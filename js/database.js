@@ -1,4 +1,4 @@
-import { MAX_AGENTS_TO_SAVE_PER_GENE_POOL } from "./constants.js";
+import { MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MAX_GENE_POOLS } from "./constants.js";
 
 // --- IndexedDB WRAPPER FOR GENE POOL STORAGE (With Worker) ---
 // Uses a Web Worker to avoid blocking the simulation thread
@@ -39,7 +39,10 @@ export class GenePoolDatabase {
                 };
 
                 // Initialize the worker's database
-                this.sendMessage('init', {})
+                this.sendMessage('init', {
+                    maxGenePools: MAX_GENE_POOLS,
+                    maxAgentsPerPool: MAX_AGENTS_TO_SAVE_PER_GENE_POOL
+                })
                     .then(() => {
                         this.logger.log('[DATABASE] Worker initialized successfully.');
                         resolve();

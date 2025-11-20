@@ -641,13 +641,43 @@ export class Simulation {
             // CRITICAL FIX: Reduced elitism from 60% to 30% to promote diversity
             // 30% chance for Elitism
             if (roll < 0.3) {
-                this.agents.sort((a, b) => b.fitness - a.fitness);
-                const topAgent = this.agents[0];
-                if (topAgent && topAgent.fitness > 0) {
-                    const eliteGene = { weights: topAgent.getWeights(), geneId: topAgent.geneId };
+                // Elitism: Pick the absolute best agent from EITHER living agents OR the gene pool
+                let bestLivingAgent = null;
+                if (this.agents.length > 0) {
+                    this.agents.sort((a, b) => b.fitness - a.fitness);
+                    bestLivingAgent = this.agents[0];
+                }
+
+                let bestStoredAgent = null;
+                let bestStoredFitness = -1;
+
+                // Find best agent in gene pools
+                for (const pool of Object.values(this.genePools)) {
+                    if (pool && pool.length > 0) {
+                        // Pools are already sorted by fitness descending
+                        const topInPool = pool[0];
+                        if (topInPool.fitness > bestStoredFitness) {
+                            bestStoredFitness = topInPool.fitness;
+                            bestStoredAgent = topInPool;
+                        }
+                    }
+                }
+
+                let eliteGene = null;
+
+                // Compare living vs stored
+                if (bestLivingAgent && (!bestStoredAgent || bestLivingAgent.fitness > bestStoredFitness)) {
+                    if (bestLivingAgent.fitness > 0) {
+                        eliteGene = { weights: bestLivingAgent.getWeights(), geneId: bestLivingAgent.geneId };
+                    }
+                } else if (bestStoredAgent) {
+                    eliteGene = { weights: bestStoredAgent.weights, geneId: bestStoredAgent.geneId };
+                }
+
+                if (eliteGene) {
                     this.spawnAgent({ gene: eliteGene });
                 } else {
-                    // Fallback to random if no suitable elite agent
+                    // Fallback to random if no suitable elite agent found anywhere
                     this.spawnAgent({ gene: null });
                 }
             }
