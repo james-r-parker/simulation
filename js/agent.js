@@ -4,7 +4,7 @@
 import { NeuralNetwork } from './neural-network.js';
 import {
     BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE,
-    REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY, MATURATION_AGE_SECONDS,
+    REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY,
     REPRODUCTION_COOLDOWN_FRAMES, PREGNANCY_DURATION_FRAMES,
     OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
@@ -254,7 +254,6 @@ export class Agent {
         this.age = (Date.now() - this.birthTime) / 1000;
         this.framesAlive++;
         this.frameCount++;
-
         if (this.reproductionCooldown > 0) this.reproductionCooldown--;
         if (this.isPregnant) {
             this.pregnancyTimer++;
@@ -370,16 +369,16 @@ export class Agent {
             hitWall = true;
         }
         if (hitWall) {
-            const energyLost = OBSTACLE_COLLISION_PENALTY / 2;
+            const energyLost = OBSTACLE_COLLISION_PENALTY / 4;  // Reduced from /2 to /4 for more forgiving wall hits
             this.energy -= energyLost;
             this.fitness -= 5; // Penalty for hitting walls
             this.collisions++;
+            this.timesHitObstacle++; // Count wall hits
             // Wall collision logging disabled for performance
         }
 
         // Obstacle Collision - OPTIMIZED: Use squared distance to avoid sqrt
         const agentSize = this.size;
-        const agentSizeSq = agentSize * agentSize;
         for (let i = 0; i < obstacles.length; i++) {
             const obs = obstacles[i];
             const dx = this.x - obs.x;
@@ -650,6 +649,7 @@ export class Agent {
         inputs.push(Math.min(this.dangerSmell, 1)); // Fear
         inputs.push(Math.min(this.attackSmell + (this.energy / OBESITY_THRESHOLD_ENERGY), 1)); // Aggression
         inputs.push(this.energy / MAX_ENERGY); // Energy ratio
+
         inputs.push(Math.min(this.age / 60, 1)); // Age ratio
         inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
         inputs.push(angleDifference / Math.PI); // Velocity-angle difference
@@ -690,7 +690,9 @@ export class Agent {
     }
 
     tryMate(mate, simulation) {
-        if (this.age < MATURATION_AGE_SECONDS || mate.age < MATURATION_AGE_SECONDS) return false;
+        // FRAME-BASED maturation check (independent of game speed)
+        const MATURATION_AGE_FRAMES = 900; // 15 seconds at 60 FPS
+        if (this.framesAlive < MATURATION_AGE_FRAMES || mate.framesAlive < MATURATION_AGE_FRAMES) return false;
         if (this.specializationType !== mate.specializationType) return false;
 
         if (this.isPregnant || this.reproductionCooldown > 0 || this.energy < MIN_ENERGY_TO_REPRODUCE ||

@@ -4,43 +4,43 @@
 export const BASE_SIZE = 5;
 export const ENERGY_TO_SIZE_RATIO = 100;
 export const MAX_ENERGY = 2500; // Increased to allow more growth
-export const MIN_ENERGY_TO_REPRODUCE = 250; 
-export const REPRODUCE_COST_BASE = 15; 
-export const CHILD_STARTING_ENERGY = 150; // Increased so offspring survive longer
-export const INITIAL_AGENT_ENERGY = 2000; // Increased so agents can learn before dying 
-export const MATURATION_AGE_SECONDS = 15; 
-export const REPRODUCTION_COOLDOWN_FRAMES = 60 * 5; 
-export const PREGNANCY_DURATION_FRAMES = 60 * 8; 
+export const MIN_ENERGY_TO_REPRODUCE = 250;
+export const REPRODUCE_COST_BASE = 15;
+export const CHILD_STARTING_ENERGY = 700; // CRITICAL FIX: Increased to 700 to ensure survival long enough to find food (was 150→400→700)
+export const INITIAL_AGENT_ENERGY = 3000; // Increased to 3000 for better initial exploration (was 2000→2500→3000) 
+export const MATURATION_AGE_FRAMES = 900; // 15 seconds at 60 FPS - FRAME-BASED to be independent of game speed
+export const REPRODUCTION_COOLDOWN_FRAMES = 60 * 5;
+export const PREGNANCY_DURATION_FRAMES = 60 * 8;
 
-export const RESPAWN_DELAY_FRAMES = 0; 
+export const RESPAWN_DELAY_FRAMES = 0;
 
-export const OBESITY_THRESHOLD_ENERGY = 350; 
-export const OBESITY_ENERGY_TAX_DIVISOR = 500; 
+export const OBESITY_THRESHOLD_ENERGY = 350;
+export const OBESITY_ENERGY_TAX_DIVISOR = 500;
 
-export const MAX_THRUST = 0.5; 
-export const MAX_ROTATION = 0.1; 
-export const MAX_VELOCITY = 10; 
+export const MAX_THRUST = 0.5;
+export const MAX_ROTATION = 0.1;
+export const MAX_VELOCITY = 10;
 export const SPRINT_BONUS_THRUST = 0.5;
-export const SPRINT_COST_PER_FRAME = 0.4; // Reduced from 0.8 to allow more sprinting
+export const SPRINT_COST_PER_FRAME = 0.25; // Reduced from 0.4 to encourage sprinting away from danger
 export const SPRINT_THRESHOLD = 0.9;
 export const FEAR_SPRINT_BONUS = 0.5;
 
-export const OBSTACLE_COLLISION_PENALTY = 50; // Reduced to be less punishing while learning 
-export const OBSTACLE_HIDING_RADIUS = 75; 
+export const OBSTACLE_COLLISION_PENALTY = 25; // CRITICAL FIX: Halved to allow learning (was killing agents in 2-3 hits) 
+export const OBSTACLE_HIDING_RADIUS = 75;
 
 export const DANGER_PHEROMONE_THRESHOLD = 30;
 export const PHEROMONE_FADE_RATE = 0.005;
 export const PHEROMONE_RADIUS = 60;
 
-export const FOOD_SPAWN_CAP = 900; // Increased to give agents more food to find
-export const HIGH_VALUE_FOOD_CHANCE = 0.05;
-export const DAMPENING_FACTOR = 0.95; 
+export const FOOD_SPAWN_CAP = 1200; // Increased from 900 to give agents more food opportunities (33% increase)
+export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
+export const DAMPENING_FACTOR = 0.95;
 
-export const ROTATION_COST_MULTIPLIER = 0.5; 
+export const ROTATION_COST_MULTIPLIER = 0.3; // Reduced from 0.5 to encourage turning and exploration
 
 // --- NEW ENERGY BALANCE FIXES ---
-export const PASSIVE_LOSS = 0.000002; // Reduced by 60% to give agents more time
-export const MOVEMENT_COST_MULTIPLIER = 0.004; // Reduced by 50% to allow more exploration
+export const PASSIVE_LOSS = 0.000001; // CRITICAL FIX: Halved to extend lifespan
+export const MOVEMENT_COST_MULTIPLIER = 0.002; // CRITICAL FIX: Halved to enable exploration (was 72% of energy drain)
 
 // World size - 16:9 aspect ratio to fit 1440p monitors
 export const WORLD_WIDTH = 14400;

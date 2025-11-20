@@ -3,7 +3,9 @@
 
 import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY, CHILD_STARTING_ENERGY,
-    FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
+    FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE, MATURATION_AGE_FRAMES, // Changed from MATURATION_AGE_SECONDS
+    SPECIALIZATION_TYPES, // Added for novelty spawning
+    RESPAWN_DELAY_FRAMES, MAX_ENERGY,
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
     PHEROMONE_RADIUS, OBSTACLE_HIDING_RADIUS
 } from './constants.js';
@@ -635,8 +637,9 @@ export class Simulation {
         for (let i = 0; i < agentsToSpawn; i++) {
             const roll = Math.random();
 
-            // 60% chance for Elitism
-            if (roll < 0.6) {
+            // CRITICAL FIX: Reduced elitism from 60% to 30% to promote diversity
+            // 30% chance for Elitism
+            if (roll < 0.3) {
                 this.agents.sort((a, b) => b.fitness - a.fitness);
                 const topAgent = this.agents[0];
                 if (topAgent && topAgent.fitness > 0) {
@@ -647,8 +650,8 @@ export class Simulation {
                     this.spawnAgent({ gene: null });
                 }
             }
-            // 30% chance for Sexual Selection
-            else if (roll < 0.9) {
+            // 45% chance for Sexual Selection (increased from 30%)
+            else if (roll < 0.75) {
                 const geneIds = Object.keys(this.genePools);
                 if (geneIds.length > 0) {
                     const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
@@ -664,9 +667,32 @@ export class Simulation {
                     this.spawnAgent({ gene: null });
                 }
             }
-            // 10% chance for Random Generation
-            else {
+            // 20% chance for Random Generation (increased from 10%)
+            else if (roll < 0.95) {
                 this.spawnAgent({ gene: null });
+            }
+            // 5% chance for Novelty Spawning (NEW) - random specialization with moderate mutation
+            else {
+                const randomGeneId = Object.keys(this.genePools)[Math.floor(Math.random() * Object.keys(this.genePools).length)];
+                if (randomGeneId) {
+                    const pool = this.genePools[randomGeneId];
+                    if (pool && pool.length > 0) {
+                        const randomAgent = pool[Math.floor(Math.random() * pool.length)];
+                        // Create a hybrid by forcing a different specialization
+                        const allTypes = Object.values(SPECIALIZATION_TYPES);
+                        const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
+                        this.spawnAgent({
+                            gene: {
+                                weights: randomAgent.weights,
+                                specializationType: novelSpecialization
+                            }
+                        });
+                    } else {
+                        this.spawnAgent({ gene: null });
+                    }
+                } else {
+                    this.spawnAgent({ gene: null });
+                }
             }
         }
 
@@ -678,7 +704,7 @@ export class Simulation {
         let baseScore = 0;
 
         // 1. Productive Actions (Contribute to Base Score)
-        baseScore += agent.offspring * 600;
+        baseScore += agent.offspring * 400; // Reduced from 600 to balance with other rewards
         baseScore += agent.foodEaten * 200;
         baseScore += agent.kills * 15;
 
@@ -692,20 +718,28 @@ export class Simulation {
         baseScore += agent.successfulEscapes * 75;
 
         // 3. Penalties (Applied to Base Score)
-        baseScore -= agent.timesHitObstacle * 15;
+        baseScore -= agent.timesHitObstacle * 100; // CRITICAL FIX: Increased from 15 to 100 to heavily discourage wall-hitting
 
-        // 4. Survival Multiplier (The most important factor)
+        // 4. Collision Avoidance Reward (NEW)
+        // Reward agents that survive without hitting obstacles
+        const collisionFreeFrames = Math.max(0, agent.framesAlive - (agent.timesHitObstacle * 20));
+        if (collisionFreeFrames > 100) {
+            baseScore += (collisionFreeFrames / 100) * 5; // +5 per 100 frames without hitting
+        }
+
+        // 5. Survival Multiplier (The most important factor)
         // This creates a positive feedback loop. A high base score is good,
         // but a high base score sustained over a long life is exponentially better.
         // The multiplier starts at 1x and increases with age.
-        // An agent living for 60 seconds gets a 2x multiplier on its entire life's achievements.
-        const survivalMultiplier = 1 + (agent.age / 60);
+        // An agent living for 60 seconds (3600 frames) gets a 2x multiplier on its entire life's achievements.
+        const survivalMultiplier = 1 + (agent.framesAlive / 3600);
 
         // Final fitness is the base score amplified by how long the agent survived.
         const finalFitness = baseScore * survivalMultiplier;
 
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        const rawSurvivalBonus = agent.age * 2;
+        // Equivalent to age * 2 (where age is in seconds) -> (frames / 60) * 2 = frames / 30
+        const rawSurvivalBonus = agent.framesAlive / 30;
 
         return Math.max(0, finalFitness + rawSurvivalBonus);
     }
@@ -762,12 +796,13 @@ export class Simulation {
             }
         }
 
-        // Update gene pools (top 3 per gene ID)
-        // Only save agents with fitness >= 50 and foodEaten >= 3
+        // Update gene pools (top 10 per gene ID)
+        // CRITICAL FIX: Lower threshold from 50 to 20, remove foodEaten requirement, increase pool size to 10
         const agentsByGene = {};
         this.agents.forEach(agent => {
-            // Filter: only save high-performing agents
-            if (agent.fitness >= 50 && agent.foodEaten >= 3) {
+            // Filter: only save agents with fitness >= 20 (was 50) and framesAlive >= 600 (10 seconds at 60 FPS)
+            // FRAME-BASED to be independent of game speed
+            if (agent.fitness >= 20 && agent.framesAlive >= 600) {
                 if (!agentsByGene[agent.geneId]) {
                     agentsByGene[agent.geneId] = [];
                 }
@@ -777,9 +812,9 @@ export class Simulation {
 
         for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
             const sorted = geneAgents.sort((a, b) => b.fitness - a.fitness);
-            // Save top 3 for this gene pool
+            // Save top 10 for this gene pool (increased from 3)
             if (sorted.length > 0) {
-                this.genePools[geneId] = sorted.slice(0, 3).map(a => ({
+                this.genePools[geneId] = sorted.slice(0, 10).map(a => ({
                     weights: a.getWeights(),
                     fitness: a.fitness,
                     geneId: a.geneId,
@@ -815,7 +850,7 @@ export class Simulation {
 
         // Average stats
         const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-        const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length;
+        const avgAge = livingAgents.reduce((sum, a) => sum + a.framesAlive, 0) / livingAgents.length;
         const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
         const avgOffspring = livingAgents.reduce((sum, a) => sum + a.offspring, 0) / livingAgents.length;
         const avgOffspringMate = livingAgents.reduce((sum, a) => sum + a.childrenFromMate, 0) / livingAgents.length;
@@ -823,9 +858,41 @@ export class Simulation {
         const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
         const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
         const avgCollisions = livingAgents.reduce((sum, a) => sum + (a.collisions || 0), 0) / livingAgents.length;
+        const avgWallHits = livingAgents.reduce((sum, a) => sum + (a.timesHitObstacle || 0), 0) / livingAgents.length;
 
-        // Count qualified agents (those that can be saved to DB)
-        const qualifiedAgents = livingAgents.filter(a => a.fitness >= 50 && a.foodEaten >= 3).length;
+        // NEW: Critical lifespan metrics (FRAME-BASED)
+        const MATURATION_FRAMES = 900; // 15 seconds at 60 FPS - independent of game speed
+        const matureAgents = livingAgents.filter(a => a.framesAlive >= MATURATION_FRAMES).length;
+        const maturationRate = (matureAgents / livingAgents.length) * 100;
+        const maxAge = Math.max(...livingAgents.map(a => a.framesAlive), 0);
+        const maxFrames = Math.max(...livingAgents.map(a => a.framesAlive), 0);
+
+        // NEW: Reproduction metrics
+        const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
+        const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
+
+        // Calculate reproduction rate (events per minute)
+        // Store previous offspring count and calculate delta
+        if (!this.previousOffspringCount) this.previousOffspringCount = 0;
+        if (!this.lastReproductionCheck) this.lastReproductionCheck = Date.now();
+
+        const currentOffspringCount = totalSexualOffspring + totalAsexualOffspring;
+        const offspringDelta = currentOffspringCount - this.previousOffspringCount;
+        const timeDelta = (Date.now() - this.lastReproductionCheck) / 1000 / 60; // in minutes
+        const reproductionRate = timeDelta > 0 ? (offspringDelta / timeDelta).toFixed(1) : 0;
+
+        // Update tracking variables every 10 seconds
+        if (timeDelta >= 0.167) { // ~10 seconds
+            this.previousOffspringCount = currentOffspringCount;
+            this.lastReproductionCheck = Date.now();
+        }
+
+        // NEW: Collision-free percentage
+        const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
+        const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
+
+        // Count qualified agents (NEW THRESHOLD: fitness >= 20, age >= 10)
+        const qualifiedAgents = livingAgents.filter(a => a.fitness >= 20 && a.framesAlive >= 600).length;
 
         // Learning rate (fitness improvement per generation)
         let learningRate = 0;
@@ -845,7 +912,36 @@ export class Simulation {
             fitnessDelta = this.fitnessHistory[this.fitnessHistory.length - 1] - this.fitnessHistory[this.fitnessHistory.length - 2];
         }
 
-        // Update DOM
+        // Update DOM - NEW METRICS
+        const matureAgentsEl = document.getElementById('mature-agents');
+        const totalAgentsEl = document.getElementById('total-agents');
+        const maturationRateEl = document.getElementById('maturation-rate');
+        const maxAgeEl = document.getElementById('max-age');
+        const maxFramesEl = document.getElementById('max-frames');
+        const totalSexualOffspringEl = document.getElementById('total-sexual-offspring');
+        const totalAsexualOffspringEl = document.getElementById('total-asexual-offspring');
+        const reproductionRateEl = document.getElementById('reproduction-rate');
+        const avgWallHitsEl = document.getElementById('avg-wall-hits');
+        const collisionFreePercentEl = document.getElementById('collision-free-percent');
+
+        if (matureAgentsEl) matureAgentsEl.textContent = matureAgents;
+        if (totalAgentsEl) totalAgentsEl.textContent = livingAgents.length;
+        if (maturationRateEl) {
+            maturationRateEl.textContent = maturationRate.toFixed(1);
+            maturationRateEl.style.color = maturationRate >= 30 ? '#0f0' : maturationRate >= 10 ? '#ff0' : '#f00';
+        }
+        if (maxAgeEl) maxAgeEl.textContent = maxAge.toFixed(1);
+        if (maxFramesEl) maxFramesEl.textContent = maxFrames.toFixed(0);
+        if (totalSexualOffspringEl) totalSexualOffspringEl.textContent = totalSexualOffspring;
+        if (totalAsexualOffspringEl) totalAsexualOffspringEl.textContent = totalAsexualOffspring;
+        if (reproductionRateEl) reproductionRateEl.textContent = reproductionRate;
+        if (avgWallHitsEl) avgWallHitsEl.textContent = avgWallHits.toFixed(1);
+        if (collisionFreePercentEl) {
+            collisionFreePercentEl.textContent = collisionFreePercent.toFixed(1);
+            collisionFreePercentEl.style.color = collisionFreePercent >= 50 ? '#0f0' : collisionFreePercent >= 25 ? '#ff0' : '#f00';
+        }
+
+        // Update DOM - EXISTING METRICS
         const fitnessValueEl = document.getElementById('fitness-value');
         const fitnessDeltaEl = document.getElementById('fitness-delta');
         const avgFitnessValueEl = document.getElementById('avg-fitness-value');
@@ -883,7 +979,11 @@ export class Simulation {
                 .join(', ');
             specializationListEl.textContent = specList || 'none';
         }
-        if (avgAgeEl) avgAgeEl.textContent = avgAge.toFixed(1);
+        if (avgAgeEl) {
+            avgAgeEl.textContent = avgAge.toFixed(1);
+            // Color code based on target: green if >600f (10s), yellow if 300-600f (5-10s), red if <300f
+            avgAgeEl.style.color = avgAge >= 600 ? '#0f0' : avgAge >= 300 ? '#ff0' : '#f00';
+        }
         if (avgEnergyEl) avgEnergyEl.textContent = avgEnergy.toFixed(1);
         if (avgOffspringEl) avgOffspringEl.textContent = avgOffspring.toFixed(2);
         if (avgOffspringMateEl) avgOffspringMateEl.textContent = avgOffspringMate.toFixed(2);

@@ -15,11 +15,11 @@ export class GenePoolDatabase {
         return new Promise((resolve, reject) => {
             try {
                 this.worker = new Worker('./js/database-worker.js');
-                
+
                 this.worker.onmessage = (e) => {
                     const { id, success, result, error } = e.data;
                     const pending = this.pendingRequests.get(id);
-                    
+
                     if (pending) {
                         this.pendingRequests.delete(id);
                         if (success) {
@@ -30,12 +30,12 @@ export class GenePoolDatabase {
                         }
                     }
                 };
-                
+
                 this.worker.onerror = (error) => {
                     this.logger.error('[DATABASE] Worker error:', error);
                     reject(error);
                 };
-                
+
                 // Initialize the worker's database
                 this.sendMessage('init', {})
                     .then(() => {
@@ -43,7 +43,7 @@ export class GenePoolDatabase {
                         resolve();
                     })
                     .catch(reject);
-                    
+
             } catch (error) {
                 this.logger.error('[DATABASE] Failed to create worker:', error);
                 reject(error);
@@ -65,7 +65,7 @@ export class GenePoolDatabase {
         const agentData = agents
             .filter(a => a.geneId === geneId)
             .sort((a, b) => b.fitness - a.fitness)
-            .slice(0, 3)
+            .slice(0, 10) // Increased from 3 to 10
             .map(a => ({
                 weights: a.getWeights(),
                 fitness: a.fitness,
@@ -77,41 +77,40 @@ export class GenePoolDatabase {
 
         // Add to queue
         this.saveQueue.push({ geneId, agents: agentData });
-        
+
         // Process queue asynchronously
         this.processQueue();
     }
 
     async processQueue() {
         if (this.isProcessingQueue || this.saveQueue.length === 0) return;
-        
-        this.isProcessingQueue = true;
-        
+
+
         // Process in batches to avoid overwhelming the worker
         const batchSize = 5;
         while (this.saveQueue.length > 0) {
             const batch = this.saveQueue.splice(0, batchSize);
-            
+
             // Send all in parallel (worker will handle sequentially)
             await Promise.allSettled(
-                batch.map(({ geneId, agents }) => 
+                batch.map(({ geneId, agents }) =>
                     this.sendMessage('saveGenePool', { geneId, agents })
                 )
             );
         }
-        
+
         this.isProcessingQueue = false;
     }
 
     // Immediate save (for periodic saves)
     async saveGenePool(geneId, agents) {
         if (!this.worker) await this.init();
-        
-        // Keep only top 3 agents per gene ID
+
+        // Keep top 10 agents per gene ID (increased from 3 for better diversity)
         const topAgents = agents
             .filter(a => a.geneId === geneId)
             .sort((a, b) => b.fitness - a.fitness)
-            .slice(0, 3)
+            .slice(0, 10)
             .map(a => ({
                 weights: a.getWeights(),
                 fitness: a.fitness,
@@ -123,9 +122,9 @@ export class GenePoolDatabase {
 
         try {
             await this.sendMessage('saveGenePool', { geneId, agents: topAgents });
-            this.logger.log(`[DATABASE] Saved gene pool for ${geneId}`, { 
-                count: topAgents.length, 
-                fitness: topAgents[0]?.fitness 
+            this.logger.log(`[DATABASE] Saved gene pool for ${geneId}`, {
+                count: topAgents.length,
+                fitness: topAgents[0]?.fitness
             });
         } catch (error) {
             this.logger.error(`[DATABASE] Error saving gene pool for ${geneId}:`, error);
@@ -139,22 +138,22 @@ export class GenePoolDatabase {
 
     async loadAllGenePools() {
         if (!this.worker) await this.init();
-        
+
         this.logger.log('[DATABASE] Loading all gene pools...');
         const allPools = await this.sendMessage('loadAllGenePools', {});
         this.logger.log(`[DATABASE] Loaded ${Object.keys(allPools).length} gene pools from database.`);
-        
+
         return allPools;
     }
 
     async clearAll() {
         if (!this.worker) await this.init();
-        
+
         this.logger.log('[DATABASE] Clearing all gene pools...');
         await this.sendMessage('clearAll', {});
         this.logger.log('[DATABASE] All gene pools cleared successfully.');
     }
-    
+
     // Ensure all queued saves are processed before shutdown
     async flush() {
         await this.processQueue();
