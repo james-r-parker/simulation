@@ -1,0 +1,799 @@
+// --- AGENT CLASS (RNN and Thrust/Rotation Implemented) ---
+// Preserved exactly from original with gene ID added (metadata only)
+
+import { NeuralNetwork } from './neural-network.js';
+import {
+    BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE,
+    REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY, MATURATION_AGE_SECONDS,
+    REPRODUCTION_COOLDOWN_FRAMES, PREGNANCY_DURATION_FRAMES,
+    OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
+    MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
+    SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
+    OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
+    PHEROMONE_RADIUS, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
+    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
+    SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS
+} from './constants.js';
+import { distance, randomGaussian, generateGeneId, geneIdToColor } from './utils.js';
+import { Rectangle } from './quadtree.js';
+import { PheromonePuff } from './pheromone.js';
+
+export class Agent {
+    constructor(gene, x, y, energy, logger, parent = null, simulation = null) {
+        this.logger = logger;
+        this.simulation = simulation;
+
+        this.gene = gene || {};
+
+        // Position and physics
+        this.x = x;
+        this.y = y;
+        this.entityType = 1.0; // 1 for agent, 2 for food
+
+        // Validate and set energy
+        if (typeof energy !== 'number' || !isFinite(energy) || energy <= 0) {
+            this.logger.error('Agent created with invalid energy, defaulting.', { providedEnergy: energy });
+            this.energy = INITIAL_AGENT_ENERGY;
+        } else {
+            this.energy = energy;
+        }
+
+        this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+        this.targetSize = this.size;
+        this.maxEnergy = MAX_ENERGY;
+        this.energyEfficiency = 1.0;
+        this.age = 0;
+        this.framesAlive = 0;
+
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.angle = Math.random() * Math.PI * 2;
+
+        // --- VITAL ---
+        // These properties MUST be set before the neural network is initialized.
+
+        // Specialization system
+        const allTypes = Object.values(SPECIALIZATION_TYPES);
+        if (this.gene.specializationType && allTypes.includes(this.gene.specializationType)) {
+            this.specializationType = this.gene.specializationType;
+        } else {
+            this.specializationType = allTypes[Math.floor(Math.random() * allTypes.length)];
+        }
+
+        if (!this.specializationType || !AGENT_CONFIGS[this.specializationType]) {
+            this.logger.error('CRITICAL: invalid specializationType after initialization! Falling back to FORAGER.', {
+                gene: this.gene,
+                type: this.specializationType
+            });
+            this.specializationType = SPECIALIZATION_TYPES.FORAGER; // Safe fallback
+        }
+
+        // Create a numeric ID for the specialization type for GPU processing
+        const typeKeys = Object.values(SPECIALIZATION_TYPES);
+        this.specializationTypeId = typeKeys.indexOf(this.specializationType);
+        if (this.specializationTypeId === -1) {
+            this.logger.error('Could not determine specializationTypeId', { type: this.specializationType });
+            this.specializationTypeId = 0; // Fallback to 0 (FORAGER)
+        }
+
+        // Get agent configuration from the central AGENT_CONFIGS object
+        const config = AGENT_CONFIGS[this.specializationType];
+
+        // Specialized sensor configurations from config
+        this.numSensorRays = this.gene.numSensorRays || config.numSensorRays || 30;
+        this.maxRayDist = this.gene.maxRayDist || config.maxRayDist || 150;
+        // Alignment rays are being phased out in favor of simpler GPU logic, but we keep a value for now.
+        this.numAlignmentRays = this.gene.numAlignmentRays || 6;
+
+        // Specialized hidden layer sizes from config
+        this.hiddenSize = this.gene.hiddenSize || config.hiddenSize || 20;
+
+        // --- RNN State ---
+        // CRITICAL: Initialize hiddenState here, as its length is needed for inputSize
+        this.hiddenState = new Array(this.hiddenSize).fill(0);
+
+        // Input size: (rays * 5) + (alignment rays * 1) + 8 state inputs + 8 memory inputs + hidden state
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 16 + this.hiddenState.length;
+        this.outputSize = 5;
+
+        // Now that sizes are defined, initialize the neural network
+        if (!this.gene.weights) {
+            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize);
+            this.gene.weights = this.nn.getWeights(); // Store the new random weights
+        } else {
+            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize, this.gene.weights);
+        }
+
+        this.birthTime = Date.now();
+        this.frameCount = 0;
+        this.offspring = 0;
+        this.childrenFromSplit = 0;
+        this.childrenFromMate = 0;
+        this.kills = 0;
+        this.foodEaten = 0;
+        this.timesHitObstacle = 0;
+        this.collisions = 0; // Total number of collisions detected
+        this.rayHits = 0; // Total number of ray hits detected
+        this.fitness = 0;
+        this.isDead = false;
+        this.wantsToReproduce = false;
+        this.wantsToAttack = false;
+        this.isSprinting = false;
+        this.lastRayData = [];
+        this.lastInputs = null;
+        this.lastOutput = null;
+        this.newHiddenState = null;
+        this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
+        this.distanceTravelled = 0;
+        this.energySpent = 0;
+        this.successfulEscapes = 0;
+        this.lastX = x;
+        this.lastY = y;
+        this.currentRotation = 0;
+
+        // --- Recent Memory (last 3 frames for temporal awareness) ---
+        this.memoryFrames = 3;
+        this.previousVelocities = Array(this.memoryFrames).fill(null).map(() => ({ vx: 0, vy: 0 }));
+        this.previousEnergies = Array(this.memoryFrames).fill(this.energy);
+        this.previousDanger = Array(this.memoryFrames).fill(0);
+        this.previousAggression = Array(this.memoryFrames).fill(0);
+
+        // --- Pre-allocated Memory for Performance ---
+        this.inputs = []; // Pre-allocate inputs array
+        this.rayData = []; // Pre-allocate rayData array
+        this.queryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate query range
+        this.smellRadius = new Rectangle(0, 0, 0, 0); // Pre-allocate smell radius
+
+        // --- RNN State ---
+        //this.hiddenState = new Array(this.hiddenSize).fill(0);
+
+        // --- BEHAVIORAL STATES ---
+        this.isPregnant = false;
+        this.pregnancyTimer = 0;
+        this.fatherWeights = this.gene.fatherWeights;
+        this.dangerSmell = 0;
+        this.attackSmell = 0;
+        this.hunger = 1;
+        this.fear = 0;
+        this.aggression = 0;
+        this.avgGroupSize = 1;
+
+        this.mutationRate = 0.1;
+        this.speedFactor = 2 + Math.random() * 3;
+
+        // --- GENE ID SYSTEM (NEW) ---
+        this.geneId = this.gene.geneId || generateGeneId();
+        this.geneColor = geneIdToColor(this.geneId);
+    }
+
+    getWeights() {
+        return this.nn.getWeights();
+    }
+
+    think(inputs) {
+        // CPU path - compute neural network forward pass
+        const result = this.nn.forward(inputs, this.hiddenState);
+        this.hiddenState = result.hiddenState;
+        this.thinkFromOutput(result.output);
+    }
+
+    thinkFromOutput(output) {
+        // Shared logic for processing neural network outputs (used by both CPU and GPU paths)
+        // Validate output array
+        if (!Array.isArray(output) || output.length < 5) {
+            console.error('Invalid output from neural network:', output);
+            output = [0.5, 0.5, 0, 0, 0]; // Default safe values
+        }
+
+        // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
+        // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
+        const thrustOutput = output[0];
+        const rotationOutput = (output[1] * 2 - 1);
+        const sprintOutput = output[2];
+        this.wantsToReproduce = output[3] > 0.8;
+        this.wantsToAttack = output[4] > 0.8;
+
+        // --- MOVEMENT CALCULATIONS ---
+        const geneticMaxThrust = MAX_THRUST * this.speedFactor;
+        let desiredThrust = thrustOutput * geneticMaxThrust;
+        let sprintThreshold = SPRINT_THRESHOLD;
+
+        // --- FIGHT/FLIGHT MODIFIERS ---
+        if (this.fear > this.aggression * 0.5) {
+            sprintThreshold = 0.5;
+            desiredThrust += FEAR_SPRINT_BONUS * MAX_THRUST;
+            if (this.dangerSmell > 0.5) this.successfulEscapes++;
+        }
+
+        if (this.isSprinting = (sprintOutput > sprintThreshold)) {
+            desiredThrust += SPRINT_BONUS_THRUST;
+        }
+
+        // Apply rotation
+        const rotationChange = rotationOutput * MAX_ROTATION;
+        this.angle += rotationChange;
+        this.currentRotation = Math.abs(rotationChange); // Store for cost calculation
+
+        // Apply thrust in the direction of the angle
+        const thrustX = Math.cos(this.angle) * desiredThrust;
+        const thrustY = Math.sin(this.angle) * desiredThrust;
+
+        this.vx += thrustX;
+        this.vy += thrustY;
+    }
+
+    update(worldWidth, worldHeight, obstacles, quadtree, simulation, newChildren) {
+        if (this.isDead) return;
+
+        // Check if GPU has already processed this agent's neural network
+        if (this.lastOutput && this.newHiddenState) {
+            // GPU processed - use results and update hidden state
+            this.hiddenState = this.newHiddenState;
+            this.thinkFromOutput(this.lastOutput);
+            // Clear GPU results so we don't reuse them
+            this.lastOutput = null;
+            this.newHiddenState = null;
+        } else {
+            // If lastInputs is not populated, it means the GPU perception step failed or was skipped.
+            // In that case, we must run perception on the CPU.
+            if (!this.lastInputs) {
+                if (this.framesAlive !== 0) {
+                    this.logger.warn(`[FALLBACK] Agent ${this.geneId} running unexpected CPU perception fallback.`, { frame: simulation.frameCount });
+                }
+                const perception = this.perceiveWorld(quadtree, obstacles, worldWidth, worldHeight);
+                this.lastRayData = perception.rayData;
+                this.think(perception.inputs);
+            } else {
+                // Otherwise, perception data is fresh, just run the brain.
+                this.think(this.lastInputs);
+                // Note: With GPU running per iteration (Solution 4), we don't clear lastInputs
+                // because GPU will overwrite it on the next iteration anyway
+            }
+        }
+
+        this.age = (Date.now() - this.birthTime) / 1000;
+        this.framesAlive++;
+        this.frameCount++;
+
+        if (this.reproductionCooldown > 0) this.reproductionCooldown--;
+        if (this.isPregnant) {
+            this.pregnancyTimer++;
+            if (this.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
+                this.isPregnant = false;
+                this.pregnancyTimer = 0;
+                this.birthChild(simulation);
+            }
+        }
+
+        // --- Movement Application ---
+        this.lastX = this.x;
+        this.lastY = this.y;
+
+        // Update recent memory (shift older frames back)
+        for (let i = this.memoryFrames - 1; i > 0; i--) {
+            this.previousVelocities[i] = { ...this.previousVelocities[i - 1] };
+            this.previousEnergies[i] = this.previousEnergies[i - 1];
+            this.previousDanger[i] = this.previousDanger[i - 1];
+            this.previousAggression[i] = this.previousAggression[i - 1];
+        }
+        // Store current frame as most recent memory
+        this.previousVelocities[0] = { vx: this.vx, vy: this.vy };
+        this.previousEnergies[0] = this.energy;
+        this.previousDanger[0] = this.dangerSmell;
+        this.previousAggression[0] = this.attackSmell;
+
+        // Apply drag/dampening
+        this.vx *= DAMPENING_FACTOR;
+        this.vy *= DAMPENING_FACTOR;
+
+        // Cap velocity - OPTIMIZED: Cache MAX_VELOCITY_SQ
+        const MAX_VELOCITY_SQ = MAX_VELOCITY * MAX_VELOCITY;
+        const currentSpeedSq = this.vx * this.vx + this.vy * this.vy;
+        if (currentSpeedSq > MAX_VELOCITY_SQ) {
+            const ratio = MAX_VELOCITY / Math.sqrt(currentSpeedSq);
+            this.vx *= ratio;
+            this.vy *= ratio;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        this.distanceTravelled += distance(this.lastX, this.lastY, this.x, this.y);
+
+        // --- ENERGY COSTS ---
+        const passiveLoss = PASSIVE_LOSS;
+        const sizeLoss = (this.size * 0.00025);
+
+        const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
+        const movementLoss = Math.min(currentSpeedSq * movementCostMultiplier, 5);
+
+        let energyLoss = sizeLoss + movementLoss;
+
+        if (this.frameCount > 1) {
+            energyLoss += passiveLoss;
+        }
+
+        this.energy -= energyLoss;
+        this.energySpent += energyLoss;
+
+        if (this.isSprinting) {
+            this.energy -= SPRINT_COST_PER_FRAME;
+            this.energySpent += SPRINT_COST_PER_FRAME;
+        }
+
+        // Explicit cost for high rotation to break spinning optimum
+        const rotationCost = this.currentRotation * ROTATION_COST_MULTIPLIER;
+        this.energy -= rotationCost;
+        this.energySpent += rotationCost;
+
+        if (this.energy > OBESITY_THRESHOLD_ENERGY) {
+            this.energy -= this.energy / OBESITY_ENERGY_TAX_DIVISOR;
+        }
+        // --- END ENERGY COSTS ---
+
+        // --- FITNESS REWARDS ---
+        // Survival reward: +0.1 per frame alive (~6 per second at 60fps)
+        this.fitness += 0.1;
+
+        this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+
+        // --- ASEXUAL REPRODUCTION (SPLITTING) ---
+        if (this.energy > this.maxEnergy * 0.95 && this.reproductionCooldown <= 0) {
+            this.split(simulation);
+        }
+
+        if (this.energy <= 0) {
+            this.isDead = true;
+        }
+
+        // --- EDGE BOUNCE ---
+        const dampen = 0.5;
+        let hitWall = false;
+        if (this.x < 0) {
+            this.x = 0;
+            this.vx *= -dampen;
+            hitWall = true;
+        }
+        if (this.x > worldWidth) {
+            this.x = worldWidth;
+            this.vx *= -dampen;
+            hitWall = true;
+        }
+        if (this.y < 0) {
+            this.y = 0;
+            this.vy *= -dampen;
+            hitWall = true;
+        }
+        if (this.y > worldHeight) {
+            this.y = worldHeight;
+            this.vy *= -dampen;
+            hitWall = true;
+        }
+        if (hitWall) {
+            const energyLost = OBSTACLE_COLLISION_PENALTY / 2;
+            this.energy -= energyLost;
+            this.fitness -= 5; // Penalty for hitting walls
+            this.collisions++;
+            // Wall collision logging disabled for performance
+        }
+
+        // Obstacle Collision - OPTIMIZED: Use squared distance to avoid sqrt
+        const agentSize = this.size;
+        const agentSizeSq = agentSize * agentSize;
+        for (let i = 0; i < obstacles.length; i++) {
+            const obs = obstacles[i];
+            const dx = this.x - obs.x;
+            const dy = this.y - obs.y;
+            const distSq = dx * dx + dy * dy;
+            const combinedRadius = agentSize + obs.radius;
+            const combinedRadiusSq = combinedRadius * combinedRadius;
+
+            if (distSq < combinedRadiusSq) {
+                const dist = Math.sqrt(distSq);
+                const overlap = combinedRadius - dist;
+                if (dist > 0.0001) { // Avoid division by zero
+                    this.x += (dx / dist) * overlap;
+                    this.y += (dy / dist) * overlap;
+                }
+                this.vx *= -dampen;
+                this.vy *= -dampen;
+
+                this.energy -= OBSTACLE_COLLISION_PENALTY;
+                this.fitness -= 10; // Larger penalty for obstacles
+                this.timesHitObstacle++;
+                this.collisions++;
+                // Obstacle collision logging disabled for performance
+                break; // Only handle first collision
+            }
+        }
+
+        this.emitPheromones(simulation);
+    }
+
+    perceiveWorld(quadtree, obstacles, worldWidth, worldHeight) {
+        // Reset ray hits counter at start of each frame
+        this.rayHits = 0;
+
+        // Reuse pre-allocated arrays
+        this.inputs.length = 0;
+        this.rayData.length = 0;
+        const inputs = this.inputs;
+        const rayData = this.rayData;
+
+        const maxRayDist = this.maxRayDist;
+        const numSensorRays = this.numSensorRays;
+        const numAlignmentRays = this.numAlignmentRays;
+
+        // Calculate ray angles
+        const startAngle = this.angle - Math.PI;
+        const sensorAngleStep = (Math.PI * 2) / numSensorRays;
+        const alignAngleStep = (Math.PI * 2) / numAlignmentRays;
+
+        // Helper for ray-circle intersection
+        const rayCircleIntersect = (rayX, rayY, rayDirX, rayDirY, circleX, circleY, circleRadius) => {
+            const ocX = circleX - rayX;
+            const ocY = circleY - rayY;
+            const b = (ocX * rayDirX + ocY * rayDirY);
+            const c = (ocX * ocX + ocY * ocY) - circleRadius * circleRadius;
+            const discriminant = b * b - c;
+
+            if (discriminant < 0) return null; // No intersection
+
+            const t1 = b - Math.sqrt(discriminant);
+            const t2 = b + Math.sqrt(discriminant);
+
+            if (t1 > 0.001) return t1; // First intersection point in front of ray origin
+            if (t2 > 0.001) return t2; // Second intersection point in front of ray origin (if t1 was behind)
+            return null; // Both intersection points are behind ray origin
+        };
+
+        // Process sensor rays
+        for (let rayIdx = 0; rayIdx < numSensorRays; rayIdx++) {
+            const angle = startAngle + rayIdx * sensorAngleStep;
+            const rayDirX = Math.cos(angle);
+            const rayDirY = Math.sin(angle);
+
+            let closestDist = maxRayDist;
+            let hitType = 0; // 0: none, 1: food, 2: smaller agent, 3: larger agent, 4: obstacle, 5: edge
+            let hitEntity = null;
+
+            // Check for world edge collisions
+            let distToEdge = Infinity;
+            if (rayDirX < 0) distToEdge = Math.min(distToEdge, -this.x / rayDirX);
+            if (rayDirX > 0) distToEdge = Math.min(distToEdge, (worldWidth - this.x) / rayDirX);
+            if (rayDirY < 0) distToEdge = Math.min(distToEdge, -this.y / rayDirY);
+            if (rayDirY > 0) distToEdge = Math.min(distToEdge, (worldHeight - this.y) / rayDirY);
+
+            if (distToEdge > 0 && distToEdge < closestDist) {
+                closestDist = distToEdge;
+                hitType = 5; // Edge
+            }
+
+            // Check for obstacle collisions
+            for (const obs of obstacles) {
+                const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
+                if (dist !== null && dist > 0 && dist < closestDist) {
+                    closestDist = dist;
+                    hitType = 4; // Obstacle
+                    hitEntity = obs;
+                }
+            }
+
+            // Query quadtree for nearby entities (agents and food)
+            // Reuse pre-allocated Rectangle
+            this.queryRange.x = this.x - maxRayDist;
+            this.queryRange.y = this.y - maxRayDist;
+            this.queryRange.w = maxRayDist * 2;
+            this.queryRange.h = maxRayDist * 2;
+
+            const nearbyEntities = quadtree.query(this.queryRange);
+
+            for (const entity of nearbyEntities) {
+                if (!entity) continue; // Safety check for bad data in quadtree
+                if (entity === this || entity.isDead) continue;
+
+                if (entity.isFood) {
+                    const food = entity;
+                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, food.x, food.y, food.size);
+                    if (dist !== null && dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                        hitType = 1; // Food
+                        hitEntity = food;
+                    }
+                } else if (entity instanceof Agent) {
+                    const otherAgent = entity;
+                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, otherAgent.x, otherAgent.y, otherAgent.size);
+                    if (dist !== null && dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                        if (this.size > otherAgent.size * 1.1) {
+                            hitType = 3; // Larger agent (prey)
+                        } else if (this.size < otherAgent.size * 0.9) {
+                            hitType = 2; // Smaller agent (predator)
+                        } else {
+                            hitType = 6; // Same size agent
+                        }
+                        hitEntity = otherAgent;
+                    }
+                }
+            }
+
+            const normalizedDist = 1.0 - (Math.min(closestDist, maxRayDist) / maxRayDist);
+            inputs.push(normalizedDist);
+
+            let hitTypeArray = [0, 0, 0, 0];
+            let hitTypeName = 'none';
+            const isHit = closestDist < maxRayDist;
+
+            if (isHit) {
+                this.rayHits++;
+                if (hitType === 1) {
+                    hitTypeArray = [1, 0, 0, 0]; hitTypeName = 'food';
+                } else if (hitType === 2) {
+                    hitTypeArray = [0, 1, 0, 0]; hitTypeName = 'smaller';
+                } else if (hitType === 3) {
+                    hitTypeArray = [0, 0, 1, 0]; hitTypeName = 'larger';
+                } else if (hitType === 6) {
+                    hitTypeArray = [0, 1, 1, 0]; hitTypeName = 'same_size_agent';
+                } else if (hitType === 4 || hitType === 5) {
+                    hitTypeArray = [0, 0, 0, 1]; hitTypeName = 'obstacle_or_edge';
+                }
+            }
+            inputs.push(...hitTypeArray);
+
+            rayData.push({
+                angle, dist: closestDist, hit: isHit, type: 'sensor',
+                hitType: hitTypeName, hitTypeValue: hitType
+            });
+        }
+
+        // Process alignment rays (no hitType, just distance)
+        for (let rayIdx = 0; rayIdx < numAlignmentRays; rayIdx++) {
+            const angle = startAngle + rayIdx * alignAngleStep;
+            const rayDirX = Math.cos(angle);
+            const rayDirY = Math.sin(angle);
+
+            let closestDist = maxRayDist;
+
+            let distToEdge = Infinity;
+            if (rayDirX < 0) distToEdge = Math.min(distToEdge, -this.x / rayDirX);
+            if (rayDirX > 0) distToEdge = Math.min(distToEdge, (worldWidth - this.x) / rayDirX);
+            if (rayDirY < 0) distToEdge = Math.min(distToEdge, -this.y / rayDirY);
+            if (rayDirY > 0) distToEdge = Math.min(distToEdge, (worldHeight - this.y) / rayDirY);
+            if (distToEdge > 0 && distToEdge < closestDist) {
+                closestDist = distToEdge;
+            }
+
+            for (const obs of obstacles) {
+                const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
+                if (dist !== null && dist > 0 && dist < closestDist) {
+                    closestDist = dist;
+                }
+            }
+
+            // Reuse pre-allocated Rectangle
+            this.queryRange.x = this.x - maxRayDist;
+            this.queryRange.y = this.y - maxRayDist;
+            this.queryRange.w = maxRayDist * 2;
+            this.queryRange.h = maxRayDist * 2;
+
+            const nearbyEntities = quadtree.query(this.queryRange);
+
+            for (const entity of nearbyEntities) {
+                if (!entity) continue; // Safety check
+                if (entity === this || entity.isDead) continue;
+
+                const r = entity.isFood ? entity.size : (entity.size || 0);
+                if (r > 0) {
+                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, entity.x, entity.y, r);
+                    if (dist !== null && dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                    }
+                }
+            }
+
+            const isHit = closestDist < maxRayDist;
+            if (isHit) {
+                this.rayHits++;
+            }
+
+            const normalizedDist = 1.0 - (Math.min(closestDist, maxRayDist) / maxRayDist);
+            inputs.push(normalizedDist);
+
+            rayData.push({
+                angle, dist: closestDist, hit: isHit, type: 'alignment',
+                hitType: isHit ? 'alignment' : 'none'
+            });
+        }
+
+        let dangerSmell = 0;
+        let attackSmell = 0;
+        let inShadow = false;
+
+        // Reuse pre-allocated Rectangle
+        this.smellRadius.x = this.x - PHEROMONE_RADIUS;
+        this.smellRadius.y = this.y - PHEROMONE_RADIUS;
+        this.smellRadius.w = PHEROMONE_RADIUS * 2;
+        this.smellRadius.h = PHEROMONE_RADIUS * 2;
+
+        const nearbyPuffs = quadtree.query(this.smellRadius);
+        for (const entity of nearbyPuffs) {
+            if (entity.data instanceof PheromonePuff) {
+                const pheromone = entity.data;
+                const dist = distance(this.x, this.y, pheromone.x, pheromone.y);
+                if (dist < PHEROMONE_RADIUS) {
+                    const intensity = 1.0 - (dist / PHEROMONE_RADIUS);
+                    if (pheromone.type === 'danger') {
+                        dangerSmell = Math.max(dangerSmell, intensity);
+                    } else if (pheromone.type === 'attack') {
+                        attackSmell = Math.max(attackSmell, intensity);
+                    }
+                }
+            }
+        }
+
+        for (const obs of obstacles) {
+            const dist = distance(this.x, this.y, obs.x, obs.y);
+            if (dist < obs.radius + OBSTACLE_HIDING_RADIUS) {
+                inShadow = true;
+                break;
+            }
+        }
+
+        this.dangerSmell = dangerSmell;
+        this.attackSmell = attackSmell;
+
+        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const velocityAngle = Math.atan2(this.vy, this.vx);
+        const angleDifference = (velocityAngle - this.angle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+
+        inputs.push((MAX_ENERGY - this.energy) / MAX_ENERGY); // Hunger
+        inputs.push(Math.min(this.dangerSmell, 1)); // Fear
+        inputs.push(Math.min(this.attackSmell + (this.energy / OBESITY_THRESHOLD_ENERGY), 1)); // Aggression
+        inputs.push(this.energy / MAX_ENERGY); // Energy ratio
+        inputs.push(Math.min(this.age / 60, 1)); // Age ratio
+        inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
+        inputs.push(angleDifference / Math.PI); // Velocity-angle difference
+        inputs.push(inShadow ? 1 : 0); // In obstacle shadow
+
+        // Recent memory (temporal awareness) - adds 8 inputs
+        inputs.push(this.previousVelocities[1].vx / MAX_VELOCITY); // Previous velocity X (1 frame ago)
+        inputs.push(this.previousVelocities[1].vy / MAX_VELOCITY); // Previous velocity Y (1 frame ago)
+        inputs.push(this.previousVelocities[2].vx / MAX_VELOCITY); // Previous velocity X (2 frames ago)
+        inputs.push(this.previousVelocities[2].vy / MAX_VELOCITY); // Previous velocity Y (2 frames ago)
+        inputs.push((this.previousEnergies[0] - this.energy) / MAX_ENERGY); // Energy delta (last frame)
+        inputs.push(Math.min(this.previousDanger[1], 1)); // Previous danger (1 frame ago)
+        inputs.push(Math.min(this.previousAggression[1], 1)); // Previous aggression (1 frame ago)
+        inputs.push((this.previousEnergies[1] - this.previousEnergies[2]) / MAX_ENERGY); // Energy delta (2 frames ago)
+
+        this.lastRayData = rayData;
+
+        return { inputs, rayData, nearbyAgents: [] }; // nearbyAgents not fully populated here, but that's ok for now.
+    }
+
+    emitPheromones(simulation) {
+        // Update fear and aggression based on pheromone smells and state
+        this.fear = Math.min(this.dangerSmell + (this.isLowEnergy() ? 0.6 : 0), 1);
+        this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0), 1);
+
+
+        // Lower thresholds and higher spawn rates for more visible pheromones
+        if (this.fear > 0.5 && Math.random() < 0.3) {
+            simulation.spawnPheromone(this.x, this.y, 'danger');
+        }
+        if (this.aggression > 0.5 && Math.random() < 0.3) {
+            simulation.spawnPheromone(this.x, this.y, 'attack');
+        }
+        // NEW: Add reproduction pheromone when wantsToReproduce
+        if (this.wantsToReproduce && Math.random() < 0.2) {
+            simulation.spawnPheromone(this.x, this.y, 'reproduction');
+        }
+    }
+
+    tryMate(mate, simulation) {
+        if (this.age < MATURATION_AGE_SECONDS || mate.age < MATURATION_AGE_SECONDS) return false;
+        if (this.specializationType !== mate.specializationType) return false;
+
+        if (this.isPregnant || this.reproductionCooldown > 0 || this.energy < MIN_ENERGY_TO_REPRODUCE ||
+            mate.isPregnant || mate.reproductionCooldown > 0 || mate.energy < MIN_ENERGY_TO_REPRODUCE) {
+            return false;
+        }
+
+        const mateScore = mate.speedFactor * (mate.energy / MAX_ENERGY);
+        const selfScore = this.speedFactor * (this.energy / MAX_ENERGY);
+
+        if (mateScore < selfScore * 0.5) return false;
+
+        this.isPregnant = true;
+        this.pregnancyTimer = 0;
+        this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
+        this.energy -= REPRODUCE_COST_BASE;
+        this.fatherWeights = mate.getWeights();
+
+        mate.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
+        mate.energy -= REPRODUCE_COST_BASE * 0.5;
+
+        this.offspring++;
+        this.childrenFromMate++;
+        this.fitness += 25; // Increased reward for successful reproduction
+        return true;
+    }
+
+    split(simulation) {
+        this.logger.log(`[LIFECYCLE] Agent ${this.geneId} is splitting due to high energy.`);
+
+        // Halve energy for parent and child
+        const childEnergy = this.energy / 2;
+        this.energy /= 2;
+
+        // Create a direct clone of the gene, including specialization
+        const childGene = {
+            weights: this.getWeights(), // Get a copy of the current weights
+            fatherWeights: null,
+            geneId: this.geneId, // Inherit gene ID
+            specializationType: this.specializationType // Direct inheritance
+        };
+
+        const child = new Agent(
+            childGene,
+            this.x + randomGaussian(0, this.size * 2),
+            this.y + randomGaussian(0, this.size * 2),
+            childEnergy,
+            this.logger,
+            null,
+            this.simulation
+        );
+
+        // Mutate the clone slightly
+        child.nn.mutate(simulation.mutationRate * 0.5); // Lower mutation rate for clones
+
+        this.offspring++;
+        this.childrenFromSplit++;
+        this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES * 1.5; // Longer cooldown after splitting
+
+        return child;
+    }
+
+    birthChild(simulation) {
+        const parentWeights = this.getWeights();
+        const childWeights = simulation.crossover(parentWeights, this.fatherWeights);
+
+        // Specialization inheritance with mutation chance (5% chance to change)
+        let childSpecialization = this.specializationType;
+        if (Math.random() < 0.05) {
+            const allTypes = Object.values(SPECIALIZATION_TYPES);
+            childSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
+        }
+
+        const childGene = {
+            weights: childWeights,
+            fatherWeights: null, // Father weights are used for creation, not inherited
+            geneId: this.geneId, // Inherit gene ID from mother
+            specializationType: childSpecialization
+        };
+
+        const child = new Agent(
+            childGene,
+            this.x + randomGaussian(0, 5),
+            this.y + randomGaussian(0, 5),
+            CHILD_STARTING_ENERGY,
+            this.logger,
+            null,
+            this.simulation
+        );
+
+        // Mutate neural network
+        child.nn.mutate(simulation.mutationRate);
+
+        // Mutate inherited traits (preserved from original)
+        child.speedFactor = Math.max(1, child.speedFactor + randomGaussian(0, 0.05));
+        child.maxRayDist = Math.max(50, child.maxRayDist + randomGaussian(0, 5));
+
+        this.fatherWeights = null;
+        return child;
+    }
+
+    isLowEnergy() {
+        return this.energy < LOW_ENERGY_THRESHOLD;
+    }
+}
+

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blob Evolution v5.0 (WebGL)</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="info-bar">
+        <span id="info-pop">Population: 0</span>
+        <span id="info-best">Best Agent: F: 0, A: 0s, O: 0, K: 0, Fd: 0</span>
+        <span id="info-gen">Generation: 0</span>
+        <span id="info-genepools">Gene Pools: 0</span>
+        <span id="info-avg-e">Avg. Energy: 0</span>
+        <span id="info-fps">FPS: 0</span>
+    </div>
+    <div id="dashboard" style="position: fixed; top: 60px; right: 10px; width: 320px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; max-height: 80vh; overflow-y: auto; z-index: 1000;">
+        <h3 style="margin-top: 0;">Learning Progress</h3>
+        <div id="fitness-trend"><strong>Best Fitness:</strong> <span id="fitness-value">0</span> (Δ: <span id="fitness-delta">0</span>)</div>
+        <div id="avg-fitness-metric"><strong>Avg Fitness:</strong> <span id="avg-fitness-value">0</span></div>
+        <div id="diversity-metric"><strong>Diversity:</strong> <span id="diversity-value">0</span> gene IDs</div>
+        <div id="gene-pool-metric"><strong>Gene Pools:</strong> <span id="gene-pool-value">0</span> stored</div>
+        <div id="qualified-agents-metric"><strong>Qualified Agents:</strong> <span id="qualified-agents-value">0</span> (F≥50 & Fd≥3)</div>
+        <div id="mutation-rate-metric"><strong>Mutation Rate:</strong> <span id="mutation-rate-value">0</span></div>
+        <div id="specialization-dist" style="margin-top: 8px;"><strong>Specializations:</strong></div>
+        <div id="specialization-list" style="margin-left: 10px; font-size: 11px;"></div>
+        <div id="avg-stats" style="margin-top: 10px;">
+            <div><strong>Average Stats:</strong></div>
+            <div style="margin-left: 10px;">
+                <div>Age: <span id="avg-age">0</span>s</div>
+                <div>Energy: <span id="avg-energy">0</span></div>
+                <div>Food Eaten: <span id="avg-food">0</span></div>
+                <div>Kills: <span id="avg-kills">0</span></div>
+                <div>Collisions: <span id="avg-collisions">0</span></div>
+                <div>Offspring (Total): <span id="avg-offspring">0</span></div>
+                <div>Offspring (Sexual): <span id="avg-offspring-mate">0</span></div>
+                <div>Offspring (Asexual): <span id="avg-offspring-split">0</span></div>
+            </div>
+        </div>
+        <div id="learning-rate" style="margin-top: 10px;"><strong>Learning Rate:</strong> <span id="learning-rate-value">0</span>/gen</div>
+        <canvas id="fitness-chart" width="300" height="100" style="margin-top: 10px; background: rgba(255,255,255,0.1); border-radius: 3px;"></canvas>
+    </div>
+    <div id="controls">
+        <label for="gameSpeed">Speed: <input type="range" id="gameSpeed" min="0.5" max="10" step="0.5" value="10"></label>
+        <label for="maxAgents">Max Agents: <input type="range" id="maxAgents" min="10" max="100" step="5" value="100"></label>
+        
+        <label for="showRays">Show Rays <input type="checkbox" id="showRays" checked></label>
+        <label for="followBest">Follow Best <input type="checkbox" id="followBest" checked></label>
+        <label for="useGpu">Use GPU <input type="checkbox" id="useGpu" checked></label>
+        <label for="foodRate">Food Rate: <input type="range" id="foodRate" min="0.1" max="2.0" step="0.1" value="1.0"></label>
+        <label for="mutationRate">Mutation Rate: <input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01" value="0.1"></label>
+        <button id="clearStorage">Clear Gene Pool</button>
+    </div>
+    <div id="canvas-container"></div>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-family: Arial, sans-serif;">
+        <h1 style="margin-bottom: 30px; font-size: 32px;">Blob Evolution</h1>
+        <div id="loading-status" style="font-size: 18px; margin-bottom: 20px;">Initializing...</div>
+        <div id="loading-progress" style="width: 300px; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; overflow: hidden;">
+            <div id="loading-progress-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.3s;"></div>
+        </div>
+    </div>
+
+    <!-- GPU.js removed - using WebGPU directly for better performance -->
+    
+    <script type="module">
+        import { Simulation } from './js/game.js';
+
+        const container = document.getElementById('canvas-container');
+        const sim = new Simulation(container);
+        
+        // The game loop is now started internally by sim.init()
+        sim.init().then(() => {
+            // Resize to fill screen after initialization
+            sim.resize();
+            // Small delay to ensure DOM is fully ready
+            setTimeout(() => {
+                sim.resize();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
+

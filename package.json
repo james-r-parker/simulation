@@ -1,0 +1,27 @@
+{
+  "name": "blob-evolution-simulation",
+  "version": "5.0.0",
+  "description": "Artificial life simulation using neuroevolution with WebGL rendering",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "serve": "npx http-server -p 8000 -c-1",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "simulation",
+    "evolution",
+    "neural-network",
+    "webgl",
+    "three.js"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
+
+
+
