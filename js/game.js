@@ -2,12 +2,13 @@
 // All simulation logic preserved exactly from original
 
 import {
-    WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY, CHILD_STARTING_ENERGY,
-    FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE, MATURATION_AGE_FRAMES, // Changed from MATURATION_AGE_SECONDS
+    WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    MAX_AGENTS_TO_SAVE_PER_GENE_POOL,
+    FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
     SPECIALIZATION_TYPES, // Added for novelty spawning
     RESPAWN_DELAY_FRAMES, MAX_ENERGY,
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
-    PHEROMONE_RADIUS, OBSTACLE_HIDING_RADIUS
+    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -440,7 +441,7 @@ export class Simulation {
             const agentsByGene = {};
             this.agents.forEach(agent => {
                 // Filter: only save high-performing agents
-                if (!agent.isDead && agent.fitness >= 50 && agent.foodEaten >= 3) {
+                if (!agent.isDead && agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL) {
                     if (!agentsByGene[agent.geneId]) {
                         agentsByGene[agent.geneId] = [];
                     }
@@ -451,7 +452,7 @@ export class Simulation {
             // Save top 3 per gene ID using immediate save (for periodic backup)
             for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
                 const sorted = geneAgents.sort((a, b) => b.fitness - a.fitness);
-                const top3 = sorted.slice(0, 3);
+                const top3 = sorted.slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
                 if (top3.length > 0) {
                     await this.db.saveGenePool(geneId, top3);
                 }
@@ -917,7 +918,7 @@ export class Simulation {
         const totalAgentsEl = document.getElementById('total-agents');
         const maturationRateEl = document.getElementById('maturation-rate');
         const maxAgeEl = document.getElementById('max-age');
-        const maxFramesEl = document.getElementById('max-frames');
+
         const totalSexualOffspringEl = document.getElementById('total-sexual-offspring');
         const totalAsexualOffspringEl = document.getElementById('total-asexual-offspring');
         const reproductionRateEl = document.getElementById('reproduction-rate');
@@ -930,8 +931,7 @@ export class Simulation {
             maturationRateEl.textContent = maturationRate.toFixed(1);
             maturationRateEl.style.color = maturationRate >= 30 ? '#0f0' : maturationRate >= 10 ? '#ff0' : '#f00';
         }
-        if (maxAgeEl) maxAgeEl.textContent = maxAge.toFixed(1);
-        if (maxFramesEl) maxFramesEl.textContent = maxFrames.toFixed(0);
+        if (maxAgeEl) maxAgeEl.textContent = maxAge.toFixed(0);
         if (totalSexualOffspringEl) totalSexualOffspringEl.textContent = totalSexualOffspring;
         if (totalAsexualOffspringEl) totalAsexualOffspringEl.textContent = totalAsexualOffspring;
         if (reproductionRateEl) reproductionRateEl.textContent = reproductionRate;
@@ -1029,7 +1029,7 @@ export class Simulation {
                 continue;
             }
 
-            const sensorAngleStep = (2 * Math.PI) / numSensorRays;
+            const sensorAngleStep = TWO_PI / numSensorRays;
             const maxRayDist = agent.maxRayDist;
 
             for (let rayIdx = 0; rayIdx < raysToProcess; rayIdx++) {
@@ -1115,7 +1115,7 @@ export class Simulation {
                 // TODO: Implement proper alignment ray tracing in GPU shader
                 inputs.push(0.5);
 
-                const angle = agent.angle + (rayIdx - numAlignmentRays / 2) * ((2 * Math.PI) / numAlignmentRays);
+                const angle = agent.angle + (rayIdx - numAlignmentRays / 2) * (TWO_PI / numAlignmentRays);
                 rayData.push({
                     angle,
                     dist: maxRayDist * 0.5, // Approximate mid-range
@@ -1135,8 +1135,8 @@ export class Simulation {
             const smellRadius = new Rectangle(
                 agent.x - PHEROMONE_RADIUS,
                 agent.y - PHEROMONE_RADIUS,
-                PHEROMONE_RADIUS * 2,
-                PHEROMONE_RADIUS * 2
+                PHEROMONE_DIAMETER,
+                PHEROMONE_DIAMETER
             );
             const nearbyPuffs = this.quadtree.query(smellRadius);
             for (const entity of nearbyPuffs) {
@@ -1177,7 +1177,7 @@ export class Simulation {
 
             const currentSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
             const velocityAngle = Math.atan2(agent.vy, agent.vx);
-            const angleDifference = (velocityAngle - agent.angle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+            const angleDifference = (velocityAngle - agent.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
             inputs.push((MAX_ENERGY - agent.energy) / MAX_ENERGY); // Hunger
             inputs.push(Math.min(agent.dangerSmell, 1)); // Fear
@@ -1258,7 +1258,7 @@ export class Simulation {
             const x = (width / (dataPoints - 1)) * i;
             const y = height - ((fitness - minFitness) / range) * height;
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.arc(x, y, 2, 0, TWO_PI);
             ctx.fill();
         });
     }
@@ -1275,8 +1275,8 @@ export class Simulation {
             // Reuse pre-allocated Rectangle
             this.collisionQueryRange.x = agent.x;
             this.collisionQueryRange.y = agent.y;
-            this.collisionQueryRange.w = agentSize * 2;
-            this.collisionQueryRange.h = agentSize * 2;
+            this.collisionQueryRange.w = agent.diameter;
+            this.collisionQueryRange.h = agent.diameter;
 
             const nearby = this.quadtree.query(this.collisionQueryRange);
 
@@ -1345,7 +1345,7 @@ export class Simulation {
         const seasonLength = 1800;
         const phase = (this.seasonTimer % seasonLength) / seasonLength;
 
-        this.foodScarcityFactor = 1.0 - (0.5 * Math.abs(Math.sin(phase * Math.PI * 2)));
+        this.foodScarcityFactor = 1.0 - (0.5 * Math.abs(Math.sin(phase * TWO_PI)));
 
         if (phase > 0.5 && phase < 0.75) {
             this.agents.forEach(a => a.energy -= 0.1);
@@ -1363,7 +1363,7 @@ export class Simulation {
         const livingAgents = this.agents.filter(a => !a.isDead);
         document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${this.maxAgents}`;
         if (this.bestAgent) {
-            document.getElementById('info-best').innerText = `Best Agent: F: ${this.bestAgent.fitness.toFixed(0)}, A: ${this.bestAgent.age.toFixed(1)}s, O: ${this.bestAgent.offspring}, K: ${this.bestAgent.kills}, Fd: ${this.bestAgent.foodEaten}, C: ${this.bestAgent.collisions || 0}, RH: ${this.bestAgent.rayHits || 0}`;
+            document.getElementById('info-best').innerText = `Best Agent: F: ${this.bestAgent.fitness.toFixed(0)}, A: ${this.bestAgent.framesAlive}f, O: ${this.bestAgent.offspring}, K: ${this.bestAgent.kills}, Fd: ${this.bestAgent.foodEaten}, C: ${this.bestAgent.collisions || 0}, RH: ${this.bestAgent.rayHits || 0}`;
         }
         document.getElementById('info-gen').innerText = `Generation: ${this.generation}`;
         document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(this.genePools).length}`;
@@ -1595,7 +1595,7 @@ export class Simulation {
 
             // Count frame as GPU or CPU based on whether GPU actually ran
             // Only count on last iteration to avoid double counting
-            // With Solution 4, GPU runs per iteration, so we track if it succeeded
+            // With Solution 4, GPU runs per iteration, so we track if it succeeded 
             if (i === iterations - 1) {
                 if (gpuRayTracingSucceeded && this.useGpu) {
                     // GPU ray tracing succeeded for this frame
@@ -1616,7 +1616,7 @@ export class Simulation {
                     const agent = this.agents[j];
                     if (agent && agent.isDead) {
                         // Check if agent qualifies for saving (fitness >= 50 and foodEaten >= 3)
-                        if (agent.fitness >= 50 && agent.foodEaten >= 3) {
+                        if (agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL) {
                             this.deadAgentQueue.push(agent);
                         }
                         this.agents.splice(j, 1);

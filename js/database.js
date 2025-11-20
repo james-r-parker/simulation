@@ -1,3 +1,5 @@
+import { MAX_AGENTS_TO_SAVE_PER_GENE_POOL } from "./constants.js";
+
 // --- IndexedDB WRAPPER FOR GENE POOL STORAGE (With Worker) ---
 // Uses a Web Worker to avoid blocking the simulation thread
 
@@ -65,7 +67,7 @@ export class GenePoolDatabase {
         const agentData = agents
             .filter(a => a.geneId === geneId)
             .sort((a, b) => b.fitness - a.fitness)
-            .slice(0, 10) // Increased from 3 to 10
+            .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL) // Increased from 3 to 10
             .map(a => ({
                 weights: a.getWeights(),
                 fitness: a.fitness,
@@ -110,7 +112,7 @@ export class GenePoolDatabase {
         const topAgents = agents
             .filter(a => a.geneId === geneId)
             .sort((a, b) => b.fitness - a.fitness)
-            .slice(0, 10)
+            .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL)
             .map(a => ({
                 weights: a.getWeights(),
                 fitness: a.fitness,

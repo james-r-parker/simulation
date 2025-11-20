@@ -1,3 +1,5 @@
+import { TWO_PI } from './constants.js';
+
 // --- MATH & UTILITY FUNCTIONS ---
 // ALL FUNCTIONS PRESERVED EXACTLY FROM ORIGINAL
 
@@ -5,13 +7,13 @@
 export function matrixMultiply(a, b) {
     const rowsA = a.length, colsA = a[0].length, rowsB = b.length, colsB = b[0].length;
     if (colsA !== rowsB) throw new Error("Matrix dimensions mismatch");
-    
+
     // Pre-allocate result array
     const result = new Array(rowsA);
     for (let i = 0; i < rowsA; i++) {
         result[i] = new Array(colsB);
     }
-    
+
     // Optimized: transpose B for better cache locality (if beneficial)
     // For small matrices, direct multiplication is fine
     if (colsB > 8) {
@@ -23,7 +25,7 @@ export function matrixMultiply(a, b) {
                 bT[j][k] = b[k][j];
             }
         }
-        
+
         for (let i = 0; i < rowsA; i++) {
             for (let j = 0; j < colsB; j++) {
                 let sum = 0;
@@ -48,12 +50,12 @@ export function matrixMultiply(a, b) {
             }
         }
     }
-    
+
     return result;
 }
 
-export function sigmoid(x) { 
-    return 1 / (1 + Math.exp(-x)); 
+export function sigmoid(x) {
+    return 1 / (1 + Math.exp(-x));
 }
 
 // Optimized sigmoid application (in-place when possible)
@@ -71,12 +73,12 @@ export function applySigmoid(matrix) {
     return result;
 }
 
-export function isUnsafe(n) { 
-    return isNaN(n) || !isFinite(n); 
+export function isUnsafe(n) {
+    return isNaN(n) || !isFinite(n);
 }
 
-export function lerp(a, b, t) { 
-    return a + (b - a) * t; 
+export function lerp(a, b, t) {
+    return a + (b - a) * t;
 }
 
 // Optimized distance calculation (avoid Math.pow, use direct multiplication)
@@ -96,9 +98,9 @@ export function distanceSquared(x1, y1, x2, y2) {
 // Box-Muller transform for Gaussian random number
 export function randomGaussian(mean = 0, stdDev = 1) {
     let u = 0, v = 0;
-    while (u === 0) u = Math.random(); 
+    while (u === 0) u = Math.random();
     while (v === 0) v = Math.random();
-    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(TWO_PI * v);
     return z * stdDev + mean;
 }
 

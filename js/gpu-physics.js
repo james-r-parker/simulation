@@ -2,6 +2,8 @@
 // GPU-accelerated ray tracing
 // Massive performance boost for large agent counts
 
+import { TWO_PI } from './constants.js';
+
 export class GPUPhysics {
     constructor(logger) {
         this.logger = logger;
@@ -17,19 +19,19 @@ export class GPUPhysics {
 
     async init(config = {}) {
         if (this.device) return true;
-        
+
         if (!navigator.gpu) {
             this.logger.warn('WebGPU not available for physics, falling back to CPU');
             return false;
         }
-        
+
         try {
             const adapter = await navigator.gpu.requestAdapter({});
             if (!adapter) {
                 this.logger.warn('No WebGPU adapter found for physics');
                 return false;
             }
-            
+
             this.device = await adapter.requestDevice();
             this.queue = this.device.queue;
             this.logger.log('GPU Physics initialized successfully', { limits: this.device.limits });
@@ -48,7 +50,7 @@ export class GPUPhysics {
             }
 
             return true;
-            
+
         } catch (error) {
             this.logger.error('Error initializing WebGPU for physics:', error);
             return false;
@@ -166,7 +168,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     let agent = agents[agent_index];
     let safe_num_rays = max(agent.numSensorRays, 1.0);
-    let ray_angle_step = (2.0 * 3.1415926535) / safe_num_rays;
+    let ray_angle_step = (${TWO_PI}) / safe_num_rays;
     let ray_angle = agent.angle + (f32(ray_in_agent_index) - safe_num_rays / 2.0) * ray_angle_step;
     
     let ray_dir = vec2<f32>(cos(ray_angle), sin(ray_angle));
@@ -229,9 +231,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     results[ray_index].entityId = entity_id;
     results[ray_index].entitySize = entity_size;
 }`;
-        
+
         const module = this.device.createShaderModule({ code: rayTracingShader });
-        
+
         const compilationInfo = await module.getCompilationInfo();
         if (compilationInfo.messages.length > 0) {
             let hadError = false;
@@ -342,7 +344,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             const numEntities = Math.min(this.buffers.maxEntities, entities.length);
             const entityData = new Float32Array(numEntities * 4);
             let foodCount = 0, agentCount = 0, unknownCount = 0;
-            
+
             // Pre-declare obstacle counts for debug logging (already declared at line 309)
             const numObstacles = obstacles.length;
             for (let i = 0; i < numEntities; i++) {
@@ -364,25 +366,25 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                     unknownCount++;
                 }
             }
-            
+
 
             // Convert circle obstacles to line segments for GPU
             // Each circle becomes an octagon (8 line segments)
             const obstacleData = new Float32Array(numObstacleSegments * 4);
-            
+
             for (let i = 0; i < numObstacles; i++) {
                 const obs = obstacles[i];
-                const angleStep = (2 * Math.PI) / segmentsPerObstacle;
-                
+                const angleStep = TWO_PI / segmentsPerObstacle;
+
                 for (let seg = 0; seg < segmentsPerObstacle; seg++) {
                     const angle1 = seg * angleStep;
                     const angle2 = ((seg + 1) % segmentsPerObstacle) * angleStep;
-                    
+
                     const x1 = obs.x + Math.cos(angle1) * obs.radius;
                     const y1 = obs.y + Math.sin(angle1) * obs.radius;
                     const x2 = obs.x + Math.cos(angle2) * obs.radius;
                     const y2 = obs.y + Math.sin(angle2) * obs.radius;
-                    
+
                     const segmentIndex = i * segmentsPerObstacle + seg;
                     const offset = segmentIndex * 4;
                     obstacleData[offset] = x1;
@@ -436,12 +438,12 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                     const rayIndex = Math.floor(i / 4);
                     const propertyIndex = i % 4;
                     const propertyName = ['distance', 'hitType', 'entityId', 'padding'][propertyIndex];
-                    
+
                     this.logger.warn(`[GPU] Result contains NaN at ray ${rayIndex}, property: ${propertyName}`);
                     return null; // Abort if any NaN is found
                 }
             }
-            
+
             return resultData;
         } catch (e) {
             this.logger.error('[GPU] Ray tracing error:', e);

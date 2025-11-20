@@ -10,9 +10,10 @@ import {
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
     SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
-    PHEROMONE_RADIUS, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
+    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
-    SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS
+    SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
+    DIRECTION_CHANGE_FITNESS_FACTOR
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -39,6 +40,7 @@ export class Agent {
         }
 
         this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+        this.diameter = this.size * 2;
         this.targetSize = this.size;
         this.maxEnergy = MAX_ENERGY;
         this.energyEfficiency = 1.0;
@@ -47,7 +49,7 @@ export class Agent {
 
         this.vx = (Math.random() - 0.5) * 0.5;
         this.vy = (Math.random() - 0.5) * 0.5;
-        this.angle = Math.random() * Math.PI * 2;
+        this.angle = Math.random() * TWO_PI;
 
         // --- VITAL ---
         // These properties MUST be set before the neural network is initialized.
@@ -334,7 +336,24 @@ export class Agent {
         // Survival reward: +0.1 per frame alive (~6 per second at 60fps)
         this.fitness += 0.1;
 
+        // Reward for changing direction (dodging/weaving)
+        const prevVx = this.previousVelocities[1].vx;
+        const prevVy = this.previousVelocities[1].vy;
+        const currVx = this.vx;
+        const currVy = this.vy;
+
+        // Only calculate if moving to avoid noise
+        if (Math.abs(prevVx) > 0.01 || Math.abs(prevVy) > 0.01) {
+            const prevAngle = Math.atan2(prevVy, prevVx);
+            const currAngle = Math.atan2(currVy, currVx);
+            let angleDiff = Math.abs(currAngle - prevAngle);
+            if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
+
+            this.fitness += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+        }
+
         this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+        this.diameter = this.size * 2;
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---
         if (this.energy > this.maxEnergy * 0.95 && this.reproductionCooldown <= 0) {
@@ -425,8 +444,8 @@ export class Agent {
 
         // Calculate ray angles
         const startAngle = this.angle - Math.PI;
-        const sensorAngleStep = (Math.PI * 2) / numSensorRays;
-        const alignAngleStep = (Math.PI * 2) / numAlignmentRays;
+        const sensorAngleStep = TWO_PI / numSensorRays;
+        const alignAngleStep = TWO_PI / numAlignmentRays;
 
         // Helper for ray-circle intersection
         const rayCircleIntersect = (rayX, rayY, rayDirX, rayDirY, circleX, circleY, circleRadius) => {
@@ -611,8 +630,8 @@ export class Agent {
         // Reuse pre-allocated Rectangle
         this.smellRadius.x = this.x - PHEROMONE_RADIUS;
         this.smellRadius.y = this.y - PHEROMONE_RADIUS;
-        this.smellRadius.w = PHEROMONE_RADIUS * 2;
-        this.smellRadius.h = PHEROMONE_RADIUS * 2;
+        this.smellRadius.w = PHEROMONE_DIAMETER;
+        this.smellRadius.h = PHEROMONE_DIAMETER;
 
         const nearbyPuffs = quadtree.query(this.smellRadius);
         for (const entity of nearbyPuffs) {
@@ -643,7 +662,7 @@ export class Agent {
 
         const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
         const velocityAngle = Math.atan2(this.vy, this.vx);
-        const angleDifference = (velocityAngle - this.angle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+        const angleDifference = (velocityAngle - this.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
         inputs.push((MAX_ENERGY - this.energy) / MAX_ENERGY); // Hunger
         inputs.push(Math.min(this.dangerSmell, 1)); // Fear
@@ -737,8 +756,8 @@ export class Agent {
 
         const child = new Agent(
             childGene,
-            this.x + randomGaussian(0, this.size * 2),
-            this.y + randomGaussian(0, this.size * 2),
+            this.x + randomGaussian(0, this.diameter),
+            this.y + randomGaussian(0, this.diameter),
             childEnergy,
             this.logger,
             null,

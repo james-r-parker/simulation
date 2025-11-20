@@ -31,12 +31,17 @@ export const OBSTACLE_HIDING_RADIUS = 75;
 export const DANGER_PHEROMONE_THRESHOLD = 30;
 export const PHEROMONE_FADE_RATE = 0.005;
 export const PHEROMONE_RADIUS = 60;
+export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
 
 export const FOOD_SPAWN_CAP = 1200; // Increased from 900 to give agents more food opportunities (33% increase)
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
 export const DAMPENING_FACTOR = 0.95;
 
 export const ROTATION_COST_MULTIPLIER = 0.3; // Reduced from 0.5 to encourage turning and exploration
+export const DIRECTION_CHANGE_FITNESS_FACTOR = 0.1; // Reward for changing trajectory
+
+// --- MATH CONSTANTS ---
+export const TWO_PI = Math.PI * 2;
 
 // --- NEW ENERGY BALANCE FIXES ---
 export const PASSIVE_LOSS = 0.000001; // CRITICAL FIX: Halved to extend lifespan
@@ -59,7 +64,9 @@ export const SPECIALIZATION_TYPES = {
 };
 
 // --- GENE POOL CONSTANTS ---
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 200;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 2500;
+export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3;
 
 // Agent specialization configurations
 export const AGENT_CONFIGS = {
