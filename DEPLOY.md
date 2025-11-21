@@ -24,12 +24,14 @@ This is the easiest and most automated method. Cloudflare Pages will automatical
    - Click **Connect to Git**
    - Select your repository
 
-3. **Configure Build Settings**:
+3. **Configure Build Settings** (IMPORTANT - Set these in the dashboard):
    - **Framework preset**: None (or Vite if available)
    - **Build command**: `npm ci && npm run build`
    - **Build output directory**: `dist`
    - **Root directory**: `/` (leave as default)
    - **Node version**: `20` (or leave default)
+   
+   **Note**: Build settings must be configured in the Cloudflare Pages dashboard. The `wrangler.toml` file does NOT support `[build]` sections for Pages projects.
 
 4. **Deploy**:
    - Click **Save and Deploy**
@@ -90,14 +92,14 @@ Use this method if you want to deploy directly from your local machine without G
 
 ## Build Configuration
 
-The project uses the following build settings:
+The project uses the following build settings (configure these in the Cloudflare Pages dashboard):
 
 - **Build Command**: `npm ci && npm run build`
 - **Output Directory**: `dist`
-- **Node Version**: 20
-- **Framework**: Vite
+- **Node Version**: 20 (or latest)
+- **Framework**: Vite (or None)
 
-These are configured in `wrangler.toml` and will be used automatically with Git integration.
+**Important**: For Cloudflare Pages, build settings are configured in the dashboard when connecting your Git repository. The `wrangler.toml` file is minimal and only contains project metadata - it does NOT support `[build]` sections for Pages projects.
 
 ## Project Structure for Cloudflare Pages
 
