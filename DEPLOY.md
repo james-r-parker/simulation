@@ -24,14 +24,19 @@ This is the easiest and most automated method. Cloudflare Pages will automatical
    - Click **Connect to Git**
    - Select your repository
 
-3. **Configure Build Settings** (IMPORTANT - Set these in the dashboard):
+3. **Configure Build Settings** (CRITICAL - Set these in the dashboard):
    - **Framework preset**: None (or Vite if available)
-   - **Build command**: `npm ci && npm run build`
+   - **Build command**: `npm ci && npm run build` (or just `npm run build`)
    - **Build output directory**: `dist`
    - **Root directory**: `/` (leave as default)
    - **Node version**: `20` (or leave default)
+   - **Deploy command**: ⚠️ **LEAVE THIS EMPTY** - Do NOT set a deploy command!
    
-   **Note**: Build settings must be configured in the Cloudflare Pages dashboard. The `wrangler.toml` file does NOT support `[build]` sections for Pages projects.
+   **IMPORTANT**: 
+   - Build settings must be configured in the Cloudflare Pages dashboard
+   - The `wrangler.toml` file does NOT support `[build]` sections for Pages projects
+   - **DO NOT set a deploy command** - Cloudflare Pages automatically deploys after the build completes
+   - If you see errors about Wrangler deployment, check that the deploy command field is empty in your dashboard settings
 
 4. **Deploy**:
    - Click **Save and Deploy**
@@ -120,6 +125,17 @@ simulation/
 - **`vite.config.js`**: Vite build settings optimized for Cloudflare Pages
 
 ## Troubleshooting
+
+### Deploy Command Errors
+
+If you see errors like "error occurred while running deploy command" or Wrangler authentication issues:
+
+1. **Check Dashboard Settings**: Go to your Pages project → Settings → Builds & deployments
+2. **Verify Deploy Command**: The "Deploy command" field should be **EMPTY**
+3. **Only Build Command Should Be Set**: `npm ci && npm run build` (or `npm run build`)
+4. **Save Changes**: Make sure to save the settings after removing any deploy command
+
+**Why**: With Git integration, Cloudflare Pages automatically deploys the build output. A deploy command is only needed for manual CLI deployments, not Git-integrated builds.
 
 ### Build Fails
 
