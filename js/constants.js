@@ -33,7 +33,7 @@ export const PHEROMONE_FADE_RATE = 0.005;
 export const PHEROMONE_RADIUS = 60;
 export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
 
-export const FOOD_SPAWN_CAP = 1200; // Increased from 900 to give agents more food opportunities (33% increase)
+export const FOOD_SPAWN_CAP = 2000; // Increased to 2000 for smaller world (8x density increase)
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
 export const DAMPENING_FACTOR = 0.95;
 
@@ -64,7 +64,7 @@ export const SPECIALIZATION_TYPES = {
 };
 
 // --- GENE POOL CONSTANTS ---
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 4500;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 6000;
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3;
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 600;
@@ -76,35 +76,35 @@ export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
         color: 0x00ff00, // Green
         numSensorRays: 40,
-        maxRayDist: 200,
+        maxRayDist: 300, // Increased from 200
         hiddenSize: 20,
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: 0xff0000, // Red
         numSensorRays: 50,
-        maxRayDist: 300,
+        maxRayDist: 450, // Increased from 300
         hiddenSize: 25,
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: 0x0000ff, // Blue
         numSensorRays: 30,
-        maxRayDist: 150,
+        maxRayDist: 250, // Increased from 150
         hiddenSize: 18,
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: 0xffff00, // Yellow
         numSensorRays: 60,
-        maxRayDist: 400,
+        maxRayDist: 600, // Increased from 400
         hiddenSize: 15,
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: 0xffa500, // Orange
         numSensorRays: 35,
-        maxRayDist: 250,
+        maxRayDist: 350, // Increased from 250
         hiddenSize: 22,
         description: 'Specialized in defending territory and allies.'
     }

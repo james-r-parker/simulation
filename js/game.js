@@ -768,7 +768,7 @@ export class Simulation {
 
         // Average stats
         const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-        const avgAge = livingAgents.reduce((sum, a) => sum + a.framesAlive, 0) / livingAgents.length;
+        const avgAge = livingAgents.reduce((sum, a) => sum + (a.framesAlive / 60), 0) / livingAgents.length; // Simulated seconds
         const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
         const avgOffspring = livingAgents.reduce((sum, a) => sum + a.offspring, 0) / livingAgents.length;
         const avgOffspringMate = livingAgents.reduce((sum, a) => sum + a.childrenFromMate, 0) / livingAgents.length;
@@ -782,7 +782,7 @@ export class Simulation {
         const MATURATION_FRAMES = 900; // 15 seconds at 60 FPS - independent of game speed
         const matureAgents = livingAgents.filter(a => a.framesAlive >= MATURATION_FRAMES).length;
         const maturationRate = (matureAgents / livingAgents.length) * 100;
-        const maxAge = Math.max(...livingAgents.map(a => a.framesAlive), 0);
+        const maxAge = Math.max(...livingAgents.map(a => a.framesAlive / 60), 0); // Simulated seconds
         const maxFrames = Math.max(...livingAgents.map(a => a.framesAlive), 0);
 
         // NEW: Reproduction metrics
@@ -1642,9 +1642,6 @@ export class Simulation {
         // Repopulate before game loop to include new agents
         this.repopulate();
 
-        // Update food spawning continuously
-        this.spawnFood();
-
         // Use Math.max to ensure at least 1 iteration, and Math.floor to handle fractional speeds
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
         for (let i = 0; i < iterations; i++) {
@@ -1656,6 +1653,9 @@ export class Simulation {
                     p.update();
                 }
             }
+            // Update food spawning continuously (INSIDE LOOP for speed scaling)
+            this.spawnFood();
+
             this.applyEnvironmentEvents();
 
             // OPTIMIZED: Rebuild quadtree less frequently - only every 5 iterations or on last iteration

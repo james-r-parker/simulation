@@ -271,7 +271,7 @@ export class Agent {
             }
         }
 
-        this.age = (Date.now() - this.birthTime) / 1000;
+        this.age = this.framesAlive / 60; // Frame-based age (independent of game speed)
         this.framesAlive++;
         if (this.reproductionCooldown > 0) this.reproductionCooldown--;
         if (this.isPregnant) {
@@ -854,7 +854,7 @@ export class Agent {
             childGene,
             this.x + randomGaussian(0, 5),
             this.y + randomGaussian(0, 5),
-            CHILD_STARTING_ENERGY,
+            childEnergy,
             this.logger,
             null,
             this.simulation
@@ -887,8 +887,8 @@ export class Agent {
         baseScore += this.offspring * 400; // Reduced from 600 to balance with other rewards
         baseScore += this.cleverTurns * 300; // Reward intelligent maneuvering (smell + vision)
         baseScore += this.directionChanged * 50; // Small bonus for general movement variety
-        baseScore += this.foodEaten * 200;
-        baseScore += this.kills * 15;
+        baseScore += this.foodEaten * 100; // Reduced from 200 to balance with kill reward
+        baseScore += this.kills * 500; // Increased from 15 to 500 to make predation viable
 
         if (this.offspring > 0 && this.foodEaten > 0) {
             baseScore += (this.offspring * this.foodEaten) * 5;
