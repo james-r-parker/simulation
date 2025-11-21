@@ -3,9 +3,33 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Blob Evolution v5.0 (WebGL)</title>
+
+    <!-- Meta Tags -->
+    <meta name="description"
+        content="A high-performance WebGL simulation of evolving blob agents. Watch them learn, eat, and reproduce in real-time.">
+    <meta name="keywords" content="evolution, simulation, genetic algorithm, neural network, webgl, javascript">
+    <meta name="author" content="Blob Evolution Team">
+    <meta name="theme-color" content="#0a0a0a">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blobevolution.sim/">
+    <meta property="og:title" content="Blob Evolution v5.0">
+    <meta property="og:description" content="Real-time evolution simulation with neural networks and GPU physics.">
+    <meta property="og:image" content="favicon.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://blobevolution.sim/">
+    <meta property="twitter:title" content="Blob Evolution v5.0">
+    <meta property="twitter:description" content="Real-time evolution simulation with neural networks and GPU physics.">
+    <meta property="twitter:image" content="favicon.png">
+
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -18,107 +42,139 @@
         <span id="info-memory">Memory: 0MB</span>
         <span id="info-fps">FPS: 0</span>
     </div>
-    <div id="dashboard"
-        style="position: fixed; top: 90px; right: 10px; width: 320px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; max-height: 80vh; overflow-y: auto; z-index: 1000;">
-        <h3 style="margin-top: 0;">Learning Progress</h3>
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">
+        ☰
+    </button>
 
-        <!-- CRITICAL METRICS -->
-        <div
-            style="background: rgba(255,100,100,0.2); padding: 8px; border-radius: 3px; margin-bottom: 10px; border-left: 3px solid #ff6666;">
-            <div><strong style="color: #ff9999;">🚨 Critical Survival Metrics</strong></div>
-            <div style="margin-left: 10px; margin-top: 5px;">
-                <div>Avg Age: <strong id="avg-age" style="font-size: 14px; color: #ffff00;">0</strong>f <span
-                        style="color: #888; font-size: 10px;">(Target: 600f+)</span></div>
-                <div>Mature Agents (≥900f): <span id="mature-agents" style="color: #0f0;">0</span> / <span
-                        id="total-agents">0</span></div>
-                <div>Maturation Rate: <span id="maturation-rate" style="font-weight: bold;">0</span>%</div>
-                <div>Max Age: <span id="max-age" style="color: #00ffff;">0</span>f</div>
-            </div>
+    <!-- Sidebar (formerly dashboard) -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Learning Progress</h3>
+            <button id="about-btn" class="icon-btn" title="About Simulation">ℹ️</button>
         </div>
 
-        <!-- REPRODUCTION METRICS -->
-        <div
-            style="background: rgba(100,100,255,0.2); padding: 8px; border-radius: 3px; margin-bottom: 10px; border-left: 3px solid #6666ff;">
-            <div><strong style="color: #9999ff;">💕 Reproduction Status</strong></div>
-            <div style="margin-left: 10px; margin-top: 5px;">
-                <div>Sexual Offspring: <span id="total-sexual-offspring"
-                        style="color: #0f0; font-weight: bold;">0</span></div>
-                <div>Asexual Offspring: <span id="total-asexual-offspring">0</span></div>
-                <div>Avg Offspring/Agent: <span id="avg-offspring">0</span></div>
-                <div>Reproduction Events/min: <span id="reproduction-rate">0</span></div>
-            </div>
-        </div>
-
-        <!-- FITNESS & LEARNING -->
-        <div style="margin-bottom: 10px;">
-            <div><strong>Fitness Metrics</strong></div>
-            <div style="margin-left: 10px;">
-                <div>Best Fitness: <span id="fitness-value">0</span> (Δ: <span id="fitness-delta">0</span>)</div>
-                <div>Avg Fitness: <span id="avg-fitness-value">0</span></div>
-                <div>Learning Rate: <span id="learning-rate-value">0</span>/gen</div>
-            </div>
-        </div>
-
-        <!-- COLLISION & NAVIGATION -->
-        <div
-            style="background: rgba(255,255,100,0.2); padding: 8px; border-radius: 3px; margin-bottom: 10px; border-left: 3px solid #ffff66;">
-            <div><strong style="color: #ffff99;">⚠️ Navigation Quality</strong></div>
-            <div style="margin-left: 10px; margin-top: 5px;">
-                <div>Avg Collisions: <span id="avg-collisions">0</span></div>
-                <div>Avg Wall Hits: <span id="avg-wall-hits">0</span></div>
-                <div>Collision-Free %: <span id="collision-free-percent" style="color: #0f0;">0</span>%</div>
-            </div>
-        </div>
-
-        <!-- GENE POOL & DIVERSITY -->
-        <div style="margin-bottom: 10px;">
-            <div><strong>Genetic Diversity</strong></div>
-            <div style="margin-left: 10px;">
-                <div>Active Gene IDs: <span id="diversity-value">0</span></div>
-                <div>Stored Gene Pools: <span id="gene-pool-value">0</span></div>
-                <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span
-                        style="color: #888; font-size: 10px;">(F≥20, 600f+)</span></div>
-                <div>Mutation Rate: <span id="mutation-rate-value">0</span></div>
-            </div>
-        </div>
-
-        <!-- RESOURCE STATS -->
-        <div style="margin-bottom: 10px;">
-            <div><strong>Resources</strong></div>
-            <div style="margin-left: 10px;">
-                <div>Avg Energy: <span id="avg-energy">0</span></div>
-                <div>Avg Food Eaten: <span id="avg-food">0</span></div>
-                <div>Avg Kills: <span id="avg-kills">0</span></div>
-            </div>
-        </div>
-
-        <!-- SPECIALIZATION DISTRIBUTION -->
-        <div style="margin-bottom: 10px;">
-            <div><strong>Specializations:</strong></div>
-            <div id="specialization-list" style="margin-left: 10px; font-size: 11px;"></div>
-        </div>
-
-        <!-- MEMORY MONITORING -->
-        <div
-            style="background: rgba(100,255,100,0.2); padding: 8px; border-radius: 3px; margin-bottom: 10px; border-left: 3px solid #66ff66;">
-            <div><strong style="color: #99ff99;">🧠 Memory Monitor</strong></div>
-            <div style="margin-left: 10px; margin-top: 5px;">
-                <div>Current Usage: <span id="current-memory" style="color: #0f0; font-weight: bold;">0MB</span></div>
-                <div>Peak Usage: <span id="peak-memory" style="color: #00ffff;">0MB</span></div>
-                <div>Growth Rate: <span id="memory-growth-rate">Stable</span></div>
-                <div id="entity-counts" style="font-size: 11px; margin-top: 3px; color: #ccc;">
-                    Agents: <strong>0</strong> | Food: <strong>0</strong> | Pheromones: <strong>0</strong> | DB Queue: <strong>0</strong>
-                </div>
-                <div style="font-size: 10px; color: #888; margin-top: 3px;">
-                    ⚠️ Rising memory indicates potential leaks<br>
-                    📊 DB Queue >50 = performance impact
+        <div class="sidebar-content">
+            <!-- CRITICAL METRICS -->
+            <div class="metric-card critical">
+                <div class="card-header">🚨 Critical Survival Metrics</div>
+                <div class="card-body">
+                    <div>Avg Age: <strong id="avg-age" class="highlight-yellow">0</strong>f <span
+                            class="sub-text">(Target: 600f+)</span></div>
+                    <div>Mature Agents (≥900f): <span id="mature-agents" class="highlight-green">0</span> / <span
+                            id="total-agents">0</span></div>
+                    <div>Maturation Rate: <span id="maturation-rate" class="bold">0</span>%</div>
+                    <div>Max Age: <span id="max-age" class="highlight-cyan">0</span>f</div>
                 </div>
             </div>
-        </div>
 
-        <canvas id="fitness-chart" width="300" height="100"
-            style="margin-top: 10px; background: rgba(255,255,255,0.1); border-radius: 3px;"></canvas>
+            <!-- REPRODUCTION METRICS -->
+            <div class="metric-card reproduction">
+                <div class="card-header">💕 Reproduction Status</div>
+                <div class="card-body">
+                    <div>Sexual Offspring: <span id="total-sexual-offspring" class="highlight-green bold">0</span></div>
+                    <div>Asexual Offspring: <span id="total-asexual-offspring">0</span></div>
+                    <div>Avg Offspring/Agent: <span id="avg-offspring">0</span></div>
+                    <div>Reproduction Events/min: <span id="reproduction-rate">0</span></div>
+                </div>
+            </div>
+
+            <!-- FITNESS & LEARNING -->
+            <div class="metric-group">
+                <div class="group-header">Fitness Metrics</div>
+                <div class="group-body">
+                    <div>Best Fitness: <span id="fitness-value">0</span> (Δ: <span id="fitness-delta">0</span>)</div>
+                    <div>Avg Fitness: <span id="avg-fitness-value">0</span></div>
+                    <div>Learning Rate: <span id="learning-rate-value">0</span>/gen</div>
+                </div>
+            </div>
+
+            <!-- COLLISION & NAVIGATION -->
+            <div class="metric-card navigation">
+                <div class="card-header">⚠️ Navigation Quality</div>
+                <div class="card-body">
+                    <div>Avg Collisions: <span id="avg-collisions">0</span></div>
+                    <div>Avg Wall Hits: <span id="avg-wall-hits">0</span></div>
+                    <div>Collision-Free %: <span id="collision-free-percent" class="highlight-green">0</span>%</div>
+                </div>
+            </div>
+
+            <!-- GENE POOL & DIVERSITY -->
+            <div class="metric-group">
+                <div class="group-header">Genetic Diversity</div>
+                <div class="group-body">
+                    <div>Active Gene IDs: <span id="diversity-value">0</span></div>
+                    <div>Stored Gene Pools: <span id="gene-pool-value">0</span></div>
+                    <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span class="sub-text">(F≥20,
+                            600f+)</span></div>
+                    <div>Mutation Rate: <span id="mutation-rate-value">0</span></div>
+                </div>
+            </div>
+
+            <!-- RESOURCE STATS -->
+            <div class="metric-group">
+                <div class="group-header">Resources</div>
+                <div class="group-body">
+                    <div>Avg Energy: <span id="avg-energy">0</span></div>
+                    <div>Avg Food Eaten: <span id="avg-food">0</span></div>
+                    <div>Avg Kills: <span id="avg-kills">0</span></div>
+                </div>
+            </div>
+
+            <!-- SPECIALIZATION DISTRIBUTION -->
+            <div class="metric-group">
+                <div class="group-header">Specializations:</div>
+                <div id="specialization-list" class="specialization-list"></div>
+            </div>
+
+            <!-- MEMORY MONITORING -->
+            <div class="metric-card memory">
+                <div class="card-header">🧠 Memory Monitor</div>
+                <div class="card-body">
+                    <div>Current Usage: <span id="current-memory" class="highlight-green bold">0MB</span></div>
+                    <div>Peak Usage: <span id="peak-memory" class="highlight-cyan">0MB</span></div>
+                    <div>Growth Rate: <span id="memory-growth-rate">Stable</span></div>
+                    <div id="entity-counts" class="sub-text-block">
+                        Agents: <strong>0</strong> | Food: <strong>0</strong> | Pheromones: <strong>0</strong> | DB
+                        Queue: <strong>0</strong>
+                    </div>
+                    <div class="warning-text">
+                        ⚠️ Rising memory indicates potential leaks<br>
+                        📊 DB Queue >50 = performance impact
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="fitness-chart" width="300" height="100" class="fitness-chart"></canvas>
+        </div>
+    </aside>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="modal hidden">
+        <div class="modal-content">
+            <span id="close-modal" class="close-btn">&times;</span>
+            <h2>About Blob Evolution v5.0</h2>
+            <div class="modal-body">
+                <p>Welcome to <strong>Blob Evolution</strong>, a high-performance WebGL simulation where autonomous
+                    agents evolve to survive.</p>
+
+                <h3>Core Features:</h3>
+                <ul>
+                    <li><strong>Neural Networks:</strong> Each blob has a brain that learns from its environment.</li>
+                    <li><strong>Genetic Algorithm:</strong> Successful agents reproduce, passing on their genes.</li>
+                    <li><strong>GPU Physics:</strong> Thousands of agents simulated in real-time using WebGL.</li>
+                    <li><strong>Complex Behavior:</strong> Agents learn to find food, avoid walls, and interact.</li>
+                </ul>
+
+                <h3>How to Watch:</h3>
+                <p>Observe the "Critical Survival Metrics" in the sidebar. Watch as the "Avg Age" increases over
+                    generations, indicating that agents are learning to survive longer.</p>
+
+                <p class="credits">Built with Vanilla JS & WebGL.</p>
+            </div>
+        </div>
     </div>
+
     <div id="controls">
         <label for="gameSpeed">Speed: <input type="range" id="gameSpeed" min="0.5" max="10" step="0.5"
                 value="10"></label>
@@ -137,14 +193,11 @@
     <div id="canvas-container"></div>
 
     <!-- Loading Screen -->
-    <div id="loading-screen"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; font-family: Arial, sans-serif;">
-        <h1 style="margin-bottom: 30px; font-size: 32px;">Blob Evolution</h1>
-        <div id="loading-status" style="font-size: 18px; margin-bottom: 20px;">Initializing...</div>
-        <div id="loading-progress"
-            style="width: 300px; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; overflow: hidden;">
-            <div id="loading-progress-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.3s;">
-            </div>
+    <div id="loading-screen" class="loading-screen">
+        <h1>Blob Evolution</h1>
+        <div id="loading-status">Initializing...</div>
+        <div id="loading-progress">
+            <div id="loading-progress-bar"></div>
         </div>
     </div>
 
@@ -164,6 +217,45 @@
             setTimeout(() => {
                 sim.resize();
             }, 100);
+
+            // UI Logic
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const aboutBtn = document.getElementById('about-btn');
+            const aboutModal = document.getElementById('about-modal');
+            const closeModal = document.getElementById('close-modal');
+
+            // Sidebar Toggle
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                sidebarToggle.textContent = sidebar.classList.contains('collapsed') ? '☰' : '✕';
+            });
+
+            // About Modal
+            aboutBtn.addEventListener('click', () => {
+                aboutModal.classList.remove('hidden');
+            });
+
+            closeModal.addEventListener('click', () => {
+                aboutModal.classList.add('hidden');
+            });
+
+            // Close modal on outside click
+            aboutModal.addEventListener('click', (e) => {
+                if (e.target === aboutModal) {
+                    aboutModal.classList.add('hidden');
+                }
+            });
+
+            // Register Service Worker (optional - fails gracefully if not present)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => {
+                        // Service worker is optional, fail silently
+                        console.debug('Service Worker not available (optional feature)');
+                    });
+            }
         });
     </script>
 </body>

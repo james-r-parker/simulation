@@ -71,38 +71,65 @@ export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 600;
 
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
 
+// --- VISUAL CONSTANTS ---
+export const COLORS = {
+    BACKGROUND: 0x050510, // Deep dark blue/black
+    FOOD: {
+        NORMAL: 0x39FF14, // Neon Green
+        HIGH_VALUE: 0xFF00FF // Neon Magenta
+    },
+    OBSTACLE: 0x9D00FF, // Neon Purple
+    AGENTS: {
+        FORAGER: 0xCCFF00, // Neon Lime
+        PREDATOR: 0xFF0033, // Neon Red
+        REPRODUCER: 0x00F0FF, // Neon Cyan
+        SCOUT: 0xFFFF00, // Neon Yellow
+        DEFENDER: 0xFF6600 // Neon Orange
+    },
+    RAYS: {
+        DEFAULT: 0x00FFFF, // Cyan
+        ALIGNMENT: 0xFFFF00, // Neon Yellow
+        FOOD: 0x39FF14, // Neon Green
+        SMALLER: 0xCCFF00, // Neon Lime
+        LARGER: 0xFF0033, // Neon Red
+        OBSTACLE: 0x9D00FF, // Neon Purple
+        EDGE: 0xFF6600, // Neon Orange
+        SAME: 0x00F0FF // Neon Cyan
+    }
+};
+
 // Agent specialization configurations
 export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
-        color: 0x00ff00, // Green
+        color: COLORS.AGENTS.FORAGER,
         numSensorRays: 40,
         maxRayDist: 300, // Increased from 200
         hiddenSize: 20,
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
-        color: 0xff0000, // Red
+        color: COLORS.AGENTS.PREDATOR,
         numSensorRays: 50,
         maxRayDist: 450, // Increased from 300
         hiddenSize: 25,
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
-        color: 0x0000ff, // Blue
+        color: COLORS.AGENTS.REPRODUCER,
         numSensorRays: 30,
         maxRayDist: 250, // Increased from 150
         hiddenSize: 18,
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
-        color: 0xffff00, // Yellow
+        color: COLORS.AGENTS.SCOUT,
         numSensorRays: 60,
         maxRayDist: 600, // Increased from 400
         hiddenSize: 15,
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
-        color: 0xffa500, // Orange
+        color: COLORS.AGENTS.DEFENDER,
         numSensorRays: 35,
         maxRayDist: 350, // Increased from 250
         hiddenSize: 22,

@@ -5,7 +5,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 import { Agent } from './agent.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
-import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY } from './constants.js';
+import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, COLORS } from './constants.js';
 
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
@@ -18,7 +18,7 @@ export class WebGLRenderer {
 
         // Scene setup
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x0a0e27); // Dark blue background
+        this.scene.background = new THREE.Color(COLORS.BACKGROUND); // Deep dark blue/black
 
         // Camera setup (orthographic for 2D)
         const aspect = container.clientWidth / container.clientHeight;
@@ -76,6 +76,18 @@ export class WebGLRenderer {
         this.agentStateGroup = new THREE.Group();
         this.scene.add(this.agentStateGroup);
         this.agentStateMeshes = new Map(); // agent -> { energyBar, statusIcon }
+
+        // Pre-calculate ray colors to avoid object creation in loop
+        this.rayColors = {
+            default: new THREE.Color(COLORS.RAYS.DEFAULT),
+            alignment: new THREE.Color(COLORS.RAYS.ALIGNMENT),
+            food: new THREE.Color(COLORS.RAYS.FOOD),
+            smaller: new THREE.Color(COLORS.RAYS.SMALLER),
+            larger: new THREE.Color(COLORS.RAYS.LARGER),
+            obstacle: new THREE.Color(COLORS.RAYS.OBSTACLE),
+            edge: new THREE.Color(COLORS.RAYS.EDGE),
+            same: new THREE.Color(COLORS.RAYS.SAME)
+        };
     }
 
     resize(width, height) {
@@ -401,7 +413,7 @@ export class WebGLRenderer {
             this.foodInstancedMesh.setMatrixAt(i, instanceMatrix);
 
             // Set instance color
-            const foodColor = food.isHighValue ? 0xffff00 : 0x00ff00;
+            const foodColor = food.isHighValue ? COLORS.FOOD.HIGH_VALUE : COLORS.FOOD.NORMAL;
             color.setHex(foodColor);
             this.foodInstancedMesh.setColorAt(i, color);
         }
@@ -506,7 +518,7 @@ export class WebGLRenderer {
         // Create obstacle meshes
         obstacles.forEach(obs => {
             const geometry = new THREE.CircleGeometry(obs.radius, 32);
-            const material = new THREE.MeshBasicMaterial({ color: 0x3c3c3c });
+            const material = new THREE.MeshBasicMaterial({ color: COLORS.OBSTACLE });
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.set(obs.x, -obs.y, 0);
             this.obstacleGroup.add(mesh);
@@ -660,25 +672,29 @@ export class WebGLRenderer {
                 positions[(bufferIndex + 1) * 3 + 2] = 0;
 
                 // Color based on hit type
-                let r = 0, g = 1, b = 1; // Default cyan
+                let color = this.rayColors.default;
+
                 if (ray.type === 'alignment') {
-                    r = 1; g = 1; b = 0; // Yellow
+                    color = this.rayColors.alignment;
                     renderCounts.alignment++;
                 } else if (ray.hit && ray.hitType && ray.hitType !== 'none') {
                     // Something was hit - color based on hit type
-                    if (ray.hitType === 'food') { r = 0; g = 1; b = 0; renderCounts.food++; } // Green
-                    else if (ray.hitType === 'smaller') { r = 1; g = 1; b = 0; renderCounts.smaller++; } // Yellow
-                    else if (ray.hitType === 'larger') { r = 1; g = 0; b = 0; renderCounts.larger++; } // Red
-                    else if (ray.hitType === 'obstacle') { r = 0.5; g = 0.5; b = 0.5; renderCounts.obstacle++; } // Gray
-                    else if (ray.hitType === 'edge') { r = 1; g = 0; b = 0; renderCounts.edge++; } // Red for edge
-                    else if (ray.hitType === 'same') { r = 1; g = 0.5; b = 0; renderCounts.same++; } // Orange
-                    else { r = 1; g = 0; b = 0; } // Red (fallback)
+                    if (ray.hitType === 'food') { color = this.rayColors.food; renderCounts.food++; }
+                    else if (ray.hitType === 'smaller') { color = this.rayColors.smaller; renderCounts.smaller++; }
+                    else if (ray.hitType === 'larger') { color = this.rayColors.larger; renderCounts.larger++; }
+                    else if (ray.hitType === 'obstacle') { color = this.rayColors.obstacle; renderCounts.obstacle++; }
+                    else if (ray.hitType === 'edge') { color = this.rayColors.edge; renderCounts.edge++; }
+                    else if (ray.hitType === 'same') { color = this.rayColors.same; renderCounts.same++; }
+                    else { color = this.rayColors.larger; } // Fallback to red
                 } else if (ray.hit) {
-                    // Hit detected but no hitType (shouldn't happen, but handle it)
-                    r = 1; g = 0; b = 0; // Red
+                    color = this.rayColors.larger; // Red
                 } else {
                     renderCounts.none++;
                 }
+
+                const r = color.r;
+                const g = color.g;
+                const b = color.b;
                 // If not hit, keep default cyan
 
                 // Apply to both start and end points
