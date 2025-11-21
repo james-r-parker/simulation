@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler pages deploy dist",
-    "deploy:preview": "npm run build && wrangler pages deployment create --env preview"
+    "deploy:preview": "npm run build && wrangler pages deployment create --env preview",
+    "pages:deploy": "echo Deployment handled automatically by Cloudflare Pages || exit 0"
   },
   "keywords": [
     "simulation",

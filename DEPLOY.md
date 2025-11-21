@@ -30,13 +30,13 @@ This is the easiest and most automated method. Cloudflare Pages will automatical
    - **Build output directory**: `dist`
    - **Root directory**: `/` (leave as default)
    - **Node version**: `20` (or leave default)
-   - **Deploy command**: ⚠️ **LEAVE THIS EMPTY** - Do NOT set a deploy command!
+   - **Deploy command**: `npm run pages:deploy` (no-op command - Cloudflare Pages handles deployment automatically)
    
    **IMPORTANT**: 
    - Build settings must be configured in the Cloudflare Pages dashboard
    - The `wrangler.toml` file does NOT support `[build]` sections for Pages projects
-   - **DO NOT set a deploy command** - Cloudflare Pages automatically deploys after the build completes
-   - If you see errors about Wrangler deployment, check that the deploy command field is empty in your dashboard settings
+   - The deploy command is a no-op because Cloudflare Pages automatically deploys after the build completes
+   - If the deploy command field cannot be empty, use: `npm run pages:deploy`
 
 4. **Deploy**:
    - Click **Save and Deploy**
@@ -131,11 +131,11 @@ simulation/
 If you see errors like "error occurred while running deploy command" or Wrangler authentication issues:
 
 1. **Check Dashboard Settings**: Go to your Pages project → Settings → Builds & deployments
-2. **Verify Deploy Command**: The "Deploy command" field should be **EMPTY**
-3. **Only Build Command Should Be Set**: `npm ci && npm run build` (or `npm run build`)
-4. **Save Changes**: Make sure to save the settings after removing any deploy command
+2. **Set Deploy Command**: Use `npm run pages:deploy` (this is a no-op command that does nothing)
+3. **Build Command**: `npm ci && npm run build` (or `npm run build`)
+4. **Save Changes**: Make sure to save the settings
 
-**Why**: With Git integration, Cloudflare Pages automatically deploys the build output. A deploy command is only needed for manual CLI deployments, not Git-integrated builds.
+**Why**: With Git integration, Cloudflare Pages automatically deploys the build output. The deploy command field may be required by the UI, but we use a no-op command since Cloudflare handles deployment automatically after the build.
 
 ### Build Fails
 
