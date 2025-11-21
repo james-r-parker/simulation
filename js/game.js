@@ -60,6 +60,20 @@ export class Simulation {
         this.currentFrameUsedGpu = false;
         this.currentFrameGpuAgentIds = new Set();
 
+        // Memory monitoring
+        this.memoryHistory = [];
+        this.memoryHistorySize = 100;
+        this.lastMemoryUpdate = Date.now();
+        this.currentMemoryUsage = 0;
+        this.peakMemoryUsage = 0;
+        this.memoryGrowthRate = 0;
+        this.entityCounts = { agents: 0, food: 0, pheromones: 0 };
+
+        // Memory management
+        this.memoryPressureThreshold = 200 * 1024 * 1024; // 200MB threshold
+        this.memoryPressureActions = 0;
+        this.lastMemoryPressureAction = 0;
+
         this.gameSpeed = 10;
         this.maxAgents = 100;
         this.foodSpawnRate = 1.0;
@@ -322,7 +336,6 @@ export class Simulation {
             // Flush dead agent queue and save current state
             this.processDeadAgentQueue();
             await this.db.flush();
-            await this.saveGenePools();
         });
     }
 
@@ -423,37 +436,6 @@ export class Simulation {
         this.deadAgentQueue = [];
     }
 
-    async saveGenePools() {
-        // Periodic save of all living agents (runs less frequently)
-        try {
-            // Group agents by gene ID and save top 3 per gene ID
-            // Only save agents with fitness >= 50 and foodEaten >= 3
-            const agentsByGene = {};
-            this.agents.forEach(agent => {
-                // Filter: only save high-performing agents
-                if (!agent.isDead && agent.fit) {
-                    if (!agentsByGene[agent.geneId]) {
-                        agentsByGene[agent.geneId] = [];
-                    }
-                    agentsByGene[agent.geneId].push(agent);
-                }
-            });
-
-            // Save top 3 per gene ID using immediate save (for periodic backup)
-            for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
-                const sorted = geneAgents.sort((a, b) => b.fitness - a.fitness);
-                const top3 = sorted.slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
-                if (top3.length > 0) {
-                    await this.db.saveGenePool(geneId, top3);
-                }
-            }
-
-            this.logger.log(`[DATABASE] Periodic save completed for ${Object.keys(agentsByGene).length} gene pools`);
-        } catch (e) {
-            this.logger.error("Failed to save gene pools:", e);
-        }
-    }
-
     initPopulation() {
         const center_x = this.worldWidth / 2;
         const center_y = this.worldHeight / 2;
@@ -470,16 +452,7 @@ export class Simulation {
 
         // Spawn remaining agents (try to use gene pools if available)
         for (let i = 3; i < startingAgentCount; i++) {
-            let gene = null;
-            // Try to get weights from any gene pool
-            const geneIds = Object.keys(this.db.pool);
-            if (geneIds.length > 0) {
-                const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
-                const pool = this.db.pool[randomGeneId];
-                if (pool && pool.length > 0) {
-                    gene = { weights: pool[Math.floor(Math.random() * pool.length)].weights };
-                }
-            }
+            const gene = this.db.getRandomAgent();
             this.spawnAgent({ gene: gene, energy: INITIAL_AGENT_ENERGY });
         }
 
@@ -520,7 +493,9 @@ export class Simulation {
             gene = null,
             x,
             y,
-            energy = INITIAL_AGENT_ENERGY
+            energy = INITIAL_AGENT_ENERGY,
+            parent = null,
+            mutationRate = null
         } = options;
 
         let startX, startY;
@@ -535,14 +510,25 @@ export class Simulation {
             startY = pos.y;
         }
 
-        this.agentSpawnQueue.push(new Agent(gene, startX, startY, startEnergy, this.logger, null, this));
+        const agent = new Agent(gene, startX, startY, startEnergy, this.logger, parent, this);
+        if (mutationRate) {
+            agent.mutate(mutationRate);
+        }
+
+        this.agentSpawnQueue.push(agent);
     }
 
     spawnFood() {
         if (this.food.length >= FOOD_SPAWN_CAP) return;
 
-        // Increased base spawn chance from 0.1 to 0.15 for more food availability
-        const foodSpawnChance = 0.15 * this.finalFoodSpawnMultiplier * this.foodScarcityFactor * (1 - (this.agents.length / (this.maxAgents * 1.5)));
+        // Calculate living agents for spawn chance
+        const livingAgents = this.agents.filter(a => !a.isDead).length;
+
+        // More generous food spawning: base chance with moderate population scaling
+        // Reduced the population penalty factor from 1.5x to 2x maxAgents for less aggressive reduction
+        const populationFactor = Math.max(0.2, 1 - (livingAgents / (this.maxAgents * 2)));
+        const foodSpawnChance = 0.15 * this.finalFoodSpawnMultiplier * this.foodScarcityFactor * populationFactor;
+
         if (Math.random() > foodSpawnChance) return;
 
         let x, y, isHighValue = false;
@@ -556,6 +542,41 @@ export class Simulation {
     }
 
     spawnPheromone(x, y, type) {
+        // Implement pheromone limits to prevent memory accumulation
+        const MAX_PHEROMONES = 2000; // Maximum total pheromones
+        const MAX_PHEROMONES_PER_TYPE = 500; // Maximum per pheromone type
+        const PHEROMONE_RADIUS_CHECK = 50; // Check radius for nearby pheromones
+        const MAX_PHEROMONES_PER_AREA = 5; // Maximum pheromones in check radius
+
+        // Global pheromone limit - remove oldest if exceeded
+        if (this.pheromones.length >= MAX_PHEROMONES) {
+            // Remove oldest pheromone (first in array)
+            if (this.pheromones.length > 0) {
+                this.pheromones.shift();
+            }
+        }
+
+        // Count pheromones by type
+        const typeCounts = this.pheromones.reduce((counts, p) => {
+            counts[p.type] = (counts[p.type] || 0) + 1;
+            return counts;
+        }, {});
+
+        // Per-type limit - don't spawn if type limit exceeded
+        if (typeCounts[type] >= MAX_PHEROMONES_PER_TYPE) {
+            return;
+        }
+
+        // Local area limit - check for nearby pheromones of same type
+        const nearbySameType = this.pheromones.filter(p =>
+            p.type === type &&
+            Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < PHEROMONE_RADIUS_CHECK
+        );
+
+        if (nearbySameType.length >= MAX_PHEROMONES_PER_AREA) {
+            return;
+        }
+
         const puff = new PheromonePuff(x, y, type);
         this.pheromones.push(puff);
     }
@@ -579,39 +600,13 @@ export class Simulation {
     }
 
     selection(geneId) {
-        const pool = this.db.pool[geneId];
-        if (!pool || pool.length === 0) return null;
-
-        // Sort by fitness once
-        const sorted = [...pool].sort((a, b) => b.fitness - a.fitness);
-
-        // Select the first parent from the elite (top 3)
-        const eliteSize = Math.min(3, sorted.length);
-        const parent1Data = sorted[Math.floor(Math.random() * eliteSize)];
-
-        // CRITICAL: If specialization is missing (old data), we can't safely mate.
-        if (!parent1Data.specializationType) {
-            this.logger.warn(`[LIFECYCLE] Gene pool data for ${geneId} is outdated. Cloning parent to be safe.`);
-            return this.crossover(parent1Data.weights, parent1Data.weights);
+        const matingPair = this.db.getMatingPair(geneId);
+        if (!matingPair) {
+            this.logger.warn(`[LIFECYCLE] No mating pair available for gene ${geneId}`);
+            return null;
         }
 
-        const parent1Weights = parent1Data.weights;
-        const parent1Specialization = parent1Data.specializationType;
-
-        // Filter the pool to find compatible mates (same specialization)
-        const compatibleMates = sorted.filter(agentData => agentData.specializationType === parent1Specialization);
-
-        if (compatibleMates.length < 2) {
-            // Not enough compatible mates, so just clone the single parent.
-            return this.crossover(parent1Weights, parent1Weights);
-        }
-
-        // Select a *different* second parent from the compatible mates
-        const otherMates = compatibleMates.filter(m => m !== parent1Data);
-        const parent2Data = otherMates[Math.floor(Math.random() * otherMates.length)];
-        const parent2Weights = parent2Data.weights;
-
-        return this.crossover(parent1Weights, parent2Weights);
+        return this.crossover(matingPair.weights1, matingPair.weights2);
     }
 
     repopulate() {
@@ -628,46 +623,12 @@ export class Simulation {
         for (let i = 0; i < agentsToSpawn; i++) {
             const roll = Math.random();
 
-            // CRITICAL FIX: Reduced elitism from 60% to 30% to promote diversity
             // 30% chance for Elitism
             if (roll < 0.3) {
-                // Elitism: Pick the absolute best agent from EITHER living agents OR the gene pool
-                let bestLivingAgent = null;
-                if (this.agents.length > 0) {
-                    this.agents.sort((a, b) => b.fitness - a.fitness);
-                    bestLivingAgent = this.agents[0];
-                }
-
-                let bestStoredAgent = null;
-                let bestStoredFitness = -1;
-
-                // Find best agent in gene pools
-                for (const pool of Object.values(this.db.pool)) {
-                    if (pool && pool.length > 0) {
-                        // Pools are already sorted by fitness descending
-                        const topInPool = pool[0];
-                        if (topInPool.fitness > bestStoredFitness) {
-                            bestStoredFitness = topInPool.fitness;
-                            bestStoredAgent = topInPool;
-                        }
-                    }
-                }
-
-                let eliteGene = null;
-
-                // Compare living vs stored
-                if (bestLivingAgent && (!bestStoredAgent || bestLivingAgent.fitness > bestStoredFitness)) {
-                    if (bestLivingAgent.fitness > 0) {
-                        eliteGene = { weights: bestLivingAgent.getWeights(), geneId: bestLivingAgent.geneId };
-                    }
-                } else if (bestStoredAgent) {
-                    eliteGene = { weights: bestStoredAgent.weights, geneId: bestStoredAgent.geneId };
-                }
-
-                if (eliteGene) {
-                    this.spawnAgent({ gene: eliteGene });
+                const gene = this.db.getRandomAgent();
+                if (gene) {
+                    this.spawnAgent({ gene: gene, mutationRate: this.mutationRate });
                 } else {
-                    // Fallback to random if no suitable elite agent found anywhere
                     this.spawnAgent({ gene: null });
                 }
             }
@@ -696,18 +657,11 @@ export class Simulation {
             else {
                 const randomGeneId = Object.keys(this.db.pool)[Math.floor(Math.random() * Object.keys(this.db.pool).length)];
                 if (randomGeneId) {
-                    const pool = this.db.pool[randomGeneId];
-                    if (pool && pool.length > 0) {
-                        const randomAgent = pool[Math.floor(Math.random() * pool.length)];
-                        // Create a hybrid by forcing a different specialization
+                    const gene = this.db.getRandomAgent(randomGeneId);
+                    if(gene) {
                         const allTypes = Object.values(SPECIALIZATION_TYPES);
                         const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
-                        this.spawnAgent({
-                            gene: {
-                                weights: randomAgent.weights,
-                                specializationType: novelSpecialization
-                            }
-                        });
+                        this.spawnAgent({ gene: { weights: gene.weights, specializationType: novelSpecialization }, mutationRate: this.mutationRate });
                     } else {
                         this.spawnAgent({ gene: null });
                     }
@@ -718,7 +672,6 @@ export class Simulation {
         }
 
         this.respawnTimer = 0;
-        this.spawnFood();
     }
 
     async updateGenePools() {
@@ -785,24 +738,12 @@ export class Simulation {
             }
         });
 
-        for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
-            const sorted = geneAgents.sort((a, b) => b.fitness - a.fitness);
-            // Save top 10 for this gene pool (increased from 3)
-            if (sorted.length > 0) {
-                this.db.pool[geneId] = sorted.slice(0, 10).map(a => ({
-                    id: a.id,
-                    weights: a.getWeights(),
-                    fitness: a.fitness,
-                    geneId: a.geneId,
-                    specializationType: a.specializationType // Store specialization
-                }));
-            } else {
-                // Prune gene pools with no qualifying agents
-                delete this.db.pool[geneId];
+        // Queue all qualifying agents for saving (database will handle grouping and pool management)
+        for (const geneAgents of Object.values(agentsByGene)) {
+            for (const agent of geneAgents) {
+                this.db.queueSaveAgent(agent);
             }
         }
-
-        await this.saveGenePools();
 
         // Update dashboard every generation for better visibility
         this.updateDashboard();
@@ -816,7 +757,8 @@ export class Simulation {
         // Calculate metrics
         const bestFitness = this.bestAgent ? this.bestAgent.fitness : 0;
         const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
-        const genePoolCount = Object.keys(this.db.pool).length;
+        const genePoolHealth = this.db.getGenePoolHealth();
+        const genePoolCount = genePoolHealth.genePoolCount;
 
         // Specialization distribution
         const specializationCounts = {};
@@ -1333,17 +1275,235 @@ export class Simulation {
         }
     }
 
+    updateMemoryStats(updateUI = true) {
+        // Update memory usage every second
+        const now = Date.now();
+        if (now - this.lastMemoryUpdate >= 1000) {
+            this.lastMemoryUpdate = now;
+
+            // Get memory usage if available (Chrome/Edge)
+            let memoryUsage = 0;
+            if (performance.memory) {
+                memoryUsage = performance.memory.usedJSHeapSize / 1024 / 1024; // Convert to MB
+                this.currentMemoryUsage = memoryUsage;
+                this.peakMemoryUsage = Math.max(this.peakMemoryUsage, memoryUsage);
+            }
+
+            // Track entity counts and database queue
+            this.entityCounts = {
+                agents: this.agents.filter(a => !a.isDead).length,
+                food: this.food.filter(f => !f.isDead).length,
+                pheromones: this.pheromones.filter(p => !p.isDead).length,
+                dbQueue: this.db.saveQueue.length
+            };
+
+            // Calculate memory growth rate (MB per minute)
+            this.memoryHistory.push({
+                time: now,
+                memory: memoryUsage,
+                entities: { ...this.entityCounts }
+            });
+
+            if (this.memoryHistory.length > this.memoryHistorySize) {
+                this.memoryHistory.shift();
+            }
+
+            if (this.memoryHistory.length >= 2) {
+                const recent = this.memoryHistory.slice(-10); // Last 10 samples
+                if (recent.length >= 2) {
+                    const oldest = recent[0];
+                    const newest = recent[recent.length - 1];
+                    const timeDiff = (newest.time - oldest.time) / 1000 / 60; // minutes
+                    const memoryDiff = newest.memory - oldest.memory;
+                    this.memoryGrowthRate = timeDiff > 0 ? memoryDiff / timeDiff : 0;
+                }
+            }
+
+            // Update UI if requested
+            if (updateUI) {
+                this.updateMemoryUI();
+            }
+        }
+    }
+
+    updateMemoryUI() {
+        // Update info bar memory display
+        const memoryEl = document.getElementById('info-memory');
+        if (memoryEl) {
+            let memoryText = '';
+            if (this.currentMemoryUsage > 0) {
+                memoryText = `Memory: ${this.currentMemoryUsage.toFixed(1)}MB`;
+                if (this.memoryGrowthRate > 0.1) {
+                    memoryText += ` (↗️ +${this.memoryGrowthRate.toFixed(1)}MB/min)`;
+                    memoryEl.style.color = '#ff6b6b';
+                } else if (this.memoryGrowthRate < -0.1) {
+                    memoryText += ` (↘️ ${this.memoryGrowthRate.toFixed(1)}MB/min)`;
+                    memoryEl.style.color = '#51cf66';
+                } else {
+                    memoryEl.style.color = '#ffd43b';
+                }
+            } else {
+                memoryText = `Memory: ~${(this.entityCounts.agents * 2 + this.entityCounts.food * 0.1 + this.entityCounts.pheromones * 0.05).toFixed(1)}MB (est.)`;
+                memoryEl.style.color = '#868e96';
+            }
+            memoryEl.textContent = memoryText;
+        }
+
+        // Update dashboard memory metrics
+        const currentMemoryEl = document.getElementById('current-memory');
+        const peakMemoryEl = document.getElementById('peak-memory');
+        const memoryGrowthEl = document.getElementById('memory-growth-rate');
+        const entityCountsEl = document.getElementById('entity-counts');
+
+        if (currentMemoryEl) {
+            currentMemoryEl.textContent = this.currentMemoryUsage > 0 ? `${this.currentMemoryUsage.toFixed(1)}MB` : 'N/A';
+        }
+        if (peakMemoryEl) {
+            peakMemoryEl.textContent = this.peakMemoryUsage > 0 ? `${this.peakMemoryUsage.toFixed(1)}MB` : 'N/A';
+        }
+        if (memoryGrowthEl) {
+            if (this.memoryGrowthRate !== 0) {
+                const rate = this.memoryGrowthRate.toFixed(2);
+                const color = this.memoryGrowthRate > 0.1 ? '#ff6b6b' : this.memoryGrowthRate < -0.1 ? '#51cf66' : '#ffd43b';
+                memoryGrowthEl.innerHTML = `<span style="color: ${color};">${this.memoryGrowthRate > 0 ? '+' : ''}${rate} MB/min</span>`;
+            } else {
+                memoryGrowthEl.textContent = 'Stable';
+            }
+        }
+        if (entityCountsEl) {
+            const dbQueueColor = this.entityCounts.dbQueue > 50 ? '#ff6b6b' :
+                                this.entityCounts.dbQueue > 20 ? '#ffd43b' : '#ccc';
+            entityCountsEl.innerHTML = `
+                Agents: <strong>${this.entityCounts.agents}</strong> |
+                Food: <strong>${this.entityCounts.food}</strong> |
+                Pheromones: <strong>${this.entityCounts.pheromones}</strong> |
+                DB Queue: <strong style="color: ${dbQueueColor};">${this.entityCounts.dbQueue}</strong>
+            `;
+        }
+    }
+
     updateInfo() {
         // Count only living agents for display
         const livingAgents = this.agents.filter(a => !a.isDead);
         document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${this.maxAgents}`;
         if (this.bestAgent) {
-            document.getElementById('info-best').innerText = `Best Agent: F: ${this.bestAgent.fitness.toFixed(0)}, A: ${this.bestAgent.framesAlive}f, O: ${this.bestAgent.offspring}, K: ${this.bestAgent.kills}, Fd: ${this.bestAgent.foodEaten}, C: ${this.bestAgent.collisions || 0}, RH: ${this.bestAgent.rayHits || 0}`;
+            document.getElementById('info-best').innerText = `Best Agent: F: ${this.bestAgent.fitness.toFixed(0)}, A: ${this.bestAgent.framesAlive}f, O: ${this.bestAgent.offspring}, K: ${this.bestAgent.kills}, Fd: ${this.bestAgent.foodEaten}, C: ${this.bestAgent.collisions || 0}, CT: ${this.bestAgent.cleverTurns?.toFixed(1) || 0}, RH: ${this.bestAgent.rayHits || 0}`;
         }
         document.getElementById('info-gen').innerText = `Generation: ${this.generation}`;
         document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(this.db.pool).length}`;
         const avgEnergy = livingAgents.length > 0 ? livingAgents.reduce((acc, a) => acc + a.energy, 0) / livingAgents.length : 0;
         document.getElementById('info-avg-e').innerText = `Avg. Energy: ${avgEnergy.toFixed(0)} | Scarcity: ${this.foodScarcityFactor.toFixed(2)}`;
+
+        // Update memory stats
+        this.updateMemoryStats();
+
+        // Check for memory pressure and take action if needed
+        this.handleMemoryPressure();
+    }
+
+    handleMemoryPressure() {
+        const now = Date.now();
+        const timeSinceLastAction = now - this.lastMemoryPressureAction;
+
+        // Only take action if memory usage is high and we haven't acted recently (avoid spam)
+        if (this.currentMemoryUsage > this.memoryPressureThreshold && timeSinceLastAction > 30000) { // 30 seconds minimum between actions
+            this.logger.warn(`[MEMORY] High memory usage detected: ${(this.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB. Taking corrective action.`);
+
+            // Force garbage collection if available
+            if (window.gc) {
+                window.gc();
+                this.logger.log('[MEMORY] Forced garbage collection');
+            }
+
+            // Aggressive cleanup actions
+            this.aggressiveMemoryCleanup();
+
+            this.memoryPressureActions++;
+            this.lastMemoryPressureAction = now;
+
+            // Update UI to show memory pressure action
+            const memoryEl = document.getElementById('info-memory');
+            if (memoryEl) {
+                const currentText = memoryEl.textContent;
+                memoryEl.textContent = currentText + ' (GC)';
+                setTimeout(() => {
+                    if (memoryEl.textContent.includes(' (GC)')) {
+                        memoryEl.textContent = memoryEl.textContent.replace(' (GC)', '');
+                    }
+                }, 2000);
+            }
+        }
+    }
+
+    aggressiveMemoryCleanup() {
+        // Force processing of dead agent queue
+        this.processDeadAgentQueue();
+
+        // Force database flush
+        if (this.db && this.db.flush) {
+            this.db.flush().catch(err => this.logger.warn('[MEMORY] Database flush failed:', err));
+        }
+
+        // Clear any cached data in GPU compute/physics if available
+        if (this.gpuCompute && this.gpuCompute.clearCache) {
+            this.gpuCompute.clearCache();
+        }
+        if (this.gpuPhysics && this.gpuPhysics.clearCache) {
+            this.gpuPhysics.clearCache();
+        }
+
+        // Reduce pheromone count if too high
+        if (this.pheromones.length > 1000) {
+            // Remove oldest pheromones (keep newest 50% to maintain behavior)
+            const keepCount = Math.floor(this.pheromones.length * 0.5);
+            this.pheromones.splice(0, this.pheromones.length - keepCount);
+            this.logger.log(`[MEMORY] Reduced pheromones from ${this.pheromones.length + (this.pheromones.length - keepCount)} to ${this.pheromones.length}`);
+        }
+
+        // Clear memory history if it's getting too large
+        if (this.memoryHistory.length > this.memoryHistorySize / 2) {
+            const keepRecent = Math.floor(this.memoryHistorySize / 4);
+            this.memoryHistory.splice(0, this.memoryHistory.length - keepRecent);
+        }
+    }
+
+    periodicMemoryCleanup() {
+        // Comprehensive cleanup that runs periodically to prevent long-term memory buildup
+
+        // Process any pending database operations
+        this.processDeadAgentQueue();
+
+        // Clean up old pheromones more aggressively
+        const originalPheromoneCount = this.pheromones.length;
+        const maxPheromones = 1500; // Slightly higher than spawn limit to allow some buffer
+
+        if (this.pheromones.length > maxPheromones) {
+            // Remove oldest pheromones, keeping the most recent
+            const toRemove = this.pheromones.length - maxPheromones;
+            this.pheromones.splice(0, toRemove);
+        }
+
+        // Clean up dead references in arrays (shouldn't be necessary but defensive programming)
+        this.agents = this.agents.filter(agent => agent && !agent.isDead);
+        this.food = this.food.filter(food => food && !food.isDead);
+
+        // Clear any accumulated ray data in agents (defensive cleanup)
+        for (const agent of this.agents) {
+            if (agent && !agent.isDead) {
+                // Clear accumulated ray data that might be building up
+                if (agent.rayData && agent.rayData.length > 100) {
+                    agent.rayData.length = 0;
+                }
+                if (agent.lastRayData && agent.lastRayData.length > 100) {
+                    agent.lastRayData.length = 0;
+                }
+            }
+        }
+
+        // Log cleanup activity
+        if (originalPheromoneCount > this.pheromones.length) {
+            this.logger.log(`[MEMORY] Periodic cleanup: Reduced pheromones from ${originalPheromoneCount} to ${this.pheromones.length}`);
+        }
     }
 
     async gameLoop() {
@@ -1402,8 +1562,11 @@ export class Simulation {
         // Track if this frame used GPU or CPU
         this.currentFrameUsedGpu = false;
 
-        // Rebuild quadtree (needed for spatial queries, but expensive)
+        // Dispose old quadtree and rebuild (needed for spatial queries, but expensive)
         // Only rebuild once per frame, not per gameSpeed iteration
+        if (this.quadtree) {
+            this.quadtree.dispose();
+        }
         this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
 
         // OPTIMIZED: Use for loops instead of spread/filter for better performance
@@ -1433,6 +1596,9 @@ export class Simulation {
         // Repopulate before game loop to include new agents
         this.repopulate();
 
+        // Update food spawning continuously
+        this.spawnFood();
+
         // Use Math.max to ensure at least 1 iteration, and Math.floor to handle fractional speeds
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
         for (let i = 0; i < iterations; i++) {
@@ -1448,6 +1614,10 @@ export class Simulation {
 
             // OPTIMIZED: Rebuild quadtree less frequently - only every 5 iterations or on last iteration
             if (i % 5 === 0 || i === iterations - 1) {
+                // Dispose old quadtree before rebuilding
+                if (this.quadtree) {
+                    this.quadtree.dispose();
+                }
                 this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
                 // Only insert non-dead entities - use actual lengths, not cached
                 for (let j = 0; j < this.agents.length; j++) {
@@ -1615,14 +1785,14 @@ export class Simulation {
 
             if (i === iterations - 1) {
                 this.frameCount++;
+                // Update memory stats every 60 frames (1 second at 60 FPS) without UI update
+                if (this.frameCount % 60 === 0) this.updateMemoryStats(false);
                 if (this.frameCount % 100 === 0) this.updateInfo();
                 if (this.frameCount % 500 === 0) this.updateGenePools();
                 // Update dashboard more frequently for better real-time feedback
                 if (this.frameCount % 30 === 0) this.updateDashboard();
-                // Periodic backup save every 3000 frames (~30 seconds at 10x speed)
-                if (this.frameCount % 3000 === 0) {
-                    this.saveGenePools().catch(e => this.logger.error('Periodic save failed:', e));
-                }
+                // Periodic comprehensive memory cleanup every 1000 frames (~16 seconds at 60 FPS)
+                if (this.frameCount % 1000 === 0) this.periodicMemoryCleanup();
             }
         }
 

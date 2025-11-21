@@ -24,8 +24,6 @@ export class NeuralNetwork {
         );
     }
 
-
-
     copyMatrix(matrix) {
         return matrix.map(row => [...row]);
     }

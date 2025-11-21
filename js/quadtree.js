@@ -30,10 +30,37 @@ export class Rectangle {
 
 export class Quadtree {
     constructor(boundary, capacity) {
-        this.boundary = boundary; 
-        this.capacity = capacity; 
-        this.points = []; 
+        this.boundary = boundary;
+        this.capacity = capacity;
+        this.points = [];
         this.divided = false;
+    }
+
+    // Dispose method to prevent memory leaks
+    dispose() {
+        // Clear points array
+        this.points.length = 0;
+
+        // Recursively dispose children
+        if (this.divided) {
+            if (this.northeast) {
+                this.northeast.dispose();
+                this.northeast = null;
+            }
+            if (this.northwest) {
+                this.northwest.dispose();
+                this.northwest = null;
+            }
+            if (this.southeast) {
+                this.southeast.dispose();
+                this.southeast = null;
+            }
+            if (this.southwest) {
+                this.southwest.dispose();
+                this.southwest = null;
+            }
+            this.divided = false;
+        }
     }
     
     subdivide() {

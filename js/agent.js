@@ -114,6 +114,7 @@ export class Agent {
         this.kills = 0;
         this.foodEaten = 0;
         this.collisions = 0; // Total number of collisions detected
+        this.timesHitObstacle = 0; // Number of obstacle collisions (not wall hits)
         this.rayHits = 0; // Total number of ray hits detected
         this.fitness = 0;
         this.fit = false;
@@ -128,6 +129,7 @@ export class Agent {
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.distanceTravelled = 0;
         this.directionChanged = 0;
+        this.cleverTurns = 0; // Direction changes in response to threats/opportunities
         this.energySpent = 0;
         this.successfulEscapes = 0;
         this.lastX = x;
@@ -140,6 +142,7 @@ export class Agent {
         this.previousEnergies = Array(this.memoryFrames).fill(this.energy);
         this.previousDanger = Array(this.memoryFrames).fill(0);
         this.previousAggression = Array(this.memoryFrames).fill(0);
+        this.previousRayHits = Array(this.memoryFrames).fill(0);
 
         // --- Pre-allocated Memory for Performance ---
         this.inputs = []; // Pre-allocate inputs array
@@ -277,12 +280,14 @@ export class Agent {
             this.previousEnergies[i] = this.previousEnergies[i - 1];
             this.previousDanger[i] = this.previousDanger[i - 1];
             this.previousAggression[i] = this.previousAggression[i - 1];
+            this.previousRayHits[i] = this.previousRayHits[i - 1];
         }
         // Store current frame as most recent memory
         this.previousVelocities[0] = { vx: this.vx, vy: this.vy };
         this.previousEnergies[0] = this.energy;
         this.previousDanger[0] = this.dangerSmell;
         this.previousAggression[0] = this.attackSmell;
+        this.previousRayHits[0] = this.rayHits;
 
         // Apply drag/dampening
         this.vx *= DAMPENING_FACTOR;
@@ -334,8 +339,9 @@ export class Agent {
         // --- END ENERGY COSTS ---
 
         // Reward for changing direction (dodging/weaving)
-        const prevVx = this.previousVelocities[1].vx;
-        const prevVy = this.previousVelocities[1].vy;
+        const prevVel = this.previousVelocities[1] || { vx: 0, vy: 0 };
+        const prevVx = prevVel.vx;
+        const prevVy = prevVel.vy;
         const currVx = this.vx;
         const currVy = this.vy;
 
@@ -347,6 +353,15 @@ export class Agent {
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
             this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+
+            // Track "clever turns" - significant direction changes in response to environment
+            if (angleDiff > 0.3) { // Only count meaningful turns (about 17 degrees)
+                // Clever turn if responding to danger, opportunity, or visual information
+                const hasRecentRayHits = this.previousRayHits.some(hits => hits > 0);
+                if (this.dangerSmell > 0.5 || this.attackSmell > 0.5 || hasRecentRayHits) {
+                    this.cleverTurns += angleDiff;
+                }
+            }
         }
 
         this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
@@ -359,6 +374,7 @@ export class Agent {
 
         if (this.energy <= 0) {
             this.isDead = true;
+            this.cleanup();
         }
 
         // --- EDGE BOUNCE ---
@@ -413,6 +429,7 @@ export class Agent {
 
                 this.energy -= OBSTACLE_COLLISION_PENALTY;
                 this.collisions++;
+                this.timesHitObstacle++;
                 // Obstacle collision logging disabled for performance
                 break; // Only handle first collision
             }
@@ -669,14 +686,23 @@ export class Agent {
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
 
         // Recent memory (temporal awareness) - adds 8 inputs
-        inputs.push(this.previousVelocities[1].vx / MAX_VELOCITY); // Previous velocity X (1 frame ago)
-        inputs.push(this.previousVelocities[1].vy / MAX_VELOCITY); // Previous velocity Y (1 frame ago)
-        inputs.push(this.previousVelocities[2].vx / MAX_VELOCITY); // Previous velocity X (2 frames ago)
-        inputs.push(this.previousVelocities[2].vy / MAX_VELOCITY); // Previous velocity Y (2 frames ago)
-        inputs.push((this.previousEnergies[0] - this.energy) / MAX_ENERGY); // Energy delta (last frame)
-        inputs.push(Math.min(this.previousDanger[1], 1)); // Previous danger (1 frame ago)
-        inputs.push(Math.min(this.previousAggression[1], 1)); // Previous aggression (1 frame ago)
-        inputs.push((this.previousEnergies[1] - this.previousEnergies[2]) / MAX_ENERGY); // Energy delta (2 frames ago)
+        // Safety checks to prevent undefined access errors
+        const vel1 = this.previousVelocities[1] || { vx: 0, vy: 0 };
+        const vel2 = this.previousVelocities[2] || { vx: 0, vy: 0 };
+        const energy0 = this.previousEnergies[0] || this.energy;
+        const energy1 = this.previousEnergies[1] || this.energy;
+        const energy2 = this.previousEnergies[2] || this.energy;
+        const danger1 = this.previousDanger[1] || 0;
+        const aggression1 = this.previousAggression[1] || 0;
+
+        inputs.push(vel1.vx / MAX_VELOCITY); // Previous velocity X (1 frame ago)
+        inputs.push(vel1.vy / MAX_VELOCITY); // Previous velocity Y (1 frame ago)
+        inputs.push(vel2.vx / MAX_VELOCITY); // Previous velocity X (2 frames ago)
+        inputs.push(vel2.vy / MAX_VELOCITY); // Previous velocity Y (2 frames ago)
+        inputs.push((energy0 - this.energy) / MAX_ENERGY); // Energy delta (last frame)
+        inputs.push(Math.min(danger1, 1)); // Previous danger (1 frame ago)
+        inputs.push(Math.min(aggression1, 1)); // Previous aggression (1 frame ago)
+        inputs.push((energy1 - energy2) / MAX_ENERGY); // Energy delta (2 frames ago)
 
         this.lastRayData = rayData;
 
@@ -810,12 +836,18 @@ export class Agent {
         return this.energy < LOW_ENERGY_THRESHOLD;
     }
 
+    mutate() {
+        this.nn.mutate(this.simulation.mutationRate);
+        this.weights = this.getWeights();
+    }
+
     calculateFitness() {
         let baseScore = 0;
 
         // 1. Productive Actions (Contribute to Base Score)
         baseScore += this.offspring * 400; // Reduced from 600 to balance with other rewards
-        baseScore += this.directionChanged * 300;
+        baseScore += this.cleverTurns * 300; // Reward intelligent maneuvering (smell + vision)
+        baseScore += this.directionChanged * 50; // Small bonus for general movement variety
         baseScore += this.foodEaten * 200;
         baseScore += this.kills * 15;
 
@@ -824,26 +856,31 @@ export class Agent {
         }
 
         // 2. Efficiency and Exploration
-        const efficiency = this.distanceTravelled / (this.energySpent || 1);
+        // Only reward efficiency for agents that have actually moved and spent energy
+        let efficiency = 0;
+        if (this.energySpent > 50) { // Minimum energy threshold to avoid division issues
+            efficiency = Math.min(this.distanceTravelled / this.energySpent, 10.0); // Cap at 10x efficiency
+        }
         baseScore += efficiency * 15;
         baseScore += this.successfulEscapes * 75;
 
         // 3. Penalties (Applied to Base Score)
-        baseScore -= this.collisions * 100; // CRITICAL FIX: Increased from 15 to 100 to heavily discourage wall-hitting
+        baseScore -= this.timesHitObstacle * 150; // Heavy penalty for obstacle collisions
+        baseScore -= (this.collisions - this.timesHitObstacle) * 30; // Lighter penalty for wall hits
 
         // 4. Collision Avoidance Reward (NEW)
         // Reward agents that survive without hitting obstacles
-        const collisionFreeFrames = Math.max(0, this.framesAlive - (this.timesHitObstacle * 20));
-        if (collisionFreeFrames > 100) {
-            baseScore += (collisionFreeFrames / 100) * 5; // +5 per 100 frames without hitting
+        const obstacleFreeFrames = Math.max(0, this.framesAlive - (this.timesHitObstacle * 30));
+        if (obstacleFreeFrames > 200) {
+            baseScore += (obstacleFreeFrames / 200) * 25; // +25 per 200 frames without obstacle hits
         }
 
         // 5. Survival Multiplier (The most important factor)
         // This creates a positive feedback loop. A high base score is good,
         // but a high base score sustained over a long life is exponentially better.
-        // The multiplier starts at 1x and increases with age.
+        // The multiplier starts at 1x and increases with age, but is capped to prevent runaway fitness.
         // An agent living for 60 seconds (3600 frames) gets a 2x multiplier on its entire life's achievements.
-        const survivalMultiplier = 1 + (this.framesAlive / 3600);
+        const survivalMultiplier = Math.min(1 + (this.framesAlive / 3600), 4.0); // Cap at 4x maximum
 
         // Final fitness is the base score amplified by how long the agent survived.
         const finalFitness = baseScore * survivalMultiplier;
@@ -855,6 +892,45 @@ export class Agent {
         this.fitness = Math.max(0, finalFitness + rawSurvivalBonus);
 
         this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && this.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && this.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+    }
+
+    cleanup() {
+        // Reinitialize memory arrays to prevent undefined access errors
+        // Don't just clear them - reinitialize with proper structure
+        this.previousVelocities = Array(this.memoryFrames).fill(null).map(() => ({ vx: 0, vy: 0 }));
+        this.previousEnergies = Array(this.memoryFrames).fill(this.energy);
+        this.previousDanger = Array(this.memoryFrames).fill(0);
+        this.previousAggression = Array(this.memoryFrames).fill(0);
+        this.previousRayHits = Array(this.memoryFrames).fill(0);
+
+        // Clear working arrays
+        this.inputs.length = 0;
+        this.rayData.length = 0;
+
+        // Clear neural network results
+        this.lastInputs = null;
+        this.lastRayData = [];
+        this.lastOutput = null;
+        this.newHiddenState = null;
+
+        // Clear gene references to help GC
+        if (this.gene) {
+            this.gene.fatherWeights = null;
+        }
+        this.fatherWeights = null;
+
+        // Reset behavioral states
+        this.dangerSmell = 0;
+        this.attackSmell = 0;
+        this.hunger = 0;
+        this.fear = 0;
+        this.aggression = 0;
+        this.avgGroupSize = 0;
+
+        // Clear renderer references if they exist
+        if (this.rendererMesh) {
+            this.rendererMesh = null;
+        }
     }
 }
 

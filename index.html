@@ -15,6 +15,7 @@
         <span id="info-gen">Generation: 0</span>
         <span id="info-genepools">Gene Pools: 0</span>
         <span id="info-avg-e">Avg. Energy: 0</span>
+        <span id="info-memory">Memory: 0MB</span>
         <span id="info-fps">FPS: 0</span>
     </div>
     <div id="dashboard"
@@ -95,6 +96,24 @@
         <div style="margin-bottom: 10px;">
             <div><strong>Specializations:</strong></div>
             <div id="specialization-list" style="margin-left: 10px; font-size: 11px;"></div>
+        </div>
+
+        <!-- MEMORY MONITORING -->
+        <div
+            style="background: rgba(100,255,100,0.2); padding: 8px; border-radius: 3px; margin-bottom: 10px; border-left: 3px solid #66ff66;">
+            <div><strong style="color: #99ff99;">🧠 Memory Monitor</strong></div>
+            <div style="margin-left: 10px; margin-top: 5px;">
+                <div>Current Usage: <span id="current-memory" style="color: #0f0; font-weight: bold;">0MB</span></div>
+                <div>Peak Usage: <span id="peak-memory" style="color: #00ffff;">0MB</span></div>
+                <div>Growth Rate: <span id="memory-growth-rate">Stable</span></div>
+                <div id="entity-counts" style="font-size: 11px; margin-top: 3px; color: #ccc;">
+                    Agents: <strong>0</strong> | Food: <strong>0</strong> | Pheromones: <strong>0</strong> | DB Queue: <strong>0</strong>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 3px;">
+                    ⚠️ Rising memory indicates potential leaks<br>
+                    📊 DB Queue >50 = performance impact
+                </div>
+            </div>
         </div>
 
         <canvas id="fitness-chart" width="300" height="100"
