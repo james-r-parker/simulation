@@ -39,7 +39,6 @@ export class Simulation {
         this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
         this.camera = new Camera(this.worldWidth / 2, this.worldHeight / 2, 0.5); // Zoomed out slightly for wider 16:9 view
 
-        this.genePools = {}; // geneId -> array of top agents
         this.generation = 0;
         this.bestAgent = null;
         this.frameCount = 0;
@@ -185,7 +184,7 @@ export class Simulation {
 
         this.updateLoadingScreen('Loading gene pools...', 30);
         try {
-            await this.loadGenePools();
+            await this.db.loadAllGenePools();
         } catch (e) {
             this.logger.error("Gene pool loading failed:", e);
         }
@@ -402,15 +401,6 @@ export class Simulation {
         this.finalFoodSpawnMultiplier = this.foodSpawnRate * populationScaleFactor;
     }
 
-    async loadGenePools() {
-        try {
-            this.genePools = await this.db.loadAllGenePools();
-        } catch (e) {
-            this.logger.error("Failed to load gene pools:", e);
-            this.genePools = {};
-        }
-    }
-
     processDeadAgentQueue() {
         // Process dead agents in batches (non-blocking)
         if (this.deadAgentQueue.length === 0) return;
@@ -441,7 +431,7 @@ export class Simulation {
             const agentsByGene = {};
             this.agents.forEach(agent => {
                 // Filter: only save high-performing agents
-                if (!agent.isDead && agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL) {
+                if (!agent.isDead && agent.fit) {
                     if (!agentsByGene[agent.geneId]) {
                         agentsByGene[agent.geneId] = [];
                     }
@@ -482,10 +472,10 @@ export class Simulation {
         for (let i = 3; i < startingAgentCount; i++) {
             let gene = null;
             // Try to get weights from any gene pool
-            const geneIds = Object.keys(this.genePools);
+            const geneIds = Object.keys(this.db.pool);
             if (geneIds.length > 0) {
                 const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
-                const pool = this.genePools[randomGeneId];
+                const pool = this.db.pool[randomGeneId];
                 if (pool && pool.length > 0) {
                     gene = { weights: pool[Math.floor(Math.random() * pool.length)].weights };
                 }
@@ -589,7 +579,7 @@ export class Simulation {
     }
 
     selection(geneId) {
-        const pool = this.genePools[geneId];
+        const pool = this.db.pool[geneId];
         if (!pool || pool.length === 0) return null;
 
         // Sort by fitness once
@@ -652,7 +642,7 @@ export class Simulation {
                 let bestStoredFitness = -1;
 
                 // Find best agent in gene pools
-                for (const pool of Object.values(this.genePools)) {
+                for (const pool of Object.values(this.db.pool)) {
                     if (pool && pool.length > 0) {
                         // Pools are already sorted by fitness descending
                         const topInPool = pool[0];
@@ -683,7 +673,7 @@ export class Simulation {
             }
             // 45% chance for Sexual Selection (increased from 30%)
             else if (roll < 0.75) {
-                const geneIds = Object.keys(this.genePools);
+                const geneIds = Object.keys(this.db.pool);
                 if (geneIds.length > 0) {
                     const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
                     const childWeights = this.selection(randomGeneId);
@@ -704,9 +694,9 @@ export class Simulation {
             }
             // 5% chance for Novelty Spawning (NEW) - random specialization with moderate mutation
             else {
-                const randomGeneId = Object.keys(this.genePools)[Math.floor(Math.random() * Object.keys(this.genePools).length)];
+                const randomGeneId = Object.keys(this.db.pool)[Math.floor(Math.random() * Object.keys(this.db.pool).length)];
                 if (randomGeneId) {
-                    const pool = this.genePools[randomGeneId];
+                    const pool = this.db.pool[randomGeneId];
                     if (pool && pool.length > 0) {
                         const randomAgent = pool[Math.floor(Math.random() * pool.length)];
                         // Create a hybrid by forcing a different specialization
@@ -731,53 +721,7 @@ export class Simulation {
         this.spawnFood();
     }
 
-    calculateFitness(agent) {
-        let baseScore = 0;
-
-        // 1. Productive Actions (Contribute to Base Score)
-        baseScore += agent.offspring * 400; // Reduced from 600 to balance with other rewards
-        baseScore += agent.foodEaten * 200;
-        baseScore += agent.kills * 15;
-
-        if (agent.offspring > 0 && agent.foodEaten > 0) {
-            baseScore += (agent.offspring * agent.foodEaten) * 5;
-        }
-
-        // 2. Efficiency and Exploration
-        const efficiency = agent.distanceTravelled / (agent.energySpent || 1);
-        baseScore += efficiency * 15;
-        baseScore += agent.successfulEscapes * 75;
-
-        // 3. Penalties (Applied to Base Score)
-        baseScore -= agent.timesHitObstacle * 100; // CRITICAL FIX: Increased from 15 to 100 to heavily discourage wall-hitting
-
-        // 4. Collision Avoidance Reward (NEW)
-        // Reward agents that survive without hitting obstacles
-        const collisionFreeFrames = Math.max(0, agent.framesAlive - (agent.timesHitObstacle * 20));
-        if (collisionFreeFrames > 100) {
-            baseScore += (collisionFreeFrames / 100) * 5; // +5 per 100 frames without hitting
-        }
-
-        // 5. Survival Multiplier (The most important factor)
-        // This creates a positive feedback loop. A high base score is good,
-        // but a high base score sustained over a long life is exponentially better.
-        // The multiplier starts at 1x and increases with age.
-        // An agent living for 60 seconds (3600 frames) gets a 2x multiplier on its entire life's achievements.
-        const survivalMultiplier = 1 + (agent.framesAlive / 3600);
-
-        // Final fitness is the base score amplified by how long the agent survived.
-        const finalFitness = baseScore * survivalMultiplier;
-
-        // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        // Equivalent to age * 2 (where age is in seconds) -> (frames / 60) * 2 = frames / 30
-        const rawSurvivalBonus = agent.framesAlive / 30;
-
-        return Math.max(0, finalFitness + rawSurvivalBonus);
-    }
-
     async updateGenePools() {
-        // Calculate raw fitness
-        this.agents.forEach(a => a.fitness = this.calculateFitness(a));
 
         // Normalized fitness (relative to population)
         if (this.agents.length > 1) {
@@ -833,7 +777,7 @@ export class Simulation {
         this.agents.forEach(agent => {
             // Filter: only save agents with fitness >= 20 (was 50) and framesAlive >= 600 (10 seconds at 60 FPS)
             // FRAME-BASED to be independent of game speed
-            if (agent.fitness >= 20 && agent.framesAlive >= 600) {
+            if (agent.fit) {
                 if (!agentsByGene[agent.geneId]) {
                     agentsByGene[agent.geneId] = [];
                 }
@@ -845,7 +789,8 @@ export class Simulation {
             const sorted = geneAgents.sort((a, b) => b.fitness - a.fitness);
             // Save top 10 for this gene pool (increased from 3)
             if (sorted.length > 0) {
-                this.genePools[geneId] = sorted.slice(0, 10).map(a => ({
+                this.db.pool[geneId] = sorted.slice(0, 10).map(a => ({
+                    id: a.id,
                     weights: a.getWeights(),
                     fitness: a.fitness,
                     geneId: a.geneId,
@@ -853,7 +798,7 @@ export class Simulation {
                 }));
             } else {
                 // Prune gene pools with no qualifying agents
-                delete this.genePools[geneId];
+                delete this.db.pool[geneId];
             }
         }
 
@@ -871,7 +816,7 @@ export class Simulation {
         // Calculate metrics
         const bestFitness = this.bestAgent ? this.bestAgent.fitness : 0;
         const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
-        const genePoolCount = Object.keys(this.genePools).length;
+        const genePoolCount = Object.keys(this.db.pool).length;
 
         // Specialization distribution
         const specializationCounts = {};
@@ -1396,7 +1341,7 @@ export class Simulation {
             document.getElementById('info-best').innerText = `Best Agent: F: ${this.bestAgent.fitness.toFixed(0)}, A: ${this.bestAgent.framesAlive}f, O: ${this.bestAgent.offspring}, K: ${this.bestAgent.kills}, Fd: ${this.bestAgent.foodEaten}, C: ${this.bestAgent.collisions || 0}, RH: ${this.bestAgent.rayHits || 0}`;
         }
         document.getElementById('info-gen').innerText = `Generation: ${this.generation}`;
-        document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(this.genePools).length}`;
+        document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(this.db.pool).length}`;
         const avgEnergy = livingAgents.length > 0 ? livingAgents.reduce((acc, a) => acc + a.energy, 0) / livingAgents.length : 0;
         document.getElementById('info-avg-e').innerText = `Avg. Energy: ${avgEnergy.toFixed(0)} | Scarcity: ${this.foodScarcityFactor.toFixed(2)}`;
     }
@@ -1644,11 +1589,8 @@ export class Simulation {
                 // Process dead agents - queue qualifying ones for database save
                 for (let j = this.agents.length - 1; j >= 0; j--) {
                     const agent = this.agents[j];
-                    if (agent && agent.isDead) {
-                        // Check if agent qualifies for saving (fitness >= 50 and foodEaten >= 3)
-                        if (agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL) {
-                            this.deadAgentQueue.push(agent);
-                        }
+                    if (agent.isDead && agent.fit) {
+                        this.deadAgentQueue.push(agent);
                         this.agents.splice(j, 1);
                     }
                 }

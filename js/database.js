@@ -11,6 +11,7 @@ export class GenePoolDatabase {
         this.pendingRequests = new Map();
         this.saveQueue = []; // Queue for pending save operations
         this.isProcessingQueue = false;
+        this.pool = {};
     }
 
     async init() {
@@ -72,6 +73,7 @@ export class GenePoolDatabase {
             .sort((a, b) => b.fitness - a.fitness)
             .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL) // Increased from 3 to 10
             .map(a => ({
+                id: a.id,
                 weights: a.getWeights(),
                 fitness: a.fitness,
                 geneId: a.geneId,
@@ -117,6 +119,7 @@ export class GenePoolDatabase {
             .sort((a, b) => b.fitness - a.fitness)
             .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL)
             .map(a => ({
+                id: a.id,
                 weights: a.getWeights(),
                 fitness: a.fitness,
                 geneId: a.geneId,
@@ -143,12 +146,8 @@ export class GenePoolDatabase {
 
     async loadAllGenePools() {
         if (!this.worker) await this.init();
-
         this.logger.log('[DATABASE] Loading all gene pools...');
-        const allPools = await this.sendMessage('loadAllGenePools', {});
-        this.logger.log(`[DATABASE] Loaded ${Object.keys(allPools).length} gene pools from database.`);
-
-        return allPools;
+        this.pool = await this.sendMessage('loadAllGenePools', {});
     }
 
     async clearAll() {

@@ -13,9 +13,10 @@ import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
-    DIRECTION_CHANGE_FITNESS_FACTOR
+    DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL
 } from './constants.js';
-import { distance, randomGaussian, generateGeneId, geneIdToColor } from './utils.js';
+import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
 import { PheromonePuff } from './pheromone.js';
 
@@ -107,16 +108,15 @@ export class Agent {
         }
 
         this.birthTime = Date.now();
-        this.frameCount = 0;
         this.offspring = 0;
         this.childrenFromSplit = 0;
         this.childrenFromMate = 0;
         this.kills = 0;
         this.foodEaten = 0;
-        this.timesHitObstacle = 0;
         this.collisions = 0; // Total number of collisions detected
         this.rayHits = 0; // Total number of ray hits detected
         this.fitness = 0;
+        this.fit = false;
         this.isDead = false;
         this.wantsToReproduce = false;
         this.wantsToAttack = false;
@@ -127,6 +127,7 @@ export class Agent {
         this.newHiddenState = null;
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.distanceTravelled = 0;
+        this.directionChanged = 0;
         this.energySpent = 0;
         this.successfulEscapes = 0;
         this.lastX = x;
@@ -164,7 +165,8 @@ export class Agent {
         this.speedFactor = 2 + Math.random() * 3;
 
         // --- GENE ID SYSTEM (NEW) ---
-        this.geneId = this.gene.geneId || generateGeneId();
+        this.id = generateId(this.birthTime)
+        this.geneId = this.gene.geneId || generateGeneId(this.id);
         this.geneColor = geneIdToColor(this.geneId);
     }
 
@@ -224,7 +226,7 @@ export class Agent {
         this.vy += thrustY;
     }
 
-    update(worldWidth, worldHeight, obstacles, quadtree, simulation, newChildren) {
+    update(worldWidth, worldHeight, obstacles, quadtree) {
         if (this.isDead) return;
 
         // Check if GPU has already processed this agent's neural network
@@ -240,7 +242,7 @@ export class Agent {
             // In that case, we must run perception on the CPU.
             if (!this.lastInputs) {
                 if (this.framesAlive !== 0) {
-                    this.logger.warn(`[FALLBACK] Agent ${this.geneId} running unexpected CPU perception fallback.`, { frame: simulation.frameCount });
+                    this.logger.warn(`[FALLBACK] Agent ${this.geneId} running unexpected CPU perception fallback.`, { frame: this.simulation.frameCount });
                 }
                 const perception = this.perceiveWorld(quadtree, obstacles, worldWidth, worldHeight);
                 this.lastRayData = perception.rayData;
@@ -255,14 +257,13 @@ export class Agent {
 
         this.age = (Date.now() - this.birthTime) / 1000;
         this.framesAlive++;
-        this.frameCount++;
         if (this.reproductionCooldown > 0) this.reproductionCooldown--;
         if (this.isPregnant) {
             this.pregnancyTimer++;
             if (this.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
                 this.isPregnant = false;
                 this.pregnancyTimer = 0;
-                this.birthChild(simulation);
+                this.birthChild();
             }
         }
 
@@ -310,7 +311,7 @@ export class Agent {
 
         let energyLoss = sizeLoss + movementLoss;
 
-        if (this.frameCount > 1) {
+        if (this.framesAlive > 1) {
             energyLoss += passiveLoss;
         }
 
@@ -332,10 +333,6 @@ export class Agent {
         }
         // --- END ENERGY COSTS ---
 
-        // --- FITNESS REWARDS ---
-        // Survival reward: +0.1 per frame alive (~6 per second at 60fps)
-        this.fitness += 0.1;
-
         // Reward for changing direction (dodging/weaving)
         const prevVx = this.previousVelocities[1].vx;
         const prevVy = this.previousVelocities[1].vy;
@@ -349,7 +346,7 @@ export class Agent {
             let angleDiff = Math.abs(currAngle - prevAngle);
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
-            this.fitness += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+            this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
         }
 
         this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
@@ -357,7 +354,7 @@ export class Agent {
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---
         if (this.energy > this.maxEnergy * 0.95 && this.reproductionCooldown <= 0) {
-            this.split(simulation);
+            this.split();
         }
 
         if (this.energy <= 0) {
@@ -390,9 +387,7 @@ export class Agent {
         if (hitWall) {
             const energyLost = OBSTACLE_COLLISION_PENALTY / 4;  // Reduced from /2 to /4 for more forgiving wall hits
             this.energy -= energyLost;
-            this.fitness -= 5; // Penalty for hitting walls
             this.collisions++;
-            this.timesHitObstacle++; // Count wall hits
             // Wall collision logging disabled for performance
         }
 
@@ -417,15 +412,14 @@ export class Agent {
                 this.vy *= -dampen;
 
                 this.energy -= OBSTACLE_COLLISION_PENALTY;
-                this.fitness -= 10; // Larger penalty for obstacles
-                this.timesHitObstacle++;
                 this.collisions++;
                 // Obstacle collision logging disabled for performance
                 break; // Only handle first collision
             }
         }
 
-        this.emitPheromones(simulation);
+        this.emitPheromones();
+        this.calculateFitness();
     }
 
     perceiveWorld(quadtree, obstacles, worldWidth, worldHeight) {
@@ -689,7 +683,7 @@ export class Agent {
         return { inputs, rayData, nearbyAgents: [] }; // nearbyAgents not fully populated here, but that's ok for now.
     }
 
-    emitPheromones(simulation) {
+    emitPheromones() {
         // Update fear and aggression based on pheromone smells and state
         this.fear = Math.min(this.dangerSmell + (this.isLowEnergy() ? 0.6 : 0), 1);
         this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0), 1);
@@ -697,18 +691,18 @@ export class Agent {
 
         // Lower thresholds and higher spawn rates for more visible pheromones
         if (this.fear > 0.5 && Math.random() < 0.3) {
-            simulation.spawnPheromone(this.x, this.y, 'danger');
+            this.simulation.spawnPheromone(this.x, this.y, 'danger');
         }
         if (this.aggression > 0.5 && Math.random() < 0.3) {
-            simulation.spawnPheromone(this.x, this.y, 'attack');
+            this.simulation.spawnPheromone(this.x, this.y, 'attack');
         }
         // NEW: Add reproduction pheromone when wantsToReproduce
         if (this.wantsToReproduce && Math.random() < 0.2) {
-            simulation.spawnPheromone(this.x, this.y, 'reproduction');
+            this.simulation.spawnPheromone(this.x, this.y, 'reproduction');
         }
     }
 
-    tryMate(mate, simulation) {
+    tryMate(mate) {
         // FRAME-BASED maturation check (independent of game speed)
         const MATURATION_AGE_FRAMES = 900; // 15 seconds at 60 FPS
         if (this.framesAlive < MATURATION_AGE_FRAMES || mate.framesAlive < MATURATION_AGE_FRAMES) return false;
@@ -735,11 +729,10 @@ export class Agent {
 
         this.offspring++;
         this.childrenFromMate++;
-        this.fitness += 25; // Increased reward for successful reproduction
         return true;
     }
 
-    split(simulation) {
+    split() {
         this.logger.log(`[LIFECYCLE] Agent ${this.geneId} is splitting due to high energy.`);
 
         // Halve energy for parent and child
@@ -765,7 +758,7 @@ export class Agent {
         );
 
         // Mutate the clone slightly
-        child.nn.mutate(simulation.mutationRate * 0.5); // Lower mutation rate for clones
+        child.nn.mutate(this.simulation.mutationRate * 0.5); // Lower mutation rate for clones
 
         this.offspring++;
         this.childrenFromSplit++;
@@ -774,9 +767,9 @@ export class Agent {
         return child;
     }
 
-    birthChild(simulation) {
+    birthChild() {
         const parentWeights = this.getWeights();
-        const childWeights = simulation.crossover(parentWeights, this.fatherWeights);
+        const childWeights = this.simulation.crossover(parentWeights, this.fatherWeights);
 
         // Specialization inheritance with mutation chance (5% chance to change)
         let childSpecialization = this.specializationType;
@@ -803,7 +796,7 @@ export class Agent {
         );
 
         // Mutate neural network
-        child.nn.mutate(simulation.mutationRate);
+        child.nn.mutate(this.simulation.mutationRate);
 
         // Mutate inherited traits (preserved from original)
         child.speedFactor = Math.max(1, child.speedFactor + randomGaussian(0, 0.05));
@@ -815,6 +808,53 @@ export class Agent {
 
     isLowEnergy() {
         return this.energy < LOW_ENERGY_THRESHOLD;
+    }
+
+    calculateFitness() {
+        let baseScore = 0;
+
+        // 1. Productive Actions (Contribute to Base Score)
+        baseScore += this.offspring * 400; // Reduced from 600 to balance with other rewards
+        baseScore += this.directionChanged * 300;
+        baseScore += this.foodEaten * 200;
+        baseScore += this.kills * 15;
+
+        if (this.offspring > 0 && this.foodEaten > 0) {
+            baseScore += (this.offspring * this.foodEaten) * 5;
+        }
+
+        // 2. Efficiency and Exploration
+        const efficiency = this.distanceTravelled / (this.energySpent || 1);
+        baseScore += efficiency * 15;
+        baseScore += this.successfulEscapes * 75;
+
+        // 3. Penalties (Applied to Base Score)
+        baseScore -= this.collisions * 100; // CRITICAL FIX: Increased from 15 to 100 to heavily discourage wall-hitting
+
+        // 4. Collision Avoidance Reward (NEW)
+        // Reward agents that survive without hitting obstacles
+        const collisionFreeFrames = Math.max(0, this.framesAlive - (this.timesHitObstacle * 20));
+        if (collisionFreeFrames > 100) {
+            baseScore += (collisionFreeFrames / 100) * 5; // +5 per 100 frames without hitting
+        }
+
+        // 5. Survival Multiplier (The most important factor)
+        // This creates a positive feedback loop. A high base score is good,
+        // but a high base score sustained over a long life is exponentially better.
+        // The multiplier starts at 1x and increases with age.
+        // An agent living for 60 seconds (3600 frames) gets a 2x multiplier on its entire life's achievements.
+        const survivalMultiplier = 1 + (this.framesAlive / 3600);
+
+        // Final fitness is the base score amplified by how long the agent survived.
+        const finalFitness = baseScore * survivalMultiplier;
+
+        // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
+        // Equivalent to age * 2 (where age is in seconds) -> (frames / 60) * 2 = frames / 30
+        const rawSurvivalBonus = this.framesAlive / 30;
+
+        this.fitness = Math.max(0, finalFitness + rawSurvivalBonus);
+
+        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && this.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && this.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
     }
 }
 

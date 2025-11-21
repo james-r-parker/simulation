@@ -105,8 +105,11 @@ export function randomGaussian(mean = 0, stdDev = 1) {
 }
 
 // Generate unique gene ID
-export function generateGeneId() {
-    return 'gene_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+export function generateId(now) {
+    return Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+}
+export function generateGeneId(id) {
+    return 'gene_' + id;
 }
 
 // Hash gene ID to HSL color (consistent coloring)

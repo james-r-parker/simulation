@@ -67,6 +67,8 @@ export const SPECIALIZATION_TYPES = {
 export const MIN_FITNESS_TO_SAVE_GENE_POOL = 2500;
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 600;
+
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
 
 // Agent specialization configurations
