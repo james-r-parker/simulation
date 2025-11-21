@@ -24,6 +24,7 @@ export class GenePoolDatabase {
                     const pending = this.pendingRequests.get(id);
 
                     if (pending) {
+                        if (pending.timeoutId) clearTimeout(pending.timeoutId);
                         this.pendingRequests.delete(id);
                         if (success) {
                             pending.resolve(result);
@@ -60,13 +61,29 @@ export class GenePoolDatabase {
     sendMessage(action, payload) {
         return new Promise((resolve, reject) => {
             const id = this.messageId++;
-            this.pendingRequests.set(id, { resolve, reject });
+
+            // Add 5 second timeout
+            const timeoutId = setTimeout(() => {
+                if (this.pendingRequests.has(id)) {
+                    this.pendingRequests.delete(id);
+                    reject(new Error(`Worker request '${action}' timed out after 5000ms`));
+                }
+            }, 5000);
+
+            this.pendingRequests.set(id, { resolve, reject, timeoutId });
             this.worker.postMessage({ id, action, payload });
         });
     }
 
     // Queue a save operation (non-blocking)
     queueSaveGenePool(geneId, agents) {
+        // Prevent queue from growing indefinitely
+        if (this.saveQueue.length >= 50) {
+            // Drop new requests if queue is full to preserve memory
+            // This is preferable to crashing the simulation
+            return;
+        }
+
         // Prepare agent data (convert to plain objects)
         // First filter for agents that meet minimum quality criteria (this.fit is true)
         const qualifiedAgents = agents.filter(a => a.geneId === geneId && a.fit);
@@ -100,6 +117,11 @@ export class GenePoolDatabase {
     queueSaveAgent(agent) {
         // Only save agents that meet minimum criteria
         if (!agent.fit) return;
+
+        // Prevent queue from growing indefinitely
+        if (this.saveQueue.length >= 50) {
+            return;
+        }
 
         // Add agent to queue
         this.saveQueue.push({

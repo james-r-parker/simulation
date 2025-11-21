@@ -1,7 +1,7 @@
 // --- SIMULATION ENTITIES CONSTANTS (BALANCING) ---
 // ALL VALUES PRESERVED EXACTLY FROM ORIGINAL
 
-export const BASE_SIZE = 5;
+export const BASE_SIZE = 10; // Increased from 5 to ensure agents are never smaller than food (size 8)
 export const ENERGY_TO_SIZE_RATIO = 100;
 export const MAX_ENERGY = 2500; // Increased to allow more growth
 export const MIN_ENERGY_TO_REPRODUCE = 250;

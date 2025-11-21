@@ -431,6 +431,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             const mappedRange = gpuReadBuffer.getMappedRange();
             const resultData = new Float32Array(mappedRange.slice(0)); // Create a copy
             gpuReadBuffer.unmap(); // Now we can unmap immediately
+            gpuReadBuffer.destroy(); // CRITICAL FIX: Destroy buffer to prevent memory leak
 
             // More robust NaN check on the copied data
             for (let i = 0; i < resultData.length; i++) {

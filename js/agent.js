@@ -150,6 +150,19 @@ export class Agent {
         this.queryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate query range
         this.smellRadius = new Rectangle(0, 0, 0, 0); // Pre-allocate smell radius
 
+        // Pre-allocate rayData objects to avoid garbage generation
+        const maxTotalRays = this.numSensorRays + this.numAlignmentRays;
+        for (let i = 0; i < maxTotalRays; i++) {
+            this.rayData.push({
+                angle: 0,
+                dist: 0,
+                hit: false,
+                type: '',
+                hitType: '',
+                hitTypeValue: 0
+            });
+        }
+
         // --- RNN State ---
         //this.hiddenState = new Array(this.hiddenSize).fill(0);
 
@@ -445,9 +458,10 @@ export class Agent {
 
         // Reuse pre-allocated arrays
         this.inputs.length = 0;
-        this.rayData.length = 0;
+        // rayData is pre-allocated, so we don't clear it, we just overwrite
         const inputs = this.inputs;
         const rayData = this.rayData;
+        let rayDataIndex = 0;
 
         const maxRayDist = this.maxRayDist;
         const numSensorRays = this.numSensorRays;
@@ -569,10 +583,23 @@ export class Agent {
             }
             inputs.push(...hitTypeArray);
 
-            rayData.push({
-                angle, dist: closestDist, hit: isHit, type: 'sensor',
-                hitType: hitTypeName, hitTypeValue: hitType
-            });
+            // OPTIMIZED: Reuse rayData object
+            if (rayDataIndex < rayData.length) {
+                const ray = rayData[rayDataIndex++];
+                ray.angle = angle;
+                ray.dist = closestDist;
+                ray.hit = isHit;
+                ray.type = 'sensor';
+                ray.hitType = hitTypeName;
+                ray.hitTypeValue = hitType;
+            } else {
+                // Fallback if needed
+                rayData.push({
+                    angle, dist: closestDist, hit: isHit, type: 'sensor',
+                    hitType: hitTypeName, hitTypeValue: hitType
+                });
+                rayDataIndex++;
+            }
         }
 
         // Process alignment rays (no hitType, just distance)
@@ -628,10 +655,22 @@ export class Agent {
             const normalizedDist = 1.0 - (Math.min(closestDist, maxRayDist) / maxRayDist);
             inputs.push(normalizedDist);
 
-            rayData.push({
-                angle, dist: closestDist, hit: isHit, type: 'alignment',
-                hitType: isHit ? 'alignment' : 'none'
-            });
+            // OPTIMIZED: Reuse rayData object
+            if (rayDataIndex < rayData.length) {
+                const ray = rayData[rayDataIndex++];
+                ray.angle = angle;
+                ray.dist = closestDist;
+                ray.hit = isHit;
+                ray.type = 'alignment';
+                ray.hitType = isHit ? 'alignment' : 'none';
+                // hitTypeValue not needed for alignment
+            } else {
+                rayData.push({
+                    angle, dist: closestDist, hit: isHit, type: 'alignment',
+                    hitType: isHit ? 'alignment' : 'none'
+                });
+                rayDataIndex++;
+            }
         }
 
         let dangerSmell = 0;

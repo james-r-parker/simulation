@@ -658,7 +658,7 @@ export class Simulation {
                 const randomGeneId = Object.keys(this.db.pool)[Math.floor(Math.random() * Object.keys(this.db.pool).length)];
                 if (randomGeneId) {
                     const gene = this.db.getRandomAgent(randomGeneId);
-                    if(gene) {
+                    if (gene) {
                         const allTypes = Object.values(SPECIALIZATION_TYPES);
                         const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
                         this.spawnAgent({ gene: { weights: gene.weights, specializationType: novelSpecialization }, mutationRate: this.mutationRate });
@@ -931,8 +931,13 @@ export class Simulation {
             const agent = gpuAgents[agentIdx];
             if (!agent) continue;
 
-            const inputs = [];
-            const rayData = [];
+            // Reuse pre-allocated arrays from Agent
+            agent.inputs.length = 0;
+            // agent.rayData is pre-allocated, so we don't clear it, we just overwrite
+            const inputs = agent.inputs;
+            const rayData = agent.rayData;
+            let rayDataIndex = 0;
+
             // Use this agent's specific number of rays, but cap it at the max the GPU can handle
             const numSensorRays = agent.numSensorRays;
             const numAlignmentRays = agent.numAlignmentRays;
@@ -942,7 +947,7 @@ export class Simulation {
             if (numSensorRays === 0) {
                 // Agent might have 0 rays by design, give it default inputs
                 agent.lastInputs = [0, 0, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 0];
-                agent.lastRayData = [];
+                // Don't clear lastRayData if we want to reuse it, but here it's a fallback
                 continue;
             }
 
@@ -1014,14 +1019,27 @@ export class Simulation {
 
                 const angle = agent.angle + (rayIdx - numSensorRays / 2) * sensorAngleStep;
 
-                rayData.push({
-                    angle,
-                    dist: distance,
-                    hit: isHit,
-                    type: 'sensor',
-                    hitType: hitTypeName,
-                    hitTypeValue: hitType
-                });
+                // OPTIMIZED: Reuse rayData object
+                if (rayDataIndex < rayData.length) {
+                    const ray = rayData[rayDataIndex++];
+                    ray.angle = angle;
+                    ray.dist = distance;
+                    ray.hit = isHit;
+                    ray.type = 'sensor';
+                    ray.hitType = hitTypeName;
+                    ray.hitTypeValue = hitType;
+                } else {
+                    // Fallback if needed
+                    rayData.push({
+                        angle,
+                        dist: distance,
+                        hit: isHit,
+                        type: 'sensor',
+                        hitType: hitTypeName,
+                        hitTypeValue: hitType
+                    });
+                    rayDataIndex++;
+                }
             }
 
             // --- Process alignment rays (simplified - just add normalized distances) ---
@@ -1033,14 +1051,36 @@ export class Simulation {
                 inputs.push(0.5);
 
                 const angle = agent.angle + (rayIdx - numAlignmentRays / 2) * (TWO_PI / numAlignmentRays);
-                rayData.push({
-                    angle,
-                    dist: maxRayDist * 0.5, // Approximate mid-range
-                    hit: false,
-                    type: 'alignment',
-                    hitType: 'none'
-                });
+
+                // OPTIMIZED: Reuse rayData object for alignment rays too
+                if (rayDataIndex < rayData.length) {
+                    const ray = rayData[rayDataIndex++];
+                    ray.angle = angle;
+                    ray.dist = maxRayDist * 0.5; // Approximate mid-range
+                    ray.hit = false;
+                    ray.type = 'alignment';
+                    ray.hitType = 'none';
+                } else {
+                    rayData.push({
+                        angle,
+                        dist: maxRayDist * 0.5, // Approximate mid-range
+                        hit: false,
+                        type: 'alignment',
+                        hitType: 'none'
+                    });
+                    rayDataIndex++;
+                }
             }
+
+            // CRITICAL: Trim rayData to the actual number of rays used
+            // This prevents stale data from previous frames if the number of rays decreased
+            if (rayData.length > rayDataIndex) {
+                rayData.length = rayDataIndex;
+            }
+
+            // Update references
+            agent.lastInputs = inputs;
+            agent.lastRayData = rayData;
 
             // --- Add other inputs (pheromones, energy, etc.) ---
             // Detect pheromones using quadtree proximity search
@@ -1372,7 +1412,7 @@ export class Simulation {
         }
         if (entityCountsEl) {
             const dbQueueColor = this.entityCounts.dbQueue > 50 ? '#ff6b6b' :
-                                this.entityCounts.dbQueue > 20 ? '#ffd43b' : '#ccc';
+                this.entityCounts.dbQueue > 20 ? '#ffd43b' : '#ccc';
             entityCountsEl.innerHTML = `
                 Agents: <strong>${this.entityCounts.agents}</strong> |
                 Food: <strong>${this.entityCounts.food}</strong> |
@@ -1490,13 +1530,16 @@ export class Simulation {
         // Clear any accumulated ray data in agents (defensive cleanup)
         for (const agent of this.agents) {
             if (agent && !agent.isDead) {
-                // Clear accumulated ray data that might be building up
+                // REMOVED: Defensive cleanup of rayData conflicts with object pooling in Agent.js
+                // Agent.js now pre-allocates and reuses rayData objects, so we must NOT clear the array here.
+                /*
                 if (agent.rayData && agent.rayData.length > 100) {
                     agent.rayData.length = 0;
                 }
                 if (agent.lastRayData && agent.lastRayData.length > 100) {
                     agent.lastRayData.length = 0;
                 }
+                */
             }
         }
 
@@ -1564,10 +1607,13 @@ export class Simulation {
 
         // Dispose old quadtree and rebuild (needed for spatial queries, but expensive)
         // Only rebuild once per frame, not per gameSpeed iteration
-        if (this.quadtree) {
-            this.quadtree.dispose();
+        // Dispose old quadtree and rebuild (needed for spatial queries, but expensive)
+        // Only rebuild once per frame, not per gameSpeed iteration
+        if (!this.quadtree) {
+            this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
+        } else {
+            this.quadtree.clear();
         }
-        this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
 
         // OPTIMIZED: Use for loops instead of spread/filter for better performance
         const numAgents = this.agents.length;
@@ -1614,11 +1660,8 @@ export class Simulation {
 
             // OPTIMIZED: Rebuild quadtree less frequently - only every 5 iterations or on last iteration
             if (i % 5 === 0 || i === iterations - 1) {
-                // Dispose old quadtree before rebuilding
-                if (this.quadtree) {
-                    this.quadtree.dispose();
-                }
-                this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
+                // Reuse quadtree structure
+                this.quadtree.clear();
                 // Only insert non-dead entities - use actual lengths, not cached
                 for (let j = 0; j < this.agents.length; j++) {
                     const agent = this.agents[j];
