@@ -9,11 +9,11 @@ export class NeuralNetwork {
         this.hiddenSize = hiddenSize;
         this.outputSize = outputSize;
 
-        if (weights && weights.weights1.length === inputSize) {
+        if (weights && weights.weights1.length === inputSize + hiddenSize) {
             this.weights1 = this.copyMatrix(weights.weights1);
             this.weights2 = this.copyMatrix(weights.weights2);
         } else {
-            this.weights1 = this.initRandomWeights(inputSize, hiddenSize);
+            this.weights1 = this.initRandomWeights(inputSize + hiddenSize, hiddenSize);
             this.weights2 = this.initRandomWeights(hiddenSize, outputSize);
         }
     }

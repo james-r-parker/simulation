@@ -40,6 +40,7 @@
         <span id="info-genepools">Gene Pools: 0</span>
         <span id="info-avg-e">Avg. Energy: 0</span>
         <span id="info-memory">Memory: 0MB</span>
+        <span id="info-runtime">Runtime: 0s</span>
         <span id="info-fps">FPS: 0</span>
     </div>
     <!-- Sidebar Toggle Button -->
@@ -59,8 +60,8 @@
             <div class="metric-card critical">
                 <div class="card-header">📊 Survival & Performance</div>
                 <div class="card-body">
-                    <div>Avg Age: <strong id="avg-age" class="highlight-yellow">0</strong>f <span
-                            class="sub-text">(Target: 600f+)</span></div>
+                    <div>Avg Age: <strong id="avg-age" class="highlight-yellow">0</strong>s <span
+                            class="sub-text">(Target: 60s+)</span></div>
                     <div>Mature Agents (≥900f): <span id="mature-agents" class="highlight-green">0</span> / <span
                             id="total-agents">0</span></div>
                     <div>Maturation Rate: <span id="maturation-rate" class="bold">0</span>%</div>
@@ -99,6 +100,7 @@
                     <div>Stored Gene Pools: <span id="gene-pool-value">0</span></div>
                     <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span class="sub-text">(F≥20,
                             600f+)</span></div>
+                    <div>Validation Queue: <span id="validation-queue-value">0</span> <span class="sub-text">(pending re-test)</span></div>
                     <div>Mutation Rate: <span id="mutation-rate-value">0</span></div>
                 </div>
             </div>
@@ -155,7 +157,8 @@
                 value="1.0"></label>
         <label for="mutationRate">Mutation Rate: <input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01"
                 value="0.1"></label>
-        <button id="clearStorage">Clear Gene Pool</button>
+        <button id="copyStats" title="Copy Stats">📋</button>
+        <button id="clearStorage" title="Clear Gene Pool">🗑️</button>
     </div>
     <div id="canvas-container"></div>
 

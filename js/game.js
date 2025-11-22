@@ -8,6 +8,7 @@ import {
     SPECIALIZATION_TYPES, // Added for novelty spawning
     RESPAWN_DELAY_FRAMES, MAX_ENERGY,
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
+    VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI
 } from './constants.js';
 import { Agent } from './agent.js';
@@ -28,14 +29,14 @@ import {
     updateInfo, updateDashboard, resize
 } from './ui.js';
 import {
-    updateMemoryStats, periodicMemoryCleanup
+    updateMemoryStats, handleMemoryPressure, periodicMemoryCleanup
 } from './memory.js';
 import {
     generateObstacles, updateFoodScalingFactor, spawnAgent,
     spawnFood, spawnPheromone, repopulate, randomSpawnAvoidCluster
 } from './spawn.js';
 import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
-import { updateGenePools } from './gene.js';
+import { updateFitnessTracking, updatePeriodicValidation } from './gene.js';
 
 export class Simulation {
     constructor(container) {
@@ -100,7 +101,13 @@ export class Simulation {
 
         // Dead agent queue for background database saving
         this.deadAgentQueue = [];
+
+        // Validation queue for multi-run testing of promising agents
+        this.validationQueue = new Map(); // geneId -> {agent: agent, attempts: number, scores: []}
         this.lastPeriodicSave = Date.now();
+
+        // Track simulation start time for runtime calculation
+        this.startTime = Date.now();
 
         this.seasonTimer = 0;
         this.foodScarcityFactor = 1.0;
@@ -275,6 +282,101 @@ export class Simulation {
 
 
 
+
+    addToValidationQueue(agent, isPeriodicValidation = false) {
+        const geneId = agent.geneId;
+
+        if (!this.validationQueue.has(geneId)) {
+            this.validationQueue.set(geneId, {
+                geneId: geneId,
+                attempts: 0,
+                scores: [],
+                lastValidationTime: 0,
+                isValidated: false,
+                weights: agent.getWeights(), // Store weights directly to avoid agent reference issues
+                specializationType: agent.specializationType || 'forager'
+            });
+            console.log(`[VALIDATION] 🆕 ${geneId} (ID: ${agent.id}) entered validation system`);
+        }
+
+        const validationEntry = this.validationQueue.get(geneId);
+
+        // Prevent duplicate validations within short time window
+        const now = Date.now();
+        if (now - validationEntry.lastValidationTime < 5000) { // 5 second cooldown
+            return;
+        }
+        validationEntry.lastValidationTime = now;
+
+        validationEntry.attempts++;
+        validationEntry.scores.push(agent.fitness);
+
+        // Enhanced logging for validation runs
+        const currentFitness = agent.fitness;
+        const source = isPeriodicValidation ? 'periodic' : 'death';
+        const runNumber = validationEntry.attempts;
+
+        console.log(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
+
+        // Check if agent has completed required validation runs
+        if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS && !validationEntry.isValidated) {
+            const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
+            const bestScore = Math.max(...validationEntry.scores);
+
+            console.log(`[VALIDATION] ${geneId} validation complete:`);
+            validationEntry.scores.forEach((score, index) => {
+                const status = score === bestScore ? '🏆 BEST' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅ PASS' : '❌ LOW';
+                console.log(`  ├── Run ${index + 1}: ${score.toFixed(1)} ${status}`);
+            });
+            console.log(`  └── Average: ${avgScore.toFixed(1)} | Required: ${VALIDATION_FITNESS_THRESHOLD}`);
+
+            if (avgScore >= VALIDATION_FITNESS_THRESHOLD) {
+                // Agent passed validation - add to gene pool
+                validationEntry.isValidated = true;
+                console.log(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION → Gene Pool (avg: ${avgScore.toFixed(1)})`);
+
+                // Create a validation record to save (use stored validation data)
+                const validationRecord = {
+                    id: `${geneId}_${Date.now()}`, // Generate unique ID for validated agent
+                    geneId: validationEntry.geneId,
+                    fitness: avgScore, // Use average score
+                    weights: validationEntry.weights, // Use stored weights
+                    specializationType: validationEntry.specializationType,
+                    getWeights: () => validationEntry.weights // Return stored weights
+                };
+                this.deadAgentQueue.push(validationRecord);
+            } else {
+                // Agent failed validation - mark as failed
+                console.log(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (avg: ${avgScore.toFixed(1)} < ${VALIDATION_FITNESS_THRESHOLD})`);
+                validationEntry.isValidated = false;
+            }
+        } else if (!validationEntry.isValidated) {
+            // Still in progress
+            const progress = `${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS}`;
+            console.log(`[VALIDATION] ${geneId} progress: ${progress} runs completed`);
+        }
+
+        // Clean up validated entries after some time
+        if (validationEntry.isValidated && validationEntry.attempts > VALIDATION_REQUIRED_RUNS + 2) {
+            console.log(`[VALIDATION] 🧹 Cleaned up validated agent ${geneId} from queue (completed validation)`);
+            this.validationQueue.delete(geneId);
+        }
+
+        // Limit queue size
+        if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
+            // Remove oldest non-validated entries first
+            const entries = Array.from(this.validationQueue.entries());
+            const toRemove = entries
+                .filter(([_, entry]) => !entry.isValidated)
+                .sort(([_, a], [__, b]) => a.lastValidationTime - b.lastValidationTime)
+                .slice(0, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE);
+
+            toRemove.forEach(([geneId, entry]) => {
+                console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                this.validationQueue.delete(geneId);
+            });
+        }
+    }
 
     processDeadAgentQueue() {
         // Process dead agents in batches (non-blocking)
@@ -570,6 +672,7 @@ export class Simulation {
                     gpuNeuralNetSucceeded = true;
                 } catch (error) {
                     // GPU failed, agents will use CPU in update()
+                    console.error('[GPU ERROR] Neural network processing failed:', error);
                 }
             }
 
@@ -609,11 +712,27 @@ export class Simulation {
             // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
             // This also reduces the number of array operations
             if (i === iterations - 1) {
-                // Process dead agents - queue qualifying ones for database save
+                // Process dead agents - queue qualifying ones for database save, remove all dead agents
                 for (let j = this.agents.length - 1; j >= 0; j--) {
                     const agent = this.agents[j];
-                    if (agent.isDead && agent.fit) {
-                        this.deadAgentQueue.push(agent);
+                    if (agent.isDead) {
+                        // Handle promising agents with validation queue system
+                        if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
+                            console.log(`[VALIDATION] 💀 Death: Adding deceased agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
+                            this.addToValidationQueue(agent);
+                        } else if (agent.fit) {
+                            // Directly add proven agents to gene pool
+                            this.deadAgentQueue.push(agent);
+                        } else {
+                            // Check if this agent was in validation queue (failed validation)
+                            if (this.validationQueue.has(agent.geneId)) {
+                                const validationEntry = this.validationQueue.get(agent.geneId);
+                                console.log(`[VALIDATION] 💥 Validation agent ${agent.geneId} died without meeting requirements (fitness: ${agent.fitness.toFixed(1)}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                                // Remove from validation queue since it failed
+                                this.validationQueue.delete(agent.geneId);
+                            }
+                        }
+                        // Remove ALL dead agents from active array to prevent memory leaks
                         this.agents.splice(j, 1);
                     }
                 }
@@ -639,9 +758,13 @@ export class Simulation {
             if (i === iterations - 1) {
                 this.frameCount++;
                 // Update memory stats every 60 frames (1 second at 60 FPS) without UI update
-                if (this.frameCount % 60 === 0) updateMemoryStats(this, false);
+                if (this.frameCount % 60 === 0) {
+                    updateMemoryStats(this, false);
+                    handleMemoryPressure(this);
+                }
                 if (this.frameCount % 100 === 0) updateInfo(this);
-                if (this.frameCount % 500 === 0) updateGenePools(this);
+                // Periodic validation checks - add high-performing agents to validation queue
+                if (this.frameCount % 500 === 0) updatePeriodicValidation(this);
                 // Update dashboard more frequently for better real-time feedback
                 if (this.frameCount % 30 === 0) updateDashboard(this);
                 // Periodic comprehensive memory cleanup every 1000 frames (~16 seconds at 60 FPS)

@@ -200,6 +200,7 @@ export class GenePoolDatabase {
         // Wait for all saves to complete
         await Promise.allSettled(promises);
 
+
         this.isProcessingQueue = false;
     }
 

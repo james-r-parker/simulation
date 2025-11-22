@@ -198,18 +198,22 @@ input[type="checkbox"]:checked::after {
 
 /* Buttons */
 button {
-    padding: 8px 20px;
+    padding: 8px 12px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
     border-radius: 6px;
     color: var(--text-main);
     font-family: inherit;
-    font-size: 12px;
+    font-size: 16px; /* Larger for emoji visibility */
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 button:hover {
@@ -233,10 +237,10 @@ button:hover {
 
 .sidebar {
     position: fixed;
-    top: 0;
+    top: 60px; /* Start below the info-bar */
     right: 0;
+    bottom: 80px; /* Leave space for controls */
     width: 340px;
-    height: 100vh;
     background: rgba(10, 10, 18, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -281,7 +285,7 @@ button:hover {
 /* Sidebar Toggle */
 .sidebar-toggle {
     position: fixed;
-    top: 20px;
+    top: 80px; /* Move down to account for info-bar */
     right: 20px;
     z-index: 1100;
     width: 40px;

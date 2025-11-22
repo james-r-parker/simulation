@@ -3,7 +3,7 @@
 
 export const BASE_SIZE = 10; // Increased from 5 to ensure agents are never smaller than food (size 8)
 export const ENERGY_TO_SIZE_RATIO = 100;
-export const MAX_ENERGY = 2500; // Increased to allow more growth
+export const MAX_ENERGY = 10000; // Increased to allow more growth
 export const MIN_ENERGY_TO_REPRODUCE = 250;
 export const REPRODUCE_COST_BASE = 15;
 export const CHILD_STARTING_ENERGY = 700; // CRITICAL FIX: Increased to 700 to ensure survival long enough to find food (was 150→400→700)
@@ -15,13 +15,13 @@ export const PREGNANCY_DURATION_FRAMES = 60 * 8;
 export const RESPAWN_DELAY_FRAMES = 0;
 
 export const OBESITY_THRESHOLD_ENERGY = 350;
-export const OBESITY_ENERGY_TAX_DIVISOR = 500;
+export const OBESITY_ENERGY_TAX_DIVISOR = 1000; // Reduced tax to be less punishing
 
 export const MAX_THRUST = 0.5;
 export const MAX_ROTATION = 0.1;
 export const MAX_VELOCITY = 10;
 export const SPRINT_BONUS_THRUST = 0.5;
-export const SPRINT_COST_PER_FRAME = 0.25; // Reduced from 0.4 to encourage sprinting away from danger
+export const SPRINT_COST_PER_FRAME = 0.05; // CRITICAL FIX: Reduced from 0.25 to prevent energy starvation
 export const SPRINT_THRESHOLD = 0.9;
 export const FEAR_SPRINT_BONUS = 0.5;
 
@@ -37,19 +37,25 @@ export const FOOD_SPAWN_CAP = 2000; // Increased to 2000 for smaller world (8x d
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
 export const DAMPENING_FACTOR = 0.95;
 
-export const ROTATION_COST_MULTIPLIER = 0.3; // Reduced from 0.5 to encourage turning and exploration
-export const DIRECTION_CHANGE_FITNESS_FACTOR = 0.1; // Reward for changing trajectory
+export const ROTATION_COST_MULTIPLIER = 0.05; // CRITICAL FIX: Reduced from 0.3 to prevent spinning agents from starving
+export const DIRECTION_CHANGE_FITNESS_FACTOR = 0.5; // Increased to heavily reward dynamic movement over lucky circles
 
 // --- MATH CONSTANTS ---
 export const TWO_PI = Math.PI * 2;
 
 // --- NEW ENERGY BALANCE FIXES ---
 export const PASSIVE_LOSS = 0.000001; // CRITICAL FIX: Halved to extend lifespan
-export const MOVEMENT_COST_MULTIPLIER = 0.002; // CRITICAL FIX: Halved to enable exploration (was 72% of energy drain)
+export const MOVEMENT_COST_MULTIPLIER = 0.001; // CRITICAL FIX: Reduced further to enable exploration
 
 // World size - 16:9 aspect ratio to fit 1440p monitors
 export const WORLD_WIDTH = 14400;
 export const WORLD_HEIGHT = 8100;
+
+// Exploration grid for tracking map coverage
+export const EXPLORATION_GRID_WIDTH = 72;  // 200px per cell
+export const EXPLORATION_GRID_HEIGHT = 40; // 202.5px per cell (close enough)
+export const EXPLORATION_CELL_WIDTH = WORLD_WIDTH / EXPLORATION_GRID_WIDTH;
+export const EXPLORATION_CELL_HEIGHT = WORLD_HEIGHT / EXPLORATION_GRID_HEIGHT;
 
 // Low energy threshold for red border (visual only)
 export const LOW_ENERGY_THRESHOLD = 100;
@@ -64,12 +70,17 @@ export const SPECIALIZATION_TYPES = {
 };
 
 // --- GENE POOL CONSTANTS ---
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 6000;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 15000; // Increased to be more selective now that fitness calculation is fixed
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3;
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 600;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 8; // Increased to require more food consumption
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1800; // Increased to 30 seconds (was 10 seconds)
 
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
+
+// Validation queue constants
+export const VALIDATION_REQUIRED_RUNS = 3; // Number of successful runs required
+export const VALIDATION_FITNESS_THRESHOLD = 12000; // Minimum fitness to enter validation
+export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents in validation queue
 
 // --- VISUAL CONSTANTS ---
 export const COLORS = {
@@ -87,7 +98,8 @@ export const COLORS = {
         DEFENDER: 0xFF6600 // Neon Orange
     },
     RAYS: {
-        DEFAULT: 0x00FFFF, // Cyan
+        DEFAULT: 0x00FFFF, // Cyan (for hits)
+        NO_HIT: 0x666666, // Dull gray for rays that hit nothing
         ALIGNMENT: 0xFFFF00, // Neon Yellow
         FOOD: 0x39FF14, // Neon Green
         SMALLER: 0xCCFF00, // Neon Lime

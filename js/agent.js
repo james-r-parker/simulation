@@ -14,7 +14,8 @@ import {
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
-    MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL
+    MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -131,6 +132,10 @@ export class Agent {
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.distanceTravelled = 0;
         this.directionChanged = 0;
+        this.speedChanged = 0; // Track speed variation to reward dynamic movement
+        this.consecutiveTurns = 0; // Track consecutive turns in same direction (penalize circles)
+        this.lastTurnDirection = 0; // Track direction of last significant turn
+        this.exploredCells = new Set(); // Track unique grid cells visited for exploration percentage
         this.cleverTurns = 0; // Direction changes in response to threats/opportunities
         this.energySpent = 0;
         this.successfulEscapes = 0;
@@ -194,8 +199,24 @@ export class Agent {
 
     think(inputs) {
         // CPU path - compute neural network forward pass
+
+        // Validate inputs
+        if (!Array.isArray(inputs) || inputs.length === 0) {
+            console.error(`[ERROR] Invalid neural network inputs for agent ${this.geneId}:`, inputs);
+            inputs = new Array(16).fill(0.5); // Fallback inputs
+        }
+
+        // Validate hidden state
+        if (!Array.isArray(this.hiddenState) || this.hiddenState.length === 0) {
+            console.error(`[ERROR] Invalid hidden state for agent ${this.geneId}:`, this.hiddenState);
+            this.hiddenState = new Array(this.hiddenSize).fill(0); // Reset hidden state
+        }
+
+
         const result = this.nn.forward(inputs, this.hiddenState);
         this.hiddenState = result.hiddenState;
+
+
         this.thinkFromOutput(result.output);
     }
 
@@ -215,9 +236,16 @@ export class Agent {
         this.wantsToReproduce = output[3] > 0.8;
         this.wantsToAttack = output[4] > 0.8;
 
+
         // --- MOVEMENT CALCULATIONS ---
         const geneticMaxThrust = MAX_THRUST * this.speedFactor;
         let desiredThrust = thrustOutput * geneticMaxThrust;
+
+        // CRITICAL FIX: Minimum movement guarantee to prevent agents from starving due to zero thrust
+        if (desiredThrust < 0.01) {
+            desiredThrust = 0.01; // Minimum thrust to ensure some movement
+        }
+
         let sprintThreshold = SPRINT_THRESHOLD;
 
         // --- FIGHT/FLIGHT MODIFIERS ---
@@ -227,7 +255,7 @@ export class Agent {
             if (this.dangerSmell > 0.5) this.successfulEscapes++;
         }
 
-        if (this.isSprinting = (sprintOutput > sprintThreshold)) {
+        if ((this.isSprinting = (sprintOutput > sprintThreshold))) {
             desiredThrust += SPRINT_BONUS_THRUST;
         }
 
@@ -237,11 +265,19 @@ export class Agent {
         this.currentRotation = Math.abs(rotationChange); // Store for cost calculation
 
         // Apply thrust in the direction of the angle
-        const thrustX = Math.cos(this.angle) * desiredThrust;
-        const thrustY = Math.sin(this.angle) * desiredThrust;
+        let finalThrustX = Math.cos(this.angle) * desiredThrust;
+        let finalThrustY = Math.sin(this.angle) * desiredThrust;
 
-        this.vx += thrustX;
-        this.vy += thrustY;
+        // TEMP: Add minimum random movement to ensure agents explore
+        if (Math.abs(finalThrustX) < 0.01 && Math.abs(finalThrustY) < 0.01) {
+            // Add small random thrust if neural network produces no movement
+            finalThrustX = (Math.random() - 0.5) * 0.1;
+            finalThrustY = (Math.random() - 0.5) * 0.1;
+        }
+
+
+        this.vx += finalThrustX;
+        this.vy += finalThrustY;
     }
 
     update(worldWidth, worldHeight, obstacles, quadtree) {
@@ -322,6 +358,12 @@ export class Agent {
 
         this.distanceTravelled += distance(this.lastX, this.lastY, this.x, this.y);
 
+        // Track exploration - mark current grid cell as visited
+        const gridX = Math.floor(this.x / EXPLORATION_CELL_WIDTH);
+        const gridY = Math.floor(this.y / EXPLORATION_CELL_HEIGHT);
+        const cellKey = `${gridX},${gridY}`;
+        this.exploredCells.add(cellKey);
+
         // --- ENERGY COSTS ---
         const passiveLoss = PASSIVE_LOSS;
         const sizeLoss = (this.size * 0.00025);
@@ -368,6 +410,27 @@ export class Agent {
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
             this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+
+            // Track speed changes to reward dynamic movement (not constant speed circles)
+            const prevSpeed = Math.sqrt(prevVx * prevVx + prevVy * prevVy);
+            const currSpeed = Math.sqrt(currVx * currVx + currVy * currVy);
+            const speedDiff = Math.abs(currSpeed - prevSpeed);
+            if (speedDiff > 0.05) { // Lower threshold for speed changes
+                this.speedChanged += speedDiff * 2.0; // Increased reward for speed variation
+            }
+
+            // Detect circular movement patterns (consecutive turns in same direction)
+            const turnDirection = Math.sign(angleDiff > 0.1 ? currAngle - prevAngle : 0);
+            if (Math.abs(angleDiff) > 0.2) { // Significant turn
+                if (turnDirection === Math.sign(this.lastTurnDirection || 0)) {
+                    this.consecutiveTurns++;
+                } else {
+                    this.consecutiveTurns = 1; // Reset on direction change
+                }
+                this.lastTurnDirection = turnDirection;
+            } else {
+                this.consecutiveTurns = Math.max(0, this.consecutiveTurns - 0.1); // Decay over time
+            }
 
             // Track "clever turns" - significant direction changes in response to environment
             if (angleDiff > 0.3) { // Only count meaningful turns (about 17 degrees)
@@ -747,6 +810,11 @@ export class Agent {
 
         this.lastRayData = rayData;
 
+        // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
+        if (this.simulation.agents && this.simulation.agents[0] === this && this.rayHits > 0 && this.framesAlive % 1200 === 0) {
+            console.log(`[DEBUG] Ray tracing active: ${this.rayHits}/${this.numSensorRays + this.numAlignmentRays} rays hitting objects`);
+        }
+
         return { inputs, rayData, nearbyAgents: [] }; // nearbyAgents not fully populated here, but that's ok for now.
     }
 
@@ -802,6 +870,7 @@ export class Agent {
     split() {
         this.logger.log(`[LIFECYCLE] Agent ${this.geneId} is splitting due to high energy.`);
 
+
         // Halve energy for parent and child
         const childEnergy = this.energy / 2;
         this.energy /= 2;
@@ -838,6 +907,7 @@ export class Agent {
         const parentWeights = this.getWeights();
         const childWeights = crossover(parentWeights, this.fatherWeights);
 
+
         // Specialization inheritance with mutation chance (5% chance to change)
         let childSpecialization = this.specializationType;
         if (Math.random() < 0.05) {
@@ -856,7 +926,7 @@ export class Agent {
             childGene,
             this.x + randomGaussian(0, 5),
             this.y + randomGaussian(0, 5),
-            childEnergy,
+            CHILD_STARTING_ENERGY,
             this.logger,
             null,
             this.simulation
@@ -883,14 +953,21 @@ export class Agent {
     }
 
     calculateFitness() {
+        // Calculate exploration percentage
+        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+        const explorationPercentage = (this.exploredCells.size / totalCells) * 100;
+
         let baseScore = 0;
 
+
         // 1. Productive Actions (Contribute to Base Score)
-        baseScore += this.offspring * 400; // Reduced from 600 to balance with other rewards
-        baseScore += this.cleverTurns * 300; // Reward intelligent maneuvering (smell + vision)
-        baseScore += this.directionChanged * 50; // Small bonus for general movement variety
-        baseScore += this.foodEaten * 100; // Reduced from 200 to balance with kill reward
-        baseScore += this.kills * 500; // Increased from 15 to 500 to make predation viable
+        baseScore += this.offspring * 50; // Heavily reduced to prevent inflation
+        baseScore += this.cleverTurns * 30; // Reduced to prevent inflation
+        baseScore += Math.min(this.directionChanged, 500) * 2; // Further reduced and capped lower
+        baseScore += Math.min(this.speedChanged, 200) * 1; // Further reduced and capped lower
+        baseScore += explorationPercentage * 10; // Reduced from 50 to prevent inflation
+        baseScore += this.foodEaten * 20; // Heavily reduced from 100
+        baseScore += this.kills * 100; // Reduced from 500
 
         if (this.offspring > 0 && this.foodEaten > 0) {
             baseScore += (this.offspring * this.foodEaten) * 5;
@@ -903,11 +980,16 @@ export class Agent {
             efficiency = Math.min(this.distanceTravelled / this.energySpent, 10.0); // Cap at 10x efficiency
         }
         baseScore += efficiency * 15;
+
+        // 3. Penalize repetitive circular movement (lucky food finding)
+        const circlePenalty = Math.min(this.consecutiveTurns * 20, 2000); // Increased penalty for circular movement
+        baseScore -= circlePenalty;
         baseScore += this.successfulEscapes * 75;
 
         // 3. Penalties (Applied to Base Score)
-        baseScore -= this.timesHitObstacle * 150; // Heavy penalty for obstacle collisions
-        baseScore -= (this.collisions - this.timesHitObstacle) * 30; // Lighter penalty for wall hits
+        baseScore -= circlePenalty; // Apply circular movement penalty
+        baseScore -= this.timesHitObstacle * 30; // Reduced penalty for obstacle collisions
+        baseScore -= (this.collisions - this.timesHitObstacle) * 10; // Reduced penalty for wall hits
 
         // 4. Collision Avoidance Reward (NEW)
         // Reward agents that survive without hitting obstacles
@@ -931,7 +1013,6 @@ export class Agent {
         const rawSurvivalBonus = this.framesAlive / 30;
 
         this.fitness = Math.max(0, finalFitness + rawSurvivalBonus);
-
         this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && this.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && this.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
     }
 
@@ -947,6 +1028,7 @@ export class Agent {
         // Clear working arrays
         this.inputs.length = 0;
         this.rayData.length = 0;
+        this.exploredCells.clear(); // Reset exploration tracking
 
         // Clear neural network results
         this.lastInputs = null;

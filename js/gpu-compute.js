@@ -618,4 +618,23 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     isAvailable() {
         return this.useGPU && this.initialized;
     }
+
+    clearCache() {
+        // Clear GPU resource caches to free memory
+        this.pipelines.clear();
+        this.weightCache.clear();
+
+        // Properly dispose of all cached buffers
+        for (const buffers of this.bufferCache.values()) {
+            if (buffers.uniforms) buffers.uniforms.destroy();
+            if (buffers.inputs) buffers.inputs.destroy();
+            if (buffers.weights1) buffers.weights1.destroy();
+            if (buffers.weights2) buffers.weights2.destroy();
+            if (buffers.outputs) buffers.outputs.destroy();
+            if (buffers.newHiddenStates) buffers.newHiddenStates.destroy();
+        }
+        this.bufferCache.clear();
+
+        this.logger.log('GPUCompute buffers disposed and cache cleared');
+    }
 }

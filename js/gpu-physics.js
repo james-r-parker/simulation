@@ -455,5 +455,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     isAvailable() {
         return !!this.device;
     }
+
+    clearCache() {
+        // Clear GPU buffers to free memory
+        if (this.buffers) {
+            // Properly dispose of WebGPU buffers
+            if (this.buffers.uniforms) this.buffers.uniforms.destroy();
+            if (this.buffers.agent) this.buffers.agent.destroy();
+            if (this.buffers.entity) this.buffers.entity.destroy();
+            if (this.buffers.obstacle) this.buffers.obstacle.destroy();
+            if (this.buffers.result) this.buffers.result.destroy();
+
+            this.buffers = null;
+            this.logger.log('GPUPhysics buffers disposed and cleared');
+        }
+    }
 }
 

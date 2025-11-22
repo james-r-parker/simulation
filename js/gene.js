@@ -1,19 +1,55 @@
 // Gene-related functions moved from game.js
 
-import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL } from './constants.js';
+import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, VALIDATION_FITNESS_THRESHOLD, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL } from './constants.js';
 import { updateDashboard } from './ui.js';
 
 export function crossover(weightsA, weightsB) {
     const crossoverMatrix = (a, b) => {
-        const rows = a.length, cols = a[0].length;
-        const splitRow = Math.floor(Math.random() * rows);
+        // Validate that both matrices are proper 2D arrays
+        if (!Array.isArray(a) || !Array.isArray(b) ||
+            a.length === 0 || b.length === 0 ||
+            !Array.isArray(a[0]) || !Array.isArray(b[0])) {
+            console.error('[GENE] Invalid matrix structure:', { a: a, b: b });
+            // Return a copy of matrix a as fallback
+            return a.map(row => Array.isArray(row) ? [...row] : []);
+        }
+
+        const rowsA = a.length, colsA = a[0].length;
+        const rowsB = b.length, colsB = b[0].length;
+
+        // Ensure matrices have compatible dimensions
+        if (rowsA !== rowsB || colsA !== colsB) {
+            console.error('[GENE] Matrix dimension mismatch:', { rowsA, colsA, rowsB, colsB });
+            // Return a copy of matrix a as fallback
+            return a.map(row => [...row]);
+        }
+
+        const splitRow = Math.floor(Math.random() * rowsA);
         const newMatrix = [];
-        for (let i = 0; i < rows; i++) {
-            if (i < splitRow) newMatrix.push([...a[i]]);
-            else newMatrix.push([...b[i]]);
+        for (let i = 0; i < rowsA; i++) {
+            try {
+                if (i < splitRow) {
+                    newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
+                } else {
+                    newMatrix.push(Array.isArray(b[i]) ? [...b[i]] : []);
+                }
+            } catch (error) {
+                console.error('[GENE] Error during crossover at row', i, ':', error);
+                // Fallback: use matrix a for this row
+                newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
+            }
         }
         return newMatrix;
     };
+
+    // Validate that both weight objects have the required structure
+    if (!weightsA || !weightsB ||
+        !weightsA.weights1 || !weightsA.weights2 ||
+        !weightsB.weights1 || !weightsB.weights2) {
+        console.error('[GENE] Invalid weights structure:', { weightsA, weightsB });
+        // Return a fallback with empty weights - the neural network will initialize randomly
+        return { weights1: [], weights2: [] };
+    }
 
     return {
         weights1: crossoverMatrix(weightsA.weights1, weightsB.weights1),
@@ -21,9 +57,10 @@ export function crossover(weightsA, weightsB) {
     };
 }
 
-export function updateGenePools(simulation) {
+export function updateFitnessTracking(simulation) {
+    // UI and fitness tracking only - no gene pool saving (handled by validation system)
 
-    // Normalized fitness (relative to population)
+    // Normalized fitness (relative to population) for UI display
     if (simulation.agents.length > 1) {
         const fitnesses = simulation.agents.map(a => a.fitness);
         const mean = fitnesses.reduce((a, b) => a + b, 0) / fitnesses.length;
@@ -70,28 +107,37 @@ export function updateGenePools(simulation) {
             simulation.mutationRate = Math.max(0.05, Math.min(0.15, simulation.mutationRate)); // Clamp to narrower range (5%-15%)
         }
     }
+}
 
-    // Update gene pools (top 10 per gene ID)
-    // CRITICAL FIX: Lower threshold from 50 to 20, remove foodEaten requirement, increase pool size to 10
-    const agentsByGene = {};
+export function updatePeriodicValidation(simulation) {
+    // Add high-performing living agents to validation queue (periodic validation)
+    // This gives long-lived successful agents a chance to enter validation without dying
+
     simulation.agents.forEach(agent => {
-        // Filter: only save agents with fitness >= 20 (was 50) and framesAlive >= 600 (10 seconds at 60 FPS)
-        // FRAME-BASED to be independent of game speed
-        if (agent.fit) {
-            if (!agentsByGene[agent.geneId]) {
-                agentsByGene[agent.geneId] = [];
-            }
-            agentsByGene[agent.geneId].push(agent);
+        // Check if agent is performing well and not already in validation
+        if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD &&
+            agent.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
+            !simulation.validationQueue.has(agent.geneId)) {
+
+            // Add to validation queue (periodic validation)
+            console.log(`[VALIDATION] 📊 Periodic check: Adding living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
+            simulation.addToValidationQueue(agent, true);
+
+            console.log(`[VALIDATION] Added living agent ${agent.geneId} to validation queue (fitness: ${agent.fitness.toFixed(1)})`);
         }
     });
 
-    // Queue all qualifying agents for saving (database will handle grouping and pool management)
-    for (const geneAgents of Object.values(agentsByGene)) {
-        for (const agent of geneAgents) {
-            simulation.db.queueSaveAgent(agent);
-        }
-    }
+    // Call fitness tracking (UI updates, best agent selection, adaptive mutation)
+    updateFitnessTracking(simulation);
 
     // Update dashboard every generation for better visibility
     updateDashboard(simulation);
+}
+
+export function updateGenePools(simulation) {
+    // DISABLED: Gene pool saving now handled by validation queue system
+    // This function now only does fitness tracking for UI purposes
+
+    // Call periodic validation (adds living agents to validation queue)
+    updatePeriodicValidation(simulation);
 }

@@ -80,6 +80,7 @@ export class WebGLRenderer {
         // Pre-calculate ray colors to avoid object creation in loop
         this.rayColors = {
             default: new THREE.Color(COLORS.RAYS.DEFAULT),
+            noHit: new THREE.Color(COLORS.RAYS.NO_HIT),
             alignment: new THREE.Color(COLORS.RAYS.ALIGNMENT),
             food: new THREE.Color(COLORS.RAYS.FOOD),
             smaller: new THREE.Color(COLORS.RAYS.SMALLER),
@@ -689,13 +690,14 @@ export class WebGLRenderer {
                 } else if (ray.hit) {
                     color = this.rayColors.larger; // Red
                 } else {
+                    // No hit - use dull gray color
+                    color = this.rayColors.noHit;
                     renderCounts.none++;
                 }
 
                 const r = color.r;
                 const g = color.g;
                 const b = color.b;
-                // If not hit, keep default cyan
 
                 // Apply to both start and end points
                 for (let i = 0; i < 2; i++) {

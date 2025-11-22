@@ -52,7 +52,6 @@ export function checkCollisions(simulation) {
                     agent.foodEaten++;
                     agent.fitness += 15; // Immediate fitness reward for food
                     other.isDead = true;
-                    // Food collision logging disabled for performance
                 } else if (other instanceof Agent) {
                     // Simple bump physics to prevent overlap
                     const overlap = combinedSize - Math.sqrt(distSq);

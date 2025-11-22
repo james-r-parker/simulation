@@ -3,7 +3,8 @@
 import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
-    SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY
+    SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
+    VALIDATION_REQUIRED_RUNS
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -150,6 +151,11 @@ export function spawnFood(simulation) {
 }
 
 export function spawnPheromone(simulation, x, y, type) {
+    // Safety check - don't spawn if simulation is null or invalid
+    if (!simulation || !simulation.pheromones || !Array.isArray(simulation.pheromones)) {
+        return;
+    }
+
     // Implement pheromone limits to prevent memory accumulation
     const MAX_PHEROMONES = 2000; // Maximum total pheromones
     const MAX_PHEROMONES_PER_TYPE = 500; // Maximum per pheromone type
@@ -201,6 +207,28 @@ export function repopulate(simulation) {
     const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, 10); // Cap at 10 per frame for performance
 
     for (let i = 0; i < agentsToSpawn; i++) {
+        // Priority 1: Use validation candidates if available
+        if (simulation.validationQueue.size > 0) {
+            // Get first validation candidate
+            const firstKey = simulation.validationQueue.keys().next().value;
+            const validationEntry = simulation.validationQueue.get(firstKey);
+
+            // Create agent with the candidate's genes for re-testing
+            const validationGene = {
+                weights: validationEntry.weights,
+                geneId: validationEntry.geneId,
+                specializationType: validationEntry.specializationType,
+                parent: null // No parent reference for validation spawns
+            };
+
+            console.log(`[VALIDATION] Respawning validation candidate ${firstKey} for test run ${validationEntry.attempts + 1}/3 (stored weights)`);
+            spawnAgent(simulation, { gene: validationGene, energy: INITIAL_AGENT_ENERGY });
+
+            // Remove from validation queue (will be re-added when this agent dies)
+            simulation.validationQueue.delete(firstKey);
+            continue;
+        }
+
         const roll = Math.random();
 
         // 30% chance for Elitism

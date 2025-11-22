@@ -8,7 +8,7 @@ export class Food {
         this.x = x; 
         this.y = y;
         this.isHighValue = isHighValue;
-        this.energyValue = isHighValue ? (100 + Math.random() * 20) : (40 + Math.random() * 10);
+        this.energyValue = isHighValue ? (200 + Math.random() * 50) : (80 + Math.random() * 20); // CRITICAL FIX: Doubled energy values to help agents survive
         this.size = isHighValue ? 12 : 8; // Larger to make food easier to see and detect with rays
         this.isFood = true; 
         this.isDead = false;
