@@ -3,6 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: '/', // Use relative paths for Cloudflare Pages
+  publicDir: 'public', // Explicitly set public directory
   server: {
     port: 5173,
     open: true, // Automatically open browser

@@ -18,7 +18,10 @@ export class GenePoolDatabase {
     async init() {
         return new Promise((resolve, reject) => {
             try {
-                this.worker = new Worker('./js/database-worker.js');
+                // Worker file is in public/ folder, served at root in both dev and production
+                // Files in public/ are automatically served at root by Vite
+                const workerPath = '/database-worker.js';
+                this.worker = new Worker(workerPath, { type: 'module' });
 
                 this.worker.onmessage = (e) => {
                     const { id, success, result, error } = e.data;

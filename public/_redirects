@@ -1,0 +1,11 @@
+# Cloudflare Pages redirects for SPA
+# Handle static assets and API routes
+/js/*  /js/:splat  200
+/css/* /css/:splat 200
+/assets/* /assets/:splat 200
+
+# Worker files must be served directly (not redirected to index.html)
+/database-worker.js /database-worker.js 200
+
+# Catch all other routes and serve index.html for SPA routing
+/*    /index.html   200

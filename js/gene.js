@@ -103,25 +103,49 @@ export function updateFitnessTracking(simulation) {
             // High mutation when stagnating, lower when improving
             // improvementRate > 0 means improving, < 0 means declining
             const stagnationFactor = Math.max(0, 1 - improvementRate * 2); // 0 to 1
-            simulation.mutationRate = simulation.baseMutationRate * (0.7 + stagnationFactor * 0.6); // 0.7x to 1.3x base rate (less aggressive)
-            simulation.mutationRate = Math.max(0.05, Math.min(0.15, simulation.mutationRate)); // Clamp to narrower range (5%-15%)
+            simulation.mutationRate = simulation.baseMutationRate * (0.8 + stagnationFactor * 0.4); // 0.8x to 1.2x base rate (more stable)
+            simulation.mutationRate = Math.max(0.06, Math.min(0.12, simulation.mutationRate)); // Clamp to stable range (6%-12%)
         }
     }
+}
+
+// Check if an agent has a validated ancestor in its lineage
+export function hasValidatedAncestor(agent, simulation) {
+    let currentGene = agent.gene;
+
+    // Walk up the parent chain (limit to 3 generations to avoid infinite loops)
+    for (let depth = 0; depth < 3 && currentGene; depth++) {
+        if (currentGene.geneId && simulation.validatedLineages.has(currentGene.geneId)) {
+            return true; // Found a validated ancestor
+        }
+        // Move to parent
+        currentGene = currentGene.parent;
+    }
+
+    return false; // No validated ancestors found
 }
 
 export function updatePeriodicValidation(simulation) {
     // Add high-performing living agents to validation queue (periodic validation)
     // This gives long-lived successful agents a chance to enter validation without dying
 
+    // Limit how many new validations we add per cycle (max 2 per periodic check)
+    let validationsAdded = 0;
+    const maxValidationsPerCycle = 2;
+
     simulation.agents.forEach(agent => {
         // Check if agent is performing well and not already in validation
         if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD &&
             agent.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
-            !simulation.validationQueue.has(agent.geneId)) {
+            !simulation.validationManager.isInValidation(agent.geneId) &&
+            !hasValidatedAncestor(agent, simulation) &&
+            !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
+            validationsAdded < maxValidationsPerCycle) {
 
             // Add to validation queue (periodic validation)
             console.log(`[VALIDATION] 📊 Periodic check: Adding living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
-            simulation.addToValidationQueue(agent, true);
+            simulation.validationManager.addToValidationQueue(agent, true);
+            validationsAdded++;
         }
     });
 
@@ -139,3 +163,4 @@ export function updateGenePools(simulation) {
     // Call periodic validation (adds living agents to validation queue)
     updatePeriodicValidation(simulation);
 }
+

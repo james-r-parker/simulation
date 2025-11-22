@@ -259,6 +259,54 @@ export function randomSpawnAvoidCluster(simulation) {
     return { x, y };
 }
 
+// Find a completely safe spawn position for validation agents
+function findSafeSpawnPosition(simulation) {
+    const worldWidth = simulation.worldWidth;
+    const worldHeight = simulation.worldHeight;
+    const agentSize = 20; // Minimum safe distance from obstacles/agents
+
+    for (let attempts = 0; attempts < 100; attempts++) {
+        const x = Math.random() * (worldWidth - 100) + 50; // Avoid edges
+        const y = Math.random() * (worldHeight - 100) + 50; // Avoid edges
+
+        // Check distance from all obstacles
+        let safeFromObstacles = true;
+        for (const obstacle of simulation.obstacles) {
+            const dx = x - obstacle.x;
+            const dy = y - obstacle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < obstacle.radius + agentSize + 50) { // Extra safety margin
+                safeFromObstacles = false;
+                break;
+            }
+        }
+
+        if (!safeFromObstacles) continue;
+
+        // Check distance from all agents
+        let safeFromAgents = true;
+        for (const agent of simulation.agents) {
+            if (!agent.isDead) {
+                const dx = x - agent.x;
+                const dy = y - agent.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < agent.diameter + agentSize + 30) { // Safe distance from other agents
+                    safeFromAgents = false;
+                    break;
+                }
+            }
+        }
+
+        if (safeFromAgents) {
+            return { x, y };
+        }
+    }
+
+    // Fallback: use regular spawn avoidance
+    console.warn('[VALIDATION] Could not find completely safe position, using fallback');
+    return randomSpawnAvoidCluster(simulation);
+}
+
 export function spawnAgent(simulation, options = {}) {
     const {
         gene = null,
@@ -266,7 +314,8 @@ export function spawnAgent(simulation, options = {}) {
         y,
         energy = INITIAL_AGENT_ENERGY,
         parent = null,
-        mutationRate = null
+        mutationRate = null,
+        isValidationAgent = false // Special handling for validation agents
     } = options;
 
     let startX, startY;
@@ -275,6 +324,11 @@ export function spawnAgent(simulation, options = {}) {
     if (x !== undefined && y !== undefined) {
         startX = x;
         startY = y;
+    } else if (isValidationAgent) {
+        // Validation agents get safer spawning - avoid all agents and obstacles
+        const pos = findSafeSpawnPosition(simulation);
+        startX = pos.x;
+        startY = pos.y;
     } else {
         const pos = randomSpawnAvoidCluster(simulation);
         startX = pos.x;
@@ -287,6 +341,7 @@ export function spawnAgent(simulation, options = {}) {
     }
 
     simulation.agentSpawnQueue.push(agent);
+    return agent; // Return the agent for tracking validation agents
 }
 
 export function spawnFood(simulation) {
@@ -365,37 +420,79 @@ export function repopulate(simulation) {
     simulation.respawnTimer++;
     if (simulation.respawnTimer < RESPAWN_DELAY_FRAMES) return;
 
+    // Check genetic diversity - force random spawning if diversity is critically low
+    const livingAgentList = simulation.agents.filter(a => !a.isDead);
+    const geneIds = livingAgentList.map(a => a.geneId);
+    const uniqueGeneIds = new Set(geneIds.filter(id => id)).size; // Filter out falsy values
+
     // Calculate how many agents to spawn to fill the population
-    const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, 10); // Cap at 10 per frame for performance
+    const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, 20); // Cap at 10 per frame for performance
 
     for (let i = 0; i < agentsToSpawn; i++) {
-        // Priority 1: Use validation candidates if available
-        if (simulation.validationQueue.size > 0) {
-            // Get first validation candidate
-            const firstKey = simulation.validationQueue.keys().next().value;
-            const validationEntry = simulation.validationQueue.get(firstKey);
-
-            // Create agent with the candidate's genes for re-testing
-            const validationGene = {
-                weights: validationEntry.weights,
-                geneId: validationEntry.geneId,
-                specializationType: validationEntry.specializationType,
-                parent: null // No parent reference for validation spawns
-            };
-
-            console.log(`[VALIDATION] Respawning validation candidate ${firstKey} for test run ${validationEntry.attempts + 1}/3 (stored weights)`);
-            // Give validation agents a slight energy boost to help them complete runs
-            spawnAgent(simulation, { gene: validationGene, energy: INITIAL_AGENT_ENERGY * 1.5 });
-
-            // Remove from validation queue (will be re-added when this agent dies)
-            simulation.validationQueue.delete(firstKey);
+        // Proactive diversity maintenance: always reserve some slots for random generation
+        const randomChance = Math.max(0.3, 0.8 - (uniqueGeneIds / simulation.maxAgents)); // 30-80% chance based on diversity
+        if (Math.random() < randomChance) {
+            // Random generation for diversity
+            spawnAgent(simulation, { gene: null });
             continue;
+        }
+
+        // Priority 1: Use validation candidates if available
+        if (simulation.validationManager.validationQueue.size > 0) {
+            // Find first non-active validation candidate
+            let firstKey = null;
+            for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+                if (!entry.isActiveTest) {
+                    firstKey = geneId;
+                    break;
+                }
+            }
+
+            if (!firstKey) {
+                //console.log(`[VALIDATION] All validation candidates are currently active - skipping validation spawn`);
+                // Skip to normal spawning
+            } else {
+                const validationEntry = simulation.validationManager.validationQueue.get(firstKey);
+
+                // Create agent with the candidate's genes for re-testing
+                const validationGene = {
+                    weights: validationEntry.weights,
+                    geneId: validationEntry.geneId,
+                    specializationType: validationEntry.specializationType,
+                    parent: null // No parent reference for validation spawns
+                };
+
+            // Limit active validation agents to prevent population domination (max 5% of population)
+            const maxValidationAgents = Math.max(1, Math.floor(simulation.maxAgents * 0.05));
+            if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
+                    //console.log(`[VALIDATION] Skipping validation spawn - ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents} active validation agents`);
+                    // Don't continue to next agent spawn - let normal population fill the gap
+                    break;
+                }
+
+                console.log(`[VALIDATION] Respawning validation candidate ${firstKey} for test run ${validationEntry.attempts + 1}/3 (stored weights)`);
+                // Give validation agents extra energy and safe spawning to ensure they can complete their runs
+                const validationAgent = spawnAgent(simulation, {
+                    gene: validationGene,
+                    energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
+                    isValidationAgent: true
+                });
+                if (validationAgent) {
+                    simulation.validationManager.activeValidationAgents++;
+                    console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+                }
+
+                // Mark as actively being tested to prevent duplicate spawns
+                validationEntry.isActiveTest = true;
+                console.log(`[VALIDATION] Marked ${firstKey} as active test (run ${validationEntry.attempts + 1})`);
+                continue;
+            }
         }
 
         const roll = Math.random();
 
-        // 30% chance for Elitism
-        if (roll < 0.3) {
+        // 25% chance for Elitism (from successful gene pool)
+        if (roll < 0.25) {
             const gene = simulation.db.getRandomAgent();
             if (gene) {
                 spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4 });
@@ -403,8 +500,8 @@ export function repopulate(simulation) {
                 spawnAgent(simulation, { gene: null });
             }
         }
-        // 45% chance for Sexual Selection (increased from 30%)
-        else if (roll < 0.75) {
+        // 25% chance for Sexual Selection (crossover from gene pool)
+        else if (roll < 0.5) {
             const matingPair = simulation.db.getMatingPair();
             if (matingPair) {
                 const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights);
@@ -414,11 +511,11 @@ export function repopulate(simulation) {
                 spawnAgent(simulation, { gene: null });
             }
         }
-        // 20% chance for Random Generation (increased from 10%)
-        else if (roll < 0.95) {
+        // 25% chance for Random Generation (fresh genetic material)
+        else if (roll < 0.75) {
             spawnAgent(simulation, { gene: null });
         }
-        // 5% chance for Novelty Spawning (NEW) - random specialization with moderate mutation
+        // 25% chance for Novelty Spawning (explore specializations)
         else {
             const parent = simulation.db.getRandomAgent();
             if (parent) {

@@ -37,7 +37,8 @@ import {
     updateObstacles
 } from './spawn.js';
 import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
-import { updateFitnessTracking, updatePeriodicValidation } from './gene.js';
+import { updateFitnessTracking, updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
+import { ValidationManager } from './validation.js';
 
 export class Simulation {
     constructor(container) {
@@ -94,7 +95,7 @@ export class Simulation {
 
         this.gameSpeed = 10;
         this.maxAgents = 100;
-        this.foodSpawnRate = 1.0;
+        this.foodSpawnRate = 1.2;
         this.mutationRate = 0.1;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation
         this.showRays = true;
@@ -104,8 +105,7 @@ export class Simulation {
         // Dead agent queue for background database saving
         this.deadAgentQueue = [];
 
-        // Validation queue for multi-run testing of promising agents
-        this.validationQueue = new Map(); // geneId -> {agent: agent, attempts: number, scores: []}
+        this.validatedLineages = new Set(); // Track gene lineages that have successfully validated
         this.lastPeriodicSave = Date.now();
 
         // Track simulation start time for runtime calculation
@@ -136,6 +136,9 @@ export class Simulation {
 
         // IndexedDB
         this.db = new GenePoolDatabase(this.logger);
+
+        // Validation system for multi-run testing of promising agents (initialized after db)
+        this.validationManager = new ValidationManager(this.logger, this.db);
 
         // --- Pre-allocated Memory for Performance ---
         this.activeAgents = []; // Pre-allocate active agents array
@@ -239,14 +242,14 @@ export class Simulation {
         try {
             const maxAgentsSlider = document.getElementById('maxAgents');
             const maxAgentsFromSlider = maxAgentsSlider ? parseInt(maxAgentsSlider.max, 10) : 100;
-            const bufferSafetyMargin = 20; // Allow for temporary population spikes from reproduction
+            const bufferSafetyMargin = 50; // Increased safety margin for population growth
 
             const MAX_RAYS_PER_AGENT = 50; // This must match the hardcoded value in the simulation
-            const MAX_ENTITIES = (maxAgentsFromSlider + bufferSafetyMargin) + FOOD_SPAWN_CAP + 100; // Agents + Food + safety buffer
-            const MAX_OBSTACLES = 300; // Each circular obstacle becomes 8 line segments, so 25 obstacles = 200 segments (with buffer)
+            const MAX_ENTITIES = (maxAgentsFromSlider + bufferSafetyMargin) * 2 + FOOD_SPAWN_CAP + 200; // Doubled agents + Food + larger safety buffer
+            const MAX_OBSTACLES = 600; // Increased for more complex environments
 
             const gpuConfig = {
-                maxAgents: maxAgentsFromSlider + bufferSafetyMargin,
+                maxAgents: (maxAgentsFromSlider + bufferSafetyMargin) * 2, // Double the agent buffer size
                 maxRaysPerAgent: MAX_RAYS_PER_AGENT,
                 maxEntities: MAX_ENTITIES,
                 maxObstacles: MAX_OBSTACLES,
@@ -301,110 +304,6 @@ export class Simulation {
 
 
 
-    addToValidationQueue(agent, isPeriodicValidation = false) {
-        const geneId = agent.geneId;
-
-        if (!this.validationQueue.has(geneId)) {
-            this.validationQueue.set(geneId, {
-                geneId: geneId,
-                attempts: 0,
-                scores: [],
-                lastValidationTime: 0,
-                isValidated: false,
-                weights: agent.getWeights(), // Store weights directly to avoid agent reference issues
-                specializationType: agent.specializationType || 'forager'
-            });
-            console.log(`[VALIDATION] 🆕 ${geneId} (ID: ${agent.id}) entered validation system`);
-        }
-
-        const validationEntry = this.validationQueue.get(geneId);
-
-        // Prevent duplicate validations within short time window
-        const currentTime = Date.now();
-        if (currentTime - validationEntry.lastValidationTime < 5000) { // 5 second cooldown
-            return;
-        }
-        validationEntry.lastValidationTime = currentTime;
-
-        validationEntry.attempts++;
-        validationEntry.scores.push(agent.fitness);
-
-        // Enhanced logging for validation runs
-        const currentFitness = agent.fitness;
-        const source = isPeriodicValidation ? 'periodic' : 'death';
-        const runNumber = validationEntry.attempts;
-
-        console.log(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
-
-        // Check if agent has completed required validation runs
-        if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS && !validationEntry.isValidated) {
-            const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
-            const bestScore = Math.max(...validationEntry.scores);
-
-            console.log(`[VALIDATION] ${geneId} validation complete:`);
-            validationEntry.scores.forEach((score, index) => {
-                const status = score === bestScore ? '🏆 BEST' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅ PASS' : '❌ LOW';
-                console.log(`  ├── Run ${index + 1}: ${score.toFixed(1)} ${status}`);
-            });
-            console.log(`  └── Average: ${avgScore.toFixed(1)} | Required: ${VALIDATION_FITNESS_THRESHOLD}`);
-
-            if (avgScore >= VALIDATION_FITNESS_THRESHOLD) {
-                // Agent passed validation - add to gene pool
-                validationEntry.isValidated = true;
-                console.log(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION → Gene Pool (avg: ${avgScore.toFixed(1)})`);
-
-                // Create a validation record to save (use stored validation data)
-                const validationRecord = {
-                    id: `${geneId}_${Date.now()}`, // Generate unique ID for validated agent
-                    geneId: validationEntry.geneId,
-                    fitness: avgScore, // Use average score
-                    weights: validationEntry.weights, // Use stored weights
-                    specializationType: validationEntry.specializationType,
-                    getWeights: () => validationEntry.weights // Return stored weights
-                };
-                this.deadAgentQueue.push(validationRecord);
-            } else {
-                // Agent failed validation - mark as failed
-                console.log(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (avg: ${avgScore.toFixed(1)} < ${VALIDATION_FITNESS_THRESHOLD})`);
-                validationEntry.isValidated = false;
-            }
-        } else if (!validationEntry.isValidated) {
-            // Still in progress
-            const progress = `${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS}`;
-            console.log(`[VALIDATION] ${geneId} progress: ${progress} runs completed`);
-        }
-
-        // Clean up validated entries after some time
-        if (validationEntry.isValidated && validationEntry.attempts > VALIDATION_REQUIRED_RUNS + 2) {
-            console.log(`[VALIDATION] 🧹 Cleaned up validated agent ${geneId} from queue (completed validation)`);
-            this.validationQueue.delete(geneId);
-        }
-
-        // Aggressive queue size management
-        if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
-            // Remove oldest non-validated entries first
-            const entries = Array.from(this.validationQueue.entries());
-            const toRemove = entries
-                .filter(([_, entry]) => !entry.isValidated)
-                .sort(([_, a], [__, b]) => a.lastValidationTime - b.lastValidationTime)
-                .slice(0, Math.min(10, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE)); // Remove up to 10 at a time
-
-            toRemove.forEach(([geneId, entry]) => {
-                console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
-                this.validationQueue.delete(geneId);
-            });
-        }
-
-        // Also clean up very old entries (5+ minutes since last validation attempt)
-        const currentTimestamp = Date.now();
-        const fiveMinutesAgo = currentTimestamp - (5 * 60 * 1000);
-        for (const [geneId, entry] of this.validationQueue.entries()) {
-            if (entry.lastValidationTime < fiveMinutesAgo && !entry.isValidated) {
-                console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (5+ minutes old)`);
-                this.validationQueue.delete(geneId);
-            }
-        }
-    }
 
     async requestWakeLock() {
         if (!('wakeLock' in navigator)) {
@@ -817,24 +716,31 @@ export class Simulation {
                 for (let j = this.agents.length - 1; j >= 0; j--) {
                     const agent = this.agents[j];
                     if (agent.isDead) {
-                        // Handle promising agents with validation queue system
-                        if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
+                        // Check if this agent was in validation queue first (highest priority)
+                        if (this.validationManager.isInValidation(agent.geneId)) {
+                            // Debug: Log validation agent death details
+                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive/60}s, Energy: ${agent.energy}, Fitness: ${agent.fitness}`);
+                            // Handle validation agent death
+                            this.validationManager.handleValidationDeath(agent, this.deadAgentQueue);
+                        } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
+                            // Handle promising agents with validation queue system
                             console.log(`[VALIDATION] 💀 Death: Adding deceased agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
-                            this.addToValidationQueue(agent);
+                            const result = this.validationManager.addToValidationQueue(agent, false);
+                            if (result === false) {
+                                // Agent was skipped (already in gene pool), add to dead queue
+                                this.deadAgentQueue.push(agent);
+                            }
                         } else if (agent.fit) {
                             // Directly add proven agents to gene pool
                             this.deadAgentQueue.push(agent);
-                        } else {
-                            // Check if this agent was in validation queue (failed validation)
-                            if (this.validationQueue.has(agent.geneId)) {
-                                const validationEntry = this.validationQueue.get(agent.geneId);
-                                console.log(`[VALIDATION] 💥 Validation agent ${agent.geneId} died without meeting requirements (fitness: ${agent.fitness.toFixed(1)}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
-                                // Remove from validation queue since it failed
-                                this.validationQueue.delete(agent.geneId);
-                            }
+                        } else if (hasValidatedAncestor(agent, this)) {
+                            // Children of validated agents get saved to gene pool automatically
+                            console.log(`[GENEPOOL] 👶 Auto-saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
+                            this.deadAgentQueue.push(agent);
                         }
                         // Remove ALL dead agents from active array to prevent memory leaks
                         this.agents.splice(j, 1);
+                        j--; // Adjust index since we removed an element
                     }
                 }
 
@@ -857,7 +763,7 @@ export class Simulation {
                         gpuPhysicsCache = 1; // Physics has buffers
                     }
 
-                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'}`);
+                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'}`);
                 }
                 // Remove dead food
                 for (let j = this.food.length - 1; j >= 0; j--) {
@@ -911,8 +817,17 @@ export class Simulation {
                 if (this.frameCount % 500 === 0) {
                     updatePeriodicValidation(this);
                     // Log validation queue status periodically
-                    if (this.validationQueue.size > 0) {
-                        console.log(`[VALIDATION] Queue status: ${this.validationQueue.size} agents pending validation`);
+                    if (this.validationManager.validationQueue.size > 0) {
+                        console.log(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
+                    }
+                    // Clean up validation queue
+                    this.validationManager.cleanupValidationQueue();
+
+                    // Resync active validation agents counter
+                    const actualValidationAgents = this.agents.filter(a => !a.isDead && this.validationManager.isInValidation(a.geneId)).length;
+                    if (actualValidationAgents !== this.validationManager.activeValidationAgents) {
+                        console.log(`[VALIDATION] Resyncing counter: ${this.validationManager.activeValidationAgents} → ${actualValidationAgents}`);
+                        this.validationManager.activeValidationAgents = actualValidationAgents;
                     }
                 }
                 // Update dashboard more frequently for better real-time feedback

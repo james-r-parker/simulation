@@ -3,6 +3,13 @@
 import { updateMemoryStats, handleMemoryPressure } from './memory.js';
 import { updateFoodScalingFactor } from './spawn.js';
 
+// Global variables for summarization feature
+let summarizer = null;
+let summaryInterval = null;
+let isFullscreenMode = false;
+let initialSummaryScheduled = false;
+let historicalSummaries = []; // Store last 10 summaries with timestamps
+
 export function updateLoadingScreen(status, progress) {
     const statusEl = document.getElementById('loading-status');
     const progressEl = document.getElementById('loading-progress-bar');
@@ -19,6 +26,291 @@ export function hideLoadingScreen() {
             loadingScreen.style.display = 'none';
         }, 500);
     }
+}
+
+// ============================================================================
+// FULLSCREEN SUMMARIZATION FEATURE
+// ============================================================================
+
+// Initialize summarizer for AI-powered summaries
+async function initializeSummarizer() {
+    if (!('Summarizer' in self)) {
+        console.log('[SUMMARIZER] ❌ Summarizer API not supported');
+        return null;
+    }
+
+    try {
+        const availability = await Summarizer.availability();
+        console.log('[SUMMARIZER] Availability check:', availability);
+
+        if (availability === 'unavailable') {
+            console.log('[SUMMARIZER] ❌ Summarizer not available');
+            return null;
+        }
+
+        const summarizerInstance = await Summarizer.create({
+            type: 'tldr',
+            length: 'medium',
+            format: 'plain-text',
+            sharedContext: 'This is a summary of real-time simulation statistics from an evolutionary AI simulation where autonomous agents learn to survive and evolve.',
+            monitor(m) {
+                m.addEventListener('downloadprogress', (e) => {
+                    console.log(`[SUMMARIZER] Downloaded ${e.loaded * 100}%`);
+                });
+            }
+        });
+
+        console.log('[SUMMARIZER] ✅ Summarizer initialized successfully');
+        return summarizerInstance;
+    } catch (error) {
+        console.error('[SUMMARIZER] Failed to initialize summarizer:', error);
+        return null;
+    }
+}
+
+// Start periodic summarization when entering fullscreen
+async function startPeriodicSummarization(simulation) {
+    console.log('[SUMMARIZER] 🚀 Starting periodic summarization');
+
+    // Initialize summarizer if not already done
+    if (!summarizer) {
+        summarizer = await initializeSummarizer();
+        if (!summarizer) {
+            console.log('[SUMMARIZER] ❌ Cannot start summarization - API not available');
+            return;
+        }
+    }
+
+    // Clear any existing interval
+    if (summaryInterval) {
+        clearInterval(summaryInterval);
+    }
+
+    // Start summarization every minute
+    summaryInterval = setInterval(async () => {
+        await generateAndDisplaySummary(simulation);
+    }, 60000); // 60 seconds
+
+    // Generate first summary immediately (only if not already scheduled)
+    if (!initialSummaryScheduled) {
+        initialSummaryScheduled = true;
+        setTimeout(() => {
+            generateAndDisplaySummary(simulation);
+            initialSummaryScheduled = false; // Reset after summary is generated
+        }, 1000);
+    }
+}
+
+// Stop periodic summarization
+function stopPeriodicSummarization() {
+    console.log('[SUMMARIZER] 🛑 Stopping periodic summarization');
+
+    if (summaryInterval) {
+        clearInterval(summaryInterval);
+        summaryInterval = null;
+    }
+
+    // Reset the initial summary flag
+    initialSummaryScheduled = false;
+
+    // Clear historical summaries when exiting fullscreen
+    historicalSummaries = [];
+}
+
+// Generate summary and display it with streaming effect
+async function generateAndDisplaySummary(simulation) {
+    if (!summarizer || !isFullscreenMode) {
+        return;
+    }
+
+    try {
+        // Get current simulation data
+        const currentStats = generateStatsDataForSummary(simulation);
+        const currentTimestamp = new Date().toISOString();
+
+        // Store current data in historical summaries (keep only last 10)
+        historicalSummaries.unshift({
+            timestamp: currentTimestamp,
+            data: currentStats
+        });
+        if (historicalSummaries.length > 10) {
+            historicalSummaries = historicalSummaries.slice(0, 10);
+        }
+
+        // Generate text for AI summarization including historical context
+        const contextText = generateHistoricalContextText();
+
+        console.log('[SUMMARIZER] 📊 Generating summary with historical context');
+
+        // Generate summary using Summarizer API with trend analysis
+        const summary = await summarizer.summarize(contextText, {
+            context: 'Analyze the trends and evolution in this evolutionary simulation over time. Compare current performance with historical data and identify patterns, improvements, or concerning trends in the agent population, fitness, reproduction, and behavior.'
+        });
+
+        console.log('[SUMMARIZER] 📝 Generated summary:', summary);
+
+        // Display summary with streaming effect
+        displayStreamingSummary(summary);
+
+    } catch (error) {
+        console.error('[SUMMARIZER] Failed to generate summary:', error);
+    }
+}
+
+// Extract the stats data generation logic from copySimulationStats
+function generateStatsDataForSummary(simulation) {
+    // Gather all current stats (same logic as copySimulationStats)
+    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    if (livingAgents.length === 0) {
+        return null;
+    }
+
+    // Calculate stats (same as updateDashboard)
+    const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
+    const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
+    const genePoolHealth = simulation.db.getGenePoolHealth();
+    const genePoolCount = genePoolHealth.genePoolCount;
+
+    const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
+    const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length;
+    const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
+    const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
+    const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
+
+    const MATURATION_SECONDS = 15;
+    const matureAgents = livingAgents.filter(a => a.age >= MATURATION_SECONDS).length;
+    const maturationRate = (matureAgents / livingAgents.length) * 100;
+
+    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
+    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
+
+    // Calculate simulation runtime
+    const runtimeMs = Date.now() - (simulation.startTime || Date.now());
+    const runtimeSeconds = Math.floor(runtimeMs / 1000);
+
+    let fitnessDelta = 0;
+    if (simulation.fitnessHistory.length >= 2) {
+        fitnessDelta = simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2];
+    }
+
+    // Return structured data for historical storage
+    return {
+        population: livingAgents.length,
+        generation: simulation.generation || 0,
+        bestFitness: bestFitness,
+        fitnessDelta: fitnessDelta,
+        avgFitness: avgFitness,
+        avgAge: avgAge,
+        maturationRate: maturationRate,
+        avgEnergy: avgEnergy,
+        totalSexualOffspring: totalSexualOffspring,
+        totalAsexualOffspring: totalAsexualOffspring,
+        geneIdCount: geneIdCount,
+        genePoolCount: genePoolCount,
+        runtimeSeconds: runtimeSeconds,
+        foodAvailable: simulation.food.length,
+        recentFitnessTrend: simulation.fitnessHistory.slice(-5)
+    };
+}
+
+// Generate historical context text for AI summarization
+function generateHistoricalContextText() {
+    if (historicalSummaries.length === 0) {
+        return 'No historical data available for analysis.';
+    }
+
+    let contextText = 'EVOLUTIONARY SIMULATION TREND ANALYSIS\n\n';
+
+    // Add current data first (most recent)
+    const current = historicalSummaries[0];
+    const currentTime = new Date(current.timestamp);
+    contextText += `CURRENT STATE (${currentTime.toLocaleTimeString()}):\n`;
+    contextText += `- Population: ${current.data.population} agents\n`;
+    contextText += `- Generation: ${current.data.generation}\n`;
+    contextText += `- Best Fitness: ${current.data.bestFitness.toFixed(0)} (Δ: ${current.data.fitnessDelta >= 0 ? '+' : ''}${current.data.fitnessDelta.toFixed(0)})\n`;
+    contextText += `- Average Fitness: ${current.data.avgFitness.toFixed(1)}\n`;
+    contextText += `- Average Age: ${current.data.avgAge.toFixed(1)}s, Maturation Rate: ${current.data.maturationRate.toFixed(1)}%\n`;
+    contextText += `- Reproduction: ${current.data.totalSexualOffspring} sexual, ${current.data.totalAsexualOffspring} asexual\n`;
+    contextText += `- Genetic Diversity: ${current.data.geneIdCount} active gene pools\n`;
+    contextText += `- Runtime: ${current.data.runtimeSeconds}s\n\n`;
+
+    // Add historical comparison data
+    if (historicalSummaries.length > 1) {
+        contextText += 'HISTORICAL COMPARISON:\n';
+
+        // Compare with 1 minute ago (if available)
+        if (historicalSummaries.length >= 2) {
+            const prev = historicalSummaries[1];
+            const timeDiff = (new Date(current.timestamp) - new Date(prev.timestamp)) / 1000 / 60; // minutes
+            contextText += `Compared to ${timeDiff.toFixed(1)} minutes ago:\n`;
+            contextText += `- Population change: ${current.data.population - prev.data.population >= 0 ? '+' : ''}${current.data.population - prev.data.population}\n`;
+            contextText += `- Fitness change: ${current.data.bestFitness - prev.data.bestFitness >= 0 ? '+' : ''}${(current.data.bestFitness - prev.data.bestFitness).toFixed(0)}\n`;
+            contextText += `- Generation progress: ${current.data.generation - prev.data.generation}\n\n`;
+        }
+
+        // Add trend data from last 10 entries
+        contextText += 'FITNESS TREND OVER TIME:\n';
+        historicalSummaries.slice(0, 10).forEach((entry, index) => {
+            const time = new Date(entry.timestamp).toLocaleTimeString();
+            contextText += `${index === 0 ? 'NOW' : `${index}min ago`}: Gen ${entry.data.generation}, Best ${entry.data.bestFitness.toFixed(0)}, Avg ${entry.data.avgFitness.toFixed(1)}\n`;
+        });
+    }
+
+    return contextText.trim();
+}
+
+// Display summary with streaming letter-by-letter effect
+function displayStreamingSummary(summaryText) {
+    // Create or update summary overlay
+    let summaryOverlay = document.getElementById('ai-summary-overlay');
+    if (!summaryOverlay) {
+        summaryOverlay = document.createElement('div');
+        summaryOverlay.id = 'ai-summary-overlay';
+        summaryOverlay.className = 'ai-summary-overlay';
+        document.body.appendChild(summaryOverlay);
+    }
+
+    // Clear previous content
+    summaryOverlay.innerHTML = '';
+
+    // Create summary content
+    const summaryContent = document.createElement('div');
+    summaryContent.className = 'ai-summary-content';
+    summaryOverlay.appendChild(summaryContent);
+
+    // Add header
+    const header = document.createElement('div');
+    header.className = 'ai-summary-header';
+    header.textContent = '🤖 AI Analysis';
+    summaryContent.appendChild(header);
+
+    // Create text container for streaming effect
+    const textContainer = document.createElement('div');
+    textContainer.className = 'ai-summary-text';
+    summaryContent.appendChild(textContainer);
+
+    // Start streaming effect
+    let charIndex = 0;
+    const streamInterval = setInterval(() => {
+        if (charIndex < summaryText.length) {
+            textContainer.textContent += summaryText[charIndex];
+            charIndex++;
+        } else {
+            clearInterval(streamInterval);
+            // Auto-hide after 10 seconds with slide-down animation
+            setTimeout(() => {
+                summaryOverlay.style.animation = 'summary-slide-down 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards';
+                setTimeout(() => {
+                    if (summaryOverlay.parentNode) {
+                        summaryOverlay.parentNode.removeChild(summaryOverlay);
+                    }
+                }, 600);
+            }, 10000);
+        }
+    }, 25); // 25ms per character for faster typing effect
+
+    // Show overlay
+    summaryOverlay.style.opacity = '1';
 }
 
 export function setupUIListeners(simulation) {
@@ -199,11 +491,24 @@ export function setupUIListeners(simulation) {
             // Show UI elements again
             showFullscreenUI();
 
+            // Stop summarization when exiting fullscreen
+            stopPeriodicSummarization();
+
             if (simulation.wakeLockEnabled && simulation.wakeLock) {
                 // Optional: Could auto-release when exiting fullscreen
                 // For now, we'll keep it enabled but log the exit
                 console.log('[WAKE] 🖥️ Exiting fullscreen (wake lock remains active)');
             }
+        }
+
+        // Update fullscreen mode state
+        isFullscreenMode = isFullscreen;
+
+        // Start/stop summarization based on fullscreen state
+        if (isFullscreen) {
+            startPeriodicSummarization(simulation);
+        } else {
+            stopPeriodicSummarization();
         }
     });
 
@@ -705,8 +1010,8 @@ export function updateDashboard(simulation) {
         qualifiedAgentsValueEl.style.color = qualifiedAgents > 0 ? '#0f0' : '#f00';
     }
     if (validationQueueValueEl) {
-        validationQueueValueEl.textContent = simulation.validationQueue.size;
-        validationQueueValueEl.style.color = simulation.validationQueue.size > 0 ? '#ff0' : '#888';
+        validationQueueValueEl.textContent = simulation.validationManager.validationQueue.size;
+        validationQueueValueEl.style.color = simulation.validationManager.validationQueue.size > 0 ? '#ff0' : '#888';
     }
     if (mutationRateValueEl) mutationRateValueEl.textContent = (simulation.mutationRate * 100).toFixed(1) + '%';
     if (avgAgeEl) {

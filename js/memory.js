@@ -192,10 +192,10 @@ export function periodicMemoryCleanup(simulation) {
     const maxAge = 300000; // 5 minutes
     const now = Date.now();
     let validationEntriesRemoved = 0;
-    for (const [geneId, entry] of simulation.validationQueue.entries()) {
+    for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
         if (now - entry.lastValidationTime > maxAge && !entry.isValidated) {
             console.log(`[MEMORY] Removed stale validation entry: ${geneId} (age: ${(now - entry.lastValidationTime)/1000}s)`);
-            simulation.validationQueue.delete(geneId);
+            simulation.validationManager.validationQueue.delete(geneId);
             validationEntriesRemoved++;
         }
     }

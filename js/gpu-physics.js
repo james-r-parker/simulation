@@ -320,10 +320,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 });
 
                 try {
-                    const dynamicMaxAgents = Math.max(numAgents * 2, 120);
-                    const dynamicMaxRays = Math.max(totalRays * 2, 6000);
-                    const dynamicMaxEntities = Math.max(numEntities * 2, 1000);
-                    const dynamicMaxObstacles = Math.max(numObstacleSegments * 2, 200);
+                    const dynamicMaxAgents = Math.max(numAgents * 3, 200); // More generous allocation
+                    const dynamicMaxRays = Math.max(totalRays * 3, 10000); // More generous allocation
+                    const dynamicMaxEntities = Math.max(numEntities * 3, 2000); // More generous allocation
+                    const dynamicMaxObstacles = Math.max(numObstacleSegments * 3, 400); // More generous allocation
 
                     this.createRayTracingBuffers(
                         dynamicMaxAgents,

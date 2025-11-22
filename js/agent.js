@@ -446,7 +446,7 @@ export class Agent {
         this.diameter = this.size * 2;
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---
-        if (this.energy > this.maxEnergy * 0.95 && this.reproductionCooldown <= 0) {
+        if (this.energy > this.maxEnergy * 0.8 && this.reproductionCooldown <= 0) {
             this.split();
         }
 

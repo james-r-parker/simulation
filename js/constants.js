@@ -15,7 +15,7 @@ export const PREGNANCY_DURATION_FRAMES = 60 * 8;
 export const RESPAWN_DELAY_FRAMES = 0;
 
 export const OBESITY_THRESHOLD_ENERGY = 350;
-export const OBESITY_ENERGY_TAX_DIVISOR = 1000; // Reduced tax to be less punishing
+export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Further reduced tax to allow longer lifespan
 
 export const MAX_THRUST = 0.5;
 export const MAX_ROTATION = 0.1;
@@ -78,7 +78,7 @@ export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 900; // Reduced to 15 seconds 
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
 
 // Validation queue constants
-export const VALIDATION_REQUIRED_RUNS = 3; // Number of successful runs required
+export const VALIDATION_REQUIRED_RUNS = 3; // Total runs needed for validation
 export const VALIDATION_FITNESS_THRESHOLD = 5000; // Same as gene pool qualification - all qualified agents get validation opportunity
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents in validation queue
 
