@@ -18,6 +18,8 @@ import {
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
+import { spawnPheromone } from './spawn.js';
+import { crossover } from './gene.js';
 import { PheromonePuff } from './pheromone.js';
 
 export class Agent {
@@ -756,14 +758,14 @@ export class Agent {
 
         // Lower thresholds and higher spawn rates for more visible pheromones
         if (this.fear > 0.5 && Math.random() < 0.3) {
-            this.simulation.spawnPheromone(this.x, this.y, 'danger');
+            spawnPheromone(this.simulation, this.x, this.y, 'danger');
         }
         if (this.aggression > 0.5 && Math.random() < 0.3) {
-            this.simulation.spawnPheromone(this.x, this.y, 'attack');
+            spawnPheromone(this.simulation, this.x, this.y, 'attack');
         }
         // NEW: Add reproduction pheromone when wantsToReproduce
         if (this.wantsToReproduce && Math.random() < 0.2) {
-            this.simulation.spawnPheromone(this.x, this.y, 'reproduction');
+            spawnPheromone(this.simulation, this.x, this.y, 'reproduction');
         }
     }
 
@@ -834,7 +836,7 @@ export class Agent {
 
     birthChild() {
         const parentWeights = this.getWeights();
-        const childWeights = this.simulation.crossover(parentWeights, this.fatherWeights);
+        const childWeights = crossover(parentWeights, this.fatherWeights);
 
         // Specialization inheritance with mutation chance (5% chance to change)
         let childSpecialization = this.specializationType;
