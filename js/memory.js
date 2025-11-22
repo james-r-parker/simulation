@@ -107,6 +107,8 @@ export function handleMemoryPressure(simulation) {
         simulation.memoryPressureActions++;
         simulation.lastMemoryPressureAction = now;
 
+        console.log(`[MEMORY] Memory pressure cleanup completed - reduced usage to ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
+
         // Update UI to show memory pressure action
         const memoryEl = document.getElementById('info-memory');
         if (memoryEl) {
@@ -130,12 +132,17 @@ export function aggressiveMemoryCleanup(simulation) {
         simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
     }
 
-    // Clear any cached data in GPU compute/physics if available
-    if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
-        simulation.gpuCompute.clearCache();
-    }
-    if (simulation.gpuPhysics && simulation.gpuPhysics.clearCache) {
-        simulation.gpuPhysics.clearCache();
+    // Clear GPU caches under memory pressure
+    const memoryPressureRatio = simulation.currentMemoryUsage / simulation.memoryPressureThreshold;
+    if (memoryPressureRatio > 1.2) { // Clear GPU caches if memory usage is 120% of threshold
+        if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
+            simulation.gpuCompute.clearCache();
+            console.log('[MEMORY] Cleared GPU compute cache (severe memory pressure)');
+        }
+        if (simulation.gpuPhysics && simulation.gpuPhysics.clearCache) {
+            simulation.gpuPhysics.clearCache();
+            console.log('[MEMORY] Cleared GPU physics cache (severe memory pressure)');
+        }
     }
 
     // Reduce pheromone count if too high
@@ -155,9 +162,17 @@ export function aggressiveMemoryCleanup(simulation) {
 
 export function periodicMemoryCleanup(simulation) {
     // Comprehensive cleanup that runs periodically to prevent long-term memory buildup
+    console.log(`[MEMORY] Starting periodic cleanup - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
 
     // Process any pending database operations
     simulation.processDeadAgentQueue();
+    console.log('[MEMORY] Processed dead agent queue');
+
+    // Force database flush under memory pressure
+    if (simulation.db && simulation.db.flush && simulation.currentMemoryUsage > simulation.memoryPressureThreshold * 0.8) {
+        console.log('[MEMORY] Forcing database flush due to memory pressure');
+        simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
+    }
 
     // Clean up old pheromones more aggressively
     const originalPheromoneCount = simulation.pheromones.length;
@@ -173,21 +188,49 @@ export function periodicMemoryCleanup(simulation) {
     simulation.agents = simulation.agents.filter(agent => agent && !agent.isDead);
     simulation.food = simulation.food.filter(food => food && !food.isDead);
 
-    // Clear any accumulated ray data in agents (defensive cleanup)
-    for (const agent of simulation.agents) {
-        if (agent && !agent.isDead) {
-            // REMOVED: Defensive cleanup of rayData conflicts with object pooling in Agent.js
-            // Agent.js now pre-allocates and reuses rayData objects, so we must NOT clear the array here.
-            /*
-            if (agent.rayData && agent.rayData.length > 100) {
-                agent.rayData.length = 0;
-            }
-            if (agent.lastRayData && agent.lastRayData.length > 100) {
-                agent.lastRayData.length = 0;
-            }
-            */
+    // Clean up validation queue - remove old entries
+    const maxAge = 300000; // 5 minutes
+    const now = Date.now();
+    let validationEntriesRemoved = 0;
+    for (const [geneId, entry] of simulation.validationQueue.entries()) {
+        if (now - entry.lastValidationTime > maxAge && !entry.isValidated) {
+            console.log(`[MEMORY] Removed stale validation entry: ${geneId} (age: ${(now - entry.lastValidationTime)/1000}s)`);
+            simulation.validationQueue.delete(geneId);
+            validationEntriesRemoved++;
         }
     }
+    if (validationEntriesRemoved > 0) {
+        console.log(`[MEMORY] Cleaned ${validationEntriesRemoved} stale validation queue entries`);
+    }
+
+    // Aggressive cleanup of agent memory arrays to prevent accumulation
+    let agentsCleaned = 0;
+    for (const agent of simulation.agents) {
+        if (agent && !agent.isDead) {
+            // Clear and reinitialize memory arrays to prevent memory leaks
+            agent.cleanup();
+            agentsCleaned++;
+
+            // Force clear any accumulated arrays
+            let arraysCleared = 0;
+            if (agent.inputs && agent.inputs.length > 1000) {
+                agent.inputs.length = 0;
+                arraysCleared++;
+            }
+            if (agent.rayData && agent.rayData.length > 1000) {
+                agent.rayData.length = 0;
+                arraysCleared++;
+            }
+            if (agent.lastRayData && agent.lastRayData.length > 1000) {
+                agent.lastRayData.length = 0;
+                arraysCleared++;
+            }
+            if (arraysCleared > 0) {
+                console.log(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId}`);
+            }
+        }
+    }
+    console.log(`[MEMORY] Cleaned memory arrays for ${agentsCleaned} agents`);
 
     // Log cleanup activity
     if (originalPheromoneCount > simulation.pheromones.length) {

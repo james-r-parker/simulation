@@ -634,3 +634,23 @@ button:hover {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
 }
+
+/* Fullscreen UI hiding */
+.fullscreen-hidden {
+    transform: translateX(-100%) translateY(-100%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: all 0.5s ease-in-out !important;
+}
+
+#info-bar.fullscreen-hidden {
+    transform: translateY(-100%) !important;
+}
+
+#controls.fullscreen-hidden {
+    transform: translateY(100%) !important;
+}
+
+#sidebar-toggle.fullscreen-hidden {
+    transform: translateX(-100%) !important;
+}

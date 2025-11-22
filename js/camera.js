@@ -83,19 +83,21 @@ export class Camera {
     
     zoomAt(mouseX, mouseY, delta, containerWidth, containerHeight, worldWidth, worldHeight, aspect) {
         const oldZoom = this.targetZoom;
-        const zoomFactor = 1 + (delta * 0.001);
+        // Much smaller zoom steps for smoother zooming (0.001 → 0.0003 = 3x smaller steps)
+        const zoomFactor = 1 + (delta * 0.0003);
         this.targetZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.targetZoom * zoomFactor));
         
         // Calculate world position under mouse cursor
-        const viewSize = Math.max(worldWidth, worldHeight) * 0.4;
+        const baseViewSize = Math.max(worldWidth, worldHeight) * 0.4;
+        const viewSize = baseViewSize * oldZoom;
         const normalizedX = (mouseX / containerWidth) * 2 - 1;
         const normalizedY = 1 - (mouseY / containerHeight) * 2;
-        
-        const worldX = this.targetX + (normalizedX * viewSize * aspect * oldZoom);
-        const worldY = this.targetY - (normalizedY * viewSize * oldZoom);
-        
+
+        const worldX = this.targetX + (normalizedX * viewSize * aspect);
+        const worldY = this.targetY - (normalizedY * viewSize);
+
         // Adjust camera position to keep world point under mouse
-        const newViewSize = viewSize * this.targetZoom;
+        const newViewSize = baseViewSize * this.targetZoom;
         this.targetX = worldX - (normalizedX * newViewSize * aspect);
         this.targetY = worldY + (normalizedY * newViewSize);
     }

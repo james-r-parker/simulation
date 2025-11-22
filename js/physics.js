@@ -82,6 +82,77 @@ export function checkCollisions(simulation) {
                 }
             }
         }
+
+        // Check collisions with ALL obstacles (not just quadtree results)
+        // This ensures obstacles are always checked regardless of quadtree performance
+        for (const obstacle of simulation.obstacles) {
+            const dx = agent.x - obstacle.x;
+            const dy = agent.y - obstacle.y;
+            const distSq = dx * dx + dy * dy;
+            const combinedSize = agentSize + obstacle.radius;
+            const combinedSizeSq = combinedSize * combinedSize;
+
+
+            if (distSq < combinedSizeSq) {
+                // Collision with obstacle - take damage and bounce
+                const dist = Math.sqrt(distSq) || 1;
+                const overlap = combinedSize - dist;
+
+                if (overlap > 0) {
+                    // Separate agent from obstacle
+                    const pushX = (dx / dist) * overlap;
+                    const pushY = (dy / dist) * overlap;
+                    agent.x += pushX;
+                    agent.y += pushY;
+
+                    // Bounce the agent (reverse velocity direction)
+                    const bounceFactor = 0.8; // Energy loss on bounce
+                    const normalX = dx / dist;
+                    const normalY = dy / dist;
+
+                    // Calculate reflection vector
+                    const dotProduct = agent.vx * normalX + agent.vy * normalY;
+                    agent.vx = (agent.vx - 2 * dotProduct * normalX) * bounceFactor;
+                    agent.vy = (agent.vy - 2 * dotProduct * normalY) * bounceFactor;
+
+                    // Apply damage for hitting obstacle
+                    const damage = 25; // Same as OBSTACLE_COLLISION_PENALTY
+                    agent.energy = Math.max(0, agent.energy - damage);
+                    agent.timesHitObstacle++;
+                    agent.fitness -= damage; // Fitness penalty
+
+                    // Clamp velocity to prevent extreme bouncing (use same limit as agent movement)
+                    const MAX_VELOCITY = 25; // Same as agent MAX_VELOCITY
+                    const currentSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                    if (currentSpeed > MAX_VELOCITY) {
+                        agent.vx = (agent.vx / currentSpeed) * MAX_VELOCITY;
+                        agent.vy = (agent.vy / currentSpeed) * MAX_VELOCITY;
+                    }
+
+                    // Check if agent died from collision
+                    if (agent.energy <= 0) {
+                        agent.isDead = true;
+                    }
+
+                    // Slightly nudge the obstacle in response to collision
+                    const nudgeStrength = 0.05; // Small nudge
+                    const nudgeAngle = Math.random() * Math.PI * 2; // Random direction
+                    obstacle.vx += Math.cos(nudgeAngle) * nudgeStrength;
+                    obstacle.vy += Math.sin(nudgeAngle) * nudgeStrength;
+
+                    // Dampen obstacle velocity slightly after nudge to prevent runaway
+                    const obstacleSpeed = Math.sqrt(obstacle.vx * obstacle.vx + obstacle.vy * obstacle.vy);
+                    const maxObstacleSpeed = 0.3; // Keep obstacles moving slowly
+                    if (obstacleSpeed > maxObstacleSpeed) {
+                        obstacle.vx = (obstacle.vx / obstacleSpeed) * maxObstacleSpeed;
+                        obstacle.vy = (obstacle.vy / obstacleSpeed) * maxObstacleSpeed;
+                    }
+
+                    // Only process one obstacle collision per agent per frame
+                    break;
+                }
+            }
+        }
     }
 }
 

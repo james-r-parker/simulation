@@ -122,8 +122,6 @@ export function updatePeriodicValidation(simulation) {
             // Add to validation queue (periodic validation)
             console.log(`[VALIDATION] 📊 Periodic check: Adding living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
             simulation.addToValidationQueue(agent, true);
-
-            console.log(`[VALIDATION] Added living agent ${agent.geneId} to validation queue (fitness: ${agent.fitness.toFixed(1)})`);
         }
     });
 

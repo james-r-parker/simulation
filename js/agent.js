@@ -824,15 +824,15 @@ export class Agent {
         this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0), 1);
 
 
-        // Lower thresholds and higher spawn rates for more visible pheromones
-        if (this.fear > 0.5 && Math.random() < 0.3) {
+        // Reduced spawn rates to prevent pheromone accumulation
+        if (this.fear > 0.5 && Math.random() < 0.1) { // Reduced from 0.3 to 0.1
             spawnPheromone(this.simulation, this.x, this.y, 'danger');
         }
-        if (this.aggression > 0.5 && Math.random() < 0.3) {
+        if (this.aggression > 0.5 && Math.random() < 0.1) { // Reduced from 0.3 to 0.1
             spawnPheromone(this.simulation, this.x, this.y, 'attack');
         }
         // NEW: Add reproduction pheromone when wantsToReproduce
-        if (this.wantsToReproduce && Math.random() < 0.2) {
+        if (this.wantsToReproduce && Math.random() < 0.05) { // Reduced from 0.2 to 0.05
             spawnPheromone(this.simulation, this.x, this.y, 'reproduction');
         }
     }

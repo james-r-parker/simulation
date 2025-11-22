@@ -413,8 +413,30 @@ export class WebGLRenderer {
             instanceMatrix.setPosition(food.x, -food.y, 0);
             this.foodInstancedMesh.setMatrixAt(i, instanceMatrix);
 
-            // Set instance color
-            const foodColor = food.isHighValue ? COLORS.FOOD.HIGH_VALUE : COLORS.FOOD.NORMAL;
+            // Set instance color (consider rotting state)
+            const energyRatio = food.energyValue / food.initialEnergy;
+            let foodColor;
+
+            if (food.isHighValue) {
+                // High-value food: Bright green → Brown
+                if (energyRatio > 0.5) {
+                    foodColor = COLORS.FOOD.HIGH_VALUE; // Fresh bright green
+                } else if (energyRatio > 0.2) {
+                    foodColor = 0x8B4513; // Brown (rotting)
+                } else {
+                    foodColor = 0x654321; // Dark brown (almost rotten)
+                }
+            } else {
+                // Normal food: Green → Brown
+                if (energyRatio > 0.5) {
+                    foodColor = COLORS.FOOD.NORMAL; // Fresh green
+                } else if (energyRatio > 0.2) {
+                    foodColor = 0x8B4513; // Brown (rotting)
+                } else {
+                    foodColor = 0x654321; // Dark brown (almost rotten)
+                }
+            }
+
             color.setHex(foodColor);
             this.foodInstancedMesh.setColorAt(i, color);
         }
@@ -503,30 +525,30 @@ export class WebGLRenderer {
     }
 
     updateObstacles(obstacles) {
-        // Only update if obstacles changed (they're static, so only create once)
-        if (this.obstacleMeshes.length > 0 && obstacles.length === this.obstacleMeshes.length / 2) {
-            return; // Already created
-        }
+        // Check if we need to recreate meshes (obstacle count changed) or update positions (obstacles moved)
+        const needsRecreate = this.obstacleMeshes.length === 0 ||
+                            obstacles.length !== this.obstacleMeshes.length / 2;
 
-        // Remove old obstacle meshes
-        this.obstacleMeshes.forEach(mesh => {
-            this.obstacleGroup.remove(mesh);
-            mesh.geometry.dispose();
-            mesh.material.dispose();
-        });
-        this.obstacleMeshes = [];
+        if (needsRecreate) {
+            // Remove old obstacle meshes
+            this.obstacleMeshes.forEach(mesh => {
+                this.obstacleGroup.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            this.obstacleMeshes = [];
 
-        // Create obstacle meshes
-        obstacles.forEach(obs => {
-            const geometry = new THREE.CircleGeometry(obs.radius, 32);
-            const material = new THREE.MeshBasicMaterial({ color: COLORS.OBSTACLE });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(obs.x, -obs.y, 0);
-            this.obstacleGroup.add(mesh);
-            this.obstacleMeshes.push(mesh);
+            // Create obstacle meshes
+            obstacles.forEach(obs => {
+                const geometry = new THREE.CircleGeometry(obs.radius, 32);
+                const material = new THREE.MeshBasicMaterial({ color: COLORS.OBSTACLE });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(obs.x, -obs.y, 0);
+                this.obstacleGroup.add(mesh);
+                this.obstacleMeshes.push(mesh);
 
-            // Add shadow (hiding radius)
-            const shadowGeometry = new THREE.RingGeometry(obs.radius, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
+                // Add shadow (hiding radius)
+                const shadowGeometry = new THREE.RingGeometry(obs.radius, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
             const shadowMaterial = new THREE.MeshBasicMaterial({
                 color: 0x000000,
                 transparent: true,
@@ -537,6 +559,19 @@ export class WebGLRenderer {
             this.obstacleGroup.add(shadowMesh);
             this.obstacleMeshes.push(shadowMesh);
         });
+        } else {
+            // Update positions of existing meshes (obstacles moved)
+            for (let i = 0; i < obstacles.length; i++) {
+                const obs = obstacles[i];
+                const circleMesh = this.obstacleMeshes[i * 2];     // Circle mesh
+                const shadowMesh = this.obstacleMeshes[i * 2 + 1]; // Shadow mesh
+
+                if (circleMesh && shadowMesh) {
+                    circleMesh.position.set(obs.x, -obs.y, 0);
+                    shadowMesh.position.set(obs.x, -obs.y, 0);
+                }
+            }
+        }
 
     }
 

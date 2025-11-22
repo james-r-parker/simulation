@@ -70,16 +70,16 @@ export const SPECIALIZATION_TYPES = {
 };
 
 // --- GENE POOL CONSTANTS ---
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 15000; // Increased to be more selective now that fitness calculation is fixed
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 5000; // Reduced from 15000 to allow more agents to qualify
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 8; // Increased to require more food consumption
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1800; // Increased to 30 seconds (was 10 seconds)
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3; // Reduced from 8 to allow more agents to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 900; // Reduced to 15 seconds to allow younger agents to qualify
 
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
 
 // Validation queue constants
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of successful runs required
-export const VALIDATION_FITNESS_THRESHOLD = 12000; // Minimum fitness to enter validation
+export const VALIDATION_FITNESS_THRESHOLD = 5000; // Same as gene pool qualification - all qualified agents get validation opportunity
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents in validation queue
 
 // --- VISUAL CONSTANTS ---

@@ -92,9 +92,228 @@ export function setupUIListeners(simulation) {
         });
     }
 
+    // Wake Lock Toggle
+    const wakeLockBtn = document.getElementById('wakeLock');
+    if (wakeLockBtn) {
+        wakeLockBtn.addEventListener('click', async () => {
+            await simulation.toggleWakeLock();
+            updateWakeLockButton();
+        });
+
+        // Check if already in fullscreen on page load
+        if (document.fullscreenElement && !simulation.wakeLockEnabled) {
+            console.log('[WAKE] 🖥️ Page loaded in fullscreen - auto-enabling wake lock');
+            simulation.requestWakeLock().then(() => updateWakeLockButton());
+        }
+    }
+
+    // Fullscreen Toggle
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', async () => {
+            console.log('[FULLSCREEN] Toggle button clicked, current fullscreenElement:', document.fullscreenElement);
+            if (!document.fullscreenElement) {
+                try {
+                    await document.documentElement.requestFullscreen();
+                    console.log('[FULLSCREEN] Requested fullscreen');
+                } catch (err) {
+                    console.error('[FULLSCREEN] Failed to enter fullscreen:', err);
+                }
+            } else {
+                try {
+                    await document.exitFullscreen();
+                    console.log('[FULLSCREEN] Exited fullscreen');
+                } catch (err) {
+                    console.error('[FULLSCREEN] Failed to exit fullscreen:', err);
+                }
+            }
+        });
+    }
+
     window.addEventListener('resize', () => resize(simulation));
+
+    // Handle page visibility changes to maintain wake lock
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && simulation.wakeLockEnabled && !simulation.wakeLock) {
+            // Page became visible again, re-acquire wake lock if it was enabled
+            console.log('[WAKE] 🔄 Re-acquiring wake lock after page became visible');
+            await simulation.requestWakeLock();
+            updateWakeLockButton();
+        }
+    });
+
+    // Auto-apply wake lock when entering fullscreen
+    console.log('[FULLSCREEN] Setting up fullscreen event listener');
+
+    document.addEventListener('fullscreenchange', async () => {
+        console.log('[FULLSCREEN] fullscreenchange event fired, fullscreenElement:', document.fullscreenElement);
+
+        // Check for fullscreen using multiple methods
+        const isFullscreen = !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement
+        );
+
+        console.log(`[FULLSCREEN] Detected fullscreen state: ${isFullscreen}`);
+
+        if (isFullscreen) {
+            console.log('[FULLSCREEN] 🖥️ Entering fullscreen mode');
+
+            // Disable follow best agent
+            const followBestCheckbox = document.getElementById('followBest');
+            if (followBestCheckbox) {
+                followBestCheckbox.checked = false;
+                simulation.followBest = false;
+                console.log('[FULLSCREEN] 👁️ Disabled "Follow Best" for fullscreen overview');
+            }
+
+            // Set camera to show entire map zoomed out (same as default zoom level)
+            const worldWidth = simulation.worldWidth;
+            const worldHeight = simulation.worldHeight;
+
+            // Use the same zoom level as the default (0.5) for consistent zoomed-out view
+            const optimalZoom = 0.5; // Same as default camera zoom
+
+            // Center camera on world center
+            simulation.camera.targetX = worldWidth / 2;
+            simulation.camera.targetY = worldHeight / 2;
+            simulation.camera.targetZoom = optimalZoom;
+
+            console.log(`[FULLSCREEN] 📹 Camera set to default zoom level for overview: zoom=${simulation.camera.targetZoom.toFixed(2)}, center=(${simulation.camera.targetX}, ${simulation.camera.targetY})`);
+
+            // Enable wake lock if not already active
+            if (!simulation.wakeLockEnabled) {
+                console.log('[WAKE] 🖥️ Entering fullscreen - auto-enabling wake lock');
+                await simulation.requestWakeLock();
+                updateWakeLockButton();
+            }
+
+            // Hide UI elements initially
+            hideFullscreenUI();
+
+        } else {
+            console.log('[FULLSCREEN] 🖥️ Exiting fullscreen mode');
+
+            // Show UI elements again
+            showFullscreenUI();
+
+            if (simulation.wakeLockEnabled && simulation.wakeLock) {
+                // Optional: Could auto-release when exiting fullscreen
+                // For now, we'll keep it enabled but log the exit
+                console.log('[WAKE] 🖥️ Exiting fullscreen (wake lock remains active)');
+            }
+        }
+    });
+
+    function updateWakeLockButton() {
+        const wakeLockBtn = document.getElementById('wakeLock');
+        if (wakeLockBtn) {
+            if (simulation.wakeLockEnabled) {
+                wakeLockBtn.textContent = '🔋';
+                wakeLockBtn.title = 'Screen Awake (Click to Disable)';
+                wakeLockBtn.style.background = 'rgba(57, 255, 20, 0.1)';
+                wakeLockBtn.style.borderColor = 'var(--neon-green)';
+                wakeLockBtn.style.boxShadow = '0 0 8px rgba(57, 255, 20, 0.3)';
+            } else {
+                wakeLockBtn.textContent = '🔋';
+                wakeLockBtn.title = 'Keep Screen Awake';
+                wakeLockBtn.style.background = '';
+                wakeLockBtn.style.borderColor = '';
+                wakeLockBtn.style.boxShadow = '';
+            }
+        }
+    }
+
+    // Fullscreen UI management
+    let uiHideTimeout;
+    const UI_HIDE_DELAY = 30000; // 30 seconds
+    let uiVisible = true;
+
+    function hideFullscreenUI() {
+        if (!document.fullscreenElement) return;
+
+        const elements = [
+            document.getElementById('info-bar'),
+            document.getElementById('sidebar'),
+            document.getElementById('sidebar-toggle'),
+            document.getElementById('controls')
+        ];
+
+        elements.forEach(el => {
+            if (el) el.classList.add('fullscreen-hidden');
+        });
+
+        uiVisible = false;
+        console.log('[FULLSCREEN] 👁️ UI hidden for fullscreen immersion');
+    }
+
+    function showFullscreenUI() {
+        if (!document.fullscreenElement) return;
+
+        const elements = [
+            document.getElementById('info-bar'),
+            document.getElementById('sidebar'),
+            document.getElementById('sidebar-toggle'),
+            document.getElementById('controls')
+        ];
+
+        elements.forEach(el => {
+            if (el) el.classList.remove('fullscreen-hidden');
+        });
+
+        uiVisible = true;
+        console.log('[FULLSCREEN] 👁️ UI shown');
+
+        // Set timeout to hide UI again after 30 seconds
+        clearTimeout(uiHideTimeout);
+        uiHideTimeout = setTimeout(() => {
+            if (document.fullscreenElement) {
+                hideFullscreenUI();
+            }
+        }, UI_HIDE_DELAY);
+    }
+
+    // Mouse movement detection for fullscreen UI
+    let lastMouseMove = 0;
+    document.addEventListener('mousemove', () => {
+        if (!document.fullscreenElement) return;
+
+        const now = Date.now();
+        // Throttle mouse move events to avoid excessive calls
+        if (now - lastMouseMove < 100) return;
+        lastMouseMove = now;
+
+        if (!uiVisible) {
+            showFullscreenUI();
+        } else {
+            // Reset the hide timeout
+            clearTimeout(uiHideTimeout);
+            uiHideTimeout = setTimeout(() => {
+                if (document.fullscreenElement) {
+                    hideFullscreenUI();
+                }
+            }, UI_HIDE_DELAY);
+        }
+    });
+
+    // Handle mouse leaving/entering the window
+    document.addEventListener('mouseleave', () => {
+        if (document.fullscreenElement && uiVisible) {
+            // Start the hide timeout immediately when mouse leaves
+            clearTimeout(uiHideTimeout);
+            uiHideTimeout = setTimeout(() => {
+                if (document.fullscreenElement) {
+                    hideFullscreenUI();
+                }
+            }, 1000); // Shorter delay when mouse leaves window
+        }
+    });
+
     window.addEventListener('beforeunload', async () => {
-        // Flush dead agent queue and save current state
+        // Release wake lock and flush dead agent queue
+        await simulation.releaseWakeLock();
         simulation.processDeadAgentQueue();
         await simulation.db.flush();
     });
@@ -171,7 +390,7 @@ export function resize(simulation) {
 export function updateInfo(simulation) {
     // Count only living agents for display
     const livingAgents = simulation.agents.filter(a => !a.isDead);
-    document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${simulation.maxAgents}`;
+    document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${simulation.maxAgents} (Total: ${simulation.totalAgentsSpawned})`;
     if (simulation.bestAgent) {
         document.getElementById('info-best').innerText = `Best Agent: F:${simulation.bestAgent.fitness.toFixed(0)}, A:${simulation.bestAgent.age.toFixed(0)}s, O:${simulation.bestAgent.offspring}, K:${simulation.bestAgent.kills}, Fd:${simulation.bestAgent.foodEaten}`;
     }
@@ -268,7 +487,7 @@ export function copySimulationStats(simulation) {
 
 📊 Core Metrics
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Population: ${livingAgents.length} agents
+Population: ${livingAgents.length} agents (Total Spawned: ${simulation.totalAgentsSpawned})
 Generation: ${simulation.generation || 0}
 Frames Processed: ${simulation.frameCount || 0}
 Best Fitness: ${bestFitness.toFixed(0)} (Δ: ${fitnessDelta >= 0 ? '+' : ''}${fitnessDelta.toFixed(0)})
@@ -301,7 +520,8 @@ Reproduction Events/min: ${reproductionRate}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Genetic Diversity: ${geneIdCount} active gene IDs
 Stored Gene Pools: ${genePoolCount}
-Qualified Agents: ${qualifiedAgents} (F≥8000, 20s+, 5+ food)
+Qualified Agents: ${qualifiedAgents} (F≥5000, 15s+, 3+ food)
+Total Agents Spawned: ${simulation.totalAgentsSpawned}
 Mutation Rate: ${(simulation.mutationRate * 100).toFixed(1)}%
 Learning Rate: ${learningRate >= 0 ? '+' : ''}${learningRate.toFixed(1)}/gen
 
@@ -404,7 +624,7 @@ export function updateDashboard(simulation) {
     const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
     const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
 
-    // Count qualified agents (same criteria as database saving: fitness >= 8000, food >= 5, age >= 20s)
+    // Count qualified agents (same criteria as database saving: fitness >= 5000, food >= 3, age >= 15s)
     const qualifiedAgents = livingAgents.filter(a => a.fit).length;
 
     // Learning rate (fitness improvement per generation)

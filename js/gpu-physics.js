@@ -312,13 +312,45 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         if (!this.buffers || !this.buffers.agent || numAgents > this.buffers.maxAgents || totalRays > this.buffers.maxRays ||
             numEntities > this.buffers.maxEntities || numObstacleSegments > this.buffers.maxObstacles) {
-            this.logger.error('GPU data exceeds pre-allocated buffer size! Aborting ray trace.', {
-                numAgents, maxAgents: this.buffers?.maxAgents,
-                totalRays, maxRays: this.buffers?.maxRays,
-                numEntities, maxEntities: this.buffers?.maxEntities,
-                numObstacleSegments, maxObstacles: this.buffers?.maxObstacles
-            });
-            return null;
+
+            // Try to create buffers dynamically if they don't exist or are too small
+            if (!this.buffers || !this.buffers.agent) {
+                this.logger.warn('GPU buffers disposed or not initialized, creating dynamically...', {
+                    numAgents, totalRays, numEntities, numObstacleSegments
+                });
+
+                try {
+                    const dynamicMaxAgents = Math.max(numAgents * 2, 120);
+                    const dynamicMaxRays = Math.max(totalRays * 2, 6000);
+                    const dynamicMaxEntities = Math.max(numEntities * 2, 1000);
+                    const dynamicMaxObstacles = Math.max(numObstacleSegments * 2, 200);
+
+                    this.createRayTracingBuffers(
+                        dynamicMaxAgents,
+                        dynamicMaxRays,
+                        dynamicMaxEntities,
+                        dynamicMaxObstacles
+                    );
+
+                    this.logger.log('GPU buffers created dynamically', {
+                        maxAgents: dynamicMaxAgents,
+                        maxRays: dynamicMaxRays,
+                        maxEntities: dynamicMaxEntities,
+                        maxObstacles: dynamicMaxObstacles
+                    });
+                } catch (error) {
+                    this.logger.error('Failed to create GPU buffers dynamically:', error);
+                    return null;
+                }
+            } else {
+                this.logger.error('GPU data exceeds pre-allocated buffer size! Aborting ray trace.', {
+                    numAgents, maxAgents: this.buffers?.maxAgents,
+                    totalRays, maxRays: this.buffers?.maxRays,
+                    numEntities, maxEntities: this.buffers?.maxEntities,
+                    numObstacleSegments, maxObstacles: this.buffers?.maxObstacles
+                });
+                return null;
+            }
         }
 
         try {

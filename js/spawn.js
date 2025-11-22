@@ -14,21 +14,51 @@ import { crossover } from './gene.js';
 
 export function generateObstacles(simulation) {
     const obstacles = [];
-    const numObstacles = 12; // Increased for larger 16:9 world
+    const numObstacles = 25; // Increased to create more challenging environment and eliminate crash-prone agents
     const minRadius = 40;
     const maxRadius = 120;
-    const minDistance = 400; // Minimum distance between obstacles
-    const margin = 200; // Keep obstacles away from world edges
+    const minDistance = 350; // Reduced from 400 to allow tighter packing with better distribution
+    const margin = 250; // Increased margin to keep obstacles away from world edges
+
+    // Create a grid-based distribution for better spreading
+    const gridCols = Math.ceil(Math.sqrt(numObstacles * 1.5)); // Slightly more columns than rows for better distribution
+    const gridRows = Math.ceil(numObstacles / gridCols);
+    const cellWidth = (WORLD_WIDTH - 2 * margin) / gridCols;
+    const cellHeight = (WORLD_HEIGHT - 2 * margin) / gridRows;
+
+    // Track which grid cells have obstacles
+    const usedCells = new Set();
 
     for (let i = 0; i < numObstacles; i++) {
-        let attempts = 50;
+        let attempts = 100; // Increased attempts for better placement
         let valid = false;
         let x, y, radius;
 
         while (attempts > 0 && !valid) {
-            // Generate random position with margin from edges
-            x = margin + Math.random() * (WORLD_WIDTH - 2 * margin);
-            y = margin + Math.random() * (WORLD_HEIGHT - 2 * margin);
+            let cellX, cellY;
+
+            if (usedCells.size < gridCols * gridRows) {
+                // Try to place in unused grid cells first
+                do {
+                    cellX = Math.floor(Math.random() * gridCols);
+                    cellY = Math.floor(Math.random() * gridRows);
+                } while (usedCells.has(`${cellX},${cellY}`) && usedCells.size < gridCols * gridRows);
+            } else {
+                // All cells used, place randomly
+                cellX = Math.floor(Math.random() * gridCols);
+                cellY = Math.floor(Math.random() * gridRows);
+            }
+
+            // Generate position within the grid cell with some randomness
+            const cellOffsetX = (Math.random() - 0.5) * cellWidth * 0.6; // 60% of cell size for randomness
+            const cellOffsetY = (Math.random() - 0.5) * cellHeight * 0.6;
+
+            x = margin + cellX * cellWidth + cellWidth * 0.5 + cellOffsetX;
+            y = margin + cellY * cellHeight + cellHeight * 0.5 + cellOffsetY;
+
+            // Ensure within world bounds
+            x = Math.max(margin, Math.min(WORLD_WIDTH - margin, x));
+            y = Math.max(margin, Math.min(WORLD_HEIGHT - margin, y));
 
             // Varied sizes - use a distribution that favors medium sizes but allows extremes
             const sizeRoll = Math.random();
@@ -57,12 +87,144 @@ export function generateObstacles(simulation) {
         }
 
         if (valid) {
-            // Ensure each obstacle has a unique ID for logging purposes
-            obstacles.push({ id: `obs_${i}_${Math.random().toString(36).substr(2, 5)}`, x, y, radius });
+            // Mark grid cell as used
+            const cellX = Math.floor((x - margin) / cellWidth);
+            const cellY = Math.floor((y - margin) / cellHeight);
+            usedCells.add(`${cellX},${cellY}`);
+
+            // Calculate initial velocity away from nearby obstacles
+            let avgNearbyX = 0;
+            let avgNearbyY = 0;
+            let nearbyCount = 0;
+            const influenceRadius = 600; // How far obstacles influence initial direction
+
+            for (const existing of obstacles) {
+                const dist = distance(x, y, existing.x, existing.y);
+                if (dist < influenceRadius && dist > 0) {
+                    avgNearbyX += existing.x;
+                    avgNearbyY += existing.y;
+                    nearbyCount++;
+                }
+            }
+
+            let vx, vy;
+            if (nearbyCount > 0) {
+                // Move away from center of mass of nearby obstacles
+                avgNearbyX /= nearbyCount;
+                avgNearbyY /= nearbyCount;
+
+                const awayX = x - avgNearbyX;
+                const awayY = y - avgNearbyY;
+                const awayDist = Math.sqrt(awayX * awayX + awayY * awayY);
+
+                if (awayDist > 0) {
+                    // Normalize and set velocity away from nearby obstacles
+                    vx = (awayX / awayDist) * 0.2; // Moderate speed away
+                    vy = (awayY / awayDist) * 0.2;
+                } else {
+                    // Fallback to random if exactly at center
+                    vx = (Math.random() - 0.5) * 0.15;
+                    vy = (Math.random() - 0.5) * 0.15;
+                }
+            } else {
+                // No nearby obstacles, random initial direction
+                vx = (Math.random() - 0.5) * 0.15;
+                vy = (Math.random() - 0.5) * 0.15;
+            }
+
+            // Create dynamic obstacle with movement properties
+            obstacles.push({
+                id: `obs_${i}_${Math.random().toString(36).substr(2, 5)}`,
+                x, y, radius,
+                vx: vx, // Direction away from nearby obstacles
+                vy: vy,
+                mass: radius * 0.1 // Larger obstacles are heavier
+            });
         }
     }
 
     return obstacles;
+}
+
+// Update obstacle positions and handle physics
+export function updateObstacles(obstacles, worldWidth, worldHeight) {
+    // Update positions
+    for (const obstacle of obstacles) {
+        obstacle.x += obstacle.vx;
+        obstacle.y += obstacle.vy;
+    }
+
+    // Handle world boundary collisions (bounce off edges)
+    for (const obstacle of obstacles) {
+        // Left/right boundaries
+        if (obstacle.x - obstacle.radius <= 0) {
+            obstacle.x = obstacle.radius;
+            obstacle.vx = Math.abs(obstacle.vx); // Bounce right
+        } else if (obstacle.x + obstacle.radius >= worldWidth) {
+            obstacle.x = worldWidth - obstacle.radius;
+            obstacle.vx = -Math.abs(obstacle.vx); // Bounce left
+        }
+
+        // Top/bottom boundaries
+        if (obstacle.y - obstacle.radius <= 0) {
+            obstacle.y = obstacle.radius;
+            obstacle.vy = Math.abs(obstacle.vy); // Bounce down
+        } else if (obstacle.y + obstacle.radius >= worldHeight) {
+            obstacle.y = worldHeight - obstacle.radius;
+            obstacle.vy = -Math.abs(obstacle.vy); // Bounce up
+        }
+    }
+
+    // Handle obstacle-obstacle collisions
+    for (let i = 0; i < obstacles.length; i++) {
+        for (let j = i + 1; j < obstacles.length; j++) {
+            const obs1 = obstacles[i];
+            const obs2 = obstacles[j];
+
+            const dx = obs2.x - obs1.x;
+            const dy = obs2.y - obs1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = obs1.radius + obs2.radius;
+
+            if (distance < minDistance && distance > 0) {
+                // Collision detected - separate obstacles and apply physics
+                const overlap = minDistance - distance;
+                const separationX = (dx / distance) * overlap * 0.5;
+                const separationY = (dy / distance) * overlap * 0.5;
+
+                // Separate obstacles
+                obs1.x -= separationX;
+                obs1.y -= separationY;
+                obs2.x += separationX;
+                obs2.y += separationY;
+
+                // Calculate collision response (elastic collision)
+                const relativeVx = obs1.vx - obs2.vx;
+                const relativeVy = obs1.vy - obs2.vy;
+                const dotProduct = relativeVx * dx + relativeVy * dy;
+
+                if (dotProduct < 0) { // Only resolve if moving towards each other
+                    const totalMass = obs1.mass + obs2.mass;
+                    const impulse = (2 * dotProduct) / (totalMass * distance * distance);
+
+                    // Apply impulse
+                    const impulseX = impulse * dx;
+                    const impulseY = impulse * dy;
+
+                    obs1.vx -= (impulseX * obs2.mass) / totalMass;
+                    obs1.vy -= (impulseY * obs2.mass) / totalMass;
+                    obs2.vx += (impulseX * obs1.mass) / totalMass;
+                    obs2.vy += (impulseY * obs1.mass) / totalMass;
+
+                    // Add some damping to prevent infinite bouncing
+                    obs1.vx *= 0.98;
+                    obs1.vy *= 0.98;
+                    obs2.vx *= 0.98;
+                    obs2.vy *= 0.98;
+                }
+            }
+        }
+    }
 }
 
 export function updateFoodScalingFactor(simulation) {
@@ -222,7 +384,8 @@ export function repopulate(simulation) {
             };
 
             console.log(`[VALIDATION] Respawning validation candidate ${firstKey} for test run ${validationEntry.attempts + 1}/3 (stored weights)`);
-            spawnAgent(simulation, { gene: validationGene, energy: INITIAL_AGENT_ENERGY });
+            // Give validation agents a slight energy boost to help them complete runs
+            spawnAgent(simulation, { gene: validationGene, energy: INITIAL_AGENT_ENERGY * 1.5 });
 
             // Remove from validation queue (will be re-added when this agent dies)
             simulation.validationQueue.delete(firstKey);

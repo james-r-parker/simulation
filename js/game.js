@@ -33,7 +33,8 @@ import {
 } from './memory.js';
 import {
     generateObstacles, updateFoodScalingFactor, spawnAgent,
-    spawnFood, spawnPheromone, repopulate, randomSpawnAvoidCluster
+    spawnFood, spawnPheromone, repopulate, randomSpawnAvoidCluster,
+    updateObstacles
 } from './spawn.js';
 import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
 import { updateFitnessTracking, updatePeriodicValidation } from './gene.js';
@@ -86,9 +87,10 @@ export class Simulation {
         this.entityCounts = { agents: 0, food: 0, pheromones: 0 };
 
         // Memory management
-        this.memoryPressureThreshold = 200 * 1024 * 1024; // 200MB threshold
+        this.memoryPressureThreshold = 150 * 1024 * 1024; // 150MB threshold (lower for more frequent cleanup)
         this.memoryPressureActions = 0;
         this.lastMemoryPressureAction = 0;
+        this.totalAgentsSpawned = 0; // Total agents created in this simulation run
 
         this.gameSpeed = 10;
         this.maxAgents = 100;
@@ -115,6 +117,10 @@ export class Simulation {
         // Adaptive mutation tracking
         this.fitnessHistory = []; // Track best fitness over generations
         this.fitnessHistorySize = 10; // Keep last 10 generations
+
+        // Screen wake lock for fullscreen gaming
+        this.wakeLock = null;
+        this.wakeLockEnabled = false;
 
         // Dashboard tracking
         this.dashboardHistory = []; // Track metrics for dashboard
@@ -237,17 +243,29 @@ export class Simulation {
 
             const MAX_RAYS_PER_AGENT = 50; // This must match the hardcoded value in the simulation
             const MAX_ENTITIES = (maxAgentsFromSlider + bufferSafetyMargin) + FOOD_SPAWN_CAP + 100; // Agents + Food + safety buffer
-            const MAX_OBSTACLES = 100; // Each circular obstacle becomes 8 line segments, so 10 obstacles = 80 segments (with buffer)
+            const MAX_OBSTACLES = 300; // Each circular obstacle becomes 8 line segments, so 25 obstacles = 200 segments (with buffer)
+
+            const gpuConfig = {
+                maxAgents: maxAgentsFromSlider + bufferSafetyMargin,
+                maxRaysPerAgent: MAX_RAYS_PER_AGENT,
+                maxEntities: MAX_ENTITIES,
+                maxObstacles: MAX_OBSTACLES,
+            };
+            console.log('[GPU-INIT] Initializing GPU Physics with config:', gpuConfig);
 
             gpuPhysicsAvailable = await Promise.race([
-                this.gpuPhysics.init({
-                    maxAgents: maxAgentsFromSlider + bufferSafetyMargin,
-                    maxRaysPerAgent: MAX_RAYS_PER_AGENT,
-                    maxEntities: MAX_ENTITIES,
-                    maxObstacles: MAX_OBSTACLES,
-                }),
+                this.gpuPhysics.init(gpuConfig),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Physics init timeout')), 15000))
-            ]).catch(() => false);
+            ]).catch((error) => {
+                console.error('[GPU-INIT] GPU Physics init failed:', error);
+                return false;
+            });
+
+            if (gpuPhysicsAvailable) {
+                console.log('[GPU-INIT] GPU Physics initialized successfully');
+            } else {
+                console.warn('[GPU-INIT] GPU Physics initialization failed or timed out');
+            }
         } catch (e) {
             this.logger.warn("GPU Physics init failed or timed out:", e);
             gpuPhysicsAvailable = false;
@@ -302,11 +320,11 @@ export class Simulation {
         const validationEntry = this.validationQueue.get(geneId);
 
         // Prevent duplicate validations within short time window
-        const now = Date.now();
-        if (now - validationEntry.lastValidationTime < 5000) { // 5 second cooldown
+        const currentTime = Date.now();
+        if (currentTime - validationEntry.lastValidationTime < 5000) { // 5 second cooldown
             return;
         }
-        validationEntry.lastValidationTime = now;
+        validationEntry.lastValidationTime = currentTime;
 
         validationEntry.attempts++;
         validationEntry.scores.push(agent.fitness);
@@ -362,19 +380,72 @@ export class Simulation {
             this.validationQueue.delete(geneId);
         }
 
-        // Limit queue size
+        // Aggressive queue size management
         if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
             // Remove oldest non-validated entries first
             const entries = Array.from(this.validationQueue.entries());
             const toRemove = entries
                 .filter(([_, entry]) => !entry.isValidated)
                 .sort(([_, a], [__, b]) => a.lastValidationTime - b.lastValidationTime)
-                .slice(0, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE);
+                .slice(0, Math.min(10, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE)); // Remove up to 10 at a time
 
             toRemove.forEach(([geneId, entry]) => {
                 console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
                 this.validationQueue.delete(geneId);
             });
+        }
+
+        // Also clean up very old entries (5+ minutes since last validation attempt)
+        const currentTimestamp = Date.now();
+        const fiveMinutesAgo = currentTimestamp - (5 * 60 * 1000);
+        for (const [geneId, entry] of this.validationQueue.entries()) {
+            if (entry.lastValidationTime < fiveMinutesAgo && !entry.isValidated) {
+                console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (5+ minutes old)`);
+                this.validationQueue.delete(geneId);
+            }
+        }
+    }
+
+    async requestWakeLock() {
+        if (!('wakeLock' in navigator)) {
+            console.warn('[WAKE] Screen Wake Lock API not supported in this browser');
+            return false;
+        }
+
+        try {
+            this.wakeLock = await navigator.wakeLock.request('screen');
+            this.wakeLockEnabled = true;
+            console.log('[WAKE] 🔋 Screen wake lock activated - display will stay on');
+
+            // Handle wake lock release (when system needs to save power)
+            this.wakeLock.addEventListener('release', () => {
+                console.log('[WAKE] 🔋 Screen wake lock released by system');
+                this.wakeLock = null;
+                this.wakeLockEnabled = false;
+            });
+
+            return true;
+        } catch (err) {
+            console.warn('[WAKE] Failed to acquire wake lock:', err.message);
+            this.wakeLockEnabled = false;
+            return false;
+        }
+    }
+
+    async releaseWakeLock() {
+        if (this.wakeLock) {
+            await this.wakeLock.release();
+            this.wakeLock = null;
+            this.wakeLockEnabled = false;
+            console.log('[WAKE] 🔋 Screen wake lock released');
+        }
+    }
+
+    async toggleWakeLock() {
+        if (this.wakeLockEnabled) {
+            await this.releaseWakeLock();
+        } else {
+            await this.requestWakeLock();
         }
     }
 
@@ -448,8 +519,8 @@ export class Simulation {
             this.agents.forEach(a => a.energy -= 0.1);
         }
 
-        if (this.seasonTimer % (seasonLength * 3) === 0) {
-            for (let i = 0; i < 5; i++) {
+        if (this.seasonTimer % (seasonLength * 6) === 0) { // Reduced frequency from *3 to *6
+            for (let i = 0; i < 2; i++) { // Reduced count from 5 to 2
                 spawnPheromone(this, this.worldWidth * Math.random(), this.worldHeight * Math.random(), 'danger');
             }
         }
@@ -550,6 +621,10 @@ export class Simulation {
                 this.quadtree.insert(new Point(pheromone.x, pheromone.y, pheromone));
             }
         }
+        // Insert obstacles into quadtree for collision detection
+        for (const obstacle of this.obstacles) {
+            this.quadtree.insert(new Point(obstacle.x, obstacle.y, obstacle));
+        }
 
         // Repopulate before game loop to include new agents
         repopulate(this);
@@ -593,6 +668,10 @@ export class Simulation {
                         this.quadtree.insert(new Point(pheromone.x, pheromone.y, pheromone));
                     }
                 }
+                // Insert obstacles into quadtree for collision detection
+                for (const obstacle of this.obstacles) {
+                    this.quadtree.insert(new Point(obstacle.x, obstacle.y, obstacle));
+                }
             }
 
             // GPU processing per iteration for accurate perception
@@ -607,6 +686,12 @@ export class Simulation {
 
             let gpuRayTracingSucceeded = false;
             let gpuNeuralNetSucceeded = false;
+
+            // Update obstacles BEFORE ray tracing so rays detect current positions
+            updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
+
+            // Update renderer immediately with new obstacle positions
+            this.renderer.updateObstacles(this.obstacles);
 
             // GPU Ray Tracing + Pheromone Detection - SYNC for immediate results
             const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 10;
@@ -694,6 +779,22 @@ export class Simulation {
                 }
             }
 
+            // Update food (rotting system)
+            for (let j = 0; j < this.food.length; j++) {
+                const food = this.food[j];
+                if (food && !food.isDead) {
+                    food.update();
+                }
+            }
+
+            // Update pheromones
+            for (let j = 0; j < this.pheromones.length; j++) {
+                const pheromone = this.pheromones[j];
+                if (pheromone && !pheromone.isDead) {
+                    pheromone.update();
+                }
+            }
+
             // Count frame as GPU or CPU based on whether GPU actually ran
             // Only count on last iteration to avoid double counting
             // With Solution 4, GPU runs per iteration, so we track if it succeeded 
@@ -739,10 +840,53 @@ export class Simulation {
 
                 // Process dead agent queue (background save)
                 this.processDeadAgentQueue();
+
+                // Periodic performance monitoring (every 1000 frames)
+                if (this.frameCount % 1000 === 0) {
+                    const livingAgents = this.agents.filter(a => !a.isDead).length;
+                    const livingFood = this.food.filter(f => !f.isDead).length;
+                    const livingPheromones = this.pheromones.filter(p => !p.isDead).length;
+
+                    // Check GPU cache sizes if available
+                    let gpuComputeCache = 0;
+                    let gpuPhysicsCache = 0;
+                    if (this.gpuCompute && this.gpuCompute.bufferCache) {
+                        gpuComputeCache = this.gpuCompute.bufferCache.size;
+                    }
+                    if (this.gpuPhysics && this.gpuPhysics.buffers) {
+                        gpuPhysicsCache = 1; // Physics has buffers
+                    }
+
+                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'}`);
+                }
                 // Remove dead food
                 for (let j = this.food.length - 1; j >= 0; j--) {
                     if (this.food[j] && this.food[j].isDead) {
                         this.food.splice(j, 1);
+                    }
+                }
+
+                // Clean up unreachable food (food that's been alive too long)
+                // This prevents food accumulation in areas agents never visit
+                if (this.frameCount % 5000 === 0) { // Check every ~83 seconds at 60 FPS
+                    const maxFoodAge = 3000; // ~50 seconds at 60 FPS
+                    let cleanedCount = 0;
+                    for (let j = this.food.length - 1; j >= 0; j--) {
+                        const food = this.food[j];
+                        if (food && !food.isDead && food.age !== undefined && food.age > maxFoodAge) {
+                            // Mark old unreachable food as dead
+                            food.isDead = true;
+                            cleanedCount++;
+                        }
+                        // Initialize age tracking for new food
+                        if (food && food.age === undefined) {
+                            food.age = 0;
+                        } else if (food && !food.isDead) {
+                            food.age++;
+                        }
+                    }
+                    if (cleanedCount > 0) {
+                        console.log(`[CLEANUP] Removed ${cleanedCount} unreachable food items`);
                     }
                 }
             }
@@ -764,11 +908,35 @@ export class Simulation {
                 }
                 if (this.frameCount % 100 === 0) updateInfo(this);
                 // Periodic validation checks - add high-performing agents to validation queue
-                if (this.frameCount % 500 === 0) updatePeriodicValidation(this);
+                if (this.frameCount % 500 === 0) {
+                    updatePeriodicValidation(this);
+                    // Log validation queue status periodically
+                    if (this.validationQueue.size > 0) {
+                        console.log(`[VALIDATION] Queue status: ${this.validationQueue.size} agents pending validation`);
+                    }
+                }
                 // Update dashboard more frequently for better real-time feedback
                 if (this.frameCount % 30 === 0) updateDashboard(this);
                 // Periodic comprehensive memory cleanup every 1000 frames (~16 seconds at 60 FPS)
-                if (this.frameCount % 1000 === 0) periodicMemoryCleanup(this);
+                if (this.frameCount % 1000 === 0) {
+                    console.log(`[PERF] Frame ${this.frameCount}: Starting periodic memory cleanup`);
+                    periodicMemoryCleanup(this);
+                    // Force GPU cache clearing every 1000 frames to prevent memory buildup
+                    if (this.gpuCompute && this.gpuCompute.clearCache) {
+                        this.gpuCompute.clearCache();
+                        console.log('[PERF] GPU compute cache cleared');
+                    }
+                    if (this.gpuPhysics && this.gpuPhysics.clearCache) {
+                        this.gpuPhysics.clearCache();
+                        console.log('[PERF] GPU physics cache cleared');
+                    }
+                    // Force garbage collection if available
+                    if (window.gc) {
+                        window.gc();
+                        console.log('[PERF] Forced garbage collection');
+                    }
+                    console.log(`[PERF] Frame ${this.frameCount}: Periodic memory cleanup completed`);
+                }
             }
         }
 
@@ -813,7 +981,7 @@ export class Simulation {
         this.renderer.updateAgents(this.agents);
         this.renderer.updateFood(this.food);
         this.renderer.updatePheromones(this.pheromones);
-        this.renderer.updateObstacles(this.obstacles);
+        // Obstacles already updated after movement
 
         this.renderer.updateRays(this.agents, this.frameCount);
         this.renderer.render();
@@ -826,6 +994,7 @@ export class Simulation {
             if (availableSlots > 0) {
                 const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
                 this.agents.push(...newAgents);
+                this.totalAgentsSpawned += newAgents.length; // Track total agents spawned in this run
             }
 
             if (this.agentSpawnQueue.length > 0) {
