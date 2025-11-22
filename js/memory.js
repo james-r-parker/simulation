@@ -76,34 +76,14 @@ export function updateMemoryUI(simulation) {
 
     // Update dashboard memory metrics
     const currentMemoryEl = document.getElementById('current-memory');
-    const peakMemoryEl = document.getElementById('peak-memory');
-    const memoryGrowthEl = document.getElementById('memory-growth-rate');
-    const entityCountsEl = document.getElementById('entity-counts');
+    const totalEntityCountEl = document.getElementById('total-entity-count');
 
     if (currentMemoryEl) {
         currentMemoryEl.textContent = simulation.currentMemoryUsage > 0 ? `${simulation.currentMemoryUsage.toFixed(1)}MB` : 'N/A';
     }
-    if (peakMemoryEl) {
-        peakMemoryEl.textContent = simulation.peakMemoryUsage > 0 ? `${simulation.peakMemoryUsage.toFixed(1)}MB` : 'N/A';
-    }
-    if (memoryGrowthEl) {
-        if (simulation.memoryGrowthRate !== 0) {
-            const rate = simulation.memoryGrowthRate.toFixed(2);
-            const color = simulation.memoryGrowthRate > 0.1 ? '#ff6b6b' : simulation.memoryGrowthRate < -0.1 ? '#51cf66' : '#ffd43b';
-            memoryGrowthEl.innerHTML = `<span style="color: ${color};">${simulation.memoryGrowthRate > 0 ? '+' : ''}${rate} MB/min</span>`;
-        } else {
-            memoryGrowthEl.textContent = 'Stable';
-        }
-    }
-    if (entityCountsEl) {
-        const dbQueueColor = simulation.entityCounts.dbQueue > 50 ? '#ff6b6b' :
-            simulation.entityCounts.dbQueue > 20 ? '#ffd43b' : '#ccc';
-        entityCountsEl.innerHTML = `
-            Agents: <strong>${simulation.entityCounts.agents}</strong> |
-            Food: <strong>${simulation.entityCounts.food}</strong> |
-            Pheromones: <strong>${simulation.entityCounts.pheromones}</strong> |
-            DB Queue: <strong style="color: ${dbQueueColor};">${simulation.entityCounts.dbQueue}</strong>
-        `;
+    if (totalEntityCountEl) {
+        const totalEntities = simulation.entityCounts.agents + simulation.entityCounts.food + simulation.entityCounts.pheromones;
+        totalEntityCountEl.textContent = totalEntities;
     }
 }
 

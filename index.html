@@ -55,9 +55,9 @@
         </div>
 
         <div class="sidebar-content">
-            <!-- CRITICAL METRICS -->
+            <!-- MERGED SURVIVAL & PERFORMANCE METRICS -->
             <div class="metric-card critical">
-                <div class="card-header">🚨 Critical Survival Metrics</div>
+                <div class="card-header">📊 Survival & Performance</div>
                 <div class="card-body">
                     <div>Avg Age: <strong id="avg-age" class="highlight-yellow">0</strong>f <span
                             class="sub-text">(Target: 600f+)</span></div>
@@ -65,6 +65,18 @@
                             id="total-agents">0</span></div>
                     <div>Maturation Rate: <span id="maturation-rate" class="bold">0</span>%</div>
                     <div>Max Age: <span id="max-age" class="highlight-cyan">0</span>f</div>
+                    <div class="metric-divider"></div>
+                    <div>Best Fitness: <span id="fitness-value">0</span> (Δ: <span id="fitness-delta">0</span>)</div>
+                    <div>Avg Fitness: <span id="avg-fitness-value">0</span></div>
+                    <div>Learning Rate: <span id="learning-rate-value">0</span>/gen</div>
+                    <div class="metric-divider"></div>
+                    <div>Avg Collisions: <span id="avg-collisions">0</span></div>
+                    <div>Avg Wall Hits: <span id="avg-wall-hits">0</span></div>
+                    <div>Collision-Free %: <span id="collision-free-percent" class="highlight-green">0</span>%</div>
+                    <div class="metric-divider"></div>
+                    <div>Avg Energy: <span id="avg-energy">0</span></div>
+                    <div>Avg Food Eaten: <span id="avg-food">0</span></div>
+                    <div>Avg Kills: <span id="avg-kills">0</span></div>
                 </div>
             </div>
 
@@ -76,26 +88,6 @@
                     <div>Asexual Offspring: <span id="total-asexual-offspring">0</span></div>
                     <div>Avg Offspring/Agent: <span id="avg-offspring">0</span></div>
                     <div>Reproduction Events/min: <span id="reproduction-rate">0</span></div>
-                </div>
-            </div>
-
-            <!-- FITNESS & LEARNING -->
-            <div class="metric-group">
-                <div class="group-header">Fitness Metrics</div>
-                <div class="group-body">
-                    <div>Best Fitness: <span id="fitness-value">0</span> (Δ: <span id="fitness-delta">0</span>)</div>
-                    <div>Avg Fitness: <span id="avg-fitness-value">0</span></div>
-                    <div>Learning Rate: <span id="learning-rate-value">0</span>/gen</div>
-                </div>
-            </div>
-
-            <!-- COLLISION & NAVIGATION -->
-            <div class="metric-card navigation">
-                <div class="card-header">⚠️ Navigation Quality</div>
-                <div class="card-body">
-                    <div>Avg Collisions: <span id="avg-collisions">0</span></div>
-                    <div>Avg Wall Hits: <span id="avg-wall-hits">0</span></div>
-                    <div>Collision-Free %: <span id="collision-free-percent" class="highlight-green">0</span>%</div>
                 </div>
             </div>
 
@@ -111,37 +103,12 @@
                 </div>
             </div>
 
-            <!-- RESOURCE STATS -->
-            <div class="metric-group">
-                <div class="group-header">Resources</div>
-                <div class="group-body">
-                    <div>Avg Energy: <span id="avg-energy">0</span></div>
-                    <div>Avg Food Eaten: <span id="avg-food">0</span></div>
-                    <div>Avg Kills: <span id="avg-kills">0</span></div>
-                </div>
-            </div>
-
-            <!-- SPECIALIZATION DISTRIBUTION -->
-            <div class="metric-group">
-                <div class="group-header">Specializations:</div>
-                <div id="specialization-list" class="specialization-list"></div>
-            </div>
-
-            <!-- MEMORY MONITORING -->
+            <!-- SIMPLIFIED MEMORY MONITORING -->
             <div class="metric-card memory">
                 <div class="card-header">🧠 Memory Monitor</div>
                 <div class="card-body">
                     <div>Current Usage: <span id="current-memory" class="highlight-green bold">0MB</span></div>
-                    <div>Peak Usage: <span id="peak-memory" class="highlight-cyan">0MB</span></div>
-                    <div>Growth Rate: <span id="memory-growth-rate">Stable</span></div>
-                    <div id="entity-counts" class="sub-text-block">
-                        Agents: <strong>0</strong> | Food: <strong>0</strong> | Pheromones: <strong>0</strong> | DB
-                        Queue: <strong>0</strong>
-                    </div>
-                    <div class="warning-text">
-                        ⚠️ Rising memory indicates potential leaks<br>
-                        📊 DB Queue >50 = performance impact
-                    </div>
+                    <div>Total Entities: <span id="total-entity-count" class="highlight-cyan">0</span></div>
                 </div>
             </div>
 

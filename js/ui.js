@@ -165,7 +165,8 @@ export function updateInfo(simulation) {
     const livingAgents = simulation.agents.filter(a => !a.isDead);
     document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${simulation.maxAgents}`;
     if (simulation.bestAgent) {
-        document.getElementById('info-best').innerText = `Best Agent: F: ${simulation.bestAgent.fitness.toFixed(0)}, A: ${simulation.bestAgent.framesAlive}f, O: ${simulation.bestAgent.offspring}, K: ${simulation.bestAgent.kills}, Fd: ${simulation.bestAgent.foodEaten}, C: ${simulation.bestAgent.collisions || 0}, CT: ${simulation.bestAgent.cleverTurns?.toFixed(1) || 0}, RH: ${simulation.bestAgent.rayHits || 0}`;
+        const ageSeconds = (simulation.bestAgent.framesAlive / 60).toFixed(0);
+        document.getElementById('info-best').innerText = `Best Agent: Fitness ${simulation.bestAgent.fitness.toFixed(0)} | Age ${ageSeconds}s | Food ${simulation.bestAgent.foodEaten} | Offspring ${simulation.bestAgent.offspring}`;
     }
     document.getElementById('info-gen').innerText = `Generation: ${simulation.generation}`;
     document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(simulation.db.pool).length}`;
@@ -190,11 +191,6 @@ export function updateDashboard(simulation) {
     const genePoolHealth = simulation.db.getGenePoolHealth();
     const genePoolCount = genePoolHealth.genePoolCount;
 
-    // Specialization distribution
-    const specializationCounts = {};
-    livingAgents.forEach(a => {
-        specializationCounts[a.specializationType] = (specializationCounts[a.specializationType] || 0) + 1;
-    });
 
     // Average stats
     const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
@@ -296,7 +292,6 @@ export function updateDashboard(simulation) {
     const genePoolValueEl = document.getElementById('gene-pool-value');
     const qualifiedAgentsValueEl = document.getElementById('qualified-agents-value');
     const mutationRateValueEl = document.getElementById('mutation-rate-value');
-    const specializationListEl = document.getElementById('specialization-list');
     const avgAgeEl = document.getElementById('avg-age');
     const avgEnergyEl = document.getElementById('avg-energy');
     const avgOffspringEl = document.getElementById('avg-offspring');
@@ -320,12 +315,6 @@ export function updateDashboard(simulation) {
         qualifiedAgentsValueEl.style.color = qualifiedAgents > 0 ? '#0f0' : '#f00';
     }
     if (mutationRateValueEl) mutationRateValueEl.textContent = (simulation.mutationRate * 100).toFixed(1) + '%';
-    if (specializationListEl) {
-        const specList = Object.entries(specializationCounts)
-            .map(([type, count]) => `${type}: ${count}`)
-            .join(', ');
-        specializationListEl.textContent = specList || 'none';
-    }
     if (avgAgeEl) {
         avgAgeEl.textContent = avgAge.toFixed(1);
         // Color code based on target: green if >600f (10s), yellow if 300-600f (5-10s), red if <300f
