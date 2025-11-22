@@ -12,6 +12,7 @@ export class GenePoolDatabase {
         this.saveQueue = []; // Queue for pending save operations (individual agents)
         this.isProcessingQueue = false;
         this.pool = {};
+        this.geneIds = [];
     }
 
     async init() {
@@ -168,15 +169,28 @@ export class GenePoolDatabase {
 
         // Process each gene pool
         const promises = [];
-        for (const [geneId, agents] of Object.entries(agentsByGene)) {
-            // Keep only top agents per gene pool
-            const sorted = agents.sort((a, b) => b.fitness - a.fitness);
+        for (const [geneId, newAgents] of Object.entries(agentsByGene)) {
+            // 1. Get existing agents from this.pool
+            const existingAgents = this.pool[geneId] || [];
+
+            // 2. Merge existing agents with new agents
+            const allAgents = [...existingAgents, ...newAgents];
+
+            // 3. Deduplicate by agent ID
+            const uniqueAgents = allAgents.filter((agent, index, self) =>
+                index === self.findIndex(a => a.id === agent.id)
+            );
+
+            // 4. Sort by fitness (descending)
+            const sorted = uniqueAgents.sort((a, b) => b.fitness - a.fitness);
+
+            // 5. Keep only top agents per gene pool
             const topAgents = sorted.slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
 
-            // Update in-memory pool
+            // 6. Update in-memory pool with the BEST agents
             this.pool[geneId] = topAgents;
 
-            // Queue save to IndexedDB
+            // 7. Queue save to IndexedDB with the BEST agents
             promises.push(
                 this.sendMessage('saveGenePool', { geneId, agents: topAgents })
                     .catch(error => this.logger.error(`[DATABASE] Error saving gene pool for ${geneId}:`, error))
@@ -193,11 +207,9 @@ export class GenePoolDatabase {
     async saveGenePool(geneId, agents) {
         if (!this.worker) await this.init();
 
-        // Keep top 10 agents per gene ID (increased from 3 for better diversity)
-        const topAgents = agents
+        // Prepare new agents data
+        const newAgentsData = agents
             .filter(a => a.geneId === geneId)
-            .sort((a, b) => b.fitness - a.fitness)
-            .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL)
             .map(a => ({
                 id: a.id,
                 weights: a.getWeights(),
@@ -206,7 +218,27 @@ export class GenePoolDatabase {
                 specializationType: a.specializationType
             }));
 
-        if (topAgents.length === 0) return;
+        if (newAgentsData.length === 0) return;
+
+        // 1. Get existing agents from this.pool
+        const existingAgents = this.pool[geneId] || [];
+
+        // 2. Merge existing agents with new agents
+        const allAgents = [...existingAgents, ...newAgentsData];
+
+        // 3. Deduplicate by agent ID
+        const uniqueAgents = allAgents.filter((agent, index, self) =>
+            index === self.findIndex(a => a.id === agent.id)
+        );
+
+        // 4. Sort by fitness (descending)
+        const sorted = uniqueAgents.sort((a, b) => b.fitness - a.fitness);
+
+        // 5. Keep only top agents
+        const topAgents = sorted.slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
+
+        // 6. Update in-memory pool with the BEST agents
+        this.pool[geneId] = topAgents;
 
         try {
             await this.sendMessage('saveGenePool', { geneId, agents: topAgents });
@@ -243,22 +275,26 @@ export class GenePoolDatabase {
         await this.processQueue();
     }
 
-    // Helper method: Get a random agent from any gene pool
-    getRandomAgent() {
+    randomGeneId() {
         const geneIds = Object.keys(this.pool);
         if (geneIds.length === 0) return null;
+        return geneIds[Math.floor(Math.random() * geneIds.length)];
+    }
 
-        const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
+    // Helper method: Get a random agent from any gene pool
+    getRandomAgent() {
+        const randomGeneId = this.randomGeneId();
         const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
         const randomAgent = pool[Math.floor(Math.random() * pool.length)];
-        return { weights: randomAgent.weights };
+        return randomAgent;
     }
 
     // Helper method: Get a mating pair for a specific geneId
-    getMatingPair(geneId) {
-        const pool = this.pool[geneId];
+    getMatingPair() {
+        const randomGeneId = this.randomGeneId();
+        const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
         // Sort by fitness once
@@ -272,33 +308,29 @@ export class GenePoolDatabase {
         if (!parent1Data.specializationType) {
             // Old data, clone parent
             return {
-                weights1: parent1Data.weights,
-                weights2: parent1Data.weights
+                parent1: parent1Data,
+                parent2: parent1Data
             };
         }
 
-        const parent1Weights = parent1Data.weights;
-        const parent1Specialization = parent1Data.specializationType;
-
         // Filter the pool to find compatible mates (same specialization)
-        const compatibleMates = sorted.filter(agentData => agentData.specializationType === parent1Specialization);
+        const compatibleMates = sorted.filter(agentData => agentData.specializationType === parent1Data.specializationType);
 
         if (compatibleMates.length < 2) {
             // Not enough compatible mates, clone the single parent
             return {
-                weights1: parent1Weights,
-                weights2: parent1Weights
+                parent1: parent1Data,
+                parent2: parent1Data
             };
         }
 
         // Select a different second parent from the compatible mates
         const otherMates = compatibleMates.filter(m => m !== parent1Data);
         const parent2Data = otherMates[Math.floor(Math.random() * otherMates.length)];
-        const parent2Weights = parent2Data.weights;
 
         return {
-            weights1: parent1Weights,
-            weights2: parent2Weights
+            parent1: parent1Data,
+            parent2: parent2Data
         };
     }
 

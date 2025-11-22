@@ -246,16 +246,6 @@
                     aboutModal.classList.add('hidden');
                 }
             });
-
-            // Register Service Worker (optional - fails gracefully if not present)
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered', reg))
-                    .catch(err => {
-                        // Service worker is optional, fail silently
-                        console.debug('Service Worker not available (optional feature)');
-                    });
-            }
         });
     </script>
 </body>

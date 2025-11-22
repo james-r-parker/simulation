@@ -599,16 +599,6 @@ export class Simulation {
         };
     }
 
-    selection(geneId) {
-        const matingPair = this.db.getMatingPair(geneId);
-        if (!matingPair) {
-            this.logger.warn(`[LIFECYCLE] No mating pair available for gene ${geneId}`);
-            return null;
-        }
-
-        return this.crossover(matingPair.weights1, matingPair.weights2);
-    }
-
     repopulate() {
         // Count only living agents for population limit
         const livingAgents = this.agents.filter(a => !a.isDead).length;
@@ -627,25 +617,19 @@ export class Simulation {
             if (roll < 0.3) {
                 const gene = this.db.getRandomAgent();
                 if (gene) {
-                    this.spawnAgent({ gene: gene, mutationRate: this.mutationRate });
+                    this.spawnAgent({ gene: gene, mutationRate: this.mutationRate / 4 });
                 } else {
                     this.spawnAgent({ gene: null });
                 }
             }
             // 45% chance for Sexual Selection (increased from 30%)
             else if (roll < 0.75) {
-                const geneIds = Object.keys(this.db.pool);
-                if (geneIds.length > 0) {
-                    const randomGeneId = geneIds[Math.floor(Math.random() * geneIds.length)];
-                    const childWeights = this.selection(randomGeneId);
-                    if (childWeights) {
-                        this.spawnAgent({ gene: { weights: childWeights } });
-                    } else {
-                        // Fallback to random if selection fails
-                        this.spawnAgent({ gene: null });
-                    }
+                const matingPair = this.db.getMatingPair();
+                if (matingPair) {
+                    const childWeights = this.crossover(matingPair.parent1.weights, matingPair.parent2.weights);
+                    this.spawnAgent({ gene: { weights: childWeights, parent: matingPair.parent1 } });
                 } else {
-                    // Fallback to random if no gene pools
+                    // Fallback to random if selection fails
                     this.spawnAgent({ gene: null });
                 }
             }
@@ -655,17 +639,13 @@ export class Simulation {
             }
             // 5% chance for Novelty Spawning (NEW) - random specialization with moderate mutation
             else {
-                const randomGeneId = Object.keys(this.db.pool)[Math.floor(Math.random() * Object.keys(this.db.pool).length)];
-                if (randomGeneId) {
-                    const gene = this.db.getRandomAgent(randomGeneId);
-                    if (gene) {
-                        const allTypes = Object.values(SPECIALIZATION_TYPES);
-                        const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
-                        this.spawnAgent({ gene: { weights: gene.weights, specializationType: novelSpecialization }, mutationRate: this.mutationRate });
-                    } else {
-                        this.spawnAgent({ gene: null });
-                    }
-                } else {
+                const parent = this.db.getRandomAgent();
+                if (parent) {
+                    const allTypes = Object.values(SPECIALIZATION_TYPES);
+                    const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
+                    this.spawnAgent({ gene: { ...parent.gene, specializationType: novelSpecialization }, mutationRate: this.mutationRate / 2, parent: parent });
+                }
+                else {
                     this.spawnAgent({ gene: null });
                 }
             }
