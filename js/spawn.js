@@ -439,53 +439,60 @@ export function repopulate(simulation) {
 
         // Priority 1: Use validation candidates if available
         if (simulation.validationManager.validationQueue.size > 0) {
-            // Find first non-active validation candidate
-            let firstKey = null;
-            for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
-                if (!entry.isActiveTest) {
-                    firstKey = geneId;
-                    break;
-                }
-            }
-
-            if (!firstKey) {
-                //console.log(`[VALIDATION] All validation candidates are currently active - skipping validation spawn`);
-                // Skip to normal spawning
-            } else {
-                const validationEntry = simulation.validationManager.validationQueue.get(firstKey);
-
-                // Create agent with the candidate's genes for re-testing
-                const validationGene = {
-                    weights: validationEntry.weights,
-                    geneId: validationEntry.geneId,
-                    specializationType: validationEntry.specializationType,
-                    parent: null // No parent reference for validation spawns
-                };
-
-            // Limit active validation agents to prevent population domination (max 5% of population)
+            // Calculate how many validation agents we can spawn this frame (up to 5 or remaining slots)
             const maxValidationAgents = Math.max(1, Math.floor(simulation.maxAgents * 0.05));
-            if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
-                    //console.log(`[VALIDATION] Skipping validation spawn - ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents} active validation agents`);
-                    // Don't continue to next agent spawn - let normal population fill the gap
-                    break;
+            const availableSlots = maxValidationAgents - simulation.validationManager.activeValidationAgents;
+            const maxToSpawnThisFrame = Math.min(5, availableSlots); // Cap at 5 per frame to prevent overwhelming the system
+
+            if (maxToSpawnThisFrame <= 0) {
+                //console.log(`[VALIDATION] Skipping validation spawn - ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents} active validation agents`);
+                // Don't continue to next agent spawn - let normal population fill the gap
+            } else {
+                // Find non-active validation candidates (up to the limit we can spawn)
+                const candidatesToSpawn = [];
+                for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+                    if (!entry.isActiveTest && candidatesToSpawn.length < maxToSpawnThisFrame) {
+                        candidatesToSpawn.push({ geneId, entry });
+                    }
                 }
 
-                console.log(`[VALIDATION] Respawning validation candidate ${firstKey} for test run ${validationEntry.attempts + 1}/3 (stored weights)`);
-                // Give validation agents extra energy and safe spawning to ensure they can complete their runs
-                const validationAgent = spawnAgent(simulation, {
-                    gene: validationGene,
-                    energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
-                    isValidationAgent: true
-                });
-                if (validationAgent) {
-                    simulation.validationManager.activeValidationAgents++;
-                    console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+                // Spawn all collected validation candidates
+                for (const { geneId, entry } of candidatesToSpawn) {
+                    // Double-check we haven't exceeded the limit (in case of concurrent modifications)
+                    if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
+                        console.log(`[VALIDATION] Stopping batch spawn - reached max validation agents limit`);
+                        break;
+                    }
+
+                    // Create agent with the candidate's genes for re-testing
+                    const validationGene = {
+                        weights: entry.weights,
+                        geneId: entry.geneId,
+                        specializationType: entry.specializationType,
+                        parent: null // No parent reference for validation spawns
+                    };
+
+                    console.log(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
+                    // Give validation agents extra energy and safe spawning to ensure they can complete their runs
+                    const validationAgent = spawnAgent(simulation, {
+                        gene: validationGene,
+                        energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
+                        isValidationAgent: true
+                    });
+                    if (validationAgent) {
+                        simulation.validationManager.activeValidationAgents++;
+                        console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+
+                        // Mark as actively being tested to prevent duplicate spawns
+                        entry.isActiveTest = true;
+                        console.log(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
+                    }
                 }
 
-                // Mark as actively being tested to prevent duplicate spawns
-                validationEntry.isActiveTest = true;
-                console.log(`[VALIDATION] Marked ${firstKey} as active test (run ${validationEntry.attempts + 1})`);
-                continue;
+                // If we spawned validation agents, continue to next spawn slot
+                if (candidatesToSpawn.length > 0) {
+                    continue;
+                }
             }
         }
 

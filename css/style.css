@@ -285,33 +285,34 @@ button:hover {
 /* Sidebar Toggle */
 .sidebar-toggle {
     position: fixed;
-    top: 80px; /* Move down to account for info-bar */
+    top: 63px; /* Positioned below the info bar */
     right: 20px;
     z-index: 1100;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    color: var(--text-main);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-dim);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
 }
 
 .sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
     border-color: var(--neon-cyan);
     color: var(--neon-cyan);
-    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-    transform: rotate(90deg);
+    transform: scale(1.05);
 }
 
-.sidebar:not(.collapsed)+.sidebar-toggle {
-    right: 360px;
+/* Move toggle button to appear within sidebar when expanded */
+.sidebar:not(.collapsed) ~ .sidebar-toggle {
+    right: 12px;
 }
 
 /* Metric Cards */

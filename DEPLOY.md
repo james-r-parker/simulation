@@ -120,7 +120,10 @@ simulation/
 
 ## Important Files
 
-- **`_redirects`**: Ensures all routes redirect to `index.html` for SPA routing
+- **`_redirects`**: Cloudflare Pages routing rules that handle:
+  - Static page redirects (`/about` → `/about.html`, `/blog` → `/blog.html`)
+  - Asset serving for JS/CSS files
+  - SPA routing (all other routes serve `index.html`)
 - **`wrangler.toml`**: Cloudflare Pages build configuration
 - **`vite.config.js`**: Vite build settings optimized for Cloudflare Pages
 

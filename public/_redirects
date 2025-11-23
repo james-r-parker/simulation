@@ -7,5 +7,14 @@
 # Worker files must be served directly (not redirected to index.html)
 /database-worker.js /database-worker.js 200
 
+# Static page redirects (clean URLs)
+/about       /about.html    200
+/blog        /blog.html     200
+/about.html  /about.html    200
+/blog.html   /blog.html     200
+
+# Handle index.html variations
+/index.html  /              200
+
 # Catch all other routes and serve index.html for SPA routing
-/*    /index.html   200
+/*           /index.html    200

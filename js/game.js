@@ -93,8 +93,8 @@ export class Simulation {
         this.lastMemoryPressureAction = 0;
         this.totalAgentsSpawned = 0; // Total agents created in this simulation run
 
-        this.gameSpeed = 10;
-        this.maxAgents = 100;
+        this.gameSpeed = 1;
+        this.maxAgents = 15;
         this.foodSpawnRate = 1.2;
         this.mutationRate = 0.1;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation

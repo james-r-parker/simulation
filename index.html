@@ -4,28 +4,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Blob Evolution v5.0 (WebGL)</title>
+    <title>Blob Evolution</title>
 
     <!-- Meta Tags -->
     <meta name="description"
-        content="A high-performance WebGL simulation of evolving blob agents. Watch them learn, eat, and reproduce in real-time.">
-    <meta name="keywords" content="evolution, simulation, genetic algorithm, neural network, webgl, javascript">
+        content="A high-performance WebGL simulation of evolving blob agents. Watch them learn, eat, and reproduce in real-time with neural networks and GPU acceleration.">
+    <meta name="keywords" content="evolution, simulation, genetic algorithm, neural network, webgl, javascript, ai, machine learning, gpu, physics">
     <meta name="author" content="Blob Evolution Team">
     <meta name="theme-color" content="#0a0a0a">
+    <meta name="robots" content="index, follow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://matrix.dotnethelp.co.uk/">
-    <meta property="og:title" content="Blob Evolution v5.0">
-    <meta property="og:description" content="Real-time evolution simulation with neural networks and GPU physics.">
-    <meta property="og:image" content="https://matrix.dotnethelp.co.uk/favicon.png">
+    <meta property="og:title" content="Blob Evolution v5.0 - Real-time AI Evolution Simulation">
+    <meta property="og:description" content="Evolve autonomous AI agents in your browser with GPU acceleration. Watch neural networks learn, agents compete, and evolution unfold in real-time.">
+    <meta property="og:image" content="https://matrix.dotnethelp.co.uk/public/preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Blob Evolution simulation showing colorful evolving agents in a dark environment">
+    <meta property="og:site_name" content="Blob Evolution">
+    <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://matrix.dotnethelp.co.uk/">
-    <meta property="twitter:title" content="Blob Evolution v5.0">
-    <meta property="twitter:description" content="Real-time evolution simulation with neural networks and GPU physics.">
-    <meta property="twitter:image" content="https://matrix.dotnethelp.co.uk/favicon.png">
+    <meta property="twitter:title" content="Blob Evolution v5.0 - Real-time AI Evolution Simulation">
+    <meta property="twitter:description" content="Evolve autonomous AI agents in your browser with GPU acceleration. Watch neural networks learn and evolution unfold in real-time.">
+    <meta property="twitter:image" content="https://matrix.dotnethelp.co.uk/public/preview.png">
+    <meta property="twitter:image:alt" content="Blob Evolution simulation showing colorful evolving agents">
+    <meta property="twitter:site" content="@blob_evolution">
+    <meta property="twitter:creator" content="@blob_evolution">
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://matrix.dotnethelp.co.uk/">
@@ -48,17 +58,22 @@
     </div>
     <!-- Sidebar Toggle Button -->
     <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">
-        ☰
+        ✕
     </button>
 
     <!-- Sidebar (formerly dashboard) -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <h3>Learning Progress</h3>
-            <button id="about-btn" class="icon-btn" title="About Simulation">ℹ️</button>
         </div>
 
         <div class="sidebar-content">
+            <div class="nav-links"
+                style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                <a href="about.html"
+                    style="color: var(--neon-green); text-decoration: none; margin-right: 15px; font-weight: bold;">About</a>
+                <a href="blog.html" style="color: var(--neon-cyan); text-decoration: none; font-weight: bold;">Blog</a>
+            </div>
             <!-- MERGED SURVIVAL & PERFORMANCE METRICS -->
             <div class="metric-card critical">
                 <div class="card-header">📊 Survival & Performance</div>
@@ -103,7 +118,8 @@
                     <div>Stored Gene Pools: <span id="gene-pool-value">0</span></div>
                     <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span class="sub-text">(F≥20,
                             600f+)</span></div>
-                    <div>Validation Queue: <span id="validation-queue-value">0</span> <span class="sub-text">(pending re-test)</span></div>
+                    <div>Validation Queue: <span id="validation-queue-value">0</span> <span class="sub-text">(pending
+                            re-test)</span></div>
                     <div>Mutation Rate: <span id="mutation-rate-value">0</span></div>
                 </div>
             </div>
@@ -121,29 +137,12 @@
         </div>
     </aside>
 
-    <!-- About Modal -->
-    <div id="about-modal" class="modal hidden">
-        <div class="modal-content">
-            <span id="close-modal" class="close-btn">&times;</span>
-            <h2>About Blob Evolution v5.0</h2>
-            <div class="modal-body">
-                <p>Welcome to <strong>Blob Evolution</strong>, a high-performance WebGL simulation where autonomous
-                    agents evolve to survive.</p>
-
-                <h3>Core Features:</h3>
-                <ul>
-                    <li><strong>Neural Networks:</strong> Each blob has a brain that learns from its environment.</li>
-                    <li><strong>Genetic Algorithm:</strong> Successful agents reproduce, passing on their genes.</li>
-                    <li><strong>GPU Physics:</strong> Thousands of agents simulated in real-time using WebGL.</li>
-                    <li><strong>Complex Behavior:</strong> Agents learn to find food, avoid walls, and interact.</li>
-                </ul>
-
-                <h3>How to Watch:</h3>
-                <p>Observe the "Critical Survival Metrics" in the sidebar. Watch as the "Avg Age" increases over
-                    generations, indicating that agents are learning to survive longer.</p>
-
-                <p class="credits">Built with Vanilla JS & WebGL.</p>
-            </div>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <h1>Blob Evolution</h1>
+        <div id="loading-status">Initializing...</div>
+        <div id="loading-progress">
+            <div id="loading-progress-bar"></div>
         </div>
     </div>
 
@@ -164,17 +163,9 @@
         <button id="clearStorage" title="Clear Gene Pool">🗑️</button>
         <button id="fullscreenBtn" title="Toggle Fullscreen">🖥️</button>
         <button id="wakeLock" title="Keep Screen Awake">🔋</button>
+        <button id="shareBtn" title="Share Page">📤</button>
     </div>
     <div id="canvas-container"></div>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <h1>Blob Evolution</h1>
-        <div id="loading-status">Initializing...</div>
-        <div id="loading-progress">
-            <div id="loading-progress-bar"></div>
-        </div>
-    </div>
 
     <!-- GPU.js removed - using WebGPU directly for better performance -->
 
@@ -183,6 +174,31 @@
 
         const container = document.getElementById('canvas-container');
         const sim = new Simulation(container);
+
+        // Share Button Functionality - Only show if Web Share API is supported
+        const shareBtn = document.getElementById('shareBtn');
+        if (shareBtn) {
+            if (!navigator.share) {
+                // Hide the button if Web Share API is not supported
+                shareBtn.style.display = 'none';
+            } else {
+                // Add click handler only if supported
+                shareBtn.addEventListener('click', async () => {
+                    const shareData = {
+                        title: 'Blob Evolution v5.0 - Real-time AI Evolution Simulation',
+                        text: 'Evolve autonomous AI agents in your browser with GPU acceleration. Watch neural networks learn and evolution unfold in real-time!',
+                        url: window.location.href
+                    };
+
+                    try {
+                        await navigator.share(shareData);
+                    } catch (error) {
+                        console.error('Error sharing:', error);
+                        alert('Sharing failed. Please try again.');
+                    }
+                });
+            }
+        }
 
         // The game loop is now started internally by sim.init()
         sim.init().then(() => {
@@ -196,30 +212,16 @@
             // UI Logic
             const sidebar = document.getElementById('sidebar');
             const sidebarToggle = document.getElementById('sidebar-toggle');
-            const aboutBtn = document.getElementById('about-btn');
-            const aboutModal = document.getElementById('about-modal');
-            const closeModal = document.getElementById('close-modal');
 
-            // Sidebar Toggle
+            // Mobile detection: hide sidebar by default on mobile devices
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                sidebar.classList.add('collapsed');
+            }
+
+            // Sidebar Toggle - now always visible when sidebar is expanded
             sidebarToggle.addEventListener('click', () => {
                 sidebar.classList.toggle('collapsed');
-                sidebarToggle.textContent = sidebar.classList.contains('collapsed') ? '☰' : '✕';
-            });
-
-            // About Modal
-            aboutBtn.addEventListener('click', () => {
-                aboutModal.classList.remove('hidden');
-            });
-
-            closeModal.addEventListener('click', () => {
-                aboutModal.classList.add('hidden');
-            });
-
-            // Close modal on outside click
-            aboutModal.addEventListener('click', (e) => {
-                if (e.target === aboutModal) {
-                    aboutModal.classList.add('hidden');
-                }
             });
         });
     </script>

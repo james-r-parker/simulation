@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Blob Evolution v5.0</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        body {
+            overflow-y: auto;
+            /* Allow scrolling */
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .content-container {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(57, 255, 20, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: var(--neon-green);
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+        }
+
+        h2 {
+            color: var(--neon-blue);
+            margin-top: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-color: var(--neon-cyan);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            /* 16:9 */
+            height: 0;
+            margin: 2rem 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .nav-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--neon-green);
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content-container">
+        <h1>About Blob Evolution</h1>
+
+        <div class="video-container">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/6oUIqGgeW4A"
+                title="YouTube video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+        </div>
+
+        <p><strong>Prepare to be amazed.</strong> Blob Evolution v5.0 isn't just a simulation—it's a window into the fundamental processes that created life itself. In this digital petri dish, you'll witness <em>evolution in real-time</em>, as simple neural networks bootstrap themselves into complex, intelligent behaviors.</p>
+
+        <p>These aren't scripted animations or pre-programmed behaviors. Every "blob" you see is a learning machine, evolving through millions of generations compressed into minutes. What starts as random flailing becomes sophisticated strategies: pack hunting, efficient foraging, defensive formations, and even primitive communication through pheromone trails.</p>
+
+        <h2>🤯 The Mind-Blowing Science</h2>
+        <p>This simulation demonstrates <strong>neuroevolution</strong>—a revolutionary approach where neural networks aren't trained on massive datasets, but evolve through Darwinian selection. Each agent has a recurrent neural network "brain" that processes sensory input and makes decisions, with the most successful brains getting to reproduce.</p>
+
+        <p>The result? <strong>Emergent intelligence</strong>. Behaviors you never explicitly programmed emerge naturally: cooperation, specialization, strategic thinking, and adaptive problem-solving. It's artificial life that builds its own complexity from the ground up.</p>
+
+        <h2>✨ Revolutionary Features That Push Boundaries</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Evolving Neural Networks</h3>
+                <p>Every blob has its own <strong>recurrent neural network brain</strong> that learns through evolution, not training data. These mini-AIs develop memory, pattern recognition, and decision-making from scratch—proving that intelligence can emerge from simple rules.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧬</div>
+                <h3>Darwinian Selection</h3>
+                <p><strong>Natural selection in silicon.</strong> Agents that survive longer, eat more, and reproduce successfully pass their neural architecture to offspring. Random mutations introduce variation, while crossover combines successful traits from multiple parents.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>GPU-Powered Evolution</h3>
+                <p>Running thousands of neural networks simultaneously requires insane computational power. We harness <strong>WebGPU compute shaders</strong> to parallelize the math, achieving real-time evolution at 60 FPS that would otherwise crawl at 2 FPS on CPU.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👀</div>
+                <h3>Photorealistic Vision</h3>
+                <p>Agents "see" using <strong>GPU-accelerated ray tracing</strong>—the same technology powering modern video games. Each blob casts dozens of rays to detect food, predators, obstacles, and potential mates with photographic precision.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Emergent Specialization</h3>
+                <p>Watch as evolution naturally creates <strong>diverse roles</strong>: stealthy hunters that ambush prey, efficient foragers that maximize energy return, defensive guardians that protect the colony, and social coordinators that organize group movements.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3>Persistent Digital Life</h3>
+                <p>Your evolved species don't die when you close the browser. <strong>IndexedDB</strong> preserves the most successful neural architectures, allowing you to continue evolving the same lineages across sessions and even share them with others.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <h3>Dynamic Environments</h3>
+                <p>The world isn't static—food spawns adapt to population pressure, seasonal scarcity challenges survival strategies, and pheromone communication enables primitive social behaviors. Evolution never stops adapting.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Real-Time Analytics</h3>
+                <p>Watch evolution metrics live: fitness curves, population dynamics, specialization ratios, energy efficiency, and genetic diversity. It's like having a window into the evolutionary process itself.</p>
+            </div>
+        </div>
+
+        <h2>🎯 What Makes This Different?</h2>
+        <p>Most AI demos show pre-trained models or scripted behaviors. This simulation creates <strong>intelligence from scratch</strong> through the same processes that created life on Earth. You're not watching a program—you're watching creation unfold.</p>
+
+        <p>The implications are profound: if simple neural networks can evolve complex behaviors, what does that say about the nature of intelligence, learning, and adaptation? This isn't just a tech demo—it's a philosophical exploration of emergence and evolution.</p>
+
+        <a href="index.html" class="nav-link">← Back to Simulation</a>
+        <a href="blog.html" class="nav-link">Read the Blog →</a>
+    </div>
+</body>
+
+</html>
