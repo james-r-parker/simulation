@@ -291,18 +291,18 @@ export class WebGLRenderer {
                 // Update body - ensure minimum visible size
                 const renderSize = Math.max(agent.size, 12); // Never smaller than 12 pixels
                 matrix.makeScale(renderSize, renderSize, 1);
-                matrix.setPosition(agent.x, -agent.y, 0); // Flip Y
+                matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
                 mesh.body.setMatrixAt(i, matrix);
 
                 // Update border (scale to 0 if not low energy to hide it)
                 if (agent.isLowEnergy()) {
                     const borderSize = Math.max(agent.size, 12) * 1.1;
                     matrix.makeScale(borderSize, borderSize, 1);
-                    matrix.setPosition(agent.x, -agent.y, 0);
+                    matrix.setPosition(agent.x, -agent.y, 0.1);
                 } else {
                     // Set scale to 0 to hide the border
                     matrix.makeScale(0, 0, 1);
-                    matrix.setPosition(agent.x, -agent.y, 0);
+                    matrix.setPosition(agent.x, -agent.y, 0.1);
                 }
                 mesh.border.setMatrixAt(i, matrix);
             }
@@ -419,12 +419,12 @@ export class WebGLRenderer {
                 const progress = elapsed / effect.duration;
                 const opacity = Math.max(1.0 - progress, 0); // Fade out over time
 
-                // Create effect ring geometry
-                const effectRadius = agent.size * (1.5 + progress * 0.5); // Grow slightly as it fades
+                // Create subtle effect ring geometry - very small and faint
+                const effectRadius = agent.size * (0.3 + progress * 0.2); // Much smaller radius
                 const geometry = new THREE.RingGeometry(
-                    effectRadius * 0.9,
+                    Math.max(agent.size * 1.1, effectRadius * 0.9), // Smaller inner radius
                     effectRadius * 1.1,
-                    32
+                    16 // Fewer segments for simpler look
                 );
 
                 // Choose color based on effect type
@@ -433,8 +433,9 @@ export class WebGLRenderer {
                 const material = new THREE.MeshBasicMaterial({
                     color: color,
                     transparent: true,
-                    opacity: opacity * 0.3,
-                    side: THREE.DoubleSide
+                    opacity: opacity * 0.08, // Very subtle opacity
+                    side: THREE.DoubleSide,
+                    depthWrite: false // Don't write to depth buffer to avoid covering agents
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);

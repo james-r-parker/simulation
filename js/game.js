@@ -372,23 +372,46 @@ export class Simulation {
     }
 
     initPopulation() {
-        const center_x = this.worldWidth / 2;
-        const center_y = this.worldHeight / 2;
         const startingAgentCount = Math.min(10, this.maxAgents);
 
-        // Spawn 3 agents right in the center
-        for (let i = 0; i < 3; i++) {
+        // Spawn all agents evenly distributed across the world
+        // Divide the world into a grid to ensure even distribution
+        const gridCols = Math.ceil(Math.sqrt(startingAgentCount));
+        const gridRows = Math.ceil(startingAgentCount / gridCols);
+
+        // Calculate cell size, leaving margins to avoid spawning too close to edges
+        const margin = 200; // Keep agents away from world edges
+        const cellWidth = (this.worldWidth - 2 * margin) / gridCols;
+        const cellHeight = (this.worldHeight - 2 * margin) / gridRows;
+
+        for (let i = 0; i < startingAgentCount; i++) {
+            // Calculate grid position
+            const gridX = i % gridCols;
+            const gridY = Math.floor(i / gridCols);
+
+            // Calculate position within the grid cell with some randomness
+            const baseX = margin + gridX * cellWidth + cellWidth / 2;
+            const baseY = margin + gridY * cellHeight + cellHeight / 2;
+
+            // Add small random offset within the cell to avoid perfect alignment
+            const offsetX = (Math.random() - 0.5) * Math.min(cellWidth * 0.3, 100);
+            const offsetY = (Math.random() - 0.5) * Math.min(cellHeight * 0.3, 100);
+
+            const x = Math.max(margin, Math.min(this.worldWidth - margin, baseX + offsetX));
+            const y = Math.max(margin, Math.min(this.worldHeight - margin, baseY + offsetY));
+
+            // Try to use gene pools for some agents, random for others
+            let gene = null;
+            if (i > 0 && Math.random() < 0.7) { // 70% chance to use existing genes after first agent
+                gene = this.db.getRandomAgent();
+            }
+
             spawnAgent(this, {
-                x: center_x + randomGaussian(0, 100),
-                y: center_y + randomGaussian(0, 100),
+                gene: gene,
+                x: x,
+                y: y,
                 energy: INITIAL_AGENT_ENERGY
             });
-        }
-
-        // Spawn remaining agents (try to use gene pools if available)
-        for (let i = 3; i < startingAgentCount; i++) {
-            const gene = this.db.getRandomAgent();
-            spawnAgent(this, { gene: gene, energy: INITIAL_AGENT_ENERGY });
         }
 
         // Initial food - spread evenly across the entire world
