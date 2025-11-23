@@ -1,8 +1,9 @@
 // --- SIMULATION ENTITIES CONSTANTS (BALANCING) ---
 // ALL VALUES PRESERVED EXACTLY FROM ORIGINAL
 
-export const BASE_SIZE = 15; // Increased to ensure agents are always clearly visible (was 10)
+export const BASE_SIZE = 25; // Increased to ensure agents are always clearly visible (was 20, originally 10)
 export const ENERGY_TO_SIZE_RATIO = 100;
+export const MIN_AGENT_SIZE = 20; // Absolute minimum size agents can reach, regardless of energy
 export const MAX_ENERGY = 10000; // Increased to allow more growth
 export const MIN_ENERGY_TO_REPRODUCE = 250;
 export const REPRODUCE_COST_BASE = 15;

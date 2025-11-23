@@ -16,12 +16,12 @@ export class Camera {
     }
     
     follow(entity) {
-        if (entity && typeof entity.x === 'number' && typeof entity.y === 'number' && 
-            isFinite(entity.x) && isFinite(entity.y)) { 
-            this.targetX = entity.x; 
-            this.targetY = entity.y; 
+        if (entity && !entity.isDead && typeof entity.x === 'number' && typeof entity.y === 'number' &&
+            isFinite(entity.x) && isFinite(entity.y)) {
+            this.targetX = entity.x;
+            this.targetY = entity.y;
         }
-        // If entity is null or invalid, don't change target (allows manual control)
+        // If entity is null, dead, or invalid, don't change target (allows manual control)
     }
     
     update() {

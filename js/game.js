@@ -862,6 +862,12 @@ export class Simulation {
             let shouldFollow = false;
             let targetAgent = null;
 
+            // Clear bestAgent if it's dead (prevent following ghosts)
+            if (this.bestAgent && this.bestAgent.isDead) {
+                this.bestAgent = null;
+            }
+
+            // Double-check bestAgent is still alive and valid
             if (this.bestAgent && !this.bestAgent.isDead &&
                 typeof this.bestAgent.x === 'number' && typeof this.bestAgent.y === 'number' &&
                 isFinite(this.bestAgent.x) && isFinite(this.bestAgent.y)) {
@@ -912,15 +918,22 @@ export class Simulation {
                     }
                 }
 
-                if (bestVisibleAgent) {
+                if (bestVisibleAgent && !bestVisibleAgent.isDead) {
                     shouldFollow = true;
                     targetAgent = bestVisibleAgent;
-                    this.bestAgent = bestVisibleAgent; // Update bestAgent to visible one
+                    this.bestAgent = bestVisibleAgent; // Update bestAgent to visible living one
                 }
             }
 
             if (shouldFollow && targetAgent) {
-                this.camera.follow(targetAgent);
+                // Final check before following - ensure target is still alive
+                if (!targetAgent.isDead) {
+                    this.camera.follow(targetAgent);
+                } else {
+                    // Target died between check and follow - center camera
+                    this.camera.targetX = this.worldWidth / 2;
+                    this.camera.targetY = this.worldHeight / 2;
+                }
             } else {
                 // No visible agents to follow, center camera
                 this.camera.targetX = this.worldWidth / 2;

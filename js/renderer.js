@@ -220,26 +220,16 @@ export class WebGLRenderer {
             const mesh = this.agentMeshes.get(geneId);
             const matrix = new THREE.Matrix4();
 
-            // Filter for VISIBLE agents only
+            // Include ALL valid agents (no frustum culling to prevent flickering)
             const validAgents = [];
             for (let j = 0; j < geneAgents.length; j++) {
                 const agent = geneAgents[j];
                 if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
                     isFinite(agent.x) && isFinite(agent.y) &&
-                    typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0) {
+                    typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
+                    !agent.isDead) { // Only exclude dead agents
 
-                    // Always include agents that have rays rendered (top 5 by fitness)
-                    // This ensures agents with rays also show their bodies
-                    const hasRays = this.showRays && agent.lastRayData;
-
-                    // Frustum culling
-                    tempVec.set(agent.x, -agent.y, 0);
-                    testSphere.center = tempVec;
-                    testSphere.radius = agent.size;
-
-                    if (frustum.intersectsSphere(testSphere) || hasRays) {
-                        validAgents.push(agent);
-                    }
+                    validAgents.push(agent);
                 }
             }
 
@@ -258,14 +248,16 @@ export class WebGLRenderer {
             for (let i = 0; i < validCount; i++) {
                 const agent = validAgents[i];
 
-                // Update body
-                matrix.makeScale(agent.size, agent.size, 1);
+                // Update body - ensure minimum visible size
+                const renderSize = Math.max(agent.size, 12); // Never smaller than 12 pixels
+                matrix.makeScale(renderSize, renderSize, 1);
                 matrix.setPosition(agent.x, -agent.y, 0); // Flip Y
                 mesh.body.setMatrixAt(i, matrix);
 
                 // Update border (scale to 0 if not low energy to hide it)
                 if (agent.isLowEnergy()) {
-                    matrix.makeScale(agent.size * 1.1, agent.size * 1.1, 1);
+                    const borderSize = Math.max(agent.size, 12) * 1.1;
+                    matrix.makeScale(borderSize, borderSize, 1);
                     matrix.setPosition(agent.x, -agent.y, 0);
                 } else {
                     // Set scale to 0 to hide the border

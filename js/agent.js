@@ -3,7 +3,7 @@
 
 import { NeuralNetwork } from './neural-network.js';
 import {
-    BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE,
+    BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE, MIN_AGENT_SIZE,
     REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY,
     REPRODUCTION_COOLDOWN_FRAMES, PREGNANCY_DURATION_FRAMES,
     OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
@@ -43,7 +43,7 @@ export class Agent {
             this.energy = energy;
         }
 
-        this.size = Math.max(BASE_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
+        this.size = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
         this.diameter = this.size * 2;
         this.targetSize = this.size;
         this.maxEnergy = MAX_ENERGY;
@@ -442,7 +442,7 @@ export class Agent {
             }
         }
 
-        this.size = Math.max(BASE_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
+        this.size = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
         this.diameter = this.size * 2;
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---
