@@ -100,7 +100,7 @@ export class Simulation {
         this.mutationRate = 0.01;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation
         this.showRays = false;
-        this.followBest = true;
+        this.followBest = false;
         this.useGpu = true; // Enable GPU by default
 
         // Dead agent queue for background database saving
@@ -953,7 +953,7 @@ export class Simulation {
         const camPos = this.camera.getPosition();
         this.renderer.updateCamera(camPos);
 
-        this.renderer.updateAgents(this.agents);
+        this.renderer.updateAgents(this.agents, this.frameCount);
         this.renderer.updateFood(this.food);
         this.renderer.updatePheromones(this.pheromones);
         // Obstacles already updated after movement

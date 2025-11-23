@@ -15,7 +15,8 @@ import {
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
-    EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT
+    EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
+    WORLD_WIDTH, WORLD_HEIGHT
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -280,7 +281,7 @@ export class Agent {
         this.vy += finalThrustY;
     }
 
-    update(worldWidth, worldHeight, obstacles, quadtree) {
+    update(worldWidth, worldHeight, obstacles, quadtree, simulation) {
         if (this.isDead) return;
 
         // Check if GPU has already processed this agent's neural network
@@ -355,6 +356,40 @@ export class Agent {
 
         this.x += this.vx;
         this.y += this.vy;
+
+        // Boundary collision detection with visual effects
+        let hitBoundary = false;
+        if (this.x - this.size <= 0) {
+            this.x = this.size;
+            this.vx = Math.abs(this.vx); // Bounce right
+            hitBoundary = true;
+        } else if (this.x + this.size >= WORLD_WIDTH) {
+            this.x = WORLD_WIDTH - this.size;
+            this.vx = -Math.abs(this.vx); // Bounce left
+            hitBoundary = true;
+        }
+
+        if (this.y - this.size <= 0) {
+            this.y = this.size;
+            this.vy = Math.abs(this.vy); // Bounce down
+            hitBoundary = true;
+        } else if (this.y + this.size >= WORLD_HEIGHT) {
+            this.y = WORLD_HEIGHT - this.size;
+            this.vy = -Math.abs(this.vy); // Bounce up
+            hitBoundary = true;
+        }
+
+        // Apply damage and trigger visual effect for boundary collisions
+        if (hitBoundary) {
+            const damage = 10; // Less damage than obstacle collisions
+            this.energy = Math.max(0, this.energy - damage);
+            this.fitness -= damage;
+
+            // Trigger collision visual effect (red glow)
+            if (simulation && simulation.renderer) {
+                simulation.renderer.addVisualEffect(this, 'collision');
+            }
+        }
 
         this.distanceTravelled += distance(this.lastX, this.lastY, this.x, this.y);
 

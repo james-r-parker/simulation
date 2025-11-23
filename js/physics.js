@@ -52,6 +52,11 @@ export function checkCollisions(simulation) {
                     agent.foodEaten++;
                     agent.fitness += 15; // Immediate fitness reward for food
                     other.isDead = true;
+
+                    // Trigger eating visual effect (green glow)
+                    if (simulation.renderer) {
+                        simulation.renderer.addVisualEffect(agent, 'eating');
+                    }
                 } else if (other instanceof Agent) {
                     // Simple bump physics to prevent overlap
                     const overlap = combinedSize - Math.sqrt(distSq);
@@ -63,6 +68,12 @@ export function checkCollisions(simulation) {
                         agent.y += pushY;
                         other.x -= pushX;
                         other.y -= pushY;
+
+                        // Trigger collision visual effect (red glow) for both agents
+                        if (simulation.renderer) {
+                            simulation.renderer.addVisualEffect(agent, 'collision');
+                            simulation.renderer.addVisualEffect(other, 'collision');
+                        }
                     }
                     // Agent collision logging disabled for performance
 
@@ -120,6 +131,11 @@ export function checkCollisions(simulation) {
                     agent.energy = Math.max(0, agent.energy - damage);
                     agent.timesHitObstacle++;
                     agent.fitness -= damage; // Fitness penalty
+
+                    // Trigger collision visual effect (red glow)
+                    if (simulation.renderer) {
+                        simulation.renderer.addVisualEffect(agent, 'collision');
+                    }
 
                     // Clamp velocity to prevent extreme bouncing (use same limit as agent movement)
                     const MAX_VELOCITY = 25; // Same as agent MAX_VELOCITY

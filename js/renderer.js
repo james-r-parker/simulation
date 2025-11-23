@@ -5,7 +5,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 import { Agent } from './agent.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
-import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, COLORS } from './constants.js';
+import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, COLORS, EFFECT_FADE_DURATION } from './constants.js';
 
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
@@ -77,6 +77,11 @@ export class WebGLRenderer {
         this.scene.add(this.agentStateGroup);
         this.agentStateMeshes = new Map(); // agent -> { energyBar, statusIcon }
 
+        // Visual effects system for collision and eating glows
+        this.agentEffectsGroup = new THREE.Group();
+        this.scene.add(this.agentEffectsGroup);
+        this.agentEffects = new Map(); // agent -> [{ type, startFrame, duration }]
+
         // Pre-calculate ray colors to avoid object creation in loop
         this.rayColors = {
             default: new THREE.Color(COLORS.RAYS.DEFAULT),
@@ -103,6 +108,41 @@ export class WebGLRenderer {
         this.camera.bottom = -viewSize;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
+    }
+
+    // Visual effects system
+    addVisualEffect(agent, effectType) {
+        if (!this.agentEffects.has(agent)) {
+            this.agentEffects.set(agent, []);
+        }
+        const effects = this.agentEffects.get(agent);
+        effects.push({
+            type: effectType,
+            startFrame: this.currentFrame || 0,
+            duration: EFFECT_FADE_DURATION
+        });
+    }
+
+    updateVisualEffects(currentFrame) {
+        this.currentFrame = currentFrame;
+
+        // Clean up expired effects and dead agents
+        for (const [agent, effects] of this.agentEffects.entries()) {
+            // Remove effects for dead agents immediately
+            if (!agent || agent.isDead) {
+                this.agentEffects.delete(agent);
+                continue;
+            }
+
+            const activeEffects = effects.filter(effect =>
+                currentFrame - effect.startFrame < effect.duration
+            );
+            if (activeEffects.length === 0) {
+                this.agentEffects.delete(agent);
+            } else {
+                this.agentEffects.set(agent, activeEffects);
+            }
+        }
     }
 
     updateCamera(cameraPos) {
@@ -139,7 +179,7 @@ export class WebGLRenderer {
         return new THREE.Color(r + m, g + m, b + m);
     }
 
-    updateAgents(agents) {
+    updateAgents(agents, frameCount) {
         // OPTIMIZED: Frustum culling - only render agents visible in camera
         const frustum = new THREE.Frustum();
         const matrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
@@ -277,6 +317,9 @@ export class WebGLRenderer {
 
         // Update agent state visualization (energy bars, status icons)
         this.updateAgentStates(agents);
+
+        // Update visual effects system
+        this.updateVisualEffects(frameCount);
     }
 
     updateAgentStates(agents) {
@@ -356,6 +399,49 @@ export class WebGLRenderer {
                 this.agentStateMeshes.set(agent, meshes);
             }
         });
+    }
+
+    updateVisualEffectsRendering() {
+        // Clear previous effect meshes
+        while (this.agentEffectsGroup.children.length > 0) {
+            const child = this.agentEffectsGroup.children[0];
+            this.agentEffectsGroup.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        }
+
+        // Render active effects
+        for (const [agent, effects] of this.agentEffects.entries()) {
+            if (!agent || agent.isDead) continue;
+
+            for (const effect of effects) {
+                const elapsed = this.currentFrame - effect.startFrame;
+                const progress = elapsed / effect.duration;
+                const opacity = Math.max(1.0 - progress, 0); // Fade out over time
+
+                // Create effect ring geometry
+                const effectRadius = agent.size * (1.5 + progress * 0.5); // Grow slightly as it fades
+                const geometry = new THREE.RingGeometry(
+                    effectRadius * 0.9,
+                    effectRadius * 1.1,
+                    32
+                );
+
+                // Choose color based on effect type
+                const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
+
+                const material = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: opacity * 0.3,
+                    side: THREE.DoubleSide
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(agent.x, -agent.y, 0.2); // Slightly in front of agent
+                this.agentEffectsGroup.add(mesh);
+            }
+        }
     }
 
     updateFood(foodArray) {
@@ -748,6 +834,9 @@ export class WebGLRenderer {
     }
 
     render() {
+        // Render visual effects
+        this.updateVisualEffectsRendering();
+
         this.renderer.render(this.scene, this.camera);
     }
 

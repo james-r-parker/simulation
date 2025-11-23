@@ -61,6 +61,9 @@ export const EXPLORATION_CELL_HEIGHT = WORLD_HEIGHT / EXPLORATION_GRID_HEIGHT;
 // Low energy threshold for red border (visual only)
 export const LOW_ENERGY_THRESHOLD = 100;
 
+// Visual effect durations (in frames)
+export const EFFECT_FADE_DURATION = 15; // How many frames effects last
+
 // Specialization types
 export const SPECIALIZATION_TYPES = {
     FORAGER: 'forager',
@@ -108,6 +111,10 @@ export const COLORS = {
         OBSTACLE: 0x9D00FF, // Neon Purple
         EDGE: 0xFF6600, // Neon Orange
         SAME: 0x00F0FF // Neon Cyan
+    },
+    EFFECTS: {
+        COLLISION: 0xFF0033, // Red glow for obstacle collisions
+        EATING: 0x39FF14    // Green glow for eating food
     }
 };
 
