@@ -112,6 +112,11 @@ export class WebGLRenderer {
 
     // Visual effects system
     addVisualEffect(agent, effectType) {
+        // NEVER add effects to dead agents
+        if (!agent || agent.isDead) {
+            return;
+        }
+
         if (!this.agentEffects.has(agent)) {
             this.agentEffects.set(agent, []);
         }
@@ -419,12 +424,12 @@ export class WebGLRenderer {
                 const progress = elapsed / effect.duration;
                 const opacity = Math.max(1.0 - progress, 0); // Fade out over time
 
-                // Create subtle effect ring geometry - very small and faint
-                const effectRadius = agent.size * (0.3 + progress * 0.2); // Much smaller radius
+                // Create visible effect ring geometry - ensure it doesn't cover the agent
+                const effectRadius = agent.size * (1.2 + progress * 0.5); // Start larger to avoid covering agent
                 const geometry = new THREE.RingGeometry(
-                    Math.max(agent.size * 1.1, effectRadius * 0.9), // Smaller inner radius
-                    effectRadius * 1.1,
-                    16 // Fewer segments for simpler look
+                    Math.max(agent.size * 1.1, effectRadius * 0.8), // Inner radius always larger than agent
+                    effectRadius * 1.3,
+                    32 // More segments for smoother look
                 );
 
                 // Choose color based on effect type
@@ -433,13 +438,13 @@ export class WebGLRenderer {
                 const material = new THREE.MeshBasicMaterial({
                     color: color,
                     transparent: true,
-                    opacity: opacity * 0.08, // Very subtle opacity
+                    opacity: opacity * 0.4, // More visible opacity
                     side: THREE.DoubleSide,
                     depthWrite: false // Don't write to depth buffer to avoid covering agents
                 });
 
                 const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(agent.x, -agent.y, 0.2); // Slightly in front of agent
+                mesh.position.set(agent.x, -agent.y, 0.05); // Slightly behind agent but in front of border
                 this.agentEffectsGroup.add(mesh);
             }
         }
