@@ -70,7 +70,7 @@ export class WebGLRenderer {
         this.rayGroup = new THREE.Group();
         this.scene.add(this.rayGroup);
         this.rayLineSegments = null; // Single LineSegments geometry for all rays
-        this.showRays = true;
+        this.showRays = false;
 
         // Agent state visualization (energy bars, status icons)
         this.agentStateGroup = new THREE.Group();
@@ -228,12 +228,16 @@ export class WebGLRenderer {
                     isFinite(agent.x) && isFinite(agent.y) &&
                     typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0) {
 
+                    // Always include agents that have rays rendered (top 5 by fitness)
+                    // This ensures agents with rays also show their bodies
+                    const hasRays = this.showRays && agent.lastRayData;
+
                     // Frustum culling
                     tempVec.set(agent.x, -agent.y, 0);
                     testSphere.center = tempVec;
                     testSphere.radius = agent.size;
 
-                    if (frustum.intersectsSphere(testSphere)) {
+                    if (frustum.intersectsSphere(testSphere) || hasRays) {
                         validAgents.push(agent);
                     }
                 }

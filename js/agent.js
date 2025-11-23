@@ -43,7 +43,7 @@ export class Agent {
             this.energy = energy;
         }
 
-        this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+        this.size = Math.max(BASE_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
         this.diameter = this.size * 2;
         this.targetSize = this.size;
         this.maxEnergy = MAX_ENERGY;
@@ -442,7 +442,7 @@ export class Agent {
             }
         }
 
-        this.size = BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO);
+        this.size = Math.max(BASE_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
         this.diameter = this.size * 2;
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---

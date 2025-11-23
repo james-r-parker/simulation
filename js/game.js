@@ -1,6 +1,7 @@
 // --- SIMULATION CLASS ---
 // All simulation logic preserved exactly from original
 
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MAX_AGENTS_TO_SAVE_PER_GENE_POOL,
@@ -95,10 +96,10 @@ export class Simulation {
 
         this.gameSpeed = 1;
         this.maxAgents = 15;
-        this.foodSpawnRate = 1.2;
-        this.mutationRate = 0.1;
+        this.foodSpawnRate = 2.0;
+        this.mutationRate = 0.01;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation
-        this.showRays = true;
+        this.showRays = false;
         this.followBest = true;
         this.useGpu = true; // Enable GPU by default
 
@@ -857,25 +858,71 @@ export class Simulation {
 
         // Update camera
         if (this.followBest) {
+            // Check if current bestAgent is visible and valid
+            let shouldFollow = false;
+            let targetAgent = null;
+
             if (this.bestAgent && !this.bestAgent.isDead &&
                 typeof this.bestAgent.x === 'number' && typeof this.bestAgent.y === 'number' &&
                 isFinite(this.bestAgent.x) && isFinite(this.bestAgent.y)) {
-                this.camera.follow(this.bestAgent);
-            } else if (this.agents.length > 0) {
-                // Find first agent with valid position
-                const validAgent = this.agents.find(a => !a.isDead &&
+
+                // Check if bestAgent is actually visible on screen (frustum culling)
+                const frustum = new THREE.Frustum();
+                const matrix = new THREE.Matrix4().multiplyMatrices(this.renderer.camera.projectionMatrix, this.renderer.camera.matrixWorldInverse);
+                frustum.setFromProjectionMatrix(matrix);
+
+                const tempVec = new THREE.Vector3();
+                const testSphere = new THREE.Sphere(tempVec, 0);
+                tempVec.set(this.bestAgent.x, -this.bestAgent.y, 0);
+                testSphere.center = tempVec;
+                testSphere.radius = this.bestAgent.size || 5;
+
+                if (frustum.intersectsSphere(testSphere)) {
+                    shouldFollow = true;
+                    targetAgent = this.bestAgent;
+                }
+            }
+
+            if (!shouldFollow && this.agents.length > 0) {
+                // Find best living agent that is actually visible on screen
+                const livingAgents = this.agents.filter(a => !a.isDead &&
                     typeof a.x === 'number' && typeof a.y === 'number' &&
                     isFinite(a.x) && isFinite(a.y));
-                if (validAgent) {
-                    this.bestAgent = validAgent;
-                    this.camera.follow(this.bestAgent);
-                } else {
-                    // No valid agents, center camera
-                    this.camera.targetX = this.worldWidth / 2;
-                    this.camera.targetY = this.worldHeight / 2;
+
+                // Check frustum for each agent
+                const frustum = new THREE.Frustum();
+                const matrix = new THREE.Matrix4().multiplyMatrices(this.renderer.camera.projectionMatrix, this.renderer.camera.matrixWorldInverse);
+                frustum.setFromProjectionMatrix(matrix);
+
+                const tempVec = new THREE.Vector3();
+                const testSphere = new THREE.Sphere(tempVec, 0);
+
+                // Find the highest fitness agent that's actually visible
+                let bestVisibleAgent = null;
+                let bestFitness = -Infinity;
+
+                for (const agent of livingAgents) {
+                    tempVec.set(agent.x, -agent.y, 0);
+                    testSphere.center = tempVec;
+                    testSphere.radius = agent.size || 5;
+
+                    if (frustum.intersectsSphere(testSphere) && (agent.fitness || 0) > bestFitness) {
+                        bestFitness = agent.fitness || 0;
+                        bestVisibleAgent = agent;
+                    }
                 }
+
+                if (bestVisibleAgent) {
+                    shouldFollow = true;
+                    targetAgent = bestVisibleAgent;
+                    this.bestAgent = bestVisibleAgent; // Update bestAgent to visible one
+                }
+            }
+
+            if (shouldFollow && targetAgent) {
+                this.camera.follow(targetAgent);
             } else {
-                // No agents, center camera
+                // No visible agents to follow, center camera
                 this.camera.targetX = this.worldWidth / 2;
                 this.camera.targetY = this.worldHeight / 2;
             }

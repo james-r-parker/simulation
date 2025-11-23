@@ -7,7 +7,7 @@ Centralized storage of all simulation constants and configuration values. This e
 ## Exports
 
 ### Energy Constants
-- `BASE_SIZE = 5` - Base agent size
+- `BASE_SIZE = 15` - Base agent size (minimum visible size)
 - `ENERGY_TO_SIZE_RATIO = 100` - Energy to size conversion ratio
 - `MAX_ENERGY = 2500` - Maximum energy an agent can have
 - `MIN_ENERGY_TO_REPRODUCE = 250` - Minimum energy required for reproduction

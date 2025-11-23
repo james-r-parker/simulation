@@ -79,9 +79,10 @@ export function updateFitnessTracking(simulation) {
         simulation.agents.forEach(a => a.normalizedFitness = a.fitness);
     }
 
-    // Sort by raw fitness for best agent selection
-    simulation.agents.sort((a, b) => b.fitness - a.fitness);
-    simulation.bestAgent = simulation.agents[0] || null;
+    // Sort by raw fitness for best agent selection (only living agents)
+    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    livingAgents.sort((a, b) => b.fitness - a.fitness);
+    simulation.bestAgent = livingAgents[0] || null;
     simulation.generation++;
 
     // Track fitness for adaptive mutation

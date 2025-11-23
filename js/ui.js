@@ -329,7 +329,9 @@ export function setupUIListeners(simulation) {
         updateFoodScalingFactor(simulation);
     });
 
-    document.getElementById('showRays').addEventListener('change', e => {
+    const showRaysCheckbox = document.getElementById('showRays');
+    showRaysCheckbox.checked = simulation.showRays;
+    showRaysCheckbox.addEventListener('change', e => {
         simulation.showRays = e.target.checked;
         simulation.renderer.setShowRays(e.target.checked);
     });
