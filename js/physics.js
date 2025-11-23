@@ -13,96 +13,148 @@ export function checkCollisions(simulation) {
     // OPTIMIZED: Collision detection using distance squared to avoid sqrt
     // Limit collision checks per agent to avoid O(n²) scaling
     const numAgents = simulation.agents.length;
+
+    // Clear processed collision tracking for this frame
+    for (let i = 0; i < numAgents; i++) {
+        const agent = simulation.agents[i];
+        if (agent && agent.processedCollisions) {
+            agent.processedCollisions.clear();
+        }
+    }
+
+    // Reuse pre-allocated collision query range
+    const collisionQueryRange = simulation.collisionQueryRange;
+
     for (let i = 0; i < numAgents; i++) {
         const agent = simulation.agents[i];
         if (!agent || agent.isDead) continue;
 
         const agentSize = agent.size;
-        // Reuse pre-allocated Rectangle
-        simulation.collisionQueryRange.x = agent.x;
-        simulation.collisionQueryRange.y = agent.y;
-        simulation.collisionQueryRange.w = agent.diameter;
-        simulation.collisionQueryRange.h = agent.diameter;
 
-        const nearby = simulation.quadtree.query(simulation.collisionQueryRange);
+        // USE QUADTREE for ALL collision detection - rebuilt every iteration for accuracy
+        // Query range based on maximum possible collision distance (agent sizes + buffer)
+        const maxOtherAgentSize = 50; // Conservative estimate of largest agent size
+        const queryRange = agentSize + maxOtherAgentSize + 20; // Buffer for movement between frames
+        collisionQueryRange.x = agent.x;
+        collisionQueryRange.y = agent.y;
+        collisionQueryRange.w = queryRange;
+        collisionQueryRange.h = queryRange;
 
-        // Limit checks per agent for performance (check closest entities first)
-        let checked = 0;
-        const maxChecks = 12; // OPTIMIZED: Reduced from 15 to 12
+        const nearby = simulation.quadtree.query(collisionQueryRange);
 
+        // Process all nearby entities for collisions
         const nearbyLen = nearby.length;
-        for (let j = 0; j < nearbyLen && checked < maxChecks; j++) {
+        for (let j = 0; j < nearbyLen; j++) {
             const other = nearby[j];
             if (agent === other || other.isDead || other instanceof PheromonePuff) continue;
-            checked++;
+
+            // Only check agent-to-agent collisions for now (food handled separately)
+            if (!(other instanceof Agent)) continue;
 
             const dx = agent.x - other.x;
             const dy = agent.y - other.y;
             const distSq = dx * dx + dy * dy;
-            const otherSize = other.size || 5;
+            const otherSize = other.size;
             const combinedSize = agentSize + otherSize;
             const combinedSizeSq = combinedSize * combinedSize;
 
             // Use squared distance for comparison (faster, no sqrt needed)
             if (distSq < combinedSizeSq) {
                 agent.collisions++; // Increment collision counter
+                other.collisions++; // Both agents get collision credit
 
-                if (other.isFood) {
-                    agent.energy += other.energyValue;
-                    agent.foodEaten++;
-                    agent.fitness += 15; // Immediate fitness reward for food
-                    other.isDead = true;
+                // Simple bump physics to prevent overlap
+                const overlap = combinedSize - Math.sqrt(distSq);
+                if (overlap > 0) {
+                    const dist = Math.sqrt(distSq) || 1;
+                    const pushX = (dx / dist) * overlap * 0.5;
+                    const pushY = (dy / dist) * overlap * 0.5;
 
-                    // Trigger eating visual effect (green glow)
+                    // Apply stronger separation to make collisions more visible
+                    const separationStrength = 1.0; // Full separation
+                    const oldAgentX = agent.x, oldAgentY = agent.y;
+                    const oldOtherX = other.x, oldOtherY = other.y;
+
+                    agent.x += pushX * separationStrength;
+                    agent.y += pushY * separationStrength;
+                    other.x -= pushX * separationStrength;
+                    other.y -= pushY * separationStrength;
+
+                    // Trigger collision visual effect (red glow) for both agents tied to game speed
                     if (simulation.renderer) {
-                        simulation.renderer.addVisualEffect(agent, 'eating');
-                    }
-                } else if (other instanceof Agent) {
-                    // Simple bump physics to prevent overlap
-                    const overlap = combinedSize - Math.sqrt(distSq);
-                    if (overlap > 0) {
-                        const dist = Math.sqrt(distSq) || 1;
-                        const pushX = (dx / dist) * overlap * 0.5;
-                        const pushY = (dy / dist) * overlap * 0.5;
-                        agent.x += pushX;
-                        agent.y += pushY;
-                        other.x -= pushX;
-                        other.y -= pushY;
-
-                        // Trigger collision visual effect (red glow) for both agents
-                        if (simulation.renderer) {
-                            simulation.renderer.addVisualEffect(agent, 'collision');
-                            simulation.renderer.addVisualEffect(other, 'collision');
-                        }
-                    }
-                    // Agent collision logging disabled for performance
-
-                    if (agent.wantsToReproduce && other.wantsToReproduce) {
-                        if (agent.tryMate(other, simulation)) {
-                            simulation.logger.log(`[LIFECYCLE] Agent ${agent.geneId} successfully mated with ${other.geneId}.`);
-                        }
+                        simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
+                        simulation.renderer.addVisualEffect(other, 'collision', simulation.gameSpeed);
                     }
 
-                    if (agent.wantsToAttack && agentSize > other.size * 1.1) {
-                        agent.energy += other.energy * 0.8;
-                        agent.kills++;
-                        agent.fitness += 20; // Reward for successful kill
-                        other.isDead = true;
-                        simulation.logger.log(`[COMBAT] Agent ${agent.geneId} killed agent ${other.geneId}.`);
+                    // Prevent checking the same collision pair again in this frame
+                    // by marking this agent pair as already processed
+                    if (!agent.processedCollisions) agent.processedCollisions = new Set();
+                    if (!other.processedCollisions) other.processedCollisions = new Set();
+
+                    const pairKey = agent.geneId < other.geneId ?
+                        `${agent.geneId}-${other.geneId}` : `${other.geneId}-${agent.geneId}`;
+
+                    if (!agent.processedCollisions.has(pairKey)) {
+                        agent.processedCollisions.add(pairKey);
+                        other.processedCollisions.add(pairKey);
+                    } else {
+                        // Skip this collision as it was already processed
+                        continue;
                     }
+                }
+                // Agent collision logging disabled for performance
+
+                if (agent.wantsToReproduce && other.wantsToReproduce) {
+                    if (agent.tryMate(other, simulation)) {
+                        simulation.logger.log(`[LIFECYCLE] Agent ${agent.geneId} successfully mated with ${other.geneId}.`);
+                    }
+                }
+
+                if (agent.wantsToAttack && agentSize > other.size * 1.1) {
+                    agent.energy += other.energy * 0.8;
+                    agent.kills++;
+                    agent.fitness += 20; // Reward for successful kill
+                    other.isDead = true;
+                    simulation.logger.log(`[COMBAT] Agent ${agent.geneId} killed agent ${other.geneId}.`);
                 }
             }
         }
 
-        // Check collisions with ALL obstacles (not just quadtree results)
-        // This ensures obstacles are always checked regardless of quadtree performance
+        // ACCURACY FIX: Use brute force for food collisions too (simpler and more reliable)
+        // Check all food items for collision with this agent
+        for (let j = 0; j < simulation.food.length; j++) {
+            const food = simulation.food[j];
+            if (!food || food.isDead) continue;
+
+            const dx = agent.x - food.x;
+            const dy = agent.y - food.y;
+            const distSq = dx * dx + dy * dy;
+            const foodSize = food.size || 5;
+            const combinedSize = agentSize + foodSize;
+            const combinedSizeSq = combinedSize * combinedSize;
+
+            // Use squared distance for comparison (faster, no sqrt needed)
+            if (distSq < combinedSizeSq) {
+                agent.energy += food.energyValue;
+                agent.foodEaten++;
+                agent.fitness += 15; // Immediate fitness reward for food
+                food.isDead = true;
+
+                // Trigger eating visual effect (green glow) tied to game speed
+                if (simulation.renderer) {
+                    simulation.renderer.addVisualEffect(agent, 'eating', simulation.gameSpeed);
+                }
+            }
+        }
+
+        // Check collisions with ALL obstacles (critical for gameplay accuracy)
+        // OPTIMIZED: Could be made spatial in future, but brute force ensures reliability
         for (const obstacle of simulation.obstacles) {
             const dx = agent.x - obstacle.x;
             const dy = agent.y - obstacle.y;
             const distSq = dx * dx + dy * dy;
             const combinedSize = agentSize + obstacle.radius;
             const combinedSizeSq = combinedSize * combinedSize;
-
 
             if (distSq < combinedSizeSq) {
                 // Collision with obstacle - take damage and bounce
@@ -132,9 +184,9 @@ export function checkCollisions(simulation) {
                     agent.timesHitObstacle++;
                     agent.fitness -= damage; // Fitness penalty
 
-                    // Trigger collision visual effect (red glow)
+                    // Trigger collision visual effect (red glow) tied to game speed
                     if (simulation.renderer) {
-                        simulation.renderer.addVisualEffect(agent, 'collision');
+                        simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
                     }
 
                     // Clamp velocity to prevent extreme bouncing (use same limit as agent movement)

@@ -664,6 +664,28 @@ export function setupCameraControls(simulation) {
         canvas.style.cursor = 'default';
     });
 
+    // LOG: Mouse click with world coordinates (ALWAYS log, not occasional)
+    canvas.addEventListener('click', (e) => {
+        if (isDragging) return; // Don't log clicks that were part of a drag
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Convert screen coordinates to world coordinates
+        const normalizedX = (mouseX / canvas.width) * 2 - 1;
+        const normalizedY = 1 - (mouseY / canvas.height) * 2;
+
+        const aspect = canvas.width / canvas.height;
+        const baseViewSize = Math.max(simulation.worldWidth, simulation.worldHeight) * 0.4;
+        const viewSize = baseViewSize * simulation.camera.zoom;
+
+        const worldX = simulation.camera.x + (normalizedX * viewSize * aspect);
+        const worldY = simulation.camera.y - (normalizedY * viewSize);
+
+        console.log(`[CAMERA-CLICK] screen(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) normalized(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)}) world(${worldX.toFixed(1)}, ${worldY.toFixed(1)}) camera(${simulation.camera.x.toFixed(1)}, ${simulation.camera.y.toFixed(1)}) zoom(${simulation.camera.zoom.toFixed(3)})`);
+    });
+
     canvas.addEventListener('mouseleave', () => {
         isDragging = false;
         canvas.style.cursor = 'default';

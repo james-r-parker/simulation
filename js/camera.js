@@ -79,6 +79,9 @@ export class Camera {
         const worldDeltaY = (deltaY / containerHeight) * (scaledViewSize * 2);
         this.targetX -= worldDeltaX;
         this.targetY += worldDeltaY; // Flip Y
+
+        // LOG: Pan event
+        console.log(`[CAMERA-PAN] delta(${deltaX.toFixed(1)}, ${deltaY.toFixed(1)}) worldDelta(${worldDeltaX.toFixed(1)}, ${worldDeltaY.toFixed(1)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
     }
     
     zoomAt(mouseX, mouseY, delta, containerWidth, containerHeight, worldWidth, worldHeight, aspect) {
@@ -86,7 +89,7 @@ export class Camera {
         // Much smaller zoom steps for smoother zooming (0.001 → 0.0003 = 3x smaller steps)
         const zoomFactor = 1 + (delta * 0.0003);
         this.targetZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.targetZoom * zoomFactor));
-        
+
         // Calculate world position under mouse cursor
         const baseViewSize = Math.max(worldWidth, worldHeight) * 0.4;
         const viewSize = baseViewSize * oldZoom;
@@ -100,6 +103,9 @@ export class Camera {
         const newViewSize = baseViewSize * this.targetZoom;
         this.targetX = worldX - (normalizedX * newViewSize * aspect);
         this.targetY = worldY + (normalizedY * newViewSize);
+
+        // LOG: Zoom event
+        console.log(`[CAMERA-ZOOM] mouse(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) delta(${delta}) zoom(${oldZoom.toFixed(3)} -> ${this.targetZoom.toFixed(3)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
     }
 }
 

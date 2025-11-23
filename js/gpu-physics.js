@@ -1,8 +1,8 @@
 // --- GPU PHYSICS MODULE (WebGPU) ---
-// GPU-accelerated ray tracing
+// GPU-accelerated ray tracing + physics simulation
 // Massive performance boost for large agent counts
 
-import { TWO_PI } from './constants.js';
+import { TWO_PI, DAMPENING_FACTOR, MAX_VELOCITY, WORLD_WIDTH, WORLD_HEIGHT, MAX_THRUST, MAX_ROTATION } from './constants.js';
 
 export class GPUPhysics {
     constructor(logger) {
@@ -14,11 +14,21 @@ export class GPUPhysics {
         this.initialized = false;
         this.rayTracingPipeline = null;
         this.rayTracingBindGroup = null;
+        this.physicsPipeline = null;
+        this.physicsBindGroup = null;
+        this.foodPipeline = null;
+        this.foodBindGroup = null;
+        this.pheromonePipeline = null;
+        this.pheromoneBindGroup = null;
         this.buffers = null;
     }
 
     async init(config = {}) {
-        if (this.device) return true;
+        // Always recreate pipelines to handle device changes/context loss
+        this.rayTracingPipeline = null;
+        this.physicsPipeline = null;
+        this.foodPipeline = null;
+        this.pheromonePipeline = null;
 
         if (!navigator.gpu) {
             this.logger.warn('WebGPU not available for physics, falling back to CPU');
@@ -38,6 +48,10 @@ export class GPUPhysics {
             this.initialized = true;
 
             await this.createRayTracingPipeline();
+            // NOTE: Physics pipeline disabled for now - collision detection works perfectly with CPU
+            // await this.createPhysicsPipeline();
+            await this.createFoodPipeline();
+            await this.createPheromonePipeline();
 
             if (config.maxAgents && config.maxRaysPerAgent && config.maxEntities && config.maxObstacles) {
                 this.logger.log('[GPU-BUFFER] Pre-allocating buffers on initialization.', config);
@@ -47,6 +61,8 @@ export class GPUPhysics {
                     config.maxEntities,
                     config.maxObstacles
                 );
+                // NOTE: Physics buffers disabled - using CPU collision detection
+                // this.createPhysicsBuffers(config.maxAgents);
             }
 
             return true;
@@ -486,6 +502,439 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     isAvailable() {
         return !!this.device;
+    }
+
+    async createPhysicsPipeline() {
+        const physicsShader = `
+            struct Agent {
+                position: vec2<f32>,
+                velocity: vec2<f32>,
+                size: f32,
+                energy: f32,
+                thrust: f32,
+                rotation: f32,
+                output0: f32, // Forward thrust
+                output1: f32, // Rotation
+                output2: f32, // Sprint
+                output3: f32, // Reproduction
+                output4: f32, // Attack
+            };
+
+            @group(0) @binding(0) var<storage, read> agentsIn: array<Agent>;
+            @group(0) @binding(1) var<storage, read_write> agentsOut: array<Agent>;
+
+            @compute @workgroup_size(64)
+            fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+                let index = global_id.x;
+                if (index >= arrayLength(&agentsIn)) {
+                    return;
+                }
+
+                var agent = agentsIn[index];
+
+                // Apply neural network outputs to physics
+                let forward_thrust = agent.output0 * ${MAX_THRUST};
+                let rotation_delta = (agent.output1 - 0.5) * 2.0 * ${MAX_ROTATION};
+
+                // Update rotation
+                agent.rotation += rotation_delta;
+
+                // Calculate thrust vector
+                let thrust_x = cos(agent.rotation) * forward_thrust;
+                let thrust_y = sin(agent.rotation) * forward_thrust;
+
+                // Apply thrust to velocity
+                agent.velocity.x += thrust_x;
+                agent.velocity.y += thrust_y;
+
+                // Apply dampening
+                agent.velocity.x *= ${DAMPENING_FACTOR};
+                agent.velocity.y *= ${DAMPENING_FACTOR};
+
+                // Cap velocity
+                let speed_sq = agent.velocity.x * agent.velocity.x + agent.velocity.y * agent.velocity.y;
+                let max_speed_sq = f32(${MAX_VELOCITY}) * f32(${MAX_VELOCITY});
+                if (speed_sq > max_speed_sq) {
+                    let ratio = f32(${MAX_VELOCITY}) / sqrt(speed_sq);
+                    agent.velocity.x *= ratio;
+                    agent.velocity.y *= ratio;
+                }
+
+                // Update position
+                agent.position.x += agent.velocity.x;
+                agent.position.y += agent.velocity.y;
+
+                // Boundary collision (bounce off edges)
+                if (agent.position.x - agent.size <= 0.0) {
+                    agent.position.x = agent.size;
+                    agent.velocity.x = abs(agent.velocity.x);
+                } else if (agent.position.x + agent.size >= f32(${WORLD_WIDTH})) {
+                    agent.position.x = f32(${WORLD_WIDTH}) - agent.size;
+                    agent.velocity.x = -abs(agent.velocity.x);
+                }
+
+                if (agent.position.y - agent.size <= 0.0) {
+                    agent.position.y = agent.size;
+                    agent.velocity.y = abs(agent.velocity.y);
+                } else if (agent.position.y + agent.size >= f32(${WORLD_HEIGHT})) {
+                    agent.position.y = f32(${WORLD_HEIGHT}) - agent.size;
+                    agent.velocity.y = -abs(agent.velocity.y);
+                }
+
+                // Apply energy cost for movement
+                let movement_cost = (abs(thrust_x) + abs(thrust_y)) * 0.001;
+                agent.energy = max(0.0, agent.energy - f32(movement_cost));
+
+                agentsOut[index] = agent;
+            }
+        `;
+
+        this.physicsPipeline = await this.device.createComputePipeline({
+            layout: 'auto',
+            compute: {
+                module: this.device.createShaderModule({ code: physicsShader }),
+                entryPoint: 'main'
+            }
+        });
+
+        this.logger.log('GPU Physics pipeline created successfully');
+    }
+
+    createPhysicsBuffers(maxAgents) {
+        const agentBufferSize = maxAgents * (2 + 2 + 1 + 1 + 1 + 1 + 5) * 4; // vec2 pos, vec2 vel, 6 floats = 11 floats * 4 bytes
+
+        this.physicsBuffers = {
+            agentsIn: this.device.createBuffer({
+                size: agentBufferSize,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+            }),
+            agentsOut: this.device.createBuffer({
+                size: agentBufferSize,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+            }),
+            maxAgents: maxAgents
+        };
+
+        this.physicsBindGroup = this.device.createBindGroup({
+            layout: this.physicsPipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: this.physicsBuffers.agentsIn } },
+                { binding: 1, resource: { buffer: this.physicsBuffers.agentsOut } }
+            ]
+        });
+    }
+
+    async batchPhysicsUpdate(agents) {
+        if (!this.useGPU || !this.initialized || !this.physicsPipeline) {
+            return null;
+        }
+
+        // Prepare agent data for GPU
+        const agentData = new Float32Array(agents.length * 11); // 11 floats per agent
+        for (let i = 0; i < agents.length; i++) {
+            const agent = agents[i];
+            const offset = i * 11;
+            agentData[offset] = agent.x;         // position.x
+            agentData[offset + 1] = agent.y;     // position.y
+            agentData[offset + 2] = agent.vx;    // velocity.x
+            agentData[offset + 3] = agent.vy;    // velocity.y
+            agentData[offset + 4] = agent.size;  // size
+            agentData[offset + 5] = agent.energy;// energy
+            agentData[offset + 6] = agent.thrust || 0;  // thrust
+            agentData[offset + 7] = agent.angle; // rotation
+            // Neural network outputs (lastOutput should be set from GPU NN)
+            agentData[offset + 8] = agent.lastOutput ? agent.lastOutput[0] : 0; // forward
+            agentData[offset + 9] = agent.lastOutput ? agent.lastOutput[1] : 0; // rotation
+            agentData[offset + 10] = agent.lastOutput ? agent.lastOutput[2] : 0; // sprint
+            // Note: Only using first 3 outputs for physics, reproduction/attack handled separately
+        }
+
+        // Upload data to GPU
+        this.device.queue.writeBuffer(this.physicsBuffers.agentsIn, 0, agentData);
+
+        // Execute physics simulation
+        const commandEncoder = this.device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginComputePass();
+
+        passEncoder.setPipeline(this.physicsPipeline);
+        passEncoder.setBindGroup(0, this.physicsBindGroup);
+        passEncoder.dispatchWorkgroups(Math.ceil(agents.length / 64), 1, 1);
+
+        passEncoder.end();
+        this.device.queue.submit([commandEncoder.finish()]);
+
+        // Read back results
+        const resultBuffer = this.device.createBuffer({
+            size: agentData.byteLength,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+        });
+
+        const copyEncoder = this.device.createCommandEncoder();
+        copyEncoder.copyBufferToBuffer(
+            this.physicsBuffers.agentsOut, 0,
+            resultBuffer, 0,
+            agentData.byteLength
+        );
+        this.device.queue.submit([copyEncoder.finish()]);
+
+        // Map and read results
+        await resultBuffer.mapAsync(GPUMapMode.READ);
+        const resultData = new Float32Array(resultBuffer.getMappedRange());
+
+        // Update agents with GPU results
+        for (let i = 0; i < agents.length; i++) {
+            const agent = agents[i];
+            const offset = i * 11;
+            agent.x = resultData[offset];       // position.x
+            agent.y = resultData[offset + 1];   // position.y
+            agent.vx = resultData[offset + 2];  // velocity.x
+            agent.vy = resultData[offset + 3];  // velocity.y
+            agent.energy = resultData[offset + 5]; // energy
+        }
+
+        resultBuffer.unmap();
+        resultBuffer.destroy();
+
+        return true;
+    }
+
+    async createFoodPipeline() {
+        const foodShader = `
+            struct Food {
+                position: vec2<f32>,
+                energy: f32,
+                initial_energy: f32,
+                age: f32,
+                max_age: f32,
+                rot_rate: f32,
+                size: f32,
+                is_high_value: f32,
+            };
+
+            @group(0) @binding(0) var<storage, read_write> food: array<Food>;
+
+            @compute @workgroup_size(64)
+            fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+                let index = global_id.x;
+                if (index >= arrayLength(&food)) {
+                    return;
+                }
+
+                var f = food[index];
+
+                // Age food
+                f.age += 1.0;
+
+                // Energy decay (rotting)
+                f.energy = max(0.0, f.energy - f.rot_rate);
+
+                // Update visual size based on remaining energy
+                let energy_ratio = f.energy / f.initial_energy;
+                if (f.is_high_value > 0.5) {
+                    f.size = max(4.0, 12.0 * energy_ratio); // High-value: 12→4
+                } else {
+                    f.size = max(3.0, 8.0 * energy_ratio);  // Normal: 8→3
+                }
+
+                food[index] = f;
+            }
+        `;
+
+        this.foodPipeline = await this.device.createComputePipeline({
+            layout: 'auto',
+            compute: {
+                module: this.device.createShaderModule({ code: foodShader }),
+                entryPoint: 'main'
+            }
+        });
+    }
+
+    async createPheromonePipeline() {
+        const pheromoneShader = `
+            struct Pheromone {
+                position: vec2<f32>,
+                life: f32,
+                size: f32,
+                fade_rate: f32,
+            };
+
+            @group(0) @binding(0) var<storage, read_write> pheromones: array<Pheromone>;
+
+            @compute @workgroup_size(64)
+            fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+                let index = global_id.x;
+                if (index >= arrayLength(&pheromones)) {
+                    return;
+                }
+
+                var p = pheromones[index];
+
+                // Fade pheromone
+                p.life -= p.fade_rate;
+
+                // Grow size
+                p.size += 0.2;
+
+                pheromones[index] = p;
+            }
+        `;
+
+        this.pheromonePipeline = await this.device.createComputePipeline({
+            layout: 'auto',
+            compute: {
+                module: this.device.createShaderModule({ code: pheromoneShader }),
+                entryPoint: 'main'
+            }
+        });
+    }
+
+    async batchFoodUpdate(foodArray) {
+        if (!this.useGPU || !this.initialized || !this.foodPipeline || foodArray.length === 0) {
+            return null;
+        }
+
+        // Create buffer for food data
+        const foodData = new Float32Array(foodArray.length * 8); // 8 floats per food
+        for (let i = 0; i < foodArray.length; i++) {
+            const food = foodArray[i];
+            const offset = i * 8;
+            foodData[offset] = food.x;
+            foodData[offset + 1] = food.y;
+            foodData[offset + 2] = food.energyValue;
+            foodData[offset + 3] = food.initialEnergy;
+            foodData[offset + 4] = food.age;
+            foodData[offset + 5] = food.maxAge;
+            foodData[offset + 6] = food.rotRate;
+            foodData[offset + 7] = food.isHighValue ? 1.0 : 0.0;
+        }
+
+        const foodBuffer = this.device.createBuffer({
+            size: foodData.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+        });
+
+        this.device.queue.writeBuffer(foodBuffer, 0, foodData);
+
+        const bindGroup = this.device.createBindGroup({
+            layout: this.foodPipeline.getBindGroupLayout(0),
+            entries: [{ binding: 0, resource: { buffer: foodBuffer } }]
+        });
+
+        // Execute food updates
+        const commandEncoder = this.device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginComputePass();
+
+        passEncoder.setPipeline(this.foodPipeline);
+        passEncoder.setBindGroup(0, bindGroup);
+        passEncoder.dispatchWorkgroups(Math.ceil(foodArray.length / 64), 1, 1);
+
+        passEncoder.end();
+        this.device.queue.submit([commandEncoder.finish()]);
+
+        // Read back results
+        const resultBuffer = this.device.createBuffer({
+            size: foodData.byteLength,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+        });
+
+        const copyEncoder = this.device.createCommandEncoder();
+        copyEncoder.copyBufferToBuffer(foodBuffer, 0, resultBuffer, 0, foodData.byteLength);
+        this.device.queue.submit([copyEncoder.finish()]);
+
+        await resultBuffer.mapAsync(GPUMapMode.READ);
+        const resultData = new Float32Array(resultBuffer.getMappedRange());
+
+        // Update food objects with GPU results
+        for (let i = 0; i < foodArray.length; i++) {
+            const food = foodArray[i];
+            const offset = i * 8;
+            food.energyValue = resultData[offset + 2];
+            food.age = resultData[offset + 4];
+            food.size = resultData[offset + 7]; // Updated size
+
+            // Mark as dead if energy <= 0 or age exceeded
+            if (food.energyValue <= 0 || food.age > food.maxAge) {
+                food.isDead = true;
+            }
+        }
+
+        resultBuffer.unmap();
+        resultBuffer.destroy();
+        foodBuffer.destroy();
+
+        return true;
+    }
+
+    async batchPheromoneUpdate(pheromoneArray) {
+        if (!this.useGPU || !this.initialized || !this.pheromonePipeline || pheromoneArray.length === 0) {
+            return null;
+        }
+
+        // Create buffer for pheromone data
+        const pheromoneData = new Float32Array(pheromoneArray.length * 4); // 4 floats per pheromone
+        for (let i = 0; i < pheromoneArray.length; i++) {
+            const p = pheromoneArray[i];
+            const offset = i * 4;
+            pheromoneData[offset] = p.x;
+            pheromoneData[offset + 1] = p.y;
+            pheromoneData[offset + 2] = p.life;
+            pheromoneData[offset + 3] = p.size;
+        }
+
+        const pheromoneBuffer = this.device.createBuffer({
+            size: pheromoneData.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
+        });
+
+        this.device.queue.writeBuffer(pheromoneBuffer, 0, pheromoneData);
+
+        const bindGroup = this.device.createBindGroup({
+            layout: this.pheromonePipeline.getBindGroupLayout(0),
+            entries: [{ binding: 0, resource: { buffer: pheromoneBuffer } }]
+        });
+
+        // Execute pheromone updates
+        const commandEncoder = this.device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginComputePass();
+
+        passEncoder.setPipeline(this.pheromonePipeline);
+        passEncoder.setBindGroup(0, bindGroup);
+        passEncoder.dispatchWorkgroups(Math.ceil(pheromoneArray.length / 64), 1, 1);
+
+        passEncoder.end();
+        this.device.queue.submit([commandEncoder.finish()]);
+
+        // Read back results
+        const resultBuffer = this.device.createBuffer({
+            size: pheromoneData.byteLength,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+        });
+
+        const copyEncoder = this.device.createCommandEncoder();
+        copyEncoder.copyBufferToBuffer(pheromoneBuffer, 0, resultBuffer, 0, pheromoneData.byteLength);
+        this.device.queue.submit([copyEncoder.finish()]);
+
+        await resultBuffer.mapAsync(GPUMapMode.READ);
+        const resultData = new Float32Array(resultBuffer.getMappedRange());
+
+        // Update pheromone objects with GPU results
+        for (let i = 0; i < pheromoneArray.length; i++) {
+            const p = pheromoneArray[i];
+            const offset = i * 4;
+            p.life = resultData[offset + 2];
+            p.size = resultData[offset + 3];
+
+            // Mark as dead if life <= 0
+            if (p.life <= 0) {
+                p.isDead = true;
+            }
+        }
+
+        resultBuffer.unmap();
+        resultBuffer.destroy();
+        pheromoneBuffer.destroy();
+
+        return true;
     }
 
     clearCache() {

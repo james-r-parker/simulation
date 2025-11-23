@@ -31,6 +31,14 @@ export class WebGLRenderer {
         );
         this.camera.position.z = 1000;
 
+        // Cached frustum for performance (reused across all culling operations)
+        this.frustum = new THREE.Frustum();
+        this.frustumMatrix = new THREE.Matrix4();
+
+        // Reusable objects for frustum culling to avoid allocations
+        this.tempVec = new THREE.Vector3();
+        this.testSphere = new THREE.Sphere(this.tempVec, 0);
+
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         // Use window size initially, will be resized properly after DOM is ready
@@ -58,6 +66,15 @@ export class WebGLRenderer {
         // Food geometry - using InstancedMesh
         this.foodGeometry = new THREE.CircleGeometry(1, 8);
         this.foodInstancedMesh = null; // Will be created in updateFood
+    }
+
+    updateFrustum() {
+        // Update cached frustum for current camera position
+        this.frustumMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+        this.frustum.setFromProjectionMatrix(this.frustumMatrix);
+    }
+
+    updateAgents(agents, frameCount) {
 
         // Pheromone system - using InstancedMesh
         this.pheromoneInstancedMesh = null; // Will be created in updatePheromones
@@ -111,7 +128,7 @@ export class WebGLRenderer {
     }
 
     // Visual effects system
-    addVisualEffect(agent, effectType) {
+    addVisualEffect(agent, effectType, gameSpeed = 1) {
         // NEVER add effects to dead agents
         if (!agent || agent.isDead) {
             return;
@@ -121,14 +138,23 @@ export class WebGLRenderer {
             this.agentEffects.set(agent, []);
         }
         const effects = this.agentEffects.get(agent);
+
+        // Adjust duration based on game speed - faster games should have faster animations
+        const adjustedDuration = Math.max(5, Math.floor(EFFECT_FADE_DURATION / gameSpeed));
+
         effects.push({
             type: effectType,
             startFrame: this.currentFrame || 0,
-            duration: EFFECT_FADE_DURATION
+            duration: adjustedDuration
         });
     }
 
     updateVisualEffects(currentFrame) {
+        // Initialize agentEffects if not already done (safety check)
+        if (!this.agentEffects) {
+            this.agentEffects = new Map();
+        }
+
         this.currentFrame = currentFrame;
 
         // Clean up expired effects and dead agents
@@ -186,9 +212,7 @@ export class WebGLRenderer {
 
     updateAgents(agents, frameCount) {
         // OPTIMIZED: Frustum culling - only render agents visible in camera
-        const frustum = new THREE.Frustum();
-        const matrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(matrix);
+        this.updateFrustum();
 
         // Group ALL living agents by gene ID first (to prevent disposal of off-screen agents)
         const agentsByGene = new Map();
@@ -218,9 +242,7 @@ export class WebGLRenderer {
             }
         }
 
-        // Reuse Vector3/Sphere for culling to reduce garbage
-        const tempVec = new THREE.Vector3();
-        const testSphere = new THREE.Sphere(tempVec, 0);
+        // Use reusable Vector3/Sphere for culling to reduce garbage
 
         // Update/create meshes for each gene ID
         for (const [geneId, geneAgents] of agentsByGene.entries()) {
@@ -265,18 +287,25 @@ export class WebGLRenderer {
             const mesh = this.agentMeshes.get(geneId);
             const matrix = new THREE.Matrix4();
 
-            // Include ALL valid agents (no frustum culling to prevent flickering)
-            const validAgents = [];
-            for (let j = 0; j < geneAgents.length; j++) {
-                const agent = geneAgents[j];
-                if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
-                    isFinite(agent.x) && isFinite(agent.y) &&
-                    typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
-                    !agent.isDead) { // Only exclude dead agents
+        // OPTIMIZED: Include only visible agents (frustum culling for performance)
+        const validAgents = [];
+        for (let j = 0; j < geneAgents.length; j++) {
+            const agent = geneAgents[j];
+            if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
+                isFinite(agent.x) && isFinite(agent.y) &&
+                typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
+                !agent.isDead) {
 
+                // Frustum culling - only include agents visible on screen
+                this.tempVec.set(agent.x, -agent.y, 0);
+                this.testSphere.center = this.tempVec;
+                this.testSphere.radius = Math.max(agent.size, 12); // Use minimum render size
+
+                if (this.frustum.intersectsSphere(this.testSphere)) {
                     validAgents.push(agent);
                 }
             }
+        }
 
             const validCount = validAgents.length;
 
@@ -407,6 +436,15 @@ export class WebGLRenderer {
     }
 
     updateVisualEffectsRendering() {
+        // Initialize required properties if not already done (safety checks)
+        if (!this.agentEffects) {
+            this.agentEffects = new Map();
+        }
+        if (!this.agentEffectsGroup) {
+            this.agentEffectsGroup = new THREE.Group();
+            this.scene.add(this.agentEffectsGroup);
+        }
+
         // Clear previous effect meshes
         while (this.agentEffectsGroup.children.length > 0) {
             const child = this.agentEffectsGroup.children[0];
@@ -452,9 +490,7 @@ export class WebGLRenderer {
 
     updateFood(foodArray) {
         // OPTIMIZED: Frustum culling + InstancedMesh for food
-        const frustum = new THREE.Frustum();
-        const matrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(matrix);
+        this.updateFrustum();
 
         // OPTIMIZED: Count visible food with for loop
         const visibleFood = [];
@@ -465,8 +501,10 @@ export class WebGLRenderer {
 
             // Frustum culling
             const foodSize = food.size || 5;
-            const testSphere = new THREE.Sphere(new THREE.Vector3(food.x, -food.y, 0), foodSize);
-            if (!frustum.intersectsSphere(testSphere)) continue;
+            this.tempVec.set(food.x, -food.y, 0);
+            this.testSphere.center = this.tempVec;
+            this.testSphere.radius = foodSize;
+            if (!this.frustum.intersectsSphere(this.testSphere)) continue;
 
             visibleFood.push(food);
         }
@@ -540,9 +578,7 @@ export class WebGLRenderer {
     updatePheromones(pheromones) {
 
         // OPTIMIZED: Frustum culling + InstancedMesh for pheromones
-        const frustum = new THREE.Frustum();
-        const matrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(matrix);
+        this.updateFrustum();
 
         // OPTIMIZED: Count visible pheromones with for loop
         const visiblePheromones = [];
@@ -553,8 +589,10 @@ export class WebGLRenderer {
 
             // Frustum culling
             const puffSize = puff.size || 5;
-            const testSphere = new THREE.Sphere(new THREE.Vector3(puff.x, -puff.y, 0), puffSize);
-            if (!frustum.intersectsSphere(testSphere)) continue;
+            this.tempVec.set(puff.x, -puff.y, 0);
+            this.testSphere.center = this.tempVec;
+            this.testSphere.radius = puffSize;
+            if (!this.frustum.intersectsSphere(this.testSphere)) continue;
 
             visiblePheromones.push(puff);
         }
@@ -613,6 +651,16 @@ export class WebGLRenderer {
     }
 
     updateObstacles(obstacles) {
+        // Initialize obstacleMeshes if not already done
+        if (!this.obstacleMeshes) {
+            this.obstacleMeshes = [];
+        }
+
+        // Safety check for obstacles array
+        if (!obstacles) {
+            obstacles = [];
+        }
+
         // Check if we need to recreate meshes (obstacle count changed) or update positions (obstacles moved)
         const needsRecreate = this.obstacleMeshes.length === 0 ||
                             obstacles.length !== this.obstacleMeshes.length / 2;
@@ -687,11 +735,11 @@ export class WebGLRenderer {
             if (agent && !agent.isDead && agent.lastRayData) {
                 // Frustum check
                 const agentSize = agent.size || 5;
-                tempVec.set(agent.x, -agent.y, 0);
-                testSphere.center = tempVec;
-                testSphere.radius = agentSize + agent.maxRayDist; // Check if rays could be in view
+                this.tempVec.set(agent.x, -agent.y, 0);
+                this.testSphere.center = this.tempVec;
+                this.testSphere.radius = agentSize + agent.maxRayDist; // Check if rays could be in view
 
-                if (frustum.intersectsSphere(testSphere)) {
+                if (this.frustum.intersectsSphere(this.testSphere)) {
                     activeAgents.push(agent);
                 }
             }

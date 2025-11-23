@@ -2,10 +2,11 @@
 // Preserved exactly from original
 
 export class Point {
-    constructor(x, y, data) {
+    constructor(x, y, data, radius = 0) {
         this.x = x;
         this.y = y;
         this.data = data;
+        this.radius = radius; // For entities with size (obstacles, agents, food)
     }
 }
 
@@ -18,8 +19,12 @@ export class Rectangle {
     }
 
     contains(point) {
-        return (point.x >= this.x - this.w && point.x <= this.x + this.w &&
-            point.y >= this.y - this.h && point.y <= this.y + this.h);
+        // Account for entity radius when checking containment
+        const entityRadius = point.radius || 0;
+        return (point.x + entityRadius >= this.x - this.w &&
+                point.x - entityRadius <= this.x + this.w &&
+                point.y + entityRadius >= this.y - this.h &&
+                point.y - entityRadius <= this.y + this.h);
     }
 
     intersects(range) {
@@ -83,10 +88,17 @@ export class Quadtree {
 
     query(range, found) {
         if (!found) found = [];
-        if (!this.boundary.intersects(range)) return found;
+
+        // Always check all entities in this node (simplified spatial query)
         for (let p of this.points) {
-            if (range.contains(p)) found.push(p.data);
+            // Simple point-in-rectangle check
+            if (p.x >= range.x - range.w && p.x <= range.x + range.w &&
+                p.y >= range.y - range.h && p.y <= range.y + range.h) {
+                found.push(p.data);
+            }
         }
+
+        // Recurse into child nodes
         if (this.divided) {
             this.northwest.query(range, found);
             this.northeast.query(range, found);

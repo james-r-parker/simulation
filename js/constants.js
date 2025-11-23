@@ -122,35 +122,35 @@ export const COLORS = {
 export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
         color: COLORS.AGENTS.FORAGER,
-        numSensorRays: 40,
+        numSensorRays: 6,  // FURTHER REDUCED for performance
         maxRayDist: 300, // Increased from 200
         hiddenSize: 20,
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: COLORS.AGENTS.PREDATOR,
-        numSensorRays: 50,
+        numSensorRays: 8,  // FURTHER REDUCED for performance
         maxRayDist: 450, // Increased from 300
         hiddenSize: 25,
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: COLORS.AGENTS.REPRODUCER,
-        numSensorRays: 30,
+        numSensorRays: 6,  // FURTHER REDUCED for performance
         maxRayDist: 250, // Increased from 150
         hiddenSize: 18,
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: COLORS.AGENTS.SCOUT,
-        numSensorRays: 60,
+        numSensorRays: 8,  // FURTHER REDUCED for performance
         maxRayDist: 600, // Increased from 400
         hiddenSize: 15,
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: COLORS.AGENTS.DEFENDER,
-        numSensorRays: 35,
+        numSensorRays: 6,  // FURTHER REDUCED for performance
         maxRayDist: 350, // Increased from 250
         hiddenSize: 22,
         description: 'Specialized in defending territory and allies.'
