@@ -10,7 +10,8 @@ import {
     RESPAWN_DELAY_FRAMES, MAX_ENERGY,
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
     VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE,
-    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI
+    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI,
+    MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -24,6 +25,7 @@ import { GPUPhysics } from './gpu-physics.js';
 import { distance, randomGaussian } from './utils.js';
 import { Logger, LOG_LEVELS } from './logger.js';
 import { PointPool } from './point-pool.js';
+import { toast } from './toast.js';
 
 // Imported functions from refactored modules
 import {
@@ -86,6 +88,9 @@ export class Simulation {
         this.lastMemoryUpdate = Date.now();
         this.currentMemoryUsage = 0;
         this.peakMemoryUsage = 0;
+
+        // Toast notification system
+        this.toast = toast;
         this.memoryGrowthRate = 0;
         this.entityCounts = { agents: 0, food: 0, pheromones: 0 };
 
@@ -501,7 +506,7 @@ export class Simulation {
             // Update FPS display
             const fpsEl = document.getElementById('info-fps');
             if (fpsEl) {
-                let fpsText = `FPS: ${this.currentFps}`;
+                let fpsText = `FPS: ${this.currentFps} `;
                 if (this.avgGpuFps > 0 || this.avgCpuFps > 0) {
                     fpsText += ` (GPU: ${this.avgGpuFps > 0 ? this.avgGpuFps : 'N/A'}, CPU: ${this.avgCpuFps > 0 ? this.avgCpuFps : 'N/A'})`;
                 }
@@ -787,13 +792,113 @@ export class Simulation {
                 // PERFORMANCE MONITORING: Suggest optimizations when FPS is low
                 if (this.frameCount % 300 === 0 && this.currentFps < 50) {
                     const livingAgents = this.agents.filter(a => !a.isDead).length;
-                    console.log(`[PERF] Low FPS detected (${this.currentFps}). Try: Reduce agents (${livingAgents}), game speed (${this.gameSpeed}), or disable GPU features`);
+                    console.log(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
                 }
             }
 
             // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
             // This also reduces the number of array operations
             if (i === iterations - 1) {
+                // === REPRODUCTION SYSTEM ===
+                // Check for reproduction opportunities (once per frame)
+                for (let j = 0; j < this.agents.length; j++) {
+                    const agent = this.agents[j];
+
+                    // Skip dead or immature agents
+                    if (agent.isDead || agent.framesAlive < MATURATION_AGE_FRAMES) continue;
+
+                    // Decrement reproduction cooldown
+                    if (agent.reproductionCooldown > 0) {
+                        agent.reproductionCooldown--;
+                    }
+
+                    // Increment pregnancy timer
+                    if (agent.isPregnant && agent.pregnancyTimer < PREGNANCY_DURATION_FRAMES) {
+                        agent.pregnancyTimer++;
+                    }
+
+                    // === BIRTH SYSTEM ===
+                    // Check if agent is ready to give birth
+                    if (agent.isPregnant && agent.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
+                        const child = agent.birthChild();
+                        if (child) {
+                            this.agentSpawnQueue.push(child);
+                            console.log(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
+
+                            // Show toast notification
+                            if (this.toast) {
+                                this.toast.showReproduction('birth', agent.geneId, child.geneId);
+                            }
+                        }
+                    }
+
+                    // === ASEXUAL REPRODUCTION (SPLITTING) ===
+                    // When energy is very high, split to create clone
+                    // Require agent to be "fit" for splitting
+                    if (agent.fit &&
+                        agent.energy > MAX_ENERGY * 0.7 &&
+                        agent.reproductionCooldown <= 0 &&
+                        !agent.isPregnant) {
+
+                        const child = agent.split();
+                        if (child) {
+                            this.agentSpawnQueue.push(child);
+                            console.log(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
+
+                            // Show toast notification
+                            if (this.toast) {
+                                this.toast.showReproduction('split', agent.geneId, child.geneId, agent.energy);
+                            }
+                        }
+                    }
+
+                    // === SEXUAL REPRODUCTION (MATING) ===
+                    // Find nearby mature agents for mating
+                    // Require agent to be "fit" for mating
+                    if (agent.fit &&
+                        agent.energy > MIN_ENERGY_TO_REPRODUCE * 2 &&
+                        !agent.isPregnant &&
+                        agent.reproductionCooldown <= 0) {
+
+                        const mateRadius = 200;
+
+                        // Find potential mates
+                        for (let k = 0; k < this.agents.length; k++) {
+                            const potentialMate = this.agents[k];
+
+                            // Skip self, dead, immature, low-energy, or unfit agents
+                            if (potentialMate === agent ||
+                                potentialMate.isDead ||
+                                potentialMate.framesAlive < MATURATION_AGE_FRAMES ||
+                                potentialMate.energy < MIN_ENERGY_TO_REPRODUCE ||
+                                potentialMate.isPregnant ||
+                                potentialMate.reproductionCooldown > 0 ||
+                                !potentialMate.fit) { // REQUIRE BOTH PARENTS TO BE FIT
+                                continue;
+                            }
+
+                            // Check distance
+                            const dx = agent.x - potentialMate.x;
+                            const dy = agent.y - potentialMate.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+
+                            if (distance < mateRadius) {
+                                // Attempt mating (use tryMate not mate)
+                                if (agent.tryMate(potentialMate)) {
+                                    console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${potentialMate.geneId}`);
+
+                                    // Show toast notification
+                                    if (this.toast) {
+                                        this.toast.showReproduction('mate', agent.geneId, potentialMate.geneId);
+                                    }
+
+                                    break; // One mate per check
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Process dead agents - queue qualifying ones for database save, remove all dead agents
                 for (let j = this.agents.length - 1; j >= 0; j--) {
                     const agent = this.agents[j];
@@ -801,33 +906,38 @@ export class Simulation {
                         // Check if this agent was in validation queue first (highest priority)
                         if (this.validationManager.isInValidation(agent.geneId)) {
                             // Debug: Log validation agent death details
-                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive / 60}s, Energy: ${agent.energy}, Fitness: ${agent.fitness}`);
+                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive / 60} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
                             // Handle validation agent death
-                            this.validationManager.handleValidationDeath(agent, this.deadAgentQueue);
+                            this.validationManager.handleValidationDeath(agent, this.db);
                         } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
-                            // Handle promising agents with validation queue system
-                            console.log(`[VALIDATION] 💀 Death: Adding deceased agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
-                            const result = this.validationManager.addToValidationQueue(agent, false);
-                            if (result === false) {
-                                // Agent was skipped (already in gene pool), add to dead queue
-                                this.deadAgentQueue.push(agent);
+                            // High-performing agent - check if gene pool exists
+                            const genePoolExists = this.db.pool[agent.geneId] !== undefined;
+
+                            if (genePoolExists) {
+                                // CASE 1: Existing gene pool - skip validation, go directly to save queue
+                                console.log(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
+                                this.db.queueSaveAgent(agent);
+                            } else {
+                                // CASE 2: New gene pool - enter validation
+                                console.log(`[VALIDATION] 💀 Death: New gene ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
+                                const result = this.validationManager.addToValidationQueue(agent, false);
+                                // If validation returns something other than false, it's handling the agent
+                                // If it returns false, it means cooldown or other skip reason
                             }
                         } else if (agent.fit) {
-                            // Directly add proven agents to gene pool
-                            this.deadAgentQueue.push(agent);
+                            // Lower-tier but still qualified agents (fitness < VALIDATION_THRESHOLD but meets other criteria)
+                            console.log(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) qualified, queueing for save`);
+                            this.db.queueSaveAgent(agent);
                         } else if (hasValidatedAncestor(agent, this)) {
                             // Children of validated agents get saved to gene pool automatically
-                            console.log(`[GENEPOOL] 👶 Auto-saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
-                            this.deadAgentQueue.push(agent);
+                            console.log(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
+                            this.db.queueSaveAgent(agent);
                         }
                         // Remove ALL dead agents from active array to prevent memory leaks
                         this.agents.splice(j, 1);
                         j--; // Adjust index since we removed an element
                     }
                 }
-
-                // Process dead agent queue (background save)
-                this.processDeadAgentQueue();
 
                 // Periodic performance monitoring (every 1000 frames)
                 if (this.frameCount % 1000 === 0) {
@@ -860,7 +970,7 @@ export class Simulation {
                         gpuPhysicsCache = 1; // Physics has buffers
                     }
 
-                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'}`);
+                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
                 }
                 // Remove dead food
                 for (let j = this.food.length - 1; j >= 0; j--) {
@@ -923,7 +1033,7 @@ export class Simulation {
                     // Resync active validation agents counter
                     const actualValidationAgents = this.agents.filter(a => !a.isDead && this.validationManager.isInValidation(a.geneId)).length;
                     if (actualValidationAgents !== this.validationManager.activeValidationAgents) {
-                        console.log(`[VALIDATION] Resyncing counter: ${this.validationManager.activeValidationAgents} → ${actualValidationAgents}`);
+                        console.log(`[VALIDATION] Resyncing counter: ${this.validationManager.activeValidationAgents} → ${actualValidationAgents} `);
                         this.validationManager.activeValidationAgents = actualValidationAgents;
                     }
                 }
@@ -1064,7 +1174,7 @@ export class Simulation {
             }
 
             if (this.agentSpawnQueue.length > 0) {
-                this.logger.log(`[LIFECYCLE] Population at limit. ${this.agentSpawnQueue.length} offspring were stillborn.`);
+                this.logger.log(`[LIFECYCLE] Population at limit.${this.agentSpawnQueue.length} offspring were stillborn.`);
             }
 
             this.agentSpawnQueue.length = 0; // Clear any remaining (stillborn) agents

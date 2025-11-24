@@ -926,6 +926,36 @@ export function copySimulationStats(simulation) {
         `${runtimeMinutes}m ${runtimeSeconds % 60}s` :
         `${runtimeSeconds}s`;
 
+    // Get validation queue info
+    const validationQueueSize = simulation.validationManager ? simulation.validationManager.validationQueue.size : 0;
+
+    // Get detailed gene pool information
+    const poolDetails = [];
+    for (const [geneId, agents] of Object.entries(simulation.db.pool || {})) {
+        if (agents && agents.length > 0) {
+            const maxFitness = Math.max(...agents.map(a => a.fitness || 0));
+            const avgFitness = agents.reduce((sum, a) => sum + (a.fitness || 0), 0) / agents.length;
+            poolDetails.push({
+                geneId: geneId.substring(0, 12),
+                count: agents.length,
+                maxFitness,
+                avgFitness
+            });
+        }
+    }
+
+    // Sort pools by max fitness (descending)
+    poolDetails.sort((a, b) => b.maxFitness - a.maxFitness);
+
+    // Calculate pool statistics
+    const poolStats = {
+        total: poolDetails.length,
+        avgAgentsPerPool: poolDetails.length > 0 ? poolDetails.reduce((sum, p) => sum + p.count, 0) / poolDetails.length : 0,
+        wellPopulated: poolDetails.filter(p => p.count >= 10).length, // Pools at capacity
+        underPopulated: poolDetails.filter(p => p.count < 5).length,
+        top10: poolDetails.slice(0, 10)
+    };
+
     // Format stats for copying
     const statsText = `
 🎯 SIMULATION STATS - ${new Date().toLocaleString()}
@@ -976,6 +1006,23 @@ Avg Collisions: ${avgCollisions.toFixed(1)}
 Avg Wall Hits: ${avgWallHits.toFixed(1)}
 Collision-Free %: ${collisionFreePercent.toFixed(1)}%
 
+🧬 Gene Pool Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Pools: ${poolStats.total} / 500 (${((poolStats.total / 500) * 100).toFixed(1)}% capacity)
+Pools at Capacity (10 agents): ${poolStats.wellPopulated}
+Under-Populated Pools (<5): ${poolStats.underPopulated}
+Avg Agents per Pool: ${poolStats.avgAgentsPerPool.toFixed(1)}
+Validation Queue: ${validationQueueSize} pending
+
+Top 10 Gene Pools by Fitness:
+${poolStats.top10.map((p, i) => `  ${i + 1}. ${p.geneId}... | Max: ${p.maxFitness.toFixed(0)}, Avg: ${p.avgFitness.toFixed(0)}, Agents: ${p.count}/10`).join('\n')}
+
+Pool Health Indicators:
+- Capacity Utilization: ${((poolStats.total / 500) * 100).toFixed(1)}%
+- Average Pool Quality: ${poolStats.top10.length > 0 ? (poolStats.top10.reduce((sum, p) => sum + p.maxFitness, 0) / poolStats.top10.length).toFixed(0) : 'N/A'}
+- Weakest Pool in Top 10: ${poolStats.top10.length >= 10 ? poolStats.top10[9].maxFitness.toFixed(0) : 'N/A'}
+- Pool Diversity Score: ${poolStats.top10.length > 0 ? (new Set(poolStats.top10.map(p => Math.floor(p.maxFitness / 1000))).size * 100).toFixed(0) : 'N/A'}
+
 🧠 Memory Monitor
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Current Usage: ${memoryStats.current}
@@ -992,7 +1039,7 @@ GPU Enabled: ${simulation.useGpu ? 'Yes' : 'No'}
 
 📈 Recent Fitness History (last 10)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${simulation.fitnessHistory.slice(-10).map((f, i) => `${i+1}: ${f.toFixed(0)}`).join(' | ')}
+${simulation.fitnessHistory.slice(-10).map((f, i) => `${i + 1}: ${f.toFixed(0)}`).join(' | ')}
 `;
 
     // Copy to clipboard

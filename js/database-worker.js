@@ -185,6 +185,20 @@ async function clearAll() {
     });
 }
 
+// Remove a specific gene pool by ID
+async function removeGenePoolById(geneId) {
+    if (!db) await initDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.delete(geneId);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
 // Handle messages from main thread
 self.onmessage = async (e) => {
     const { id, action, payload } = e.data;
@@ -217,6 +231,11 @@ self.onmessage = async (e) => {
 
             case 'clearAll':
                 await clearAll();
+                result = { success: true };
+                break;
+
+            case 'removeGenePoolById':
+                await removeGenePoolById(payload.geneId);
                 result = { success: true };
                 break;
 

@@ -1,0 +1,142 @@
+/* Toast Notification System Styles */
+
+.toast-container {
+    position: fixed;
+    top: 80px;
+    /* Below header */
+    left: 20px;
+    /* Changed from right to left to avoid sidebar */
+    z-index: 10000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(57, 255, 20, 0.2),
+        inset 0 0 20px rgba(57, 255, 20, 0.05);
+}
+
+.toast-pool-add {
+    border-left: 4px solid #00F0FF;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(0, 240, 255, 0.2),
+        inset 0 0 20px rgba(0, 240, 255, 0.05);
+}
+
+.toast-warning {}
+
+.toast-score-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 2px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.toast-summary {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-fitness {
+    font-weight: 600;
+    color: #CCFF00;
+    text-shadow: 0 0 6px rgba(204, 255, 0, 0.5);
+}
+
+.toast-position {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.toast-replacement {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 100, 100, 0.2);
+    font-size: 12px;
+    color: #FF6666;
+    text-shadow: 0 0 6px rgba(255, 100, 100, 0.3);
+}
+
+.toast-capacity {
+    font-weight: 600;
+    color: #FFD700;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+}
+
+.toast-message {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+/* Animations */
+@keyframes celebrate {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    25% {
+        transform: scale(1.3) rotate(-15deg);
+    }
+
+    50% {
+        transform: scale(1.2) rotate(15deg);
+    }
+
+    75% {
+        transform: scale(1.3) rotate(-10deg);
+    }
+}
+
+@keyframes bounce-in {
+    0% {
+        transform: scale(0) rotate(-180deg);
+    }
+
+    50% {
+        transform: scale(1.2) rotate(10deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes pulse-warning {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .toast-container {
+        right: 10px;
+        left: 10px;
+        top: 60px;
+    }
+
+    .toast {
+        min-width: unset;
+        max-width: unset;
+    }
+
+    .toast-icon {
+        font-size: 24px;
+    }
+
+    .toast-title {
+        font-size: 14px;
+    }
+}

@@ -2,6 +2,7 @@
 // Manages multi-run testing and validation of promising agents
 
 import { VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE } from './constants.js';
+import { toast } from './toast.js';
 
 export class ValidationManager {
     constructor(logger, db) {
@@ -9,9 +10,14 @@ export class ValidationManager {
         this.db = db;
         this.validationQueue = new Map(); // geneId -> validation entry
         this.activeValidationAgents = 0; // Count of currently living validation agents
+        this.toast = toast; // Toast notification system
     }
 
     // Add an agent to the validation queue for testing
+    // Returns:
+    // - false: Gene already exists in pool, skip validation (caller should handle as existing gene)
+    // - { success: false }: Validation in progress or failed
+    // - { success: true, record: {...} }: Validation passed, record ready for gene pool
     addToValidationQueue(agent, isPeriodicValidation = false, skipGenePoolCheck = false) {
         const geneId = agent.geneId;
 
@@ -67,6 +73,10 @@ export class ValidationManager {
                 console.log(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION (2/${validationEntry.attempts} runs passed, avg: ${avgScore.toFixed(1)})`);
 
                 validationEntry.isValidated = true;
+
+                // Show toast notification
+                this.toast.showValidationPassed(geneId, avgScore, validationEntry.scores, validationEntry.attempts);
+
                 const validationRecord = {
                     id: `${geneId}_${Date.now()}`,
                     geneId: validationEntry.geneId,
@@ -97,6 +107,9 @@ export class ValidationManager {
                 // Agent passed validation - return validation record for gene pool saving
                 validationEntry.isValidated = true;
                 console.log(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION (avg: ${avgScore.toFixed(1)})`);
+
+                // Show toast notification
+                this.toast.showValidationPassed(geneId, avgScore, validationEntry.scores, validationEntry.attempts);
 
                 // Create a validation record to save
                 const validationRecord = {
@@ -172,7 +185,7 @@ export class ValidationManager {
     }
 
     // Handle validation agent death
-    handleValidationDeath(agent, deadAgentQueue) {
+    handleValidationDeath(agent, db) {
         if (this.validationQueue.has(agent.geneId)) {
             const validationEntry = this.validationQueue.get(agent.geneId);
             console.log(`[VALIDATION] 💥 Validation agent ${agent.geneId} died, validation run completed (fitness: ${agent.fitness.toFixed(1)}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
@@ -183,8 +196,9 @@ export class ValidationManager {
             // Process the validation result (skip gene pool check since this is validation completion)
             const result = this.addToValidationQueue(agent, false, true);
             if (result.success) {
-                // Agent passed validation, add to gene pool
-                deadAgentQueue.push(result.record);
+                // Agent passed validation, queue for gene pool save
+                console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed, queueing for save`);
+                db.queueSaveAgent(result.record);
             }
 
             // Only remove from validation queue if it has failed multiple times
