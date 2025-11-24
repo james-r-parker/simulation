@@ -10,8 +10,6 @@
 # Static page redirects (clean URLs)
 /about       /about.html    200
 /blog        /blog.html     200
-/about.html  /about.html    200
-/blog.html   /blog.html     200
 
 # Handle index.html variations
 /index.html  /              200
