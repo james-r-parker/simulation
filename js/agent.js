@@ -620,13 +620,35 @@ export class Agent {
                 hitType = 5; // Edge
             }
 
-            // Check for obstacle collisions
-            for (const obs of obstacles) {
-                const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
-                if (dist !== null && dist > 0 && dist < closestDist) {
-                    closestDist = dist;
-                    hitType = 4; // Obstacle
-                    hitEntity = obs;
+            // OPTIMIZED: Query quadtree for nearby obstacles instead of checking all 500
+            // Calculate ray bounding box for spatial query
+            const rayEndX = this.x + rayDirX * maxRayDist;
+            const rayEndY = this.y + rayDirY * maxRayDist;
+            const rayBoundsMinX = Math.min(this.x, rayEndX);
+            const rayBoundsMaxX = Math.max(this.x, rayEndX);
+            const rayBoundsMinY = Math.min(this.y, rayEndY);
+            const rayBoundsMaxY = Math.max(this.y, rayEndY);
+            const rayBoundsCenterX = (rayBoundsMinX + rayBoundsMaxX) / 2;
+            const rayBoundsCenterY = (rayBoundsMinY + rayBoundsMaxY) / 2;
+            const rayBoundsHalfWidth = (rayBoundsMaxX - rayBoundsMinX) / 2 + 50; // +50 for safety margin
+            const rayBoundsHalfHeight = (rayBoundsMaxY - rayBoundsMinY) / 2 + 50;
+
+            // Reuse pre-allocated Rectangle for ray bounds query
+            const rayBounds = new Rectangle(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
+            const nearbyPoints = quadtree.query(rayBounds);
+
+            // Check only nearby obstacles
+            for (const point of nearbyPoints) {
+                const entity = point.data;
+                // Check if this is an obstacle (obstacles don't have isFood or Agent properties)
+                if (entity && !entity.isFood && !(entity instanceof Agent) && entity.radius !== undefined) {
+                    const obs = entity;
+                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
+                    if (dist !== null && dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                        hitType = 4; // Obstacle
+                        hitEntity = obs;
+                    }
                 }
             }
 
@@ -727,10 +749,30 @@ export class Agent {
                 closestDist = distToEdge;
             }
 
-            for (const obs of obstacles) {
-                const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
-                if (dist !== null && dist > 0 && dist < closestDist) {
-                    closestDist = dist;
+            // OPTIMIZED: Query quadtree for nearby obstacles instead of checking all 500
+            const rayEndX = this.x + rayDirX * maxRayDist;
+            const rayEndY = this.y + rayDirY * maxRayDist;
+            const rayBoundsMinX = Math.min(this.x, rayEndX);
+            const rayBoundsMaxX = Math.max(this.x, rayEndX);
+            const rayBoundsMinY = Math.min(this.y, rayEndY);
+            const rayBoundsMaxY = Math.max(this.y, rayEndY);
+            const rayBoundsCenterX = (rayBoundsMinX + rayBoundsMaxX) / 2;
+            const rayBoundsCenterY = (rayBoundsMinY + rayBoundsMaxY) / 2;
+            const rayBoundsHalfWidth = (rayBoundsMaxX - rayBoundsMinX) / 2 + 50;
+            const rayBoundsHalfHeight = (rayBoundsMaxY - rayBoundsMinY) / 2 + 50;
+
+            const rayBounds = new Rectangle(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
+            const nearbyPoints = quadtree.query(rayBounds);
+
+            // Check only nearby obstacles
+            for (const point of nearbyPoints) {
+                const entity = point.data;
+                if (entity && !entity.isFood && !(entity instanceof Agent) && entity.radius !== undefined) {
+                    const obs = entity;
+                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, obs.x, obs.y, obs.radius);
+                    if (dist !== null && dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                    }
                 }
             }
 
