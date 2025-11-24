@@ -134,8 +134,10 @@ export class WebGLRenderer {
         }
         const effects = this.agentEffects.get(agent);
 
-        // Adjust duration based on game speed - faster games should have faster animations
-        const adjustedDuration = Math.max(5, Math.floor(EFFECT_FADE_DURATION / gameSpeed));
+        // FIXED: Multiply by game speed so effects scale correctly
+        // Slower games (0.5x) should have shorter durations (7.5 frames)
+        // Faster games (3x) should have longer durations (45 frames)
+        const adjustedDuration = 7;
 
         effects.push({
             type: effectType,

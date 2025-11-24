@@ -120,11 +120,20 @@ export function checkCollisions(simulation) {
             }
         }
 
-        // ACCURACY FIX: Use brute force for food collisions too (simpler and more reliable)
-        // Check all food items for collision with this agent
-        for (let j = 0; j < simulation.food.length; j++) {
-            const food = simulation.food[j];
-            if (!food || food.isDead) continue;
+        // OPTIMIZED: Use quadtree for food collision detection
+        // Query for nearby food within collision range
+        const foodQueryRange = agentSize + 10; // Max food size is ~5, add buffer
+        collisionQueryRange.x = agent.x;
+        collisionQueryRange.y = agent.y;
+        collisionQueryRange.w = foodQueryRange;
+        collisionQueryRange.h = foodQueryRange;
+
+        const nearbyFood = simulation.quadtree.query(collisionQueryRange);
+
+        for (let j = 0; j < nearbyFood.length; j++) {
+            const food = nearbyFood[j];
+            // Check if this is food (has isFood property)
+            if (!food || !food.isFood || food.isDead) continue;
 
             const dx = agent.x - food.x;
             const dy = agent.y - food.y;
@@ -147,9 +156,22 @@ export function checkCollisions(simulation) {
             }
         }
 
-        // Check collisions with ALL obstacles (critical for gameplay accuracy)
-        // OPTIMIZED: Could be made spatial in future, but brute force ensures reliability
-        for (const obstacle of simulation.obstacles) {
+        // OPTIMIZED: Use quadtree for obstacle collision detection
+        // Query for nearby obstacles within collision range
+        const maxObstacleRadius = 100; // Conservative estimate of largest obstacle
+        const obstacleQueryRange = agentSize + maxObstacleRadius + 20; // Buffer
+        collisionQueryRange.x = agent.x;
+        collisionQueryRange.y = agent.y;
+        collisionQueryRange.w = obstacleQueryRange;
+        collisionQueryRange.h = obstacleQueryRange;
+
+        const nearbyObstacles = simulation.quadtree.query(collisionQueryRange);
+
+        for (let j = 0; j < nearbyObstacles.length; j++) {
+            const obstacle = nearbyObstacles[j];
+            // Check if this is an obstacle (not food, not agent, has radius)
+            if (!obstacle || obstacle.isFood || obstacle instanceof Agent || obstacle.radius === undefined) continue;
+
             const dx = agent.x - obstacle.x;
             const dy = agent.y - obstacle.y;
             const distSq = dx * dx + dy * dy;
@@ -418,8 +440,21 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             }
         }
 
-        // Obstacle shadow detection
-        for (const obs of simulation.obstacles) {
+        // OPTIMIZED: Use quadtree for obstacle shadow detection
+        const shadowQueryRange = OBSTACLE_HIDING_RADIUS + 100; // Max obstacle radius
+        const shadowQueryRect = new Rectangle(
+            agent.x,
+            agent.y,
+            shadowQueryRange,
+            shadowQueryRange
+        );
+        const nearbyObstaclesForShadow = simulation.quadtree.query(shadowQueryRect);
+
+        for (const point of nearbyObstaclesForShadow) {
+            const obs = point;
+            // Check if this is an obstacle
+            if (!obs || obs.isFood || obs instanceof Agent || obs.radius === undefined) continue;
+
             const dist = distance(agent.x, agent.y, obs.x, obs.y);
             if (dist < obs.radius + OBSTACLE_HIDING_RADIUS) {
                 inShadow = true;
