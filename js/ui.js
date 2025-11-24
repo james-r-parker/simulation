@@ -634,6 +634,43 @@ export function setupCameraControls(simulation) {
     let lastMouseX = 0;
     let lastMouseY = 0;
 
+    // Touch-specific variables for pinch zoom
+    let initialPinchDistance = 0;
+    let lastPinchCenterX = 0;
+    let lastPinchCenterY = 0;
+    let isPinching = false;
+
+    // Helper function to get touch center and distance
+    function getTouchData(touches) {
+        if (touches.length === 1) {
+            // Single touch - return position
+            return {
+                centerX: touches[0].clientX,
+                centerY: touches[0].clientY,
+                distance: 0,
+                isPinch: false
+            };
+        } else if (touches.length >= 2) {
+            // Multi-touch - calculate pinch center and distance
+            const touch1 = touches[0];
+            const touch2 = touches[1];
+            const centerX = (touch1.clientX + touch2.clientX) / 2;
+            const centerY = (touch1.clientY + touch2.clientY) / 2;
+            const distance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2)
+            );
+            return {
+                centerX: centerX,
+                centerY: centerY,
+                distance: distance,
+                isPinch: true
+            };
+        }
+        return null;
+    }
+
+    // Mouse events (desktop)
     canvas.addEventListener('mousedown', (e) => {
         if (simulation.followBest) return; // Disable when following best agent
         isDragging = true;
@@ -664,6 +701,90 @@ export function setupCameraControls(simulation) {
         canvas.style.cursor = 'default';
     });
 
+    canvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+    });
+
+    // Touch events (mobile)
+    canvas.addEventListener('touchstart', (e) => {
+        if (simulation.followBest) return;
+
+        const touchData = getTouchData(e.touches);
+        if (!touchData) return;
+
+        if (touchData.isPinch) {
+            // Start pinch gesture
+            isPinching = true;
+            initialPinchDistance = touchData.distance;
+            lastPinchCenterX = touchData.centerX;
+            lastPinchCenterY = touchData.centerY;
+        } else {
+            // Start single touch drag
+            isDragging = true;
+            lastMouseX = touchData.centerX;
+            lastMouseY = touchData.centerY;
+        }
+
+        e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (simulation.followBest) return;
+
+        const touchData = getTouchData(e.touches);
+        if (!touchData) return;
+
+        if (touchData.isPinch && isPinching) {
+            // Handle pinch zoom
+            const rect = canvas.getBoundingClientRect();
+            const pinchCenterX = touchData.centerX - rect.left;
+            const pinchCenterY = touchData.centerY - rect.top;
+
+            // Calculate zoom delta based on pinch distance change
+            const distanceRatio = touchData.distance / initialPinchDistance;
+            const zoomDelta = (distanceRatio - 1) * 1000; // Scale for zoom sensitivity
+
+            const aspect = container.clientWidth / container.clientHeight;
+            simulation.camera.zoomAt(pinchCenterX, pinchCenterY, -zoomDelta, container.clientWidth, container.clientHeight,
+                simulation.worldWidth, simulation.worldHeight, aspect);
+
+            // Update initial distance for continuous zooming
+            initialPinchDistance = touchData.distance;
+        } else if (!touchData.isPinch && isDragging) {
+            // Handle single touch pan
+            const deltaX = touchData.centerX - lastMouseX;
+            const deltaY = touchData.centerY - lastMouseY;
+
+            const aspect = container.clientWidth / container.clientHeight;
+            const viewSize = Math.max(simulation.worldWidth, simulation.worldHeight) * 0.4;
+
+            simulation.camera.pan(deltaX, deltaY, container.clientWidth, container.clientHeight, viewSize, aspect);
+
+            lastMouseX = touchData.centerX;
+            lastMouseY = touchData.centerY;
+        }
+
+        e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        // If no touches remaining, stop all interactions
+        if (e.touches.length === 0) {
+            isDragging = false;
+            isPinching = false;
+        } else if (e.touches.length === 1 && isPinching) {
+            // Pinch ended, switch to single touch drag if still touching
+            isPinching = false;
+            isDragging = true;
+            const touchData = getTouchData(e.touches);
+            if (touchData) {
+                lastMouseX = touchData.centerX;
+                lastMouseY = touchData.centerY;
+            }
+        }
+    });
+
     // LOG: Mouse click with world coordinates (ALWAYS log, not occasional)
     canvas.addEventListener('click', (e) => {
         if (isDragging) return; // Don't log clicks that were part of a drag
@@ -684,11 +805,6 @@ export function setupCameraControls(simulation) {
         const worldY = simulation.camera.y - (normalizedY * viewSize);
 
         console.log(`[CAMERA-CLICK] screen(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) normalized(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)}) world(${worldX.toFixed(1)}, ${worldY.toFixed(1)}) camera(${simulation.camera.x.toFixed(1)}, ${simulation.camera.y.toFixed(1)}) zoom(${simulation.camera.zoom.toFixed(3)})`);
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-        isDragging = false;
-        canvas.style.cursor = 'default';
     });
 
     canvas.addEventListener('wheel', (e) => {
