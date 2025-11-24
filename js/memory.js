@@ -73,18 +73,6 @@ export function updateMemoryUI(simulation) {
         }
         memoryEl.textContent = memoryText;
     }
-
-    // Update dashboard memory metrics
-    const currentMemoryEl = document.getElementById('current-memory');
-    const totalEntityCountEl = document.getElementById('total-entity-count');
-
-    if (currentMemoryEl) {
-        currentMemoryEl.textContent = simulation.currentMemoryUsage > 0 ? `${simulation.currentMemoryUsage.toFixed(1)}MB` : 'N/A';
-    }
-    if (totalEntityCountEl) {
-        const totalEntities = simulation.entityCounts.agents + simulation.entityCounts.food + simulation.entityCounts.pheromones;
-        totalEntityCountEl.textContent = totalEntities;
-    }
 }
 
 export function handleMemoryPressure(simulation) {

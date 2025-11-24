@@ -2,7 +2,8 @@
 
 import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS,
-    MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI
+    MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
+    MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -104,9 +105,19 @@ export function checkCollisions(simulation) {
                 }
                 // Agent collision logging disabled for performance
 
-                if (agent.wantsToReproduce && other.wantsToReproduce) {
-                    if (agent.tryMate(other, simulation)) {
-                        simulation.logger.log(`[LIFECYCLE] Agent ${agent.geneId} successfully mated with ${other.geneId}.`);
+                // === SEXUAL REPRODUCTION (MATING) ===
+                // Check for mating opportunities when agents collide
+                if (agent.wantsToReproduce && other.wantsToReproduce &&
+                    agent.energy > MIN_ENERGY_TO_REPRODUCE && other.energy > MIN_ENERGY_TO_REPRODUCE) {
+
+                    // Attempt mating (tryMate handles all other validation)
+                    if (agent.tryMate(other)) {
+                        console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${other.geneId}`);
+
+                        // Show toast notification
+                        if (simulation.toast) {
+                            simulation.toast.showReproduction('mate', agent.geneId, other.geneId);
+                        }
                     }
                 }
 

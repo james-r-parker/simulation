@@ -852,51 +852,6 @@ export class Simulation {
                         }
                     }
 
-                    // === SEXUAL REPRODUCTION (MATING) ===
-                    // Find nearby mature agents for mating
-                    // Require agent to be "fit" for mating
-                    if (agent.fit &&
-                        agent.energy > MIN_ENERGY_TO_REPRODUCE * 2 &&
-                        !agent.isPregnant &&
-                        agent.reproductionCooldown <= 0) {
-
-                        const mateRadius = 200;
-
-                        // Find potential mates
-                        for (let k = 0; k < this.agents.length; k++) {
-                            const potentialMate = this.agents[k];
-
-                            // Skip self, dead, immature, low-energy, or unfit agents
-                            if (potentialMate === agent ||
-                                potentialMate.isDead ||
-                                potentialMate.framesAlive < MATURATION_AGE_FRAMES ||
-                                potentialMate.energy < MIN_ENERGY_TO_REPRODUCE ||
-                                potentialMate.isPregnant ||
-                                potentialMate.reproductionCooldown > 0 ||
-                                !potentialMate.fit) { // REQUIRE BOTH PARENTS TO BE FIT
-                                continue;
-                            }
-
-                            // Check distance
-                            const dx = agent.x - potentialMate.x;
-                            const dy = agent.y - potentialMate.y;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-
-                            if (distance < mateRadius) {
-                                // Attempt mating (use tryMate not mate)
-                                if (agent.tryMate(potentialMate)) {
-                                    console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${potentialMate.geneId}`);
-
-                                    // Show toast notification
-                                    if (this.toast) {
-                                        this.toast.showReproduction('mate', agent.geneId, potentialMate.geneId);
-                                    }
-
-                                    break; // One mate per check
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // Process dead agents - queue qualifying ones for database save, remove all dead agents

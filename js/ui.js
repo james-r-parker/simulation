@@ -836,11 +836,6 @@ export function updateInfo(simulation) {
     // Count only living agents for display
     const livingAgents = simulation.agents.filter(a => !a.isDead);
     document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${simulation.maxAgents} (Total: ${simulation.totalAgentsSpawned})`;
-    if (simulation.bestAgent) {
-        document.getElementById('info-best').innerText = `Best Agent: F:${simulation.bestAgent.fitness.toFixed(0)}, A:${simulation.bestAgent.age.toFixed(0)}s, O:${simulation.bestAgent.offspring}, K:${simulation.bestAgent.kills}, Fd:${simulation.bestAgent.foodEaten}`;
-    }
-    document.getElementById('info-gen').innerText = `Generation: ${simulation.generation}`;
-    document.getElementById('info-genepools').innerText = `Gene Pools: ${Object.keys(simulation.db.pool).length}`;
     const avgEnergy = livingAgents.length > 0 ? livingAgents.reduce((acc, a) => acc + a.energy, 0) / livingAgents.length : 0;
     document.getElementById('info-avg-e').innerText = `Avg. Energy: ${avgEnergy.toFixed(0)} | Scarcity: ${simulation.foodScarcityFactor.toFixed(2)}`;
 

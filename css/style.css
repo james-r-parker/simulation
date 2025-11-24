@@ -1,6 +1,6 @@
 /* Neon & Glassmorphism UI Styling */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 :root {
     /* Core Colors */
@@ -50,7 +50,8 @@ body {
     background-image:
         radial-gradient(circle at 50% 50%, rgba(20, 20, 40, 0.5) 0%, transparent 100%);
     color: var(--text-main);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-family: 'Orbitron', 'Inter', 'Segoe UI', sans-serif;
+    /* Using Orbitron everywhere for full cyberpunk aesthetic */
     -webkit-font-smoothing: antialiased;
 }
 
@@ -87,11 +88,12 @@ body {
     backdrop-filter: blur(var(--blur-amount));
     -webkit-backdrop-filter: blur(var(--blur-amount));
     border-bottom: 1px solid var(--glass-border);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
     z-index: 100;
     font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.5px;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-lg);
 }
 
 #info-bar span {
@@ -241,15 +243,15 @@ button:hover {
     right: 0;
     bottom: 80px; /* Leave space for controls */
     width: 340px;
-    background: rgba(10, 10, 18, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-amount));
+    -webkit-backdrop-filter: blur(var(--blur-amount));
     border-left: 1px solid var(--glass-border);
     z-index: 1000;
     display: flex;
     flex-direction: column;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--shadow-lg);
 }
 
 .sidebar.collapsed {
@@ -262,11 +264,14 @@ button:hover {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--glass-border);
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(var(--blur-amount));
+    -webkit-backdrop-filter: blur(var(--blur-amount));
 }
 
 .sidebar-header h3 {
     font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--neon-cyan);
@@ -534,6 +539,7 @@ button:hover {
 .modal h2 {
     color: var(--neon-cyan);
     font-size: 24px;
+    font-weight: 600;
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid var(--glass-border);
