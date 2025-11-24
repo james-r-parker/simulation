@@ -512,7 +512,14 @@ export function repopulate(simulation) {
             const matingPair = simulation.db.getMatingPair();
             if (matingPair) {
                 const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights);
-                spawnAgent(simulation, { gene: { weights: childWeights, parent: matingPair.parent1 } });
+                // CRITICAL: Don't pass neural network structure params - let agent use config defaults
+                const childGene = {
+                    weights: childWeights,
+                    specializationType: matingPair.parent1.specializationType,
+                    geneId: matingPair.parent1.geneId
+                    // Don't pass numSensorRays, hiddenSize, etc - they should come from config
+                };
+                spawnAgent(simulation, { gene: childGene });
             } else {
                 // Fallback to random if selection fails
                 spawnAgent(simulation, { gene: null });
@@ -528,7 +535,19 @@ export function repopulate(simulation) {
             if (parent) {
                 const allTypes = Object.values(SPECIALIZATION_TYPES);
                 const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
-                spawnAgent(simulation, { gene: { ...parent.gene, specializationType: novelSpecialization }, mutationRate: simulation.mutationRate / 2, parent: parent });
+
+                // CRITICAL: If specialization changes, don't pass parent weights or structure
+                const usesParentGene = novelSpecialization === parent.specializationType;
+                const childGene = {
+                    weights: usesParentGene ? parent.weights : null,
+                    specializationType: novelSpecialization,
+                    geneId: usesParentGene ? parent.geneId : null
+                    // Don't pass numSensorRays, hiddenSize etc - incompatible if spec changed
+                };
+                spawnAgent(simulation, {
+                    gene: childGene,
+                    mutationRate: usesParentGene ? simulation.mutationRate / 2 : null
+                });
             }
             else {
                 spawnAgent(simulation, { gene: null });

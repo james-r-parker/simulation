@@ -74,44 +74,7 @@ export class WebGLRenderer {
         this.frustum.setFromProjectionMatrix(this.frustumMatrix);
     }
 
-    updateAgents(agents, frameCount) {
 
-        // Pheromone system - using InstancedMesh
-        this.pheromoneInstancedMesh = null; // Will be created in updatePheromones
-        this.pheromoneGeometry = new THREE.CircleGeometry(1, 16);
-
-        // Obstacle meshes
-        this.obstacleMeshes = [];
-
-        // Ray visualization - using single LineSegments for performance
-        this.rayGroup = new THREE.Group();
-        this.scene.add(this.rayGroup);
-        this.rayLineSegments = null; // Single LineSegments geometry for all rays
-        this.showRays = false;
-
-        // Agent state visualization (energy bars, status icons)
-        this.agentStateGroup = new THREE.Group();
-        this.scene.add(this.agentStateGroup);
-        this.agentStateMeshes = new Map(); // agent -> { energyBar, statusIcon }
-
-        // Visual effects system for collision and eating glows
-        this.agentEffectsGroup = new THREE.Group();
-        this.scene.add(this.agentEffectsGroup);
-        this.agentEffects = new Map(); // agent -> [{ type, startFrame, duration }]
-
-        // Pre-calculate ray colors to avoid object creation in loop
-        this.rayColors = {
-            default: new THREE.Color(COLORS.RAYS.DEFAULT),
-            noHit: new THREE.Color(COLORS.RAYS.NO_HIT),
-            alignment: new THREE.Color(COLORS.RAYS.ALIGNMENT),
-            food: new THREE.Color(COLORS.RAYS.FOOD),
-            smaller: new THREE.Color(COLORS.RAYS.SMALLER),
-            larger: new THREE.Color(COLORS.RAYS.LARGER),
-            obstacle: new THREE.Color(COLORS.RAYS.OBSTACLE),
-            edge: new THREE.Color(COLORS.RAYS.EDGE),
-            same: new THREE.Color(COLORS.RAYS.SAME)
-        };
-    }
 
     resize(width, height) {
         if (width <= 0 || height <= 0) return; // Skip invalid sizes
@@ -190,6 +153,11 @@ export class WebGLRenderer {
         this.camera.top = viewSize;
         this.camera.bottom = -viewSize;
         this.camera.updateProjectionMatrix();
+
+        // CRITICAL: Update frustum immediately after camera changes
+        // This ensures frustum culling uses the latest camera view
+        this.camera.updateMatrixWorld();
+        this.updateFrustum();
     }
 
     // HSL to RGB helper
@@ -271,15 +239,20 @@ export class WebGLRenderer {
                 const bodyMaterial = new THREE.MeshBasicMaterial({ color: baseColor });
                 const borderMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
-                // Allocate for up to 100 agents per gene ID (can be increased if needed)
-                const maxInstances = 100;
+                // Increased from 100 to 200 to handle larger populations per gene
+                const maxInstances = 200;
                 const bodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, maxInstances);
                 const borderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, maxInstances);
 
                 bodyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 borderMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
-                this.agentMeshes.set(geneId, { body: bodyMesh, border: borderMesh });
+                // CRITICAL: Disable Three.js built-in frustum culling
+                // Three.js has its own frustum culling that can interfere with rendering
+                bodyMesh.frustumCulled = false;
+                borderMesh.frustumCulled = false;
+
+                this.agentMeshes.set(geneId, { body: bodyMesh, border: borderMesh, maxCapacity: maxInstances });
                 this.agentGroup.add(bodyMesh);
                 this.agentGroup.add(borderMesh);
             }
@@ -287,25 +260,26 @@ export class WebGLRenderer {
             const mesh = this.agentMeshes.get(geneId);
             const matrix = new THREE.Matrix4();
 
-        // OPTIMIZED: Include only visible agents (frustum culling for performance)
-        const validAgents = [];
-        for (let j = 0; j < geneAgents.length; j++) {
-            const agent = geneAgents[j];
-            if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
-                isFinite(agent.x) && isFinite(agent.y) &&
-                typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
-                !agent.isDead) {
+            // OPTIMIZED: Include only visible agents (frustum culling for performance)
+            const validAgents = [];
+            for (let j = 0; j < geneAgents.length; j++) {
+                const agent = geneAgents[j];
+                if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
+                    isFinite(agent.x) && isFinite(agent.y) &&
+                    typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
+                    !agent.isDead) {
 
-                // Frustum culling - only include agents visible on screen
-                this.tempVec.set(agent.x, -agent.y, 0);
-                this.testSphere.center = this.tempVec;
-                this.testSphere.radius = Math.max(agent.size, 12); // Use minimum render size
+                    // Frustum culling - only include agents visible on screen
+                    this.tempVec.set(agent.x, -agent.y, 0);
+                    this.testSphere.center = this.tempVec;
+                    // Use larger safety margin to prevent premature culling at edges
+                    this.testSphere.radius = Math.max(agent.size, 12) * 3 + 50;
 
-                if (this.frustum.intersectsSphere(this.testSphere)) {
-                    validAgents.push(agent);
+                    if (this.frustum.intersectsSphere(this.testSphere)) {
+                        validAgents.push(agent);
+                    }
                 }
             }
-        }
 
             const validCount = validAgents.length;
 
@@ -318,8 +292,49 @@ export class WebGLRenderer {
                 continue;
             }
 
-            // Update all instances
-            for (let i = 0; i < validCount; i++) {
+            // CRITICAL: Check if we need to resize the instanced mesh
+            if (validCount > mesh.maxCapacity) {
+                // We have more visible agents than the mesh can handle - need to resize
+                const newCapacity = Math.max(validCount * 1.5, mesh.maxCapacity * 2); // Grow by 50% or double
+                console.warn(`[RENDERER] Gene ${geneId} exceeded capacity (${validCount} > ${mesh.maxCapacity}). Resizing to ${newCapacity}`);
+
+                // Remove old meshes
+                this.agentGroup.remove(mesh.body);
+                this.agentGroup.remove(mesh.border);
+                mesh.body.geometry.dispose();
+                mesh.body.material.dispose();
+                mesh.border.geometry.dispose();
+                mesh.border.material.dispose();
+
+                // Create new larger meshes
+                const bodyMaterial = mesh.body.material.clone();
+                const borderMaterial = mesh.border.material.clone();
+                const newBodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, newCapacity);
+                const newBorderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, newCapacity);
+
+                newBodyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                newBorderMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+                // CRITICAL: Disable Three.js built-in frustum culling on new meshes too
+                newBodyMesh.frustumCulled = false;
+                newBorderMesh.frustumCulled = false;
+
+                // Update mesh reference
+                mesh.body = newBodyMesh;
+                mesh.border = newBorderMesh;
+                mesh.maxCapacity = newCapacity;
+
+                this.agentGroup.add(newBodyMesh);
+                this.agentGroup.add(newBorderMesh);
+            }
+
+            // Update all instances (limited to mesh capacity for safety)
+            const renderCount = Math.min(validCount, mesh.maxCapacity);
+            if (renderCount < validCount) {
+                console.warn(`[RENDERER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
+            }
+
+            for (let i = 0; i < renderCount; i++) {
                 const agent = validAgents[i];
 
                 // Update body - ensure minimum visible size
@@ -342,8 +357,8 @@ export class WebGLRenderer {
             }
 
             // Update instance count
-            mesh.body.count = validCount;
-            mesh.border.count = validCount;
+            mesh.body.count = renderCount;
+            mesh.border.count = renderCount;
 
             mesh.body.instanceMatrix.needsUpdate = true;
             mesh.border.instanceMatrix.needsUpdate = true;
@@ -456,6 +471,12 @@ export class WebGLRenderer {
         // Render active effects
         for (const [agent, effects] of this.agentEffects.entries()) {
             if (!agent || agent.isDead) continue;
+
+            // Frustum culling - skip effects for agents outside camera view
+            this.tempVec.set(agent.x, -agent.y, 0);
+            this.testSphere.center = this.tempVec;
+            this.testSphere.radius = Math.max(agent.size, 12) * 2; // Larger radius for effects
+            if (!this.frustum.intersectsSphere(this.testSphere)) continue;
 
             for (const effect of effects) {
                 const elapsed = this.currentFrame - effect.startFrame;
@@ -663,7 +684,7 @@ export class WebGLRenderer {
 
         // Check if we need to recreate meshes (obstacle count changed) or update positions (obstacles moved)
         const needsRecreate = this.obstacleMeshes.length === 0 ||
-                            obstacles.length !== this.obstacleMeshes.length / 2;
+            obstacles.length !== this.obstacleMeshes.length / 2;
 
         if (needsRecreate) {
             // Remove old obstacle meshes
@@ -685,16 +706,16 @@ export class WebGLRenderer {
 
                 // Add shadow (hiding radius)
                 const shadowGeometry = new THREE.RingGeometry(obs.radius, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
-            const shadowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x000000,
-                transparent: true,
-                opacity: 0.4
+                const shadowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    transparent: true,
+                    opacity: 0.4
+                });
+                const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
+                shadowMesh.position.set(obs.x, -obs.y, 0);
+                this.obstacleGroup.add(shadowMesh);
+                this.obstacleMeshes.push(shadowMesh);
             });
-            const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
-            shadowMesh.position.set(obs.x, -obs.y, 0);
-            this.obstacleGroup.add(shadowMesh);
-            this.obstacleMeshes.push(shadowMesh);
-        });
         } else {
             // Update positions of existing meshes (obstacles moved)
             for (let i = 0; i < obstacles.length; i++) {

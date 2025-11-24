@@ -105,10 +105,15 @@ export class Agent {
 
         // Now that sizes are defined, initialize the neural network
         if (!this.gene.weights) {
+            // No weights in gene - create new random weights
             this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize);
             this.gene.weights = this.nn.getWeights(); // Store the new random weights
         } else {
+            // Weights exist in gene - try to use them
             this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize, this.gene.weights);
+            // CRITICAL: If NN constructor detected incompatible dimensions and reinitialized,
+            // update the gene with the new weights so it doesn't keep trying to use bad weights
+            this.gene.weights = this.nn.getWeights();
         }
 
         this.birthTime = Date.now();
@@ -883,6 +888,12 @@ export class Agent {
             return false;
         }
 
+        // CRITICAL: Only mate with same specialization type
+        // Different specializations have different neural network dimensions
+        if (this.specializationType !== mate.specializationType) {
+            return false;
+        }
+
         const mateScore = mate.speedFactor * (mate.energy / MAX_ENERGY);
         const selfScore = this.speedFactor * (this.energy / MAX_ENERGY);
 
@@ -950,11 +961,21 @@ export class Agent {
             childSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
         }
 
+        // CRITICAL: Only pass weights if child has same specialization as parent
+        // Different specializations have different hiddenSize, so weights are incompatible
+        const useParentWeights = childSpecialization === this.specializationType;
+
         const childGene = {
-            weights: childWeights,
+            weights: useParentWeights ? childWeights : null, // null = new random weights
             fatherWeights: null, // Father weights are used for creation, not inherited
-            geneId: this.geneId, // Inherit gene ID from mother
-            specializationType: childSpecialization
+            geneId: useParentWeights ? this.geneId : generateGeneId(Date.now()), // New gene ID for new specialization
+            specializationType: childSpecialization,
+            // CRITICAL: Don't inherit neural network structure if specialization changed
+            // Each specialization has its own numSensorRays, hiddenSize, etc.
+            numSensorRays: useParentWeights ? this.numSensorRays : undefined,
+            numAlignmentRays: useParentWeights ? this.numAlignmentRays : undefined,
+            hiddenSize: useParentWeights ? this.hiddenSize : undefined,
+            maxRayDist: useParentWeights ? this.maxRayDist : undefined
         };
 
         const child = new Agent(
@@ -967,8 +988,10 @@ export class Agent {
             this.simulation
         );
 
-        // Mutate neural network
-        child.nn.mutate(this.simulation.mutationRate);
+        // Mutate neural network (only if using parent weights)
+        if (useParentWeights) {
+            child.nn.mutate(this.simulation.mutationRate);
+        }
 
         // Mutate inherited traits (preserved from original)
         child.speedFactor = Math.max(1, child.speedFactor + randomGaussian(0, 0.05));
