@@ -23,6 +23,7 @@ import { GPUCompute } from './gpu-compute.js';
 import { GPUPhysics } from './gpu-physics.js';
 import { distance, randomGaussian } from './utils.js';
 import { Logger, LOG_LEVELS } from './logger.js';
+import { PointPool } from './point-pool.js';
 
 // Imported functions from refactored modules
 import {
@@ -145,6 +146,14 @@ export class Simulation {
         this.activeAgents = []; // Pre-allocate active agents array
         this.allEntities = []; // Pre-allocate all entities array
         this.collisionQueryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate collision query range
+
+        // Object pool for quadtree Point objects to reduce GC pressure
+        this.pointPool = new PointPool(5000); // Pre-allocate 5000 Points
+
+        // Pre-allocated arrays for filter operations
+        this.livingFood = [];
+        this.livingPheromones = [];
+        this.livingAgents = [];
 
         this.init();
     }
@@ -526,34 +535,37 @@ export class Simulation {
             // This ensures all collision queries use current entity positions
             this.quadtree.clear();
 
+            // Return all Points to pool before rebuilding
+            this.pointPool.releaseAll();
+
             for (let j = 0; j < this.agents.length; j++) {
                 const agent = this.agents[j];
                 if (agent && !agent.isDead) {
-                    // Create new Point object for each agent to avoid reference issues
-                    const point = new Point(agent.x, agent.y, agent, agent.size / 2);
+                    // Use Point pool instead of allocating new objects
+                    const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
                     this.quadtree.insert(point);
                 }
             }
             for (let j = 0; j < this.food.length; j++) {
                 const food = this.food[j];
                 if (food && !food.isDead) {
-                    // Create new Point object for each food item
-                    const point = new Point(food.x, food.y, food, food.size / 2 || 2.5);
+                    // Use Point pool instead of allocating new objects
+                    const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
                     this.quadtree.insert(point);
                 }
             }
             for (let j = 0; j < this.pheromones.length; j++) {
                 const pheromone = this.pheromones[j];
                 if (pheromone && !pheromone.isDead) {
-                    // Create new Point object for each pheromone
-                    const point = new Point(pheromone.x, pheromone.y, pheromone, 0);
+                    // Use Point pool instead of allocating new objects
+                    const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
                     this.quadtree.insert(point);
                 }
             }
             // Insert obstacles into quadtree for collision detection
             for (const obstacle of this.obstacles) {
-                // Create new Point object for each obstacle
-                const point = new Point(obstacle.x, obstacle.y, obstacle, obstacle.radius);
+                // Use Point pool instead of allocating new objects
+                const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
                 this.quadtree.insert(point);
             }
 
@@ -691,9 +703,16 @@ export class Simulation {
             // PERFORMANCE OPTIMIZATION: GPU-accelerated food updates
             if (this.useGpu && this.gpuPhysics && this.gpuPhysics.isAvailable()) {
                 try {
-                    const livingFood = this.food.filter(f => f && !f.isDead);
-                    if (livingFood.length > 0) {
-                        await this.gpuPhysics.batchFoodUpdate(livingFood);
+                    // Reuse pre-allocated array instead of filter()
+                    this.livingFood.length = 0;
+                    for (let j = 0; j < this.food.length; j++) {
+                        const f = this.food[j];
+                        if (f && !f.isDead) {
+                            this.livingFood.push(f);
+                        }
+                    }
+                    if (this.livingFood.length > 0) {
+                        await this.gpuPhysics.batchFoodUpdate(this.livingFood);
                     }
                 } catch (error) {
                     // Fallback to CPU updates
@@ -717,9 +736,16 @@ export class Simulation {
             // PERFORMANCE OPTIMIZATION: GPU-accelerated pheromone updates
             if (this.useGpu && this.gpuPhysics && this.gpuPhysics.isAvailable()) {
                 try {
-                    const livingPheromones = this.pheromones.filter(p => p && !p.isDead);
-                    if (livingPheromones.length > 0) {
-                        await this.gpuPhysics.batchPheromoneUpdate(livingPheromones);
+                    // Reuse pre-allocated array instead of filter()
+                    this.livingPheromones.length = 0;
+                    for (let j = 0; j < this.pheromones.length; j++) {
+                        const p = this.pheromones[j];
+                        if (p && !p.isDead) {
+                            this.livingPheromones.push(p);
+                        }
+                    }
+                    if (this.livingPheromones.length > 0) {
+                        await this.gpuPhysics.batchPheromoneUpdate(this.livingPheromones);
                     }
                 } catch (error) {
                     // Fallback to CPU updates
@@ -775,7 +801,7 @@ export class Simulation {
                         // Check if this agent was in validation queue first (highest priority)
                         if (this.validationManager.isInValidation(agent.geneId)) {
                             // Debug: Log validation agent death details
-                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive/60}s, Energy: ${agent.energy}, Fitness: ${agent.fitness}`);
+                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive / 60}s, Energy: ${agent.energy}, Fitness: ${agent.fitness}`);
                             // Handle validation agent death
                             this.validationManager.handleValidationDeath(agent, this.deadAgentQueue);
                         } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
@@ -805,9 +831,24 @@ export class Simulation {
 
                 // Periodic performance monitoring (every 1000 frames)
                 if (this.frameCount % 1000 === 0) {
-                    const livingAgents = this.agents.filter(a => !a.isDead).length;
-                    const livingFood = this.food.filter(f => !f.isDead).length;
-                    const livingPheromones = this.pheromones.filter(p => !p.isDead).length;
+                    // Reuse pre-allocated arrays instead of filter()
+                    this.livingAgents.length = 0;
+                    this.livingFood.length = 0;
+                    this.livingPheromones.length = 0;
+
+                    for (const a of this.agents) {
+                        if (!a.isDead) this.livingAgents.push(a);
+                    }
+                    for (const f of this.food) {
+                        if (!f.isDead) this.livingFood.push(f);
+                    }
+                    for (const p of this.pheromones) {
+                        if (!p.isDead) this.livingPheromones.push(p);
+                    }
+
+                    const livingAgents = this.livingAgents.length;
+                    const livingFood = this.livingFood.length;
+                    const livingPheromones = this.livingPheromones.length;
 
                     // Check GPU cache sizes if available
                     let gpuComputeCache = 0;

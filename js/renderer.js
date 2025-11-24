@@ -53,10 +53,12 @@ export class WebGLRenderer {
         this.foodGroup = new THREE.Group();
         this.pheromoneGroup = new THREE.Group();
         this.obstacleGroup = new THREE.Group();
+        this.rayGroup = new THREE.Group(); // Ray visualization
         this.scene.add(this.agentGroup);
         this.scene.add(this.foodGroup);
         this.scene.add(this.pheromoneGroup);
         this.scene.add(this.obstacleGroup);
+        this.scene.add(this.rayGroup);
 
         // Agent meshes (instanced for performance)
         this.agentMeshes = new Map(); // geneId -> mesh
@@ -66,6 +68,36 @@ export class WebGLRenderer {
         // Food geometry - using InstancedMesh
         this.foodGeometry = new THREE.CircleGeometry(1, 8);
         this.foodInstancedMesh = null; // Will be created in updateFood
+
+        // Pheromone geometry
+        this.pheromoneGeometry = new THREE.CircleGeometry(1, 8);
+        this.pheromoneInstancedMesh = null; // Will be created in updatePheromones
+
+        // Ray visualization
+        this.showRays = false;
+        this.rayLineSegments = null;
+        this.rayColors = {
+            default: new THREE.Color(0x00FFFF),
+            noHit: new THREE.Color(0x666666),
+            alignment: new THREE.Color(0xFFFF00),
+            food: new THREE.Color(0x39FF14),
+            smaller: new THREE.Color(0xCCFF00),
+            larger: new THREE.Color(0xFF0033),
+            obstacle: new THREE.Color(0x9D00FF),
+            edge: new THREE.Color(0xFF6600),
+            same: new THREE.Color(0x00F0FF)
+        };
+
+        // Agent state visualization
+        this.agentStateGroup = new THREE.Group();
+        this.scene.add(this.agentStateGroup);
+        this.agentStateMeshes = new Map();
+
+        // Visual effects
+        this.agentEffects = new Map();
+        this.agentEffectsGroup = new THREE.Group();
+        this.scene.add(this.agentEffectsGroup);
+        this.currentFrame = 0;
     }
 
     updateFrustum() {

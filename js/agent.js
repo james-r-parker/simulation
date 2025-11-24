@@ -333,14 +333,17 @@ export class Agent {
 
         // Update recent memory (shift older frames back)
         for (let i = this.memoryFrames - 1; i > 0; i--) {
-            this.previousVelocities[i] = { ...this.previousVelocities[i - 1] };
+            // Mutate existing object instead of creating new one
+            this.previousVelocities[i].vx = this.previousVelocities[i - 1].vx;
+            this.previousVelocities[i].vy = this.previousVelocities[i - 1].vy;
             this.previousEnergies[i] = this.previousEnergies[i - 1];
             this.previousDanger[i] = this.previousDanger[i - 1];
             this.previousAggression[i] = this.previousAggression[i - 1];
             this.previousRayHits[i] = this.previousRayHits[i - 1];
         }
         // Store current frame as most recent memory
-        this.previousVelocities[0] = { vx: this.vx, vy: this.vy };
+        this.previousVelocities[0].vx = this.vx;
+        this.previousVelocities[0].vy = this.vy;
         this.previousEnergies[0] = this.energy;
         this.previousDanger[0] = this.dangerSmell;
         this.previousAggression[0] = this.attackSmell;
