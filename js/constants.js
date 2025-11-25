@@ -5,11 +5,11 @@ export const BASE_SIZE = 25; // Increased to ensure agents are always clearly vi
 export const ENERGY_TO_SIZE_RATIO = 100;
 export const MIN_AGENT_SIZE = 20; // Absolute minimum size agents can reach, regardless of energy
 export const MAX_ENERGY = 10000; // Increased to allow more growth
-export const MIN_ENERGY_TO_REPRODUCE = 250;
+export const MIN_ENERGY_TO_REPRODUCE = 150; // REDUCED from 250 to make reproduction more accessible for young agents
 export const REPRODUCE_COST_BASE = 15;
 export const CHILD_STARTING_ENERGY = 700; // CRITICAL FIX: Increased to 700 to ensure survival long enough to find food (was 150→400→700)
-export const INITIAL_AGENT_ENERGY = 3000; // Increased to 3000 for better initial exploration (was 2000→2500→3000) 
-export const MATURATION_AGE_FRAMES = 900; // 15 seconds at 60 FPS - FRAME-BASED to be independent of game speed
+export const INITIAL_AGENT_ENERGY = 3000; // INCREASED from 2500 to 3000 to give agents more time to find food and learn
+export const MATURATION_AGE_FRAMES = 600; // REDUCED from 900 (15s) to 600 (10s) - agents live ~10s on average, allow reproduction before death
 export const REPRODUCTION_COOLDOWN_FRAMES = 60 * 5;
 export const PREGNANCY_DURATION_FRAMES = 60 * 8;
 
@@ -26,7 +26,7 @@ export const SPRINT_COST_PER_FRAME = 0.05; // CRITICAL FIX: Reduced from 0.25 to
 export const SPRINT_THRESHOLD = 0.9;
 export const FEAR_SPRINT_BONUS = 0.5;
 
-export const OBSTACLE_COLLISION_PENALTY = 25; // CRITICAL FIX: Halved to allow learning (was killing agents in 2-3 hits) 
+export const OBSTACLE_COLLISION_PENALTY = 50; // Increased to 100 to severely punish crashing (was 25)
 export const OBSTACLE_HIDING_RADIUS = 75;
 
 export const DANGER_PHEROMONE_THRESHOLD = 30;
@@ -34,19 +34,19 @@ export const PHEROMONE_FADE_RATE = 0.005;
 export const PHEROMONE_RADIUS = 60;
 export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
 
-export const FOOD_SPAWN_CAP = 800; // Reduced to create food scarcity and encourage strategic foraging
+export const FOOD_SPAWN_CAP = 300; // Reduced to 300 to create food scarcity (was 800)
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
 export const DAMPENING_FACTOR = 0.95;
 
-export const ROTATION_COST_MULTIPLIER = 0.05; // CRITICAL FIX: Reduced from 0.3 to prevent spinning agents from starving
-export const DIRECTION_CHANGE_FITNESS_FACTOR = 0.5; // Increased to heavily reward dynamic movement over lucky circles
+export const ROTATION_COST_MULTIPLIER = 0.1; // Increased to 0.1 to discourage spinning (was 0.05)
+export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Increased to 2.0 to heavily reward dynamic movement (was 0.5)
 
 // --- MATH CONSTANTS ---
 export const TWO_PI = Math.PI * 2;
 
 // --- NEW ENERGY BALANCE FIXES ---
-export const PASSIVE_LOSS = 0.000001; // CRITICAL FIX: Halved to extend lifespan
-export const MOVEMENT_COST_MULTIPLIER = 0.001; // CRITICAL FIX: Reduced further to enable exploration
+export const PASSIVE_LOSS = 0.03; // REDUCED from 0.05 to 0.03 to help agents live longer (was 0.000001 originally)
+export const MOVEMENT_COST_MULTIPLIER = 0.008; // REDUCED from 0.01 to 0.008 to reduce movement energy cost (was 0.001 originally)
 
 // World size - 16:9 aspect ratio to fit 1440p monitors
 export const WORLD_WIDTH = 14400;
@@ -74,16 +74,19 @@ export const SPECIALIZATION_TYPES = {
 };
 
 // --- GENE POOL CONSTANTS ---
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 5000; // Reduced from 15000 to allow more agents to qualify
+// TEMPORARILY RELAXED CRITERIA: Adjusted to current performance level - will raise as agents improve
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000; // TEMPORARILY REDUCED from 4000 to 3000 to allow agents to qualify
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 3; // Reduced from 8 to allow more agents to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 900; // Reduced to 15 seconds to allow younger agents to qualify
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 10; // TEMPORARILY REDUCED from 6 to 4 (was 5 originally)
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1200; // TEMPORARILY REDUCED from 1200 (20s) to 900 (15s) - was 600 (10s) originally
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0; // TEMPORARILY REDUCED from 3.0% to 2.0% - allows more agents to qualify
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 1; // TEMPORARILY REDUCED from 1.0 to 0.5 - shows some navigation learning
 
 export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
 
 // Validation queue constants
 export const VALIDATION_REQUIRED_RUNS = 3; // Total runs needed for validation
-export const VALIDATION_FITNESS_THRESHOLD = 5000; // Same as gene pool qualification - all qualified agents get validation opportunity
+export const VALIDATION_FITNESS_THRESHOLD = 10000; // Excellent tier - agents with 5000+ fitness get validation opportunity (good agents at 3000+ just get saved, temporarily relaxed)
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents in validation queue
 
 // --- VISUAL CONSTANTS ---
@@ -123,7 +126,7 @@ export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
         color: COLORS.AGENTS.FORAGER,
         numSensorRays: 24,  // FURTHER REDUCED for performance
-        maxRayDist: 300, // Increased from 200
+        maxRayDist: 400, // INCREASED from 300 to 400 to help foragers find food more easily
         hiddenSize: 20,
         description: 'Specialized in finding and consuming food.'
     },

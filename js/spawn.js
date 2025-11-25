@@ -348,19 +348,70 @@ export function spawnFood(simulation) {
     if (simulation.food.length >= FOOD_SPAWN_CAP) return;
 
     // Calculate living agents for spawn chance
-    const livingAgents = simulation.agents.filter(a => !a.isDead).length;
+    const livingAgentsArray = simulation.agents.filter(a => !a.isDead);
+    const livingAgentsCount = livingAgentsArray.length;
 
     // Balanced food spawning: enough for survival with small buffer during scarce seasons
     // Scale food inversely with living agents - more agents = less food per agent
-    const populationFactor = Math.max(0.1, 1 - (livingAgents / simulation.maxAgents));
-    const foodSpawnChance = 0.4 * simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * populationFactor;
+    // ADJUSTED: More aggressive reduction to prevent food surplus (target ~150-200% energy buffer instead of 12,000%+)
+    const populationFactor = Math.max(0.2, 1 - (livingAgentsCount / simulation.maxAgents) * 1.2);
+    const foodSpawnChance = simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * populationFactor;
 
     if (Math.random() > foodSpawnChance) return;
 
     let x, y, isHighValue = false;
-    const pos = randomSpawnAvoidCluster(simulation);
-    x = pos.x;
-    y = pos.y;
+    
+    // IMPROVED: 30% chance to spawn food near agents to help them find food more easily
+    // This helps agents learn food-seeking behavior by making food more accessible
+    if (livingAgentsCount > 0 && Math.random() < 0.3) {
+        // Get array of living agents with valid positions
+        const activeAgents = livingAgentsArray.filter(a => a && typeof a.x === 'number' && typeof a.y === 'number' && isFinite(a.x) && isFinite(a.y));
+        if (activeAgents.length > 0) {
+            // Spawn near a random living agent (within 200-400 units)
+            const randomAgent = activeAgents[Math.floor(Math.random() * activeAgents.length)];
+            if (randomAgent) {
+                const angle = Math.random() * Math.PI * 2;
+                const spawnDistance = 200 + Math.random() * 200; // 200-400 units away
+                x = randomAgent.x + Math.cos(angle) * spawnDistance;
+                y = randomAgent.y + Math.sin(angle) * spawnDistance;
+                
+                // Ensure within world bounds
+                x = Math.max(50, Math.min(simulation.worldWidth - 50, x));
+                y = Math.max(50, Math.min(simulation.worldHeight - 50, y));
+                
+                // Check if position is safe (not in obstacle or too close to other food)
+                let safe = true;
+                if (simulation.obstacles && simulation.obstacles.some(o => o && distance(x, y, o.x, o.y) < o.radius + 30)) {
+                    safe = false;
+                }
+                if (simulation.food && simulation.food.some(f => f && !f.isDead && distance(x, y, f.x, f.y) < 20)) {
+                    safe = false;
+                }
+                
+                // If not safe, fall back to random spawn
+                if (!safe) {
+                    const pos = randomSpawnAvoidCluster(simulation);
+                    x = pos.x;
+                    y = pos.y;
+                }
+            } else {
+                // Agent was invalid, fall back to random spawn
+                const pos = randomSpawnAvoidCluster(simulation);
+                x = pos.x;
+                y = pos.y;
+            }
+        } else {
+            // No active agents with valid positions, fall back to random spawn
+            const pos = randomSpawnAvoidCluster(simulation);
+            x = pos.x;
+            y = pos.y;
+        }
+    } else {
+        // 70% random spawn (original behavior)
+        const pos = randomSpawnAvoidCluster(simulation);
+        x = pos.x;
+        y = pos.y;
+    }
 
     if (Math.random() < HIGH_VALUE_FOOD_CHANCE) isHighValue = true;
 

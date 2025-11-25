@@ -118,11 +118,26 @@
                 <div class="group-body">
                     <div>Active Gene IDs: <span id="diversity-value">0</span></div>
                     <div>Stored Gene Pools: <span id="gene-pool-value">0</span></div>
-                    <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span class="sub-text">(F≥20,
-                            600f+)</span></div>
+                    <div>Qualified Agents: <span id="qualified-agents-value">0</span> <span class="sub-text">(All criteria)</span></div>
                     <div>Validation Queue: <span id="validation-queue-value">0</span> <span class="sub-text">(pending
                             re-test)</span></div>
                     <div>Mutation Rate: <span id="mutation-rate-value">0</span></div>
+                </div>
+            </div>
+
+            <!-- QUALIFICATION CRITERIA -->
+            <div class="metric-card qualification">
+                <div class="card-header">✅ Qualification Criteria</div>
+                <div class="card-body">
+                    <div class="sub-text" style="margin-bottom: 8px; font-size: 0.85em; opacity: 0.8;">Thresholds: F≥3000, Food≥4, Age≥15s, Explore≥2%, Nav≥0.5</div>
+                    <div>Avg Exploration: <span id="avg-exploration-pct" class="highlight-cyan">0</span>%</div>
+                    <div>Avg Turns to Food: <span id="avg-turns-to-food" class="highlight-green">0</span></div>
+                    <div class="metric-divider"></div>
+                    <div>Meet Fitness: <span id="meet-fitness">0</span> / <span class="total-agents-ref">0</span></div>
+                    <div>Meet Food: <span id="meet-food">0</span> / <span class="total-agents-ref">0</span></div>
+                    <div>Meet Age: <span id="meet-age">0</span> / <span class="total-agents-ref">0</span></div>
+                    <div>Meet Exploration: <span id="meet-exploration">0</span> / <span class="total-agents-ref">0</span></div>
+                    <div>Meet Navigation: <span id="meet-navigation">0</span> / <span class="total-agents-ref">0</span></div>
                 </div>
             </div>
 
@@ -149,7 +164,7 @@
         <label for="useGpu">Use GPU <input type="checkbox" id="useGpu" checked></label>
         <label for="autoAdjust">Auto Adjust <input type="checkbox" id="autoAdjust" checked></label>
         <label for="foodRate">Food Rate: <input type="range" id="foodRate" min="0.1" max="2.0" step="0.1"
-                value="0.1"></label>
+                value="0.4"></label>
         <label for="mutationRate">Mutation Rate: <input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01"
                 value="0.01"></label>
         <button id="copyStats" title="Copy Stats">📋</button>

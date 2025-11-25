@@ -2,6 +2,27 @@
 
 import { updateMemoryStats, handleMemoryPressure } from './memory.js';
 import { updateFoodScalingFactor } from './spawn.js';
+import { copySimulationStats } from './stats.js';
+import {
+    MIN_FITNESS_TO_SAVE_GENE_POOL,
+    MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
+    MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
+    EXPLORATION_GRID_WIDTH,
+    EXPLORATION_GRID_HEIGHT
+} from './constants.js';
+
+const safeNumber = (value, fallback = 0) => {
+    const num = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(num) ? num : fallback;
+};
+
+const averageMetric = (items, getter) => {
+    if (!items || items.length === 0) return 0;
+    const total = items.reduce((sum, item) => sum + safeNumber(getter(item), 0), 0);
+    return safeNumber(total / items.length, 0);
+};
 
 // Global variables for summarization feature
 let summarizer = null;
@@ -33,14 +54,15 @@ export function hideLoadingScreen() {
 // ============================================================================
 
 // Initialize summarizer for AI-powered summaries
-async function initializeSummarizer() {
+async function initializeSummarizer(requireUserGesture = false) {
     if (!('Summarizer' in self)) {
         console.log('[SUMMARIZER] ❌ Summarizer API not supported');
         return null;
     }
 
+    let availability;
     try {
-        const availability = await Summarizer.availability();
+        availability = await Summarizer.availability();
         console.log('[SUMMARIZER] Availability check:', availability);
 
         if (availability === 'unavailable') {
@@ -48,10 +70,17 @@ async function initializeSummarizer() {
             return null;
         }
 
+        // If availability is "downloading" or "downloadable", we need a user gesture
+        if ((availability === 'downloading' || availability === 'downloadable') && !requireUserGesture) {
+            console.log('[SUMMARIZER] ⚠️ User gesture required for initialization. Will retry on next user interaction.');
+            return null;
+        }
+
         const summarizerInstance = await Summarizer.create({
             type: 'tldr',
             length: 'medium',
             format: 'plain-text',
+            lang: 'en', // Specify output language (en, es, or ja)
             sharedContext: 'This is a summary of real-time simulation statistics from an evolutionary AI simulation where autonomous agents learn to survive and evolve.',
             monitor(m) {
                 m.addEventListener('downloadprogress', (e) => {
@@ -63,6 +92,10 @@ async function initializeSummarizer() {
         console.log('[SUMMARIZER] ✅ Summarizer initialized successfully');
         return summarizerInstance;
     } catch (error) {
+        if (error.name === 'NotAllowedError' && availability && (availability === 'downloading' || availability === 'downloadable')) {
+            console.log('[SUMMARIZER] ⚠️ User gesture required. Click anywhere to initialize.');
+            return null;
+        }
         console.error('[SUMMARIZER] Failed to initialize summarizer:', error);
         return null;
     }
@@ -74,8 +107,40 @@ async function startPeriodicSummarization(simulation) {
 
     // Initialize summarizer if not already done
     if (!summarizer) {
-        summarizer = await initializeSummarizer();
-        if (!summarizer) {
+        // Try to initialize (may fail if user gesture is required)
+        summarizer = await initializeSummarizer(false);
+        
+        // If initialization failed due to user gesture requirement, set up click handler
+        if (!summarizer && 'Summarizer' in self) {
+            const availability = await Summarizer.availability();
+            if (availability === 'downloading' || availability === 'downloadable') {
+                console.log('[SUMMARIZER] 👆 Waiting for user gesture to initialize...');
+                
+                // Set up one-time click handler to initialize on user interaction
+                const initOnClick = async (e) => {
+                    summarizer = await initializeSummarizer(true);
+                    if (summarizer) {
+                        console.log('[SUMMARIZER] ✅ Initialized after user gesture');
+                        // Remove the click handler
+                        document.removeEventListener('click', initOnClick);
+                        document.removeEventListener('touchstart', initOnClick);
+                        // Generate first summary now that it's initialized
+                        setTimeout(() => {
+                            generateAndDisplaySummary(simulation);
+                        }, 500);
+                    }
+                };
+                
+                // Listen for click or touch
+                document.addEventListener('click', initOnClick, { once: true });
+                document.addEventListener('touchstart', initOnClick, { once: true });
+                
+                // Don't return - let the interval be set up, it will just skip until initialized
+            } else {
+                console.log('[SUMMARIZER] ❌ Cannot start summarization - API not available');
+                return;
+            }
+        } else if (!summarizer) {
             console.log('[SUMMARIZER] ❌ Cannot start summarization - API not available');
             return;
         }
@@ -166,31 +231,31 @@ function generateStatsDataForSummary(simulation) {
     }
 
     // Calculate stats (same as updateDashboard)
-    const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
+    const bestFitness = safeNumber(simulation.bestAgent ? simulation.bestAgent.fitness : 0, 0);
     const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
     const genePoolHealth = simulation.db.getGenePoolHealth();
     const genePoolCount = genePoolHealth.genePoolCount;
 
-    const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-    const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length;
-    const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
-    const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
-    const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
+    const avgFitness = averageMetric(livingAgents, a => a.fitness);
+    const avgAge = averageMetric(livingAgents, a => a.age);
+    const avgEnergy = averageMetric(livingAgents, a => a.energy);
+    const avgFood = averageMetric(livingAgents, a => a.foodEaten);
+    const avgKills = averageMetric(livingAgents, a => a.kills);
 
-    const MATURATION_SECONDS = 15;
+    const MATURATION_SECONDS = 10; // Updated to match new MATURATION_AGE_FRAMES (600 frames = 10s)
     const matureAgents = livingAgents.filter(a => a.age >= MATURATION_SECONDS).length;
     const maturationRate = (matureAgents / livingAgents.length) * 100;
 
-    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
-    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
+    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromMate || 0, 0), 0);
+    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromSplit || 0, 0), 0);
 
     // Calculate simulation runtime
     const runtimeMs = Date.now() - (simulation.startTime || Date.now());
-    const runtimeSeconds = Math.floor(runtimeMs / 1000);
+    const runtimeSeconds = safeNumber(Math.floor(runtimeMs / 1000), 0);
 
     let fitnessDelta = 0;
     if (simulation.fitnessHistory.length >= 2) {
-        fitnessDelta = simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2];
+        fitnessDelta = safeNumber(simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2], 0);
     }
 
     // Return structured data for historical storage
@@ -858,287 +923,40 @@ export function updateInfo(simulation) {
     handleMemoryPressure(simulation);
 }
 
-export function copySimulationStats(simulation) {
-    // Gather all current stats
-    const livingAgents = simulation.agents.filter(a => !a.isDead);
-    if (livingAgents.length === 0) {
-        alert('No living agents to analyze');
-        return;
-    }
-
-    // Calculate stats (same as updateDashboard)
-    const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
-    const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
-    const genePoolHealth = simulation.db.getGenePoolHealth();
-    const genePoolCount = genePoolHealth.genePoolCount;
-
-    const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-    const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length;
-    const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
-    const avgOffspring = livingAgents.reduce((sum, a) => sum + a.offspring, 0) / livingAgents.length;
-    const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
-    const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
-    const avgCollisions = livingAgents.reduce((sum, a) => sum + (a.collisions || 0), 0) / livingAgents.length;
-    const avgWallHits = livingAgents.reduce((sum, a) => sum + (a.timesHitObstacle || 0), 0) / livingAgents.length;
-
-    const MATURATION_SECONDS = 15;
-    const matureAgents = livingAgents.filter(a => a.age >= MATURATION_SECONDS).length;
-    const maturationRate = (matureAgents / livingAgents.length) * 100;
-    const maxAge = Math.max(...livingAgents.map(a => a.age), 0);
-
-    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
-    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
-
-    const reproductionRate = simulation.reproductionRate || 0;
-    const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
-    const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
-    const qualifiedAgents = livingAgents.filter(a => a.fit).length;
-
-    let learningRate = 0;
-    if (simulation.fitnessHistory.length >= 2) {
-        const recent = simulation.fitnessHistory.slice(-5);
-        const older = simulation.fitnessHistory.slice(-10, -5);
-        if (older.length > 0) {
-            const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-            const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
-            learningRate = (recentAvg - olderAvg) / older.length;
-        }
-    }
-
-    let fitnessDelta = 0;
-    if (simulation.fitnessHistory.length >= 2) {
-        fitnessDelta = simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2];
-    }
-
-    // Get memory stats
-    const memoryStats = {
-        current: 'N/A',
-        peak: 'N/A'
-    };
-    if (performance.memory) {
-        memoryStats.current = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1) + 'MB';
-        memoryStats.peak = simulation.peakMemoryUsage ? simulation.peakMemoryUsage.toFixed(1) + 'MB' : 'N/A';
-    }
-
-    // Calculate simulation runtime
-    const runtimeMs = Date.now() - (simulation.startTime || Date.now());
-    const runtimeSeconds = Math.floor(runtimeMs / 1000);
-    const runtimeMinutes = Math.floor(runtimeSeconds / 60);
-    const runtimeDisplay = runtimeMinutes > 0 ?
-        `${runtimeMinutes}m ${runtimeSeconds % 60}s` :
-        `${runtimeSeconds}s`;
-
-    // Get validation queue info
-    const validationQueueSize = simulation.validationManager ? simulation.validationManager.validationQueue.size : 0;
-
-    // Calculate detailed food statistics
-    const livingFood = simulation.food.filter(f => !f.isDead);
-    const highValueFood = livingFood.filter(f => f.isHighValue);
-    const normalFood = livingFood.filter(f => !f.isHighValue);
-
-    const totalFoodEnergy = livingFood.reduce((sum, f) => sum + f.energyValue, 0);
-    const avgFoodEnergy = livingFood.length > 0 ? totalFoodEnergy / livingFood.length : 0;
-
-    const highValueEnergy = highValueFood.reduce((sum, f) => sum + f.energyValue, 0);
-    const normalEnergy = normalFood.reduce((sum, f) => sum + f.energyValue, 0);
-
-    const foodSpawnRate = simulation.foodSpawnRate;
-    const foodScarcityFactor = simulation.foodScarcityFactor;
-    const finalFoodMultiplier = simulation.finalFoodSpawnMultiplier;
-    const populationFactor = Math.max(0.1, 1 - (livingAgents.length / simulation.maxAgents));
-    const baseSpawnChance = 0.4;
-    const currentSpawnChance = baseSpawnChance * finalFoodMultiplier * foodScarcityFactor * populationFactor;
-    const spawnRatePerSecond = currentSpawnChance * 60; // At 60 FPS
-
-    // Energy calculations
-    const avgFoodValue = 0.9 * 90 + 0.1 * 225; // Weighted average of normal/high-value food
-    const energyProvidedPerSecond = spawnRatePerSecond * avgFoodValue;
-    const energyNeededPerSecond = livingAgents.length * 0.42; // ~0.42 energy/sec per agent
-    const energyBuffer = energyNeededPerSecond > 0 ? ((energyProvidedPerSecond / energyNeededPerSecond) - 1) * 100 : 0;
-
-    // Get detailed gene pool information
-    const poolDetails = [];
-    for (const [geneId, agents] of Object.entries(simulation.db.pool || {})) {
-        if (agents && agents.length > 0) {
-            const maxFitness = Math.max(...agents.map(a => a.fitness || 0));
-            const avgFitness = agents.reduce((sum, a) => sum + (a.fitness || 0), 0) / agents.length;
-            poolDetails.push({
-                geneId: geneId.substring(0, 12),
-                count: agents.length,
-                maxFitness,
-                avgFitness
-            });
-        }
-    }
-
-    // Sort pools by max fitness (descending)
-    poolDetails.sort((a, b) => b.maxFitness - a.maxFitness);
-
-    // Calculate pool statistics
-    const poolStats = {
-        total: poolDetails.length,
-        avgAgentsPerPool: poolDetails.length > 0 ? poolDetails.reduce((sum, p) => sum + p.count, 0) / poolDetails.length : 0,
-        wellPopulated: poolDetails.filter(p => p.count >= 10).length, // Pools at capacity
-        underPopulated: poolDetails.filter(p => p.count < 5).length,
-        top10: poolDetails.slice(0, 10)
-    };
-
-    // Format stats for copying
-    const statsText = `
-🎯 SIMULATION STATS - ${new Date().toLocaleString()}
-
-📊 Core Metrics
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Population: ${livingAgents.length} agents (Total Spawned: ${simulation.totalAgentsSpawned})
-Generation: ${simulation.generation || 0}
-Frames Processed: ${simulation.frameCount || 0}
-Best Fitness: ${bestFitness.toFixed(0)} (Δ: ${fitnessDelta >= 0 ? '+' : ''}${fitnessDelta.toFixed(0)})
-Avg Fitness: ${avgFitness.toFixed(1)}
-Simulation Runtime: ${runtimeDisplay} (${runtimeSeconds}s)
-
-🎯 Performance Targets
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Avg Age: ${avgAge.toFixed(1)}s (Target: 60s+)
-Max Age: ${maxAge.toFixed(1)}s
-Mature Agents (≥15s): ${matureAgents} / ${livingAgents.length}
-Maturation Rate: ${maturationRate.toFixed(1)}%
-
-💰 Resources & Survival
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Avg Energy: ${avgEnergy.toFixed(1)}
-Food Available: ${simulation.food.length} items
-Avg Food Eaten: ${avgFood.toFixed(1)}
-Total Food Consumed: ${livingAgents.reduce((sum, a) => sum + a.foodEaten, 0)}
-Avg Kills: ${avgKills.toFixed(2)}
-
-🍎 Detailed Food Statistics
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Current Food: ${livingFood.length} (${normalFood.length} normal, ${highValueFood.length} high-value)
-Total Food Energy: ${totalFoodEnergy.toFixed(0)}
-Avg Food Energy: ${avgFoodEnergy.toFixed(1)} (${normalEnergy.toFixed(0)} normal, ${highValueEnergy.toFixed(0)} high-value)
-Food Spawn Rate: ${foodSpawnRate.toFixed(2)} (UI slider)
-Food Scarcity Factor: ${foodScarcityFactor.toFixed(2)} (0.5-1.0, seasonal)
-Final Food Multiplier: ${finalFoodMultiplier.toFixed(3)}
-Population Factor: ${populationFactor.toFixed(2)} (scales with agent count)
-Base Spawn Chance: ${baseSpawnChance}
-Current Spawn Chance: ${currentSpawnChance.toFixed(6)} per frame
-Spawn Rate: ${spawnRatePerSecond.toFixed(3)} food/sec (${(spawnRatePerSecond * 3600).toFixed(1)} food/hour)
-Energy Provided: ${energyProvidedPerSecond.toFixed(1)} energy/sec
-Energy Needed: ${energyNeededPerSecond.toFixed(1)} energy/sec (${livingAgents.length} agents × 0.42)
-Energy Buffer: ${energyBuffer >= 0 ? '+' : ''}${energyBuffer.toFixed(1)}% (${energyBuffer >= 0 ? 'surplus' : 'deficit'})
-
-🤝 Reproduction
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Sexual Offspring: ${totalSexualOffspring}
-Asexual Offspring: ${totalAsexualOffspring}
-Avg Offspring/Agent: ${(avgOffspring).toFixed(2)}
-Reproduction Events/min: ${reproductionRate}
-
-🎯 Behavior & Learning
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Genetic Diversity: ${geneIdCount} active gene IDs
-Stored Gene Pools: ${genePoolCount}
-Qualified Agents: ${qualifiedAgents} (F≥5000, 15s+, 3+ food)
-Total Agents Spawned: ${simulation.totalAgentsSpawned}
-Mutation Rate: ${(simulation.mutationRate * 100).toFixed(1)}%
-Learning Rate: ${learningRate >= 0 ? '+' : ''}${learningRate.toFixed(1)}/gen
-
-⚔️ Combat & Navigation
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Avg Collisions: ${avgCollisions.toFixed(1)}
-Avg Wall Hits: ${avgWallHits.toFixed(1)}
-Collision-Free %: ${collisionFreePercent.toFixed(1)}%
-
-🧬 Gene Pool Analysis
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total Pools: ${poolStats.total} / 500 (${((poolStats.total / 500) * 100).toFixed(1)}% capacity)
-Pools at Capacity (10 agents): ${poolStats.wellPopulated}
-Under-Populated Pools (<5): ${poolStats.underPopulated}
-Avg Agents per Pool: ${poolStats.avgAgentsPerPool.toFixed(1)}
-Validation Queue: ${validationQueueSize} pending
-
-Top 10 Gene Pools by Fitness:
-${poolStats.top10.map((p, i) => `  ${i + 1}. ${p.geneId}... | Max: ${p.maxFitness.toFixed(0)}, Avg: ${p.avgFitness.toFixed(0)}, Agents: ${p.count}/10`).join('\n')}
-
-Pool Health Indicators:
-- Capacity Utilization: ${((poolStats.total / 500) * 100).toFixed(1)}%
-- Average Pool Quality: ${poolStats.top10.length > 0 ? (poolStats.top10.reduce((sum, p) => sum + p.maxFitness, 0) / poolStats.top10.length).toFixed(0) : 'N/A'}
-- Weakest Pool in Top 10: ${poolStats.top10.length >= 10 ? poolStats.top10[9].maxFitness.toFixed(0) : 'N/A'}
-- Pool Diversity Score: ${poolStats.top10.length > 0 ? (new Set(poolStats.top10.map(p => Math.floor(p.maxFitness / 1000))).size * 100).toFixed(0) : 'N/A'}
-
-🧠 Memory Monitor
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Current Usage: ${memoryStats.current}
-Peak Usage: ${memoryStats.peak}
-Total Entities: ${simulation.agents.length + simulation.food.length + simulation.pheromones.length}
-
-⚙️ Simulation Settings
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Game Speed: ${simulation.gameSpeed}
-Max Agents: ${simulation.maxAgents}
-Food Spawn Multiplier: ${simulation.finalFoodSpawnMultiplier ? simulation.finalFoodSpawnMultiplier.toFixed(2) : 'N/A'}
-Food Scarcity Factor: ${simulation.foodScarcityFactor.toFixed(2)}
-GPU Enabled: ${simulation.useGpu ? 'Yes' : 'No'}
-Auto-Adjust: ${simulation.autoAdjustEnabled ? 'Yes' : 'No'} (Target: ${simulation.targetFps} FPS, Caps: ${simulation.autoMaxAgents} agents, ${simulation.autoMaxSpeed}x speed)
-
-📈 Recent Fitness History (last 10)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${simulation.fitnessHistory.slice(-10).map((f, i) => `${i + 1}: ${f.toFixed(0)}`).join(' | ')}
-`;
-
-    // Copy to clipboard
-    navigator.clipboard.writeText(statsText.trim()).then(() => {
-        // Visual feedback
-        const btn = document.getElementById('copyStats');
-        if (btn) {
-            const originalText = btn.textContent;
-            btn.textContent = '✅ Copied!';
-            btn.style.backgroundColor = '#0f0';
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.backgroundColor = '';
-            }, 2000);
-        }
-    }).catch(err => {
-        console.error('Failed to copy stats:', err);
-        alert('Failed to copy stats to clipboard');
-    });
-}
-
 export function updateDashboard(simulation) {
     // Only count living agents for dashboard stats
     const livingAgents = simulation.agents.filter(a => !a.isDead);
     if (livingAgents.length === 0) return;
 
     // Calculate metrics
-    const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
+    const bestFitness = safeNumber(simulation.bestAgent ? simulation.bestAgent.fitness : 0, 0);
     const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
     const genePoolHealth = simulation.db.getGenePoolHealth();
     const genePoolCount = genePoolHealth.genePoolCount;
 
 
     // Average stats
-    const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-    const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length; // Real seconds accounting for game speed
-    const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
-    const avgOffspring = livingAgents.reduce((sum, a) => sum + a.offspring, 0) / livingAgents.length;
-    const avgOffspringMate = livingAgents.reduce((sum, a) => sum + a.childrenFromMate, 0) / livingAgents.length;
-    const avgOffspringSplit = livingAgents.reduce((sum, a) => sum + a.childrenFromSplit, 0) / livingAgents.length;
-    const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
-    const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
-    const avgCollisions = livingAgents.reduce((sum, a) => sum + (a.collisions || 0), 0) / livingAgents.length;
-    const avgWallHits = livingAgents.reduce((sum, a) => sum + (a.timesHitObstacle || 0), 0) / livingAgents.length;
+    const avgFitness = averageMetric(livingAgents, a => a.fitness);
+    const avgAge = averageMetric(livingAgents, a => a.age); // Real seconds accounting for game speed
+    const avgEnergy = averageMetric(livingAgents, a => a.energy);
+    const avgOffspring = averageMetric(livingAgents, a => a.offspring || 0);
+    const avgOffspringMate = averageMetric(livingAgents, a => a.childrenFromMate || 0);
+    const avgOffspringSplit = averageMetric(livingAgents, a => a.childrenFromSplit || 0);
+    const avgFood = averageMetric(livingAgents, a => a.foodEaten || 0);
+    const avgKills = averageMetric(livingAgents, a => a.kills || 0);
+    const avgCollisions = averageMetric(livingAgents, a => a.collisions || 0);
+    const avgWallHits = averageMetric(livingAgents, a => a.timesHitObstacle || 0);
 
     // NEW: Critical lifespan metrics (TIME-BASED)
-    const MATURATION_SECONDS = 15; // 15 seconds of real time
+    const MATURATION_SECONDS = 10; // Updated to 10 seconds to match new MATURATION_AGE_FRAMES (600 frames)
     const matureAgents = livingAgents.filter(a => a.age >= MATURATION_SECONDS).length;
     const maturationRate = (matureAgents / livingAgents.length) * 100;
-    const maxAge = Math.max(...livingAgents.map(a => a.age), 0); // Real seconds accounting for game speed
-    const maxFrames = Math.max(...livingAgents.map(a => a.framesAlive), 0);
+    const maxAge = safeNumber(Math.max(...livingAgents.map(a => safeNumber(a.age, 0))), 0); // Real seconds accounting for game speed
+    const maxFrames = safeNumber(Math.max(...livingAgents.map(a => safeNumber(a.framesAlive, 0))), 0);
 
     // NEW: Reproduction metrics
-    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
-    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
+    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromMate || 0, 0), 0);
+    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromSplit || 0, 0), 0);
 
     // Calculate reproduction rate (events per minute)
     // Store previous offspring count and calculate delta
@@ -1148,7 +966,7 @@ export function updateDashboard(simulation) {
     const currentOffspringCount = totalSexualOffspring + totalAsexualOffspring;
     const offspringDelta = currentOffspringCount - simulation.previousOffspringCount;
     const timeDelta = (Date.now() - simulation.lastReproductionCheck) / 1000 / 60; // in minutes
-    const reproductionRate = timeDelta > 0 ? (offspringDelta / timeDelta).toFixed(1) : 0;
+    const reproductionRateValue = safeNumber(timeDelta > 0 ? (offspringDelta / timeDelta) : 0, 0);
 
     // Update tracking variables every 10 seconds
     if (timeDelta >= 0.167) { // ~10 seconds
@@ -1157,11 +975,34 @@ export function updateDashboard(simulation) {
     }
 
     // NEW: Collision-free percentage
-    const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
-    const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
+    const collisionFreeAgents = livingAgents.filter(a => safeNumber(a.timesHitObstacle || 0, 0) === 0).length;
+    const collisionFreePercent = safeNumber((collisionFreeAgents / livingAgents.length) * 100, 0);
 
-    // Count qualified agents (same criteria as database saving: fitness >= 5000, food >= 3, age >= 15s)
+    // Count qualified agents (same criteria as database saving: fitness >= 4000, food >= 6, age >= 20s)
     const qualifiedAgents = livingAgents.filter(a => a.fit).length;
+
+    // Validation queue size
+    const validationQueueSizeDashboard = simulation.validationManager && simulation.validationManager.validationQueue
+        ? simulation.validationManager.validationQueue.size
+        : 0;
+
+    // Calculate qualification criteria breakdown
+    const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingExploration = livingAgents.filter(a => {
+        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
+        return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
+    }).length;
+    const agentsMeetingNavigation = livingAgents.filter(a => safeNumber(a.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL).length;
+    
+    // Calculate average exploration percentage and turns towards food
+    const avgExplorationPercentage = livingAgents.reduce((sum, a) => {
+        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
+        return sum + explorationPercentage;
+    }, 0) / livingAgents.length;
+    const avgTurnsTowardsFood = averageMetric(livingAgents, a => a.turnsTowardsFood || 0);
 
     // Learning rate (fitness improvement per generation)
     let learningRate = 0;
@@ -1171,14 +1012,14 @@ export function updateDashboard(simulation) {
         if (older.length > 0) {
             const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
             const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
-            learningRate = (recentAvg - olderAvg) / older.length;
+            learningRate = safeNumber((recentAvg - olderAvg) / older.length, 0);
         }
     }
 
     // Fitness delta
     let fitnessDelta = 0;
     if (simulation.fitnessHistory.length >= 2) {
-        fitnessDelta = simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2];
+        fitnessDelta = safeNumber(simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2], 0);
     }
 
     // Update DOM - NEW METRICS
@@ -1202,7 +1043,7 @@ export function updateDashboard(simulation) {
     if (maxAgeEl) maxAgeEl.textContent = maxAge.toFixed(0);
     if (totalSexualOffspringEl) totalSexualOffspringEl.textContent = totalSexualOffspring;
     if (totalAsexualOffspringEl) totalAsexualOffspringEl.textContent = totalAsexualOffspring;
-    if (reproductionRateEl) reproductionRateEl.textContent = reproductionRate;
+    if (reproductionRateEl) reproductionRateEl.textContent = reproductionRateValue.toFixed(1);
     if (avgWallHitsEl) avgWallHitsEl.textContent = avgWallHits.toFixed(1);
     if (collisionFreePercentEl) {
         collisionFreePercentEl.textContent = collisionFreePercent.toFixed(1);
@@ -1227,6 +1068,7 @@ export function updateDashboard(simulation) {
     const avgKillsEl = document.getElementById('avg-kills');
     const avgCollisionsEl = document.getElementById('avg-collisions');
     const learningRateEl = document.getElementById('learning-rate-value');
+    const mutationRatePercent = safeNumber(simulation.mutationRate, 0) * 100;
 
     if (fitnessValueEl) fitnessValueEl.textContent = bestFitness.toFixed(0);
     if (fitnessDeltaEl) {
@@ -1241,10 +1083,10 @@ export function updateDashboard(simulation) {
         qualifiedAgentsValueEl.style.color = qualifiedAgents > 0 ? '#0f0' : '#f00';
     }
     if (validationQueueValueEl) {
-        validationQueueValueEl.textContent = simulation.validationManager.validationQueue.size;
-        validationQueueValueEl.style.color = simulation.validationManager.validationQueue.size > 0 ? '#ff0' : '#888';
+        validationQueueValueEl.textContent = validationQueueSizeDashboard;
+        validationQueueValueEl.style.color = validationQueueSizeDashboard > 0 ? '#ff0' : '#888';
     }
-    if (mutationRateValueEl) mutationRateValueEl.textContent = (simulation.mutationRate * 100).toFixed(1) + '%';
+    if (mutationRateValueEl) mutationRateValueEl.textContent = mutationRatePercent.toFixed(1) + '%';
     if (avgAgeEl) {
         avgAgeEl.textContent = avgAge.toFixed(1);
         // Color code based on target: green if >60s (1 min), yellow if 30-60s (30s-1min), red if <30s
@@ -1261,6 +1103,43 @@ export function updateDashboard(simulation) {
         learningRateEl.textContent = (learningRate >= 0 ? '+' : '') + learningRate.toFixed(1);
         learningRateEl.style.color = learningRate >= 0 ? '#0f0' : '#f00';
     }
+
+    // Update DOM - QUALIFICATION CRITERIA
+    const avgExplorationPctEl = document.getElementById('avg-exploration-pct');
+    const avgTurnsToFoodEl = document.getElementById('avg-turns-to-food');
+    const meetFitnessEl = document.getElementById('meet-fitness');
+    const meetFoodEl = document.getElementById('meet-food');
+    const meetAgeEl = document.getElementById('meet-age');
+    const meetExplorationEl = document.getElementById('meet-exploration');
+    const meetNavigationEl = document.getElementById('meet-navigation');
+
+    if (avgExplorationPctEl) avgExplorationPctEl.textContent = avgExplorationPercentage.toFixed(1);
+    if (avgTurnsToFoodEl) avgTurnsToFoodEl.textContent = avgTurnsTowardsFood.toFixed(1);
+    if (meetFitnessEl) {
+        meetFitnessEl.textContent = agentsMeetingFitness;
+        meetFitnessEl.style.color = agentsMeetingFitness > 0 ? '#0f0' : '#f00';
+    }
+    if (meetFoodEl) {
+        meetFoodEl.textContent = agentsMeetingFood;
+        meetFoodEl.style.color = agentsMeetingFood > 0 ? '#0f0' : '#f00';
+    }
+    if (meetAgeEl) {
+        meetAgeEl.textContent = agentsMeetingAge;
+        meetAgeEl.style.color = agentsMeetingAge > 0 ? '#0f0' : '#f00';
+    }
+    if (meetExplorationEl) {
+        meetExplorationEl.textContent = agentsMeetingExploration;
+        meetExplorationEl.style.color = agentsMeetingExploration > 0 ? '#0f0' : '#f00';
+    }
+    if (meetNavigationEl) {
+        meetNavigationEl.textContent = agentsMeetingNavigation;
+        meetNavigationEl.style.color = agentsMeetingNavigation > 0 ? '#0f0' : '#f00';
+    }
+    // Update all total-agents-ref elements (they all show the same value)
+    const totalAgentsRefs = document.querySelectorAll('.total-agents-ref');
+    totalAgentsRefs.forEach(el => {
+        el.textContent = livingAgents.length;
+    });
 
     // Update fitness chart
     simulation.updateFitnessChart();

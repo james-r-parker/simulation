@@ -116,7 +116,7 @@ export class Simulation {
 
         this.gameSpeed = 0.5; // Start conservative for auto-adjustment
         this.maxAgents = 10; // Start with fewer agents for auto-adjustment
-        this.foodSpawnRate = 0.1;
+        this.foodSpawnRate = 0.12; // FURTHER REDUCED from 0.15 to 0.12 to balance food surplus (target ~150-200% buffer instead of 2800%+)
         this.mutationRate = 0.01;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation
         this.showRays = false;
@@ -770,7 +770,8 @@ export class Simulation {
                     const allEntities = this.allEntities;
                     const maxRaysPerAgent = 50; // Max rays across all specializations
 
-                    // PERFORMANCE: Start both GPU operations in parallel
+                    // CRITICAL: Ray tracing must complete BEFORE neural network processing
+                    // because the neural network needs the converted ray results as inputs
                     const gpuRayPromise = this.gpuPhysics.batchRayTracing(
                         activeAgents,
                         allEntities,
@@ -780,15 +781,10 @@ export class Simulation {
                         this.worldHeight
                     );
 
-                    const gpuNeuralPromise = this.gpuCompute.batchNeuralNetworkForward(activeAgents);
+                    // Wait for ray tracing to complete first
+                    const gpuRayResults = await gpuRayPromise;
 
-                    // Wait for both operations to complete in parallel
-                    const [gpuRayResults, gpuNeuralResults] = await Promise.all([
-                        gpuRayPromise,
-                        gpuNeuralPromise
-                    ]);
-
-                    // Process ray tracing results
+                    // Process ray tracing results and convert to neural network inputs
                     if (gpuRayResults && gpuRayResults.length > 0) {
                         convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
                         gpuRayTracingSucceeded = true;
@@ -797,6 +793,9 @@ export class Simulation {
                             this.logger.warn('GPU ray tracing returned null or empty results');
                         }
                     }
+
+                    // NOW run neural network with the fresh inputs from ray tracing
+                    const gpuNeuralResults = await this.gpuCompute.batchNeuralNetworkForward(activeAgents);
 
                     // Neural network results are already in agent.lastOutput and agent.newHiddenState
                     gpuNeuralNetSucceeded = true;

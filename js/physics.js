@@ -211,36 +211,15 @@ export function checkCollisions(simulation) {
 
                     // Bounce the agent (reverse velocity direction)
                     const bounceFactor = 0.8; // Energy loss on bounce
-                    const normalX = dx / dist;
-                    const normalY = dy / dist;
-
-                    // Calculate reflection vector
-                    const dotProduct = agent.vx * normalX + agent.vy * normalY;
-                    agent.vx = (agent.vx - 2 * dotProduct * normalX) * bounceFactor;
-                    agent.vy = (agent.vy - 2 * dotProduct * normalY) * bounceFactor;
-
-                    // Apply damage for hitting obstacle
-                    const damage = 25; // Same as OBSTACLE_COLLISION_PENALTY
-                    agent.energy = Math.max(0, agent.energy - damage);
-                    agent.timesHitObstacle++;
-                    agent.fitness -= damage; // Fitness penalty
-
-                    // Trigger collision visual effect (red glow) tied to game speed
-                    if (simulation.renderer) {
-                        simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
-                    }
-
-                    // Clamp velocity to prevent extreme bouncing (use same limit as agent movement)
-                    const MAX_VELOCITY = 25; // Same as agent MAX_VELOCITY
-                    const currentSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
-                    if (currentSpeed > MAX_VELOCITY) {
-                        agent.vx = (agent.vx / currentSpeed) * MAX_VELOCITY;
-                        agent.vy = (agent.vy / currentSpeed) * MAX_VELOCITY;
-                    }
 
                     // Check if agent died from collision
                     if (agent.energy <= 0) {
                         agent.isDead = true;
+                    }
+
+                    // Trigger collision visual effect (red glow) tied to game speed
+                    if (simulation.renderer) {
+                        simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
                     }
 
                     // Slightly nudge the obstacle in response to collision

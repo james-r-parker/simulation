@@ -15,6 +15,7 @@ import {
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT
 } from './constants.js';
@@ -150,6 +151,11 @@ export class Agent {
         this.lastX = x;
         this.lastY = y;
         this.currentRotation = 0;
+        this.turnsTowardsFood = 0; // Track turning towards food
+        this.turnsAwayFromObstacles = 0; // Track turning away from obstacles
+        this.foodApproaches = 0; // Track successful approaches to food
+        this.lastFoodDistance = Infinity; // Track distance to nearest food
+        this.lastObstacleDistance = Infinity; // Track distance to nearest obstacle
 
         // --- Recent Memory (last 3 frames for temporal awareness) ---
         this.memoryFrames = 3;
@@ -447,11 +453,17 @@ export class Agent {
         const currVx = this.vx;
         const currVy = this.vy;
 
+        // Variables for navigation tracking
+        let prevAngle = 0;
+        let currAngle = 0;
+        let angleDiff = 0;
+        let turnDirection = 0;
+
         // Only calculate if moving to avoid noise
         if (Math.abs(prevVx) > 0.01 || Math.abs(prevVy) > 0.01) {
-            const prevAngle = Math.atan2(prevVy, prevVx);
-            const currAngle = Math.atan2(currVy, currVx);
-            let angleDiff = Math.abs(currAngle - prevAngle);
+            prevAngle = Math.atan2(prevVy, prevVx);
+            currAngle = Math.atan2(currVy, currVx);
+            angleDiff = Math.abs(currAngle - prevAngle);
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
             this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
@@ -465,7 +477,7 @@ export class Agent {
             }
 
             // Detect circular movement patterns (consecutive turns in same direction)
-            const turnDirection = Math.sign(angleDiff > 0.1 ? currAngle - prevAngle : 0);
+            turnDirection = Math.sign(angleDiff > 0.1 ? currAngle - prevAngle : 0);
             if (Math.abs(angleDiff) > 0.2) { // Significant turn
                 if (turnDirection === Math.sign(this.lastTurnDirection || 0)) {
                     this.consecutiveTurns++;
@@ -484,6 +496,80 @@ export class Agent {
                 if (this.dangerSmell > 0.5 || this.attackSmell > 0.5 || hasRecentRayHits) {
                     this.cleverTurns += angleDiff;
                 }
+            }
+        }
+
+        // === NAVIGATION BEHAVIOR TRACKING (NEW) ===
+        // Track turning towards food and away from obstacles
+        if (this.lastRayData && this.lastRayData.length > 0 && Math.abs(angleDiff) > 0.05) {
+            // Find closest food and obstacle in ray data
+            let closestFoodDist = Infinity;
+            let closestFoodAngle = null;
+            let closestObstacleDist = Infinity;
+            let closestObstacleAngle = null;
+
+            for (const ray of this.lastRayData) {
+                if (ray.hit && ray.hitType === 'food' && ray.dist < closestFoodDist) {
+                    closestFoodDist = ray.dist;
+                    closestFoodAngle = ray.angle;
+                }
+                if (ray.hit && (ray.hitType === 'obstacle_or_edge' || ray.hitType === 'obstacle') && ray.dist < closestObstacleDist) {
+                    closestObstacleDist = ray.dist;
+                    closestObstacleAngle = ray.angle;
+                }
+            }
+
+            // Track food approaches (getting closer to food)
+            if (closestFoodDist < Infinity) {
+                // Fix Infinity bug: only calculate if lastFoodDistance is finite
+                if (this.lastFoodDistance < Infinity && closestFoodDist < this.lastFoodDistance) {
+                    this.foodApproaches += (this.lastFoodDistance - closestFoodDist) * 0.1; // Reward proportional to approach speed
+                }
+                this.lastFoodDistance = closestFoodDist;
+
+                // Check if agent is turning towards food
+                if (closestFoodAngle !== null) {
+                    // Calculate angle to food relative to agent's current facing angle
+                    let angleToFood = closestFoodAngle - this.angle;
+                    // Normalize angle difference
+                    while (angleToFood > Math.PI) angleToFood -= TWO_PI;
+                    while (angleToFood < -Math.PI) angleToFood += TWO_PI;
+
+                    // Check if turn direction aligns with food direction
+                    const foodDirection = Math.sign(angleToFood);
+                    
+                    if (Math.abs(turnDirection - foodDirection) < 0.5 || (Math.abs(angleToFood) < 0.3)) {
+                        // Agent is turning towards food or already facing it
+                        this.turnsTowardsFood += Math.min(Math.abs(angleDiff), 0.5); // Cap reward per turn
+                    }
+                }
+            } else {
+                this.lastFoodDistance = Infinity;
+            }
+
+            // Track obstacle avoidance (turning away from obstacles)
+            if (closestObstacleDist < Infinity) {
+                if (closestObstacleDist < this.lastObstacleDistance) {
+                    // Getting closer to obstacle - check if turning away
+                    if (closestObstacleAngle !== null) {
+                        // Calculate angle to obstacle relative to agent's current facing angle
+                        let angleToObstacle = closestObstacleAngle - this.angle;
+                        // Normalize angle difference
+                        while (angleToObstacle > Math.PI) angleToObstacle -= TWO_PI;
+                        while (angleToObstacle < -Math.PI) angleToObstacle += TWO_PI;
+
+                        // Check if turn direction is away from obstacle
+                        const obstacleDirection = Math.sign(angleToObstacle);
+                        
+                        if (Math.abs(turnDirection + obstacleDirection) < 0.5 || (turnDirection === 0 && Math.abs(angleToObstacle) > 2.5)) {
+                            // Agent is turning away from obstacle (opposite direction) or avoiding it
+                            this.turnsAwayFromObstacles += Math.min(Math.abs(angleDiff), 0.5); // Cap reward per turn
+                        }
+                    }
+                }
+                this.lastObstacleDistance = closestObstacleDist;
+            } else {
+                this.lastObstacleDistance = Infinity;
             }
         }
 
@@ -947,7 +1033,7 @@ export class Agent {
 
     tryMate(mate) {
         // FRAME-BASED maturation check (independent of game speed)
-        const MATURATION_AGE_FRAMES = 900; // 15 seconds at 60 FPS
+        const MATURATION_AGE_FRAMES = 600; // REDUCED to 10 seconds at 60 FPS (was 15s/900 frames)
         if (this.framesAlive < MATURATION_AGE_FRAMES || mate.framesAlive < MATURATION_AGE_FRAMES) return false;
         if (this.specializationType !== mate.specializationType) return false;
 
@@ -1079,67 +1165,97 @@ export class Agent {
     }
 
     calculateFitness() {
+        // Safety: Ensure all tracking variables are numbers to prevent Infinity/NaN
+        const safeNumber = (val, defaultVal = 0) => {
+            if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
+            return val;
+        };
+
         // Calculate exploration percentage
         const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-        const explorationPercentage = (this.exploredCells.size / totalCells) * 100;
+        const exploredCellsSize = safeNumber(this.exploredCells?.size || 0, 0);
+        const explorationPercentage = (exploredCellsSize / totalCells) * 100;
 
         let baseScore = 0;
 
-
         // 1. Productive Actions (Contribute to Base Score)
-        baseScore += this.offspring * 50; // Heavily reduced to prevent inflation
-        baseScore += this.cleverTurns * 30; // Reduced to prevent inflation
-        baseScore += Math.min(this.directionChanged, 500) * 2; // Further reduced and capped lower
-        baseScore += Math.min(this.speedChanged, 200) * 1; // Further reduced and capped lower
-        baseScore += explorationPercentage * 10; // Reduced from 50 to prevent inflation
-        baseScore += this.foodEaten * 20; // Heavily reduced from 100
-        baseScore += this.kills * 100; // Reduced from 500
+        baseScore += safeNumber(this.offspring || 0, 0) * 50;
+        baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
+        baseScore += Math.min(safeNumber(this.directionChanged || 0, 0), 500) * 2;
+        baseScore += Math.min(safeNumber(this.speedChanged || 0, 0), 200) * 1;
+        baseScore += safeNumber(explorationPercentage, 0) * 10;
+        baseScore += safeNumber(this.foodEaten || 0, 0) * 200;
+        baseScore += safeNumber(this.kills || 0, 0) * 100;
+        
+        // Navigation behavior rewards (NEW) - INCREASED to encourage learning
+        baseScore += safeNumber(this.turnsTowardsFood || 0, 0) * 10; // INCREASED from 5 to 10
+        baseScore += safeNumber(this.turnsAwayFromObstacles || 0, 0) * 10;
+        baseScore += safeNumber(this.foodApproaches || 0, 0) * 25; // INCREASED from 15 to 25 to reward food-seeking behavior
 
-        if (this.offspring > 0 && this.foodEaten > 0) {
-            baseScore += (this.offspring * this.foodEaten) * 5;
+        const offspring = safeNumber(this.offspring || 0, 0);
+        const foodEaten = safeNumber(this.foodEaten || 0, 0);
+        if (offspring > 0 && foodEaten > 0) {
+            baseScore += (offspring * foodEaten) * 5;
         }
 
         // 2. Efficiency and Exploration
         // Only reward efficiency for agents that have actually moved and spent energy
         let efficiency = 0;
-        if (this.energySpent > 50) { // Minimum energy threshold to avoid division issues
-            efficiency = Math.min(this.distanceTravelled / this.energySpent, 10.0); // Cap at 10x efficiency
+        const energySpent = safeNumber(this.energySpent || 0, 0);
+        const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
+        if (energySpent > 50) {
+            efficiency = Math.min(distanceTravelled / energySpent, 10.0);
         }
         baseScore += efficiency * 15;
 
         // 3. Penalize repetitive circular movement (lucky food finding)
-        const circlePenalty = Math.min(this.consecutiveTurns * 20, 2000); // Increased penalty for circular movement
+        const consecutiveTurns = safeNumber(this.consecutiveTurns || 0, 0);
+        const circlePenalty = Math.min(consecutiveTurns * 20, 2000);
         baseScore -= circlePenalty;
-        baseScore += this.successfulEscapes * 75;
+        baseScore += safeNumber(this.successfulEscapes || 0, 0) * 75;
 
         // 3. Penalties (Applied to Base Score)
         baseScore -= circlePenalty; // Apply circular movement penalty
-        baseScore -= this.timesHitObstacle * 30; // Reduced penalty for obstacle collisions
-        baseScore -= (this.collisions - this.timesHitObstacle) * 10; // Reduced penalty for wall hits
+        const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
+        const collisions = safeNumber(this.collisions || 0, 0);
+        baseScore -= timesHitObstacle * 30;
+        baseScore -= (collisions - timesHitObstacle) * 10;
 
         // 4. Collision Avoidance Reward (NEW)
         // Reward agents that survive without hitting obstacles
-        const obstacleFreeFrames = Math.max(0, this.framesAlive - (this.timesHitObstacle * 30));
+        const framesAlive = safeNumber(this.framesAlive || 0, 0);
+        const obstacleFreeFrames = Math.max(0, framesAlive - (timesHitObstacle * 30));
         if (obstacleFreeFrames > 200) {
-            baseScore += (obstacleFreeFrames / 200) * 25; // +25 per 200 frames without obstacle hits
+            baseScore += (obstacleFreeFrames / 200) * 25;
         }
 
         // 5. Survival Multiplier (The most important factor)
-        // This creates a positive feedback loop. A high base score is good,
-        // but a high base score sustained over a long life is exponentially better.
-        // The multiplier starts at 1x and increases with age, but is capped to prevent runaway fitness.
-        // An agent living for 60 seconds (3600 frames) gets a 2x multiplier on its entire life's achievements.
-        const survivalMultiplier = Math.min(1 + (this.framesAlive / 3600), 4.0); // Cap at 4x maximum
+        // ADJUSTED: Agents live ~10s (600 frames) on average, so we scale to 1800 frames (30s) for 2x multiplier
+        // This gives agents ~1.33x multiplier at 10s instead of ~1.17x
+        const survivalMultiplier = Math.min(1 + (framesAlive / 1800), 3.0);
 
         // Final fitness is the base score amplified by how long the agent survived.
         const finalFitness = baseScore * survivalMultiplier;
 
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        // Equivalent to age * 2 (where age is in seconds) -> (frames / 60) * 2 = frames / 30
-        const rawSurvivalBonus = this.framesAlive / 30;
+        const rawSurvivalBonus = framesAlive / 30;
 
-        this.fitness = Math.max(0, finalFitness + rawSurvivalBonus);
-        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && this.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && this.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+        // Final safety check to ensure fitness is a finite number
+        const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
+        this.fitness = Math.max(0, finalFitnessValue);
+        
+        // TEMPORARILY RELAXED QUALIFICATION: Adjusted to current performance level - will raise as agents improve
+        // - Fitness: 3000+ (temporarily reduced from 4000)
+        // - Food: 4+ items (temporarily reduced from 6)
+        // - Age: 15+ seconds (900 frames) - temporarily reduced from 20s/1200 frames
+        // - Exploration: 2%+ map coverage - temporarily reduced from 3%
+        // - Navigation: 0.5+ turns towards food - temporarily reduced from 1.0
+        const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
+        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && 
+                    foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && 
+                    framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
+                    explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
+                    turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
     }
 
     cleanup() {
