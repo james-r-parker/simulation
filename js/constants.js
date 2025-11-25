@@ -34,7 +34,7 @@ export const PHEROMONE_FADE_RATE = 0.005;
 export const PHEROMONE_RADIUS = 60;
 export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
 
-export const FOOD_SPAWN_CAP = 2000; // Increased to 2000 for smaller world (8x density increase)
+export const FOOD_SPAWN_CAP = 800; // Reduced to create food scarcity and encourage strategic foraging
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
 export const DAMPENING_FACTOR = 0.95;
 

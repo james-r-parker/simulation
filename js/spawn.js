@@ -246,11 +246,11 @@ export function randomSpawnAvoidCluster(simulation) {
             safe = false;
             continue;
         }
-        if (simulation.agents.some(a => distance(x, y, a.x, a.y) < 50)) {
+        if (simulation.agents.some(a => distance(x, y, a.x, a.y) < 35)) {
             safe = false;
             continue;
         }
-        if (simulation.food.some(f => distance(x, y, f.x, f.y) < 5)) {
+        if (simulation.food.some(f => distance(x, y, f.x, f.y) < 15)) {
             safe = false;
             continue;
         }
@@ -350,10 +350,10 @@ export function spawnFood(simulation) {
     // Calculate living agents for spawn chance
     const livingAgents = simulation.agents.filter(a => !a.isDead).length;
 
-    // More generous food spawning: base chance with moderate population scaling
-    // Reduced the population penalty factor from 1.5x to 2x maxAgents for less aggressive reduction
-    const populationFactor = Math.max(0.2, 1 - (livingAgents / (simulation.maxAgents * 2)));
-    const foodSpawnChance = 0.15 * simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * populationFactor;
+    // Balanced food spawning: enough for survival with small buffer during scarce seasons
+    // Scale food inversely with living agents - more agents = less food per agent
+    const populationFactor = Math.max(0.1, 1 - (livingAgents / simulation.maxAgents));
+    const foodSpawnChance = 0.4 * simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * populationFactor;
 
     if (Math.random() > foodSpawnChance) return;
 

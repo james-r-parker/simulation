@@ -167,6 +167,22 @@ export class ToastNotification {
         });
     }
 
+    // Show auto-adjust notification
+    showAutoAdjust(direction, parameter, oldValue, newValue, currentFps) {
+        const icon = direction === 'up' ? '🚀' : '⚡';
+        const directionText = direction === 'up' ? 'Increased' : 'Decreased';
+        const title = `Auto-Adjust: ${directionText} ${parameter.charAt(0).toUpperCase() + parameter.slice(1)}`;
+
+        const content = `
+            <div class="toast-details">
+                ${oldValue} → ${newValue}
+                <div class="toast-avg">Current FPS: ${currentFps.toFixed(0)}</div>
+            </div>
+        `;
+
+        this.show(icon, title, content, 'toast-pool-add', 4000); // 4 second duration
+    }
+
     remove(toastEl) {
         toastEl.classList.remove('toast-show');
         toastEl.classList.add('toast-hide');

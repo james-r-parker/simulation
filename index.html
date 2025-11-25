@@ -60,7 +60,7 @@
     </div>
     <!-- Sidebar Toggle Button -->
     <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">
-        ✕
+        ☰
     </button>
 
     <!-- Sidebar (formerly dashboard) -->
@@ -147,8 +147,9 @@
         <label for="showRays">Show Rays <input type="checkbox" id="showRays"></label>
         <label for="followBest">Follow Best <input type="checkbox" id="followBest" checked></label>
         <label for="useGpu">Use GPU <input type="checkbox" id="useGpu" checked></label>
+        <label for="autoAdjust">Auto Adjust <input type="checkbox" id="autoAdjust" checked></label>
         <label for="foodRate">Food Rate: <input type="range" id="foodRate" min="0.1" max="2.0" step="0.1"
-                value="2.0"></label>
+                value="0.1"></label>
         <label for="mutationRate">Mutation Rate: <input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01"
                 value="0.01"></label>
         <button id="copyStats" title="Copy Stats">📋</button>
@@ -212,8 +213,17 @@
             }
 
             // Sidebar Toggle - now always visible when sidebar is expanded
+            const updateSidebarIcon = () => {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                sidebarToggle.textContent = isCollapsed ? '☰' : '✕';
+            };
+
+            // Initialize icon based on current state
+            updateSidebarIcon();
+
             sidebarToggle.addEventListener('click', () => {
                 sidebar.classList.toggle('collapsed');
+                updateSidebarIcon();
             });
         });
     </script>

@@ -82,6 +82,20 @@ export class Simulation {
         this.currentFrameUsedGpu = false;
         this.currentFrameGpuAgentIds = new Set();
 
+        // Auto-performance adjustment
+        this.fpsHistory = []; // Track last 30 seconds of FPS
+        this.lastAutoAdjustTime = Date.now();
+        this.autoAdjustEnabled = true; // Enable by default
+        this.targetFps = 60;
+        this.adjustmentCooldown = 15000; // 15 seconds between adjustments
+        this.minAgents = 5;
+        this.maxAgentsLimit = 100;
+        this.minGameSpeed = 0.5;
+        this.maxGameSpeed = 10;
+        // Auto-adjust caps at 75% of maximum to leave headroom for manual adjustment
+        this.autoMaxAgents = Math.floor(this.maxAgentsLimit * 0.75); // 75 agents
+        this.autoMaxSpeed = this.maxGameSpeed * 0.75; // 7.5x speed
+
         // Memory monitoring
         this.memoryHistory = [];
         this.memoryHistorySize = 100;
@@ -100,9 +114,9 @@ export class Simulation {
         this.lastMemoryPressureAction = 0;
         this.totalAgentsSpawned = 0; // Total agents created in this simulation run
 
-        this.gameSpeed = 1;
-        this.maxAgents = 25;
-        this.foodSpawnRate = 2.0;
+        this.gameSpeed = 0.5; // Start conservative for auto-adjustment
+        this.maxAgents = 10; // Start with fewer agents for auto-adjustment
+        this.foodSpawnRate = 0.1;
         this.mutationRate = 0.01;
         this.baseMutationRate = 0.1; // Base rate for adaptive mutation
         this.showRays = false;
@@ -165,6 +179,113 @@ export class Simulation {
 
     resize() {
         resize(this);
+    }
+
+    performAutoAdjustment() {
+        // Calculate average FPS over the last 30 seconds
+        const avgFps = this.fpsHistory.reduce((sum, fps) => sum + fps, 0) / this.fpsHistory.length;
+        const minFps = Math.min(...this.fpsHistory);
+        const maxFps = Math.max(...this.fpsHistory);
+
+        // Count living agents
+        const livingAgents = this.agents.filter(a => !a.isDead).length;
+
+        console.log(`[AUTO-ADJUST] FPS: avg=${avgFps.toFixed(1)}, range=${minFps}-${maxFps}, agents=${livingAgents}/${this.maxAgents}, speed=${this.gameSpeed}`);
+
+        // Determine if we need to adjust
+        let adjustmentNeeded = false;
+        let increasePerformance = false;
+        let decreasePerformance = false;
+
+        // If consistently below target FPS, decrease performance
+        if (avgFps < this.targetFps - 5 && minFps < this.targetFps - 10) {
+            decreasePerformance = true;
+            adjustmentNeeded = true;
+            console.log(`[AUTO-ADJUST] ⚠️ Low FPS detected - decreasing performance`);
+        }
+        // If consistently above target FPS with headroom, increase performance
+        else if (avgFps > this.targetFps + 5 && minFps > this.targetFps - 5) {
+            increasePerformance = true;
+            adjustmentNeeded = true;
+            console.log(`[AUTO-ADJUST] ✅ High FPS detected - increasing performance`);
+        } else {
+            console.log(`[AUTO-ADJUST] ➡️ FPS within target range (${this.targetFps} ±5) - no adjustment needed`);
+        }
+
+        if (adjustmentNeeded) {
+            // Prioritize: agents first (more impactful), then speed
+            if (decreasePerformance) {
+                // Decrease performance: reduce agents first, then speed
+                if (this.maxAgents > this.minAgents) {
+                    const oldValue = this.maxAgents;
+                    const newMaxAgents = Math.max(this.minAgents, Math.floor(this.maxAgents * 0.8));
+                    if (newMaxAgents !== this.maxAgents) {
+                        this.maxAgents = newMaxAgents;
+                        console.log(`[AUTO-ADJUST] ↓ Reduced max agents to ${this.maxAgents} (FPS: ${avgFps.toFixed(1)})`);
+                        // Update UI slider
+                        const slider = document.getElementById('maxAgents');
+                        if (slider) slider.value = this.maxAgents;
+                        // Update food scaling
+                        import('./spawn.js').then(module => module.updateFoodScalingFactor(this));
+                        // Show toast notification
+                        if (this.toast) {
+                            this.toast.showAutoAdjust('down', 'max agents', oldValue, newMaxAgents, avgFps);
+                        }
+                        return; // Only make one adjustment per cycle
+                    }
+                }
+                if (this.gameSpeed > this.minGameSpeed) {
+                    const oldValue = this.gameSpeed;
+                    this.gameSpeed = Math.max(this.minGameSpeed, this.gameSpeed - 0.5);
+                    console.log(`[AUTO-ADJUST] ↓ Reduced game speed to ${this.gameSpeed} (FPS: ${avgFps.toFixed(1)})`);
+                    // Update UI slider
+                    const slider = document.getElementById('gameSpeed');
+                    if (slider) slider.value = this.gameSpeed;
+                    // Show toast notification
+                    if (this.toast) {
+                        this.toast.showAutoAdjust('down', 'game speed', oldValue, this.gameSpeed, avgFps);
+                    }
+                    return;
+                }
+            }
+            else if (increasePerformance) {
+                // Increase performance: increase agents first (more impactful), then speed
+                if (this.maxAgents < this.autoMaxAgents) {
+                    // Increase agents more aggressively when performance is consistently good (up to 75% cap)
+                    const oldValue = this.maxAgents;
+                    const newMaxAgents = Math.min(this.autoMaxAgents, Math.floor(this.maxAgents * 1.5));
+                    if (newMaxAgents !== this.maxAgents) {
+                        this.maxAgents = newMaxAgents;
+                        console.log(`[AUTO-ADJUST] ↑ Increased max agents to ${this.maxAgents}/${this.autoMaxAgents} cap (FPS: ${avgFps.toFixed(1)})`);
+                        // Update UI slider
+                        const slider = document.getElementById('maxAgents');
+                        if (slider) slider.value = this.maxAgents;
+                        // Update food scaling
+                        import('./spawn.js').then(module => module.updateFoodScalingFactor(this));
+                        // Show toast notification
+                        if (this.toast) {
+                            this.toast.showAutoAdjust('up', 'max agents', oldValue, newMaxAgents, avgFps);
+                        }
+                        return; // Only make one adjustment per cycle
+                    }
+                }
+                if (this.gameSpeed < this.autoMaxSpeed) {
+                    const oldValue = this.gameSpeed;
+                    this.gameSpeed = Math.min(this.autoMaxSpeed, this.gameSpeed + 0.5);
+                    console.log(`[AUTO-ADJUST] ↑ Increased game speed to ${this.gameSpeed}/${this.autoMaxSpeed} cap (FPS: ${avgFps.toFixed(1)})`);
+                    // Update UI slider
+                    const slider = document.getElementById('gameSpeed');
+                    if (slider) slider.value = this.gameSpeed;
+                    // Show toast notification
+                    if (this.toast) {
+                        this.toast.showAutoAdjust('up', 'game speed', oldValue, this.gameSpeed, avgFps);
+                    }
+                    return;
+                }
+            }
+        } else {
+            console.log(`[AUTO-ADJUST] No adjustment needed (FPS: ${avgFps.toFixed(1)}, target: ${this.targetFps})`);
+        }
     }
 
     updateFitnessChart() {
@@ -518,6 +639,22 @@ export class Simulation {
                     fpsEl.style.color = '#ff0';
                 } else {
                     fpsEl.style.color = '#f00';
+                }
+            }
+
+            // Auto-performance adjustment
+            if (this.autoAdjustEnabled) {
+                // Track FPS history (keep last 30 seconds)
+                this.fpsHistory.push(this.currentFps);
+                if (this.fpsHistory.length > 30) {
+                    this.fpsHistory.shift();
+                }
+
+                // Auto-adjust every 30 seconds if we have enough history
+                const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
+                if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10) {
+                    this.performAutoAdjustment();
+                    this.lastAutoAdjustTime = now;
                 }
             }
         }

@@ -354,6 +354,13 @@ export function setupUIListeners(simulation) {
         simulation.logger.log('GPU usage:', simulation.useGpu ? 'enabled' : 'disabled');
     });
 
+    const autoAdjustCheckbox = document.getElementById('autoAdjust');
+    autoAdjustCheckbox.checked = simulation.autoAdjustEnabled;
+    autoAdjustCheckbox.addEventListener('change', e => {
+        simulation.autoAdjustEnabled = e.target.checked;
+        simulation.logger.log('Auto-adjust:', simulation.autoAdjustEnabled ? 'enabled' : 'disabled');
+    });
+
     // Camera controls (pan and zoom)
     setupCameraControls(simulation);
 
@@ -924,6 +931,31 @@ export function copySimulationStats(simulation) {
     // Get validation queue info
     const validationQueueSize = simulation.validationManager ? simulation.validationManager.validationQueue.size : 0;
 
+    // Calculate detailed food statistics
+    const livingFood = simulation.food.filter(f => !f.isDead);
+    const highValueFood = livingFood.filter(f => f.isHighValue);
+    const normalFood = livingFood.filter(f => !f.isHighValue);
+
+    const totalFoodEnergy = livingFood.reduce((sum, f) => sum + f.energyValue, 0);
+    const avgFoodEnergy = livingFood.length > 0 ? totalFoodEnergy / livingFood.length : 0;
+
+    const highValueEnergy = highValueFood.reduce((sum, f) => sum + f.energyValue, 0);
+    const normalEnergy = normalFood.reduce((sum, f) => sum + f.energyValue, 0);
+
+    const foodSpawnRate = simulation.foodSpawnRate;
+    const foodScarcityFactor = simulation.foodScarcityFactor;
+    const finalFoodMultiplier = simulation.finalFoodSpawnMultiplier;
+    const populationFactor = Math.max(0.1, 1 - (livingAgents.length / simulation.maxAgents));
+    const baseSpawnChance = 0.4;
+    const currentSpawnChance = baseSpawnChance * finalFoodMultiplier * foodScarcityFactor * populationFactor;
+    const spawnRatePerSecond = currentSpawnChance * 60; // At 60 FPS
+
+    // Energy calculations
+    const avgFoodValue = 0.9 * 90 + 0.1 * 225; // Weighted average of normal/high-value food
+    const energyProvidedPerSecond = spawnRatePerSecond * avgFoodValue;
+    const energyNeededPerSecond = livingAgents.length * 0.42; // ~0.42 energy/sec per agent
+    const energyBuffer = energyNeededPerSecond > 0 ? ((energyProvidedPerSecond / energyNeededPerSecond) - 1) * 100 : 0;
+
     // Get detailed gene pool information
     const poolDetails = [];
     for (const [geneId, agents] of Object.entries(simulation.db.pool || {})) {
@@ -979,6 +1011,22 @@ Avg Food Eaten: ${avgFood.toFixed(1)}
 Total Food Consumed: ${livingAgents.reduce((sum, a) => sum + a.foodEaten, 0)}
 Avg Kills: ${avgKills.toFixed(2)}
 
+🍎 Detailed Food Statistics
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Current Food: ${livingFood.length} (${normalFood.length} normal, ${highValueFood.length} high-value)
+Total Food Energy: ${totalFoodEnergy.toFixed(0)}
+Avg Food Energy: ${avgFoodEnergy.toFixed(1)} (${normalEnergy.toFixed(0)} normal, ${highValueEnergy.toFixed(0)} high-value)
+Food Spawn Rate: ${foodSpawnRate.toFixed(2)} (UI slider)
+Food Scarcity Factor: ${foodScarcityFactor.toFixed(2)} (0.5-1.0, seasonal)
+Final Food Multiplier: ${finalFoodMultiplier.toFixed(3)}
+Population Factor: ${populationFactor.toFixed(2)} (scales with agent count)
+Base Spawn Chance: ${baseSpawnChance}
+Current Spawn Chance: ${currentSpawnChance.toFixed(6)} per frame
+Spawn Rate: ${spawnRatePerSecond.toFixed(3)} food/sec (${(spawnRatePerSecond * 3600).toFixed(1)} food/hour)
+Energy Provided: ${energyProvidedPerSecond.toFixed(1)} energy/sec
+Energy Needed: ${energyNeededPerSecond.toFixed(1)} energy/sec (${livingAgents.length} agents × 0.42)
+Energy Buffer: ${energyBuffer >= 0 ? '+' : ''}${energyBuffer.toFixed(1)}% (${energyBuffer >= 0 ? 'surplus' : 'deficit'})
+
 🤝 Reproduction
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Sexual Offspring: ${totalSexualOffspring}
@@ -1031,6 +1079,7 @@ Max Agents: ${simulation.maxAgents}
 Food Spawn Multiplier: ${simulation.finalFoodSpawnMultiplier ? simulation.finalFoodSpawnMultiplier.toFixed(2) : 'N/A'}
 Food Scarcity Factor: ${simulation.foodScarcityFactor.toFixed(2)}
 GPU Enabled: ${simulation.useGpu ? 'Yes' : 'No'}
+Auto-Adjust: ${simulation.autoAdjustEnabled ? 'Yes' : 'No'} (Target: ${simulation.targetFps} FPS, Caps: ${simulation.autoMaxAgents} agents, ${simulation.autoMaxSpeed}x speed)
 
 📈 Recent Fitness History (last 10)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -9,7 +9,7 @@ import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
 import { PheromonePuff } from './pheromone.js';
 import { Agent } from './agent.js';
-import { queryArrayPool } from './array-pool.js';
+import { queryArrayPool, hitTypeArrayPool } from './array-pool.js';
 import { rectanglePool } from './rectangle-pool.js';
 
 export function checkCollisions(simulation) {
@@ -342,31 +342,35 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
                 inputs.push(normalizedDist);
             }
 
-            let hitTypeArray = [0, 0, 0, 0];
+            // PERFORMANCE: Use pooled array instead of allocating new one
+            const hitTypeArray = hitTypeArrayPool.acquire();
             let hitTypeName = 'none';
             if (isHit) {
                 simulation.rayHits++;
                 if (hitType === 1) { // Wall
-                    hitTypeArray = [0, 0, 0, 1]; hitTypeName = 'edge';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 0; hitTypeArray[2] = 0; hitTypeArray[3] = 1; hitTypeName = 'edge';
                 } else if (hitType === 2) { // Food
-                    hitTypeArray = [1, 0, 0, 0]; hitTypeName = 'food';
+                    hitTypeArray[0] = 1; hitTypeArray[1] = 0; hitTypeArray[2] = 0; hitTypeArray[3] = 0; hitTypeName = 'food';
                 } else if (hitType === 3) { // Agent - differentiate by size
                     const agentSize = agent.size;
                     if (entitySize > agentSize * 1.1) {
                         // Larger agent (threat/predator)
-                        hitTypeArray = [0, 1, 0, 0]; hitTypeName = 'larger';
+                        hitTypeArray[0] = 0; hitTypeArray[1] = 1; hitTypeArray[2] = 0; hitTypeArray[3] = 0; hitTypeName = 'larger';
                     } else if (entitySize < agentSize * 0.9) {
                         // Smaller agent (prey)
-                        hitTypeArray = [0, 0, 1, 0]; hitTypeName = 'smaller';
+                        hitTypeArray[0] = 0; hitTypeArray[1] = 0; hitTypeArray[2] = 1; hitTypeArray[3] = 0; hitTypeName = 'smaller';
                     } else {
                         // Same size agent
-                        hitTypeArray = [0, 1, 1, 0]; hitTypeName = 'same';
+                        hitTypeArray[0] = 0; hitTypeArray[1] = 1; hitTypeArray[2] = 1; hitTypeArray[3] = 0; hitTypeName = 'same';
                     }
                 } else if (hitType === 4) { // Obstacle
-                    hitTypeArray = [0, 0, 0, 1]; hitTypeName = 'obstacle';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 0; hitTypeArray[2] = 0; hitTypeArray[3] = 1; hitTypeName = 'obstacle';
                 }
             }
             inputs.push(...hitTypeArray);
+
+            // PERFORMANCE: Return array to pool
+            hitTypeArrayPool.release(hitTypeArray);
 
             const angle = agent.angle + (rayIdx - numSensorRays / 2) * sensorAngleStep;
 

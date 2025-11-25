@@ -23,7 +23,7 @@ import { Rectangle } from './quadtree.js';
 import { spawnPheromone } from './spawn.js';
 import { crossover } from './gene.js';
 import { PheromonePuff } from './pheromone.js';
-import { queryArrayPool } from './array-pool.js';
+import { queryArrayPool, hitTypeArrayPool } from './array-pool.js';
 import { rectanglePool } from './rectangle-pool.js';
 
 export class Agent {
@@ -699,25 +699,29 @@ export class Agent {
             const normalizedDist = 1.0 - (Math.min(closestDist, maxRayDist) / maxRayDist);
             inputs.push(normalizedDist);
 
-            let hitTypeArray = [0, 0, 0, 0];
+            // PERFORMANCE: Use pooled array instead of allocating new one
+            const hitTypeArray = hitTypeArrayPool.acquire();
             let hitTypeName = 'none';
             const isHit = closestDist < maxRayDist;
 
             if (isHit) {
                 this.rayHits++;
                 if (hitType === 1) {
-                    hitTypeArray = [1, 0, 0, 0]; hitTypeName = 'food';
+                    hitTypeArray[0] = 1; hitTypeArray[1] = 0; hitTypeArray[2] = 0; hitTypeArray[3] = 0; hitTypeName = 'food';
                 } else if (hitType === 2) {
-                    hitTypeArray = [0, 1, 0, 0]; hitTypeName = 'smaller';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 1; hitTypeArray[2] = 0; hitTypeArray[3] = 0; hitTypeName = 'smaller';
                 } else if (hitType === 3) {
-                    hitTypeArray = [0, 0, 1, 0]; hitTypeName = 'larger';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 0; hitTypeArray[2] = 1; hitTypeArray[3] = 0; hitTypeName = 'larger';
                 } else if (hitType === 6) {
-                    hitTypeArray = [0, 1, 1, 0]; hitTypeName = 'same_size_agent';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 1; hitTypeArray[2] = 1; hitTypeArray[3] = 0; hitTypeName = 'same_size_agent';
                 } else if (hitType === 4 || hitType === 5) {
-                    hitTypeArray = [0, 0, 0, 1]; hitTypeName = 'obstacle_or_edge';
+                    hitTypeArray[0] = 0; hitTypeArray[1] = 0; hitTypeArray[2] = 0; hitTypeArray[3] = 1; hitTypeName = 'obstacle_or_edge';
                 }
             }
             inputs.push(...hitTypeArray);
+
+            // PERFORMANCE: Return array to pool
+            hitTypeArrayPool.release(hitTypeArray);
 
             // OPTIMIZED: Reuse rayData object
             if (rayDataIndex < rayData.length) {
