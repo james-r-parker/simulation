@@ -5,24 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dev Blog - Blob Evolution v5.0</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/assets/index.css">
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         body {
+            width: 100%;
+            min-height: 100vh;
             overflow-y: auto;
             padding: 2rem;
             max-width: 900px;
             margin: 0 auto;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, rgba(20, 20, 40, 0.5) 0%, transparent 100%);
+            color: var(--text-main);
+            font-family: 'Orbitron', 'Inter', 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         .blog-container {
-            background: rgba(15, 15, 20, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(57, 255, 20, 0.1);
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border);
             border-radius: 15px;
             padding: 3rem;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            box-shadow: var(--shadow-lg);
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
         }
 
         .blog-header {
@@ -120,11 +128,14 @@
         }
 
         .tech-box {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px dashed rgba(255, 255, 255, 0.2);
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px dashed var(--glass-border);
             padding: 1.5rem;
             border-radius: 10px;
             margin: 2rem 0;
+            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, transparent 50%);
         }
 
         .video-wrapper {
@@ -134,7 +145,8 @@
             margin: 3rem 0;
             border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
         }
 
         .video-wrapper iframe {
@@ -192,7 +204,7 @@
             <div class="subtitle">The Engineering Behind Blob Evolution v5.0</div>
 
             <div class="author-section">
-                <img src="james.png" alt="James Parker" class="author-img">
+                <img src="/james.png" alt="James Parker" class="author-img">
                 <div class="author-info">
                     <span class="author-name">James Parker</span>
                     <span class="author-role">Lead Developer & Simulation Architect</span>

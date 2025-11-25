@@ -15,16 +15,40 @@ Tracks current memory usage (using `performance.memory` in Chrome) and calculate
 - **Growth Rate**: Calculates MB/min growth to warn the user if the simulation is "leaking".
 
 ### `handleMemoryPressure(simulation)`
-Checks if memory usage exceeds the threshold (default 300MB). If so, it triggers corrective actions.
-- **Threshold**: `memoryPressureThreshold` in constants.
-- **Cooldown**: Prevents spamming cleanup actions (30s cooldown).
+Checks memory usage against multiple thresholds and triggers appropriate cleanup actions.
+- **Medium Threshold**: 400MB - triggers moderate cleanup (60s cooldown)
+- **High Threshold**: 500MB - triggers aggressive cleanup (30s cooldown)
+- **Legacy Threshold**: 150MB - triggers light cleanup (30s cooldown)
 
-### `aggressiveMemoryCleanup(simulation)`
-Triggered under high memory pressure.
-- **Force GC**: Calls `window.gc()` if available (requires specific browser flags).
-- **Clear Caches**: Wipes GPU compute and physics caches.
-- **Cull Pheromones**: Removes old pheromones to free up object count.
-- **Flush DB**: Forces a database write to clear pending queues.
+### Memory Cleanup Functions
+
+#### `lightMemoryCleanup(simulation)`
+Basic cleanup for legacy threshold crossings.
+- **Process Dead Agents**: Clears dead agent queue
+- **Flush DB**: Forces database write
+
+#### `moderateMemoryCleanup(simulation)`
+Moderate cleanup for medium memory usage (400MB+).
+- **Process Dead Agents**: Clears dead agent queue
+- **Flush DB**: Forces database write
+- **Reduce Pheromones**: Keeps 70% of pheromones
+- **Trim Memory History**: Reduces history size
+
+#### `aggressiveMemoryCleanup(simulation)`
+Aggressive cleanup for high memory usage (500MB+).
+- **Force GC**: Calls `window.gc()` if available
+- **Clear Caches**: Wipes GPU compute and physics caches
+- **Cull Pheromones**: Keeps 50% of pheromones
+- **Flush DB**: Forces database write
+- **Trim Memory History**: Heavily reduces history
+
+#### `emergencyMemoryCleanup(simulation)`
+Emergency cleanup for critically high memory usage.
+- **Force GC**: Calls `window.gc()` if available
+- **Clear All Caches**: Wipes all GPU caches
+- **Cull Pheromones**: Keeps only 30% of pheromones
+- **Clear Queues**: Removes old validation entries
+- **Minimal History**: Keeps only 10 history entries
 
 ### `periodicMemoryCleanup(simulation)`
 Runs regularly (e.g., every few minutes) to perform maintenance.

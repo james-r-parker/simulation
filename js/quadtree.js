@@ -1,5 +1,8 @@
 // --- QUADTREE SPATIAL INDEXING ---
 // Preserved exactly from original
+// PERFORMANCE: Uses array pool to eliminate allocations
+
+import { queryArrayPool } from './array-pool.js';
 
 export class Point {
     constructor(x, y, data, radius = 0) {
@@ -22,9 +25,9 @@ export class Rectangle {
         // Account for entity radius when checking containment
         const entityRadius = point.radius || 0;
         return (point.x + entityRadius >= this.x - this.w &&
-                point.x - entityRadius <= this.x + this.w &&
-                point.y + entityRadius >= this.y - this.h &&
-                point.y - entityRadius <= this.y + this.h);
+            point.x - entityRadius <= this.x + this.w &&
+            point.y + entityRadius >= this.y - this.h &&
+            point.y - entityRadius <= this.y + this.h);
     }
 
     intersects(range) {
@@ -87,7 +90,10 @@ export class Quadtree {
     }
 
     query(range, found) {
-        if (!found) found = [];
+        // PERFORMANCE: Use array pool to eliminate allocations
+        // If no array provided, acquire one from the pool
+        const usingPool = !found;
+        if (!found) found = queryArrayPool.acquire();
 
         // Always check all entities in this node (simplified spatial query)
         for (let p of this.points) {

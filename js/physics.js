@@ -9,6 +9,8 @@ import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
 import { PheromonePuff } from './pheromone.js';
 import { Agent } from './agent.js';
+import { queryArrayPool } from './array-pool.js';
+import { rectanglePool } from './rectangle-pool.js';
 
 export function checkCollisions(simulation) {
     // OPTIMIZED: Collision detection using distance squared to avoid sqrt
@@ -131,6 +133,9 @@ export function checkCollisions(simulation) {
             }
         }
 
+        // PERFORMANCE: Release array back to pool after use
+        queryArrayPool.release(nearby);
+
         // OPTIMIZED: Use quadtree for food collision detection
         // Query for nearby food within collision range
         const foodQueryRange = agentSize + 10; // Max food size is ~5, add buffer
@@ -166,6 +171,9 @@ export function checkCollisions(simulation) {
                 }
             }
         }
+
+        // PERFORMANCE: Release array back to pool after use
+        queryArrayPool.release(nearbyFood);
 
         // OPTIMIZED: Use quadtree for obstacle collision detection
         // Query for nearby obstacles within collision range
@@ -254,6 +262,9 @@ export function checkCollisions(simulation) {
                 }
             }
         }
+
+        // PERFORMANCE: Release array back to pool after use
+        queryArrayPool.release(nearbyObstacles);
     }
 }
 
@@ -429,7 +440,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         let inShadow = false;
 
         // Pheromone detection
-        const smellRadius = new Rectangle(
+        const smellRadius = rectanglePool.acquire(
             agent.x - PHEROMONE_RADIUS,
             agent.y - PHEROMONE_RADIUS,
             PHEROMONE_DIAMETER,
@@ -451,13 +462,16 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             }
         }
 
+        // PERFORMANCE: Release rectangle and array back to pools
+        rectanglePool.release(smellRadius);
+        queryArrayPool.release(nearbyPuffs);
+
         // OPTIMIZED: Use quadtree for obstacle shadow detection
-        const shadowQueryRange = OBSTACLE_HIDING_RADIUS + 100; // Max obstacle radius
-        const shadowQueryRect = new Rectangle(
-            agent.x,
-            agent.y,
-            shadowQueryRange,
-            shadowQueryRange
+        const shadowQueryRect = rectanglePool.acquire(
+            agent.x - agent.maxRayDist,
+            agent.y - agent.maxRayDist,
+            agent.maxRayDist * 2,
+            agent.maxRayDist * 2
         );
         const nearbyObstaclesForShadow = simulation.quadtree.query(shadowQueryRect);
 
@@ -472,6 +486,10 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
                 break;
             }
         }
+
+        // PERFORMANCE: Release rectangle and array back to pools
+        rectanglePool.release(shadowQueryRect);
+        queryArrayPool.release(nearbyObstaclesForShadow);
 
         agent.dangerSmell = dangerSmell;
         agent.attackSmell = attackSmell;

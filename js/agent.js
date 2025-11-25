@@ -23,6 +23,8 @@ import { Rectangle } from './quadtree.js';
 import { spawnPheromone } from './spawn.js';
 import { crossover } from './gene.js';
 import { PheromonePuff } from './pheromone.js';
+import { queryArrayPool } from './array-pool.js';
+import { rectanglePool } from './rectangle-pool.js';
 
 export class Agent {
     constructor(gene, x, y, energy, logger, parent = null, simulation = null) {
@@ -634,7 +636,7 @@ export class Agent {
             const rayBoundsHalfHeight = (rayBoundsMaxY - rayBoundsMinY) / 2 + 50;
 
             // Reuse pre-allocated Rectangle for ray bounds query
-            const rayBounds = new Rectangle(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
+            const rayBounds = rectanglePool.acquire(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
             const nearbyPoints = quadtree.query(rayBounds);
 
             // Check only nearby obstacles
@@ -651,6 +653,10 @@ export class Agent {
                     }
                 }
             }
+
+            // PERFORMANCE: Release rectangle and array back to pools
+            rectanglePool.release(rayBounds);
+            queryArrayPool.release(nearbyPoints);
 
             // Query quadtree for nearby entities (agents and food)
             // Reuse pre-allocated Rectangle
@@ -730,6 +736,9 @@ export class Agent {
                 });
                 rayDataIndex++;
             }
+
+            // PERFORMANCE: Release entity query array back to pool
+            queryArrayPool.release(nearbyEntities);
         }
 
         // Process alignment rays (no hitType, just distance)
@@ -761,7 +770,7 @@ export class Agent {
             const rayBoundsHalfWidth = (rayBoundsMaxX - rayBoundsMinX) / 2 + 50;
             const rayBoundsHalfHeight = (rayBoundsMaxY - rayBoundsMinY) / 2 + 50;
 
-            const rayBounds = new Rectangle(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
+            const rayBounds = rectanglePool.acquire(rayBoundsCenterX, rayBoundsCenterY, rayBoundsHalfWidth, rayBoundsHalfHeight);
             const nearbyPoints = quadtree.query(rayBounds);
 
             // Check only nearby obstacles
@@ -775,6 +784,10 @@ export class Agent {
                     }
                 }
             }
+
+            // PERFORMANCE: Release rectangle and array back to pools
+            rectanglePool.release(rayBounds);
+            queryArrayPool.release(nearbyPoints);
 
             // Reuse pre-allocated Rectangle
             this.queryRange.x = this.x - maxRayDist;
@@ -821,6 +834,9 @@ export class Agent {
                 });
                 rayDataIndex++;
             }
+
+            // PERFORMANCE: Release entity query array back to pool
+            queryArrayPool.release(nearbyEntities);
         }
 
         let dangerSmell = 0;
@@ -848,6 +864,9 @@ export class Agent {
                 }
             }
         }
+
+        // PERFORMANCE: Release pheromone query array back to pool
+        queryArrayPool.release(nearbyPuffs);
 
         for (const obs of obstacles) {
             const dist = distance(this.x, this.y, obs.x, obs.y);

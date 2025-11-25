@@ -56,20 +56,28 @@ export function updateMemoryUI(simulation) {
     const memoryEl = document.getElementById('info-memory');
     if (memoryEl) {
         let memoryText = '';
-        if (simulation.currentMemoryUsage > 0) {
-            memoryText = `Memory: ${simulation.currentMemoryUsage.toFixed(1)}MB`;
-            if (simulation.memoryGrowthRate > 0.1) {
+        const memoryUsageMB = simulation.currentMemoryUsage;
+
+        if (memoryUsageMB > 0) {
+            memoryText = `Memory: ${memoryUsageMB.toFixed(1)}MB`;
+
+            // Color based on absolute memory usage thresholds
+            if (memoryUsageMB >= 500) { // High memory threshold
+                memoryEl.style.color = '#ff1744'; // Bright red for critical
+            } else if (memoryUsageMB >= 400) { // Medium memory threshold
+                memoryEl.style.color = '#ff9800'; // Orange for warning
+            } else if (simulation.memoryGrowthRate > 0.1) {
                 memoryText += ` (↗️ +${simulation.memoryGrowthRate.toFixed(1)}MB/min)`;
-                memoryEl.style.color = '#ff6b6b';
+                memoryEl.style.color = '#ff6b6b'; // Red for growing memory
             } else if (simulation.memoryGrowthRate < -0.1) {
                 memoryText += ` (↘️ ${simulation.memoryGrowthRate.toFixed(1)}MB/min)`;
-                memoryEl.style.color = '#51cf66';
+                memoryEl.style.color = '#51cf66'; // Green for decreasing memory
             } else {
-                memoryEl.style.color = '#ffd43b';
+                memoryEl.style.color = '#ffd43b'; // Yellow for stable memory
             }
         } else {
             memoryText = `Memory: ~${(simulation.entityCounts.agents * 2 + simulation.entityCounts.food * 0.1 + simulation.entityCounts.pheromones * 0.05).toFixed(1)}MB (est.)`;
-            memoryEl.style.color = '#868e96';
+            memoryEl.style.color = '#868e96'; // Gray for estimated memory
         }
         memoryEl.textContent = memoryText;
     }
@@ -78,10 +86,29 @@ export function updateMemoryUI(simulation) {
 export function handleMemoryPressure(simulation) {
     const now = Date.now();
     const timeSinceLastAction = now - simulation.lastMemoryPressureAction;
+    const memoryUsageMB = simulation.currentMemoryUsage;
 
-    // Only take action if memory usage is high and we haven't acted recently (avoid spam)
-    if (simulation.currentMemoryUsage > simulation.memoryPressureThreshold && timeSinceLastAction > 30000) { // 30 seconds minimum between actions
-        simulation.logger.warn(`[MEMORY] High memory usage detected: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB. Taking corrective action.`);
+    // Define memory thresholds (in MB)
+    const MEDIUM_MEMORY_THRESHOLD = 400;
+    const HIGH_MEMORY_THRESHOLD = 500;
+
+    let shouldTakeAction = false;
+    let actionLevel = 'none';
+
+    // Determine action level based on memory usage
+    if (memoryUsageMB > HIGH_MEMORY_THRESHOLD) {
+        shouldTakeAction = true;
+        actionLevel = 'high';
+    } else if (memoryUsageMB > MEDIUM_MEMORY_THRESHOLD && timeSinceLastAction > 60000) { // 60 seconds for medium
+        shouldTakeAction = true;
+        actionLevel = 'medium';
+    } else if (memoryUsageMB > simulation.memoryPressureThreshold && timeSinceLastAction > 30000) { // 30 seconds for legacy threshold
+        shouldTakeAction = true;
+        actionLevel = 'legacy';
+    }
+
+    if (shouldTakeAction) {
+        simulation.logger.warn(`[MEMORY] ${actionLevel.charAt(0).toUpperCase() + actionLevel.slice(1)} memory usage detected: ${memoryUsageMB.toFixed(1)}MB. Taking corrective action.`);
 
         // Force garbage collection if available
         if (window.gc) {
@@ -89,25 +116,71 @@ export function handleMemoryPressure(simulation) {
             simulation.logger.log('[MEMORY] Forced garbage collection');
         }
 
-        // Aggressive cleanup actions
-        aggressiveMemoryCleanup(simulation);
+        // Apply cleanup based on severity
+        if (actionLevel === 'high') {
+            // Most aggressive cleanup for high memory usage
+            aggressiveMemoryCleanup(simulation);
+            // Additional high-memory actions
+            emergencyMemoryCleanup(simulation);
+        } else if (actionLevel === 'medium') {
+            // Moderate cleanup for medium memory usage
+            moderateMemoryCleanup(simulation);
+        } else {
+            // Legacy cleanup for basic threshold
+            lightMemoryCleanup(simulation);
+        }
 
         simulation.memoryPressureActions++;
         simulation.lastMemoryPressureAction = now;
 
-        console.log(`[MEMORY] Memory pressure cleanup completed - reduced usage to ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
+        console.log(`[MEMORY] ${actionLevel} memory pressure cleanup completed`);
 
         // Update UI to show memory pressure action
         const memoryEl = document.getElementById('info-memory');
         if (memoryEl) {
             const currentText = memoryEl.textContent;
-            memoryEl.textContent = currentText + ' (GC)';
+            const indicator = actionLevel === 'high' ? ' (HIGH)' : actionLevel === 'medium' ? ' (MED)' : ' (GC)';
+            memoryEl.textContent = currentText + indicator;
             setTimeout(() => {
-                if (memoryEl.textContent.includes(' (GC)')) {
-                    memoryEl.textContent = memoryEl.textContent.replace(' (GC)', '');
+                if (memoryEl.textContent.includes(indicator)) {
+                    memoryEl.textContent = memoryEl.textContent.replace(indicator, '');
                 }
-            }, 2000);
+            }, 3000);
         }
+    }
+}
+
+export function lightMemoryCleanup(simulation) {
+    // Basic cleanup for legacy threshold
+    simulation.processDeadAgentQueue();
+
+    // Force database flush
+    if (simulation.db && simulation.db.flush) {
+        simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
+    }
+}
+
+export function moderateMemoryCleanup(simulation) {
+    // Moderate cleanup for medium memory usage (400MB+)
+    simulation.processDeadAgentQueue();
+
+    // Force database flush
+    if (simulation.db && simulation.db.flush) {
+        simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
+    }
+
+    // Reduce pheromone count moderately
+    if (simulation.pheromones.length > 1500) {
+        // Remove oldest pheromones (keep newest 70% to maintain behavior)
+        const keepCount = Math.floor(simulation.pheromones.length * 0.7);
+        simulation.pheromones.splice(0, simulation.pheromones.length - keepCount);
+        simulation.logger.log(`[MEMORY] Moderate pheromone reduction: kept ${keepCount} of ${simulation.pheromones.length + (simulation.pheromones.length - keepCount)}`);
+    }
+
+    // Clear some memory history
+    if (simulation.memoryHistory.length > simulation.memoryHistorySize * 0.75) {
+        const keepRecent = Math.floor(simulation.memoryHistorySize / 2);
+        simulation.memoryHistory.splice(0, simulation.memoryHistory.length - keepRecent);
     }
 }
 
@@ -121,8 +194,8 @@ export function aggressiveMemoryCleanup(simulation) {
     }
 
     // Clear GPU caches under memory pressure
-    const memoryPressureRatio = simulation.currentMemoryUsage / simulation.memoryPressureThreshold;
-    if (memoryPressureRatio > 1.2) { // Clear GPU caches if memory usage is 120% of threshold
+    const memoryPressureRatio = simulation.currentMemoryUsage / 500; // Use 500MB as reference
+    if (memoryPressureRatio > 1.2) { // Clear GPU caches if memory usage is 120% of high threshold
         if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
             simulation.gpuCompute.clearCache();
             console.log('[MEMORY] Cleared GPU compute cache (severe memory pressure)');
@@ -148,6 +221,47 @@ export function aggressiveMemoryCleanup(simulation) {
     }
 }
 
+export function emergencyMemoryCleanup(simulation) {
+    // Emergency cleanup for very high memory usage (500MB+)
+    console.log('[MEMORY] EMERGENCY CLEANUP: Memory usage critically high!');
+
+    // Most aggressive pheromone reduction
+    if (simulation.pheromones.length > 500) {
+        const keepCount = Math.floor(simulation.pheromones.length * 0.3); // Keep only 30%
+        simulation.pheromones.splice(0, simulation.pheromones.length - keepCount);
+        simulation.logger.warn(`[MEMORY] Emergency pheromone reduction: kept ${keepCount} of ${simulation.pheromones.length + (simulation.pheromones.length - keepCount)}`);
+    }
+
+    // Force clear all GPU caches
+    if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
+        simulation.gpuCompute.clearCache();
+        console.log('[MEMORY] Emergency: Cleared GPU compute cache');
+    }
+    if (simulation.gpuPhysics && simulation.gpuPhysics.clearCache) {
+        simulation.gpuPhysics.clearCache();
+        console.log('[MEMORY] Emergency: Cleared GPU physics cache');
+    }
+
+    // Clear most of memory history
+    if (simulation.memoryHistory.length > 10) {
+        simulation.memoryHistory.splice(0, simulation.memoryHistory.length - 10);
+    }
+
+    // Force validation queue cleanup
+    const maxAge = 60000; // 1 minute for emergency
+    const now = Date.now();
+    let emergencyEntriesRemoved = 0;
+    for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+        if (now - entry.lastValidationTime > maxAge) {
+            simulation.validationManager.validationQueue.delete(geneId);
+            emergencyEntriesRemoved++;
+        }
+    }
+    if (emergencyEntriesRemoved > 0) {
+        console.log(`[MEMORY] Emergency: Removed ${emergencyEntriesRemoved} validation queue entries`);
+    }
+}
+
 export function periodicMemoryCleanup(simulation) {
     // Comprehensive cleanup that runs periodically to prevent long-term memory buildup
     console.log(`[MEMORY] Starting periodic cleanup - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
@@ -156,8 +270,8 @@ export function periodicMemoryCleanup(simulation) {
     simulation.processDeadAgentQueue();
     console.log('[MEMORY] Processed dead agent queue');
 
-    // Force database flush under memory pressure
-    if (simulation.db && simulation.db.flush && simulation.currentMemoryUsage > simulation.memoryPressureThreshold * 0.8) {
+    // Force database flush under memory pressure (medium threshold)
+    if (simulation.db && simulation.db.flush && simulation.currentMemoryUsage > 400) { // 400MB medium threshold
         console.log('[MEMORY] Forcing database flush due to memory pressure');
         simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
     }

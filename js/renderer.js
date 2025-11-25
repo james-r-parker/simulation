@@ -6,6 +6,7 @@ import { Agent } from './agent.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
 import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, COLORS, EFFECT_FADE_DURATION } from './constants.js';
+import { queryArrayPool } from './array-pool.js';
 
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
@@ -38,6 +39,13 @@ export class WebGLRenderer {
         // Reusable objects for frustum culling to avoid allocations
         this.tempVec = new THREE.Vector3();
         this.testSphere = new THREE.Sphere(this.tempVec, 0);
+
+        // PERFORMANCE: Pre-allocated temp arrays to reuse instead of allocating per frame
+        this.tempValidAgents = [];
+        this.tempVisibleFood = [];
+        this.tempVisiblePheromones = [];
+        this.tempActiveAgents = [];
+        this.tempActiveEffects = [];
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -162,13 +170,19 @@ export class WebGLRenderer {
                 continue;
             }
 
-            const activeEffects = effects.filter(effect =>
-                currentFrame - effect.startFrame < effect.duration
-            );
+            // PERFORMANCE: Reuse temp array instead of filter, then copy
+            const activeEffects = this.tempActiveEffects;
+            activeEffects.length = 0;
+            for (const effect of effects) {
+                if (currentFrame - effect.startFrame < effect.duration) {
+                    activeEffects.push(effect);
+                }
+            }
             if (activeEffects.length === 0) {
                 this.agentEffects.delete(agent);
             } else {
-                this.agentEffects.set(agent, activeEffects);
+                // Create a new array copy to store (can't store reference to reusable array)
+                this.agentEffects.set(agent, [...activeEffects]);
             }
         }
     }
@@ -295,7 +309,9 @@ export class WebGLRenderer {
             const matrix = new THREE.Matrix4();
 
             // OPTIMIZED: Include only visible agents (frustum culling for performance)
-            const validAgents = [];
+            // PERFORMANCE: Reuse temp array instead of allocating
+            const validAgents = this.tempValidAgents;
+            validAgents.length = 0;
             for (let j = 0; j < geneAgents.length; j++) {
                 const agent = geneAgents[j];
                 if (typeof agent.x === 'number' && typeof agent.y === 'number' &&
@@ -422,8 +438,13 @@ export class WebGLRenderer {
 
         // Limit to showing state for max 20 agents (reduced for performance)
         const maxStateAgents = 20;
-        const agentsToShow = agents.filter(a => !a.isDead)
-            .sort((a, b) => b.fitness - a.fitness) // Show state for top agents
+        // PERFORMANCE: Reuse temp array instead of filter
+        const agentsToShow = this.tempActiveAgents;
+        agentsToShow.length = 0;
+        for (let i = 0; i < agents.length; i++) {
+            if (!agents[i].isDead) agentsToShow.push(agents[i]);
+        }
+        agentsToShow.sort((a, b) => b.fitness - a.fitness) // Show state for top agents
             .slice(0, maxStateAgents);
 
         // Create state visualization for limited agents
@@ -548,7 +569,9 @@ export class WebGLRenderer {
         this.updateFrustum();
 
         // OPTIMIZED: Count visible food with for loop
-        const visibleFood = [];
+        // PERFORMANCE: Reuse temp array instead of allocating  
+        const visibleFood = this.tempVisibleFood;
+        visibleFood.length = 0;
         const numFood = foodArray.length;
         for (let i = 0; i < numFood; i++) {
             const food = foodArray[i];
@@ -636,7 +659,9 @@ export class WebGLRenderer {
         this.updateFrustum();
 
         // OPTIMIZED: Count visible pheromones with for loop
-        const visiblePheromones = [];
+        // PERFORMANCE: Reuse temp array instead of allocating
+        const visiblePheromones = this.tempVisiblePheromones;
+        visiblePheromones.length = 0;
         const numPheromones = pheromones.length;
         for (let i = 0; i < numPheromones; i++) {
             const puff = pheromones[i];
@@ -783,7 +808,9 @@ export class WebGLRenderer {
         const testSphere = new THREE.Sphere(tempVec, 0);
 
         // OPTIMIZED: Only show rays for top 5 agents (or best agent) - use for loop
-        const activeAgents = [];
+        // PERFORMANCE: Reuse temp array instead of allocating
+        const activeAgents = this.tempActiveAgents;
+        activeAgents.length = 0;
         const numAgents = agents.length;
         for (let i = 0; i < numAgents; i++) {
             const agent = agents[i];

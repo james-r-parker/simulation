@@ -95,7 +95,7 @@ export class Simulation {
         this.entityCounts = { agents: 0, food: 0, pheromones: 0 };
 
         // Memory management
-        this.memoryPressureThreshold = 150 * 1024 * 1024; // 150MB threshold (lower for more frequent cleanup)
+        this.memoryPressureThreshold = 150 * 1024 * 1024; // 150MB legacy threshold (fallback for basic cleanup)
         this.memoryPressureActions = 0;
         this.lastMemoryPressureAction = 0;
         this.totalAgentsSpawned = 0; // Total agents created in this simulation run
@@ -791,7 +791,10 @@ export class Simulation {
 
                 // PERFORMANCE MONITORING: Suggest optimizations when FPS is low
                 if (this.frameCount % 300 === 0 && this.currentFps < 50) {
-                    const livingAgents = this.agents.filter(a => !a.isDead).length;
+                    let livingAgents = 0;
+                    for (let i = 0; i < this.agents.length; i++) {
+                        if (!this.agents[i].isDead) livingAgents++;
+                    }
                     console.log(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
                 }
             }
@@ -986,7 +989,13 @@ export class Simulation {
                     this.validationManager.cleanupValidationQueue();
 
                     // Resync active validation agents counter
-                    const actualValidationAgents = this.agents.filter(a => !a.isDead && this.validationManager.isInValidation(a.geneId)).length;
+                    let actualValidationAgents = 0;
+                    for (let i = 0; i < this.agents.length; i++) {
+                        const agent = this.agents[i];
+                        if (!agent.isDead && this.validationManager.isInValidation(agent.geneId)) {
+                            actualValidationAgents++;
+                        }
+                    }
                     if (actualValidationAgents !== this.validationManager.activeValidationAgents) {
                         console.log(`[VALIDATION] Resyncing counter: ${this.validationManager.activeValidationAgents} → ${actualValidationAgents} `);
                         this.validationManager.activeValidationAgents = actualValidationAgents;
@@ -1050,9 +1059,14 @@ export class Simulation {
 
             if (!shouldFollow && this.agents.length > 0) {
                 // Find best living agent that is actually visible on screen
-                const livingAgents = this.agents.filter(a => !a.isDead &&
-                    typeof a.x === 'number' && typeof a.y === 'number' &&
-                    isFinite(a.x) && isFinite(a.y));
+                const livingAgents = [];
+                for (let i = 0; i < this.agents.length; i++) {
+                    const agent = this.agents[i];
+                    if (!agent.isDead && typeof agent.x === 'number' && typeof agent.y === 'number' &&
+                        isFinite(agent.x) && isFinite(agent.y)) {
+                        livingAgents.push(agent);
+                    }
+                }
 
                 // Check frustum for each agent (reuse cached frustum from renderer)
 
@@ -1114,13 +1128,20 @@ export class Simulation {
         this.renderer.updatePheromones(this.pheromones);
         // Obstacles already updated after movement
 
+        // CRITICAL FIX: Clean up expired visual effects and dead agent references
+        // Without this, agentEffects Map grows unbounded causing FPS degradation over time
+        this.renderer.updateVisualEffects(this.frameCount);
+
         this.renderer.updateRays(this.agents, this.frameCount);
         this.renderer.render();
 
         // Process the agent spawn queue, enforcing the max population limit
         if (this.agentSpawnQueue.length > 0) {
             // Count only living agents for population limit
-            const livingAgents = this.agents.filter(a => !a.isDead).length;
+            let livingAgents = 0;
+            for (let i = 0; i < this.agents.length; i++) {
+                if (!this.agents[i].isDead) livingAgents++;
+            }
             const availableSlots = this.maxAgents - livingAgents;
             if (availableSlots > 0) {
                 const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
