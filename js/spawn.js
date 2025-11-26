@@ -522,8 +522,11 @@ export function repopulate(simulation) {
                 // Find non-active validation candidates (up to the limit we can spawn)
                 const candidatesToSpawn = [];
                 for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
-                    if (!entry.isActiveTest && candidatesToSpawn.length < maxToSpawnThisFrame) {
-                        candidatesToSpawn.push({ geneId, entry });
+                    if (!entry.isActiveTest && !simulation.validationManager.isSpawnLocked(geneId) && candidatesToSpawn.length < maxToSpawnThisFrame) {
+                        // Try to acquire spawn lock
+                        if (simulation.validationManager.acquireSpawnLock(geneId)) {
+                            candidatesToSpawn.push({ geneId, entry });
+                        }
                     }
                 }
 
@@ -557,6 +560,10 @@ export function repopulate(simulation) {
                         // Mark as actively being tested to prevent duplicate spawns
                         entry.isActiveTest = true;
                         console.log(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
+                    } else {
+                        // Release spawn lock if spawning failed
+                        simulation.validationManager.releaseSpawnLock(geneId);
+                        console.log(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
                     }
                 }
 

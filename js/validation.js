@@ -10,6 +10,7 @@ export class ValidationManager {
         this.db = db;
         this.validationQueue = new Map(); // geneId -> validation entry
         this.activeValidationAgents = 0; // Count of currently living validation agents
+        this.spawnLocks = new Set(); // geneIds currently being spawned to prevent race conditions
         this.toast = toast; // Toast notification system
     }
 
@@ -145,43 +146,126 @@ export class ValidationManager {
 
     // Clean up the validation queue (remove old/stale entries)
     cleanupValidationQueue() {
-        // Aggressive queue size management
-        if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
-            // Remove oldest non-validated entries first
-            const entries = Array.from(this.validationQueue.entries());
-            const toRemove = entries
-                .filter(([_, entry]) => !entry.isValidated)
-                .sort(([_, a], [__, b]) => a.lastValidationTime - b.lastValidationTime)
-                .slice(0, Math.min(10, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE)); // Remove up to 10 at a time
+        const now = Date.now();
+        const entries = Array.from(this.validationQueue.entries());
 
-            toRemove.forEach(([geneId, entry]) => {
-                console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
-                this.validationQueue.delete(geneId);
-            });
+        // Priority 1: Remove agents that should be removed based on validation logic
+        const shouldRemoveEntries = entries.filter(([geneId, entry]) => {
+            const reason = this.shouldRemoveFromQueue(entry);
+            return reason !== false;
+        });
+
+        shouldRemoveEntries.forEach(([geneId, entry]) => {
+            const reason = this.shouldRemoveFromQueue(entry);
+            console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (${reason})`);
+            this.validationQueue.delete(geneId);
+            // Release spawn lock if it exists
+            this.releaseSpawnLock(geneId);
+        });
+
+        // Priority 2: Aggressive queue size management - prioritize stuck agents
+        if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
+            const remainingEntries = Array.from(this.validationQueue.entries());
+
+            // First, try to remove stuck agents (high attempt count)
+            const stuckAgents = remainingEntries
+                .filter(([_, entry]) => entry.attempts >= VALIDATION_REQUIRED_RUNS + 1 && !entry.isValidated)
+                .sort(([_, a], [__, b]) => b.attempts - a.attempts) // Remove highest attempt count first
+                .slice(0, Math.min(5, remainingEntries.length));
+
+            if (stuckAgents.length > 0) {
+                stuckAgents.forEach(([geneId, entry]) => {
+                    console.log(`[VALIDATION] 🗑️ Removed stuck ${geneId} from validation queue (high attempts: ${entry.attempts})`);
+                    this.validationQueue.delete(geneId);
+                    this.releaseSpawnLock(geneId);
+                });
+            }
+
+            // If still over limit, remove oldest entries
+            if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
+                const oldestEntries = Array.from(this.validationQueue.entries())
+                    .filter(([_, entry]) => !entry.isValidated)
+                    .sort(([_, a], [__, b]) => a.lastValidationTime - b.lastValidationTime)
+                    .slice(0, Math.min(10, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE));
+
+                oldestEntries.forEach(([geneId, entry]) => {
+                    console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                    this.validationQueue.delete(geneId);
+                    this.releaseSpawnLock(geneId);
+                });
+            }
         }
 
-        // Also clean up very old entries (5+ minutes since last validation attempt)
-        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+        // Priority 3: Clean up very old entries (10+ minutes since last validation attempt)
+        const tenMinutesAgo = now - (10 * 60 * 1000);
         for (const [geneId, entry] of this.validationQueue.entries()) {
-            if (entry.lastValidationTime < fiveMinutesAgo && !entry.isValidated) {
-                console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (5+ minutes old)`);
+            if (entry.lastValidationTime < tenMinutesAgo && !entry.isValidated) {
+                console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (10+ minutes old, attempts: ${entry.attempts})`);
                 this.validationQueue.delete(geneId);
+                this.releaseSpawnLock(geneId);
             }
         }
     }
 
     // Get validation statistics
-    getStats() {
-        const actualValidationAgents = this.activeValidationAgents; // This would need to be passed from outside
+    getStats(simulation) {
+        // Get accurate count of living validation agents
+        let actualValidationAgents = 0;
+        if (simulation && simulation.agents) {
+            for (const agent of simulation.agents) {
+                if (!agent.isDead && this.isInValidation(agent.geneId)) {
+                    actualValidationAgents++;
+                }
+            }
+        }
+
         return {
             queueSize: this.validationQueue.size,
-            activeAgents: this.activeValidationAgents
+            activeAgents: this.activeValidationAgents,
+            actualActiveAgents: actualValidationAgents,
+            spawnLocks: this.spawnLocks.size
         };
+    }
+
+    // Resync active validation agents counter with actual living agents
+    resyncActiveAgentsCount(simulation) {
+        if (!simulation || !simulation.agents) return;
+
+        let actualCount = 0;
+        for (const agent of simulation.agents) {
+            if (!agent.isDead && this.isInValidation(agent.geneId)) {
+                actualCount++;
+            }
+        }
+
+        if (actualCount !== this.activeValidationAgents) {
+            console.log(`[VALIDATION] Resyncing counter: ${this.activeValidationAgents} → ${actualCount}`);
+            this.activeValidationAgents = actualCount;
+        }
+
+        return actualCount;
     }
 
     // Check if an agent is currently in validation
     isInValidation(geneId) {
         return this.validationQueue.has(geneId);
+    }
+
+    // Spawn lock management to prevent race conditions
+    acquireSpawnLock(geneId) {
+        if (this.spawnLocks.has(geneId)) {
+            return false; // Already locked
+        }
+        this.spawnLocks.add(geneId);
+        return true;
+    }
+
+    releaseSpawnLock(geneId) {
+        this.spawnLocks.delete(geneId);
+    }
+
+    isSpawnLocked(geneId) {
+        return this.spawnLocks.has(geneId);
     }
 
     // Handle validation agent death
@@ -199,16 +283,44 @@ export class ValidationManager {
                 // Agent passed validation, queue for gene pool save
                 console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed, queueing for save`);
                 db.queueSaveAgent(result.record);
-            }
-
-            // Only remove from validation queue if it has failed multiple times
-            if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS) {
+                // Remove from queue after successful validation
                 this.validationQueue.delete(agent.geneId);
             } else {
-                console.log(`[VALIDATION] Keeping ${agent.geneId} in queue for another attempt (${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                // Check if we should remove this agent from the queue
+                const shouldRemove = this.shouldRemoveFromQueue(validationEntry);
+                if (shouldRemove) {
+                    console.log(`[VALIDATION] 🗑️ Removing ${agent.geneId} from validation queue (${shouldRemove})`);
+                    this.validationQueue.delete(agent.geneId);
+                } else {
+                    console.log(`[VALIDATION] Keeping ${agent.geneId} in queue for another attempt (${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                }
             }
             return true;
         }
+        return false;
+    }
+
+    // Determine if a validation entry should be removed from the queue
+    shouldRemoveFromQueue(validationEntry) {
+        // Remove if already validated (shouldn't happen here but safety check)
+        if (validationEntry.isValidated) {
+            return 'already validated';
+        }
+
+        // Remove if completed required runs but failed validation
+        if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS) {
+            const successfulRuns = validationEntry.scores.filter(score => score >= VALIDATION_FITNESS_THRESHOLD).length;
+            if (successfulRuns < 2) {
+                return `failed validation (${successfulRuns}/${VALIDATION_REQUIRED_RUNS} successful runs)`;
+            }
+        }
+
+        // Remove if too many attempts without success (stuck agents)
+        if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS + 2) {
+            return `too many attempts (${validationEntry.attempts}), likely stuck`;
+        }
+
+        // Keep if still has potential for validation
         return false;
     }
 }

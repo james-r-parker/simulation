@@ -286,7 +286,10 @@ export class WebGLRenderer {
                 }
 
                 const bodyMaterial = new THREE.MeshBasicMaterial({ color: baseColor });
-                const borderMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+                // Use COLORS.AGENTS for specialization-based border color
+                const specializationColor = COLORS.AGENTS[specialization] || COLORS.AGENTS.FORAGER;
+                const borderMaterial = new THREE.MeshBasicMaterial({ color: specializationColor });
 
                 // Increased from 100 to 200 to handle larger populations per gene
                 const maxInstances = MAX_INSTANCES_PER_BATCH;
@@ -394,16 +397,10 @@ export class WebGLRenderer {
                 matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
                 mesh.body.setMatrixAt(i, matrix);
 
-                // Update border (scale to 0 if not low energy to hide it)
-                if (agent.isLowEnergy()) {
-                    const borderSize = Math.max(agent.size, 12) * 1.1;
-                    matrix.makeScale(borderSize, borderSize, 1);
-                    matrix.setPosition(agent.x, -agent.y, 0.1);
-                } else {
-                    // Set scale to 0 to hide the border
-                    matrix.makeScale(0, 0, 1);
-                    matrix.setPosition(agent.x, -agent.y, 0.1);
-                }
+                // Update border (always visible to show specialization)
+                const borderSize = Math.max(agent.size, 12) * 1.1;
+                matrix.makeScale(borderSize, borderSize, 1);
+                matrix.setPosition(agent.x, -agent.y, 0.1);
                 mesh.border.setMatrixAt(i, matrix);
             }
 

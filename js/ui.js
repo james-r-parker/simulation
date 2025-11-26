@@ -207,9 +207,9 @@ async function generateAndDisplaySummary(simulation) {
 
         console.log('[SUMMARIZER] 📊 Generating summary with historical context');
 
-        // Generate summary using Summarizer API with trend analysis
+        // Generate summary using Summarizer API with focus on key metric differences
         const summary = await summarizer.summarize(contextText, {
-            context: 'Analyze the trends and evolution in this evolutionary simulation over time. Compare current performance with historical data and identify patterns, improvements, or concerning trends in the agent population, fitness, reproduction, and behavior.'
+            context: 'Analyze key performance differences and evolutionary trends in this simulation. Focus on significant changes in fitness, population, reproduction rates, genetic diversity, and agent behavior. Identify whether the simulation is improving, stagnating, or declining. Compare current metrics against historical baselines and highlight any concerning trends or breakthroughs in evolution. Pay special attention to fitness deltas, reproduction efficiency, and genetic diversity changes over time.'
         });
 
         console.log('[SUMMARIZER] 📝 Generated summary:', summary);
@@ -284,7 +284,7 @@ function generateHistoricalContextText() {
         return 'No historical data available for analysis.';
     }
 
-    let contextText = 'EVOLUTIONARY SIMULATION TREND ANALYSIS\n\n';
+    let contextText = 'EVOLUTIONARY SIMULATION PERFORMANCE ANALYSIS\n\n';
 
     // Add current data first (most recent)
     const current = historicalSummaries[0];
@@ -299,29 +299,88 @@ function generateHistoricalContextText() {
     contextText += `- Genetic Diversity: ${current.data.geneIdCount} active gene pools\n`;
     contextText += `- Runtime: ${current.data.runtimeSeconds}s\n\n`;
 
-    // Add historical comparison data
+    // Add detailed historical comparison data
     if (historicalSummaries.length > 1) {
-        contextText += 'HISTORICAL COMPARISON:\n';
+        contextText += 'KEY METRIC DIFFERENCES:\n';
 
-        // Compare with 1 minute ago (if available)
+        // Compare with immediate previous (most recent comparison)
         if (historicalSummaries.length >= 2) {
             const prev = historicalSummaries[1];
             const timeDiff = (new Date(current.timestamp) - new Date(prev.timestamp)) / 1000 / 60; // minutes
-            contextText += `Compared to ${timeDiff.toFixed(1)} minutes ago:\n`;
-            contextText += `- Population change: ${current.data.population - prev.data.population >= 0 ? '+' : ''}${current.data.population - prev.data.population}\n`;
-            contextText += `- Fitness change: ${current.data.bestFitness - prev.data.bestFitness >= 0 ? '+' : ''}${(current.data.bestFitness - prev.data.bestFitness).toFixed(0)}\n`;
-            contextText += `- Generation progress: ${current.data.generation - prev.data.generation}\n\n`;
+
+            const fitnessDelta = current.data.bestFitness - prev.data.bestFitness;
+            const avgFitnessDelta = current.data.avgFitness.toFixed(1) - prev.data.avgFitness.toFixed(1);
+            const popDelta = current.data.population - prev.data.population;
+            const genDelta = current.data.generation - prev.data.generation;
+            const sexualDelta = current.data.totalSexualOffspring - prev.data.totalSexualOffspring;
+            const asexualDelta = current.data.totalAsexualOffspring - prev.data.totalAsexualOffspring;
+            const diversityDelta = current.data.geneIdCount - prev.data.geneIdCount;
+
+            contextText += `RECENT CHANGES (${timeDiff.toFixed(1)} minutes ago → now):\n`;
+            contextText += `• Fitness: ${fitnessDelta >= 0 ? '+' : ''}${fitnessDelta.toFixed(0)} (best), ${avgFitnessDelta >= 0 ? '+' : ''}${avgFitnessDelta.toFixed(1)} (avg)\n`;
+            contextText += `• Population: ${popDelta >= 0 ? '+' : ''}${popDelta} agents\n`;
+            contextText += `• Reproduction: ${sexualDelta >= 0 ? '+' : ''}${sexualDelta} sexual, ${asexualDelta >= 0 ? '+' : ''}${asexualDelta} asexual\n`;
+            contextText += `• Genetic Diversity: ${diversityDelta >= 0 ? '+' : ''}${diversityDelta} gene pools\n`;
+            contextText += `• Generation Progress: +${genDelta} generations\n\n`;
         }
 
-        // Add trend data from last 10 entries
-        contextText += 'FITNESS TREND OVER TIME:\n';
-        historicalSummaries.slice(0, 10).forEach((entry, index) => {
-            const time = new Date(entry.timestamp).toLocaleTimeString();
-            contextText += `${index === 0 ? 'NOW' : `${index}min ago`}: Gen ${entry.data.generation}, Best ${entry.data.bestFitness.toFixed(0)}, Avg ${entry.data.avgFitness.toFixed(1)}\n`;
+        // Add longer-term trend analysis (compare with 5+ entries back)
+        if (historicalSummaries.length >= 5) {
+            const baseline = historicalSummaries[4]; // ~5 entries back
+            const baselineTime = (new Date(current.timestamp) - new Date(baseline.timestamp)) / 1000 / 60; // minutes
+
+            const longTermFitnessDelta = current.data.bestFitness - baseline.data.bestFitness;
+            const longTermAvgFitnessDelta = current.data.avgFitness.toFixed(1) - baseline.data.avgFitness.toFixed(1);
+            const longTermGenProgress = current.data.generation - baseline.data.generation;
+
+            contextText += `LONG-TERM TRENDS (${baselineTime.toFixed(0)} minutes span):\n`;
+            contextText += `• Fitness Evolution: ${longTermFitnessDelta >= 0 ? '+' : ''}${longTermFitnessDelta.toFixed(0)} (best), ${longTermAvgFitnessDelta >= 0 ? '+' : ''}${longTermAvgFitnessDelta.toFixed(1)} (avg)\n`;
+            contextText += `• Evolutionary Pace: ${longTermGenProgress} generations total\n`;
+            contextText += `• Fitness Rate: ${(longTermFitnessDelta / baselineTime).toFixed(1)} per minute\n\n`;
+        }
+
+        // Add performance trend indicators
+        contextText += 'PERFORMANCE TREND ANALYSIS:\n';
+        const recentEntries = historicalSummaries.slice(0, Math.min(8, historicalSummaries.length));
+
+        // Calculate trend direction for key metrics
+        const fitnessTrend = calculateTrendDirection(recentEntries.map(e => e.data.bestFitness));
+        const populationTrend = calculateTrendDirection(recentEntries.map(e => e.data.population));
+        const diversityTrend = calculateTrendDirection(recentEntries.map(e => e.data.geneIdCount));
+
+        contextText += `• Fitness Trend: ${fitnessTrend}\n`;
+        contextText += `• Population Trend: ${populationTrend}\n`;
+        contextText += `• Diversity Trend: ${diversityTrend}\n\n`;
+
+        // Add detailed timeline for context
+        contextText += 'RECENT TIMELINE (last 8 data points):\n';
+        recentEntries.forEach((entry, index) => {
+            const timeAgo = index === 0 ? 'NOW' : `${index * 0.5}min ago`;
+            const fitnessChange = index === 0 ? '' : ` (${entry.data.fitnessDelta >= 0 ? '+' : ''}${entry.data.fitnessDelta.toFixed(0)})`;
+            contextText += `${timeAgo}: Gen ${entry.data.generation}, Best ${entry.data.bestFitness.toFixed(0)}${fitnessChange}, Pop ${entry.data.population}, Div ${entry.data.geneIdCount}\n`;
         });
     }
 
     return contextText.trim();
+}
+
+// Helper function to calculate trend direction
+function calculateTrendDirection(values) {
+    if (values.length < 3) return 'insufficient data';
+
+    const recent = values.slice(0, Math.min(3, values.length));
+    const older = values.slice(3, Math.min(6, values.length));
+
+    if (older.length === 0) return 'insufficient data';
+
+    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+
+    const change = recentAvg - olderAvg;
+    const percentChange = Math.abs(change / olderAvg) * 100;
+
+    if (percentChange < 2) return 'stable';
+    return change > 0 ? `improving (+${percentChange.toFixed(1)}%)` : `declining (-${percentChange.toFixed(1)}%)`;
 }
 
 // Display summary with streaming letter-by-letter effect
@@ -446,8 +505,8 @@ export function setupUIListeners(simulation) {
 
     document.getElementById('clearStorage').addEventListener('click', async () => {
         await simulation.db.clearAll();
-        alert('Gene pool cleared. Reloading.');
-        location.reload();
+        simulation.toast.show('🗑️', 'Gene Pool Cleared', 'All saved genes have been removed. Reloading...', 'toast-warning', 3000);
+        setTimeout(() => location.reload(), 1000); // Brief delay to show toast before reload
     });
 
     // Copy Stats button

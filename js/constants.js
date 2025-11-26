@@ -1,221 +1,271 @@
 // --- SIMULATION CONFIGURATION ---
-export const WORLD_WIDTH = 14400;
-export const WORLD_HEIGHT = 8100;
-export const FPS_TARGET = 60;
-export const AUTO_ADJUST_COOLDOWN = 15000; // 15 seconds between performance adjustments
-export const MIN_AGENTS = 5;
-export const MAX_AGENTS_LIMIT = 100;
-export const MIN_GAME_SPEED = 0.5;
-export const MAX_GAME_SPEED = 10;
-export const MEMORY_PRESSURE_THRESHOLD = 150 * 1024 * 1024; // 150MB
-export const SEASON_LENGTH = 1800; // Frames per season phase
+// Core world and performance settings that define the simulation environment
+export const WORLD_WIDTH = 14400; // Total width of the simulation world in pixels
+export const WORLD_HEIGHT = 8100; // Total height of the simulation world in pixels
+export const FPS_TARGET = 60; // Target frames per second for smooth animation and physics
+export const AUTO_ADJUST_COOLDOWN = 15000; // Minimum frames between automatic performance adjustments (15 seconds at 60 FPS)
+export const MIN_AGENTS = 5; // Minimum number of agents that must exist at any time
+export const MAX_AGENTS_LIMIT = 100; // Hard upper limit on total agent population
+export const MIN_GAME_SPEED = 0.5; // Minimum allowed game speed multiplier (slowest playback)
+export const MAX_GAME_SPEED = 10; // Maximum allowed game speed multiplier (fastest playback)
+export const MEMORY_PRESSURE_THRESHOLD = 150 * 1024 * 1024; // Memory usage threshold that triggers cleanup (150MB)
+export const SEASON_LENGTH = 1800; // Number of frames per season phase (environmental cycle)
 
 // --- AGENT CONSTANTS ---
-export const BASE_SIZE = 25; // Increased to ensure agents are always clearly visible (was 20, originally 10)
-export const MIN_AGENT_SIZE = 20; // Absolute minimum size agents can reach, regardless of energy
-export const ENERGY_TO_SIZE_RATIO = 100;
+// Physical and behavioral properties that define how agents look, move, and survive
 
-export const INITIAL_AGENT_ENERGY = 3000; // INCREASED from 2500 to 3000 to give agents more time to find food and learn
-export const MAX_ENERGY = 10000; // Increased to allow more growth
-export const MIN_ENERGY_TO_REPRODUCE = 150; // REDUCED from 250 to make reproduction more accessible for young agents
-export const REPRODUCE_COST_BASE = 15;
-export const CHILD_STARTING_ENERGY = 700; // CRITICAL FIX: Increased to 700 to ensure survival long enough to find food (was 150→400→700)
+// Size and appearance
+export const BASE_SIZE = 25; // Default visual radius of agents in pixels
+export const MIN_AGENT_SIZE = 20; // Minimum visual size agents can shrink to, regardless of energy level
+export const ENERGY_TO_SIZE_RATIO = 100; // How much energy affects agent size (higher energy = larger size)
 
-export const MAX_THRUST = 0.5;
-export const MAX_ROTATION = 0.1;
-export const MAX_VELOCITY = 10;
-export const SPRINT_BONUS_THRUST = 0.5;
-export const SPRINT_COST_PER_FRAME = 0.05; // CRITICAL FIX: Reduced from 0.25 to prevent energy starvation
-export const SPRINT_THRESHOLD = 0.9;
-export const FEAR_SPRINT_BONUS = 0.5;
+// Energy system
+export const INITIAL_AGENT_ENERGY = 3000; // Starting energy for newly spawned agents
+export const MAX_ENERGY = 10000; // Maximum energy an agent can accumulate
+export const MIN_ENERGY_TO_REPRODUCE = 250; // Minimum energy required to attempt reproduction
+export const REPRODUCE_COST_BASE = 15; // Base energy cost for reproduction attempts
+export const CHILD_STARTING_ENERGY = 700; // Energy given to newborn agents
 
-export const AGENT_MEMORY_FRAMES = 3; // Number of frames of history to keep for temporal awareness
-export const BASE_MUTATION_RATE = 0.1;
-export const AGENT_SPEED_FACTOR_BASE = 2;
-export const AGENT_SPEED_FACTOR_VARIANCE = 3;
+// Movement physics
+export const MAX_THRUST = 0.5; // Maximum acceleration force agents can apply
+export const MAX_ROTATION = 0.1; // Maximum turning speed in radians per frame
+export const MAX_VELOCITY = 8; // Maximum speed an agent can reach
+export const SPRINT_BONUS_THRUST = 0.5; // Additional thrust when sprinting
+export const SPRINT_COST_PER_FRAME = 0.05; // Energy cost per frame when sprinting
+export const SPRINT_THRESHOLD = 0.9; // Neural network output threshold to trigger sprinting
+export const FEAR_SPRINT_BONUS = 0.5; // Extra thrust bonus when fleeing from threats
 
-export const REPRODUCTION_COOLDOWN_FRAMES = 60 * 5;
-export const PREGNANCY_DURATION_FRAMES = 60 * 8;
-export const MATURATION_AGE_FRAMES = 600; // REDUCED from 900 (15s) to 600 (10s) - agents live ~10s on average, allow reproduction before death
-export const RESPAWN_DELAY_FRAMES = 0;
+// Neural network and evolution
+export const AGENT_MEMORY_FRAMES = 3; // Number of previous frames stored for temporal decision making
+export const BASE_MUTATION_RATE = 0.1; // Base probability of gene mutations during reproduction
+export const AGENT_SPEED_FACTOR_BASE = 2; // Base multiplier for agent movement speed calculations
+export const AGENT_SPEED_FACTOR_VARIANCE = 3; // Random variance range for speed factor inheritance
 
-export const OBESITY_THRESHOLD_ENERGY = 350;
-export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Further reduced tax to allow longer lifespan
-export const PASSIVE_LOSS = 0.03; // REDUCED from 0.05 to 0.03 to help agents live longer (was 0.000001 originally)
-export const MOVEMENT_COST_MULTIPLIER = 0.008; // REDUCED from 0.01 to 0.008 to reduce movement energy cost (was 0.001 originally)
-export const ROTATION_COST_MULTIPLIER = 0.1; // Increased to 0.1 to discourage spinning (was 0.05)
-export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Increased to 2.0 to heavily reward dynamic movement (was 0.5)
+// Reproduction timing
+export const REPRODUCTION_COOLDOWN_FRAMES = 60 * 5; // Frames an agent must wait between reproduction attempts (5 seconds)
+export const PREGNANCY_DURATION_FRAMES = 60 * 8; // Frames required for pregnancy to complete (8 seconds)
+export const MATURATION_AGE_FRAMES = 600; // Minimum age in frames before agents can reproduce (10 seconds)
+export const RESPAWN_DELAY_FRAMES = 0; // Frames to wait before respawning dead agents
 
-export const WALL_COLLISION_DAMAGE = 10;
-export const EDGE_BOUNCE_DAMPING = 0.5;
+// Energy management
+export const OBESITY_THRESHOLD_ENERGY = 350; // Energy level above which agents suffer obesity penalties
+export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Divisor for calculating obesity energy tax (higher = less tax)
+export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (metabolic cost)
+export const MOVEMENT_COST_MULTIPLIER = 0.008; // Energy cost multiplier for movement (velocity * this)
+export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotation (rotation speed * this)
+export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Multiplier for fitness scoring based on directional changes
+
+// Collision and damage
+export const WALL_COLLISION_DAMAGE = 50; // Energy damage taken when hitting world boundaries
+export const EDGE_BOUNCE_DAMPING = 0.5; // Velocity reduction factor when bouncing off edges
 
 // --- FOOD CONSTANTS ---
-export const FOOD_SPAWN_CAP = 300; // Reduced to 300 to create food scarcity (was 800)
-export const FOOD_SPAWN_RATE = 0.12; // Base spawn rate per frame
-export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Increased from 0.05 to provide more high-value learning opportunities
+// Settings for food spawning, energy values, and decay mechanics
 
-export const FOOD_ENERGY_NORMAL_BASE = 80;
-export const FOOD_ENERGY_NORMAL_VARIANCE = 20;
-export const FOOD_ENERGY_HIGH_BASE = 200;
-export const FOOD_ENERGY_HIGH_VARIANCE = 50;
+// Spawning system
+export const FOOD_SPAWN_CAP = 300; // Maximum number of food items that can exist simultaneously
+export const FOOD_SPAWN_RATE = 0.12; // Probability per frame of attempting to spawn new food
+export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Probability that spawned food will be high-value type
 
-export const FOOD_SIZE_NORMAL = 8;
-export const FOOD_SIZE_HIGH = 12;
-export const FOOD_SIZE_MIN_NORMAL = 3;
-export const FOOD_SIZE_MIN_HIGH = 4;
+// Energy values (agents gain these when eating food)
+export const FOOD_ENERGY_NORMAL_BASE = 200; // Base energy value of normal food
+export const FOOD_ENERGY_NORMAL_VARIANCE = 20; // Random variance in normal food energy (± this amount)
+export const FOOD_ENERGY_HIGH_BASE = 400; // Base energy value of high-value food
+export const FOOD_ENERGY_HIGH_VARIANCE = 50; // Random variance in high-value food energy (± this amount)
 
-export const FOOD_ROT_RATE_BASE = 0.002;
-export const FOOD_ROT_RATE_VARIANCE = 0.003;
-export const FOOD_MAX_AGE_BASE = 60000;
-export const FOOD_MAX_AGE_VARIANCE = 30000;
+// Visual appearance
+export const FOOD_SIZE_NORMAL = 8; // Visual radius of normal food in pixels
+export const FOOD_SIZE_HIGH = 12; // Visual radius of high-value food in pixels
+export const FOOD_SIZE_MIN_NORMAL = 3; // Minimum size normal food can shrink to during decay
+export const FOOD_SIZE_MIN_HIGH = 4; // Minimum size high-value food can shrink to during decay
+
+// Decay system (food spoils over time)
+export const FOOD_ROT_RATE_BASE = 0.002; // Base rate at which food loses energy per frame
+export const FOOD_ROT_RATE_VARIANCE = 0.003; // Random variance in food rot rate
+export const FOOD_MAX_AGE_BASE = 60000; // Base maximum age of food before it disappears (in frames)
+export const FOOD_MAX_AGE_VARIANCE = 30000; // Random variance in food maximum age (± this amount)
 
 // --- OBSTACLE CONSTANTS ---
-export const OBSTACLE_COUNT = 25;
-export const OBSTACLE_MIN_RADIUS = 40;
-export const OBSTACLE_MAX_RADIUS = 120;
-export const OBSTACLE_MIN_DISTANCE = 350;
-export const OBSTACLE_SPAWN_MARGIN = 250;
-export const OBSTACLE_INFLUENCE_RADIUS = 600;
-export const OBSTACLE_MAX_SPEED = 0.3;
+// Dynamic obstacles that move around and create navigation challenges
 
-export const OBSTACLE_COLLISION_PENALTY = 50; // Increased to 100 to severely punish crashing (was 25)
-export const OBSTACLE_HIDING_RADIUS = 75;
+// Generation and placement
+export const OBSTACLE_COUNT = 25; // Total number of obstacles in the world
+export const OBSTACLE_MIN_RADIUS = 40; // Minimum radius of obstacles in pixels
+export const OBSTACLE_MAX_RADIUS = 120; // Maximum radius of obstacles in pixels
+export const OBSTACLE_MIN_DISTANCE = 350; // Minimum distance obstacles must maintain from each other
+export const OBSTACLE_SPAWN_MARGIN = 250; // Distance from world edges where obstacles cannot spawn
+export const OBSTACLE_INFLUENCE_RADIUS = 600; // Distance at which obstacles affect agent behavior
+export const OBSTACLE_MAX_SPEED = 0.3; // Maximum movement speed of obstacles
+
+// Interaction penalties
+export const OBSTACLE_COLLISION_PENALTY = 50; // Energy damage taken when colliding with obstacles
+export const OBSTACLE_HIDING_RADIUS = 75; // Distance within which agents can hide behind obstacles
 
 // --- PHEROMONE CONSTANTS ---
-export const MAX_PHEROMONES_TOTAL = 2000;
-export const MAX_PHEROMONES_PER_TYPE = 500;
-export const MAX_PHEROMONES_PER_AREA = 5;
-export const PHEROMONE_RADIUS_CHECK = 50;
+// Chemical trail system that agents use for communication and navigation
 
-export const PHEROMONE_RADIUS = 60;
-export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
-export const PHEROMONE_FADE_RATE = 0.005;
-export const DANGER_PHEROMONE_THRESHOLD = 30;
+// Limits and performance
+export const MAX_PHEROMONES_TOTAL = 2000; // Total pheromone markers allowed in the world
+export const MAX_PHEROMONES_PER_TYPE = 500; // Maximum markers per pheromone type (food, danger, etc.)
+export const MAX_PHEROMONES_PER_AREA = 5; // Maximum markers allowed in any given area
+export const PHEROMONE_RADIUS_CHECK = 50; // Search radius when checking for existing pheromones
+
+// Visual and behavioral properties
+export const PHEROMONE_RADIUS = 60; // Visual radius of pheromone markers in pixels
+export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2; // Calculated diameter for convenience
+export const PHEROMONE_FADE_RATE = 0.005; // Rate at which pheromones lose intensity per frame
+export const DANGER_PHEROMONE_THRESHOLD = 30; // Intensity threshold above which pheromones signal danger
 
 // --- RENDERER CONSTANTS ---
-export const VIEW_SIZE_RATIO = 0.4;
-export const EFFECT_DURATION_BASE = 7;
-export const MAX_INSTANCES_PER_BATCH = 200;
-export const EFFECT_FADE_DURATION = 15; // How many frames effects last
+// GPU rendering performance and visual effect settings
 
+// Camera and viewport
+export const VIEW_SIZE_RATIO = 0.4; // Portion of world visible in camera (0.4 = 40% of world size)
+
+// Visual effects
+export const EFFECT_DURATION_BASE = 7; // Base duration for visual effects in frames
+export const EFFECT_FADE_DURATION = 15; // How many frames visual effects take to fade out
+
+// GPU batching
+export const MAX_INSTANCES_PER_BATCH = 200; // Maximum objects rendered in a single GPU batch
+
+// Color palette for all visual elements in the simulation (hex colors)
 export const COLORS = {
-    BACKGROUND: 0x050510, // Deep dark blue/black
+    BACKGROUND: 0x050510, // Deep space background color
     FOOD: {
-        NORMAL: 0x39FF14, // Neon Green
-        HIGH_VALUE: 0xFF00FF // Neon Magenta
+        NORMAL: 0x39FF14, // Standard food items (neon green)
+        HIGH_VALUE: 0xFF00FF // Rare high-energy food items (neon magenta)
     },
-    OBSTACLE: 0x9D00FF, // Neon Purple
+    OBSTACLE: 0x9D00FF, // Moving obstacles that agents must avoid (neon purple)
     AGENTS: {
-        FORAGER: 0xCCFF00, // Neon Lime
-        PREDATOR: 0xFF0033, // Neon Red
-        REPRODUCER: 0x00F0FF, // Neon Cyan
-        SCOUT: 0xFFFF00, // Neon Yellow
-        DEFENDER: 0xFF6600 // Neon Orange
+        FORAGER: 0xCCFF00, // Food-specialized agents (neon lime)
+        PREDATOR: 0xFF0033, // Hunting-specialized agents (neon red)
+        REPRODUCER: 0x00F0FF, // Breeding-specialized agents (neon cyan)
+        SCOUT: 0xFFFF00, // Exploration-specialized agents (neon yellow)
+        DEFENDER: 0xFF6600 // Territory defense-specialized agents (neon orange)
     },
     RAYS: {
-        DEFAULT: 0x00FFFF, // Cyan (for hits)
-        NO_HIT: 0x666666, // Dull gray for rays that hit nothing
-        ALIGNMENT: 0xFFFF00, // Neon Yellow
-        FOOD: 0x39FF14, // Neon Green
-        SMALLER: 0xCCFF00, // Neon Lime
-        LARGER: 0xFF0033, // Neon Red
-        OBSTACLE: 0x9D00FF, // Neon Purple
-        EDGE: 0xFF6600, // Neon Orange
-        SAME: 0x00F0FF // Neon Cyan
+        DEFAULT: 0x00FFFF, // Default sensor ray color when hitting objects (cyan)
+        NO_HIT: 0x666666, // Color when sensor rays hit nothing (dull gray)
+        ALIGNMENT: 0xFFFF00, // Rays detecting alignment with other agents (neon yellow)
+        FOOD: 0x39FF14, // Rays detecting food sources (neon green)
+        SMALLER: 0xCCFF00, // Rays detecting smaller agents (neon lime)
+        LARGER: 0xFF0033, // Rays detecting larger agents (neon red)
+        OBSTACLE: 0x9D00FF, // Rays detecting obstacles (neon purple)
+        EDGE: 0xFF6600, // Rays detecting world boundaries (neon orange)
+        SAME: 0x00F0FF // Rays detecting agents of same specialization (neon cyan)
     },
     EFFECTS: {
-        COLLISION: 0xFF0033, // Red glow for obstacle collisions
-        EATING: 0x39FF14    // Green glow for eating food
+        COLLISION: 0xFF0033, // Visual effect when agents hit obstacles (red glow)
+        EATING: 0x39FF14 // Visual effect when agents consume food (green glow)
     }
 };
 
 // --- PHYSICS CONSTANTS ---
-export const DAMPENING_FACTOR = 0.95;
-export const COLLISION_SEPARATION_STRENGTH = 1.0;
-export const BITE_SIZE = 5;
-export const BOUNCE_ENERGY_LOSS = 0.8;
-export const COLLISION_NUDGE_STRENGTH = 0.05;
+// Low-level physics simulation parameters for movement and collisions
+
+// Movement physics
+export const DAMPENING_FACTOR = 0.95; // Velocity reduction factor applied each frame (friction)
+
+// Collision system
+export const COLLISION_SEPARATION_STRENGTH = 1.0; // Force applied to separate overlapping agents
+export const COLLISION_NUDGE_STRENGTH = 0.05; // Small random force to prevent collision sticking
+
+// Combat mechanics
+export const BITE_SIZE = 5; // Energy amount stolen when one agent bites another
+export const BOUNCE_ENERGY_LOSS = 0.8; // Velocity reduction when agents bounce off each other
 
 // --- NEURAL NETWORK CONSTANTS ---
-export const NN_WEIGHT_INIT_STD_DEV = 0.1;
-export const NN_MUTATION_STD_DEV_RATIO = 0.3;
-export const NN_MACRO_MUTATION_CHANCE = 0.02;
-export const NN_WEIGHT_CLAMP_MIN = -3;
-export const NN_WEIGHT_CLAMP_MAX = 3;
+// Parameters controlling neural network initialization, mutation, and evolution
+
+// Initialization
+export const NN_WEIGHT_INIT_STD_DEV = 0.1; // Standard deviation for random weight initialization
+
+// Mutation system
+export const NN_MUTATION_STD_DEV_RATIO = 0.3; // Mutation strength as ratio of initial weight std dev
+export const NN_MACRO_MUTATION_CHANCE = 0.02; // Probability of major structural mutations
+
+// Weight constraints
+export const NN_WEIGHT_CLAMP_MIN = -3; // Minimum allowed neural network weight value
+export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight value
 
 // --- GENE POOL CONSTANTS ---
-// TEMPORARILY RELAXED CRITERIA: Adjusted to current performance level - will raise as agents improve
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000; // TEMPORARILY REDUCED from 4000 to 3000 to allow agents to qualify
-export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 10; // TEMPORARILY REDUCED from 6 to 4 (was 5 originally)
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1200; // TEMPORARILY REDUCED from 1200 (20s) to 900 (15s) - was 600 (10s) originally
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0; // TEMPORARILY REDUCED from 3.0% to 2.0% - allows more agents to qualify
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 1; // TEMPORARILY REDUCED from 1.0 to 0.5 - shows some navigation learning
+// Criteria for saving successful agents to the persistent gene pool
 
-export const MAX_GENE_POOLS = 500; // Limit total stored gene pools
+// Qualification thresholds
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 15000; // Minimum fitness score required to save agent genes
+export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 10; // Minimum food items consumed to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1800; // Minimum lifespan in frames to qualify (30 seconds)
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0; // Minimum world exploration percentage required
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
 
-// Validation queue constants
-export const VALIDATION_REQUIRED_RUNS = 3; // Total runs needed for validation
-export const VALIDATION_FITNESS_THRESHOLD = 10000; // Excellent tier - agents with 5000+ fitness get validation opportunity (good agents at 3000+ just get saved, temporarily relaxed)
-export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents in validation queue
+// Storage limits
+export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in database
+
+// Validation system (rigorous testing for elite agents)
+export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
+export const VALIDATION_FITNESS_THRESHOLD = 15000; // Fitness threshold for validation eligibility
+export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 
 // --- MATH CONSTANTS ---
-export const TWO_PI = Math.PI * 2;
+// Pre-calculated mathematical values for performance
+export const TWO_PI = Math.PI * 2; // Full circle in radians (2π)
 
 // --- MISC CONSTANTS ---
-// Exploration grid for tracking map coverage
-export const EXPLORATION_GRID_WIDTH = 72;  // 200px per cell
-export const EXPLORATION_GRID_HEIGHT = 40; // 202.5px per cell (close enough)
-export const EXPLORATION_CELL_WIDTH = WORLD_WIDTH / EXPLORATION_GRID_WIDTH;
-export const EXPLORATION_CELL_HEIGHT = WORLD_HEIGHT / EXPLORATION_GRID_HEIGHT;
+// Exploration tracking system for agent fitness scoring
+export const EXPLORATION_GRID_WIDTH = 72; // Number of grid cells across world width
+export const EXPLORATION_GRID_HEIGHT = 40; // Number of grid cells across world height
+export const EXPLORATION_CELL_WIDTH = WORLD_WIDTH / EXPLORATION_GRID_WIDTH; // Width of each exploration cell
+export const EXPLORATION_CELL_HEIGHT = WORLD_HEIGHT / EXPLORATION_GRID_HEIGHT; // Height of each exploration cell
 
-// Low energy threshold for red border (visual only)
-export const LOW_ENERGY_THRESHOLD = 100;
+// Visual indicators
+export const LOW_ENERGY_THRESHOLD = 100; // Energy level that triggers low-energy visual warnings
 
-// Specialization types
+// Agent specialization system
 export const SPECIALIZATION_TYPES = {
-    FORAGER: 'forager',
-    PREDATOR: 'predator',
-    REPRODUCER: 'reproducer',
-    SCOUT: 'scout',
-    DEFENDER: 'defender'
+    FORAGER: 'forager', // Food-finding specialists
+    PREDATOR: 'predator', // Hunting specialists
+    REPRODUCER: 'reproducer', // Breeding specialists
+    SCOUT: 'scout', // Exploration specialists
+    DEFENDER: 'defender' // Territory defense specialists
 };
 
-// Agent specialization configurations
+// Agent specialization configurations - each specialization has unique neural network size and sensor capabilities
 export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
-        color: COLORS.AGENTS.FORAGER,
-        numSensorRays: 24,  // FURTHER REDUCED for performance
-        maxRayDist: 400, // INCREASED from 300 to 400 to help foragers find food more easily
-        hiddenSize: 20,
+        color: COLORS.AGENTS.FORAGER, // Visual color for forager agents
+        numSensorRays: 24, // Number of sensor rays for detecting environment
+        maxRayDist: 400, // Maximum distance sensor rays can detect
+        hiddenSize: 20, // Size of neural network hidden layer
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
-        color: COLORS.AGENTS.PREDATOR,
-        numSensorRays: 32,  // FURTHER REDUCED for performance
-        maxRayDist: 450, // Increased from 300
-        hiddenSize: 25,
+        color: COLORS.AGENTS.PREDATOR, // Visual color for predator agents
+        numSensorRays: 32, // Number of sensor rays for detecting environment
+        maxRayDist: 450, // Maximum distance sensor rays can detect
+        hiddenSize: 25, // Size of neural network hidden layer
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
-        color: COLORS.AGENTS.REPRODUCER,
-        numSensorRays: 24,  // FURTHER REDUCED for performance
-        maxRayDist: 250, // Increased from 150
-        hiddenSize: 18,
+        color: COLORS.AGENTS.REPRODUCER, // Visual color for reproducer agents
+        numSensorRays: 24, // Number of sensor rays for detecting environment
+        maxRayDist: 250, // Maximum distance sensor rays can detect
+        hiddenSize: 18, // Size of neural network hidden layer
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
-        color: COLORS.AGENTS.SCOUT,
-        numSensorRays: 32,  // FURTHER REDUCED for performance
-        maxRayDist: 600, // Increased from 400
-        hiddenSize: 15,
+        color: COLORS.AGENTS.SCOUT, // Visual color for scout agents
+        numSensorRays: 32, // Number of sensor rays for detecting environment
+        maxRayDist: 600, // Maximum distance sensor rays can detect
+        hiddenSize: 15, // Size of neural network hidden layer
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
-        color: COLORS.AGENTS.DEFENDER,
-        numSensorRays: 24,  // FURTHER REDUCED for performance
-        maxRayDist: 350, // Increased from 250
-        hiddenSize: 22,
+        color: COLORS.AGENTS.DEFENDER, // Visual color for defender agents
+        numSensorRays: 24, // Number of sensor rays for detecting environment
+        maxRayDist: 350, // Maximum distance sensor rays can detect
+        hiddenSize: 22, // Size of neural network hidden layer
         description: 'Specialized in defending territory and allies.'
     }
 };
