@@ -779,6 +779,16 @@ export function setupUIListeners(simulation) {
     window.addEventListener('focus', () => handleWindowFocusChange(simulation));
     window.addEventListener('blur', () => handleWindowFocusChange(simulation));
 
+    // Genetic Diversity Modal
+    const geneticDiversitySection = document.getElementById('genetic-diversity-section');
+    if (geneticDiversitySection) {
+        geneticDiversitySection.addEventListener('click', () => {
+            showGeneticDiversityModal(simulation);
+        });
+        geneticDiversitySection.style.cursor = 'pointer';
+        geneticDiversitySection.title = 'Click to view gene pool details';
+    }
+
     window.addEventListener('beforeunload', async () => {
         // Release wake lock and flush dead agent queue
         await simulation.releaseWakeLock();
@@ -1010,6 +1020,130 @@ export function updateInfo(simulation) {
 
     // Check for memory pressure and take action if needed
     handleMemoryPressure(simulation);
+}
+
+// Genetic Diversity Modal Functions
+function showGeneticDiversityModal(simulation) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('genetic-diversity-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'genetic-diversity-modal';
+        modal.className = 'genetic-diversity-modal';
+        document.body.appendChild(modal);
+    }
+
+    // Get gene pool data
+    const genePoolHealth = simulation.db.getGenePoolHealth();
+    const genePools = simulation.db.pool;
+
+    // Build modal content
+    modal.innerHTML = `
+        <div class="modal-backdrop">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>🧬 Genetic Diversity</h2>
+                    <button class="modal-close" title="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="gene-pool-summary">
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Gene Pools:</span>
+                                <span class="stat-value">${genePoolHealth.genePoolCount}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Agents:</span>
+                                <span class="stat-value">${genePoolHealth.totalAgents}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg Fitness:</span>
+                                <span class="stat-value">${genePoolHealth.avgFitness.toFixed(0)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gene-pool-table-container">
+                        <table class="gene-pool-table">
+                            <thead>
+                                <tr>
+                                    <th>Gene ID</th>
+                                    <th>Agents</th>
+                                    <th>Best Fitness</th>
+                                    <th>Avg Fitness</th>
+                                    <th>Specializations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(genePools).map(([geneId, agents]) => {
+                                    if (!agents || agents.length === 0) return '';
+
+                                    const bestFitness = Math.max(...agents.map(a => a.fitness));
+                                    const avgFitness = agents.reduce((sum, a) => sum + a.fitness, 0) / agents.length;
+                                    const specializationCounts = {};
+
+                                    agents.forEach(agent => {
+                                        const type = agent.specializationType || 'Unknown';
+                                        specializationCounts[type] = (specializationCounts[type] || 0) + 1;
+                                    });
+
+                                    const specializationText = Object.entries(specializationCounts)
+                                        .map(([type, count]) => `${type}:${count}`)
+                                        .join(', ');
+
+                                    return `
+                                        <tr>
+                                            <td class="gene-id-cell">${geneId}</td>
+                                            <td>${agents.length}</td>
+                                            <td class="fitness-cell">${bestFitness.toFixed(0)}</td>
+                                            <td>${avgFitness.toFixed(0)}</td>
+                                            <td class="specialization-cell">${specializationText}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${genePoolHealth.genePoolCount === 0 ? '<div class="no-data">No gene pools saved yet. Agents need to meet qualification criteria to be saved.</div>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('visible'), 10);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.modal-close');
+    const backdrop = modal.querySelector('.modal-backdrop');
+
+    const closeModal = () => {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    // ESC key to close
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // Remove listeners when modal closes
+    modal.addEventListener('transitionend', () => {
+        if (!modal.classList.contains('visible')) {
+            document.removeEventListener('keydown', escHandler);
+        }
+    }, { once: true });
 }
 
 export function updateDashboard(simulation) {

@@ -1228,8 +1228,12 @@ export class Simulation {
                 const tempVec = new THREE.Vector3();
                 const testSphere = new THREE.Sphere(tempVec, 0);
 
-                // Find the highest fitness agent that's actually visible
+                // Find the best agent with prioritization:
+                // 1. Qualified agents (.fit = true), by fitness
+                // 2. Agents in validation tests, by fitness
+                // 3. All agents, by fitness
                 let bestVisibleAgent = null;
+                let bestPriority = 3; // Lower number = higher priority
                 let bestFitness = -Infinity;
 
                 for (const agent of livingAgents) {
@@ -1237,8 +1241,31 @@ export class Simulation {
                     testSphere.center = tempVec;
                     testSphere.radius = agent.size || 5;
 
-                    if (this.renderer.frustum.intersectsSphere(testSphere) && (agent.fitness || 0) > bestFitness) {
-                        bestFitness = agent.fitness || 0;
+                    if (!this.renderer.frustum.intersectsSphere(testSphere)) {
+                        continue; // Skip if not visible
+                    }
+
+                    const agentFitness = agent.fitness || 0;
+                    let agentPriority = 3; // Default: all agents
+
+                    // Priority 1: Qualified agents (.fit = true)
+                    if (agent.fit === true) {
+                        agentPriority = 1;
+                    }
+                    // Priority 2: Agents in validation tests
+                    else if (this.validationManager && this.validationManager.isInValidation(agent.geneId)) {
+                        agentPriority = 2;
+                    }
+
+                    // Select this agent if:
+                    // - Higher priority (lower number), OR
+                    // - Same priority but higher fitness
+                    const shouldSelect = (agentPriority < bestPriority) ||
+                                       (agentPriority === bestPriority && agentFitness > bestFitness);
+
+                    if (shouldSelect) {
+                        bestPriority = agentPriority;
+                        bestFitness = agentFitness;
                         bestVisibleAgent = agent;
                     }
                 }

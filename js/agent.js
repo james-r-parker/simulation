@@ -1272,7 +1272,6 @@ export class Agent {
         baseScore += safeNumber(this.successfulEscapes || 0, 0) * 75;
 
         // 3. Penalties (Applied to Base Score)
-        baseScore -= circlePenalty; // Apply circular movement penalty
         const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
         const collisions = safeNumber(this.collisions || 0, 0);
         baseScore -= timesHitObstacle * 30;
@@ -1302,6 +1301,7 @@ export class Agent {
 
         // Final safety check to ensure fitness is a finite number
         const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
+        // Add final calculated fitness to any accumulated real-time rewards
         this.fitness = Math.max(0, finalFitnessValue);
 
         // TEMPORARILY RELAXED QUALIFICATION: Adjusted to current performance level - will raise as agents improve
@@ -1326,6 +1326,9 @@ export class Agent {
         this.previousDanger = Array(this.memoryFrames).fill(0);
         this.previousAggression = Array(this.memoryFrames).fill(0);
         this.previousRayHits = Array(this.memoryFrames).fill(0);
+
+        // Calculate final fitness before clearing exploration data
+        this.calculateFitness();
 
         // Clear working arrays
         this.inputs.length = 0;
