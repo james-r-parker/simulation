@@ -73,10 +73,13 @@ export function checkCollisions(simulation) {
                 const isPrey = sizeRatio < 0.8;     // Agent is 20% smaller (Other is predator)
 
                 // Simple bump physics to prevent overlap
+                // Simple bump physics to prevent overlap
                 const overlap = combinedSize - Math.sqrt(distSq);
                 if (overlap > 0) {
                     const dist = Math.sqrt(distSq) || 1;
-                    const separationStrength = COLLISION_SEPARATION_STRENGTH; // Strong separation
+
+                    // 1. Resolve Overlap (Position Correction)
+                    const separationStrength = COLLISION_SEPARATION_STRENGTH;
                     const separationX = (dx / dist) * overlap * 0.5 * separationStrength;
                     const separationY = (dy / dist) * overlap * 0.5 * separationStrength;
 
@@ -84,6 +87,40 @@ export function checkCollisions(simulation) {
                     agent.y += separationY;
                     other.x -= separationX;
                     other.y -= separationY;
+
+                    // 2. Resolve Velocity (Elastic Bounce)
+                    // Normal vector (from other to agent)
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+
+                    // Relative velocity
+                    const dvx = agent.vx - other.vx;
+                    const dvy = agent.vy - other.vy;
+
+                    // Velocity along normal
+                    const velAlongNormal = dvx * nx + dvy * ny;
+
+                    // Do not resolve if velocities are separating
+                    if (velAlongNormal < 0) {
+                        // Restitution (bounciness)
+                        const restitution = BOUNCE_ENERGY_LOSS; // 0.8 means 20% energy loss
+
+                        // Impulse scalar
+                        let j = -(1 + restitution) * velAlongNormal;
+
+                        // Assume equal mass for now (could use size/energy as mass)
+                        // Impulse = j / (1/m1 + 1/m2) -> j / 2 if m1=m2=1
+                        j /= 2;
+
+                        // Apply impulse
+                        const impulseX = j * nx;
+                        const impulseY = j * ny;
+
+                        agent.vx += impulseX;
+                        agent.vy += impulseY;
+                        other.vx -= impulseX;
+                        other.vy -= impulseY;
+                    }
 
                     // VISUAL EFFECTS & PENALTIES
                     if (isPredator) {
@@ -247,16 +284,28 @@ export function checkCollisions(simulation) {
                 const overlap = combinedSize - dist;
 
                 if (overlap > 0) {
-                    // Separate agent from obstacle
-                    const pushX = (dx / dist) * overlap;
-                    const pushY = (dy / dist) * overlap;
+                    // 1. Resolve Overlap (Position Correction)
+                    // Push agent out of obstacle
+                    const nx = dx / dist; // Normal pointing from obstacle to agent
+                    const ny = dy / dist;
+
+                    const pushX = nx * overlap;
+                    const pushY = ny * overlap;
                     agent.x += pushX;
                     agent.y += pushY;
 
-                    // Bounce effect
-                    const bounceFactor = BOUNCE_ENERGY_LOSS; // Energy loss on bounce
-                    agent.vx = -agent.vx * bounceFactor;
-                    agent.vy = -agent.vy * bounceFactor;
+                    // 2. Resolve Velocity (Vector Reflection)
+                    // Formula: r = d - 2(d . n)n
+                    // where d is incident vector (agent velocity), n is normal
+                    const dot = agent.vx * nx + agent.vy * ny;
+
+                    // Only reflect if moving towards the obstacle
+                    if (dot < 0) {
+                        const bounceFactor = BOUNCE_ENERGY_LOSS; // Energy loss
+
+                        agent.vx = (agent.vx - 2 * dot * nx) * bounceFactor;
+                        agent.vy = (agent.vy - 2 * dot * ny) * bounceFactor;
+                    }
 
                     // Check if agent died from collision
                     if (agent.energy <= 0) {
@@ -270,8 +319,8 @@ export function checkCollisions(simulation) {
 
                     // Nudge obstacle slightly
                     const nudgeStrength = COLLISION_NUDGE_STRENGTH;
-                    obstacle.vx += (dx / dist) * nudgeStrength;
-                    obstacle.vy += (dy / dist) * nudgeStrength;
+                    obstacle.vx -= nx * nudgeStrength; // Push obstacle opposite to normal
+                    obstacle.vy -= ny * nudgeStrength;
 
                     // Cap obstacle speed
                     const obstacleSpeed = Math.sqrt(obstacle.vx * obstacle.vx + obstacle.vy * obstacle.vy);

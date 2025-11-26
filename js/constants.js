@@ -54,6 +54,9 @@ export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (met
 export const MOVEMENT_COST_MULTIPLIER = 0.008; // Energy cost multiplier for movement (velocity * this)
 export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotation (rotation speed * this)
 export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Multiplier for fitness scoring based on directional changes
+export const SEDENTARY_VELOCITY_THRESHOLD = 0.5; // Speed below which an agent is considered sedentary
+export const SEDENTARY_GRACE_PERIOD = 300; // Frames (approx 5s) allowed before sedentary penalty kicks in
+export const SEDENTARY_PENALTY_MULTIPLIER = 50.0; // Multiplier for passive energy loss when sedentary
 
 // Collision and damage
 export const WALL_COLLISION_DAMAGE = 50; // Energy damage taken when hitting world boundaries
@@ -170,6 +173,7 @@ export const COLORS = {
 
 // Movement physics
 export const DAMPENING_FACTOR = 0.95; // Velocity reduction factor applied each frame (friction)
+export const BRAKING_FRICTION = 0.90; // Stronger friction applied when agent is not thrusting
 
 // Collision system
 export const COLLISION_SEPARATION_STRENGTH = 1.0; // Force applied to separate overlapping agents

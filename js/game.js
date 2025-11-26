@@ -606,6 +606,9 @@ export class Simulation {
 
     async gameLoop() {
 
+        // Start performance monitoring for this frame
+        this.perfMonitor.startFrame();
+
         // FPS calculation
         this.fpsFrameCount++;
         const now = Date.now();
@@ -675,16 +678,12 @@ export class Simulation {
         // Track if this frame used GPU or CPU
         this.currentFrameUsedGpu = false;
 
-        // Initialize quadtree if needed
-        if (!this.quadtree) {
-            this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
-        }
 
-        // Start performance monitoring for this frame
-        this.perfMonitor.startFrame();
 
+        this.perfMonitor.startPhase('spawn');
         // Repopulate before game loop to include new agents
         repopulate(this);
+        this.perfMonitor.endPhase('spawn');
 
         // ACCURACY PRESERVED: Allow full game speed without capping
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
@@ -775,8 +774,7 @@ export class Simulation {
             // Update obstacles BEFORE ray tracing so rays detect current positions
             updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
 
-            // Update renderer immediately with new obstacle positions
-            this.renderer.updateObstacles(this.obstacles);
+            // Renderer update moved to end of frame (outside physics loop)
 
             // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
             // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
@@ -916,10 +914,12 @@ export class Simulation {
                 }
             }
 
+            this.perfMonitor.startPhase('cleanup');
+
             // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
             // This also reduces the number of array operations
             if (i === iterations - 1) {
-                this.perfMonitor.startPhase('cleanup');
+
                 // === REPRODUCTION SYSTEM ===
                 // Check for reproduction opportunities (once per frame)
                 for (let j = 0; j < this.agents.length; j++) {
@@ -1048,6 +1048,8 @@ export class Simulation {
 
                     console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
                 }
+
+
                 // Remove dead food
                 for (let j = this.food.length - 1; j >= 0; j--) {
                     if (this.food[j] && this.food[j].isDead) {
@@ -1066,11 +1068,13 @@ export class Simulation {
                         this.pheromones.splice(j, 1);
                     }
                 }
-                this.perfMonitor.endPhase('cleanup');
             }
+
+            this.perfMonitor.endPhase('cleanup');
 
             if (i === iterations - 1) {
                 this.frameCount++;
+                this.perfMonitor.startPhase('memory');
                 // Update memory stats every ~1 second using real time to avoid throttling
                 if (now - this.lastMemoryPressureCheckTime >= 1000) {
                     this.lastMemoryPressureCheckTime = now;
@@ -1118,6 +1122,7 @@ export class Simulation {
                     }
                     console.log(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
                 }
+                this.perfMonitor.endPhase('memory');
             }
         }
 
@@ -1214,32 +1219,28 @@ export class Simulation {
             }
         }
         this.camera.update();
-        this.perfMonitor.endPhase('camera');
-
         // Update renderer data structures
         const camPos = this.camera.getPosition();
         this.renderer.updateCamera(camPos);
+        this.perfMonitor.endPhase('camera');
+
+        this.perfMonitor.startPhase('updates');
         this.renderer.updateAgents(this.agents, this.frameCount);
         this.renderer.updateFood(this.food);
         this.renderer.updatePheromones(this.pheromones);
-        // Obstacles already updated after movement
+        this.perfMonitor.endPhase('updates');
 
-        // CRITICAL FIX: Clean up expired visual effects and dead agent references
-        // Without this, agentEffects Map grows unbounded causing FPS degradation over time
-        this.renderer.updateVisualEffects(this.frameCount);
+        // Obstacles already updated after movement
+        this.renderer.updateObstacles(this.obstacles);
 
         // Render the scene
         this.perfMonitor.startPhase('rendering');
+        this.renderer.updateVisualEffects(this.frameCount);
         this.renderer.updateRays(this.agents, this.frameCount);
         this.renderer.render();
         this.perfMonitor.endPhase('rendering');
 
-        // End frame timing and log performance report every 5 seconds
-        this.perfMonitor.endFrame();
-        if (this.frameCount % (FPS_TARGET * 5) === 0) {
-            this.perfMonitor.logReport();
-        }
-
+        this.perfMonitor.startPhase('spawn_agents');
         // Process the agent spawn queue, enforcing the max population limit
         if (this.agentSpawnQueue.length > 0) {
             // Count only living agents for population limit
@@ -1259,6 +1260,14 @@ export class Simulation {
             }
 
             this.agentSpawnQueue.length = 0; // Clear any remaining (stillborn) agents
+        }
+
+        this.perfMonitor.endPhase('spawn_agents');
+
+        // End frame timing and log performance report every 5 seconds
+        this.perfMonitor.endFrame();
+        if (this.frameCount % (FPS_TARGET * 5) === 0) {
+            this.perfMonitor.logReport();
         }
 
         requestAnimationFrame(() => {

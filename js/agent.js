@@ -1,6 +1,3 @@
-// --- AGENT CLASS (RNN and Thrust/Rotation Implemented) ---
-// Preserved exactly from original with gene ID added (metadata only)
-
 import { NeuralNetwork } from './neural-network.js';
 import {
     BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE, MIN_AGENT_SIZE,
@@ -10,10 +7,11 @@ import {
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
     SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
-    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
+    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
+    SEDENTARY_VELOCITY_THRESHOLD, SEDENTARY_GRACE_PERIOD, SEDENTARY_PENALTY_MULTIPLIER,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
-    DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
+    DIRECTION_CHANGE_FITNESS_FACTOR,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
@@ -160,6 +158,7 @@ export class Agent {
         this.foodApproaches = 0; // Track successful approaches to food
         this.lastFoodDistance = null; // Track distance to nearest food (null = no recent food detected)
         this.lastObstacleDistance = null; // Track distance to nearest obstacle (null = no recent obstacle detected)
+        this.sedentaryFrames = 0; // Track how long agent has been stationary
 
         // --- Recent Memory (last 3 frames for temporal awareness) ---
         this.memoryFrames = AGENT_MEMORY_FRAMES;
@@ -251,7 +250,9 @@ export class Agent {
 
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
-        const thrustOutput = output[0];
+        // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
+        // Map thrust to [-1, 1] for reverse capability
+        let rawThrust = (output[0] * 2 - 1);
         const rotationOutput = (output[1] * 2 - 1);
         const sprintOutput = output[2];
         this.wantsToReproduce = output[3] > 0.8;
@@ -259,42 +260,50 @@ export class Agent {
 
 
         // --- MOVEMENT CALCULATIONS ---
-        const geneticMaxThrust = MAX_THRUST * this.speedFactor;
-        let desiredThrust = thrustOutput * geneticMaxThrust;
-
-        // CRITICAL FIX: Minimum movement guarantee to prevent agents from starving due to zero thrust
-        if (desiredThrust < 0.01) {
-            desiredThrust = 0.01; // Minimum thrust to ensure some movement
+        // Apply deadzone to thrust to allow stopping
+        if (Math.abs(rawThrust) < 0.1) {
+            rawThrust = 0;
         }
+
+        const geneticMaxThrust = MAX_THRUST * this.speedFactor;
+        let desiredThrust = rawThrust * geneticMaxThrust;
+
+        // Set braking flag if thrust is zero (in deadzone)
+        this.isBraking = rawThrust === 0;
 
         let sprintThreshold = SPRINT_THRESHOLD;
 
         // --- FIGHT/FLIGHT MODIFIERS ---
         if (this.fear > this.aggression * 0.5) {
             sprintThreshold = 0.5;
-            desiredThrust += FEAR_SPRINT_BONUS * MAX_THRUST;
+            // Only apply fear sprint bonus if moving forward
+            if (desiredThrust > 0) {
+                desiredThrust += FEAR_SPRINT_BONUS * MAX_THRUST;
+            }
             if (this.dangerSmell > 0.5) this.successfulEscapes++;
         }
 
-        if ((this.isSprinting = (sprintOutput > sprintThreshold))) {
+        // Only allow sprinting if moving forward
+        if ((this.isSprinting = (sprintOutput > sprintThreshold && desiredThrust > 0))) {
             desiredThrust += SPRINT_BONUS_THRUST;
         }
 
         // Apply rotation
         const rotationChange = rotationOutput * MAX_ROTATION;
         this.angle += rotationChange;
+
+        // Normalize angle to [0, TWO_PI) to prevent precision issues
+        this.angle = this.angle % TWO_PI;
+        if (this.angle < 0) this.angle += TWO_PI;
+
         this.currentRotation = Math.abs(rotationChange); // Store for cost calculation
 
         // Apply thrust in the direction of the angle
         let finalThrustX = Math.cos(this.angle) * desiredThrust;
         let finalThrustY = Math.sin(this.angle) * desiredThrust;
 
-        // TEMP: Add minimum random movement to ensure agents explore
-        if (Math.abs(finalThrustX) < 0.01 && Math.abs(finalThrustY) < 0.01) {
-            // Add small random thrust if neural network produces no movement
-            finalThrustX = (Math.random() - 0.5) * 0.1;
-            finalThrustY = (Math.random() - 0.5) * 0.1;
-        }
+        // TEMP: Add minimum random movement REMOVED to allow zero thrust
+        // if (Math.abs(finalThrustX) < 0.01 && Math.abs(finalThrustY) < 0.01) { ... }
 
 
         this.vx += finalThrustX;
@@ -367,8 +376,10 @@ export class Agent {
         this.previousRayHits[0] = this.rayHits;
 
         // Apply drag/dampening
-        this.vx *= DAMPENING_FACTOR;
-        this.vy *= DAMPENING_FACTOR;
+        // Use stronger braking friction if agent is not applying thrust
+        const friction = this.isBraking ? BRAKING_FRICTION : DAMPENING_FACTOR;
+        this.vx *= friction;
+        this.vy *= friction;
 
         // Cap velocity - OPTIMIZED: Cache MAX_VELOCITY_SQ
         const MAX_VELOCITY_SQ = MAX_VELOCITY * MAX_VELOCITY;
@@ -425,11 +436,25 @@ export class Agent {
         this.exploredCells.add(cellKey);
 
         // --- ENERGY COSTS ---
-        const passiveLoss = PASSIVE_LOSS;
+        // 1. Passive metabolic cost (existence)
+        let passiveLoss = PASSIVE_LOSS + (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
         const sizeLoss = (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
 
+        // 2. Sedentary Penalty
+        // Check if agent is moving slowly
+        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (currentSpeed < SEDENTARY_VELOCITY_THRESHOLD) {
+            this.sedentaryFrames++;
+            if (this.sedentaryFrames > SEDENTARY_GRACE_PERIOD) {
+                // Apply penalty multiplier to passive loss
+                passiveLoss *= SEDENTARY_PENALTY_MULTIPLIER;
+            }
+        } else {
+            this.sedentaryFrames = 0; // Reset if moving
+        }
+
         const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
-        const movementLoss = Math.min(currentSpeedSq * movementCostMultiplier, 5);
+        const movementLoss = Math.min(currentSpeed * currentSpeed * movementCostMultiplier, 5);
 
         let energyLoss = sizeLoss + movementLoss;
 
