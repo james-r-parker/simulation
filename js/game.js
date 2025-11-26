@@ -148,8 +148,13 @@ export class Simulation {
 
         // Dashboard tracking
         this.dashboardHistory = []; // Track metrics for dashboard
-        this.dashboardHistorySize = 100; // Keep last 100 data points 
+        this.dashboardHistorySize = 100; // Keep last 100 data points
         this.finalFoodSpawnMultiplier = 1.0;
+
+        // Real-time timing for critical periodic operations (not affected by focus loss)
+        this.lastValidationCheckTime = Date.now();
+        this.lastMemoryCleanupTime = Date.now();
+        this.lastMemoryPressureCheckTime = Date.now();
 
         // WebGL Renderer
         this.renderer = new WebGLRenderer(container, this.worldWidth, this.worldHeight, this.logger);
@@ -612,7 +617,6 @@ export class Simulation {
 
 
     async gameLoop() {
-
 
         // FPS calculation
         this.fpsFrameCount++;
@@ -1117,8 +1121,9 @@ export class Simulation {
 
             if (i === iterations - 1) {
                 this.frameCount++;
-                // Update memory stats every 60 frames (1 second at 60 FPS) without UI update
-                if (this.frameCount % 60 === 0) {
+                // Update memory stats every ~1 second using real time to avoid throttling
+                if (now - this.lastMemoryPressureCheckTime >= 1000) {
+                    this.lastMemoryPressureCheckTime = now;
                     updateMemoryStats(this, false);
                     handleMemoryPressure(this);
                 }
@@ -1126,8 +1131,9 @@ export class Simulation {
                 const uiUpdateInterval = this.hasFocus ? 100 : 1000; // 100ms vs 1 second
                 if (this.frameCount % uiUpdateInterval === 0) updateInfo(this);
 
-                // Periodic validation checks - add high-performing agents to validation queue
-                if (this.frameCount % 500 === 0) {
+                // Periodic validation checks - use real time to avoid throttling when focus lost
+                if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
+                    this.lastValidationCheckTime = now;
                     updatePeriodicValidation(this);
                     // Log validation queue status periodically
                     if (this.validationManager.validationQueue.size > 0) {
@@ -1143,11 +1149,12 @@ export class Simulation {
                 // Dashboard updates: Much less frequent when not focused
                 const dashboardInterval = this.hasFocus ? 30 : 300; // Every 0.5s vs 5s
                 if (this.frameCount % dashboardInterval === 0) updateDashboard(this);
-                // Periodic comprehensive memory cleanup every 5000 frames (~83 seconds at 60 FPS)
-                if (this.frameCount % 5000 === 0) {
-                    console.log(`[PERF] Frame ${this.frameCount}: Starting periodic memory cleanup`);
+                // Periodic comprehensive memory cleanup - use real time to avoid throttling
+                if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
+                    this.lastMemoryCleanupTime = now;
+                    console.log(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
                     periodicMemoryCleanup(this);
-                    // Force GPU cache clearing every 5000 frames to prevent memory buildup
+                    // Force GPU cache clearing to prevent memory buildup
                     if (this.gpuCompute && this.gpuCompute.clearCache) {
                         this.gpuCompute.clearCache();
                         console.log('[PERF] GPU compute cache cleared');
@@ -1161,7 +1168,7 @@ export class Simulation {
                         window.gc();
                         console.log('[PERF] Forced garbage collection');
                     }
-                    console.log(`[PERF] Frame ${this.frameCount}: Periodic memory cleanup completed`);
+                    console.log(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
                 }
             }
         }

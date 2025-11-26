@@ -193,10 +193,10 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 15000; // Minimum fitness score required to save agent genes
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 12000; // Minimum fitness score required to save agent genes
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 10; // Minimum food items consumed to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1800; // Minimum lifespan in frames to qualify (30 seconds)
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3600; // Minimum lifespan in frames to qualify
 export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0; // Minimum world exploration percentage required
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
 
@@ -205,7 +205,7 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 
 // Validation system (rigorous testing for elite agents)
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
-export const VALIDATION_FITNESS_THRESHOLD = 15000; // Fitness threshold for validation eligibility
+export const VALIDATION_FITNESS_THRESHOLD = 11000; // Fitness threshold for validation eligibility
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 
 // --- MATH CONSTANTS ---
