@@ -658,12 +658,12 @@ export class Simulation {
                     this.fpsHistory.shift();
                 }
 
-            // Auto-adjust every 30 seconds if we have enough history (only when focused)
-            const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
-            if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
-                this.performAutoAdjustment();
-                this.lastAutoAdjustTime = now;
-            }
+                // Auto-adjust every 30 seconds if we have enough history (only when focused)
+                const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
+                if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
+                    this.performAutoAdjustment();
+                    this.lastAutoAdjustTime = now;
+                }
             }
         }
 
@@ -685,38 +685,45 @@ export class Simulation {
             // This ensures all collision queries use current entity positions
             this.quadtree.clear();
 
+            // MEMORY LEAK FIX: Use try-finally to ensure points are always released
             // Return all Points to pool before rebuilding
             this.pointPool.releaseAll();
 
-            for (let j = 0; j < this.agents.length; j++) {
-                const agent = this.agents[j];
-                if (agent && !agent.isDead) {
+            try {
+                for (let j = 0; j < this.agents.length; j++) {
+                    const agent = this.agents[j];
+                    if (agent && !agent.isDead) {
+                        // Use Point pool instead of allocating new objects
+                        const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
+                        this.quadtree.insert(point);
+                    }
+                }
+                for (let j = 0; j < this.food.length; j++) {
+                    const food = this.food[j];
+                    if (food && !food.isDead) {
+                        // Use Point pool instead of allocating new objects
+                        const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
+                        this.quadtree.insert(point);
+                    }
+                }
+                for (let j = 0; j < this.pheromones.length; j++) {
+                    const pheromone = this.pheromones[j];
+                    if (pheromone && !pheromone.isDead) {
+                        // Use Point pool instead of allocating new objects
+                        const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
+                        this.quadtree.insert(point);
+                    }
+                }
+                // Insert obstacles into quadtree for collision detection
+                for (const obstacle of this.obstacles) {
                     // Use Point pool instead of allocating new objects
-                    const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
+                    const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
                     this.quadtree.insert(point);
                 }
-            }
-            for (let j = 0; j < this.food.length; j++) {
-                const food = this.food[j];
-                if (food && !food.isDead) {
-                    // Use Point pool instead of allocating new objects
-                    const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
-                    this.quadtree.insert(point);
-                }
-            }
-            for (let j = 0; j < this.pheromones.length; j++) {
-                const pheromone = this.pheromones[j];
-                if (pheromone && !pheromone.isDead) {
-                    // Use Point pool instead of allocating new objects
-                    const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
-                    this.quadtree.insert(point);
-                }
-            }
-            // Insert obstacles into quadtree for collision detection
-            for (const obstacle of this.obstacles) {
-                // Use Point pool instead of allocating new objects
-                const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
-                this.quadtree.insert(point);
+            } catch (error) {
+                // If quadtree building fails, log and ensure pool is still released
+                this.logger.error('[QUADTREE] Error building quadtree:', error);
+                // Point pool will be released in finally block
             }
 
             // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
@@ -849,73 +856,19 @@ export class Simulation {
                 }
             }
 
-            // PERFORMANCE OPTIMIZATION: GPU-accelerated food updates
-            // NOTE: Disabled GPU path due to GPU initialization failures
-            // Food updates use CPU path which works correctly
-            if (false) {
-                try {
-                    // Reuse pre-allocated array instead of filter()
-                    this.livingFood.length = 0;
-                    for (let j = 0; j < this.food.length; j++) {
-                        const f = this.food[j];
-                        if (f && !f.isDead) {
-                            this.livingFood.push(f);
-                        }
-                    }
-                    if (this.livingFood.length > 0) {
-                        await this.gpuPhysics.batchFoodUpdate(this.livingFood);
-                    }
-                } catch (error) {
-                    // Fallback to CPU updates
-                    for (let j = 0; j < this.food.length; j++) {
-                        const food = this.food[j];
-                        if (food && !food.isDead) {
-                            food.update();
-                        }
-                    }
-                }
-            } else {
-                // CPU fallback for food updates
-                for (let j = 0; j < this.food.length; j++) {
-                    const food = this.food[j];
-                    if (food && !food.isDead) {
-                        food.update();
-                    }
+            // Food updates (CPU path)
+            for (let j = 0; j < this.food.length; j++) {
+                const food = this.food[j];
+                if (food && !food.isDead) {
+                    food.update();
                 }
             }
 
-            // PERFORMANCE OPTIMIZATION: GPU-accelerated pheromone updates  
-            // NOTE: Disabled GPU path due to GPU initialization failures
-            // Pheromone updates use CPU path which works correctly
-            if (false) {
-                try {
-                    // Reuse pre-allocated array instead of filter()
-                    this.livingPheromones.length = 0;
-                    for (let j = 0; j < this.pheromones.length; j++) {
-                        const p = this.pheromones[j];
-                        if (p && !p.isDead) {
-                            this.livingPheromones.push(p);
-                        }
-                    }
-                    if (this.livingPheromones.length > 0) {
-                        await this.gpuPhysics.batchPheromoneUpdate(this.livingPheromones);
-                    }
-                } catch (error) {
-                    // Fallback to CPU updates
-                    for (let j = 0; j < this.pheromones.length; j++) {
-                        const pheromone = this.pheromones[j];
-                        if (pheromone && !pheromone.isDead) {
-                            pheromone.update();
-                        }
-                    }
-                }
-            } else {
-                // CPU fallback for pheromone updates
-                for (let j = 0; j < this.pheromones.length; j++) {
-                    const pheromone = this.pheromones[j];
-                    if (pheromone && !pheromone.isDead) {
-                        pheromone.update();
-                    }
+            // Pheromone updates (CPU path)
+            for (let j = 0; j < this.pheromones.length; j++) {
+                const pheromone = this.pheromones[j];
+                if (pheromone && !pheromone.isDead) {
+                    pheromone.update();
                 }
             }
 

@@ -3,8 +3,9 @@
 import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
+    FOOD_SPAWN_NEAR_AGENTS_CHANCE, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX,
     SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
-    VALIDATION_REQUIRED_RUNS,
+    VALIDATION_REQUIRED_RUNS, MAX_AGENTS_TO_SPAWN_PER_FRAME,
     OBSTACLE_COUNT, OBSTACLE_MIN_RADIUS, OBSTACLE_MAX_RADIUS,
     OBSTACLE_MIN_DISTANCE, OBSTACLE_SPAWN_MARGIN, OBSTACLE_INFLUENCE_RADIUS,
     OBSTACLE_MAX_SPEED,
@@ -46,7 +47,7 @@ export function generateObstacles(simulation) {
                 do {
                     cellX = Math.floor(Math.random() * gridCols);
                     cellY = Math.floor(Math.random() * gridRows);
-                } while (usedCells.has(`${cellX},${cellY}`) && usedCells.size < gridCols * gridRows);
+                } while (usedCells.has(`${cellX},${cellY} `) && usedCells.size < gridCols * gridRows);
             } else {
                 // All cells used, place randomly
                 cellX = Math.floor(Math.random() * gridCols);
@@ -94,7 +95,7 @@ export function generateObstacles(simulation) {
             // Mark grid cell as used
             const cellX = Math.floor((x - margin) / cellWidth);
             const cellY = Math.floor((y - margin) / cellHeight);
-            usedCells.add(`${cellX},${cellY}`);
+            usedCells.add(`${cellX},${cellY} `);
 
             // Calculate initial velocity away from nearby obstacles
             let avgNearbyX = 0;
@@ -138,7 +139,7 @@ export function generateObstacles(simulation) {
 
             // Create dynamic obstacle with movement properties
             obstacles.push({
-                id: `obs_${i}_${Math.random().toString(36).substr(2, 5)}`,
+                id: `obs_${i}_${Math.random().toString(36).substr(2, 5)} `,
                 x, y, radius,
                 vx: vx, // Direction away from nearby obstacles
                 vy: vy,
@@ -351,15 +352,21 @@ export function spawnAgent(simulation, options = {}) {
 export function spawnFood(simulation) {
     if (simulation.food.length >= FOOD_SPAWN_CAP) return;
 
-    // Calculate living agents for spawn chance
-    const livingAgentsArray = simulation.agents.filter(a => !a.isDead);
-    const livingAgentsCount = livingAgentsArray.length;
+    // PERFORMANCE: Manual counting instead of filter() to avoid array allocation
+    let livingAgentsCount = 0;
+    for (let i = 0; i < simulation.agents.length; i++) {
+        if (!simulation.agents[i].isDead) livingAgentsCount++;
+    }
 
     // GUARANTEE ENOUGH FOOD:
     // We want to maintain a healthy ratio of food to agents (e.g., 1.5 food items per agent)
     // If food is below this target, we BOOST the spawn rate.
     const targetFoodCount = Math.max(50, livingAgentsCount * 1.5); // Minimum 50 food items
-    const currentFoodCount = simulation.food.filter(f => !f.isDead).length;
+
+    let currentFoodCount = 0;
+    for (let i = 0; i < simulation.food.length; i++) {
+        if (!simulation.food[i].isDead) currentFoodCount++;
+    }
 
     let spawnMultiplier = 1.0;
     if (currentFoodCount < targetFoodCount) {
@@ -383,17 +390,24 @@ export function spawnFood(simulation) {
 
     let x, y;
 
-    // IMPROVED: 30% chance to spawn food near agents to help them find food more easily
+    // IMPROVED: Configurable chance to spawn food near agents to help them find food more easily
     // This helps agents learn food-seeking behavior by making food more accessible
-    if (livingAgentsCount > 0 && Math.random() < 0.3) {
-        // Get array of living agents with valid positions
-        const activeAgents = livingAgentsArray.filter(a => a && typeof a.x === 'number' && typeof a.y === 'number' && isFinite(a.x) && isFinite(a.y));
+    if (livingAgentsCount > 0 && Math.random() < FOOD_SPAWN_NEAR_AGENTS_CHANCE) {
+        // Build array of living agents with valid positions (only when needed)
+        const activeAgents = [];
+        for (let i = 0; i < simulation.agents.length; i++) {
+            const a = simulation.agents[i];
+            if (!a.isDead && typeof a.x === 'number' && typeof a.y === 'number' && isFinite(a.x) && isFinite(a.y)) {
+                activeAgents.push(a);
+            }
+        }
         if (activeAgents.length > 0) {
-            // Spawn near a random living agent (within 200-400 units)
+            // Spawn near a random living agent (distance from constants)
             const randomAgent = activeAgents[Math.floor(Math.random() * activeAgents.length)];
             if (randomAgent) {
                 const angle = Math.random() * Math.PI * 2;
-                const spawnDistance = 200 + Math.random() * 200; // 200-400 units away
+                const spawnDistance = FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN +
+                    Math.random() * (FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX - FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN);
                 x = randomAgent.x + Math.cos(angle) * spawnDistance;
                 y = randomAgent.y + Math.sin(angle) * spawnDistance;
 
@@ -484,20 +498,29 @@ export function spawnPheromone(simulation, x, y, type) {
 }
 
 export function repopulate(simulation) {
-    // Count only living agents for population limit
-    const livingAgents = simulation.agents.filter(a => !a.isDead).length;
+    // PERFORMANCE: Manual count instead of filter() to avoid array allocation
+    let livingAgents = 0;
+    for (let i = 0; i < simulation.agents.length; i++) {
+        if (!simulation.agents[i].isDead) livingAgents++;
+    }
     if (livingAgents >= simulation.maxAgents) return;
 
     simulation.respawnTimer++;
     if (simulation.respawnTimer < RESPAWN_DELAY_FRAMES) return;
 
     // Check genetic diversity - force random spawning if diversity is critically low
-    const livingAgentList = simulation.agents.filter(a => !a.isDead);
-    const geneIds = livingAgentList.map(a => a.geneId);
-    const uniqueGeneIds = new Set(geneIds.filter(id => id)).size; // Filter out falsy values
+    // Build list and count unique genes only when needed
+    const geneIds = [];
+    for (let i = 0; i < simulation.agents.length; i++) {
+        const agent = simulation.agents[i];
+        if (!agent.isDead && agent.geneId) {
+            geneIds.push(agent.geneId);
+        }
+    }
+    const uniqueGeneIds = new Set(geneIds).size;
 
     // Calculate how many agents to spawn to fill the population
-    const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, 20); // Cap at 10 per frame for performance
+    const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, MAX_AGENTS_TO_SPAWN_PER_FRAME);
 
     for (let i = 0; i < agentsToSpawn; i++) {
         // Proactive diversity maintenance: always reserve some slots for random generation
@@ -516,7 +539,7 @@ export function repopulate(simulation) {
             const maxToSpawnThisFrame = Math.min(5, availableSlots); // Cap at 5 per frame to prevent overwhelming the system
 
             if (maxToSpawnThisFrame <= 0) {
-                //console.log(`[VALIDATION] Skipping validation spawn - ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents} active validation agents`);
+                //console.log(`[VALIDATION] Skipping validation spawn - ${ simulation.validationManager.activeValidationAgents }/${maxValidationAgents} active validation agents`);
                 // Don't continue to next agent spawn - let normal population fill the gap
             } else {
                 // Find non-active validation candidates (up to the limit we can spawn)

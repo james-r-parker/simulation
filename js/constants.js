@@ -66,6 +66,9 @@ export const EDGE_BOUNCE_DAMPING = 0.5; // Velocity reduction factor when bounci
 export const FOOD_SPAWN_CAP = 300; // Maximum number of food items that can exist simultaneously
 export const FOOD_SPAWN_RATE = 0.12; // Probability per frame of attempting to spawn new food
 export const HIGH_VALUE_FOOD_CHANCE = 0.1; // Probability that spawned food will be high-value type
+export const FOOD_SPAWN_NEAR_AGENTS_CHANCE = 0.3; // Probability that food spawns near living agents (helps learning)
+export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN = 200; // Minimum distance from agent to spawn food
+export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400; // Maximum distance from agent to spawn food
 
 // Energy values (agents gain these when eating food)
 export const FOOD_ENERGY_NORMAL_BASE = 200; // Base energy value of normal food
@@ -89,13 +92,14 @@ export const FOOD_MAX_AGE_VARIANCE = 30000; // Random variance in food maximum a
 // Dynamic obstacles that move around and create navigation challenges
 
 // Generation and placement
-export const OBSTACLE_COUNT = 25; // Total number of obstacles in the world
+export const OBSTACLE_COUNT = 25; // Actual number of obstacles spawned in the world
 export const OBSTACLE_MIN_RADIUS = 40; // Minimum radius of obstacles in pixels
 export const OBSTACLE_MAX_RADIUS = 120; // Maximum radius of obstacles in pixels
 export const OBSTACLE_MIN_DISTANCE = 350; // Minimum distance obstacles must maintain from each other
 export const OBSTACLE_SPAWN_MARGIN = 250; // Distance from world edges where obstacles cannot spawn
 export const OBSTACLE_INFLUENCE_RADIUS = 600; // Distance at which obstacles affect agent behavior
 export const OBSTACLE_MAX_SPEED = 0.3; // Maximum movement speed of obstacles
+export const GPU_MAX_OBSTACLES = 600; // Maximum obstacles GPU can handle (buffer size, not actual count)
 
 // Interaction penalties
 export const OBSTACLE_COLLISION_PENALTY = 50; // Energy damage taken when colliding with obstacles
@@ -296,3 +300,8 @@ export const POINT_POOL_SIZE = 5000; // Initial point pool allocation size
 // --- TIMEOUT CONSTANTS ---
 export const GPU_INIT_TIMEOUT_MS = 15000; // GPU initialization timeout (ms)
 export const WORKER_REQUEST_TIMEOUT_MS = 5000; // Database worker request timeout (ms)
+
+// --- ADDITIONAL PERFORMANCE CONSTANTS ---
+export const AGENT_SIZE_ENERGY_LOSS_MULTIPLIER = 0.00025; // Energy loss per frame based on agent size
+export const MAX_AGENTS_TO_SPAWN_PER_FRAME = 20; // Maximum agents to spawn in a single frame during repopulation
+export const GPU_MAX_RAYS_PER_AGENT = 50; // Maximum rays per agent across all specializations (GPU buffer size)

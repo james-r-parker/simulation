@@ -11,7 +11,7 @@ import {
     SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, ROTATION_COST_MULTIPLIER,
-    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
+    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
@@ -158,8 +158,8 @@ export class Agent {
         this.turnsTowardsFood = 0; // Track turning towards food
         this.turnsAwayFromObstacles = 0; // Track turning away from obstacles
         this.foodApproaches = 0; // Track successful approaches to food
-        this.lastFoodDistance = Infinity; // Track distance to nearest food
-        this.lastObstacleDistance = Infinity; // Track distance to nearest obstacle
+        this.lastFoodDistance = null; // Track distance to nearest food (null = no recent food detected)
+        this.lastObstacleDistance = null; // Track distance to nearest obstacle (null = no recent obstacle detected)
 
         // --- Recent Memory (last 3 frames for temporal awareness) ---
         this.memoryFrames = AGENT_MEMORY_FRAMES;
@@ -209,6 +209,9 @@ export class Agent {
         this.id = generateId(this.birthTime)
         this.geneId = this.gene.geneId || generateGeneId(this.id);
         this.geneColor = geneIdToColor(this.geneId);
+
+        // Performance: One-time GPU fallback warning flag
+        this.gpuFallbackWarned = false;
     }
 
     getWeights() {
@@ -313,8 +316,9 @@ export class Agent {
             // If lastInputs is not populated, it means the GPU perception step failed or was skipped.
             // In that case, we must run perception on the CPU.
             if (!this.lastInputs) {
-                if (this.framesAlive !== 0) {
-                    this.logger.warn(`[FALLBACK] Agent ${this.geneId} running unexpected CPU perception fallback.`, { frame: this.simulation.frameCount });
+                if (this.framesAlive !== 0 && !this.gpuFallbackWarned) {
+                    this.logger.warn(`[FALLBACK] Agent ${this.geneId} running CPU perception fallback.`, { frame: this.simulation.frameCount });
+                    this.gpuFallbackWarned = true;
                 }
                 const perception = this.perceiveWorld(quadtree, obstacles, worldWidth, worldHeight);
                 this.lastRayData = perception.rayData;
@@ -422,7 +426,7 @@ export class Agent {
 
         // --- ENERGY COSTS ---
         const passiveLoss = PASSIVE_LOSS;
-        const sizeLoss = (this.size * 0.00025);
+        const sizeLoss = (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
 
         const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
         const movementLoss = Math.min(currentSpeedSq * movementCostMultiplier, 5);
@@ -526,8 +530,8 @@ export class Agent {
 
             // Track food approaches (getting closer to food)
             if (closestFoodDist < Infinity) {
-                // Fix Infinity bug: only calculate if lastFoodDistance is finite
-                if (this.lastFoodDistance < Infinity && closestFoodDist < this.lastFoodDistance) {
+                // Track improvement only if we have previous data
+                if (this.lastFoodDistance !== null && closestFoodDist < this.lastFoodDistance) {
                     this.foodApproaches += (this.lastFoodDistance - closestFoodDist) * 0.1; // Reward proportional to approach speed
                 }
                 this.lastFoodDistance = closestFoodDist;
@@ -549,7 +553,7 @@ export class Agent {
                     }
                 }
             } else {
-                this.lastFoodDistance = Infinity;
+                this.lastFoodDistance = null; // No food detected
             }
 
             // Track obstacle avoidance (turning away from obstacles)
@@ -574,7 +578,7 @@ export class Agent {
                 }
                 this.lastObstacleDistance = closestObstacleDist;
             } else {
-                this.lastObstacleDistance = Infinity;
+                this.lastObstacleDistance = null; // No obstacle detected
             }
         }
 
