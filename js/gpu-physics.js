@@ -12,6 +12,7 @@ export class GPUPhysics {
         this.device = null;
         this.queue = null;
         this.initialized = false;
+        this.workgroupSize = 256; // Default workgroup size, will be adjusted based on GPU capabilities
         this.rayTracingPipeline = null;
         this.rayTracingBindGroup = null;
         this.physicsPipeline = null;
@@ -168,7 +169,7 @@ fn rayLineSegmentIntersection(rayOrigin: vec2<f32>, rayDir: vec2<f32>, p1: vec2<
 }
 
 
-@compute @workgroup_size(64, 1, 1)
+@compute @workgroup_size(256, 1, 1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let ray_index = global_id.x;
 
@@ -209,13 +210,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         if (t > 0.0 && t < closest_dist) { closest_dist = t; hit_type = 1.0; }
     }
     
-    // Entity intersection
+    // Entity intersection - optimized with early bounds checking
     for (var i = 0u; i < u32(uniforms.numEntities); i = i + 1u) {
         let entity = entities[i];
         // Skip self: agents come after food in the entities array
         let my_entity_index = agent_index + u32(uniforms.numFood);
         if (entity.entityType == 1.0 && i == my_entity_index) { continue; }
-        
+
+        // Early bounds check - skip entities that are too far to intersect
+        let dx = entity.x - ray_origin.x;
+        let dy = entity.y - ray_origin.y;
+        let dist_sq = dx * dx + dy * dy;
+        let max_reach = closest_dist + entity.size;
+        if (dist_sq > max_reach * max_reach) { continue; }
+
         let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
         if (dist > 0.0 && dist < closest_dist) {
             closest_dist = dist;
@@ -230,9 +238,24 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
     }
 
-    // Obstacle intersection
+    // Obstacle intersection - optimized with distance bounds
     for (var i = 0u; i < u32(uniforms.numObstacles); i = i + 1u) {
         let obs = obstacles[i];
+
+        // Early bounds check - approximate distance to line segment
+        let dx1 = obs.x1 - ray_origin.x;
+        let dy1 = obs.y1 - ray_origin.y;
+        let dx2 = obs.x2 - ray_origin.x;
+        let dy2 = obs.y2 - ray_origin.y;
+
+        // Use minimum distance to endpoints as approximation
+        let dist1_sq = dx1 * dx1 + dy1 * dy1;
+        let dist2_sq = dx2 * dx2 + dy2 * dy2;
+        let min_dist_sq = min(dist1_sq, dist2_sq);
+
+        // Skip if both endpoints are farther than current closest distance
+        if (min_dist_sq > closest_dist * closest_dist) { continue; }
+
         let dist = rayLineSegmentIntersection(ray_origin, ray_dir, vec2<f32>(obs.x1, obs.y1), vec2<f32>(obs.x2, obs.y2));
         if (dist > 0.0 && dist < closest_dist) {
             closest_dist = dist;
@@ -261,10 +284,49 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             }
         }
 
-        this.rayTracingPipeline = this.device.createComputePipeline({
-            layout: 'auto',
-            compute: { module, entryPoint: 'main' }
-        });
+        // Try different workgroup sizes if the current one fails
+        const workgroupSizes = [128, 256, 64]; // Fallback sizes in order of preference
+        let pipelineCreated = false;
+
+        for (const size of workgroupSizes) {
+            try {
+                // Create a new shader module with the specific workgroup size
+                const shaderWithSize = rayTracingShader.replace('@compute @workgroup_size(128, 1, 1)', `@compute @workgroup_size(${size}, 1, 1)`);
+                const moduleWithSize = this.device.createShaderModule({ code: shaderWithSize });
+
+                // Add error scoping for pipeline creation
+                if (!this.device || this.device.destroyed) {
+                    throw new Error('WebGPU device is not available or has been destroyed');
+                }
+                this.device.pushErrorScope('validation');
+                this.device.pushErrorScope('internal');
+
+                this.rayTracingPipeline = this.device.createComputePipeline({
+                    layout: 'auto',
+                    compute: { module: moduleWithSize, entryPoint: 'main' }
+                });
+
+                // Check for pipeline creation errors
+                const internalError = await this.device.popErrorScope();
+                const validationError = await this.device.popErrorScope();
+
+                if (!internalError && !validationError) {
+                    this.logger.info(`Ray tracing pipeline created successfully with workgroup size ${size}`);
+                    this.workgroupSize = size; // Store the working size
+                    pipelineCreated = true;
+                    break;
+                } else {
+                    this.logger.warn(`Workgroup size ${size} failed:`, { internalError, validationError });
+                }
+            } catch (error) {
+                this.logger.warn(`Failed to create pipeline with workgroup size ${size}:`, error);
+            }
+        }
+
+        if (!pipelineCreated) {
+            this.logger.error('Failed to create ray tracing pipeline with any workgroup size');
+            return false;
+        }
     }
 
     createRayTracingBuffers(maxAgents, maxRays, maxEntities, maxObstacles) {
@@ -453,7 +515,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             pass.setPipeline(this.rayTracingPipeline);
             pass.setBindGroup(0, this.rayTracingBindGroup);
 
-            pass.dispatchWorkgroups(Math.ceil(totalRays / 64));
+            // Use the workgroup size that was successfully used for pipeline creation
+            const workgroupSize = this.workgroupSize || 64; // Fallback to 64 if not set
+            pass.dispatchWorkgroups(Math.ceil(totalRays / workgroupSize));
             pass.end();
 
             const gpuReadBuffer = this.device.createBuffer({
@@ -464,13 +528,43 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             commandEncoder.copyBufferToBuffer(this.buffers.result, 0, gpuReadBuffer, 0, this.buffers.result.size);
 
             // Add error scoping to catch more specific WebGPU errors
+            if (!this.device || this.device.destroyed) {
+                throw new Error('WebGPU device is not available or has been destroyed');
+            }
             this.device.pushErrorScope('validation');
+            this.device.pushErrorScope('out-of-memory');
+            this.device.pushErrorScope('internal');
 
             this.queue.submit([commandEncoder.finish()]);
 
-            const gpuError = await this.device.popErrorScope();
-            if (gpuError) {
-                this.logger.error(`[WebGPU] Error during command submission:`, gpuError);
+            // Check for submission errors
+            let internalError, oomError, validationError;
+            try {
+                internalError = await this.device.popErrorScope();
+            } catch (e) {
+                this.logger.error('Failed to pop internal error scope:', e);
+            }
+            try {
+                oomError = await this.device.popErrorScope();
+            } catch (e) {
+                this.logger.error('Failed to pop out-of-memory error scope:', e);
+            }
+            try {
+                validationError = await this.device.popErrorScope();
+            } catch (e) {
+                this.logger.error('Failed to pop validation error scope:', e);
+            }
+
+            if (internalError) {
+                this.logger.error('GPU ray tracing internal error:', internalError);
+                return null;
+            }
+            if (oomError) {
+                this.logger.error('GPU ray tracing out of memory:', oomError);
+                return null;
+            }
+            if (validationError) {
+                this.logger.error('GPU ray tracing validation error:', validationError);
                 return null;
             }
 

@@ -180,7 +180,7 @@ export class Simulation {
         this.pointPool = new PointPool(); // Uses default POINT_POOL_SIZE
 
         // Performance monitoring framework
-        this.perfMonitor = new PerformanceMonitor(60); // 60-frame rolling average
+        this.perfMonitor = new PerformanceMonitor(this.logger, 60); // 60-frame rolling average
         this.perfMonitor.setEnabled(true); // Enable by default
 
         // Pre-allocated arrays for filter operations
@@ -204,7 +204,7 @@ export class Simulation {
         // Count living agents
         const livingAgents = this.agents.filter(a => !a.isDead).length;
 
-        console.log(`[AUTO-ADJUST] FPS: avg=${avgFps.toFixed(1)}, range=${minFps}-${maxFps}, agents=${livingAgents}/${this.maxAgents}, speed=${this.gameSpeed}`);
+        this.logger.info(`[AUTO-ADJUST] FPS: avg=${avgFps.toFixed(1)}, range=${minFps}-${maxFps}, agents=${livingAgents}/${this.maxAgents}, speed=${this.gameSpeed}`);
 
         // Determine if we need to adjust
         let adjustmentNeeded = false;
@@ -215,15 +215,15 @@ export class Simulation {
         if (avgFps < this.targetFps - 5 && minFps < this.targetFps - 10) {
             decreasePerformance = true;
             adjustmentNeeded = true;
-            console.log(`[AUTO-ADJUST] ⚠️ Low FPS detected - decreasing performance`);
+            this.logger.info(`[AUTO-ADJUST] ⚠️ Low FPS detected - decreasing performance`);
         }
         // If consistently above target FPS with headroom, increase performance
         else if (avgFps > this.targetFps + 5 && minFps > this.targetFps - 5) {
             increasePerformance = true;
             adjustmentNeeded = true;
-            console.log(`[AUTO-ADJUST] ✅ High FPS detected - increasing performance`);
+            this.logger.info(`[AUTO-ADJUST] ✅ High FPS detected - increasing performance`);
         } else {
-            console.log(`[AUTO-ADJUST] ➡️ FPS within target range (${this.targetFps} ±5) - no adjustment needed`);
+            this.logger.info(`[AUTO-ADJUST] ➡️ FPS within target range (${this.targetFps} ±5) - no adjustment needed`);
         }
 
         if (adjustmentNeeded) {
@@ -235,7 +235,7 @@ export class Simulation {
                     const newMaxAgents = Math.max(this.minAgents, Math.floor(this.maxAgents * 0.8));
                     if (newMaxAgents !== this.maxAgents) {
                         this.maxAgents = newMaxAgents;
-                        console.log(`[AUTO-ADJUST] ↓ Reduced max agents to ${this.maxAgents} (FPS: ${avgFps.toFixed(1)})`);
+                        this.logger.info(`[AUTO-ADJUST] ↓ Reduced max agents to ${this.maxAgents} (FPS: ${avgFps.toFixed(1)})`);
                         // Update UI slider
                         const slider = document.getElementById('maxAgents');
                         if (slider) slider.value = this.maxAgents;
@@ -251,7 +251,7 @@ export class Simulation {
                 if (this.gameSpeed > this.minGameSpeed) {
                     const oldValue = this.gameSpeed;
                     this.gameSpeed = Math.max(this.minGameSpeed, this.gameSpeed - 0.5);
-                    console.log(`[AUTO-ADJUST] ↓ Reduced game speed to ${this.gameSpeed} (FPS: ${avgFps.toFixed(1)})`);
+                    this.logger.info(`[AUTO-ADJUST] ↓ Reduced game speed to ${this.gameSpeed} (FPS: ${avgFps.toFixed(1)})`);
                     // Update UI slider
                     const slider = document.getElementById('gameSpeed');
                     if (slider) slider.value = this.gameSpeed;
@@ -270,7 +270,7 @@ export class Simulation {
                     const newMaxAgents = Math.min(this.autoMaxAgents, Math.floor(this.maxAgents * 1.5));
                     if (newMaxAgents !== this.maxAgents) {
                         this.maxAgents = newMaxAgents;
-                        console.log(`[AUTO-ADJUST] ↑ Increased max agents to ${this.maxAgents}/${this.autoMaxAgents} cap (FPS: ${avgFps.toFixed(1)})`);
+                        this.logger.info(`[AUTO-ADJUST] ↑ Increased max agents to ${this.maxAgents}/${this.autoMaxAgents} cap (FPS: ${avgFps.toFixed(1)})`);
                         // Update UI slider
                         const slider = document.getElementById('maxAgents');
                         if (slider) slider.value = this.maxAgents;
@@ -286,7 +286,7 @@ export class Simulation {
                 if (this.gameSpeed < this.autoMaxSpeed) {
                     const oldValue = this.gameSpeed;
                     this.gameSpeed = Math.min(this.autoMaxSpeed, this.gameSpeed + 0.5);
-                    console.log(`[AUTO-ADJUST] ↑ Increased game speed to ${this.gameSpeed}/${this.autoMaxSpeed} cap (FPS: ${avgFps.toFixed(1)})`);
+                    this.logger.info(`[AUTO-ADJUST] ↑ Increased game speed to ${this.gameSpeed}/${this.autoMaxSpeed} cap (FPS: ${avgFps.toFixed(1)})`);
                     // Update UI slider
                     const slider = document.getElementById('gameSpeed');
                     if (slider) slider.value = this.gameSpeed;
@@ -298,7 +298,7 @@ export class Simulation {
                 }
             }
         } else {
-            console.log(`[AUTO-ADJUST] No adjustment needed (FPS: ${avgFps.toFixed(1)}, target: ${this.targetFps})`);
+            this.logger.debug(`[AUTO-ADJUST] No adjustment needed (FPS: ${avgFps.toFixed(1)}, target: ${this.targetFps})`);
         }
     }
 
@@ -388,6 +388,12 @@ export class Simulation {
             gpuAvailable = false;
         }
 
+        if (gpuAvailable) {
+            this.logger.log('GPU Compute initialized successfully');
+        } else {
+            this.logger.warn('GPU Compute initialization failed, neural networks will use CPU');
+        }
+
         updateLoadingScreen('Initializing GPU Physics...', 70);
         try {
             const maxAgentsSlider = document.getElementById('maxAgents');
@@ -404,20 +410,20 @@ export class Simulation {
                 maxEntities: MAX_ENTITIES,
                 maxObstacles: MAX_OBSTACLES,
             };
-            console.log('[GPU-INIT] Initializing GPU Physics with config:', gpuConfig);
+            this.logger.info('[GPU-INIT] Initializing GPU Physics with config:', gpuConfig);
 
             gpuPhysicsAvailable = await Promise.race([
                 this.gpuPhysics.init(gpuConfig),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Physics init timeout')), GPU_INIT_TIMEOUT_MS))
             ]).catch((error) => {
-                console.error('[GPU-INIT] GPU Physics init failed:', error);
+                this.logger.error('[GPU-INIT] GPU Physics init failed:', error);
                 return false;
             });
 
             if (gpuPhysicsAvailable) {
-                console.log('[GPU-INIT] GPU Physics initialized successfully');
+                this.logger.info('[GPU-INIT] GPU Physics initialized successfully');
             } else {
-                console.warn('[GPU-INIT] GPU Physics initialization failed or timed out');
+                this.logger.warn('[GPU-INIT] GPU Physics initialization failed or timed out');
             }
         } catch (e) {
             this.logger.warn("GPU Physics init failed or timed out:", e);
@@ -457,25 +463,25 @@ export class Simulation {
 
     async requestWakeLock() {
         if (!('wakeLock' in navigator)) {
-            console.warn('[WAKE] Screen Wake Lock API not supported in this browser');
+            this.logger.warn('[WAKE] Screen Wake Lock API not supported in this browser');
             return false;
         }
 
         try {
             this.wakeLock = await navigator.wakeLock.request('screen');
             this.wakeLockEnabled = true;
-            console.log('[WAKE] 🔋 Screen wake lock activated - display will stay on');
+            this.logger.info('[WAKE] 🔋 Screen wake lock activated - display will stay on');
 
             // Handle wake lock release (when system needs to save power)
             this.wakeLock.addEventListener('release', () => {
-                console.log('[WAKE] 🔋 Screen wake lock released by system');
+                this.logger.info('[WAKE] 🔋 Screen wake lock released by system');
                 this.wakeLock = null;
                 this.wakeLockEnabled = false;
             });
 
             return true;
         } catch (err) {
-            console.warn('[WAKE] Failed to acquire wake lock:', err.message);
+            this.logger.warn('[WAKE] Failed to acquire wake lock:', err.message);
             this.wakeLockEnabled = false;
             return false;
         }
@@ -486,7 +492,7 @@ export class Simulation {
             await this.wakeLock.release();
             this.wakeLock = null;
             this.wakeLockEnabled = false;
-            console.log('[WAKE] 🔋 Screen wake lock released');
+            this.logger.info('[WAKE] 🔋 Screen wake lock released');
         }
     }
 
@@ -609,38 +615,53 @@ export class Simulation {
         // Start performance monitoring for this frame
         this.perfMonitor.startFrame();
 
-        // FPS calculation
-        this.fpsFrameCount++;
         const now = Date.now();
-        const elapsed = now - this.lastFpsUpdate;
-        if (elapsed >= 1000) { // Update FPS every second
-            this.currentFps = Math.round((this.fpsFrameCount * 1000) / elapsed);
-            this.fpsFrameCount = 0;
-            this.lastFpsUpdate = now;
 
-            // Track GPU vs CPU FPS
-            const gpuCpuElapsed = now - this.lastGpuCpuUpdate;
-            if (gpuCpuElapsed >= 1000) {
-                // Calculate average FPS for GPU and CPU frames
-                if (this.gpuFrameCount > 0) {
-                    const gpuFps = Math.round((this.gpuFrameCount * 1000) / gpuCpuElapsed);
-                    this.gpuFpsHistory.push(gpuFps);
-                    if (this.gpuFpsHistory.length > 10) this.gpuFpsHistory.shift(); // Keep last 10 samples
-                    this.avgGpuFps = Math.round(this.gpuFpsHistory.reduce((a, b) => a + b, 0) / this.gpuFpsHistory.length);
-                }
-                if (this.cpuFrameCount > 0) {
-                    const cpuFps = Math.round((this.cpuFrameCount * 1000) / gpuCpuElapsed);
-                    this.cpuFpsHistory.push(cpuFps);
-                    if (this.cpuFpsHistory.length > 10) this.cpuFpsHistory.shift(); // Keep last 10 samples
-                    this.avgCpuFps = Math.round(this.cpuFpsHistory.reduce((a, b) => a + b, 0) / this.cpuFpsHistory.length);
-                }
+        // Housekeeping tasks (FPS calculation, GPU/CPU tracking, wake lock)
+        this.perfMonitor.timeSync('housekeeping', () => {
+            // FPS calculation
+            this.fpsFrameCount++;
+            const elapsed = now - this.lastFpsUpdate;
+            if (elapsed >= 1000) { // Update FPS every second
+                this.currentFps = Math.round((this.fpsFrameCount * 1000) / elapsed);
+                this.fpsFrameCount = 0;
+                this.lastFpsUpdate = now;
 
-                this.gpuFrameCount = 0;
-                this.cpuFrameCount = 0;
-                this.lastGpuCpuUpdate = now;
+                // Track GPU vs CPU FPS
+                const gpuCpuElapsed = now - this.lastGpuCpuUpdate;
+                if (gpuCpuElapsed >= 1000) {
+                    // Calculate average FPS for GPU and CPU frames
+                    if (this.gpuFrameCount > 0) {
+                        const gpuFps = Math.round((this.gpuFrameCount * 1000) / gpuCpuElapsed);
+                        this.gpuFpsHistory.push(gpuFps);
+                        if (this.gpuFpsHistory.length > 10) this.gpuFpsHistory.shift(); // Keep last 10 samples
+                        this.avgGpuFps = Math.round(this.gpuFpsHistory.reduce((a, b) => a + b, 0) / this.gpuFpsHistory.length);
+                    }
+                    if (this.cpuFrameCount > 0) {
+                        const cpuFps = Math.round((this.cpuFrameCount * 1000) / gpuCpuElapsed);
+                        this.cpuFpsHistory.push(cpuFps);
+                        if (this.cpuFpsHistory.length > 10) this.cpuFpsHistory.shift(); // Keep last 10 samples
+                        this.avgCpuFps = Math.round(this.cpuFpsHistory.reduce((a, b) => a + b, 0) / this.cpuFpsHistory.length);
+                    }
+
+                    this.gpuFrameCount = 0;
+                    this.cpuFrameCount = 0;
+                    this.lastGpuCpuUpdate = now;
+                }
             }
 
-            // Update FPS display
+            // Wake lock management
+            if (this.wakeLockEnabled) {
+                // Wake lock is maintained automatically, just check if it's still active
+                if (!this.wakeLock) {
+                    this.logger.warn('[WAKE] Screen wake lock was released unexpectedly');
+                    this.wakeLockEnabled = false;
+                }
+            }
+        });
+
+        // Update FPS display
+        this.perfMonitor.timeSync('ui', () => {
             const fpsEl = document.getElementById('info-fps');
             if (fpsEl) {
                 let fpsText = `FPS: ${this.currentFps} `;
@@ -657,9 +678,11 @@ export class Simulation {
                     fpsEl.style.color = '#f00';
                 }
             }
+        });
 
-            // Auto-performance adjustment
-            if (this.autoAdjustEnabled) {
+        // Auto-performance adjustment
+        if (this.autoAdjustEnabled) {
+            this.perfMonitor.timeSync('autoAdjust', () => {
                 // Track FPS history (keep last 30 seconds)
                 this.fpsHistory.push(this.currentFps);
                 if (this.fpsHistory.length > 30) {
@@ -672,7 +695,7 @@ export class Simulation {
                     this.performAutoAdjustment();
                     this.lastAutoAdjustTime = now;
                 }
-            }
+            });
         }
 
         // Track if this frame used GPU or CPU
@@ -779,7 +802,7 @@ export class Simulation {
             // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
             // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
             this.perfMonitor.startPhase('perception');
-            const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 10;
+            const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 1;
 
             if (canUseGpu) {
                 try {
@@ -794,37 +817,47 @@ export class Simulation {
                         this.allEntities.push(activeAgents[j]);
                     }
                     const allEntities = this.allEntities;
-                    const maxRaysPerAgent = 50; // Max rays across all specializations
+                    const maxRaysPerAgent = 100; // Increased from 50 for better batching efficiency
 
                     // CRITICAL: Ray tracing must complete BEFORE neural network processing
                     // because the neural network needs the converted ray results as inputs
-                    const gpuRayPromise = this.gpuPhysics.batchRayTracing(
-                        activeAgents,
-                        allEntities,
-                        this.obstacles,
-                        maxRaysPerAgent,
-                        this.worldWidth,
-                        this.worldHeight
-                    );
-
-                    // Wait for ray tracing to complete first
-                    const gpuRayResults = await gpuRayPromise;
+                    const gpuRayResults = await this.perfMonitor.timeAsync('perception.rayTracing', async () => {
+                        return this.gpuPhysics.batchRayTracing(
+                            activeAgents,
+                            allEntities,
+                            this.obstacles,
+                            maxRaysPerAgent,
+                            this.worldWidth,
+                            this.worldHeight
+                        );
+                    });
 
                     // Process ray tracing results and convert to neural network inputs
                     if (gpuRayResults && gpuRayResults.length > 0) {
-                        convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
+                        this.perfMonitor.timeSync('perception.rayTracing', () => {
+                            convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
+                        });
                         gpuRayTracingSucceeded = true;
                     } else {
-                        if (this.frameCount < 10) {
-                            this.logger.warn('GPU ray tracing returned null or empty results');
+                        if (this.frameCount % 300 === 0) { // Log every 5 seconds instead of just first 10 frames
+                            this.logger.warn(`GPU ray tracing returned null or empty results (results: ${gpuRayResults}, length: ${gpuRayResults ? gpuRayResults.length : 'N/A'})`);
                         }
                     }
 
                     // NOW run neural network with the fresh inputs from ray tracing
-                    const gpuNeuralResults = await this.gpuCompute.batchNeuralNetworkForward(activeAgents);
-
-                    // Neural network results are already in agent.lastOutput and agent.newHiddenState
-                    gpuNeuralNetSucceeded = true;
+                    await this.perfMonitor.timeAsync('perception.neuralNetwork', async () => {
+                        try {
+                            const gpuNeuralResults = await this.gpuCompute.batchNeuralNetworkForward(activeAgents);
+                            // Neural network results are already in agent.lastOutput and agent.newHiddenState
+                            gpuNeuralNetSucceeded = true;
+                            return gpuNeuralResults;
+                        } catch (neuralError) {
+                            if (this.frameCount % 300 === 0) { // Log every 5 seconds
+                                this.logger.warn('GPU Neural Network processing failed:', neuralError);
+                            }
+                            throw neuralError; // Re-throw to be caught by outer try-catch
+                        }
+                    });
 
                 } catch (error) {
                     if (this.frameCount < 10) {
@@ -833,14 +866,19 @@ export class Simulation {
                 }
             }
 
-            // CPU perception fallback (if GPU ray tracing failed or not available)
+            // CPU perception fallback (ONLY if GPU ray tracing failed)
             if (!gpuRayTracingSucceeded && activeAgents.length > 0) {
-                for (let j = 0; j < activeAgents.length; j++) {
-                    const agent = activeAgents[j];
-                    const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
-                    agent.lastInputs = perception.inputs;
-                    agent.lastRayData = perception.rayData;
-                }
+                // Debug: Log why we're falling back to CPU
+                this.logger.warn(`[CPU-FALLBACK] Frame ${this.frameCount}: GPU ray tracing failed, using CPU for ${activeAgents.length} agents`);
+
+                this.perfMonitor.timeSync('perception.cpuFallback', () => {
+                    for (let j = 0; j < activeAgents.length; j++) {
+                        const agent = activeAgents[j];
+                        const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
+                        agent.lastInputs = perception.inputs;
+                        agent.lastRayData = perception.rayData;
+                    }
+                });
             }
 
             // Neural network processing now happens in parallel with ray tracing above
@@ -853,37 +891,47 @@ export class Simulation {
             // CRITICAL FIX: Always check collisions to prevent tunneling
             // Both agents can move, so we must check every iteration
             this.perfMonitor.startPhase('physics');
-            checkCollisions(this);
 
-            // Update agents (will use GPU results if available, otherwise CPU)
+            // Collision detection
+            this.perfMonitor.timeSync('physics.collisions', () => {
+                checkCollisions(this);
+            });
+
+            // Agent updates (will use GPU results if available, otherwise CPU)
             // OPTIMIZED: Use for loop instead of forEach
             // Use actual length, not cached, since arrays can be modified
-            for (let j = 0; j < this.agents.length; j++) {
-                const agent = this.agents[j];
+            this.perfMonitor.timeSync('physics.agentUpdates', () => {
+                for (let j = 0; j < this.agents.length; j++) {
+                    const agent = this.agents[j];
 
-                if (!agent || agent.isDead) continue;
+                    if (!agent || agent.isDead) continue;
 
-                // Let the agent think and update its state
-                if (!agent.isDead) {
-                    agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
+                    // Let the agent think and update its state
+                    if (!agent.isDead) {
+                        agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
+                    }
                 }
-            }
+            });
 
-            // Food updates (CPU path)
-            for (let j = 0; j < this.food.length; j++) {
-                const food = this.food[j];
-                if (food && !food.isDead) {
-                    food.update();
+            // Entity updates (food and pheromones)
+            this.perfMonitor.timeSync('physics.entityUpdates', () => {
+                // Food updates (CPU path)
+                for (let j = 0; j < this.food.length; j++) {
+                    const food = this.food[j];
+                    if (food && !food.isDead) {
+                        food.update();
+                    }
                 }
-            }
 
-            // Pheromone updates (CPU path)
-            for (let j = 0; j < this.pheromones.length; j++) {
-                const pheromone = this.pheromones[j];
-                if (pheromone && !pheromone.isDead) {
-                    pheromone.update();
+                // Pheromone updates (CPU path)
+                for (let j = 0; j < this.pheromones.length; j++) {
+                    const pheromone = this.pheromones[j];
+                    if (pheromone && !pheromone.isDead) {
+                        pheromone.update();
+                    }
                 }
-            }
+            });
+
             this.perfMonitor.endPhase('physics');
 
             // Count frame as GPU or CPU based on whether GPU actually ran
@@ -906,11 +954,13 @@ export class Simulation {
 
                 // PERFORMANCE MONITORING: Suggest optimizations when FPS is low
                 if (this.frameCount % 300 === 0 && this.currentFps < 50) {
-                    let livingAgents = 0;
-                    for (let i = 0; i < this.agents.length; i++) {
-                        if (!this.agents[i].isDead) livingAgents++;
-                    }
-                    console.log(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
+                    this.perfMonitor.timeSync('misc', () => {
+                        let livingAgents = 0;
+                        for (let i = 0; i < this.agents.length; i++) {
+                            if (!this.agents[i].isDead) livingAgents++;
+                        }
+                        this.logger.warn(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
+                    });
                 }
             }
 
@@ -944,7 +994,7 @@ export class Simulation {
                         const child = agent.birthChild();
                         if (child) {
                             this.agentSpawnQueue.push(child);
-                            console.log(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
+                            this.logger.info(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
 
                             // Show toast notification
                             if (this.toast) {
@@ -964,7 +1014,7 @@ export class Simulation {
                         const child = agent.split();
                         if (child) {
                             this.agentSpawnQueue.push(child);
-                            console.log(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
+                            this.logger.info(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
 
                             // Show toast notification
                             if (this.toast) {
@@ -982,7 +1032,7 @@ export class Simulation {
                         // Check if this agent was in validation queue first (highest priority)
                         if (this.validationManager.isInValidation(agent.geneId)) {
                             // Debug: Log validation agent death details
-                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
+                            this.logger.debug(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
                             // Handle validation agent death
                             this.validationManager.handleValidationDeath(agent, this.db);
                         } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
@@ -991,22 +1041,22 @@ export class Simulation {
 
                             if (genePoolExists) {
                                 // CASE 1: Existing gene pool - skip validation, go directly to save queue
-                                console.log(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
+                                this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
                                 this.db.queueSaveAgent(agent);
                             } else {
                                 // CASE 2: New gene pool - enter validation
-                                console.log(`[VALIDATION] 💀 Death: New gene ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
+                                this.logger.debug(`[VALIDATION] 💀 Death: New gene ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
                                 const result = this.validationManager.addToValidationQueue(agent, false);
                                 // If validation returns something other than false, it's handling the agent
                                 // If it returns false, it means cooldown or other skip reason
                             }
                         } else if (agent.fit) {
                             // Lower-tier but still qualified agents (fitness < VALIDATION_THRESHOLD but meets other criteria)
-                            console.log(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) qualified, queueing for save`);
+                            this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) qualified, queueing for save`);
                             this.db.queueSaveAgent(agent);
                         } else if (hasValidatedAncestor(agent, this)) {
                             // Children of validated agents get saved to gene pool automatically
-                            console.log(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
+                            this.logger.debug(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
                             this.db.queueSaveAgent(agent);
                         }
                         // Remove ALL dead agents from active array to prevent memory leaks
@@ -1046,7 +1096,7 @@ export class Simulation {
                         gpuPhysicsCache = 1; // Physics has buffers
                     }
 
-                    console.log(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
+                    this.logger.debug(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
                 }
 
 
@@ -1090,7 +1140,7 @@ export class Simulation {
                     updatePeriodicValidation(this);
                     // Log validation queue status periodically
                     if (this.validationManager.validationQueue.size > 0) {
-                        console.log(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
+                        this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
                     }
                     // Clean up validation queue
                     this.validationManager.cleanupValidationQueue();
@@ -1100,27 +1150,31 @@ export class Simulation {
                 }
 
                 // Dashboard updates (only when focused)
-                if (this.frameCount % 30 === 0 && document.hasFocus()) updateDashboard(this);
+                if (this.frameCount % 30 === 0 && document.hasFocus()) {
+                    this.perfMonitor.timeSync('ui', () => {
+                        updateDashboard(this);
+                    });
+                }
                 // Periodic comprehensive memory cleanup - use real time to avoid throttling
                 if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
                     this.lastMemoryCleanupTime = now;
-                    console.log(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
+                    this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
                     periodicMemoryCleanup(this);
                     // Force GPU cache clearing to prevent memory buildup
                     if (this.gpuCompute && this.gpuCompute.clearCache) {
                         this.gpuCompute.clearCache();
-                        console.log('[PERF] GPU compute cache cleared');
+                        this.logger.info('[PERF] GPU compute cache cleared');
                     }
                     if (this.gpuPhysics && this.gpuPhysics.clearCache) {
                         this.gpuPhysics.clearCache();
-                        console.log('[PERF] GPU physics cache cleared');
+                        this.logger.info('[PERF] GPU physics cache cleared');
                     }
                     // Force garbage collection if available
                     if (window.gc) {
                         window.gc();
-                        console.log('[PERF] Forced garbage collection');
+                        this.logger.info('[PERF] Forced garbage collection');
                     }
-                    console.log(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
+                    this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
                 }
                 this.perfMonitor.endPhase('memory');
             }
@@ -1218,26 +1272,33 @@ export class Simulation {
                 this.camera.targetY = this.worldHeight / 2;
             }
         }
-        this.camera.update();
-        // Update renderer data structures
-        const camPos = this.camera.getPosition();
-        this.renderer.updateCamera(camPos);
-        this.perfMonitor.endPhase('camera');
-
-        this.perfMonitor.startPhase('updates');
-        this.renderer.updateAgents(this.agents, this.frameCount);
-        this.renderer.updateFood(this.food);
-        this.renderer.updatePheromones(this.pheromones);
-        this.perfMonitor.endPhase('updates');
-
-        // Obstacles already updated after movement
-        this.renderer.updateObstacles(this.obstacles);
+        this.perfMonitor.timeSync('rendering.updates', () => {
+            this.camera.update();
+            // Update renderer data structures
+            const camPos = this.camera.getPosition();
+            this.renderer.updateCamera(camPos);
+            this.renderer.updateAgents(this.agents, this.frameCount);
+            this.renderer.updateFood(this.food);
+            this.renderer.updatePheromones(this.pheromones);
+            // Obstacles already updated after movement
+            this.renderer.updateObstacles(this.obstacles);
+        });
 
         // Render the scene
         this.perfMonitor.startPhase('rendering');
-        this.renderer.updateVisualEffects(this.frameCount);
-        this.renderer.updateRays(this.agents, this.frameCount);
-        this.renderer.render();
+
+        this.perfMonitor.timeSync('rendering.visualEffects', () => {
+            this.renderer.updateVisualEffects(this.frameCount);
+        });
+
+        this.perfMonitor.timeSync('rendering.rayRendering', () => {
+            this.renderer.updateRays(this.agents, this.frameCount);
+        });
+
+        this.perfMonitor.timeSync('rendering.render', () => {
+            this.renderer.render();
+        });
+
         this.perfMonitor.endPhase('rendering');
 
         this.perfMonitor.startPhase('spawn_agents');
