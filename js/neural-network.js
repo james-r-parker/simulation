@@ -2,6 +2,7 @@
 // Preserves exact neural network architecture and operations
 
 import { matrixMultiply, applySigmoid, randomGaussian } from './utils.js';
+import { NN_WEIGHT_INIT_STD_DEV, NN_MUTATION_STD_DEV_RATIO, NN_MACRO_MUTATION_CHANCE, NN_WEIGHT_CLAMP_MIN, NN_WEIGHT_CLAMP_MAX } from './constants.js';
 
 export class NeuralNetwork {
     constructor(inputSize, hiddenSize, outputSize, weights = null) {
@@ -36,7 +37,7 @@ export class NeuralNetwork {
 
     initRandomWeights(rows, cols) {
         return Array.from({ length: rows }, () =>
-            Array.from({ length: cols }, () => randomGaussian(0, 0.1))
+            Array.from({ length: cols }, () => randomGaussian(0, NN_WEIGHT_INIT_STD_DEV))
         );
     }
 
@@ -131,17 +132,17 @@ export class NeuralNetwork {
     }
 
     mutate(mutationRate) {
-        const stdDev = mutationRate * 0.3;
-        const macroStdDev = mutationRate * 3.0;
+        const stdDev = mutationRate * NN_MUTATION_STD_DEV_RATIO;
+        const macroStdDev = mutationRate * 3.0; // Keep this relative to mutation rate
 
         const mutateMatrix = (matrix) => matrix.map(row => row.map(w => {
             let newW = w + randomGaussian(0, stdDev);
 
-            if (Math.random() < 0.02) {
+            if (Math.random() < NN_MACRO_MUTATION_CHANCE) {
                 newW += randomGaussian(0, macroStdDev);
             }
 
-            return Math.max(-3, Math.min(3, newW));
+            return Math.max(NN_WEIGHT_CLAMP_MIN, Math.min(NN_WEIGHT_CLAMP_MAX, newW));
         }));
 
         this.weights1 = mutateMatrix(this.weights1);

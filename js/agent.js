@@ -17,7 +17,9 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
-    WORLD_WIDTH, WORLD_HEIGHT
+    WORLD_WIDTH, WORLD_HEIGHT,
+    AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
+    WALL_COLLISION_DAMAGE, EDGE_BOUNCE_DAMPING
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -158,7 +160,7 @@ export class Agent {
         this.lastObstacleDistance = Infinity; // Track distance to nearest obstacle
 
         // --- Recent Memory (last 3 frames for temporal awareness) ---
-        this.memoryFrames = 3;
+        this.memoryFrames = AGENT_MEMORY_FRAMES;
         this.previousVelocities = Array(this.memoryFrames).fill(null).map(() => ({ vx: 0, vy: 0 }));
         this.previousEnergies = Array(this.memoryFrames).fill(this.energy);
         this.previousDanger = Array(this.memoryFrames).fill(0);
@@ -198,8 +200,8 @@ export class Agent {
         this.aggression = 0;
         this.avgGroupSize = 1;
 
-        this.mutationRate = 0.1;
-        this.speedFactor = 2 + Math.random() * 3;
+        this.mutationRate = BASE_MUTATION_RATE;
+        this.speedFactor = AGENT_SPEED_FACTOR_BASE + Math.random() * AGENT_SPEED_FACTOR_VARIANCE;
 
         // --- GENE ID SYSTEM (NEW) ---
         this.id = generateId(this.birthTime)
@@ -397,7 +399,7 @@ export class Agent {
 
         // Apply damage and trigger visual effect for boundary collisions
         if (hitBoundary) {
-            const damage = 10; // Less damage than obstacle collisions
+            const damage = WALL_COLLISION_DAMAGE; // Less damage than obstacle collisions
             this.energy = Math.max(0, this.energy - damage);
             this.fitness -= damage;
 
@@ -587,7 +589,7 @@ export class Agent {
         }
 
         // --- EDGE BOUNCE ---
-        const dampen = 0.5;
+        const dampen = EDGE_BOUNCE_DAMPING;
         let hitWall = false;
         if (this.x < 0) {
             this.x = 0;

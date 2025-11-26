@@ -11,7 +11,10 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
     VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI,
-    MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE
+    MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE,
+    FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
+    MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
+    FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -86,12 +89,12 @@ export class Simulation {
         this.fpsHistory = []; // Track last 30 seconds of FPS
         this.lastAutoAdjustTime = Date.now();
         this.autoAdjustEnabled = true; // Enable by default
-        this.targetFps = 60;
-        this.adjustmentCooldown = 15000; // 15 seconds between adjustments
-        this.minAgents = 5;
-        this.maxAgentsLimit = 100;
-        this.minGameSpeed = 0.5;
-        this.maxGameSpeed = 10;
+        this.targetFps = FPS_TARGET;
+        this.adjustmentCooldown = AUTO_ADJUST_COOLDOWN; // 15 seconds between adjustments
+        this.minAgents = MIN_AGENTS;
+        this.maxAgentsLimit = MAX_AGENTS_LIMIT;
+        this.minGameSpeed = MIN_GAME_SPEED;
+        this.maxGameSpeed = MAX_GAME_SPEED;
         // Auto-adjust caps at 75% of maximum to leave headroom for manual adjustment
         this.autoMaxAgents = Math.floor(this.maxAgentsLimit * 0.75); // 75 agents
         this.autoMaxSpeed = this.maxGameSpeed * 0.75; // 7.5x speed
@@ -109,16 +112,16 @@ export class Simulation {
         this.entityCounts = { agents: 0, food: 0, pheromones: 0 };
 
         // Memory management
-        this.memoryPressureThreshold = 150 * 1024 * 1024; // 150MB legacy threshold (fallback for basic cleanup)
+        this.memoryPressureThreshold = MEMORY_PRESSURE_THRESHOLD; // 150MB legacy threshold (fallback for basic cleanup)
         this.memoryPressureActions = 0;
         this.lastMemoryPressureAction = 0;
         this.totalAgentsSpawned = 0; // Total agents created in this simulation run
 
         this.gameSpeed = 0.5; // Start conservative for auto-adjustment
         this.maxAgents = 10; // Start with fewer agents for auto-adjustment
-        this.foodSpawnRate = 0.12; // FURTHER REDUCED from 0.15 to 0.12 to balance food surplus (target ~150-200% buffer instead of 2800%+)
+        this.foodSpawnRate = FOOD_SPAWN_RATE; // FURTHER REDUCED from 0.15 to 0.12 to balance food surplus (target ~150-200% buffer instead of 2800%+)
         this.mutationRate = 0.01;
-        this.baseMutationRate = 0.1; // Base rate for adaptive mutation
+        this.baseMutationRate = BASE_MUTATION_RATE; // Base rate for adaptive mutation
         this.showRays = false;
         this.followBest = false;
         this.useGpu = true; // Enable GPU by default
@@ -568,7 +571,7 @@ export class Simulation {
 
     applyEnvironmentEvents() {
         this.seasonTimer++;
-        const seasonLength = 1800;
+        const seasonLength = SEASON_LENGTH;
         const phase = (this.seasonTimer % seasonLength) / seasonLength;
 
         this.foodScarcityFactor = 1.0 - (0.5 * Math.abs(Math.sin(phase * TWO_PI)));

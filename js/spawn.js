@@ -4,7 +4,11 @@ import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
     SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
-    VALIDATION_REQUIRED_RUNS
+    VALIDATION_REQUIRED_RUNS,
+    OBSTACLE_COUNT, OBSTACLE_MIN_RADIUS, OBSTACLE_MAX_RADIUS,
+    OBSTACLE_MIN_DISTANCE, OBSTACLE_SPAWN_MARGIN, OBSTACLE_INFLUENCE_RADIUS,
+    OBSTACLE_MAX_SPEED,
+    MAX_PHEROMONES_TOTAL, MAX_PHEROMONES_PER_TYPE, PHEROMONE_RADIUS_CHECK, MAX_PHEROMONES_PER_AREA
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -14,11 +18,11 @@ import { crossover } from './gene.js';
 
 export function generateObstacles(simulation) {
     const obstacles = [];
-    const numObstacles = 25; // Increased to create more challenging environment and eliminate crash-prone agents
-    const minRadius = 40;
-    const maxRadius = 120;
-    const minDistance = 350; // Reduced from 400 to allow tighter packing with better distribution
-    const margin = 250; // Increased margin to keep obstacles away from world edges
+    const numObstacles = OBSTACLE_COUNT; // Increased to create more challenging environment and eliminate crash-prone agents
+    const minRadius = OBSTACLE_MIN_RADIUS;
+    const maxRadius = OBSTACLE_MAX_RADIUS;
+    const minDistance = OBSTACLE_MIN_DISTANCE; // Reduced from 400 to allow tighter packing with better distribution
+    const margin = OBSTACLE_SPAWN_MARGIN; // Increased margin to keep obstacles away from world edges
 
     // Create a grid-based distribution for better spreading
     const gridCols = Math.ceil(Math.sqrt(numObstacles * 1.5)); // Slightly more columns than rows for better distribution
@@ -96,7 +100,7 @@ export function generateObstacles(simulation) {
             let avgNearbyX = 0;
             let avgNearbyY = 0;
             let nearbyCount = 0;
-            const influenceRadius = 600; // How far obstacles influence initial direction
+            const influenceRadius = OBSTACLE_INFLUENCE_RADIUS; // How far obstacles influence initial direction
 
             for (const existing of obstacles) {
                 const dist = distance(x, y, existing.x, existing.y);
@@ -377,7 +381,7 @@ export function spawnFood(simulation) {
 
     if (Math.random() > foodSpawnChance) return;
 
-    let x, y, isHighValue = false;
+    let x, y;
 
     // IMPROVED: 30% chance to spawn food near agents to help them find food more easily
     // This helps agents learn food-seeking behavior by making food more accessible
@@ -431,9 +435,7 @@ export function spawnFood(simulation) {
         y = pos.y;
     }
 
-    if (Math.random() < HIGH_VALUE_FOOD_CHANCE) isHighValue = true;
-
-    simulation.food.push(new Food(x, y, isHighValue));
+    simulation.food.push(new Food(x, y));
 }
 
 export function spawnPheromone(simulation, x, y, type) {
@@ -443,10 +445,10 @@ export function spawnPheromone(simulation, x, y, type) {
     }
 
     // Implement pheromone limits to prevent memory accumulation
-    const MAX_PHEROMONES = 2000; // Maximum total pheromones
-    const MAX_PHEROMONES_PER_TYPE = 500; // Maximum per pheromone type
-    const PHEROMONE_RADIUS_CHECK = 50; // Check radius for nearby pheromones
-    const MAX_PHEROMONES_PER_AREA = 5; // Maximum pheromones in check radius
+    const MAX_PHEROMONES = MAX_PHEROMONES_TOTAL; // Maximum total pheromones
+    const MAX_PHEROMONES_PER_TYPE_LIMIT = MAX_PHEROMONES_PER_TYPE; // Maximum per pheromone type
+    const PHEROMONE_RADIUS_CHECK_VAL = PHEROMONE_RADIUS_CHECK; // Check radius for nearby pheromones
+    const MAX_PHEROMONES_PER_AREA_LIMIT = MAX_PHEROMONES_PER_AREA; // Maximum pheromones in check radius
 
     // Global pheromone limit - remove oldest if exceeded
     if (simulation.pheromones.length >= MAX_PHEROMONES) {
@@ -463,17 +465,17 @@ export function spawnPheromone(simulation, x, y, type) {
     }, {});
 
     // Per-type limit - don't spawn if type limit exceeded
-    if (typeCounts[type] >= MAX_PHEROMONES_PER_TYPE) {
+    if (typeCounts[type] >= MAX_PHEROMONES_PER_TYPE_LIMIT) {
         return;
     }
 
     // Local area limit - check for nearby pheromones of same type
     const nearbySameType = simulation.pheromones.filter(p =>
         p.type === type &&
-        Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < PHEROMONE_RADIUS_CHECK
+        Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < PHEROMONE_RADIUS_CHECK_VAL
     );
 
-    if (nearbySameType.length >= MAX_PHEROMONES_PER_AREA) {
+    if (nearbySameType.length >= MAX_PHEROMONES_PER_AREA_LIMIT) {
         return;
     }
 

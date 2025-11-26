@@ -5,7 +5,10 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 import { Agent } from './agent.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
-import { LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, COLORS, EFFECT_FADE_DURATION } from './constants.js';
+import {
+    LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY,
+    COLORS, VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION
+} from './constants.js';
 import { queryArrayPool } from './array-pool.js';
 
 export class WebGLRenderer {
@@ -24,7 +27,7 @@ export class WebGLRenderer {
         // Camera setup (orthographic for 2D)
         const aspect = container.clientWidth / container.clientHeight;
         // Smaller viewSize = see less world = things appear larger (was 0.6, now 0.4)
-        const viewSize = Math.max(worldWidth, worldHeight) * 0.4;
+        const viewSize = Math.max(worldWidth, worldHeight) * VIEW_SIZE_RATIO;
         this.camera = new THREE.OrthographicCamera(
             -viewSize * aspect, viewSize * aspect,
             viewSize, -viewSize,
@@ -85,15 +88,15 @@ export class WebGLRenderer {
         this.showRays = false;
         this.rayLineSegments = null;
         this.rayColors = {
-            default: new THREE.Color(0x00FFFF),
-            noHit: new THREE.Color(0x666666),
-            alignment: new THREE.Color(0xFFFF00),
-            food: new THREE.Color(0x39FF14),
-            smaller: new THREE.Color(0xCCFF00),
-            larger: new THREE.Color(0xFF0033),
-            obstacle: new THREE.Color(0x9D00FF),
-            edge: new THREE.Color(0xFF6600),
-            same: new THREE.Color(0x00F0FF)
+            default: new THREE.Color(COLORS.RAYS.DEFAULT),
+            noHit: new THREE.Color(COLORS.RAYS.NO_HIT),
+            alignment: new THREE.Color(COLORS.RAYS.ALIGNMENT),
+            food: new THREE.Color(COLORS.RAYS.FOOD),
+            smaller: new THREE.Color(COLORS.RAYS.SMALLER),
+            larger: new THREE.Color(COLORS.RAYS.LARGER),
+            obstacle: new THREE.Color(COLORS.RAYS.OBSTACLE),
+            edge: new THREE.Color(COLORS.RAYS.EDGE),
+            same: new THREE.Color(COLORS.RAYS.SAME)
         };
 
         // Agent state visualization
@@ -114,14 +117,12 @@ export class WebGLRenderer {
         this.frustum.setFromProjectionMatrix(this.frustumMatrix);
     }
 
-
-
     resize(width, height) {
         if (width <= 0 || height <= 0) return; // Skip invalid sizes
 
         const aspect = width / height;
         // Smaller viewSize = see less world = things appear larger (0.4 = zoomed in)
-        const viewSize = Math.max(this.worldWidth, this.worldHeight) * 0.4;
+        const viewSize = Math.max(this.worldWidth, this.worldHeight) * VIEW_SIZE_RATIO;
         this.camera.left = -viewSize * aspect;
         this.camera.right = viewSize * aspect;
         this.camera.top = viewSize;
@@ -145,7 +146,7 @@ export class WebGLRenderer {
         // FIXED: Multiply by game speed so effects scale correctly
         // Slower games (0.5x) should have shorter durations (7.5 frames)
         // Faster games (3x) should have longer durations (45 frames)
-        const adjustedDuration = 7;
+        const adjustedDuration = EFFECT_DURATION_BASE;
 
         effects.push({
             type: effectType,
@@ -193,7 +194,7 @@ export class WebGLRenderer {
 
         // Update camera zoom and projection
         const aspect = this.container.clientWidth / this.container.clientHeight;
-        const baseViewSize = Math.max(this.worldWidth, this.worldHeight) * 0.4;
+        const baseViewSize = Math.max(this.worldWidth, this.worldHeight) * VIEW_SIZE_RATIO;
         const viewSize = baseViewSize * cameraPos.zoom;
 
         this.camera.left = -viewSize * aspect;
@@ -288,7 +289,7 @@ export class WebGLRenderer {
                 const borderMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
                 // Increased from 100 to 200 to handle larger populations per gene
-                const maxInstances = 200;
+                const maxInstances = MAX_INSTANCES_PER_BATCH;
                 const bodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, maxInstances);
                 const borderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, maxInstances);
 
@@ -426,83 +427,6 @@ export class WebGLRenderer {
         // This is very expensive - creating/destroying meshes every frame
         // For now, disable it entirely for performance
         return;
-
-        // Clear all old state meshes
-        while (this.agentStateGroup.children.length > 0) {
-            const child = this.agentStateGroup.children[0];
-            this.agentStateGroup.remove(child);
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
-        }
-        this.agentStateMeshes.clear();
-
-        // Limit to showing state for max 20 agents (reduced for performance)
-        const maxStateAgents = 20;
-        // PERFORMANCE: Reuse temp array instead of filter
-        const agentsToShow = this.tempActiveAgents;
-        agentsToShow.length = 0;
-        for (let i = 0; i < agents.length; i++) {
-            if (!agents[i].isDead) agentsToShow.push(agents[i]);
-        }
-        agentsToShow.sort((a, b) => b.fitness - a.fitness) // Show state for top agents
-            .slice(0, maxStateAgents);
-
-        // Create state visualization for limited agents
-        agentsToShow.forEach(agent => {
-            const meshes = {};
-
-            // Energy bar (above agent) - simplified, only fill, no background
-            const energyRatio = agent.energy / MAX_ENERGY;
-            const barWidth = agent.size * 1.5;
-            const barHeight = 2;
-            const barY = agent.y - agent.size - 8;
-
-            // Energy fill only (skip background for performance)
-            const fillWidth = barWidth * energyRatio;
-            if (fillWidth > 0) {
-                const fillGeometry = new THREE.PlaneGeometry(fillWidth, barHeight * 0.8);
-                let fillColor = 0x00ff00; // Green
-                if (energyRatio < 0.3) fillColor = 0xff0000; // Red
-                else if (energyRatio < 0.6) fillColor = 0xffff00; // Yellow
-                const fillMaterial = new THREE.MeshBasicMaterial({ color: fillColor });
-                const fillMesh = new THREE.Mesh(fillGeometry, fillMaterial);
-                fillMesh.position.set(agent.x - (barWidth - fillWidth) / 2, -barY, 0.1);
-                this.agentStateGroup.add(fillMesh);
-                meshes.energyBar = fillMesh;
-            }
-
-            // Status icon - only show most important states
-            if (agent.isPregnant) {
-                const iconSize = agent.size * 0.3;
-                const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
-                const iconGeometry = new THREE.CircleGeometry(iconSize * pulse, 6); // Reduced segments
-                const iconMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xff00ff,
-                    transparent: true,
-                    opacity: 0.7
-                });
-                const iconMesh = new THREE.Mesh(iconGeometry, iconMaterial);
-                iconMesh.position.set(agent.x, -(agent.y + agent.size + 5), 0);
-                this.agentStateGroup.add(iconMesh);
-                meshes.statusIcon = iconMesh;
-            } else if (agent.wantsToAttack) {
-                // Red aura - simplified
-                const auraGeometry = new THREE.RingGeometry(agent.size * 1.1, agent.size * 1.2, 8); // Reduced segments
-                const auraMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xff0000,
-                    transparent: true,
-                    opacity: 0.4
-                });
-                const auraMesh = new THREE.Mesh(auraGeometry, auraMaterial);
-                auraMesh.position.set(agent.x, -agent.y, 0);
-                this.agentStateGroup.add(auraMesh);
-                meshes.statusIcon = auraMesh;
-            }
-
-            if (meshes.energyBar || meshes.statusIcon) {
-                this.agentStateMeshes.set(agent, meshes);
-            }
-        });
     }
 
     updateVisualEffectsRendering() {
@@ -980,4 +904,3 @@ export class WebGLRenderer {
         this.showRays = show;
     }
 }
-

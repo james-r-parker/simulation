@@ -1,9 +1,12 @@
+
 // Physics and collision functions moved from game.js
 
 import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS,
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
-    MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES
+    MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES,
+    COLLISION_SEPARATION_STRENGTH, BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
+    OBSTACLE_MAX_SPEED
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -73,16 +76,14 @@ export function checkCollisions(simulation) {
                 const overlap = combinedSize - Math.sqrt(distSq);
                 if (overlap > 0) {
                     const dist = Math.sqrt(distSq) || 1;
-                    const pushX = (dx / dist) * overlap * 0.5;
-                    const pushY = (dy / dist) * overlap * 0.5;
+                    const separationStrength = COLLISION_SEPARATION_STRENGTH; // Strong separation
+                    const separationX = (dx / dist) * overlap * 0.5 * separationStrength;
+                    const separationY = (dy / dist) * overlap * 0.5 * separationStrength;
 
-                    // Apply stronger separation to make collisions more visible
-                    const separationStrength = 1.0; // Full separation
-
-                    agent.x += pushX * separationStrength;
-                    agent.y += pushY * separationStrength;
-                    other.x -= pushX * separationStrength;
-                    other.y -= pushY * separationStrength;
+                    agent.x += separationX;
+                    agent.y += separationY;
+                    other.x -= separationX;
+                    other.y -= separationY;
 
                     // VISUAL EFFECTS & PENALTIES
                     if (isPredator) {
@@ -92,7 +93,7 @@ export function checkCollisions(simulation) {
                             simulation.renderer.addVisualEffect(other, 'collision', simulation.gameSpeed); // Red glow for victim
                         }
                         // Steal energy (bite)
-                        const biteSize = 5;
+                        const biteSize = BITE_SIZE;
                         const energyStolen = Math.min(other.energy, biteSize);
                         agent.energy += energyStolen;
                         other.energy -= energyStolen;
@@ -107,8 +108,8 @@ export function checkCollisions(simulation) {
                             simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
                             simulation.renderer.addVisualEffect(other, 'eating', simulation.gameSpeed);
                         }
-                        // Lose energy (bitten)
-                        const biteSize = 5;
+                        // Transfer energy (eating)
+                        const biteSize = BITE_SIZE; // Energy transferred per frame
                         const energyLost = Math.min(agent.energy, biteSize);
                         agent.energy -= energyLost;
                         other.energy += energyLost;
@@ -134,7 +135,7 @@ export function checkCollisions(simulation) {
                     if (!other.processedCollisions) other.processedCollisions = new Set();
 
                     const pairKey = agent.geneId < other.geneId ?
-                        `${agent.geneId}-${other.geneId}` : `${other.geneId}-${agent.geneId}`;
+                        `${agent.geneId} -${other.geneId} ` : `${other.geneId} -${agent.geneId} `;
 
                     if (!agent.processedCollisions.has(pairKey)) {
                         agent.processedCollisions.add(pairKey);
@@ -155,7 +156,7 @@ export function checkCollisions(simulation) {
 
                     // Attempt mating (tryMate handles all other validation)
                     if (agent.tryMate(other)) {
-                        console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${other.geneId}`);
+                        console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${other.geneId} `);
 
                         // Show toast notification
                         if (simulation.toast) {
@@ -252,8 +253,10 @@ export function checkCollisions(simulation) {
                     agent.x += pushX;
                     agent.y += pushY;
 
-                    // Bounce the agent (reverse velocity direction)
-                    const bounceFactor = 0.8; // Energy loss on bounce
+                    // Bounce effect
+                    const bounceFactor = BOUNCE_ENERGY_LOSS; // Energy loss on bounce
+                    agent.vx = -agent.vx * bounceFactor;
+                    agent.vy = -agent.vy * bounceFactor;
 
                     // Check if agent died from collision
                     if (agent.energy <= 0) {
@@ -265,15 +268,14 @@ export function checkCollisions(simulation) {
                         simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
                     }
 
-                    // Slightly nudge the obstacle in response to collision
-                    const nudgeStrength = 0.05; // Small nudge
-                    const nudgeAngle = Math.random() * Math.PI * 2; // Random direction
-                    obstacle.vx += Math.cos(nudgeAngle) * nudgeStrength;
-                    obstacle.vy += Math.sin(nudgeAngle) * nudgeStrength;
+                    // Nudge obstacle slightly
+                    const nudgeStrength = COLLISION_NUDGE_STRENGTH;
+                    obstacle.vx += (dx / dist) * nudgeStrength;
+                    obstacle.vy += (dy / dist) * nudgeStrength;
 
-                    // Dampen obstacle velocity slightly after nudge to prevent runaway
+                    // Cap obstacle speed
                     const obstacleSpeed = Math.sqrt(obstacle.vx * obstacle.vx + obstacle.vy * obstacle.vy);
-                    const maxObstacleSpeed = 0.3; // Keep obstacles moving slowly
+                    const maxObstacleSpeed = OBSTACLE_MAX_SPEED;
                     if (obstacleSpeed > maxObstacleSpeed) {
                         obstacle.vx = (obstacle.vx / obstacleSpeed) * maxObstacleSpeed;
                         obstacle.vy = (obstacle.vy / obstacleSpeed) * maxObstacleSpeed;
@@ -346,7 +348,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             // Debug: Log GPU raw results for first few rays (disabled - working correctly)
             // if (agentIdx === 0 && rayIdx < 10 && this.frameCount % 60 === 0) {
             //     const hitTypeNames = {0: 'none', 1: 'edge', 2: 'food', 3: 'agent', 4: 'obstacle'};
-            //     this.logger.log(`[GPU-RAY-DEBUG] Agent 0, Ray ${rayIdx}: hitType=${hitType} (${hitTypeNames[hitType] || 'unknown'}), dist=${distance.toFixed(1)}, maxDist=${maxRayDist}`);
+            //     this.logger.log(`[GPU - RAY - DEBUG] Agent 0, Ray ${ rayIdx }: hitType = ${ hitType } (${ hitTypeNames[hitType] || 'unknown' }), dist = ${ distance.toFixed(1) }, maxDist = ${ maxRayDist } `);
             // }
 
             const normalizedDist = 1.0 - (Math.min(distance, maxRayDist) / maxRayDist);
@@ -522,7 +524,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
         // Debug: Log pheromone detection for first agent (disabled by default)
         // if (agentIdx === 0 && (dangerSmell > 0 || attackSmell > 0) && this.frameCount % 60 === 0) {
-        //     this.logger.log(`[PHEROMONE-GPU-DEBUG] Agent 0 detected:`, {
+        //     this.logger.log(`[PHEROMONE - GPU - DEBUG] Agent 0 detected: `, {
         //         dangerSmell: dangerSmell.toFixed(2),
         //         attackSmell: attackSmell.toFixed(2),
         //         nearbyPheromones: nearbyPuffs.filter(e => e.data instanceof PheromonePuff).length
