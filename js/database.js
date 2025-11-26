@@ -1,4 +1,4 @@
-import { MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MAX_GENE_POOLS } from "./constants.js";
+import { MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MAX_GENE_POOLS, WORKER_REQUEST_TIMEOUT_MS } from "./constants.js";
 import { toast } from './toast.js';
 
 // --- IndexedDB WRAPPER FOR GENE POOL STORAGE (With Worker) ---
@@ -71,9 +71,9 @@ export class GenePoolDatabase {
             const timeoutId = setTimeout(() => {
                 if (this.pendingRequests.has(id)) {
                     this.pendingRequests.delete(id);
-                    reject(new Error(`Worker request '${action}' timed out after 5000ms`));
+                    reject(new Error(`Worker request '${action}' timed out after ${WORKER_REQUEST_TIMEOUT_MS}ms`));
                 }
-            }, 5000);
+            }, WORKER_REQUEST_TIMEOUT_MS);
 
             this.pendingRequests.set(id, { resolve, reject, timeoutId });
             this.worker.postMessage({ id, action, payload });

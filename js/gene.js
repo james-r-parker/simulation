@@ -1,6 +1,6 @@
 // Gene-related functions moved from game.js
 
-import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, VALIDATION_FITNESS_THRESHOLD, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL } from './constants.js';
+import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, VALIDATION_FITNESS_THRESHOLD, PERIODIC_VALIDATION_FITNESS_THRESHOLD, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK } from './constants.js';
 import { updateDashboard } from './ui.js';
 
 export function crossover(weightsA, weightsB) {
@@ -130,18 +130,17 @@ export function updatePeriodicValidation(simulation) {
     // Add high-performing living agents to validation queue (periodic validation)
     // This gives long-lived successful agents a chance to enter validation without dying
 
-    // Limit how many new validations we add per cycle (max 2 per periodic check)
+    // Limit how many new validations we add per cycle
     let validationsAdded = 0;
-    const maxValidationsPerCycle = 2;
 
     simulation.agents.forEach(agent => {
         // Check if agent is performing well and not already in validation
-        if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD &&
-            agent.framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
+        if (agent.fitness >= PERIODIC_VALIDATION_FITNESS_THRESHOLD &&
+            agent.age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL && // Minimum lifespan in seconds
             !simulation.validationManager.isInValidation(agent.geneId) &&
             !hasValidatedAncestor(agent, simulation) &&
             !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
-            validationsAdded < maxValidationsPerCycle) {
+            validationsAdded < MAX_VALIDATIONS_PER_PERIODIC_CHECK) {
 
             // Add to validation queue (periodic validation)
             console.log(`[VALIDATION] 📊 Periodic check: Adding living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);

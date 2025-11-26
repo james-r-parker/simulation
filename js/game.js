@@ -14,7 +14,8 @@ import {
     MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE,
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
-    FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH
+    FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH,
+    GPU_INIT_TIMEOUT_MS
 } from './constants.js';
 import { Agent } from './agent.js';
 import { Food } from './food.js';
@@ -175,7 +176,7 @@ export class Simulation {
         this.collisionQueryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate collision query range
 
         // Object pool for quadtree Point objects to reduce GC pressure
-        this.pointPool = new PointPool(5000); // Pre-allocate 5000 Points
+        this.pointPool = new PointPool(); // Uses default POINT_POOL_SIZE
 
         // Pre-allocated arrays for filter operations
         this.livingFood = [];
@@ -375,7 +376,7 @@ export class Simulation {
         try {
             gpuAvailable = await Promise.race([
                 this.gpuCompute.init(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Compute init timeout')), 15000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Compute init timeout')), GPU_INIT_TIMEOUT_MS))
             ]).catch(() => false);
         } catch (e) {
             this.logger.warn("GPU Compute init failed or timed out:", e);
@@ -402,7 +403,7 @@ export class Simulation {
 
             gpuPhysicsAvailable = await Promise.race([
                 this.gpuPhysics.init(gpuConfig),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Physics init timeout')), 15000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('GPU Physics init timeout')), GPU_INIT_TIMEOUT_MS))
             ]).catch((error) => {
                 console.error('[GPU-INIT] GPU Physics init failed:', error);
                 return false;
@@ -657,12 +658,12 @@ export class Simulation {
                     this.fpsHistory.shift();
                 }
 
-                // Auto-adjust every 30 seconds if we have enough history
-                const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
-                if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10) {
-                    this.performAutoAdjustment();
-                    this.lastAutoAdjustTime = now;
-                }
+            // Auto-adjust every 30 seconds if we have enough history (only when focused)
+            const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
+            if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
+                this.performAutoAdjustment();
+                this.lastAutoAdjustTime = now;
+            }
             }
         }
 
@@ -1011,7 +1012,7 @@ export class Simulation {
                         // Check if this agent was in validation queue first (highest priority)
                         if (this.validationManager.isInValidation(agent.geneId)) {
                             // Debug: Log validation agent death details
-                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.framesAlive / 60} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
+                            console.log(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
                             // Handle validation agent death
                             this.validationManager.handleValidationDeath(agent, this.db);
                         } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
@@ -1123,8 +1124,8 @@ export class Simulation {
                     this.validationManager.resyncActiveAgentsCount(this);
                 }
 
-                // Dashboard updates
-                if (this.frameCount % 30 === 0) updateDashboard(this);
+                // Dashboard updates (only when focused)
+                if (this.frameCount % 30 === 0 && document.hasFocus()) updateDashboard(this);
                 // Periodic comprehensive memory cleanup - use real time to avoid throttling
                 if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
                     this.lastMemoryCleanupTime = now;

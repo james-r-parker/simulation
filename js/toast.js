@@ -1,6 +1,15 @@
 // --- TOAST NOTIFICATION SYSTEM ---
 // Displays beautiful toast notifications for gene pool events
 
+import {
+    VALIDATION_FITNESS_THRESHOLD,
+    TOAST_DURATION_SUCCESS,
+    TOAST_DURATION_FAILURE,
+    TOAST_DURATION_NORMAL,
+    TOAST_DURATION_SHORT,
+    TOAST_DURATION_REPRODUCTION
+} from './constants.js';
+
 export class ToastNotification {
     constructor() {
         this.container = null;
@@ -23,11 +32,11 @@ export class ToastNotification {
 
     // Show validation passed notification
     showValidationPassed(geneId, avgScore, scores, attempts) {
-        const successCount = scores.filter(s => s >= 5000).length;
+        const successCount = scores.filter(s => s >= VALIDATION_FITNESS_THRESHOLD).length;
 
         let scoreDetails = '';
         scores.forEach((score, index) => {
-            const emoji = score === Math.max(...scores) ? '🏆' : score >= 5000 ? '✅' : '❌';
+            const emoji = score === Math.max(...scores) ? '🏆' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅' : '❌';
             scoreDetails += `<div class="toast-score-line">${emoji} Run ${index + 1}: ${score.toFixed(0)}</div>`;
         });
 
@@ -42,7 +51,31 @@ export class ToastNotification {
             </div>
         `;
 
-        this.show(icon, title, content, 'toast-validation', 8000);
+        this.show(icon, title, content, 'toast-validation', TOAST_DURATION_SUCCESS);
+    }
+
+    // Show validation failed notification
+    showValidationFailed(geneId, avgScore, scores, attempts) {
+        const successCount = scores.filter(s => s >= VALIDATION_FITNESS_THRESHOLD).length;
+
+        let scoreDetails = '';
+        scores.forEach((score, index) => {
+            const emoji = score === Math.max(...scores) ? '🏆' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅' : '❌';
+            scoreDetails += `<div class="toast-score-line">${emoji} Run ${index + 1}: ${score.toFixed(0)}</div>`;
+        });
+
+        const icon = '💥';
+        const title = 'Validation Failed';
+        const content = `
+            <div class="toast-gene-id">${this.truncateGeneId(geneId)}</div>
+            <div class="toast-details">
+                <div class="toast-avg">Average: ${avgScore.toFixed(0)}</div>
+                ${scoreDetails}
+                <div class="toast-summary">${successCount}/${attempts} runs succeeded</div>
+            </div>
+        `;
+
+        this.show(icon, title, content, 'toast-validation-failed', TOAST_DURATION_FAILURE);
     }
 
     // Show new agent added to pool notification
@@ -63,7 +96,7 @@ export class ToastNotification {
             </div>
         `;
 
-        this.show(positionEmoji, title, content, 'toast-pool-add', 5000);
+        this.show(positionEmoji, title, content, 'toast-pool-add', TOAST_DURATION_NORMAL);
     }
 
     // Show pool at capacity notification
@@ -78,7 +111,7 @@ export class ToastNotification {
             </div>
         `;
 
-        this.show(icon, title, content, 'toast-warning', 5000);
+        this.show(icon, title, content, 'toast-warning', TOAST_DURATION_NORMAL);
     }
 
     // Show reproduction notification
@@ -122,11 +155,11 @@ export class ToastNotification {
                 break;
         }
 
-        this.show(icon, title, content, 'toast-pool-add', 3000); // Short duration for reproduction
+        this.show(icon, title, content, 'toast-pool-add', TOAST_DURATION_SHORT); // Short duration for reproduction
     }
 
     // Generic show method
-    show(icon, title, content, className = '', duration = 5000) {
+    show(icon, title, content, className = '', duration = TOAST_DURATION_NORMAL) {
         // Remove oldest toast if at max capacity
         if (this.toasts.length >= this.maxToasts) {
             const oldest = this.toasts.shift();
@@ -180,7 +213,7 @@ export class ToastNotification {
             </div>
         `;
 
-        this.show(icon, title, content, 'toast-pool-add', 4000); // 4 second duration
+        this.show(icon, title, content, 'toast-pool-add', TOAST_DURATION_REPRODUCTION); // Reproduction duration
     }
 
     remove(toastEl) {

@@ -3,6 +3,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { Agent } from './agent.js';
+import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGENT_MINIMUM_BORDER_SIZE } from './constants.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
 import {
@@ -31,9 +32,9 @@ export class WebGLRenderer {
         this.camera = new THREE.OrthographicCamera(
             -viewSize * aspect, viewSize * aspect,
             viewSize, -viewSize,
-            0.1, 10000
+            0.1, CAMERA_FAR_PLANE
         );
-        this.camera.position.z = 1000;
+        this.camera.position.z = CAMERA_Z_POSITION;
 
         // Cached frustum for performance (reused across all culling operations)
         this.frustum = new THREE.Frustum();
@@ -51,7 +52,11 @@ export class WebGLRenderer {
         this.tempActiveEffects = [];
 
         // Renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: false,
+            powerPreference: "high-performance"
+        });
         // Use window size initially, will be resized properly after DOM is ready
         const initialWidth = container.clientWidth || window.innerWidth;
         const initialHeight = container.clientHeight || window.innerHeight;
@@ -74,7 +79,7 @@ export class WebGLRenderer {
         // Agent meshes (instanced for performance)
         this.agentMeshes = new Map(); // geneId -> mesh
         this.agentGeometry = new THREE.CircleGeometry(1, 16);
-        this.agentBorderGeometry = new THREE.RingGeometry(0.95, 1.0, 16);
+        this.agentBorderGeometry = new THREE.RingGeometry(0.95, 1.0, 48); // Increased from 16 to 48 segments for smoother borders
 
         // Food geometry - using InstancedMesh
         this.foodGeometry = new THREE.CircleGeometry(1, 8);
@@ -327,7 +332,7 @@ export class WebGLRenderer {
                     this.tempVec.set(agent.x, -agent.y, 0);
                     this.testSphere.center = this.tempVec;
                     // Use larger safety margin to prevent premature culling at edges
-                    this.testSphere.radius = Math.max(agent.size, 12) * 3 + 50;
+                    this.testSphere.radius = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * 3 + 50;
 
                     if (this.frustum.intersectsSphere(this.testSphere)) {
                         validAgents.push(agent);
@@ -392,13 +397,13 @@ export class WebGLRenderer {
                 const agent = validAgents[i];
 
                 // Update body - ensure minimum visible size
-                const renderSize = Math.max(agent.size, 12); // Never smaller than 12 pixels
+                const renderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE); // Never smaller than minimum size
                 matrix.makeScale(renderSize, renderSize, 1);
                 matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
                 mesh.body.setMatrixAt(i, matrix);
 
                 // Update border (always visible to show specialization)
-                const borderSize = Math.max(agent.size, 12) * 1.1;
+                const borderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * AGENT_BORDER_SIZE_MULTIPLIER;
                 matrix.makeScale(borderSize, borderSize, 1);
                 matrix.setPosition(agent.x, -agent.y, 0.1);
                 mesh.border.setMatrixAt(i, matrix);
@@ -451,7 +456,7 @@ export class WebGLRenderer {
             // Frustum culling - skip effects for agents outside camera view
             this.tempVec.set(agent.x, -agent.y, 0);
             this.testSphere.center = this.tempVec;
-            this.testSphere.radius = Math.max(agent.size, 12) * 2; // Larger radius for effects
+            this.testSphere.radius = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * 2; // Larger radius for effects
             if (!this.frustum.intersectsSphere(this.testSphere)) continue;
 
             for (const effect of effects) {

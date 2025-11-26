@@ -151,13 +151,15 @@ async function startPeriodicSummarization(simulation) {
         clearInterval(summaryInterval);
     }
 
-    // Start summarization every minute
+    // Start summarization every minute (only when focused)
     summaryInterval = setInterval(async () => {
-        await generateAndDisplaySummary(simulation);
+        if (document.hasFocus()) {
+            await generateAndDisplaySummary(simulation);
+        }
     }, 60000); // 60 seconds
 
-    // Generate first summary immediately (only if not already scheduled)
-    if (!initialSummaryScheduled) {
+    // Generate first summary immediately (only if not already scheduled and focused)
+    if (!initialSummaryScheduled && document.hasFocus()) {
         initialSummaryScheduled = true;
         setTimeout(() => {
             generateAndDisplaySummary(simulation);

@@ -1,7 +1,13 @@
 // --- VALIDATION SYSTEM ---
 // Manages multi-run testing and validation of promising agents
 
-import { VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE } from './constants.js';
+import {
+    VALIDATION_REQUIRED_RUNS,
+    VALIDATION_FITNESS_THRESHOLD,
+    MAX_VALIDATION_QUEUE_SIZE,
+    VALIDATION_COOLDOWN_MS,
+    VALIDATION_CLEANUP_TIMEOUT_MS
+} from './constants.js';
 import { toast } from './toast.js';
 
 export class ValidationManager {
@@ -49,7 +55,7 @@ export class ValidationManager {
 
         // Prevent duplicate validations within short time window
         const currentTime = Date.now();
-        if (currentTime - validationEntry.lastValidationTime < 5000) { // 5 second cooldown
+        if (currentTime - validationEntry.lastValidationTime < VALIDATION_COOLDOWN_MS) { // Cooldown between validation attempts
             return false;
         }
         validationEntry.lastValidationTime = currentTime;
@@ -125,9 +131,17 @@ export class ValidationManager {
 
                 return { success: true, record: validationRecord };
             } else {
-                // Agent failed validation - mark as failed
+                // Agent failed validation - mark as failed and remove from queue
                 console.log(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (avg: ${avgScore.toFixed(1)} < ${VALIDATION_FITNESS_THRESHOLD})`);
                 validationEntry.isValidated = false;
+
+                // Show toast notification for failed validation
+                this.toast.showValidationFailed(geneId, avgScore, validationEntry.scores, validationEntry.attempts);
+
+                // Remove failed agent from validation queue
+                console.log(`[VALIDATION] 🗑️ Removing failed agent ${geneId} from validation queue`);
+                this.validationQueue.delete(geneId);
+                this.releaseSpawnLock(geneId);
             }
         } else if (!validationEntry.isValidated) {
             // Still in progress
@@ -197,7 +211,7 @@ export class ValidationManager {
         }
 
         // Priority 3: Clean up very old entries (10+ minutes since last validation attempt)
-        const tenMinutesAgo = now - (10 * 60 * 1000);
+        const tenMinutesAgo = now - VALIDATION_CLEANUP_TIMEOUT_MS;
         for (const [geneId, entry] of this.validationQueue.entries()) {
             if (entry.lastValidationTime < tenMinutesAgo && !entry.isValidated) {
                 console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (10+ minutes old, attempts: ${entry.attempts})`);

@@ -14,8 +14,9 @@ import {
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
-    MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
+    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
     AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
@@ -54,6 +55,7 @@ export class Agent {
         this.targetSize = this.size;
         this.maxEnergy = MAX_ENERGY;
         this.energyEfficiency = 1.0;
+        this.birthTime = Date.now(); // Real-time birth timestamp for accurate age/fitness calculation
         this.age = 0;
         this.framesAlive = 0;
 
@@ -325,8 +327,9 @@ export class Agent {
             }
         }
 
-        this.age = this.framesAlive / 60; // Frame-based age (independent of game speed)
-        this.framesAlive++;
+        // Calculate age using real time instead of frame count for consistency when focus is lost
+        this.age = (Date.now() - this.birthTime) / 1000; // Age in seconds
+        this.framesAlive++; // Keep framesAlive for backward compatibility
         if (this.reproductionCooldown > 0) this.reproductionCooldown--;
         if (this.isPregnant) {
             this.pregnancyTimer++;
@@ -1247,23 +1250,26 @@ export class Agent {
         baseScore -= (collisions - timesHitObstacle) * 10;
 
         // 4. Collision Avoidance Reward (NEW)
+        // Use real-time age in seconds for fitness calculation (not affected by focus loss)
+        const ageInSeconds = safeNumber(this.age || 0, 0);
+        const ageInFrames = ageInSeconds * FPS_TARGET; // Convert to equivalent frames for compatibility
+
         // Reward agents that survive without hitting obstacles
-        const framesAlive = safeNumber(this.framesAlive || 0, 0);
-        const obstacleFreeFrames = Math.max(0, framesAlive - (timesHitObstacle * 30));
+        const obstacleFreeFrames = Math.max(0, ageInFrames - (timesHitObstacle * 30));
         if (obstacleFreeFrames > 200) {
             baseScore += (obstacleFreeFrames / 200) * 25;
         }
 
         // 5. Survival Multiplier (The most important factor)
-        // ADJUSTED: Agents live ~10s (600 frames) on average, so we scale to 1800 frames (30s) for 2x multiplier
+        // ADJUSTED: Agents live ~10s on average, so we scale to 30s for 2x multiplier
         // This gives agents ~1.33x multiplier at 10s instead of ~1.17x
-        const survivalMultiplier = Math.min(1 + (framesAlive / 1800), 3.0);
+        const survivalMultiplier = Math.min(1 + (ageInSeconds / 30), 3.0);
 
         // Final fitness is the base score amplified by how long the agent survived.
         const finalFitness = baseScore * survivalMultiplier;
 
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        const rawSurvivalBonus = framesAlive / 30;
+        const rawSurvivalBonus = ageInSeconds;
 
         // Final safety check to ensure fitness is a finite number
         const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
@@ -1278,7 +1284,7 @@ export class Agent {
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
         this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL &&
             foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL &&
-            framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
+            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL && // Minimum lifespan in seconds
             explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
             turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
     }

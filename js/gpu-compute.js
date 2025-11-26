@@ -2,6 +2,8 @@
 // Direct WebGPU compute shaders for neural network forward passes
 // MAXIMUM OPTIMIZATION: Weight caching, double-buffering, batched uploads, parallel processing, vectorization
 
+import { GPU_INIT_TIMEOUT_MS } from './constants.js';
+
 export class GPUCompute {
     constructor(logger) {
         this.logger = logger;
@@ -47,7 +49,7 @@ export class GPUCompute {
                         maxBufferSize: adapter.limits.maxBufferSize
                     }
                 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Device request timeout')), 15000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Device request timeout')), GPU_INIT_TIMEOUT_MS))
             ]);
             
             // Check if device is already lost (from previous hang)

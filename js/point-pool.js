@@ -2,9 +2,10 @@
 // Reuses Point objects instead of allocating new ones every quadtree rebuild
 
 import { Point } from './quadtree.js';
+import { POINT_POOL_SIZE } from './constants.js';
 
 export class PointPool {
-    constructor(initialSize = 5000) {
+    constructor(initialSize = POINT_POOL_SIZE) {
         this.pool = [];
         this.activePoints = new Set();
 

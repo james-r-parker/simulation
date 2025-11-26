@@ -197,6 +197,7 @@ export const MIN_FITNESS_TO_SAVE_GENE_POOL = 12000; // Minimum fitness score req
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 10; // Minimum food items consumed to qualify
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3600; // Minimum lifespan in frames to qualify
+export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (60)
 export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0; // Minimum world exploration percentage required
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
 
@@ -205,7 +206,8 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 
 // Validation system (rigorous testing for elite agents)
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
-export const VALIDATION_FITNESS_THRESHOLD = 11000; // Fitness threshold for validation eligibility
+export const VALIDATION_FITNESS_THRESHOLD = 11000; // Fitness threshold for death-based validation eligibility
+export const PERIODIC_VALIDATION_FITNESS_THRESHOLD = VALIDATION_FITNESS_THRESHOLD * 1.5; // 50% higher threshold for periodic validation (16500)
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 
 // --- MATH CONSTANTS ---
@@ -269,3 +271,28 @@ export const AGENT_CONFIGS = {
         description: 'Specialized in defending territory and allies.'
     }
 };
+
+// --- UI CONSTANTS ---
+export const TOAST_DURATION_SUCCESS = 8000; // Validation passed toast duration (ms)
+export const TOAST_DURATION_FAILURE = 6000; // Validation failed toast duration (ms)
+export const TOAST_DURATION_NORMAL = 5000; // Normal toast duration (ms)
+export const TOAST_DURATION_SHORT = 3000; // Short toast duration (ms)
+export const TOAST_DURATION_REPRODUCTION = 4000; // Reproduction toast duration (ms)
+
+// --- VALIDATION TIMING ---
+export const VALIDATION_COOLDOWN_MS = 5000; // Cooldown between validation attempts (ms)
+export const VALIDATION_CLEANUP_TIMEOUT_MS = 10 * 60 * 1000; // Remove stale entries after 10 minutes (ms)
+export const MAX_VALIDATIONS_PER_PERIODIC_CHECK = 2; // Maximum agents to add to validation per periodic check
+
+// --- CAMERA SETTINGS ---
+export const CAMERA_Z_POSITION = 1000; // Default camera Z position
+export const CAMERA_FAR_PLANE = 10000; // Camera far clipping plane
+
+// --- RENDERING CONSTANTS ---
+export const AGENT_BORDER_SIZE_MULTIPLIER = 1.1; // Border size relative to agent body
+export const AGENT_MINIMUM_BORDER_SIZE = 12; // Minimum border size for visibility
+export const POINT_POOL_SIZE = 5000; // Initial point pool allocation size
+
+// --- TIMEOUT CONSTANTS ---
+export const GPU_INIT_TIMEOUT_MS = 15000; // GPU initialization timeout (ms)
+export const WORKER_REQUEST_TIMEOUT_MS = 5000; // Database worker request timeout (ms)
