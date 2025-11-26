@@ -151,31 +151,13 @@ export class Simulation {
         this.dashboardHistorySize = 100; // Keep last 100 data points
         this.finalFoodSpawnMultiplier = 1.0;
 
-        // Real-time timing for critical periodic operations (not affected by focus loss)
+        // Real-time timing for critical periodic operations
         this.lastValidationCheckTime = Date.now();
         this.lastMemoryCleanupTime = Date.now();
         this.lastMemoryPressureCheckTime = Date.now();
 
         // WebGL Renderer
         this.renderer = new WebGLRenderer(container, this.worldWidth, this.worldHeight, this.logger);
-
-        // Focus-based rendering optimization
-        this.hasFocus = document.hasFocus();
-        this.lastFocusTime = Date.now();
-        this.focusCheckInterval = 1000; // Check focus every second
-        this.lastFocusCheck = 0;
-
-        // Set up focus/blur event listeners for performance optimization
-        window.addEventListener('focus', () => {
-            this.hasFocus = true;
-            this.lastFocusTime = Date.now();
-            console.log('[PERF] 🎯 Window gained focus - resuming full rendering');
-        });
-
-        window.addEventListener('blur', () => {
-            this.hasFocus = false;
-            console.log('[PERF] 💤 Window lost focus - reducing rendering for performance');
-        });
 
         // GPU Compute (WebGPU for RTX 4090 and high-end GPUs)
         this.gpuCompute = new GPUCompute(this.logger);
@@ -656,10 +638,6 @@ export class Simulation {
                 if (this.avgGpuFps > 0 || this.avgCpuFps > 0) {
                     fpsText += ` (GPU: ${this.avgGpuFps > 0 ? this.avgGpuFps : 'N/A'}, CPU: ${this.avgCpuFps > 0 ? this.avgCpuFps : 'N/A'})`;
                 }
-                // Show background mode indicator
-                if (!this.hasFocus) {
-                    fpsText += ' 💤';
-                }
                 fpsEl.textContent = fpsText;
                 // Color code FPS (green > 30, yellow > 15, red otherwise)
                 if (this.currentFps >= 30) {
@@ -1127,11 +1105,10 @@ export class Simulation {
                     updateMemoryStats(this, false);
                     handleMemoryPressure(this);
                 }
-                // UI updates: Reduce frequency when window doesn't have focus
-                const uiUpdateInterval = this.hasFocus ? 100 : 1000; // 100ms vs 1 second
-                if (this.frameCount % uiUpdateInterval === 0) updateInfo(this);
+                // UI updates
+                if (this.frameCount % 100 === 0) updateInfo(this);
 
-                // Periodic validation checks - use real time to avoid throttling when focus lost
+                // Periodic validation checks - use real time for consistent timing
                 if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
                     this.lastValidationCheckTime = now;
                     updatePeriodicValidation(this);
@@ -1146,9 +1123,8 @@ export class Simulation {
                     this.validationManager.resyncActiveAgentsCount(this);
                 }
 
-                // Dashboard updates: Much less frequent when not focused
-                const dashboardInterval = this.hasFocus ? 30 : 300; // Every 0.5s vs 5s
-                if (this.frameCount % dashboardInterval === 0) updateDashboard(this);
+                // Dashboard updates
+                if (this.frameCount % 30 === 0) updateDashboard(this);
                 // Periodic comprehensive memory cleanup - use real time to avoid throttling
                 if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
                     this.lastMemoryCleanupTime = now;
@@ -1266,14 +1242,7 @@ export class Simulation {
         }
         this.camera.update();
 
-        // Focus-based rendering optimization
-        if (now - this.lastFocusCheck >= this.focusCheckInterval) {
-            // Periodically check focus state in case events were missed
-            this.hasFocus = document.hasFocus();
-            this.lastFocusCheck = now;
-        }
-
-        // Update renderer data structures (needed for physics even when not rendering)
+        // Update renderer data structures
         const camPos = this.camera.getPosition();
         this.renderer.updateCamera(camPos);
         this.renderer.updateAgents(this.agents, this.frameCount);
@@ -1285,17 +1254,9 @@ export class Simulation {
         // Without this, agentEffects Map grows unbounded causing FPS degradation over time
         this.renderer.updateVisualEffects(this.frameCount);
 
-        // Only perform expensive rendering operations if window has focus
-        if (this.hasFocus) {
-            this.renderer.updateRays(this.agents, this.frameCount);
-            this.renderer.render();
-        } else {
-            // Skip expensive rendering when window doesn't have focus
-            // Evolution continues in background, just no visual output
-            if (this.frameCount % 600 === 0) { // Log every 10 seconds at 60fps
-                console.log(`[PERF] 💤 Background mode: Evolution continues without rendering (focus lost ${Math.floor((now - this.lastFocusTime) / 1000)}s ago)`);
-            }
-        }
+        // Render the scene
+        this.renderer.updateRays(this.agents, this.frameCount);
+        this.renderer.render();
 
         // Process the agent spawn queue, enforcing the max population limit
         if (this.agentSpawnQueue.length > 0) {
