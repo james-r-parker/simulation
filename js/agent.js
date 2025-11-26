@@ -537,7 +537,7 @@ export class Agent {
 
                     // Check if turn direction aligns with food direction
                     const foodDirection = Math.sign(angleToFood);
-                    
+
                     if (Math.abs(turnDirection - foodDirection) < 0.5 || (Math.abs(angleToFood) < 0.3)) {
                         // Agent is turning towards food or already facing it
                         this.turnsTowardsFood += Math.min(Math.abs(angleDiff), 0.5); // Cap reward per turn
@@ -560,7 +560,7 @@ export class Agent {
 
                         // Check if turn direction is away from obstacle
                         const obstacleDirection = Math.sign(angleToObstacle);
-                        
+
                         if (Math.abs(turnDirection + obstacleDirection) < 0.5 || (turnDirection === 0 && Math.abs(angleToObstacle) > 2.5)) {
                             // Agent is turning away from obstacle (opposite direction) or avoiding it
                             this.turnsAwayFromObstacles += Math.min(Math.abs(angleDiff), 0.5); // Cap reward per turn
@@ -1013,9 +1013,32 @@ export class Agent {
     }
 
     emitPheromones() {
-        // Update fear and aggression based on pheromone smells and state
-        this.fear = Math.min(this.dangerSmell + (this.isLowEnergy() ? 0.6 : 0), 1);
-        this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0), 1);
+        // Analyze visual inputs for threats (predators) and targets (prey)
+        let predatorProximity = 0;
+        let preyProximity = 0;
+
+        if (this.lastRayData) {
+            for (const ray of this.lastRayData) {
+                if (ray.hit) {
+                    const intensity = 1.0 - (ray.dist / this.maxRayDist);
+                    // 'smaller' hit type means "I am smaller", so the other agent is a PREDATOR
+                    if (ray.hitTypeName === 'smaller') {
+                        predatorProximity = Math.max(predatorProximity, intensity);
+                    }
+                    // 'larger' hit type means "I am larger", so the other agent is PREY
+                    else if (ray.hitTypeName === 'larger') {
+                        preyProximity = Math.max(preyProximity, intensity);
+                    }
+                }
+            }
+        }
+
+        // Update fear and aggression based on pheromone smells, internal state, AND visual threats
+        // Fear increases if: smelling danger, low energy, OR seeing a predator
+        this.fear = Math.min(this.dangerSmell + (this.isLowEnergy() ? 0.6 : 0) + predatorProximity, 1);
+
+        // Aggression increases if: smelling attack, wanting to attack, high energy, OR seeing prey
+        this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0) + preyProximity, 1);
 
 
         // Reduced spawn rates to prevent pheromone accumulation
@@ -1186,7 +1209,7 @@ export class Agent {
         baseScore += safeNumber(explorationPercentage, 0) * 10;
         baseScore += safeNumber(this.foodEaten || 0, 0) * 200;
         baseScore += safeNumber(this.kills || 0, 0) * 100;
-        
+
         // Navigation behavior rewards (NEW) - INCREASED to encourage learning
         baseScore += safeNumber(this.turnsTowardsFood || 0, 0) * 10; // INCREASED from 5 to 10
         baseScore += safeNumber(this.turnsAwayFromObstacles || 0, 0) * 10;
@@ -1243,7 +1266,7 @@ export class Agent {
         // Final safety check to ensure fitness is a finite number
         const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
         this.fitness = Math.max(0, finalFitnessValue);
-        
+
         // TEMPORARILY RELAXED QUALIFICATION: Adjusted to current performance level - will raise as agents improve
         // - Fitness: 3000+ (temporarily reduced from 4000)
         // - Food: 4+ items (temporarily reduced from 6)
@@ -1251,11 +1274,11 @@ export class Agent {
         // - Exploration: 2%+ map coverage - temporarily reduced from 3%
         // - Navigation: 0.5+ turns towards food - temporarily reduced from 1.0
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
-        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL && 
-                    foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL && 
-                    framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
-                    explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
-                    turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
+        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL &&
+            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL &&
+            framesAlive >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL &&
+            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
+            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
     }
 
     cleanup() {

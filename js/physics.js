@@ -63,8 +63,11 @@ export function checkCollisions(simulation) {
 
             // Use squared distance for comparison (faster, no sqrt needed)
             if (distSq < combinedSizeSq) {
-                agent.collisions++; // Increment collision counter
-                other.collisions++; // Both agents get collision credit
+
+                // PREDATION LOGIC: Check if one agent is significantly larger (Hunter vs Prey)
+                const sizeRatio = agentSize / otherSize;
+                const isPredator = sizeRatio > 1.2; // Agent is 20% larger
+                const isPrey = sizeRatio < 0.8;     // Agent is 20% smaller (Other is predator)
 
                 // Simple bump physics to prevent overlap
                 const overlap = combinedSize - Math.sqrt(distSq);
@@ -75,18 +78,54 @@ export function checkCollisions(simulation) {
 
                     // Apply stronger separation to make collisions more visible
                     const separationStrength = 1.0; // Full separation
-                    const oldAgentX = agent.x, oldAgentY = agent.y;
-                    const oldOtherX = other.x, oldOtherY = other.y;
 
                     agent.x += pushX * separationStrength;
                     agent.y += pushY * separationStrength;
                     other.x -= pushX * separationStrength;
                     other.y -= pushY * separationStrength;
 
-                    // Trigger collision visual effect (red glow) for both agents tied to game speed
-                    if (simulation.renderer) {
-                        simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
-                        simulation.renderer.addVisualEffect(other, 'collision', simulation.gameSpeed);
+                    // VISUAL EFFECTS & PENALTIES
+                    if (isPredator) {
+                        // Agent is the predator: No penalty, eating effect
+                        if (simulation.renderer) {
+                            simulation.renderer.addVisualEffect(agent, 'eating', simulation.gameSpeed); // Green glow for successful hunt
+                            simulation.renderer.addVisualEffect(other, 'collision', simulation.gameSpeed); // Red glow for victim
+                        }
+                        // Steal energy (bite)
+                        const biteSize = 5;
+                        const energyStolen = Math.min(other.energy, biteSize);
+                        agent.energy += energyStolen;
+                        other.energy -= energyStolen;
+                        agent.foodEaten += 0.1; // Partial credit for nibbling
+
+                        // Only count collision for prey
+                        other.collisions++;
+
+                    } else if (isPrey) {
+                        // Agent is the prey: Take damage, collision effect
+                        if (simulation.renderer) {
+                            simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
+                            simulation.renderer.addVisualEffect(other, 'eating', simulation.gameSpeed);
+                        }
+                        // Lose energy (bitten)
+                        const biteSize = 5;
+                        const energyLost = Math.min(agent.energy, biteSize);
+                        agent.energy -= energyLost;
+                        other.energy += energyLost;
+                        other.foodEaten += 0.1;
+
+                        // Count collision for prey
+                        agent.collisions++;
+
+                    } else {
+                        // Normal collision (similar sizes): Both penalized
+                        agent.collisions++;
+                        other.collisions++;
+
+                        if (simulation.renderer) {
+                            simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
+                            simulation.renderer.addVisualEffect(other, 'collision', simulation.gameSpeed);
+                        }
                     }
 
                     // Prevent checking the same collision pair again in this frame
@@ -109,7 +148,9 @@ export function checkCollisions(simulation) {
 
                 // === SEXUAL REPRODUCTION (MATING) ===
                 // Check for mating opportunities when agents collide
-                if (agent.wantsToReproduce && other.wantsToReproduce &&
+                // Only mate if NOT in a predator/prey relationship
+                if (!isPredator && !isPrey &&
+                    agent.wantsToReproduce && other.wantsToReproduce &&
                     agent.energy > MIN_ENERGY_TO_REPRODUCE && other.energy > MIN_ENERGY_TO_REPRODUCE) {
 
                     // Attempt mating (tryMate handles all other validation)
@@ -123,8 +164,10 @@ export function checkCollisions(simulation) {
                     }
                 }
 
-                if (agent.wantsToAttack && agentSize > other.size * 1.1) {
-                    agent.energy += other.energy * 0.8;
+                // FATAL ATTACK (Kill)
+                // If predator wants to attack and is significantly larger, instant kill
+                if (agent.wantsToAttack && isPredator) {
+                    agent.energy += other.energy * 0.8; // Consume remaining energy
                     agent.kills++;
                     agent.fitness += 20; // Reward for successful kill
                     other.isDead = true;

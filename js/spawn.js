@@ -351,16 +351,34 @@ export function spawnFood(simulation) {
     const livingAgentsArray = simulation.agents.filter(a => !a.isDead);
     const livingAgentsCount = livingAgentsArray.length;
 
-    // Balanced food spawning: enough for survival with small buffer during scarce seasons
-    // Scale food inversely with living agents - more agents = less food per agent
-    // ADJUSTED: More aggressive reduction to prevent food surplus (target ~150-200% energy buffer instead of 12,000%+)
-    const populationFactor = Math.max(0.2, 1 - (livingAgentsCount / simulation.maxAgents) * 1.2);
-    const foodSpawnChance = simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * populationFactor;
+    // GUARANTEE ENOUGH FOOD:
+    // We want to maintain a healthy ratio of food to agents (e.g., 1.5 food items per agent)
+    // If food is below this target, we BOOST the spawn rate.
+    const targetFoodCount = Math.max(50, livingAgentsCount * 1.5); // Minimum 50 food items
+    const currentFoodCount = simulation.food.filter(f => !f.isDead).length;
+
+    let spawnMultiplier = 1.0;
+    if (currentFoodCount < targetFoodCount) {
+        // Boost spawning if we are below target
+        // The lower we are, the higher the boost (up to 5x)
+        const deficit = 1 - (currentFoodCount / targetFoodCount);
+        spawnMultiplier = 1.0 + (deficit * 4.0);
+    } else {
+        // If we have enough food, we can slow down slightly, but don't starve them
+        spawnMultiplier = 0.5;
+    }
+
+    // Base spawn chance adjusted by multiplier
+    // simulation.finalFoodSpawnMultiplier comes from config/sliders
+    const foodSpawnChance = simulation.finalFoodSpawnMultiplier * simulation.foodScarcityFactor * spawnMultiplier;
+
+    // Hard cap check is still useful to prevent infinite memory usage, but we rely on ratio mostly
+    if (simulation.food.length >= FOOD_SPAWN_CAP && currentFoodCount >= targetFoodCount) return;
 
     if (Math.random() > foodSpawnChance) return;
 
     let x, y, isHighValue = false;
-    
+
     // IMPROVED: 30% chance to spawn food near agents to help them find food more easily
     // This helps agents learn food-seeking behavior by making food more accessible
     if (livingAgentsCount > 0 && Math.random() < 0.3) {
@@ -374,11 +392,11 @@ export function spawnFood(simulation) {
                 const spawnDistance = 200 + Math.random() * 200; // 200-400 units away
                 x = randomAgent.x + Math.cos(angle) * spawnDistance;
                 y = randomAgent.y + Math.sin(angle) * spawnDistance;
-                
+
                 // Ensure within world bounds
                 x = Math.max(50, Math.min(simulation.worldWidth - 50, x));
                 y = Math.max(50, Math.min(simulation.worldHeight - 50, y));
-                
+
                 // Check if position is safe (not in obstacle or too close to other food)
                 let safe = true;
                 if (simulation.obstacles && simulation.obstacles.some(o => o && distance(x, y, o.x, o.y) < o.radius + 30)) {
@@ -387,7 +405,7 @@ export function spawnFood(simulation) {
                 if (simulation.food && simulation.food.some(f => f && !f.isDead && distance(x, y, f.x, f.y) < 20)) {
                     safe = false;
                 }
-                
+
                 // If not safe, fall back to random spawn
                 if (!safe) {
                     const pos = randomSpawnAvoidCluster(simulation);

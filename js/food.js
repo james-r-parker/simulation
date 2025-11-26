@@ -14,8 +14,8 @@ export class Food {
         this.isFood = true;
         this.isDead = false;
         this.age = 0; // Track how long this food has existed
-        this.rotRate = 0.02 + Math.random() * 0.03; // Random rot rate: 0.02-0.05 energy per frame (much slower!)
-        this.maxAge = 30000 + Math.random() * 20000; // Random max age: 500-833 seconds at 60 FPS (8-14 minutes!)
+        this.rotRate = 0.002 + Math.random() * 0.003; // Random rot rate: 0.002-0.005 energy per frame (10x slower!)
+        this.maxAge = 60000 + Math.random() * 30000; // Random max age: 1000-1500 seconds at 60 FPS (16-25 minutes!)
     }
 
     update() {

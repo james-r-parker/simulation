@@ -842,7 +842,9 @@ export class Simulation {
             }
 
             // PERFORMANCE OPTIMIZATION: GPU-accelerated food updates
-            if (this.useGpu && this.gpuPhysics && this.gpuPhysics.isAvailable()) {
+            // NOTE: Disabled GPU path due to GPU initialization failures
+            // Food updates use CPU path which works correctly
+            if (false) {
                 try {
                     // Reuse pre-allocated array instead of filter()
                     this.livingFood.length = 0;
@@ -874,8 +876,10 @@ export class Simulation {
                 }
             }
 
-            // PERFORMANCE OPTIMIZATION: GPU-accelerated pheromone updates
-            if (this.useGpu && this.gpuPhysics && this.gpuPhysics.isAvailable()) {
+            // PERFORMANCE OPTIMIZATION: GPU-accelerated pheromone updates  
+            // NOTE: Disabled GPU path due to GPU initialization failures
+            // Pheromone updates use CPU path which works correctly
+            if (false) {
                 try {
                     // Reuse pre-allocated array instead of filter()
                     this.livingPheromones.length = 0;
@@ -1073,29 +1077,9 @@ export class Simulation {
                     }
                 }
 
-                // Clean up unreachable food (food that's been alive too long)
-                // This prevents food accumulation in areas agents never visit
-                if (this.frameCount % 5000 === 0) { // Check every ~83 seconds at 60 FPS
-                    const maxFoodAge = 3000; // ~50 seconds at 60 FPS
-                    let cleanedCount = 0;
-                    for (let j = this.food.length - 1; j >= 0; j--) {
-                        const food = this.food[j];
-                        if (food && !food.isDead && food.age !== undefined && food.age > maxFoodAge) {
-                            // Mark old unreachable food as dead
-                            food.isDead = true;
-                            cleanedCount++;
-                        }
-                        // Initialize age tracking for new food
-                        if (food && food.age === undefined) {
-                            food.age = 0;
-                        } else if (food && !food.isDead) {
-                            food.age++;
-                        }
-                    }
-                    if (cleanedCount > 0) {
-                        console.log(`[CLEANUP] Removed ${cleanedCount} unreachable food items`);
-                    }
-                }
+                // Clean up unreachable food logic REMOVED
+                // Food now has its own natural decay/rotting process in food.js
+                // This prevents "random" disappearance of valid food items
             }
             // Remove dead pheromones - only on last iteration
             if (i === iterations - 1) {
