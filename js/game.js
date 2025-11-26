@@ -47,6 +47,7 @@ import {
 import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
 import { updateFitnessTracking, updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
+import { PerformanceMonitor } from './performance-monitor.js';
 
 export class Simulation {
     constructor(container) {
@@ -177,6 +178,10 @@ export class Simulation {
 
         // Object pool for quadtree Point objects to reduce GC pressure
         this.pointPool = new PointPool(); // Uses default POINT_POOL_SIZE
+
+        // Performance monitoring framework
+        this.perfMonitor = new PerformanceMonitor(60); // 60-frame rolling average
+        this.perfMonitor.setEnabled(true); // Enable by default
 
         // Pre-allocated arrays for filter operations
         this.livingFood = [];
@@ -675,6 +680,9 @@ export class Simulation {
             this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
         }
 
+        // Start performance monitoring for this frame
+        this.perfMonitor.startFrame();
+
         // Repopulate before game loop to include new agents
         repopulate(this);
 
@@ -682,6 +690,7 @@ export class Simulation {
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
         for (let i = 0; i < iterations; i++) {
             // REBUILD quadtree every iteration for accurate collision detection
+            this.perfMonitor.startPhase('quadtree');
             // This ensures all collision queries use current entity positions
             this.quadtree.clear();
 
@@ -725,6 +734,7 @@ export class Simulation {
                 this.logger.error('[QUADTREE] Error building quadtree:', error);
                 // Point pool will be released in finally block
             }
+            this.perfMonitor.endPhase('quadtree');
 
             // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
             // ACCURACY MAINTAINED: Pheromones don't need to update every frame
@@ -740,7 +750,9 @@ export class Simulation {
             // PERFORMANCE OPTIMIZATION: Reduce food spawning frequency
             // ACCURACY MAINTAINED: Food still spawns regularly, just not every iteration
             if (i % Math.max(1, Math.floor(this.gameSpeed / 2)) === 0 || i === iterations - 1) {
+                this.perfMonitor.startPhase('spawning');
                 spawnFood(this);
+                this.perfMonitor.endPhase('spawning');
             }
 
             this.applyEnvironmentEvents();
@@ -768,6 +780,7 @@ export class Simulation {
 
             // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
             // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
+            this.perfMonitor.startPhase('perception');
             const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 10;
 
             if (canUseGpu) {
@@ -837,9 +850,11 @@ export class Simulation {
             if (!gpuNeuralNetSucceeded) {
                 this.logger.warn('GPU Neural Network processing failed, using CPU');
             }
+            this.perfMonitor.endPhase('perception');
 
             // CRITICAL FIX: Always check collisions to prevent tunneling
             // Both agents can move, so we must check every iteration
+            this.perfMonitor.startPhase('physics');
             checkCollisions(this);
 
             // Update agents (will use GPU results if available, otherwise CPU)
@@ -871,6 +886,7 @@ export class Simulation {
                     pheromone.update();
                 }
             }
+            this.perfMonitor.endPhase('physics');
 
             // Count frame as GPU or CPU based on whether GPU actually ran
             // Only count on last iteration to avoid double counting
@@ -903,6 +919,7 @@ export class Simulation {
             // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
             // This also reduces the number of array operations
             if (i === iterations - 1) {
+                this.perfMonitor.startPhase('cleanup');
                 // === REPRODUCTION SYSTEM ===
                 // Check for reproduction opportunities (once per frame)
                 for (let j = 0; j < this.agents.length; j++) {
@@ -1049,6 +1066,7 @@ export class Simulation {
                         this.pheromones.splice(j, 1);
                     }
                 }
+                this.perfMonitor.endPhase('cleanup');
             }
 
             if (i === iterations - 1) {
@@ -1104,6 +1122,7 @@ export class Simulation {
         }
 
         // Update camera
+        this.perfMonitor.startPhase('camera');
         if (this.followBest) {
             // Check if current bestAgent is visible and valid
             let shouldFollow = false;
@@ -1195,6 +1214,7 @@ export class Simulation {
             }
         }
         this.camera.update();
+        this.perfMonitor.endPhase('camera');
 
         // Update renderer data structures
         const camPos = this.camera.getPosition();
@@ -1209,8 +1229,16 @@ export class Simulation {
         this.renderer.updateVisualEffects(this.frameCount);
 
         // Render the scene
+        this.perfMonitor.startPhase('rendering');
         this.renderer.updateRays(this.agents, this.frameCount);
         this.renderer.render();
+        this.perfMonitor.endPhase('rendering');
+
+        // End frame timing and log performance report every 5 seconds
+        this.perfMonitor.endFrame();
+        if (this.frameCount % (FPS_TARGET * 5) === 0) {
+            this.perfMonitor.logReport();
+        }
 
         // Process the agent spawn queue, enforcing the max population limit
         if (this.agentSpawnQueue.length > 0) {
