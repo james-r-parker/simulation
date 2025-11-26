@@ -109,13 +109,13 @@ async function startPeriodicSummarization(simulation) {
     if (!summarizer) {
         // Try to initialize (may fail if user gesture is required)
         summarizer = await initializeSummarizer(false);
-        
+
         // If initialization failed due to user gesture requirement, set up click handler
         if (!summarizer && 'Summarizer' in self) {
             const availability = await Summarizer.availability();
             if (availability === 'downloading' || availability === 'downloadable') {
                 console.log('[SUMMARIZER] 👆 Waiting for user gesture to initialize...');
-                
+
                 // Set up one-time click handler to initialize on user interaction
                 const initOnClick = async (e) => {
                     summarizer = await initializeSummarizer(true);
@@ -130,11 +130,11 @@ async function startPeriodicSummarization(simulation) {
                         }, 500);
                     }
                 };
-                
+
                 // Listen for click or touch
                 document.addEventListener('click', initOnClick, { once: true });
                 document.addEventListener('touchstart', initOnClick, { once: true });
-                
+
                 // Don't return - let the interval be set up, it will just skip until initialized
             } else {
                 console.log('[SUMMARIZER] ❌ Cannot start summarization - API not available');
@@ -165,6 +165,30 @@ async function startPeriodicSummarization(simulation) {
             generateAndDisplaySummary(simulation);
             initialSummaryScheduled = false; // Reset after summary is generated
         }, 1000);
+    }
+}
+
+// Pause/resume summarization based on window focus
+function handleWindowFocusChange(simulation) {
+    if (!isFullscreenMode) return; // Only handle focus changes in fullscreen mode
+
+    if (document.hasFocus()) {
+        console.log('[SUMMARIZER] 👁️ Window regained focus - resuming summarization');
+        // Restart summarization if we have a summarizer but no active interval
+        if (summarizer && !summaryInterval) {
+            summaryInterval = setInterval(async () => {
+                if (document.hasFocus()) {
+                    await generateAndDisplaySummary(simulation);
+                }
+            }, 60000); // 60 seconds
+        }
+    } else {
+        console.log('[SUMMARIZER] 💤 Window lost focus - pausing summarization');
+        // Clear the interval to stop summarization
+        if (summaryInterval) {
+            clearInterval(summaryInterval);
+            summaryInterval = null;
+        }
     }
 }
 
@@ -750,6 +774,10 @@ export function setupUIListeners(simulation) {
             }, 1000); // Shorter delay when mouse leaves window
         }
     });
+
+    // Handle window focus changes to pause/resume AI summarization
+    window.addEventListener('focus', () => handleWindowFocusChange(simulation));
+    window.addEventListener('blur', () => handleWindowFocusChange(simulation));
 
     window.addEventListener('beforeunload', async () => {
         // Release wake lock and flush dead agent queue
