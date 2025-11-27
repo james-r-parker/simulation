@@ -291,22 +291,55 @@ export class ValidationManager {
             validationEntry.isActiveTest = false; // Clear active test flag
             console.log(`[VALIDATION] Active validation agents: ${this.activeValidationAgents}, cleared active test flag for ${agent.geneId}`);
 
-            // Process the validation result (skip gene pool check since this is validation completion)
-            const result = this.addToValidationQueue(agent, false, true);
-            if (result.success) {
-                // Agent passed validation, queue for gene pool save
-                console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed, queueing for save`);
-                db.queueSaveAgent(result.record);
-                // Remove from queue after successful validation
-                this.validationQueue.delete(agent.geneId);
-            } else {
-                // Check if we should remove this agent from the queue
-                const shouldRemove = this.shouldRemoveFromQueue(validationEntry);
-                if (shouldRemove) {
-                    console.log(`[VALIDATION] 🗑️ Removing ${agent.geneId} from validation queue (${shouldRemove})`);
+            // SPECIAL HANDLING: If agent dies with fitness above threshold, count it as a pass
+            if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
+                console.log(`[VALIDATION] 💀 Agent ${agent.geneId} died but achieved fitness ${agent.fitness.toFixed(1)} >= ${VALIDATION_FITNESS_THRESHOLD} - counting as successful run`);
+
+                // Force this run to be recorded as successful
+                validationEntry.attempts++;
+                validationEntry.scores.push(agent.fitness);
+                validationEntry.lastValidationTime = Date.now();
+
+                // Check if this gives us enough successful runs for validation
+                const successfulRuns = validationEntry.scores.filter(score => score >= VALIDATION_FITNESS_THRESHOLD).length;
+
+                if (successfulRuns >= 2 || (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS && successfulRuns >= 2)) {
+                    // Agent now has enough successful runs to pass validation
+                    const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
+                    console.log(`[VALIDATION] 🎉 ${agent.geneId} PASSED VALIDATION from death (death counted as pass, ${successfulRuns}/${validationEntry.attempts} runs successful, avg: ${avgScore.toFixed(1)})`);
+
+                    validationEntry.isValidated = true;
+                    this.toast.showValidationPassed(agent.geneId, avgScore, validationEntry.scores, validationEntry.attempts);
+
+                    const validationRecord = {
+                        id: `${agent.geneId}_${Date.now()}`,
+                        geneId: validationEntry.geneId,
+                        fitness: avgScore,
+                        weights: validationEntry.weights,
+                        specializationType: validationEntry.specializationType,
+                        fit: true,
+                        getWeights: () => validationEntry.weights
+                    };
+
+                    db.queueSaveAgent(validationRecord);
                     this.validationQueue.delete(agent.geneId);
                 } else {
-                    console.log(`[VALIDATION] Keeping ${agent.geneId} in queue for another attempt (${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                    // Not enough successful runs yet, keep in queue for potential respawn
+                    console.log(`[VALIDATION] Agent ${agent.geneId} death counted as pass but needs more runs (${successfulRuns}/${Math.max(2, validationEntry.attempts)} successful needed)`);
+                }
+            } else {
+                // Agent died with insufficient fitness - process normally
+                console.log(`[VALIDATION] Agent ${agent.geneId} died with insufficient fitness ${agent.fitness.toFixed(1)} < ${VALIDATION_FITNESS_THRESHOLD} - processing as normal validation attempt`);
+                const result = this.addToValidationQueue(agent, false, true);
+                if (result.success) {
+                    // Agent passed validation through normal means
+                    console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed through normal validation, queueing for save`);
+                    db.queueSaveAgent(result.record);
+                    this.validationQueue.delete(agent.geneId);
+                } else {
+                    // Agent failed validation - remove from queue
+                    console.log(`[VALIDATION] 🗑️ Removing failed validation agent ${agent.geneId} from queue (died with insufficient fitness)`);
+                    this.validationQueue.delete(agent.geneId);
                 }
             }
             return true;

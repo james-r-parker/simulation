@@ -789,12 +789,194 @@ export function setupUIListeners(simulation) {
         geneticDiversitySection.title = 'Click to view gene pool details';
     }
 
+    // Agent Modal Close Button
+    const closeAgentModalBtn = document.getElementById('close-agent-modal');
+    if (closeAgentModalBtn) {
+        closeAgentModalBtn.addEventListener('click', () => {
+            closeAgentModal();
+        });
+    }
+
     window.addEventListener('beforeunload', async () => {
         // Release wake lock and flush dead agent queue
         await simulation.releaseWakeLock();
         simulation.processDeadAgentQueue();
         await simulation.db.flush();
     });
+}
+
+
+// --- Agent Details Modal ---
+let agentModalUpdateInterval = null;
+let selectedAgent = null;
+
+export function openAgentModal(agent) {
+    if (!agent) return;
+
+    selectedAgent = agent;
+    const modal = document.getElementById('agent-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        updateAgentModal(agent);
+
+        // Start update loop
+        if (agentModalUpdateInterval) clearInterval(agentModalUpdateInterval);
+        agentModalUpdateInterval = setInterval(() => {
+            if (agent.isDead) {
+                closeAgentModal();
+            } else {
+                updateAgentModal(agent);
+            }
+        }, 100); // Update 10 times per second
+
+        // Render NN once
+        renderNN(agent);
+    }
+}
+
+export function closeAgentModal() {
+    const modal = document.getElementById('agent-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    if (agentModalUpdateInterval) {
+        clearInterval(agentModalUpdateInterval);
+        agentModalUpdateInterval = null;
+    }
+    selectedAgent = null;
+}
+
+function updateAgentModal(agent) {
+    const idEl = document.getElementById('modal-agent-id');
+    if (idEl) idEl.textContent = `Agent #${agent.id || '?'}`;
+
+    const typeEl = document.getElementById('modal-agent-type');
+    if (typeEl) {
+        typeEl.textContent = agent.specializationType || 'FORAGER';
+        // Set color based on type
+        const colors = {
+            'FORAGER': 'var(--neon-green)',
+            'PREDATOR': 'var(--neon-red)',
+            'REPRODUCER': 'var(--neon-magenta)',
+            'SCOUT': 'var(--neon-cyan)',
+            'DEFENDER': 'var(--neon-yellow)'
+        };
+        typeEl.style.color = colors[agent.specializationType] || 'white';
+        typeEl.style.borderColor = colors[agent.specializationType] || 'white';
+    }
+
+    const genEl = document.getElementById('modal-agent-gen');
+    if (genEl) genEl.textContent = agent.generation || 0;
+
+    // Stats
+    const energyVal = document.getElementById('modal-energy-val');
+    const energyBar = document.getElementById('modal-energy-bar');
+    if (energyVal) energyVal.textContent = Math.floor(agent.energy);
+    if (energyBar) energyBar.style.width = `${Math.min(100, (agent.energy / agent.maxEnergy) * 100)}%`;
+
+    const healthVal = document.getElementById('modal-health-val');
+    const healthBar = document.getElementById('modal-health-bar');
+    // Using energy as health proxy for now
+    if (healthVal) healthVal.textContent = `${Math.floor((agent.energy / agent.maxEnergy) * 100)}%`;
+    if (healthBar) healthBar.style.width = `${Math.min(100, (agent.energy / agent.maxEnergy) * 100)}%`;
+
+    const ageVal = document.getElementById('modal-age-val');
+    if (ageVal) ageVal.textContent = `${agent.age.toFixed(1)}s`;
+
+    const fitnessVal = document.getElementById('modal-fitness-val');
+    if (fitnessVal) fitnessVal.textContent = Math.floor(agent.fitness);
+
+    const foodVal = document.getElementById('modal-food-val');
+    if (foodVal) foodVal.textContent = agent.foodEaten;
+
+    const offspringVal = document.getElementById('modal-offspring-val');
+    if (offspringVal) offspringVal.textContent = (agent.childrenFromMate || 0) + (agent.childrenFromSplit || 0);
+
+    const tempVal = document.getElementById('modal-temp-val');
+    if (tempVal) tempVal.textContent = `${agent.temperature.toFixed(1)}°C`;
+
+    const killsVal = document.getElementById('modal-kills-val');
+    if (killsVal) killsVal.textContent = agent.kills;
+}
+
+function renderNN(agent) {
+    const canvas = document.getElementById('nn-viz-canvas');
+    if (!canvas || !agent.nn) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Simple visualization: Hidden -> Output weights
+    const hiddenSize = agent.hiddenSize || 20;
+    const outputSize = agent.outputSize || 5;
+    const weights2 = agent.nn.weights2; // Hidden -> Output
+
+    if (!weights2) return;
+
+    const nodeRadius = 4;
+    const hiddenX = 60;
+    const outputX = w - 80;
+
+    const hiddenSpacing = (h - 40) / Math.max(hiddenSize, 1);
+    const outputSpacing = (h - 40) / Math.max(outputSize, 1);
+    const outputCenterOffset = (h - (outputSize * outputSpacing)) / 2;
+    const hiddenCenterOffset = (h - (hiddenSize * hiddenSpacing)) / 2;
+
+    // Draw connections
+    for (let i = 0; i < hiddenSize; i++) {
+        const hy = hiddenCenterOffset + i * hiddenSpacing + 20;
+        for (let j = 0; j < outputSize; j++) {
+            const oy = outputCenterOffset + j * outputSpacing + 20;
+
+            const weight = weights2[i][j];
+            const opacity = Math.min(1, Math.abs(weight));
+            const color = weight > 0 ? `rgba(0, 255, 0, ${opacity})` : `rgba(255, 0, 0, ${opacity})`;
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.abs(weight) * 3;
+            ctx.beginPath();
+            ctx.moveTo(hiddenX, hy);
+            ctx.lineTo(outputX, oy);
+            ctx.stroke();
+        }
+    }
+
+    // Draw Hidden nodes
+    ctx.fillStyle = '#aaa';
+    for (let i = 0; i < hiddenSize; i++) {
+        const hy = hiddenCenterOffset + i * hiddenSpacing + 20;
+        ctx.beginPath();
+        ctx.arc(hiddenX, hy, nodeRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText("Hidden Layer", hiddenX, 15);
+
+    // Draw Output nodes and labels
+    const outputs = ['Thrust', 'Rotate', 'Sprint', 'Mate', 'Attack'];
+    ctx.textAlign = 'left';
+    for (let i = 0; i < outputSize; i++) {
+        const oy = outputCenterOffset + i * outputSpacing + 20;
+
+        // Node
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(outputX, oy, nodeRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = '11px Inter';
+        ctx.fillText(outputs[i], outputX + 10, oy + 4);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Orbitron';
+    ctx.textAlign = 'center';
+    ctx.fillText("Outputs", outputX, 15);
 }
 
 export function setupCameraControls(simulation) {
@@ -1076,22 +1258,22 @@ function showGeneticDiversityModal(simulation) {
                             </thead>
                             <tbody>
                                 ${Object.entries(genePools).map(([geneId, agents]) => {
-                                    if (!agents || agents.length === 0) return '';
+        if (!agents || agents.length === 0) return '';
 
-                                    const bestFitness = Math.max(...agents.map(a => a.fitness));
-                                    const avgFitness = agents.reduce((sum, a) => sum + a.fitness, 0) / agents.length;
-                                    const specializationCounts = {};
+        const bestFitness = Math.max(...agents.map(a => a.fitness));
+        const avgFitness = agents.reduce((sum, a) => sum + a.fitness, 0) / agents.length;
+        const specializationCounts = {};
 
-                                    agents.forEach(agent => {
-                                        const type = agent.specializationType || 'Unknown';
-                                        specializationCounts[type] = (specializationCounts[type] || 0) + 1;
-                                    });
+        agents.forEach(agent => {
+            const type = agent.specializationType || 'Unknown';
+            specializationCounts[type] = (specializationCounts[type] || 0) + 1;
+        });
 
-                                    const specializationText = Object.entries(specializationCounts)
-                                        .map(([type, count]) => `${type}:${count}`)
-                                        .join(', ');
+        const specializationText = Object.entries(specializationCounts)
+            .map(([type, count]) => `${type}:${count}`)
+            .join(', ');
 
-                                    return `
+        return `
                                         <tr>
                                             <td class="gene-id-cell">${geneId}</td>
                                             <td>${agents.length}</td>
@@ -1100,7 +1282,7 @@ function showGeneticDiversityModal(simulation) {
                                             <td class="specialization-cell">${specializationText}</td>
                                         </tr>
                                     `;
-                                }).join('')}
+    }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1219,7 +1401,7 @@ export function updateDashboard(simulation) {
         return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
     }).length;
     const agentsMeetingNavigation = livingAgents.filter(a => safeNumber(a.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL).length;
-    
+
     // Calculate average exploration percentage and turns towards food
     const avgExplorationPercentage = livingAgents.reduce((sum, a) => {
         const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;

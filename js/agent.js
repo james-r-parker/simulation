@@ -9,7 +9,7 @@ import {
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
-    SEDENTARY_VELOCITY_THRESHOLD, SEDENTARY_GRACE_PERIOD, SEDENTARY_PENALTY_MULTIPLIER,
+    TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_START, TEMPERATURE_GAIN_MOVE, TEMPERATURE_LOSS_PASSIVE, TEMPERATURE_PASSIVE_LOSS_FACTOR,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
@@ -56,6 +56,7 @@ export class Agent {
         this.birthTime = Date.now(); // Real-time birth timestamp for accurate age/fitness calculation
         this.age = 0;
         this.framesAlive = 0;
+        this.temperature = TEMPERATURE_START;
 
         this.vx = (Math.random() - 0.5) * 0.5;
         this.vy = (Math.random() - 0.5) * 0.5;
@@ -104,8 +105,8 @@ export class Agent {
         // CRITICAL: Initialize hiddenState here, as its length is needed for inputSize
         this.hiddenState = new Array(this.hiddenSize).fill(0);
 
-        // Input size: (rays * 5) + (alignment rays * 1) + 8 state inputs + 8 memory inputs + hidden state
-        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 16 + this.hiddenState.length;
+        // Input size: (rays * 5) + (alignment rays * 1) + 9 state inputs + 8 memory inputs + hidden state
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 17 + this.hiddenState.length;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -158,7 +159,6 @@ export class Agent {
         this.foodApproaches = 0; // Track successful approaches to food
         this.lastFoodDistance = null; // Track distance to nearest food (null = no recent food detected)
         this.lastObstacleDistance = null; // Track distance to nearest obstacle (null = no recent obstacle detected)
-        this.sedentaryFrames = 0; // Track how long agent has been stationary
 
         // --- Recent Memory (last 3 frames for temporal awareness) ---
         this.memoryFrames = AGENT_MEMORY_FRAMES;
@@ -440,18 +440,24 @@ export class Agent {
         let passiveLoss = PASSIVE_LOSS + (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
         const sizeLoss = (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
 
-        // 2. Sedentary Penalty
-        // Check if agent is moving slowly
+        // 2. Temperature Logic
+        // Increase temp based on movement
         const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (currentSpeed < SEDENTARY_VELOCITY_THRESHOLD) {
-            this.sedentaryFrames++;
-            if (this.sedentaryFrames > SEDENTARY_GRACE_PERIOD) {
-                // Apply penalty multiplier to passive loss
-                passiveLoss *= SEDENTARY_PENALTY_MULTIPLIER;
-            }
-        } else {
-            this.sedentaryFrames = 0; // Reset if moving
-        }
+        const speedRatio = Math.min(currentSpeed / MAX_VELOCITY, 1.0);
+        this.temperature += speedRatio * TEMPERATURE_GAIN_MOVE;
+
+        // Passive temp loss
+        this.temperature -= TEMPERATURE_LOSS_PASSIVE;
+
+        // Clamp temperature
+        this.temperature = Math.max(TEMPERATURE_MIN, Math.min(TEMPERATURE_MAX, this.temperature));
+
+        // Calculate passive loss multiplier based on temperature
+        // 0 temp = max penalty, 100 temp = no penalty (1x)
+        const tempFactor = 1.0 - (this.temperature / TEMPERATURE_MAX); // 1.0 at 0 temp, 0.0 at 100 temp
+        const passiveMultiplier = 1.0 + (tempFactor * (TEMPERATURE_PASSIVE_LOSS_FACTOR - 1.0));
+
+        passiveLoss *= passiveMultiplier;
 
         const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
         const movementLoss = Math.min(currentSpeed * currentSpeed * movementCostMultiplier, 5);
@@ -1016,6 +1022,7 @@ export class Agent {
         inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
         inputs.push(angleDifference / Math.PI); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
+        inputs.push(this.temperature / TEMPERATURE_MAX); // Temperature
 
         // Recent memory (temporal awareness) - adds 8 inputs
         // Safety checks to prevent undefined access errors

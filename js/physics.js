@@ -6,7 +6,7 @@ import {
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
     MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES,
     COLLISION_SEPARATION_STRENGTH, BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
-    OBSTACLE_MAX_SPEED
+    OBSTACLE_MAX_SPEED, TEMPERATURE_GAIN_EAT, TEMPERATURE_MAX
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -136,6 +136,9 @@ export function checkCollisions(simulation) {
                         other.energy -= energyStolen;
                         agent.foodEaten += 0.1; // Partial credit for nibbling
 
+                        // Temperature gain from eating
+                        agent.temperature = Math.min(TEMPERATURE_MAX, agent.temperature + TEMPERATURE_GAIN_EAT);
+
                         // Only count collision for prey
                         other.collisions++;
 
@@ -151,6 +154,9 @@ export function checkCollisions(simulation) {
                         agent.energy -= energyLost;
                         other.energy += energyLost;
                         other.foodEaten += 0.1;
+
+                        // Temperature gain from eating
+                        other.temperature = Math.min(TEMPERATURE_MAX, other.temperature + TEMPERATURE_GAIN_EAT);
 
                         // Count collision for prey
                         agent.collisions++;
@@ -245,6 +251,9 @@ export function checkCollisions(simulation) {
                 agent.foodEaten++;
                 agent.fitness += 15; // Immediate fitness reward for food
                 food.isDead = true;
+
+                // Temperature gain from eating
+                agent.temperature = Math.min(TEMPERATURE_MAX, agent.temperature + TEMPERATURE_GAIN_EAT);
 
                 // Trigger eating visual effect (green glow) tied to game speed
                 if (simulation.renderer) {
@@ -592,6 +601,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
         inputs.push(angleDifference / Math.PI); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
+        inputs.push(agent.temperature / TEMPERATURE_MAX); // Temperature
 
         // Recent memory (temporal awareness) - adds 8 inputs
         inputs.push(agent.previousVelocities[1].vx / MAX_VELOCITY); // Previous velocity X (1 frame ago)

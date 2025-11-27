@@ -34,7 +34,7 @@ import { toast } from './toast.js';
 // Imported functions from refactored modules
 import {
     updateLoadingScreen, hideLoadingScreen, setupUIListeners,
-    updateInfo, updateDashboard, resize
+    updateInfo, updateDashboard, resize, openAgentModal
 } from './ui.js';
 import {
     updateMemoryStats, handleMemoryPressure, periodicMemoryCleanup
@@ -450,10 +450,59 @@ export class Simulation {
         await new Promise(resolve => setTimeout(resolve, 300));
         hideLoadingScreen();
 
+        // Add click listener for agent selection
+        this.renderer.renderer.domElement.addEventListener('click', (e) => this.handleCanvasClick(e));
+
         // Start the game loop only after everything is initialized
         this.gameLoop().catch(error => {
             this.logger.error('Error starting game loop:', error);
         });
+    }
+
+    handleCanvasClick(event) {
+        const rect = this.renderer.renderer.domElement.getBoundingClientRect();
+        const clientX = event.clientX;
+        const clientY = event.clientY;
+
+        // Convert to normalized device coordinates (NDC) [-1, 1]
+        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+        // Unproject to world coordinates using the renderer's camera
+        const threeCamera = this.renderer.camera;
+        const vector = new THREE.Vector3(x, y, 0);
+        vector.unproject(threeCamera);
+
+        // Renderer flips Y for drawing, so we flip back to get simulation coordinates
+        const worldX = vector.x;
+        const worldY = -vector.y;
+
+        // Find closest agent
+        let closestAgent = null;
+        let minDist = Infinity;
+        const clickThreshold = 20; // World units tolerance
+
+        // Check active agents
+        // Optimization: Use quadtree if available, but linear scan is fine for click (rare event)
+        for (const agent of this.agents) {
+            if (agent.isDead) continue;
+
+            const dx = agent.x - worldX;
+            const dy = agent.y - worldY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Check if click is within agent's visual radius (plus some padding for easier clicking)
+            const hitRadius = Math.max(agent.size * 1.5, 5);
+
+            if (dist < hitRadius && dist < minDist) {
+                minDist = dist;
+                closestAgent = agent;
+            }
+        }
+
+        if (closestAgent) {
+            openAgentModal(closestAgent, this);
+        }
     }
 
 
@@ -1035,8 +1084,8 @@ export class Simulation {
                             this.logger.debug(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
                             // Handle validation agent death
                             this.validationManager.handleValidationDeath(agent, this.db);
-                        } else if (agent.fitness >= VALIDATION_FITNESS_THRESHOLD) {
-                            // High-performing agent - check if gene pool exists
+                        } else if (agent.fit) {
+                            // Agent meets comprehensive fit criteria - check if gene pool exists
                             const genePoolExists = this.db.pool[agent.geneId] !== undefined;
 
                             if (genePoolExists) {
@@ -1044,8 +1093,8 @@ export class Simulation {
                                 this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
                                 this.db.queueSaveAgent(agent);
                             } else {
-                                // CASE 2: New gene pool - enter validation
-                                this.logger.debug(`[VALIDATION] 💀 Death: New gene ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
+                                // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
+                                this.logger.debug(`[VALIDATION] 💀 Death: Fit agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
                                 const result = this.validationManager.addToValidationQueue(agent, false);
                                 // If validation returns something other than false, it's handling the agent
                                 // If it returns false, it means cooldown or other skip reason
@@ -1261,7 +1310,7 @@ export class Simulation {
                     // - Higher priority (lower number), OR
                     // - Same priority but higher fitness
                     const shouldSelect = (agentPriority < bestPriority) ||
-                                       (agentPriority === bestPriority && agentFitness > bestFitness);
+                        (agentPriority === bestPriority && agentFitness > bestFitness);
 
                     if (shouldSelect) {
                         bestPriority = agentPriority;

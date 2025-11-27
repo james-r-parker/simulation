@@ -134,16 +134,16 @@ export function updatePeriodicValidation(simulation) {
     let validationsAdded = 0;
 
     simulation.agents.forEach(agent => {
-        // Check if agent is performing well and not already in validation
-        if (agent.fitness >= PERIODIC_VALIDATION_FITNESS_THRESHOLD &&
-            agent.age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL && // Minimum lifespan in seconds
+        // Check if agent is comprehensively fit and not already in validation
+        if (agent.fit &&
+            agent.fitness >= PERIODIC_VALIDATION_FITNESS_THRESHOLD &&
             !simulation.validationManager.isInValidation(agent.geneId) &&
             !hasValidatedAncestor(agent, simulation) &&
             !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
             validationsAdded < MAX_VALIDATIONS_PER_PERIODIC_CHECK) {
 
             // Add to validation queue (periodic validation)
-            console.log(`[VALIDATION] 📊 Periodic check: Adding living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
+            console.log(`[VALIDATION] 📊 Periodic check: Adding fit living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
             simulation.validationManager.addToValidationQueue(agent, true);
             validationsAdded++;
         }
