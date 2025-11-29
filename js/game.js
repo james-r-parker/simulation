@@ -59,7 +59,13 @@ import { PerformanceMonitor } from './performance-monitor.js';
 
 export class Simulation {
     constructor(container) {
-        this.logger = new Logger(LOG_LEVELS.DEBUG); // Set to DEBUG for detailed logs
+        // Set log level based on environment - DEBUG for dev, INFO for production
+        const isProduction = typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__;
+        this.logger = new Logger(isProduction ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG);
+
+        // Performance monitoring framework - disabled in production for performance
+        this.perfMonitor = new PerformanceMonitor(this.logger, 60); // 60-frame rolling average
+        this.perfMonitor.setEnabled(!isProduction); // Enable only in development
         this.logger.log('Simulation constructor started.');
 
         this.agents = [];
@@ -190,9 +196,6 @@ export class Simulation {
         // Object pool for quadtree Point objects to reduce GC pressure
         this.pointPool = new PointPool(); // Uses default POINT_POOL_SIZE
 
-        // Performance monitoring framework
-        this.perfMonitor = new PerformanceMonitor(this.logger, 60); // 60-frame rolling average
-        this.perfMonitor.setEnabled(true); // Enable by default
 
         // Pre-allocated arrays for filter operations
         this.livingFood = [];
@@ -1022,7 +1025,7 @@ export class Simulation {
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
         for (let i = 0; i < iterations; i++) {
             // REBUILD quadtree every iteration for accurate collision detection
-            this.perfMonitor.startPhase('quadtree_active');
+            this.perfMonitor.startPhase(`quadtree_${i}`);
             // This ensures all collision queries use current entity positions
             this.quadtree.clear();
 
@@ -1072,7 +1075,7 @@ export class Simulation {
                 this.logger.error('[QUADTREE] Error building quadtree:', error);
                 // Point pool will be released in finally block
             }
-            this.perfMonitor.endPhase('quadtree');
+            this.perfMonitor.endPhase(`quadtree_${i}`);
 
             // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
             // ACCURACY MAINTAINED: Pheromones don't need to update every frame
@@ -1105,13 +1108,15 @@ export class Simulation {
             let gpuNeuralNetSucceeded = false;
 
             // Update obstacles BEFORE ray tracing so rays detect current positions
-            updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
+            this.perfMonitor.timeSync('obstacles', () => {
+                updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
+            });
 
             // Renderer update moved to end of frame (outside physics loop)
 
             // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
             // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
-            this.perfMonitor.startPhase('perception');
+            this.perfMonitor.startPhase(`perception_${i}`);
             const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 1;
 
             if (canUseGpu) {
@@ -1224,11 +1229,11 @@ export class Simulation {
             if (!gpuNeuralNetSucceeded) {
                 this.logger.warn('GPU Neural Network processing failed, using CPU');
             }
-            this.perfMonitor.endPhase('perception');
+            this.perfMonitor.endPhase(`perception_${i}`);
 
             // CRITICAL FIX: Always check collisions to prevent tunneling
             // Both agents can move, so we must check every iteration
-            this.perfMonitor.startPhase('physics');
+            this.perfMonitor.startPhase(`physics_${i}`);
 
             // Collision detection
             this.perfMonitor.timeSync('physics.collisions', () => {
@@ -1267,7 +1272,7 @@ export class Simulation {
                 }
             });
 
-            this.perfMonitor.endPhase('physics');
+            this.perfMonitor.endPhase(`physics_${i}`);
 
             // Count frame as GPU or CPU based on whether GPU actually ran
             // Only count on last iteration to avoid double counting
@@ -1299,7 +1304,7 @@ export class Simulation {
                 }
             }
 
-            this.perfMonitor.startPhase('cleanup');
+            this.perfMonitor.startPhase(`cleanup_${i}`);
 
             // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
             // This also reduces the number of array operations
@@ -1459,7 +1464,7 @@ export class Simulation {
                 }
             }
 
-            this.perfMonitor.endPhase('cleanup');
+            this.perfMonitor.endPhase(`cleanup_${i}`);
 
             if (i === iterations - 1) {
                 this.frameCount++;
@@ -1715,6 +1720,8 @@ export class Simulation {
                 this.camera.targetY = this.worldHeight / 2;
             }
         }
+        this.perfMonitor.endPhase('camera');
+
         this.perfMonitor.timeSync('rendering.updates', () => {
             this.camera.update();
             // Update renderer data structures
@@ -1806,13 +1813,15 @@ export class Simulation {
         // End frame timing and log performance report every 5 seconds
         this.perfMonitor.endFrame();
         if (this.frameCount % (FPS_TARGET * 5) === 0) {
-            this.perfMonitor.logReport();
+            this.perfMonitor.timeSync('logging', () => {
+                this.perfMonitor.logReport();
 
-            // Also log health status
-            const health = this.perfMonitor.getHealthStatus();
-            if (health.status !== 'warming_up') {
-                this.logger.info(`[PERF-HEALTH] Status: ${health.status}, degradation: ${health.degradationRatio.toFixed(2)}x`);
-            }
+                // Also log health status
+                const health = this.perfMonitor.getHealthStatus();
+                if (health.status !== 'warming_up') {
+                    this.logger.info(`[PERF-HEALTH] Status: ${health.status}, degradation: ${health.degradationRatio.toFixed(2)}x`);
+                }
+            });
         }
 
         this.animationFrameId = requestAnimationFrame(() => {

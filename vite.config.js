@@ -20,7 +20,15 @@ export default defineConfig({
         // Use relative paths for assets
         assetFileNames: 'assets/[name].[ext]'
       }
+    },
+    // Define production environment variables
+    define: {
+      __PRODUCTION__: true
     }
+  },
+  // Define development environment variables
+  define: {
+    __PRODUCTION__: false
   }
 });
 
