@@ -285,7 +285,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
 
         // Try different workgroup sizes if the current one fails
-        const workgroupSizes = [128, 256, 64]; // Fallback sizes in order of preference
+        const workgroupSizes = [128, 64]; // Fallback sizes in order of preference
         let pipelineCreated = false;
 
         for (const size of workgroupSizes) {
@@ -573,19 +573,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             const resultData = new Float32Array(mappedRange.slice(0)); // Create a copy
             gpuReadBuffer.unmap(); // Now we can unmap immediately
             gpuReadBuffer.destroy(); // CRITICAL FIX: Destroy buffer to prevent memory leak
-
-            // More robust NaN check on the copied data
-            for (let i = 0; i < resultData.length; i++) {
-                if (isNaN(resultData[i])) {
-                    const rayIndex = Math.floor(i / 4);
-                    const propertyIndex = i % 4;
-                    const propertyName = ['distance', 'hitType', 'entityId', 'padding'][propertyIndex];
-
-                    this.logger.warn(`[GPU] Result contains NaN at ray ${rayIndex}, property: ${propertyName}`);
-                    return null; // Abort if any NaN is found
-                }
-            }
-
             return resultData;
         } catch (e) {
             this.logger.error('[GPU] Ray tracing error:', e);
