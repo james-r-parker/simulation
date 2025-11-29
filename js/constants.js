@@ -277,8 +277,6 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 
 // Validation system (rigorous testing for elite agents)
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
-export const VALIDATION_FITNESS_THRESHOLD = 18000; // Fitness threshold for death-based validation eligibility
-export const PERIODIC_VALIDATION_FITNESS_THRESHOLD = VALIDATION_FITNESS_THRESHOLD; // Same threshold as death validation
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 
 // --- MATH CONSTANTS ---
@@ -370,5 +368,10 @@ export const WORKER_REQUEST_TIMEOUT_MS = 5000; // Database worker request timeou
 
 // --- ADDITIONAL PERFORMANCE CONSTANTS ---
 export const AGENT_SIZE_ENERGY_LOSS_MULTIPLIER = 0.00025; // Energy loss per frame based on agent size
-export const MAX_AGENTS_TO_SPAWN_PER_FRAME = 20; // Maximum agents to spawn in a single frame during repopulation
+export const MAX_AGENTS_TO_SPAWN_PER_FRAME = 8; // Maximum agents to spawn in a single frame during repopulation (balanced for smooth spawning)
+export const SPAWN_STAGGER_FRAMES = 2; // Frames to wait between individual agent spawns (prevents jarring batch spawning)
+export const SPAWN_GROWTH_DURATION_FRAMES = 120; // Frames for spawn growth effect (120 = 2 seconds at 60 FPS)
+export const SPAWN_GROWTH_MIN_SCALE = 0.3; // Starting scale for spawn growth (30% of final size)
+export const SPAWN_GROWTH_MAX_SCALE = 1.0; // Ending scale for spawn growth (100% of final size)
+export const SPAWN_SIZE_INTERPOLATION_SPEED = 0.05; // Size interpolation speed (5% per frame)
 export const GPU_MAX_RAYS_PER_AGENT = 50; // Maximum rays per agent across all specializations (GPU buffer size)

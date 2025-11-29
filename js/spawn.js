@@ -5,7 +5,7 @@ import {
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
     FOOD_SPAWN_NEAR_AGENTS_CHANCE, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX,
     SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
-    VALIDATION_REQUIRED_RUNS, MAX_AGENTS_TO_SPAWN_PER_FRAME,
+    VALIDATION_REQUIRED_RUNS, MAX_AGENTS_TO_SPAWN_PER_FRAME, SPAWN_STAGGER_FRAMES,
     OBSTACLE_COUNT, OBSTACLE_MIN_RADIUS, OBSTACLE_MAX_RADIUS,
     OBSTACLE_MIN_DISTANCE, OBSTACLE_SPAWN_MARGIN, OBSTACLE_INFLUENCE_RADIUS,
     OBSTACLE_MAX_SPEED,
@@ -550,10 +550,19 @@ export function repopulate(simulation) {
     for (let i = 0; i < simulation.agents.length; i++) {
         if (!simulation.agents[i].isDead) livingAgents++;
     }
-    if (livingAgents >= simulation.maxAgents) return;
+
+    // Population smoothing: be more conservative when population is high or low
+    const populationRatio = livingAgents / simulation.maxAgents;
+
+    // If population is at max capacity, stop spawning to prevent overcrowding
+    if (populationRatio >= 1.0) return;
+
+    // If population is very low (<5%) or declining rapidly (< -20% change), be more aggressive about spawning
+    // If population is moderate (5-90%), normal spawning
+    const shouldSpawnAggressively = populationRatio < 0.05 || (simulation.populationChangeRate && simulation.populationChangeRate < -0.2);
 
     simulation.respawnTimer++;
-    if (simulation.respawnTimer < RESPAWN_DELAY_FRAMES) return;
+    if (simulation.respawnTimer < RESPAWN_DELAY_FRAMES && !shouldSpawnAggressively) return;
 
     // Check genetic diversity - force random spawning if diversity is critically low
     // Build list and count unique genes only when needed
@@ -566,83 +575,78 @@ export function repopulate(simulation) {
     }
     const uniqueGeneIds = new Set(geneIds).size;
 
-    // Calculate how many agents to spawn to fill the population
-    const agentsToSpawn = Math.min(simulation.maxAgents - livingAgents, MAX_AGENTS_TO_SPAWN_PER_FRAME);
+    // Check spawn stagger timer - only spawn one agent every few frames to prevent jarring visual effects
+    // But spawn more aggressively if population is critically low
+    const criticalPopulationThreshold = Math.max(3, simulation.maxAgents * 0.05); // 5% or minimum 3 agents
+    const useStagger = livingAgents >= criticalPopulationThreshold;
 
-    for (let i = 0; i < agentsToSpawn; i++) {
-        // Proactive diversity maintenance: always reserve some slots for random generation
-        const randomChance = Math.max(0.3, 0.8 - (uniqueGeneIds / simulation.maxAgents)); // 30-80% chance based on diversity
-        if (Math.random() < randomChance) {
-            // Random generation for diversity
-            spawnAgent(simulation, { gene: null });
-            continue;
-        }
+    if (useStagger) {
+        simulation.spawnStaggerTimer++;
+        if (simulation.spawnStaggerTimer < SPAWN_STAGGER_FRAMES) return;
+    }
 
-        // Priority 1: Use validation candidates if available
-        if (simulation.validationManager.validationQueue.size > 0) {
-            // Calculate how many validation agents we can spawn this frame (up to 5 or remaining slots)
-            const maxValidationAgents = Math.max(1, Math.floor(simulation.maxAgents * 0.05));
-            const availableSlots = maxValidationAgents - simulation.validationManager.activeValidationAgents;
-            const maxToSpawnThisFrame = Math.min(5, availableSlots); // Cap at 5 per frame to prevent overwhelming the system
+    // Reset stagger timer and spawn one agent (or more if population is critical)
+    simulation.spawnStaggerTimer = 0;
 
-            if (maxToSpawnThisFrame <= 0) {
-                //console.log(`[VALIDATION] Skipping validation spawn - ${ simulation.validationManager.activeValidationAgents }/${maxValidationAgents} active validation agents`);
-                // Don't continue to next agent spawn - let normal population fill the gap
-            } else {
-                // Find non-active validation candidates (up to the limit we can spawn)
-                const candidatesToSpawn = [];
-                for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
-                    if (!entry.isActiveTest && !simulation.validationManager.isSpawnLocked(geneId) && candidatesToSpawn.length < maxToSpawnThisFrame) {
-                        // Try to acquire spawn lock
-                        if (simulation.validationManager.acquireSpawnLock(geneId)) {
-                            candidatesToSpawn.push({ geneId, entry });
+    // Proactive diversity maintenance: always reserve some slots for random generation
+    const randomChance = Math.max(0.3, 0.8 - (uniqueGeneIds / simulation.maxAgents)); // 30-80% chance based on diversity
+    if (Math.random() < randomChance) {
+        // Random generation for diversity
+        spawnAgent(simulation, { gene: null });
+        return; // Only spawn one agent per stagger cycle
+    }
+
+    // Priority 1: Use validation candidates if available
+    if (simulation.validationManager.validationQueue.size > 0) {
+        const maxValidationAgents = Math.max(1, Math.floor(simulation.maxAgents * 0.05));
+        const availableSlots = maxValidationAgents - simulation.validationManager.activeValidationAgents;
+
+        if (availableSlots > 0) {
+            // Find first available validation candidate
+            for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+                if (!entry.isActiveTest && !simulation.validationManager.isSpawnLocked(geneId)) {
+                    // Try to acquire spawn lock
+                    if (simulation.validationManager.acquireSpawnLock(geneId)) {
+                        // Double-check we haven't exceeded the limit
+                        if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
+                            simulation.validationManager.releaseSpawnLock(geneId);
+                            break;
+                        }
+
+                        // Create agent with the candidate's genes for re-testing
+                        const validationGene = {
+                            weights: entry.weights,
+                            geneId: entry.geneId,
+                            specializationType: entry.specializationType,
+                            parent: null // No parent reference for validation spawns
+                        };
+
+                        console.log(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
+                        // Give validation agents extra energy and safe spawning to ensure they can complete their runs
+                        const validationAgent = spawnAgent(simulation, {
+                            gene: validationGene,
+                            energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
+                            isValidationAgent: true
+                        });
+                        if (validationAgent) {
+                            simulation.validationManager.activeValidationAgents++;
+                            console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+
+                            // Mark as actively being tested to prevent duplicate spawns
+                            entry.isActiveTest = true;
+                            console.log(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
+                            return; // Successfully spawned validation agent
+                        } else {
+                            // Release spawn lock if spawning failed
+                            simulation.validationManager.releaseSpawnLock(geneId);
+                            console.log(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
                         }
                     }
-                }
-
-                // Spawn all collected validation candidates
-                for (const { geneId, entry } of candidatesToSpawn) {
-                    // Double-check we haven't exceeded the limit (in case of concurrent modifications)
-                    if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
-                        console.log(`[VALIDATION] Stopping batch spawn - reached max validation agents limit`);
-                        break;
-                    }
-
-                    // Create agent with the candidate's genes for re-testing
-                    const validationGene = {
-                        weights: entry.weights,
-                        geneId: entry.geneId,
-                        specializationType: entry.specializationType,
-                        parent: null // No parent reference for validation spawns
-                    };
-
-                    console.log(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
-                    // Give validation agents extra energy and safe spawning to ensure they can complete their runs
-                    const validationAgent = spawnAgent(simulation, {
-                        gene: validationGene,
-                        energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
-                        isValidationAgent: true
-                    });
-                    if (validationAgent) {
-                        simulation.validationManager.activeValidationAgents++;
-                        console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
-
-                        // Mark as actively being tested to prevent duplicate spawns
-                        entry.isActiveTest = true;
-                        console.log(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
-                    } else {
-                        // Release spawn lock if spawning failed
-                        simulation.validationManager.releaseSpawnLock(geneId);
-                        console.log(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
-                    }
-                }
-
-                // If we spawned validation agents, continue to next spawn slot
-                if (candidatesToSpawn.length > 0) {
-                    continue;
+                    break; // Only try one candidate per stagger cycle
                 }
             }
         }
+    }
 
         const roll = Math.random();
 
@@ -664,7 +668,7 @@ export function repopulate(simulation) {
                 const childGene = {
                     weights: childWeights,
                     specializationType: matingPair.parent1.specializationType,
-                    geneId: matingPair.parent1.geneId
+                    geneId: matingPair.parent1.geneId,
                     // Don't pass numSensorRays, hiddenSize, etc - they should come from config
                 };
                 spawnAgent(simulation, { gene: childGene });
@@ -689,19 +693,18 @@ export function repopulate(simulation) {
                 const childGene = {
                     weights: usesParentGene ? parent.weights : null,
                     specializationType: novelSpecialization,
-                    geneId: usesParentGene ? parent.geneId : null
+                    geneId: usesParentGene ? parent.geneId : null,
                     // Don't pass numSensorRays, hiddenSize etc - incompatible if spec changed
                 };
                 spawnAgent(simulation, {
                     gene: childGene,
-                    mutationRate: usesParentGene ? simulation.mutationRate / 2 : null
+                    mutationRate: usesParentGene ? simulation.mutationRate / 2 : null,
                 });
             }
             else {
                 spawnAgent(simulation, { gene: null });
             }
         }
-    }
 
     simulation.respawnTimer = 0;
 }

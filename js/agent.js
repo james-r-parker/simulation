@@ -20,6 +20,7 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+    SPAWN_GROWTH_DURATION_FRAMES, SPAWN_GROWTH_MIN_SCALE, SPAWN_GROWTH_MAX_SCALE, SPAWN_SIZE_INTERPOLATION_SPEED,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
     AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
@@ -363,6 +364,9 @@ export class Agent {
             return;
         }
 
+        // Constants for spawn growth effect
+        const spawnProgress = Math.min(1.0, this.framesAlive / SPAWN_GROWTH_DURATION_FRAMES);
+
         // Check if GPU has already processed this agent's neural network
         if (this.lastOutput && this.newHiddenState) {
             // GPU processed - use results and update hidden state
@@ -393,6 +397,24 @@ export class Agent {
         // Calculate age using real time instead of frame count for consistency when focus is lost
         this.age = (Date.now() - this.birthTime) / 1000; // Age in seconds
         this.framesAlive++; // Keep framesAlive for backward compatibility
+
+        // Smooth size growth effect for newly spawned agents (grow from 30% to 100% size over 120 frames)
+
+        // Calculate base size from energy (used for both spawn effect and normal sizing)
+        const energyBasedSize = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
+
+        // During spawn growth, scale from min to max of energy-based size
+        if (spawnProgress < 1.0) {
+            const scaleRange = SPAWN_GROWTH_MAX_SCALE - SPAWN_GROWTH_MIN_SCALE;
+            this.targetSize = energyBasedSize * (SPAWN_GROWTH_MIN_SCALE + scaleRange * spawnProgress);
+        } else {
+            // After growth complete, use normal energy-based sizing
+            this.targetSize = energyBasedSize;
+        }
+
+        // Interpolate actual size towards target size for smooth visual effect
+        this.size += (this.targetSize - this.size) * SPAWN_SIZE_INTERPOLATION_SPEED;
+        this.diameter = this.size * 2;
         if (this.reproductionCooldown > 0) this.reproductionCooldown--;
         if (this.isPregnant) {
             this.pregnancyTimer++;
@@ -687,8 +709,17 @@ export class Agent {
             }
         }
 
-        this.size = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
-        this.diameter = this.size * 2;
+        // Update target size based on current energy (for normal size changes)
+        // Only update if spawn growth is complete (to avoid conflicts)
+
+        if (spawnProgress >= 1.0) {
+            const energyBasedSize = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
+            this.targetSize = energyBasedSize;
+
+            // Interpolate actual size towards target size for smooth visual effect
+            this.size += (this.targetSize - this.size) * SPAWN_SIZE_INTERPOLATION_SPEED;
+            this.diameter = this.size * 2;
+        }
 
         // --- ASEXUAL REPRODUCTION (SPLITTING) ---
         if (this.energy > this.maxEnergy * 0.8 && this.reproductionCooldown <= 0) {
@@ -1443,12 +1474,8 @@ export class Agent {
         // Add final calculated fitness to any accumulated real-time rewards
         this.fitness = Math.max(0, finalFitnessValue);
 
-        // TEMPORARILY RELAXED QUALIFICATION: Adjusted to current performance level - will raise as agents improve
-        // - Fitness: 3000+ (temporarily reduced from 4000)
-        // - Food: 4+ items (temporarily reduced from 6)
-        // - Age: 15+ seconds (900 frames) - temporarily reduced from 20s/1200 frames
-        // - Exploration: 2%+ map coverage - temporarily reduced from 3%
-        // - Navigation: 0.5+ turns towards food - temporarily reduced from 1.0
+        // Agent qualification criteria for gene pool entry
+        // Must meet ALL of the following thresholds:
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
         this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL &&
             foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL &&

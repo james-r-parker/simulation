@@ -9,7 +9,7 @@ import {
     SPECIALIZATION_TYPES, // Added for novelty spawning
     RESPAWN_DELAY_FRAMES, MAX_ENERGY,
     MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
-    VALIDATION_REQUIRED_RUNS, VALIDATION_FITNESS_THRESHOLD, MAX_VALIDATION_QUEUE_SIZE,
+    VALIDATION_REQUIRED_RUNS, MAX_VALIDATION_QUEUE_SIZE,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI,
     MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE,
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
@@ -85,6 +85,9 @@ export class Simulation {
         this.bestAgent = null;
         this.frameCount = 0;
         this.respawnTimer = 0;
+        this.spawnStaggerTimer = 0; // Timer for staggering individual agent spawns
+        this.recentPopulationHistory = []; // Track recent population for smoothing
+        this.populationChangeRate = 0; // Rate of population change (-1 to 1)
         this.destroyed = false;
 
         // FPS tracking

@@ -108,13 +108,21 @@ export class GenePoolDatabase {
         const agentData = uniqueAgents
             .sort((a, b) => b.fitness - a.fitness)
             .slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL) // Take top N from qualified agents
-            .map(a => ({
-                id: a.id,
-                weights: a.getWeights(),
-                fitness: a.fitness,
-                geneId: a.geneId,
-                specializationType: a.specializationType
-            }));
+            .map(a => {
+                try {
+                    return {
+                        id: a.id,
+                        weights: a.getWeights(),
+                        fitness: a.fitness,
+                        geneId: a.geneId,
+                        specializationType: a.specializationType
+                    };
+                } catch (error) {
+                    console.warn(`[DATABASE] ⚠️ Failed to get weights for agent ${a.id}:`, error);
+                    return null;
+                }
+            })
+            .filter(item => item !== null); // Remove any agents that failed to get weights
 
         if (agentData.length === 0) return;
 
@@ -129,6 +137,12 @@ export class GenePoolDatabase {
     queueSaveAgent(agent) {
         // Only save agents that meet minimum criteria
         if (!agent.fit) return;
+
+        // Safety check: Ensure agent has valid neural network
+        if (!agent || !agent.nn) {
+            console.warn(`[DATABASE] ❌ Cannot save agent - agent or neural network is null`);
+            return;
+        }
 
         const geneId = agent.geneId;
         const agentFitness = agent.fitness;

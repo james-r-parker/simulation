@@ -7,6 +7,7 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL,
     MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_GRID_WIDTH,
@@ -848,6 +849,24 @@ export function setupUIListeners(simulation) {
         });
     }
 
+    // Agent Modal Save Button
+    const saveAgentBtn = document.getElementById('save-agent-btn');
+    if (saveAgentBtn) {
+        saveAgentBtn.addEventListener('click', async () => {
+            if (selectedAgent && simulation) {
+                try {
+                    // Skip validation and save directly to gene pool
+                    await simulation.db.queueSaveAgent(selectedAgent);
+                    toast.show('💾 Agent Saved', `Agent #${selectedAgent.id} saved directly to gene pool`, 'toast-success', 3000);
+                    console.log(`[UI] Agent ${selectedAgent.id} saved directly to gene pool (skipped validation)`);
+                } catch (error) {
+                    console.error('[UI] Failed to save agent:', error);
+                    toast.show('❌ Save Failed', 'Failed to save agent to gene pool', 'toast-error', 3000);
+                }
+            }
+        });
+    }
+
     window.addEventListener('beforeunload', async () => {
         // Release wake lock and flush dead agent queue
         await simulation.releaseWakeLock();
@@ -916,6 +935,19 @@ function updateAgentModal(agent) {
         };
         typeEl.style.color = colors[agent.specializationType] || 'white';
         typeEl.style.borderColor = colors[agent.specializationType] || 'white';
+    }
+
+    // Update save button state based on agent eligibility
+    const saveBtn = document.getElementById('save-agent-btn');
+    if (saveBtn) {
+        const canSave = agent.fit && !simulation.db.pool[agent.geneId];
+        saveBtn.disabled = !canSave;
+        saveBtn.title = canSave ?
+            'Skip validation and save directly to gene pool' :
+            agent.fit ?
+                'Agent already exists in gene pool' :
+                'Agent does not meet qualification criteria';
+        saveBtn.style.opacity = canSave ? '1' : '0.5';
     }
 
     const genEl = document.getElementById('modal-agent-gen');
@@ -1422,7 +1454,10 @@ function showGeneticDiversityModal(simulation) {
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>🧬 Genetic Diversity</h2>
-                    <button class="modal-close" title="Close">&times;</button>
+                    <div class="modal-actions">
+                        <button class="modal-delete-btn" id="delete-gene-pool-btn" title="Delete entire gene pool">🗑️</button>
+                        <button class="modal-close" title="Close">&times;</button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <div class="gene-pool-summary">
@@ -1808,7 +1843,7 @@ function showQualificationModal(simulation) {
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
     const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
     const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
-    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {
         const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
         return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
@@ -1826,7 +1861,7 @@ function showQualificationModal(simulation) {
     const qualifiedAgents = livingAgents.filter(a => {
         const fitnessOk = safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
         const foodOk = safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
-        const ageOk = safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+        const ageOk = safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL;
         const explorationOk = ((a.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
         const navigationOk = safeNumber(a.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
         return fitnessOk && foodOk && ageOk && explorationOk && navigationOk;
@@ -1837,7 +1872,7 @@ function showQualificationModal(simulation) {
     livingAgents.forEach(agent => {
         const fitnessOk = safeNumber(agent.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
         const foodOk = safeNumber(agent.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
-        const ageOk = safeNumber(agent.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+        const ageOk = safeNumber(agent.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL;
         const explorationOk = ((agent.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
         const navigationOk = safeNumber(agent.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
 
@@ -1859,7 +1894,7 @@ function showQualificationModal(simulation) {
                     <div class="compact-summary-bar">
                         <div class="summary-item"><strong>Qualified:</strong> <span class="${qualifiedAgents > 0 ? 'highlight-green' : 'highlight-red'}">${qualifiedAgents}/${livingAgents.length}</span></div>
                         <div class="summary-item"><strong>Rate:</strong> ${((qualifiedAgents / livingAgents.length) * 100).toFixed(1)}%</div>
-                        <div class="summary-item"><strong>Thresholds:</strong> F≥${MIN_FITNESS_TO_SAVE_GENE_POOL}, Food≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}, Age≥${MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL}f, Exp≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%, Nav≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}</div>
+                        <div class="summary-item"><strong>Thresholds:</strong> F≥${MIN_FITNESS_TO_SAVE_GENE_POOL}, Food≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}, Age≥${MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL}s, Exp≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%, Nav≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}</div>
                     </div>
 
                     <div class="compact-stats-grid">
@@ -1875,7 +1910,7 @@ function showQualificationModal(simulation) {
                             <div class="stat-cell"><strong>Population Averages:</strong></div>
                             <div class="stat-cell">Fitness: ${averageMetric(livingAgents, a => a.fitness).toFixed(0)} |
                             Food: ${averageMetric(livingAgents, a => a.foodEaten || 0).toFixed(1)} |
-                            Age: ${averageMetric(livingAgents, a => a.framesAlive || 0).toFixed(0)}f |
+                            Age: ${averageMetric(livingAgents, a => a.age || 0).toFixed(1)}s |
                             Exp: <span class="highlight-cyan">${avgExplorationPercentage.toFixed(1)}%</span> |
                             Nav: <span class="highlight-green">${avgTurnsTowardsFood.toFixed(1)}</span></div>
                         </div>
@@ -1999,7 +2034,7 @@ export function updateDashboard(simulation) {
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
     const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
     const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
-    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {
         const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
         return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;

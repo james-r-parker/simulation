@@ -5,6 +5,7 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL,
     MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_GRID_WIDTH,
@@ -116,7 +117,7 @@ export function copySimulationStats(simulation) {
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
     const agentsMeetingFitness = livingAgents.filter(a => a.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
     const agentsMeetingFood = livingAgents.filter(a => (a.foodEaten || 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
-    const agentsMeetingAge = livingAgents.filter(a => (a.framesAlive || 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingAge = livingAgents.filter(a => (a.age || 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {
         const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
         return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
@@ -237,13 +238,13 @@ Stored Gene Pools: ${genePoolCount}
 Qualified Agents: ${qualifiedAgents}
 Validation Queue: ${validationQueueSize}
 
--- QUALIFICATION CRITERIA (TEMPORARILY RELAXED - WILL RAISE AS AGENTS IMPROVE) --
-Thresholds (Temporarily Relaxed - Will Raise as Agents Improve):
-  - Fitness: ≥${MIN_FITNESS_TO_SAVE_GENE_POOL} (temporarily reduced from 4000)
-  - Food Eaten: ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL} items (temporarily reduced from 6)
-  - Age: ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s (${MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL} frames, temporarily reduced from 20s)
-  - Exploration: ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}% map coverage (temporarily reduced from 3%)
-  - Navigation: ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL} turns towards food (temporarily reduced from 1.0)
+-- QUALIFICATION CRITERIA --
+Gene Pool Qualification Thresholds:
+  - Fitness: ≥${MIN_FITNESS_TO_SAVE_GENE_POOL}
+  - Food Eaten: ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL} items
+  - Age: ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s (${MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL} frames)
+  - Exploration: ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}% map coverage
+  - Navigation: ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL} turns towards food
 Agents Meeting Each Criterion:
   - Fitness ≥${MIN_FITNESS_TO_SAVE_GENE_POOL}: ${agentsMeetingFitness} / ${livingAgents.length} (${((agentsMeetingFitness / livingAgents.length) * 100).toFixed(1)}%)
   - Food ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}: ${agentsMeetingFood} / ${livingAgents.length} (${((agentsMeetingFood / livingAgents.length) * 100).toFixed(1)}%)

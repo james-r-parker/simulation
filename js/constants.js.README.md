@@ -69,10 +69,16 @@ Centralized storage of all simulation constants and configuration values. This e
   - `description` - Human-readable description
 
 ### Gene Pool Constants
-- `MIN_FITNESS_TO_SAVE_GENE_POOL = 200` - Minimum fitness required to save agent to gene pool
+- `MIN_FITNESS_TO_SAVE_GENE_POOL = 20000` - Minimum fitness required to save agent to gene pool
 
 ### Spawn Constants
 - `RESPAWN_DELAY_FRAMES = 0` - Frames to wait before respawning agents
+- `MAX_AGENTS_TO_SPAWN_PER_FRAME = 8` - Maximum agents to spawn per frame (reduced for smooth spawning)
+- `SPAWN_STAGGER_FRAMES = 2` - Frames between individual agent spawns
+- `SPAWN_GROWTH_DURATION_FRAMES = 120` - Frames for new agent size growth effect (2 seconds)
+- `SPAWN_GROWTH_MIN_SCALE = 0.3` - Starting size scale for spawn growth (30%)
+- `SPAWN_GROWTH_MAX_SCALE = 1.0` - Ending size scale for spawn growth (100%)
+- `SPAWN_SIZE_INTERPOLATION_SPEED = 0.05` - Size interpolation speed per frame (5%)
 
 ## Usage
 

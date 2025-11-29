@@ -478,6 +478,38 @@ button:hover {
     background: rgba(255, 0, 51, 0.1);
 }
 
+.sidebar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sidebar-save-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    min-width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-save-btn:hover:not(:disabled) {
+    color: var(--neon-green);
+    background: rgba(57, 255, 20, 0.1);
+}
+
+.sidebar-save-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5 !important;
+}
+
 /* Metric Cards */
 .metric-card,
 .metric-group {
@@ -1055,6 +1087,35 @@ button:hover {
     color: var(--neon-red);
     background: rgba(255, 0, 51, 0.1);
     transform: scale(1.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.modal-delete-btn {
+    background: rgba(255, 0, 51, 0.1);
+    border: 1px solid rgba(255, 0, 51, 0.3);
+    color: var(--neon-red);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-delete-btn:hover {
+    background: rgba(255, 0, 51, 0.2);
+    border-color: var(--neon-red);
+    color: #ff6b6b;
+    transform: scale(1.05);
 }
 
 .modal-body {

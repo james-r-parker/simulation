@@ -2,7 +2,6 @@
 // Displays beautiful toast notifications for gene pool events
 
 import {
-    VALIDATION_FITNESS_THRESHOLD,
     TOAST_DURATION_SUCCESS,
     TOAST_DURATION_FAILURE,
     TOAST_DURATION_NORMAL,
@@ -31,8 +30,8 @@ export class ToastNotification {
     }
 
     // Show validation passed notification
-    showValidationPassed(geneId, avgScore, scores, attempts) {
-        const successCount = scores.filter(s => s >= VALIDATION_FITNESS_THRESHOLD).length;
+    showValidationPassed(geneId, avgScore, scores, fitResults, attempts) {
+        const successCount = fitResults.filter(fit => fit).length;
 
         let scoreDetails = '';
         scores.forEach((score, index) => {
@@ -55,12 +54,13 @@ export class ToastNotification {
     }
 
     // Show validation failed notification
-    showValidationFailed(geneId, avgScore, scores, attempts) {
-        const successCount = scores.filter(s => s >= VALIDATION_FITNESS_THRESHOLD).length;
+    showValidationFailed(geneId, avgScore, scores, fitResults, attempts) {
+        const successCount = fitResults.filter(fit => fit).length;
 
         let scoreDetails = '';
         scores.forEach((score, index) => {
-            const emoji = score === Math.max(...scores) ? '🏆' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅' : '❌';
+            const fit = fitResults[index];
+            const emoji = score === Math.max(...scores) ? '🏆' : fit ? '✅' : '❌';
             scoreDetails += `<div class="toast-score-line">${emoji} Run ${index + 1}: ${score.toFixed(0)}</div>`;
         });
 

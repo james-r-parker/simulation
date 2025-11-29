@@ -27,15 +27,15 @@ The `ValidationManager` implements a rigorous quality assurance system that prev
 
 ### Phase 1: Candidate Selection
 ```javascript
-// Triggered when agent dies with high fitness
-if (agent.fitness > VALIDATION_FITNESS_THRESHOLD &&
+// Triggered when agent dies and meets fit criteria
+if (agent.fit &&
     agent.age > VALIDATION_MIN_AGE) {
     validationManager.addToValidationQueue(agent);
 }
 ```
 
 **Criteria**:
-- **Fitness Threshold**: Score > 20 (demonstrates capability)
+- **Fit Status**: Agent must be `fit` (meets comprehensive fitness requirements)
 - **Survival Time**: Age > 600 frames (10+ seconds of survival)
 - **Cooldown Check**: Prevents recently tested lineages from re-entering
 - **Duplicate Prevention**: Same gene ID can't be queued multiple times

@@ -1,6 +1,6 @@
 // Gene-related functions moved from game.js
 
-import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, VALIDATION_FITNESS_THRESHOLD, PERIODIC_VALIDATION_FITNESS_THRESHOLD, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK } from './constants.js';
+import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK } from './constants.js';
 import { updateDashboard } from './ui.js';
 
 export function crossover(weightsA, weightsB) {
@@ -83,6 +83,27 @@ export function updateFitnessTracking(simulation) {
     const livingAgents = simulation.agents.filter(a => !a.isDead);
     livingAgents.sort((a, b) => b.fitness - a.fitness);
     simulation.bestAgent = livingAgents[0] || null;
+
+    // Track population changes for smoothing
+    const currentPopulation = livingAgents.length;
+    simulation.recentPopulationHistory.push(currentPopulation);
+    if (simulation.recentPopulationHistory.length > 10) { // Keep last 10 measurements
+        simulation.recentPopulationHistory.shift();
+    }
+
+    // Calculate population change rate (for spawn smoothing)
+    if (simulation.recentPopulationHistory.length >= 5) {
+        const recent = simulation.recentPopulationHistory.slice(-3);
+        const older = simulation.recentPopulationHistory.slice(-5, -2);
+        const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+
+        if (olderAvg > 0) {
+            simulation.populationChangeRate = (recentAvg - olderAvg) / olderAvg; // -1 to 1
+            simulation.populationChangeRate = Math.max(-1, Math.min(1, simulation.populationChangeRate)); // Clamp
+        }
+    }
+
     simulation.generation++;
 
     // Track fitness for adaptive mutation
@@ -134,17 +155,24 @@ export function updatePeriodicValidation(simulation) {
     let validationsAdded = 0;
 
     simulation.agents.forEach(agent => {
-        // Check if agent is comprehensively fit and not already in validation
-        if (agent.fit &&
-            !simulation.validationManager.isInValidation(agent.geneId) &&
-            !hasValidatedAncestor(agent, simulation) &&
-            !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
-            validationsAdded < MAX_VALIDATIONS_PER_PERIODIC_CHECK) {
+        if (!agent.isDead && agent.nn) { // Safety check: ensure agent has neural network
+            try {
+                agent.calculateFitness();
+                // Check if agent is comprehensively fit and not already in validation
+                if (agent.fit &&
+                    !simulation.validationManager.isInValidation(agent.geneId) &&
+                    !hasValidatedAncestor(agent, simulation) &&
+                    !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
+                    validationsAdded < MAX_VALIDATIONS_PER_PERIODIC_CHECK) {
 
-            // Add to validation queue (periodic validation)
-            console.log(`[VALIDATION] 📊 Periodic check: Adding fit living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
-            simulation.validationManager.addToValidationQueue(agent, true);
-            validationsAdded++;
+                    // Add to validation queue (periodic validation)
+                    console.log(`[VALIDATION] 📊 Periodic check: Adding fit living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
+                    simulation.validationManager.addToValidationQueue(agent, true);
+                    validationsAdded++;
+                }
+            } catch (error) {
+                console.warn(`[VALIDATION] ⚠️ Failed to process agent ${agent.geneId || 'unknown'} in periodic validation:`, error);
+            }
         }
     });
 
