@@ -11,9 +11,10 @@ import {
 import { toast } from './toast.js';
 
 export class ValidationManager {
-    constructor(logger, db) {
+    constructor(logger, db, simulation) {
         this.logger = logger;
         this.db = db;
+        this.simulation = simulation;
         this.validationQueue = new Map(); // geneId -> validation entry
         this.activeValidationAgents = 0; // Count of currently living validation agents
         this.spawnLocks = new Set(); // geneIds currently being spawned to prevent race conditions
@@ -93,6 +94,13 @@ export class ValidationManager {
                     fit: true,
                     getWeights: () => validationEntry.weights
                 };
+
+                // Release spawn lock on successful validation
+                this.releaseSpawnLock(geneId);
+
+                // Mark this lineage as validated to prevent descendants from needing validation
+                this.simulation.validatedLineages.add(validationEntry.geneId);
+
                 return { success: true, record: validationRecord };
             }
         }
@@ -128,6 +136,12 @@ export class ValidationManager {
                     fit: true, // Mark as qualified for gene pool
                     getWeights: () => validationEntry.weights // Return stored weights
                 };
+
+                // Release spawn lock on successful validation
+                this.releaseSpawnLock(geneId);
+
+                // Mark this lineage as validated to prevent descendants from needing validation
+                this.simulation.validatedLineages.add(validationEntry.geneId);
 
                 return { success: true, record: validationRecord };
             } else {
@@ -323,6 +337,10 @@ export class ValidationManager {
 
                     db.queueSaveAgent(validationRecord);
                     this.validationQueue.delete(agent.geneId);
+                    this.releaseSpawnLock(agent.geneId);
+
+                    // Mark this lineage as validated to prevent descendants from needing validation
+                    this.simulation.validatedLineages.add(agent.geneId);
                 } else {
                     // Not enough successful runs yet, keep in queue for potential respawn
                     console.log(`[VALIDATION] Agent ${agent.geneId} death counted as pass but needs more runs (${successfulRuns}/${Math.max(2, validationEntry.attempts)} successful needed)`);
@@ -336,6 +354,7 @@ export class ValidationManager {
                     console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed through normal validation, queueing for save`);
                     db.queueSaveAgent(result.record);
                     this.validationQueue.delete(agent.geneId);
+                    this.releaseSpawnLock(agent.geneId);
                 } else {
                     // Agent failed validation - remove from queue
                     console.log(`[VALIDATION] 🗑️ Removing failed validation agent ${agent.geneId} from queue (died with insufficient fitness)`);

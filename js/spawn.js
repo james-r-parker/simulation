@@ -14,6 +14,7 @@ import {
 import { Agent } from './agent.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
+import { FERTILE_ZONE_SPAWN_CHANCE, FERTILE_ZONE_INFLUENCE_DISTANCE } from './constants.js';
 import { distance, randomGaussian } from './utils.js';
 import { crossover } from './gene.js';
 
@@ -443,10 +444,45 @@ export function spawnFood(simulation) {
             y = pos.y;
         }
     } else {
-        // 70% random spawn (original behavior)
-        const pos = randomSpawnAvoidCluster(simulation);
-        x = pos.x;
-        y = pos.y;
+        // 70% random spawn, but with nutrient cycling: prefer fertile zones
+        let pos;
+
+        // Chance to spawn in fertile zones (nutrient-rich areas from decomposed agents)
+        if (simulation.fertileZones && simulation.fertileZones.length > 0 && Math.random() < FERTILE_ZONE_SPAWN_CHANCE) {
+            // Select fertile zone weighted by fertility level
+            const totalFertility = simulation.fertileZones.reduce((sum, zone) => sum + zone.fertility, 0);
+            let randomValue = Math.random() * totalFertility;
+
+            let selectedZone = null;
+            for (const zone of simulation.fertileZones) {
+                randomValue -= zone.fertility;
+                if (randomValue <= 0) {
+                    selectedZone = zone;
+                    break;
+                }
+            }
+
+            if (selectedZone) {
+                // Spawn within the fertile zone radius
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * selectedZone.radius;
+                x = selectedZone.x + Math.cos(angle) * distance;
+                y = selectedZone.y + Math.sin(angle) * distance;
+
+                // Ensure within world bounds
+                x = Math.max(50, Math.min(simulation.worldWidth - 50, x));
+                y = Math.max(50, Math.min(simulation.worldHeight - 50, y));
+
+                pos = { x, y };
+            }
+        }
+
+        // Fall back to random spawn if no fertile zone selected
+        if (!pos) {
+            pos = randomSpawnAvoidCluster(simulation);
+            x = pos.x;
+            y = pos.y;
+        }
     }
 
     simulation.food.push(new Food(x, y));
@@ -484,12 +520,23 @@ export function spawnPheromone(simulation, x, y, type) {
     }
 
     // Local area limit - check for nearby pheromones of same type
-    const nearbySameType = simulation.pheromones.filter(p =>
-        p.type === type &&
-        Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < PHEROMONE_RADIUS_CHECK_VAL
-    );
+    // OPTIMIZED: Manual loop instead of filter to avoid allocation
+    let nearbyCount = 0;
+    const sqRadius = PHEROMONE_RADIUS_CHECK_VAL * PHEROMONE_RADIUS_CHECK_VAL;
 
-    if (nearbySameType.length >= MAX_PHEROMONES_PER_AREA_LIMIT) {
+    for (let i = 0; i < simulation.pheromones.length; i++) {
+        const p = simulation.pheromones[i];
+        if (p.type === type) {
+            const dx = p.x - x;
+            const dy = p.y - y;
+            if (dx * dx + dy * dy < sqRadius) {
+                nearbyCount++;
+                if (nearbyCount >= MAX_PHEROMONES_PER_AREA_LIMIT) break;
+            }
+        }
+    }
+
+    if (nearbyCount >= MAX_PHEROMONES_PER_AREA_LIMIT) {
         return;
     }
 

@@ -9,7 +9,7 @@ export const MAX_AGENTS_LIMIT = 100; // Hard upper limit on total agent populati
 export const MIN_GAME_SPEED = 0.5; // Minimum allowed game speed multiplier (slowest playback)
 export const MAX_GAME_SPEED = 10; // Maximum allowed game speed multiplier (fastest playback)
 export const MEMORY_PRESSURE_THRESHOLD = 150 * 1024 * 1024; // Memory usage threshold that triggers cleanup (150MB)
-export const SEASON_LENGTH = 1800; // Number of frames per season phase (environmental cycle)
+export const SEASON_LENGTH = 3600; // Number of frames per season phase (environmental cycle) - 60 seconds at 60 FPS
 
 // --- AGENT CONSTANTS ---
 // Physical and behavioral properties that define how agents look, move, and survive
@@ -62,6 +62,65 @@ export const TEMPERATURE_GAIN_EAT = 15; // Temperature gain when eating
 export const TEMPERATURE_LOSS_PASSIVE = 0.1; // Temperature loss per frame
 export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 10.0; // Max multiplier for passive energy loss at 0 temperature
 
+// Temperature-dependent behavior constants
+export const TEMPERATURE_OPTIMAL_MIN = 40; // Minimum temperature for optimal performance
+export const TEMPERATURE_OPTIMAL_MAX = 70; // Maximum temperature for optimal performance
+export const TEMPERATURE_COLD_STRESS_THRESHOLD = 30; // Temperature below which severe cold stress occurs
+export const TEMPERATURE_HEAT_STRESS_THRESHOLD = 85; // Temperature above which severe heat stress occurs
+export const TEMPERATURE_COLD_MODERATE_THRESHOLD = 40; // Temperature below which moderate cold effects occur
+export const TEMPERATURE_HEAT_MODERATE_THRESHOLD = 70; // Temperature above which moderate heat effects occur
+export const TEMPERATURE_EFFICIENCY_OPTIMAL = 1.0; // Movement efficiency at optimal temperatures
+export const TEMPERATURE_EFFICIENCY_COLD_MODERATE = 0.7; // Movement efficiency in moderate cold
+export const TEMPERATURE_EFFICIENCY_HEAT_MODERATE = 0.8; // Movement efficiency in moderate heat
+export const TEMPERATURE_EFFICIENCY_COLD_SEVERE = 0.3; // Movement efficiency in severe cold
+export const TEMPERATURE_EFFICIENCY_HEAT_SEVERE = 0.4; // Movement efficiency in severe heat
+export const TEMPERATURE_REPRODUCTION_SUPPRESSION_EXTREME = 0.3; // Chance of reproduction suppression in extreme temperatures
+
+// Seasonal environmental cycle constants
+export const SEASON_SPRING_TEMP_MODIFIER = -5; // Temperature modifier during spring
+export const SEASON_SUMMER_TEMP_MODIFIER = 15; // Temperature modifier during summer
+export const SEASON_FALL_TEMP_MODIFIER = 5; // Temperature modifier during fall
+export const SEASON_WINTER_TEMP_MODIFIER = -15; // Temperature modifier during winter
+export const SEASON_SPRING_REPRODUCTION_BONUS = 1.5; // Reproduction rate multiplier in spring (breeding season)
+export const SEASON_SUMMER_REPRODUCTION_BONUS = 1.2; // Reproduction rate multiplier in summer
+export const SEASON_FALL_REPRODUCTION_BONUS = 0.7; // Reproduction rate multiplier in fall
+export const SEASON_WINTER_REPRODUCTION_BONUS = 0.3; // Reproduction rate multiplier in winter
+export const SEASON_SUMMER_ENERGY_DRAIN = 1.3; // Energy drain multiplier in summer
+export const SEASON_FALL_ENERGY_DRAIN = 1.1; // Energy drain multiplier in fall
+export const SEASON_WINTER_ENERGY_DRAIN = 1.8; // Energy drain multiplier in winter
+export const SEASON_SPRING_MUTATION_MULTIPLIER = 1.1; // Mutation rate multiplier in spring
+export const SEASON_SUMMER_MUTATION_MULTIPLIER = 1.0; // Mutation rate multiplier in summer
+export const SEASON_FALL_MUTATION_MULTIPLIER = 1.0; // Mutation rate multiplier in fall
+export const SEASON_WINTER_MUTATION_MULTIPLIER = 0.8; // Mutation rate multiplier in winter
+
+// Nutrient cycling and decomposition constants
+export const FERTILE_ZONE_MAX_COUNT = 100; // Maximum number of fertile zones allowed
+export const FERTILE_ZONE_FERTILITY_FACTOR = 0.05; // Energy-to-fertility conversion factor for dead agents
+export const FERTILE_ZONE_MAX_FERTILITY = 50; // Maximum fertility value for any zone
+export const FERTILE_ZONE_DECAY_RATE = 0.001; // Fertility decay rate per frame
+export const FERTILE_ZONE_MIN_FERTILITY = 1; // Minimum fertility to create a zone
+export const FERTILE_ZONE_SIZE_FACTOR = 3; // Zone radius multiplier based on agent size
+export const FERTILE_ZONE_MIN_RADIUS = 50; // Minimum zone radius
+export const FERTILE_ZONE_SPAWN_CHANCE = 0.4; // Chance to spawn food in fertile zones vs random
+export const FERTILE_ZONE_INFLUENCE_DISTANCE = 200; // Distance within which fertile zones affect food spawning
+
+// Kin recognition and social behavior constants
+export const KIN_RELATEDNESS_SELF = 1.0; // Relatedness value for self
+export const KIN_RELATEDNESS_PARENT_CHILD = 0.5; // Relatedness between parent and child
+export const KIN_RELATEDNESS_SIBLINGS = 0.5; // Relatedness between siblings
+export const KIN_RELATEDNESS_GRANDPARENT = 0.25; // Relatedness for grandparents/grandchildren/aunts/uncles
+export const KIN_RELATEDNESS_DISTANT = 0.125; // Relatedness for distant relatives
+export const KIN_RELATEDNESS_MAX_GENERATION_DIFF = 2; // Maximum generation difference for relatedness calculation
+export const KIN_PREDATION_REDUCTION_THRESHOLD = 0.25; // Minimum relatedness to trigger predation reduction
+export const KIN_ATTACK_PREVENTION_CHANCE = 0.25; // Base chance to prevent attack on siblings
+export const KIN_ATTACK_PREVENTION_PARENT = 0.5; // Chance to prevent attack on parent/child
+
+// Seasonal food scarcity factors
+export const SEASON_SPRING_FOOD_SCARCITY = 1.2; // Food abundance after winter
+export const SEASON_SUMMER_FOOD_SCARCITY = 1.0; // Normal food availability in summer
+export const SEASON_FALL_FOOD_SCARCITY = 0.8; // Resources becoming scarce in fall
+export const SEASON_WINTER_FOOD_SCARCITY = 0.4; // Severe food scarcity in winter
+
 // Collision and damage
 export const WALL_COLLISION_DAMAGE = 50; // Energy damage taken when hitting world boundaries
 export const EDGE_BOUNCE_DAMPING = 0.5; // Velocity reduction factor when bouncing off edges
@@ -84,10 +143,10 @@ export const FOOD_ENERGY_HIGH_BASE = 400; // Base energy value of high-value foo
 export const FOOD_ENERGY_HIGH_VARIANCE = 50; // Random variance in high-value food energy (± this amount)
 
 // Visual appearance
-export const FOOD_SIZE_NORMAL = 8; // Visual radius of normal food in pixels
-export const FOOD_SIZE_HIGH = 12; // Visual radius of high-value food in pixels
-export const FOOD_SIZE_MIN_NORMAL = 3; // Minimum size normal food can shrink to during decay
-export const FOOD_SIZE_MIN_HIGH = 4; // Minimum size high-value food can shrink to during decay
+export const FOOD_SIZE_NORMAL = 20; // Visual radius of normal food in pixels (increased for better ray detection)
+export const FOOD_SIZE_HIGH = 30; // Visual radius of high-value food in pixels (increased for better ray detection)
+export const FOOD_SIZE_MIN_NORMAL = 8; // Minimum size normal food can shrink to during decay (increased for better ray detection)
+export const FOOD_SIZE_MIN_HIGH = 12; // Minimum size high-value food can shrink to during decay (increased for better ray detection)
 
 // Decay system (food spoils over time)
 export const FOOD_ROT_RATE_BASE = 0.002; // Base rate at which food loses energy per frame
@@ -207,11 +266,11 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Qualification thresholds
 export const MIN_FITNESS_TO_SAVE_GENE_POOL = 20000; // Minimum fitness score required to save agent genes
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 20; // Minimum food items consumed to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 5400; // Minimum lifespan in frames to qualify
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3600; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (60)
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 5.0; // Minimum world exploration percentage required
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.0; // Minimum world exploration percentage required
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 3; // Minimum successful food-seeking behaviors
 
 // Storage limits
 export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in database
@@ -219,7 +278,7 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 // Validation system (rigorous testing for elite agents)
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
 export const VALIDATION_FITNESS_THRESHOLD = 18000; // Fitness threshold for death-based validation eligibility
-export const PERIODIC_VALIDATION_FITNESS_THRESHOLD = VALIDATION_FITNESS_THRESHOLD * 1.5; // 50% higher threshold for periodic validation (16500)
+export const PERIODIC_VALIDATION_FITNESS_THRESHOLD = VALIDATION_FITNESS_THRESHOLD; // Same threshold as death validation
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 
 // --- MATH CONSTANTS ---

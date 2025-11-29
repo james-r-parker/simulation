@@ -813,5 +813,29 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.logger.log('GPUPhysics buffers disposed and cleared');
         }
     }
+
+    /**
+     * Comprehensive cleanup for long-term stability
+     * @param {number} sessionHours - Hours since simulation started
+     */
+    deepCleanup(sessionHours = 0) {
+        // Force buffer recreation for memory defragmentation in long sessions
+        if (sessionHours > 4) {
+            this.logger.debug(`GPUPhysics: Defragmenting memory (${sessionHours.toFixed(1)}h session)`);
+            this.clearCache();
+        }
+    }
+
+    /**
+     * Check if buffers need to be recreated due to size changes
+     * @param {Object} config - Configuration for buffer sizes
+     * @returns {boolean} - True if buffers need recreation
+     */
+    buffersNeedRecreation(config) {
+        // GPU Physics uses fixed-size buffers based on max agents/entities
+        // We don't need complex cache management like GPU Compute
+        // Buffers are recreated only when simulation parameters change significantly
+        return false; // For now, keep it simple
+    }
 }
 

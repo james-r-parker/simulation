@@ -10,6 +10,11 @@ import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
     TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_START, TEMPERATURE_GAIN_MOVE, TEMPERATURE_LOSS_PASSIVE, TEMPERATURE_PASSIVE_LOSS_FACTOR,
+    TEMPERATURE_OPTIMAL_MIN, TEMPERATURE_OPTIMAL_MAX, TEMPERATURE_COLD_STRESS_THRESHOLD, TEMPERATURE_HEAT_STRESS_THRESHOLD,
+    TEMPERATURE_COLD_MODERATE_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD, TEMPERATURE_EFFICIENCY_OPTIMAL,
+    TEMPERATURE_EFFICIENCY_COLD_MODERATE, TEMPERATURE_EFFICIENCY_HEAT_MODERATE, TEMPERATURE_EFFICIENCY_COLD_SEVERE,
+    TEMPERATURE_EFFICIENCY_HEAT_SEVERE, TEMPERATURE_REPRODUCTION_SUPPRESSION_EXTREME,
+    SEASON_LENGTH,
     SPECIALIZATION_TYPES, INITIAL_AGENT_ENERGY, AGENT_CONFIGS, TWO_PI,
     DIRECTION_CHANGE_FITNESS_FACTOR,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
@@ -18,7 +23,9 @@ import {
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
     AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
-    WALL_COLLISION_DAMAGE, EDGE_BOUNCE_DAMPING
+    WALL_COLLISION_DAMAGE, EDGE_BOUNCE_DAMPING,
+    KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
+    KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -57,6 +64,15 @@ export class Agent {
         this.age = 0;
         this.framesAlive = 0;
         this.temperature = TEMPERATURE_START;
+
+        // Genealogy tracking for kin recognition
+        this.genealogy = {
+            id: this.gene.id || generateId(),
+            parent1Id: parent ? parent.genealogy?.id : null,
+            parent2Id: null, // Set during mating
+            generation: parent ? (parent.genealogy?.generation || 0) + 1 : 0,
+            offspring: []
+        };
 
         this.vx = (Math.random() - 0.5) * 0.5;
         this.vy = (Math.random() - 0.5) * 0.5;
@@ -137,7 +153,14 @@ export class Agent {
         this.wantsToReproduce = false;
         this.wantsToAttack = false;
         this.isSprinting = false;
+        this.isResting = false;
         this.lastRayData = [];
+
+        // Territorial behavior for defenders
+        this.territoryCenterX = this.x;
+        this.territoryCenterY = this.y;
+        this.territoryRadius = 200; // Territory size
+        this.isInTerritory = true;
         this.lastInputs = null;
         this.lastOutput = null;
         this.newHiddenState = null;
@@ -175,21 +198,6 @@ export class Agent {
         this.smellRadius = new Rectangle(0, 0, 0, 0); // Pre-allocate smell radius
 
         // Pre-allocate rayData objects to avoid garbage generation
-        const maxTotalRays = this.numSensorRays + this.numAlignmentRays;
-        for (let i = 0; i < maxTotalRays; i++) {
-            this.rayData.push({
-                angle: 0,
-                dist: 0,
-                hit: false,
-                type: '',
-                hitType: '',
-                hitTypeValue: 0
-            });
-        }
-
-        // --- RNN State ---
-        //this.hiddenState = new Array(this.hiddenSize).fill(0);
-
         // --- BEHAVIORAL STATES ---
         this.isPregnant = false;
         this.pregnancyTimer = 0;
@@ -236,8 +244,13 @@ export class Agent {
         const result = this.nn.forward(inputs, this.hiddenState);
         this.hiddenState = result.hiddenState;
 
+        // Store output for UI visualization (CPU path)
+        this.lastOutput = result.output;
 
         this.thinkFromOutput(result.output);
+
+        // Release pooled arrays back to pool
+        result.release();
     }
 
     thinkFromOutput(output) {
@@ -258,6 +271,9 @@ export class Agent {
         this.wantsToReproduce = output[3] > 0.8;
         this.wantsToAttack = output[4] > 0.8;
 
+        // Kin recognition: Reduce attack willingness toward close relatives
+        // This will be checked during collision resolution
+
 
         // --- MOVEMENT CALCULATIONS ---
         // Apply deadzone to thrust to allow stopping
@@ -272,6 +288,28 @@ export class Agent {
         this.isBraking = rawThrust === 0;
 
         let sprintThreshold = SPRINT_THRESHOLD;
+
+        // --- TEMPERATURE-DEPENDENT BEHAVIOR ---
+        // Temperature affects movement efficiency and behavior
+        const tempEfficiency = this.getTemperatureEfficiency();
+
+        // Apply temperature penalty to thrust
+        desiredThrust *= tempEfficiency;
+
+        // --- ENERGY CONSERVATION (RESTING) ---
+        // Agents conserve energy when critically low - reduce activity
+        if (this.energy < LOW_ENERGY_THRESHOLD * 0.5) { // Below 50 energy
+            desiredThrust *= 0.3; // Reduce movement to 30% when exhausted
+            this.isResting = true;
+        } else {
+            this.isResting = false;
+        }
+
+        // Temperature affects reproduction willingness
+        if (this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD || this.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD) {
+            // Extreme temperatures reduce mating drive
+            this.wantsToReproduce = this.wantsToReproduce && (Math.random() < TEMPERATURE_REPRODUCTION_SUPPRESSION_EXTREME);
+        }
 
         // --- FIGHT/FLIGHT MODIFIERS ---
         if (this.fear > this.aggression * 0.5) {
@@ -430,8 +468,8 @@ export class Agent {
         this.distanceTravelled += distance(this.lastX, this.lastY, this.x, this.y);
 
         // Track exploration - mark current grid cell as visited
-        const gridX = Math.floor(this.x / EXPLORATION_CELL_WIDTH);
-        const gridY = Math.floor(this.y / EXPLORATION_CELL_HEIGHT);
+        const gridX = Math.max(0, Math.min(EXPLORATION_GRID_WIDTH - 1, Math.floor(this.x / EXPLORATION_CELL_WIDTH)));
+        const gridY = Math.max(0, Math.min(EXPLORATION_GRID_HEIGHT - 1, Math.floor(this.y / EXPLORATION_CELL_HEIGHT)));
         const cellKey = `${gridX},${gridY}`;
         this.exploredCells.add(cellKey);
 
@@ -446,8 +484,27 @@ export class Agent {
         const speedRatio = Math.min(currentSpeed / MAX_VELOCITY, 1.0);
         this.temperature += speedRatio * TEMPERATURE_GAIN_MOVE;
 
-        // Passive temp loss
-        this.temperature -= TEMPERATURE_LOSS_PASSIVE;
+        // Passive temp loss (affected by season)
+        let passiveLossRate = TEMPERATURE_LOSS_PASSIVE;
+
+        // Seasonal temperature effects on passive loss
+        // In summer: harder to cool down (higher ambient temperature)
+        // In winter: easier to cool down (lower ambient temperature)
+        if (this.simulation && this.simulation.seasonTimer !== undefined) {
+            const phase = (this.simulation.seasonTimer % SEASON_LENGTH) / SEASON_LENGTH;
+
+            if (phase < 0.25) { // Spring - moderate cooling
+                passiveLossRate *= 1.1;
+            } else if (phase < 0.5) { // Summer - harder to cool
+                passiveLossRate *= 0.9;
+            } else if (phase < 0.75) { // Fall - moderate cooling
+                passiveLossRate *= 1.0; // Normal rate
+            } else { // Winter - easier to cool
+                passiveLossRate *= 1.2;
+            }
+        }
+
+        this.temperature -= passiveLossRate;
 
         // Clamp temperature
         this.temperature = Math.max(TEMPERATURE_MIN, Math.min(TEMPERATURE_MAX, this.temperature));
@@ -455,7 +512,12 @@ export class Agent {
         // Calculate passive loss multiplier based on temperature
         // 0 temp = max penalty, 100 temp = no penalty (1x)
         const tempFactor = 1.0 - (this.temperature / TEMPERATURE_MAX); // 1.0 at 0 temp, 0.0 at 100 temp
-        const passiveMultiplier = 1.0 + (tempFactor * (TEMPERATURE_PASSIVE_LOSS_FACTOR - 1.0));
+        let passiveMultiplier = 1.0 + (tempFactor * (TEMPERATURE_PASSIVE_LOSS_FACTOR - 1.0));
+
+        // Resting agents conserve energy better (lower metabolic rate)
+        if (this.isResting) {
+            passiveMultiplier *= 0.5; // 50% less passive loss when resting
+        }
 
         passiveLoss *= passiveMultiplier;
 
@@ -562,7 +624,7 @@ export class Agent {
             // Track food approaches (getting closer to food)
             if (closestFoodDist < Infinity) {
                 // Track improvement only if we have previous data
-                if (this.lastFoodDistance !== null && closestFoodDist < this.lastFoodDistance) {
+                if (this.lastFoodDistance !== null && this.lastFoodDistance !== undefined && closestFoodDist < this.lastFoodDistance) {
                     this.foodApproaches += (this.lastFoodDistance - closestFoodDist) * 0.1; // Reward proportional to approach speed
                 }
                 this.lastFoodDistance = closestFoodDist;
@@ -694,7 +756,7 @@ export class Agent {
 
         // Reuse pre-allocated arrays
         this.inputs.length = 0;
-        // rayData is pre-allocated, so we don't clear it, we just overwrite
+        this.rayData.length = 0; // Clear rayData to prevent accumulation
         const inputs = this.inputs;
         const rayData = this.rayData;
         let rayDataIndex = 0;
@@ -1050,25 +1112,34 @@ export class Agent {
             console.log(`[DEBUG] Ray tracing active: ${this.rayHits}/${this.numSensorRays + this.numAlignmentRays} rays hitting objects`);
         }
 
-        return { inputs, rayData, nearbyAgents: [] }; // nearbyAgents not fully populated here, but that's ok for now.
+        return { inputs, rayData, nearbyAgents: null }; // nearbyAgents not fully populated here, but that's ok for now.
     }
 
     emitPheromones() {
         // Analyze visual inputs for threats (predators) and targets (prey)
         let predatorProximity = 0;
         let preyProximity = 0;
+        let offspringProximity = 0;
+        let packProximity = 0; // For cooperative hunting
 
         if (this.lastRayData) {
             for (const ray of this.lastRayData) {
                 if (ray.hit) {
                     const intensity = 1.0 - (ray.dist / this.maxRayDist);
-                    // 'smaller' hit type means "I am smaller", so the other agent is a PREDATOR
-                    if (ray.hitTypeName === 'smaller') {
+                    // 'larger' hit type means "I am smaller", so the other agent is a PREDATOR
+                    if (ray.hitTypeName === 'larger') {
                         predatorProximity = Math.max(predatorProximity, intensity);
                     }
-                    // 'larger' hit type means "I am larger", so the other agent is PREY
-                    else if (ray.hitTypeName === 'larger') {
+                    // 'smaller' hit type means "I am larger", so the other agent is PREY
+                    else if (ray.hitTypeName === 'smaller') {
                         preyProximity = Math.max(preyProximity, intensity);
+                    }
+                    // COOPERATIVE HUNTING: Detect other predators for pack behavior
+                    else if (ray.hitTypeName === 'larger' || ray.hitTypeName === 'same') {
+                        // Check if it's another predator (rough approximation - same size often means same type)
+                        if (ray.hitTypeName === 'same') {
+                            packProximity = Math.max(packProximity, intensity * 0.5); // Weaker pack signal for same size
+                        }
                     }
                 }
             }
@@ -1078,8 +1149,45 @@ export class Agent {
         // Fear increases if: smelling danger, low energy, OR seeing a predator
         this.fear = Math.min(this.dangerSmell + (this.isLowEnergy() ? 0.6 : 0) + predatorProximity, 1);
 
-        // Aggression increases if: smelling attack, wanting to attack, high energy, OR seeing prey
-        this.aggression = Math.min(this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy > OBESITY_THRESHOLD_ENERGY ? 0.4 : 0) + preyProximity, 1);
+        // Aggression increases if: smelling attack, wanting to attack, low energy (hunger), OR seeing prey
+        let baseAggression = this.attackSmell + (this.wantsToAttack ? 0.6 : 0) + (this.energy < LOW_ENERGY_THRESHOLD ? 0.4 : 0) + preyProximity;
+
+        // DEFENDER TERRITORIAL BONUS: Increased aggression when intruders detected in territory
+        if (this.specializationType === 'defender') {
+            const distFromTerritory = Math.sqrt((this.x - this.territoryCenterX) ** 2 + (this.y - this.territoryCenterY) ** 2);
+            this.isInTerritory = distFromTerritory < this.territoryRadius;
+
+            // Extra aggression when in territory and seeing prey (intruders)
+            if (this.isInTerritory && preyProximity > 0) {
+                baseAggression += 0.3; // +30% aggression for territorial defense
+            }
+
+            // Reduced fear when defending territory (brave defenders)
+            this.fear *= 0.7; // 30% less fear for defenders in their territory
+        }
+
+        // SCOUT MIGRATION BEHAVIOR: Increased exploration drive during seasonal changes
+        if (this.specializationType === 'scout' && this.simulation && this.simulation.seasonTimer !== undefined) {
+            const phase = (this.simulation.seasonTimer % SEASON_LENGTH) / SEASON_LENGTH;
+            // Scouts are more exploratory during seasonal transitions (spring and fall)
+            if ((phase >= 0.2 && phase <= 0.3) || (phase >= 0.7 && phase <= 0.8)) {
+                baseAggression += 0.2; // More aggressive exploration during migration seasons
+            }
+        }
+
+        // PREDATOR COOPERATIVE HUNTING: Increased aggression when pack members nearby
+        if (this.specializationType === 'predator' && packProximity > 0) {
+            baseAggression += packProximity * 0.3; // Up to +30% aggression when hunting in packs
+            this.fear *= 0.9; // 10% less fear when hunting with pack (safety in numbers)
+        }
+
+        // PARENTING BEHAVIOR: Reduced aggression and increased protectiveness around offspring
+        if (offspringProximity > 0) {
+            baseAggression *= 0.7; // 30% less aggression around offspring (protective, not hunting)
+            this.fear *= 0.8; // 20% less fear when offspring nearby (braver to protect young)
+        }
+
+        this.aggression = Math.min(baseAggression, 1);
 
 
         // Reduced spawn rates to prevent pheromone accumulation
@@ -1122,6 +1230,10 @@ export class Agent {
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.energy -= REPRODUCE_COST_BASE;
         this.fatherWeights = mate.getWeights();
+
+        // Update genealogy: track parent-child relationships for kin recognition
+        this.genealogy.parent2Id = mate.genealogy.id;
+        mate.genealogy.offspring.push(this.genealogy.id);
 
         mate.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         mate.energy -= REPRODUCE_COST_BASE * 0.5;
@@ -1274,7 +1386,9 @@ export class Agent {
 
         // 3. Penalize repetitive circular movement (lucky food finding)
         const consecutiveTurns = safeNumber(this.consecutiveTurns || 0, 0);
-        const circlePenalty = Math.min(consecutiveTurns * 20, 2000);
+        // Cap consecutive turns to prevent extreme penalties (max 50 turns = 1000 penalty)
+        const cappedTurns = Math.min(consecutiveTurns, 50);
+        const circlePenalty = Math.min(cappedTurns * 20, 2000);
         baseScore -= circlePenalty;
         baseScore += safeNumber(this.successfulEscapes || 0, 0) * 75;
 
@@ -1298,7 +1412,7 @@ export class Agent {
         // 5. Survival Multiplier (The most important factor)
         // ADJUSTED: Agents live ~10s on average, so we scale to 30s for 2x multiplier
         // This gives agents ~1.33x multiplier at 10s instead of ~1.17x
-        const survivalMultiplier = Math.min(1 + (ageInSeconds / 30), 3.0);
+        const survivalMultiplier = Math.max(0.1, Math.min(1 + (ageInSeconds / 30), 3.0));
 
         // Final fitness is the base score amplified by how long the agent survived.
         const finalFitness = baseScore * survivalMultiplier;
@@ -1323,6 +1437,74 @@ export class Agent {
             ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL && // Minimum lifespan in seconds
             explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
             turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
+    }
+
+    getTemperatureEfficiency() {
+        // Temperature affects movement efficiency and behavior
+        // Optimal temperature range: TEMPERATURE_OPTIMAL_MIN-TEMPERATURE_OPTIMAL_MAX degrees
+        // Below TEMPERATURE_COLD_STRESS_THRESHOLD or above TEMPERATURE_HEAT_STRESS_THRESHOLD: severe penalties
+        // TEMPERATURE_COLD_MODERATE_THRESHOLD-TEMPERATURE_HEAT_MODERATE_THRESHOLD: moderate penalties
+
+        if (this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD) {
+            // Extreme cold: hibernation-like state, very low activity
+            return TEMPERATURE_EFFICIENCY_COLD_SEVERE;
+        } else if (this.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD) {
+            // Cold: reduced efficiency
+            return TEMPERATURE_EFFICIENCY_COLD_MODERATE;
+        } else if (this.temperature <= TEMPERATURE_OPTIMAL_MAX) {
+            // Optimal range: full efficiency
+            return TEMPERATURE_EFFICIENCY_OPTIMAL;
+        } else if (this.temperature <= TEMPERATURE_HEAT_MODERATE_THRESHOLD) {
+            // Warm: slight reduction due to heat stress
+            return TEMPERATURE_EFFICIENCY_HEAT_MODERATE;
+        } else {
+            // Extreme heat: severe reduction, seek cooling
+            return TEMPERATURE_EFFICIENCY_HEAT_SEVERE;
+        }
+    }
+
+    getRelatedness(otherAgent) {
+        // Calculate genetic relatedness using genealogy
+        // This is a simplified model - in reality this would be more complex
+        if (!otherAgent || !otherAgent.genealogy || !this.genealogy) {
+            return 0;
+        }
+
+        // Same agent
+        if (this.genealogy.id === otherAgent.genealogy.id) {
+            return KIN_RELATEDNESS_SELF;
+        }
+
+        // Direct parent-child relationship
+        if (this.genealogy.parent1Id === otherAgent.genealogy.id ||
+            this.genealogy.parent2Id === otherAgent.genealogy.id ||
+            otherAgent.genealogy.parent1Id === this.genealogy.id ||
+            otherAgent.genealogy.parent2Id === this.genealogy.id) {
+            return KIN_RELATEDNESS_PARENT_CHILD;
+        }
+
+        // Sibling relationship (same parents)
+        if ((this.genealogy.parent1Id === otherAgent.genealogy.parent1Id ||
+             this.genealogy.parent1Id === otherAgent.genealogy.parent2Id) &&
+            (this.genealogy.parent2Id === otherAgent.genealogy.parent1Id ||
+             this.genealogy.parent2Id === otherAgent.genealogy.parent2Id)) {
+            return KIN_RELATEDNESS_SIBLINGS;
+        }
+
+        // Grandparent/grandchild or aunt/uncle
+        if (this.genealogy.parent1Id && otherAgent.genealogy.offspring.includes(this.genealogy.parent1Id) ||
+            this.genealogy.parent2Id && otherAgent.genealogy.offspring.includes(this.genealogy.parent2Id) ||
+            otherAgent.genealogy.parent1Id && this.genealogy.offspring.includes(otherAgent.genealogy.parent1Id) ||
+            otherAgent.genealogy.parent2Id && this.genealogy.offspring.includes(otherAgent.genealogy.parent2Id)) {
+            return KIN_RELATEDNESS_GRANDPARENT;
+        }
+
+        // Distant relatives or same generation (simplified)
+        if (Math.abs(this.genealogy.generation - otherAgent.genealogy.generation) <= KIN_RELATEDNESS_MAX_GENERATION_DIFF) {
+            return KIN_RELATEDNESS_DISTANT;
+        }
+
+        return 0; // Unrelated
     }
 
     cleanup() {

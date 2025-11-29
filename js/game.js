@@ -15,6 +15,14 @@ import {
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
     FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH,
+    TEMPERATURE_MIN, TEMPERATURE_MAX,
+    SEASON_SPRING_TEMP_MODIFIER, SEASON_SUMMER_TEMP_MODIFIER, SEASON_FALL_TEMP_MODIFIER, SEASON_WINTER_TEMP_MODIFIER,
+    SEASON_SPRING_REPRODUCTION_BONUS, SEASON_SUMMER_REPRODUCTION_BONUS, SEASON_FALL_REPRODUCTION_BONUS, SEASON_WINTER_REPRODUCTION_BONUS,
+    SEASON_SUMMER_ENERGY_DRAIN, SEASON_FALL_ENERGY_DRAIN, SEASON_WINTER_ENERGY_DRAIN,
+    SEASON_SPRING_MUTATION_MULTIPLIER, SEASON_SUMMER_MUTATION_MULTIPLIER, SEASON_FALL_MUTATION_MULTIPLIER, SEASON_WINTER_MUTATION_MULTIPLIER,
+    SEASON_SPRING_FOOD_SCARCITY, SEASON_SUMMER_FOOD_SCARCITY, SEASON_FALL_FOOD_SCARCITY, SEASON_WINTER_FOOD_SCARCITY,
+    FERTILE_ZONE_MAX_COUNT, FERTILE_ZONE_FERTILITY_FACTOR, FERTILE_ZONE_MAX_FERTILITY, FERTILE_ZONE_DECAY_RATE,
+    FERTILE_ZONE_MIN_FERTILITY, FERTILE_ZONE_SIZE_FACTOR, FERTILE_ZONE_MIN_RADIUS,
     GPU_INIT_TIMEOUT_MS
 } from './constants.js';
 import { Agent } from './agent.js';
@@ -58,6 +66,7 @@ export class Simulation {
         this.agentSpawnQueue = [];
         this.food = [];
         this.pheromones = [];
+        this.fertileZones = []; // Nutrient-rich areas from decomposed agents
 
         this.worldWidth = WORLD_WIDTH;
         this.worldHeight = WORLD_HEIGHT;
@@ -70,6 +79,7 @@ export class Simulation {
         this.bestAgent = null;
         this.frameCount = 0;
         this.respawnTimer = 0;
+        this.destroyed = false;
 
         // FPS tracking
         this.lastFpsUpdate = Date.now();
@@ -90,7 +100,7 @@ export class Simulation {
         // Auto-performance adjustment
         this.fpsHistory = []; // Track last 30 seconds of FPS
         this.lastAutoAdjustTime = Date.now();
-        this.autoAdjustEnabled = true; // Enable by default
+        this.autoAdjustEnabled = false; // Disable by default
         this.targetFps = FPS_TARGET;
         this.adjustmentCooldown = AUTO_ADJUST_COOLDOWN; // 15 seconds between adjustments
         this.minAgents = MIN_AGENTS;
@@ -124,6 +134,7 @@ export class Simulation {
         this.foodSpawnRate = FOOD_SPAWN_RATE; // FURTHER REDUCED from 0.15 to 0.12 to balance food surplus (target ~150-200% buffer instead of 2800%+)
         this.mutationRate = 0.01;
         this.baseMutationRate = BASE_MUTATION_RATE; // Base rate for adaptive mutation
+        this.adaptiveMutationRate = BASE_MUTATION_RATE; // Adaptive mutation rate that changes with environment
         this.showRays = false;
         this.followBest = false;
         this.useGpu = true; // Enable GPU by default
@@ -169,7 +180,7 @@ export class Simulation {
         this.db = new GenePoolDatabase(this.logger);
 
         // Validation system for multi-run testing of promising agents (initialized after db)
-        this.validationManager = new ValidationManager(this.logger, this.db);
+        this.validationManager = new ValidationManager(this.logger, this.db, this);
 
         // --- Pre-allocated Memory for Performance ---
         this.activeAgents = []; // Pre-allocate active agents array
@@ -188,11 +199,157 @@ export class Simulation {
         this.livingPheromones = [];
         this.livingAgents = [];
 
+        // Long-term stability tracking for renderer
+        this.rendererSessionStartTime = Date.now();
+        this.rendererTotalFramesRendered = 0;
+        this.rendererLastDefragTime = Date.now();
+        this.rendererDefragIntervalHours = 4; // Defragment renderer every 4 hours
+
         this.init();
     }
 
     resize() {
         resize(this);
+    }
+
+    /**
+     * Comprehensive cleanup method to prevent memory leaks
+     * Call this when destroying the simulation or on page unload
+     */
+    destroy() {
+        // Guard against multiple destroy calls
+        if (this.destroyed) {
+            this.logger.log('Simulation already destroyed, skipping...');
+            return;
+        }
+
+        this.logger.log('Destroying simulation and cleaning up resources...');
+        this.destroyed = true;
+
+        // 1. Cancel the game loop animation frame
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = undefined;
+        }
+
+        // 2. Remove event listeners
+        this._removeEventListeners();
+
+        // 3. Terminate web worker
+        if (this.db && this.db.worker) {
+            this.db.worker.terminate();
+            this.logger.log('Database worker terminated');
+        }
+
+        // 4. Dispose WebGL renderer and all GPU resources
+        if (this.renderer && this.renderer.dispose) {
+            this.renderer.dispose();
+            this.logger.log('WebGL renderer disposed');
+        }
+
+        // 5. Clear GPU caches
+        if (this.gpuCompute && this.gpuCompute.clearCache) {
+            this.gpuCompute.clearCache();
+            this.logger.log('GPU compute cache cleared');
+        }
+        if (this.gpuPhysics && this.gpuPhysics.clearCache) {
+            this.gpuPhysics.clearCache();
+            this.logger.log('GPU physics cache cleared');
+        }
+
+        // 6. Stop UI intervals and remove event listeners (imported from ui.js)
+        try {
+            import('./ui.js').then(module => {
+                if (module.stopPeriodicSummarization) {
+                    module.stopPeriodicSummarization();
+                }
+                if (module.cleanupUIEventListeners) {
+                    module.cleanupUIEventListeners();
+                }
+            });
+        } catch (e) {
+            this.logger.warn('Could not cleanup UI:', e);
+        }
+
+        // 7. Clear arrays and references
+        this.agents.length = 0;
+        this.agentSpawnQueue.length = 0;
+        this.food.length = 0;
+        this.pheromones.length = 0;
+        this.deadAgentQueue.length = 0;
+        this.validatedLineages.clear();
+
+        // 8. Clear point pool
+        if (this.pointPool) {
+            this.pointPool.releaseAll();
+        }
+
+        // 9. Clear performance monitor
+        if (this.perfMonitor) {
+            this.perfMonitor.setEnabled(false);
+        }
+
+        // 10. Release wake lock
+        if (this.wakeLockEnabled) {
+            this.releaseWakeLock();
+        }
+
+        this.logger.log('Simulation destroyed and all resources cleaned up');
+    }
+
+    /**
+     * Static method to create a new simulation, destroying the old one if it exists
+     * @param {HTMLElement} container - The container element for the simulation
+     * @param {Simulation} oldSimulation - The old simulation to destroy (optional)
+     * @returns {Promise<Simulation>} - Promise that resolves to the new simulation
+     */
+    static async createNew(container, oldSimulation = null) {
+        // Destroy the old simulation if provided
+        if (oldSimulation && oldSimulation.destroy) {
+            oldSimulation.destroy();
+        }
+
+        // Clear the global reference
+        window.currentSimulation = null;
+
+        // Create new simulation
+        const newSim = new Simulation(container);
+
+        // Store the new reference
+        window.currentSimulation = newSim;
+
+        // Initialize the new simulation
+        await newSim.init();
+
+        // Resize after initialization
+        newSim.resize();
+        setTimeout(() => {
+            newSim.resize();
+        }, 100);
+
+        return newSim;
+    }
+
+    /**
+     * Remove all event listeners to prevent memory leaks
+     */
+    _removeEventListeners() {
+        // Canvas click listener
+        if (this.renderer && this.renderer.renderer && this.renderer.renderer.domElement) {
+            this.renderer.renderer.domElement.removeEventListener('click', this.handleCanvasClick);
+        }
+
+        // Wake lock listener
+        if (this.wakeLock) {
+            this.wakeLock.removeEventListener('release', () => {
+                this.logger.info('[WAKE] 🔋 Screen wake lock released by system');
+                this.wakeLock = null;
+                this.wakeLockEnabled = false;
+            });
+        }
+
+        // UI event listeners are handled by the UI module's cleanup
+        // The UI module should have its own cleanup method
     }
 
     performAutoAdjustment() {
@@ -477,31 +634,36 @@ export class Simulation {
         const worldX = vector.x;
         const worldY = -vector.y;
 
-        // Find closest agent
+        // Find closest agent - now checks ALL living agents regardless of distance
         let closestAgent = null;
         let minDist = Infinity;
-        const clickThreshold = 20; // World units tolerance
 
-        // Check active agents
-        // Optimization: Use quadtree if available, but linear scan is fine for click (rare event)
+        // Count living agents first to provide feedback if none exist
+        let livingAgents = 0;
         for (const agent of this.agents) {
-            if (agent.isDead) continue;
+            if (!agent.isDead) {
+                livingAgents++;
+                const dx = agent.x - worldX;
+                const dy = agent.y - worldY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-            const dx = agent.x - worldX;
-            const dy = agent.y - worldY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            // Check if click is within agent's visual radius (plus some padding for easier clicking)
-            const hitRadius = Math.max(agent.size * 1.5, 5);
-
-            if (dist < hitRadius && dist < minDist) {
-                minDist = dist;
-                closestAgent = agent;
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestAgent = agent;
+                }
             }
         }
 
         if (closestAgent) {
+            // Show feedback about which agent was selected and distance
+            this.logger.debug(`[AGENT-SELECT] Selected agent ${closestAgent.id} (${closestAgent.geneId}) at distance ${minDist.toFixed(1)} world units`);
             openAgentModal(closestAgent, this);
+        } else if (livingAgents === 0) {
+            // No living agents to select
+            this.toast?.show('No living agents to select', 'info', 2000);
+        } else {
+            // This shouldn't happen, but just in case
+            this.logger.warn('[AGENT-SELECT] No closest agent found despite living agents existing');
         }
     }
 
@@ -640,15 +802,110 @@ export class Simulation {
         const seasonLength = SEASON_LENGTH;
         const phase = (this.seasonTimer % seasonLength) / seasonLength;
 
-        this.foodScarcityFactor = 1.0 - (0.5 * Math.abs(Math.sin(phase * TWO_PI)));
+        // Enhanced seasonal cycles with multiple environmental factors
+        this.updateSeasonalEnvironment(phase, seasonLength);
 
-        if (phase > 0.5 && phase < 0.75) {
-            this.agents.forEach(a => a.energy -= 0.1);
+        // Update fertile zones (nutrient cycling)
+        this.updateFertileZones();
+
+        // Seasonal danger events (storms, predators, etc.)
+        if (this.seasonTimer % (seasonLength * 6) === 0) {
+            for (let i = 0; i < 2; i++) {
+                spawnPheromone(this, this.worldWidth * Math.random(), this.worldHeight * Math.random(), 'danger');
+            }
+        }
+    }
+
+    updateSeasonalEnvironment(phase, seasonLength) {
+        // Four distinct seasons with different environmental pressures
+        let globalTemperatureModifier = 0;
+        let reproductionBonus = 1.0;
+        let mutationMultiplier = 1.0;
+        let energyDrainMultiplier = 1.0;
+
+        if (phase < 0.25) {
+            // SPRING: Warming temperatures, breeding season, resource recovery
+            globalTemperatureModifier = SEASON_SPRING_TEMP_MODIFIER; // Cool but warming
+            reproductionBonus = SEASON_SPRING_REPRODUCTION_BONUS; // Breeding season bonus
+            this.foodScarcityFactor = SEASON_SPRING_FOOD_SCARCITY; // Abundant food after winter
+            mutationMultiplier = SEASON_SPRING_MUTATION_MULTIPLIER; // Slightly increased variation during reproduction
+        } else if (phase < 0.5) {
+            // SUMMER: Hot temperatures, peak resources, high energy demands
+            globalTemperatureModifier = SEASON_SUMMER_TEMP_MODIFIER; // Hot summer
+            reproductionBonus = SEASON_SUMMER_REPRODUCTION_BONUS; // Continued breeding
+            this.foodScarcityFactor = SEASON_SUMMER_FOOD_SCARCITY; // Normal food availability
+            energyDrainMultiplier = SEASON_SUMMER_ENERGY_DRAIN; // Higher energy demands in heat
+            mutationMultiplier = SEASON_SUMMER_MUTATION_MULTIPLIER; // Normal mutation rate
+        } else if (phase < 0.75) {
+            // FALL: Cooling temperatures, resource preparation, moderate stress
+            globalTemperatureModifier = SEASON_FALL_TEMP_MODIFIER; // Mild temperatures
+            reproductionBonus = SEASON_FALL_REPRODUCTION_BONUS; // Reduced breeding as winter approaches
+            this.foodScarcityFactor = SEASON_FALL_FOOD_SCARCITY; // Resources becoming scarce
+            energyDrainMultiplier = SEASON_FALL_ENERGY_DRAIN; // Moderate energy stress
+        } else {
+            // WINTER: Cold temperatures, severe resource scarcity, survival pressure
+            globalTemperatureModifier = SEASON_WINTER_TEMP_MODIFIER; // Cold winter
+            reproductionBonus = SEASON_WINTER_REPRODUCTION_BONUS; // Very low breeding in winter
+            this.foodScarcityFactor = SEASON_WINTER_FOOD_SCARCITY; // Severe food scarcity
+            energyDrainMultiplier = SEASON_WINTER_ENERGY_DRAIN; // High energy drain in cold
+            mutationMultiplier = SEASON_WINTER_MUTATION_MULTIPLIER; // Reduced mutation during harsh conditions
         }
 
-        if (this.seasonTimer % (seasonLength * 6) === 0) { // Reduced frequency from *3 to *6
-            for (let i = 0; i < 2; i++) { // Reduced count from 5 to 2
-                spawnPheromone(this, this.worldWidth * Math.random(), this.worldHeight * Math.random(), 'danger');
+        // Apply seasonal environmental effects (temperature is now handled by agent metabolism)
+        this.agents.forEach(agent => {
+            if (!agent.isDead) {
+                // Seasonal reproduction modifier
+                if (agent.wantsToReproduce && Math.random() > reproductionBonus) {
+                    agent.wantsToReproduce = false; // Suppress reproduction outside breeding season
+                }
+
+                // Seasonal energy drain
+                if (phase > 0.5) { // Fall and winter
+                    agent.energy -= 0.05 * energyDrainMultiplier;
+                }
+            }
+        });
+
+        // Update mutation rate based on environmental stress
+        this.adaptiveMutationRate *= mutationMultiplier;
+        this.adaptiveMutationRate = Math.max(0.1, Math.min(2.0, this.adaptiveMutationRate));
+    }
+
+    updateFertileZones() {
+        // Update and decay fertile zones over time
+        for (let i = this.fertileZones.length - 1; i >= 0; i--) {
+            const zone = this.fertileZones[i];
+            zone.age++;
+            zone.fertility -= zone.decayRate * zone.initialFertility;
+
+            // Remove depleted zones
+            if (zone.fertility <= 0.1) {
+                this.fertileZones.splice(i, 1);
+            }
+        }
+    }
+
+    createFertileZone(agent) {
+        // Create nutrient-rich area where agent died
+        // Fertility based on agent's final energy and size (larger, well-fed agents create richer soil)
+        const fertility = Math.min(agent.energy * FERTILE_ZONE_FERTILITY_FACTOR, FERTILE_ZONE_MAX_FERTILITY); // Cap fertility
+
+        if (fertility > FERTILE_ZONE_MIN_FERTILITY) { // Only create zones for agents with significant energy
+            this.fertileZones.push({
+                x: agent.x,
+                y: agent.y,
+                fertility: fertility,
+                initialFertility: fertility,
+                radius: Math.max(FERTILE_ZONE_MIN_RADIUS, agent.size * FERTILE_ZONE_SIZE_FACTOR), // Zone size based on agent size
+                decayRate: FERTILE_ZONE_DECAY_RATE,
+                age: 0
+            });
+
+            // Limit total fertile zones to prevent performance issues
+            if (this.fertileZones.length > FERTILE_ZONE_MAX_COUNT) {
+                // Remove oldest, least fertile zone
+                this.fertileZones.sort((a, b) => (a.fertility / a.initialFertility) - (b.fertility / b.initialFertility));
+                this.fertileZones.shift();
             }
         }
     }
@@ -660,6 +917,10 @@ export class Simulation {
 
 
     async gameLoop() {
+        // Guard against running game loop after destruction
+        if (this.destroyed) {
+            return;
+        }
 
         // Start performance monitoring for this frame
         this.perfMonitor.startFrame();
@@ -761,13 +1022,16 @@ export class Simulation {
         const iterations = Math.max(1, Math.floor(this.gameSpeed));
         for (let i = 0; i < iterations; i++) {
             // REBUILD quadtree every iteration for accurate collision detection
-            this.perfMonitor.startPhase('quadtree');
+            this.perfMonitor.startPhase('quadtree_active');
             // This ensures all collision queries use current entity positions
             this.quadtree.clear();
 
             // MEMORY LEAK FIX: Use try-finally to ensure points are always released
             // Return all Points to pool before rebuilding
             this.pointPool.releaseAll();
+
+            // OPTIMIZATION: Build activeAgents list here to avoid iterating agents again later
+            this.activeAgents.length = 0;
 
             try {
                 for (let j = 0; j < this.agents.length; j++) {
@@ -776,6 +1040,9 @@ export class Simulation {
                         // Use Point pool instead of allocating new objects
                         const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
                         this.quadtree.insert(point);
+
+                        // Add to active agents list
+                        this.activeAgents.push(agent);
                     }
                 }
                 for (let j = 0; j < this.food.length; j++) {
@@ -831,13 +1098,7 @@ export class Simulation {
             // Quadtree is now rebuilt once per frame outside the iteration loop
 
             // GPU processing per iteration for accurate perception
-            // Reuse activeAgents array
-            this.activeAgents.length = 0;
-            for (let j = 0; j < this.agents.length; j++) {
-                if (!this.agents[j].isDead) {
-                    this.activeAgents.push(this.agents[j]);
-                }
-            }
+            // activeAgents array is now built during quadtree phase
             const activeAgents = this.activeAgents;
 
             let gpuRayTracingSucceeded = false;
@@ -923,11 +1184,39 @@ export class Simulation {
                 this.perfMonitor.timeSync('perception.cpuFallback', () => {
                     for (let j = 0; j < activeAgents.length; j++) {
                         const agent = activeAgents[j];
-                        const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
-                        agent.lastInputs = perception.inputs;
-                        agent.lastRayData = perception.rayData;
+                        try {
+                            const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
+                            agent.lastInputs = perception.inputs;
+                            agent.lastRayData = perception.rayData;
+                        } catch (perceptionError) {
+                            // If even CPU perception fails, provide safe fallback inputs
+                            this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.geneId} CPU perception failed:`, perceptionError);
+                            agent.lastInputs = new Array(agent.inputSize).fill(0.5); // Safe neutral inputs
+                            agent.lastRayData = [];
+                        }
                     }
                 });
+
+                // Track GPU failures to potentially disable GPU temporarily
+                if (!this.gpuFailureCount) this.gpuFailureCount = 0;
+                this.gpuFailureCount++;
+
+                // If GPU fails repeatedly, temporarily disable it
+                if (this.gpuFailureCount >= 10 && this.useGpu) {
+                    this.logger.warn(`[GPU-DISABLE] Too many GPU failures (${this.gpuFailureCount}), temporarily disabling GPU acceleration`);
+                    this.useGpu = false;
+                    // Reset failure count and try to re-enable GPU after some time
+                    this.gpuFailureCount = 0;
+                    setTimeout(() => {
+                        if (this.gpuCompute && this.gpuCompute.isAvailable()) {
+                            this.logger.info('[GPU-REENABLE] Re-enabling GPU acceleration after cooldown');
+                            this.useGpu = true;
+                        }
+                    }, 30000); // 30 second cooldown
+                }
+            } else if (gpuRayTracingSucceeded) {
+                // Reset failure count on success
+                this.gpuFailureCount = 0;
             }
 
             // Neural network processing now happens in parallel with ray tracing above
@@ -950,15 +1239,12 @@ export class Simulation {
             // OPTIMIZED: Use for loop instead of forEach
             // Use actual length, not cached, since arrays can be modified
             this.perfMonitor.timeSync('physics.agentUpdates', () => {
-                for (let j = 0; j < this.agents.length; j++) {
-                    const agent = this.agents[j];
-
-                    if (!agent || agent.isDead) continue;
-
-                    // Let the agent think and update its state
-                    if (!agent.isDead) {
-                        agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
-                    }
+                // OPTIMIZED: Iterate activeAgents instead of all agents
+                const activeCount = this.activeAgents.length;
+                for (let j = 0; j < activeCount; j++) {
+                    const agent = this.activeAgents[j];
+                    // No need to check isDead or null, activeAgents only contains living agents
+                    agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
                 }
             });
 
@@ -1099,15 +1385,15 @@ export class Simulation {
                                 // If validation returns something other than false, it's handling the agent
                                 // If it returns false, it means cooldown or other skip reason
                             }
-                        } else if (agent.fit) {
-                            // Lower-tier but still qualified agents (fitness < VALIDATION_THRESHOLD but meets other criteria)
-                            this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) qualified, queueing for save`);
-                            this.db.queueSaveAgent(agent);
                         } else if (hasValidatedAncestor(agent, this)) {
                             // Children of validated agents get saved to gene pool automatically
                             this.logger.debug(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
                             this.db.queueSaveAgent(agent);
                         }
+
+                        // NUTRIENT CYCLING: Create fertile zone from decomposed agent
+                        this.createFertileZone(agent);
+
                         // Remove ALL dead agents from active array to prevent memory leaks
                         this.agents.splice(j, 1);
                         j--; // Adjust index since we removed an element
@@ -1183,6 +1469,24 @@ export class Simulation {
                 // UI updates
                 if (this.frameCount % 100 === 0) updateInfo(this);
 
+                // Periodic agent data cleanup - prevent array accumulation
+                if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
+                    for (const agent of this.agents) {
+                        if (agent && !agent.isDead) {
+                            // Limit array sizes to prevent unbounded growth
+                            if (agent.inputs && agent.inputs.length > 1000) {
+                                agent.inputs.length = 0;
+                            }
+                            if (agent.rayData && agent.rayData.length > 500) {
+                                agent.rayData.length = 0;
+                            }
+                            if (agent.lastRayData && agent.lastRayData.length > 500) {
+                                agent.lastRayData.length = 0;
+                            }
+                        }
+                    }
+                }
+
                 // Periodic validation checks - use real time for consistent timing
                 if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
                     this.lastValidationCheckTime = now;
@@ -1209,15 +1513,74 @@ export class Simulation {
                     this.lastMemoryCleanupTime = now;
                     this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
                     periodicMemoryCleanup(this);
-                    // Force GPU cache clearing to prevent memory buildup
-                    if (this.gpuCompute && this.gpuCompute.clearCache) {
-                        this.gpuCompute.clearCache();
-                        this.logger.info('[PERF] GPU compute cache cleared');
+
+                    // Calculate session duration for all cleanup operations
+                    const sessionDurationHours = (now - this.startTime) / (1000 * 60 * 60);
+
+                    // Intelligent database cache management for long-term stability
+                    if (this.db && this.db.trimCache) {
+                        this.db.trimCache(sessionDurationHours);
                     }
-                    if (this.gpuPhysics && this.gpuPhysics.clearCache) {
-                        this.gpuPhysics.clearCache();
-                        this.logger.info('[PERF] GPU physics cache cleared');
+
+                    // Selective GPU cache management - trim instead of full clear to avoid performance spikes
+                    let shouldTrimCache = sessionDurationHours >= 1 || this.currentMemoryUsage > this.memoryPressureThreshold * 0.8;
+
+                    // More aggressive trimming as simulation runs longer
+                    let maxCacheSize = 10;
+                    if (sessionDurationHours > 1) maxCacheSize = 5;
+                    if (sessionDurationHours > 2) maxCacheSize = 3;
+
+                    // Also trim every cleanup cycle if we're using a lot of GPU resources
+                    if (this.gpuCompute && this.gpuCompute.pipelines.size > maxCacheSize) {
+                        shouldTrimCache = true;
                     }
+
+                    if (shouldTrimCache) {
+                        this.logger.debug(`[PERF] Periodic GPU cache maintenance (${sessionDurationHours.toFixed(1)}h session, maxCacheSize: ${maxCacheSize})`);
+
+                        // Use enhanced selective trimming for GPU Compute
+                        if (this.gpuCompute && this.gpuCompute.deepCleanup) {
+                            this.gpuCompute.deepCleanup(sessionDurationHours);
+                        }
+
+                            // Enhanced GPU Physics cleanup
+                        if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
+                            this.gpuPhysics.deepCleanup(sessionDurationHours);
+                        }
+                    }
+
+                    // Renderer defragmentation for long-term stability
+                    const rendererAgeHours = (now - this.rendererSessionStartTime) / (1000 * 60 * 60);
+                    if (rendererAgeHours > this.rendererDefragIntervalHours) {
+                        this.logger.debug(`[RENDERER] Defragmenting renderer resources (${rendererAgeHours.toFixed(1)}h session)`);
+
+                        // Force renderer cleanup and recreation of instanced meshes
+                        if (this.renderer && this.renderer.defragment) {
+                            this.renderer.defragment();
+                        } else {
+                            // Fallback: clear agent meshes to force recreation
+                            if (this.renderer && this.renderer.agentMeshes) {
+                                for (const [geneId, mesh] of this.renderer.agentMeshes.entries()) {
+                                    if (mesh.body) {
+                                        this.renderer.agentGroup.remove(mesh.body);
+                                        mesh.body.geometry.dispose();
+                                        mesh.body.material.dispose();
+                                    }
+                                    if (mesh.border) {
+                                        this.renderer.agentGroup.remove(mesh.border);
+                                        mesh.border.geometry.dispose();
+                                        mesh.border.material.dispose();
+                                    }
+                                }
+                                this.renderer.agentMeshes.clear();
+                                this.logger.debug('[RENDERER] Cleared agent meshes for defragmentation');
+                            }
+                        }
+
+                        this.rendererLastDefragTime = now;
+                        this.rendererDefragIntervalHours = Math.min(this.rendererDefragIntervalHours + 1, 8); // Gradually increase interval
+                    }
+
                     // Force garbage collection if available
                     if (window.gc) {
                         window.gc();
@@ -1401,13 +1764,54 @@ export class Simulation {
 
         this.perfMonitor.endPhase('spawn_agents');
 
+        // Performance degradation detection and recovery
+        const sessionTimeMs = now - this.startTime;
+        this.perfMonitor.establishBaseline(sessionTimeMs);
+
+        if (this.perfMonitor.checkPerformanceDegradation(sessionTimeMs)) {
+            // Trigger performance recovery
+            this.logger.warn('[PERF-RECOVERY] Triggering performance recovery due to degradation');
+
+            // Force garbage collection
+            if (window.gc) {
+                window.gc();
+                this.logger.info('[PERF-RECOVERY] Forced garbage collection');
+            }
+
+            // Clear GPU caches aggressively
+            if (this.gpuCompute && this.gpuCompute.clearCache) {
+                this.gpuCompute.clearCache();
+                this.logger.info('[PERF-RECOVERY] Cleared GPU compute cache');
+            }
+            if (this.gpuPhysics && this.gpuPhysics.clearCache) {
+                this.gpuPhysics.clearCache();
+                this.logger.info('[PERF-RECOVERY] Cleared GPU physics cache');
+            }
+
+            // Defragment renderer
+            if (this.renderer && this.renderer.defragment) {
+                this.renderer.defragment();
+                this.logger.info('[PERF-RECOVERY] Defragmented renderer resources');
+            }
+
+            // Reset performance baseline to current state
+            this.perfMonitor.baselineEstablished = false;
+            this.logger.info('[PERF-RECOVERY] Reset performance baseline for re-establishment');
+        }
+
         // End frame timing and log performance report every 5 seconds
         this.perfMonitor.endFrame();
         if (this.frameCount % (FPS_TARGET * 5) === 0) {
             this.perfMonitor.logReport();
+
+            // Also log health status
+            const health = this.perfMonitor.getHealthStatus();
+            if (health.status !== 'warming_up') {
+                this.logger.info(`[PERF-HEALTH] Status: ${health.status}, degradation: ${health.degradationRatio.toFixed(2)}x`);
+            }
         }
 
-        requestAnimationFrame(() => {
+        this.animationFrameId = requestAnimationFrame(() => {
             this.gameLoop().catch(error => {
                 this.logger.error('Error in game loop:', error);
             });

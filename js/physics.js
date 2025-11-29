@@ -6,7 +6,9 @@ import {
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
     MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES,
     COLLISION_SEPARATION_STRENGTH, BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
-    OBSTACLE_MAX_SPEED, TEMPERATURE_GAIN_EAT, TEMPERATURE_MAX
+    OBSTACLE_MAX_SPEED, TEMPERATURE_GAIN_EAT, TEMPERATURE_MAX,
+    KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_PREDATION_REDUCTION_THRESHOLD,
+    KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -15,16 +17,55 @@ import { Agent } from './agent.js';
 import { queryArrayPool, hitTypeArrayPool } from './array-pool.js';
 import { rectanglePool } from './rectangle-pool.js';
 
+// Pool for collision tracking Sets to reduce GC pressure
+class CollisionSetPool {
+    constructor(initialSize = 200) {
+        this.pool = [];
+        // Pre-populate with empty Sets
+        for (let i = 0; i < initialSize; i++) {
+            this.pool.push(new Set());
+        }
+    }
+
+    acquire() {
+        if (this.pool.length > 0) {
+            const set = this.pool.pop();
+            set.clear(); // Ensure it's empty
+            return set;
+        }
+        return new Set();
+    }
+
+    release(set) {
+        if (set && set instanceof Set) {
+            set.clear(); // Clear contents before returning to pool
+            this.pool.push(set);
+        }
+    }
+
+    getStats() {
+        return {
+            poolSize: this.pool.length
+        };
+    }
+}
+
+const collisionSetPool = new CollisionSetPool();
+
+// Export for external access (used by memory cleanup)
+export { collisionSetPool };
+
 export function checkCollisions(simulation) {
     // OPTIMIZED: Collision detection using distance squared to avoid sqrt
     // Limit collision checks per agent to avoid O(n²) scaling
     const numAgents = simulation.agents.length;
 
-    // Clear processed collision tracking for this frame
+    // Clear processed collision tracking for this frame - release and reacquire pooled Sets
     for (let i = 0; i < numAgents; i++) {
         const agent = simulation.agents[i];
         if (agent && agent.processedCollisions) {
-            agent.processedCollisions.clear();
+            collisionSetPool.release(agent.processedCollisions);
+            agent.processedCollisions = collisionSetPool.acquire();
         }
     }
 
@@ -67,10 +108,34 @@ export function checkCollisions(simulation) {
             // Use squared distance for comparison (faster, no sqrt needed)
             if (distSq < combinedSizeSq) {
 
-                // PREDATION LOGIC: Check if one agent is significantly larger (Hunter vs Prey)
+                // PREDATION LOGIC: Only PREDATOR specialization agents can hunt
                 const sizeRatio = agentSize / otherSize;
-                const isPredator = sizeRatio > 1.2; // Agent is 20% larger
-                const isPrey = sizeRatio < 0.8;     // Agent is 20% smaller (Other is predator)
+                let isPredator = false;
+                let isPrey = false;
+
+                // Only PREDATOR agents can be predators and can only eat smaller agents
+                if (agent.specializationType === 'predator' && sizeRatio > 1.1) {
+                    isPredator = true; // Agent is PREDATOR and 10%+ larger than other
+                }
+
+                // Only PREDATOR agents can be prey to other PREDATOR agents
+                if (other.specializationType === 'predator' && sizeRatio < 0.909) {
+                    isPrey = true; // Other is PREDATOR and 10%+ larger than agent
+                }
+
+                let isSimilarSize = sizeRatio >= 0.909 && sizeRatio <= 1.1; // Similar size agents (±10%)
+
+                // KIN RECOGNITION: Reduce predation among close relatives (overrides specialization rules)
+                const relatedness = agent.getRelatedness(other);
+                if (relatedness >= KIN_PREDATION_REDUCTION_THRESHOLD) { // Close relatives (parent/child, siblings, etc.)
+                    // Kin selection: significantly reduce predation willingness
+                    isPredator = isPredator && (Math.random() > (relatedness >= KIN_RELATEDNESS_PARENT_CHILD ? KIN_ATTACK_PREVENTION_PARENT : KIN_ATTACK_PREVENTION_CHANCE));
+                    isPrey = isPrey && (Math.random() > (relatedness >= KIN_RELATEDNESS_PARENT_CHILD ? KIN_ATTACK_PREVENTION_PARENT : KIN_ATTACK_PREVENTION_CHANCE));
+                    // If both were predators/prey but kinship prevented it, treat as similar size
+                    if (!isPredator && !isPrey && sizeRatio > 1.1) {
+                        isSimilarSize = true;
+                    }
+                }
 
                 // Simple bump physics to prevent overlap
                 // Simple bump physics to prevent overlap
@@ -108,9 +173,11 @@ export function checkCollisions(simulation) {
                         // Impulse scalar
                         let j = -(1 + restitution) * velAlongNormal;
 
-                        // Assume equal mass for now (could use size/energy as mass)
-                        // Impulse = j / (1/m1 + 1/m2) -> j / 2 if m1=m2=1
-                        j /= 2;
+                        // Use mass proportional to size squared (volume in 2D)
+                        const mass1 = agentSize * agentSize;
+                        const mass2 = otherSize * otherSize;
+                        // Impulse = j / (1/m1 + 1/m2)
+                        j /= (1 / mass1 + 1 / mass2);
 
                         // Apply impulse
                         const impulseX = j * nx;
@@ -161,8 +228,35 @@ export function checkCollisions(simulation) {
                         // Count collision for prey
                         agent.collisions++;
 
+                    } else if (isSimilarSize) {
+                        // Similar size agents: Minor energy exchange, both get collision penalty
+                        // If both want to attack, make energy exchange more significant (hunter vs hunter)
+                        const bothWantToAttack = agent.wantsToAttack && other.wantsToAttack;
+                        const exchangeMultiplier = bothWantToAttack ? 1.0 : 0.1; // 10x more aggressive if both are hunters
+                        const energyExchange = Math.random() < 0.5 ? BITE_SIZE * exchangeMultiplier : -BITE_SIZE * exchangeMultiplier;
+
+                        if (energyExchange > 0 && agent.energy > energyExchange) {
+                            agent.energy -= energyExchange;
+                            other.energy += energyExchange;
+                            other.foodEaten += exchangeMultiplier * 0.1;
+                        } else if (energyExchange < 0 && other.energy > Math.abs(energyExchange)) {
+                            other.energy += energyExchange; // energyExchange is negative
+                            agent.energy -= energyExchange; // This makes agent.energy increase
+                            agent.foodEaten += exchangeMultiplier * 0.1;
+                        }
+
+                        // Both agents get collision penalty
+                        agent.collisions++;
+                        other.collisions++;
+
+                        if (simulation.renderer) {
+                            // Use eating effect if both are attacking (hunter battle), otherwise collision
+                            const effectType = bothWantToAttack ? 'eating' : 'collision';
+                            simulation.renderer.addVisualEffect(agent, effectType, simulation.gameSpeed);
+                            simulation.renderer.addVisualEffect(other, effectType, simulation.gameSpeed);
+                        }
                     } else {
-                        // Normal collision (similar sizes): Both penalized
+                        // Fallback: Normal collision (should not reach here with new logic)
                         agent.collisions++;
                         other.collisions++;
 
@@ -174,11 +268,11 @@ export function checkCollisions(simulation) {
 
                     // Prevent checking the same collision pair again in this frame
                     // by marking this agent pair as already processed
-                    if (!agent.processedCollisions) agent.processedCollisions = new Set();
-                    if (!other.processedCollisions) other.processedCollisions = new Set();
+                    if (!agent.processedCollisions) agent.processedCollisions = collisionSetPool.acquire();
+                    if (!other.processedCollisions) other.processedCollisions = collisionSetPool.acquire();
 
-                    const pairKey = agent.geneId < other.geneId ?
-                        `${agent.geneId} -${other.geneId} ` : `${other.geneId} -${agent.geneId} `;
+                    const pairKey = agent.id < other.id ?
+                        `${agent.id}-${other.id}` : `${other.id}-${agent.id}`;
 
                     if (!agent.processedCollisions.has(pairKey)) {
                         agent.processedCollisions.add(pairKey);
@@ -192,8 +286,8 @@ export function checkCollisions(simulation) {
 
                 // === SEXUAL REPRODUCTION (MATING) ===
                 // Check for mating opportunities when agents collide
-                // Only mate if NOT in a predator/prey relationship
-                if (!isPredator && !isPrey &&
+                // Only mate if agents are similar size (not predator/prey relationships)
+                if (isSimilarSize &&
                     agent.wantsToReproduce && other.wantsToReproduce &&
                     agent.energy > MIN_ENERGY_TO_REPRODUCE && other.energy > MIN_ENERGY_TO_REPRODUCE) {
 
@@ -225,7 +319,7 @@ export function checkCollisions(simulation) {
 
         // OPTIMIZED: Use quadtree for food collision detection
         // Query for nearby food within collision range
-        const foodQueryRange = agentSize + 10; // Max food size is ~5, add buffer
+        const foodQueryRange = agentSize + 35; // Max food size is ~30, add buffer
         collisionQueryRange.x = agent.x;
         collisionQueryRange.y = agent.y;
         collisionQueryRange.w = foodQueryRange;
@@ -366,7 +460,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
         // Reuse pre-allocated arrays from Agent
         agent.inputs.length = 0;
-        // agent.rayData is pre-allocated, so we don't clear it, we just overwrite
+        agent.rayData.length = 0; // Clear rayData to prevent accumulation
         const inputs = agent.inputs;
         const rayData = agent.rayData;
         let rayDataIndex = 0;

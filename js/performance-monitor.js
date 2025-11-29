@@ -52,6 +52,14 @@ export class PerformanceMonitor {
 
         // Enabled flag for performance (can disable in production)
         this.enabled = true;
+
+        // Long-term performance degradation detection
+        this.baselineFrameTime = null; // Baseline performance established after first minute
+        this.degradationThreshold = 1.5; // 50% performance degradation triggers recovery
+        this.baselineEstablished = false;
+        this.lastRecoveryAttempt = 0;
+        this.recoveryCooldownMs = 300000; // 5 minutes between recovery attempts
+        this.degradationHistory = []; // Track degradation over time
     }
 
     // Start timing the entire frame
@@ -384,5 +392,89 @@ export class PerformanceMonitor {
     // Enable/disable monitoring
     setEnabled(enabled) {
         this.enabled = enabled;
+    }
+
+    /**
+     * Check for performance degradation and trigger recovery if needed
+     * @param {number} sessionTimeMs - Time since simulation started (milliseconds)
+     * @returns {boolean} - True if recovery was triggered
+     */
+    checkPerformanceDegradation(sessionTimeMs) {
+        if (!this.enabled || !this.baselineEstablished) return false;
+
+        const currentFrameTime = this.stats.frameTime;
+        const degradationRatio = currentFrameTime / this.baselineFrameTime;
+
+        // Record degradation for trend analysis
+        this.degradationHistory.push({
+            time: sessionTimeMs,
+            ratio: degradationRatio,
+            frameTime: currentFrameTime
+        });
+
+        // Keep last 20 degradation measurements
+        if (this.degradationHistory.length > 20) {
+            this.degradationHistory.shift();
+        }
+
+        // Check if degradation exceeds threshold
+        if (degradationRatio > this.degradationThreshold) {
+            const timeSinceLastRecovery = sessionTimeMs - this.lastRecoveryAttempt;
+
+            if (timeSinceLastRecovery > this.recoveryCooldownMs) {
+                this.logger.warn(`[PERF-DEGRADATION] Performance degraded ${degradationRatio.toFixed(2)}x (baseline: ${this.baselineFrameTime.toFixed(2)}ms, current: ${currentFrameTime.toFixed(2)}ms)`);
+                this.lastRecoveryAttempt = sessionTimeMs;
+                return true; // Trigger recovery
+            }
+        }
+
+        return false; // No recovery needed
+    }
+
+    /**
+     * Establish baseline performance after initial warmup period
+     * @param {number} sessionTimeMs - Time since simulation started (milliseconds)
+     */
+    establishBaseline(sessionTimeMs) {
+        if (this.baselineEstablished) return;
+
+        // Establish baseline after 1 minute of stable operation
+        if (sessionTimeMs > 60000 && this.timings.frame.length >= 30) {
+            // Use 95th percentile to avoid outliers
+            const frameTimes = [...this.timings.frame].sort((a, b) => a - b);
+            const p95Index = Math.floor(frameTimes.length * 0.95);
+            this.baselineFrameTime = frameTimes[p95Index];
+
+            this.baselineEstablished = true;
+            this.logger.info(`[PERF-BASELINE] Established baseline frame time: ${this.baselineFrameTime.toFixed(2)}ms (95th percentile)`);
+        }
+    }
+
+    /**
+     * Get performance health status
+     * @returns {Object} - Performance health metrics
+     */
+    getHealthStatus() {
+        if (!this.baselineEstablished) {
+            return { status: 'warming_up', baselineFrameTime: null, currentFrameTime: this.stats.frameTime };
+        }
+
+        const degradationRatio = this.stats.frameTime / this.baselineFrameTime;
+        let status = 'healthy';
+
+        if (degradationRatio > this.degradationThreshold) {
+            status = 'degraded';
+        } else if (degradationRatio > 1.2) {
+            status = 'warning';
+        }
+
+        return {
+            status,
+            baselineFrameTime: this.baselineFrameTime,
+            currentFrameTime: this.stats.frameTime,
+            degradationRatio,
+            sessionHealth: this.degradationHistory.length > 0 ?
+                this.degradationHistory[this.degradationHistory.length - 1].ratio : 1.0
+        };
     }
 }

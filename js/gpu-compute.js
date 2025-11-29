@@ -71,12 +71,16 @@ export class GPUCompute {
             // Set up device lost handler
             this.device.lost.then((info) => {
                 this.logger.warn('GPU Compute device lost:', info);
+                // Clear ALL state to ensure clean recovery
                 this.useGPU = false;
                 this.initialized = false;
                 this.device = null;
                 this.queue = null;
                 this.pipelines.clear();
                 this.bufferCache.clear();
+                this.weightCache.clear();
+                this.stagingBufferIndex = 0; // Reset double-buffering state
+                this.processing = false; // Reset processing lock
             }).catch(() => {
                 // Ignore errors from lost promise
             });
@@ -238,25 +242,39 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         return false;
     }
     
-    // Ultra-fast hash - only samples 3x3 matrix (much faster than 5x5)
+    // Ultra-fast hash - samples multiple points across the matrix for better coverage
     fastHashWeights(weights1, weights2) {
         let hash1 = 0, hash2 = 0;
-        const sampleSize = 3; // Even smaller sample for speed
+        const sampleSize = 5; // Increased sample size for better coverage
         
-        // Sample first few weights only
-        for (let i = 0; i < Math.min(weights1.length, sampleSize); i++) {
-            const row = weights1[i];
+        // Sample weights from different parts of the matrix for better coverage
+        const maxRows1 = weights1.length;
+        const maxRows2 = weights2.length;
+
+        for (let i = 0; i < sampleSize; i++) {
+            // Sample from different positions: start, middle, end
+            const rowIdx = i < 3 ? i : Math.floor((i - 3) * maxRows1 / sampleSize);
+            const row = weights1[Math.min(rowIdx, maxRows1 - 1)];
             if (row) {
-                for (let j = 0; j < Math.min(row.length, sampleSize); j++) {
-                    hash1 = ((hash1 << 3) - hash1) + (row[j] * 1000) | 0;
+                const maxCols = row.length;
+                for (let j = 0; j < Math.min(maxCols, 3); j++) {
+                    // Sample from different column positions
+                    const colIdx = j < 2 ? j : Math.floor(j * maxCols / 3);
+                    hash1 = ((hash1 << 3) - hash1) + (row[Math.min(colIdx, maxCols - 1)] * 1000) | 0;
                 }
             }
         }
-        for (let i = 0; i < Math.min(weights2.length, sampleSize); i++) {
-            const row = weights2[i];
+
+        for (let i = 0; i < sampleSize; i++) {
+            // Sample from different positions: start, middle, end
+            const rowIdx = i < 3 ? i : Math.floor((i - 3) * maxRows2 / sampleSize);
+            const row = weights2[Math.min(rowIdx, maxRows2 - 1)];
             if (row) {
-                for (let j = 0; j < Math.min(row.length, sampleSize); j++) {
-                    hash2 = ((hash2 << 3) - hash2) + (row[j] * 1000) | 0;
+                const maxCols = row.length;
+                for (let j = 0; j < Math.min(maxCols, 3); j++) {
+                    // Sample from different column positions
+                    const colIdx = j < 2 ? j : Math.floor(j * maxCols / 3);
+                    hash2 = ((hash2 << 3) - hash2) + (row[Math.min(colIdx, maxCols - 1)] * 1000) | 0;
                 }
             }
         }
@@ -457,25 +475,36 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         let batchedWeight2Data = null;
         const weightUpdateOffsets = [];
 
+        // Clean up weight cache entries for dead agents to prevent memory leaks
+        const deadAgentIds = new Set();
+        for (const agent of validAgents) {
+            if (agent.isDead) {
+                deadAgentIds.add(agent.id);
+            }
+        }
+        for (const deadId of deadAgentIds) {
+            this.weightCache.delete(deadId);
+        }
+
         for (let idx = 0; idx < validAgents.length; idx++) {
             const agent = validAgents[idx];
             const w = agent.nn.getWeights();
-            
-            // Ultra-fast weight change check
+
+            // Ultra-fast weight change check (with fallback to full validation)
             if (this.checkWeightChanged(agent, w.weights1, w.weights2)) {
                 needsWeightUpload = true;
                 if (!batchedWeight1Data) {
                     batchedWeight1Data = new Float32Array(maxAgents * inputSize * hiddenSize);
                     batchedWeight2Data = new Float32Array(maxAgents * hiddenSize * outputSize);
                 }
-                
+
                 agentsNeedingWeightUpdate.push({ agent, idx });
-                
+
                 const weight1Offset = idx * inputSize * hiddenSize;
                 const weight2Offset = idx * hiddenSize * outputSize;
                 const w1 = w.weights1;
                 const w2 = w.weights2;
-                
+
                 // Pack weights directly into batched array (optimized loops)
                 for (let j = 0; j < inputSize; j++) {
                     const w1Row = w1[j];
@@ -495,7 +524,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                         }
                     }
                 }
-                
+
                 weightUpdateOffsets.push({ idx, weight1Offset, weight2Offset });
             }
         }
@@ -554,7 +583,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         // DOUBLE-BUFFERING: Use alternating staging buffers
         const stagingIndex = this.stagingBufferIndex % 2;
-        this.stagingBufferIndex++;
 
         // Copy results to staging buffers (non-blocking)
         encoder.copyBufferToBuffer(buffers.outputs, 0, buffers.stagingOutputs[stagingIndex], 0, validAgents.length * outputSize * 4);
@@ -599,6 +627,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             // Unmap buffers
             buffers.stagingOutputs[stagingIndex].unmap();
             buffers.stagingHiddenStates[stagingIndex].unmap();
+
+            // Only advance staging buffer index on successful completion
+            this.stagingBufferIndex++;
         } catch (mapError) {
             // Buffer already mapped or other mapping error
             try {
@@ -611,6 +642,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             } catch (e) {
                 // Ignore unmapping errors
             }
+            // Don't advance staging buffer index on failure to avoid corruption
             throw mapError;
         }
 
@@ -638,5 +670,121 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         this.bufferCache.clear();
 
         this.logger.log('GPUCompute buffers disposed and cache cleared');
+    }
+
+    /**
+     * Selectively clear old cache entries to free memory without destroying performance
+     * Enhanced for long-term stability with more aggressive cleanup over time
+     * @param {number} maxEntries - Maximum number of entries to keep (default: 10)
+     * @param {number} sessionHours - Hours since simulation started (for adaptive cleanup)
+     */
+    trimCache(maxEntries = 10, sessionHours = 0) {
+        // Adaptive cache limits based on session duration
+        let adaptiveMaxEntries = maxEntries;
+        if (sessionHours > 1) adaptiveMaxEntries = Math.max(5, maxEntries - 2);
+        if (sessionHours > 2) adaptiveMaxEntries = Math.max(3, maxEntries - 4);
+        if (sessionHours > 4) adaptiveMaxEntries = Math.max(2, maxEntries - 6);
+        if (sessionHours > 8) adaptiveMaxEntries = Math.max(1, maxEntries - 8);
+
+        // Also trim pipelines - keep only most recently used architectures
+        if (this.pipelines.size > adaptiveMaxEntries) {
+            const pipelineEntries = Array.from(this.pipelines.entries());
+            const toRemove = pipelineEntries.slice(0, pipelineEntries.length - adaptiveMaxEntries);
+            for (const [key] of toRemove) {
+                this.pipelines.delete(key);
+            }
+            this.logger.debug(`GPUCompute pipelines trimmed from ${pipelineEntries.length} to ${this.pipelines.size} entries (${sessionHours.toFixed(1)}h session)`);
+        }
+
+        // If cache is not too large, don't trim
+        if (this.bufferCache.size <= adaptiveMaxEntries) {
+            return;
+        }
+
+        // Convert to array, sort by access time (if available), keep most recent
+        const entries = Array.from(this.bufferCache.entries());
+        // For long sessions, be more aggressive with cleanup
+        const toRemove = entries.slice(0, entries.length - adaptiveMaxEntries);
+
+        let buffersDisposed = 0;
+        for (const [key, buffers] of toRemove) {
+            // Dispose all GPU buffers
+            if (buffers.uniforms) buffers.uniforms.destroy();
+            if (buffers.inputs) buffers.inputs.destroy();
+            if (buffers.weights1) buffers.weights1.destroy();
+            if (buffers.weights2) buffers.weights2.destroy();
+            if (buffers.outputs) buffers.outputs.destroy();
+            if (buffers.newHiddenStates) buffers.newHiddenStates.destroy();
+
+            // Dispose staging buffers (double-buffering)
+            if (buffers.stagingOutputs) {
+                buffers.stagingOutputs.forEach(buffer => {
+                    if (buffer && !buffer.destroyed) buffer.destroy();
+                });
+            }
+            if (buffers.stagingHiddenStates) {
+                buffers.stagingHiddenStates.forEach(buffer => {
+                    if (buffer && !buffer.destroyed) buffer.destroy();
+                });
+            }
+
+            // Clear bind group reference
+            if (buffers.bindGroup) {
+                buffers.bindGroup = null;
+            }
+
+            // Clear typed arrays
+            if (buffers.inputArray) buffers.inputArray = null;
+            if (buffers.uniformArray) buffers.uniformArray = null;
+
+            // Remove from cache
+            this.bufferCache.delete(key);
+            buffersDisposed++;
+        }
+
+        this.logger.debug(`GPUCompute cache trimmed from ${entries.length} to ${this.bufferCache.size} entries (${buffersDisposed} buffers disposed, ${sessionHours.toFixed(1)}h session)`);
+    }
+
+    /**
+     * Force defragmentation of GPU memory by recreating critical buffers
+     * Call this periodically during long sessions to prevent memory fragmentation
+     */
+    defragmentMemory() {
+        if (!this.device) return;
+
+        this.logger.debug('GPUCompute: Starting memory defragmentation');
+
+        // Force recreation of all buffer caches by clearing them
+        // This will cause buffers to be recreated on next use with fresh memory
+        const originalSize = this.bufferCache.size;
+        this.clearCache();
+        this.logger.debug(`GPUCompute: Defragmented memory by clearing ${originalSize} buffer cache entries`);
+    }
+
+    /**
+     * Comprehensive cleanup for long-term stability
+     * @param {number} sessionHours - Hours since simulation started
+     */
+    deepCleanup(sessionHours = 0) {
+        // Trim caches with session-aware limits
+        this.trimCache(10, sessionHours);
+
+        // Defragment memory every few hours for very long sessions
+        if (sessionHours > 2 && sessionHours % 2 === 0) {
+            this.defragmentMemory();
+        }
+
+        // Clear weight cache periodically to prevent unbounded growth
+        if (this.weightCache.size > 1000) {
+            const originalSize = this.weightCache.size;
+            // Keep only entries that have been accessed recently (if we had timestamps)
+            // For now, clear half to prevent sudden performance drops
+            const entries = Array.from(this.weightCache.entries());
+            const toRemove = entries.slice(0, Math.floor(entries.length / 2));
+            for (const [key] of toRemove) {
+                this.weightCache.delete(key);
+            }
+            this.logger.debug(`GPUCompute weight cache trimmed from ${originalSize} to ${this.weightCache.size} entries`);
+        }
     }
 }

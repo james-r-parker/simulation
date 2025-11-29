@@ -14,6 +14,13 @@ export class GenePoolDatabase {
         this.isProcessingQueue = false;
         this.pool = {};
         this.geneIds = [];
+
+        // Intelligent cache management for long-term stability
+        this.cacheAccessTimes = new Map(); // geneId -> lastAccessTime
+        this.cacheSizeHistory = []; // Track cache size over time
+        this.maxCacheSize = MAX_GENE_POOLS; // Default limit
+        this.lastCacheTrimTime = Date.now();
+        this.cacheTrimIntervalMs = 30 * 60 * 1000; // 30 minutes
     }
 
     async init() {
@@ -437,6 +444,9 @@ export class GenePoolDatabase {
     // Helper method: Get a random agent from any gene pool
     getRandomAgent() {
         const randomGeneId = this.randomGeneId();
+        if (randomGeneId) {
+            this.updateCacheAccess(randomGeneId);
+        }
         const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
@@ -447,6 +457,9 @@ export class GenePoolDatabase {
     // Helper method: Get a mating pair for a specific geneId
     getMatingPair() {
         const randomGeneId = this.randomGeneId();
+        if (randomGeneId) {
+            this.updateCacheAccess(randomGeneId);
+        }
         const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
@@ -516,5 +529,143 @@ export class GenePoolDatabase {
             totalAgents,
             specializationCounts
         };
+    }
+
+    /**
+     * Update cache access time for a gene pool
+     * @param {string} geneId - The gene pool ID that was accessed
+     */
+    updateCacheAccess(geneId) {
+        this.cacheAccessTimes.set(geneId, Date.now());
+    }
+
+    /**
+     * Intelligent cache trimming to prevent memory bloat during long sessions
+     * @param {number} sessionHours - Hours since simulation started
+     */
+    trimCache(sessionHours = 0) {
+        const now = Date.now();
+        const timeSinceLastTrim = now - this.lastCacheTrimTime;
+
+        // Adaptive trimming frequency based on session duration
+        let shouldTrim = false;
+        if (sessionHours < 1) {
+            shouldTrim = timeSinceLastTrim > (15 * 60 * 1000); // 15 minutes for new sessions
+        } else if (sessionHours < 4) {
+            shouldTrim = timeSinceLastTrim > (30 * 60 * 1000); // 30 minutes
+        } else {
+            shouldTrim = timeSinceLastTrim > (60 * 60 * 1000); // 1 hour for long sessions
+        }
+
+        if (!shouldTrim) return;
+
+        this.lastCacheTrimTime = now;
+
+        // Adaptive cache size limits based on session duration
+        let maxCacheEntries = MAX_GENE_POOLS; // Base limit
+        if (sessionHours > 2) maxCacheEntries = Math.max(300, MAX_GENE_POOLS * 0.8);
+        if (sessionHours > 4) maxCacheEntries = Math.max(200, MAX_GENE_POOLS * 0.6);
+        if (sessionHours > 8) maxCacheEntries = Math.max(100, MAX_GENE_POOLS * 0.4);
+        if (sessionHours > 24) maxCacheEntries = Math.max(50, MAX_GENE_POOLS * 0.2);
+
+        const currentSize = Object.keys(this.pool).length;
+
+        // Track cache size history
+        this.cacheSizeHistory.push({ time: now, size: currentSize });
+        if (this.cacheSizeHistory.length > 20) {
+            this.cacheSizeHistory.shift();
+        }
+
+        // Only trim if we're significantly over the adaptive limit
+        if (currentSize <= maxCacheEntries * 1.2) {
+            return;
+        }
+
+        // Sort gene pools by last access time (oldest first)
+        const entries = Object.keys(this.pool).map(geneId => ({
+            geneId,
+            lastAccess: this.cacheAccessTimes.get(geneId) || 0,
+            pool: this.pool[geneId]
+        }));
+
+        entries.sort((a, b) => a.lastAccess - b.lastAccess);
+
+        // Remove oldest accessed gene pools until we're under the limit
+        const toRemove = entries.slice(0, currentSize - maxCacheEntries);
+        let removedCount = 0;
+
+        for (const entry of toRemove) {
+            // Only remove if the pool has been inactive for a significant time
+            const inactiveHours = (now - entry.lastAccess) / (1000 * 60 * 60);
+            const minInactiveHours = Math.max(1, sessionHours * 0.1); // 10% of session time
+
+            if (inactiveHours > minInactiveHours) {
+                delete this.pool[entry.geneId];
+                this.cacheAccessTimes.delete(entry.geneId);
+                removedCount++;
+            }
+        }
+
+        if (removedCount > 0) {
+            this.logger.debug(`[DATABASE] Trimmed cache: removed ${removedCount} inactive gene pools (${currentSize - removedCount} remaining, session: ${sessionHours.toFixed(1)}h)`);
+        }
+    }
+
+    /**
+     * Get cache health statistics for monitoring
+     */
+    getCacheHealth() {
+        const now = Date.now();
+        const currentSize = Object.keys(this.pool).length;
+        const accessTimes = Array.from(this.cacheAccessTimes.values());
+
+        let avgInactiveHours = 0;
+        if (accessTimes.length > 0) {
+            const totalInactiveMs = accessTimes.reduce((sum, time) => sum + (now - time), 0);
+            avgInactiveHours = (totalInactiveMs / accessTimes.length) / (1000 * 60 * 60);
+        }
+
+        return {
+            currentSize,
+            maxSize: MAX_GENE_POOLS,
+            avgInactiveHours,
+            sizeHistory: this.cacheSizeHistory.slice(-5) // Last 5 measurements
+        };
+    }
+
+    /**
+     * Terminate the web worker to prevent memory leaks
+     * Call this when destroying the simulation
+     */
+    terminate() {
+        if (this.worker) {
+            // Clear any pending timeouts
+            for (const [id, pending] of this.pendingRequests.entries()) {
+                if (pending.timeoutId) {
+                    clearTimeout(pending.timeoutId);
+                }
+            }
+            this.pendingRequests.clear();
+
+            // Terminate the worker
+            this.worker.terminate();
+            this.worker = null;
+            this.logger.log('[DATABASE] Worker terminated successfully');
+        }
+
+        // Clear queues
+        this.saveQueue.length = 0;
+        this.pool = {};
+        this.geneIds.length = 0;
+
+        // Reset cache management tracking
+        this.cacheAccessTimes = new Map();
+        this.cacheSizeHistory = [];
+        this.lastCacheTrimTime = Date.now();
+
+        // Initialize cache access tracking for existing pools
+        for (const geneId of Object.keys(this.pool)) {
+            this.cacheAccessTimes.set(geneId, Date.now());
+        }
     }
 }

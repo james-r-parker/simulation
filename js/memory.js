@@ -1,5 +1,10 @@
 // Memory management functions moved from game.js
 
+// Import pool clearing functions for periodic cleanup
+import { clearGPUResourcePools } from './three-object-pool.js';
+import { neuralArrayPool } from './neural-network.js';
+import { collisionSetPool } from './physics.js';
+
 export function updateMemoryStats(simulation, updateUI = true) {
     // Update memory usage every second
     const now = Date.now();
@@ -115,6 +120,11 @@ export function handleMemoryPressure(simulation) {
             window.gc();
             simulation.logger.log('[MEMORY] Forced garbage collection');
         }
+
+        // Clear object pools to free memory immediately
+        simulation.logger.log('[MEMORY] Clearing object pools due to memory pressure');
+        clearGPUResourcePools();
+        neuralArrayPool.clearOldPools();
 
         // Apply cleanup based on severity
         if (actionLevel === 'high') {
@@ -264,7 +274,11 @@ export function emergencyMemoryCleanup(simulation) {
 
 export function periodicMemoryCleanup(simulation) {
     // Comprehensive cleanup that runs periodically to prevent long-term memory buildup
-    console.log(`[MEMORY] Starting periodic cleanup - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
+    const sessionDurationHours = (Date.now() - simulation.startTime) / (1000 * 60 * 60);
+    console.log(`[MEMORY] Starting periodic cleanup (session: ${sessionDurationHours.toFixed(1)}h) - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
+
+    // Advanced garbage collection management for long-term stability
+    performAdvancedGC(simulation, sessionDurationHours);
 
     // Process any pending database operations
     simulation.processDeadAgentQueue();
@@ -276,22 +290,34 @@ export function periodicMemoryCleanup(simulation) {
         simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
     }
 
-    // Clean up old pheromones more aggressively
+    // Clean up old pheromones more aggressively over time
     const originalPheromoneCount = simulation.pheromones.length;
-    const maxPheromones = 1500; // Slightly higher than spawn limit to allow some buffer
+    let maxPheromones = 1500; // Base limit
+
+    // Reduce pheromone limits as simulation runs longer to prevent accumulation
+    if (sessionDurationHours > 1) maxPheromones = 1200;
+    if (sessionDurationHours > 2) maxPheromones = 1000;
+    if (sessionDurationHours > 4) maxPheromones = 800;
+    if (sessionDurationHours > 8) maxPheromones = 600;
+    if (sessionDurationHours > 24) maxPheromones = 400;
 
     if (simulation.pheromones.length > maxPheromones) {
         // Remove oldest pheromones, keeping the most recent
         const toRemove = simulation.pheromones.length - maxPheromones;
         simulation.pheromones.splice(0, toRemove);
+        simulation.logger.log(`[MEMORY] Reduced pheromones to ${maxPheromones} limit (${sessionDurationHours.toFixed(1)}h session)`);
     }
 
     // Clean up dead references in arrays (shouldn't be necessary but defensive programming)
     simulation.agents = simulation.agents.filter(agent => agent && !agent.isDead);
     simulation.food = simulation.food.filter(food => food && !food.isDead);
 
-    // Clean up validation queue - remove old entries
-    const maxAge = 300000; // 5 minutes
+    // Clean up validation queue - remove old entries (more aggressive over time)
+    let maxAge = 300000; // 5 minutes base
+    if (sessionDurationHours > 1) maxAge = 240000; // 4 minutes
+    if (sessionDurationHours > 2) maxAge = 180000; // 3 minutes
+    if (sessionDurationHours > 4) maxAge = 120000; // 2 minutes
+
     const now = Date.now();
     let validationEntriesRemoved = 0;
     for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
@@ -305,37 +331,276 @@ export function periodicMemoryCleanup(simulation) {
         console.log(`[MEMORY] Cleaned ${validationEntriesRemoved} stale validation queue entries`);
     }
 
-    // Aggressive cleanup of agent memory arrays to prevent accumulation
+    // Aggressive cleanup of agent memory arrays to prevent accumulation (more frequent over time)
     let agentsCleaned = 0;
+    let arraySizeLimit = 1000; // Base limit
+
+    // Reduce array size limits as simulation runs longer
+    if (sessionDurationHours > 1) arraySizeLimit = 800;
+    if (sessionDurationHours > 2) arraySizeLimit = 600;
+    if (sessionDurationHours > 4) arraySizeLimit = 400;
+    if (sessionDurationHours > 8) arraySizeLimit = 200;
+    if (sessionDurationHours > 24) arraySizeLimit = 100;
+
     for (const agent of simulation.agents) {
         if (agent && !agent.isDead) {
             // Clear and reinitialize memory arrays to prevent memory leaks
             agent.cleanup();
             agentsCleaned++;
 
-            // Force clear any accumulated arrays
+            // Force clear any accumulated arrays (more aggressive limits)
             let arraysCleared = 0;
-            if (agent.inputs && agent.inputs.length > 1000) {
+            if (agent.inputs && agent.inputs.length > arraySizeLimit) {
                 agent.inputs.length = 0;
                 arraysCleared++;
             }
-            if (agent.rayData && agent.rayData.length > 1000) {
+            if (agent.rayData && agent.rayData.length > arraySizeLimit) {
                 agent.rayData.length = 0;
                 arraysCleared++;
             }
-            if (agent.lastRayData && agent.lastRayData.length > 1000) {
+            if (agent.lastRayData && agent.lastRayData.length > arraySizeLimit) {
                 agent.lastRayData.length = 0;
                 arraysCleared++;
             }
             if (arraysCleared > 0) {
-                console.log(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId}`);
+                console.log(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId} (${arraySizeLimit} limit)`);
             }
         }
     }
-    console.log(`[MEMORY] Cleaned memory arrays for ${agentsCleaned} agents`);
+    console.log(`[MEMORY] Cleaned memory arrays for ${agentsCleaned} agents (${arraySizeLimit} limit)`);
+
+    // Force cleanup of any remaining visual effects that might have leaked
+    if (simulation.renderer && simulation.renderer.agentEffectsGroup) {
+        const effectsBefore = simulation.renderer.agentEffectsGroup.children.length;
+        // The renderer updateVisualEffectsRendering already disposes properly,
+        // but force a cleanup just in case
+        while (simulation.renderer.agentEffectsGroup.children.length > 0) {
+            const child = simulation.renderer.agentEffectsGroup.children[0];
+            simulation.renderer.agentEffectsGroup.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) child.material.dispose();
+        }
+        if (effectsBefore > 0) {
+            console.log(`[MEMORY] Cleaned up ${effectsBefore} visual effect meshes`);
+        }
+    }
+
+    // Clear dashboard history if it's getting too large (prevent memory bloat)
+    const maxDashboardHistory = 100; // Base limit
+    if (sessionDurationHours > 1) {
+        // Reduce dashboard history retention over time
+        if (simulation.dashboardHistory.length > maxDashboardHistory / 2) {
+            const keepRecent = Math.floor(maxDashboardHistory / 4);
+            simulation.dashboardHistory.splice(0, simulation.dashboardHistory.length - keepRecent);
+            console.log(`[MEMORY] Trimmed dashboard history to ${keepRecent} entries (${sessionDurationHours.toFixed(1)}h session)`);
+        }
+    }
+
+    // Clear fitness history if getting too large (prevent memory bloat)
+    const maxFitnessHistory = 100; // Base limit
+    if (simulation.fitnessHistory.length > maxFitnessHistory) {
+        const keepRecent = Math.floor(maxFitnessHistory / 2);
+        simulation.fitnessHistory.splice(0, simulation.fitnessHistory.length - keepRecent);
+        console.log(`[MEMORY] Trimmed fitness history to ${keepRecent} entries`);
+    }
+
+    // Force JavaScript garbage collection if available (more aggressive over time)
+    if (window.gc) {
+        if (sessionDurationHours > 1 || simulation.currentMemoryUsage > 400) {
+            window.gc();
+            console.log('[MEMORY] Forced garbage collection (session-aware)');
+        }
+    }
 
     // Log cleanup activity
     if (originalPheromoneCount > simulation.pheromones.length) {
-        simulation.logger.log(`[MEMORY] Periodic cleanup: Reduced pheromones from ${originalPheromoneCount} to ${simulation.pheromones.length}`);
+        simulation.logger.log(`[MEMORY] Periodic cleanup: Reduced pheromones from ${originalPheromoneCount} to ${simulation.pheromones.length} (${sessionDurationHours.toFixed(1)}h session)`);
     }
+
+    // Log memory trends for debugging long-term stability
+    if (simulation.memoryHistory.length >= 2) {
+        const recent = simulation.memoryHistory.slice(-10);
+        if (recent.length >= 2) {
+            const oldest = recent[0];
+            const newest = recent[recent.length - 1];
+            const timeDiff = (newest.time - oldest.time) / 1000 / 60; // minutes
+            const memoryDiff = newest.memory - oldest.memory;
+            const growthRate = timeDiff > 0 ? memoryDiff / timeDiff : 0;
+            if (Math.abs(growthRate) > 0.5) { // Log significant trends
+                simulation.logger.info(`[MEMORY] Trend: ${growthRate > 0 ? '+' : ''}${growthRate.toFixed(2)}MB/min over last ${timeDiff.toFixed(1)}min`);
+            }
+        }
+    }
+
+    // Clear object pools to prevent long-term memory accumulation
+    console.log('[MEMORY] Clearing object pools to prevent memory leaks');
+    clearGPUResourcePools();
+    neuralArrayPool.clearOldPools();
+
+    // Log pool statistics for debugging
+    const poolStats = {
+        gpuRingGeometry: 0, // Would need to expose stats
+        gpuMaterials: 0,
+        neuralArrays: Object.keys(neuralArrayPool.getStats()).length,
+        collisionSets: collisionSetPool.getStats().poolSize
+    };
+    console.log(`[MEMORY] Pool cleanup completed - Neural array pools: ${poolStats.neuralArrays} sizes, Collision sets: ${poolStats.collisionSets}`);
+}
+
+/**
+ * Advanced garbage collection management for long-term stability
+ * @param {Simulation} simulation - The simulation instance
+ * @param {number} sessionDurationHours - Hours since simulation started
+ */
+export function performAdvancedGC(simulation, sessionDurationHours) {
+    const now = Date.now();
+
+    // Initialize GC tracking if not already done
+    if (!simulation.gcStats) {
+        simulation.gcStats = {
+            lastGC: 0,
+            gcCount: 0,
+            totalGCTime: 0,
+            heapSizeHistory: [],
+            gcPressureHistory: []
+        };
+    }
+
+    // Track heap size if available
+    if (performance.memory) {
+        const heapSize = performance.memory.usedJSHeapSize / 1024 / 1024; // MB
+        simulation.gcStats.heapSizeHistory.push({ time: now, size: heapSize });
+
+        // Keep only last 50 heap measurements
+        if (simulation.gcStats.heapSizeHistory.length > 50) {
+            simulation.gcStats.heapSizeHistory.shift();
+        }
+    }
+
+    // Adaptive GC triggering based on session duration and memory trends
+    let shouldTriggerGC = false;
+    let gcReason = '';
+
+    // Always trigger GC for very long sessions
+    if (sessionDurationHours > 24) {
+        shouldTriggerGC = true;
+        gcReason = 'long_session';
+    } else if (sessionDurationHours > 8) {
+        // For long sessions, trigger GC every 2 hours
+        const timeSinceLastGC = now - simulation.gcStats.lastGC;
+        if (timeSinceLastGC > (2 * 60 * 60 * 1000)) { // 2 hours
+            shouldTriggerGC = true;
+            gcReason = 'regular_long_session';
+        }
+    } else if (sessionDurationHours > 2) {
+        // For medium sessions, trigger GC every 4 hours
+        const timeSinceLastGC = now - simulation.gcStats.lastGC;
+        if (timeSinceLastGC > (4 * 60 * 60 * 1000)) { // 4 hours
+            shouldTriggerGC = true;
+            gcReason = 'regular_medium_session';
+        }
+    }
+
+    // Trigger GC based on memory growth trends
+    if (!shouldTriggerGC && simulation.gcStats.heapSizeHistory.length >= 5) {
+        const recent = simulation.gcStats.heapSizeHistory.slice(-5);
+        const growthRate = calculateMemoryGrowthRate(recent);
+
+        // Trigger GC if memory is growing rapidly (> 10MB per hour)
+        if (growthRate > 10) {
+            shouldTriggerGC = true;
+            gcReason = 'memory_growth';
+        }
+
+        // Track GC pressure
+        simulation.gcStats.gcPressureHistory.push({
+            time: now,
+            growthRate,
+            heapSize: recent[recent.length - 1].size
+        });
+
+        // Keep only last 20 pressure measurements
+        if (simulation.gcStats.gcPressureHistory.length > 20) {
+            simulation.gcStats.gcPressureHistory.shift();
+        }
+    }
+
+    // Trigger GC based on memory pressure patterns
+    if (!shouldTriggerGC && simulation.memoryHistory.length >= 10) {
+        const recentMemory = simulation.memoryHistory.slice(-10);
+        const memoryVariance = calculateMemoryVariance(recentMemory);
+
+        // High variance indicates unstable memory usage
+        if (memoryVariance > 50) { // 50MB variance
+            shouldTriggerGC = true;
+            gcReason = 'memory_instability';
+        }
+    }
+
+    if (shouldTriggerGC && window.gc) {
+        const gcStart = performance.now();
+        window.gc();
+        const gcTime = performance.now() - gcStart;
+
+        simulation.gcStats.lastGC = now;
+        simulation.gcStats.gcCount++;
+        simulation.gcStats.totalGCTime += gcTime;
+
+        simulation.logger.info(`[GC] Triggered garbage collection (${gcReason}) - took ${gcTime.toFixed(2)}ms, session: ${sessionDurationHours.toFixed(1)}h`);
+    }
+}
+
+/**
+ * Calculate memory growth rate from heap size history
+ * @param {Array} heapHistory - Array of {time, size} objects
+ * @returns {number} - Growth rate in MB per hour
+ */
+function calculateMemoryGrowthRate(heapHistory) {
+    if (heapHistory.length < 2) return 0;
+
+    const first = heapHistory[0];
+    const last = heapHistory[heapHistory.length - 1];
+    const timeDiffHours = (last.time - first.time) / (1000 * 60 * 60);
+    const sizeDiff = last.size - first.size;
+
+    return timeDiffHours > 0 ? sizeDiff / timeDiffHours : 0;
+}
+
+/**
+ * Calculate memory usage variance
+ * @param {Array} memoryHistory - Array of memory history objects
+ * @returns {number} - Variance in MB
+ */
+function calculateMemoryVariance(memoryHistory) {
+    if (memoryHistory.length < 2) return 0;
+
+    const values = memoryHistory.map(entry => entry.memory);
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+
+    return Math.sqrt(variance);
+}
+
+/**
+ * Get garbage collection statistics
+ * @param {Simulation} simulation - The simulation instance
+ * @returns {Object} - GC statistics
+ */
+export function getGCStats(simulation) {
+    if (!simulation.gcStats) {
+        return { available: false };
+    }
+
+    const stats = simulation.gcStats;
+    const avgGCTime = stats.gcCount > 0 ? stats.totalGCTime / stats.gcCount : 0;
+
+    return {
+        available: true,
+        gcCount: stats.gcCount,
+        avgGCTime,
+        totalGCTime: stats.totalGCTime,
+        lastGC: stats.lastGC,
+        heapHistorySize: stats.heapSizeHistory.length,
+        pressureHistorySize: stats.gcPressureHistory.length
+    };
 }

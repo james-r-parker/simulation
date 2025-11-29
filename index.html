@@ -155,18 +155,19 @@
     </div>
 
     <div id="controls">
-        <label for="gameSpeed">Speed: <input type="range" id="gameSpeed" min="0.1" max="5" step="0.1" value="1"></label>
-        <label for="maxAgents">Max Agents: <input type="range" id="maxAgents" min="10" max="100" step="5"
-                value="100"></label>
+        <label for="gameSpeed" title="Speed"><input type="range" id="gameSpeed" min="0.1" max="5" step="0.1" value="1">⏩</label>
+        <label for="maxAgents" title="Max Agents"><input type="range" id="maxAgents" min="10" max="100" step="5"
+                value="100">👥</label>
+        <label for="foodRate" title="Food Rate"><input type="range" id="foodRate" min="0.1" max="2.0" step="0.1"
+                value="0.4">🍎</label>
+        <label for="mutationRate" title="Mutation Rate"><input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01"
+                value="0.01">🧬</label>
 
-        <label for="showRays">Show Rays <input type="checkbox" id="showRays"></label>
-        <label for="followBest">Follow Best <input type="checkbox" id="followBest" checked></label>
-        <label for="useGpu">Use GPU <input type="checkbox" id="useGpu" checked></label>
-        <label for="autoAdjust">Auto Adjust <input type="checkbox" id="autoAdjust" checked></label>
-        <label for="foodRate">Food Rate: <input type="range" id="foodRate" min="0.1" max="2.0" step="0.1"
-                value="0.4"></label>
-        <label for="mutationRate">Mutation Rate: <input type="range" id="mutationRate" min="0.01" max="0.5" step="0.01"
-                value="0.01"></label>
+        <label for="showRays" title="Show Rays"><input type="checkbox" id="showRays">👁️</label>
+        <label for="followBest" title="Follow Best"><input type="checkbox" id="followBest" checked>🎯</label>
+        <label for="useGpu" title="Use GPU"><input type="checkbox" id="useGpu" checked>⚡</label>
+        <label for="autoAdjust" title="Auto Adjust"><input type="checkbox" id="autoAdjust" checked>🔄</label>
+        <label for="aiSummaryMode" title="AI Summary Mode"><input type="checkbox" id="aiSummaryMode">🤖</label>
         <button id="copyStats" title="Copy Stats">📋</button>
         <button id="clearStorage" title="Clear Gene Pool">🗑️</button>
         <button id="fullscreenBtn" title="Toggle Fullscreen">🖥️</button>
@@ -176,19 +177,23 @@
     <div id="canvas-container"></div>
 
     <!-- Agent Details Modal -->
-    <div id="agent-modal" class="modal hidden">
-        <div class="modal-content agent-details">
-            <span class="close-btn" id="close-agent-modal">&times;</span>
-            <h2 id="modal-agent-id">Agent #000</h2>
-            
-            <div class="modal-body">
-                <div class="agent-header-info">
-                    <div class="agent-type-badge" id="modal-agent-type">FORAGER</div>
-                    <div class="agent-generation">Gen: <span id="modal-agent-gen">0</span></div>
-                </div>
+    <aside id="agent-sidebar" class="sidebar collapsed">
+        <div class="sidebar-header">
+            <h3 id="modal-agent-id">Agent #000</h3>
+            <button class="sidebar-close-btn" id="close-agent-modal" aria-label="Close Agent Details">✕</button>
+        </div>
 
-                <div class="agent-stats-grid">
-                    <div class="stat-item">
+        <div class="sidebar-content agent-details">
+            <div class="agent-header-info">
+                <div class="agent-type-badge" id="modal-agent-type">FORAGER</div>
+                <span class="agent-generation">Gen: <span id="modal-agent-gen">0</span></span>
+            </div>
+
+            <!-- Core Stats -->
+            <div class="stats-section">
+                <h4>Core Stats</h4>
+                <div class="agent-stats-grid compact">
+                    <div class="stat-item has-bar">
                         <span class="stat-label">Energy</span>
                         <div class="stat-bar-container">
                             <div class="stat-bar" id="modal-energy-bar" style="width: 50%"></div>
@@ -196,19 +201,16 @@
                         <span class="stat-value" id="modal-energy-val">100</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Health</span> <!-- Using Energy as Health proxy or just generic health if available -->
-                        <div class="stat-bar-container">
-                            <div class="stat-bar health" id="modal-health-bar" style="width: 100%"></div>
-                        </div>
-                        <span class="stat-value" id="modal-health-val">100%</span>
+                        <span class="stat-label">Fitness</span>
+                        <span class="stat-value highlight-green" id="modal-fitness-val">0</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Age</span>
                         <span class="stat-value" id="modal-age-val">0s</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Fitness</span>
-                        <span class="stat-value highlight-green" id="modal-fitness-val">0</span>
+                        <span class="stat-label">Temperature</span>
+                        <span class="stat-value" id="modal-temp-val">50.0°C</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Food Eaten</span>
@@ -218,23 +220,95 @@
                         <span class="stat-label">Offspring</span>
                         <span class="stat-value" id="modal-offspring-val">0</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- Behavior Stats -->
+            <div class="stats-section">
+                <h4>Behavior</h4>
+                <div class="agent-stats-grid compact">
                     <div class="stat-item">
-                        <span class="stat-label">Temp</span>
-                        <span class="stat-value" id="modal-temp-val">25°C</span>
-                    </div>
-                     <div class="stat-item">
                         <span class="stat-label">Kills</span>
                         <span class="stat-value" id="modal-kills-val">0</span>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Exploration</span>
+                        <span class="stat-value" id="modal-exploration-val">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Food Turns</span>
+                        <span class="stat-value" id="modal-turns-food-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Smart Turns</span>
+                        <span class="stat-value" id="modal-clever-turns-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Direction Δ</span>
+                        <span class="stat-value" id="modal-direction-changes-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Speed Δ</span>
+                        <span class="stat-value" id="modal-speed-changes-val">0</span>
+                    </div>
                 </div>
+            </div>
 
-                <h3>Neural Network Activity</h3>
+            <!-- Survival Stats -->
+            <div class="stats-section">
+                <h4>Survival</h4>
+                <div class="agent-stats-grid compact">
+                    <div class="stat-item">
+                        <span class="stat-label">Obstacle Turns</span>
+                        <span class="stat-value" id="modal-turns-obstacles-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Food Approaches</span>
+                        <span class="stat-value" id="modal-food-approaches-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Efficiency</span>
+                        <span class="stat-value" id="modal-efficiency-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Obstacle Hits</span>
+                        <span class="stat-value" id="modal-obstacle-hits-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Collisions</span>
+                        <span class="stat-value" id="modal-collisions-val">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Survival Bonus</span>
+                        <span class="stat-value" id="modal-survival-bonus-val">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fitness Modifiers -->
+            <div class="stats-section">
+                <h4>Fitness Modifiers</h4>
+                <div class="agent-stats-grid compact">
+                    <div class="stat-item">
+                        <span class="stat-label">Survival Multi</span>
+                        <span class="stat-value" id="modal-survival-multi-val">1.0x</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Circle Penalty</span>
+                        <span class="stat-value" id="modal-circle-penalty-val">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neural Network Visualization -->
+            <div class="stats-section">
+                <h4>Neural Network</h4>
                 <div class="nn-viz-container">
-                    <canvas id="nn-viz-canvas" width="540" height="200"></canvas>
+                    <canvas id="nn-viz-canvas" width="280" height="120"></canvas>
                 </div>
             </div>
         </div>
-    </div>
+    </aside>
 
     <!-- GPU.js removed - using WebGPU directly for better performance -->
 
@@ -269,8 +343,14 @@
             }
         }
 
+        // Global reference to simulation for cleanup
+        window.currentSimulation = null;
+
         // The game loop is now started internally by sim.init()
         sim.init().then(() => {
+            // Store reference for cleanup
+            window.currentSimulation = sim;
+
             // Resize to fill screen after initialization
             sim.resize();
             // Small delay to ensure DOM is fully ready
@@ -302,6 +382,16 @@
                 updateSidebarIcon();
             });
         });
+
+        // Cleanup on page unload to prevent memory leaks
+        window.addEventListener('beforeunload', () => {
+            if (window.currentSimulation && window.currentSimulation.destroy) {
+                window.currentSimulation.destroy();
+            }
+        });
+
+        // Note: Removed aggressive cleanup on visibility change as it destroys simulation
+        // when user simply switches tabs or minimizes window. Only cleanup on actual page unload.
     </script>
 </body>
 

@@ -3,6 +3,72 @@
 
 import { matrixMultiply, applySigmoid, randomGaussian } from './utils.js';
 import { NN_WEIGHT_INIT_STD_DEV, NN_MUTATION_STD_DEV_RATIO, NN_MACRO_MUTATION_CHANCE, NN_WEIGHT_CLAMP_MIN, NN_WEIGHT_CLAMP_MAX } from './constants.js';
+import { queryArrayPool } from './array-pool.js';
+
+// Pool for neural network computation arrays to reduce GC pressure
+class NeuralArrayPool {
+    constructor() {
+        this.pools = new Map(); // size -> pool of arrays
+    }
+
+    acquire(size) {
+        if (!this.pools.has(size)) {
+            this.pools.set(size, []);
+        }
+
+        const pool = this.pools.get(size);
+        if (pool.length > 0) {
+            return pool.pop();
+        }
+
+        // Create new array of exact size
+        return new Array(size);
+    }
+
+    release(array) {
+        if (!array || !Array.isArray(array)) return;
+
+        const size = array.length;
+        if (!this.pools.has(size)) {
+            this.pools.set(size, []);
+        }
+
+        const pool = this.pools.get(size);
+        // Clear array contents but keep allocated space
+        array.length = size; // Ensure correct size
+        pool.push(array);
+    }
+
+    getStats() {
+        const stats = {};
+        for (const [size, pool] of this.pools.entries()) {
+            stats[size] = pool.length;
+        }
+        return stats;
+    }
+
+    // Clear pools to prevent memory accumulation over long runs
+    clearOldPools() {
+        // Only keep pools for sizes that have been used recently
+        // This prevents accumulation of pools for neural networks that no longer exist
+        const currentTime = Date.now();
+        const maxAge = 10 * 60 * 1000; // 10 minutes
+
+        for (const [size, pool] of this.pools.entries()) {
+            // Clear pools that are empty or have been unused for too long
+            if (pool.length === 0) {
+                this.pools.delete(size);
+            }
+            // Note: We could add timestamp tracking for more sophisticated cleanup,
+            // but for now just clear empty pools
+        }
+    }
+}
+
+const neuralArrayPool = new NeuralArrayPool();
+
+// Export for external access (used by memory cleanup)
+export { neuralArrayPool };
 
 export class NeuralNetwork {
     constructor(inputSize, hiddenSize, outputSize, weights = null) {
@@ -12,13 +78,16 @@ export class NeuralNetwork {
 
         // CRITICAL: Validate weights dimensions match current architecture
         // Old saved agents may have different hiddenSize (e.g. 15 vs 20)
+        // Check all rows have consistent column counts to prevent jagged arrays
         const validWeights = weights &&
             weights.weights1 &&
             weights.weights2 &&
+            Array.isArray(weights.weights1) &&
+            Array.isArray(weights.weights2) &&
             weights.weights1.length === inputSize + hiddenSize &&
             weights.weights2.length === hiddenSize &&
-            weights.weights2[0] &&
-            weights.weights2[0].length === outputSize;
+            weights.weights2.every(row => Array.isArray(row) && row.length === outputSize) &&
+            weights.weights1.every(row => Array.isArray(row) && row.length === hiddenSize);
 
         if (validWeights) {
             // Weights match expected dimensions - safe to copy
@@ -76,7 +145,7 @@ export class NeuralNetwork {
         }
 
         // First layer: inputs -> hidden (direct computation)
-        const hidden = new Array(hiddenSize);
+        const hidden = neuralArrayPool.acquire(hiddenSize);
         for (let i = 0; i < hiddenSize; i++) {
             let sum = 0;
             // Process inputs
@@ -104,7 +173,7 @@ export class NeuralNetwork {
         }
 
         // Second layer: hidden -> output (direct computation)
-        const output = new Array(outputSize);
+        const output = neuralArrayPool.acquire(outputSize);
         for (let i = 0; i < outputSize; i++) {
             let sum = 0;
             for (let j = 0; j < hiddenSize; j++) {
@@ -127,7 +196,12 @@ export class NeuralNetwork {
 
         return {
             output: output,
-            hiddenState: hidden
+            hiddenState: hidden,
+            // Add release function to return arrays to pool
+            release: () => {
+                neuralArrayPool.release(output);
+                neuralArrayPool.release(hidden);
+            }
         };
     }
 

@@ -11,6 +11,17 @@ import {
     COLORS, VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION
 } from './constants.js';
 import { queryArrayPool } from './array-pool.js';
+import {
+    acquireMatrix4, releaseMatrix4,
+    acquireVector3, releaseVector3,
+    acquireColor, releaseColor,
+    acquireFrustum, releaseFrustum,
+    acquireSphere, releaseSphere,
+    acquireRingGeometry, releaseRingGeometry,
+    acquireMeshBasicMaterial, releaseMeshBasicMaterial,
+    clearGPUResourcePools
+} from './three-object-pool.js';
+import { neuralArrayPool } from './neural-network.js';
 
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
@@ -116,6 +127,150 @@ export class WebGLRenderer {
         this.currentFrame = 0;
     }
 
+    /**
+     * Comprehensive cleanup method to dispose of all WebGL resources
+     * Call this when destroying the renderer to prevent memory leaks
+     */
+    dispose() {
+        // Guard against multiple dispose calls
+        if (!this.scene) {
+            this.logger.log('Renderer already disposed, skipping...');
+            return;
+        }
+
+        this.logger.log('Disposing WebGL renderer and all resources...');
+
+        // 1. Dispose of agent meshes and materials
+        if (this.agentMeshes) {
+            for (const [geneId, mesh] of this.agentMeshes.entries()) {
+                if (mesh.body && mesh.body.geometry) {
+                    mesh.body.geometry.dispose();
+                }
+                if (mesh.body && mesh.body.material) {
+                    mesh.body.material.dispose();
+                }
+                if (mesh.border && mesh.border.geometry) {
+                    mesh.border.geometry.dispose();
+                }
+                if (mesh.border && mesh.border.material) {
+                    mesh.border.material.dispose();
+                }
+                // Remove from scene
+                if (mesh.body && this.agentGroup) this.agentGroup.remove(mesh.body);
+                if (mesh.border && this.agentGroup) this.agentGroup.remove(mesh.border);
+            }
+            this.agentMeshes.clear();
+        }
+
+        // 2. Dispose of food instanced mesh
+        if (this.foodInstancedMesh) {
+            if (this.foodInstancedMesh.geometry) {
+                this.foodInstancedMesh.geometry.dispose();
+            }
+            if (this.foodInstancedMesh.material) {
+                this.foodInstancedMesh.material.dispose();
+            }
+            if (this.foodGroup) this.foodGroup.remove(this.foodInstancedMesh);
+        }
+
+        // 3. Dispose of pheromone instanced mesh
+        if (this.pheromoneInstancedMesh) {
+            if (this.pheromoneInstancedMesh.geometry) {
+                this.pheromoneInstancedMesh.geometry.dispose();
+            }
+            if (this.pheromoneInstancedMesh.material) {
+                this.pheromoneInstancedMesh.material.dispose();
+            }
+            if (this.pheromoneGroup) this.pheromoneGroup.remove(this.pheromoneInstancedMesh);
+        }
+
+        // 4. Dispose of ray visualization
+        if (this.rayLineSegments) {
+            if (this.rayLineSegments.geometry) {
+                this.rayLineSegments.geometry.dispose();
+            }
+            if (this.rayLineSegments.material) {
+                this.rayLineSegments.material.dispose();
+            }
+            if (this.rayGroup) this.rayGroup.remove(this.rayLineSegments);
+        }
+
+        // 5. Dispose of agent state meshes
+        if (this.agentStateMeshes) {
+            for (const [agent, mesh] of this.agentStateMeshes.entries()) {
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) mesh.material.dispose();
+                if (this.agentStateGroup) this.agentStateGroup.remove(mesh);
+            }
+            this.agentStateMeshes.clear();
+        }
+
+        // 6. Dispose of visual effects
+        if (this.agentEffectsGroup) {
+            // Dispose of all children geometries and materials
+            if (this.agentEffectsGroup) {
+                while (this.agentEffectsGroup.children.length > 0) {
+                    const child = this.agentEffectsGroup.children[0];
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                    this.agentEffectsGroup.remove(child);
+                }
+            }
+        }
+
+        // 7. Clear agent effects map
+        if (this.agentEffects) {
+            this.agentEffects.clear();
+        }
+
+        // 8. Dispose of shared geometries (if they exist)
+        if (this.agentGeometry) {
+            this.agentGeometry.dispose();
+        }
+        if (this.agentBorderGeometry) {
+            this.agentBorderGeometry.dispose();
+        }
+        if (this.foodGeometry) {
+            this.foodGeometry.dispose();
+        }
+        if (this.pheromoneGeometry) {
+            this.pheromoneGeometry.dispose();
+        }
+
+        // 9. Clear groups from scene
+        if (this.scene) {
+            if (this.agentGroup) this.scene.remove(this.agentGroup);
+            if (this.foodGroup) this.scene.remove(this.foodGroup);
+            if (this.pheromoneGroup) this.scene.remove(this.pheromoneGroup);
+            if (this.obstacleGroup) this.scene.remove(this.obstacleGroup);
+            if (this.rayGroup) this.scene.remove(this.rayGroup);
+            if (this.agentStateGroup) this.scene.remove(this.agentStateGroup);
+            if (this.agentEffectsGroup) this.scene.remove(this.agentEffectsGroup);
+        }
+
+        // 10. Dispose of Three.js renderer
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+
+        // 11. Clear references to prevent memory leaks
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.agentMeshes = null;
+        this.agentEffects = null;
+        this.agentStateMeshes = null;
+
+        // 12. Clear pre-allocated arrays
+        this.tempValidAgents.length = 0;
+        this.tempVisibleFood.length = 0;
+        this.tempVisiblePheromones.length = 0;
+        this.tempActiveAgents.length = 0;
+        this.tempActiveEffects.length = 0;
+
+        this.logger.log('WebGL renderer disposed successfully');
+    }
+
     updateFrustum() {
         // Update cached frustum for current camera position
         this.frustumMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
@@ -176,24 +331,27 @@ export class WebGLRenderer {
                 continue;
             }
 
-            // PERFORMANCE: Reuse temp array instead of filter, then copy
-            const activeEffects = this.tempActiveEffects;
-            activeEffects.length = 0;
-            for (const effect of effects) {
-                if (currentFrame - effect.startFrame < effect.duration) {
-                    activeEffects.push(effect);
+            // PERFORMANCE: In-place removal of expired effects to avoid allocation
+            // Iterate backwards to safely splice
+            for (let i = effects.length - 1; i >= 0; i--) {
+                const effect = effects[i];
+                if (currentFrame - effect.startFrame >= effect.duration) {
+                    effects.splice(i, 1);
                 }
             }
-            if (activeEffects.length === 0) {
+
+            if (effects.length === 0) {
                 this.agentEffects.delete(agent);
-            } else {
-                // Create a new array copy to store (can't store reference to reusable array)
-                this.agentEffects.set(agent, [...activeEffects]);
             }
         }
     }
 
     updateCamera(cameraPos) {
+        // Guard against accessing disposed camera
+        if (!this.camera) {
+            return;
+        }
+
         this.camera.position.x = cameraPos.x;
         this.camera.position.y = -cameraPos.y; // Flip Y for Three.js
 
@@ -315,7 +473,7 @@ export class WebGLRenderer {
             }
 
             const mesh = this.agentMeshes.get(geneId);
-            const matrix = new THREE.Matrix4();
+            const matrix = acquireMatrix4();
 
             // OPTIMIZED: Include only visible agents (frustum culling for performance)
             // PERFORMANCE: Reuse temp array instead of allocating
@@ -415,6 +573,9 @@ export class WebGLRenderer {
 
             mesh.body.instanceMatrix.needsUpdate = true;
             mesh.border.instanceMatrix.needsUpdate = true;
+
+            // Release pooled matrix
+            releaseMatrix4(matrix);
         }
 
         // Update agent state visualization (energy bars, status icons)
@@ -441,12 +602,17 @@ export class WebGLRenderer {
             this.scene.add(this.agentEffectsGroup);
         }
 
-        // Clear previous effect meshes
+        // Clear previous effect meshes - CRITICAL: Release pooled geometries and materials to prevent memory leaks
         while (this.agentEffectsGroup.children.length > 0) {
             const child = this.agentEffectsGroup.children[0];
             this.agentEffectsGroup.remove(child);
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
+            // Release pooled THREE.js resources back to pools instead of disposing
+            if (child.geometry) {
+                releaseRingGeometry(child.geometry);
+            }
+            if (child.material) {
+                releaseMeshBasicMaterial(child.material);
+            }
         }
 
         // Render active effects
@@ -466,7 +632,7 @@ export class WebGLRenderer {
 
                 // Create visible effect ring geometry - ensure it doesn't cover the agent
                 const effectRadius = agent.size * (1.2 + progress * 0.5); // Start larger to avoid covering agent
-                const geometry = new THREE.RingGeometry(
+                const geometry = acquireRingGeometry(
                     Math.max(agent.size * 1.1, effectRadius * 0.8), // Inner radius always larger than agent
                     effectRadius * 1.3,
                     32 // More segments for smoother look
@@ -475,7 +641,7 @@ export class WebGLRenderer {
                 // Choose color based on effect type
                 const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
 
-                const material = new THREE.MeshBasicMaterial({
+                const material = acquireMeshBasicMaterial({
                     color: color,
                     transparent: true,
                     opacity: opacity * 0.4, // More visible opacity
@@ -533,8 +699,8 @@ export class WebGLRenderer {
         }
 
         // Update instances
-        const instanceMatrix = new THREE.Matrix4();
-        const color = new THREE.Color();
+        const instanceMatrix = acquireMatrix4();
+        const color = acquireColor();
         for (let i = 0; i < neededCount; i++) {
             const food = visibleFood[i];
 
@@ -577,6 +743,10 @@ export class WebGLRenderer {
         if (this.foodInstancedMesh.instanceColor) {
             this.foodInstancedMesh.instanceColor.needsUpdate = true;
         }
+
+        // Release pooled objects
+        releaseMatrix4(instanceMatrix);
+        releaseColor(color);
     }
 
     updatePheromones(pheromones) {
@@ -630,8 +800,8 @@ export class WebGLRenderer {
         }
 
         // Update instances
-        const instanceMatrix = new THREE.Matrix4();
-        const color = new THREE.Color();
+        const instanceMatrix = acquireMatrix4();
+        const color = acquireColor();
         for (let i = 0; i < neededCount; i++) {
             const puff = visiblePheromones[i];
 
@@ -654,6 +824,10 @@ export class WebGLRenderer {
         if (this.pheromoneInstancedMesh.instanceColor) {
             this.pheromoneInstancedMesh.instanceColor.needsUpdate = true;
         }
+
+        // Release pooled objects
+        releaseMatrix4(instanceMatrix);
+        releaseColor(color);
     }
 
     updateObstacles(obstacles) {
@@ -727,11 +901,13 @@ export class WebGLRenderer {
         }
 
         // Frustum culling for rays
-        const frustum = new THREE.Frustum();
-        const matrix = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+        const frustum = acquireFrustum();
+        const matrix = acquireMatrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
         frustum.setFromProjectionMatrix(matrix);
-        const tempVec = new THREE.Vector3();
-        const testSphere = new THREE.Sphere(tempVec, 0);
+        const tempVec = acquireVector3();
+        const testSphere = acquireSphere();
+        testSphere.center = tempVec; // Reuse the acquired vector
+        testSphere.radius = 0;
 
         // OPTIMIZED: Only show rays for top 5 agents (or best agent) - use for loop
         // PERFORMANCE: Reuse temp array instead of allocating
@@ -893,6 +1069,12 @@ export class WebGLRenderer {
         this.rayLineSegments.geometry.attributes.color.needsUpdate = true;
         this.rayLineSegments.geometry.setDrawRange(0, bufferIndex);
         this.rayLineSegments.visible = true;
+
+        // Release pooled objects
+        releaseFrustum(frustum);
+        releaseMatrix4(matrix);
+        releaseVector3(tempVec);
+        releaseSphere(testSphere);
     }
 
     render() {
@@ -904,5 +1086,60 @@ export class WebGLRenderer {
 
     setShowRays(show) {
         this.showRays = show;
+    }
+
+    /**
+     * Defragment renderer resources for long-term stability
+     * Clears and recreates instanced meshes to prevent memory fragmentation
+     */
+    defragment() {
+        // Clear agent meshes to force recreation with fresh memory
+        if (this.agentMeshes) {
+            for (const [geneId, mesh] of this.agentMeshes.entries()) {
+                if (mesh.body) {
+                    this.agentGroup.remove(mesh.body);
+                    mesh.body.geometry.dispose();
+                    mesh.body.material.dispose();
+                }
+                if (mesh.border) {
+                    this.agentGroup.remove(mesh.border);
+                    mesh.border.geometry.dispose();
+                    mesh.border.material.dispose();
+                }
+            }
+            this.agentMeshes.clear();
+        }
+
+        // Clear food instanced mesh
+        if (this.foodInstancedMesh) {
+            this.foodGroup.remove(this.foodInstancedMesh);
+            this.foodInstancedMesh.geometry.dispose();
+            this.foodInstancedMesh.material.dispose();
+            this.foodInstancedMesh = null;
+        }
+
+        // Clear pheromone instanced mesh
+        if (this.pheromoneInstancedMesh) {
+            this.pheromoneGroup.remove(this.pheromoneInstancedMesh);
+            this.pheromoneInstancedMesh.geometry.dispose();
+            this.pheromoneInstancedMesh.material.dispose();
+            this.pheromoneInstancedMesh = null;
+        }
+
+        // Clear ray visualization
+        if (this.rayLineSegments) {
+            this.rayGroup.remove(this.rayLineSegments);
+            this.rayLineSegments.geometry.dispose();
+            this.rayLineSegments.material.dispose();
+            this.rayLineSegments = null;
+        }
+
+        // Clear GPU resource pools to prevent memory leaks
+        clearGPUResourcePools();
+
+        // Clear neural network pools to prevent accumulation of unused array sizes
+        neuralArrayPool.clearOldPools();
+
+        this.logger.debug('Renderer defragmentation completed - resources will be recreated on next render');
     }
 }

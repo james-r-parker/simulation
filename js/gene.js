@@ -136,7 +136,6 @@ export function updatePeriodicValidation(simulation) {
     simulation.agents.forEach(agent => {
         // Check if agent is comprehensively fit and not already in validation
         if (agent.fit &&
-            agent.fitness >= PERIODIC_VALIDATION_FITNESS_THRESHOLD &&
             !simulation.validationManager.isInValidation(agent.geneId) &&
             !hasValidatedAncestor(agent, simulation) &&
             !simulation.db.pool[agent.geneId] && // Skip if already in gene pool

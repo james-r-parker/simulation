@@ -30,6 +30,7 @@ let summaryInterval = null;
 let isFullscreenMode = false;
 let initialSummaryScheduled = false;
 let historicalSummaries = []; // Store last 10 summaries with timestamps
+let isAISummaryModeEnabled = false; // AI summary mode checkbox state
 
 export function updateLoadingScreen(status, progress) {
     const statusEl = document.getElementById('loading-status');
@@ -103,6 +104,12 @@ async function initializeSummarizer(requireUserGesture = false) {
 
 // Start periodic summarization when entering fullscreen
 async function startPeriodicSummarization(simulation) {
+    // Only start summarization if AI summary mode is enabled
+    if (!isAISummaryModeEnabled) {
+        console.log('[SUMMARIZER] 🚫 AI Summary Mode not enabled - skipping summarization');
+        return;
+    }
+
     console.log('[SUMMARIZER] 🚀 Starting periodic summarization');
 
     // Initialize summarizer if not already done
@@ -151,12 +158,12 @@ async function startPeriodicSummarization(simulation) {
         clearInterval(summaryInterval);
     }
 
-    // Start summarization every minute (only when focused)
+    // Start summarization every 3 minutes (only when focused) - tripled from original 1 minute
     summaryInterval = setInterval(async () => {
         if (document.hasFocus()) {
             await generateAndDisplaySummary(simulation);
         }
-    }, 60000); // 60 seconds
+    }, 180000); // 180 seconds (3 minutes)
 
     // Generate first summary immediately (only if not already scheduled and focused)
     if (!initialSummaryScheduled && document.hasFocus()) {
@@ -210,7 +217,7 @@ function stopPeriodicSummarization() {
 
 // Generate summary and display it with streaming effect
 async function generateAndDisplaySummary(simulation) {
-    if (!summarizer || !isFullscreenMode) {
+    if (!summarizer || !isFullscreenMode || !isAISummaryModeEnabled) {
         return;
     }
 
@@ -511,6 +518,20 @@ export function setupUIListeners(simulation) {
         simulation.logger.log('Auto-adjust:', simulation.autoAdjustEnabled ? 'enabled' : 'disabled');
     });
 
+    const aiSummaryModeCheckbox = document.getElementById('aiSummaryMode');
+    aiSummaryModeCheckbox.checked = isAISummaryModeEnabled;
+    aiSummaryModeCheckbox.addEventListener('change', e => {
+        isAISummaryModeEnabled = e.target.checked;
+        simulation.logger.log('AI Summary Mode:', isAISummaryModeEnabled ? 'enabled' : 'disabled');
+        // If enabling, try to initialize summarizer
+        if (isAISummaryModeEnabled) {
+            initializeSummarizerForSimulation(simulation);
+        } else {
+            // Disable summarization when unchecked
+            stopPeriodicSummarization();
+        }
+    });
+
     // Camera controls (pan and zoom)
     setupCameraControls(simulation);
 
@@ -663,8 +684,8 @@ export function setupUIListeners(simulation) {
         // Update fullscreen mode state
         isFullscreenMode = isFullscreen;
 
-        // Start/stop summarization based on fullscreen state
-        if (isFullscreen) {
+        // Start/stop summarization based on fullscreen state and AI summary mode
+        if (isFullscreen && isAISummaryModeEnabled) {
             startPeriodicSummarization(simulation);
         } else {
             stopPeriodicSummarization();
@@ -789,6 +810,36 @@ export function setupUIListeners(simulation) {
         geneticDiversitySection.title = 'Click to view gene pool details';
     }
 
+    // Survival & Performance Modal
+    const survivalPerformanceSection = document.querySelector('.metric-card.critical');
+    if (survivalPerformanceSection) {
+        survivalPerformanceSection.addEventListener('click', () => {
+            showSurvivalPerformanceModal(simulation);
+        });
+        survivalPerformanceSection.style.cursor = 'pointer';
+        survivalPerformanceSection.title = 'Click to view detailed survival and performance metrics';
+    }
+
+    // Reproduction Status Modal
+    const reproductionSection = document.querySelector('.metric-card.reproduction');
+    if (reproductionSection) {
+        reproductionSection.addEventListener('click', () => {
+            showReproductionModal(simulation);
+        });
+        reproductionSection.style.cursor = 'pointer';
+        reproductionSection.title = 'Click to view detailed reproduction statistics';
+    }
+
+    // Qualification Criteria Modal
+    const qualificationSection = document.querySelector('.metric-card.qualification');
+    if (qualificationSection) {
+        qualificationSection.addEventListener('click', () => {
+            showQualificationModal(simulation);
+        });
+        qualificationSection.style.cursor = 'pointer';
+        qualificationSection.title = 'Click to view detailed qualification criteria breakdown';
+    }
+
     // Agent Modal Close Button
     const closeAgentModalBtn = document.getElementById('close-agent-modal');
     if (closeAgentModalBtn) {
@@ -814,9 +865,9 @@ export function openAgentModal(agent) {
     if (!agent) return;
 
     selectedAgent = agent;
-    const modal = document.getElementById('agent-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
+    const sidebar = document.getElementById('agent-sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('collapsed');
         updateAgentModal(agent);
 
         // Start update loop
@@ -826,18 +877,20 @@ export function openAgentModal(agent) {
                 closeAgentModal();
             } else {
                 updateAgentModal(agent);
+                // Update NN visualization in real-time to show current activity
+                renderNN(agent);
             }
         }, 100); // Update 10 times per second
 
-        // Render NN once
+        // Initial NN render
         renderNN(agent);
     }
 }
 
 export function closeAgentModal() {
-    const modal = document.getElementById('agent-modal');
-    if (modal) {
-        modal.classList.add('hidden');
+    const sidebar = document.getElementById('agent-sidebar');
+    if (sidebar) {
+        sidebar.classList.add('collapsed');
     }
     if (agentModalUpdateInterval) {
         clearInterval(agentModalUpdateInterval);
@@ -871,32 +924,89 @@ function updateAgentModal(agent) {
     // Stats
     const energyVal = document.getElementById('modal-energy-val');
     const energyBar = document.getElementById('modal-energy-bar');
-    if (energyVal) energyVal.textContent = Math.floor(agent.energy);
+    if (energyVal) energyVal.textContent = agent.energy.toFixed(0);
     if (energyBar) energyBar.style.width = `${Math.min(100, (agent.energy / agent.maxEnergy) * 100)}%`;
 
     const healthVal = document.getElementById('modal-health-val');
     const healthBar = document.getElementById('modal-health-bar');
     // Using energy as health proxy for now
-    if (healthVal) healthVal.textContent = `${Math.floor((agent.energy / agent.maxEnergy) * 100)}%`;
+    if (healthVal) healthVal.textContent = `${((agent.energy / agent.maxEnergy) * 100).toFixed(0)}%`;
     if (healthBar) healthBar.style.width = `${Math.min(100, (agent.energy / agent.maxEnergy) * 100)}%`;
 
     const ageVal = document.getElementById('modal-age-val');
     if (ageVal) ageVal.textContent = `${agent.age.toFixed(1)}s`;
 
     const fitnessVal = document.getElementById('modal-fitness-val');
-    if (fitnessVal) fitnessVal.textContent = Math.floor(agent.fitness);
+    if (fitnessVal) fitnessVal.textContent = agent.fitness.toFixed(0);
 
     const foodVal = document.getElementById('modal-food-val');
-    if (foodVal) foodVal.textContent = agent.foodEaten;
+    if (foodVal) foodVal.textContent = (agent.foodEaten || 0).toFixed(0);
 
     const offspringVal = document.getElementById('modal-offspring-val');
-    if (offspringVal) offspringVal.textContent = (agent.childrenFromMate || 0) + (agent.childrenFromSplit || 0);
+    if (offspringVal) offspringVal.textContent = ((agent.childrenFromMate || 0) + (agent.childrenFromSplit || 0)).toFixed(0);
 
     const tempVal = document.getElementById('modal-temp-val');
     if (tempVal) tempVal.textContent = `${agent.temperature.toFixed(1)}°C`;
 
     const killsVal = document.getElementById('modal-kills-val');
-    if (killsVal) killsVal.textContent = agent.kills;
+    if (killsVal) killsVal.textContent = (agent.kills || 0).toFixed(0);
+
+    // Fitness metrics
+    const explorationVal = document.getElementById('modal-exploration-val');
+    if (explorationVal) {
+        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+        const exploredCells = agent.exploredCells?.size || 0;
+        const explorationPct = (exploredCells / totalCells) * 100;
+        explorationVal.textContent = `${explorationPct.toFixed(1)}%`;
+    }
+
+    const turnsFoodVal = document.getElementById('modal-turns-food-val');
+    if (turnsFoodVal) turnsFoodVal.textContent = (agent.turnsTowardsFood || 0).toFixed(1);
+
+    const cleverTurnsVal = document.getElementById('modal-clever-turns-val');
+    if (cleverTurnsVal) cleverTurnsVal.textContent = (agent.cleverTurns || 0).toFixed(1);
+
+    const directionChangesVal = document.getElementById('modal-direction-changes-val');
+    if (directionChangesVal) directionChangesVal.textContent = (agent.directionChanged || 0).toFixed(1);
+
+    const speedChangesVal = document.getElementById('modal-speed-changes-val');
+    if (speedChangesVal) speedChangesVal.textContent = (agent.speedChanged || 0).toFixed(1);
+
+    const turnsObstaclesVal = document.getElementById('modal-turns-obstacles-val');
+    if (turnsObstaclesVal) turnsObstaclesVal.textContent = (agent.turnsAwayFromObstacles || 0).toFixed(1);
+
+    const foodApproachesVal = document.getElementById('modal-food-approaches-val');
+    if (foodApproachesVal) foodApproachesVal.textContent = (agent.foodApproaches || 0).toFixed(1);
+
+    const efficiencyVal = document.getElementById('modal-efficiency-val');
+    if (efficiencyVal) {
+        const energySpent = agent.energySpent || 0;
+        const distanceTravelled = agent.distanceTravelled || 0;
+        const efficiency = energySpent > 50 ? Math.min(distanceTravelled / energySpent, 10.0) : 0;
+        efficiencyVal.textContent = efficiency.toFixed(2);
+    }
+
+    const obstacleHitsVal = document.getElementById('modal-obstacle-hits-val');
+    if (obstacleHitsVal) obstacleHitsVal.textContent = (agent.timesHitObstacle || 0).toFixed(0);
+
+    const collisionsVal = document.getElementById('modal-collisions-val');
+    if (collisionsVal) collisionsVal.textContent = (agent.collisions || 0).toFixed(0);
+
+    const survivalBonusVal = document.getElementById('modal-survival-bonus-val');
+    if (survivalBonusVal) survivalBonusVal.textContent = (agent.age || 0).toFixed(1);
+
+    const survivalMultiVal = document.getElementById('modal-survival-multi-val');
+    if (survivalMultiVal) {
+        const survivalMultiplier = Math.min(1 + ((agent.age || 0) / 30), 3.0);
+        survivalMultiVal.textContent = `${survivalMultiplier.toFixed(2)}x`;
+    }
+
+    const circlePenaltyVal = document.getElementById('modal-circle-penalty-val');
+    if (circlePenaltyVal) {
+        const consecutiveTurns = agent.consecutiveTurns || 0;
+        const circlePenalty = Math.min(consecutiveTurns * 20, 2000);
+        circlePenaltyVal.textContent = circlePenalty.toFixed(0);
+    }
 }
 
 function renderNN(agent) {
@@ -908,7 +1018,7 @@ function renderNN(agent) {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Simple visualization: Hidden -> Output weights
+    // Neural network visualization with real-time activity
     const hiddenSize = agent.hiddenSize || 20;
     const outputSize = agent.outputSize || 5;
     const weights2 = agent.nn.weights2; // Hidden -> Output
@@ -924,18 +1034,37 @@ function renderNN(agent) {
     const outputCenterOffset = (h - (outputSize * outputSpacing)) / 2;
     const hiddenCenterOffset = (h - (hiddenSize * hiddenSpacing)) / 2;
 
-    // Draw connections
+    // Get current outputs for activity visualization
+    // Neural network outputs are sigmoid-activated (0-1 range)
+    // Convert to activation levels where 0.5 = neutral, 0.0/1.0 = max activation
+    const rawOutputs = agent.lastOutput || new Array(outputSize).fill(0.5);
+    const currentOutputs = rawOutputs.map(output => Math.abs(output - 0.5) * 2); // Convert to 0-1 activation scale
+
+    const currentTime = Date.now() * 0.005; // For subtle pulsing animation
+
+    // Draw connections with activity highlighting
     for (let i = 0; i < hiddenSize; i++) {
         const hy = hiddenCenterOffset + i * hiddenSpacing + 20;
         for (let j = 0; j < outputSize; j++) {
             const oy = outputCenterOffset + j * outputSpacing + 20;
 
             const weight = weights2[i][j];
-            const opacity = Math.min(1, Math.abs(weight));
-            const color = weight > 0 ? `rgba(0, 255, 0, ${opacity})` : `rgba(255, 0, 0, ${opacity})`;
+            const outputActivation = Math.abs(currentOutputs[j] || 0);
 
-            ctx.strokeStyle = color;
-            ctx.lineWidth = Math.abs(weight) * 3;
+            // Base connection color based on weight
+            const baseOpacity = Math.min(1, Math.abs(weight));
+            const baseColor = weight > 0 ? [0, 255, 0] : [255, 0, 0];
+
+            // Activity boost - make connections brighter when output is active
+            const activityBoost = outputActivation * 0.5;
+            const finalOpacity = Math.min(1, baseOpacity + activityBoost);
+
+            // Subtle pulsing for active connections
+            const pulse = outputActivation > 0.1 ? Math.sin(currentTime + j) * 0.2 + 0.8 : 1;
+            const finalColor = `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${finalOpacity * pulse})`;
+
+            ctx.strokeStyle = finalColor;
+            ctx.lineWidth = Math.abs(weight) * 2 + (outputActivation * 2); // Thicker when active
             ctx.beginPath();
             ctx.moveTo(hiddenX, hy);
             ctx.lineTo(outputX, oy);
@@ -956,27 +1085,93 @@ function renderNN(agent) {
     ctx.textAlign = 'center';
     ctx.fillText("Hidden Layer", hiddenX, 15);
 
-    // Draw Output nodes and labels
+    // Draw Output nodes and labels with activity indication
     const outputs = ['Thrust', 'Rotate', 'Sprint', 'Mate', 'Attack'];
     ctx.textAlign = 'left';
     for (let i = 0; i < outputSize; i++) {
         const oy = outputCenterOffset + i * outputSpacing + 20;
+        const outputActivation = Math.abs(currentOutputs[i] || 0);
 
-        // Node
-        ctx.fillStyle = '#fff';
+        // Dynamic node color based on activation
+        let nodeColor = '#fff'; // Default white
+        let nodeRadiusDynamic = nodeRadius;
+
+        if (outputActivation > 0.7) {
+            // High activation - bright green with pulsing
+            const pulse = Math.sin(currentTime * 3 + i) * 0.3 + 0.7;
+            nodeColor = `rgba(0, 255, 0, ${pulse})`;
+            nodeRadiusDynamic = nodeRadius * 1.5;
+        } else if (outputActivation > 0.3) {
+            // Medium activation - dim green
+            nodeColor = `rgba(0, 255, 0, ${0.6 + outputActivation * 0.4})`;
+            nodeRadiusDynamic = nodeRadius * 1.2;
+        } else if (outputActivation > 0.1) {
+            // Low activation - very dim green
+            nodeColor = `rgba(0, 255, 0, ${0.3})`;
+        }
+
+        // Draw node with activity indication
+        ctx.fillStyle = nodeColor;
         ctx.beginPath();
-        ctx.arc(outputX, oy, nodeRadius, 0, Math.PI * 2);
+        ctx.arc(outputX, oy, nodeRadiusDynamic, 0, Math.PI * 2);
         ctx.fill();
 
-        // Label
-        ctx.fillStyle = '#fff';
+        // Add subtle glow for highly active outputs
+        if (outputActivation > 0.7) {
+            ctx.strokeStyle = `rgba(0, 255, 0, ${0.5 + Math.sin(currentTime * 4 + i) * 0.3})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Label with activation strength
+        ctx.fillStyle = outputActivation > 0.3 ? '#0f0' : '#fff';
         ctx.font = '11px Inter';
-        ctx.fillText(outputs[i], outputX + 10, oy + 4);
+
+        // Show activation level descriptively
+        let activationText = outputs[i];
+        if (outputActivation > 0.7) {
+            activationText += ' (HIGH)';
+        } else if (outputActivation > 0.4) {
+            activationText += ' (MED)';
+        } else if (outputActivation > 0.1) {
+            activationText += ' (LOW)';
+        }
+
+        ctx.fillText(activationText, outputX + 10, oy + 4);
     }
+
+    // Status indicator
     ctx.fillStyle = '#fff';
     ctx.font = '12px Orbitron';
     ctx.textAlign = 'center';
     ctx.fillText("Outputs", outputX, 15);
+
+    // Add activity summary at bottom
+    const highActivity = currentOutputs.filter(o => o > 0.7).length;
+    const medActivity = currentOutputs.filter(o => o > 0.4 && o <= 0.7).length;
+    const lowActivity = currentOutputs.filter(o => o > 0.1 && o <= 0.4).length;
+
+    ctx.fillStyle = (highActivity + medActivity) > 0 ? '#0f0' : '#666';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'center';
+
+    let summaryText = '';
+    if (highActivity > 0) {
+        summaryText += `${highActivity} HIGH`;
+    }
+    if (medActivity > 0) {
+        if (summaryText) summaryText += ', ';
+        summaryText += `${medActivity} MED`;
+    }
+    if (lowActivity > 0) {
+        if (summaryText) summaryText += ', ';
+        summaryText += `${lowActivity} LOW`;
+    }
+    if (!summaryText) {
+        summaryText = 'Neural network idle';
+    }
+
+    ctx.fillText(summaryText, w / 2, h - 5);
 }
 
 export function setupCameraControls(simulation) {
@@ -1190,7 +1385,9 @@ export function updateInfo(simulation) {
     const livingAgents = simulation.agents.filter(a => !a.isDead);
     document.getElementById('info-pop').innerText = `Population: ${livingAgents.length}/${simulation.maxAgents} (Total: ${simulation.totalAgentsSpawned})`;
     const avgEnergy = livingAgents.length > 0 ? livingAgents.reduce((acc, a) => acc + a.energy, 0) / livingAgents.length : 0;
-    document.getElementById('info-avg-e').innerText = `Avg. Energy: ${avgEnergy.toFixed(0)} | Scarcity: ${simulation.foodScarcityFactor.toFixed(2)}`;
+    // Calculate average temperature for display
+    const avgTemperature = livingAgents.length > 0 ? livingAgents.reduce((acc, a) => acc + a.temperature, 0) / livingAgents.length : 50;
+    document.getElementById('info-avg-e').innerText = `Avg. Energy: ${avgEnergy.toFixed(0)} | Scarcity: ${simulation.foodScarcityFactor.toFixed(2)} | Temp: ${avgTemperature.toFixed(1)}°C`;
 
     // Update runtime
     const runtimeMs = Date.now() - (simulation.startTime || Date.now());
@@ -1288,6 +1485,413 @@ function showGeneticDiversityModal(simulation) {
                     </div>
 
                     ${genePoolHealth.genePoolCount === 0 ? '<div class="no-data">No gene pools saved yet. Agents need to meet qualification criteria to be saved.</div>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('visible'), 10);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.modal-close');
+    const backdrop = modal.querySelector('.modal-backdrop');
+
+    const closeModal = () => {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    // ESC key to close
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // Remove listeners when modal closes
+    modal.addEventListener('transitionend', () => {
+        if (!modal.classList.contains('visible')) {
+            document.removeEventListener('keydown', escHandler);
+        }
+    }, { once: true });
+}
+
+// Survival & Performance Modal Functions
+function showSurvivalPerformanceModal(simulation) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('survival-performance-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'survival-performance-modal';
+        modal.className = 'genetic-diversity-modal'; // Reuse the same CSS class
+        document.body.appendChild(modal);
+    }
+
+    // Get current stats data
+    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    if (livingAgents.length === 0) {
+        return;
+    }
+
+    // Calculate stats (same as updateDashboard)
+    const bestFitness = safeNumber(simulation.bestAgent ? simulation.bestAgent.fitness : 0, 0);
+    const avgFitness = averageMetric(livingAgents, a => a.fitness);
+    const avgAge = averageMetric(livingAgents, a => a.age);
+    const avgEnergy = averageMetric(livingAgents, a => a.energy);
+    const avgFood = averageMetric(livingAgents, a => a.foodEaten);
+    const avgKills = averageMetric(livingAgents, a => a.kills);
+    const avgCollisions = averageMetric(livingAgents, a => a.collisions);
+    const avgWallHits = averageMetric(livingAgents, a => a.timesHitObstacle);
+
+    const matureAgents = livingAgents.filter(a => a.age >= 10).length; // 10 seconds = 600 frames
+    const maturationRate = (matureAgents / livingAgents.length) * 100;
+    const maxAge = safeNumber(Math.max(...livingAgents.map(a => safeNumber(a.age, 0))), 0);
+    const collisionFreeAgents = livingAgents.filter(a => safeNumber(a.timesHitObstacle || 0, 0) === 0).length;
+    const collisionFreePercent = safeNumber((collisionFreeAgents / livingAgents.length) * 100, 0);
+
+    let fitnessDelta = 0;
+    if (simulation.fitnessHistory.length >= 2) {
+        fitnessDelta = safeNumber(simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2], 0);
+    }
+
+    // Build modal content
+    modal.innerHTML = `
+        <div class="modal-backdrop">
+            <div class="modal-content compact-modal">
+                <div class="modal-header">
+                    <h2>📊 Survival & Performance Details</h2>
+                    <button class="modal-close" title="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="compact-summary-bar">
+                        <div class="summary-item"><strong>Pop:</strong> ${livingAgents.length}</div>
+                        <div class="summary-item"><strong>Gen:</strong> ${simulation.generation || 0}</div>
+                        <div class="summary-item"><strong>Runtime:</strong> ${Math.floor((Date.now() - (simulation.startTime || Date.now())) / 1000)}s</div>
+                        <div class="summary-item"><strong>Best Fitness:</strong> <span class="highlight-green">${bestFitness.toFixed(0)}</span></div>
+                        <div class="summary-item"><strong>Δ:</strong> <span class="${fitnessDelta >= 0 ? 'highlight-green' : 'highlight-red'}">${fitnessDelta >= 0 ? '+' : ''}${fitnessDelta.toFixed(0)}</span></div>
+                    </div>
+
+                    <div class="compact-stats-grid">
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Fitness:</strong> ${avgFitness.toFixed(1)}</div>
+                            <div class="stat-cell"><strong>Age:</strong> ${avgAge.toFixed(1)}s</div>
+                            <div class="stat-cell"><strong>Energy:</strong> ${avgEnergy.toFixed(1)}</div>
+                            <div class="stat-cell"><strong>Food:</strong> ${avgFood.toFixed(1)}</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Mature:</strong> ${matureAgents}/${livingAgents.length} (${maturationRate.toFixed(1)}%)</div>
+                            <div class="stat-cell"><strong>Max Age:</strong> <span class="highlight-cyan">${maxAge.toFixed(0)}s</span></div>
+                            <div class="stat-cell"><strong>Kills:</strong> ${avgKills.toFixed(2)}</div>
+                            <div class="stat-cell"><strong>Collisions:</strong> ${avgCollisions.toFixed(1)}</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Wall Hits:</strong> ${avgWallHits.toFixed(1)}</div>
+                            <div class="stat-cell"><strong>Collision-Free:</strong> <span class="${collisionFreePercent >= 50 ? 'highlight-green' : collisionFreePercent >= 25 ? 'highlight-yellow' : 'highlight-red'}">${collisionFreePercent.toFixed(1)}%</span></div>
+                            <div class="stat-cell"><strong>Learning Rate:</strong> ${simulation.fitnessHistory.length >= 2 ? ((simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2]) / 2).toFixed(1) : 'N/A'}</div>
+                            <div class="stat-cell"><strong>Population Δ:</strong> ${livingAgents.length - (simulation.previousPopulationCount || livingAgents.length)}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('visible'), 10);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.modal-close');
+    const backdrop = modal.querySelector('.modal-backdrop');
+
+    const closeModal = () => {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    // ESC key to close
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // Remove listeners when modal closes
+    modal.addEventListener('transitionend', () => {
+        if (!modal.classList.contains('visible')) {
+            document.removeEventListener('keydown', escHandler);
+        }
+    }, { once: true });
+}
+
+// Reproduction Status Modal Functions
+function showReproductionModal(simulation) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('reproduction-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'reproduction-modal';
+        modal.className = 'genetic-diversity-modal'; // Reuse the same CSS class
+        document.body.appendChild(modal);
+    }
+
+    // Get current stats data
+    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    if (livingAgents.length === 0) {
+        return;
+    }
+
+    // Calculate reproduction stats
+    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromMate || 0, 0), 0);
+    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + safeNumber(a.childrenFromSplit || 0, 0), 0);
+    const totalOffspring = totalSexualOffspring + totalAsexualOffspring;
+
+    const avgOffspring = averageMetric(livingAgents, a => a.offspring || 0);
+    const avgOffspringMate = averageMetric(livingAgents, a => a.childrenFromMate || 0);
+    const avgOffspringSplit = averageMetric(livingAgents, a => a.childrenFromSplit || 0);
+
+    // Calculate reproduction rate (events per minute)
+    if (!simulation.previousOffspringCount) simulation.previousOffspringCount = 0;
+    if (!simulation.lastReproductionCheck) simulation.lastReproductionCheck = Date.now();
+
+    const currentOffspringCount = totalSexualOffspring + totalAsexualOffspring;
+    const offspringDelta = currentOffspringCount - simulation.previousOffspringCount;
+    const timeDelta = (Date.now() - simulation.lastReproductionCheck) / 1000 / 60; // in minutes
+    const reproductionRateValue = safeNumber(timeDelta > 0 ? (offspringDelta / timeDelta) : 0, 0);
+
+    // Update tracking variables every 10 seconds
+    if (timeDelta >= 0.167) { // ~10 seconds
+        simulation.previousOffspringCount = currentOffspringCount;
+        simulation.lastReproductionCheck = Date.now();
+    }
+
+    // Calculate specialization-based reproduction
+    const specializationReproduction = {};
+    livingAgents.forEach(agent => {
+        const type = agent.specializationType || 'Unknown';
+        if (!specializationReproduction[type]) {
+            specializationReproduction[type] = {
+                count: 0,
+                totalOffspring: 0,
+                sexualOffspring: 0,
+                asexualOffspring: 0
+            };
+        }
+        specializationReproduction[type].count++;
+        specializationReproduction[type].totalOffspring += safeNumber(agent.childrenFromMate || 0, 0) + safeNumber(agent.childrenFromSplit || 0, 0);
+        specializationReproduction[type].sexualOffspring += safeNumber(agent.childrenFromMate || 0, 0);
+        specializationReproduction[type].asexualOffspring += safeNumber(agent.childrenFromSplit || 0, 0);
+    });
+
+    // Calculate generation distribution
+    const generationStats = {};
+    livingAgents.forEach(agent => {
+        const gen = agent.generation || 0;
+        if (!generationStats[gen]) {
+            generationStats[gen] = { count: 0, totalOffspring: 0 };
+        }
+        generationStats[gen].count++;
+        generationStats[gen].totalOffspring += safeNumber(agent.childrenFromMate || 0, 0) + safeNumber(agent.childrenFromSplit || 0, 0);
+    });
+
+    // Build modal content
+    modal.innerHTML = `
+        <div class="modal-backdrop">
+            <div class="modal-content compact-modal">
+                <div class="modal-header">
+                    <h2>💕 Reproduction Status Details</h2>
+                    <button class="modal-close" title="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="compact-summary-bar">
+                        <div class="summary-item"><strong>Total Offspring:</strong> ${totalOffspring}</div>
+                        <div class="summary-item"><strong>Sexual:</strong> <span class="highlight-green">${totalSexualOffspring}</span></div>
+                        <div class="summary-item"><strong>Asexual:</strong> ${totalAsexualOffspring}</div>
+                        <div class="summary-item"><strong>Rate:</strong> ${reproductionRateValue.toFixed(1)}/min</div>
+                        <div class="summary-item"><strong>Avg/Agent:</strong> ${avgOffspring.toFixed(2)}</div>
+                    </div>
+
+                    <div class="compact-stats-grid">
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>By Specialization:</strong></div>
+                            <div class="stat-cell">${Object.entries(specializationReproduction).map(([type, data]) =>
+                                `${type}:${data.count}→${data.totalOffspring}(${data.sexualOffspring}♡)`
+                            ).join(' | ')}</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Recent Generations:</strong></div>
+                            <div class="stat-cell">${Object.entries(generationStats).sort(([a], [b]) => parseInt(b) - parseInt(a)).slice(0, 3).map(([gen, data]) =>
+                                `G${gen}:${data.count}→${data.totalOffspring}(${(data.totalOffspring / data.count).toFixed(1)})`
+                            ).join(' | ')}</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Status:</strong></div>
+                            <div class="stat-cell">${totalSexualOffspring > totalAsexualOffspring ? 'Sexual dominant ✓' : 'Asexual dominant ⚡'} |
+                            ${reproductionRateValue > 5 ? 'High rate ✓' : reproductionRateValue > 1 ? 'Moderate ⚠' : 'Low rate ⚠'} |
+                            ${Object.keys(specializationReproduction).length > 1 ? 'Diverse ✓' : 'Mono-type ⚠'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    modal.style.display = 'block';
+    setTimeout(() => modal.classList.add('visible'), 10);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.modal-close');
+    const backdrop = modal.querySelector('.modal-backdrop');
+
+    const closeModal = () => {
+        modal.classList.remove('visible');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+    });
+
+    // ESC key to close
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // Remove listeners when modal closes
+    modal.addEventListener('transitionend', () => {
+        if (!modal.classList.contains('visible')) {
+            document.removeEventListener('keydown', escHandler);
+        }
+    }, { once: true });
+}
+
+// Qualification Criteria Modal Functions
+function showQualificationModal(simulation) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('qualification-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qualification-modal';
+        modal.className = 'genetic-diversity-modal'; // Reuse the same CSS class
+        document.body.appendChild(modal);
+    }
+
+    // Get current stats data
+    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    if (livingAgents.length === 0) {
+        return;
+    }
+
+    // Calculate qualification criteria breakdown
+    const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingExploration = livingAgents.filter(a => {
+        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
+        return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
+    }).length;
+    const agentsMeetingNavigation = livingAgents.filter(a => safeNumber(a.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL).length;
+
+    // Calculate average exploration percentage and turns towards food
+    const avgExplorationPercentage = livingAgents.reduce((sum, a) => {
+        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
+        return sum + explorationPercentage;
+    }, 0) / livingAgents.length;
+    const avgTurnsTowardsFood = averageMetric(livingAgents, a => a.turnsTowardsFood || 0);
+
+    // Calculate agents meeting ALL criteria (qualified agents)
+    const qualifiedAgents = livingAgents.filter(a => {
+        const fitnessOk = safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
+        const foodOk = safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
+        const ageOk = safeNumber(a.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+        const explorationOk = ((a.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
+        const navigationOk = safeNumber(a.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
+        return fitnessOk && foodOk && ageOk && explorationOk && navigationOk;
+    }).length;
+
+    // Calculate specialization distribution for qualified agents
+    const qualifiedSpecializations = {};
+    livingAgents.forEach(agent => {
+        const fitnessOk = safeNumber(agent.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
+        const foodOk = safeNumber(agent.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
+        const ageOk = safeNumber(agent.framesAlive || 0, 0) >= MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL;
+        const explorationOk = ((agent.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
+        const navigationOk = safeNumber(agent.turnsTowardsFood || 0, 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
+
+        if (fitnessOk && foodOk && ageOk && explorationOk && navigationOk) {
+            const type = agent.specializationType || 'Unknown';
+            qualifiedSpecializations[type] = (qualifiedSpecializations[type] || 0) + 1;
+        }
+    });
+
+    // Build modal content
+    modal.innerHTML = `
+        <div class="modal-backdrop">
+            <div class="modal-content compact-modal">
+                <div class="modal-header">
+                    <h2>✅ Qualification Criteria Details</h2>
+                    <button class="modal-close" title="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="compact-summary-bar">
+                        <div class="summary-item"><strong>Qualified:</strong> <span class="${qualifiedAgents > 0 ? 'highlight-green' : 'highlight-red'}">${qualifiedAgents}/${livingAgents.length}</span></div>
+                        <div class="summary-item"><strong>Rate:</strong> ${((qualifiedAgents / livingAgents.length) * 100).toFixed(1)}%</div>
+                        <div class="summary-item"><strong>Thresholds:</strong> F≥${MIN_FITNESS_TO_SAVE_GENE_POOL}, Food≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}, Age≥${MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL}f, Exp≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%, Nav≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}</div>
+                    </div>
+
+                    <div class="compact-stats-grid">
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Criteria Met:</strong></div>
+                            <div class="stat-cell">Fitness: <span class="${agentsMeetingFitness > 0 ? 'highlight-green' : 'highlight-red'}">${agentsMeetingFitness}</span> |
+                            Food: <span class="${agentsMeetingFood > 0 ? 'highlight-green' : 'highlight-red'}">${agentsMeetingFood}</span> |
+                            Age: <span class="${agentsMeetingAge > 0 ? 'highlight-green' : 'highlight-red'}">${agentsMeetingAge}</span> |
+                            Exp: <span class="${agentsMeetingExploration > 0 ? 'highlight-green' : 'highlight-red'}">${agentsMeetingExploration}</span> |
+                            Nav: <span class="${agentsMeetingNavigation > 0 ? 'highlight-green' : 'highlight-red'}">${agentsMeetingNavigation}</span></div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Population Averages:</strong></div>
+                            <div class="stat-cell">Fitness: ${averageMetric(livingAgents, a => a.fitness).toFixed(0)} |
+                            Food: ${averageMetric(livingAgents, a => a.foodEaten || 0).toFixed(1)} |
+                            Age: ${averageMetric(livingAgents, a => a.framesAlive || 0).toFixed(0)}f |
+                            Exp: <span class="highlight-cyan">${avgExplorationPercentage.toFixed(1)}%</span> |
+                            Nav: <span class="highlight-green">${avgTurnsTowardsFood.toFixed(1)}</span></div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Qualified Specializations:</strong></div>
+                            <div class="stat-cell">${Object.entries(qualifiedSpecializations).length > 0 ?
+                                Object.entries(qualifiedSpecializations).map(([type, count]) => `${type}:${count}`).join(' | ') :
+                                'None yet'}</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-cell"><strong>Status:</strong></div>
+                            <div class="stat-cell">${qualifiedAgents > 0 ? 'Evolution progressing ✓' : 'Evolution in progress ⚠'} |
+                            ${agentsMeetingFitness === 0 ? 'Fitness issues ⚠' : agentsMeetingFitness < livingAgents.length * 0.1 ? 'High pressure ⚠' : 'Good fitness ✓'} |
+                            ${agentsMeetingExploration === 0 ? 'Sedentary ⚠' : agentsMeetingExploration < livingAgents.length * 0.2 ? 'Limited exploration ⚠' : 'Good coverage ✓'}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1548,4 +2152,40 @@ export function updateDashboard(simulation) {
 
     // Update fitness chart
     simulation.updateFitnessChart();
+}
+
+/**
+ * Cleanup function to remove all UI event listeners and prevent memory leaks
+ * Call this when destroying the simulation
+ */
+export function cleanupUIEventListeners() {
+    // Stop periodic summarization
+    stopPeriodicSummarization();
+
+    // Get DOM elements and remove their event listeners
+    const gameSpeedSlider = document.getElementById('gameSpeed');
+    const maxAgentsSlider = document.getElementById('maxAgents');
+    const foodRateSlider = document.getElementById('foodRate');
+    const mutationRateSlider = document.getElementById('mutationRate');
+    const showRaysCheckbox = document.getElementById('showRays');
+    const followBestCheckbox = document.getElementById('followBest');
+    const useGpuCheckbox = document.getElementById('useGpu');
+    const autoAdjustCheckbox = document.getElementById('autoAdjust');
+    const copyStatsBtn = document.getElementById('copyStats');
+    const clearStorageBtn = document.getElementById('clearStorage');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const wakeLockBtn = document.getElementById('wakeLock');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const geneticDiversitySection = document.getElementById('genetic-diversity-section');
+
+    // Note: We can't easily remove specific event listeners without storing references
+    // The most reliable way is to clone and replace elements, or use a more sophisticated
+    // event management system. For now, we'll clear any intervals and let garbage collection
+    // handle the DOM elements when the page unloads.
+
+    // Clear any sidebar-related event listeners by closing any open sidebars
+    const agentSidebar = document.getElementById('agent-sidebar');
+    if (agentSidebar && !agentSidebar.classList.contains('collapsed')) {
+        agentSidebar.classList.add('collapsed');
+    }
 }
