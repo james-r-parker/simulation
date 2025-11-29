@@ -304,9 +304,9 @@ export class WebGLRenderer {
         const effects = this.agentEffects.get(agent);
 
         // FIXED: Multiply by game speed so effects scale correctly
-        // Slower games (0.5x) should have shorter durations (7.5 frames)
-        // Faster games (3x) should have longer durations (45 frames)
-        const adjustedDuration = EFFECT_DURATION_BASE;
+        // Slower games (0.5x) should have shorter durations (3.5 frames)
+        // Faster games (3x) should have longer durations (21 frames)
+        const adjustedDuration = Math.max(1, Math.round(EFFECT_DURATION_BASE * gameSpeed));
 
         effects.push({
             type: effectType,
@@ -901,6 +901,8 @@ export class WebGLRenderer {
             return;
         }
 
+
+
         // Frustum culling for rays
         const frustum = acquireFrustum();
         const matrix = acquireMatrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
@@ -1070,6 +1072,7 @@ export class WebGLRenderer {
         this.rayLineSegments.geometry.attributes.color.needsUpdate = true;
         this.rayLineSegments.geometry.setDrawRange(0, bufferIndex);
         this.rayLineSegments.visible = true;
+
 
         // Release pooled objects
         releaseFrustum(frustum);

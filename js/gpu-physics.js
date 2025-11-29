@@ -220,27 +220,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         let ray_min_x = min(ray_origin.x, ray_max_x) - closest_dist; // Extra margin for entity size
         let ray_max_x_bound = max(ray_origin.x, ray_max_x) + closest_dist;
         
-        // Binary search for start index (first entity with X >= ray_min_x)
-        var left = 0u;
-        var right = num_entities;
-        var start_idx = 0u;
-        
-        while (left < right) {
-            let mid = (left + right) / 2u;
-            if (entities[mid].x < ray_min_x) {
-                left = mid + 1u;
-            } else {
-                right = mid;
-            }
-        }
-        start_idx = left;
-        
-        // Iterate only entities in X range
-        for (var i = start_idx; i < num_entities; i = i + 1u) {
+        // Check all entities (no sorting assumption for better compatibility)
+        for (var i = 0u; i < num_entities; i = i + 1u) {
             let entity = entities[i];
-            
-            // Early exit: entities are sorted by X, so stop when X exceeds ray bounds
-            if (entity.x > ray_max_x_bound) { break; }
             
             // Skip self: agents come after food in the entities array
             let my_entity_index = agent_index + u32(uniforms.numFood);
@@ -315,7 +297,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
 
         // Try different workgroup sizes if the current one fails
-        const workgroupSizes = [128, 64]; // Fallback sizes in order of preference
+        const workgroupSizes = [256, 128, 64]; // Fallback sizes in order of preference
         let pipelineCreated = false;
 
         for (const size of workgroupSizes) {
@@ -408,10 +390,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
 
     async batchRayTracing(agents, entities, obstacles, numRaysPerAgent, worldWidth = 10000, worldHeight = 10000) {
-        if (this.isRayTracingBusy) {
-            // this.logger.warn('[GPU] Ray tracing skipped - previous frame still processing');
-            return null;
-        }
 
         if (!this.device || !this.initialized) {
             this.logger.warn('[GPU] Ray tracing called before device ready');
@@ -630,7 +608,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
             // Log every 1000 frames to avoid spam
             if (Math.random() < 0.001) { // ~0.1% of frames
-                this.logger.info(`[RAY-TRACE-PERF] ${numAgents} agents × ${numRaysPerAgent} rays × ${numEntities} entities = ${totalIntersectionTests.toLocaleString()} tests in ${rayTracingDuration.toFixed(2)}ms (${testsPerMs.toLocaleString()} tests/ms, ${avgTestsPerRay} entities/ray)`);
+                this.logger.debug(`[RAY-TRACE-PERF] ${numAgents} agents × ${numRaysPerAgent} rays × ${numEntities} entities = ${totalIntersectionTests.toLocaleString()} tests in ${rayTracingDuration.toFixed(2)}ms (${testsPerMs.toLocaleString()} tests/ms, ${avgTestsPerRay} entities/ray)`);
             }
 
             return resultData;

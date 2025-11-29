@@ -137,9 +137,9 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN = 200; // Minimum distance from 
 export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400; // Maximum distance from agent to spawn food
 
 // Energy values (agents gain these when eating food)
-export const FOOD_ENERGY_NORMAL_BASE = 200; // Base energy value of normal food
+export const FOOD_ENERGY_NORMAL_BASE = 250; // Base energy value of normal food
 export const FOOD_ENERGY_NORMAL_VARIANCE = 20; // Random variance in normal food energy (± this amount)
-export const FOOD_ENERGY_HIGH_BASE = 400; // Base energy value of high-value food
+export const FOOD_ENERGY_HIGH_BASE = 500; // Base energy value of high-value food
 export const FOOD_ENERGY_HIGH_VARIANCE = 50; // Random variance in high-value food energy (± this amount)
 
 // Visual appearance
@@ -265,10 +265,10 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 1; // Minimum fitness score required to save agent genes
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 20000; // Minimum fitness score required to save agent genes
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1; // Minimum food items consumed to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1; // Minimum lifespan in frames to qualify
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5; // Minimum food items consumed to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3000; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (50)
 export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.0; // Minimum world exploration percentage required
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors

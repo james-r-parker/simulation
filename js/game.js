@@ -898,910 +898,912 @@ export class Simulation {
             return;
         }
 
-        // Start performance monitoring for this frame
-        this.perfMonitor.startFrame();
+        if(!this.gpuPhysics.isRayTracingBusy) {
+  
 
-        const now = Date.now();
+            const now = Date.now();
+            
+            // Start performance monitoring for this frame
+            this.perfMonitor.startFrame();
 
-        // Housekeeping tasks (FPS calculation, GPU/CPU tracking, wake lock)
-        this.perfMonitor.timeSync('housekeeping', () => {
-            // FPS calculation
-            this.fpsFrameCount++;
-            const elapsed = now - this.lastFpsUpdate;
-            if (elapsed >= 1000) { // Update FPS every second
-                this.currentFps = Math.round((this.fpsFrameCount * 1000) / elapsed);
-                this.fpsFrameCount = 0;
-                this.lastFpsUpdate = now;
+            // Housekeeping tasks (FPS calculation, GPU/CPU tracking, wake lock)
+            this.perfMonitor.timeSync('housekeeping', () => {
+                // FPS calculation
+                this.fpsFrameCount++;
+                const elapsed = now - this.lastFpsUpdate;
+                if (elapsed >= 1000) { // Update FPS every second
+                    this.currentFps = Math.round((this.fpsFrameCount * 1000) / elapsed);
+                    this.fpsFrameCount = 0;
+                    this.lastFpsUpdate = now;
 
-                // Track GPU vs CPU FPS
-                const gpuCpuElapsed = now - this.lastGpuCpuUpdate;
-                if (gpuCpuElapsed >= 1000) {
-                    // Calculate average FPS for GPU and CPU frames
-                    if (this.gpuFrameCount > 0) {
-                        const gpuFps = Math.round((this.gpuFrameCount * 1000) / gpuCpuElapsed);
-                        this.gpuFpsHistory.push(gpuFps);
-                        if (this.gpuFpsHistory.length > 10) this.gpuFpsHistory.shift(); // Keep last 10 samples
-                        this.avgGpuFps = Math.round(this.gpuFpsHistory.reduce((a, b) => a + b, 0) / this.gpuFpsHistory.length);
-                    }
-                    if (this.cpuFrameCount > 0) {
-                        const cpuFps = Math.round((this.cpuFrameCount * 1000) / gpuCpuElapsed);
-                        this.cpuFpsHistory.push(cpuFps);
-                        if (this.cpuFpsHistory.length > 10) this.cpuFpsHistory.shift(); // Keep last 10 samples
-                        this.avgCpuFps = Math.round(this.cpuFpsHistory.reduce((a, b) => a + b, 0) / this.cpuFpsHistory.length);
-                    }
-
-                    this.gpuFrameCount = 0;
-                    this.cpuFrameCount = 0;
-                    this.lastGpuCpuUpdate = now;
-                }
-            }
-
-            // Wake lock management
-            if (this.wakeLockEnabled) {
-                // Wake lock is maintained automatically, just check if it's still active
-                if (!this.wakeLock) {
-                    this.logger.warn('[WAKE] Screen wake lock was released unexpectedly');
-                    this.wakeLockEnabled = false;
-                }
-            }
-        });
-
-        // Update FPS display
-        this.perfMonitor.timeSync('ui', () => {
-            const fpsEl = document.getElementById('info-fps');
-            if (fpsEl) {
-                let fpsText = `FPS: ${this.currentFps} `;
-                if (this.avgGpuFps > 0 || this.avgCpuFps > 0) {
-                    fpsText += ` (GPU: ${this.avgGpuFps > 0 ? this.avgGpuFps : 'N/A'}, CPU: ${this.avgCpuFps > 0 ? this.avgCpuFps : 'N/A'})`;
-                }
-                fpsEl.textContent = fpsText;
-                // Color code FPS (green > 30, yellow > 15, red otherwise)
-                if (this.currentFps >= 30) {
-                    fpsEl.style.color = '#0f0';
-                } else if (this.currentFps >= 15) {
-                    fpsEl.style.color = '#ff0';
-                } else {
-                    fpsEl.style.color = '#f00';
-                }
-            }
-        });
-
-        // Auto-performance adjustment
-        if (this.autoAdjustEnabled) {
-            this.perfMonitor.timeSync('autoAdjust', () => {
-                // Track FPS history (keep last 30 seconds)
-                this.fpsHistory.push(this.currentFps);
-                if (this.fpsHistory.length > 30) {
-                    this.fpsHistory.shift();
-                }
-
-                // Auto-adjust every 30 seconds if we have enough history (only when focused)
-                const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
-                if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
-                    this.performAutoAdjustment();
-                    this.lastAutoAdjustTime = now;
-                }
-            });
-        }
-
-        // Track if this frame used GPU or CPU
-        this.currentFrameUsedGpu = false;
-
-
-
-        this.perfMonitor.startPhase('spawn');
-        // Repopulate before game loop to include new agents
-        repopulate(this);
-        this.perfMonitor.endPhase('spawn');
-
-        // ACCURACY PRESERVED: Allow full game speed without capping
-        const iterations = Math.max(1, Math.floor(this.gameSpeed));
-        for (let i = 0; i < iterations; i++) {
-            // REBUILD quadtree every iteration for accurate collision detection
-            this.perfMonitor.startPhase(`quadtree_${i}`);
-            // This ensures all collision queries use current entity positions
-            this.quadtree.clear();
-
-            // MEMORY LEAK FIX: Use try-finally to ensure points are always released
-            // Return all Points to pool before rebuilding
-            this.pointPool.releaseAll();
-
-            // OPTIMIZATION: Build activeAgents list here to avoid iterating agents again later
-            this.activeAgents.length = 0;
-
-            try {
-                for (let j = 0; j < this.agents.length; j++) {
-                    const agent = this.agents[j];
-                    if (agent && !agent.isDead) {
-                        // Use Point pool instead of allocating new objects
-                        const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
-                        this.quadtree.insert(point);
-
-                        // Add to active agents list
-                        this.activeAgents.push(agent);
-                    }
-                }
-                for (let j = 0; j < this.food.length; j++) {
-                    const food = this.food[j];
-                    if (food && !food.isDead) {
-                        // Use Point pool instead of allocating new objects
-                        const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
-                        this.quadtree.insert(point);
-                    }
-                }
-                for (let j = 0; j < this.pheromones.length; j++) {
-                    const pheromone = this.pheromones[j];
-                    if (pheromone && !pheromone.isDead) {
-                        // Use Point pool instead of allocating new objects
-                        const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
-                        this.quadtree.insert(point);
-                    }
-                }
-                // Insert obstacles into quadtree for collision detection
-                for (const obstacle of this.obstacles) {
-                    // Use Point pool instead of allocating new objects
-                    const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
-                    this.quadtree.insert(point);
-                }
-            } catch (error) {
-                // If quadtree building fails, log and ensure pool is still released
-                this.logger.error('[QUADTREE] Error building quadtree:', error);
-                // Point pool will be released in finally block
-            }
-            this.perfMonitor.endPhase(`quadtree_${i}`);
-
-            // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
-            // ACCURACY MAINTAINED: Pheromones don't need to update every frame
-            if (i % 2 === 0 || i === iterations - 1) { // Update every other iteration
-                for (let j = 0; j < this.pheromones.length; j++) {
-                    const p = this.pheromones[j];
-                    if (p && !p.isDead) {
-                        p.update();
-                    }
-                }
-            }
-
-            // PERFORMANCE OPTIMIZATION: Reduce food spawning frequency
-            // ACCURACY MAINTAINED: Food still spawns regularly, just not every iteration
-            if (i % Math.max(1, Math.floor(this.gameSpeed / 2)) === 0 || i === iterations - 1) {
-                this.perfMonitor.startPhase('spawning');
-                spawnFood(this);
-                this.perfMonitor.endPhase('spawning');
-            }
-
-            this.applyEnvironmentEvents();
-
-            // Quadtree is now rebuilt once per frame outside the iteration loop
-
-            // GPU processing per iteration for accurate perception
-            // activeAgents array is now built during quadtree phase
-            const activeAgents = this.activeAgents;
-
-            let gpuRayTracingSucceeded = false;
-            let gpuNeuralNetSucceeded = false;
-
-            // Update obstacles BEFORE ray tracing so rays detect current positions
-            this.perfMonitor.timeSync('obstacles', () => {
-                updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
-            });
-
-            // Renderer update moved to end of frame (outside physics loop)
-
-            // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
-            // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
-            this.perfMonitor.startPhase(`perception_${i}`);
-            const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 1;
-
-            if (canUseGpu) {
-                try {
-                    // Build arrays with current state - Reuse allEntities
-                    this.allEntities.length = 0;
-                    for (let j = 0; j < this.food.length; j++) {
-                        if (!this.food[j].isDead) {
-                            this.allEntities.push(this.food[j]);
+                    // Track GPU vs CPU FPS
+                    const gpuCpuElapsed = now - this.lastGpuCpuUpdate;
+                    if (gpuCpuElapsed >= 1000) {
+                        // Calculate average FPS for GPU and CPU frames
+                        if (this.gpuFrameCount > 0) {
+                            const gpuFps = Math.round((this.gpuFrameCount * 1000) / gpuCpuElapsed);
+                            this.gpuFpsHistory.push(gpuFps);
+                            if (this.gpuFpsHistory.length > 10) this.gpuFpsHistory.shift(); // Keep last 10 samples
+                            this.avgGpuFps = Math.round(this.gpuFpsHistory.reduce((a, b) => a + b, 0) / this.gpuFpsHistory.length);
                         }
+                        if (this.cpuFrameCount > 0) {
+                            const cpuFps = Math.round((this.cpuFrameCount * 1000) / gpuCpuElapsed);
+                            this.cpuFpsHistory.push(cpuFps);
+                            if (this.cpuFpsHistory.length > 10) this.cpuFpsHistory.shift(); // Keep last 10 samples
+                            this.avgCpuFps = Math.round(this.cpuFpsHistory.reduce((a, b) => a + b, 0) / this.cpuFpsHistory.length);
+                        }
+
+                        this.gpuFrameCount = 0;
+                        this.cpuFrameCount = 0;
+                        this.lastGpuCpuUpdate = now;
                     }
-                    for (let j = 0; j < activeAgents.length; j++) {
-                        this.allEntities.push(activeAgents[j]);
+                }
+
+                // Wake lock management
+                if (this.wakeLockEnabled) {
+                    // Wake lock is maintained automatically, just check if it's still active
+                    if (!this.wakeLock) {
+                        this.logger.warn('[WAKE] Screen wake lock was released unexpectedly');
+                        this.wakeLockEnabled = false;
                     }
+                }
+            });
 
-                    // SPATIAL PARTITIONING: Sort entities by X for GPU binary search
-                    this.allEntities.sort((a, b) => a.x - b.x);
-
-                    const allEntities = this.allEntities;
-
-                    const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
-
-                    // CRITICAL: Ray tracing must complete BEFORE neural network processing
-                    // because the neural network needs the converted ray results as inputs
-                    const gpuRayResults = await this.perfMonitor.timeAsync('perception.rayTracing', async () => {
-                        return this.gpuPhysics.batchRayTracing(
-                            activeAgents,
-                            allEntities,
-                            this.obstacles,
-                            maxRaysPerAgent,
-                            this.worldWidth,
-                            this.worldHeight
-                        );
-                    });
-
-                    // Process ray tracing results and convert to neural network inputs
-                    if (gpuRayResults && gpuRayResults.length > 0) {
-                        this.perfMonitor.timeSync('perception.rayTracing', () => {
-                            convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
-                        });
-                        gpuRayTracingSucceeded = true;
+            // Update FPS display
+            this.perfMonitor.timeSync('ui', () => {
+                const fpsEl = document.getElementById('info-fps');
+                if (fpsEl) {
+                    let fpsText = `FPS: ${this.currentFps} `;
+                    if (this.avgGpuFps > 0 || this.avgCpuFps > 0) {
+                        fpsText += ` (GPU: ${this.avgGpuFps > 0 ? this.avgGpuFps : 'N/A'}, CPU: ${this.avgCpuFps > 0 ? this.avgCpuFps : 'N/A'})`;
+                    }
+                    fpsEl.textContent = fpsText;
+                    // Color code FPS (green > 30, yellow > 15, red otherwise)
+                    if (this.currentFps >= 30) {
+                        fpsEl.style.color = '#0f0';
+                    } else if (this.currentFps >= 15) {
+                        fpsEl.style.color = '#ff0';
                     } else {
-                        if (this.frameCount % 300 === 0) { // Log every 5 seconds instead of just first 10 frames
-                            this.logger.warn(`GPU ray tracing returned null or empty results (results: ${gpuRayResults}, length: ${gpuRayResults ? gpuRayResults.length : 'N/A'})`);
-                        }
+                        fpsEl.style.color = '#f00';
+                    }
+                }
+            });
+
+            // Auto-performance adjustment
+            if (this.autoAdjustEnabled) {
+                this.perfMonitor.timeSync('autoAdjust', () => {
+                    // Track FPS history (keep last 30 seconds)
+                    this.fpsHistory.push(this.currentFps);
+                    if (this.fpsHistory.length > 30) {
+                        this.fpsHistory.shift();
                     }
 
-                    // NOW run neural network with the fresh inputs from ray tracing
-                    await this.perfMonitor.timeAsync('perception.neuralNetwork', async () => {
-                        try {
-                            const gpuNeuralResults = await this.gpuCompute.batchNeuralNetworkForward(activeAgents);
-                            // Neural network results are already in agent.lastOutput and agent.newHiddenState
-                            gpuNeuralNetSucceeded = true;
-                            return gpuNeuralResults;
-                        } catch (neuralError) {
-                            if (this.frameCount % 300 === 0) { // Log every 5 seconds
-                                this.logger.warn('GPU Neural Network processing failed:', neuralError);
+                    // Auto-adjust every 30 seconds if we have enough history (only when focused)
+                    const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
+                    if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
+                        this.performAutoAdjustment();
+                        this.lastAutoAdjustTime = now;
+                    }
+                });
+            }
+
+            // Track if this frame used GPU or CPU
+            this.currentFrameUsedGpu = false;
+
+            this.perfMonitor.startPhase('spawn');
+            // Repopulate before game loop to include new agents
+            repopulate(this);
+            this.perfMonitor.endPhase('spawn');
+
+            // ACCURACY PRESERVED: Allow full game speed without capping
+            const iterations = Math.max(1, Math.floor(this.gameSpeed));
+            for (let i = 0; i < iterations; i++) {
+
+                if(this.gpuPhysics.isRayTracingBusy) {
+                    continue;
+                }
+
+                // REBUILD quadtree every iteration for accurate collision detection
+                this.perfMonitor.startPhase(`quadtree_${i}`);
+                // This ensures all collision queries use current entity positions
+                this.quadtree.clear();
+
+                // MEMORY LEAK FIX: Use try-finally to ensure points are always released
+                // Return all Points to pool before rebuilding
+                this.pointPool.releaseAll();
+
+                // OPTIMIZATION: Build activeAgents list here to avoid iterating agents again later
+                this.activeAgents.length = 0;
+
+                try {
+                    for (let j = 0; j < this.agents.length; j++) {
+                        const agent = this.agents[j];
+                        if (agent && !agent.isDead) {
+                            // Use Point pool instead of allocating new objects
+                            const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
+                            this.quadtree.insert(point);
+
+                            // Add to active agents list
+                            this.activeAgents.push(agent);
+                        }
+                    }
+                    for (let j = 0; j < this.food.length; j++) {
+                        const food = this.food[j];
+                        if (food && !food.isDead) {
+                            // Use Point pool instead of allocating new objects
+                            const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
+                            this.quadtree.insert(point);
+                        }
+                    }
+                    for (let j = 0; j < this.pheromones.length; j++) {
+                        const pheromone = this.pheromones[j];
+                        if (pheromone && !pheromone.isDead) {
+                            // Use Point pool instead of allocating new objects
+                            const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
+                            this.quadtree.insert(point);
+                        }
+                    }
+                    // Insert obstacles into quadtree for collision detection
+                    for (const obstacle of this.obstacles) {
+                        // Use Point pool instead of allocating new objects
+                        const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
+                        this.quadtree.insert(point);
+                    }
+                } catch (error) {
+                    // If quadtree building fails, log and ensure pool is still released
+                    this.logger.error('[QUADTREE] Error building quadtree:', error);
+                    // Point pool will be released in finally block
+                }
+                this.perfMonitor.endPhase(`quadtree_${i}`);
+
+                // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
+                // ACCURACY MAINTAINED: Pheromones don't need to update every frame
+                if (i % 2 === 0 || i === iterations - 1) { // Update every other iteration
+                    for (let j = 0; j < this.pheromones.length; j++) {
+                        const p = this.pheromones[j];
+                        if (p && !p.isDead) {
+                            p.update();
+                        }
+                    }
+                }
+
+                // PERFORMANCE OPTIMIZATION: Reduce food spawning frequency
+                // ACCURACY MAINTAINED: Food still spawns regularly, just not every iteration
+                if (i % Math.max(1, Math.floor(this.gameSpeed / 2)) === 0 || i === iterations - 1) {
+                    this.perfMonitor.startPhase('spawning');
+                    spawnFood(this);
+                    this.perfMonitor.endPhase('spawning');
+                }
+
+                this.applyEnvironmentEvents();
+
+                // Quadtree is now rebuilt once per frame outside the iteration loop
+
+                // GPU processing per iteration for accurate perception
+                // activeAgents array is now built during quadtree phase
+                const activeAgents = this.activeAgents;
+
+                let gpuRayTracingSucceeded = false;
+                let gpuNeuralNetSucceeded = false;
+
+                // Update obstacles BEFORE ray tracing so rays detect current positions
+                this.perfMonitor.timeSync('obstacles', () => {
+                    updateObstacles(this.obstacles, this.worldWidth, this.worldHeight);
+                });
+
+                // Renderer update moved to end of frame (outside physics loop)
+
+                // PERFORMANCE OPTIMIZATION: Run GPU operations in parallel for better throughput
+                // ACCURACY PRESERVED: Full neural networks and ray tracing, just parallelized
+                this.perfMonitor.startPhase(`perception_${i}`);
+                const canUseGpu = this.useGpu && this.gpuPhysics.isAvailable() && activeAgents.length >= 1;
+
+                if (canUseGpu) {
+                    try {
+
+                         // Build arrays with current state - Reuse allEntities
+                         this.allEntities.length = 0;
+                         for (let j = 0; j < this.food.length; j++) {
+                             if (!this.food[j].isDead) {
+                                 this.allEntities.push(this.food[j]);
+                             }
+                         }
+                         for (let j = 0; j < activeAgents.length; j++) {
+                             this.allEntities.push(activeAgents[j]);
+                         }
+
+                         const allEntities = this.allEntities;
+
+                         const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
+
+                         // CRITICAL: Ray tracing must complete BEFORE neural network processing
+                         // because the neural network needs the converted ray results as inputs
+                         const gpuRayResults = await this.perfMonitor.timeAsync('perception.rayTracing', async () => {
+                             return this.gpuPhysics.batchRayTracing(
+                                 activeAgents,
+                                 allEntities,
+                                 this.obstacles,
+                                 maxRaysPerAgent,
+                                 this.worldWidth,
+                                 this.worldHeight
+                             );
+                         });
+
+                        // Process ray tracing results and convert to neural network inputs
+                        if (gpuRayResults && gpuRayResults.length > 0) {
+                            this.perfMonitor.timeSync('perception.rayTracing', () => {
+                                convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
+                            });
+                            gpuRayTracingSucceeded = true;
+                        } else {
+                            this.logger.warn(`[RAY-TRACE] GPU ray tracing failed - results: ${gpuRayResults}, length: ${gpuRayResults ? gpuRayResults.length : 'N/A'}`);
+                            // Force CPU fallback when GPU fails
+                            gpuRayTracingSucceeded = false;
+                        }
+
+                        // NOW run neural network with the fresh inputs from ray tracing
+                        await this.perfMonitor.timeAsync('perception.neuralNetwork', async () => {
+                            try {
+                                const gpuNeuralResults = await this.gpuCompute.batchNeuralNetworkForward(activeAgents);
+                                // Neural network results are already in agent.lastOutput and agent.newHiddenState
+                                gpuNeuralNetSucceeded = true;
+                                return gpuNeuralResults;
+                            } catch (neuralError) {
+                                if (this.frameCount % 300 === 0) { // Log every 5 seconds
+                                    this.logger.warn('GPU Neural Network processing failed:', neuralError);
+                                }
+                                throw neuralError; // Re-throw to be caught by outer try-catch
                             }
-                            throw neuralError; // Re-throw to be caught by outer try-catch
+                        });
+
+                    } catch (error) {
+                        if (this.frameCount < 10) {
+                            this.logger.warn('Parallel GPU operations failed:', error);
+                        }
+                    }
+                }
+
+                // CPU perception fallback (ONLY if GPU ray tracing failed)
+                if (!gpuRayTracingSucceeded && activeAgents.length > 0) {
+                    // Debug: Log why we're falling back to CPU
+                    this.logger.warn(`[CPU-FALLBACK] Frame ${this.frameCount}: GPU ray tracing failed, using CPU for ${activeAgents.length} agents`);
+
+                    this.perfMonitor.timeSync('perception.cpuFallback', () => {
+                        for (let j = 0; j < activeAgents.length; j++) {
+                            const agent = activeAgents[j];
+                            try {
+                                const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
+                                agent.lastInputs = perception.inputs;
+                                agent.lastRayData = perception.rayData;
+                            } catch (perceptionError) {
+                                // If even CPU perception fails, provide safe fallback inputs
+                                this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.geneId} CPU perception failed:`, perceptionError);
+                                agent.lastInputs = new Array(agent.inputSize).fill(0.5); // Safe neutral inputs
+                                agent.lastRayData = [];
+                            }
                         }
                     });
 
-                } catch (error) {
-                    debugger;
-                    if (this.frameCount < 10) {
-                        this.logger.warn('Parallel GPU operations failed:', error);
+                    // Track GPU failures to potentially disable GPU temporarily
+                    if (!this.gpuFailureCount) this.gpuFailureCount = 0;
+                    this.gpuFailureCount++;
+
+                    // If GPU fails repeatedly, temporarily disable it
+                    if (this.gpuFailureCount >= 10 && this.useGpu) {
+                        this.logger.warn(`[GPU-DISABLE] Too many GPU failures (${this.gpuFailureCount}), temporarily disabling GPU acceleration`);
+                        this.useGpu = false;
+                        // Reset failure count and try to re-enable GPU after some time
+                        this.gpuFailureCount = 0;
+                        setTimeout(() => {
+                            if (this.gpuCompute && this.gpuCompute.isAvailable()) {
+                                this.logger.info('[GPU-REENABLE] Re-enabling GPU acceleration after cooldown');
+                                this.useGpu = true;
+                            }
+                        }, 30000); // 30 second cooldown
                     }
+                } else if (gpuRayTracingSucceeded) {
+                    // Reset failure count on success
+                    this.gpuFailureCount = 0;
                 }
-            }
 
-            // CPU perception fallback (ONLY if GPU ray tracing failed)
-            if (!gpuRayTracingSucceeded && activeAgents.length > 0) {
-                debugger
-                // Debug: Log why we're falling back to CPU
-                this.logger.warn(`[CPU-FALLBACK] Frame ${this.frameCount}: GPU ray tracing failed, using CPU for ${activeAgents.length} agents`);
+                // Neural network processing now happens in parallel with ray tracing above
 
-                this.perfMonitor.timeSync('perception.cpuFallback', () => {
-                    for (let j = 0; j < activeAgents.length; j++) {
-                        const agent = activeAgents[j];
-                        try {
-                            const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
-                            agent.lastInputs = perception.inputs;
-                            agent.lastRayData = perception.rayData;
-                        } catch (perceptionError) {
-                            // If even CPU perception fails, provide safe fallback inputs
-                            this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.geneId} CPU perception failed:`, perceptionError);
-                            agent.lastInputs = new Array(agent.inputSize).fill(0.5); // Safe neutral inputs
-                            agent.lastRayData = [];
+                if (!gpuNeuralNetSucceeded) {
+                    this.logger.warn('GPU Neural Network processing failed, using CPU');
+                }
+                this.perfMonitor.endPhase(`perception_${i}`);
+
+                // CRITICAL FIX: Always check collisions to prevent tunneling
+                // Both agents can move, so we must check every iteration
+                this.perfMonitor.startPhase(`physics_${i}`);
+
+                // Collision detection
+                this.perfMonitor.timeSync('physics.collisions', () => {
+                    checkCollisions(this);
+                });
+
+                // Agent updates (will use GPU results if available, otherwise CPU)
+                // OPTIMIZED: Use for loop instead of forEach
+                // Use actual length, not cached, since arrays can be modified
+                this.perfMonitor.timeSync('physics.agentUpdates', () => {
+                    // OPTIMIZED: Iterate activeAgents instead of all agents
+                    const activeCount = this.activeAgents.length;
+                    for (let j = 0; j < activeCount; j++) {
+                        const agent = this.activeAgents[j];
+                        // No need to check isDead or null, activeAgents only contains living agents
+                        agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
+                    }
+                });
+
+                // Entity updates (food and pheromones)
+                this.perfMonitor.timeSync('physics.entityUpdates', () => {
+                    // Food updates (CPU path)
+                    for (let j = 0; j < this.food.length; j++) {
+                        const food = this.food[j];
+                        if (food && !food.isDead) {
+                            food.update();
+                        }
+                    }
+
+                    // Pheromone updates (CPU path)
+                    for (let j = 0; j < this.pheromones.length; j++) {
+                        const pheromone = this.pheromones[j];
+                        if (pheromone && !pheromone.isDead) {
+                            pheromone.update();
                         }
                     }
                 });
 
-                // Track GPU failures to potentially disable GPU temporarily
-                if (!this.gpuFailureCount) this.gpuFailureCount = 0;
-                this.gpuFailureCount++;
+                this.perfMonitor.endPhase(`physics_${i}`);
 
-                // If GPU fails repeatedly, temporarily disable it
-                if (this.gpuFailureCount >= 10 && this.useGpu) {
-                    this.logger.warn(`[GPU-DISABLE] Too many GPU failures (${this.gpuFailureCount}), temporarily disabling GPU acceleration`);
-                    this.useGpu = false;
-                    // Reset failure count and try to re-enable GPU after some time
-                    this.gpuFailureCount = 0;
-                    setTimeout(() => {
-                        if (this.gpuCompute && this.gpuCompute.isAvailable()) {
-                            this.logger.info('[GPU-REENABLE] Re-enabling GPU acceleration after cooldown');
-                            this.useGpu = true;
-                        }
-                    }, 30000); // 30 second cooldown
-                }
-            } else if (gpuRayTracingSucceeded) {
-                // Reset failure count on success
-                this.gpuFailureCount = 0;
-            }
-
-            // Neural network processing now happens in parallel with ray tracing above
-
-            if (!gpuNeuralNetSucceeded) {
-                this.logger.warn('GPU Neural Network processing failed, using CPU');
-            }
-            this.perfMonitor.endPhase(`perception_${i}`);
-
-            // CRITICAL FIX: Always check collisions to prevent tunneling
-            // Both agents can move, so we must check every iteration
-            this.perfMonitor.startPhase(`physics_${i}`);
-
-            // Collision detection
-            this.perfMonitor.timeSync('physics.collisions', () => {
-                checkCollisions(this);
-            });
-
-            // Agent updates (will use GPU results if available, otherwise CPU)
-            // OPTIMIZED: Use for loop instead of forEach
-            // Use actual length, not cached, since arrays can be modified
-            this.perfMonitor.timeSync('physics.agentUpdates', () => {
-                // OPTIMIZED: Iterate activeAgents instead of all agents
-                const activeCount = this.activeAgents.length;
-                for (let j = 0; j < activeCount; j++) {
-                    const agent = this.activeAgents[j];
-                    // No need to check isDead or null, activeAgents only contains living agents
-                    agent.update(this.worldWidth, this.worldHeight, this.obstacles, this.quadtree, this);
-                }
-            });
-
-            // Entity updates (food and pheromones)
-            this.perfMonitor.timeSync('physics.entityUpdates', () => {
-                // Food updates (CPU path)
-                for (let j = 0; j < this.food.length; j++) {
-                    const food = this.food[j];
-                    if (food && !food.isDead) {
-                        food.update();
-                    }
-                }
-
-                // Pheromone updates (CPU path)
-                for (let j = 0; j < this.pheromones.length; j++) {
-                    const pheromone = this.pheromones[j];
-                    if (pheromone && !pheromone.isDead) {
-                        pheromone.update();
-                    }
-                }
-            });
-
-            this.perfMonitor.endPhase(`physics_${i}`);
-
-            // Count frame as GPU or CPU based on whether GPU actually ran
-            // Only count on last iteration to avoid double counting
-            // With Solution 4, GPU runs per iteration, so we track if it succeeded
-            if (i === iterations - 1) {
-                if (gpuRayTracingSucceeded && this.useGpu) {
-                    // GPU ray tracing succeeded for this frame
-                    this.gpuFrameCount++;
-                } else {
-                    // GPU wasn't available or failed, fell back to CPU
-                    this.cpuFrameCount++;
-                }
-
-                // PERFORMANCE OPTIMIZATION: Skip expensive operations when not needed
-                // Only rebuild quadtree every 5 iterations to reduce overhead
-                if (i % 5 === 0 || i === iterations - 1) {
-                    // Quadtree rebuild happens here (already optimized)
-                }
-
-                // PERFORMANCE MONITORING: Suggest optimizations when FPS is low
-                if (this.frameCount % 300 === 0 && this.currentFps < 50) {
-                    this.perfMonitor.timeSync('misc', () => {
-                        let livingAgents = 0;
-                        for (let i = 0; i < this.agents.length; i++) {
-                            if (!this.agents[i].isDead) livingAgents++;
-                        }
-                        this.logger.warn(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
-                    });
-                }
-            }
-
-            this.perfMonitor.startPhase(`cleanup_${i}`);
-
-            // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
-            // This also reduces the number of array operations
-            if (i === iterations - 1) {
-
-                // === REPRODUCTION SYSTEM ===
-                // Check for reproduction opportunities (once per frame)
-                for (let j = 0; j < this.agents.length; j++) {
-                    const agent = this.agents[j];
-
-                    // Skip dead or immature agents
-                    if (agent.isDead || agent.framesAlive < MATURATION_AGE_FRAMES) continue;
-
-                    // Decrement reproduction cooldown
-                    if (agent.reproductionCooldown > 0) {
-                        agent.reproductionCooldown--;
+                // Count frame as GPU or CPU based on whether GPU actually ran
+                // Only count on last iteration to avoid double counting
+                // With Solution 4, GPU runs per iteration, so we track if it succeeded
+                if (i === iterations - 1) {
+                    if (gpuRayTracingSucceeded && this.useGpu) {
+                        // GPU ray tracing succeeded for this frame
+                        this.gpuFrameCount++;
+                    } else {
+                        // GPU wasn't available or failed, fell back to CPU
+                        this.cpuFrameCount++;
                     }
 
-                    // Increment pregnancy timer
-                    if (agent.isPregnant && agent.pregnancyTimer < PREGNANCY_DURATION_FRAMES) {
-                        agent.pregnancyTimer++;
+                    // PERFORMANCE OPTIMIZATION: Skip expensive operations when not needed
+                    // Only rebuild quadtree every 5 iterations to reduce overhead
+                    if (i % 5 === 0 || i === iterations - 1) {
+                        // Quadtree rebuild happens here (already optimized)
                     }
 
-                    // === BIRTH SYSTEM ===
-                    // Check if agent is ready to give birth
-                    if (agent.isPregnant && agent.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
-                        const child = agent.birthChild();
-                        if (child) {
-                            this.agentSpawnQueue.push(child);
-                            this.logger.info(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
-
-                            // Show toast notification
-                            if (this.toast) {
-                                this.toast.showReproduction('birth', agent.geneId, child.geneId);
+                    // PERFORMANCE MONITORING: Suggest optimizations when FPS is low
+                    if (this.frameCount % 300 === 0 && this.currentFps < 50 && this.frameCount > 100) {
+                        this.perfMonitor.timeSync('misc', () => {
+                            let livingAgents = 0;
+                            for (let i = 0; i < this.agents.length; i++) {
+                                if (!this.agents[i].isDead) livingAgents++;
                             }
-                        }
+                            this.logger.warn(`[PERF] Low FPS detected(${this.currentFps}).Try: Reduce agents(${livingAgents}), game speed(${this.gameSpeed}), or disable GPU features`);
+                        });
                     }
-
-                    // === ASEXUAL REPRODUCTION (SPLITTING) ===
-                    // When energy is very high, split to create clone
-                    // Require agent to be "fit" for splitting
-                    if (agent.fit &&
-                        agent.energy > MAX_ENERGY * 0.7 &&
-                        agent.reproductionCooldown <= 0 &&
-                        !agent.isPregnant) {
-
-                        const child = agent.split();
-                        if (child) {
-                            this.agentSpawnQueue.push(child);
-                            this.logger.info(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
-
-                            // Show toast notification
-                            if (this.toast) {
-                                this.toast.showReproduction('split', agent.geneId, child.geneId, agent.energy);
-                            }
-                        }
-                    }
-
                 }
 
-                // Process dead agents - queue qualifying ones for database save, remove all dead agents
-                for (let j = this.agents.length - 1; j >= 0; j--) {
-                    const agent = this.agents[j];
-                    if (agent.isDead) {
-                        // Check if this agent was in validation queue first (highest priority)
-                        if (this.validationManager.isInValidation(agent.geneId)) {
-                            // Debug: Log validation agent death details
-                            this.logger.debug(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
-                            // Handle validation agent death
-                            this.validationManager.handleValidationDeath(agent, this.db);
-                        } else if (agent.fit) {
-                            // Agent meets comprehensive fit criteria - check if gene pool exists
-                            const genePoolExists = this.db.pool[agent.geneId] !== undefined;
+                this.perfMonitor.startPhase(`cleanup_${i}`);
 
-                            if (genePoolExists) {
-                                // CASE 1: Existing gene pool - skip validation, go directly to save queue
-                                this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
-                                this.db.queueSaveAgent(agent);
-                            } else {
-                                // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
-                                this.logger.debug(`[VALIDATION] 💀 Death: Fit agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
-                                const result = this.validationManager.addToValidationQueue(agent, false);
-                                // If validation returns something other than false, it's handling the agent
-                                // If it returns false, it means cooldown or other skip reason
-                            }
-                        } else if (hasValidatedAncestor(agent, this)) {
-                            // Children of validated agents get saved to gene pool automatically
-                            this.logger.debug(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
-                            this.db.queueSaveAgent(agent);
+                // OPTIMIZED: Only remove dead entities on last iteration to avoid index issues
+                // This also reduces the number of array operations
+                if (i === iterations - 1) {
+
+                    // === REPRODUCTION SYSTEM ===
+                    // Check for reproduction opportunities (once per frame)
+                    for (let j = 0; j < this.agents.length; j++) {
+                        const agent = this.agents[j];
+
+                        // Skip dead or immature agents
+                        if (agent.isDead || agent.framesAlive < MATURATION_AGE_FRAMES) continue;
+
+                        // Decrement reproduction cooldown
+                        if (agent.reproductionCooldown > 0) {
+                            agent.reproductionCooldown--;
                         }
 
-                        // NUTRIENT CYCLING: Create fertile zone from decomposed agent
-                        this.createFertileZone(agent);
-
-                        // CRITICAL: Call cleanup to break circular references before removal
-                        // This allows the agent to be garbage collected immediately
-                        agent.cleanup();
-
-                        // Remove ALL dead agents from active array to prevent memory leaks
-                        this.agents.splice(j, 1);
-                        j--; // Adjust index since we removed an element
-                    }
-                }
-
-                // Periodic performance monitoring (every 1000 frames)
-                if (this.frameCount % 1000 === 0) {
-                    // Reuse pre-allocated arrays instead of filter()
-                    this.livingAgents.length = 0;
-                    this.livingFood.length = 0;
-                    this.livingPheromones.length = 0;
-
-                    for (const a of this.agents) {
-                        if (!a.isDead) this.livingAgents.push(a);
-                    }
-                    for (const f of this.food) {
-                        if (!f.isDead) this.livingFood.push(f);
-                    }
-                    for (const p of this.pheromones) {
-                        if (!p.isDead) this.livingPheromones.push(p);
-                    }
-
-                    const livingAgents = this.livingAgents.length;
-                    const livingFood = this.livingFood.length;
-                    const livingPheromones = this.livingPheromones.length;
-
-                    // Check GPU cache sizes if available
-                    let gpuComputeCache = 0;
-                    let gpuPhysicsCache = 0;
-                    if (this.gpuCompute && this.gpuCompute.bufferCache) {
-                        gpuComputeCache = this.gpuCompute.bufferCache.size;
-                    }
-                    if (this.gpuPhysics && this.gpuPhysics.buffers) {
-                        gpuPhysicsCache = 1; // Physics has buffers
-                    }
-
-                    this.logger.debug(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
-                }
-
-
-                // Remove dead food
-                for (let j = this.food.length - 1; j >= 0; j--) {
-                    if (this.food[j] && this.food[j].isDead) {
-                        this.food.splice(j, 1);
-                    }
-                }
-
-                // Clean up unreachable food logic REMOVED
-                // Food now has its own natural decay/rotting process in food.js
-                // This prevents "random" disappearance of valid food items
-            }
-            // Remove dead pheromones - only on last iteration
-            if (i === iterations - 1) {
-                for (let j = this.pheromones.length - 1; j >= 0; j--) {
-                    if (this.pheromones[j] && this.pheromones[j].isDead) {
-                        this.pheromones.splice(j, 1);
-                    }
-                }
-            }
-
-            this.perfMonitor.endPhase(`cleanup_${i}`);
-
-            if (i === iterations - 1) {
-                this.frameCount++;
-                this.perfMonitor.startPhase('memory');
-                // Update memory stats every ~1 second using real time to avoid throttling
-                if (now - this.lastMemoryPressureCheckTime >= 1000) {
-                    this.lastMemoryPressureCheckTime = now;
-                    updateMemoryStats(this, false);
-                    handleMemoryPressure(this);
-                }
-                // UI updates
-                if (this.frameCount % 100 === 0) updateInfo(this);
-
-                // Periodic agent data cleanup - prevent array accumulation
-                if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
-                    for (const agent of this.agents) {
-                        if (agent && !agent.isDead) {
-                            // Limit array sizes to prevent unbounded growth
-                            if (agent.inputs && agent.inputs.length > 1000) {
-                                agent.inputs.length = 0;
-                            }
-                            if (agent.rayData && agent.rayData.length > 500) {
-                                agent.rayData.length = 0;
-                            }
-                            if (agent.lastRayData && agent.lastRayData.length > 500) {
-                                agent.lastRayData.length = 0;
-                            }
-                        }
-                    }
-                }
-
-                // Periodic validation checks - use real time for consistent timing
-                if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
-                    this.lastValidationCheckTime = now;
-                    updatePeriodicValidation(this);
-                    // Log validation queue status periodically
-                    if (this.validationManager.validationQueue.size > 0) {
-                        this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
-                    }
-                    // Clean up validation queue
-                    this.validationManager.cleanupValidationQueue();
-
-                    // Resync active validation agents counter
-                    this.validationManager.resyncActiveAgentsCount(this);
-                }
-
-                // Dashboard updates (only when focused)
-                if (this.frameCount % 30 === 0 && document.hasFocus()) {
-                    this.perfMonitor.timeSync('ui', () => {
-                        updateDashboard(this);
-                    });
-                }
-                // Periodic comprehensive memory cleanup - use real time to avoid throttling
-                if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
-                    this.lastMemoryCleanupTime = now;
-                    this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
-                    periodicMemoryCleanup(this);
-
-                    // Calculate session duration for all cleanup operations
-                    const sessionDurationHours = (now - this.startTime) / (1000 * 60 * 60);
-
-                    // Intelligent database cache management for long-term stability
-                    if (this.db && this.db.trimCache) {
-                        this.db.trimCache(sessionDurationHours);
-                    }
-
-                    // Selective GPU cache management - trim instead of full clear to avoid performance spikes
-                    let shouldTrimCache = sessionDurationHours >= 1 || this.currentMemoryUsage > this.memoryPressureThreshold * 0.8;
-
-                    // More aggressive trimming as simulation runs longer
-                    let maxCacheSize = 10;
-                    if (sessionDurationHours > 1) maxCacheSize = 5;
-                    if (sessionDurationHours > 2) maxCacheSize = 3;
-
-                    // Also trim every cleanup cycle if we're using a lot of GPU resources
-                    if (this.gpuCompute && this.gpuCompute.pipelines.size > maxCacheSize) {
-                        shouldTrimCache = true;
-                    }
-
-                    if (shouldTrimCache) {
-                        this.logger.debug(`[PERF] Periodic GPU cache maintenance (${sessionDurationHours.toFixed(1)}h session, maxCacheSize: ${maxCacheSize})`);
-
-                        // Use enhanced selective trimming for GPU Compute
-                        if (this.gpuCompute && this.gpuCompute.deepCleanup) {
-                            this.gpuCompute.deepCleanup(sessionDurationHours);
+                        // Increment pregnancy timer
+                        if (agent.isPregnant && agent.pregnancyTimer < PREGNANCY_DURATION_FRAMES) {
+                            agent.pregnancyTimer++;
                         }
 
-                        // Enhanced GPU Physics cleanup
-                        if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
-                            this.gpuPhysics.deepCleanup(sessionDurationHours);
-                        }
-                    }
+                        // === BIRTH SYSTEM ===
+                        // Check if agent is ready to give birth
+                        if (agent.isPregnant && agent.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
+                            const child = agent.birthChild();
+                            if (child) {
+                                this.agentSpawnQueue.push(child);
+                                this.logger.info(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
 
-                    // Renderer defragmentation for long-term stability
-                    const rendererAgeHours = (now - this.rendererSessionStartTime) / (1000 * 60 * 60);
-                    if (rendererAgeHours > this.rendererDefragIntervalHours) {
-                        this.logger.debug(`[RENDERER] Defragmenting renderer resources (${rendererAgeHours.toFixed(1)}h session)`);
-
-                        // Force renderer cleanup and recreation of instanced meshes
-                        if (this.renderer && this.renderer.defragment) {
-                            this.renderer.defragment();
-                        } else {
-                            // Fallback: clear agent meshes to force recreation
-                            if (this.renderer && this.renderer.agentMeshes) {
-                                for (const [geneId, mesh] of this.renderer.agentMeshes.entries()) {
-                                    if (mesh.body) {
-                                        this.renderer.agentGroup.remove(mesh.body);
-                                        mesh.body.geometry.dispose();
-                                        mesh.body.material.dispose();
-                                    }
-                                    if (mesh.border) {
-                                        this.renderer.agentGroup.remove(mesh.border);
-                                        mesh.border.geometry.dispose();
-                                        mesh.border.material.dispose();
-                                    }
+                                // Show toast notification
+                                if (this.toast) {
+                                    this.toast.showReproduction('birth', agent.geneId, child.geneId);
                                 }
-                                this.renderer.agentMeshes.clear();
-                                this.logger.debug('[RENDERER] Cleared agent meshes for defragmentation');
                             }
                         }
 
-                        this.rendererLastDefragTime = now;
-                        this.rendererDefragIntervalHours = Math.min(this.rendererDefragIntervalHours + 1, 8); // Gradually increase interval
+                        // === ASEXUAL REPRODUCTION (SPLITTING) ===
+                        // When energy is very high, split to create clone
+                        // Require agent to be "fit" for splitting
+                        if (agent.fit &&
+                            agent.energy > MAX_ENERGY * 0.7 &&
+                            agent.reproductionCooldown <= 0 &&
+                            !agent.isPregnant) {
+
+                            const child = agent.split();
+                            if (child) {
+                                this.agentSpawnQueue.push(child);
+                                this.logger.info(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
+
+                                // Show toast notification
+                                if (this.toast) {
+                                    this.toast.showReproduction('split', agent.geneId, child.geneId, agent.energy);
+                                }
+                            }
+                        }
+
                     }
 
-                    // Force garbage collection if available
-                    if (window.gc) {
-                        window.gc();
-                        this.logger.info('[PERF] Forced garbage collection');
+                    // Process dead agents - queue qualifying ones for database save, remove all dead agents
+                    for (let j = this.agents.length - 1; j >= 0; j--) {
+                        const agent = this.agents[j];
+                        if (agent.isDead) {
+                            // Check if this agent was in validation queue first (highest priority)
+                            if (this.validationManager.isInValidation(agent.geneId)) {
+                                // Debug: Log validation agent death details
+                                this.logger.debug(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
+                                // Handle validation agent death
+                                this.validationManager.handleValidationDeath(agent, this.db);
+                            } else if (agent.fit) {
+                                // Agent meets comprehensive fit criteria - check if gene pool exists
+                                const genePoolExists = this.db.pool[agent.geneId] !== undefined;
+
+                                if (genePoolExists) {
+                                    // CASE 1: Existing gene pool - skip validation, go directly to save queue
+                                    this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
+                                    this.db.queueSaveAgent(agent);
+                                } else {
+                                    // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
+                                    this.logger.debug(`[VALIDATION] 💀 Death: Fit agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
+                                    const result = this.validationManager.addToValidationQueue(agent, false);
+                                    // If validation returns something other than false, it's handling the agent
+                                    // If it returns false, it means cooldown or other skip reason
+                                }
+                            } else if (hasValidatedAncestor(agent, this)) {
+                                // Children of validated agents get saved to gene pool automatically
+                                this.logger.debug(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
+                                this.db.queueSaveAgent(agent);
+                            }
+
+                            // NUTRIENT CYCLING: Create fertile zone from decomposed agent
+                            this.createFertileZone(agent);
+
+                            // CRITICAL: Call cleanup to break circular references before removal
+                            // This allows the agent to be garbage collected immediately
+                            agent.cleanup();
+
+                            // Remove ALL dead agents from active array to prevent memory leaks
+                            this.agents.splice(j, 1);
+                            j--; // Adjust index since we removed an element
+                        }
                     }
-                    this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
+
+                    // Periodic performance monitoring (every 1000 frames)
+                    if (this.frameCount % 1000 === 0) {
+                        // Reuse pre-allocated arrays instead of filter()
+                        this.livingAgents.length = 0;
+                        this.livingFood.length = 0;
+                        this.livingPheromones.length = 0;
+
+                        for (const a of this.agents) {
+                            if (!a.isDead) this.livingAgents.push(a);
+                        }
+                        for (const f of this.food) {
+                            if (!f.isDead) this.livingFood.push(f);
+                        }
+                        for (const p of this.pheromones) {
+                            if (!p.isDead) this.livingPheromones.push(p);
+                        }
+
+                        const livingAgents = this.livingAgents.length;
+                        const livingFood = this.livingFood.length;
+                        const livingPheromones = this.livingPheromones.length;
+
+                        // Check GPU cache sizes if available
+                        let gpuComputeCache = 0;
+                        let gpuPhysicsCache = 0;
+                        if (this.gpuCompute && this.gpuCompute.bufferCache) {
+                            gpuComputeCache = this.gpuCompute.bufferCache.size;
+                        }
+                        if (this.gpuPhysics && this.gpuPhysics.buffers) {
+                            gpuPhysicsCache = 1; // Physics has buffers
+                        }
+
+                        this.logger.debug(`[PERF] Frame ${this.frameCount}: ${livingAgents} agents, ${livingFood} food, ${livingPheromones} pheromones, ${this.validationManager.validationQueue.size} validation, GPU cache: ${gpuComputeCache} compute, ${gpuPhysicsCache} physics, FPS: ${this.avgCpuFps?.toFixed(1) || 'N/A'} `);
+                    }
+
+
+                    // Remove dead food
+                    for (let j = this.food.length - 1; j >= 0; j--) {
+                        if (this.food[j] && this.food[j].isDead) {
+                            this.food.splice(j, 1);
+                        }
+                    }
+
+                    // Clean up unreachable food logic REMOVED
+                    // Food now has its own natural decay/rotting process in food.js
+                    // This prevents "random" disappearance of valid food items
                 }
-                this.perfMonitor.endPhase('memory');
-            }
-        }
-
-        // Update camera
-        this.perfMonitor.startPhase('camera');
-        if (this.followBest) {
-            // Check if current bestAgent is visible and valid
-            let shouldFollow = false;
-            let targetAgent = null;
-
-            // Clear bestAgent if it's dead (prevent following ghosts)
-            if (this.bestAgent && this.bestAgent.isDead) {
-                this.bestAgent = null;
-            }
-
-            // Double-check bestAgent is still alive and valid
-            if (this.bestAgent && !this.bestAgent.isDead &&
-                typeof this.bestAgent.x === 'number' && typeof this.bestAgent.y === 'number' &&
-                isFinite(this.bestAgent.x) && isFinite(this.bestAgent.y)) {
-
-                // Check if bestAgent is actually visible on screen (frustum culling)
-                this.renderer.updateFrustum();
-
-                const tempVec = new THREE.Vector3();
-                const testSphere = new THREE.Sphere(tempVec, 0);
-                tempVec.set(this.bestAgent.x, -this.bestAgent.y, 0);
-                testSphere.center = tempVec;
-                testSphere.radius = this.bestAgent.size || 5;
-
-                if (this.renderer.frustum.intersectsSphere(testSphere)) {
-                    shouldFollow = true;
-                    targetAgent = this.bestAgent;
-                }
-            }
-
-            if (!shouldFollow && this.agents.length > 0) {
-                // Find best living agent that is actually visible on screen
-                const livingAgents = [];
-                for (let i = 0; i < this.agents.length; i++) {
-                    const agent = this.agents[i];
-                    if (!agent.isDead && typeof agent.x === 'number' && typeof agent.y === 'number' &&
-                        isFinite(agent.x) && isFinite(agent.y)) {
-                        livingAgents.push(agent);
+                // Remove dead pheromones - only on last iteration
+                if (i === iterations - 1) {
+                    for (let j = this.pheromones.length - 1; j >= 0; j--) {
+                        if (this.pheromones[j] && this.pheromones[j].isDead) {
+                            this.pheromones.splice(j, 1);
+                        }
                     }
                 }
 
-                // Check frustum for each agent (reuse cached frustum from renderer)
+                this.perfMonitor.endPhase(`cleanup_${i}`);
+            }
 
-                const tempVec = new THREE.Vector3();
-                const testSphere = new THREE.Sphere(tempVec, 0);
+            // Always increment frame count, even if iterations were skipped
+            this.frameCount++;
+            this.perfMonitor.startPhase('memory');
+            // Update memory stats every ~1 second using real time to avoid throttling
+            if (now - this.lastMemoryPressureCheckTime >= 1000) {
+                this.lastMemoryPressureCheckTime = now;
+                updateMemoryStats(this, false);
+                handleMemoryPressure(this);
+            }
+            // UI updates
+            if (this.frameCount % 100 === 0) updateInfo(this);
 
-                // Find the best agent with prioritization:
-                // 1. Qualified agents (.fit = true), by fitness
-                // 2. Agents in validation tests, by fitness
-                // 3. All agents, by fitness
-                let bestVisibleAgent = null;
-                let bestPriority = 3; // Lower number = higher priority
-                let bestFitness = -Infinity;
+                    // Periodic agent data cleanup - prevent array accumulation
+                    if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
+                        for (const agent of this.agents) {
+                            if (agent && !agent.isDead) {
+                                // Limit array sizes to prevent unbounded growth
+                                if (agent.inputs && agent.inputs.length > 1000) {
+                                    agent.inputs.length = 0;
+                                }
+                                if (agent.rayData && agent.rayData.length > 500) {
+                                    agent.rayData.length = 0;
+                                }
+                                if (agent.lastRayData && agent.lastRayData.length > 500) {
+                                    agent.lastRayData.length = 0;
+                                }
+                            }
+                        }
+                    }
 
-                for (const agent of livingAgents) {
-                    tempVec.set(agent.x, -agent.y, 0);
+                    // Periodic validation checks - use real time for consistent timing
+                    if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
+                        this.lastValidationCheckTime = now;
+                        updatePeriodicValidation(this);
+                        // Log validation queue status periodically
+                        if (this.validationManager.validationQueue.size > 0) {
+                            this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
+                        }
+                        // Clean up validation queue
+                        this.validationManager.cleanupValidationQueue();
+
+                        // Resync active validation agents counter
+                        this.validationManager.resyncActiveAgentsCount(this);
+                    }
+
+                    // Dashboard updates (only when focused)
+                    if (this.frameCount % 30 === 0 && document.hasFocus()) {
+                        this.perfMonitor.timeSync('ui', () => {
+                            updateDashboard(this);
+                        });
+                    }
+                    // Periodic comprehensive memory cleanup - use real time to avoid throttling
+                    if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
+                        this.lastMemoryCleanupTime = now;
+                        this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
+                        periodicMemoryCleanup(this);
+
+                        // Calculate session duration for all cleanup operations
+                        const sessionDurationHours = (now - this.startTime) / (1000 * 60 * 60);
+
+                        // Intelligent database cache management for long-term stability
+                        if (this.db && this.db.trimCache) {
+                            this.db.trimCache(sessionDurationHours);
+                        }
+
+                        // Selective GPU cache management - trim instead of full clear to avoid performance spikes
+                        let shouldTrimCache = sessionDurationHours >= 1 || this.currentMemoryUsage > this.memoryPressureThreshold * 0.8;
+
+                        // More aggressive trimming as simulation runs longer
+                        let maxCacheSize = 10;
+                        if (sessionDurationHours > 1) maxCacheSize = 5;
+                        if (sessionDurationHours > 2) maxCacheSize = 3;
+
+                        // Also trim every cleanup cycle if we're using a lot of GPU resources
+                        if (this.gpuCompute && this.gpuCompute.pipelines.size > maxCacheSize) {
+                            shouldTrimCache = true;
+                        }
+
+                        if (shouldTrimCache) {
+                            this.logger.debug(`[PERF] Periodic GPU cache maintenance (${sessionDurationHours.toFixed(1)}h session, maxCacheSize: ${maxCacheSize})`);
+
+                            // Use enhanced selective trimming for GPU Compute
+                            if (this.gpuCompute && this.gpuCompute.deepCleanup) {
+                                this.gpuCompute.deepCleanup(sessionDurationHours);
+                            }
+
+                            // Enhanced GPU Physics cleanup
+                            if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
+                                this.gpuPhysics.deepCleanup(sessionDurationHours);
+                            }
+                        }
+
+                        // Renderer defragmentation for long-term stability
+                        const rendererAgeHours = (now - this.rendererSessionStartTime) / (1000 * 60 * 60);
+                        if (rendererAgeHours > this.rendererDefragIntervalHours) {
+                            this.logger.debug(`[RENDERER] Defragmenting renderer resources (${rendererAgeHours.toFixed(1)}h session)`);
+
+                            // Force renderer cleanup and recreation of instanced meshes
+                            if (this.renderer && this.renderer.defragment) {
+                                this.renderer.defragment();
+                            } else {
+                                // Fallback: clear agent meshes to force recreation
+                                if (this.renderer && this.renderer.agentMeshes) {
+                                    for (const [geneId, mesh] of this.renderer.agentMeshes.entries()) {
+                                        if (mesh.body) {
+                                            this.renderer.agentGroup.remove(mesh.body);
+                                            mesh.body.geometry.dispose();
+                                            mesh.body.material.dispose();
+                                        }
+                                        if (mesh.border) {
+                                            this.renderer.agentGroup.remove(mesh.border);
+                                            mesh.border.geometry.dispose();
+                                            mesh.border.material.dispose();
+                                        }
+                                    }
+                                    this.renderer.agentMeshes.clear();
+                                    this.logger.debug('[RENDERER] Cleared agent meshes for defragmentation');
+                                }
+                            }
+
+                            this.rendererLastDefragTime = now;
+                            this.rendererDefragIntervalHours = Math.min(this.rendererDefragIntervalHours + 1, 8); // Gradually increase interval
+                        }
+
+                        // Force garbage collection if available
+                        if (window.gc) {
+                            window.gc();
+                            this.logger.info('[PERF] Forced garbage collection');
+                        }
+                        this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
+                    }
+                    this.perfMonitor.endPhase('memory');
+
+            // Update camera
+            this.perfMonitor.startPhase('camera');
+            if (this.followBest) {
+                // Check if current bestAgent is visible and valid
+                let shouldFollow = false;
+                let targetAgent = null;
+
+                // Clear bestAgent if it's dead (prevent following ghosts)
+                if (this.bestAgent && this.bestAgent.isDead) {
+                    this.bestAgent = null;
+                }
+
+                // Double-check bestAgent is still alive and valid
+                if (this.bestAgent && !this.bestAgent.isDead &&
+                    typeof this.bestAgent.x === 'number' && typeof this.bestAgent.y === 'number' &&
+                    isFinite(this.bestAgent.x) && isFinite(this.bestAgent.y)) {
+
+                    // Check if bestAgent is actually visible on screen (frustum culling)
+                    this.renderer.updateFrustum();
+
+                    const tempVec = new THREE.Vector3();
+                    const testSphere = new THREE.Sphere(tempVec, 0);
+                    tempVec.set(this.bestAgent.x, -this.bestAgent.y, 0);
                     testSphere.center = tempVec;
-                    testSphere.radius = agent.size || 5;
+                    testSphere.radius = this.bestAgent.size || 5;
 
-                    if (!this.renderer.frustum.intersectsSphere(testSphere)) {
-                        continue; // Skip if not visible
-                    }
-
-                    const agentFitness = agent.fitness || 0;
-                    let agentPriority = 3; // Default: all agents
-
-                    // Priority 1: Qualified agents (.fit = true)
-                    if (agent.fit === true) {
-                        agentPriority = 1;
-                    }
-                    // Priority 2: Agents in validation tests
-                    else if (this.validationManager && this.validationManager.isInValidation(agent.geneId)) {
-                        agentPriority = 2;
-                    }
-
-                    // Select this agent if:
-                    // - Higher priority (lower number), OR
-                    // - Same priority but higher fitness
-                    const shouldSelect = (agentPriority < bestPriority) ||
-                        (agentPriority === bestPriority && agentFitness > bestFitness);
-
-                    if (shouldSelect) {
-                        bestPriority = agentPriority;
-                        bestFitness = agentFitness;
-                        bestVisibleAgent = agent;
+                    if (this.renderer.frustum.intersectsSphere(testSphere)) {
+                        shouldFollow = true;
+                        targetAgent = this.bestAgent;
                     }
                 }
 
-                if (bestVisibleAgent && !bestVisibleAgent.isDead) {
-                    shouldFollow = true;
-                    targetAgent = bestVisibleAgent;
-                    this.bestAgent = bestVisibleAgent; // Update bestAgent to visible living one
-                }
-            }
+                if (!shouldFollow && this.agents.length > 0) {
+                    // Find best living agent that is actually visible on screen
+                    const livingAgents = [];
+                    for (let i = 0; i < this.agents.length; i++) {
+                        const agent = this.agents[i];
+                        if (!agent.isDead && typeof agent.x === 'number' && typeof agent.y === 'number' &&
+                            isFinite(agent.x) && isFinite(agent.y)) {
+                            livingAgents.push(agent);
+                        }
+                    }
 
-            if (shouldFollow && targetAgent) {
-                // Final check before following - ensure target is still alive
-                if (!targetAgent.isDead) {
-                    this.camera.follow(targetAgent);
+                    // Check frustum for each agent (reuse cached frustum from renderer)
+
+                    const tempVec = new THREE.Vector3();
+                    const testSphere = new THREE.Sphere(tempVec, 0);
+
+                    // Find the best agent with prioritization:
+                    // 1. Qualified agents (.fit = true), by fitness
+                    // 2. Agents in validation tests, by fitness
+                    // 3. All agents, by fitness
+                    let bestVisibleAgent = null;
+                    let bestPriority = 3; // Lower number = higher priority
+                    let bestFitness = -Infinity;
+
+                    for (const agent of livingAgents) {
+                        tempVec.set(agent.x, -agent.y, 0);
+                        testSphere.center = tempVec;
+                        testSphere.radius = agent.size || 5;
+
+                        if (!this.renderer.frustum.intersectsSphere(testSphere)) {
+                            continue; // Skip if not visible
+                        }
+
+                        const agentFitness = agent.fitness || 0;
+                        let agentPriority = 3; // Default: all agents
+
+                        // Priority 1: Qualified agents (.fit = true)
+                        if (agent.fit === true) {
+                            agentPriority = 1;
+                        }
+                        // Priority 2: Agents in validation tests
+                        else if (this.validationManager && this.validationManager.isInValidation(agent.geneId)) {
+                            agentPriority = 2;
+                        }
+
+                        // Select this agent if:
+                        // - Higher priority (lower number), OR
+                        // - Same priority but higher fitness
+                        const shouldSelect = (agentPriority < bestPriority) ||
+                            (agentPriority === bestPriority && agentFitness > bestFitness);
+
+                        if (shouldSelect) {
+                            bestPriority = agentPriority;
+                            bestFitness = agentFitness;
+                            bestVisibleAgent = agent;
+                        }
+                    }
+
+                    if (bestVisibleAgent && !bestVisibleAgent.isDead) {
+                        shouldFollow = true;
+                        targetAgent = bestVisibleAgent;
+                        this.bestAgent = bestVisibleAgent; // Update bestAgent to visible living one
+                    }
+                }
+
+                if (shouldFollow && targetAgent) {
+                    // Final check before following - ensure target is still alive
+                    if (!targetAgent.isDead) {
+                        this.camera.follow(targetAgent);
+                    } else {
+                        // Target died between check and follow - center camera
+                        this.camera.targetX = this.worldWidth / 2;
+                        this.camera.targetY = this.worldHeight / 2;
+                    }
                 } else {
-                    // Target died between check and follow - center camera
+                    // No visible agents to follow, center camera
                     this.camera.targetX = this.worldWidth / 2;
                     this.camera.targetY = this.worldHeight / 2;
                 }
             } else {
-                // No visible agents to follow, center camera
-                this.camera.targetX = this.worldWidth / 2;
-                this.camera.targetY = this.worldHeight / 2;
-            }
-        } else {
-            // Not following - don't change camera target (allows manual control)
-            // But ensure target is valid
-            if (!isFinite(this.camera.targetX) || !isFinite(this.camera.targetY)) {
-                this.camera.targetX = this.worldWidth / 2;
-                this.camera.targetY = this.worldHeight / 2;
-            }
-        }
-        this.perfMonitor.endPhase('camera');
-
-        this.perfMonitor.timeSync('rendering.updates', () => {
-            this.camera.update();
-            // Update renderer data structures
-            const camPos = this.camera.getPosition();
-            this.renderer.updateCamera(camPos);
-            this.renderer.updateAgents(this.agents, this.frameCount);
-            this.renderer.updateFood(this.food);
-            this.renderer.updatePheromones(this.pheromones);
-            // Obstacles already updated after movement
-            this.renderer.updateObstacles(this.obstacles);
-        });
-
-        // Render the scene
-        this.perfMonitor.startPhase('rendering');
-
-        this.perfMonitor.timeSync('rendering.visualEffects', () => {
-            this.renderer.updateVisualEffects(this.frameCount);
-        });
-
-        this.perfMonitor.timeSync('rendering.rayRendering', () => {
-            this.renderer.updateRays(this.agents, this.frameCount);
-        });
-
-        this.perfMonitor.timeSync('rendering.render', () => {
-            this.renderer.render();
-        });
-
-        this.perfMonitor.endPhase('rendering');
-
-        this.perfMonitor.startPhase('spawn_agents');
-        // Process the agent spawn queue, enforcing the max population limit
-        if (this.agentSpawnQueue.length > 0) {
-            // Count only living agents for population limit
-            let livingAgents = 0;
-            for (let i = 0; i < this.agents.length; i++) {
-                if (!this.agents[i].isDead) livingAgents++;
-            }
-            const availableSlots = this.maxAgents - livingAgents;
-            if (availableSlots > 0) {
-                const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
-                this.agents.push(...newAgents);
-                this.totalAgentsSpawned += newAgents.length; // Track total agents spawned in this run
-            }
-
-            if (this.agentSpawnQueue.length > 0) {
-                this.logger.log(`[LIFECYCLE] Population at limit.${this.agentSpawnQueue.length} offspring were stillborn.`);
-            }
-
-            this.agentSpawnQueue.length = 0; // Clear any remaining (stillborn) agents
-        }
-
-        this.perfMonitor.endPhase('spawn_agents');
-
-        // Performance degradation detection and recovery
-        const sessionTimeMs = now - this.startTime;
-        this.perfMonitor.establishBaseline(sessionTimeMs);
-
-        if (this.perfMonitor.checkPerformanceDegradation(sessionTimeMs)) {
-            // Trigger performance recovery
-            this.logger.warn('[PERF-RECOVERY] Triggering performance recovery due to degradation');
-
-            // Force garbage collection
-            if (window.gc) {
-                window.gc();
-                this.logger.info('[PERF-RECOVERY] Forced garbage collection');
-            }
-
-            // Clear GPU caches aggressively
-            if (this.gpuCompute && this.gpuCompute.clearCache) {
-                this.gpuCompute.clearCache();
-                this.logger.info('[PERF-RECOVERY] Cleared GPU compute cache');
-            }
-            if (this.gpuPhysics && this.gpuPhysics.clearCache) {
-                this.gpuPhysics.clearCache();
-                this.logger.info('[PERF-RECOVERY] Cleared GPU physics cache');
-            }
-
-            // Defragment renderer
-            if (this.renderer && this.renderer.defragment) {
-                this.renderer.defragment();
-                this.logger.info('[PERF-RECOVERY] Defragmented renderer resources');
-            }
-
-            // Reset performance baseline to current state
-            this.perfMonitor.baselineEstablished = false;
-            this.logger.info('[PERF-RECOVERY] Reset performance baseline for re-establishment');
-        }
-
-        // End frame timing and log performance report every 5 seconds
-        this.perfMonitor.endFrame();
-        if (this.frameCount % (FPS_TARGET * 5) === 0) {
-            this.perfMonitor.timeSync('logging', () => {
-                this.perfMonitor.logReport();
-
-                // Also log health status
-                const health = this.perfMonitor.getHealthStatus();
-                if (health.status !== 'warming_up') {
-                    this.logger.info(`[PERF-HEALTH] Status: ${health.status}, degradation: ${health.degradationRatio.toFixed(2)}x`);
+                // Not following - don't change camera target (allows manual control)
+                // But ensure target is valid
+                if (!isFinite(this.camera.targetX) || !isFinite(this.camera.targetY)) {
+                    this.camera.targetX = this.worldWidth / 2;
+                    this.camera.targetY = this.worldHeight / 2;
                 }
+            }
+            this.perfMonitor.endPhase('camera');
+
+            this.perfMonitor.timeSync('rendering.updates', () => {
+                this.camera.update();
+                // Update renderer data structures
+                const camPos = this.camera.getPosition();
+                this.renderer.updateCamera(camPos);
+                this.renderer.updateAgents(this.agents, this.frameCount);
+                this.renderer.updateFood(this.food);
+                this.renderer.updatePheromones(this.pheromones);
+                // Obstacles already updated after movement
+                this.renderer.updateObstacles(this.obstacles);
             });
+
+            // Render the scene
+            this.perfMonitor.startPhase('rendering');
+
+            this.perfMonitor.timeSync('rendering.visualEffects', () => {
+                this.renderer.updateVisualEffects(this.frameCount);
+            });
+
+            this.perfMonitor.timeSync('rendering.rayRendering', () => {
+                this.renderer.updateRays(this.agents, this.frameCount);
+            });
+
+            this.perfMonitor.timeSync('rendering.render', () => {
+                this.renderer.render();
+            });
+
+            this.perfMonitor.endPhase('rendering');
+
+            this.perfMonitor.startPhase('spawn_agents');
+            // Process the agent spawn queue, enforcing the max population limit
+            if (this.agentSpawnQueue.length > 0) {
+                // Count only living agents for population limit
+                let livingAgents = 0;
+                for (let i = 0; i < this.agents.length; i++) {
+                    if (!this.agents[i].isDead) livingAgents++;
+                }
+                const availableSlots = this.maxAgents - livingAgents;
+                if (availableSlots > 0) {
+                    const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
+                    this.agents.push(...newAgents);
+                    this.totalAgentsSpawned += newAgents.length; // Track total agents spawned in this run
+                }
+
+                if (this.agentSpawnQueue.length > 0) {
+                    this.logger.log(`[LIFECYCLE] Population at limit.${this.agentSpawnQueue.length} offspring were stillborn.`);
+                }
+
+                this.agentSpawnQueue.length = 0; // Clear any remaining (stillborn) agents
+            }
+
+            this.perfMonitor.endPhase('spawn_agents');
+
+            // Performance degradation detection and recovery
+            const sessionTimeMs = now - this.startTime;
+            this.perfMonitor.establishBaseline(sessionTimeMs);
+
+            if (this.perfMonitor.checkPerformanceDegradation(sessionTimeMs)) {
+                // Trigger performance recovery
+                this.logger.warn('[PERF-RECOVERY] Triggering performance recovery due to degradation');
+
+                // Force garbage collection
+                if (window.gc) {
+                    window.gc();
+                    this.logger.info('[PERF-RECOVERY] Forced garbage collection');
+                }
+
+                // Clear GPU caches aggressively
+                if (this.gpuCompute && this.gpuCompute.clearCache) {
+                    this.gpuCompute.clearCache();
+                    this.logger.info('[PERF-RECOVERY] Cleared GPU compute cache');
+                }
+                if (this.gpuPhysics && this.gpuPhysics.clearCache) {
+                    this.gpuPhysics.clearCache();
+                    this.logger.info('[PERF-RECOVERY] Cleared GPU physics cache');
+                }
+
+                // Defragment renderer
+                if (this.renderer && this.renderer.defragment) {
+                    this.renderer.defragment();
+                    this.logger.info('[PERF-RECOVERY] Defragmented renderer resources');
+                }
+
+                // Reset performance baseline to current state
+                this.perfMonitor.baselineEstablished = false;
+                this.logger.info('[PERF-RECOVERY] Reset performance baseline for re-establishment');
+            }
+
+            // End frame timing and log performance report every 5 seconds
+            this.perfMonitor.endFrame();
+            if (this.frameCount % (FPS_TARGET * 5) === 0) {
+                this.perfMonitor.timeSync('logging', () => {
+                    this.perfMonitor.logReport();
+
+                    // Also log health status
+                    const health = this.perfMonitor.getHealthStatus();
+                    if (health.status !== 'warming_up') {
+                        this.logger.info(`[PERF-HEALTH] Status: ${health.status}, degradation: ${health.degradationRatio.toFixed(2)}x`);
+                    }
+                });
+            }
         }
 
         this.animationFrameId = requestAnimationFrame(() => {
