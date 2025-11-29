@@ -228,6 +228,12 @@ export class Agent {
     think(inputs) {
         // CPU path - compute neural network forward pass
 
+        // Safety check: if NN was cleaned up, mark agent as dead and return
+        if (!this.nn) {
+            this.isDead = true;
+            return;
+        }
+
         // Validate inputs
         if (!Array.isArray(inputs) || inputs.length === 0) {
             console.error(`[ERROR] Invalid neural network inputs for agent ${this.geneId}:`, inputs);
@@ -350,6 +356,12 @@ export class Agent {
 
     update(worldWidth, worldHeight, obstacles, quadtree, simulation) {
         if (this.isDead) return;
+
+        // Safety check: if neural network was cleaned up, mark as dead and return
+        if (!this.nn) {
+            this.isDead = true;
+            return;
+        }
 
         // Check if GPU has already processed this agent's neural network
         if (this.lastOutput && this.newHiddenState) {
@@ -1233,6 +1245,12 @@ export class Agent {
 
         // Update genealogy: track parent-child relationships for kin recognition
         this.genealogy.parent2Id = mate.genealogy.id;
+
+        // CRITICAL: Cap offspring tracking to prevent unbounded growth
+        // This prevents memory leaks from genealogy arrays growing indefinitely
+        if (mate.genealogy.offspring.length >= 100) {
+            mate.genealogy.offspring.shift(); // Remove oldest offspring
+        }
         mate.genealogy.offspring.push(this.genealogy.id);
 
         mate.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
@@ -1485,9 +1503,9 @@ export class Agent {
 
         // Sibling relationship (same parents)
         if ((this.genealogy.parent1Id === otherAgent.genealogy.parent1Id ||
-             this.genealogy.parent1Id === otherAgent.genealogy.parent2Id) &&
+            this.genealogy.parent1Id === otherAgent.genealogy.parent2Id) &&
             (this.genealogy.parent2Id === otherAgent.genealogy.parent1Id ||
-             this.genealogy.parent2Id === otherAgent.genealogy.parent2Id)) {
+                this.genealogy.parent2Id === otherAgent.genealogy.parent2Id)) {
             return KIN_RELATEDNESS_SIBLINGS;
         }
 
@@ -1548,6 +1566,12 @@ export class Agent {
         if (this.rendererMesh) {
             this.rendererMesh = null;
         }
+
+        // CRITICAL: Break circular references to allow garbage collection
+        // This is essential for preventing memory leaks during long runs
+        this.simulation = null;
+        this.logger = null;
+        this.nn = null; // Neural network holds weight matrices in memory
     }
 }
 

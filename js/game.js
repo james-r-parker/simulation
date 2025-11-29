@@ -1394,6 +1394,10 @@ export class Simulation {
                         // NUTRIENT CYCLING: Create fertile zone from decomposed agent
                         this.createFertileZone(agent);
 
+                        // CRITICAL: Call cleanup to break circular references before removal
+                        // This allows the agent to be garbage collected immediately
+                        agent.cleanup();
+
                         // Remove ALL dead agents from active array to prevent memory leaks
                         this.agents.splice(j, 1);
                         j--; // Adjust index since we removed an element
@@ -1543,7 +1547,7 @@ export class Simulation {
                             this.gpuCompute.deepCleanup(sessionDurationHours);
                         }
 
-                            // Enhanced GPU Physics cleanup
+                        // Enhanced GPU Physics cleanup
                         if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
                             this.gpuPhysics.deepCleanup(sessionDurationHours);
                         }
