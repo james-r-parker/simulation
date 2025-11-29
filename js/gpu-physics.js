@@ -2,7 +2,7 @@
 // GPU-accelerated ray tracing + physics simulation
 // Massive performance boost for large agent counts
 
-import { TWO_PI, DAMPENING_FACTOR, MAX_VELOCITY, WORLD_WIDTH, WORLD_HEIGHT, MAX_THRUST, MAX_ROTATION } from './constants.js';
+import { TWO_PI, DAMPENING_FACTOR, MAX_VELOCITY, WORLD_WIDTH, WORLD_HEIGHT, MAX_THRUST, MAX_ROTATION, OBSTACLE_SEGMENTS } from './constants.js';
 
 export class GPUPhysics {
     constructor(logger) {
@@ -210,31 +210,61 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         if (t > 0.0 && t < closest_dist) { closest_dist = t; hit_type = 1.0; }
     }
     
-    // Entity intersection - optimized with early bounds checking
-    for (var i = 0u; i < u32(uniforms.numEntities); i = i + 1u) {
-        let entity = entities[i];
-        // Skip self: agents come after food in the entities array
-        let my_entity_index = agent_index + u32(uniforms.numFood);
-        if (entity.entityType == 1.0 && i == my_entity_index) { continue; }
-
-        // Early bounds check - skip entities that are too far to intersect
-        let dx = entity.x - ray_origin.x;
-        let dy = entity.y - ray_origin.y;
-        let dist_sq = dx * dx + dy * dy;
-        let max_reach = closest_dist + entity.size;
-        if (dist_sq > max_reach * max_reach) { continue; }
-
-        let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
-        if (dist > 0.0 && dist < closest_dist) {
-            closest_dist = dist;
-            // Map entityType to hitType: food (entityType 2) → hitType 2, agent (entityType 1) → hitType 3
-            if (entity.entityType == 2.0) {
-                hit_type = 2.0; // Food
-            } else if (entity.entityType == 1.0) {
-                hit_type = 3.0; // Agent
+    // SPATIAL PARTITIONING: Entities are sorted by X coordinate
+    // Binary search to find X range, then only check entities in that range
+    let num_entities = u32(uniforms.numEntities);
+    
+    if (num_entities > 0u) {
+        // Calculate X bounds for this ray
+        let ray_max_x = ray_origin.x + ray_dir.x * closest_dist;
+        let ray_min_x = min(ray_origin.x, ray_max_x) - closest_dist; // Extra margin for entity size
+        let ray_max_x_bound = max(ray_origin.x, ray_max_x) + closest_dist;
+        
+        // Binary search for start index (first entity with X >= ray_min_x)
+        var left = 0u;
+        var right = num_entities;
+        var start_idx = 0u;
+        
+        while (left < right) {
+            let mid = (left + right) / 2u;
+            if (entities[mid].x < ray_min_x) {
+                left = mid + 1u;
+            } else {
+                right = mid;
             }
-            entity_id = f32(i);
-            entity_size = entity.size; // Store the size of hit entity
+        }
+        start_idx = left;
+        
+        // Iterate only entities in X range
+        for (var i = start_idx; i < num_entities; i = i + 1u) {
+            let entity = entities[i];
+            
+            // Early exit: entities are sorted by X, so stop when X exceeds ray bounds
+            if (entity.x > ray_max_x_bound) { break; }
+            
+            // Skip self: agents come after food in the entities array
+            let my_entity_index = agent_index + u32(uniforms.numFood);
+            if (entity.entityType == 1.0 && i == my_entity_index) { continue; }
+            
+            // Early bounds check - skip entities that are too far to intersect
+            let dx = entity.x - ray_origin.x;
+            let dy = entity.y - ray_origin.y;
+            let dist_sq = dx * dx + dy * dy;
+            let max_reach = closest_dist + entity.size;
+            if (dist_sq > max_reach * max_reach) { continue; }
+            
+            let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
+            if (dist > 0.0 && dist < closest_dist) {
+                closest_dist = dist;
+                // Map entityType to hitType: food (entityType 2) → hitType 2, agent (entityType 1) → hitType 3
+                if (entity.entityType == 2.0) {
+                    hit_type = 2.0; // Food
+                } else if (entity.entityType == 1.0) {
+                    hit_type = 3.0; // Agent
+                }
+                entity_id = f32(i);
+                entity_size = entity.size; // Store the size of hit entity
+            }
         }
     }
 
@@ -357,6 +387,11 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 size: maxRays * 4 * Float32Array.BYTES_PER_ELEMENT,
                 usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
             }),
+            // PERFORMANCE: Persistent read buffer to avoid creating/destroying every frame
+            readBuffer: this.device.createBuffer({
+                size: maxRays * 4 * Float32Array.BYTES_PER_ELEMENT,
+                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+            }),
             maxAgents, maxRays, maxEntities, maxObstacles
         };
 
@@ -373,18 +408,27 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
 
     async batchRayTracing(agents, entities, obstacles, numRaysPerAgent, worldWidth = 10000, worldHeight = 10000) {
+        if (this.isRayTracingBusy) {
+            // this.logger.warn('[GPU] Ray tracing skipped - previous frame still processing');
+            return null;
+        }
+
         if (!this.device || !this.initialized) {
             this.logger.warn('[GPU] Ray tracing called before device ready');
             return null;
         }
 
+        this.isRayTracingBusy = true;
         const numAgents = agents.length;
-        if (numAgents === 0) return null;
+        if (numAgents === 0) {
+            this.isRayTracingBusy = false;
+            return null;
+        }
 
         const totalRays = numAgents * numRaysPerAgent;
         const numEntities = entities.length;
         // Each circular obstacle becomes 8 line segments
-        const segmentsPerObstacle = 8;
+        const segmentsPerObstacle = OBSTACLE_SEGMENTS;
         const numObstacleSegments = obstacles.length * segmentsPerObstacle;
 
         if (!this.buffers || !this.buffers.agent || numAgents > this.buffers.maxAgents || totalRays > this.buffers.maxRays ||
@@ -417,6 +461,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                     });
                 } catch (error) {
                     this.logger.error('Failed to create GPU buffers dynamically:', error);
+                    this.isRayTracingBusy = false;
                     return null;
                 }
             } else {
@@ -426,6 +471,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                     numEntities, maxEntities: this.buffers?.maxEntities,
                     numObstacleSegments, maxObstacles: this.buffers?.maxObstacles
                 });
+                this.isRayTracingBusy = false;
                 return null;
             }
         }
@@ -510,6 +556,11 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 numAgents, numRaysPerAgent, numEntities, numObstacleSegments, foodCount, worldWidth, worldHeight
             ]));
 
+            // PERFORMANCE LOGGING: Track ray tracing workload
+            const totalRaysToTrace = numAgents * numRaysPerAgent;
+            const totalIntersectionTests = totalRaysToTrace * numEntities;
+            const rayTracingStartTime = performance.now();
+
             const commandEncoder = this.device.createCommandEncoder();
             const pass = commandEncoder.beginComputePass();
             pass.setPipeline(this.rayTracingPipeline);
@@ -520,10 +571,8 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             pass.dispatchWorkgroups(Math.ceil(totalRays / workgroupSize));
             pass.end();
 
-            const gpuReadBuffer = this.device.createBuffer({
-                size: this.buffers.result.size,
-                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-            });
+            // PERFORMANCE: Reuse persistent read buffer instead of creating new one
+            const gpuReadBuffer = this.buffers.readBuffer;
 
             commandEncoder.copyBufferToBuffer(this.buffers.result, 0, gpuReadBuffer, 0, this.buffers.result.size);
 
@@ -571,12 +620,25 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             await gpuReadBuffer.mapAsync(GPUMapMode.READ);
             const mappedRange = gpuReadBuffer.getMappedRange();
             const resultData = new Float32Array(mappedRange.slice(0)); // Create a copy
-            gpuReadBuffer.unmap(); // Now we can unmap immediately
-            gpuReadBuffer.destroy(); // CRITICAL FIX: Destroy buffer to prevent memory leak
+            gpuReadBuffer.unmap();
+
+            // PERFORMANCE LOGGING: Calculate and log ray tracing metrics
+            const rayTracingEndTime = performance.now();
+            const rayTracingDuration = rayTracingEndTime - rayTracingStartTime;
+            const avgTestsPerRay = numEntities;
+            const testsPerMs = totalIntersectionTests / rayTracingDuration;
+
+            // Log every 1000 frames to avoid spam
+            if (Math.random() < 0.001) { // ~0.1% of frames
+                this.logger.info(`[RAY-TRACE-PERF] ${numAgents} agents × ${numRaysPerAgent} rays × ${numEntities} entities = ${totalIntersectionTests.toLocaleString()} tests in ${rayTracingDuration.toFixed(2)}ms (${testsPerMs.toLocaleString()} tests/ms, ${avgTestsPerRay} entities/ray)`);
+            }
+
             return resultData;
         } catch (e) {
             this.logger.error('[GPU] Ray tracing error:', e);
             return null;
+        } finally {
+            this.isRayTracingBusy = false;
         }
     }
 
