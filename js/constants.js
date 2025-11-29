@@ -165,7 +165,8 @@ export const OBSTACLE_MIN_DISTANCE = 350; // Minimum distance obstacles must mai
 export const OBSTACLE_SPAWN_MARGIN = 250; // Distance from world edges where obstacles cannot spawn
 export const OBSTACLE_INFLUENCE_RADIUS = 600; // Distance at which obstacles affect agent behavior
 export const OBSTACLE_MAX_SPEED = 0.3; // Maximum movement speed of obstacles
-export const GPU_MAX_OBSTACLES = 600; // Maximum obstacles GPU can handle (buffer size, not actual count)
+export const OBSTACLE_SEGMENTS = 8; // Number of segments in obstacle path
+export const GPU_MAX_OBSTACLES = OBSTACLE_COUNT * OBSTACLE_SEGMENTS; // Maximum obstacles GPU can handle (buffer size, not actual count)
 
 // Interaction penalties
 export const OBSTACLE_COLLISION_PENALTY = 50; // Energy damage taken when colliding with obstacles
@@ -264,10 +265,10 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 20000; // Minimum fitness score required to save agent genes
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 1; // Minimum fitness score required to save agent genes
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3000; // Minimum lifespan in frames to qualify
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1; // Minimum food items consumed to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 1; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (50)
 export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.0; // Minimum world exploration percentage required
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors

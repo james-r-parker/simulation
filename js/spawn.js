@@ -351,7 +351,14 @@ export function spawnAgent(simulation, options = {}) {
 }
 
 export function spawnFood(simulation) {
-    if (simulation.food.length >= FOOD_SPAWN_CAP) return;
+    // HARD CAP: Count only LIVING food to enforce the cap
+    let livingFoodCount = 0;
+    for (let i = 0; i < simulation.food.length; i++) {
+        if (!simulation.food[i].isDead) livingFoodCount++;
+    }
+
+    // CRITICAL: Never exceed FOOD_SPAWN_CAP
+    if (livingFoodCount >= FOOD_SPAWN_CAP) return;
 
     // PERFORMANCE: Manual counting instead of filter() to avoid array allocation
     let livingAgentsCount = 0;
@@ -485,7 +492,9 @@ export function spawnFood(simulation) {
         }
     }
 
-    simulation.food.push(new Food(x, y));
+    if (simulation.food.length < FOOD_SPAWN_CAP) {
+        simulation.food.push(new Food(x, y));
+    }
 }
 
 export function spawnPheromone(simulation, x, y, type) {
@@ -648,63 +657,63 @@ export function repopulate(simulation) {
         }
     }
 
-        const roll = Math.random();
+    const roll = Math.random();
 
-        // 25% chance for Elitism (from successful gene pool)
-        if (roll < 0.25) {
-            const gene = simulation.db.getRandomAgent();
-            if (gene) {
-                spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4 });
-            } else {
-                spawnAgent(simulation, { gene: null });
-            }
-        }
-        // 25% chance for Sexual Selection (crossover from gene pool)
-        else if (roll < 0.5) {
-            const matingPair = simulation.db.getMatingPair();
-            if (matingPair) {
-                const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights);
-                // CRITICAL: Don't pass neural network structure params - let agent use config defaults
-                const childGene = {
-                    weights: childWeights,
-                    specializationType: matingPair.parent1.specializationType,
-                    geneId: matingPair.parent1.geneId,
-                    // Don't pass numSensorRays, hiddenSize, etc - they should come from config
-                };
-                spawnAgent(simulation, { gene: childGene });
-            } else {
-                // Fallback to random if selection fails
-                spawnAgent(simulation, { gene: null });
-            }
-        }
-        // 25% chance for Random Generation (fresh genetic material)
-        else if (roll < 0.75) {
+    // 25% chance for Elitism (from successful gene pool)
+    if (roll < 0.25) {
+        const gene = simulation.db.getRandomAgent();
+        if (gene) {
+            spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4 });
+        } else {
             spawnAgent(simulation, { gene: null });
         }
-        // 25% chance for Novelty Spawning (explore specializations)
-        else {
-            const parent = simulation.db.getRandomAgent();
-            if (parent) {
-                const allTypes = Object.values(SPECIALIZATION_TYPES);
-                const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
-
-                // CRITICAL: If specialization changes, don't pass parent weights or structure
-                const usesParentGene = novelSpecialization === parent.specializationType;
-                const childGene = {
-                    weights: usesParentGene ? parent.weights : null,
-                    specializationType: novelSpecialization,
-                    geneId: usesParentGene ? parent.geneId : null,
-                    // Don't pass numSensorRays, hiddenSize etc - incompatible if spec changed
-                };
-                spawnAgent(simulation, {
-                    gene: childGene,
-                    mutationRate: usesParentGene ? simulation.mutationRate / 2 : null,
-                });
-            }
-            else {
-                spawnAgent(simulation, { gene: null });
-            }
+    }
+    // 25% chance for Sexual Selection (crossover from gene pool)
+    else if (roll < 0.5) {
+        const matingPair = simulation.db.getMatingPair();
+        if (matingPair) {
+            const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights);
+            // CRITICAL: Don't pass neural network structure params - let agent use config defaults
+            const childGene = {
+                weights: childWeights,
+                specializationType: matingPair.parent1.specializationType,
+                geneId: matingPair.parent1.geneId,
+                // Don't pass numSensorRays, hiddenSize, etc - they should come from config
+            };
+            spawnAgent(simulation, { gene: childGene });
+        } else {
+            // Fallback to random if selection fails
+            spawnAgent(simulation, { gene: null });
         }
+    }
+    // 25% chance for Random Generation (fresh genetic material)
+    else if (roll < 0.75) {
+        spawnAgent(simulation, { gene: null });
+    }
+    // 25% chance for Novelty Spawning (explore specializations)
+    else {
+        const parent = simulation.db.getRandomAgent();
+        if (parent) {
+            const allTypes = Object.values(SPECIALIZATION_TYPES);
+            const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
+
+            // CRITICAL: If specialization changes, don't pass parent weights or structure
+            const usesParentGene = novelSpecialization === parent.specializationType;
+            const childGene = {
+                weights: usesParentGene ? parent.weights : null,
+                specializationType: novelSpecialization,
+                geneId: usesParentGene ? parent.geneId : null,
+                // Don't pass numSensorRays, hiddenSize etc - incompatible if spec changed
+            };
+            spawnAgent(simulation, {
+                gene: childGene,
+                mutationRate: usesParentGene ? simulation.mutationRate / 2 : null,
+            });
+        }
+        else {
+            spawnAgent(simulation, { gene: null });
+        }
+    }
 
     simulation.respawnTimer = 0;
 }

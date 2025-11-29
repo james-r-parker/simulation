@@ -3,38 +3,30 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import {
-    WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
-    MAX_AGENTS_TO_SAVE_PER_GENE_POOL,
+    WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
-    SPECIALIZATION_TYPES, // Added for novelty spawning
-    RESPAWN_DELAY_FRAMES, MAX_ENERGY,
-    MIN_FITNESS_TO_SAVE_GENE_POOL, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY,
-    VALIDATION_REQUIRED_RUNS, MAX_VALIDATION_QUEUE_SIZE,
-    PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS, TWO_PI,
-    MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES, MIN_ENERGY_TO_REPRODUCE,
+    SPECIALIZATION_TYPES,
+    MAX_ENERGY, TWO_PI,
+    MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES,
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
     FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH,
-    TEMPERATURE_MIN, TEMPERATURE_MAX,
     SEASON_SPRING_TEMP_MODIFIER, SEASON_SUMMER_TEMP_MODIFIER, SEASON_FALL_TEMP_MODIFIER, SEASON_WINTER_TEMP_MODIFIER,
     SEASON_SPRING_REPRODUCTION_BONUS, SEASON_SUMMER_REPRODUCTION_BONUS, SEASON_FALL_REPRODUCTION_BONUS, SEASON_WINTER_REPRODUCTION_BONUS,
     SEASON_SUMMER_ENERGY_DRAIN, SEASON_FALL_ENERGY_DRAIN, SEASON_WINTER_ENERGY_DRAIN,
-    SEASON_SPRING_MUTATION_MULTIPLIER, SEASON_SUMMER_MUTATION_MULTIPLIER, SEASON_FALL_MUTATION_MULTIPLIER, SEASON_WINTER_MUTATION_MULTIPLIER,
+    SEASON_SPRING_MUTATION_MULTIPLIER, SEASON_SUMMER_MUTATION_MULTIPLIER, SEASON_WINTER_MUTATION_MULTIPLIER,
     SEASON_SPRING_FOOD_SCARCITY, SEASON_SUMMER_FOOD_SCARCITY, SEASON_FALL_FOOD_SCARCITY, SEASON_WINTER_FOOD_SCARCITY,
     FERTILE_ZONE_MAX_COUNT, FERTILE_ZONE_FERTILITY_FACTOR, FERTILE_ZONE_MAX_FERTILITY, FERTILE_ZONE_DECAY_RATE,
     FERTILE_ZONE_MIN_FERTILITY, FERTILE_ZONE_SIZE_FACTOR, FERTILE_ZONE_MIN_RADIUS,
-    GPU_INIT_TIMEOUT_MS
+    GPU_INIT_TIMEOUT_MS, AGENT_CONFIGS, OBSTACLE_COUNT, GPU_MAX_OBSTACLES
 } from './constants.js';
-import { Agent } from './agent.js';
 import { Food } from './food.js';
-import { PheromonePuff } from './pheromone.js';
-import { Quadtree, Rectangle, Point } from './quadtree.js';
+import { Quadtree, Rectangle } from './quadtree.js';
 import { Camera } from './camera.js';
 import { WebGLRenderer } from './renderer.js';
 import { GenePoolDatabase } from './database.js';
 import { GPUCompute } from './gpu-compute.js';
 import { GPUPhysics } from './gpu-physics.js';
-import { distance, randomGaussian } from './utils.js';
 import { Logger, LOG_LEVELS } from './logger.js';
 import { PointPool } from './point-pool.js';
 import { toast } from './toast.js';
@@ -53,7 +45,7 @@ import {
     updateObstacles
 } from './spawn.js';
 import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
-import { updateFitnessTracking, updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
+import { updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
 import { PerformanceMonitor } from './performance-monitor.js';
 
@@ -559,19 +551,13 @@ export class Simulation {
 
         updateLoadingScreen('Initializing GPU Physics...', 70);
         try {
-            const maxAgentsSlider = document.getElementById('maxAgents');
-            const maxAgentsFromSlider = maxAgentsSlider ? parseInt(maxAgentsSlider.max, 10) : 100;
-            const bufferSafetyMargin = 50; // Increased safety margin for population growth
-
-            const MAX_RAYS_PER_AGENT = 50; // This must match the hardcoded value in the simulation
-            const MAX_ENTITIES = (maxAgentsFromSlider + bufferSafetyMargin) * 2 + FOOD_SPAWN_CAP + 200; // Doubled agents + Food + larger safety buffer
-            const MAX_OBSTACLES = 600; // Increased for more complex environments
+            const MAX_ENTITIES = MAX_AGENTS_LIMIT + FOOD_SPAWN_CAP + OBSTACLE_COUNT;
 
             const gpuConfig = {
-                maxAgents: (maxAgentsFromSlider + bufferSafetyMargin) * 2, // Double the agent buffer size
-                maxRaysPerAgent: MAX_RAYS_PER_AGENT,
+                maxAgents: MAX_AGENTS_LIMIT,
+                maxRaysPerAgent: AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays,
                 maxEntities: MAX_ENTITIES,
-                maxObstacles: MAX_OBSTACLES,
+                maxObstacles: GPU_MAX_OBSTACLES,
             };
             this.logger.info('[GPU-INIT] Initializing GPU Physics with config:', gpuConfig);
 
@@ -672,11 +658,6 @@ export class Simulation {
             this.logger.warn('[AGENT-SELECT] No closest agent found despite living agents existing');
         }
     }
-
-
-
-
-
 
     async requestWakeLock() {
         if (!('wakeLock' in navigator)) {
@@ -791,17 +772,12 @@ export class Simulation {
         const initialFoodCount = Math.min(FOOD_SPAWN_CAP, 400); // Max 400 initial food (doubled for learning)
 
         for (let i = 0; i < initialFoodCount; i++) {
+            if (this.food.length >= FOOD_SPAWN_CAP) break;
             const pos = randomSpawnAvoidCluster(this);
             const isHighValue = Math.random() < HIGH_VALUE_FOOD_CHANCE;
             this.food.push(new Food(pos.x, pos.y, isHighValue));
         }
     }
-
-
-
-
-
-
 
     applyEnvironmentEvents() {
         this.seasonTimer++;
@@ -915,12 +891,6 @@ export class Simulation {
             }
         }
     }
-
-
-
-
-
-
 
     async gameLoop() {
         // Guard against running game loop after destruction
@@ -1134,8 +1104,13 @@ export class Simulation {
                     for (let j = 0; j < activeAgents.length; j++) {
                         this.allEntities.push(activeAgents[j]);
                     }
+
+                    // SPATIAL PARTITIONING: Sort entities by X for GPU binary search
+                    this.allEntities.sort((a, b) => a.x - b.x);
+
                     const allEntities = this.allEntities;
-                    const maxRaysPerAgent = 100; // Increased from 50 for better batching efficiency
+
+                    const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
 
                     // CRITICAL: Ray tracing must complete BEFORE neural network processing
                     // because the neural network needs the converted ray results as inputs
@@ -1178,6 +1153,7 @@ export class Simulation {
                     });
 
                 } catch (error) {
+                    debugger;
                     if (this.frameCount < 10) {
                         this.logger.warn('Parallel GPU operations failed:', error);
                     }
@@ -1186,6 +1162,7 @@ export class Simulation {
 
             // CPU perception fallback (ONLY if GPU ray tracing failed)
             if (!gpuRayTracingSucceeded && activeAgents.length > 0) {
+                debugger
                 // Debug: Log why we're falling back to CPU
                 this.logger.warn(`[CPU-FALLBACK] Frame ${this.frameCount}: GPU ray tracing failed, using CPU for ${activeAgents.length} agents`);
 

@@ -518,9 +518,10 @@ export class WebGLRenderer {
                 // Remove old meshes
                 this.agentGroup.remove(mesh.body);
                 this.agentGroup.remove(mesh.border);
-                mesh.body.geometry.dispose();
+                // CRITICAL FIX: DO NOT dispose geometry as it is shared
+                // mesh.body.geometry.dispose(); 
                 mesh.body.material.dispose();
-                mesh.border.geometry.dispose();
+                // mesh.border.geometry.dispose();
                 mesh.border.material.dispose();
 
                 // Create new larger meshes
@@ -1098,12 +1099,14 @@ export class WebGLRenderer {
             for (const [geneId, mesh] of this.agentMeshes.entries()) {
                 if (mesh.body) {
                     this.agentGroup.remove(mesh.body);
-                    mesh.body.geometry.dispose();
+                    // CRITICAL FIX: DO NOT dispose geometry as it is shared
+                    // mesh.body.geometry.dispose();
                     mesh.body.material.dispose();
                 }
                 if (mesh.border) {
                     this.agentGroup.remove(mesh.border);
-                    mesh.border.geometry.dispose();
+                    // CRITICAL FIX: DO NOT dispose geometry as it is shared
+                    // mesh.border.geometry.dispose();
                     mesh.border.material.dispose();
                 }
             }

@@ -148,10 +148,6 @@ export class PerformanceMonitor {
                 subPhase,
                 pendingSince: now
             });
-            // Only log cross-frame phase completion occasionally to reduce spam
-            if (Math.random() < 0.01) { // Log ~1% of the time
-                this.logger.debug(`[PERF] Phase '${phaseName}' completed in different frame, marked as pending`);
-            }
             return;
         }
 
@@ -653,7 +649,17 @@ export class PerformanceMonitor {
             const timeSinceLastRecovery = sessionTimeMs - this.lastRecoveryAttempt;
 
             if (timeSinceLastRecovery > this.recoveryCooldownMs) {
+                // Log detailed breakdown to help identify the bottleneck
+                const breakdown = this.stats.breakdown || {};
+                const physicsTime = breakdown.physics?.total || 0;
+                const renderingTime = breakdown.rendering?.total || 0;
+                const perceptionTime = breakdown.perception?.total || 0;
+                const cleanupTime = breakdown.cleanup || 0;
+                const quadtreeTime = breakdown.quadtree || 0;
+
                 this.logger.warn(`[PERF-DEGRADATION] Performance degraded ${degradationRatio.toFixed(2)}x (baseline: ${this.baselineFrameTime.toFixed(2)}ms, current: ${currentFrameTime.toFixed(2)}ms)`);
+                this.logger.warn(`[PERF-BREAKDOWN] Physics: ${physicsTime.toFixed(2)}ms, Rendering: ${renderingTime.toFixed(2)}ms, Perception: ${perceptionTime.toFixed(2)}ms, Cleanup: ${cleanupTime.toFixed(2)}ms, Quadtree: ${quadtreeTime.toFixed(2)}ms`);
+
                 this.lastRecoveryAttempt = sessionTimeMs;
                 return true; // Trigger recovery
             }
