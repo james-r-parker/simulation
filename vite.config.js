@@ -18,7 +18,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Use relative paths for assets
-        assetFileNames: 'assets/[name].[ext]'
+        assetFileNames: 'assets/[name].[ext]',
+        // Split vendor libraries into separate chunks for better caching
+        manualChunks: {
+          vendor: ['three']
+        }
       }
     },
     // Define production environment variables

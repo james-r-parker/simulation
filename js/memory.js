@@ -344,11 +344,8 @@ export function periodicMemoryCleanup(simulation) {
 
     for (const agent of simulation.agents) {
         if (agent && !agent.isDead) {
-            // Clear and reinitialize memory arrays to prevent memory leaks
-            agent.cleanup();
-            agentsCleaned++;
-
-            // Force clear any accumulated arrays (more aggressive limits)
+            // Only clear accumulated arrays that cause memory issues
+            // DO NOT call agent.cleanup() on living agents as it breaks their neural network state!
             let arraysCleared = 0;
             if (agent.inputs && agent.inputs.length > arraySizeLimit) {
                 agent.inputs.length = 0;
@@ -363,6 +360,7 @@ export function periodicMemoryCleanup(simulation) {
                 arraysCleared++;
             }
             if (arraysCleared > 0) {
+                agentsCleaned++;
                 console.log(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId} (${arraySizeLimit} limit)`);
             }
         }

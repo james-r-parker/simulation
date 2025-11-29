@@ -23,6 +23,7 @@
     "@eslint/js": "^9.39.1",
     "eslint": "^9.39.1",
     "eslint-plugin-jsdoc": "^61.4.1",
+    "three": "^0.160.0",
     "typescript": "^5.9.3",
     "vite": "^7.2.4",
     "wrangler": "^4.50.0"
