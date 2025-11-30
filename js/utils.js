@@ -119,6 +119,7 @@ export function geneIdToColor(geneId) {
         hash = geneId.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    return { h: hue, s: 70, l: 50 };
+    // Increased saturation and adjusted lightness for more vibrant, distinct colors
+    return { h: hue, s: 85, l: 60 };
 }
 

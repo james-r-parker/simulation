@@ -1,24 +1,34 @@
 // --- WebGL RENDERER USING THREE.JS ---
 // Handles all rendering, simulation logic preserved
 
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { Agent } from './agent.js';
 import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGENT_MINIMUM_BORDER_SIZE } from './constants.js';
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
 import {
     LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY,
-    COLORS, VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION
+    COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING,
+    VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION
 } from './constants.js';
 import { queryArrayPool } from './array-pool.js';
 import {
     acquireMatrix4, releaseMatrix4,
     acquireVector3, releaseVector3,
+    acquireVector2, releaseVector2,
     acquireColor, releaseColor,
     acquireFrustum, releaseFrustum,
     acquireSphere, releaseSphere,
+    acquireCircleGeometry, releaseCircleGeometry,
     acquireRingGeometry, releaseRingGeometry,
     acquireMeshBasicMaterial, releaseMeshBasicMaterial,
+    acquireBufferGeometry, releaseBufferGeometry,
+    acquirePointsMaterial, releasePointsMaterial,
+    acquireLineBasicMaterial, releaseLineBasicMaterial,
     clearGPUResourcePools
 } from './three-object-pool.js';
 import { neuralArrayPool } from './neural-network.js';
@@ -26,15 +36,32 @@ import { neuralArrayPool } from './neural-network.js';
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
         this.logger = logger;
-        this.logger.log('Renderer constructor started.');
+        this.logger.log('[RENDER] Renderer constructor started.');
 
         this.container = container;
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
 
+        // Post-processing setup (initialize early so it's available when setupPostProcessing is called)
+        this.effectComposer = null;
+        this.postProcessingEnabled = true; // Can be toggled for performance
+
         // Scene setup
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(COLORS.BACKGROUND); // Deep dark blue/black
+
+        // Add lighting for cyberpunk aesthetic
+        // Ambient light for base illumination
+        const ambientLight = new THREE.AmbientLight(0x001122, 0.5); // Deep blue/cyan ambient light
+        this.scene.add(ambientLight);
+        this.ambientLight = ambientLight;
+
+        // Add directional light to help MeshStandardMaterial be visible
+        // This helps with the glassy/metallic look while emissive provides the glow
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        directionalLight.position.set(0, 0, 1000);
+        this.scene.add(directionalLight);
+        this.directionalLight = directionalLight;
 
         // Camera setup (orthographic for 2D)
         const aspect = container.clientWidth / container.clientHeight;
@@ -55,6 +82,13 @@ export class WebGLRenderer {
         this.tempVec = new THREE.Vector3();
         this.testSphere = new THREE.Sphere(this.tempVec, 0);
 
+        // Reusable buffers for sparkles and rays to avoid allocations
+        this.sparklePositionsBuffer = null;
+        this.sparkleColorsBuffer = null;
+        this.sparkleSizesBuffer = null;
+        this.rayPositionsBuffer = null;
+        this.rayColorsBuffer = null;
+
         // PERFORMANCE: Pre-allocated temp arrays to reuse instead of allocating per frame
         this.tempValidAgents = [];
         this.tempVisibleFood = [];
@@ -74,6 +108,9 @@ export class WebGLRenderer {
         this.renderer.setSize(initialWidth, initialHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         container.appendChild(this.renderer.domElement);
+
+        // Setup post-processing pipeline
+        this.setupPostProcessing();
 
         // Groups for organization
         this.agentGroup = new THREE.Group();
@@ -125,6 +162,13 @@ export class WebGLRenderer {
         this.agentEffectsGroup = new THREE.Group();
         this.scene.add(this.agentEffectsGroup);
         this.currentFrame = 0;
+
+        // Particle sparkle system
+        this.sparkles = [];
+        this.sparkleGroup = new THREE.Group();
+        this.scene.add(this.sparkleGroup);
+        this.maxSparkles = 200; // Limit for performance
+        this.sparklesEnabled = true; // Can be toggled for performance
     }
 
     /**
@@ -134,11 +178,11 @@ export class WebGLRenderer {
     dispose() {
         // Guard against multiple dispose calls
         if (!this.scene) {
-            this.logger.log('Renderer already disposed, skipping...');
+            this.logger.log('[RENDER] Renderer already disposed, skipping...');
             return;
         }
 
-        this.logger.log('Disposing WebGL renderer and all resources...');
+        this.logger.log('[RENDER] Disposing WebGL renderer and all resources...');
 
         // 1. Dispose of agent meshes and materials
         if (this.agentMeshes) {
@@ -187,10 +231,10 @@ export class WebGLRenderer {
         // 4. Dispose of ray visualization
         if (this.rayLineSegments) {
             if (this.rayLineSegments.geometry) {
-                this.rayLineSegments.geometry.dispose();
+                releaseBufferGeometry(this.rayLineSegments.geometry);
             }
             if (this.rayLineSegments.material) {
-                this.rayLineSegments.material.dispose();
+                releaseLineBasicMaterial(this.rayLineSegments.material);
             }
             if (this.rayGroup) this.rayGroup.remove(this.rayLineSegments);
         }
@@ -218,12 +262,26 @@ export class WebGLRenderer {
             }
         }
 
-        // 7. Clear agent effects map
+        // 7. Dispose of sparkle system
+        if (this.sparkleGroup) {
+            while (this.sparkleGroup.children.length > 0) {
+                const child = this.sparkleGroup.children[0];
+                if (child.geometry) releaseBufferGeometry(child.geometry);
+                if (child.material) releasePointsMaterial(child.material);
+                this.sparkleGroup.remove(child);
+            }
+            if (this.scene) this.scene.remove(this.sparkleGroup);
+        }
+        if (this.sparkles) {
+            this.sparkles.length = 0;
+        }
+
+        // 8. Clear agent effects map
         if (this.agentEffects) {
             this.agentEffects.clear();
         }
 
-        // 8. Dispose of shared geometries (if they exist)
+        // 9. Dispose of shared geometries (if they exist)
         if (this.agentGeometry) {
             this.agentGeometry.dispose();
         }
@@ -237,7 +295,7 @@ export class WebGLRenderer {
             this.pheromoneGeometry.dispose();
         }
 
-        // 9. Clear groups from scene
+        // 10. Clear groups from scene
         if (this.scene) {
             if (this.agentGroup) this.scene.remove(this.agentGroup);
             if (this.foodGroup) this.scene.remove(this.foodGroup);
@@ -248,12 +306,18 @@ export class WebGLRenderer {
             if (this.agentEffectsGroup) this.scene.remove(this.agentEffectsGroup);
         }
 
-        // 10. Dispose of Three.js renderer
+        // 11. Dispose of post-processing
+        if (this.effectComposer) {
+            this.effectComposer.dispose();
+            this.effectComposer = null;
+        }
+
+        // 12. Dispose of Three.js renderer
         if (this.renderer) {
             this.renderer.dispose();
         }
 
-        // 11. Clear references to prevent memory leaks
+        // 13. Clear references to prevent memory leaks
         this.scene = null;
         this.camera = null;
         this.renderer = null;
@@ -261,14 +325,14 @@ export class WebGLRenderer {
         this.agentEffects = null;
         this.agentStateMeshes = null;
 
-        // 12. Clear pre-allocated arrays
+        // 14. Clear pre-allocated arrays
         this.tempValidAgents.length = 0;
         this.tempVisibleFood.length = 0;
         this.tempVisiblePheromones.length = 0;
         this.tempActiveAgents.length = 0;
         this.tempActiveEffects.length = 0;
 
-        this.logger.log('WebGL renderer disposed successfully');
+        this.logger.log('[RENDER] WebGL renderer disposed successfully');
     }
 
     updateFrustum() {
@@ -289,6 +353,142 @@ export class WebGLRenderer {
         this.camera.bottom = -viewSize;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
+
+        // Resize post-processing render targets
+        if (this.effectComposer) {
+            this.effectComposer.setSize(width, height);
+        }
+    }
+
+    setupPostProcessing() {
+        this.logger.log('[RENDER] setupPostProcessing called');
+        this.logger.log(`[RENDER] postProcessingEnabled: ${this.postProcessingEnabled}`);
+        
+        if (!this.postProcessingEnabled) {
+            this.logger.warn('[RENDER] Post-processing disabled, skipping setup');
+            return;
+        }
+
+        try {
+            this.logger.log('[RENDER] Attempting to create post-processing passes...');
+            // Create render pass
+            const renderPass = new RenderPass(this.scene, this.camera);
+
+            // Get renderer size
+            const sizeVec = acquireVector2();
+            this.renderer.getSize(sizeVec);
+            const width = sizeVec.x || this.container.clientWidth || window.innerWidth;
+            const height = sizeVec.y || this.container.clientHeight || window.innerHeight;
+            releaseVector2(sizeVec);
+
+            // Create bloom pass
+            const bloomSizeVec = acquireVector2();
+            bloomSizeVec.set(width, height);
+            const bloomPass = new UnrealBloomPass(
+                bloomSizeVec,
+                POST_PROCESSING.BLOOM.STRENGTH,
+                POST_PROCESSING.BLOOM.RADIUS,
+                POST_PROCESSING.BLOOM.THRESHOLD
+            );
+
+            // Create vignette shader
+            const vignetteShader = {
+                uniforms: {
+                    tDiffuse: { value: null },
+                    offset: { value: POST_PROCESSING.VIGNETTE.OFFSET },
+                    darkness: { value: POST_PROCESSING.VIGNETTE.DARKNESS }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D tDiffuse;
+                    uniform float offset;
+                    uniform float darkness;
+                    varying vec2 vUv;
+                    void main() {
+                        vec4 texel = texture2D(tDiffuse, vUv);
+                        vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+                        float dist = length(uv);
+                        float vignette = smoothstep(0.8, offset, dist);
+                        gl_FragColor = mix(texel, vec4(0.0, 0.0, 0.0, 1.0), vignette * darkness);
+                    }
+                `
+            };
+
+            // Create chromatic aberration shader
+            const chromaticAberrationShader = {
+                uniforms: {
+                    tDiffuse: { value: null },
+                    offset: { value: POST_PROCESSING.CHROMATIC_ABERRATION.OFFSET }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D tDiffuse;
+                    uniform float offset;
+                    varying vec2 vUv;
+                    void main() {
+                        vec2 uv = vUv;
+                        vec2 offsetVec = (uv - vec2(0.5)) * offset;
+                        float r = texture2D(tDiffuse, uv + offsetVec).r;
+                        float g = texture2D(tDiffuse, uv).g;
+                        float b = texture2D(tDiffuse, uv - offsetVec).b;
+                        gl_FragColor = vec4(r, g, b, 1.0);
+                    }
+                `
+            };
+
+            // Create effect composer
+            this.effectComposer = new EffectComposer(this.renderer);
+            this.effectComposer.addPass(renderPass);
+            this.effectComposer.addPass(bloomPass);
+
+            // Add screen effects if enabled
+            if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
+                const chromaticPass = new ShaderPass(chromaticAberrationShader);
+                this.effectComposer.addPass(chromaticPass);
+                this.chromaticPass = chromaticPass;
+            }
+
+            if (POST_PROCESSING.VIGNETTE.ENABLED) {
+                const vignettePass = new ShaderPass(vignetteShader);
+                vignettePass.renderToScreen = true; // Last pass should render to screen
+                this.effectComposer.addPass(vignettePass);
+                this.vignettePass = vignettePass;
+            } else {
+                bloomPass.renderToScreen = true; // If no vignette, bloom is last
+            }
+
+            // Store passes for later access
+            this.bloomPass = bloomPass;
+            
+            // Update bloom pass properties to match constants
+            this.bloomPass.strength = POST_PROCESSING.BLOOM.STRENGTH;
+            this.bloomPass.radius = POST_PROCESSING.BLOOM.RADIUS;
+            this.bloomPass.threshold = POST_PROCESSING.BLOOM.THRESHOLD;
+            
+            this.logger.log(`[RENDER] Bloom pass configured: strength=${this.bloomPass.strength}, radius=${this.bloomPass.radius}, threshold=${this.bloomPass.threshold}`);
+
+            this.logger.log('[RENDER] Post-processing pipeline initialized successfully');
+            this.logger.log(`[RENDER] Bloom: strength=${POST_PROCESSING.BLOOM.STRENGTH}, radius=${POST_PROCESSING.BLOOM.RADIUS}, threshold=${POST_PROCESSING.BLOOM.THRESHOLD}`);
+            this.logger.log(`[RENDER] Vignette: ${POST_PROCESSING.VIGNETTE.ENABLED ? 'enabled' : 'disabled'}`);
+            this.logger.log(`[RENDER] Chromatic Aberration: ${POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED ? 'enabled' : 'disabled'}`);
+        } catch (error) {
+            this.logger.warn('[RENDER] Failed to initialize post-processing, falling back to basic rendering:', error);
+            this.logger.warn('[RENDER] Post-processing error details:', error.message, error.stack);
+            this.postProcessingEnabled = false;
+            this.effectComposer = null;
+        }
     }
 
     // Visual effects system
@@ -313,6 +513,112 @@ export class WebGLRenderer {
             startFrame: this.currentFrame || 0,
             duration: adjustedDuration
         });
+
+        // Add sparkle particles for visual effects
+        this.addSparkles(agent, effectType);
+    }
+
+    addSparkles(agent, effectType) {
+        if (!this.sparklesEnabled) return;
+        if (!agent || agent.isDead) return;
+        if (this.sparkles.length >= this.maxSparkles) return; // Limit for performance
+
+        // Spawn 3-5 sparkles per effect
+        const sparkleCount = 3 + Math.floor(Math.random() * 3);
+        const color = effectType === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
+
+        for (let i = 0; i < sparkleCount; i++) {
+            if (this.sparkles.length >= this.maxSparkles) break;
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = agent.size * (0.5 + Math.random() * 0.5);
+            const speed = 0.5 + Math.random() * 1.0;
+            const life = 20 + Math.floor(Math.random() * 20); // 20-40 frames
+
+            this.sparkles.push({
+                x: agent.x + Math.cos(angle) * distance,
+                y: agent.y + Math.sin(angle) * distance,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                color: color,
+                life: life,
+                maxLife: life,
+                size: 2 + Math.random() * 2
+            });
+        }
+    }
+
+    updateSparkles() {
+        if (!this.sparklesEnabled) return;
+        // Update and remove expired sparkles
+        for (let i = this.sparkles.length - 1; i >= 0; i--) {
+            const sparkle = this.sparkles[i];
+            sparkle.x += sparkle.vx;
+            sparkle.y += sparkle.vy;
+            sparkle.vx *= 0.95; // Friction
+            sparkle.vy *= 0.95;
+            sparkle.life--;
+
+            if (sparkle.life <= 0) {
+                this.sparkles.splice(i, 1);
+            }
+        }
+
+        // Clear and recreate sparkle meshes
+        while (this.sparkleGroup.children.length > 0) {
+            const child = this.sparkleGroup.children[0];
+            this.sparkleGroup.remove(child);
+            if (child.geometry) releaseBufferGeometry(child.geometry);
+            if (child.material) releasePointsMaterial(child.material);
+        }
+
+        // Create sparkle meshes
+        if (this.sparkles.length > 0) {
+            // Reuse or create buffers to avoid allocations
+            const neededSize = this.sparkles.length * 3;
+            if (!this.sparklePositionsBuffer || this.sparklePositionsBuffer.length < neededSize) {
+                this.sparklePositionsBuffer = new Float32Array(neededSize);
+                this.sparkleColorsBuffer = new Float32Array(neededSize);
+                this.sparkleSizesBuffer = new Float32Array(this.sparkles.length);
+            }
+            const positions = this.sparklePositionsBuffer.subarray(0, neededSize);
+            const colors = this.sparkleColorsBuffer.subarray(0, neededSize);
+            const sizes = this.sparkleSizesBuffer.subarray(0, this.sparkles.length);
+
+            for (let i = 0; i < this.sparkles.length; i++) {
+                const sparkle = this.sparkles[i];
+                const i3 = i * 3;
+                positions[i3] = sparkle.x;
+                positions[i3 + 1] = -sparkle.y; // Flip Y for Three.js
+                positions[i3 + 2] = 0.2; // Slightly above other objects
+
+                const color = acquireColor();
+                color.setHex(sparkle.color);
+                const opacity = sparkle.life / sparkle.maxLife;
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+                releaseColor(color); // Release after use
+
+                sizes[i] = sparkle.size * opacity;
+            }
+
+            const geometry = acquireBufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = acquirePointsMaterial({
+                size: 4,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: false
+            });
+
+            const points = new THREE.Points(geometry, material);
+            this.sparkleGroup.add(points);
+        }
     }
 
     updateVisualEffects(currentFrame) {
@@ -372,7 +678,7 @@ export class WebGLRenderer {
         this.updateFrustum();
     }
 
-    // HSL to RGB helper
+    // HSL to RGB helper - uses pooled color
     hslToRgb(h, s, l) {
         h /= 360;
         s /= 100;
@@ -387,7 +693,9 @@ export class WebGLRenderer {
         else if (h < 4 / 6) { r = 0; g = x; b = c; }
         else if (h < 5 / 6) { r = x; g = 0; b = c; }
         else { r = c; g = 0; b = x; }
-        return new THREE.Color(r + m, g + m, b + m);
+        const color = acquireColor();
+        color.set(r + m, g + m, b + m);
+        return color;
     }
 
     updateAgents(agents, frameCount) {
@@ -434,25 +742,86 @@ export class WebGLRenderer {
                 }
                 let baseColor = this.hslToRgb(geneAgents[0].geneColor.h, geneAgents[0].geneColor.s, geneAgents[0].geneColor.l);
 
-                // Apply specialization tint
+                // Apply subtle specialization tint (much lighter to preserve geneId color variation)
                 const specialization = geneAgents[0].specializationType;
+                // Use very subtle tints (0.95-0.98 multiplier) to preserve geneId color differences
+                const tempColor = acquireColor();
                 if (specialization === SPECIALIZATION_TYPES.FORAGER) {
-                    baseColor = new THREE.Color(baseColor.r * 0.7 + 0.3, baseColor.g * 0.7 + 0.3, baseColor.b * 0.7);
+                    // Slight green/yellow tint
+                    tempColor.set(
+                        baseColor.r * 0.95 + 0.05,
+                        baseColor.g * 0.95 + 0.05,
+                        baseColor.b * 0.98
+                    );
                 } else if (specialization === SPECIALIZATION_TYPES.PREDATOR) {
-                    baseColor = new THREE.Color(baseColor.r * 0.7 + 0.3, baseColor.g * 0.7, baseColor.b * 0.7);
+                    // Slight red tint
+                    tempColor.set(
+                        baseColor.r * 0.95 + 0.05,
+                        baseColor.g * 0.98,
+                        baseColor.b * 0.98
+                    );
                 } else if (specialization === SPECIALIZATION_TYPES.REPRODUCER) {
-                    baseColor = new THREE.Color(baseColor.r * 0.7 + 0.3, baseColor.g * 0.7 + 0.2, baseColor.b * 0.7 + 0.2);
+                    // Slight cyan/magenta tint
+                    tempColor.set(
+                        baseColor.r * 0.95 + 0.05,
+                        baseColor.g * 0.97 + 0.03,
+                        baseColor.b * 0.97 + 0.03
+                    );
                 } else if (specialization === SPECIALIZATION_TYPES.SCOUT) {
-                    baseColor = new THREE.Color(baseColor.r * 0.7, baseColor.g * 0.7 + 0.2, baseColor.b * 0.7 + 0.3);
+                    // Slight yellow/cyan tint
+                    tempColor.set(
+                        baseColor.r * 0.98,
+                        baseColor.g * 0.97 + 0.03,
+                        baseColor.b * 0.95 + 0.05
+                    );
                 } else if (specialization === SPECIALIZATION_TYPES.DEFENDER) {
-                    baseColor = new THREE.Color(baseColor.r * 0.7 + 0.3, baseColor.g * 0.7 + 0.3, baseColor.b * 0.7);
+                    // Slight orange tint
+                    tempColor.set(
+                        baseColor.r * 0.95 + 0.05,
+                        baseColor.g * 0.97 + 0.03,
+                        baseColor.b * 0.98
+                    );
+                } else {
+                    tempColor.copy(baseColor);
                 }
+                // Release baseColor and use tempColor
+                releaseColor(baseColor);
+                baseColor = tempColor;
 
-                const bodyMaterial = new THREE.MeshBasicMaterial({ color: baseColor });
+                // Create material for agent body - agents should be the brightest/most visible
+                // Very strong emissive to make agents stand out prominently
+                const emissiveColor = acquireColor();
+                emissiveColor.copy(baseColor);
+                emissiveColor.multiplyScalar(0.8); // Very strong emissive for high visibility
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: baseColor.clone(), // Clone for material (material owns this)
+                    emissive: emissiveColor.clone(), // Clone for material
+                    emissiveIntensity: 2.5, // Much higher emissive - agents should be very bright
+                    metalness: 0.0, // No metalness to show pure color
+                    roughness: 0.6, // Higher roughness for matte, crisp appearance
+                    transparent: false, // No transparency for crisper look
+                    opacity: 1.0
+                });
+                releaseColor(emissiveColor); // Release after cloning
 
-                // Use COLORS.AGENTS for specialization-based border color
-                const specializationColor = COLORS.AGENTS[specialization] || COLORS.AGENTS.FORAGER;
-                const borderMaterial = new THREE.MeshBasicMaterial({ color: specializationColor });
+                // Border material - bright but not brighter than body
+                const specializationColor = acquireColor();
+                specializationColor.setHex(COLORS.AGENTS[specialization] || COLORS.AGENTS.FORAGER);
+                const borderEmissiveColor = acquireColor();
+                borderEmissiveColor.setHex(EMISSIVE_COLORS.AGENTS[specialization] || EMISSIVE_COLORS.AGENTS.FORAGER);
+                borderEmissiveColor.multiplyScalar(0.6); // Strong emissive for border
+                const borderMaterial = new THREE.MeshStandardMaterial({
+                    color: specializationColor.clone(), // Clone for material
+                    emissive: borderEmissiveColor.clone(), // Clone for material
+                    emissiveIntensity: 1.8, // High emissive - bright but not brighter than body
+                    metalness: 0.0, // No metalness
+                    roughness: 0.6, // Higher roughness for crisp look
+                    transparent: false,
+                    opacity: 1.0
+                });
+                releaseColor(specializationColor);
+                releaseColor(borderEmissiveColor);
+                releaseColor(baseColor); // Release baseColor after materials are created
 
                 // Increased from 100 to 200 to handle larger populations per gene
                 const maxInstances = MAX_INSTANCES_PER_BATCH;
@@ -513,7 +882,7 @@ export class WebGLRenderer {
             if (validCount > mesh.maxCapacity) {
                 // We have more visible agents than the mesh can handle - need to resize
                 const newCapacity = Math.max(validCount * 1.5, mesh.maxCapacity * 2); // Grow by 50% or double
-                this.logger.warn(`[RENDERER] Gene ${geneId} exceeded capacity (${validCount} > ${mesh.maxCapacity}). Resizing to ${newCapacity}`);
+                this.logger.warn(`[RENDER] Gene ${geneId} exceeded capacity (${validCount} > ${mesh.maxCapacity}). Resizing to ${newCapacity}`);
 
                 // Remove old meshes
                 this.agentGroup.remove(mesh.body);
@@ -549,7 +918,7 @@ export class WebGLRenderer {
             // Update all instances (limited to mesh capacity for safety)
             const renderCount = Math.min(validCount, mesh.maxCapacity);
             if (renderCount < validCount) {
-                this.logger.warn(`[RENDERER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
+                this.logger.warn(`[RENDER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
             }
 
             for (let i = 0; i < renderCount; i++) {
@@ -612,7 +981,8 @@ export class WebGLRenderer {
                 releaseRingGeometry(child.geometry);
             }
             if (child.material) {
-                releaseMeshBasicMaterial(child.material);
+                // Dispose material (no longer using pooled materials for effects)
+                child.material.dispose();
             }
         }
 
@@ -641,11 +1011,20 @@ export class WebGLRenderer {
 
                 // Choose color based on effect type
                 const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
+                const emissiveColor = effect.type === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
+                const emissiveColorObj = acquireColor();
+                emissiveColorObj.setHex(emissiveColor);
+                emissiveColorObj.multiplyScalar(0.5);
 
-                const material = acquireMeshBasicMaterial({
+                // Use MeshStandardMaterial for enhanced glow effects
+                const material = new THREE.MeshStandardMaterial({
                     color: color,
-                    transparent: true,
-                    opacity: opacity * 0.4, // More visible opacity
+                    emissive: emissiveColorObj.clone(), // Clone for material
+                    emissiveIntensity: MATERIAL_PROPERTIES.EFFECT.EMISSIVE_INTENSITY * opacity,
+                    metalness: MATERIAL_PROPERTIES.EFFECT.METALNESS,
+                    roughness: MATERIAL_PROPERTIES.EFFECT.ROUGHNESS,
+                    transparent: MATERIAL_PROPERTIES.EFFECT.TRANSPARENT,
+                    opacity: opacity * 0.5, // More visible opacity
                     side: THREE.DoubleSide,
                     depthWrite: false // Don't write to depth buffer to avoid covering agents
                 });
@@ -653,6 +1032,7 @@ export class WebGLRenderer {
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(agent.x, -agent.y, 0.05); // Slightly behind agent but in front of border
                 this.agentEffectsGroup.add(mesh);
+                releaseColor(emissiveColorObj); // Release color after material is created
             }
         }
     }
@@ -693,9 +1073,32 @@ export class WebGLRenderer {
 
             // Create InstancedMesh with capacity for more food
             const maxFood = Math.max(neededCount * 2, 1000);
-            const material = new THREE.MeshBasicMaterial();
+            // Food material - dimmed down so agents are more prominent
+            const foodEmissiveColor = acquireColor();
+            foodEmissiveColor.setHex(EMISSIVE_COLORS.FOOD.NORMAL);
+            foodEmissiveColor.multiplyScalar(0.2); // Reduced emissive - food should be dimmer
+            const material = new THREE.MeshStandardMaterial({
+                color: COLORS.FOOD.NORMAL,
+                emissive: foodEmissiveColor.clone(), // Clone for material
+                emissiveIntensity: 0.4, // Reduced from 2.5 - food should be dimmer than agents
+                metalness: MATERIAL_PROPERTIES.FOOD.METALNESS,
+                roughness: MATERIAL_PROPERTIES.FOOD.ROUGHNESS,
+                transparent: MATERIAL_PROPERTIES.FOOD.TRANSPARENT,
+                opacity: MATERIAL_PROPERTIES.FOOD.OPACITY,
+                vertexColors: true // Enable per-instance colors
+            });
+            releaseColor(foodEmissiveColor);
             this.foodInstancedMesh = new THREE.InstancedMesh(this.foodGeometry, material, maxFood);
             this.foodInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            // Enable per-instance colors for food
+            // Reuse existing instanceColor if it exists and is large enough
+            if (!this.foodInstancedMesh.instanceColor || this.foodInstancedMesh.instanceColor.count < maxFood) {
+                if (this.foodInstancedMesh.instanceColor) {
+                    this.foodInstancedMesh.instanceColor.dispose();
+                }
+                this.foodInstancedMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxFood * 3), 3);
+                this.foodInstancedMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            }
             this.foodGroup.add(this.foodInstancedMesh);
         }
 
@@ -787,17 +1190,33 @@ export class WebGLRenderer {
 
             // Create InstancedMesh with capacity for more pheromones
             const maxPheromones = Math.max(neededCount * 2, 2000);
-            const material = new THREE.MeshBasicMaterial({
-                transparent: true,
-                opacity: 0.6
+            // Pheromone material - dimmed down so agents are more prominent
+            const pheromoneEmissiveColor = acquireColor();
+            pheromoneEmissiveColor.setHex(0x00FFFF); // Default cyan
+            pheromoneEmissiveColor.multiplyScalar(0.15); // Reduced emissive - pheromones should be dimmer
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x00FFFF,
+                emissive: pheromoneEmissiveColor.clone(), // Clone for material
+                emissiveIntensity: 0.3, // Reduced from 1.5 - pheromones should be dimmer than agents
+                metalness: MATERIAL_PROPERTIES.PHEROMONE.METALNESS,
+                roughness: MATERIAL_PROPERTIES.PHEROMONE.ROUGHNESS,
+                transparent: MATERIAL_PROPERTIES.PHEROMONE.TRANSPARENT,
+                opacity: MATERIAL_PROPERTIES.PHEROMONE.OPACITY
             });
+            releaseColor(pheromoneEmissiveColor);
             this.pheromoneInstancedMesh = new THREE.InstancedMesh(this.pheromoneGeometry, material, maxPheromones);
             this.pheromoneInstancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
             this.pheromoneGroup.add(this.pheromoneInstancedMesh);
 
             // Enable per-instance colors
-            this.pheromoneInstancedMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxPheromones * 3), 3);
-            this.pheromoneInstancedMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            // Reuse existing instanceColor if it exists and is large enough
+            if (!this.pheromoneInstancedMesh.instanceColor || this.pheromoneInstancedMesh.instanceColor.count < maxPheromones) {
+                if (this.pheromoneInstancedMesh.instanceColor) {
+                    this.pheromoneInstancedMesh.instanceColor.dispose();
+                }
+                this.pheromoneInstancedMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(maxPheromones * 3), 3);
+                this.pheromoneInstancedMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            }
         }
 
         // Update instances
@@ -850,21 +1269,42 @@ export class WebGLRenderer {
             // Remove old obstacle meshes
             this.obstacleMeshes.forEach(mesh => {
                 this.obstacleGroup.remove(mesh);
-                mesh.geometry.dispose();
+                // Release geometry if pooled, otherwise dispose
+                if (mesh.geometry.parameters && mesh.geometry.parameters.radius === 1 && mesh.geometry.parameters.segments === 32) {
+                    releaseCircleGeometry(mesh.geometry);
+                } else {
+                    mesh.geometry.dispose();
+                }
                 mesh.material.dispose();
             });
             this.obstacleMeshes = [];
 
             // Create obstacle meshes
             obstacles.forEach(obs => {
-                const geometry = new THREE.CircleGeometry(obs.radius, 32);
-                const material = new THREE.MeshBasicMaterial({ color: COLORS.OBSTACLE });
+                // Use pooled geometry for standard size, create new for custom sizes
+                const geometry = (obs.radius === 1) 
+                    ? acquireCircleGeometry(obs.radius, 32)
+                    : new THREE.CircleGeometry(obs.radius, 32);
+                // Obstacle material - dimmed down so agents are more prominent
+                const obstacleEmissiveColor = acquireColor();
+                obstacleEmissiveColor.setHex(EMISSIVE_COLORS.OBSTACLE);
+                obstacleEmissiveColor.multiplyScalar(0.2); // Reduced emissive - obstacles should be dimmer
+                const material = new THREE.MeshStandardMaterial({
+                    color: COLORS.OBSTACLE,
+                    emissive: obstacleEmissiveColor.clone(), // Clone for material
+                    emissiveIntensity: 0.4, // Reduced from 1.8 - obstacles should be dimmer than agents
+                    metalness: MATERIAL_PROPERTIES.OBSTACLE.METALNESS,
+                    roughness: MATERIAL_PROPERTIES.OBSTACLE.ROUGHNESS,
+                    transparent: MATERIAL_PROPERTIES.OBSTACLE.TRANSPARENT,
+                    opacity: MATERIAL_PROPERTIES.OBSTACLE.OPACITY
+                });
+                releaseColor(obstacleEmissiveColor);
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(obs.x, -obs.y, 0);
                 this.obstacleGroup.add(mesh);
                 this.obstacleMeshes.push(mesh);
 
-                // Add shadow (hiding radius)
+                // Add shadow (hiding radius) - keep basic material for shadow
                 const shadowGeometry = new THREE.RingGeometry(obs.radius, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
                 const shadowMaterial = new THREE.MeshBasicMaterial({
                     color: 0x000000,
@@ -965,22 +1405,32 @@ export class WebGLRenderer {
             // Create or resize geometry
             if (this.rayLineSegments) {
                 this.rayGroup.remove(this.rayLineSegments);
-                this.rayLineSegments.geometry.dispose();
-                this.rayLineSegments.material.dispose();
+                // Release pooled resources
+                releaseBufferGeometry(this.rayLineSegments.geometry);
+                releaseLineBasicMaterial(this.rayLineSegments.material);
             }
 
             // Allocate for max rays (with some headroom)
             const maxRays = Math.max(totalRays * 2, 500);
-            const positions = new Float32Array(maxRays * 2 * 3); // 2 points per ray, 3 coords per point
-            const colors = new Float32Array(maxRays * 2 * 3); // RGB per point
-            const geometry = new THREE.BufferGeometry();
+            // Reuse or create buffers to avoid allocations
+            const neededPosSize = maxRays * 2 * 3;
+            const neededColorSize = maxRays * 2 * 3;
+            if (!this.rayPositionsBuffer || this.rayPositionsBuffer.length < neededPosSize) {
+                this.rayPositionsBuffer = new Float32Array(neededPosSize);
+                this.rayColorsBuffer = new Float32Array(neededColorSize);
+            }
+            const positions = this.rayPositionsBuffer.subarray(0, neededPosSize);
+            const colors = this.rayColorsBuffer.subarray(0, neededColorSize);
+            const geometry = acquireBufferGeometry();
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            const material = new THREE.LineBasicMaterial({
+            // Create glowing ray material with emissive properties
+            const material = acquireLineBasicMaterial({
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.6
+                opacity: 0.8, // Increased opacity for better visibility
+                linewidth: 2 // Thicker lines for better glow effect
             });
 
             this.rayLineSegments = new THREE.LineSegments(geometry, material);
@@ -1082,14 +1532,54 @@ export class WebGLRenderer {
     }
 
     render() {
+        // Update sparkles
+        this.updateSparkles();
+
         // Render visual effects
         this.updateVisualEffectsRendering();
 
-        this.renderer.render(this.scene, this.camera);
+        // Use post-processing if enabled, otherwise use basic render
+        if (this.postProcessingEnabled && this.effectComposer) {
+            try {
+                this.effectComposer.render();
+            } catch (error) {
+                // Fallback to basic render if post-processing fails
+                this.logger.warn('[RENDER] Post-processing render failed, using basic render:', error);
+                this.renderer.render(this.scene, this.camera);
+            }
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
     }
 
     setShowRays(show) {
         this.showRays = show;
+    }
+
+    setPostProcessingEnabled(enabled) {
+        this.postProcessingEnabled = enabled;
+        if (!enabled && this.effectComposer) {
+            // Clean up post-processing
+            this.effectComposer.dispose();
+            this.effectComposer = null;
+        } else if (enabled && !this.effectComposer) {
+            // Reinitialize post-processing
+            this.setupPostProcessing();
+        }
+    }
+
+    setSparklesEnabled(enabled) {
+        this.sparklesEnabled = enabled !== false;
+        if (!this.sparklesEnabled) {
+            // Clear existing sparkles
+            this.sparkles.length = 0;
+            while (this.sparkleGroup.children.length > 0) {
+                const child = this.sparkleGroup.children[0];
+                this.sparkleGroup.remove(child);
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+            }
+        }
     }
 
     /**
@@ -1135,8 +1625,8 @@ export class WebGLRenderer {
         // Clear ray visualization
         if (this.rayLineSegments) {
             this.rayGroup.remove(this.rayLineSegments);
-            this.rayLineSegments.geometry.dispose();
-            this.rayLineSegments.material.dispose();
+            releaseBufferGeometry(this.rayLineSegments.geometry);
+            releaseLineBasicMaterial(this.rayLineSegments.material);
             this.rayLineSegments = null;
         }
 
@@ -1146,6 +1636,6 @@ export class WebGLRenderer {
         // Clear neural network pools to prevent accumulation of unused array sizes
         neuralArrayPool.clearOldPools();
 
-        this.logger.debug('Renderer defragmentation completed - resources will be recreated on next render');
+        this.logger.debug('[RENDER] Renderer defragmentation completed - resources will be recreated on next render');
     }
 }

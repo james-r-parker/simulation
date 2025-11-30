@@ -1,7 +1,7 @@
 // --- SIMULATION CLASS ---
 // All simulation logic preserved exactly from original
 
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'three';
 import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,

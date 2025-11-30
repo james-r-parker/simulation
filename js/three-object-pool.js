@@ -110,7 +110,7 @@ class GPUResourcePool extends ObjectPool {
 }
 
 // Import THREE here to avoid circular dependencies
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'three';
 
 // Matrix4 pool - safe to reuse indefinitely
 export const matrix4Pool = new SimpleObjectPool(
@@ -130,6 +130,16 @@ export const vector3Pool = new SimpleObjectPool(
         vec.set(0, 0, 0);
     },
     50
+);
+
+// Vector2 pool - safe to reuse indefinitely
+export const vector2Pool = new SimpleObjectPool(
+    () => new THREE.Vector2(),
+    (vec) => {
+        // Reset vector to zero
+        vec.set(0, 0);
+    },
+    20
 );
 
 // Color pool - safe to reuse indefinitely
@@ -161,6 +171,19 @@ export const spherePool = new SimpleObjectPool(
         sphere.radius = 0;
     },
     20
+);
+
+// CircleGeometry pool - has GPU resources, needs periodic clearing
+export const circleGeometryPool = new GPUResourcePool(
+    () => new THREE.CircleGeometry(1, 32), // Default radius 1, 32 segments
+    (geometry) => {
+        // Reset geometry parameters
+        geometry.dispose();
+    },
+    (geometry) => {
+        geometry.dispose();
+    },
+    10
 );
 
 // RingGeometry pool - has GPU resources, needs periodic clearing
@@ -199,6 +222,9 @@ export function releaseMatrix4(matrix) { matrix4Pool.release(matrix); }
 export function acquireVector3() { return vector3Pool.acquire(); }
 export function releaseVector3(vec) { vector3Pool.release(vec); }
 
+export function acquireVector2() { return vector2Pool.acquire(); }
+export function releaseVector2(vec) { vector2Pool.release(vec); }
+
 export function acquireColor() { return colorPool.acquire(); }
 export function releaseColor(color) { colorPool.release(color); }
 
@@ -207,6 +233,26 @@ export function releaseFrustum(frustum) { frustumPool.release(frustum); }
 
 export function acquireSphere() { return spherePool.acquire(); }
 export function releaseSphere(sphere) { spherePool.release(sphere); }
+
+export function acquireCircleGeometry(radius, segments) {
+    const geometry = circleGeometryPool.acquire();
+    // Note: CircleGeometry doesn't support dynamic radius/segments easily
+    // We'll create new ones if radius/segments differ, but pool standard ones
+    if (radius !== 1 || segments !== 32) {
+        // For non-standard sizes, create new (could extend pool later)
+        circleGeometryPool.release(geometry);
+        return new THREE.CircleGeometry(radius, segments);
+    }
+    return geometry;
+}
+export function releaseCircleGeometry(geometry) {
+    // Only release if it's from the pool (standard size)
+    if (geometry.parameters && geometry.parameters.radius === 1 && geometry.parameters.segments === 32) {
+        circleGeometryPool.release(geometry);
+    } else {
+        geometry.dispose();
+    }
+}
 
 export function acquireRingGeometry(innerRadius = 1, outerRadius = 2, segments = 32) {
     const geometry = ringGeometryPool.acquire();
@@ -234,21 +280,148 @@ export function acquireMeshBasicMaterial(options = {}) {
 }
 export function releaseMeshBasicMaterial(material) { meshBasicMaterialPool.release(material); }
 
+// BufferGeometry pool - has GPU resources, needs periodic clearing
+export const bufferGeometryPool = new GPUResourcePool(
+    () => new THREE.BufferGeometry(),
+    (geometry) => {
+        // Clear all attributes
+        const attributeNames = Object.keys(geometry.attributes);
+        for (const name of attributeNames) {
+            geometry.deleteAttribute(name);
+        }
+        geometry.setIndex(null);
+    },
+    (geometry) => {
+        geometry.dispose();
+    },
+    20
+);
+
+// PointsMaterial pool - has GPU resources, needs periodic clearing
+export const pointsMaterialPool = new GPUResourcePool(
+    () => new THREE.PointsMaterial(),
+    (material) => {
+        // Reset material to default state
+        material.color.set(0xffffff);
+        material.size = 1;
+        material.vertexColors = false;
+        material.transparent = false;
+        material.opacity = 1;
+        material.sizeAttenuation = true;
+    },
+    (material) => {
+        material.dispose();
+    },
+    10
+);
+
+// LineBasicMaterial pool - has GPU resources, needs periodic clearing
+export const lineBasicMaterialPool = new GPUResourcePool(
+    () => new THREE.LineBasicMaterial(),
+    (material) => {
+        // Reset material to default state
+        material.color.set(0xffffff);
+        material.vertexColors = false;
+        material.transparent = false;
+        material.opacity = 1;
+        material.linewidth = 1;
+    },
+    (material) => {
+        material.dispose();
+    },
+    10
+);
+
+// BufferAttribute pool - has GPU resources, needs periodic clearing
+// Note: BufferAttributes are usually created with specific sizes, so pooling is limited
+// But we can pool the attribute objects themselves
+export const bufferAttributePool = new GPUResourcePool(
+    () => new THREE.BufferAttribute(new Float32Array(0), 1),
+    (attribute) => {
+        // BufferAttribute doesn't have a simple reset, but we can clear the array
+        if (attribute.array) {
+            attribute.array.fill(0);
+        }
+    },
+    (attribute) => {
+        attribute.dispose();
+    },
+    30
+);
+
+// Utility functions for new pools
+export function acquireBufferGeometry() { return bufferGeometryPool.acquire(); }
+export function releaseBufferGeometry(geometry) { 
+    // Clear attributes before releasing
+    const attributeNames = Object.keys(geometry.attributes);
+    for (const name of attributeNames) {
+        geometry.deleteAttribute(name);
+    }
+    geometry.setIndex(null);
+    bufferGeometryPool.release(geometry); 
+}
+
+export function acquirePointsMaterial(options = {}) {
+    const material = pointsMaterialPool.acquire();
+    // Apply options
+    if (options.size !== undefined) material.size = options.size;
+    if (options.color !== undefined) material.color.set(options.color);
+    if (options.vertexColors !== undefined) material.vertexColors = options.vertexColors;
+    if (options.transparent !== undefined) material.transparent = options.transparent;
+    if (options.opacity !== undefined) material.opacity = options.opacity;
+    if (options.sizeAttenuation !== undefined) material.sizeAttenuation = options.sizeAttenuation;
+    return material;
+}
+export function releasePointsMaterial(material) { pointsMaterialPool.release(material); }
+
+export function acquireLineBasicMaterial(options = {}) {
+    const material = lineBasicMaterialPool.acquire();
+    // Apply options
+    if (options.color !== undefined) material.color.set(options.color);
+    if (options.vertexColors !== undefined) material.vertexColors = options.vertexColors;
+    if (options.transparent !== undefined) material.transparent = options.transparent;
+    if (options.opacity !== undefined) material.opacity = options.opacity;
+    if (options.linewidth !== undefined) material.linewidth = options.linewidth;
+    return material;
+}
+export function releaseLineBasicMaterial(material) { lineBasicMaterialPool.release(material); }
+
+export function acquireBufferAttribute(array, itemSize) {
+    // For BufferAttribute, we usually need specific array sizes
+    // So we'll create new ones but pool the objects when possible
+    // This is a simplified version - in practice, attributes are often tied to geometries
+    return new THREE.BufferAttribute(array, itemSize);
+}
+export function releaseBufferAttribute(attribute) {
+    // Note: BufferAttributes are usually disposed with geometries
+    // This is mainly for standalone attributes
+    if (attribute) attribute.dispose();
+}
+
 // Debug function to get pool statistics
 export function getPoolStats() {
     return {
         matrix4: matrix4Pool.getStats(),
         vector3: vector3Pool.getStats(),
+        vector2: vector2Pool.getStats(),
         color: colorPool.getStats(),
         frustum: frustumPool.getStats(),
         sphere: spherePool.getStats(),
+        circleGeometry: circleGeometryPool.getStats(),
         ringGeometry: ringGeometryPool.getStats(),
-        meshBasicMaterial: meshBasicMaterialPool.getStats()
+        meshBasicMaterial: meshBasicMaterialPool.getStats(),
+        bufferGeometry: bufferGeometryPool.getStats(),
+        pointsMaterial: pointsMaterialPool.getStats(),
+        lineBasicMaterial: lineBasicMaterialPool.getStats()
     };
 }
 
 // Function to manually clear GPU resource pools (for memory management)
 export function clearGPUResourcePools() {
+    circleGeometryPool.clearGPUResources();
     ringGeometryPool.clearGPUResources();
     meshBasicMaterialPool.clearGPUResources();
+    bufferGeometryPool.clearGPUResources();
+    pointsMaterialPool.clearGPUResources();
+    lineBasicMaterialPool.clearGPUResources();
 }

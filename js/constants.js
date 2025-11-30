@@ -233,6 +233,55 @@ export const COLORS = {
     }
 };
 
+// Emissive color palette for cyberpunk glow effects (slightly brighter/more saturated)
+export const EMISSIVE_COLORS = {
+    FOOD: {
+        NORMAL: 0x4AFF2E, // Brighter neon green for food glow
+        HIGH_VALUE: 0xFF1AFF // Brighter neon magenta for high-value food
+    },
+    OBSTACLE: 0xBD1AFF, // Brighter neon purple for obstacles
+    AGENTS: {
+        FORAGER: 0xE6FF1A, // Brighter neon lime
+        PREDATOR: 0xFF1A4D, // Brighter neon red
+        REPRODUCER: 0x1AFFFF, // Brighter neon cyan
+        SCOUT: 0xFFFF1A, // Brighter neon yellow
+        DEFENDER: 0xFF7A1A // Brighter neon orange
+    },
+    RAYS: {
+        DEFAULT: 0x1AFFFF, // Brighter cyan
+        NO_HIT: 0x888888, // Slightly brighter gray
+        ALIGNMENT: 0xFFFF1A, // Brighter yellow
+        FOOD: 0x4AFF2E, // Brighter green
+        SMALLER: 0xE6FF1A, // Brighter lime
+        LARGER: 0xFF1A4D, // Brighter red
+        OBSTACLE: 0xBD1AFF, // Brighter purple
+        EDGE: 0xFF7A1A, // Brighter orange
+        SAME: 0x1AFFFF // Brighter cyan
+    },
+    EFFECTS: {
+        COLLISION: 0xFF1A4D, // Brighter red glow
+        EATING: 0x4AFF2E // Brighter green glow
+    }
+};
+
+// Post-processing configuration
+export const POST_PROCESSING = {
+    BLOOM: {
+        STRENGTH: 0.4, // Bloom intensity (minimal - only for very bright elements)
+        RADIUS: 0.3, // Bloom spread radius (very tight to reduce fuzziness)
+        THRESHOLD: 0.98 // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
+    },
+    VIGNETTE: {
+        ENABLED: true,
+        OFFSET: 0.8, // Vignette offset
+        DARKNESS: 0.1 // Vignette darkness (reduced from 0.5 for subtler effect)
+    },
+    CHROMATIC_ABERRATION: {
+        ENABLED: true,
+        OFFSET: 0.0001 // Chromatic aberration offset (reduced from 0.001 for subtler effect)
+    }
+};
+
 // --- PHYSICS CONSTANTS ---
 // Low-level physics simulation parameters for movement and collisions
 
@@ -382,6 +431,51 @@ export const CAMERA_FAR_PLANE = 10000; // Camera far clipping plane
 export const AGENT_BORDER_SIZE_MULTIPLIER = 1.1; // Border size relative to agent body
 export const AGENT_MINIMUM_BORDER_SIZE = 12; // Minimum border size for visibility
 export const POINT_POOL_SIZE = 5000; // Initial point pool allocation size
+
+// Material properties for cyberpunk glassy aesthetic
+export const MATERIAL_PROPERTIES = {
+    AGENT: {
+        EMISSIVE_INTENSITY: 1.8, // Glow intensity for agent bodies
+        METALNESS: 0.4, // Glassy/metallic look
+        ROUGHNESS: 0.2, // Smooth/glossy surface
+        OPACITY: 0.9, // Slight transparency
+        TRANSPARENT: true
+    },
+    AGENT_BORDER: {
+        EMISSIVE_INTENSITY: 2.2, // Higher glow for borders
+        METALNESS: 0.5,
+        ROUGHNESS: 0.15,
+        OPACITY: 0.95,
+        TRANSPARENT: true
+    },
+    FOOD: {
+        EMISSIVE_INTENSITY: 2.5, // High glow for food
+        METALNESS: 0.2,
+        ROUGHNESS: 0.2,
+        OPACITY: 0.9,
+        TRANSPARENT: true
+    },
+    PHEROMONE: {
+        EMISSIVE_INTENSITY: 1.5,
+        METALNESS: 0.1,
+        ROUGHNESS: 0.3,
+        OPACITY: 0.6,
+        TRANSPARENT: true
+    },
+    OBSTACLE: {
+        EMISSIVE_INTENSITY: 1.8,
+        METALNESS: 0.4,
+        ROUGHNESS: 0.2,
+        OPACITY: 0.95,
+        TRANSPARENT: false
+    },
+    EFFECT: {
+        EMISSIVE_INTENSITY: 2.0,
+        METALNESS: 0.3,
+        ROUGHNESS: 0.25,
+        TRANSPARENT: true
+    }
+};
 
 // --- TIMEOUT CONSTANTS ---
 export const GPU_INIT_TIMEOUT_MS = 15000; // GPU initialization timeout (ms)
