@@ -251,6 +251,14 @@ export class Agent {
     }
 
     getWeights() {
+        // If neural network is cleaned up but we have extracted weights, use those
+        if (!this.nn && this._extractedWeights) {
+            return this._extractedWeights;
+        }
+        // Otherwise, try to get from neural network
+        if (!this.nn) {
+            throw new Error('Neural network is null and no extracted weights available');
+        }
         return this.nn.getWeights();
     }
 
@@ -260,6 +268,8 @@ export class Agent {
         // Safety check: if NN was cleaned up, mark agent as dead and return
         if (!this.nn) {
             this.isDead = true;
+            // If we have extracted weights, preserve them for potential validation
+            // (weights extraction should have happened before cleanup, but just in case)
             return;
         }
 
@@ -389,6 +399,8 @@ export class Agent {
         // Safety check: if neural network was cleaned up, mark as dead and return
         if (!this.nn) {
             this.isDead = true;
+            // If we have extracted weights, preserve them for potential validation
+            // (weights extraction should have happened before cleanup, but just in case)
             return;
         }
 
@@ -795,6 +807,17 @@ export class Agent {
 
         if (this.energy <= 0) {
             this.isDead = true;
+            // CRITICAL: Extract weights BEFORE cleanup so they're available for validation
+            if (this.nn && !this._extractedWeights) {
+                try {
+                    this._extractedWeights = this.nn.getWeights();
+                } catch (error) {
+                    // If extraction fails, log but continue with cleanup
+                    if (this.logger) {
+                        this.logger.debug(`[AGENT] Could not extract weights before cleanup for agent ${this.id} (${this.geneId}): ${error.message}`);
+                    }
+                }
+            }
             this.cleanup();
         }
 
@@ -1789,6 +1812,17 @@ export class Agent {
 
         // Log cleanup for debugging validation issues
         this.logger.debug(`[AGENT-CLEANUP] 🧹 Cleaning up agent ${this.id} (${this.geneId}) - Age: ${this.age.toFixed(1)}s, Fitness: ${this.fitness.toFixed(1)}, Fit: ${this.fit}, Energy: ${this.energy.toFixed(1)}, NN: ${this.nn ? 'present' : 'null'}`);
+
+        // CRITICAL: Extract weights BEFORE cleanup if agent is fit and weights not already extracted
+        // This ensures weights are available for validation even after cleanup
+        if (this.fit && this.nn && !this._extractedWeights) {
+            try {
+                this._extractedWeights = this.nn.getWeights();
+                this.logger.debug(`[AGENT-CLEANUP] Extracted weights for fit agent ${this.id} (${this.geneId}) before cleanup`);
+            } catch (error) {
+                this.logger.debug(`[AGENT-CLEANUP] Could not extract weights for agent ${this.id} (${this.geneId}): ${error.message}`);
+            }
+        }
 
         // Reinitialize memory arrays to prevent undefined access errors
         // Don't just clear them - reinitialize with proper structure

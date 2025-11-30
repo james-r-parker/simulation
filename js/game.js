@@ -1605,7 +1605,18 @@ export class Simulation {
                             let agentWeights = null;
                             let hasValidWeights = false;
                             
-                            if (agent.nn) {
+                            // Try multiple methods to extract weights
+                            // 1. Check if weights were already extracted and stored
+                            if (agent._extractedWeights) {
+                                agentWeights = agent._extractedWeights;
+                                hasValidWeights = agentWeights &&
+                                    typeof agentWeights === 'object' &&
+                                    agentWeights.weights1 && agentWeights.weights2 &&
+                                    Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                    agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                            }
+                            // 2. Try to get weights from neural network if it exists
+                            else if (agent.nn) {
                                 try {
                                     agentWeights = agent.getWeights();
                                     hasValidWeights = agentWeights &&
@@ -1614,14 +1625,31 @@ export class Simulation {
                                         Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
                                         agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
                                 } catch (error) {
-                                    // If getWeights fails, we'll skip validation for this agent
-                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}): ${error.message}`);
+                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via nn.getWeights(): ${error.message}`);
+                                }
+                            }
+                            // 3. Try to call getWeights() directly even if nn is null (might be a method override)
+                            else if (typeof agent.getWeights === 'function') {
+                                try {
+                                    agentWeights = agent.getWeights();
+                                    hasValidWeights = agentWeights &&
+                                        typeof agentWeights === 'object' &&
+                                        agentWeights.weights1 && agentWeights.weights2 &&
+                                        Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                        agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                } catch (error) {
+                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via getWeights(): ${error.message}`);
                                 }
                             }
                             
                             // Store weights on agent temporarily so validation can access them even after cleanup
-                            if (hasValidWeights) {
+                            if (hasValidWeights && agentWeights) {
                                 agent._extractedWeights = agentWeights;
+                            } else {
+                                // Log why we couldn't extract weights for debugging
+                                if (!agent.nn && typeof agent.getWeights !== 'function') {
+                                    this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) has no neural network and no getWeights method`);
+                                }
                             }
 
                             // Check if this agent was in validation queue first (highest priority)
@@ -1659,9 +1687,32 @@ export class Simulation {
 
                                     // Use weights extracted earlier (before any cleanup)
                                     if (!hasValidWeights || !agentWeights) {
-                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no valid neural network weights`);
-                                        // Continue to cleanup - agent can't enter validation without weights
-                                    } else {
+                                        // Try one more time to get weights if we have the method
+                                        if (typeof agent.getWeights === 'function' && !agentWeights) {
+                                            try {
+                                                agentWeights = agent.getWeights();
+                                                hasValidWeights = agentWeights &&
+                                                    typeof agentWeights === 'object' &&
+                                                    agentWeights.weights1 && agentWeights.weights2 &&
+                                                    Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                                    agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                                if (hasValidWeights) {
+                                                    agent._extractedWeights = agentWeights;
+                                                }
+                                            } catch (error) {
+                                                // Ignore - we'll skip validation
+                                            }
+                                        }
+                                        
+                                        if (!hasValidWeights || !agentWeights) {
+                                            this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no valid neural network weights (nn: ${agent.nn ? 'exists' : 'null'}, getWeights: ${typeof agent.getWeights}, extracted: ${agent._extractedWeights ? 'yes' : 'no'})`);
+                                            // Continue to cleanup - agent can't enter validation without weights
+                                        } else {
+                                            // We got weights on retry, continue with validation
+                                        }
+                                    }
+                                    
+                                    if (hasValidWeights && agentWeights) {
                                         // Temporarily attach weights to agent if neural network is missing
                                         // This allows addToValidationQueue to work properly
                                         const originalNN = agent.nn;
