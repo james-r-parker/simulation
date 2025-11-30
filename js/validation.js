@@ -5,7 +5,14 @@ import {
     VALIDATION_REQUIRED_RUNS,
     MAX_VALIDATION_QUEUE_SIZE,
     VALIDATION_COOLDOWN_MS,
-    VALIDATION_CLEANUP_TIMEOUT_MS
+    VALIDATION_CLEANUP_TIMEOUT_MS,
+    MIN_FITNESS_TO_SAVE_GENE_POOL,
+    MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
+    MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
+    EXPLORATION_GRID_WIDTH,
+    EXPLORATION_GRID_HEIGHT
 } from './constants.js';
 import { toast } from './toast.js';
 
@@ -75,6 +82,7 @@ export class ValidationManager {
                     attempts: 0,
                     scores: [],
                     fitResults: [], // Track whether each run was fit
+                    criteriaDetails: [], // Track which criteria passed/failed in each run
                     lastValidationTime: 0,
                     isValidated: false,
                     isActiveTest: false, // Flag to prevent duplicate spawns during active testing
@@ -102,12 +110,24 @@ export class ValidationManager {
         validationEntry.scores.push(agent.fitness);
         validationEntry.fitResults.push(agent.fit); // Track fit status
 
+        // Extract detailed criteria information for this run
+        const criteriaDetails = this.getCriteriaDetails(agent);
+        validationEntry.criteriaDetails.push(criteriaDetails);
+
         // Enhanced logging for validation runs
         const currentFitness = agent.fitness;
         const source = isPeriodicValidation ? 'periodic' : 'death';
         const runNumber = validationEntry.attempts;
 
+        // Detailed logging with criteria breakdown
+        const criteriaStatus = criteriaDetails.criteria.map((c, i) => {
+            const names = ['Fitness', 'Food', 'Age', 'Exploration', 'Navigation'];
+            return `${names[i]}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
+        }).join(' | ');
+        
         this.logger.info(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
+        this.logger.info(`[VALIDATION] ${geneId} - Run ${runNumber} Criteria: ${criteriaStatus}`);
+        this.logger.info(`[VALIDATION] ${geneId} - Run ${runNumber} Summary: ${criteriaDetails.criteriaMet}/5 criteria met, Fit: ${agent.fit ? 'YES' : 'NO'}`);
 
         // Check for early success after 2 runs
         if (validationEntry.attempts >= 2 && !validationEntry.isValidated) {
@@ -115,7 +135,24 @@ export class ValidationManager {
             if (successfulRuns >= 2) {
                 // Early success - agent has proven itself with 2 good runs
                 const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
-                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION (2/${validationEntry.attempts} runs passed, avg: ${avgScore.toFixed(1)})`);
+                this.logger.info(`[VALIDATION] ========================================`);
+                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION`);
+                this.logger.info(`[VALIDATION] ========================================`);
+                this.logger.info(`[VALIDATION] Early Success: ${successfulRuns}/${validationEntry.attempts} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
+                
+                // Log criteria details for successful runs
+                validationEntry.scores.forEach((score, index) => {
+                    if (validationEntry.fitResults[index]) {
+                        const criteriaDetails = validationEntry.criteriaDetails[index];
+                        if (criteriaDetails) {
+                            const criteriaStatus = criteriaDetails.criteria.map(c => {
+                                return `${c.name}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
+                            }).join(' | ');
+                            this.logger.info(`[VALIDATION] Run ${index + 1} (PASS): ${criteriaStatus}`);
+                        }
+                    }
+                });
+                this.logger.info(`[VALIDATION] ========================================`);
 
                 validationEntry.isValidated = true;
 
@@ -145,24 +182,41 @@ export class ValidationManager {
             }
         }
 
-        // Check if agent has completed required validation runs (full 3-run cycle)
+            // Check if agent has completed required validation runs (full 3-run cycle)
         if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS && !validationEntry.isValidated) {
             const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
             const bestScore = Math.max(...validationEntry.scores);
             const successfulRuns = validationEntry.fitResults.filter(fit => fit).length;
 
-            this.logger.info(`[VALIDATION] ${geneId} validation complete:`);
+            this.logger.info(`[VALIDATION] ========================================`);
+            this.logger.info(`[VALIDATION] ${geneId} VALIDATION COMPLETE`);
+            this.logger.info(`[VALIDATION] ========================================`);
+            this.logger.info(`[VALIDATION] Overall Results: ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
+            
+            // Detailed breakdown of each run
             validationEntry.scores.forEach((score, index) => {
                 const fit = validationEntry.fitResults[index];
-                const status = score === bestScore ? '🏆 BEST' : fit ? '✅ FIT' : '❌ LOW';
-                this.logger.info(`  ├── Run ${index + 1}: ${score.toFixed(1)} ${status}`);
+                const status = score === bestScore ? '🏆 BEST' : fit ? '✅ PASS' : '❌ FAIL';
+                const criteriaDetails = validationEntry.criteriaDetails[index];
+                
+                this.logger.info(`[VALIDATION] ────────────────────────────────────────`);
+                this.logger.info(`[VALIDATION] Run ${index + 1}: ${status} | Fitness: ${score.toFixed(1)}`);
+                
+                if (criteriaDetails) {
+                    const criteriaStatus = criteriaDetails.criteria.map(c => {
+                        return `${c.name}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
+                    }).join(' | ');
+                    this.logger.info(`[VALIDATION] Run ${index + 1} Criteria: ${criteriaStatus}`);
+                    this.logger.info(`[VALIDATION] Run ${index + 1} Details: ${criteriaDetails.criteriaMet}/5 criteria met`);
+                }
             });
-            this.logger.info(`  └── Results: ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average: ${avgScore.toFixed(1)}`);
+            
+            this.logger.info(`[VALIDATION] ========================================`);
 
             if (successfulRuns >= 2) { // Require at least 2 out of 3 runs to be successful
                 // Agent passed validation - return validation record for gene pool saving
                 validationEntry.isValidated = true;
-                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION (avg: ${avgScore.toFixed(1)})`);
+                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION - Queueing for gene pool save (avg: ${avgScore.toFixed(1)})`);
 
                 // Show toast notification
                 this.toast.showValidationPassed(geneId, avgScore, validationEntry.scores, validationEntry.fitResults, validationEntry.attempts);
@@ -190,7 +244,25 @@ export class ValidationManager {
                 return { success: true, record: validationRecord };
             } else {
                 // Agent failed validation - mark as failed and remove from queue
-                this.logger.info(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (${successfulRuns}/${VALIDATION_REQUIRED_RUNS} fit runs)`);
+                this.logger.info(`[VALIDATION] ========================================`);
+                this.logger.info(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION`);
+                this.logger.info(`[VALIDATION] ========================================`);
+                this.logger.info(`[VALIDATION] Failure Reason: Only ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
+                
+                // Log which runs failed and why
+                validationEntry.scores.forEach((score, index) => {
+                    if (!validationEntry.fitResults[index]) {
+                        const criteriaDetails = validationEntry.criteriaDetails[index];
+                        if (criteriaDetails) {
+                            const failedCriteria = criteriaDetails.criteria.filter(c => !c.passed).map(c => {
+                                return `${c.name} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
+                            }).join(', ');
+                            this.logger.info(`[VALIDATION] Run ${index + 1} (FAIL): Fitness ${score.toFixed(1)} | Failed: ${failedCriteria || 'Unknown'}`);
+                        }
+                    }
+                });
+                this.logger.info(`[VALIDATION] ========================================`);
+                
                 validationEntry.isValidated = false;
 
                 // Show toast notification for failed validation
@@ -423,7 +495,20 @@ export class ValidationManager {
 
         // Now we know we have valid stored weights and a valid validation entry
         if (this.validationQueue.has(agent.geneId)) {
-            this.logger.info(`[VALIDATION] 💥 Validation agent ${agent.id} (${agent.geneId}) died, validation run completed (fitness: ${agent.fitness.toFixed(1)}, fit: ${agent.fit}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+            // Calculate final fitness before logging
+            agent.calculateFitness();
+            const criteriaDetails = this.getCriteriaDetails(agent);
+            
+            this.logger.info(`[VALIDATION] 💥 Validation agent ${agent.id} (${agent.geneId}) died`);
+            this.logger.info(`[VALIDATION] Run ${validationEntry.attempts + 1}/${VALIDATION_REQUIRED_RUNS} completed: Fitness ${agent.fitness.toFixed(1)}, Fit: ${agent.fit ? 'YES' : 'NO'}`);
+            
+            if (criteriaDetails) {
+                const criteriaStatus = criteriaDetails.criteria.map(c => {
+                    return `${c.name}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
+                }).join(' | ');
+                this.logger.info(`[VALIDATION] Run ${validationEntry.attempts + 1} Criteria: ${criteriaStatus}`);
+                this.logger.info(`[VALIDATION] Run ${validationEntry.attempts + 1} Summary: ${criteriaDetails.criteriaMet}/5 criteria met`);
+            }
 
             // Safety: Ensure active validation agents counter doesn't go negative
             if (this.activeValidationAgents > 0) {
@@ -473,6 +558,69 @@ export class ValidationManager {
             return true;
         }
         return false;
+    }
+
+    // Extract detailed criteria information from an agent
+    getCriteriaDetails(agent) {
+
+        // Calculate exploration percentage
+        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+        const exploredCellsSize = agent.exploredCells?.size || 0;
+        const explorationPercentage = (exploredCellsSize / totalCells) * 100;
+
+        // Calculate age in seconds
+        const ageInSeconds = agent.age || 0;
+
+        // Get values
+        const fitness = agent.fitness || 0;
+        const foodEaten = agent.foodEaten || 0;
+        const turnsTowardsFood = agent.turnsTowardsFood || 0;
+
+        // Build criteria array
+        const criteria = [
+            {
+                name: 'Fitness',
+                value: fitness,
+                threshold: MIN_FITNESS_TO_SAVE_GENE_POOL,
+                passed: fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL
+            },
+            {
+                name: 'Food Eaten',
+                value: foodEaten,
+                threshold: MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+                passed: foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL
+            },
+            {
+                name: 'Age (seconds)',
+                value: ageInSeconds,
+                threshold: MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+                passed: ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL
+            },
+            {
+                name: 'Exploration (%)',
+                value: explorationPercentage,
+                threshold: MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
+                passed: explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL
+            },
+            {
+                name: 'Turns Towards Food',
+                value: turnsTowardsFood,
+                threshold: MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
+                passed: turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
+            }
+        ];
+
+        const criteriaMet = criteria.filter(c => c.passed).length;
+
+        return {
+            criteria,
+            criteriaMet,
+            fitness,
+            foodEaten,
+            ageInSeconds,
+            explorationPercentage,
+            turnsTowardsFood
+        };
     }
 
     // Determine if a validation entry should be removed from the queue

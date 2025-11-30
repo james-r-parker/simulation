@@ -5,7 +5,7 @@ import {
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
     FOOD_SPAWN_NEAR_AGENTS_CHANCE, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN, FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX,
     SPECIALIZATION_TYPES, RESPAWN_DELAY_FRAMES, MAX_ENERGY,
-    VALIDATION_REQUIRED_RUNS, MAX_AGENTS_TO_SPAWN_PER_FRAME, SPAWN_STAGGER_FRAMES,
+    VALIDATION_REQUIRED_RUNS, VALIDATION_AGENT_ENERGY, MAX_AGENTS_TO_SPAWN_PER_FRAME, SPAWN_STAGGER_FRAMES,
     OBSTACLE_COUNT, OBSTACLE_MIN_RADIUS, OBSTACLE_MAX_RADIUS,
     OBSTACLE_MIN_DISTANCE, OBSTACLE_SPAWN_MARGIN, OBSTACLE_INFLUENCE_RADIUS,
     OBSTACLE_MAX_SPEED,
@@ -654,7 +654,7 @@ export function repopulate(simulation) {
                         // Give validation agents extra energy and safe spawning to ensure they can complete their runs
                         const validationAgent = spawnAgent(simulation, {
                             gene: validationGene,
-                            energy: INITIAL_AGENT_ENERGY, // Normal energy for validation agents
+                            energy: VALIDATION_AGENT_ENERGY, // Extra energy for validation agents (from constants)
                             isValidationAgent: true
                         });
                         if (validationAgent) {

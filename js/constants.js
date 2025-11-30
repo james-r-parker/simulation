@@ -279,12 +279,12 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000; // Minimum fitness score required to save agent genes
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 5000; // Minimum fitness score required to save agent genes (reduced from 10000)
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (33.33s)
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.1; // Minimum world exploration percentage required
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.5; // Minimum world exploration percentage required (reduced from 1.1%)
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 10; // Minimum successful food-seeking behaviors
 
 // Storage limits
@@ -293,6 +293,9 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 // Validation system (rigorous testing for elite agents)
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
+export const VALIDATION_AGENT_ENERGY = 3000; // Energy given to validation agents (boosted from INITIAL_AGENT_ENERGY for fairer testing)
+export const EXCEPTIONAL_FITNESS_THRESHOLD = 15000; // Fitness threshold for partial credit system (4/5 criteria with exceptional fitness)
+export const INACTIVE_TEMPERATURE_PENALTY = 0.5; // Penalty multiplier for agents with avg temperature < 1 (50% penalty instead of zero)
 
 // --- MATH CONSTANTS ---
 // Pre-calculated mathematical values for performance

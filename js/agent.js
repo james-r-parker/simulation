@@ -19,7 +19,7 @@ import {
     DIRECTION_CHANGE_FITNESS_FACTOR,
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
-    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+    MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, EXCEPTIONAL_FITNESS_THRESHOLD, INACTIVE_TEMPERATURE_PENALTY,
     SPAWN_GROWTH_DURATION_FRAMES, SPAWN_GROWTH_MIN_SCALE, SPAWN_GROWTH_MAX_SCALE, SPAWN_SIZE_INTERPOLATION_SPEED,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
@@ -713,8 +713,9 @@ export class Agent {
                     // Check if turn direction aligns with food direction
                     const foodDirection = Math.sign(angleToFood);
 
-                    if (Math.abs(turnDirection - foodDirection) < 0.5 || (Math.abs(angleToFood) < 0.3)) {
+                    if (Math.abs(turnDirection - foodDirection) < 0.7 || (Math.abs(angleToFood) < 0.2)) {
                         // Agent is turning towards food or already facing it
+                        // Increased tolerance (0.5->0.7) and reduced minimum angle (0.3->0.2) for more accurate tracking
                         this.turnsTowardsFood += Math.min(Math.abs(angleDiff), 0.5); // Cap reward per turn
                     }
                 }
@@ -1633,10 +1634,10 @@ export class Agent {
         // Only applies after surviving longer than 20 seconds to avoid rewarding short-lived agents
         const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
 
-        // Agents that never heated up (avg temp = 0) get 0 fitness - complete inactivity penalty
+        // Agents that never heated up (avg temp < 1) get penalty instead of zero
+        // This prevents good agents from being completely invalidated by temperature tracking edge cases
         if (avgTemperature < 1) {
-            this.fitness = 0;
-            return;
+            adjustedBaseScore *= INACTIVE_TEMPERATURE_PENALTY; // Penalty for inactive agents (from constants)
         }
 
         // Final safety check to ensure fitness is a finite number
@@ -1645,13 +1646,19 @@ export class Agent {
         this.fitness = Math.max(0, finalFitnessValue);
 
         // Agent qualification criteria for gene pool entry
-        // Must meet ALL of the following thresholds:
+        // Partial credit system: Allow 4/5 criteria if fitness is exceptional
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
-        this.fit = this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL &&
-            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL &&
-            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL && // Minimum lifespan in seconds
-            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL &&
-            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL;
+        const criteria = [
+            this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL,
+            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
+            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
+        ];
+        const criteriaMet = criteria.filter(Boolean).length;
+        
+        // All 5 criteria must pass, OR 4/5 criteria with exceptional fitness (from constants)
+        this.fit = criteriaMet >= 5 || (criteriaMet >= 4 && this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD);
     }
 
     getTemperatureEfficiency() {
