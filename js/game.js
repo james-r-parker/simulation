@@ -45,6 +45,7 @@ import {
     updateObstacles
 } from './spawn.js';
 import { checkCollisions, convertGpuRayResultsToInputs, collisionSetPool } from './physics.js';
+import { distanceSquared } from './utils.js';
 import { updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
 import { PerformanceMonitor } from './performance-monitor.js';
@@ -70,7 +71,8 @@ export class Simulation {
         this.worldHeight = WORLD_HEIGHT;
         this.obstacles = generateObstacles(this);
 
-        this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
+        // PERFORMANCE: Increased capacity from 4 to 8 to reduce tree depth and improve performance
+        this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 8);
         this.camera = new Camera(this.worldWidth / 2, this.worldHeight / 2, 0.5, this.logger); // Zoomed out slightly for wider 16:9 view
 
         this.generation = 0;
@@ -187,10 +189,22 @@ export class Simulation {
         this.activeAgents = []; // Pre-allocate active agents array
         this.allEntities = []; // Pre-allocate all entities array
         this.collisionQueryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate collision query range
+        
+        // PERFORMANCE: Spatial grid for ray tracing optimization
+        this.spatialGridEnabled = true; // Enable spatial partitioning
+        this.spatialGridCellSize = 200; // Size of each grid cell (pixels) - balances performance vs accuracy
+        this.spatialGridWidth = Math.ceil(this.worldWidth / this.spatialGridCellSize);
+        this.spatialGridHeight = Math.ceil(this.worldHeight / this.spatialGridCellSize);
+        this.spatialGrid = null; // Will be initialized when needed
+        this.spatialGridEntityIndices = null; // Entity indices per grid cell
 
         // Object pool for quadtree Point objects to reduce GC pressure
         this.pointPool = new PointPool(); // Uses default POINT_POOL_SIZE
 
+        // PERFORMANCE: Quadtree caching - track entity positions to avoid unnecessary rebuilds
+        this.lastAgentPositions = new Map(); // Map<agent, {x, y}>
+        this.lastFoodPositions = new Map(); // Map<food, {x, y}>
+        this.quadtreeRebuildThreshold = 10; // Rebuild if entity moved more than 10 pixels
 
         // Pre-allocated arrays for filter operations
         this.livingFood = [];
@@ -204,6 +218,95 @@ export class Simulation {
         this.rendererDefragIntervalHours = 4; // Defragment renderer every 4 hours
 
         this.init();
+    }
+
+    /**
+     * Build spatial grid for ray tracing optimization
+     * Assigns entities to grid cells based on their position
+     * @param {Array} entities - Array of entities (food + agents)
+     * @returns {Object} Grid data with entity indices per cell
+     */
+    buildSpatialGrid(entities) {
+        if (!this.spatialGridEnabled) {
+            return null;
+        }
+
+        // Initialize grid if needed
+        if (!this.spatialGrid) {
+            this.spatialGrid = [];
+            this.spatialGridEntityIndices = [];
+            const totalCells = this.spatialGridWidth * this.spatialGridHeight;
+            for (let i = 0; i < totalCells; i++) {
+                this.spatialGrid[i] = [];
+                this.spatialGridEntityIndices[i] = [];
+            }
+        }
+
+        // Clear previous grid
+        const totalCells = this.spatialGridWidth * this.spatialGridHeight;
+        for (let i = 0; i < totalCells; i++) {
+            this.spatialGrid[i].length = 0;
+            this.spatialGridEntityIndices[i].length = 0;
+        }
+
+        // Assign entities to grid cells
+        for (let i = 0; i < entities.length; i++) {
+            const entity = entities[i];
+            if (!entity || entity.isDead) continue;
+
+            const entityX = entity.x;
+            const entityY = entity.y;
+            const entitySize = entity.size || 0;
+
+            // Calculate grid cell coordinates
+            const cellX = Math.floor(entityX / this.spatialGridCellSize);
+            const cellY = Math.floor(entityY / this.spatialGridCellSize);
+
+            // Entity can span multiple cells if it's large, so check neighboring cells too
+            const cellRadius = Math.ceil(entitySize / this.spatialGridCellSize) + 1;
+            const minCellX = Math.max(0, cellX - cellRadius);
+            const maxCellX = Math.min(this.spatialGridWidth - 1, cellX + cellRadius);
+            const minCellY = Math.max(0, cellY - cellRadius);
+            const maxCellY = Math.min(this.spatialGridHeight - 1, cellY + cellRadius);
+
+            // Add entity to all relevant cells
+            for (let cy = minCellY; cy <= maxCellY; cy++) {
+                for (let cx = minCellX; cx <= maxCellX; cx++) {
+                    const cellIndex = cy * this.spatialGridWidth + cx;
+                    if (cellIndex >= 0 && cellIndex < totalCells) {
+                        this.spatialGrid[cellIndex].push(entity);
+                        this.spatialGridEntityIndices[cellIndex].push(i);
+                    }
+                }
+            }
+        }
+
+        // Build flat arrays for GPU
+        const cellEntityCounts = new Uint32Array(totalCells);
+        const cellStartIndices = new Uint32Array(totalCells);
+        const cellEntityIndices = [];
+        
+        // Count entities per cell and build start indices
+        let currentOffset = 0;
+        for (let i = 0; i < totalCells; i++) {
+            const count = this.spatialGridEntityIndices[i].length;
+            cellEntityCounts[i] = count;
+            cellStartIndices[i] = currentOffset;
+            // Add entity indices to flat array
+            for (let j = 0; j < count; j++) {
+                cellEntityIndices.push(this.spatialGridEntityIndices[i][j]);
+            }
+            currentOffset += count;
+        }
+
+        return {
+            cellSize: this.spatialGridCellSize,
+            gridWidth: this.spatialGridWidth,
+            gridHeight: this.spatialGridHeight,
+            cellEntityCounts: cellEntityCounts, // Uint32Array: number of entities per cell
+            cellStartIndices: cellStartIndices, // Uint32Array: starting index for each cell
+            cellEntityIndices: new Uint32Array(cellEntityIndices) // Uint32Array: flat array of entity indices
+        };
     }
 
     resize() {
@@ -1011,56 +1114,136 @@ export class Simulation {
                     continue;
                 }
 
-                // REBUILD quadtree every iteration for accurate collision detection
+                // PERFORMANCE: Quadtree caching - only rebuild if entities moved significantly
                 this.perfMonitor.startPhase(`quadtree_${i}`);
-                // This ensures all collision queries use current entity positions
-                this.quadtree.clear();
-
-                // MEMORY LEAK FIX: Use try-finally to ensure points are always released
-                // Return all Points to pool before rebuilding
-                this.pointPool.releaseAll();
-
-                // OPTIMIZATION: Build activeAgents list here to avoid iterating agents again later
-                this.activeAgents.length = 0;
-
-                try {
-                    for (let j = 0; j < this.agents.length; j++) {
-                        const agent = this.agents[j];
-                        if (agent && !agent.isDead) {
-                            // Use Point pool instead of allocating new objects
-                            const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
-                            this.quadtree.insert(point);
-
-                            // Add to active agents list
-                            this.activeAgents.push(agent);
+                
+                // Check if quadtree needs rebuilding by comparing current positions to last positions
+                let needsRebuild = false;
+                const thresholdSq = this.quadtreeRebuildThreshold * this.quadtreeRebuildThreshold;
+                
+                // Check agents for movement
+                for (let j = 0; j < this.agents.length; j++) {
+                    const agent = this.agents[j];
+                    if (agent && !agent.isDead) {
+                        const lastPos = this.lastAgentPositions.get(agent);
+                        if (!lastPos) {
+                            needsRebuild = true;
+                            break;
+                        }
+                        const dx = agent.x - lastPos.x;
+                        const dy = agent.y - lastPos.y;
+                        if (dx * dx + dy * dy > thresholdSq) {
+                            needsRebuild = true;
+                            break;
                         }
                     }
+                }
+                
+                // Check food for movement (only if agents didn't trigger rebuild)
+                if (!needsRebuild) {
                     for (let j = 0; j < this.food.length; j++) {
                         const food = this.food[j];
                         if (food && !food.isDead) {
-                            // Use Point pool instead of allocating new objects
-                            const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
-                            this.quadtree.insert(point);
+                            const lastPos = this.lastFoodPositions.get(food);
+                            if (!lastPos) {
+                                needsRebuild = true;
+                                break;
+                            }
+                            const dx = food.x - lastPos.x;
+                            const dy = food.y - lastPos.y;
+                            if (dx * dx + dy * dy > thresholdSq) {
+                                needsRebuild = true;
+                                break;
+                            }
                         }
                     }
-                    for (let j = 0; j < this.pheromones.length; j++) {
-                        const pheromone = this.pheromones[j];
-                        if (pheromone && !pheromone.isDead) {
+                }
+                
+                // Only rebuild if entities moved significantly or this is first frame
+                if (needsRebuild || this.lastAgentPositions.size === 0) {
+                    // This ensures all collision queries use current entity positions
+                    this.quadtree.clear();
+
+                    // MEMORY LEAK FIX: Use try-finally to ensure points are always released
+                    // Return all Points to pool before rebuilding
+                    this.pointPool.releaseAll();
+
+                    // OPTIMIZATION: Build activeAgents list here to avoid iterating agents again later
+                    this.activeAgents.length = 0;
+
+                    try {
+                        for (let j = 0; j < this.agents.length; j++) {
+                            const agent = this.agents[j];
+                            if (agent && !agent.isDead) {
+                                // Use Point pool instead of allocating new objects
+                                const point = this.pointPool.acquire(agent.x, agent.y, agent, agent.size / 2);
+                                this.quadtree.insert(point);
+
+                                // Add to active agents list
+                                this.activeAgents.push(agent);
+                                
+                                // Update position tracking
+                                this.lastAgentPositions.set(agent, { x: agent.x, y: agent.y });
+                            } else if (agent && agent.isDead) {
+                                // Remove dead agents from tracking
+                                this.lastAgentPositions.delete(agent);
+                            }
+                        }
+                        for (let j = 0; j < this.food.length; j++) {
+                            const food = this.food[j];
+                            if (food && !food.isDead) {
+                                // Use Point pool instead of allocating new objects
+                                const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
+                                this.quadtree.insert(point);
+                                
+                                // Update position tracking
+                                this.lastFoodPositions.set(food, { x: food.x, y: food.y });
+                            } else if (food && food.isDead) {
+                                // Remove dead food from tracking
+                                this.lastFoodPositions.delete(food);
+                            }
+                        }
+                        for (let j = 0; j < this.pheromones.length; j++) {
+                            const pheromone = this.pheromones[j];
+                            if (pheromone && !pheromone.isDead) {
+                                const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, pheromone.radius || 2.5);
+                                this.quadtree.insert(point);
+                            }
+                        }
+                        // Insert obstacles into quadtree for collision detection
+                        for (const obstacle of this.obstacles) {
                             // Use Point pool instead of allocating new objects
-                            const point = this.pointPool.acquire(pheromone.x, pheromone.y, pheromone, 0);
+                            const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
                             this.quadtree.insert(point);
                         }
+                    } catch (error) {
+                        this.logger.error('Error rebuilding quadtree:', error);
+                        // Fallback: clear and rebuild on error
+                        this.quadtree.clear();
+                        this.pointPool.releaseAll();
                     }
-                    // Insert obstacles into quadtree for collision detection
-                    for (const obstacle of this.obstacles) {
-                        // Use Point pool instead of allocating new objects
-                        const point = this.pointPool.acquire(obstacle.x, obstacle.y, obstacle, obstacle.radius);
-                        this.quadtree.insert(point);
+                } else {
+                    // PERFORMANCE: Skip rebuild, but still update activeAgents list and position tracking
+                    this.activeAgents.length = 0;
+                    for (let j = 0; j < this.agents.length; j++) {
+                        const agent = this.agents[j];
+                        if (agent && !agent.isDead) {
+                            this.activeAgents.push(agent);
+                            // Update position tracking (even if not rebuilding, keep tracking current)
+                            this.lastAgentPositions.set(agent, { x: agent.x, y: agent.y });
+                        } else if (agent && agent.isDead) {
+                            this.lastAgentPositions.delete(agent);
+                        }
                     }
-                } catch (error) {
-                    // If quadtree building fails, log and ensure pool is still released
-                    this.logger.error('[QUADTREE] Error building quadtree:', error);
-                    // Point pool will be released in finally block
+                    // Update food position tracking
+                    for (let j = 0; j < this.food.length; j++) {
+                        const food = this.food[j];
+                        if (food && !food.isDead) {
+                            this.lastFoodPositions.set(food, { x: food.x, y: food.y });
+                        } else if (food && food.isDead) {
+                            this.lastFoodPositions.delete(food);
+                        }
+                    }
                 }
                 this.perfMonitor.endPhase(`quadtree_${i}`);
 
@@ -1111,18 +1294,70 @@ export class Simulation {
 
                         // Build arrays with current state - Reuse allEntities
                         this.allEntities.length = 0;
-                        for (let j = 0; j < this.food.length; j++) {
-                            if (!this.food[j].isDead) {
-                                this.allEntities.push(this.food[j]);
+                        
+                        // PERFORMANCE: Filter entities to only include those within maxRayDist of any agent
+                        // This is mathematically correct - entities beyond maxRayDist cannot be detected anyway
+                        // Find maximum maxRayDist among all active agents
+                        let maxRayDist = 0;
+                        for (let j = 0; j < activeAgents.length; j++) {
+                            const agent = activeAgents[j];
+                            if (agent && !agent.isDead && agent.maxRayDist > maxRayDist) {
+                                maxRayDist = agent.maxRayDist;
                             }
                         }
-                        for (let j = 0; j < activeAgents.length; j++) {
-                            this.allEntities.push(activeAgents[j]);
+                        
+                        // If no agents, skip entity filtering
+                        if (maxRayDist > 0 && activeAgents.length > 0) {
+                            const maxRayDistSq = maxRayDist * maxRayDist;
+                            
+                            // Filter food - only include if within maxRayDist of any agent
+                            for (let j = 0; j < this.food.length; j++) {
+                                const food = this.food[j];
+                                if (food && !food.isDead) {
+                                    // Check if food is within range of any agent
+                                    let inRange = false;
+                                    const foodSize = food.size || 0;
+                                    const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
+                                    
+                                    for (let k = 0; k < activeAgents.length; k++) {
+                                        const agent = activeAgents[k];
+                                        if (agent && !agent.isDead) {
+                                            const distSq = distanceSquared(agent.x, agent.y, food.x, food.y);
+                                            if (distSq <= maxCheckDistSq) {
+                                                inRange = true;
+                                                break; // Early exit once found
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (inRange) {
+                                        this.allEntities.push(food);
+                                    }
+                                }
+                            }
+                            
+                            // Always include all active agents (they need to detect each other)
+                            for (let j = 0; j < activeAgents.length; j++) {
+                                this.allEntities.push(activeAgents[j]);
+                            }
+                        } else {
+                            // Fallback: include all entities if no agents or maxRayDist is 0
+                            for (let j = 0; j < this.food.length; j++) {
+                                if (!this.food[j].isDead) {
+                                    this.allEntities.push(this.food[j]);
+                                }
+                            }
+                            for (let j = 0; j < activeAgents.length; j++) {
+                                this.allEntities.push(activeAgents[j]);
+                            }
                         }
 
                         const allEntities = this.allEntities;
 
                         const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
+
+                        // PERFORMANCE: Build spatial grid for optimized ray tracing
+                        const spatialGrid = this.spatialGridEnabled ? this.buildSpatialGrid(allEntities) : null;
 
                         // CRITICAL: Ray tracing must complete BEFORE neural network processing
                         // because the neural network needs the converted ray results as inputs
@@ -1133,7 +1368,8 @@ export class Simulation {
                                 this.obstacles,
                                 maxRaysPerAgent,
                                 this.worldWidth,
-                                this.worldHeight
+                                this.worldHeight,
+                                spatialGrid // Pass spatial grid data
                             );
                         });
 
@@ -1509,8 +1745,9 @@ export class Simulation {
             // Always increment frame count, even if iterations were skipped
             this.frameCount++;
             this.perfMonitor.startPhase('memory');
-            // Update memory stats every ~1 second using real time to avoid throttling
-            if (now - this.lastMemoryPressureCheckTime >= 1000) {
+            // Update memory stats every ~0.5 seconds using real time to avoid throttling
+            // PERFORMANCE: Reduced interval from 1000ms to 500ms for more frequent cleanup
+            if (now - this.lastMemoryPressureCheckTime >= 500) {
                 this.lastMemoryPressureCheckTime = now;
                 updateMemoryStats(this, false);
                 handleMemoryPressure(this);
@@ -1519,17 +1756,19 @@ export class Simulation {
             if (this.frameCount % 100 === 0) updateInfo(this);
 
             // Periodic agent data cleanup - prevent array accumulation
-            if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
+            // PERFORMANCE: Reduced interval from 30 to 10 frames for more aggressive cleanup
+            if (this.frameCount % 10 === 0) { // More frequent cleanup: every ~0.17 seconds at 60 FPS
                 for (const agent of this.agents) {
                     if (agent && !agent.isDead) {
                         // Limit array sizes to prevent unbounded growth
-                        if (agent.inputs && agent.inputs.length > 1000) {
+                        // PERFORMANCE: Lowered limits from 1000/500 to 500/250 for more aggressive cleanup
+                        if (agent.inputs && agent.inputs.length > 500) {
                             agent.inputs.length = 0;
                         }
-                        if (agent.rayData && agent.rayData.length > 500) {
+                        if (agent.rayData && agent.rayData.length > 250) {
                             agent.rayData.length = 0;
                         }
-                        if (agent.lastRayData && agent.lastRayData.length > 500) {
+                        if (agent.lastRayData && agent.lastRayData.length > 250) {
                             agent.lastRayData.length = 0;
                         }
                     }

@@ -335,11 +335,13 @@ export function periodicMemoryCleanup(simulation) {
     let agentsCleaned = 0;
     let arraySizeLimit = 1000; // Base limit
 
+    // PERFORMANCE: More aggressive array size limits applied earlier to prevent degradation
     // Reduce array size limits as simulation runs longer
-    if (sessionDurationHours > 1) arraySizeLimit = 800;
-    if (sessionDurationHours > 2) arraySizeLimit = 600;
-    if (sessionDurationHours > 4) arraySizeLimit = 400;
-    if (sessionDurationHours > 8) arraySizeLimit = 200;
+    if (sessionDurationHours > 0.5) arraySizeLimit = 600; // Start reducing after 30 minutes
+    if (sessionDurationHours > 1) arraySizeLimit = 400;
+    if (sessionDurationHours > 2) arraySizeLimit = 300;
+    if (sessionDurationHours > 4) arraySizeLimit = 200;
+    if (sessionDurationHours > 8) arraySizeLimit = 150;
     if (sessionDurationHours > 24) arraySizeLimit = 100;
 
     for (const agent of simulation.agents) {

@@ -119,6 +119,10 @@ struct RayUniforms {
     numFood: f32,
     worldWidth: f32,
     worldHeight: f32,
+    gridCellSize: f32,
+    gridWidth: f32,
+    gridHeight: f32,
+    useSpatialGrid: f32, // 1.0 if spatial grid enabled, 0.0 otherwise
 };
 
 @group(0) @binding(0) var<uniform> uniforms: RayUniforms;
@@ -126,6 +130,9 @@ struct RayUniforms {
 @group(0) @binding(2) var<storage, read> entities: array<Entity>;
 @group(0) @binding(3) var<storage, read> obstacles: array<Obstacle>;
 @group(0) @binding(4) var<storage, read_write> results: array<RayResult>;
+@group(0) @binding(5) var<storage, read> cellEntityCounts: array<u32>; // Number of entities per cell
+@group(0) @binding(6) var<storage, read> cellStartIndices: array<u32>; // Starting index in cellEntityIndices for each cell
+@group(0) @binding(7) var<storage, read> cellEntityIndices: array<u32>; // Flat array of entity indices per cell
 
 fn rayCircleIntersection(rayOrigin: vec2<f32>, rayDir: vec2<f32>, circleCenter: vec2<f32>, radius: f32) -> f32 {
     let oc = rayOrigin - circleCenter;
@@ -210,42 +217,114 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         if (t > 0.0 && t < closest_dist) { closest_dist = t; hit_type = 1.0; }
     }
     
-    // SPATIAL PARTITIONING: Entities are sorted by X coordinate
-    // Binary search to find X range, then only check entities in that range
+    // SPATIAL PARTITIONING: Use grid-based lookup to only check entities in relevant cells
     let num_entities = u32(uniforms.numEntities);
     
     if (num_entities > 0u) {
-        // Calculate X bounds for this ray
-        let ray_max_x = ray_origin.x + ray_dir.x * closest_dist;
-        let ray_min_x = min(ray_origin.x, ray_max_x) - closest_dist; // Extra margin for entity size
-        let ray_max_x_bound = max(ray_origin.x, ray_max_x) + closest_dist;
-        
-        // Check all entities (no sorting assumption for better compatibility)
-        for (var i = 0u; i < num_entities; i = i + 1u) {
-            let entity = entities[i];
+        if (uniforms.useSpatialGrid > 0.5 && uniforms.gridCellSize > 0.0) {
+            // PERFORMANCE: Grid-based spatial partitioning
+            // Calculate which grid cells the ray passes through
+            let grid_cell_size = uniforms.gridCellSize;
+            let grid_width = u32(uniforms.gridWidth);
+            let grid_height = u32(uniforms.gridHeight);
             
-            // Skip self: agents come after food in the entities array
-            let my_entity_index = agent_index + u32(uniforms.numFood);
-            if (entity.entityType == 1.0 && i == my_entity_index) { continue; }
+            // Calculate grid cells that the ray passes through
+            let ray_end = ray_origin + ray_dir * closest_dist;
+            // Clamp cell coordinates to valid range
+            let start_cell_x_f = max(0.0, min(ray_origin.x / grid_cell_size, f32(grid_width - 1u)));
+            let start_cell_y_f = max(0.0, min(ray_origin.y / grid_cell_size, f32(grid_height - 1u)));
+            let end_cell_x_f = max(0.0, min(ray_end.x / grid_cell_size, f32(grid_width - 1u)));
+            let end_cell_y_f = max(0.0, min(ray_end.y / grid_cell_size, f32(grid_height - 1u)));
             
-            // Early bounds check - skip entities that are too far to intersect
-            let dx = entity.x - ray_origin.x;
-            let dy = entity.y - ray_origin.y;
-            let dist_sq = dx * dx + dy * dy;
-            let max_reach = closest_dist + entity.size;
-            if (dist_sq > max_reach * max_reach) { continue; }
+            let start_cell_x = u32(start_cell_x_f);
+            let start_cell_y = u32(start_cell_y_f);
+            let end_cell_x = u32(end_cell_x_f);
+            let end_cell_y = u32(end_cell_y_f);
             
-            let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
-            if (dist > 0.0 && dist < closest_dist) {
-                closest_dist = dist;
-                // Map entityType to hitType: food (entityType 2) → hitType 2, agent (entityType 1) → hitType 3
-                if (entity.entityType == 2.0) {
-                    hit_type = 2.0; // Food
-                } else if (entity.entityType == 1.0) {
-                    hit_type = 3.0; // Agent
+            // Simple approach: check cells in a bounding box around the ray
+            // Use var for mutable variables
+            var min_cell_x = min(start_cell_x, end_cell_x);
+            var max_cell_x = max(start_cell_x, end_cell_x);
+            var min_cell_y = min(start_cell_y, end_cell_y);
+            var max_cell_y = max(start_cell_y, end_cell_y);
+            
+            // Expand by 1 cell in each direction to account for entity size
+            if (min_cell_x > 0u) { min_cell_x = min_cell_x - 1u; }
+            if (min_cell_y > 0u) { min_cell_y = min_cell_y - 1u; }
+            if (max_cell_x < grid_width - 1u) { max_cell_x = max_cell_x + 1u; }
+            if (max_cell_y < grid_height - 1u) { max_cell_y = max_cell_y + 1u; }
+            
+            // Check entities in relevant grid cells
+            // Note: Entities may be checked multiple times if they span multiple cells, but early bounds check handles this efficiently
+            for (var cy = min_cell_y; cy <= max_cell_y && cy < grid_height; cy = cy + 1u) {
+                for (var cx = min_cell_x; cx <= max_cell_x && cx < grid_width; cx = cx + 1u) {
+                    let cell_index = cy * grid_width + cx;
+                    let entity_count = cellEntityCounts[cell_index];
+                    
+                    // Get starting index in flat entity indices array
+                    let entity_index_offset = cellStartIndices[cell_index];
+                    
+                    // Check entities in this cell
+                    for (var i = 0u; i < entity_count; i = i + 1u) {
+                        let entity_idx = cellEntityIndices[entity_index_offset + i];
+                        if (entity_idx >= num_entities) { continue; }
+                        
+                        let entity = entities[entity_idx];
+                        
+                        // Skip self: agents come after food in the entities array
+                        let my_entity_index = agent_index + u32(uniforms.numFood);
+                        if (entity.entityType == 1.0 && entity_idx == my_entity_index) { continue; }
+                        
+                        // Early bounds check - skip entities that are too far to intersect
+                        let dx = entity.x - ray_origin.x;
+                        let dy = entity.y - ray_origin.y;
+                        let dist_sq = dx * dx + dy * dy;
+                        let max_reach = closest_dist + entity.size;
+                        if (dist_sq > max_reach * max_reach) { continue; }
+                        
+                        let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
+                        if (dist > 0.0 && dist < closest_dist) {
+                            closest_dist = dist;
+                            // Map entityType to hitType: food (entityType 2) → hitType 2, agent (entityType 1) → hitType 3
+                            if (entity.entityType == 2.0) {
+                                hit_type = 2.0; // Food
+                            } else if (entity.entityType == 1.0) {
+                                hit_type = 3.0; // Agent
+                            }
+                            entity_id = f32(entity_idx);
+                            entity_size = entity.size; // Store the size of hit entity
+                        }
+                    }
                 }
-                entity_id = f32(i);
-                entity_size = entity.size; // Store the size of hit entity
+            }
+        } else {
+            // Fallback: Check all entities (original brute-force method)
+            for (var i = 0u; i < num_entities; i = i + 1u) {
+                let entity = entities[i];
+                
+                // Skip self: agents come after food in the entities array
+                let my_entity_index = agent_index + u32(uniforms.numFood);
+                if (entity.entityType == 1.0 && i == my_entity_index) { continue; }
+                
+                // Early bounds check - skip entities that are too far to intersect
+                let dx = entity.x - ray_origin.x;
+                let dy = entity.y - ray_origin.y;
+                let dist_sq = dx * dx + dy * dy;
+                let max_reach = closest_dist + entity.size;
+                if (dist_sq > max_reach * max_reach) { continue; }
+                
+                let dist = rayCircleIntersection(ray_origin, ray_dir, vec2<f32>(entity.x, entity.y), entity.size);
+                if (dist > 0.0 && dist < closest_dist) {
+                    closest_dist = dist;
+                    // Map entityType to hitType: food (entityType 2) → hitType 2, agent (entityType 1) → hitType 3
+                    if (entity.entityType == 2.0) {
+                        hit_type = 2.0; // Food
+                    } else if (entity.entityType == 1.0) {
+                        hit_type = 3.0; // Agent
+                    }
+                    entity_id = f32(i);
+                    entity_size = entity.size; // Store the size of hit entity
+                }
             }
         }
     }
@@ -350,7 +429,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         this.buffers = {
             uniforms: this.device.createBuffer({
-                size: 7 * Float32Array.BYTES_PER_ELEMENT,
+                size: 11 * Float32Array.BYTES_PER_ELEMENT, // Updated for spatial grid params
                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
             }),
             agent: this.device.createBuffer({
@@ -377,6 +456,26 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             maxAgents, maxRays, maxEntities, maxObstacles
         };
 
+        // Create spatial grid buffers (will be resized dynamically if needed)
+        // World is 14400x8100, with 200px cells = 72x41 = 2952 cells max
+        const maxGridCells = 4000; // Increased to handle full world size (72x41 = 2952)
+        const maxGridEntities = 20000; // Max entities across all cells (400 entities * ~50 cells each)
+        
+        this.buffers.gridCellCounts = this.device.createBuffer({
+            size: maxGridCells * Uint32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+        
+        this.buffers.gridStartIndices = this.device.createBuffer({
+            size: maxGridCells * Uint32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+        
+        this.buffers.gridEntityIndices = this.device.createBuffer({
+            size: maxGridEntities * Uint32Array.BYTES_PER_ELEMENT,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+
         this.rayTracingBindGroup = this.device.createBindGroup({
             layout: this.rayTracingPipeline.getBindGroupLayout(0),
             entries: [
@@ -385,11 +484,14 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 { binding: 2, resource: { buffer: this.buffers.entity } },
                 { binding: 3, resource: { buffer: this.buffers.obstacle } },
                 { binding: 4, resource: { buffer: this.buffers.result } },
+                { binding: 5, resource: { buffer: this.buffers.gridCellCounts } },
+                { binding: 6, resource: { buffer: this.buffers.gridStartIndices } },
+                { binding: 7, resource: { buffer: this.buffers.gridEntityIndices } },
             ],
         });
     }
 
-    async batchRayTracing(agents, entities, obstacles, numRaysPerAgent, worldWidth = 10000, worldHeight = 10000) {
+    async batchRayTracing(agents, entities, obstacles, numRaysPerAgent, worldWidth = 10000, worldHeight = 10000, spatialGrid = null) {
 
         if (!this.device || !this.initialized) {
             this.logger.warn('[GPU] Ray tracing called before device ready');
@@ -527,11 +629,40 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 }
             }
 
+            // Process spatial grid data if provided
+            let useSpatialGrid = 0.0;
+            let gridCellSize = 0.0;
+            let gridWidth = 0.0;
+            let gridHeight = 0.0;
+            
+            if (spatialGrid && spatialGrid.cellEntityCounts && spatialGrid.cellEntityCounts.length > 0) {
+                useSpatialGrid = 1.0;
+                gridCellSize = spatialGrid.cellSize;
+                gridWidth = spatialGrid.gridWidth;
+                gridHeight = spatialGrid.gridHeight;
+                
+                // Upload spatial grid data to GPU
+                const totalCells = gridWidth * gridHeight;
+                if (totalCells <= 4000 && spatialGrid.cellEntityIndices.length <= 20000) {
+                    this.queue.writeBuffer(this.buffers.gridCellCounts, 0, spatialGrid.cellEntityCounts);
+                    this.queue.writeBuffer(this.buffers.gridStartIndices, 0, spatialGrid.cellStartIndices);
+                    this.queue.writeBuffer(this.buffers.gridEntityIndices, 0, spatialGrid.cellEntityIndices);
+                } else {
+                    // Grid too large, fall back to brute force
+                    this.logger.warn('[GPU] Spatial grid too large, falling back to brute force', {
+                        totalCells, entityIndices: spatialGrid.cellEntityIndices.length,
+                        maxCells: 4000, maxEntities: 20000
+                    });
+                    useSpatialGrid = 0.0;
+                }
+            }
+
             this.queue.writeBuffer(this.buffers.agent, 0, agentData);
             this.queue.writeBuffer(this.buffers.entity, 0, entityData);
             this.queue.writeBuffer(this.buffers.obstacle, 0, obstacleData);
             this.queue.writeBuffer(this.buffers.uniforms, 0, new Float32Array([
-                numAgents, numRaysPerAgent, numEntities, numObstacleSegments, foodCount, worldWidth, worldHeight
+                numAgents, numRaysPerAgent, numEntities, numObstacleSegments, foodCount, worldWidth, worldHeight,
+                gridCellSize, gridWidth, gridHeight, useSpatialGrid
             ]));
 
             // PERFORMANCE LOGGING: Track ray tracing workload
