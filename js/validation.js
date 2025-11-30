@@ -39,10 +39,24 @@ export class ValidationManager {
         // In this case, we use the stored validation entry data instead of agent.nn
         const isDeathProcessing = skipGenePoolCheck && this.validationQueue.has(geneId);
 
-        // Safety check: Ensure agent has valid neural network (unless processing a death)
-        if (!agent || (!isDeathProcessing && !agent.nn)) {
-            this.logger.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - agent or neural network is null`);
+        // Safety check: Ensure agent exists
+        if (!agent) {
+            this.logger.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - agent is null`);
             return false;
+        }
+
+        // Try to get weights - this will work even if neural network is cleaned up
+        // as long as getWeights() method is still available
+        let weights = null;
+        try {
+            weights = agent.getWeights();
+        } catch (error) {
+            // If getWeights fails, check if neural network exists
+            if (!agent.nn && !isDeathProcessing) {
+                this.logger.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - no neural network and getWeights() failed: ${error.message}`);
+                return false;
+            }
+            // If it's death processing, we'll use stored weights from validation entry
         }
 
         // Check if this geneId is already in the gene pool - if so, skip validation and save directly
@@ -56,7 +70,10 @@ export class ValidationManager {
 
         if (!this.validationQueue.has(geneId)) {
             try {
-                const weights = agent.getWeights();
+                // Use weights we extracted earlier, or try to get them again
+                if (!weights) {
+                    weights = agent.getWeights();
+                }
 
                 // Safety check: Ensure weights are valid NeuralNetwork format (object with weights1, weights2)
                 const isValidWeights = weights &&

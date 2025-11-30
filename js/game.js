@@ -1600,6 +1600,30 @@ export class Simulation {
                     for (let j = this.agents.length - 1; j >= 0; j--) {
                         const agent = this.agents[j];
                         if (agent.isDead) {
+                            // CRITICAL: Extract weights IMMEDIATELY when agent dies, before any cleanup
+                            // This ensures we can add agents to validation even if cleanup occurs later
+                            let agentWeights = null;
+                            let hasValidWeights = false;
+                            
+                            if (agent.nn) {
+                                try {
+                                    agentWeights = agent.getWeights();
+                                    hasValidWeights = agentWeights &&
+                                        typeof agentWeights === 'object' &&
+                                        agentWeights.weights1 && agentWeights.weights2 &&
+                                        Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                        agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                } catch (error) {
+                                    // If getWeights fails, we'll skip validation for this agent
+                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}): ${error.message}`);
+                                }
+                            }
+                            
+                            // Store weights on agent temporarily so validation can access them even after cleanup
+                            if (hasValidWeights) {
+                                agent._extractedWeights = agentWeights;
+                            }
+
                             // Check if this agent was in validation queue first (highest priority)
                             if (this.validationManager.isInValidation(agent.geneId) && agent.isValidationAgent) {
                                 // This is a SPAWNED validation test agent - handle specially
@@ -1633,32 +1657,31 @@ export class Simulation {
                                     // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
                                     this.logger.info(`[LIFECYCLE] 🎯 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (entering validation)`);
 
-                                    // Safety check: Ensure agent has valid neural network before validation
-                                    if (!agent.nn) {
-                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no neural network`);
-                                        continue;
-                                    }
-
-                                    try {
-                                        const testWeights = agent.getWeights();
-                                        const isValidWeights = testWeights &&
-                                            typeof testWeights === 'object' &&
-                                            testWeights.weights1 && testWeights.weights2 &&
-                                            Array.isArray(testWeights.weights1) && Array.isArray(testWeights.weights2) &&
-                                            testWeights.weights1.length > 0 && testWeights.weights2.length > 0;
-
-                                        if (!isValidWeights) {
-                                            this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - invalid neural network weights format`);
-                                            this.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, testWeights);
-                                            continue;
+                                    // Use weights extracted earlier (before any cleanup)
+                                    if (!hasValidWeights || !agentWeights) {
+                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no valid neural network weights`);
+                                        // Continue to cleanup - agent can't enter validation without weights
+                                    } else {
+                                        // Temporarily attach weights to agent if neural network is missing
+                                        // This allows addToValidationQueue to work properly
+                                        const originalNN = agent.nn;
+                                        if (!agent.nn && agentWeights) {
+                                            // Create a temporary getWeights function that returns the extracted weights
+                                            agent.getWeights = () => agentWeights;
                                         }
-                                    } catch (error) {
-                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - error getting weights: ${error.message}`);
-                                        continue;
-                                    }
 
-                                    const result = this.validationManager.addToValidationQueue(agent, false);
-                                    this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) validation entry result: ${result}`);
+                                        const result = this.validationManager.addToValidationQueue(agent, false);
+                                        
+                                        // Restore original state if we modified it
+                                        if (!originalNN && agentWeights) {
+                                            // Only delete if we added it (check if it's our temporary function)
+                                            if (agent.getWeights && !agent.nn) {
+                                                delete agent.getWeights;
+                                            }
+                                        }
+                                        
+                                        this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) validation entry result: ${result}`);
+                                    }
                                 }
                             } else if (hasValidatedAncestor(agent, this)) {
                                 // Children of validated agents get saved to gene pool automatically
