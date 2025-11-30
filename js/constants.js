@@ -335,7 +335,7 @@ export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consume
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (33.33s)
 export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.5; // Minimum world exploration percentage required (reduced from 1.1%)
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 10; // Minimum successful food-seeking behaviors
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
 
 // Storage limits
 export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in database

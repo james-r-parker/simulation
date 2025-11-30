@@ -133,14 +133,30 @@ export class GenePoolDatabase {
         this.processQueue();
     }
 
-    // Queue individual agent for saving (called from game.js)
+    // Queue individual agent for saving (called from game.js or validation.js)
     queueSaveAgent(agent) {
         // Only save agents that meet minimum criteria
-        if (!agent.fit) return;
+        if (!agent.fit) {
+            this.logger.debug(`[DATABASE] Skipping agent save - agent.fit is false`);
+            return;
+        }
 
-        // Safety check: Ensure agent has valid neural network
-        if (!agent || !agent.nn) {
-            this.logger.warn(`[DATABASE] ❌ Cannot save agent - agent or neural network is null`);
+        // Safety check: Ensure agent has valid weights (either via nn or getWeights method)
+        if (!agent) {
+            this.logger.warn(`[DATABASE] ❌ Cannot save agent - agent is null`);
+            return;
+        }
+
+        // Try to get weights - validation records have getWeights() but no nn
+        let weights = null;
+        try {
+            weights = agent.getWeights();
+            if (!weights || typeof weights !== 'object' || !weights.weights1 || !weights.weights2) {
+                this.logger.warn(`[DATABASE] ❌ Cannot save agent - invalid weights format`);
+                return;
+            }
+        } catch (error) {
+            this.logger.warn(`[DATABASE] ❌ Cannot save agent - error getting weights: ${error.message}`);
             return;
         }
 
@@ -194,17 +210,19 @@ export class GenePoolDatabase {
             return;
         }
 
-        // Add agent to queue
+        // Add agent to queue (use weights we already extracted)
         this.saveQueue.push({
             geneId: agent.geneId,
             agent: {
                 id: agent.id,
-                weights: agent.getWeights(),
+                weights: weights, // Use pre-extracted weights
                 fitness: agent.fitness,
                 geneId: agent.geneId,
                 specializationType: agent.specializationType
             }
         });
+
+        this.logger.info(`[DATABASE] Queued agent ${agent.id} (${geneId}) for IndexedDB save (fitness: ${agentFitness.toFixed(1)})`);
 
         // Process queue asynchronously
         this.processQueue();
@@ -283,12 +301,14 @@ export class GenePoolDatabase {
             // 4. Sort by fitness (descending)
             const sorted = uniqueAgents.sort((a, b) => b.fitness - a.fitness);
 
-            // 5. Keep only top agents  per gene pool
+            // 5. Keep only top agents per gene pool
             const topAgents = sorted.slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
 
             // 6. Update in-memory pool with the BEST agents
             const wasNewPool = !existingAgents || existingAgents.length === 0;
             this.pool[geneId] = topAgents;
+            
+            this.logger.info(`[DATABASE] Updated pool ${geneId} with ${topAgents.length} agents (was ${existingAgents.length}, added ${newAgents.length})`);
 
             // 7. Show toast notification for new agents added
             for (const newAgent of newAgents) {
