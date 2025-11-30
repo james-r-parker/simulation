@@ -9,7 +9,10 @@ import {
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_GRID_WIDTH,
-    EXPLORATION_GRID_HEIGHT
+    EXPLORATION_GRID_HEIGHT,
+    TEMPERATURE_MAX,
+    FPS_TARGET,
+    INACTIVE_TEMPERATURE_PENALTY
 } from './constants.js';
 
 export function copySimulationStats(simulation) {
@@ -47,39 +50,100 @@ export function copySimulationStats(simulation) {
     const avgSuccessfulEscapes = livingAgents.reduce((sum, a) => sum + safeNumber(a.successfulEscapes || 0, 0), 0) / livingAgents.length;
     
     // Detailed fitness breakdown - with safety checks to prevent Infinity
+    // NOTE: This breakdown matches the actual calculateFitness() formula in agent.js
     const fitnessBreakdown = livingAgents.map(a => {
         const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
         const explorationPercentage = safeNumber((a.exploredCells?.size || 0) / totalCells * 100, 0);
-        const baseScore = 
-            safeNumber(a.offspring || 0, 0) * 50 +
-            safeNumber(a.cleverTurns || 0, 0) * 50 +
-            Math.min(safeNumber(a.directionChanged || 0, 0), 500) * 2 +
-            Math.min(safeNumber(a.speedChanged || 0, 0), 200) * 1 +
-            explorationPercentage * 20 + // Updated to match new reward (was 10)
-            safeNumber(a.foodEaten || 0, 0) * 200 +
-            safeNumber(a.kills || 0, 0) * 100 +
-            safeNumber(a.turnsTowardsFood || 0, 0) * 10 + // Updated to match new reward (was 5)
-            safeNumber(a.turnsAwayFromObstacles || 0, 0) * 10 +
-            safeNumber(a.foodApproaches || 0, 0) * 25; // Updated to match new reward (was 15), with safety check
+        const ageInSeconds = safeNumber(a.age || 0, 0);
         
+        // Match actual calculateFitness() formula multipliers (updated after Phase 2 changes)
+        let baseScore = 0;
+        
+        // Temperature system (symmetric bonus/penalty - 100 points each)
+        const avgTemperature = a.temperatureSamples > 0 ? safeNumber(a.temperatureSum / a.temperatureSamples, 0) : 0;
+        let temperatureBonus = 0;
+        let temperaturePenalty = 0;
+        if (avgTemperature < 1) {
+            temperaturePenalty = (1 - avgTemperature) * 100; // Up to 100 points penalty
+        } else {
+            temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 100; // Up to 100 points bonus
+        }
+        baseScore += temperatureBonus - temperaturePenalty;
+        
+        // Productive actions - match actual multipliers (REBALANCED)
+        baseScore += safeNumber(a.offspring || 0, 0) * 150; // Increased from 100
+        baseScore += safeNumber(a.cleverTurns || 0, 0) * 50;
+        baseScore += Math.min(safeNumber(a.directionChanged || 0, 0), 500) * 2;
+        baseScore += Math.min(safeNumber(a.speedChanged || 0, 0), 200) * 1;
+        baseScore += safeNumber(explorationPercentage, 0) * 100;
+        baseScore += safeNumber(a.foodEaten || 0, 0) * 500;
+        baseScore += safeNumber(a.kills || 0, 0) * 200; // Reduced from 300
+        baseScore += safeNumber(a.turnsTowardsFood || 0, 0) * 10;
+        baseScore += safeNumber(a.turnsAwayFromObstacles || 0, 0) * 10;
+        baseScore += safeNumber(a.foodApproaches || 0, 0) * 25;
+        
+        // Enhanced synergy bonus
+        const offspring = safeNumber(a.offspring || 0, 0);
+        const foodEaten = safeNumber(a.foodEaten || 0, 0);
+        if (offspring > 0 && foodEaten > 0) {
+            baseScore += (offspring * 2 + foodEaten) * 10; // Enhanced from (offspring * foodEaten) * 5
+        }
+        
+        // Efficiency (no threshold - always calculate)
+        let efficiency = 0;
+        const energySpent = safeNumber(a.energySpent || 0, 0);
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (energySpent > 0) {
+            efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
+        }
+        baseScore += efficiency * 15;
+        
+        // Successful escapes
+        baseScore += safeNumber(a.successfulEscapes || 0, 0) * 75;
+        
+        // Penalties - match actual formula (single circle penalty, not double)
+        const consecutiveTurns = safeNumber(a.consecutiveTurns || 0, 0);
+        const cappedTurns = Math.min(consecutiveTurns, 50);
+        const circlePenalty = Math.min(cappedTurns * 20, 2000); // Fixed: single penalty, not double
         const penalties = 
-            Math.min(safeNumber(a.consecutiveTurns || 0, 0) * 20, 2000) * 2 + // Circle penalty applied twice
+            circlePenalty +
             safeNumber(a.timesHitObstacle || 0, 0) * 30 +
             (safeNumber(a.collisions || 0, 0) - safeNumber(a.timesHitObstacle || 0, 0)) * 10;
         
-        const survivalMultiplier = Math.min(1 + (safeNumber(a.framesAlive || 0, 0) / 1800), 3.0);
-        const rawSurvivalBonus = safeNumber(a.framesAlive || 0, 0) / 30;
+        // Collision avoidance reward
+        const ageInFrames = ageInSeconds * FPS_TARGET;
+        const obstacleFreeFrames = Math.max(0, ageInFrames - (safeNumber(a.timesHitObstacle || 0, 0) * 30));
+        if (obstacleFreeFrames > 200) {
+            baseScore += (obstacleFreeFrames / 200) * 25;
+        }
+        
+        // Inactivity penalty
+        let inactivityPenalty = 0;
+        if (ageInSeconds > 20 && baseScore < 50) {
+            const inactivityDuration = Math.max(0, ageInSeconds - 20);
+            inactivityPenalty = inactivityDuration * 2;
+        }
+        
+        // Apply inactivity penalty
+        let adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+        // Note: Temperature penalty already applied in baseScore calculation above
+        
+        // REBALANCED SURVIVAL: Separate bonus instead of multiplier
+        const survivalBonus = Math.min(ageInSeconds * 10, 500); // 10 points per second, capped at 500
+        const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
+        // Final fitness = adjusted base score + survival bonuses (not multiplied)
+        const finalFitness = adjustedBaseScore + survivalBonus + rawSurvivalBonus;
         
         const finalBaseScore = safeNumber(baseScore, 0);
         const finalPenalties = safeNumber(penalties, 0);
-        const finalNetBaseScore = safeNumber(finalBaseScore - finalPenalties, 0);
+        const finalNetBaseScore = safeNumber(adjustedBaseScore, 0); // Use adjusted base score (after penalties and inactivity)
         
         return {
             fitness: safeNumber(a.fitness, 0),
             baseScore: finalBaseScore,
             penalties: finalPenalties,
             netBaseScore: finalNetBaseScore,
-            survivalMultiplier: safeNumber(survivalMultiplier, 1.0),
+            survivalBonus: safeNumber(survivalBonus, 0), // Changed from survivalMultiplier
             rawSurvivalBonus: safeNumber(rawSurvivalBonus, 0),
             finalFitness: safeNumber(a.fitness, 0)
         };
@@ -88,7 +152,7 @@ export function copySimulationStats(simulation) {
     const avgBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.baseScore, 0) / livingAgents.length;
     const avgPenalties = fitnessBreakdown.reduce((sum, f) => sum + f.penalties, 0) / livingAgents.length;
     const avgNetBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.netBaseScore, 0) / livingAgents.length;
-    const avgSurvivalMultiplier = fitnessBreakdown.reduce((sum, f) => sum + f.survivalMultiplier, 0) / livingAgents.length;
+    const avgSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.survivalBonus, 0) / livingAgents.length;
     const avgRawSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.rawSurvivalBonus, 0) / livingAgents.length;
     
     // Additional fitness component averages for detailed breakdown
@@ -272,16 +336,17 @@ Avg Successful Escapes: ${avgSuccessfulEscapes.toFixed(2)}
 Avg Base Score: ${avgBaseScore.toFixed(1)}
 Avg Penalties: ${avgPenalties.toFixed(1)}
 Avg Net Base Score: ${avgNetBaseScore.toFixed(1)}
-Avg Survival Multiplier: ${avgSurvivalMultiplier.toFixed(2)}x
+Avg Survival Bonus: ${avgSurvivalBonus.toFixed(0)} pts
 Avg Raw Survival Bonus: ${avgRawSurvivalBonus.toFixed(1)}
 Fitness Components (Rewards):
-  - Food Eaten: ${(avgFood * 200).toFixed(1)} pts (${avgFood.toFixed(1)} × 200)
-  - Offspring: ${(avgOffspring * 50).toFixed(1)} pts (${avgOffspring.toFixed(2)} × 50)
-  - Turns Towards Food: ${(avgTurnsTowardsFood * 5).toFixed(1)} pts (${avgTurnsTowardsFood.toFixed(2)} × 5)
+  - Food Eaten: ${(avgFood * 500).toFixed(1)} pts (${avgFood.toFixed(1)} × 500)
+  - Offspring: ${(avgOffspring * 150).toFixed(1)} pts (${avgOffspring.toFixed(2)} × 150)
+  - Kills: ${(avgKills * 200).toFixed(1)} pts (${avgKills.toFixed(2)} × 200)
+  - Turns Towards Food: ${(avgTurnsTowardsFood * 10).toFixed(1)} pts (${avgTurnsTowardsFood.toFixed(2)} × 10)
   - Turns Away From Obstacles: ${(avgTurnsAwayFromObstacles * 10).toFixed(1)} pts (${avgTurnsAwayFromObstacles.toFixed(2)} × 10)
-  - Food Approaches: ${(avgFoodApproaches * 15).toFixed(1)} pts (${avgFoodApproaches.toFixed(2)} × 15)
+  - Food Approaches: ${(avgFoodApproaches * 25).toFixed(1)} pts (${avgFoodApproaches.toFixed(2)} × 25)
   - Clever Turns: ${(avgCleverTurns * 50).toFixed(1)} pts (${avgCleverTurns.toFixed(2)} × 50)
-  - Exploration: ${(avgExplorationPercentage * 10).toFixed(1)} pts (${avgExplorationPercentage.toFixed(2)}% × 10)
+  - Exploration: ${(avgExplorationPercentage * 100).toFixed(1)} pts (${avgExplorationPercentage.toFixed(2)}% × 100)
   - Direction Changes: ${(avgDirectionChanged * 2).toFixed(1)} pts (${avgDirectionChanged.toFixed(1)} × 2, capped)
   - Speed Changes: ${(avgSpeedChanged * 1).toFixed(1)} pts (${avgSpeedChanged.toFixed(1)} × 1, capped)
   - Obstacle-Free Frames: ${avgObstacleFreeFrames.toFixed(1)} pts

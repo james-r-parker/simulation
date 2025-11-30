@@ -279,7 +279,8 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 5000; // Minimum fitness score required to save agent genes (reduced from 10000)
+// UPDATED: Reduced from 5000 to 3000 after fitness formula rebalancing (survival multiplier → bonus, kill/offspring rebalance)
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 3000; // Minimum fitness score required to save agent genes (reduced from 5000 after formula changes)
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
 export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000; // Minimum lifespan in frames to qualify
@@ -294,8 +295,10 @@ export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in dat
 export const VALIDATION_REQUIRED_RUNS = 3; // Number of test runs required for validation
 export const MAX_VALIDATION_QUEUE_SIZE = 50; // Maximum agents waiting for validation
 export const VALIDATION_AGENT_ENERGY = 3000; // Energy given to validation agents (boosted from INITIAL_AGENT_ENERGY for fairer testing)
-export const EXCEPTIONAL_FITNESS_THRESHOLD = 15000; // Fitness threshold for partial credit system (4/5 criteria with exceptional fitness)
-export const INACTIVE_TEMPERATURE_PENALTY = 0.5; // Penalty multiplier for agents with avg temperature < 1 (50% penalty instead of zero)
+// UPDATED: Reduced from 15000 to 10000 after fitness formula rebalancing (scales proportionally with main threshold)
+export const EXCEPTIONAL_FITNESS_THRESHOLD = 10000; // Fitness threshold for partial credit system (4/5 criteria with exceptional fitness)
+// NOTE: INACTIVE_TEMPERATURE_PENALTY no longer used - temperature system now uses symmetric bonus/penalty
+export const INACTIVE_TEMPERATURE_PENALTY = 0.5; // DEPRECATED: Replaced by symmetric temperature bonus/penalty system
 
 // --- MATH CONSTANTS ---
 // Pre-calculated mathematical values for performance

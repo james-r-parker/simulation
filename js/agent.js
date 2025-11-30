@@ -942,7 +942,11 @@ export class Agent {
         }
 
         this.emitPheromones();
-        this.calculateFitness();
+        // PERFORMANCE: Calculate fitness every 10 frames instead of every frame
+        // Fitness is still calculated on death (see cleanup method) and periodically for UI
+        if (this.framesAlive % 10 === 0) {
+            this.calculateFitness();
+        }
     }
 
     perceiveWorld(quadtree, obstacles, worldWidth, worldHeight) {
@@ -1598,19 +1602,28 @@ export class Agent {
 
         let baseScore = 0;
 
-        // Temperature-based fitness bonus (reward active/warm agents)
+        // Temperature-based fitness (symmetric bonus/penalty system)
         const avgTemperature = this.temperatureSamples > 0 ? this.temperatureSum / this.temperatureSamples : 0;
-        const temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 50; // Up to 50 points for perfect temperature
-        baseScore += temperatureBonus;
+        let temperatureBonus = 0;
+        let temperaturePenalty = 0;
+        if (avgTemperature < 1) {
+            // Penalty for inactive agents (symmetric to bonus)
+            temperaturePenalty = (1 - avgTemperature) * 100; // Up to 100 points penalty
+        } else {
+            // Bonus for active agents
+            temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 100; // Up to 100 points bonus
+        }
+        baseScore += temperatureBonus - temperaturePenalty;
 
         // 1. Productive Actions (Contribute to Base Score)
-        baseScore += safeNumber(this.offspring || 0, 0) * 100;
+        // REBALANCED: Offspring increased from 100 to 150, kills reduced from 300 to 200
+        baseScore += safeNumber(this.offspring || 0, 0) * 150; // Increased from 100
         baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
         baseScore += Math.min(safeNumber(this.directionChanged || 0, 0), 500) * 2;
         baseScore += Math.min(safeNumber(this.speedChanged || 0, 0), 200) * 1;
         baseScore += safeNumber(explorationPercentage, 0) * 100;
         baseScore += safeNumber(this.foodEaten || 0, 0) * 500;
-        baseScore += safeNumber(this.kills || 0, 0) * 300;
+        baseScore += safeNumber(this.kills || 0, 0) * 200; // Reduced from 300
 
         // Navigation behavior rewards (NEW) - INCREASED to encourage learning
         baseScore += safeNumber(this.turnsTowardsFood || 0, 0) * 10; // INCREASED from 5 to 10
@@ -1619,17 +1632,18 @@ export class Agent {
 
         const offspring = safeNumber(this.offspring || 0, 0);
         const foodEaten = safeNumber(this.foodEaten || 0, 0);
+        // Enhanced synergy bonus: reward agents that both reproduce and eat
         if (offspring > 0 && foodEaten > 0) {
-            baseScore += (offspring * foodEaten) * 5;
+            baseScore += (offspring * 2 + foodEaten) * 10; // Enhanced from (offspring * foodEaten) * 5
         }
 
         // 2. Efficiency and Exploration
-        // Only reward efficiency for agents that have actually moved and spent energy
+        // REMOVED THRESHOLD: Always calculate efficiency, even for early deaths
         let efficiency = 0;
         const energySpent = safeNumber(this.energySpent || 0, 0);
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
-        if (energySpent > 50) {
-            efficiency = Math.min(distanceTravelled / energySpent, 10.0);
+        if (energySpent > 0) {
+            efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
         }
         baseScore += efficiency * 15;
 
@@ -1667,31 +1681,19 @@ export class Agent {
             inactivityPenalty = inactivityDuration * 2; // 2 points per second of inactivity beyond 20s
         }
 
-        // 7. Survival Multiplier (The most important factor)
-        // ADJUSTED: Agents live ~10s on average, so we scale to 60s for 2x multiplier
-        // This reduces the dominance of longevity in fitness scoring
-        const survivalMultiplier = Math.max(0.1, Math.min(1 + (ageInSeconds / 60), 3.0));
-
         // Apply inactivity penalty to base score
         let adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
 
-        // Agents that never heated up (avg temp < 1) get penalty instead of zero
-        // This prevents good agents from being completely invalidated by temperature tracking edge cases
-        // Apply this penalty BEFORE calculating finalFitness so it's actually used
-        if (avgTemperature < 1) {
-            adjustedBaseScore *= INACTIVE_TEMPERATURE_PENALTY; // Penalty for inactive agents (from constants)
-        }
-
-        // Final fitness is the adjusted base score amplified by how long the agent survived.
-        const finalFitness = adjustedBaseScore * survivalMultiplier;
-
+        // 7. REBALANCED SURVIVAL: Use separate bonus instead of multiplier to reduce dominance
+        // Separate survival bonus (max 500 points) instead of 3x multiplier
+        // This prevents passive survivalists from achieving high fitness
+        const survivalBonus = Math.min(ageInSeconds * 10, 500); // 10 points per second, capped at 500
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        // Only applies after surviving longer than 20 seconds to avoid rewarding short-lived agents
+        // Only applies after surviving longer than 30 seconds to avoid rewarding short-lived agents
         const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
 
-        // Final safety check to ensure fitness is a finite number
-        const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
-        // Add final calculated fitness to any accumulated real-time rewards
+        // Final fitness = adjusted base score + survival bonuses (not multiplied)
+        const finalFitnessValue = safeNumber(adjustedBaseScore + survivalBonus + rawSurvivalBonus, 0);
         this.fitness = Math.max(0, finalFitnessValue);
 
         // Agent qualification criteria for gene pool entry

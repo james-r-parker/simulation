@@ -333,7 +333,7 @@ export function checkCollisions(simulation) {
                 if (agent.wantsToAttack && isPredator) {
                     agent.energy += other.energy * 0.8; // Consume remaining energy
                     agent.kills++;
-                    agent.fitness += 20; // Reward for successful kill
+                    // Removed: agent.fitness += 20; // Wasted - overwritten by calculateFitness() every frame
                     other.isDead = true;
                     simulation.logger.log(`[COMBAT] Agent ${agent.geneId} killed agent ${other.geneId}.`);
                 }
@@ -369,7 +369,7 @@ export function checkCollisions(simulation) {
             if (distSq < combinedSizeSq) {
                 agent.energy += food.energyValue;
                 agent.foodEaten++;
-                agent.fitness += 15; // Immediate fitness reward for food
+                // Removed: agent.fitness += 15; // Wasted - overwritten by calculateFitness() every frame
                 food.isDead = true;
 
                 // Temperature gain from eating
