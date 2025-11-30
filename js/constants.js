@@ -255,7 +255,6 @@ export const COLLISION_SEPARATION_MULTIPLIER = 0.5; // Multiplier for collision 
 export const BITE_SIZE = 5; // Energy amount stolen when one agent bites another
 export const BOUNCE_ENERGY_LOSS = 0.8; // Velocity reduction when agents bounce off each other
 export const FOOD_EATEN_INCREMENT = 0.1; // Amount added to foodEaten counter when agents eat
-export const VALIDATION_AGENT_MAX_AGE_SECONDS = 110; // Maximum age for validation agents before forced death
 
 // Agent territory and spatial constants
 export const TERRITORY_RADIUS = 200; // Default territory size for agents

@@ -28,7 +28,7 @@ import {
     BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
     KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF,
-    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD, VALIDATION_AGENT_MAX_AGE_SECONDS
+    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -229,7 +229,7 @@ export class Agent {
         this._cleanedUp = false; // Flag to prevent double cleanup
 
         // Log agent birth
-        this.logger.info(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}`);
+        this.logger.debug(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}`);
     }
 
     getWeights() {
@@ -408,11 +408,8 @@ export class Agent {
         this.age = (Date.now() - this.birthTime) / 1000; // Age in seconds
         this.framesAlive++; // Keep framesAlive for backward compatibility
 
-        // Force death for validation agents after maximum time to ensure validation completes
-        if (this.isValidationAgent && this.age > VALIDATION_AGENT_MAX_AGE_SECONDS) {
-            this.energy = 0; // Force death
-            this.logger.debug(`[VALIDATION] Forced death of validation agent ${this.id} (${this.geneId}) after ${this.age.toFixed(1)}s timeout`);
-        }
+        // Validation agents die naturally from energy depletion just like regular agents
+        // No forced timeout needed - they will run their course and provide accurate fitness data
 
         // Smooth size growth effect for newly spawned agents (grow from 30% to 100% size over SIZE_GROWTH_FRAMES)
 

@@ -207,7 +207,7 @@ export function checkCollisions(simulation) {
                         agent.foodEaten += FOOD_EATEN_INCREMENT; // Partial credit for nibbling
 
                         // Log successful eating
-                        simulation.logger.info(`[LIFECYCLE] 🍽️ Agent ${agent.id} (${agent.geneId}) ate Agent ${other.id} (${other.geneId}) - Energy stolen: ${energyStolen.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Prey energy: ${other.energy.toFixed(1)}`);
+                        simulation.logger.debug(`[LIFECYCLE] 🍽️ Agent ${agent.id} (${agent.geneId}) ate Agent ${other.id} (${other.geneId}) - Energy stolen: ${energyStolen.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Prey energy: ${other.energy.toFixed(1)}`);
 
                         // Temperature gain from eating
                         agent.temperature = Math.min(TEMPERATURE_MAX, agent.temperature + TEMPERATURE_GAIN_EAT);
@@ -229,7 +229,7 @@ export function checkCollisions(simulation) {
                         other.foodEaten += FOOD_EATEN_INCREMENT;
 
                         // Log being eaten
-                        simulation.logger.info(`[LIFECYCLE] 😵 Agent ${agent.id} (${agent.geneId}) eaten by Agent ${other.id} (${other.geneId}) - Energy lost: ${energyLost.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Predator energy: ${other.energy.toFixed(1)}`);
+                        simulation.logger.debug(`[LIFECYCLE] 😵 Agent ${agent.id} (${agent.geneId}) eaten by Agent ${other.id} (${other.geneId}) - Energy lost: ${energyLost.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Predator energy: ${other.energy.toFixed(1)}`);
 
                         // Temperature gain from eating
                         other.temperature = Math.min(TEMPERATURE_MAX, other.temperature + TEMPERATURE_GAIN_EAT);

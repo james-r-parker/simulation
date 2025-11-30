@@ -274,7 +274,7 @@ export class Simulation {
         for (const agent of this.agents) {
             if (!agent.isDead) {
                 agent.cleanup();
-                this.logger.info(`[LIFECYCLE] 🔄 Agent ${agent.id} (${agent.geneId}) cleaned up during simulation reset - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}`);
+                this.logger.debug(`[LIFECYCLE] 🔄 Agent ${agent.id} (${agent.geneId}) cleaned up during simulation reset - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}`);
             }
         }
         this.agents.length = 0;
