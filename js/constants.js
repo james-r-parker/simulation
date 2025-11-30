@@ -48,8 +48,6 @@ export const MATURATION_AGE_FRAMES = 600; // Minimum age in frames before agents
 export const RESPAWN_DELAY_FRAMES = 0; // Frames to wait before respawning dead agents
 
 // Energy management
-export const OBESITY_THRESHOLD_ENERGY = 15000; // Energy level above which agents suffer obesity penalties
-export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Divisor for calculating obesity energy tax (higher = less tax)
 export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (metabolic cost)
 export const MOVEMENT_COST_MULTIPLIER = 0.003; // Energy cost multiplier for movement (velocity * this)
 export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotation (rotation speed * this)
@@ -141,6 +139,9 @@ export const FOOD_ENERGY_NORMAL_BASE = 500; // Base energy value of normal food
 export const FOOD_ENERGY_NORMAL_VARIANCE = 20; // Random variance in normal food energy (± this amount)
 export const FOOD_ENERGY_HIGH_BASE = 1000; // Base energy value of high-value food
 export const FOOD_ENERGY_HIGH_VARIANCE = 50; // Random variance in high-value food energy (± this amount)
+
+export const OBESITY_THRESHOLD_ENERGY = 15000; // Energy level above which agents suffer obesity penalties
+export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Divisor for calculating obesity energy tax (higher = less tax)
 
 // Visual appearance
 export const FOOD_SIZE_NORMAL = 20; // Visual radius of normal food in pixels (increased for better ray detection)

@@ -343,6 +343,9 @@ export function spawnAgent(simulation, options = {}) {
     }
 
     const agent = new Agent(gene, startX, startY, startEnergy, simulation.logger, parent, simulation);
+    if (isValidationAgent) {
+        agent.isValidationAgent = true;
+    }
     if (mutationRate) {
         agent.mutate(mutationRate);
     }
