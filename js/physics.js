@@ -10,6 +10,9 @@ import {
     PREY_SIZE_RATIO_THRESHOLD, COLLISION_SEPARATION_MULTIPLIER, FOOD_EATEN_INCREMENT,
     BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
     OBSTACLE_MAX_SPEED, TEMPERATURE_GAIN_EAT, TEMPERATURE_MAX,
+    TEMPERATURE_OPTIMAL_MIN, TEMPERATURE_OPTIMAL_MAX,
+    TEMPERATURE_COLD_STRESS_THRESHOLD, TEMPERATURE_COLD_MODERATE_THRESHOLD,
+    TEMPERATURE_HEAT_STRESS_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD,
     KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_PREDATION_REDUCTION_THRESHOLD,
     KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE
 } from './constants.js';
@@ -724,7 +727,30 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(currentSpeed * invMaxVelocity); // Speed ratio
         inputs.push(angleDifference * invPi); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
-        inputs.push(agent.temperature * invTempMax); // Temperature
+        
+        // Enhanced temperature inputs (4 inputs instead of 1)
+        inputs.push(agent.temperature * invTempMax); // Current temperature (0-1)
+        // Distance from optimal range (0-1, where 0 = optimal, 1 = max distance)
+        const optimalCenter = (TEMPERATURE_OPTIMAL_MIN + TEMPERATURE_OPTIMAL_MAX) / 2;
+        const optimalRange = TEMPERATURE_OPTIMAL_MAX - TEMPERATURE_OPTIMAL_MIN;
+        const distanceFromOptimal = Math.abs(agent.temperature - optimalCenter);
+        inputs.push(Math.min(distanceFromOptimal / (TEMPERATURE_MAX / 2), 1.0)); // Distance from optimal (0-1)
+        // Cold stress indicator (0-1, where 1 = severe cold stress)
+        const coldStress = agent.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ? 
+            1.0 : 
+            (agent.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ? 
+                (TEMPERATURE_COLD_MODERATE_THRESHOLD - agent.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) : 
+                0.0);
+        inputs.push(Math.min(coldStress, 1.0)); // Cold stress (0-1)
+        // Heat stress indicator (0-1, where 1 = severe heat stress)
+        const heatStress = agent.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ? 
+            1.0 : 
+            (agent.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ? 
+                (agent.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) : 
+                0.0);
+        inputs.push(Math.min(heatStress, 1.0)); // Heat stress (0-1)
+        
+        inputs.push(simulation.seasonPhase !== undefined ? simulation.seasonPhase : 0.0); // Season phase (0-1)
 
         // Recent memory (temporal awareness) - adds 8 inputs
         inputs.push(agent.previousVelocities[1].vx * invMaxVelocity); // Previous velocity X (1 frame ago)
@@ -735,6 +761,18 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(Math.min(agent.previousDanger[1], 1)); // Previous danger (1 frame ago)
         inputs.push(Math.min(agent.previousAggression[1], 1)); // Previous aggression (1 frame ago)
         inputs.push((agent.previousEnergies[1] - agent.previousEnergies[2]) * invMaxEnergy); // Energy delta (2 frames ago)
+
+        // Lifetime experience metrics (career achievements accessible to NN)
+        inputs.push(Math.min(agent.foodEaten / 10, 1)); // Career nutrition score (0-1 scale)
+        inputs.push(Math.min(agent.timesHitObstacle / 5, 1)); // Safety record (0-1 scale)
+        inputs.push(Math.min(agent.offspring / 3, 1)); // Reproductive success (0-1 scale)
+
+        // Recent event flags (binary indicators for recent experiences)
+        inputs.push(agent.eventFlags && agent.eventFlags.justAteFood > 0 ? 1 : 0); // Recently ate food
+        inputs.push(agent.eventFlags && agent.eventFlags.justHitObstacle > 0 ? 1 : 0); // Recently hit obstacle
+        inputs.push(agent.eventFlags && agent.eventFlags.justReproduced > 0 ? 1 : 0); // Recently reproduced
+        inputs.push(agent.eventFlags && agent.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
+        inputs.push(agent.eventFlags && agent.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
 
         agent.lastInputs = inputs;
         agent.lastRayData = rayData;

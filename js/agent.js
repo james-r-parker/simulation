@@ -128,8 +128,15 @@ export class Agent {
         // CRITICAL: Initialize hiddenState here, as its length is needed for inputSize
         this.hiddenState = new Array(this.hiddenSize).fill(0);
 
-        // Input size: (rays * 5) + (alignment rays * 1) + 9 state inputs + 8 memory inputs + hidden state
-        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 17 + this.hiddenState.length;
+        // Input size: (rays * 5) + (alignment rays * 1) + 29 state/memory/other inputs + hidden state
+        // State inputs: 8 base (hunger, fear, aggression, energy, age, speed, angle diff, shadow)
+        // + 4 temperature (current, distance, cold stress, heat stress)
+        // + 1 season phase
+        // + 8 memory inputs
+        // + 3 lifetime metrics (food eaten, obstacles hit, offspring)
+        // + 5 event flags (just ate, hit obstacle, reproduced, attacked, low energy)
+        // = 8 + 4 + 1 + 8 + 3 + 5 = 29
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 29 + this.hiddenState.length;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -567,7 +574,7 @@ export class Agent {
             // Environmental temperature affects cooling rate
             // Positive modifier (hotter environment) = slower cooling (retain heat)
             // Negative modifier (colder environment) = faster cooling (lose heat)
-            const envTempEffect = 1.0 + (this.simulation.globalTemperatureModifier * 0.02); // ±2% per degree modifier
+            const envTempEffect = 1.0 + (this.simulation.globalTemperatureModifier * 0.07); // ±7% per degree modifier (increased from 2% for more noticeable seasonal effects)
             passiveLossRate *= envTempEffect;
         }
 
@@ -592,8 +599,28 @@ export class Agent {
 
         passiveLoss *= passiveMultiplier;
 
+        // Calculate movement efficiency based on temperature
+        let movementEfficiency = TEMPERATURE_EFFICIENCY_OPTIMAL;
+        if (this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD) {
+            // Severe cold stress
+            movementEfficiency = TEMPERATURE_EFFICIENCY_COLD_SEVERE;
+        } else if (this.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD) {
+            // Moderate cold stress
+            movementEfficiency = TEMPERATURE_EFFICIENCY_COLD_MODERATE;
+        } else if (this.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD) {
+            // Severe heat stress
+            movementEfficiency = TEMPERATURE_EFFICIENCY_HEAT_SEVERE;
+        } else if (this.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD) {
+            // Moderate heat stress
+            movementEfficiency = TEMPERATURE_EFFICIENCY_HEAT_MODERATE;
+        } else if (this.temperature >= TEMPERATURE_OPTIMAL_MIN && this.temperature <= TEMPERATURE_OPTIMAL_MAX) {
+            // Optimal temperature range
+            movementEfficiency = TEMPERATURE_EFFICIENCY_OPTIMAL;
+        }
+
         const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
-        const movementLoss = Math.min(currentSpeed * currentSpeed * movementCostMultiplier, 5);
+        // Apply temperature efficiency to movement cost (lower efficiency = higher cost per unit of movement)
+        const movementLoss = Math.min(currentSpeed * currentSpeed * movementCostMultiplier / movementEfficiency, 5);
 
         let energyLoss = sizeLoss + movementLoss;
 
@@ -1252,7 +1279,28 @@ export class Agent {
         inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
         inputs.push(angleDifference / Math.PI); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
-        inputs.push(this.temperature / TEMPERATURE_MAX); // Temperature
+        // Enhanced temperature inputs (4 inputs instead of 1)
+        inputs.push(this.temperature / TEMPERATURE_MAX); // Current temperature (0-1)
+        // Distance from optimal range (0-1, where 0 = optimal, 1 = max distance)
+        const optimalCenter = (TEMPERATURE_OPTIMAL_MIN + TEMPERATURE_OPTIMAL_MAX) / 2;
+        const distanceFromOptimal = Math.abs(this.temperature - optimalCenter);
+        inputs.push(Math.min(distanceFromOptimal / (TEMPERATURE_MAX / 2), 1.0)); // Distance from optimal (0-1)
+        // Cold stress indicator (0-1, where 1 = severe cold stress)
+        const coldStress = this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ? 
+            1.0 : 
+            (this.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ? 
+                (TEMPERATURE_COLD_MODERATE_THRESHOLD - this.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) : 
+                0.0);
+        inputs.push(Math.min(coldStress, 1.0)); // Cold stress (0-1)
+        // Heat stress indicator (0-1, where 1 = severe heat stress)
+        const heatStress = this.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ? 
+            1.0 : 
+            (this.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ? 
+                (this.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) : 
+                0.0);
+        inputs.push(Math.min(heatStress, 1.0)); // Heat stress (0-1)
+        
+        inputs.push(this.simulation && this.simulation.seasonPhase !== undefined ? this.simulation.seasonPhase : 0.0); // Season phase (0-1)
 
         // Recent memory (temporal awareness) - adds 8 inputs
         // Safety checks to prevent undefined access errors
@@ -1625,7 +1673,14 @@ export class Agent {
         const survivalMultiplier = Math.max(0.1, Math.min(1 + (ageInSeconds / 60), 3.0));
 
         // Apply inactivity penalty to base score
-        const adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+        let adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+
+        // Agents that never heated up (avg temp < 1) get penalty instead of zero
+        // This prevents good agents from being completely invalidated by temperature tracking edge cases
+        // Apply this penalty BEFORE calculating finalFitness so it's actually used
+        if (avgTemperature < 1) {
+            adjustedBaseScore *= INACTIVE_TEMPERATURE_PENALTY; // Penalty for inactive agents (from constants)
+        }
 
         // Final fitness is the adjusted base score amplified by how long the agent survived.
         const finalFitness = adjustedBaseScore * survivalMultiplier;
@@ -1633,12 +1688,6 @@ export class Agent {
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
         // Only applies after surviving longer than 20 seconds to avoid rewarding short-lived agents
         const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
-
-        // Agents that never heated up (avg temp < 1) get penalty instead of zero
-        // This prevents good agents from being completely invalidated by temperature tracking edge cases
-        if (avgTemperature < 1) {
-            adjustedBaseScore *= INACTIVE_TEMPERATURE_PENALTY; // Penalty for inactive agents (from constants)
-        }
 
         // Final safety check to ensure fitness is a finite number
         const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);

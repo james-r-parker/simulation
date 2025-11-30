@@ -152,6 +152,7 @@ export class Simulation {
         this.startTime = Date.now();
 
         this.seasonTimer = 0;
+        this.seasonPhase = 0.0; // Normalized season phase (0-1) for neural network input
         this.foodScarcityFactor = 1.0;
 
         // Adaptive mutation tracking
@@ -893,6 +894,7 @@ export class Simulation {
         this.seasonTimer++;
         const seasonLength = SEASON_LENGTH;
         const phase = (this.seasonTimer % seasonLength) / seasonLength;
+        this.seasonPhase = phase; // Store phase for neural network access
 
         // Enhanced seasonal cycles with multiple environmental factors
         this.updateSeasonalEnvironment(phase, seasonLength);
@@ -948,12 +950,15 @@ export class Simulation {
         this.agents.forEach(agent => {
             if (!agent.isDead) {
                 // Seasonal reproduction modifier
-                if (agent.wantsToReproduce && Math.random() > reproductionBonus) {
+                // When reproductionBonus > 1.0, suppress reproduction with probability (1.0 / reproductionBonus)
+                // When reproductionBonus < 1.0, suppress reproduction with higher probability
+                if (agent.wantsToReproduce && Math.random() > (1.0 / reproductionBonus)) {
                     agent.wantsToReproduce = false; // Suppress reproduction outside breeding season
                 }
 
                 // Seasonal energy drain
-                if (phase > 0.5) { // Fall and winter
+                // Apply in summer (phase 0.25-0.5), fall (phase 0.5-0.75), and winter (phase 0.75-1.0)
+                if (phase >= 0.25) { // Summer, fall, and winter
                     agent.energy -= 0.05 * energyDrainMultiplier;
                 }
             }

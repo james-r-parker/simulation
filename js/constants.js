@@ -24,7 +24,7 @@ export const INITIAL_AGENT_ENERGY = 2500; // Starting energy for newly spawned a
 export const MAX_ENERGY = 25000; // Maximum energy an agent can accumulate
 export const MIN_ENERGY_TO_REPRODUCE = 250; // Minimum energy required to attempt reproduction
 export const REPRODUCE_COST_BASE = 15; // Base energy cost for reproduction attempts
-export const CHILD_STARTING_ENERGY = 700; // Energy given to newborn agents
+export const CHILD_STARTING_ENERGY = 1750; // Energy given to newborn agents (increased from 700 for better survival)
 
 // Movement physics
 export const MAX_THRUST = 0.5; // Maximum acceleration force agents can apply
@@ -54,11 +54,11 @@ export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotat
 export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Multiplier for fitness scoring based on directional changes
 export const TEMPERATURE_MAX = 100; // Maximum temperature
 export const TEMPERATURE_MIN = 0; // Minimum temperature
-export const TEMPERATURE_START = 55; // Starting temperature
+export const TEMPERATURE_START = 50; // Starting temperature (closer to optimal range center)
 export const TEMPERATURE_GAIN_MOVE = 0.025; // Temperature gain per frame at max speed
-export const TEMPERATURE_GAIN_EAT = 4; // Temperature gain when eating
+export const TEMPERATURE_GAIN_EAT = 2; // Temperature gain when eating (reduced from 4 to prevent rapid heat stress)
 export const TEMPERATURE_LOSS_PASSIVE = 0.015; // Temperature loss per frame
-export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 15.0; // Max multiplier for passive energy loss at 0 temperature
+export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 7.0; // Max multiplier for passive energy loss at 0 temperature (reduced from 15.0 for better balance)
 
 // Temperature-dependent behavior constants
 export const TEMPERATURE_OPTIMAL_MIN = 40; // Minimum temperature for optimal performance
