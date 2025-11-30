@@ -35,7 +35,8 @@ export class ToastNotification {
 
         let scoreDetails = '';
         scores.forEach((score, index) => {
-            const emoji = score === Math.max(...scores) ? '🏆' : score >= VALIDATION_FITNESS_THRESHOLD ? '✅' : '❌';
+            const fit = fitResults[index];
+            const emoji = score === Math.max(...scores) ? '🏆' : fit ? '✅' : '❌';
             scoreDetails += `<div class="toast-score-line">${emoji} Run ${index + 1}: ${score.toFixed(0)}</div>`;
         });
 
