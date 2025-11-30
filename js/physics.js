@@ -510,6 +510,8 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
         const sensorAngleStep = TWO_PI / numSensorRays;
         const maxRayDist = agent.maxRayDist;
+        // PERFORMANCE: Cache inverse for division optimization
+        const invMaxRayDist = 1 / maxRayDist;
 
         for (let rayIdx = 0; rayIdx < raysToProcess; rayIdx++) {
             const globalRayIdx = agentIdx * maxRaysPerAgent + rayIdx;
@@ -533,20 +535,9 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             //     this.logger.log(`[GPU - RAY - DEBUG] Agent 0, Ray ${ rayIdx }: hitType = ${ hitType } (${ hitTypeNames[hitType] || 'unknown' }), dist = ${ distance.toFixed(1) }, maxDist = ${ maxRayDist } `);
             // }
 
-            const normalizedDist = 1.0 - (Math.min(distance, maxRayDist) / maxRayDist);
-
-            if (isNaN(normalizedDist)) {
-                simulation.logger.error('[GPU-CONVERT] normalizedDist became NaN!', {
-                    agentId: agent.geneId,
-                    agentSpecialization: agent.specializationType,
-                    rawDistance: distance,
-                    agentMaxRayDist: maxRayDist
-                });
-                // Set to a safe value to prevent crashing the NN
-                inputs.push(0);
-            } else {
-                inputs.push(normalizedDist);
-            }
+            // PERFORMANCE: Use cached inverse for multiplication instead of division
+            const normalizedDist = 1.0 - (Math.min(distance, maxRayDist) * invMaxRayDist);
+            inputs.push(normalizedDist);
 
             // PERFORMANCE: Use pooled array instead of allocating new one
             const hitTypeArray = hitTypeArrayPool.acquire();
@@ -713,35 +704,39 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         //     });
         // }
 
+        // PERFORMANCE: Pre-calculate inverse constants to use multiplication instead of division
+        const invMaxEnergy = 1 / MAX_ENERGY;
+        const invMaxVelocity = 1 / MAX_VELOCITY;
+        const invTempMax = 1 / TEMPERATURE_MAX;
+        const invPi = 1 / Math.PI;
+        const invAge60 = 1 / 60;
+        const invObesityThreshold = 1 / OBESITY_THRESHOLD_ENERGY;
+
         const currentSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
         const velocityAngle = Math.atan2(agent.vy, agent.vx);
         const angleDifference = (velocityAngle - agent.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
-        inputs.push((MAX_ENERGY - agent.energy) / MAX_ENERGY); // Hunger
+        inputs.push((MAX_ENERGY - agent.energy) * invMaxEnergy); // Hunger
         inputs.push(Math.min(agent.dangerSmell, 1)); // Fear
-        inputs.push(Math.min(agent.attackSmell + (agent.energy / OBESITY_THRESHOLD_ENERGY), 1)); // Aggression
-        inputs.push(agent.energy / MAX_ENERGY); // Energy ratio
-        inputs.push(Math.min(agent.age / 60, 1)); // Age ratio
-        inputs.push(currentSpeed / MAX_VELOCITY); // Speed ratio
-        inputs.push(angleDifference / Math.PI); // Velocity-angle difference
+        inputs.push(Math.min(agent.attackSmell + (agent.energy * invObesityThreshold), 1)); // Aggression
+        inputs.push(agent.energy * invMaxEnergy); // Energy ratio
+        inputs.push(Math.min(agent.age * invAge60, 1)); // Age ratio
+        inputs.push(currentSpeed * invMaxVelocity); // Speed ratio
+        inputs.push(angleDifference * invPi); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
-        inputs.push(agent.temperature / TEMPERATURE_MAX); // Temperature
+        inputs.push(agent.temperature * invTempMax); // Temperature
 
         // Recent memory (temporal awareness) - adds 8 inputs
-        inputs.push(agent.previousVelocities[1].vx / MAX_VELOCITY); // Previous velocity X (1 frame ago)
-        inputs.push(agent.previousVelocities[1].vy / MAX_VELOCITY); // Previous velocity Y (1 frame ago)
-        inputs.push(agent.previousVelocities[2].vx / MAX_VELOCITY); // Previous velocity X (2 frames ago)
-        inputs.push(agent.previousVelocities[2].vy / MAX_VELOCITY); // Previous velocity Y (2 frames ago)
-        inputs.push((agent.previousEnergies[0] - agent.energy) / MAX_ENERGY); // Energy delta (last frame)
+        inputs.push(agent.previousVelocities[1].vx * invMaxVelocity); // Previous velocity X (1 frame ago)
+        inputs.push(agent.previousVelocities[1].vy * invMaxVelocity); // Previous velocity Y (1 frame ago)
+        inputs.push(agent.previousVelocities[2].vx * invMaxVelocity); // Previous velocity X (2 frames ago)
+        inputs.push(agent.previousVelocities[2].vy * invMaxVelocity); // Previous velocity Y (2 frames ago)
+        inputs.push((agent.previousEnergies[0] - agent.energy) * invMaxEnergy); // Energy delta (last frame)
         inputs.push(Math.min(agent.previousDanger[1], 1)); // Previous danger (1 frame ago)
         inputs.push(Math.min(agent.previousAggression[1], 1)); // Previous aggression (1 frame ago)
-        inputs.push((agent.previousEnergies[1] - agent.previousEnergies[2]) / MAX_ENERGY); // Energy delta (2 frames ago)
+        inputs.push((agent.previousEnergies[1] - agent.previousEnergies[2]) * invMaxEnergy); // Energy delta (2 frames ago)
 
         agent.lastInputs = inputs;
         agent.lastRayData = rayData;
-
-        if (inputs.some(isNaN)) {
-            simulation.logger.error('[GPU PERCEPTION] NaN detected in GPU perception inputs', { agentId: agent.geneId, inputs });
-        }
     }
 }

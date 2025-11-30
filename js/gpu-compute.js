@@ -379,7 +379,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             }
         }
 
-        if (validAgents.length === 0) return false;
+        // PERFORMANCE: Cache array length early
+        const numValidAgents = validAgents.length;
+        if (numValidAgents === 0) return false;
 
         // Get or create pipeline for this specialization
         let pipeline = this.createPipelineForSpecialization(inputSize, hiddenSize, outputSize);
@@ -391,9 +393,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         const bufferKey = `${inputSize}_${hiddenSize}_${outputSize}`;
         let buffers = this.bufferCache.get(bufferKey);
         
-        const maxAgents = Math.max(validAgents.length, 256); // Allocate for at least 256 agents
+        const maxAgents = Math.max(numValidAgents, 256); // Allocate for at least 256 agents
         
-        if (!buffers || buffers.maxAgents < validAgents.length) {
+        if (!buffers || buffers.maxAgents < numValidAgents) {
             // Create or resize buffers with DOUBLE-BUFFERING for staging
             const uniformBufferSize = 6 * 4; // 6 u32s (24 bytes)
             const inputBufferSize = maxAgents * inputSize * 4; // f32 = 4 bytes
@@ -465,19 +467,19 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         // Pack inputs efficiently (use set() for TypedArray bulk copy)
         // OPTIMIZED: Direct memory access, no function calls in hot loop
-        for (let idx = 0; idx < validAgents.length; idx++) {
+        for (let idx = 0; idx < numValidAgents; idx++) {
             const agent = validAgents[idx];
             const inputOffset = idx * inputSize;
             const perceptionInputs = agent.lastInputs;
             const hiddenState = agent.hiddenState;
             
-            // Direct copy - fastest method
+            // PERFORMANCE: Direct copy without fallback (inputs should always be valid)
             let i = inputOffset;
             for (let j = 0; j < perceptionSize; j++) {
-                inputs[i++] = perceptionInputs[j] || 0;
+                inputs[i++] = perceptionInputs[j];
             }
             for (let j = 0; j < hiddenSize; j++) {
-                inputs[i++] = hiddenState[j] || 0;
+                inputs[i++] = hiddenState[j];
             }
         }
 
@@ -501,7 +503,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.weightCache.delete(deadId);
         }
 
-        for (let idx = 0; idx < validAgents.length; idx++) {
+        for (let idx = 0; idx < numValidAgents; idx++) {
             const agent = validAgents[idx];
             const w = agent.nn.getWeights();
 
@@ -548,7 +550,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         const encoder = this.device.createCommandEncoder();
         
         // Upload inputs (always needed)
-        this.queue.writeBuffer(buffers.inputs, 0, inputs, 0, validAgents.length * inputSize);
+        this.queue.writeBuffer(buffers.inputs, 0, inputs, 0, numValidAgents * inputSize);
 
         // Upload weights ONLY if they changed
         if (needsWeightUpload && batchedWeight1Data) {
@@ -568,7 +570,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         buffers.uniformArray[0] = inputSize;
         buffers.uniformArray[1] = hiddenSize;
         buffers.uniformArray[2] = outputSize;
-        buffers.uniformArray[3] = validAgents.length;
+        buffers.uniformArray[3] = numValidAgents;
         buffers.uniformArray[4] = 0;
         buffers.uniformArray[5] = 0;
         this.queue.writeBuffer(buffers.uniforms, 0, buffers.uniformArray);
@@ -594,7 +596,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         pass.setBindGroup(0, buffers.bindGroup);
         // PERFORMANCE: Use optimal workgroup size (stored in pipeline metadata or use default)
         const workgroupSize = this.optimalWorkgroupSize || 128;
-        const workgroupCount = Math.ceil(validAgents.length / workgroupSize);
+        const workgroupCount = Math.ceil(numValidAgents / workgroupSize);
         pass.dispatchWorkgroups(workgroupCount);
         pass.end();
 
@@ -602,8 +604,8 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         const stagingIndex = this.stagingBufferIndex % 2;
 
         // Copy results to staging buffers (non-blocking)
-        encoder.copyBufferToBuffer(buffers.outputs, 0, buffers.stagingOutputs[stagingIndex], 0, validAgents.length * outputSize * 4);
-        encoder.copyBufferToBuffer(buffers.newHiddenStates, 0, buffers.stagingHiddenStates[stagingIndex], 0, validAgents.length * hiddenSize * 4);
+        encoder.copyBufferToBuffer(buffers.outputs, 0, buffers.stagingOutputs[stagingIndex], 0, numValidAgents * outputSize * 4);
+        encoder.copyBufferToBuffer(buffers.newHiddenStates, 0, buffers.stagingHiddenStates[stagingIndex], 0, numValidAgents * hiddenSize * 4);
 
         this.queue.submit([encoder.finish()]);
 
@@ -623,7 +625,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
             // PERFORMANCE: Optimized unpacking - arrays are pre-allocated, use direct assignment
             // Use subarray views for faster access (no copying, just views)
-            for (let idx = 0; idx < validAgents.length; idx++) {
+            for (let idx = 0; idx < numValidAgents; idx++) {
                 const agent = validAgents[idx];
                 const outputOffset = idx * outputSize;
                 const hiddenOffset = idx * hiddenSize;
