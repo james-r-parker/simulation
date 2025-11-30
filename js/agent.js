@@ -128,14 +128,25 @@ export class Agent {
         // CRITICAL: Initialize hiddenState here, as its length is needed for inputSize
         this.hiddenState = new Array(this.hiddenSize).fill(0);
 
-        // Input size: (rays * 5) + (alignment rays * 1) + 29 state/memory/other inputs + hidden state
-        // State inputs: 8 base (hunger, fear, aggression, energy, age, speed, angle diff, shadow)
-        // + 4 temperature (current, distance, cold stress, heat stress)
-        // + 1 season phase
-        // + 8 memory inputs
-        // + 3 lifetime metrics (food eaten, obstacles hit, offspring)
-        // + 5 event flags (just ate, hit obstacle, reproduced, attacked, low energy)
-        // = 8 + 4 + 1 + 8 + 3 + 5 = 29
+        // --- NEURAL NETWORK INPUT STRUCTURE (RNN Architecture) ---
+        // NOTE: This is a Recurrent Neural Network (RNN), so the hidden state from the previous
+        // timestep is fed back as input along with the current perception data.
+        //
+        // Input size calculation: perception inputs + hidden state feedback
+        // - Perception inputs: (sensor rays * 5) + (alignment rays * 1) + 29 state/memory inputs
+        // - Hidden state: hiddenSize (RNN feedback from previous timestep)
+        //
+        // Perception input breakdown (29 total):
+        //   - 8 base state: hunger, fear, aggression, energy, age, speed, angle diff, shadow
+        //   - 4 temperature: current temp, distance from optimal, cold stress, heat stress
+        //   - 1 season phase
+        //   - 8 memory: previous velocities (4), energy deltas (2), previous danger/aggression (2)
+        //   - 3 lifetime metrics: food eaten, obstacles hit, offspring (all normalized to [0,1])
+        //   - 5 event flags: just ate, hit obstacle, reproduced, attacked, low energy (binary)
+        //
+        // All inputs are normalized to [0,1] or [-1,1] ranges for consistent neural network training.
+        // The first layer processes (perception + hiddenState) together, which is why hiddenState
+        // is included in inputSize. This is the standard RNN architecture pattern.
         this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 29 + this.hiddenState.length;
         this.outputSize = 5;
 

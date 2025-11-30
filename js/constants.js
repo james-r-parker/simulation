@@ -378,35 +378,35 @@ export const AGENT_CONFIGS = {
         color: COLORS.AGENTS.FORAGER, // Visual color for forager agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 300, // Maximum distance sensor rays can detect
-        hiddenSize: 20, // Size of neural network hidden layer
+        hiddenSize: 24, // Size of neural network hidden layer (increased from 20 for better capacity)
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: COLORS.AGENTS.PREDATOR, // Visual color for predator agents
         numSensorRays: 24, // Number of sensor rays for detecting environment
         maxRayDist: 350, // Maximum distance sensor rays can detect
-        hiddenSize: 25, // Size of neural network hidden layer
+        hiddenSize: 30, // Size of neural network hidden layer (increased from 25 for better capacity)
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: COLORS.AGENTS.REPRODUCER, // Visual color for reproducer agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 250, // Maximum distance sensor rays can detect
-        hiddenSize: 18, // Size of neural network hidden layer
+        hiddenSize: 22, // Size of neural network hidden layer (increased from 18 for better capacity)
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: COLORS.AGENTS.SCOUT, // Visual color for scout agents
         numSensorRays: 24, // Number of sensor rays for detecting environment
         maxRayDist: 400, // Maximum distance sensor rays can detect
-        hiddenSize: 15, // Size of neural network hidden layer
+        hiddenSize: 20, // Size of neural network hidden layer (increased from 15 for better capacity - largest increase needed)
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: COLORS.AGENTS.DEFENDER, // Visual color for defender agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 350, // Maximum distance sensor rays can detect
-        hiddenSize: 22, // Size of neural network hidden layer
+        hiddenSize: 26, // Size of neural network hidden layer (increased from 22 for better capacity)
         description: 'Specialized in defending territory and allies.'
     }
 };
