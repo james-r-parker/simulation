@@ -3,6 +3,7 @@
 // MAXIMUM OPTIMIZATION: Weight caching, double-buffering, batched uploads, parallel processing, vectorization
 
 import { GPU_INIT_TIMEOUT_MS } from './constants.js';
+import { NeuralNetwork } from './neural-network.js';
 
 export class GPUCompute {
     constructor(logger) {
@@ -569,12 +570,57 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.weightCache.delete(deadId);
         }
 
+        // OPTIMIZED: Pre-calculate expected dimensions once outside the loop
+        const expectedWeight1RowsMin = perceptionSize + hiddenSize; // Minimum expected (correct size)
+        const expectedWeight1RowsMax = perceptionSize + 2 * hiddenSize; // Maximum (agent bug creates this)
+        const expectedWeight2Rows = hiddenSize;
+
         for (let idx = 0; idx < numValidAgents; idx++) {
             const agent = validAgents[idx];
             const w = agent.nn.getWeights();
 
+            // OPTIMIZED: Only validate weights if not already validated (cache validation result)
+            // Check if agent has been validated before (use a flag to avoid repeated validation)
+            if (!agent._gpuWeightsValidated) {
+                // CRITICAL: Validate weight dimensions match expected input size
+                // This handles cases where agents have old weights from before input size changes
+                // Fast validation: only check lengths, not every row
+                const w1Len = w.weights1 ? w.weights1.length : 0;
+                const w2Len = w.weights2 ? w.weights2.length : 0;
+                const w1RowLen = w.weights1 && w.weights1[0] ? w.weights1[0].length : 0;
+                const w2RowLen = w.weights2 && w.weights2[0] ? w.weights2[0].length : 0;
+                
+                const weight1Valid = w1Len >= expectedWeight1RowsMin && 
+                                     w1Len <= expectedWeight1RowsMax &&
+                                     w1RowLen === hiddenSize;
+                const weight2Valid = w2Len === expectedWeight2Rows && w2RowLen === outputSize;
+                
+                if (!weight1Valid || !weight2Valid) {
+                    // Weight dimensions don't match - force reinitialization
+                    this.logger.warn(`[GPU-COMPUTE] Agent ${agent.id} has incompatible weights. Expected w1=${expectedWeight1RowsMin}-${expectedWeight1RowsMax}x${hiddenSize}, w2=${expectedWeight2Rows}x${outputSize}. Got w1=${w1Len}x${w1RowLen}, w2=${w2Len}x${w2RowLen}. Reinitializing.`);
+                    
+                    // Force neural network to reinitialize with correct dimensions
+                    agent.nn = new NeuralNetwork(perceptionSize, hiddenSize, outputSize, null, agent.logger);
+                    agent.gene.weights = agent.nn.getWeights(); // Update gene with new weights
+                    agent.inputSize = perceptionSize + hiddenSize;
+                    
+                    // Clear weight cache for this agent
+                    this.weightCache.delete(agent);
+                    
+                    // Get new weights after reinitialization
+                    const newW = agent.nn.getWeights();
+                    w.weights1 = newW.weights1;
+                    w.weights2 = newW.weights2;
+                }
+                
+                // Mark as validated to skip future checks
+                agent._gpuWeightsValidated = true;
+            }
+
             // Ultra-fast weight change check (with fallback to full validation)
             if (this.checkWeightChanged(agent, w.weights1, w.weights2)) {
+                // Weights changed - clear validation flag to revalidate dimensions
+                agent._gpuWeightsValidated = false;
                 needsWeightUpload = true;
                 if (!batchedWeight1Data) {
                     batchedWeight1Data = new Float32Array(maxAgents * inputSize * hiddenSize);
@@ -589,21 +635,43 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 const w2 = w.weights2;
 
                 // Pack weights directly into batched array (optimized loops)
-                for (let j = 0; j < inputSize; j++) {
+                // Note: The agent's neural network was created with inputSize that includes hiddenSize
+                // So weights1 has (perceptionSize + hiddenSize + hiddenSize) rows
+                // But we only need to pack (perceptionSize + hiddenSize) rows for the GPU shader
+                // The GPU shader expects inputSize rows where inputSize = perceptionSize + hiddenSize
+                const actualWeight1Rows = Math.min(w1.length, inputSize); // Pack only inputSize rows
+                for (let j = 0; j < actualWeight1Rows; j++) {
                     const w1Row = w1[j];
                     const rowOffset = weight1Offset + j * hiddenSize;
-                    if (w1Row) {
+                    if (w1Row && w1Row.length === hiddenSize) {
                         for (let k = 0; k < hiddenSize; k++) {
                             batchedWeight1Data[rowOffset + k] = w1Row[k] || 0;
                         }
+                    } else {
+                        // Fallback: zero out if row is invalid
+                        for (let k = 0; k < hiddenSize; k++) {
+                            batchedWeight1Data[rowOffset + k] = 0;
+                        }
+                    }
+                }
+                // Zero out any remaining rows if weights1 had fewer rows than expected
+                for (let j = actualWeight1Rows; j < inputSize; j++) {
+                    const rowOffset = weight1Offset + j * hiddenSize;
+                    for (let k = 0; k < hiddenSize; k++) {
+                        batchedWeight1Data[rowOffset + k] = 0;
                     }
                 }
                 for (let j = 0; j < hiddenSize; j++) {
                     const w2Row = w2[j];
                     const rowOffset = weight2Offset + j * outputSize;
-                    if (w2Row) {
+                    if (w2Row && w2Row.length === outputSize) {
                         for (let k = 0; k < outputSize; k++) {
                             batchedWeight2Data[rowOffset + k] = w2Row[k] || 0;
+                        }
+                    } else {
+                        // Fallback: zero out if row is invalid
+                        for (let k = 0; k < outputSize; k++) {
+                            batchedWeight2Data[rowOffset + k] = 0;
                         }
                     }
                 }

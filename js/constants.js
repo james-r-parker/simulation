@@ -32,8 +32,34 @@ export const MAX_ROTATION = 0.1; // Maximum turning speed in radians per frame
 export const MAX_VELOCITY = 8; // Maximum speed an agent can reach
 export const SPRINT_BONUS_THRUST = 0.5; // Additional thrust when sprinting
 export const SPRINT_COST_PER_FRAME = 0.05; // Energy cost per frame when sprinting
-export const SPRINT_THRESHOLD = 0.9; // Neural network output threshold to trigger sprinting
+export const SPRINT_THRESHOLD = 0.9; // Neural network output threshold to trigger sprinting (legacy, now used for cost threshold)
 export const FEAR_SPRINT_BONUS = 0.5; // Extra thrust bonus when fleeing from threats
+
+// Movement smoothing and acceleration curves
+export const THRUST_DEADZONE = 0.05; // Reduced deadzone for finer speed control (reduced from 0.1)
+export const ACCELERATION_SMOOTHING = 0.35; // How quickly thrust ramps up towards target (0-1, higher = faster) - increased from 0.2 for more responsive movement
+export const DECELERATION_RATE_NORMAL = 0.12; // Normal deceleration rate when reducing thrust (reduced from 0.15 for smoother stops)
+export const DECELERATION_RATE_BRAKING = 0.25; // Active braking deceleration rate (when thrust near zero) - reduced from 0.35 for smoother braking
+export const DECELERATION_RATE_EMERGENCY = 0.4; // Emergency stop deceleration rate (when danger detected) - reduced from 0.5 for smoother emergency stops
+
+// Rotation smoothing and momentum
+export const ROTATION_SMOOTHING = 0.25; // Rotation interpolation rate towards target (not currently used, using momentum instead)
+export const ROTATION_MOMENTUM = 0.75; // Rotation carryover factor (how much rotation persists) - increased from 0.7 for smoother rotation
+export const ROTATION_EFFICIENCY_AT_MAX_SPEED = 0.7; // Rotation efficiency at max speed (30% reduction, harder to turn at high speeds)
+
+// Sprint enhancements (directional sprint system)
+export const SPRINT_BONUS_MULTIPLIER = 0.5; // Sprint intensity multiplier (1.0 to 1.5x max thrust)
+export const SPRINT_COST_INTENSITY_THRESHOLD = 0.3; // Minimum sprint intensity to cost energy (below this = free)
+
+// Velocity momentum system
+export const VELOCITY_MOMENTUM = 0.85; // Velocity carryover factor (how much velocity persists before new thrust)
+
+// Fitness calculation thresholds (prevent tiny movements from inflating fitness)
+export const MIN_DISTANCE_FOR_MOVEMENT_REWARDS = 100; // Minimum distance traveled to get movement rewards (prevents tiny movements from accumulating fitness)
+export const MIN_ANGLE_CHANGE_FOR_FITNESS = 0.1; // Minimum angle change in radians to count for directionChanged (~5.7 degrees)
+export const MIN_SPEED_CHANGE_FOR_FITNESS = 0.15; // Minimum speed change to count for speedChanged
+export const MIN_NAVIGATION_TURN_FOR_FITNESS = 0.15; // Minimum turn angle for navigation rewards (~8.6 degrees)
+export const MIN_FOOD_APPROACH_DISTANCE = 5; // Minimum distance improvement to count as food approach
 
 // Neural network and evolution
 export const AGENT_MEMORY_FRAMES = 30; // Number of previous frames stored for temporal decision making (~0.5 seconds at 60fps)
@@ -267,8 +293,8 @@ export const EMISSIVE_COLORS = {
 // Post-processing configuration
 export const POST_PROCESSING = {
     BLOOM: {
-        STRENGTH: 0.4, // Bloom intensity (minimal - only for very bright elements)
-        RADIUS: 0.3, // Bloom spread radius (very tight to reduce fuzziness)
+        STRENGTH: 0.25, // Bloom intensity (minimal - only for very bright elements)
+        RADIUS: 1, // Bloom spread radius (very tight to reduce fuzziness)
         THRESHOLD: 0.98 // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
     },
     VIGNETTE: {
@@ -329,12 +355,12 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 
 // Qualification thresholds
 // UPDATED: Reduced from 5000 to 3000 after fitness formula rebalancing (survival multiplier → bonus, kill/offspring rebalance)
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 3000; // Minimum fitness score required to save agent genes (reduced from 5000 after formula changes)
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 9000; // Minimum fitness score required to save agent genes (reduced from 5000 after formula changes)
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5; // Minimum food items consumed to qualify
 export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000; // Minimum lifespan in frames to qualify
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (33.33s)
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.5; // Minimum world exploration percentage required (reduced from 1.1%)
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.5; // Minimum world exploration percentage required (reduced from 1.1%)
 export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
 
 // Storage limits

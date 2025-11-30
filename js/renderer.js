@@ -26,6 +26,7 @@ import {
     acquireCircleGeometry, releaseCircleGeometry,
     acquireRingGeometry, releaseRingGeometry,
     acquireMeshBasicMaterial, releaseMeshBasicMaterial,
+    acquireMeshStandardMaterial, releaseMeshStandardMaterial,
     acquireBufferGeometry, releaseBufferGeometry,
     acquirePointsMaterial, releasePointsMaterial,
     acquireLineBasicMaterial, releaseLineBasicMaterial,
@@ -88,6 +89,9 @@ export class WebGLRenderer {
         this.sparkleSizesBuffer = null;
         this.rayPositionsBuffer = null;
         this.rayColorsBuffer = null;
+        
+        // Reusable sparkle Points object to avoid recreation
+        this.sparklePoints = null;
 
         // PERFORMANCE: Pre-allocated temp arrays to reuse instead of allocating per frame
         this.tempValidAgents = [];
@@ -162,6 +166,9 @@ export class WebGLRenderer {
         this.agentEffectsGroup = new THREE.Group();
         this.scene.add(this.agentEffectsGroup);
         this.currentFrame = 0;
+        // Pool of effect meshes for reuse
+        this.effectMeshPool = [];
+        this.activeEffectMeshes = [];
 
         // Particle sparkle system
         this.sparkles = [];
@@ -169,6 +176,21 @@ export class WebGLRenderer {
         this.scene.add(this.sparkleGroup);
         this.maxSparkles = 200; // Limit for performance
         this.sparklesEnabled = true; // Can be toggled for performance
+
+        // HSL to RGB cache for performance (caches by h,s,l tuple)
+        this.hslToRgbCache = new Map();
+        this.hslCacheMaxSize = 1000; // Limit cache size to prevent memory growth
+
+        // Precomputed math constants for performance
+        this.MATH_CONSTANTS = {
+            ONE_OVER_360: 1 / 360,
+            ONE_OVER_100: 1 / 100,
+            ONE_OVER_6: 1 / 6,
+            TWO_OVER_6: 2 / 6,
+            THREE_OVER_6: 3 / 6,
+            FOUR_OVER_6: 4 / 6,
+            FIVE_OVER_6: 5 / 6
+        };
     }
 
     /**
@@ -255,11 +277,22 @@ export class WebGLRenderer {
             if (this.agentEffectsGroup) {
                 while (this.agentEffectsGroup.children.length > 0) {
                     const child = this.agentEffectsGroup.children[0];
-                    if (child.geometry) child.geometry.dispose();
-                    if (child.material) child.material.dispose();
+                    if (child.geometry) releaseRingGeometry(child.geometry);
+                    if (child.material) releaseMeshStandardMaterial(child.material);
                     this.agentEffectsGroup.remove(child);
                 }
             }
+        }
+        // Clean up effect mesh pool
+        if (this.effectMeshPool) {
+            for (const mesh of this.effectMeshPool) {
+                if (mesh.geometry) releaseRingGeometry(mesh.geometry);
+                if (mesh.material) releaseMeshStandardMaterial(mesh.material);
+            }
+            this.effectMeshPool = [];
+        }
+        if (this.activeEffectMeshes) {
+            this.activeEffectMeshes = [];
         }
 
         // 7. Dispose of sparkle system
@@ -271,6 +304,11 @@ export class WebGLRenderer {
                 this.sparkleGroup.remove(child);
             }
             if (this.scene) this.scene.remove(this.sparkleGroup);
+        }
+        if (this.sparklePoints) {
+            if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
+            if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
+            this.sparklePoints = null;
         }
         if (this.sparkles) {
             this.sparkles.length = 0;
@@ -564,22 +602,15 @@ export class WebGLRenderer {
             }
         }
 
-        // Clear and recreate sparkle meshes
-        while (this.sparkleGroup.children.length > 0) {
-            const child = this.sparkleGroup.children[0];
-            this.sparkleGroup.remove(child);
-            if (child.geometry) releaseBufferGeometry(child.geometry);
-            if (child.material) releasePointsMaterial(child.material);
-        }
-
-        // Create sparkle meshes
+        // Update sparkle meshes - reuse when possible
         if (this.sparkles.length > 0) {
-            // Reuse or create buffers to avoid allocations
+            // Reuse or create buffers with growth strategy (1.5x growth factor)
             const neededSize = this.sparkles.length * 3;
             if (!this.sparklePositionsBuffer || this.sparklePositionsBuffer.length < neededSize) {
-                this.sparklePositionsBuffer = new Float32Array(neededSize);
-                this.sparkleColorsBuffer = new Float32Array(neededSize);
-                this.sparkleSizesBuffer = new Float32Array(this.sparkles.length);
+                const growSize = Math.ceil(neededSize * 1.5); // Allocate 1.5x to reduce reallocations
+                this.sparklePositionsBuffer = new Float32Array(growSize);
+                this.sparkleColorsBuffer = new Float32Array(growSize);
+                this.sparkleSizesBuffer = new Float32Array(Math.ceil(this.sparkles.length * 1.5));
             }
             const positions = this.sparklePositionsBuffer.subarray(0, neededSize);
             const colors = this.sparkleColorsBuffer.subarray(0, neededSize);
@@ -603,21 +634,63 @@ export class WebGLRenderer {
                 sizes[i] = sparkle.size * opacity;
             }
 
-            const geometry = acquireBufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            // Reuse existing geometry and Points object if available
+            if (!this.sparklePoints) {
+                const geometry = acquireBufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-            const material = acquirePointsMaterial({
-                size: 4,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.8,
-                sizeAttenuation: false
-            });
+                const material = acquirePointsMaterial({
+                    size: 4,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    sizeAttenuation: false
+                });
 
-            const points = new THREE.Points(geometry, material);
-            this.sparkleGroup.add(points);
+                this.sparklePoints = new THREE.Points(geometry, material);
+                this.sparkleGroup.add(this.sparklePoints);
+            } else {
+                // Update existing attributes instead of creating new ones
+                const geometry = this.sparklePoints.geometry;
+                const posAttr = geometry.attributes.position;
+                const colorAttr = geometry.attributes.color;
+                const sizeAttr = geometry.attributes.size;
+
+                // Update existing attributes if buffer size matches, otherwise recreate
+                if (posAttr.array.length >= neededSize) {
+                    posAttr.array.set(positions);
+                    posAttr.needsUpdate = true;
+                    posAttr.count = this.sparkles.length;
+                } else {
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                }
+
+                if (colorAttr.array.length >= neededSize) {
+                    colorAttr.array.set(colors);
+                    colorAttr.needsUpdate = true;
+                    colorAttr.count = this.sparkles.length;
+                } else {
+                    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                }
+
+                if (sizeAttr.array.length >= this.sparkles.length) {
+                    sizeAttr.array.set(sizes);
+                    sizeAttr.needsUpdate = true;
+                    sizeAttr.count = this.sparkles.length;
+                } else {
+                    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                }
+            }
+        } else {
+            // No sparkles - remove Points object but keep it for reuse
+            if (this.sparklePoints) {
+                this.sparkleGroup.remove(this.sparklePoints);
+                if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
+                if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
+                this.sparklePoints = null;
+            }
         }
     }
 
@@ -678,23 +751,52 @@ export class WebGLRenderer {
         this.updateFrustum();
     }
 
-    // HSL to RGB helper - uses pooled color
+    // HSL to RGB helper - uses pooled color and caching for performance
     hslToRgb(h, s, l) {
-        h /= 360;
-        s /= 100;
-        l /= 100;
-        const c = (1 - Math.abs(2 * l - 1)) * s;
-        const x = c * (1 - Math.abs((h * 6) % 2 - 1));
-        const m = l - c / 2;
+        // Create cache key (round to reduce cache size)
+        const hRounded = Math.round(h);
+        const sRounded = Math.round(s);
+        const lRounded = Math.round(l);
+        const cacheKey = `${hRounded},${sRounded},${lRounded}`;
+
+        // Check cache first
+        if (this.hslToRgbCache.has(cacheKey)) {
+            const cachedRgb = this.hslToRgbCache.get(cacheKey);
+            const color = acquireColor();
+            color.set(cachedRgb[0], cachedRgb[1], cachedRgb[2]);
+            return color;
+        }
+
+        // Compute HSL to RGB conversion using precomputed constants
+        const hNorm = h * this.MATH_CONSTANTS.ONE_OVER_360;
+        const sNorm = s * this.MATH_CONSTANTS.ONE_OVER_100;
+        const lNorm = l * this.MATH_CONSTANTS.ONE_OVER_100;
+        const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+        const x = c * (1 - Math.abs((hNorm * 6) % 2 - 1));
+        const m = lNorm - c * 0.5;
         let r, g, b;
-        if (h < 1 / 6) { r = c; g = x; b = 0; }
-        else if (h < 2 / 6) { r = x; g = c; b = 0; }
-        else if (h < 3 / 6) { r = 0; g = c; b = x; }
-        else if (h < 4 / 6) { r = 0; g = x; b = c; }
-        else if (h < 5 / 6) { r = x; g = 0; b = c; }
+        if (hNorm < this.MATH_CONSTANTS.ONE_OVER_6) { r = c; g = x; b = 0; }
+        else if (hNorm < this.MATH_CONSTANTS.TWO_OVER_6) { r = x; g = c; b = 0; }
+        else if (hNorm < this.MATH_CONSTANTS.THREE_OVER_6) { r = 0; g = c; b = x; }
+        else if (hNorm < this.MATH_CONSTANTS.FOUR_OVER_6) { r = 0; g = x; b = c; }
+        else if (hNorm < this.MATH_CONSTANTS.FIVE_OVER_6) { r = x; g = 0; b = c; }
         else { r = c; g = 0; b = x; }
+        
+        const finalR = r + m;
+        const finalG = g + m;
+        const finalB = b + m;
+        
         const color = acquireColor();
-        color.set(r + m, g + m, b + m);
+        color.set(finalR, finalG, finalB);
+
+        // Cache the RGB values (limit cache size)
+        if (this.hslToRgbCache.size >= this.hslCacheMaxSize) {
+            // Remove oldest entry (simple FIFO - remove first)
+            const firstKey = this.hslToRgbCache.keys().next().value;
+            this.hslToRgbCache.delete(firstKey);
+        }
+        this.hslToRgbCache.set(cacheKey, [finalR, finalG, finalB]);
+
         return color;
     }
 
@@ -971,22 +1073,15 @@ export class WebGLRenderer {
             this.agentEffectsGroup = new THREE.Group();
             this.scene.add(this.agentEffectsGroup);
         }
-
-        // Clear previous effect meshes - CRITICAL: Release pooled geometries and materials to prevent memory leaks
-        while (this.agentEffectsGroup.children.length > 0) {
-            const child = this.agentEffectsGroup.children[0];
-            this.agentEffectsGroup.remove(child);
-            // Release pooled THREE.js resources back to pools instead of disposing
-            if (child.geometry) {
-                releaseRingGeometry(child.geometry);
-            }
-            if (child.material) {
-                // Dispose material (no longer using pooled materials for effects)
-                child.material.dispose();
-            }
+        if (!this.effectMeshPool) {
+            this.effectMeshPool = [];
+        }
+        if (!this.activeEffectMeshes) {
+            this.activeEffectMeshes = [];
         }
 
-        // Render active effects
+        // Collect all active effects that need rendering
+        const effectsToRender = [];
         for (const [agent, effects] of this.agentEffects.entries()) {
             if (!agent || agent.isDead) continue;
 
@@ -1001,39 +1096,81 @@ export class WebGLRenderer {
                 const progress = elapsed / effect.duration;
                 const opacity = Math.max(1.0 - progress, 0); // Fade out over time
 
-                // Create visible effect ring geometry - ensure it doesn't cover the agent
-                const effectRadius = agent.size * (1.2 + progress * 0.5); // Start larger to avoid covering agent
-                const geometry = acquireRingGeometry(
-                    Math.max(agent.size * 1.1, effectRadius * 0.8), // Inner radius always larger than agent
-                    effectRadius * 1.3,
-                    32 // More segments for smoother look
-                );
-
-                // Choose color based on effect type
-                const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
-                const emissiveColor = effect.type === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
-                const emissiveColorObj = acquireColor();
-                emissiveColorObj.setHex(emissiveColor);
-                emissiveColorObj.multiplyScalar(0.5);
-
-                // Use MeshStandardMaterial for enhanced glow effects
-                const material = new THREE.MeshStandardMaterial({
-                    color: color,
-                    emissive: emissiveColorObj.clone(), // Clone for material
-                    emissiveIntensity: MATERIAL_PROPERTIES.EFFECT.EMISSIVE_INTENSITY * opacity,
-                    metalness: MATERIAL_PROPERTIES.EFFECT.METALNESS,
-                    roughness: MATERIAL_PROPERTIES.EFFECT.ROUGHNESS,
-                    transparent: MATERIAL_PROPERTIES.EFFECT.TRANSPARENT,
-                    opacity: opacity * 0.5, // More visible opacity
-                    side: THREE.DoubleSide,
-                    depthWrite: false // Don't write to depth buffer to avoid covering agents
+                effectsToRender.push({
+                    agent,
+                    effect,
+                    progress,
+                    opacity
                 });
-
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(agent.x, -agent.y, 0.05); // Slightly behind agent but in front of border
-                this.agentEffectsGroup.add(mesh);
-                releaseColor(emissiveColorObj); // Release color after material is created
             }
+        }
+
+        // Return unused meshes to pool
+        while (this.activeEffectMeshes.length > effectsToRender.length) {
+            const mesh = this.activeEffectMeshes.pop();
+            mesh.visible = false;
+            this.effectMeshPool.push(mesh);
+        }
+
+        // Reuse or create meshes for active effects
+        for (let i = 0; i < effectsToRender.length; i++) {
+            const { agent, effect, progress, opacity } = effectsToRender[i];
+            let mesh;
+
+            if (i < this.activeEffectMeshes.length) {
+                // Reuse existing mesh
+                mesh = this.activeEffectMeshes[i];
+                mesh.visible = true;
+            } else {
+                // Get mesh from pool or create new one
+                if (this.effectMeshPool.length > 0) {
+                    mesh = this.effectMeshPool.pop();
+                    mesh.visible = true;
+                } else {
+                    // Create new mesh
+                    const geometry = acquireRingGeometry(1, 2, 32);
+                    const material = acquireMeshStandardMaterial({
+                        side: THREE.DoubleSide,
+                        depthWrite: false
+                    });
+                    mesh = new THREE.Mesh(geometry, material);
+                    this.agentEffectsGroup.add(mesh);
+                }
+                this.activeEffectMeshes.push(mesh);
+            }
+
+            // Update mesh properties
+            const effectRadius = agent.size * (1.2 + progress * 0.5);
+            const innerRadius = Math.max(agent.size * 1.1, effectRadius * 0.8);
+            const outerRadius = effectRadius * 1.3;
+
+            // Update geometry if needed (recreate if size changed significantly)
+            if (!mesh.geometry || 
+                Math.abs(mesh.geometry.parameters.innerRadius - innerRadius) > 0.1 ||
+                Math.abs(mesh.geometry.parameters.outerRadius - outerRadius) > 0.1) {
+                if (mesh.geometry) {
+                    releaseRingGeometry(mesh.geometry);
+                }
+                mesh.geometry = acquireRingGeometry(innerRadius, outerRadius, 32);
+            }
+
+            // Update material properties
+            const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
+            const emissiveColor = effect.type === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
+            const emissiveColorObj = acquireColor();
+            emissiveColorObj.setHex(emissiveColor);
+            emissiveColorObj.multiplyScalar(0.5);
+
+            mesh.material.color.set(color);
+            mesh.material.emissive.copy(emissiveColorObj);
+            mesh.material.emissiveIntensity = MATERIAL_PROPERTIES.EFFECT.EMISSIVE_INTENSITY * opacity;
+            mesh.material.metalness = MATERIAL_PROPERTIES.EFFECT.METALNESS;
+            mesh.material.roughness = MATERIAL_PROPERTIES.EFFECT.ROUGHNESS;
+            mesh.material.transparent = MATERIAL_PROPERTIES.EFFECT.TRANSPARENT;
+            mesh.material.opacity = opacity * 0.5;
+            mesh.position.set(agent.x, -agent.y, 0.05);
+
+            releaseColor(emissiveColorObj);
         }
     }
 
@@ -1401,7 +1538,19 @@ export class WebGLRenderer {
         }
 
         // Use single LineSegments geometry for all rays (much faster)
-        if (!this.rayLineSegments || this.rayLineSegments.geometry.attributes.position.count < totalRays * 2) {
+        const neededVertexCount = totalRays * 2;
+        if (!this.rayLineSegments || this.rayLineSegments.geometry.attributes.position.count < neededVertexCount) {
+            // Allocate for max rays with growth strategy (1.5x growth factor)
+            const maxRays = Math.max(Math.ceil(totalRays * 1.5), 500);
+            const neededPosSize = maxRays * 2 * 3;
+            const neededColorSize = maxRays * 2 * 3;
+            
+            // Reuse or create buffers with growth strategy
+            if (!this.rayPositionsBuffer || this.rayPositionsBuffer.length < neededPosSize) {
+                this.rayPositionsBuffer = new Float32Array(neededPosSize);
+                this.rayColorsBuffer = new Float32Array(neededColorSize);
+            }
+            
             // Create or resize geometry
             if (this.rayLineSegments) {
                 this.rayGroup.remove(this.rayLineSegments);
@@ -1410,15 +1559,6 @@ export class WebGLRenderer {
                 releaseLineBasicMaterial(this.rayLineSegments.material);
             }
 
-            // Allocate for max rays (with some headroom)
-            const maxRays = Math.max(totalRays * 2, 500);
-            // Reuse or create buffers to avoid allocations
-            const neededPosSize = maxRays * 2 * 3;
-            const neededColorSize = maxRays * 2 * 3;
-            if (!this.rayPositionsBuffer || this.rayPositionsBuffer.length < neededPosSize) {
-                this.rayPositionsBuffer = new Float32Array(neededPosSize);
-                this.rayColorsBuffer = new Float32Array(neededColorSize);
-            }
             const positions = this.rayPositionsBuffer.subarray(0, neededPosSize);
             const colors = this.rayColorsBuffer.subarray(0, neededColorSize);
             const geometry = acquireBufferGeometry();
@@ -1573,11 +1713,17 @@ export class WebGLRenderer {
         if (!this.sparklesEnabled) {
             // Clear existing sparkles
             this.sparkles.length = 0;
+            if (this.sparklePoints) {
+                this.sparkleGroup.remove(this.sparklePoints);
+                if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
+                if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
+                this.sparklePoints = null;
+            }
             while (this.sparkleGroup.children.length > 0) {
                 const child = this.sparkleGroup.children[0];
                 this.sparkleGroup.remove(child);
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
+                if (child.geometry) releaseBufferGeometry(child.geometry);
+                if (child.material) releasePointsMaterial(child.material);
             }
         }
     }

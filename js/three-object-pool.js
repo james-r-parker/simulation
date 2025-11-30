@@ -215,6 +215,27 @@ export const meshBasicMaterialPool = new GPUResourcePool(
     20
 );
 
+// MeshStandardMaterial pool - has GPU resources, needs periodic clearing
+export const meshStandardMaterialPool = new GPUResourcePool(
+    () => new THREE.MeshStandardMaterial(),
+    (material) => {
+        // Reset material to default state
+        material.color.set(0xffffff);
+        material.emissive.set(0x000000);
+        material.emissiveIntensity = 0;
+        material.metalness = 0;
+        material.roughness = 1;
+        material.transparent = false;
+        material.opacity = 1;
+        material.side = THREE.FrontSide;
+        material.depthWrite = true;
+    },
+    (material) => {
+        material.dispose();
+    },
+    30 // Higher capacity since these are used frequently for effects
+);
+
 // Utility functions for easy pool usage
 export function acquireMatrix4() { return matrix4Pool.acquire(); }
 export function releaseMatrix4(matrix) { matrix4Pool.release(matrix); }
@@ -279,6 +300,34 @@ export function acquireMeshBasicMaterial(options = {}) {
     return material;
 }
 export function releaseMeshBasicMaterial(material) { meshBasicMaterialPool.release(material); }
+
+export function acquireMeshStandardMaterial(options = {}) {
+    const material = meshStandardMaterialPool.acquire();
+    // Apply options
+    if (options.color !== undefined) {
+        if (options.color instanceof THREE.Color) {
+            material.color.copy(options.color);
+        } else {
+            material.color.set(options.color);
+        }
+    }
+    if (options.emissive !== undefined) {
+        if (options.emissive instanceof THREE.Color) {
+            material.emissive.copy(options.emissive);
+        } else {
+            material.emissive.set(options.emissive);
+        }
+    }
+    if (options.emissiveIntensity !== undefined) material.emissiveIntensity = options.emissiveIntensity;
+    if (options.metalness !== undefined) material.metalness = options.metalness;
+    if (options.roughness !== undefined) material.roughness = options.roughness;
+    if (options.transparent !== undefined) material.transparent = options.transparent;
+    if (options.opacity !== undefined) material.opacity = options.opacity;
+    if (options.side !== undefined) material.side = options.side;
+    if (options.depthWrite !== undefined) material.depthWrite = options.depthWrite;
+    return material;
+}
+export function releaseMeshStandardMaterial(material) { meshStandardMaterialPool.release(material); }
 
 // BufferGeometry pool - has GPU resources, needs periodic clearing
 export const bufferGeometryPool = new GPUResourcePool(
@@ -410,6 +459,7 @@ export function getPoolStats() {
         circleGeometry: circleGeometryPool.getStats(),
         ringGeometry: ringGeometryPool.getStats(),
         meshBasicMaterial: meshBasicMaterialPool.getStats(),
+        meshStandardMaterial: meshStandardMaterialPool.getStats(),
         bufferGeometry: bufferGeometryPool.getStats(),
         pointsMaterial: pointsMaterialPool.getStats(),
         lineBasicMaterial: lineBasicMaterialPool.getStats()
@@ -421,6 +471,7 @@ export function clearGPUResourcePools() {
     circleGeometryPool.clearGPUResources();
     ringGeometryPool.clearGPUResources();
     meshBasicMaterialPool.clearGPUResources();
+    meshStandardMaterialPool.clearGPUResources();
     bufferGeometryPool.clearGPUResources();
     pointsMaterialPool.clearGPUResources();
     lineBasicMaterialPool.clearGPUResources();

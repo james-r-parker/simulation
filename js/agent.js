@@ -6,6 +6,10 @@ import {
     OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
     SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
+    THRUST_DEADZONE, ACCELERATION_SMOOTHING, DECELERATION_RATE_NORMAL, DECELERATION_RATE_BRAKING, DECELERATION_RATE_EMERGENCY,
+    ROTATION_SMOOTHING, ROTATION_MOMENTUM, ROTATION_EFFICIENCY_AT_MAX_SPEED,
+    SPRINT_BONUS_MULTIPLIER, SPRINT_COST_INTENSITY_THRESHOLD,
+    VELOCITY_MOMENTUM,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS, OBSTACLE_MAX_SPEED,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
@@ -20,6 +24,8 @@ import {
     MIN_FITNESS_TO_SAVE_GENE_POOL, MIN_FOOD_EATEN_TO_SAVE_GENE_POOL, FPS_TARGET,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL, MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, EXCEPTIONAL_FITNESS_THRESHOLD, INACTIVE_TEMPERATURE_PENALTY,
+    MIN_DISTANCE_FOR_MOVEMENT_REWARDS, MIN_ANGLE_CHANGE_FOR_FITNESS, MIN_SPEED_CHANGE_FOR_FITNESS,
+    MIN_NAVIGATION_TURN_FOR_FITNESS, MIN_FOOD_APPROACH_DISTANCE,
     SPAWN_GROWTH_DURATION_FRAMES, SPAWN_GROWTH_MIN_SCALE, SPAWN_GROWTH_MAX_SCALE, SPAWN_SIZE_INTERPOLATION_SPEED,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
@@ -133,21 +139,22 @@ export class Agent {
         // timestep is fed back as input along with the current perception data.
         //
         // Input size calculation: perception inputs + hidden state feedback
-        // - Perception inputs: (sensor rays * 5) + (alignment rays * 1) + 29 state/memory inputs
+        // - Perception inputs: (sensor rays * 5) + (alignment rays * 1) + 33 state/memory inputs
         // - Hidden state: hiddenSize (RNN feedback from previous timestep)
         //
-        // Perception input breakdown (29 total):
+        // Perception input breakdown (33 total):
         //   - 8 base state: hunger, fear, aggression, energy, age, speed, angle diff, shadow
         //   - 4 temperature: current temp, distance from optimal, cold stress, heat stress
         //   - 1 season phase
         //   - 8 memory: previous velocities (4), energy deltas (2), previous danger/aggression (2)
         //   - 3 lifetime metrics: food eaten, obstacles hit, offspring (all normalized to [0,1])
         //   - 5 event flags: just ate, hit obstacle, reproduced, attacked, low energy (binary)
+        //   - 4 movement state: current thrust, current rotation, thrust change, rotation change (NEW)
         //
         // All inputs are normalized to [0,1] or [-1,1] ranges for consistent neural network training.
         // The first layer processes (perception + hiddenState) together, which is why hiddenState
         // is included in inputSize. This is the standard RNN architecture pattern.
-        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 29 + this.hiddenState.length;
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 33 + this.hiddenState.length;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -248,6 +255,15 @@ export class Agent {
         this.mutationRate = BASE_MUTATION_RATE;
         this.speedFactor = AGENT_SPEED_FACTOR_BASE + Math.random() * AGENT_SPEED_FACTOR_VARIANCE;
 
+        // --- MOVEMENT STATE TRACKING (for acceleration/deceleration smoothing) ---
+        this.currentThrust = 0; // Current thrust level (smoothed)
+        this.targetThrust = 0; // Target thrust from neural network
+        this.currentRotation = 0; // Current rotation rate (smoothed, preserves sign for momentum)
+        this.targetRotation = 0; // Target rotation from neural network
+        this.previousThrust = 0; // Previous frame thrust (for change detection)
+        this.previousRotation = 0; // Previous frame rotation (for change detection, preserves sign)
+        this.rotationMagnitudeForCost = 0; // Rotation magnitude for cost calculation (separate from currentRotation)
+
         // --- GENE ID SYSTEM (NEW) ---
         this.id = generateId(this.birthTime)
         this.geneId = this.gene.geneId || generateGeneId(this.id);
@@ -318,42 +334,73 @@ export class Agent {
         }
 
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
-        // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
-        // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
         // Map thrust to [-1, 1] for reverse capability
         let rawThrust = (output[0] * 2 - 1);
         const rotationOutput = (output[1] * 2 - 1);
-        const sprintOutput = output[2];
+        const sprintIntensity = output[2]; // [0, 1] - continuous intensity, not binary
         this.wantsToReproduce = output[3] > 0.8;
         this.wantsToAttack = output[4] > 0.8;
 
         // Kin recognition: Reduce attack willingness toward close relatives
         // This will be checked during collision resolution
 
-
         // --- MOVEMENT CALCULATIONS ---
-        // Apply deadzone to thrust to allow stopping
-        if (Math.abs(rawThrust) < 0.1) {
+        // 1. Apply deadzone to thrust (reduced for finer control)
+        if (Math.abs(rawThrust) < THRUST_DEADZONE) {
             rawThrust = 0;
         }
 
+        // 2. Calculate target thrust
         const geneticMaxThrust = MAX_THRUST * this.speedFactor;
-        let desiredThrust = rawThrust * geneticMaxThrust;
+        this.targetThrust = rawThrust * geneticMaxThrust;
 
-        // Set braking flag if thrust is zero (in deadzone)
-        this.isBraking = rawThrust === 0;
+        // 3. Calculate current speed for context-aware deceleration
+        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
 
-        let sprintThreshold = SPRINT_THRESHOLD;
+        // 4. Smooth acceleration/deceleration with context-aware rates
+        let decelRate = DECELERATION_RATE_NORMAL;
 
-        // --- TEMPERATURE-DEPENDENT BEHAVIOR ---
-        // Temperature affects movement efficiency and behavior
+        // Choose deceleration rate based on context
+        if (Math.abs(this.targetThrust) < THRUST_DEADZONE * geneticMaxThrust) {
+            this.isBraking = true;
+            decelRate = DECELERATION_RATE_BRAKING;
+        } else {
+            this.isBraking = false;
+        }
+
+        // Emergency deceleration when danger detected
+        // OPTIMIZED: Cache previousRayHits check to avoid repeated array access
+        if (this.dangerSmell > 0.7) {
+            decelRate = DECELERATION_RATE_EMERGENCY;
+        } else if (this.previousRayHits && this.previousRayHits.length > 0 && this.previousRayHits[0] > 5) {
+            decelRate = DECELERATION_RATE_EMERGENCY;
+        }
+
+        // Interpolate towards target thrust
+        // OPTIMIZED: Use squared comparison to avoid Math.abs calls
+        const targetThrustSq = this.targetThrust * this.targetThrust;
+        const currentThrustSq = this.currentThrust * this.currentThrust;
+        
+        if (targetThrustSq > currentThrustSq) {
+            // Accelerating - use acceleration smoothing
+            this.currentThrust += (this.targetThrust - this.currentThrust) * ACCELERATION_SMOOTHING;
+        } else {
+            // Decelerating - use context-aware deceleration rate
+            this.currentThrust += (this.targetThrust - this.currentThrust) * decelRate;
+        }
+
+        // Clamp to max thrust (optimized: single Math.max call)
+        if (this.currentThrust > geneticMaxThrust) {
+            this.currentThrust = geneticMaxThrust;
+        } else if (this.currentThrust < -geneticMaxThrust) {
+            this.currentThrust = -geneticMaxThrust;
+        }
+
+        // 5. Apply temperature and energy modifiers
         const tempEfficiency = this.getTemperatureEfficiency();
+        let desiredThrust = this.currentThrust * tempEfficiency;
 
-        // Apply temperature penalty to thrust
-        desiredThrust *= tempEfficiency;
-
-        // --- ENERGY CONSERVATION (RESTING) ---
-        // Agents conserve energy when critically low - reduce activity
+        // Energy conservation (resting)
         if (this.energy < LOW_ENERGY_THRESHOLD * 0.5) { // Below 50 energy
             desiredThrust *= 0.3; // Reduce movement to 30% when exhausted
             this.isResting = true;
@@ -367,41 +414,68 @@ export class Agent {
             this.wantsToReproduce = this.wantsToReproduce && (Math.random() < TEMPERATURE_REPRODUCTION_SUPPRESSION_EXTREME);
         }
 
-        // --- FIGHT/FLIGHT MODIFIERS ---
-        if (this.fear > this.aggression * 0.5) {
-            sprintThreshold = 0.5;
-            // Only apply fear sprint bonus if moving forward
-            if (desiredThrust > 0) {
-                desiredThrust += FEAR_SPRINT_BONUS * MAX_THRUST;
-            }
+        // 6. Apply directional sprint (continuous intensity, works in any direction)
+        if (sprintIntensity > SPRINT_COST_INTENSITY_THRESHOLD) {
+            this.isSprinting = true;
+            const sprintMultiplier = 1.0 + (sprintIntensity * SPRINT_BONUS_MULTIPLIER);
+            desiredThrust *= sprintMultiplier;
+
+            // Sprint energy cost scales with intensity
+            const sprintCost = SPRINT_COST_PER_FRAME * sprintIntensity;
+            this.energy -= sprintCost;
+            this.energySpent += sprintCost;
+        } else {
+            this.isSprinting = false;
+        }
+
+        // 7. Fear sprint bonus (only if moving, works in any direction)
+        if (this.fear > this.aggression * 0.5 && desiredThrust !== 0) {
+            desiredThrust += FEAR_SPRINT_BONUS * MAX_THRUST * Math.sign(desiredThrust);
             if (this.dangerSmell > 0.5) this.successfulEscapes++;
         }
 
-        // Only allow sprinting if moving forward
-        if ((this.isSprinting = (sprintOutput > sprintThreshold && desiredThrust > 0))) {
-            desiredThrust += SPRINT_BONUS_THRUST;
-        }
+        // 8. Smooth rotation with momentum
+        this.targetRotation = rotationOutput * MAX_ROTATION;
 
-        // Apply rotation
-        const rotationChange = rotationOutput * MAX_ROTATION;
-        this.angle += rotationChange;
+        // Apply rotation momentum (carryover from previous frame)
+        // Use previousRotation which stores the rotation rate from last frame
+        this.currentRotation = this.previousRotation * ROTATION_MOMENTUM;
+        this.currentRotation += this.targetRotation * (1 - ROTATION_MOMENTUM);
+
+        // Rotation efficiency at high speeds (harder to turn at max speed)
+        const speedRatio = currentSpeed / MAX_VELOCITY;
+        const rotationEfficiency = 1.0 - (speedRatio * (1 - ROTATION_EFFICIENCY_AT_MAX_SPEED));
+        this.currentRotation *= rotationEfficiency;
+
+        // Apply rotation to angle
+        this.angle += this.currentRotation;
 
         // Normalize angle to [0, TWO_PI) to prevent precision issues
         this.angle = this.angle % TWO_PI;
         if (this.angle < 0) this.angle += TWO_PI;
 
-        this.currentRotation = Math.abs(rotationChange); // Store for cost calculation
+        // Store rotation magnitude for cost calculation (use absolute value of smoothed rotation)
+        // OPTIMIZED: Calculate magnitude once and reuse
+        const rotationMagnitude = this.currentRotation < 0 ? -this.currentRotation : this.currentRotation;
 
-        // Apply thrust in the direction of the angle
-        let finalThrustX = Math.cos(this.angle) * desiredThrust;
-        let finalThrustY = Math.sin(this.angle) * desiredThrust;
-
-        // TEMP: Add minimum random movement REMOVED to allow zero thrust
-        // if (Math.abs(finalThrustX) < 0.01 && Math.abs(finalThrustY) < 0.01) { ... }
-
+        // 9. Apply thrust in the direction of the angle
+        // Note: Velocity momentum removed - update() already applies DAMPENING_FACTOR for physics friction
+        // The acceleration/deceleration smoothing above provides the movement smoothness
+        const finalThrustX = Math.cos(this.angle) * desiredThrust;
+        const finalThrustY = Math.sin(this.angle) * desiredThrust;
 
         this.vx += finalThrustX;
         this.vy += finalThrustY;
+
+        // Store for next frame
+        this.previousThrust = this.currentThrust;
+        // CRITICAL: Store the actual rotation rate (with sign) for momentum calculation
+        // Don't store magnitude here - we need the direction for proper momentum
+        this.previousRotation = this.currentRotation;
+        
+        // Store rotation magnitude separately for cost calculation (used in update() method)
+        // We'll use a separate variable to avoid breaking momentum
+        this.rotationMagnitudeForCost = rotationMagnitude;
     }
 
     update(worldWidth, worldHeight, obstacles, quadtree, simulation) {
@@ -656,13 +730,12 @@ export class Agent {
         // Exclude passive losses including temperature debuffs
         this.energySpent += movementLoss;
 
-        if (this.isSprinting) {
-            this.energy -= SPRINT_COST_PER_FRAME;
-            this.energySpent += SPRINT_COST_PER_FRAME;
-        }
+        // Sprint cost is now handled in thinkFromOutput() with intensity scaling
+        // Removed duplicate sprint cost calculation here
 
         // Explicit cost for high rotation to break spinning optimum
-        const rotationCost = this.currentRotation * ROTATION_COST_MULTIPLIER;
+        // Use rotationMagnitudeForCost which was stored in thinkFromOutput()
+        const rotationCost = (this.rotationMagnitudeForCost || Math.abs(this.currentRotation || 0)) * ROTATION_COST_MULTIPLIER;
         this.energy -= rotationCost;
         this.energySpent += rotationCost;
 
@@ -685,20 +758,30 @@ export class Agent {
         let turnDirection = 0;
 
         // Only calculate if moving to avoid noise
-        if (Math.abs(prevVx) > 0.01 || Math.abs(prevVy) > 0.01) {
+        // OPTIMIZED: Use squared comparison to avoid Math.abs
+        const prevSpeedSq = prevVx * prevVx + prevVy * prevVy;
+        const currSpeedSq = currVx * currVx + currVy * currVy;
+        const MIN_MOVEMENT_THRESHOLD_SQ = 0.0001; // 0.01^2 to avoid sqrt
+        
+        if (prevSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ || currSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ) {
             prevAngle = Math.atan2(prevVy, prevVx);
             currAngle = Math.atan2(currVy, currVx);
             angleDiff = Math.abs(currAngle - prevAngle);
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
-            this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+            // Only count significant direction changes (minimum threshold to prevent tiny movements)
+            // This prevents tiny jittery movements from accumulating massive fitness
+            if (angleDiff > MIN_ANGLE_CHANGE_FOR_FITNESS) {
+                this.directionChanged += angleDiff * DIRECTION_CHANGE_FITNESS_FACTOR;
+            }
 
             // Track speed changes to reward dynamic movement (not constant speed circles)
-            const prevSpeed = Math.sqrt(prevVx * prevVx + prevVy * prevVy);
-            const currSpeed = Math.sqrt(currVx * currVx + currVy * currVy);
+            const prevSpeed = Math.sqrt(prevSpeedSq);
+            const currSpeed = Math.sqrt(currSpeedSq);
             const speedDiff = Math.abs(currSpeed - prevSpeed);
-            if (speedDiff > 0.05) { // Lower threshold for speed changes
-                this.speedChanged += speedDiff * 2.0; // Increased reward for speed variation
+            // Increased threshold and reduced multiplier to prevent tiny speed changes from accumulating
+            if (speedDiff > MIN_SPEED_CHANGE_FOR_FITNESS) {
+                this.speedChanged += speedDiff * 1.0; // Reduced from 2.0 to 1.0
             }
 
             // Detect circular movement patterns (consecutive turns in same direction)
@@ -715,10 +798,16 @@ export class Agent {
             }
 
             // Track "clever turns" - significant direction changes in response to environment
-            if (angleDiff > 0.3) { // Only count meaningful turns (about 17 degrees)
+            if (angleDiff > 0.2) { // Only count meaningful turns (about 11 degrees, reduced from 0.3)
                 // Clever turn if responding to danger, opportunity, or visual information
                 const hasRecentRayHits = this.previousRayHits.some(hits => hits > 0);
-                if (this.dangerSmell > 0.5 || this.attackSmell > 0.5 || hasRecentRayHits) {
+                const isStrategicTurn = this.dangerSmell > 0.5 || this.attackSmell > 0.5 || hasRecentRayHits;
+                
+                if (isStrategicTurn) {
+                    // Double reward for strategic turns (turning towards food, away from obstacles, or evading danger)
+                    this.cleverTurns += angleDiff * 2.0;
+                } else {
+                    // Regular reward for any significant turn
                     this.cleverTurns += angleDiff;
                 }
             }
@@ -726,7 +815,8 @@ export class Agent {
 
         // === NAVIGATION BEHAVIOR TRACKING (NEW) ===
         // Track turning towards food and away from obstacles
-        if (this.lastRayData && this.lastRayData.length > 0 && Math.abs(angleDiff) > 0.05) {
+        // OPTIMIZED: Require more significant turns to prevent tiny movements from accumulating
+        if (this.lastRayData && this.lastRayData.length > 0 && Math.abs(angleDiff) > MIN_NAVIGATION_TURN_FOR_FITNESS) {
             // Find closest food and obstacle in ray data
             let closestFoodDist = Infinity;
             let closestFoodAngle = null;
@@ -747,8 +837,12 @@ export class Agent {
             // Track food approaches (getting closer to food)
             if (closestFoodDist < Infinity) {
                 // Track improvement only if we have previous data
+                // OPTIMIZED: Require minimum approach distance to prevent tiny movements from accumulating
                 if (this.lastFoodDistance !== null && this.lastFoodDistance !== undefined && closestFoodDist < this.lastFoodDistance) {
-                    this.foodApproaches += (this.lastFoodDistance - closestFoodDist) * 0.1; // Reward proportional to approach speed
+                    const approachDistance = this.lastFoodDistance - closestFoodDist;
+                    if (approachDistance > MIN_FOOD_APPROACH_DISTANCE) { // Only count significant approaches
+                        this.foodApproaches += approachDistance * 0.1; // Reward proportional to approach speed
+                    }
                 }
                 this.lastFoodDistance = closestFoodDist;
 
@@ -1371,6 +1465,27 @@ export class Agent {
         inputs.push(this.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
         inputs.push(this.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
 
+        // Optional: Movement state inputs (enhances learning of movement control)
+        // OPTIMIZED: Cache geneticMaxThrust calculation and use cached inverse
+        const geneticMaxThrust = MAX_THRUST * this.speedFactor;
+        const invGeneticMaxThrust = 1 / Math.max(geneticMaxThrust, 0.001);
+        const invMaxRotation = 1 / MAX_ROTATION;
+        
+        // Current thrust level (0-1, normalized by max thrust)
+        inputs.push(Math.abs(this.currentThrust) * invGeneticMaxThrust);
+        
+        // Current rotation rate (-1 to 1, normalized by max rotation)
+        inputs.push((this.previousRotation || 0) * invMaxRotation);
+        
+        // Thrust change (delta from previous frame)
+        const thrustChange = this.currentThrust - (this.previousThrust || 0);
+        inputs.push(thrustChange * invGeneticMaxThrust);
+        
+        // Rotation change (delta from previous frame)
+        // Approximation: use current rotation rate as indicator of change
+        const rotationChange = this.previousRotation || 0;
+        inputs.push(rotationChange * invMaxRotation);
+
         this.lastRayData = rayData;
 
         // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
@@ -1653,16 +1768,46 @@ export class Agent {
         // REBALANCED: Offspring increased from 100 to 150, kills reduced from 300 to 200
         baseScore += safeNumber(this.offspring || 0, 0) * 150; // Increased from 100
         baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
-        baseScore += Math.min(safeNumber(this.directionChanged || 0, 0), 500) * 2;
-        baseScore += Math.min(safeNumber(this.speedChanged || 0, 0), 200) * 1;
+        
+        // Movement rewards - NORMALIZED by distance traveled to prevent tiny movements from inflating fitness
+        const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
+        const ageInSeconds = safeNumber(this.age || 0, 0);
+        
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            // Normalize movement metrics by distance traveled (per 100 units of distance)
+            const distanceNormalizer = distanceTravelled / 100;
+            
+            // Direction changes: cap and normalize
+            const directionChangedNormalized = Math.min(safeNumber(this.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
+            baseScore += directionChangedNormalized * 1.0; // Reduced from 2.0 and normalized
+            
+            // Speed changes: cap and normalize
+            const speedChangedNormalized = Math.min(safeNumber(this.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
+            baseScore += speedChangedNormalized * 0.5; // Reduced from 1.0 and normalized
+        } else {
+            // Penalty for minimal movement (agents that barely move)
+            const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
+            baseScore -= Math.min(movementPenalty, 50); // Max 50 point penalty for minimal movement
+        }
+        
         baseScore += safeNumber(explorationPercentage, 0) * 100;
         baseScore += safeNumber(this.foodEaten || 0, 0) * 500;
         baseScore += safeNumber(this.kills || 0, 0) * 200; // Reduced from 300
 
-        // Navigation behavior rewards (NEW) - INCREASED to encourage learning
-        baseScore += safeNumber(this.turnsTowardsFood || 0, 0) * 10; // INCREASED from 5 to 10
-        baseScore += safeNumber(this.turnsAwayFromObstacles || 0, 0) * 10;
-        baseScore += safeNumber(this.foodApproaches || 0, 0) * 25; // INCREASED from 15 to 25 to reward food-seeking behavior
+        // Navigation behavior rewards - NORMALIZED by distance to prevent accumulation from tiny movements
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            
+            // Normalize navigation rewards by distance
+            const turnsTowardsFoodNormalized = safeNumber(this.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += turnsTowardsFoodNormalized * 5; // Reduced from 10 and normalized
+            
+            const turnsAwayFromObstaclesNormalized = safeNumber(this.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += turnsAwayFromObstaclesNormalized * 5; // Reduced from 10 and normalized
+            
+            const foodApproachesNormalized = safeNumber(this.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += foodApproachesNormalized * 10; // Reduced from 25 and normalized
+        }
 
         const offspring = safeNumber(this.offspring || 0, 0);
         const foodEaten = safeNumber(this.foodEaten || 0, 0);
@@ -1675,7 +1820,7 @@ export class Agent {
         // REMOVED THRESHOLD: Always calculate efficiency, even for early deaths
         let efficiency = 0;
         const energySpent = safeNumber(this.energySpent || 0, 0);
-        const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
+        // Reuse distanceTravelled declared above
         if (energySpent > 0) {
             efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
         }
@@ -1697,7 +1842,7 @@ export class Agent {
 
         // 4. Collision Avoidance Reward (NEW)
         // Use real-time age in seconds for fitness calculation (not affected by focus loss)
-        const ageInSeconds = safeNumber(this.age || 0, 0);
+        // Reuse ageInSeconds declared above
         const ageInFrames = ageInSeconds * FPS_TARGET; // Convert to equivalent frames for compatibility
 
         // Reward agents that survive without hitting obstacles
@@ -1820,6 +1965,9 @@ export class Agent {
             return;
         }
         this._cleanedUp = true;
+        
+        // Clear GPU validation flag
+        this._gpuWeightsValidated = false;
 
         // Log cleanup for debugging validation issues
         this.logger.debug(`[AGENT-CLEANUP] 🧹 Cleaning up agent ${this.id} (${this.geneId}) - Age: ${this.age.toFixed(1)}s, Fitness: ${this.fitness.toFixed(1)}, Fit: ${this.fit}, Energy: ${this.energy.toFixed(1)}, NN: ${this.nn ? 'present' : 'null'}`);

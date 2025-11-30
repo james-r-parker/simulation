@@ -14,7 +14,8 @@ import {
     TEMPERATURE_COLD_STRESS_THRESHOLD, TEMPERATURE_COLD_MODERATE_THRESHOLD,
     TEMPERATURE_HEAT_STRESS_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD,
     KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_PREDATION_REDUCTION_THRESHOLD,
-    KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE
+    KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE,
+    MAX_THRUST, MAX_ROTATION
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -773,6 +774,27 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(agent.eventFlags && agent.eventFlags.justReproduced > 0 ? 1 : 0); // Recently reproduced
         inputs.push(agent.eventFlags && agent.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
         inputs.push(agent.eventFlags && agent.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
+
+        // Optional: Movement state inputs (enhances learning of movement control)
+        // OPTIMIZED: Cache calculations and use multiplication instead of division
+        const geneticMaxThrust = MAX_THRUST * agent.speedFactor;
+        const invGeneticMaxThrust = 1 / Math.max(geneticMaxThrust, 0.001);
+        const invMaxRotation = 1 / MAX_ROTATION;
+        
+        // Current thrust level (0-1, normalized by max thrust)
+        inputs.push(Math.abs(agent.currentThrust || 0) * invGeneticMaxThrust);
+        
+        // Current rotation rate (-1 to 1, normalized by max rotation)
+        inputs.push((agent.previousRotation || 0) * invMaxRotation);
+        
+        // Thrust change (delta from previous frame)
+        const thrustChange = (agent.currentThrust || 0) - (agent.previousThrust || 0);
+        inputs.push(thrustChange * invGeneticMaxThrust);
+        
+        // Rotation change (delta from previous frame)
+        // Note: This is a simplified calculation - full implementation would track previous-previous rotation
+        const rotationChange = 0; // Placeholder - would need additional state tracking for accurate calculation
+        inputs.push(rotationChange * invMaxRotation);
 
         agent.lastInputs = inputs;
         agent.lastRayData = rayData;
