@@ -44,7 +44,7 @@ import {
     spawnFood, spawnPheromone, repopulate, randomSpawnAvoidCluster,
     updateObstacles
 } from './spawn.js';
-import { checkCollisions, convertGpuRayResultsToInputs } from './physics.js';
+import { checkCollisions, convertGpuRayResultsToInputs, collisionSetPool } from './physics.js';
 import { updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
 import { PerformanceMonitor } from './performance-monitor.js';
@@ -905,11 +905,11 @@ export class Simulation {
             return;
         }
 
-        if(!this.gpuPhysics.isRayTracingBusy) {
-  
+        if (!this.gpuPhysics.isRayTracingBusy) {
+
 
             const now = Date.now();
-            
+
             // Start performance monitoring for this frame
             this.perfMonitor.startFrame();
 
@@ -1006,7 +1006,7 @@ export class Simulation {
             const iterations = Math.max(1, Math.floor(this.gameSpeed));
             for (let i = 0; i < iterations; i++) {
 
-                if(this.gpuPhysics.isRayTracingBusy) {
+                if (this.gpuPhysics.isRayTracingBusy) {
                     continue;
                 }
 
@@ -1108,33 +1108,33 @@ export class Simulation {
                 if (canUseGpu) {
                     try {
 
-                         // Build arrays with current state - Reuse allEntities
-                         this.allEntities.length = 0;
-                         for (let j = 0; j < this.food.length; j++) {
-                             if (!this.food[j].isDead) {
-                                 this.allEntities.push(this.food[j]);
-                             }
-                         }
-                         for (let j = 0; j < activeAgents.length; j++) {
-                             this.allEntities.push(activeAgents[j]);
-                         }
+                        // Build arrays with current state - Reuse allEntities
+                        this.allEntities.length = 0;
+                        for (let j = 0; j < this.food.length; j++) {
+                            if (!this.food[j].isDead) {
+                                this.allEntities.push(this.food[j]);
+                            }
+                        }
+                        for (let j = 0; j < activeAgents.length; j++) {
+                            this.allEntities.push(activeAgents[j]);
+                        }
 
-                         const allEntities = this.allEntities;
+                        const allEntities = this.allEntities;
 
-                         const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
+                        const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
 
-                         // CRITICAL: Ray tracing must complete BEFORE neural network processing
-                         // because the neural network needs the converted ray results as inputs
-                         const gpuRayResults = await this.perfMonitor.timeAsync('perception.rayTracing', async () => {
-                             return this.gpuPhysics.batchRayTracing(
-                                 activeAgents,
-                                 allEntities,
-                                 this.obstacles,
-                                 maxRaysPerAgent,
-                                 this.worldWidth,
-                                 this.worldHeight
-                             );
-                         });
+                        // CRITICAL: Ray tracing must complete BEFORE neural network processing
+                        // because the neural network needs the converted ray results as inputs
+                        const gpuRayResults = await this.perfMonitor.timeAsync('perception.rayTracing', async () => {
+                            return this.gpuPhysics.batchRayTracing(
+                                activeAgents,
+                                allEntities,
+                                this.obstacles,
+                                maxRaysPerAgent,
+                                this.worldWidth,
+                                this.worldHeight
+                            );
+                        });
 
                         // Process ray tracing results and convert to neural network inputs
                         if (gpuRayResults && gpuRayResults.length > 0) {
@@ -1435,6 +1435,12 @@ export class Simulation {
                             // NUTRIENT CYCLING: Create fertile zone from decomposed agent
                             this.createFertileZone(agent);
 
+                            // PERFORMANCE: Release collision tracking Set back to pool
+                            if (agent.processedCollisions) {
+                                collisionSetPool.release(agent.processedCollisions);
+                                agent.processedCollisions = null;
+                            }
+
                             // Remove ALL dead agents from active array to prevent memory leaks
                             this.agents.splice(j, 1);
                             j--; // Adjust index since we removed an element
@@ -1511,126 +1517,126 @@ export class Simulation {
             // UI updates
             if (this.frameCount % 100 === 0) updateInfo(this);
 
-                    // Periodic agent data cleanup - prevent array accumulation
-                    if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
-                        for (const agent of this.agents) {
-                            if (agent && !agent.isDead) {
-                                // Limit array sizes to prevent unbounded growth
-                                if (agent.inputs && agent.inputs.length > 1000) {
-                                    agent.inputs.length = 0;
+            // Periodic agent data cleanup - prevent array accumulation
+            if (this.frameCount % 30 === 0) { // More frequent cleanup: every 0.5 seconds at 60 FPS
+                for (const agent of this.agents) {
+                    if (agent && !agent.isDead) {
+                        // Limit array sizes to prevent unbounded growth
+                        if (agent.inputs && agent.inputs.length > 1000) {
+                            agent.inputs.length = 0;
+                        }
+                        if (agent.rayData && agent.rayData.length > 500) {
+                            agent.rayData.length = 0;
+                        }
+                        if (agent.lastRayData && agent.lastRayData.length > 500) {
+                            agent.lastRayData.length = 0;
+                        }
+                    }
+                }
+            }
+
+            // Periodic validation checks - use real time for consistent timing
+            if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
+                this.lastValidationCheckTime = now;
+                updatePeriodicValidation(this, this.logger);
+                // Log validation queue status periodically
+                if (this.validationManager.validationQueue.size > 0) {
+                    this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
+                }
+                // Clean up validation queue
+                this.validationManager.cleanupValidationQueue();
+
+                // Resync active validation agents counter
+                this.validationManager.resyncActiveAgentsCount(this);
+            }
+
+            // Dashboard updates (only when focused)
+            if (this.frameCount % 30 === 0 && document.hasFocus()) {
+                this.perfMonitor.timeSync('ui', () => {
+                    updateDashboard(this);
+                });
+            }
+            // Periodic comprehensive memory cleanup - use real time to avoid throttling
+            if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
+                this.lastMemoryCleanupTime = now;
+                this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
+                periodicMemoryCleanup(this);
+
+                // Calculate session duration for all cleanup operations
+                const sessionDurationHours = (now - this.startTime) / (1000 * 60 * 60);
+
+                // Intelligent database cache management for long-term stability
+                if (this.db && this.db.trimCache) {
+                    this.db.trimCache(sessionDurationHours);
+                }
+
+                // Selective GPU cache management - trim instead of full clear to avoid performance spikes
+                let shouldTrimCache = sessionDurationHours >= 1 || this.currentMemoryUsage > this.memoryPressureThreshold * 0.8;
+
+                // More aggressive trimming as simulation runs longer
+                let maxCacheSize = 10;
+                if (sessionDurationHours > 1) maxCacheSize = 5;
+                if (sessionDurationHours > 2) maxCacheSize = 3;
+
+                // Also trim every cleanup cycle if we're using a lot of GPU resources
+                if (this.gpuCompute && this.gpuCompute.pipelines.size > maxCacheSize) {
+                    shouldTrimCache = true;
+                }
+
+                if (shouldTrimCache) {
+                    this.logger.debug(`[PERF] Periodic GPU cache maintenance (${sessionDurationHours.toFixed(1)}h session, maxCacheSize: ${maxCacheSize})`);
+
+                    // Use enhanced selective trimming for GPU Compute
+                    if (this.gpuCompute && this.gpuCompute.deepCleanup) {
+                        this.gpuCompute.deepCleanup(sessionDurationHours);
+                    }
+
+                    // Enhanced GPU Physics cleanup
+                    if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
+                        this.gpuPhysics.deepCleanup(sessionDurationHours);
+                    }
+                }
+
+                // Renderer defragmentation for long-term stability
+                const rendererAgeHours = (now - this.rendererSessionStartTime) / (1000 * 60 * 60);
+                if (rendererAgeHours > this.rendererDefragIntervalHours) {
+                    this.logger.debug(`[RENDERER] Defragmenting renderer resources (${rendererAgeHours.toFixed(1)}h session)`);
+
+                    // Force renderer cleanup and recreation of instanced meshes
+                    if (this.renderer && this.renderer.defragment) {
+                        this.renderer.defragment();
+                    } else {
+                        // Fallback: clear agent meshes to force recreation
+                        if (this.renderer && this.renderer.agentMeshes) {
+                            for (const [geneId, mesh] of this.renderer.agentMeshes.entries()) {
+                                if (mesh.body) {
+                                    this.renderer.agentGroup.remove(mesh.body);
+                                    mesh.body.geometry.dispose();
+                                    mesh.body.material.dispose();
                                 }
-                                if (agent.rayData && agent.rayData.length > 500) {
-                                    agent.rayData.length = 0;
-                                }
-                                if (agent.lastRayData && agent.lastRayData.length > 500) {
-                                    agent.lastRayData.length = 0;
+                                if (mesh.border) {
+                                    this.renderer.agentGroup.remove(mesh.border);
+                                    mesh.border.geometry.dispose();
+                                    mesh.border.material.dispose();
                                 }
                             }
+                            this.renderer.agentMeshes.clear();
+                            this.logger.debug('[RENDERER] Cleared agent meshes for defragmentation');
                         }
                     }
 
-                    // Periodic validation checks - use real time for consistent timing
-                    if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
-                        this.lastValidationCheckTime = now;
-                        updatePeriodicValidation(this, this.logger);
-                        // Log validation queue status periodically
-                        if (this.validationManager.validationQueue.size > 0) {
-                            this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
-                        }
-                        // Clean up validation queue
-                        this.validationManager.cleanupValidationQueue();
+                    this.rendererLastDefragTime = now;
+                    this.rendererDefragIntervalHours = Math.min(this.rendererDefragIntervalHours + 1, 8); // Gradually increase interval
+                }
 
-                        // Resync active validation agents counter
-                        this.validationManager.resyncActiveAgentsCount(this);
-                    }
-
-                    // Dashboard updates (only when focused)
-                    if (this.frameCount % 30 === 0 && document.hasFocus()) {
-                        this.perfMonitor.timeSync('ui', () => {
-                            updateDashboard(this);
-                        });
-                    }
-                    // Periodic comprehensive memory cleanup - use real time to avoid throttling
-                    if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
-                        this.lastMemoryCleanupTime = now;
-                        this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Starting periodic memory cleanup`);
-                        periodicMemoryCleanup(this);
-
-                        // Calculate session duration for all cleanup operations
-                        const sessionDurationHours = (now - this.startTime) / (1000 * 60 * 60);
-
-                        // Intelligent database cache management for long-term stability
-                        if (this.db && this.db.trimCache) {
-                            this.db.trimCache(sessionDurationHours);
-                        }
-
-                        // Selective GPU cache management - trim instead of full clear to avoid performance spikes
-                        let shouldTrimCache = sessionDurationHours >= 1 || this.currentMemoryUsage > this.memoryPressureThreshold * 0.8;
-
-                        // More aggressive trimming as simulation runs longer
-                        let maxCacheSize = 10;
-                        if (sessionDurationHours > 1) maxCacheSize = 5;
-                        if (sessionDurationHours > 2) maxCacheSize = 3;
-
-                        // Also trim every cleanup cycle if we're using a lot of GPU resources
-                        if (this.gpuCompute && this.gpuCompute.pipelines.size > maxCacheSize) {
-                            shouldTrimCache = true;
-                        }
-
-                        if (shouldTrimCache) {
-                            this.logger.debug(`[PERF] Periodic GPU cache maintenance (${sessionDurationHours.toFixed(1)}h session, maxCacheSize: ${maxCacheSize})`);
-
-                            // Use enhanced selective trimming for GPU Compute
-                            if (this.gpuCompute && this.gpuCompute.deepCleanup) {
-                                this.gpuCompute.deepCleanup(sessionDurationHours);
-                            }
-
-                            // Enhanced GPU Physics cleanup
-                            if (this.gpuPhysics && this.gpuPhysics.deepCleanup) {
-                                this.gpuPhysics.deepCleanup(sessionDurationHours);
-                            }
-                        }
-
-                        // Renderer defragmentation for long-term stability
-                        const rendererAgeHours = (now - this.rendererSessionStartTime) / (1000 * 60 * 60);
-                        if (rendererAgeHours > this.rendererDefragIntervalHours) {
-                            this.logger.debug(`[RENDERER] Defragmenting renderer resources (${rendererAgeHours.toFixed(1)}h session)`);
-
-                            // Force renderer cleanup and recreation of instanced meshes
-                            if (this.renderer && this.renderer.defragment) {
-                                this.renderer.defragment();
-                            } else {
-                                // Fallback: clear agent meshes to force recreation
-                                if (this.renderer && this.renderer.agentMeshes) {
-                                    for (const [geneId, mesh] of this.renderer.agentMeshes.entries()) {
-                                        if (mesh.body) {
-                                            this.renderer.agentGroup.remove(mesh.body);
-                                            mesh.body.geometry.dispose();
-                                            mesh.body.material.dispose();
-                                        }
-                                        if (mesh.border) {
-                                            this.renderer.agentGroup.remove(mesh.border);
-                                            mesh.border.geometry.dispose();
-                                            mesh.border.material.dispose();
-                                        }
-                                    }
-                                    this.renderer.agentMeshes.clear();
-                                    this.logger.debug('[RENDERER] Cleared agent meshes for defragmentation');
-                                }
-                            }
-
-                            this.rendererLastDefragTime = now;
-                            this.rendererDefragIntervalHours = Math.min(this.rendererDefragIntervalHours + 1, 8); // Gradually increase interval
-                        }
-
-                        // Force garbage collection if available
-                        if (window.gc) {
-                            window.gc();
-                            this.logger.info('[PERF] Forced garbage collection');
-                        }
-                        this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
-                    }
-                    this.perfMonitor.endPhase('memory');
+                // Force garbage collection if available
+                if (window.gc) {
+                    window.gc();
+                    this.logger.info('[PERF] Forced garbage collection');
+                }
+                this.logger.info(`[PERF] Time ${Math.floor((now - this.startTime) / 1000)}s: Periodic memory cleanup completed`);
+            }
+            this.perfMonitor.endPhase('memory');
 
             // Update camera
             this.perfMonitor.startPhase('camera');

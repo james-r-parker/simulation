@@ -269,11 +269,12 @@ export function randomSpawnAvoidCluster(simulation) {
 function findSafeSpawnPosition(simulation) {
     const worldWidth = simulation.worldWidth;
     const worldHeight = simulation.worldHeight;
-    const agentSize = 20; // Minimum safe distance from obstacles/agents
+    const agentSize = 80; // Assumed max size for validation agents (energy 5000 -> size ~75)
 
     for (let attempts = 0; attempts < 100; attempts++) {
-        const x = Math.random() * (worldWidth - 100) + 50; // Avoid edges
-        const y = Math.random() * (worldHeight - 100) + 50; // Avoid edges
+        const margin = 100; // Keep away from walls
+        const x = Math.random() * (worldWidth - 2 * margin) + margin;
+        const y = Math.random() * (worldHeight - 2 * margin) + margin;
 
         // Check distance from all obstacles
         let safeFromObstacles = true;
@@ -611,7 +612,7 @@ export function repopulate(simulation) {
         const availableSlots = maxValidationAgents - simulation.validationManager.activeValidationAgents;
 
         if (availableSlots > 0) {
-                    // Find first available validation candidate
+            // Find first available validation candidate
             for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
                 if (!entry.isActiveTest && !simulation.validationManager.isSpawnLocked(geneId)) {
                     // Safety check: Ensure we have valid weights before attempting to spawn

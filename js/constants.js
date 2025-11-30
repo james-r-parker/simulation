@@ -48,7 +48,7 @@ export const MATURATION_AGE_FRAMES = 600; // Minimum age in frames before agents
 export const RESPAWN_DELAY_FRAMES = 0; // Frames to wait before respawning dead agents
 
 // Energy management
-export const OBESITY_THRESHOLD_ENERGY = 350; // Energy level above which agents suffer obesity penalties
+export const OBESITY_THRESHOLD_ENERGY = 15000; // Energy level above which agents suffer obesity penalties
 export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Divisor for calculating obesity energy tax (higher = less tax)
 export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (metabolic cost)
 export const MOVEMENT_COST_MULTIPLIER = 0.003; // Energy cost multiplier for movement (velocity * this)

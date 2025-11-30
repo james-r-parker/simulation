@@ -104,12 +104,12 @@ export class Quadtree {
             }
         }
 
-        // Recurse into child nodes
+        // Recurse into child nodes ONLY if they intersect the query range
         if (this.divided) {
-            this.northwest.query(range, found);
-            this.northeast.query(range, found);
-            this.southwest.query(range, found);
-            this.southeast.query(range, found);
+            if (this.northwest.boundary.intersects(range)) this.northwest.query(range, found);
+            if (this.northeast.boundary.intersects(range)) this.northeast.query(range, found);
+            if (this.southwest.boundary.intersects(range)) this.southwest.query(range, found);
+            if (this.southeast.boundary.intersects(range)) this.southeast.query(range, found);
         }
         return found;
     }
