@@ -205,6 +205,8 @@ export function checkCollisions(simulation) {
                         agent.energy += energyStolen;
                         other.energy -= energyStolen;
                         agent.foodEaten += FOOD_EATEN_INCREMENT; // Partial credit for nibbling
+                        agent.eventFlags.justAteFood = 30; // Set flag for 30 frames (~0.5 seconds)
+                        other.eventFlags.justAttacked = 30; // Victim was attacked
 
                         // Log successful eating
                         simulation.logger.debug(`[LIFECYCLE] 🍽️ Agent ${agent.id} (${agent.geneId}) ate Agent ${other.id} (${other.geneId}) - Energy stolen: ${energyStolen.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Prey energy: ${other.energy.toFixed(1)}`);
@@ -227,6 +229,8 @@ export function checkCollisions(simulation) {
                         agent.energy -= energyLost;
                         other.energy += energyLost;
                         other.foodEaten += FOOD_EATEN_INCREMENT;
+                        other.eventFlags.justAteFood = 30; // Set flag for 30 frames (~0.5 seconds)
+                        agent.eventFlags.justAttacked = 30; // Victim was attacked
 
                         // Log being eaten
                         simulation.logger.debug(`[LIFECYCLE] 😵 Agent ${agent.id} (${agent.geneId}) eaten by Agent ${other.id} (${other.geneId}) - Energy lost: ${energyLost.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Predator energy: ${other.energy.toFixed(1)}`);
@@ -248,10 +252,14 @@ export function checkCollisions(simulation) {
                             agent.energy -= energyExchange;
                             other.energy += energyExchange;
                             other.foodEaten += exchangeMultiplier * FOOD_EATEN_INCREMENT;
+                            other.eventFlags.justAteFood = 30; // Set flag for 30 frames (~0.5 seconds)
+                            agent.eventFlags.justAttacked = 30; // Agent lost energy (was attacked)
                         } else if (energyExchange < 0 && other.energy > Math.abs(energyExchange)) {
                             other.energy += energyExchange; // energyExchange is negative
                             agent.energy -= energyExchange; // This makes agent.energy increase
                             agent.foodEaten += exchangeMultiplier * FOOD_EATEN_INCREMENT;
+                            agent.eventFlags.justAteFood = 30; // Set flag for 30 frames (~0.5 seconds)
+                            other.eventFlags.justAttacked = 30; // Other lost energy (was attacked)
                         }
 
                         // Both agents get collision penalty

@@ -198,6 +198,15 @@ export class Agent {
         this.previousAggression = Array(this.memoryFrames).fill(0);
         this.previousRayHits = Array(this.memoryFrames).fill(0);
 
+        // --- Event Memory Flags (countdown frames since events) ---
+        this.eventFlags = {
+            justAteFood: 0,      // Frames since eating food
+            justHitObstacle: 0,  // Frames since obstacle collision
+            justReproduced: 0,   // Frames since reproduction
+            justAttacked: 0,     // Frames since being attacked
+            lowEnergyWarning: 0  // Frames in low energy state
+        };
+
         // --- Pre-allocated Memory for Performance ---
         this.inputs = []; // Pre-allocate inputs array
         this.rayData = []; // Pre-allocate rayData array
@@ -459,6 +468,19 @@ export class Agent {
         this.previousDanger[0] = this.dangerSmell;
         this.previousAggression[0] = this.attackSmell;
         this.previousRayHits[0] = this.rayHits;
+
+        // Update event flags (decrement counters each frame)
+        if (this.eventFlags.justAteFood > 0) this.eventFlags.justAteFood--;
+        if (this.eventFlags.justHitObstacle > 0) this.eventFlags.justHitObstacle--;
+        if (this.eventFlags.justReproduced > 0) this.eventFlags.justReproduced--;
+        if (this.eventFlags.justAttacked > 0) this.eventFlags.justAttacked--;
+
+        // Set low energy warning if energy drops below threshold
+        if (this.energy < LOW_ENERGY_THRESHOLD) {
+            this.eventFlags.lowEnergyWarning = 30; // Set flag for 30 frames
+        } else if (this.eventFlags.lowEnergyWarning > 0) {
+            this.eventFlags.lowEnergyWarning--; // Decrement if not in low energy
+        }
 
         // Apply drag/dampening
         // Use stronger braking friction if agent is not applying thrust
@@ -877,6 +899,7 @@ export class Agent {
                 this.energy -= OBSTACLE_COLLISION_PENALTY;
                 this.collisions++;
                 this.timesHitObstacle++;
+                this.eventFlags.justHitObstacle = 30; // Set flag for 30 frames (~0.5 seconds)
 
                 // Add visual effect
                 if (simulation.renderer) {
@@ -1247,6 +1270,18 @@ export class Agent {
         inputs.push(Math.min(aggression1, 1)); // Previous aggression (1 frame ago)
         inputs.push((energy1 - energy2) / MAX_ENERGY); // Energy delta (2 frames ago)
 
+        // Lifetime experience metrics (career achievements accessible to NN)
+        inputs.push(Math.min(this.foodEaten / 10, 1)); // Career nutrition score (0-1 scale)
+        inputs.push(Math.min(this.timesHitObstacle / 5, 1)); // Safety record (0-1 scale)
+        inputs.push(Math.min(this.offspring / 3, 1)); // Reproductive success (0-1 scale)
+
+        // Recent event flags (binary indicators for recent experiences)
+        inputs.push(this.eventFlags.justAteFood > 0 ? 1 : 0); // Recently ate food
+        inputs.push(this.eventFlags.justHitObstacle > 0 ? 1 : 0); // Recently hit obstacle
+        inputs.push(this.eventFlags.justReproduced > 0 ? 1 : 0); // Recently reproduced
+        inputs.push(this.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
+        inputs.push(this.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
+
         this.lastRayData = rayData;
 
         // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
@@ -1427,6 +1462,7 @@ export class Agent {
         child.nn.mutate(this.simulation.mutationRate * 0.5); // Lower mutation rate for clones
 
         this.offspring++;
+        this.eventFlags.justReproduced = 60; // Set flag for 60 frames (~1 second) - longer for reproduction
         this.childrenFromSplit++;
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES * 1.5; // Longer cooldown after splitting
 

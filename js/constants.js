@@ -36,7 +36,7 @@ export const SPRINT_THRESHOLD = 0.9; // Neural network output threshold to trigg
 export const FEAR_SPRINT_BONUS = 0.5; // Extra thrust bonus when fleeing from threats
 
 // Neural network and evolution
-export const AGENT_MEMORY_FRAMES = 3; // Number of previous frames stored for temporal decision making
+export const AGENT_MEMORY_FRAMES = 30; // Number of previous frames stored for temporal decision making (~0.5 seconds at 60fps)
 export const BASE_MUTATION_RATE = 0.1; // Base probability of gene mutations during reproduction
 export const AGENT_SPEED_FACTOR_BASE = 2; // Base multiplier for agent movement speed calculations
 export const AGENT_SPEED_FACTOR_VARIANCE = 3; // Random variance range for speed factor inheritance
@@ -321,35 +321,35 @@ export const SPECIALIZATION_TYPES = {
 export const AGENT_CONFIGS = {
     [SPECIALIZATION_TYPES.FORAGER]: {
         color: COLORS.AGENTS.FORAGER, // Visual color for forager agents
-        numSensorRays: 24, // Number of sensor rays for detecting environment
-        maxRayDist: 400, // Maximum distance sensor rays can detect
+        numSensorRays: 16, // Number of sensor rays for detecting environment
+        maxRayDist: 300, // Maximum distance sensor rays can detect
         hiddenSize: 20, // Size of neural network hidden layer
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: COLORS.AGENTS.PREDATOR, // Visual color for predator agents
-        numSensorRays: 32, // Number of sensor rays for detecting environment
-        maxRayDist: 450, // Maximum distance sensor rays can detect
+        numSensorRays: 24, // Number of sensor rays for detecting environment
+        maxRayDist: 350, // Maximum distance sensor rays can detect
         hiddenSize: 25, // Size of neural network hidden layer
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: COLORS.AGENTS.REPRODUCER, // Visual color for reproducer agents
-        numSensorRays: 24, // Number of sensor rays for detecting environment
+        numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 250, // Maximum distance sensor rays can detect
         hiddenSize: 18, // Size of neural network hidden layer
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: COLORS.AGENTS.SCOUT, // Visual color for scout agents
-        numSensorRays: 32, // Number of sensor rays for detecting environment
-        maxRayDist: 600, // Maximum distance sensor rays can detect
+        numSensorRays: 24, // Number of sensor rays for detecting environment
+        maxRayDist: 400, // Maximum distance sensor rays can detect
         hiddenSize: 15, // Size of neural network hidden layer
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: COLORS.AGENTS.DEFENDER, // Visual color for defender agents
-        numSensorRays: 24, // Number of sensor rays for detecting environment
+        numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 350, // Maximum distance sensor rays can detect
         hiddenSize: 22, // Size of neural network hidden layer
         description: 'Specialized in defending territory and allies.'
