@@ -17,7 +17,7 @@ export const SEASON_LENGTH = 3600; // Number of frames per season phase (environ
 // Size and appearance
 export const BASE_SIZE = 25; // Default visual radius of agents in pixels
 export const MIN_AGENT_SIZE = 20; // Minimum visual size agents can shrink to, regardless of energy level
-export const ENERGY_TO_SIZE_RATIO = 100; // How much energy affects agent size (higher energy = larger size)
+export const ENERGY_TO_SIZE_RATIO = 250; // How much energy affects agent size (higher energy = larger size)
 
 // Energy system
 export const INITIAL_AGENT_ENERGY = 5000; // Starting energy for newly spawned agents
