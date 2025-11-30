@@ -1238,6 +1238,110 @@ button:hover {
     line-height: 1.4;
 }
 
+/* Validation Queue Styling */
+.validation-queue-section {
+    margin-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 24px;
+}
+
+.validation-queue-section h3 {
+    color: var(--neon-cyan);
+    font-size: 18px;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.validation-stats {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.validation-queue-table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.validation-queue-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.validation-queue-table thead {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(57, 255, 20, 0.1));
+}
+
+.validation-queue-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.validation-queue-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
+    vertical-align: top;
+}
+
+.validation-queue-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.validation-queue-table tbody tr:hover {
+    background: rgba(0, 240, 255, 0.05);
+}
+
+.status-cell {
+    font-weight: 600;
+    text-align: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-progress {
+    background: rgba(255, 165, 0, 0.2);
+    color: #FFA500;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.status-validated {
+    background: rgba(57, 255, 20, 0.2);
+    color: var(--neon-green);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+}
+
+.status-passed {
+    background: rgba(57, 255, 20, 0.2);
+    color: var(--neon-green);
+    border: 1px solid rgba(57, 255, 20, 0.3);
+}
+
+.status-failed {
+    background: rgba(255, 0, 0, 0.2);
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.status-stuck {
+    background: rgba(255, 0, 0, 0.3);
+    color: #FF4444;
+    border: 1px solid rgba(255, 0, 0, 0.5);
+}
+
 .no-data {
     text-align: center;
     color: var(--text-dim);

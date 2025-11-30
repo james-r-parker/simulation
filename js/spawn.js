@@ -309,7 +309,7 @@ function findSafeSpawnPosition(simulation) {
     }
 
     // Fallback: use regular spawn avoidance
-    console.warn('[VALIDATION] Could not find completely safe position, using fallback');
+    simulation.logger.warn('[VALIDATION] Could not find completely safe position, using fallback');
     return randomSpawnAvoidCluster(simulation);
 }
 
@@ -555,7 +555,7 @@ export function spawnPheromone(simulation, x, y, type) {
 
 export function repopulate(simulation) {
     // PERFORMANCE: Manual count instead of filter() to avoid array allocation
-    let livingAgents = 0;
+    let livingAgents = simulation.agentSpawnQueue.length;
     for (let i = 0; i < simulation.agents.length; i++) {
         if (!simulation.agents[i].isDead) livingAgents++;
     }
@@ -611,9 +611,25 @@ export function repopulate(simulation) {
         const availableSlots = maxValidationAgents - simulation.validationManager.activeValidationAgents;
 
         if (availableSlots > 0) {
-            // Find first available validation candidate
+                    // Find first available validation candidate
             for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
                 if (!entry.isActiveTest && !simulation.validationManager.isSpawnLocked(geneId)) {
+                    // Safety check: Ensure we have valid weights before attempting to spawn
+                    const isValidWeights = entry.weights &&
+                        typeof entry.weights === 'object' &&
+                        entry.weights.weights1 && entry.weights.weights2 &&
+                        Array.isArray(entry.weights.weights1) && Array.isArray(entry.weights.weights2) &&
+                        entry.weights.weights1.length > 0 && entry.weights.weights2.length > 0;
+
+                    if (!isValidWeights) {
+                        simulation.logger.warn(`[VALIDATION] ❌ Cannot spawn validation agent for ${geneId} - invalid or missing weights format`);
+                        simulation.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, entry.weights);
+                        // Remove this corrupted entry from the queue
+                        simulation.validationManager.validationQueue.delete(geneId);
+                        simulation.validationManager.releaseSpawnLock(geneId);
+                        continue;
+                    }
+
                     // Try to acquire spawn lock
                     if (simulation.validationManager.acquireSpawnLock(geneId)) {
                         // Double-check we haven't exceeded the limit
@@ -630,25 +646,25 @@ export function repopulate(simulation) {
                             parent: null // No parent reference for validation spawns
                         };
 
-                        console.log(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
+                        simulation.logger.info(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
                         // Give validation agents extra energy and safe spawning to ensure they can complete their runs
                         const validationAgent = spawnAgent(simulation, {
                             gene: validationGene,
-                            energy: INITIAL_AGENT_ENERGY * 3, // Triple energy for validation
+                            energy: INITIAL_AGENT_ENERGY, // Normal energy for validation agents
                             isValidationAgent: true
                         });
                         if (validationAgent) {
                             simulation.validationManager.activeValidationAgents++;
-                            console.log(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+                            simulation.logger.info(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
 
                             // Mark as actively being tested to prevent duplicate spawns
                             entry.isActiveTest = true;
-                            console.log(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
+                            simulation.logger.info(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
                             return; // Successfully spawned validation agent
                         } else {
                             // Release spawn lock if spawning failed
                             simulation.validationManager.releaseSpawnLock(geneId);
-                            console.log(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
+                            simulation.logger.info(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
                         }
                     }
                     break; // Only try one candidate per stagger cycle
@@ -672,7 +688,7 @@ export function repopulate(simulation) {
     else if (roll < 0.5) {
         const matingPair = simulation.db.getMatingPair();
         if (matingPair) {
-            const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights);
+            const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights, simulation.logger);
             // CRITICAL: Don't pass neural network structure params - let agent use config defaults
             const childGene = {
                 weights: childWeights,

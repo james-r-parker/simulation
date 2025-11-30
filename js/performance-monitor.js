@@ -651,11 +651,11 @@ export class PerformanceMonitor {
             if (timeSinceLastRecovery > this.recoveryCooldownMs) {
                 // Log detailed breakdown to help identify the bottleneck
                 const breakdown = this.stats.breakdown || {};
-                const physicsTime = breakdown.physics?.total || 0;
-                const renderingTime = breakdown.rendering?.total || 0;
-                const perceptionTime = breakdown.perception?.total || 0;
-                const cleanupTime = breakdown.cleanup || 0;
-                const quadtreeTime = breakdown.quadtree || 0;
+                const physicsTime = breakdown.physics?.time || 0;
+                const renderingTime = breakdown.rendering?.time || 0;
+                const perceptionTime = breakdown.perception?.time || 0;
+                const cleanupTime = breakdown.cleanup?.time || 0;
+                const quadtreeTime = breakdown.quadtree?.time || 0;
 
                 this.logger.warn(`[PERF-DEGRADATION] Performance degraded ${degradationRatio.toFixed(2)}x (baseline: ${this.baselineFrameTime.toFixed(2)}ms, current: ${currentFrameTime.toFixed(2)}ms)`);
                 this.logger.warn(`[PERF-BREAKDOWN] Physics: ${physicsTime.toFixed(2)}ms, Rendering: ${renderingTime.toFixed(2)}ms, Perception: ${perceptionTime.toFixed(2)}ms, Cleanup: ${cleanupTime.toFixed(2)}ms, Quadtree: ${quadtreeTime.toFixed(2)}ms`);

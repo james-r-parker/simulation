@@ -118,7 +118,7 @@ export class GenePoolDatabase {
                         specializationType: a.specializationType
                     };
                 } catch (error) {
-                    console.warn(`[DATABASE] ⚠️ Failed to get weights for agent ${a.id}:`, error);
+                    this.logger.warn(`[DATABASE] ⚠️ Failed to get weights for agent ${a.id}:`, error);
                     return null;
                 }
             })
@@ -140,7 +140,7 @@ export class GenePoolDatabase {
 
         // Safety check: Ensure agent has valid neural network
         if (!agent || !agent.nn) {
-            console.warn(`[DATABASE] ❌ Cannot save agent - agent or neural network is null`);
+            this.logger.warn(`[DATABASE] ❌ Cannot save agent - agent or neural network is null`);
             return;
         }
 

@@ -318,7 +318,7 @@ Population Factor: ${populationFactor.toFixed(2)}
             }, 2000);
         }
     }).catch(err => {
-        console.error('Failed to copy stats:', err);
+        simulation.logger.error('Failed to copy stats:', err);
         alert('Failed to copy stats to clipboard');
     });
 }

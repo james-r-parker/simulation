@@ -5,7 +5,10 @@ import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS,
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
     MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES,
-    COLLISION_SEPARATION_STRENGTH, BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
+    COLLISION_SEPARATION_STRENGTH, COLLISION_ENERGY_LOSS_CAP, COLLISION_ENERGY_LOSS_PERCENTAGE,
+    COLLISION_QUERY_BUFFER, MAX_AGENT_SIZE_ESTIMATE, PREDATOR_SIZE_RATIO_THRESHOLD,
+    PREY_SIZE_RATIO_THRESHOLD, COLLISION_SEPARATION_MULTIPLIER, FOOD_EATEN_INCREMENT,
+    BITE_SIZE, BOUNCE_ENERGY_LOSS, COLLISION_NUDGE_STRENGTH,
     OBSTACLE_MAX_SPEED, TEMPERATURE_GAIN_EAT, TEMPERATURE_MAX,
     KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_PREDATION_REDUCTION_THRESHOLD,
     KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE
@@ -80,8 +83,8 @@ export function checkCollisions(simulation) {
 
         // USE QUADTREE for ALL collision detection - rebuilt every iteration for accuracy
         // Query range based on maximum possible collision distance (agent sizes + buffer)
-        const maxOtherAgentSize = 50; // Conservative estimate of largest agent size
-        const queryRange = agentSize + maxOtherAgentSize + 20; // Buffer for movement between frames
+        const maxOtherAgentSize = MAX_AGENT_SIZE_ESTIMATE; // Conservative estimate of largest agent size
+        const queryRange = agentSize + maxOtherAgentSize + COLLISION_QUERY_BUFFER; // Buffer for movement between frames
         collisionQueryRange.x = agent.x;
         collisionQueryRange.y = agent.y;
         collisionQueryRange.w = queryRange;
@@ -114,16 +117,16 @@ export function checkCollisions(simulation) {
                 let isPrey = false;
 
                 // Only PREDATOR agents can be predators and can only eat smaller agents
-                if (agent.specializationType === 'predator' && sizeRatio > 1.1) {
-                    isPredator = true; // Agent is PREDATOR and 10%+ larger than other
+                if (agent.specializationType === 'predator' && sizeRatio > PREDATOR_SIZE_RATIO_THRESHOLD) {
+                    isPredator = true; // Agent is PREDATOR and significantly larger than other
                 }
 
                 // Only PREDATOR agents can be prey to other PREDATOR agents
-                if (other.specializationType === 'predator' && sizeRatio < 0.909) {
-                    isPrey = true; // Other is PREDATOR and 10%+ larger than agent
+                if (other.specializationType === 'predator' && sizeRatio < PREY_SIZE_RATIO_THRESHOLD) {
+                    isPrey = true; // Other is PREDATOR and significantly larger than agent
                 }
 
-                let isSimilarSize = sizeRatio >= 0.909 && sizeRatio <= 1.1; // Similar size agents (±10%)
+                let isSimilarSize = sizeRatio >= PREY_SIZE_RATIO_THRESHOLD && sizeRatio <= PREDATOR_SIZE_RATIO_THRESHOLD; // Similar size agents
 
                 // KIN RECOGNITION: Reduce predation among close relatives (overrides specialization rules)
                 const relatedness = agent.getRelatedness(other);
@@ -145,8 +148,8 @@ export function checkCollisions(simulation) {
 
                     // 1. Resolve Overlap (Position Correction)
                     const separationStrength = COLLISION_SEPARATION_STRENGTH;
-                    const separationX = (dx / dist) * overlap * 0.5 * separationStrength;
-                    const separationY = (dy / dist) * overlap * 0.5 * separationStrength;
+                    const separationX = (dx / dist) * overlap * COLLISION_SEPARATION_MULTIPLIER * separationStrength;
+                    const separationY = (dy / dist) * overlap * COLLISION_SEPARATION_MULTIPLIER * separationStrength;
 
                     agent.x += separationX;
                     agent.y += separationY;
@@ -201,7 +204,10 @@ export function checkCollisions(simulation) {
                         const energyStolen = Math.min(other.energy, biteSize);
                         agent.energy += energyStolen;
                         other.energy -= energyStolen;
-                        agent.foodEaten += 0.1; // Partial credit for nibbling
+                        agent.foodEaten += FOOD_EATEN_INCREMENT; // Partial credit for nibbling
+
+                        // Log successful eating
+                        simulation.logger.info(`[LIFECYCLE] 🍽️ Agent ${agent.id} (${agent.geneId}) ate Agent ${other.id} (${other.geneId}) - Energy stolen: ${energyStolen.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Prey energy: ${other.energy.toFixed(1)}`);
 
                         // Temperature gain from eating
                         agent.temperature = Math.min(TEMPERATURE_MAX, agent.temperature + TEMPERATURE_GAIN_EAT);
@@ -220,7 +226,10 @@ export function checkCollisions(simulation) {
                         const energyLost = Math.min(agent.energy, biteSize);
                         agent.energy -= energyLost;
                         other.energy += energyLost;
-                        other.foodEaten += 0.1;
+                        other.foodEaten += FOOD_EATEN_INCREMENT;
+
+                        // Log being eaten
+                        simulation.logger.info(`[LIFECYCLE] 😵 Agent ${agent.id} (${agent.geneId}) eaten by Agent ${other.id} (${other.geneId}) - Energy lost: ${energyLost.toFixed(1)}, Agent energy: ${agent.energy.toFixed(1)}, Predator energy: ${other.energy.toFixed(1)}`);
 
                         // Temperature gain from eating
                         other.temperature = Math.min(TEMPERATURE_MAX, other.temperature + TEMPERATURE_GAIN_EAT);
@@ -238,11 +247,11 @@ export function checkCollisions(simulation) {
                         if (energyExchange > 0 && agent.energy > energyExchange) {
                             agent.energy -= energyExchange;
                             other.energy += energyExchange;
-                            other.foodEaten += exchangeMultiplier * 0.1;
+                            other.foodEaten += exchangeMultiplier * FOOD_EATEN_INCREMENT;
                         } else if (energyExchange < 0 && other.energy > Math.abs(energyExchange)) {
                             other.energy += energyExchange; // energyExchange is negative
                             agent.energy -= energyExchange; // This makes agent.energy increase
-                            agent.foodEaten += exchangeMultiplier * 0.1;
+                            agent.foodEaten += exchangeMultiplier * FOOD_EATEN_INCREMENT;
                         }
 
                         // Both agents get collision penalty
@@ -259,6 +268,12 @@ export function checkCollisions(simulation) {
                         // Fallback: Normal collision (should not reach here with new logic)
                         agent.collisions++;
                         other.collisions++;
+
+                        // Log significant collision
+                        const energyLost = Math.min(agent.energy, COLLISION_ENERGY_LOSS_CAP) * COLLISION_ENERGY_LOSS_PERCENTAGE; // Small energy loss on collision
+                        if (energyLost > 0.01) { // Only log significant collisions
+                            simulation.logger.debug(`[LIFECYCLE] 💥 Agent ${agent.id} (${agent.geneId}) collided with Agent ${other.id} (${other.geneId}) - Energy lost: ${energyLost.toFixed(2)}`);
+                        }
 
                         if (simulation.renderer) {
                             simulation.renderer.addVisualEffect(agent, 'collision', simulation.gameSpeed);
@@ -293,7 +308,7 @@ export function checkCollisions(simulation) {
 
                     // Attempt mating (tryMate handles all other validation)
                     if (agent.tryMate(other)) {
-                        console.log(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${other.geneId} `);
+                        simulation.logger.info(`[REPRODUCTION] 💕 Mating: ${agent.geneId} + ${other.geneId} `);
 
                         // Show toast notification
                         if (simulation.toast) {
@@ -362,7 +377,7 @@ export function checkCollisions(simulation) {
         // OPTIMIZED: Use quadtree for obstacle collision detection
         // Query for nearby obstacles within collision range
         const maxObstacleRadius = 100; // Conservative estimate of largest obstacle
-        const obstacleQueryRange = agentSize + maxObstacleRadius + 20; // Buffer
+        const obstacleQueryRange = agentSize + maxObstacleRadius + COLLISION_QUERY_BUFFER; // Buffer
         collisionQueryRange.x = agent.x;
         collisionQueryRange.y = agent.y;
         collisionQueryRange.w = obstacleQueryRange;
@@ -387,27 +402,34 @@ export function checkCollisions(simulation) {
                 const overlap = combinedSize - dist;
 
                 if (overlap > 0) {
-                    // 1. Resolve Overlap (Position Correction)
-                    // Push agent out of obstacle
+                    // 1. Resolve Overlap (Position Correction) - Enhanced Push Away
+                    // Push agent out of obstacle with stronger separation
                     const nx = dx / dist; // Normal pointing from obstacle to agent
                     const ny = dy / dist;
 
-                    const pushX = nx * overlap;
-                    const pushY = ny * overlap;
+                    const pushStrength = 1.5; // Stronger push for obstacles
+                    const pushX = nx * overlap * pushStrength;
+                    const pushY = ny * overlap * pushStrength;
                     agent.x += pushX;
                     agent.y += pushY;
 
-                    // 2. Resolve Velocity (Vector Reflection)
+                    // 2. Resolve Velocity (Vector Reflection) - Enhanced Bounce
                     // Formula: r = d - 2(d . n)n
                     // where d is incident vector (agent velocity), n is normal
                     const dot = agent.vx * nx + agent.vy * ny;
+                    const bounceFactor = Math.min(BOUNCE_ENERGY_LOSS * 3, 0.99); // Triple the bounce
+                    const minBounceSpeed = 0.3; // Minimum speed to ensure push away
 
-                    // Only reflect if moving towards the obstacle
-                    if (dot < 0) {
-                        const bounceFactor = BOUNCE_ENERGY_LOSS; // Energy loss
+                    // Always apply bounce for consistent push away behavior, but scale by approach direction
+                    const bounceScale = dot < 0 ? 1.0 : 0.5; // Full bounce if moving towards, half if moving away
+                    agent.vx = (agent.vx - 2 * dot * nx) * bounceFactor * bounceScale;
+                    agent.vy = (agent.vy - 2 * dot * ny) * bounceFactor * bounceScale;
 
-                        agent.vx = (agent.vx - 2 * dot * nx) * bounceFactor;
-                        agent.vy = (agent.vy - 2 * dot * ny) * bounceFactor;
+                    // Ensure minimum push away speed in the correct direction
+                    const pushSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                    if (pushSpeed < minBounceSpeed) {
+                        agent.vx += nx * minBounceSpeed * 0.5; // Add minimum push in normal direction
+                        agent.vy += ny * minBounceSpeed * 0.5;
                     }
 
                     // Check if agent died from collision

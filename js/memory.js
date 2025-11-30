@@ -143,7 +143,7 @@ export function handleMemoryPressure(simulation) {
         simulation.memoryPressureActions++;
         simulation.lastMemoryPressureAction = now;
 
-        console.log(`[MEMORY] ${actionLevel} memory pressure cleanup completed`);
+        simulation.logger.info(`[MEMORY] ${actionLevel} memory pressure cleanup completed`);
 
         // Update UI to show memory pressure action
         const memoryEl = document.getElementById('info-memory');
@@ -208,11 +208,11 @@ export function aggressiveMemoryCleanup(simulation) {
     if (memoryPressureRatio > 1.2) { // Clear GPU caches if memory usage is 120% of high threshold
         if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
             simulation.gpuCompute.clearCache();
-            console.log('[MEMORY] Cleared GPU compute cache (severe memory pressure)');
+            simulation.logger.info('[MEMORY] Cleared GPU compute cache (severe memory pressure)');
         }
         if (simulation.gpuPhysics && simulation.gpuPhysics.clearCache) {
             simulation.gpuPhysics.clearCache();
-            console.log('[MEMORY] Cleared GPU physics cache (severe memory pressure)');
+            simulation.logger.info('[MEMORY] Cleared GPU physics cache (severe memory pressure)');
         }
     }
 
@@ -233,7 +233,7 @@ export function aggressiveMemoryCleanup(simulation) {
 
 export function emergencyMemoryCleanup(simulation) {
     // Emergency cleanup for very high memory usage (500MB+)
-    console.log('[MEMORY] EMERGENCY CLEANUP: Memory usage critically high!');
+    simulation.logger.error('[MEMORY] EMERGENCY CLEANUP: Memory usage critically high!');
 
     // Most aggressive pheromone reduction
     if (simulation.pheromones.length > 500) {
@@ -245,11 +245,11 @@ export function emergencyMemoryCleanup(simulation) {
     // Force clear all GPU caches
     if (simulation.gpuCompute && simulation.gpuCompute.clearCache) {
         simulation.gpuCompute.clearCache();
-        console.log('[MEMORY] Emergency: Cleared GPU compute cache');
+        simulation.logger.info('[MEMORY] Emergency: Cleared GPU compute cache');
     }
     if (simulation.gpuPhysics && simulation.gpuPhysics.clearCache) {
         simulation.gpuPhysics.clearCache();
-        console.log('[MEMORY] Emergency: Cleared GPU physics cache');
+        simulation.logger.info('[MEMORY] Emergency: Cleared GPU physics cache');
     }
 
     // Clear most of memory history
@@ -268,25 +268,25 @@ export function emergencyMemoryCleanup(simulation) {
         }
     }
     if (emergencyEntriesRemoved > 0) {
-        console.log(`[MEMORY] Emergency: Removed ${emergencyEntriesRemoved} validation queue entries`);
+        simulation.logger.info(`[MEMORY] Emergency: Removed ${emergencyEntriesRemoved} validation queue entries`);
     }
 }
 
 export function periodicMemoryCleanup(simulation) {
     // Comprehensive cleanup that runs periodically to prevent long-term memory buildup
     const sessionDurationHours = (Date.now() - simulation.startTime) / (1000 * 60 * 60);
-    console.log(`[MEMORY] Starting periodic cleanup (session: ${sessionDurationHours.toFixed(1)}h) - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
+    simulation.logger.info(`[MEMORY] Starting periodic cleanup (session: ${sessionDurationHours.toFixed(1)}h) - current usage: ${(simulation.currentMemoryUsage / 1024 / 1024).toFixed(1)}MB`);
 
     // Advanced garbage collection management for long-term stability
     performAdvancedGC(simulation, sessionDurationHours);
 
     // Process any pending database operations
     simulation.processDeadAgentQueue();
-    console.log('[MEMORY] Processed dead agent queue');
+        simulation.logger.info('[MEMORY] Processed dead agent queue');
 
     // Force database flush under memory pressure (medium threshold)
     if (simulation.db && simulation.db.flush && simulation.currentMemoryUsage > 400) { // 400MB medium threshold
-        console.log('[MEMORY] Forcing database flush due to memory pressure');
+        simulation.logger.info('[MEMORY] Forcing database flush due to memory pressure');
         simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
     }
 
@@ -322,13 +322,13 @@ export function periodicMemoryCleanup(simulation) {
     let validationEntriesRemoved = 0;
     for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
         if (now - entry.lastValidationTime > maxAge && !entry.isValidated) {
-            console.log(`[MEMORY] Removed stale validation entry: ${geneId} (age: ${(now - entry.lastValidationTime)/1000}s)`);
+            simulation.logger.info(`[MEMORY] Removed stale validation entry: ${geneId} (age: ${(now - entry.lastValidationTime)/1000}s)`);
             simulation.validationManager.validationQueue.delete(geneId);
             validationEntriesRemoved++;
         }
     }
     if (validationEntriesRemoved > 0) {
-        console.log(`[MEMORY] Cleaned ${validationEntriesRemoved} stale validation queue entries`);
+        simulation.logger.info(`[MEMORY] Cleaned ${validationEntriesRemoved} stale validation queue entries`);
     }
 
     // Aggressive cleanup of agent memory arrays to prevent accumulation (more frequent over time)
@@ -361,11 +361,11 @@ export function periodicMemoryCleanup(simulation) {
             }
             if (arraysCleared > 0) {
                 agentsCleaned++;
-                console.log(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId} (${arraySizeLimit} limit)`);
+                simulation.logger.info(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId} (${arraySizeLimit} limit)`);
             }
         }
     }
-    console.log(`[MEMORY] Cleaned memory arrays for ${agentsCleaned} agents (${arraySizeLimit} limit)`);
+    simulation.logger.info(`[MEMORY] Cleaned memory arrays for ${agentsCleaned} agents (${arraySizeLimit} limit)`);
 
     // Force cleanup of any remaining visual effects that might have leaked
     if (simulation.renderer && simulation.renderer.agentEffectsGroup) {
@@ -379,7 +379,7 @@ export function periodicMemoryCleanup(simulation) {
             if (child.material) child.material.dispose();
         }
         if (effectsBefore > 0) {
-            console.log(`[MEMORY] Cleaned up ${effectsBefore} visual effect meshes`);
+            simulation.logger.info(`[MEMORY] Cleaned up ${effectsBefore} visual effect meshes`);
         }
     }
 
@@ -390,7 +390,7 @@ export function periodicMemoryCleanup(simulation) {
         if (simulation.dashboardHistory.length > maxDashboardHistory / 2) {
             const keepRecent = Math.floor(maxDashboardHistory / 4);
             simulation.dashboardHistory.splice(0, simulation.dashboardHistory.length - keepRecent);
-            console.log(`[MEMORY] Trimmed dashboard history to ${keepRecent} entries (${sessionDurationHours.toFixed(1)}h session)`);
+            simulation.logger.info(`[MEMORY] Trimmed dashboard history to ${keepRecent} entries (${sessionDurationHours.toFixed(1)}h session)`);
         }
     }
 
@@ -399,14 +399,14 @@ export function periodicMemoryCleanup(simulation) {
     if (simulation.fitnessHistory.length > maxFitnessHistory) {
         const keepRecent = Math.floor(maxFitnessHistory / 2);
         simulation.fitnessHistory.splice(0, simulation.fitnessHistory.length - keepRecent);
-        console.log(`[MEMORY] Trimmed fitness history to ${keepRecent} entries`);
+        simulation.logger.info(`[MEMORY] Trimmed fitness history to ${keepRecent} entries`);
     }
 
     // Force JavaScript garbage collection if available (more aggressive over time)
     if (window.gc) {
         if (sessionDurationHours > 1 || simulation.currentMemoryUsage > 400) {
             window.gc();
-            console.log('[MEMORY] Forced garbage collection (session-aware)');
+            simulation.logger.info('[MEMORY] Forced garbage collection (session-aware)');
         }
     }
 
@@ -431,7 +431,7 @@ export function periodicMemoryCleanup(simulation) {
     }
 
     // Clear object pools to prevent long-term memory accumulation
-    console.log('[MEMORY] Clearing object pools to prevent memory leaks');
+    simulation.logger.info('[MEMORY] Clearing object pools to prevent memory leaks');
     clearGPUResourcePools();
     neuralArrayPool.clearOldPools();
 
@@ -442,7 +442,7 @@ export function periodicMemoryCleanup(simulation) {
         neuralArrays: Object.keys(neuralArrayPool.getStats()).length,
         collisionSets: collisionSetPool.getStats().poolSize
     };
-    console.log(`[MEMORY] Pool cleanup completed - Neural array pools: ${poolStats.neuralArrays} sizes, Collision sets: ${poolStats.collisionSets}`);
+    simulation.logger.info(`[MEMORY] Pool cleanup completed - Neural array pools: ${poolStats.neuralArrays} sizes, Collision sets: ${poolStats.collisionSets}`);
 }
 
 /**

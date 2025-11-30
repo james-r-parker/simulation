@@ -71,10 +71,11 @@ const neuralArrayPool = new NeuralArrayPool();
 export { neuralArrayPool };
 
 export class NeuralNetwork {
-    constructor(inputSize, hiddenSize, outputSize, weights = null) {
+    constructor(inputSize, hiddenSize, outputSize, weights = null, logger = null) {
         this.inputSize = inputSize;
         this.hiddenSize = hiddenSize;
         this.outputSize = outputSize;
+        this.logger = logger;
 
         // CRITICAL: Validate weights dimensions match current architecture
         // Old saved agents may have different hiddenSize (e.g. 15 vs 20)
@@ -96,7 +97,7 @@ export class NeuralNetwork {
         } else {
             // Weights missing, corrupted, or dimension mismatch - reinitialize
             if (weights) {
-                console.warn('[NN-INIT] Discarding incompatible saved weights. Expected dims: w1=' + (inputSize + hiddenSize) + 'x' + hiddenSize + ', w2=' + hiddenSize + 'x' + outputSize +
+                (this.logger || console).warn('[NN-INIT] Discarding incompatible saved weights. Expected dims: w1=' + (inputSize + hiddenSize) + 'x' + hiddenSize + ', w2=' + hiddenSize + 'x' + outputSize +
                     '. Got: w1=' + (weights.weights1?.length || 0) + 'x??, w2=' + (weights.weights2?.length || 0) + 'x' + (weights.weights2?.[0]?.length || 0));
             }
             this.weights1 = this.initRandomWeights(inputSize + hiddenSize, hiddenSize);
@@ -127,7 +128,7 @@ export class NeuralNetwork {
 
         // CRITICAL: Validate weights dimensions before processing
         if (!this.weights1 || !Array.isArray(this.weights1) || this.weights1.length === 0) {
-            console.error('[NN-ERROR] weights1 is invalid:', this.weights1);
+            (this.logger || console).error('[NN-ERROR] weights1 is invalid:', this.weights1);
             // Return safe fallback
             return {
                 output: new Array(outputSize).fill(0.5),
@@ -136,7 +137,7 @@ export class NeuralNetwork {
         }
 
         if (!this.weights2 || !Array.isArray(this.weights2) || this.weights2.length === 0) {
-            console.error('[NN-ERROR] weights2 is invalid:', this.weights2);
+            (this.logger || console).error('[NN-ERROR] weights2 is invalid:', this.weights2);
             // Return safe fallback
             return {
                 output: new Array(outputSize).fill(0.5),
@@ -152,7 +153,7 @@ export class NeuralNetwork {
             for (let j = 0; j < inputSize; j++) {
                 // Validate weights1 row exists
                 if (!this.weights1[j] || typeof this.weights1[j][i] !== 'number') {
-                    console.error(`[NN-ERROR] weights1[${j}][${i}] is invalid. weights1 length: ${this.weights1.length}, expected: ${inputSize + hiddenSize}`);
+                    (this.logger || console).error(`[NN-ERROR] weights1[${j}][${i}] is invalid. weights1 length: ${this.weights1.length}, expected: ${inputSize + hiddenSize}`);
                     sum += 0; // Skip invalid weight
                     continue;
                 }
@@ -163,7 +164,7 @@ export class NeuralNetwork {
                 const weights1Index = inputSize + j;
                 // Validate weights1 row exists
                 if (!this.weights1[weights1Index] || typeof this.weights1[weights1Index][i] !== 'number') {
-                    console.error(`[NN-ERROR] weights1[${weights1Index}][${i}] is invalid. weights1 length: ${this.weights1.length}, expected: ${inputSize + hiddenSize}`);
+                    (this.logger || console).error(`[NN-ERROR] weights1[${weights1Index}][${i}] is invalid. weights1 length: ${this.weights1.length}, expected: ${inputSize + hiddenSize}`);
                     sum += 0; // Skip invalid weight
                     continue;
                 }
@@ -179,13 +180,13 @@ export class NeuralNetwork {
             for (let j = 0; j < hiddenSize; j++) {
                 // CRITICAL: Validate weights2 row exists before accessing
                 if (!this.weights2[j]) {
-                    console.error(`[NN-ERROR] weights2[${j}] is undefined. weights2 length: ${this.weights2.length}, expected hiddenSize: ${hiddenSize}, outputSize: ${outputSize}`);
-                    console.error('[NN-ERROR] Full weights2 structure:', JSON.stringify(this.weights2.map((row, idx) => row ? `row${idx}:${row.length}` : `row${idx}:undefined`)));
+                    (this.logger || console).error(`[NN-ERROR] weights2[${j}] is undefined. weights2 length: ${this.weights2.length}, expected hiddenSize: ${hiddenSize}, outputSize: ${outputSize}`);
+                    (this.logger || console).error('[NN-ERROR] Full weights2 structure:', JSON.stringify(this.weights2.map((row, idx) => row ? `row${idx}:${row.length}` : `row${idx}:undefined`)));
                     sum += 0; // Skip this weight
                     continue;
                 }
                 if (typeof this.weights2[j][i] !== 'number') {
-                    console.error(`[NN-ERROR] weights2[${j}][${i}] is not a number:`, this.weights2[j][i]);
+                    (this.logger || console).error(`[NN-ERROR] weights2[${j}][${i}] is not a number:`, this.weights2[j][i]);
                     sum += 0; // Skip invalid weight
                     continue;
                 }

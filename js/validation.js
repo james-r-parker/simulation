@@ -30,14 +30,14 @@ export class ValidationManager {
 
         // Safety check: Ensure agent has valid neural network
         if (!agent || !agent.nn) {
-            console.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - agent or neural network is null`);
+            this.logger.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - agent or neural network is null`);
             return false;
         }
 
         // Check if this geneId is already in the gene pool - if so, skip validation and save directly
         // But skip this check for validation run processing (when skipGenePoolCheck = true)
         if (!skipGenePoolCheck && this.db.pool[geneId]) {
-            console.log(`[VALIDATION] ⏭️ Skipping validation for ${geneId} - already in gene pool, saving directly`);
+            this.logger.info(`[VALIDATION] ⏭️ Skipping validation for ${geneId} - already in gene pool, saving directly`);
             // Note: We can't push to deadAgentQueue here as it's not available in this class
             // The caller should handle this case
             return false; // Indicate that validation was skipped
@@ -46,6 +46,26 @@ export class ValidationManager {
         if (!this.validationQueue.has(geneId)) {
             try {
                 const weights = agent.getWeights();
+
+                // Safety check: Ensure weights are valid NeuralNetwork format (object with weights1, weights2)
+                const isValidWeights = weights &&
+                    typeof weights === 'object' &&
+                    weights.weights1 && weights.weights2 &&
+                    Array.isArray(weights.weights1) && Array.isArray(weights.weights2) &&
+                    weights.weights1.length > 0 && weights.weights2.length > 0;
+
+                if (!isValidWeights) {
+                    this.logger.warn(`[VALIDATION] ❌ Cannot add ${geneId} to validation queue - invalid weights format`);
+                    this.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, weights);
+                    // Log additional debug info
+                    if (agent && agent.nn) {
+                        this.logger.warn(`[VALIDATION] Agent NN exists but getWeights() returned invalid format. NN inputSize: ${agent.nn.inputSize}, hiddenSize: ${agent.nn.hiddenSize}, outputSize: ${agent.nn.outputSize}`);
+                    } else {
+                        this.logger.warn(`[VALIDATION] Agent has no neural network!`);
+                    }
+                    return false;
+                }
+
                 this.validationQueue.set(geneId, {
                     geneId: geneId,
                     attempts: 0,
@@ -57,9 +77,9 @@ export class ValidationManager {
                     weights: weights, // Store weights directly to avoid agent reference issues
                     specializationType: agent.specializationType || 'forager'
                 });
-                console.log(`[VALIDATION] 🆕 ${geneId} (ID: ${agent.id}) entered validation system`);
+                this.logger.info(`[VALIDATION] 🆕 ${geneId} (ID: ${agent.id}) entered validation system`);
             } catch (error) {
-                console.error(`[VALIDATION] ❌ Failed to get weights for agent ${geneId}:`, error);
+                this.logger.error(`[VALIDATION] ❌ Failed to get weights for agent ${geneId}:`, error);
                 return false;
             }
         }
@@ -83,7 +103,7 @@ export class ValidationManager {
         const source = isPeriodicValidation ? 'periodic' : 'death';
         const runNumber = validationEntry.attempts;
 
-        console.log(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
+        this.logger.info(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
 
         // Check for early success after 2 runs
         if (validationEntry.attempts >= 2 && !validationEntry.isValidated) {
@@ -91,7 +111,7 @@ export class ValidationManager {
             if (successfulRuns >= 2) {
                 // Early success - agent has proven itself with 2 good runs
                 const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
-                console.log(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION (2/${validationEntry.attempts} runs passed, avg: ${avgScore.toFixed(1)})`);
+                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION (2/${validationEntry.attempts} runs passed, avg: ${avgScore.toFixed(1)})`);
 
                 validationEntry.isValidated = true;
 
@@ -127,18 +147,18 @@ export class ValidationManager {
             const bestScore = Math.max(...validationEntry.scores);
             const successfulRuns = validationEntry.fitResults.filter(fit => fit).length;
 
-            console.log(`[VALIDATION] ${geneId} validation complete:`);
-            validationEntry.scores.forEach((score, index) => {
-                const fit = validationEntry.fitResults[index];
-                const status = score === bestScore ? '🏆 BEST' : fit ? '✅ FIT' : '❌ LOW';
-                console.log(`  ├── Run ${index + 1}: ${score.toFixed(1)} ${status}`);
-            });
-            console.log(`  └── Results: ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average: ${avgScore.toFixed(1)}`);
+            this.logger.info(`[VALIDATION] ${geneId} validation complete:`);
+                validationEntry.scores.forEach((score, index) => {
+                    const fit = validationEntry.fitResults[index];
+                    const status = score === bestScore ? '🏆 BEST' : fit ? '✅ FIT' : '❌ LOW';
+                    this.logger.info(`  ├── Run ${index + 1}: ${score.toFixed(1)} ${status}`);
+                });
+            this.logger.info(`  └── Results: ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average: ${avgScore.toFixed(1)}`);
 
             if (successfulRuns >= 2) { // Require at least 2 out of 3 runs to be successful
                 // Agent passed validation - return validation record for gene pool saving
                 validationEntry.isValidated = true;
-                console.log(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION (avg: ${avgScore.toFixed(1)})`);
+                this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED VALIDATION (avg: ${avgScore.toFixed(1)})`);
 
                 // Show toast notification
                 this.toast.showValidationPassed(geneId, avgScore, validationEntry.scores, validationEntry.fitResults, validationEntry.attempts);
@@ -166,21 +186,21 @@ export class ValidationManager {
                 return { success: true, record: validationRecord };
             } else {
                 // Agent failed validation - mark as failed and remove from queue
-                console.log(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (${successfulRuns}/${VALIDATION_REQUIRED_RUNS} fit runs)`);
+                this.logger.info(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION (${successfulRuns}/${VALIDATION_REQUIRED_RUNS} fit runs)`);
                 validationEntry.isValidated = false;
 
                 // Show toast notification for failed validation
                 this.toast.showValidationFailed(geneId, avgScore, validationEntry.scores, validationEntry.fitResults, validationEntry.attempts);
 
                 // Remove failed agent from validation queue
-                console.log(`[VALIDATION] 🗑️ Removing failed agent ${geneId} from validation queue`);
+                this.logger.info(`[VALIDATION] 🗑️ Removing failed agent ${geneId} from validation queue`);
                 this.validationQueue.delete(geneId);
                 this.releaseSpawnLock(geneId);
             }
         } else if (!validationEntry.isValidated) {
             // Still in progress
             const progress = `${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS}`;
-            console.log(`[VALIDATION] ${geneId} progress: ${progress} runs completed`);
+            this.logger.info(`[VALIDATION] ${geneId} progress: ${progress} runs completed`);
         }
 
         return { success: false };
@@ -198,13 +218,43 @@ export class ValidationManager {
         }).filter(item => item.reason !== false);
 
         shouldRemoveEntries.forEach(({ geneId, reason }) => {
-            console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (${reason})`);
+            this.logger.info(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (${reason})`);
             this.validationQueue.delete(geneId);
             // Release spawn lock if it exists
             this.releaseSpawnLock(geneId);
         });
 
-        // Priority 2: Aggressive queue size management - prioritize stuck agents
+        // Priority 2: Check for agents that have been marked as active test but haven't progressed
+        // This prevents validation from getting permanently blocked on slow/stuck agents
+        const twoMinutesAgo = now - (2 * 60 * 1000); // 2 minutes - reset if no living agent (died without cleanup)
+
+        for (const [geneId, entry] of this.validationQueue.entries()) {
+            if (entry.isActiveTest) {
+                // Check if there's actually a living agent with this geneId in the simulation
+                let livingAgentExists = false;
+                if (this.simulation && this.simulation.agents) {
+                    for (const agent of this.simulation.agents) {
+                        if (!agent.isDead && agent.geneId === geneId) {
+                            livingAgentExists = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!livingAgentExists && entry.lastValidationTime < twoMinutesAgo) {
+                    // No living agent found after 2+ minutes - agent likely died/stuck, safe to reset
+                    this.logger.warn(`[VALIDATION] ⚠️ Resetting stuck active test flag for ${geneId} (no living agent after 2+ minutes)`);
+                    entry.isActiveTest = false;
+                    this.releaseSpawnLock(geneId);
+                } else if (livingAgentExists && entry.lastValidationTime < twoMinutesAgo) {
+                    // Living agent exists, been testing 2+ minutes - monitor but don't reset yet
+                    this.logger.debug(`[VALIDATION] ⏱️ Validation agent for ${geneId} still active after 2+ minutes (monitoring)`);
+                }
+                // If living agent exists and < 2 minutes, continue normal operation
+            }
+        }
+
+        // Priority 3: Aggressive queue size management - prioritize stuck agents
         if (this.validationQueue.size > MAX_VALIDATION_QUEUE_SIZE) {
             const remainingEntries = Array.from(this.validationQueue.entries());
 
@@ -216,7 +266,7 @@ export class ValidationManager {
 
             if (stuckAgents.length > 0) {
                 stuckAgents.forEach(([geneId, entry]) => {
-                    console.log(`[VALIDATION] 🗑️ Removed stuck ${geneId} from validation queue (high attempts: ${entry.attempts})`);
+                    this.logger.info(`[VALIDATION] 🗑️ Removed stuck ${geneId} from validation queue (high attempts: ${entry.attempts})`);
                     this.validationQueue.delete(geneId);
                     this.releaseSpawnLock(geneId);
                 });
@@ -230,21 +280,26 @@ export class ValidationManager {
                     .slice(0, Math.min(10, this.validationQueue.size - MAX_VALIDATION_QUEUE_SIZE));
 
                 oldestEntries.forEach(([geneId, entry]) => {
-                    console.log(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+                    this.logger.info(`[VALIDATION] 🗑️ Removed ${geneId} from validation queue (queue full, attempts: ${entry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
                     this.validationQueue.delete(geneId);
                     this.releaseSpawnLock(geneId);
                 });
             }
         }
 
-        // Priority 3: Clean up very old entries (10+ minutes since last validation attempt)
+        // Priority 4: Clean up very old entries (10+ minutes since last validation attempt)
         const tenMinutesAgo = now - VALIDATION_CLEANUP_TIMEOUT_MS;
         for (const [geneId, entry] of this.validationQueue.entries()) {
             if (entry.lastValidationTime < tenMinutesAgo && !entry.isValidated) {
-                console.log(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (10+ minutes old, attempts: ${entry.attempts})`);
+                this.logger.info(`[VALIDATION] ⏰ Removed stale ${geneId} from validation queue (10+ minutes old, attempts: ${entry.attempts})`);
                 this.validationQueue.delete(geneId);
                 this.releaseSpawnLock(geneId);
             }
+        }
+
+        // Priority 5: Resync active validation agents counter to prevent drift
+        if (this.simulation) {
+            this.resyncActiveAgentsCount(this.simulation);
         }
     }
 
@@ -280,7 +335,7 @@ export class ValidationManager {
         }
 
         if (actualCount !== this.activeValidationAgents) {
-            console.log(`[VALIDATION] Resyncing counter: ${this.activeValidationAgents} → ${actualCount}`);
+            this.logger.info(`[VALIDATION] Resyncing counter: ${this.activeValidationAgents} → ${actualCount}`);
             this.activeValidationAgents = actualCount;
         }
 
@@ -295,14 +350,22 @@ export class ValidationManager {
     // Spawn lock management to prevent race conditions
     acquireSpawnLock(geneId) {
         if (this.spawnLocks.has(geneId)) {
+            this.logger.debug(`[VALIDATION] 🔒 Spawn lock already held for ${geneId}`);
             return false; // Already locked
         }
         this.spawnLocks.add(geneId);
+        this.logger.debug(`[VALIDATION] 🔓 Acquired spawn lock for ${geneId}`);
         return true;
     }
 
     releaseSpawnLock(geneId) {
+        const wasLocked = this.spawnLocks.has(geneId);
         this.spawnLocks.delete(geneId);
+        if (wasLocked) {
+            this.logger.debug(`[VALIDATION] 🔒 Released spawn lock for ${geneId}`);
+        } else {
+            this.logger.warn(`[VALIDATION] ⚠️ Attempted to release spawn lock for ${geneId} but it wasn't locked`);
+        }
     }
 
     isSpawnLocked(geneId) {
@@ -311,27 +374,104 @@ export class ValidationManager {
 
     // Handle validation agent death
     handleValidationDeath(agent, db) {
+        // Safety check: Ensure agent is valid before processing
+        if (!agent || !agent.nn) {
+            this.logger.warn(`[VALIDATION] ❌ Cannot process validation death - agent ${agent?.geneId || 'unknown'} or neural network is null/invalid`);
+            // If this was supposed to be a validation agent, clean up the queue entry
+            if (agent && agent.geneId && this.validationQueue.has(agent.geneId)) {
+                this.logger.warn(`[VALIDATION] 🗑️ Removing invalid validation entry for ${agent.geneId}`);
+                this.validationQueue.delete(agent.geneId);
+                this.releaseSpawnLock(agent.geneId);
+                // Decrement counter if this was an active validation agent
+                if (this.activeValidationAgents > 0) {
+                    this.activeValidationAgents--;
+                }
+            }
+            // Safe to cleanup invalid agent
+            if (agent) {
+                agent.cleanup();
+            }
+            return false;
+        }
+
+        // Additional safety check: Ensure neural network can provide valid weights
+        try {
+            const testWeights = agent.getWeights();
+            const isValidWeights = testWeights &&
+                typeof testWeights === 'object' &&
+                testWeights.weights1 && testWeights.weights2 &&
+                Array.isArray(testWeights.weights1) && Array.isArray(testWeights.weights2) &&
+                testWeights.weights1.length > 0 && testWeights.weights2.length > 0;
+
+            if (!isValidWeights) {
+                this.logger.warn(`[VALIDATION] ❌ Cannot process validation death - agent ${agent?.geneId || 'unknown'}  neural network has invalid weights format`);
+                this.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, testWeights);
+                // Clean up this corrupted validation entry
+                if (this.validationQueue.has(agent.geneId)) {
+                    this.logger.warn(`[VALIDATION] 🗑️ Removing corrupted validation entry for ${agent.geneId}`);
+                    this.validationQueue.delete(agent.geneId);
+                    this.releaseSpawnLock(agent.geneId);
+                    if (this.activeValidationAgents > 0) {
+                        this.activeValidationAgents--;
+                    }
+                }
+                agent.cleanup();
+                return false;
+            }
+        } catch (error) {
+            this.logger.warn(`[VALIDATION] ❌ Cannot process validation death ${agent?.geneId || 'unknown'}  - error getting weights: ${error.message}`);
+            // Clean up this corrupted validation entry
+            if (this.validationQueue.has(agent.geneId)) {
+                this.logger.warn(`[VALIDATION] 🗑️ Removing corrupted validation entry for ${agent.geneId}`);
+                this.validationQueue.delete(agent.geneId);
+                this.releaseSpawnLock(agent.geneId);
+                if (this.activeValidationAgents > 0) {
+                    this.activeValidationAgents--;
+                }
+            }
+            agent.cleanup();
+            return false;
+        }
+
         if (this.validationQueue.has(agent.geneId)) {
             const validationEntry = this.validationQueue.get(agent.geneId);
-            console.log(`[VALIDATION] 💥 Validation agent ${agent.geneId} died, validation run completed (fitness: ${agent.fitness.toFixed(1)}, fit: ${agent.fit}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
-            this.activeValidationAgents--; // Decrement counter when validation agent dies
+            this.logger.info(`[VALIDATION] 💥 Validation agent ${agent.id} (${agent.geneId}) died, validation run completed (fitness: ${agent.fitness.toFixed(1)}, fit: ${agent.fit}, attempts: ${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS})`);
+
+            // Safety: Ensure active validation agents counter doesn't go negative
+            if (this.activeValidationAgents > 0) {
+                this.activeValidationAgents--; // Decrement counter when validation agent dies
+            } else {
+                this.logger.warn(`[VALIDATION] ⚠️ Active validation agents counter was already 0, possible sync issue`);
+            }
+
             validationEntry.isActiveTest = false; // Clear active test flag
-            console.log(`[VALIDATION] Active validation agents: ${this.activeValidationAgents}, cleared active test flag for ${agent.geneId}`);
+            this.logger.info(`[VALIDATION] Active validation agents: ${this.activeValidationAgents}, cleared active test flag for agent ${agent.id} (${agent.geneId})`);
+
+            // Always release spawn lock on death to prevent permanent locks
+            this.releaseSpawnLock(agent.geneId);
 
             // Process this validation run using standard logic
             const result = this.addToValidationQueue(agent, false, true);
             if (result.success) {
                 // Agent passed validation through normal means
-                console.log(`[VALIDATION] ✅ Validated agent ${agent.geneId} passed validation, queueing for save`);
+                this.logger.info(`[VALIDATION] ✅ Validated agent ${agent.id} (${agent.geneId}) passed validation, queueing for save`);
                 db.queueSaveAgent(result.record);
                 this.validationQueue.delete(agent.geneId);
-                this.releaseSpawnLock(agent.geneId);
+                // Spawn lock already released above
+
+                // Safe to cleanup now that validation is complete and agent is saved
+                agent.cleanup();
             } else if (result === false) {
                 // Agent was skipped (already in gene pool) - this shouldn't happen for validation agents
-                console.warn(`[VALIDATION] ⚠️ Validation agent ${agent.geneId} was skipped during death processing (already in gene pool?)`);
+                this.logger.warn(`[VALIDATION] ⚠️ Validation agent ${agent.id} (${agent.geneId}) was skipped during death processing (already in gene pool?)`);
+                // Still remove from queue to prevent getting stuck
+                this.validationQueue.delete(agent.geneId);
+
+                // Safe to cleanup since validation is not needed
+                agent.cleanup();
             } else {
-                // Still in progress or validation ongoing
-                console.log(`[VALIDATION] Validation agent ${agent.geneId} death processed, validation continues (${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS} runs)`);
+                // Still in progress or validation ongoing - DON'T cleanup, agent will be respawned
+                this.logger.info(`[VALIDATION] Validation agent ${agent.id} (${agent.geneId}) death processed, validation continues (${validationEntry.attempts}/${VALIDATION_REQUIRED_RUNS} runs)`);
             }
             return true;
         }
@@ -351,6 +491,18 @@ export class ValidationManager {
         // Remove if too many attempts without success (stuck agents)
         if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS + 2) {
             return `too many attempts (${validationEntry.attempts}), likely stuck`;
+        }
+
+        // Remove if validated but still in queue (shouldn't happen but safety check)
+        if (validationEntry.isValidated) {
+            return `already validated but still in queue`;
+        }
+
+        // Remove if entry has been inactive for too long without making progress
+        const now = Date.now();
+        const timeSinceLastAttempt = now - validationEntry.lastValidationTime;
+        if (timeSinceLastAttempt > VALIDATION_CLEANUP_TIMEOUT_MS && validationEntry.attempts > 0) {
+            return `inactive for ${Math.floor(timeSinceLastAttempt / 60000)} minutes`;
         }
 
         // Keep if still has potential for validation

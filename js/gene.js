@@ -3,13 +3,13 @@
 import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK } from './constants.js';
 import { updateDashboard } from './ui.js';
 
-export function crossover(weightsA, weightsB) {
+export function crossover(weightsA, weightsB, logger) {
     const crossoverMatrix = (a, b) => {
         // Validate that both matrices are proper 2D arrays
         if (!Array.isArray(a) || !Array.isArray(b) ||
             a.length === 0 || b.length === 0 ||
             !Array.isArray(a[0]) || !Array.isArray(b[0])) {
-            console.error('[GENE] Invalid matrix structure:', { a: a, b: b });
+            logger.error('[GENE] Invalid matrix structure:', { a: a, b: b });
             // Return a copy of matrix a as fallback
             return a.map(row => Array.isArray(row) ? [...row] : []);
         }
@@ -19,7 +19,7 @@ export function crossover(weightsA, weightsB) {
 
         // Ensure matrices have compatible dimensions
         if (rowsA !== rowsB || colsA !== colsB) {
-            console.error('[GENE] Matrix dimension mismatch:', { rowsA, colsA, rowsB, colsB });
+            logger.error('[GENE] Matrix dimension mismatch:', { rowsA, colsA, rowsB, colsB });
             // Return a copy of matrix a as fallback
             return a.map(row => [...row]);
         }
@@ -34,7 +34,7 @@ export function crossover(weightsA, weightsB) {
                     newMatrix.push(Array.isArray(b[i]) ? [...b[i]] : []);
                 }
             } catch (error) {
-                console.error('[GENE] Error during crossover at row', i, ':', error);
+                logger.error('[GENE] Error during crossover at row', i, ':', error);
                 // Fallback: use matrix a for this row
                 newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
             }
@@ -46,7 +46,7 @@ export function crossover(weightsA, weightsB) {
     if (!weightsA || !weightsB ||
         !weightsA.weights1 || !weightsA.weights2 ||
         !weightsB.weights1 || !weightsB.weights2) {
-        console.error('[GENE] Invalid weights structure:', { weightsA, weightsB });
+        logger.error('[GENE] Invalid weights structure:', { weightsA, weightsB });
         // Return a fallback with empty weights - the neural network will initialize randomly
         return { weights1: [], weights2: [] };
     }
@@ -147,7 +147,7 @@ export function hasValidatedAncestor(agent, simulation) {
     return false; // No validated ancestors found
 }
 
-export function updatePeriodicValidation(simulation) {
+export function updatePeriodicValidation(simulation, logger) {
     // Add high-performing living agents to validation queue (periodic validation)
     // This gives long-lived successful agents a chance to enter validation without dying
 
@@ -165,13 +165,32 @@ export function updatePeriodicValidation(simulation) {
                     !simulation.db.pool[agent.geneId] && // Skip if already in gene pool
                     validationsAdded < MAX_VALIDATIONS_PER_PERIODIC_CHECK) {
 
+                    // Additional safety check: Ensure neural network can provide valid weights
+                    try {
+                        const testWeights = agent.getWeights();
+                        const isValidWeights = testWeights &&
+                            typeof testWeights === 'object' &&
+                            testWeights.weights1 && testWeights.weights2 &&
+                            Array.isArray(testWeights.weights1) && Array.isArray(testWeights.weights2) &&
+                            testWeights.weights1.length > 0 && testWeights.weights2.length > 0;
+
+                        if (!isValidWeights) {
+                            logger.warn(`[VALIDATION] ⚠️ Periodic validation: Skipping agent ${agent.geneId} - invalid neural network weights format`);
+                            logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, testWeights);
+                            return; // Continue to next agent
+                        }
+                    } catch (error) {
+                        logger.warn(`[VALIDATION] ⚠️ Periodic validation: Skipping agent ${agent.geneId} - error getting weights: ${error.message}`);
+                        return; // Continue to next agent
+                    }
+
                     // Add to validation queue (periodic validation)
-                    console.log(`[VALIDATION] 📊 Periodic check: Adding fit living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
+                    logger.info(`[VALIDATION] 📊 Periodic check: Adding fit living agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) to validation`);
                     simulation.validationManager.addToValidationQueue(agent, true);
                     validationsAdded++;
                 }
             } catch (error) {
-                console.warn(`[VALIDATION] ⚠️ Failed to process agent ${agent.geneId || 'unknown'} in periodic validation:`, error);
+                logger.warn(`[VALIDATION] ⚠️ Failed to process agent ${agent.geneId || 'unknown'} in periodic validation:`, error);
             }
         }
     });

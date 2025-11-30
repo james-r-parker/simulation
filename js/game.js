@@ -71,7 +71,7 @@ export class Simulation {
         this.obstacles = generateObstacles(this);
 
         this.quadtree = new Quadtree(new Rectangle(this.worldWidth / 2, this.worldHeight / 2, this.worldWidth / 2, this.worldHeight / 2), 4);
-        this.camera = new Camera(this.worldWidth / 2, this.worldHeight / 2, 0.5); // Zoomed out slightly for wider 16:9 view
+        this.camera = new Camera(this.worldWidth / 2, this.worldHeight / 2, 0.5, this.logger); // Zoomed out slightly for wider 16:9 view
 
         this.generation = 0;
         this.bestAgent = null;
@@ -270,6 +270,13 @@ export class Simulation {
         }
 
         // 7. Clear arrays and references
+        // Clean up all living agents before clearing arrays
+        for (const agent of this.agents) {
+            if (!agent.isDead) {
+                agent.cleanup();
+                this.logger.info(`[LIFECYCLE] 🔄 Agent ${agent.id} (${agent.geneId}) cleaned up during simulation reset - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}`);
+            }
+        }
         this.agents.length = 0;
         this.agentSpawnQueue.length = 0;
         this.food.length = 0;
@@ -1177,7 +1184,7 @@ export class Simulation {
                                 agent.lastRayData = perception.rayData;
                             } catch (perceptionError) {
                                 // If even CPU perception fails, provide safe fallback inputs
-                                this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.geneId} CPU perception failed:`, perceptionError);
+                                this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.id} (${agent.geneId}) CPU perception failed:`, perceptionError);
                                 agent.lastInputs = new Array(agent.inputSize).fill(0.5); // Safe neutral inputs
                                 agent.lastRayData = [];
                             }
@@ -1352,38 +1359,81 @@ export class Simulation {
                         const agent = this.agents[j];
                         if (agent.isDead) {
                             // Check if this agent was in validation queue first (highest priority)
-                            if (this.validationManager.isInValidation(agent.geneId)) {
-                                // Debug: Log validation agent death details
-                                this.logger.debug(`[VALIDATION] Agent ${agent.geneId} died during validation - Age: ${agent.age.toFixed(1)} s, Energy: ${agent.energy}, Fitness: ${agent.fitness} `);
+                            if (this.validationManager.isInValidation(agent.geneId) && agent.isValidationAgent) {
+                                // This is a SPAWNED validation test agent - handle specially
+                                this.logger.info(`[LIFECYCLE] ⚔️ Validation test agent ${agent.id} (${agent.geneId}) died during testing - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
                                 // Handle validation agent death
                                 this.validationManager.handleValidationDeath(agent, this.db);
-                            } else if (agent.fit) {
+                                // Validation agents get cleaned up in handleValidationDeath if validation completes,
+                                // or they get respawned if validation continues - don't clean up here
+
+                                // CRITICAL: Skip the rest of death processing for validation agents
+                                // They are handled entirely by handleValidationDeath
+                                this.agents.splice(j, 1);
+                                j--; // Adjust index since we removed an element
+                                continue;
+                            } else if (this.validationManager.isInValidation(agent.geneId)) {
+                                // This is an ORIGINAL agent whose gene is in validation - treat as normal death
+                                // but log that it died during validation testing
+                                this.logger.info(`[LIFECYCLE] 💥 Original agent ${agent.id} (${agent.geneId}) died while gene undergoing validation - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
+                                // Continue with normal death processing below
+                            }
+
+                            if (agent.fit) {
                                 // Agent meets comprehensive fit criteria - check if gene pool exists
                                 const genePoolExists = this.db.pool[agent.geneId] !== undefined;
 
                                 if (genePoolExists) {
                                     // CASE 1: Existing gene pool - skip validation, go directly to save queue
-                                    this.logger.debug(`[GENEPOOL] 💀 Death: Agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) from existing pool, queueing for save`);
+                                    this.logger.info(`[LIFECYCLE] 🏆 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (saved to gene pool)`);
                                     this.db.queueSaveAgent(agent);
                                 } else {
                                     // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
-                                    this.logger.debug(`[VALIDATION] 💀 Death: Fit agent ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)}) entering validation`);
+                                    this.logger.info(`[LIFECYCLE] 🎯 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (entering validation)`);
+
+                                    // Safety check: Ensure agent has valid neural network before validation
+                                    if (!agent.nn) {
+                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no neural network`);
+                                        continue;
+                                    }
+
+                                    try {
+                                        const testWeights = agent.getWeights();
+                                        const isValidWeights = testWeights &&
+                                            typeof testWeights === 'object' &&
+                                            testWeights.weights1 && testWeights.weights2 &&
+                                            Array.isArray(testWeights.weights1) && Array.isArray(testWeights.weights2) &&
+                                            testWeights.weights1.length > 0 && testWeights.weights2.length > 0;
+
+                                        if (!isValidWeights) {
+                                            this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - invalid neural network weights format`);
+                                            this.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, testWeights);
+                                            continue;
+                                        }
+                                    } catch (error) {
+                                        this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - error getting weights: ${error.message}`);
+                                        continue;
+                                    }
+
                                     const result = this.validationManager.addToValidationQueue(agent, false);
-                                    // If validation returns something other than false, it's handling the agent
-                                    // If it returns false, it means cooldown or other skip reason
+                                    this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) validation entry result: ${result}`);
                                 }
                             } else if (hasValidatedAncestor(agent, this)) {
                                 // Children of validated agents get saved to gene pool automatically
-                                this.logger.debug(`[GENEPOOL] 👶 Auto - saving child of validated lineage: ${agent.geneId} (fitness: ${agent.fitness.toFixed(1)})`);
+                                this.logger.info(`[LIFECYCLE] 👼 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (auto-saved as validated descendant)`);
                                 this.db.queueSaveAgent(agent);
+                            }
+                            else {
+                                // Log regular agent death
+                                this.logger.info(`[LIFECYCLE] 💀 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Fit: ${agent.fit}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
+
+                                // CRITICAL: Call cleanup to break circular references before removal
+                                // This allows the agent to be garbage collected immediately
+                                agent.cleanup();
                             }
 
                             // NUTRIENT CYCLING: Create fertile zone from decomposed agent
                             this.createFertileZone(agent);
-
-                            // CRITICAL: Call cleanup to break circular references before removal
-                            // This allows the agent to be garbage collected immediately
-                            agent.cleanup();
 
                             // Remove ALL dead agents from active array to prevent memory leaks
                             this.agents.splice(j, 1);
@@ -1482,7 +1532,7 @@ export class Simulation {
                     // Periodic validation checks - use real time for consistent timing
                     if (now - this.lastValidationCheckTime >= 8333) { // ~500 frames at 60fps = 8333ms
                         this.lastValidationCheckTime = now;
-                        updatePeriodicValidation(this);
+                        updatePeriodicValidation(this, this.logger);
                         // Log validation queue status periodically
                         if (this.validationManager.validationQueue.size > 0) {
                             this.logger.debug(`[VALIDATION] Queue status: ${this.validationManager.validationQueue.size} agents pending validation`);
@@ -1585,37 +1635,14 @@ export class Simulation {
             // Update camera
             this.perfMonitor.startPhase('camera');
             if (this.followBest) {
-                // Check if current bestAgent is visible and valid
-                let shouldFollow = false;
-                let targetAgent = null;
-
                 // Clear bestAgent if it's dead (prevent following ghosts)
                 if (this.bestAgent && this.bestAgent.isDead) {
                     this.bestAgent = null;
                 }
 
-                // Double-check bestAgent is still alive and valid
-                if (this.bestAgent && !this.bestAgent.isDead &&
-                    typeof this.bestAgent.x === 'number' && typeof this.bestAgent.y === 'number' &&
-                    isFinite(this.bestAgent.x) && isFinite(this.bestAgent.y)) {
-
-                    // Check if bestAgent is actually visible on screen (frustum culling)
-                    this.renderer.updateFrustum();
-
-                    const tempVec = new THREE.Vector3();
-                    const testSphere = new THREE.Sphere(tempVec, 0);
-                    tempVec.set(this.bestAgent.x, -this.bestAgent.y, 0);
-                    testSphere.center = tempVec;
-                    testSphere.radius = this.bestAgent.size || 5;
-
-                    if (this.renderer.frustum.intersectsSphere(testSphere)) {
-                        shouldFollow = true;
-                        targetAgent = this.bestAgent;
-                    }
-                }
-
-                if (!shouldFollow && this.agents.length > 0) {
-                    // Find best living agent that is actually visible on screen
+                // Find the absolute best living agent using priority system
+                let targetAgent = null;
+                if (this.agents.length > 0) {
                     const livingAgents = [];
                     for (let i = 0; i < this.agents.length; i++) {
                         const agent = this.agents[i];
@@ -1625,28 +1652,15 @@ export class Simulation {
                         }
                     }
 
-                    // Check frustum for each agent (reuse cached frustum from renderer)
-
-                    const tempVec = new THREE.Vector3();
-                    const testSphere = new THREE.Sphere(tempVec, 0);
-
                     // Find the best agent with prioritization:
                     // 1. Qualified agents (.fit = true), by fitness
                     // 2. Agents in validation tests, by fitness
                     // 3. All agents, by fitness
-                    let bestVisibleAgent = null;
+                    let bestAgent = null;
                     let bestPriority = 3; // Lower number = higher priority
                     let bestFitness = -Infinity;
 
                     for (const agent of livingAgents) {
-                        tempVec.set(agent.x, -agent.y, 0);
-                        testSphere.center = tempVec;
-                        testSphere.radius = agent.size || 5;
-
-                        if (!this.renderer.frustum.intersectsSphere(testSphere)) {
-                            continue; // Skip if not visible
-                        }
-
                         const agentFitness = agent.fitness || 0;
                         let agentPriority = 3; // Default: all agents
 
@@ -1668,28 +1682,24 @@ export class Simulation {
                         if (shouldSelect) {
                             bestPriority = agentPriority;
                             bestFitness = agentFitness;
-                            bestVisibleAgent = agent;
+                            bestAgent = agent;
                         }
                     }
 
-                    if (bestVisibleAgent && !bestVisibleAgent.isDead) {
-                        shouldFollow = true;
-                        targetAgent = bestVisibleAgent;
-                        this.bestAgent = bestVisibleAgent; // Update bestAgent to visible living one
+                    if (bestAgent && !bestAgent.isDead) {
+                        targetAgent = bestAgent;
+                        // Open agent modal if this is a new best agent
+                        if (bestAgent !== this.bestAgent) {
+                            openAgentModal(bestAgent, this);
+                        }
+                        this.bestAgent = bestAgent; // Update bestAgent reference
                     }
                 }
 
-                if (shouldFollow && targetAgent) {
-                    // Final check before following - ensure target is still alive
-                    if (!targetAgent.isDead) {
-                        this.camera.follow(targetAgent);
-                    } else {
-                        // Target died between check and follow - center camera
-                        this.camera.targetX = this.worldWidth / 2;
-                        this.camera.targetY = this.worldHeight / 2;
-                    }
+                if (targetAgent && !targetAgent.isDead) {
+                    this.camera.follow(targetAgent);
                 } else {
-                    // No visible agents to follow, center camera
+                    // Target died between check and follow - center camera
                     this.camera.targetX = this.worldWidth / 2;
                     this.camera.targetY = this.worldHeight / 2;
                 }
@@ -1746,12 +1756,6 @@ export class Simulation {
                     this.agents.push(...newAgents);
                     this.totalAgentsSpawned += newAgents.length; // Track total agents spawned in this run
                 }
-
-                if (this.agentSpawnQueue.length > 0) {
-                    this.logger.log(`[LIFECYCLE] Population at limit.${this.agentSpawnQueue.length} offspring were stillborn.`);
-                }
-
-                this.agentSpawnQueue.length = 0; // Clear any remaining (stillborn) agents
             }
 
             this.perfMonitor.endPhase('spawn_agents');

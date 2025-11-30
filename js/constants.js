@@ -20,8 +20,8 @@ export const MIN_AGENT_SIZE = 20; // Minimum visual size agents can shrink to, r
 export const ENERGY_TO_SIZE_RATIO = 100; // How much energy affects agent size (higher energy = larger size)
 
 // Energy system
-export const INITIAL_AGENT_ENERGY = 3000; // Starting energy for newly spawned agents
-export const MAX_ENERGY = 10000; // Maximum energy an agent can accumulate
+export const INITIAL_AGENT_ENERGY = 5000; // Starting energy for newly spawned agents
+export const MAX_ENERGY = 25000; // Maximum energy an agent can accumulate
 export const MIN_ENERGY_TO_REPRODUCE = 250; // Minimum energy required to attempt reproduction
 export const REPRODUCE_COST_BASE = 15; // Base energy cost for reproduction attempts
 export const CHILD_STARTING_ENERGY = 700; // Energy given to newborn agents
@@ -51,16 +51,16 @@ export const RESPAWN_DELAY_FRAMES = 0; // Frames to wait before respawning dead 
 export const OBESITY_THRESHOLD_ENERGY = 350; // Energy level above which agents suffer obesity penalties
 export const OBESITY_ENERGY_TAX_DIVISOR = 2000; // Divisor for calculating obesity energy tax (higher = less tax)
 export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (metabolic cost)
-export const MOVEMENT_COST_MULTIPLIER = 0.008; // Energy cost multiplier for movement (velocity * this)
+export const MOVEMENT_COST_MULTIPLIER = 0.003; // Energy cost multiplier for movement (velocity * this)
 export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotation (rotation speed * this)
 export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Multiplier for fitness scoring based on directional changes
 export const TEMPERATURE_MAX = 100; // Maximum temperature
 export const TEMPERATURE_MIN = 0; // Minimum temperature
 export const TEMPERATURE_START = 50; // Starting temperature
-export const TEMPERATURE_GAIN_MOVE = 0.3; // Temperature gain per frame at max speed
+export const TEMPERATURE_GAIN_MOVE = 1.5; // Temperature gain per frame at max speed
 export const TEMPERATURE_GAIN_EAT = 15; // Temperature gain when eating
-export const TEMPERATURE_LOSS_PASSIVE = 0.1; // Temperature loss per frame
-export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 10.0; // Max multiplier for passive energy loss at 0 temperature
+export const TEMPERATURE_LOSS_PASSIVE = 0.2; // Temperature loss per frame
+export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 15.0; // Max multiplier for passive energy loss at 0 temperature
 
 // Temperature-dependent behavior constants
 export const TEMPERATURE_OPTIMAL_MIN = 40; // Minimum temperature for optimal performance
@@ -137,9 +137,9 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MIN = 200; // Minimum distance from 
 export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400; // Maximum distance from agent to spawn food
 
 // Energy values (agents gain these when eating food)
-export const FOOD_ENERGY_NORMAL_BASE = 250; // Base energy value of normal food
+export const FOOD_ENERGY_NORMAL_BASE = 500; // Base energy value of normal food
 export const FOOD_ENERGY_NORMAL_VARIANCE = 20; // Random variance in normal food energy (± this amount)
-export const FOOD_ENERGY_HIGH_BASE = 500; // Base energy value of high-value food
+export const FOOD_ENERGY_HIGH_BASE = 1000; // Base energy value of high-value food
 export const FOOD_ENERGY_HIGH_VARIANCE = 50; // Random variance in high-value food energy (± this amount)
 
 // Visual appearance
@@ -151,8 +151,8 @@ export const FOOD_SIZE_MIN_HIGH = 12; // Minimum size high-value food can shrink
 // Decay system (food spoils over time)
 export const FOOD_ROT_RATE_BASE = 0.002; // Base rate at which food loses energy per frame
 export const FOOD_ROT_RATE_VARIANCE = 0.003; // Random variance in food rot rate
-export const FOOD_MAX_AGE_BASE = 60000; // Base maximum age of food before it disappears (in frames)
-export const FOOD_MAX_AGE_VARIANCE = 30000; // Random variance in food maximum age (± this amount)
+export const FOOD_MAX_AGE_BASE = 10000; // Base maximum age of food before it disappears (in frames)
+export const FOOD_MAX_AGE_VARIANCE = 1000; // Random variance in food maximum age (± this amount)
 
 // --- OBSTACLE CONSTANTS ---
 // Dynamic obstacles that move around and create navigation challenges
@@ -242,10 +242,24 @@ export const BRAKING_FRICTION = 0.90; // Stronger friction applied when agent is
 // Collision system
 export const COLLISION_SEPARATION_STRENGTH = 1.0; // Force applied to separate overlapping agents
 export const COLLISION_NUDGE_STRENGTH = 0.05; // Small random force to prevent collision sticking
+export const COLLISION_ENERGY_LOSS_CAP = 1.0; // Maximum energy considered for collision damage calculation
+export const COLLISION_ENERGY_LOSS_PERCENTAGE = 0.1; // Percentage of energy lost in collisions
+export const COLLISION_QUERY_BUFFER = 20; // Buffer distance added to collision queries for movement between frames
+export const MAX_AGENT_SIZE_ESTIMATE = 100; // Reasonable estimate for collision queries - balances accuracy vs performance
+export const PREDATOR_SIZE_RATIO_THRESHOLD = 1.1; // Size ratio required for predator behavior (10% larger)
+export const PREY_SIZE_RATIO_THRESHOLD = 0.909; // Size ratio threshold for prey vulnerability (10% smaller)
+export const COLLISION_SEPARATION_MULTIPLIER = 0.5; // Multiplier for collision separation calculations
 
 // Combat mechanics
 export const BITE_SIZE = 5; // Energy amount stolen when one agent bites another
 export const BOUNCE_ENERGY_LOSS = 0.8; // Velocity reduction when agents bounce off each other
+export const FOOD_EATEN_INCREMENT = 0.1; // Amount added to foodEaten counter when agents eat
+export const VALIDATION_AGENT_MAX_AGE_SECONDS = 110; // Maximum age for validation agents before forced death
+
+// Agent territory and spatial constants
+export const TERRITORY_RADIUS = 200; // Default territory size for agents
+export const RAY_DISTANCE_THRESHOLD = 0.001; // Minimum distance threshold for ray intersections
+export const DIVISION_BY_ZERO_THRESHOLD = 0.0001; // Minimum value to avoid division by zero
 
 // --- NEURAL NETWORK CONSTANTS ---
 // Parameters controlling neural network initialization, mutation, and evolution
@@ -265,13 +279,13 @@ export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight v
 // Criteria for saving successful agents to the persistent gene pool
 
 // Qualification thresholds
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 20000; // Minimum fitness score required to save agent genes
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000; // Minimum fitness score required to save agent genes
 export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10; // Maximum agents saved per gene pool generation
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5; // Minimum food items consumed to qualify
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3000; // Minimum lifespan in frames to qualify
-export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (50)
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.0; // Minimum world exploration percentage required
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5; // Minimum successful food-seeking behaviors
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 4; // Minimum food items consumed to qualify
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000; // Minimum lifespan in frames to qualify
+export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET; // Minimum lifespan in seconds (33.33s)
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.1; // Minimum world exploration percentage required
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 10; // Minimum successful food-seeking behaviors
 
 // Storage limits
 export const MAX_GENE_POOLS = 500; // Maximum number of gene pools stored in database

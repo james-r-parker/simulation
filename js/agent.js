@@ -6,7 +6,7 @@ import {
     OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
     SPRINT_COST_PER_FRAME, SPRINT_THRESHOLD, FEAR_SPRINT_BONUS,
-    OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS,
+    OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS, OBSTACLE_MAX_SPEED,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
     PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
     TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_START, TEMPERATURE_GAIN_MOVE, TEMPERATURE_LOSS_PASSIVE, TEMPERATURE_PASSIVE_LOSS_FACTOR,
@@ -25,8 +25,10 @@ import {
     WORLD_WIDTH, WORLD_HEIGHT,
     AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
     WALL_COLLISION_DAMAGE, EDGE_BOUNCE_DAMPING,
+    BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
-    KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF
+    KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF,
+    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD, VALIDATION_AGENT_MAX_AGE_SECONDS
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -65,6 +67,10 @@ export class Agent {
         this.age = 0;
         this.framesAlive = 0;
         this.temperature = TEMPERATURE_START;
+
+        // Temperature tracking for fitness calculation
+        this.temperatureSum = 0;
+        this.temperatureSamples = 0;
 
         // Genealogy tracking for kin recognition
         this.genealogy = {
@@ -129,11 +135,11 @@ export class Agent {
         // Now that sizes are defined, initialize the neural network
         if (!this.gene.weights) {
             // No weights in gene - create new random weights
-            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize);
+            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize, null, this.logger);
             this.gene.weights = this.nn.getWeights(); // Store the new random weights
         } else {
             // Weights exist in gene - try to use them
-            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize, this.gene.weights);
+            this.nn = new NeuralNetwork(this.inputSize, this.hiddenSize, this.outputSize, this.gene.weights, this.logger);
             // CRITICAL: If NN constructor detected incompatible dimensions and reinitialized,
             // update the gene with the new weights so it doesn't keep trying to use bad weights
             this.gene.weights = this.nn.getWeights();
@@ -160,7 +166,7 @@ export class Agent {
         // Territorial behavior for defenders
         this.territoryCenterX = this.x;
         this.territoryCenterY = this.y;
-        this.territoryRadius = 200; // Territory size
+        this.territoryRadius = TERRITORY_RADIUS; // Territory size
         this.isInTerritory = true;
         this.lastInputs = null;
         this.lastOutput = null;
@@ -220,6 +226,10 @@ export class Agent {
 
         // Performance: One-time GPU fallback warning flag
         this.gpuFallbackWarned = false;
+        this._cleanedUp = false; // Flag to prevent double cleanup
+
+        // Log agent birth
+        this.logger.info(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}`);
     }
 
     getWeights() {
@@ -237,13 +247,13 @@ export class Agent {
 
         // Validate inputs
         if (!Array.isArray(inputs) || inputs.length === 0) {
-            console.error(`[ERROR] Invalid neural network inputs for agent ${this.geneId}:`, inputs);
+            this.logger.error(`[ERROR] Invalid neural network inputs for agent ${this.geneId}:`, inputs);
             inputs = new Array(16).fill(0.5); // Fallback inputs
         }
 
         // Validate hidden state
         if (!Array.isArray(this.hiddenState) || this.hiddenState.length === 0) {
-            console.error(`[ERROR] Invalid hidden state for agent ${this.geneId}:`, this.hiddenState);
+            this.logger.error(`[ERROR] Invalid hidden state for agent ${this.geneId}:`, this.hiddenState);
             this.hiddenState = new Array(this.hiddenSize).fill(0); // Reset hidden state
         }
 
@@ -264,7 +274,7 @@ export class Agent {
         // Shared logic for processing neural network outputs (used by both CPU and GPU paths)
         // Validate output array
         if (!Array.isArray(output) || output.length < 5) {
-            console.error('Invalid output from neural network:', output);
+            this.logger.error(`[ERROR] Invalid output from neural network for agent ${this.id} (${this.geneId}):`, output);
             output = [0.5, 0.5, 0, 0, 0]; // Default safe values
         }
 
@@ -398,7 +408,13 @@ export class Agent {
         this.age = (Date.now() - this.birthTime) / 1000; // Age in seconds
         this.framesAlive++; // Keep framesAlive for backward compatibility
 
-        // Smooth size growth effect for newly spawned agents (grow from 30% to 100% size over 120 frames)
+        // Force death for validation agents after maximum time to ensure validation completes
+        if (this.isValidationAgent && this.age > VALIDATION_AGENT_MAX_AGE_SECONDS) {
+            this.energy = 0; // Force death
+            this.logger.debug(`[VALIDATION] Forced death of validation agent ${this.id} (${this.geneId}) after ${this.age.toFixed(1)}s timeout`);
+        }
+
+        // Smooth size growth effect for newly spawned agents (grow from 30% to 100% size over SIZE_GROWTH_FRAMES)
 
         // Calculate base size from energy (used for both spawn effect and normal sizing)
         const energyBasedSize = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
@@ -543,6 +559,10 @@ export class Agent {
         // Clamp temperature
         this.temperature = Math.max(TEMPERATURE_MIN, Math.min(TEMPERATURE_MAX, this.temperature));
 
+        // Track temperature for fitness calculation
+        this.temperatureSum += this.temperature;
+        this.temperatureSamples++;
+
         // Calculate passive loss multiplier based on temperature
         // 0 temp = max penalty, 100 temp = no penalty (1x)
         const tempFactor = 1.0 - (this.temperature / TEMPERATURE_MAX); // 1.0 at 0 temp, 0.0 at 100 temp
@@ -565,7 +585,9 @@ export class Agent {
         }
 
         this.energy -= energyLoss;
-        this.energySpent += energyLoss;
+        // Only count active energy expenditures (movement, sprinting) in energySpent
+        // Exclude passive losses including temperature debuffs
+        this.energySpent += movementLoss;
 
         if (this.isSprinting) {
             this.energy -= SPRINT_COST_PER_FRAME;
@@ -731,37 +753,82 @@ export class Agent {
             this.cleanup();
         }
 
-        // --- EDGE BOUNCE ---
-        const dampen = EDGE_BOUNCE_DAMPING;
+        // --- EDGE BOUNCE WITH PHYSICS - ENHANCED PUSH AWAY ---
         let hitWall = false;
+        const restitution = Math.min(BOUNCE_ENERGY_LOSS * 3, 0.99); // Triple the bounce (much more bouncy)
+        const separationStrength = COLLISION_SEPARATION_STRENGTH * 2.0; // Stronger push away
+        const minBounceSpeed = 0.5; // Minimum speed to ensure agents get pushed away
+
         if (this.x < 0) {
-            this.x = 0;
-            this.vx *= -dampen;
-            hitWall = true;
+            // Left edge collision - normal points right (1, 0)
+            const overlap = this.size - this.x; // How much we're overlapping the edge
+            if (overlap > 0) {
+                // Stronger position correction to push agent away
+                this.x += overlap * separationStrength;
+
+                // Always apply bounce for consistent push away behavior
+                this.vx = Math.abs(this.vx) * restitution + minBounceSpeed; // Always push right
+                if (this.vx < minBounceSpeed) this.vx = minBounceSpeed; // Ensure minimum push
+
+                hitWall = true;
+            }
+        } else if (this.x > worldWidth) {
+            // Right edge collision - normal points left (-1, 0)
+            const overlap = this.x - (worldWidth - this.size);
+            if (overlap > 0) {
+                // Stronger position correction to push agent away
+                this.x -= overlap * separationStrength;
+
+                // Always apply bounce for consistent push away behavior
+                this.vx = -Math.abs(this.vx) * restitution - minBounceSpeed; // Always push left
+                if (this.vx > -minBounceSpeed) this.vx = -minBounceSpeed; // Ensure minimum push
+
+                hitWall = true;
+            }
         }
-        if (this.x > worldWidth) {
-            this.x = worldWidth;
-            this.vx *= -dampen;
-            hitWall = true;
-        }
+
         if (this.y < 0) {
-            this.y = 0;
-            this.vy *= -dampen;
-            hitWall = true;
+            // Top edge collision - normal points down (0, 1)
+            const overlap = this.size - this.y;
+            if (overlap > 0) {
+                // Stronger position correction to push agent away
+                this.y += overlap * separationStrength;
+
+                // Always apply bounce for consistent push away behavior
+                this.vy = Math.abs(this.vy) * restitution + minBounceSpeed; // Always push down
+                if (this.vy < minBounceSpeed) this.vy = minBounceSpeed; // Ensure minimum push
+
+                hitWall = true;
+            }
+        } else if (this.y > worldHeight) {
+            // Bottom edge collision - normal points up (0, -1)
+            const overlap = this.y - (worldHeight - this.size);
+            if (overlap > 0) {
+                // Stronger position correction to push agent away
+                this.y -= overlap * separationStrength;
+
+                // Always apply bounce for consistent push away behavior
+                this.vy = -Math.abs(this.vy) * restitution - minBounceSpeed; // Always push up
+                if (this.vy > -minBounceSpeed) this.vy = -minBounceSpeed; // Ensure minimum push
+
+                hitWall = true;
+            }
         }
-        if (this.y > worldHeight) {
-            this.y = worldHeight;
-            this.vy *= -dampen;
-            hitWall = true;
-        }
+
         if (hitWall) {
             const energyLost = OBSTACLE_COLLISION_PENALTY / 4;  // Reduced from /2 to /4 for more forgiving wall hits
             this.energy -= energyLost;
             this.collisions++;
+
+            // Add visual effect for wall collisions
+            if (simulation.renderer) {
+                simulation.renderer.addVisualEffect(this, 'collision', simulation.gameSpeed);
+            }
+
             // Wall collision logging disabled for performance
         }
 
-        // Obstacle Collision - OPTIMIZED: Use squared distance to avoid sqrt
+        // Obstacle Collision with bounce physics (fallback to agent-level collision)
         const agentSize = this.size;
         for (let i = 0; i < obstacles.length; i++) {
             const obs = obstacles[i];
@@ -772,18 +839,57 @@ export class Agent {
             const combinedRadiusSq = combinedRadius * combinedRadius;
 
             if (distSq < combinedRadiusSq) {
-                const dist = Math.sqrt(distSq);
+                const dist = Math.sqrt(distSq) || 1;
                 const overlap = combinedRadius - dist;
-                if (dist > 0.0001) { // Avoid division by zero
-                    this.x += (dx / dist) * overlap;
-                    this.y += (dy / dist) * overlap;
+
+                // Enhanced position correction for stronger push away
+                const separationStrength = COLLISION_SEPARATION_STRENGTH * 1.5; // Stronger push for obstacles
+                const pushX = (dx / dist) * overlap * separationStrength;
+                const pushY = (dy / dist) * overlap * separationStrength;
+                this.x += pushX;
+                this.y += pushY;
+
+                // Enhanced velocity bounce with minimum push away speed
+                const nx = dx / dist;
+                const ny = dy / dist;
+                const dot = this.vx * nx + this.vy * ny;
+                const bounceFactor = Math.min(BOUNCE_ENERGY_LOSS * 3, 0.99); // Triple the bounce for obstacles too
+                const minBounceSpeed = 0.3; // Minimum speed to ensure push away
+
+                // Always apply bounce for consistent push away behavior, but scale by approach direction
+                const bounceScale = dot < 0 ? 1.0 : 0.5; // Full bounce if moving towards, half if moving away
+                this.vx = (this.vx - 2 * dot * nx) * bounceFactor * bounceScale;
+                this.vy = (this.vy - 2 * dot * ny) * bounceFactor * bounceScale;
+
+                // Ensure minimum push away speed in the correct direction
+                const pushSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (pushSpeed < minBounceSpeed) {
+                    this.vx += nx * minBounceSpeed * 0.5; // Add minimum push in normal direction
+                    this.vy += ny * minBounceSpeed * 0.5;
                 }
-                this.vx *= -dampen;
-                this.vy *= -dampen;
+
+                // Nudge obstacle slightly (same as physics.js)
+                const nudgeStrength = COLLISION_NUDGE_STRENGTH;
+                obs.vx -= nx * nudgeStrength;
+                obs.vy -= ny * nudgeStrength;
+
+                // Cap obstacle speed
+                const obstacleSpeed = Math.sqrt(obs.vx * obs.vx + obs.vy * obs.vy);
+                const maxObstacleSpeed = OBSTACLE_MAX_SPEED;
+                if (obstacleSpeed > maxObstacleSpeed) {
+                    obs.vx = (obs.vx / obstacleSpeed) * maxObstacleSpeed;
+                    obs.vy = (obs.vy / obstacleSpeed) * maxObstacleSpeed;
+                }
 
                 this.energy -= OBSTACLE_COLLISION_PENALTY;
                 this.collisions++;
                 this.timesHitObstacle++;
+
+                // Add visual effect
+                if (simulation.renderer) {
+                    simulation.renderer.addVisualEffect(this, 'collision', simulation.gameSpeed);
+                }
+
                 // Obstacle collision logging disabled for performance
                 break; // Only handle first collision
             }
@@ -826,8 +932,8 @@ export class Agent {
             const t1 = b - Math.sqrt(discriminant);
             const t2 = b + Math.sqrt(discriminant);
 
-            if (t1 > 0.001) return t1; // First intersection point in front of ray origin
-            if (t2 > 0.001) return t2; // Second intersection point in front of ray origin (if t1 was behind)
+            if (t1 > RAY_DISTANCE_THRESHOLD) return t1; // First intersection point in front of ray origin
+            if (t2 > RAY_DISTANCE_THRESHOLD) return t2; // Second intersection point in front of ray origin (if t1 was behind)
             return null; // Both intersection points are behind ray origin
         };
 
@@ -1152,7 +1258,7 @@ export class Agent {
 
         // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
         if (this.simulation.agents && this.simulation.agents[0] === this && this.rayHits > 0 && this.framesAlive % 1200 === 0) {
-            console.log(`[DEBUG] Ray tracing active: ${this.rayHits}/${this.numSensorRays + this.numAlignmentRays} rays hitting objects`);
+            this.logger.debug(`[DEBUG] Agent ${this.id} (${this.geneId}) - Ray tracing active: ${this.rayHits}/${this.numSensorRays + this.numAlignmentRays} rays hitting objects`);
         }
 
         return { inputs, rayData, nearbyAgents: null }; // nearbyAgents not fully populated here, but that's ok for now.
@@ -1272,6 +1378,7 @@ export class Agent {
         this.pregnancyTimer = 0;
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.energy -= REPRODUCE_COST_BASE;
+        this.energySpent += REPRODUCE_COST_BASE;
         this.fatherWeights = mate.getWeights();
 
         // Update genealogy: track parent-child relationships for kin recognition
@@ -1286,14 +1393,19 @@ export class Agent {
 
         mate.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         mate.energy -= REPRODUCE_COST_BASE * 0.5;
+        mate.energySpent += REPRODUCE_COST_BASE * 0.5;
 
         this.offspring++;
         this.childrenFromMate++;
+
+        // Log successful mating
+        this.logger.info(`[LIFECYCLE] 💕 Agent ${this.id} (${this.geneId}) mated with Agent ${mate.id} (${mate.geneId}) - Specialization: ${this.specializationType}, Energy spent: ${REPRODUCE_COST_BASE.toFixed(1)}`);
+
         return true;
     }
 
     split() {
-        this.logger.log(`[LIFECYCLE] Agent ${this.geneId} is splitting due to high energy.`);
+        this.logger.info(`[LIFECYCLE] ✂️ Agent ${this.id} (${this.geneId}) is splitting due to high energy (${this.energy.toFixed(1)}).`);
 
 
         // Halve energy for parent and child
@@ -1330,7 +1442,10 @@ export class Agent {
 
     birthChild() {
         const parentWeights = this.getWeights();
-        const childWeights = crossover(parentWeights, this.fatherWeights);
+        const childWeights = crossover(parentWeights, this.fatherWeights, this.logger);
+
+        // Log birth of child
+        this.logger.info(`[LIFECYCLE] 👶 Agent ${this.id} (${this.geneId}) giving birth to child - Specialization: ${this.specializationType}, Energy spent: ${REPRODUCE_COST_BASE.toFixed(1)}`);
 
 
         // Specialization inheritance with mutation chance (5% chance to change)
@@ -1403,14 +1518,19 @@ export class Agent {
 
         let baseScore = 0;
 
+        // Temperature-based fitness bonus (reward active/warm agents)
+        const avgTemperature = this.temperatureSamples > 0 ? this.temperatureSum / this.temperatureSamples : 0;
+        const temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 50; // Up to 50 points for perfect temperature
+        baseScore += temperatureBonus;
+
         // 1. Productive Actions (Contribute to Base Score)
-        baseScore += safeNumber(this.offspring || 0, 0) * 50;
+        baseScore += safeNumber(this.offspring || 0, 0) * 100;
         baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
         baseScore += Math.min(safeNumber(this.directionChanged || 0, 0), 500) * 2;
         baseScore += Math.min(safeNumber(this.speedChanged || 0, 0), 200) * 1;
-        baseScore += safeNumber(explorationPercentage, 0) * 10;
-        baseScore += safeNumber(this.foodEaten || 0, 0) * 200;
-        baseScore += safeNumber(this.kills || 0, 0) * 100;
+        baseScore += safeNumber(explorationPercentage, 0) * 100;
+        baseScore += safeNumber(this.foodEaten || 0, 0) * 500;
+        baseScore += safeNumber(this.kills || 0, 0) * 300;
 
         // Navigation behavior rewards (NEW) - INCREASED to encourage learning
         baseScore += safeNumber(this.turnsTowardsFood || 0, 0) * 10; // INCREASED from 5 to 10
@@ -1458,16 +1578,35 @@ export class Agent {
             baseScore += (obstacleFreeFrames / 200) * 25;
         }
 
-        // 5. Survival Multiplier (The most important factor)
-        // ADJUSTED: Agents live ~10s on average, so we scale to 30s for 2x multiplier
-        // This gives agents ~1.33x multiplier at 10s instead of ~1.17x
-        const survivalMultiplier = Math.max(0.1, Math.min(1 + (ageInSeconds / 30), 3.0));
+        // 6. Activity Requirement Penalty
+        // Penalize agents that survive for extended periods with minimal activity
+        let inactivityPenalty = 0;
+        if (ageInSeconds > 20 && baseScore < 50) {
+            // Agents surviving >20s with baseScore <50 get increasingly penalized
+            const inactivityDuration = Math.max(0, ageInSeconds - 20);
+            inactivityPenalty = inactivityDuration * 2; // 2 points per second of inactivity beyond 20s
+        }
 
-        // Final fitness is the base score amplified by how long the agent survived.
-        const finalFitness = baseScore * survivalMultiplier;
+        // 7. Survival Multiplier (The most important factor)
+        // ADJUSTED: Agents live ~10s on average, so we scale to 60s for 2x multiplier
+        // This reduces the dominance of longevity in fitness scoring
+        const survivalMultiplier = Math.max(0.1, Math.min(1 + (ageInSeconds / 60), 3.0));
+
+        // Apply inactivity penalty to base score
+        const adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+
+        // Final fitness is the adjusted base score amplified by how long the agent survived.
+        const finalFitness = adjustedBaseScore * survivalMultiplier;
 
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        const rawSurvivalBonus = ageInSeconds;
+        // Only applies after surviving longer than 20 seconds to avoid rewarding short-lived agents
+        const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
+
+        // Agents that never heated up (avg temp = 0) get 0 fitness - complete inactivity penalty
+        if (avgTemperature < 1) {
+            this.fitness = 0;
+            return;
+        }
 
         // Final safety check to ensure fitness is a finite number
         const finalFitnessValue = safeNumber(finalFitness + rawSurvivalBonus, 0);
@@ -1553,6 +1692,15 @@ export class Agent {
     }
 
     cleanup() {
+        // Prevent double cleanup
+        if (this._cleanedUp) {
+            return;
+        }
+        this._cleanedUp = true;
+
+        // Log cleanup for debugging validation issues
+        this.logger.debug(`[AGENT-CLEANUP] 🧹 Cleaning up agent ${this.id} (${this.geneId}) - Age: ${this.age.toFixed(1)}s, Fitness: ${this.fitness.toFixed(1)}, Fit: ${this.fit}, Energy: ${this.energy.toFixed(1)}, NN: ${this.nn ? 'present' : 'null'}`);
+
         // Reinitialize memory arrays to prevent undefined access errors
         // Don't just clear them - reinitialize with proper structure
         this.previousVelocities = Array(this.memoryFrames).fill(null).map(() => ({ vx: 0, vy: 0 }));

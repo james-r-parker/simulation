@@ -513,7 +513,7 @@ export class WebGLRenderer {
             if (validCount > mesh.maxCapacity) {
                 // We have more visible agents than the mesh can handle - need to resize
                 const newCapacity = Math.max(validCount * 1.5, mesh.maxCapacity * 2); // Grow by 50% or double
-                console.warn(`[RENDERER] Gene ${geneId} exceeded capacity (${validCount} > ${mesh.maxCapacity}). Resizing to ${newCapacity}`);
+                this.logger.warn(`[RENDERER] Gene ${geneId} exceeded capacity (${validCount} > ${mesh.maxCapacity}). Resizing to ${newCapacity}`);
 
                 // Remove old meshes
                 this.agentGroup.remove(mesh.body);
@@ -549,7 +549,7 @@ export class WebGLRenderer {
             // Update all instances (limited to mesh capacity for safety)
             const renderCount = Math.min(validCount, mesh.maxCapacity);
             if (renderCount < validCount) {
-                console.warn(`[RENDERER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
+                this.logger.warn(`[RENDERER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
             }
 
             for (let i = 0; i < renderCount; i++) {

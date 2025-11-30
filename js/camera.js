@@ -4,15 +4,16 @@
 import { lerp } from './utils.js';
 
 export class Camera {
-    constructor(x, y, zoom) {
-        this.x = x; 
-        this.y = y; 
-        this.targetX = x; 
-        this.targetY = y; 
+    constructor(x, y, zoom, logger = null) {
+        this.x = x;
+        this.y = y;
+        this.targetX = x;
+        this.targetY = y;
         this.zoom = zoom;
         this.targetZoom = zoom;
         this.minZoom = 0.1;
         this.maxZoom = 2.0;
+        this.logger = logger;
     }
     
     follow(entity) {
@@ -81,7 +82,7 @@ export class Camera {
         this.targetY += worldDeltaY; // Flip Y
 
         // LOG: Pan event
-        console.log(`[CAMERA-PAN] delta(${deltaX.toFixed(1)}, ${deltaY.toFixed(1)}) worldDelta(${worldDeltaX.toFixed(1)}, ${worldDeltaY.toFixed(1)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
+        (this.logger || console).debug(`[CAMERA-PAN] delta(${deltaX.toFixed(1)}, ${deltaY.toFixed(1)}) worldDelta(${worldDeltaX.toFixed(1)}, ${worldDeltaY.toFixed(1)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
     }
     
     zoomAt(mouseX, mouseY, delta, containerWidth, containerHeight, worldWidth, worldHeight, aspect) {
@@ -105,7 +106,7 @@ export class Camera {
         this.targetY = worldY + (normalizedY * newViewSize);
 
         // LOG: Zoom event
-        console.log(`[CAMERA-ZOOM] mouse(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) delta(${delta}) zoom(${oldZoom.toFixed(3)} -> ${this.targetZoom.toFixed(3)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
+        (this.logger || console).debug(`[CAMERA-ZOOM] mouse(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) delta(${delta}) zoom(${oldZoom.toFixed(3)} -> ${this.targetZoom.toFixed(3)}) target(${this.targetX.toFixed(1)}, ${this.targetY.toFixed(1)})`);
     }
 }
 

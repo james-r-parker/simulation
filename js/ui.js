@@ -858,9 +858,9 @@ export function setupUIListeners(simulation) {
                     // Skip validation and save directly to gene pool
                     await simulation.db.queueSaveAgent(selectedAgent);
                     toast.show('💾 Agent Saved', `Agent #${selectedAgent.id} saved directly to gene pool`, 'toast-success', 3000);
-                    console.log(`[UI] Agent ${selectedAgent.id} saved directly to gene pool (skipped validation)`);
+                    simulation.logger.info(`[UI] Agent ${selectedAgent.id} saved directly to gene pool (skipped validation)`);
                 } catch (error) {
-                    console.error('[UI] Failed to save agent:', error);
+                    simulation.logger.error('[UI] Failed to save agent:', error);
                     toast.show('❌ Save Failed', 'Failed to save agent to gene pool', 'toast-error', 3000);
                 }
             }
@@ -880,14 +880,14 @@ export function setupUIListeners(simulation) {
 let agentModalUpdateInterval = null;
 let selectedAgent = null;
 
-export function openAgentModal(agent) {
+export function openAgentModal(agent, simulation) {
     if (!agent) return;
 
     selectedAgent = agent;
     const sidebar = document.getElementById('agent-sidebar');
     if (sidebar) {
         sidebar.classList.remove('collapsed');
-        updateAgentModal(agent);
+        updateAgentModal(agent, simulation);
 
         // Start update loop
         if (agentModalUpdateInterval) clearInterval(agentModalUpdateInterval);
@@ -895,7 +895,7 @@ export function openAgentModal(agent) {
             if (agent.isDead) {
                 closeAgentModal();
             } else {
-                updateAgentModal(agent);
+                updateAgentModal(agent, simulation);
                 // Update NN visualization in real-time to show current activity
                 renderNN(agent);
             }
@@ -918,7 +918,7 @@ export function closeAgentModal() {
     selectedAgent = null;
 }
 
-function updateAgentModal(agent) {
+function updateAgentModal(agent, simulation) {
     const idEl = document.getElementById('modal-agent-id');
     if (idEl) idEl.textContent = `Agent #${agent.id || '?'}`;
 
@@ -978,7 +978,10 @@ function updateAgentModal(agent) {
     if (offspringVal) offspringVal.textContent = ((agent.childrenFromMate || 0) + (agent.childrenFromSplit || 0)).toFixed(0);
 
     const tempVal = document.getElementById('modal-temp-val');
-    if (tempVal) tempVal.textContent = `${agent.temperature.toFixed(1)}°C`;
+    if (tempVal) {
+        const avgTemp = agent.temperatureSamples > 0 ? agent.temperatureSum / agent.temperatureSamples : 0;
+        tempVal.textContent = `${agent.temperature.toFixed(1)}°C (avg: ${avgTemp.toFixed(1)}°C)`;
+    }
 
     const killsVal = document.getElementById('modal-kills-val');
     if (killsVal) killsVal.textContent = (agent.kills || 0).toFixed(0);
@@ -1384,7 +1387,7 @@ export function setupCameraControls(simulation) {
         const worldX = simulation.camera.x + (normalizedX * viewSize * aspect);
         const worldY = simulation.camera.y - (normalizedY * viewSize);
 
-        console.log(`[CAMERA-CLICK] screen(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) normalized(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)}) world(${worldX.toFixed(1)}, ${worldY.toFixed(1)}) camera(${simulation.camera.x.toFixed(1)}, ${simulation.camera.y.toFixed(1)}) zoom(${simulation.camera.zoom.toFixed(3)})`);
+        simulation.logger.debug(`[CAMERA-CLICK] screen(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) normalized(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)}) world(${worldX.toFixed(1)}, ${worldY.toFixed(1)}) camera(${simulation.camera.x.toFixed(1)}, ${simulation.camera.y.toFixed(1)}) zoom(${simulation.camera.zoom.toFixed(3)})`);
     });
 
     canvas.addEventListener('wheel', (e) => {
@@ -1448,6 +1451,10 @@ function showGeneticDiversityModal(simulation) {
     const genePoolHealth = simulation.db.getGenePoolHealth();
     const genePools = simulation.db.pool;
 
+    // Get validation queue data
+    const validationStats = simulation.validationManager.getStats(simulation);
+    const validationQueue = Array.from(simulation.validationManager.validationQueue.entries());
+
     // Build modal content
     modal.innerHTML = `
         <div class="modal-backdrop">
@@ -1475,6 +1482,77 @@ function showGeneticDiversityModal(simulation) {
                                 <span class="stat-value">${genePoolHealth.avgFitness.toFixed(0)}</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="validation-queue-section">
+                        <h3>🔬 Validation Queue</h3>
+                        <div class="validation-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Queue Size:</span>
+                                <span class="stat-value">${validationStats.queueSize}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Active Agents:</span>
+                                <span class="stat-value">${validationStats.actualActiveAgents}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Spawn Locks:</span>
+                                <span class="stat-value">${validationStats.spawnLocks}</span>
+                            </div>
+                        </div>
+
+                        ${validationQueue.length > 0 ? `
+                        <div class="validation-queue-table-container">
+                            <table class="validation-queue-table">
+                                <thead>
+                                    <tr>
+                                        <th>Gene ID</th>
+                                        <th>Runs</th>
+                                        <th>Best Score</th>
+                                        <th>Avg Score</th>
+                                        <th>Fit Runs</th>
+                                        <th>Status</th>
+                                        <th>Last Activity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${validationQueue.map(([geneId, entry]) => {
+                                        const bestScore = entry.scores.length > 0 ? Math.max(...entry.scores) : 0;
+                                        const avgScore = entry.scores.length > 0 ? entry.scores.reduce((a, b) => a + b, 0) / entry.scores.length : 0;
+                                        const fitRuns = entry.fitResults.filter(fit => fit).length;
+                                        const totalRuns = entry.attempts;
+                                        const timeSinceLast = Date.now() - entry.lastValidationTime;
+                                        const timeAgo = timeSinceLast < 60000 ? `${Math.floor(timeSinceLast / 1000)}s` : `${Math.floor(timeSinceLast / 60000)}m`;
+
+                                        let status = 'In Progress';
+                                        let statusClass = 'status-progress';
+                                        if (entry.isValidated) {
+                                            status = 'Validated';
+                                            statusClass = 'status-validated';
+                                        } else if (totalRuns >= 3) {
+                                            status = fitRuns >= 2 ? 'Passed' : 'Failed';
+                                            statusClass = fitRuns >= 2 ? 'status-passed' : 'status-failed';
+                                        } else if (entry.attempts >= 5) {
+                                            status = 'Stuck';
+                                            statusClass = 'status-stuck';
+                                        }
+
+                                        return `
+                                    <tr>
+                                        <td class="gene-id-cell">${geneId}</td>
+                                        <td>${totalRuns}/3</td>
+                                        <td class="fitness-cell">${bestScore.toFixed(0)}</td>
+                                        <td>${avgScore.toFixed(0)}</td>
+                                        <td>${fitRuns}/${totalRuns}</td>
+                                        <td class="status-cell ${statusClass}">${status}</td>
+                                        <td>${timeAgo} ago</td>
+                                    </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ` : '<div class="no-data">No agents currently in validation queue.</div>'}
                     </div>
 
                     <div class="gene-pool-table-container">
