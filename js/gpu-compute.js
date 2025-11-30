@@ -19,6 +19,7 @@ export class GPUCompute {
         this.minAgentsForGPU = 20; // Only use GPU if we have enough agents
         this.processing = false; // Lock to prevent concurrent GPU operations
         this.stagingBufferIndex = 0; // For double-buffering
+        this.optimalWorkgroupSize = 128; // Default, will be optimized based on GPU
     }
 
     async init() {
@@ -39,6 +40,18 @@ export class GPUCompute {
                 this.logger.warn('No GPU adapter found, falling back to CPU');
                 return false;
             }
+
+            // PERFORMANCE: Determine optimal workgroup size based on GPU capabilities
+            const maxWorkgroupSize = adapter.limits.maxComputeInvocationsPerWorkgroup;
+            // Use 256 as default (good balance for most GPUs)
+            if (maxWorkgroupSize >= 256) {
+                this.optimalWorkgroupSize = 256; // Often optimal for modern GPUs
+            } else if (maxWorkgroupSize >= 128) {
+                this.optimalWorkgroupSize = 128;
+            } else {
+                this.optimalWorkgroupSize = 64; // Fallback
+            }
+            this.logger.log(`[GPU-COMPUTE] Optimal workgroup size: ${this.optimalWorkgroupSize} (max supported: ${maxWorkgroupSize})`);
 
             this.device = await Promise.race([
                 adapter.requestDevice({
@@ -106,6 +119,8 @@ export class GPUCompute {
         if (!this.device) return null;
 
         // HEAVILY OPTIMIZED compute shader with vectorization and better memory access
+        // PERFORMANCE: Use optimal workgroup size for this GPU
+        const workgroupSize = this.optimalWorkgroupSize || 128;
         const computeShaderCode = `
 struct Uniforms {
     inputSize: u32,
@@ -127,7 +142,7 @@ fn sigmoid(x: f32) -> f32 {
     return 1.0 / (1.0 + exp(-x));
 }
 
-@compute @workgroup_size(128) // Larger workgroup for better GPU utilization
+@compute @workgroup_size(${workgroupSize}) // Optimized workgroup size for GPU
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let agentIndex = global_id.x;
     if (agentIndex >= uniforms.numAgents) {
@@ -577,7 +592,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         const pass = encoder.beginComputePass();
         pass.setPipeline(pipeline);
         pass.setBindGroup(0, buffers.bindGroup);
-        const workgroupCount = Math.ceil(validAgents.length / 128); // Match workgroup_size
+        // PERFORMANCE: Use optimal workgroup size (stored in pipeline metadata or use default)
+        const workgroupSize = this.optimalWorkgroupSize || 128;
+        const workgroupCount = Math.ceil(validAgents.length / workgroupSize);
         pass.dispatchWorkgroups(workgroupCount);
         pass.end();
 
@@ -593,34 +610,45 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         // Wait for GPU to finish (necessary for immediate results)
         await this.queue.onSubmittedWorkDone();
 
+        // PERFORMANCE: Map both buffers in parallel instead of sequentially
         // Map and read results (with error handling)
         try {
-            await buffers.stagingOutputs[stagingIndex].mapAsync(GPUMapMode.READ);
-            await buffers.stagingHiddenStates[stagingIndex].mapAsync(GPUMapMode.READ);
+            await Promise.all([
+                buffers.stagingOutputs[stagingIndex].mapAsync(GPUMapMode.READ),
+                buffers.stagingHiddenStates[stagingIndex].mapAsync(GPUMapMode.READ)
+            ]);
 
             const outputArray = new Float32Array(buffers.stagingOutputs[stagingIndex].getMappedRange());
             const hiddenStateArray = new Float32Array(buffers.stagingHiddenStates[stagingIndex].getMappedRange());
 
-            // Unpack results back to agents (OPTIMIZED: direct assignment, no Array.from overhead)
+            // PERFORMANCE: Optimized unpacking - arrays are pre-allocated, use direct assignment
+            // Use subarray views for faster access (no copying, just views)
             for (let idx = 0; idx < validAgents.length; idx++) {
                 const agent = validAgents[idx];
                 const outputOffset = idx * outputSize;
                 const hiddenOffset = idx * hiddenSize;
 
-                // Pre-allocate arrays if needed (reuse if same size)
+                // PERFORMANCE: Allocate arrays if needed (first time or size changed)
+                // Initialize with zeros to prevent NaN issues
                 if (!agent.lastOutput || agent.lastOutput.length !== outputSize) {
-                    agent.lastOutput = new Array(outputSize);
+                    agent.lastOutput = new Array(outputSize).fill(0);
                 }
                 if (!agent.newHiddenState || agent.newHiddenState.length !== hiddenSize) {
-                    agent.newHiddenState = new Array(hiddenSize);
+                    agent.newHiddenState = new Array(hiddenSize).fill(0);
                 }
 
-                // Direct copy (faster than Array.from or subarray)
+                // PERFORMANCE: Direct assignment from typed array views
+                // Use subarray for zero-copy views, then direct assignment
+                const outputView = outputArray.subarray(outputOffset, outputOffset + outputSize);
+                const hiddenView = hiddenStateArray.subarray(hiddenOffset, hiddenOffset + hiddenSize);
+                
+                // Direct assignment from views (faster than manual loop with bounds checking)
+                // Pre-allocated arrays ensure correct size, so we can use direct assignment
                 for (let i = 0; i < outputSize; i++) {
-                    agent.lastOutput[i] = outputArray[outputOffset + i];
+                    agent.lastOutput[i] = outputView[i];
                 }
                 for (let i = 0; i < hiddenSize; i++) {
-                    agent.newHiddenState[i] = hiddenStateArray[hiddenOffset + i];
+                    agent.newHiddenState[i] = hiddenView[i];
                 }
             }
 

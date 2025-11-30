@@ -169,8 +169,10 @@ export class Agent {
         this.territoryRadius = TERRITORY_RADIUS; // Territory size
         this.isInTerritory = true;
         this.lastInputs = null;
-        this.lastOutput = null;
-        this.newHiddenState = null;
+        // PERFORMANCE: Arrays will be allocated by GPU unpacking when results are ready
+        // Keep as null initially so truthiness check works correctly
+        this.lastOutput = null; // Will be allocated by GPU unpacking
+        this.newHiddenState = null; // Will be allocated by GPU unpacking
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES;
         this.distanceTravelled = 0;
         this.directionChanged = 0;
