@@ -840,7 +840,8 @@ export class Simulation {
             mutationMultiplier = SEASON_WINTER_MUTATION_MULTIPLIER; // Reduced mutation during harsh conditions
         }
 
-        // Apply seasonal environmental effects (temperature is now handled by agent metabolism)
+        // Apply seasonal environmental effects
+        this.globalTemperatureModifier = globalTemperatureModifier;
         this.agents.forEach(agent => {
             if (!agent.isDead) {
                 // Seasonal reproduction modifier

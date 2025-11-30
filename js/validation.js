@@ -28,8 +28,12 @@ export class ValidationManager {
     addToValidationQueue(agent, isPeriodicValidation = false, skipGenePoolCheck = false) {
         const geneId = agent.geneId;
 
-        // Safety check: Ensure agent has valid neural network
-        if (!agent || !agent.nn) {
+        // CRITICAL: When skipGenePoolCheck is true (death processing), the agent may already be cleaned up
+        // In this case, we use the stored validation entry data instead of agent.nn
+        const isDeathProcessing = skipGenePoolCheck && this.validationQueue.has(geneId);
+
+        // Safety check: Ensure agent has valid neural network (unless processing a death)
+        if (!agent || (!isDeathProcessing && !agent.nn)) {
             this.logger.warn(`[VALIDATION] ❌ Cannot add agent to validation queue - agent or neural network is null`);
             return false;
         }
@@ -195,7 +199,7 @@ export class ValidationManager {
                 // Remove failed agent from validation queue
                 this.logger.info(`[VALIDATION] 🗑️ Removing failed agent ${geneId} from validation queue`);
                 this.validationQueue.delete(geneId);
-                this.releaseSpawnLock(geneId);
+                // Note: spawn lock already released in handleValidationDeath, no need to release again
             }
         } else if (!validationEntry.isValidated) {
             // Still in progress
@@ -327,9 +331,12 @@ export class ValidationManager {
     resyncActiveAgentsCount(simulation) {
         if (!simulation || !simulation.agents) return;
 
+        // CRITICAL FIX: Only count actual validation TEST agents, not original agents in validation
+        // An original agent with geneId in validationQueue is NOT a validation test agent
+        // We need to check agent.isValidationAgent to distinguish test agents from originals
         let actualCount = 0;
         for (const agent of simulation.agents) {
-            if (!agent.isDead && this.isInValidation(agent.geneId)) {
+            if (!agent.isDead && agent.isValidationAgent && this.isInValidation(agent.geneId)) {
                 actualCount++;
             }
         }

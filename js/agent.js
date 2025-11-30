@@ -526,32 +526,28 @@ export class Agent {
         const sizeLoss = (this.size * AGENT_SIZE_ENERGY_LOSS_MULTIPLIER);
 
         // 2. Temperature Logic
-        // Increase temp based on movement
+        // Increase temp based on movement (FPS-normalized)
         const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
         const speedRatio = Math.min(currentSpeed / MAX_VELOCITY, 1.0);
-        this.temperature += speedRatio * TEMPERATURE_GAIN_MOVE;
+        const fpsNormalization = this.simulation && this.simulation.currentFps ?
+            FPS_TARGET / Math.max(this.simulation.currentFps, 1) : 1.0;
+        this.temperature += speedRatio * TEMPERATURE_GAIN_MOVE * fpsNormalization;
 
         // Passive temp loss (affected by season)
         let passiveLossRate = TEMPERATURE_LOSS_PASSIVE;
 
-        // Seasonal temperature effects on passive loss
-        // In summer: harder to cool down (higher ambient temperature)
-        // In winter: easier to cool down (lower ambient temperature)
-        if (this.simulation && this.simulation.seasonTimer !== undefined) {
-            const phase = (this.simulation.seasonTimer % SEASON_LENGTH) / SEASON_LENGTH;
-
-            if (phase < 0.25) { // Spring - moderate cooling
-                passiveLossRate *= 1.1;
-            } else if (phase < 0.5) { // Summer - harder to cool
-                passiveLossRate *= 0.9;
-            } else if (phase < 0.75) { // Fall - moderate cooling
-                passiveLossRate *= 1.0; // Normal rate
-            } else { // Winter - easier to cool
-                passiveLossRate *= 1.2;
-            }
+        // Environmental temperature effects on passive loss
+        // Higher ambient temperature = harder to cool down (slower cooling)
+        // Lower ambient temperature = easier to cool down (faster cooling)
+        if (this.simulation && this.simulation.globalTemperatureModifier !== undefined) {
+            // Environmental temperature affects cooling rate
+            // Positive modifier (hotter environment) = slower cooling (retain heat)
+            // Negative modifier (colder environment) = faster cooling (lose heat)
+            const envTempEffect = 1.0 + (this.simulation.globalTemperatureModifier * 0.02); // ±2% per degree modifier
+            passiveLossRate *= envTempEffect;
         }
 
-        this.temperature -= passiveLossRate;
+        this.temperature -= passiveLossRate * fpsNormalization;
 
         // Clamp temperature
         this.temperature = Math.max(TEMPERATURE_MIN, Math.min(TEMPERATURE_MAX, this.temperature));
@@ -1635,8 +1631,8 @@ export class Agent {
         } else if (this.temperature <= TEMPERATURE_OPTIMAL_MAX) {
             // Optimal range: full efficiency
             return TEMPERATURE_EFFICIENCY_OPTIMAL;
-        } else if (this.temperature <= TEMPERATURE_HEAT_MODERATE_THRESHOLD) {
-            // Warm: slight reduction due to heat stress
+        } else if (this.temperature < TEMPERATURE_HEAT_STRESS_THRESHOLD) {
+            // Moderate heat: slight reduction due to heat stress
             return TEMPERATURE_EFFICIENCY_HEAT_MODERATE;
         } else {
             // Extreme heat: severe reduction, seek cooling

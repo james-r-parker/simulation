@@ -20,7 +20,7 @@ export const MIN_AGENT_SIZE = 20; // Minimum visual size agents can shrink to, r
 export const ENERGY_TO_SIZE_RATIO = 250; // How much energy affects agent size (higher energy = larger size)
 
 // Energy system
-export const INITIAL_AGENT_ENERGY = 5000; // Starting energy for newly spawned agents
+export const INITIAL_AGENT_ENERGY = 2500; // Starting energy for newly spawned agents
 export const MAX_ENERGY = 25000; // Maximum energy an agent can accumulate
 export const MIN_ENERGY_TO_REPRODUCE = 250; // Minimum energy required to attempt reproduction
 export const REPRODUCE_COST_BASE = 15; // Base energy cost for reproduction attempts
@@ -48,21 +48,21 @@ export const MATURATION_AGE_FRAMES = 600; // Minimum age in frames before agents
 export const RESPAWN_DELAY_FRAMES = 0; // Frames to wait before respawning dead agents
 
 // Energy management
-export const PASSIVE_LOSS = 0.02; // Energy lost per frame just by existing (metabolic cost)
-export const MOVEMENT_COST_MULTIPLIER = 0.003; // Energy cost multiplier for movement (velocity * this)
+export const PASSIVE_LOSS = 0.01; // Energy lost per frame just by existing (metabolic cost)
+export const MOVEMENT_COST_MULTIPLIER = 0.02; // Energy cost multiplier for movement (velocity * this)
 export const ROTATION_COST_MULTIPLIER = 0.1; // Energy cost multiplier for rotation (rotation speed * this)
 export const DIRECTION_CHANGE_FITNESS_FACTOR = 2.0; // Multiplier for fitness scoring based on directional changes
 export const TEMPERATURE_MAX = 100; // Maximum temperature
 export const TEMPERATURE_MIN = 0; // Minimum temperature
-export const TEMPERATURE_START = 50; // Starting temperature
-export const TEMPERATURE_GAIN_MOVE = 1.5; // Temperature gain per frame at max speed
-export const TEMPERATURE_GAIN_EAT = 15; // Temperature gain when eating
-export const TEMPERATURE_LOSS_PASSIVE = 0.2; // Temperature loss per frame
+export const TEMPERATURE_START = 55; // Starting temperature
+export const TEMPERATURE_GAIN_MOVE = 0.025; // Temperature gain per frame at max speed
+export const TEMPERATURE_GAIN_EAT = 4; // Temperature gain when eating
+export const TEMPERATURE_LOSS_PASSIVE = 0.015; // Temperature loss per frame
 export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 15.0; // Max multiplier for passive energy loss at 0 temperature
 
 // Temperature-dependent behavior constants
 export const TEMPERATURE_OPTIMAL_MIN = 40; // Minimum temperature for optimal performance
-export const TEMPERATURE_OPTIMAL_MAX = 70; // Maximum temperature for optimal performance
+export const TEMPERATURE_OPTIMAL_MAX = 65; // Maximum temperature for optimal performance
 export const TEMPERATURE_COLD_STRESS_THRESHOLD = 30; // Temperature below which severe cold stress occurs
 export const TEMPERATURE_HEAT_STRESS_THRESHOLD = 85; // Temperature above which severe heat stress occurs
 export const TEMPERATURE_COLD_MODERATE_THRESHOLD = 40; // Temperature below which moderate cold effects occur
