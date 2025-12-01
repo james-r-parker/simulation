@@ -1072,112 +1072,15 @@ export class WebGLRenderer {
     }
 
     updateVisualEffectsRendering() {
-        // Initialize required properties if not already done (safety checks)
-        if (!this.agentEffects) {
-            this.agentEffects = new Map();
-        }
-        if (!this.agentEffectsGroup) {
-            this.agentEffectsGroup = new THREE.Group();
-            this.scene.add(this.agentEffectsGroup);
-        }
-        if (!this.effectMeshPool) {
-            this.effectMeshPool = [];
-        }
-        if (!this.activeEffectMeshes) {
-            this.activeEffectMeshes = [];
-        }
-
-        // Collect all active effects that need rendering
-        const effectsToRender = [];
-        for (const [agent, effects] of this.agentEffects.entries()) {
-            if (!agent || agent.isDead) continue;
-
-            // Frustum culling - skip effects for agents outside camera view
-            this.tempVec.set(agent.x, -agent.y, 0);
-            this.testSphere.center = this.tempVec;
-            this.testSphere.radius = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * 2; // Larger radius for effects
-            if (!this.frustum.intersectsSphere(this.testSphere)) continue;
-
-            for (const effect of effects) {
-                const elapsed = this.currentFrame - effect.startFrame;
-                const progress = elapsed / effect.duration;
-                const opacity = Math.max(1.0 - progress, 0); // Fade out over time
-
-                effectsToRender.push({
-                    agent,
-                    effect,
-                    progress,
-                    opacity
-                });
+        // DISABLED: Ring effects are replaced by sparkle particles
+        // This method is kept for potential future use but no longer renders rings
+        // Sparkles are handled separately via updateSparkles() which is called in render()
+        
+        // Hide any existing ring meshes to prevent old rings from showing
+        if (this.activeEffectMeshes) {
+            for (let i = 0; i < this.activeEffectMeshes.length; i++) {
+                this.activeEffectMeshes[i].visible = false;
             }
-        }
-
-        // Return unused meshes to pool
-        while (this.activeEffectMeshes.length > effectsToRender.length) {
-            const mesh = this.activeEffectMeshes.pop();
-            mesh.visible = false;
-            this.effectMeshPool.push(mesh);
-        }
-
-        // Reuse or create meshes for active effects
-        for (let i = 0; i < effectsToRender.length; i++) {
-            const { agent, effect, progress, opacity } = effectsToRender[i];
-            let mesh;
-
-            if (i < this.activeEffectMeshes.length) {
-                // Reuse existing mesh
-                mesh = this.activeEffectMeshes[i];
-                mesh.visible = true;
-            } else {
-                // Get mesh from pool or create new one
-                if (this.effectMeshPool.length > 0) {
-                    mesh = this.effectMeshPool.pop();
-                    mesh.visible = true;
-                } else {
-                    // Create new mesh
-                    const geometry = acquireRingGeometry(1, 2, 32);
-                    const material = acquireMeshStandardMaterial({
-                        side: THREE.DoubleSide,
-                        depthWrite: false
-                    });
-                    mesh = new THREE.Mesh(geometry, material);
-                    this.agentEffectsGroup.add(mesh);
-                }
-                this.activeEffectMeshes.push(mesh);
-            }
-
-            // Update mesh properties
-            const effectRadius = agent.size * (1.2 + progress * 0.5);
-            const innerRadius = Math.max(agent.size * 1.1, effectRadius * 0.8);
-            const outerRadius = effectRadius * 1.3;
-
-            // Update geometry if needed (recreate if size changed significantly)
-            if (!mesh.geometry || 
-                Math.abs(mesh.geometry.parameters.innerRadius - innerRadius) > 0.1 ||
-                Math.abs(mesh.geometry.parameters.outerRadius - outerRadius) > 0.1) {
-                if (mesh.geometry) {
-                    releaseRingGeometry(mesh.geometry);
-                }
-                mesh.geometry = acquireRingGeometry(innerRadius, outerRadius, 32);
-            }
-
-            // Update material properties
-            const color = effect.type === 'collision' ? COLORS.EFFECTS.COLLISION : COLORS.EFFECTS.EATING;
-            const emissiveColor = effect.type === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
-            const emissiveColorObj = acquireColor();
-            emissiveColorObj.setHex(emissiveColor);
-            emissiveColorObj.multiplyScalar(0.5);
-
-            mesh.material.color.set(color);
-            mesh.material.emissive.copy(emissiveColorObj);
-            mesh.material.emissiveIntensity = MATERIAL_PROPERTIES.EFFECT.EMISSIVE_INTENSITY * opacity;
-            mesh.material.metalness = MATERIAL_PROPERTIES.EFFECT.METALNESS;
-            mesh.material.roughness = MATERIAL_PROPERTIES.EFFECT.ROUGHNESS;
-            mesh.material.transparent = MATERIAL_PROPERTIES.EFFECT.TRANSPARENT;
-            mesh.material.opacity = opacity * 0.5;
-            mesh.position.set(agent.x, -agent.y, 0.05);
-
-            releaseColor(emissiveColorObj);
         }
     }
 

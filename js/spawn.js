@@ -322,7 +322,8 @@ export function spawnAgent(simulation, options = {}) {
         energy = INITIAL_AGENT_ENERGY,
         parent = null,
         mutationRate = null,
-        isValidationAgent = false // Special handling for validation agents
+        isValidationAgent = false, // Special handling for validation agents
+        mutationProcess = null // Track which mutation process was used (e.g., 'elitism', 'crossover', 'random', 'novelty', 'validation', 'birth', 'split')
     } = options;
 
     let startX, startY;
@@ -342,7 +343,10 @@ export function spawnAgent(simulation, options = {}) {
         startY = pos.y;
     }
 
-    const agent = new Agent(gene, startX, startY, startEnergy, simulation.logger, parent, simulation);
+    // Store mutation process in gene object if provided
+    const agentGene = gene ? { ...gene, mutationProcess: mutationProcess || 'unknown' } : { mutationProcess: mutationProcess || 'random' };
+    
+    const agent = new Agent(agentGene, startX, startY, startEnergy, simulation.logger, parent, simulation);
     if (isValidationAgent) {
         agent.isValidationAgent = true;
     }
@@ -605,7 +609,7 @@ export function repopulate(simulation) {
     const randomChance = Math.max(0.3, 0.8 - (uniqueGeneIds / simulation.maxAgents)); // 30-80% chance based on diversity
     if (Math.random() < randomChance) {
         // Random generation for diversity
-        spawnAgent(simulation, { gene: null });
+        spawnAgent(simulation, { gene: null, mutationProcess: 'random' });
         return; // Only spawn one agent per stagger cycle
     }
 
@@ -658,7 +662,8 @@ export function repopulate(simulation) {
                             const validationAgent = spawnAgent(simulation, {
                                 gene: validationGene,
                                 energy: VALIDATION_AGENT_ENERGY, // Extra energy for validation agents (from constants)
-                                isValidationAgent: true
+                                isValidationAgent: true,
+                                mutationProcess: 'validation'
                             });
                             if (validationAgent) {
                                 simulation.validationManager.activeValidationAgents++;
@@ -729,9 +734,9 @@ export function repopulate(simulation) {
         const gene = simulation.db.getRandomAgent('tournament'); // Use tournament selection
         if (gene) {
             // Lower mutation for elite agents (preserve good genes)
-            spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4 });
+            spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4, mutationProcess: 'elitism' });
         } else {
-            spawnAgent(simulation, { gene: null });
+            spawnAgent(simulation, { gene: null, mutationProcess: 'random' });
         }
     }
     // Sexual Selection: Use improved mating pair selection with fitness-weighted crossover
@@ -756,15 +761,15 @@ export function repopulate(simulation) {
                 geneId: matingPair.parent1.geneId,
                 // Don't pass numSensorRays, hiddenSize, etc - they should come from config
             };
-            spawnAgent(simulation, { gene: childGene });
+            spawnAgent(simulation, { gene: childGene, mutationProcess: 'crossover' });
         } else {
             // Fallback to random if selection fails
-            spawnAgent(simulation, { gene: null });
+            spawnAgent(simulation, { gene: null, mutationProcess: 'random' });
         }
     }
     // Random Generation: Fresh genetic material for exploration
     else if (roll < normalizedElitism + normalizedCrossover + normalizedRandom) {
-        spawnAgent(simulation, { gene: null });
+        spawnAgent(simulation, { gene: null, mutationProcess: 'random' });
     }
     // Novelty Spawning: Explore specializations with tournament-selected parent
     else {
@@ -784,10 +789,11 @@ export function repopulate(simulation) {
             spawnAgent(simulation, {
                 gene: childGene,
                 mutationRate: usesParentGene ? simulation.mutationRate / 2 : null,
+                mutationProcess: 'novelty'
             });
         }
         else {
-            spawnAgent(simulation, { gene: null });
+            spawnAgent(simulation, { gene: null, mutationProcess: 'random' });
         }
     }
 

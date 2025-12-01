@@ -885,7 +885,8 @@ export class Simulation {
                 gene: gene,
                 x: x,
                 y: y,
-                energy: INITIAL_AGENT_ENERGY
+                energy: INITIAL_AGENT_ENERGY,
+                mutationProcess: gene ? 'initial_elite' : 'initial_random'
             });
         }
 

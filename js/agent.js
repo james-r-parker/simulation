@@ -303,7 +303,8 @@ export class Agent {
         this._lastTargetCacheUpdate = 0;
 
         // Log agent birth
-        this.logger.debug(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}`);
+        const mutationProcess = this.gene?.mutationProcess || 'unknown';
+        this.logger.debug(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}, Mutation: ${mutationProcess}`);
     }
 
     getWeights() {
@@ -1870,7 +1871,8 @@ export class Agent {
             weights: this.getWeights(), // Get a copy of the current weights
             fatherWeights: null,
             geneId: this.geneId, // Inherit gene ID
-            specializationType: this.specializationType // Direct inheritance
+            specializationType: this.specializationType, // Direct inheritance
+            mutationProcess: 'split' // Track that this agent was created by splitting
         };
 
         const child = new Agent(
@@ -1944,6 +1946,7 @@ export class Agent {
             fatherWeights: null, // Father weights are used for creation, not inherited
             geneId: useParentWeights ? this.geneId : generateGeneId(Date.now()), // New gene ID for new specialization
             specializationType: childSpecialization,
+            mutationProcess: 'birth', // Track that this agent was born from reproduction
             // CRITICAL: Don't inherit neural network structure if specialization changed
             // Each specialization has its own numSensorRays, hiddenSize, etc.
             numSensorRays: useParentWeights ? this.numSensorRays : undefined,
