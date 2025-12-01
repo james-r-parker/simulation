@@ -157,7 +157,9 @@ export class Simulation {
 
         // Adaptive mutation tracking
         this.fitnessHistory = []; // Track best fitness over generations
-        this.fitnessHistorySize = 10; // Keep last 10 generations
+        this.averageFitnessHistory = []; // Track average fitness over generations
+        this.medianFitnessHistory = []; // Track median fitness over generations
+        this.fitnessHistorySize = 50; // Keep last 50 generations for better chart visualization
 
         // Screen wake lock for fullscreen gaming
         this.wakeLock = null;
@@ -572,6 +574,10 @@ export class Simulation {
         const canvas = document.getElementById('fitness-chart');
         if (!canvas || this.fitnessHistory.length < 2) return;
 
+        // Ensure arrays are initialized (backward compatibility)
+        if (!this.averageFitnessHistory) this.averageFitnessHistory = [];
+        if (!this.medianFitnessHistory) this.medianFitnessHistory = [];
+
         const ctx = canvas.getContext('2d');
         const width = canvas.width;
         const height = canvas.height;
@@ -593,35 +599,68 @@ export class Simulation {
 
         // Get data to plot (last 50 points or all if less)
         const dataPoints = Math.min(50, this.fitnessHistory.length);
-        const data = this.fitnessHistory.slice(-dataPoints);
-        const maxFitness = Math.max(...data, 1);
-        const minFitness = Math.min(...data, 0);
+        const bestData = this.fitnessHistory.slice(-dataPoints);
+        const avgData = (this.averageFitnessHistory || []).slice(-dataPoints);
+        const medianData = (this.medianFitnessHistory || []).slice(-dataPoints);
+        
+        // Find global min/max across all datasets for consistent scaling
+        const allData = [...bestData, ...avgData, ...medianData];
+        const maxFitness = Math.max(...allData, 1);
+        const minFitness = Math.min(...allData, 0);
         const range = maxFitness - minFitness || 1;
 
-        // Draw line
-        ctx.strokeStyle = '#0f0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        data.forEach((fitness, i) => {
-            const x = (width / (dataPoints - 1)) * i;
-            const y = height - ((fitness - minFitness) / range) * height;
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.stroke();
-
-        // Draw points
-        ctx.fillStyle = '#0f0';
-        data.forEach((fitness, i) => {
-            const x = (width / (dataPoints - 1)) * i;
-            const y = height - ((fitness - minFitness) / range) * height;
+        // Helper function to draw a line
+        const drawLine = (data, color, lineWidth = 2) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, TWO_PI);
-            ctx.fill();
-        });
+            data.forEach((fitness, i) => {
+                const x = (width / (dataPoints - 1)) * i;
+                const y = height - ((fitness - minFitness) / range) * height;
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+        };
+
+        // Draw median (bottom line, dimmer) - represents typical agent
+        if (medianData.length > 0) {
+            drawLine(medianData, 'rgba(100, 200, 255, 0.6)', 1.5);
+        }
+
+        // Draw average (middle line) - represents population health
+        if (avgData.length > 0) {
+            drawLine(avgData, '#0ff', 2);
+        }
+
+        // Draw best (top line, brightest) - represents peak performance
+        drawLine(bestData, '#0f0', 2.5);
+
+        // Draw legend
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        
+        // Best
+        ctx.fillStyle = '#0f0';
+        ctx.fillRect(5, 5, 12, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Best', 20, 3);
+        
+        // Average
+        ctx.fillStyle = '#0ff';
+        ctx.fillRect(5, 18, 12, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Avg', 20, 16);
+        
+        // Median
+        ctx.fillStyle = 'rgba(100, 200, 255, 0.6)';
+        ctx.fillRect(5, 31, 12, 2);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('Median', 20, 29);
     }
 
     async init() {

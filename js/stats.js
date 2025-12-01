@@ -11,8 +11,7 @@ import {
     EXPLORATION_GRID_WIDTH,
     EXPLORATION_GRID_HEIGHT,
     TEMPERATURE_MAX,
-    FPS_TARGET,
-    INACTIVE_TEMPERATURE_PENALTY
+    FPS_TARGET
 } from './constants.js';
 
 export function copySimulationStats(simulation) {

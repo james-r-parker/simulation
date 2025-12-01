@@ -763,7 +763,7 @@ export class GenePoolDatabase {
         
         // CRITICAL: Immediate enforcement if pool exceeds MAX_GENE_POOLS
         // Don't wait for adaptive trimming - enforce limit immediately
-        const currentSize = Object.keys(this.pool).length;
+        let currentSize = Object.keys(this.pool).length;
         if (currentSize > MAX_GENE_POOLS) {
             const poolsToRemove = currentSize - MAX_GENE_POOLS;
             this.logger.warn(`[DATABASE] trimCache: Pool count exceeded limit! Current: ${currentSize}, Max: ${MAX_GENE_POOLS}. Immediately removing ${poolsToRemove} weakest pool(s).`);

@@ -13,19 +13,22 @@
 Imagine tiny digital blobs that **learn to survive**. Not through programming, but through **millions of years of evolution compressed into minutes**. These aren't scripted behaviors - they're **emergent intelligence** born from neural networks and natural selection.
 
 ### 🔥 Real-Time Neuroevolution
-- **🧠 1,000+ Brains Computing Simultaneously**: Each blob has its own recurrent neural network that learns in real-time
+- **🧠 100+ Brains Computing Simultaneously**: Each blob has its own recurrent neural network that learns in real-time
 - **🎯 Evolution You Can Watch**: See behaviors emerge: hunters become stealthy, foragers get efficient, defenders grow tough
 - **🧬 Genetic Memory**: Your evolved species persist across browser sessions via IndexedDB
+- **🧪 Multiple Specializations**: Five distinct agent types evolve with unique neural architectures and behaviors
 
 ### ⚡ Insane Performance
 - **🚀 WebGPU Acceleration**: Custom compute shaders make evolution happen at 60 FPS
-- **👁️ Ray-Traced Vision**: Photorealistic sensory perception using GPU-powered ray casting
+- **👁️ Ray-Traced Vision**: GPU-powered ray casting for realistic sensory perception
 - **🔥 Zero Frameworks**: Pure JavaScript + WebGL + WebGPU - no bloated dependencies
+- **⚙️ Optimized Physics**: Quadtree spatial partitioning for efficient collision detection
 
 ### 🎮 Immersive Experience
 - **🌌 Living World**: Dynamic food spawning, pheromone communication, environmental challenges
 - **📊 Real-Time Analytics**: Watch fitness curves, population dynamics, and specialization emergence
 - **🎨 Cyberpunk UI**: Neon aesthetics meet scientific precision
+- **🌡️ Dynamic Environment**: Seasonal cycles, temperature system, and nutrient cycling create realistic challenges
 
 ## 🎯 What You'll Witness
 
@@ -40,6 +43,78 @@ Imagine tiny digital blobs that **learn to survive**. Not through programming, b
 - **Efficient Foragers**: Navigate complex environments like pros
 - **Defensive Specialists**: Protect the colony from threats
 - **Migration Experts**: Lead mass movements to better territories
+
+## 🎮 Game Overview
+
+### What Is This?
+
+Blob Evolution is an **artificial life simulation** where digital organisms evolve through neuroevolution. Each agent (blob) has:
+- A **recurrent neural network brain** that processes sensory input
+- **Sensor rays** that detect food, obstacles, and other agents
+- **Energy system** that requires constant food consumption
+- **Reproduction system** that passes genes to offspring
+- **Specialization types** that evolve unique survival strategies
+
+### Core Mechanics
+
+**Survival**: Agents must find food to maintain energy. Energy depletes over time through movement and metabolic costs. When energy reaches zero, the agent dies.
+
+**Reproduction**: Successful agents can reproduce when they have sufficient energy and meet maturity requirements. Offspring inherit neural network weights from parents with mutations.
+
+**Evolution**: Agents with higher fitness scores (based on survival, reproduction, food consumption, and exploration) are more likely to pass their genes to the next generation.
+
+**Specialization**: Five distinct agent types evolve:
+- **Foragers** (Lime): Specialized in finding and consuming food efficiently
+- **Predators** (Red): Specialized in hunting other agents for energy
+- **Reproducers** (Cyan): Specialized in mating and creating offspring
+- **Scouts** (Yellow): Specialized in long-range sensing and exploration
+- **Defenders** (Orange): Specialized in defending territory and allies
+
+### Environmental Systems
+
+**Seasons**: The world cycles through spring, summer, fall, and winter (60 seconds each). Each season affects:
+- Temperature modifiers (winter is colder, summer is hotter)
+- Reproduction rates (spring is breeding season)
+- Energy drain multipliers (winter is harsher)
+- Food scarcity (winter has less food)
+
+**Temperature System**: Agents have internal temperature that affects:
+- Movement efficiency (optimal range: 40-65°)
+- Energy loss (extreme temperatures increase metabolic costs)
+- Reproduction success (extreme temperatures suppress reproduction)
+
+**Nutrient Cycling**: When agents die, they create fertile zones that increase food spawning in that area, creating a realistic ecosystem cycle.
+
+**Pheromone Communication**: Agents can leave chemical trails that signal:
+- Food locations
+- Danger zones
+- Reproduction opportunities
+
+**Dynamic Obstacles**: 25 moving obstacles create navigation challenges and force agents to develop pathfinding strategies.
+
+### How Evolution Works
+
+1. **Initial Population**: Random agents with random neural network weights spawn
+2. **Natural Selection**: Agents that survive longer, eat more, and reproduce more have higher fitness
+3. **Gene Pool**: Top-performing agents are saved to persistent gene pools
+4. **Reproduction**: New agents are created from gene pool parents via:
+   - **Crossover**: Combining weights from two parents
+   - **Mutation**: Random changes to weights (adaptive rates based on fitness)
+5. **Specialization**: Agents evolve different strategies based on their specialization type
+6. **Validation**: Elite agents undergo rigorous multi-run testing before being saved
+
+### Agent Behaviors
+
+Agents make decisions based on their neural network processing:
+- **Perception**: Sensor rays detect nearby food, obstacles, agents, and world boundaries
+- **Memory**: Recurrent networks remember previous frames (60 frames = ~1 second)
+- **Decision Making**: Network outputs control:
+  - Thrust direction and intensity
+  - Rotation speed
+  - Sprint activation
+  - Reproduction desire
+  - Attack behavior
+- **Learning**: Successful behaviors are encoded in neural weights and passed to offspring
 
 ---
 
@@ -59,9 +134,28 @@ Every blob has a **mini-brain** - a recurrent neural network that processes sens
 - **Weight Caching**: Smart hashing prevents redundant GPU uploads
 
 ### 🎯 Evolutionary Algorithm
-- **Fitness Function**: Rewards survival, efficiency, reproduction, and social success
-- **Adaptive Mutation**: Automatically adjusts evolution speed based on progress
-- **Gene Pool Management**: Preserves the best lineages across generations
+- **Fitness Function**: Rewards survival, efficiency, reproduction, exploration, and social success
+- **Adaptive Mutation**: Automatically adjusts evolution speed based on progress (4-15% mutation rate)
+- **Gene Pool Management**: Preserves the best lineages across generations (up to 500 gene pools)
+- **Multiple Crossover Strategies**: Uniform, one-point, multi-point, fitness-weighted, and SBX
+- **Parent Selection**: Tournament, fitness-proportional, rank-based, and random selection methods
+- **Diversity Preservation**: Genetic distance checks prevent inbreeding
+
+### 🌍 World & Environment
+- **World Size**: 14,400 × 8,100 pixels (16:9 aspect ratio)
+- **Dynamic Food System**: Up to 300 food items with normal and high-value variants
+- **Seasonal Cycles**: 60-second seasons with temperature, reproduction, and food scarcity changes
+- **Temperature System**: Agents must maintain optimal temperature (40-65°) for peak performance
+- **Fertile Zones**: Dead agents create nutrient-rich areas that spawn more food
+- **Moving Obstacles**: 25 dynamic obstacles create navigation challenges
+- **Pheromone Trails**: Up to 2,000 chemical markers for communication
+
+### 🧬 Specialization System
+Each specialization has unique characteristics:
+- **Neural Network Size**: 25-38 hidden neurons (varies by type)
+- **Sensor Rays**: 16-24 rays with 250-400 pixel range
+- **Color Coding**: Visual distinction for easy identification
+- **Evolved Behaviors**: Each type develops unique survival strategies over generations
 
 ---
 

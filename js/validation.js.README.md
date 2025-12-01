@@ -1,6 +1,7 @@
-# 🛡️ Validation System (`validation.js`)
+# Validation System (`validation.js`)
 
 ## Purpose
+
 The `ValidationManager` implements a rigorous quality assurance system that prevents lucky or unstable agents from polluting the permanent gene pool. In evolutionary computation, this is crucial—false positives can derail long-term progress.
 
 ## Why Validation Matters
@@ -23,102 +24,204 @@ The `ValidationManager` implements a rigorous quality assurance system that prev
 
 **Multi-Run Consensus**: Requires majority success (2/3 runs) to account for stochastic variation.
 
+## Class: ValidationManager
+
+### Constructor
+
+```javascript
+new ValidationManager(logger, db, simulation)
+```
+
+**Parameters**:
+- `logger`: Logger instance for debugging
+- `db`: GenePoolDatabase instance for saving validated agents
+- `simulation`: Simulation instance for spawning validation agents
+
+**Initialization**:
+- Creates validation queue (Map: geneId → validation entry)
+- Initializes spawn locks to prevent race conditions
+- Sets up toast notification system
+
 ## Validation Protocol
 
 ### Phase 1: Candidate Selection
-```javascript
-// Triggered when agent dies and meets fit criteria
-if (agent.fit &&
-    agent.age > VALIDATION_MIN_AGE) {
-    validationManager.addToValidationQueue(agent);
-}
-```
 
-**Criteria**:
-- **Fit Status**: Agent must be `fit` (meets comprehensive fitness requirements)
-- **Survival Time**: Age > 600 frames (10+ seconds of survival)
-- **Cooldown Check**: Prevents recently tested lineages from re-entering
-- **Duplicate Prevention**: Same gene ID can't be queued multiple times
+Agents are added to validation queue when they die and meet qualification criteria.
+
+**Criteria** (all must be met):
+- `agent.fit === true`: Agent meets comprehensive fitness requirements
+- `agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (9000)
+- `agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL` (5)
+- `agent.age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (33.33 seconds)
+- `explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL` (1.5%)
+- `agent.turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL` (5)
+- Gene ID not already in gene pool
+- Gene ID not already in validation queue
+- Cooldown period passed (prevents re-testing same lineage)
+
+**Cooldown**: `VALIDATION_COOLDOWN_MS` (5000ms) between validation attempts for same gene ID
 
 ### Phase 2: Controlled Testing
-```javascript
-// Agent respawned in safe location
-const testAgent = new Agent({
-    ...originalAgent.getWeights(),
-    x: SAFE_SPAWN_X,
-    y: SAFE_SPAWN_Y,
-    energy: VALIDATION_START_ENERGY // Extra energy for fair testing
-});
-```
+
+Agents are respawned in controlled conditions for testing.
 
 **Controlled Conditions**:
 - **Safe Spawn**: Away from walls and immediate threats
-- **Standard Energy**: 300 energy (normal starting amount)
+- **Standard Energy**: `VALIDATION_AGENT_ENERGY` (3000, boosted from normal 2500 for fairer testing)
 - **Clean Environment**: No pheromones or environmental effects
 - **Isolated Testing**: Validation agents run in parallel with main simulation
+- **Same Neural Network**: Exact weights copied from original agent
+
+**Spawn Process**:
+1. Extract weights from original agent
+2. Create new agent with same weights
+3. Spawn in safe location
+4. Track as validation agent
+5. Monitor until death
 
 ### Phase 3: Multi-Run Verification
-```javascript
-// Each agent tested VALIDATION_REQUIRED_RUNS times
-const requiredRuns = 3;
-const requiredPasses = 2; // Majority rule
 
-// Track results across runs
-validationResults[geneId] = {
-    runs: [fitness1, fitness2, fitness3],
-    passed: passes >= requiredPasses
-};
-```
+Each agent is tested `VALIDATION_REQUIRED_RUNS` (3) times.
+
+**Process**:
+1. Spawn validation agent
+2. Let it live until death
+3. Record fitness score for this run
+4. Check if fitness meets threshold
+5. Repeat until all runs complete
+6. Apply majority rule (2/3 must pass)
 
 **Statistical Analysis**:
 - **Consistency Check**: All runs must exceed minimum threshold
 - **Performance Stability**: Variance analysis prevents erratic performers
 - **Majority Rule**: 2/3 success rate required for validation
+- **Exceptional Fitness**: Agents with `EXCEPTIONAL_FITNESS_THRESHOLD` (10000) can pass with 4/5 criteria
 
 ### Phase 4: Permanent Preservation
-```javascript
-if (validationPassed) {
-    // Save to IndexedDB gene pool
-    await database.saveValidatedGene(agent.getWeights(), metadata);
-    // Mark gene ID as validated to prevent re-testing
-    validatedGeneIds.add(agent.geneId);
-}
-```
+
+If validation passes, agent is saved to gene pool.
+
+**Process**:
+1. Extract weights and metadata
+2. Save to database via `db.queueSaveAgent()`
+3. Mark gene ID as validated
+4. Show success toast notification
+5. Clean up validation tracking
+
+**Failure Handling**:
+- Failed validations logged but not saved
+- Show failure toast notification
+- Gene ID can be retested after cooldown
 
 ## Key Methods
 
-### `addToValidationQueue(agent)`
-**Purpose**: Add high-performing agents to the validation pipeline
+### `addToValidationQueue(agent, isPeriodicValidation, skipGenePoolCheck)`
+Adds high-performing agents to the validation pipeline.
+
+**Parameters**:
+- `agent`: Agent instance to validate
+- `isPeriodicValidation`: Whether this is from periodic validation check
+- `skipGenePoolCheck`: Skip gene pool existence check (for death processing)
+
+**Returns**:
+- `false`: Gene already exists in pool or validation skipped
+- `{ success: false }`: Validation in progress or failed
+- `{ success: true, record: {...} }`: Validation passed, record ready for gene pool
+
 **Process**:
-1. Validate agent meets criteria (fitness, age, cooldown)
+1. Validate agent meets criteria
 2. Check for duplicate gene IDs in queue
-3. Add to validation queue with timestamp
-4. Initialize result tracking structure
+3. Extract weights (handles cleaned-up agents)
+4. Validate weights format
+5. Add to validation queue with timestamp
+6. Initialize result tracking structure
 
 **Error Handling**: Graceful rejection of invalid candidates with logging
 
 ### `handleValidationDeath(agent)`
-**Purpose**: Process completed validation runs and determine outcomes
+Processes completed validation runs and determines outcomes.
+
+**Parameters**:
+- `agent`: Validation agent that just died
+
 **Process**:
-1. Record fitness score for this run
-2. Update run counter and results array
-3. Check if agent passed this individual run
-4. Determine if validation complete (all runs finished)
-5. Apply majority rule decision
-6. Save successful agents to database
-7. Clean up validation tracking data
+1. Find validation entry for agent's gene ID
+2. Record fitness score for this run
+3. Update run counter and results array
+4. Check if agent passed this individual run (meets all criteria)
+5. Determine if validation complete (all runs finished)
+6. Apply majority rule decision (2/3 must pass)
+7. Save successful agents to database
+8. Show toast notification (success or failure)
+9. Clean up validation tracking data
 
 **Integration**: Called automatically when validation agents die
 
-### `cleanupValidationQueue()`
-**Purpose**: Prevent memory leaks and queue stagnation
+### `spawnValidationAgent(geneId)`
+Spawns a validation agent for testing.
+
+**Parameters**:
+- `geneId`: Gene ID to spawn
+
 **Process**:
-1. Remove entries older than timeout threshold
+1. Get validation entry from queue
+2. Extract weights from entry
+3. Find safe spawn location
+4. Create new agent with validation energy
+5. Mark as validation agent
+6. Add to simulation
+7. Track active validation agents
+
+**Returns**: Agent instance or null if spawn failed
+
+### `cleanupValidationQueue()`
+Prevents memory leaks and queue stagnation.
+
+**Process**:
+1. Remove entries older than `VALIDATION_CLEANUP_TIMEOUT_MS` (10 minutes)
 2. Clean up stuck validation runs
 3. Reset failed validation attempts
-4. Maintain queue size limits
+4. Maintain queue size limits (`MAX_VALIDATION_QUEUE_SIZE`: 50)
 
 **Frequency**: Called periodically from main game loop
+
+### `updatePeriodicValidation(simulation)`
+Periodically checks for agents that should be validated.
+
+**Process**:
+1. Find living agents that meet criteria
+2. Add up to `MAX_VALIDATIONS_PER_PERIODIC_CHECK` (2) to queue
+3. Prevents queue overflow
+
+**Frequency**: Called periodically from main game loop
+
+## Qualification Criteria
+
+Agents must meet ALL of the following to qualify for validation:
+
+1. **Fitness**: `fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (9000)
+2. **Food Eaten**: `foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL` (5)
+3. **Age**: `age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (33.33 seconds)
+4. **Exploration**: `explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL` (1.5%)
+5. **Navigation**: `turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL` (5)
+
+**Exceptional Fitness Exception**: Agents with `fitness >= EXCEPTIONAL_FITNESS_THRESHOLD` (10000) can pass with 4/5 criteria met.
+
+## Configuration Parameters
+
+From `constants.js`:
+- `VALIDATION_REQUIRED_RUNS`: 3 (number of test runs)
+- `MAX_VALIDATION_QUEUE_SIZE`: 50 (maximum agents in queue)
+- `VALIDATION_COOLDOWN_MS`: 5000 (cooldown between attempts)
+- `VALIDATION_CLEANUP_TIMEOUT_MS`: 600000 (10 minutes, cleanup timeout)
+- `MAX_VALIDATIONS_PER_PERIODIC_CHECK`: 2 (agents added per check)
+- `VALIDATION_AGENT_ENERGY`: 3000 (energy for validation agents)
+- `MIN_FITNESS_TO_SAVE_GENE_POOL`: 9000 (minimum fitness)
+- `MIN_FOOD_EATEN_TO_SAVE_GENE_POOL`: 5 (minimum food eaten)
+- `MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL`: 33.33 (minimum age)
+- `MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL`: 1.5 (minimum exploration)
+- `MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL`: 5 (minimum navigation)
+- `EXCEPTIONAL_FITNESS_THRESHOLD`: 10000 (exceptional fitness threshold)
 
 ## Performance Impact
 
@@ -126,11 +229,13 @@ if (validationPassed) {
 - **Minimal**: Validation runs in background during normal simulation
 - **Parallel Execution**: Validation agents don't interfere with main population
 - **Resource Efficient**: Uses same neural processing pipeline as main simulation
+- **Limited Concurrency**: Maximum queue size prevents resource exhaustion
 
 ### Memory Management
-- **Bounded Queues**: Maximum queue size prevents memory growth
-- **Automatic Cleanup**: Stale entries removed periodically
-- **Result Caching**: Previous validation results cached to avoid re-testing
+- **Bounded Queues**: Maximum queue size (`MAX_VALIDATION_QUEUE_SIZE`: 50) prevents memory growth
+- **Automatic Cleanup**: Stale entries removed after timeout
+- **Result Caching**: Previous validation results prevent re-testing
+- **Spawn Locks**: Prevent race conditions when spawning
 
 ## Integration Points
 
@@ -139,15 +244,20 @@ if (validationPassed) {
 - **Result Feedback**: Provides validation status for adaptive mutation
 - **Lineage Tracking**: Prevents validation of closely related agents
 
-### With `database-worker.js`
-- **Persistent Storage**: Saves validated genes to IndexedDB
+### With `database.js`
+- **Persistent Storage**: Saves validated agents to IndexedDB
 - **Gene Pool Management**: Updates permanent gene collections
-- **Backup/Restore**: Validation status preserved across sessions
+- **Existence Checks**: Verifies gene not already in pool before validation
 
 ### With `game.js`
 - **Queue Processing**: Main loop calls validation cleanup
 - **Resource Allocation**: Ensures validation agents get fair processing time
 - **UI Integration**: Provides validation statistics for display
+- **Death Processing**: Handles validation agent deaths
+
+### With `spawn.js`
+- **Safe Spawning**: Provides safe spawn locations for validation agents
+- **Energy Boost**: Uses `VALIDATION_AGENT_ENERGY` for fair testing
 
 ## Quality Assurance Outcomes
 
@@ -161,25 +271,33 @@ if (validationPassed) {
 - **Quality Threshold**: Maintains minimum performance standards
 - **Long-term Progress**: Ensures evolutionary improvements are genuine
 
-## Configuration Parameters
-
-```javascript
-const VALIDATION_CONFIG = {
-    FITNESS_THRESHOLD: 20,      // Minimum fitness to qualify
-    MIN_AGE: 600,              // Minimum survival time (frames)
-    REQUIRED_RUNS: 3,          // Test repetitions
-    REQUIRED_PASSES: 2,        // Majority rule threshold
-    START_ENERGY: 300,         // Fair testing energy
-    COOLDOWN_FRAMES: 1800,     // Prevent re-testing (30 seconds)
-    MAX_QUEUE_SIZE: 10         // Prevent queue explosion
-};
-```
-
 ## Why This System Works
 
 **Traditional ML**: Assumes training data represents real-world distribution
+
 **Evolutionary AI**: Must handle stochastic environments and random events
 
 **Validation bridges this gap** by ensuring that evolutionary "discoveries" are robust enough to work consistently, not just lucky breaks. This creates a foundation for genuine intelligence evolution rather than overfitting to specific environmental conditions.
 
 The validation system transforms chaotic evolution into reliable, reproducible progress.
+
+## Usage Example
+
+```javascript
+import { ValidationManager } from './validation.js';
+import { GenePoolDatabase } from './database.js';
+
+const validationManager = new ValidationManager(logger, db, simulation);
+
+// Add agent to validation queue (called when agent dies)
+const result = validationManager.addToValidationQueue(agent);
+
+// Handle validation agent death
+validationManager.handleValidationDeath(validationAgent);
+
+// Periodic cleanup
+validationManager.cleanupValidationQueue();
+
+// Periodic validation check
+validationManager.updatePeriodicValidation(simulation);
+```

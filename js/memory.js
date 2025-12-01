@@ -435,6 +435,12 @@ export function periodicMemoryCleanup(simulation) {
     if (simulation.fitnessHistory.length > maxFitnessHistory) {
         const keepRecent = Math.floor(maxFitnessHistory / 2);
         simulation.fitnessHistory.splice(0, simulation.fitnessHistory.length - keepRecent);
+        if (simulation.averageFitnessHistory) {
+            simulation.averageFitnessHistory.splice(0, simulation.averageFitnessHistory.length - keepRecent);
+        }
+        if (simulation.medianFitnessHistory) {
+            simulation.medianFitnessHistory.splice(0, simulation.medianFitnessHistory.length - keepRecent);
+        }
         simulation.logger.info(`[MEMORY] Trimmed fitness history to ${keepRecent} entries`);
     }
 
@@ -500,6 +506,12 @@ export function periodicMemoryCleanup(simulation) {
         if (sessionDurationHours >= 24 && simulation.fitnessHistory.length > 20) {
             const keepRecent = 10; // Keep only last 10 entries for 24+ hour sessions
             simulation.fitnessHistory.splice(0, simulation.fitnessHistory.length - keepRecent);
+            if (simulation.averageFitnessHistory) {
+                simulation.averageFitnessHistory.splice(0, simulation.averageFitnessHistory.length - keepRecent);
+            }
+            if (simulation.medianFitnessHistory) {
+                simulation.medianFitnessHistory.splice(0, simulation.medianFitnessHistory.length - keepRecent);
+            }
             simulation.logger.info(`[MEMORY] Aggressively trimmed fitness history to ${keepRecent} entries (24+ hour session)`);
         }
 

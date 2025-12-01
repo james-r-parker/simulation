@@ -270,11 +270,35 @@ export function updateFitnessTracking(simulation) {
 
     simulation.generation++;
 
-    // Track fitness for adaptive mutation
+    // Track fitness for adaptive mutation and charting
     const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
+    
+    // Calculate average and median fitness (reuse livingAgents from above)
+    let averageFitness = 0;
+    let medianFitness = 0;
+    
+    if (livingAgents.length > 0) {
+        const fitnesses = livingAgents.map(a => a.fitness).sort((a, b) => a - b);
+        averageFitness = fitnesses.reduce((a, b) => a + b, 0) / fitnesses.length;
+        
+        // Calculate median
+        const mid = Math.floor(fitnesses.length / 2);
+        if (fitnesses.length % 2 === 0) {
+            medianFitness = (fitnesses[mid - 1] + fitnesses[mid]) / 2;
+        } else {
+            medianFitness = fitnesses[mid];
+        }
+    }
+    
+    // Track all three metrics
     simulation.fitnessHistory.push(bestFitness);
+    simulation.averageFitnessHistory.push(averageFitness);
+    simulation.medianFitnessHistory.push(medianFitness);
+    
     if (simulation.fitnessHistory.length > simulation.fitnessHistorySize) {
         simulation.fitnessHistory.shift();
+        simulation.averageFitnessHistory.shift();
+        simulation.medianFitnessHistory.shift();
     }
 
     // Adaptive mutation rate
