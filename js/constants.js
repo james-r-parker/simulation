@@ -2093,7 +2093,7 @@ export const AGENT_MINIMUM_BORDER_SIZE = 12;
 export const COLORS = {
     BACKGROUND: 0x050510, // Deep space background color
     FOOD: {
-        NORMAL: 0x39FF14,      // Standard food items (neon green)
+        NORMAL: 0x00FF00,      // Standard food items (pure bright green)
         HIGH_VALUE: 0xFF00FF    // Rare high-energy food items (neon magenta)
     },
     OBSTACLE: 0x9D00FF,        // Moving obstacles that agents must avoid (neon purple)
@@ -2106,14 +2106,14 @@ export const COLORS = {
     },
     RAYS: {
         DEFAULT: 0x00FFFF,      // Default sensor ray color when hitting objects (cyan)
-        NO_HIT: 0x666666,      // Color when sensor rays hit nothing (dull gray)
+        NO_HIT: 0xFFFFFF,      // Color when sensor rays hit nothing (bright white)
         ALIGNMENT: 0xFFFF00,   // Rays detecting alignment with other agents (neon yellow)
         FOOD: 0x39FF14,        // Rays detecting food sources (neon green)
-        SMALLER: 0xCCFF00,     // Rays detecting smaller agents (neon lime)
+        SMALLER: 0x00F0FF,     // Rays detecting smaller agents (neon cyan)
         LARGER: 0xFF0033,      // Rays detecting larger agents (neon red)
         OBSTACLE: 0x9D00FF,    // Rays detecting obstacles (neon purple)
-        EDGE: 0xFF6600,        // Rays detecting world boundaries (neon orange)
-        SAME: 0x00F0FF         // Rays detecting agents of same specialization (neon cyan)
+        EDGE: 0xCCCCCC,        // Rays detecting world boundaries (light gray)
+        SAME: 0xFFFF00         // Rays detecting agents of same specialization (neon yellow)
     },
     EFFECTS: {
         COLLISION: 0xFF0033,   // Visual effect when agents hit obstacles (red glow)
@@ -2128,7 +2128,7 @@ export const COLORS = {
  */
 export const EMISSIVE_COLORS = {
     FOOD: {
-        NORMAL: 0x4AFF2E,      // Brighter neon green for food glow
+        NORMAL: 0x00FF00,      // Pure bright green for food glow
         HIGH_VALUE: 0xFF1AFF   // Brighter neon magenta for high-value food
     },
     OBSTACLE: 0xBD1AFF,        // Brighter neon purple for obstacles
@@ -2141,14 +2141,14 @@ export const EMISSIVE_COLORS = {
     },
     RAYS: {
         DEFAULT: 0x1AFFFF,     // Brighter cyan
-        NO_HIT: 0x888888,     // Slightly brighter gray
+        NO_HIT: 0xFFFFFF,     // Bright white
         ALIGNMENT: 0xFFFF1A,  // Brighter yellow
         FOOD: 0x4AFF2E,        // Brighter green
-        SMALLER: 0xE6FF1A,     // Brighter lime
+        SMALLER: 0x1AFFFF,     // Brighter cyan
         LARGER: 0xFF1A4D,     // Brighter red
         OBSTACLE: 0xBD1AFF,    // Brighter purple
-        EDGE: 0xFF7A1A,       // Brighter orange
-        SAME: 0x1AFFFF        // Brighter cyan
+        EDGE: 0xFFFFFF,       // Bright white
+        SAME: 0xFFFF1A        // Brighter yellow
     },
     EFFECTS: {
         COLLISION: 0xFF1A4D,  // Brighter red glow

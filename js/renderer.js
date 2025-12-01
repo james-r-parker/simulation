@@ -2328,11 +2328,11 @@ export class WebGLRenderer {
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-            // Create glowing ray material with emissive properties
+            // Create clean ray material without reflection effects
             const material = acquireLineBasicMaterial({
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.8, // Increased opacity for better visibility
+                opacity: 0.9, // Increased opacity for better visibility
                 linewidth: 2 // Thicker lines for better glow effect
             });
 
