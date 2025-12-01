@@ -863,6 +863,18 @@ export class Simulation {
             this.logger.warn(`[MEMORY] Dead agent queue is large: ${queueSize} agents. Processing now.`);
         }
 
+        // MEMORY LEAK FIX: Clean up position tracking Maps for dead agents
+        let positionMapCleanups = 0;
+        for (const agent of this.deadAgentQueue) {
+            if (this.lastAgentPositions.has(agent)) {
+                this.lastAgentPositions.delete(agent);
+                positionMapCleanups++;
+            }
+        }
+        if (positionMapCleanups > 0) {
+            this.logger.debug(`[MEMORY] Cleaned up ${positionMapCleanups} dead agent entries from position tracking Map`);
+        }
+
         // Group by gene ID and queue for background save
         const agentsByGene = {};
         this.deadAgentQueue.forEach(agent => {

@@ -939,6 +939,18 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.defragmentMemory();
         }
 
+        // MEMORY LEAK FIX: More aggressive weight cache cleanup
+        this.cleanupWeightCache(agents);
+    }
+
+    /**
+     * Clean up weight cache for dead agents - can be called independently for emergency cleanup
+     * @param {Array} agents - Optional array of current agents in simulation
+     */
+    cleanupWeightCache(agents = null) {
+        let removedCount = 0;
+        const originalSize = this.weightCache.size;
+
         // Clean up weight cache entries for agents not in simulation
         if (agents && Array.isArray(agents)) {
             const activeAgentIds = new Set();
@@ -949,29 +961,29 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             }
 
             // Remove cache entries for agents that are no longer in simulation
-            let removedCount = 0;
             for (const [agentId] of this.weightCache.entries()) {
                 if (!activeAgentIds.has(agentId)) {
                     this.weightCache.delete(agentId);
                     removedCount++;
                 }
             }
-            if (removedCount > 0) {
-                this.logger.debug(`GPUCompute weight cache: removed ${removedCount} entries for agents not in simulation`);
-            }
         }
 
-        // Clear weight cache periodically to prevent unbounded growth (fallback if agents not provided)
-        if (this.weightCache.size > 1000) {
-            const originalSize = this.weightCache.size;
+        // MEMORY LEAK FIX: More aggressive size-based cleanup - reduce threshold from 1000 to 500
+        // Clear weight cache if it exceeds reasonable size (fallback if agents not provided)
+        if (this.weightCache.size > 500) {
             // Keep only entries that have been accessed recently (if we had timestamps)
             // For now, clear half to prevent sudden performance drops
             const entries = Array.from(this.weightCache.entries());
             const toRemove = entries.slice(0, Math.floor(entries.length / 2));
             for (const [key] of toRemove) {
                 this.weightCache.delete(key);
+                removedCount++;
             }
-            this.logger.debug(`GPUCompute weight cache trimmed from ${originalSize} to ${this.weightCache.size} entries`);
+        }
+
+        if (removedCount > 0) {
+            this.logger.info(`[GPU-COMPUTE] Weight cache cleanup: removed ${removedCount} entries (${originalSize} → ${this.weightCache.size})`);
         }
     }
 }

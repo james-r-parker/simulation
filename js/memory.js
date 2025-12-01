@@ -257,18 +257,68 @@ export function emergencyMemoryCleanup(simulation) {
         simulation.memoryHistory.splice(0, simulation.memoryHistory.length - 10);
     }
 
-    // Force validation queue cleanup
-    const maxAge = 60000; // 1 minute for emergency
+    // MEMORY LEAK FIX: Aggressively clear validation queue weights
     const now = Date.now();
+    let weightsCleared = 0;
     let emergencyEntriesRemoved = 0;
+    const maxAge = 60000; // 1 minute for emergency
+    
     for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+        // Clear weights from validated entries immediately (they're already saved)
+        if (entry.isValidated && entry.weights) {
+            entry.weights = null;
+            weightsCleared++;
+        }
+        // Clear weights from old entries that haven't been accessed recently
+        if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > maxAge)) {
+            entry.weights = null;
+            weightsCleared++;
+        }
+        // Remove very old entries
         if (now - entry.lastValidationTime > maxAge) {
             simulation.validationManager.validationQueue.delete(geneId);
             emergencyEntriesRemoved++;
         }
     }
+    if (weightsCleared > 0) {
+        simulation.logger.info(`[MEMORY] Emergency: Cleared weights from ${weightsCleared} validation queue entries`);
+    }
     if (emergencyEntriesRemoved > 0) {
         simulation.logger.info(`[MEMORY] Emergency: Removed ${emergencyEntriesRemoved} validation queue entries`);
+    }
+
+    // MEMORY LEAK FIX: Clean up position tracking Maps
+    let positionMapCleanups = 0;
+    if (simulation.lastAgentPositions) {
+        for (const [agent] of simulation.lastAgentPositions.entries()) {
+            if (!agent || agent.isDead || !simulation.agents.includes(agent)) {
+                simulation.lastAgentPositions.delete(agent);
+                positionMapCleanups++;
+            }
+        }
+    }
+    if (simulation.lastFoodPositions) {
+        for (const [food] of simulation.lastFoodPositions.entries()) {
+            if (!food || food.isDead || !simulation.food.includes(food)) {
+                simulation.lastFoodPositions.delete(food);
+                positionMapCleanups++;
+            }
+        }
+    }
+    if (positionMapCleanups > 0) {
+        simulation.logger.info(`[MEMORY] Emergency: Cleaned up ${positionMapCleanups} stale position tracking Map entries`);
+    }
+
+    // MEMORY LEAK FIX: Clean up GPU weight cache for dead agents
+    if (simulation.gpuCompute && simulation.gpuCompute.cleanupWeightCache) {
+        simulation.gpuCompute.cleanupWeightCache(simulation.agents);
+        simulation.logger.info('[MEMORY] Emergency: Cleaned GPU weight cache');
+    }
+
+    // MEMORY LEAK FIX: Clean up database cache access times
+    if (simulation.db && simulation.db.cleanupStaleCacheAccessTimes) {
+        simulation.db.cleanupStaleCacheAccessTimes();
+        simulation.logger.info('[MEMORY] Emergency: Cleaned database cache access times');
     }
 }
 
@@ -472,6 +522,65 @@ export function periodicMemoryCleanup(simulation) {
         }
     }
 
+    // MEMORY LEAK FIX: Clean up position tracking Maps periodically
+    let positionMapCleanups = 0;
+    if (simulation.lastAgentPositions) {
+        for (const [agent] of simulation.lastAgentPositions.entries()) {
+            if (!agent || agent.isDead || !simulation.agents.includes(agent)) {
+                simulation.lastAgentPositions.delete(agent);
+                positionMapCleanups++;
+            }
+        }
+    }
+    if (simulation.lastFoodPositions) {
+        for (const [food] of simulation.lastFoodPositions.entries()) {
+            if (!food || food.isDead || !simulation.food.includes(food)) {
+                simulation.lastFoodPositions.delete(food);
+                positionMapCleanups++;
+            }
+        }
+    }
+    if (positionMapCleanups > 0) {
+        simulation.logger.info(`[MEMORY] Cleaned up ${positionMapCleanups} stale position tracking Map entries`);
+    }
+
+    // MEMORY LEAK FIX: Clean up GPU weight cache for dead agents (more frequent for long sessions)
+    if (simulation.gpuCompute && simulation.gpuCompute.cleanupWeightCache) {
+        const shouldCleanup = sessionDurationHours > 1 || simulation.currentMemoryUsage > 300;
+        if (shouldCleanup) {
+            simulation.gpuCompute.cleanupWeightCache(simulation.agents);
+            simulation.logger.info('[MEMORY] Cleaned GPU weight cache');
+        }
+    }
+
+    // MEMORY LEAK FIX: Clean up database cache access times
+    if (simulation.db && simulation.db.cleanupStaleCacheAccessTimes) {
+        simulation.db.cleanupStaleCacheAccessTimes();
+    }
+
+    // MEMORY LEAK FIX: Clear validation queue weights more aggressively (not just for 8+ hour sessions)
+    if (sessionDurationHours > 0.5) { // Start clearing weights after 30 minutes
+        let weightsCleared = 0;
+        const now = Date.now();
+        const weightRetentionTime = sessionDurationHours > 24 ? 300000 : 900000; // 5 min for 24+ hour sessions, 15 min otherwise
+        
+        for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+            // Clear weights from validated entries immediately (they're already saved)
+            if (entry.isValidated && entry.weights) {
+                entry.weights = null;
+                weightsCleared++;
+            }
+            // Clear weights from old entries that haven't been accessed recently
+            else if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > weightRetentionTime)) {
+                entry.weights = null;
+                weightsCleared++;
+            }
+        }
+        if (weightsCleared > 0) {
+            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (${sessionDurationHours.toFixed(1)}h session)`);
+        }
+    }
+
     // Clear object pools to prevent long-term memory accumulation
     simulation.logger.info('[MEMORY] Clearing object pools to prevent memory leaks');
     clearGPUResourcePools();
@@ -489,17 +598,25 @@ export function periodicMemoryCleanup(simulation) {
             simulation.gpuPhysics.deepCleanup(sessionDurationHours);
         }
 
-        // Clear validation queue weights after successful validation (they're already saved)
+        // MEMORY LEAK FIX: More aggressive validation queue weight clearing
         let weightsCleared = 0;
+        const now = Date.now();
+        const weightRetentionTime = sessionDurationHours > 24 ? 300000 : 600000; // 5 min for 24+ hour sessions, 10 min otherwise
+        
         for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+            // Clear weights from validated entries immediately (they're already saved)
             if (entry.isValidated && entry.weights) {
-                // Weights are already saved to gene pool, safe to clear
+                entry.weights = null;
+                weightsCleared++;
+            }
+            // Clear weights from old entries that haven't been accessed recently
+            else if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > weightRetentionTime)) {
                 entry.weights = null;
                 weightsCleared++;
             }
         }
         if (weightsCleared > 0) {
-            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validated entries`);
+            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (${sessionDurationHours.toFixed(1)}h session)`);
         }
 
         // More aggressive fitness history cleanup for very long sessions

@@ -795,7 +795,12 @@ export class GenePoolDatabase {
             shouldTrim = timeSinceLastTrim > (60 * 60 * 1000); // 1 hour for long sessions
         }
 
-        if (!shouldTrim) return;
+        // MEMORY LEAK FIX: Always clean up stale cacheAccessTimes entries
+        this.cleanupStaleCacheAccessTimes();
+
+        if (!shouldTrim) {
+            return;
+        }
 
         this.lastCacheTrimTime = now;
 
@@ -853,6 +858,22 @@ export class GenePoolDatabase {
 
         if (removedCount > 0) {
             this.logger.debug(`[DATABASE] Trimmed cache: removed ${removedCount} inactive gene pools (${currentSize - removedCount} remaining, session: ${sessionHours.toFixed(1)}h)`);
+        }
+    }
+
+    /**
+     * MEMORY LEAK FIX: Clean up stale cacheAccessTimes entries for pools that no longer exist
+     */
+    cleanupStaleCacheAccessTimes() {
+        let removedCount = 0;
+        for (const [geneId] of this.cacheAccessTimes.entries()) {
+            if (!this.pool[geneId]) {
+                this.cacheAccessTimes.delete(geneId);
+                removedCount++;
+            }
+        }
+        if (removedCount > 0) {
+            this.logger.debug(`[DATABASE] Cleaned up ${removedCount} stale cacheAccessTimes entries`);
         }
     }
 
