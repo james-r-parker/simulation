@@ -13,7 +13,10 @@ export class PerformanceMonitor {
                 total: [],           // Total perception time
                 rayTracing: [],      // GPU ray tracing
                 neuralNetwork: [],   // Neural network forward pass
-                cpuFallback: []      // CPU perception fallback
+                cpuFallback: [],     // CPU perception fallback
+                entityFiltering: [], // Entity array building
+                spatialGrid: [],     // Spatial grid building
+                gpuRayResultProcessing: [] // GPU ray result conversion to inputs
             },
             physics: {           // Physics updates (parent phase)
                 total: [],           // Total physics time
@@ -41,6 +44,11 @@ export class PerformanceMonitor {
             autoAdjust: [],     // Auto-performance adjustment logic
             housekeeping: [],   // FPS tracking, GPU/CPU frame counting, wake lock
             misc: [],          // Miscellaneous operations (logging, warnings, etc.)
+            reproduction: [],   // Reproduction system
+            deadAgentProcessing: [], // Dead agent cleanup and validation
+            deadEntityRemoval: [],   // Food/pheromone removal
+            environmentEvents: [],   // Environment events (season, etc.)
+            pheromoneUpdates: [],    // Pheromone updates outside spawning
             other: []           // Everything else
         };
 
@@ -98,9 +106,25 @@ export class PerformanceMonitor {
             return;
         }
 
+        // For sub-phases, find the active parent phase from the phase stack
+        // This handles cases where parent phase has iteration suffix (e.g., 'perception_0')
+        let activeParentPhase = parentPhase;
+        if (subPhase) {
+            // Look for the active parent phase in the phase stack
+            for (let i = this.phaseStack.length - 1; i >= 0; i--) {
+                const stackPhase = this.phaseStack[i].name;
+                const stackParent = stackPhase.split('.')[0];
+                // Check if this stack phase is a parent phase (no dot) and matches our parent base name
+                if (!stackPhase.includes('.') && stackParent === parentPhase) {
+                    activeParentPhase = stackPhase; // Use the actual parent phase name (may include suffix)
+                    break;
+                }
+            }
+        }
+
         // Initialize phase tracking
-        if (!this.currentFrame[parentPhase]) {
-            this.currentFrame[parentPhase] = {
+        if (!this.currentFrame[activeParentPhase]) {
+            this.currentFrame[activeParentPhase] = {
                 start: now,
                 duration: 0,
                 subPhases: {}
@@ -109,14 +133,14 @@ export class PerformanceMonitor {
 
         // Handle sub-phases
         if (subPhase) {
-            if (!this.currentFrame[parentPhase].subPhases[subPhase]) {
-                this.currentFrame[parentPhase].subPhases[subPhase] = { start: now, duration: 0 };
+            if (!this.currentFrame[activeParentPhase].subPhases[subPhase]) {
+                this.currentFrame[activeParentPhase].subPhases[subPhase] = { start: now, duration: 0 };
             } else {
-                this.currentFrame[parentPhase].subPhases[subPhase].start = now;
+                this.currentFrame[activeParentPhase].subPhases[subPhase].start = now;
             }
         } else {
             // Parent phase timing
-            this.currentFrame[parentPhase].start = now;
+            this.currentFrame[activeParentPhase].start = now;
         }
 
         // Push to phase stack for hierarchical tracking
@@ -164,21 +188,37 @@ export class PerformanceMonitor {
             }
         }
 
-        if (this.currentFrame[parentPhase]) {
-            if (subPhase && this.currentFrame[parentPhase].subPhases[subPhase]) {
+        // For sub-phases, find the active parent phase from the phase stack
+        // This handles cases where parent phase has iteration suffix (e.g., 'perception_0')
+        let activeParentPhase = parentPhase;
+        if (subPhase) {
+            // Look for the active parent phase in the phase stack (before current phase)
+            for (let i = this.phaseStack.length - 2; i >= 0; i--) {
+                const stackPhase = this.phaseStack[i].name;
+                const stackParent = stackPhase.split('.')[0];
+                // Check if this stack phase is a parent phase (no dot) and matches our parent base name
+                if (!stackPhase.includes('.') && stackParent === parentPhase) {
+                    activeParentPhase = stackPhase; // Use the actual parent phase name (may include suffix)
+                    break;
+                }
+            }
+        }
+
+        if (this.currentFrame[activeParentPhase]) {
+            if (subPhase && this.currentFrame[activeParentPhase].subPhases[subPhase]) {
                 // End sub-phase timing
-                const duration = now - this.currentFrame[parentPhase].subPhases[subPhase].start;
-                this.currentFrame[parentPhase].subPhases[subPhase].duration += duration;
+                const duration = now - this.currentFrame[activeParentPhase].subPhases[subPhase].start;
+                this.currentFrame[activeParentPhase].subPhases[subPhase].duration += duration;
                 // Accumulate sub-phase time into parent phase
-                this.currentFrame[parentPhase].duration += duration;
+                this.currentFrame[activeParentPhase].duration += duration;
             } else {
                 // End parent phase timing
                 // If parent has no sub-phases accumulated yet, calculate from start time
                 // If parent has sub-phases, add any remaining time not covered by sub-phases
-                const totalParentTime = now - this.currentFrame[parentPhase].start;
-                const remainingTime = totalParentTime - this.currentFrame[parentPhase].duration;
+                const totalParentTime = now - this.currentFrame[activeParentPhase].start;
+                const remainingTime = totalParentTime - this.currentFrame[activeParentPhase].duration;
                 if (remainingTime > 0) {
-                    this.currentFrame[parentPhase].duration += remainingTime;
+                    this.currentFrame[activeParentPhase].duration += remainingTime;
                 }
             }
         }
@@ -240,6 +280,8 @@ export class PerformanceMonitor {
         const aggregatedPhases = {};
 
         // First, aggregate phases by base name (remove iteration suffix)
+        // IMPORTANT: Parent phase duration already includes sub-phases (added in endPhase),
+        // so we only aggregate the parent duration, not sub-phases separately for accounting
         for (const [phase, data] of Object.entries(this.currentFrame)) {
             const basePhase = phase.replace(/_\d+$/, ''); // Remove iteration suffix like _0, _1, etc.
 
@@ -250,10 +292,11 @@ export class PerformanceMonitor {
                 };
             }
 
-            // Aggregate duration
+            // Aggregate parent duration (already includes all sub-phases)
             aggregatedPhases[basePhase].duration += data.duration || 0;
 
-            // Aggregate sub-phases
+            // Aggregate sub-phases separately ONLY for reporting/breakdown (not for accounting)
+            // The parent duration already includes these, so we don't add them to accountedTime
             for (const [subPhase, subData] of Object.entries(data.subPhases || {})) {
                 if (!aggregatedPhases[basePhase].subPhases[subPhase]) {
                     aggregatedPhases[basePhase].subPhases[subPhase] = { duration: 0 };
@@ -263,6 +306,8 @@ export class PerformanceMonitor {
         }
 
         // Also include completed pending phases in aggregation
+        // NOTE: Pending phases are phases that started in a previous frame but ended in this frame
+        // They are NOT in currentFrame, so we need to handle them separately
         for (const [pendingKey, pendingData] of this.pendingPhases.entries()) {
             if (pendingData.completedInThisFrame) {
                 // Handle both iteration suffixes and sub-phases
@@ -285,15 +330,16 @@ export class PerformanceMonitor {
                 }
 
                 if (subPhase) {
-                    // This is a sub-phase
+                    // This is a sub-phase that completed
+                    // Add to sub-phase aggregate for reporting
                     if (!aggregatedPhases[basePhase].subPhases[subPhase]) {
                         aggregatedPhases[basePhase].subPhases[subPhase] = { duration: 0 };
                     }
                     aggregatedPhases[basePhase].subPhases[subPhase].duration += pendingData.duration || 0;
-                    // Also add to parent phase total
+                    // Add to parent phase total (parent duration includes sub-phases)
                     aggregatedPhases[basePhase].duration += pendingData.duration || 0;
                 } else {
-                    // This is a parent phase
+                    // This is a parent phase that completed
                     aggregatedPhases[basePhase].duration += pendingData.duration || 0;
                 }
             }
@@ -566,10 +612,24 @@ export class PerformanceMonitor {
     logReport() {
         const report = this.getReport();
 
-        // Calculate accounted time excluding 'other' since it's derived from frameTime - accountedTime
-        const phasesExceptOther = Object.entries(report.phases)
-            .filter(([phase]) => phase !== 'other (untracked)' && phase !== 'other');
-        const totalAccounted = phasesExceptOther.reduce((sum, [, phase]) => sum + parseFloat(phase.time), 0);
+        // Calculate accounted time using NON-AMORTIZED times for accurate tracking percentage
+        // Amortized times can exceed 100% for infrequent phases, so we use raw averages instead
+        let totalAccounted = 0;
+        for (const [phase, timings] of Object.entries(this.timings)) {
+            if (phase !== 'frame' && phase !== 'other') {
+                if (typeof timings === 'object' && !Array.isArray(timings)) {
+                    // Hierarchical phase - use total time (non-amortized)
+                    if (timings.total && timings.total.length > 0) {
+                        const avg = this.getAverage(timings.total);
+                        totalAccounted += avg;
+                    }
+                } else if (Array.isArray(timings) && timings.length > 0) {
+                    // Flat phase - use average (non-amortized)
+                    const avg = this.getAverage(timings);
+                    totalAccounted += avg;
+                }
+            }
+        }
         const accountedPercentage = report.frameTime > 0 ? (totalAccounted / parseFloat(report.frameTime)) * 100 : 0;
 
         this.logger.debug('=== Performance Report ===');

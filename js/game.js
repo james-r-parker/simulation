@@ -1318,12 +1318,14 @@ export class Simulation {
                 // PERFORMANCE OPTIMIZATION: Reduce pheromone update frequency for better performance
                 // ACCURACY MAINTAINED: Pheromones don't need to update every frame
                 if (i % 2 === 0 || i === iterations - 1) { // Update every other iteration
-                    for (let j = 0; j < this.pheromones.length; j++) {
-                        const p = this.pheromones[j];
-                        if (p && !p.isDead) {
-                            p.update();
+                    this.perfMonitor.timeSync('pheromoneUpdates', () => {
+                        for (let j = 0; j < this.pheromones.length; j++) {
+                            const p = this.pheromones[j];
+                            if (p && !p.isDead) {
+                                p.update();
+                            }
                         }
-                    }
+                    });
                 }
 
                 // PERFORMANCE OPTIMIZATION: Reduce food spawning frequency
@@ -1334,7 +1336,9 @@ export class Simulation {
                     this.perfMonitor.endPhase('spawning');
                 }
 
-                this.applyEnvironmentEvents();
+                this.perfMonitor.timeSync('environmentEvents', () => {
+                    this.applyEnvironmentEvents();
+                });
 
                 // Quadtree is now rebuilt once per frame outside the iteration loop
 
@@ -1365,67 +1369,71 @@ export class Simulation {
                         
                         // PERFORMANCE: Filter entities to only include those within maxRayDist of any agent
                         // This is mathematically correct - entities beyond maxRayDist cannot be detected anyway
-                        // Find maximum maxRayDist among all active agents
-                        let maxRayDist = 0;
-                        for (let j = 0; j < activeAgents.length; j++) {
-                            const agent = activeAgents[j];
-                            if (agent && !agent.isDead && agent.maxRayDist > maxRayDist) {
-                                maxRayDist = agent.maxRayDist;
+                        this.perfMonitor.timeSync('perception.entityFiltering', () => {
+                            // Find maximum maxRayDist among all active agents
+                            let maxRayDist = 0;
+                            for (let j = 0; j < activeAgents.length; j++) {
+                                const agent = activeAgents[j];
+                                if (agent && !agent.isDead && agent.maxRayDist > maxRayDist) {
+                                    maxRayDist = agent.maxRayDist;
+                                }
                             }
-                        }
-                        
-                        // If no agents, skip entity filtering
-                        if (maxRayDist > 0 && activeAgents.length > 0) {
-                            const maxRayDistSq = maxRayDist * maxRayDist;
                             
-                            // Filter food - only include if within maxRayDist of any agent
-                            for (let j = 0; j < this.food.length; j++) {
-                                const food = this.food[j];
-                                if (food && !food.isDead) {
-                                    // Check if food is within range of any agent
-                                    let inRange = false;
-                                    const foodSize = food.size || 0;
-                                    const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
-                                    
-                                    for (let k = 0; k < activeAgents.length; k++) {
-                                        const agent = activeAgents[k];
-                                        if (agent && !agent.isDead) {
-                                            const distSq = distanceSquared(agent.x, agent.y, food.x, food.y);
-                                            if (distSq <= maxCheckDistSq) {
-                                                inRange = true;
-                                                break; // Early exit once found
+                            // If no agents, skip entity filtering
+                            if (maxRayDist > 0 && activeAgents.length > 0) {
+                                const maxRayDistSq = maxRayDist * maxRayDist;
+                                
+                                // Filter food - only include if within maxRayDist of any agent
+                                for (let j = 0; j < this.food.length; j++) {
+                                    const food = this.food[j];
+                                    if (food && !food.isDead) {
+                                        // Check if food is within range of any agent
+                                        let inRange = false;
+                                        const foodSize = food.size || 0;
+                                        const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
+                                        
+                                        for (let k = 0; k < activeAgents.length; k++) {
+                                            const agent = activeAgents[k];
+                                            if (agent && !agent.isDead) {
+                                                const distSq = distanceSquared(agent.x, agent.y, food.x, food.y);
+                                                if (distSq <= maxCheckDistSq) {
+                                                    inRange = true;
+                                                    break; // Early exit once found
+                                                }
                                             }
                                         }
-                                    }
-                                    
-                                    if (inRange) {
-                                        this.allEntities.push(food);
+                                        
+                                        if (inRange) {
+                                            this.allEntities.push(food);
+                                        }
                                     }
                                 }
-                            }
-                            
-                            // Always include all active agents (they need to detect each other)
-                            for (let j = 0; j < activeAgents.length; j++) {
-                                this.allEntities.push(activeAgents[j]);
-                            }
-                        } else {
-                            // Fallback: include all entities if no agents or maxRayDist is 0
-                            for (let j = 0; j < this.food.length; j++) {
-                                if (!this.food[j].isDead) {
-                                    this.allEntities.push(this.food[j]);
+                                
+                                // Always include all active agents (they need to detect each other)
+                                for (let j = 0; j < activeAgents.length; j++) {
+                                    this.allEntities.push(activeAgents[j]);
+                                }
+                            } else {
+                                // Fallback: include all entities if no agents or maxRayDist is 0
+                                for (let j = 0; j < this.food.length; j++) {
+                                    if (!this.food[j].isDead) {
+                                        this.allEntities.push(this.food[j]);
+                                    }
+                                }
+                                for (let j = 0; j < activeAgents.length; j++) {
+                                    this.allEntities.push(activeAgents[j]);
                                 }
                             }
-                            for (let j = 0; j < activeAgents.length; j++) {
-                                this.allEntities.push(activeAgents[j]);
-                            }
-                        }
+                        });
 
                         const allEntities = this.allEntities;
 
                         const maxRaysPerAgent = AGENT_CONFIGS[SPECIALIZATION_TYPES.SCOUT].numSensorRays;
 
                         // PERFORMANCE: Build spatial grid for optimized ray tracing
-                        const spatialGrid = this.spatialGridEnabled ? this.buildSpatialGrid(allEntities) : null;
+                        const spatialGrid = this.perfMonitor.timeSync('perception.spatialGrid', () => {
+                            return this.spatialGridEnabled ? this.buildSpatialGrid(allEntities) : null;
+                        });
 
                         // CRITICAL: Ray tracing must complete BEFORE neural network processing
                         // because the neural network needs the converted ray results as inputs
@@ -1443,7 +1451,7 @@ export class Simulation {
 
                         // Process ray tracing results and convert to neural network inputs
                         if (gpuRayResults && gpuRayResults.length > 0) {
-                            this.perfMonitor.timeSync('perception.rayTracing', () => {
+                            this.perfMonitor.timeSync('perception.gpuRayResultProcessing', () => {
                                 convertGpuRayResultsToInputs(this, gpuRayResults, activeAgents, maxRaysPerAgent);
                             });
                             gpuRayTracingSucceeded = true;
@@ -1606,61 +1614,64 @@ export class Simulation {
 
                     // === REPRODUCTION SYSTEM ===
                     // Check for reproduction opportunities (once per frame)
-                    for (let j = 0; j < this.agents.length; j++) {
-                        const agent = this.agents[j];
+                    this.perfMonitor.timeSync('reproduction', () => {
+                        for (let j = 0; j < this.agents.length; j++) {
+                            const agent = this.agents[j];
 
-                        // Skip dead or immature agents
-                        if (agent.isDead || agent.framesAlive < MATURATION_AGE_FRAMES) continue;
+                            // Skip dead or immature agents
+                            if (agent.isDead || agent.framesAlive < MATURATION_AGE_FRAMES) continue;
 
-                        // Decrement reproduction cooldown
-                        if (agent.reproductionCooldown > 0) {
-                            agent.reproductionCooldown--;
-                        }
+                            // Decrement reproduction cooldown
+                            if (agent.reproductionCooldown > 0) {
+                                agent.reproductionCooldown--;
+                            }
 
-                        // Increment pregnancy timer
-                        if (agent.isPregnant && agent.pregnancyTimer < PREGNANCY_DURATION_FRAMES) {
-                            agent.pregnancyTimer++;
-                        }
+                            // Increment pregnancy timer
+                            if (agent.isPregnant && agent.pregnancyTimer < PREGNANCY_DURATION_FRAMES) {
+                                agent.pregnancyTimer++;
+                            }
 
-                        // === BIRTH SYSTEM ===
-                        // Check if agent is ready to give birth
-                        if (agent.isPregnant && agent.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
-                            const child = agent.birthChild();
-                            if (child) {
-                                this.agentSpawnQueue.push(child);
-                                this.logger.info(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
+                            // === BIRTH SYSTEM ===
+                            // Check if agent is ready to give birth
+                            if (agent.isPregnant && agent.pregnancyTimer >= PREGNANCY_DURATION_FRAMES) {
+                                const child = agent.birthChild();
+                                if (child) {
+                                    this.agentSpawnQueue.push(child);
+                                    this.logger.info(`[REPRODUCTION] 🍼 Birth: ${child.geneId} from ${agent.geneId} (queued for spawn)`);
 
-                                // Show toast notification
-                                if (this.toast) {
-                                    this.toast.showReproduction('birth', agent.geneId, child.geneId);
+                                    // Show toast notification
+                                    if (this.toast) {
+                                        this.toast.showReproduction('birth', agent.geneId, child.geneId);
+                                    }
                                 }
                             }
-                        }
 
-                        // === ASEXUAL REPRODUCTION (SPLITTING) ===
-                        // When energy is very high, split to create clone
-                        // Require agent to be "fit" for splitting
-                        if (agent.fit &&
-                            agent.energy > MAX_ENERGY * 0.7 &&
-                            agent.reproductionCooldown <= 0 &&
-                            !agent.isPregnant) {
+                            // === ASEXUAL REPRODUCTION (SPLITTING) ===
+                            // When energy is very high, split to create clone
+                            // Require agent to be "fit" for splitting
+                            if (agent.fit &&
+                                agent.energy > MAX_ENERGY * 0.7 &&
+                                agent.reproductionCooldown <= 0 &&
+                                !agent.isPregnant) {
 
-                            const child = agent.split();
-                            if (child) {
-                                this.agentSpawnQueue.push(child);
-                                this.logger.info(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
+                                const child = agent.split();
+                                if (child) {
+                                    this.agentSpawnQueue.push(child);
+                                    this.logger.info(`[REPRODUCTION] 🔄 Split: ${agent.geneId} energy ${agent.energy.toFixed(0)} (queued for spawn)`);
 
-                                // Show toast notification
-                                if (this.toast) {
-                                    this.toast.showReproduction('split', agent.geneId, child.geneId, agent.energy);
+                                    // Show toast notification
+                                    if (this.toast) {
+                                        this.toast.showReproduction('split', agent.geneId, child.geneId, agent.energy);
+                                    }
                                 }
                             }
-                        }
 
-                    }
+                        }
+                    });
 
                     // Process dead agents - queue qualifying ones for database save, remove all dead agents
-                    for (let j = this.agents.length - 1; j >= 0; j--) {
+                    this.perfMonitor.timeSync('deadAgentProcessing', () => {
+                        for (let j = this.agents.length - 1; j >= 0; j--) {
                         const agent = this.agents[j];
                         if (agent.isDead) {
                             // CRITICAL: Extract weights IMMEDIATELY when agent dies, before any cleanup
@@ -1836,7 +1847,8 @@ export class Simulation {
                             this.agents.splice(j, 1);
                             j--; // Adjust index since we removed an element
                         }
-                    }
+                        }
+                    });
 
                     // Periodic performance monitoring (every 1000 frames)
                     if (this.frameCount % 1000 === 0) {
@@ -1878,24 +1890,26 @@ export class Simulation {
                     }
 
 
-                    // Remove dead food
-                    for (let j = this.food.length - 1; j >= 0; j--) {
-                        if (this.food[j] && this.food[j].isDead) {
-                            this.food.splice(j, 1);
+                    // Remove dead food and pheromones
+                    this.perfMonitor.timeSync('deadEntityRemoval', () => {
+                        // Remove dead food
+                        for (let j = this.food.length - 1; j >= 0; j--) {
+                            if (this.food[j] && this.food[j].isDead) {
+                                this.food.splice(j, 1);
+                            }
                         }
-                    }
 
-                    // Clean up unreachable food logic REMOVED
-                    // Food now has its own natural decay/rotting process in food.js
-                    // This prevents "random" disappearance of valid food items
-                }
-                // Remove dead pheromones - only on last iteration
-                if (i === iterations - 1) {
-                    for (let j = this.pheromones.length - 1; j >= 0; j--) {
-                        if (this.pheromones[j] && this.pheromones[j].isDead) {
-                            this.pheromones.splice(j, 1);
+                        // Clean up unreachable food logic REMOVED
+                        // Food now has its own natural decay/rotting process in food.js
+                        // This prevents "random" disappearance of valid food items
+
+                        // Remove dead pheromones - only on last iteration
+                        for (let j = this.pheromones.length - 1; j >= 0; j--) {
+                            if (this.pheromones[j] && this.pheromones[j].isDead) {
+                                this.pheromones.splice(j, 1);
+                            }
                         }
-                    }
+                    });
                 }
 
                 this.perfMonitor.endPhase(`cleanup_${i}`);

@@ -666,13 +666,19 @@ export class Agent {
         this.vx *= friction;
         this.vy *= friction;
 
-        // Cap velocity - OPTIMIZED: Cache MAX_VELOCITY_SQ
+        // OPTIMIZED: Calculate speed squared early for reuse in multiple places
         const MAX_VELOCITY_SQ = MAX_VELOCITY * MAX_VELOCITY;
-        const currentSpeedSq = this.vx * this.vx + this.vy * this.vy;
+        let currentSpeedSq = this.vx * this.vx + this.vy * this.vy;
+        
+        // Cap velocity - OPTIMIZED: Cache sqrt result and use multiplication instead of division
         if (currentSpeedSq > MAX_VELOCITY_SQ) {
-            const ratio = MAX_VELOCITY / Math.sqrt(currentSpeedSq);
+            const currentSpeed = Math.sqrt(currentSpeedSq);
+            const invCurrentSpeed = 1 / currentSpeed;
+            const ratio = MAX_VELOCITY * invCurrentSpeed;
             this.vx *= ratio;
             this.vy *= ratio;
+            // Recalculate after capping
+            currentSpeedSq = MAX_VELOCITY_SQ;
         }
 
         this.x += this.vx;
@@ -728,8 +734,10 @@ export class Agent {
 
         // 2. Temperature Logic
         // Increase temp based on movement (FPS-normalized)
-        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        const speedRatio = Math.min(currentSpeed / MAX_VELOCITY, 1.0);
+        // OPTIMIZED: Reuse currentSpeedSq from velocity capping
+        const currentSpeed = currentSpeedSq > 0 ? Math.sqrt(currentSpeedSq) : 0;
+        const invMaxVelocity = 1 / MAX_VELOCITY;
+        const speedRatio = Math.min(currentSpeed * invMaxVelocity, 1.0);
         const fpsNormalization = this.simulation && this.simulation.currentFps ?
             FPS_TARGET / Math.max(this.simulation.currentFps, 1) : 1.0;
         this.temperature += speedRatio * TEMPERATURE_GAIN_MOVE * fpsNormalization;
@@ -790,7 +798,9 @@ export class Agent {
 
         const movementCostMultiplier = MOVEMENT_COST_MULTIPLIER;
         // Apply temperature efficiency to movement cost (lower efficiency = higher cost per unit of movement)
-        const movementLoss = Math.min(currentSpeed * currentSpeed * movementCostMultiplier / movementEfficiency, 5);
+        // OPTIMIZED: Cache inverse efficiency and use multiplication
+        const invMovementEfficiency = 1 / movementEfficiency;
+        const movementLoss = Math.min(currentSpeedSq * movementCostMultiplier * invMovementEfficiency, 5);
 
         let energyLoss = sizeLoss + movementLoss;
 
@@ -1076,29 +1086,36 @@ export class Agent {
         }
 
         // Obstacle Collision with bounce physics (fallback to agent-level collision)
+        // OPTIMIZED: Cache agentSize and use early exit
         const agentSize = this.size;
+        const agentSizeSq = agentSize * agentSize;
         for (let i = 0; i < obstacles.length; i++) {
             const obs = obstacles[i];
             const dx = this.x - obs.x;
             const dy = this.y - obs.y;
             const distSq = dx * dx + dy * dy;
-            const combinedRadius = agentSize + obs.radius;
+            const obsRadius = obs.radius;
+            const combinedRadius = agentSize + obsRadius;
             const combinedRadiusSq = combinedRadius * combinedRadius;
 
             if (distSq < combinedRadiusSq) {
+                // OPTIMIZED: Cache sqrt result
                 const dist = Math.sqrt(distSq) || 1;
+                const invDist = 1 / dist;
                 const overlap = combinedRadius - dist;
 
                 // Enhanced position correction for stronger push away
                 const separationStrength = COLLISION_SEPARATION_STRENGTH * 1.5; // Stronger push for obstacles
-                const pushX = (dx / dist) * overlap * separationStrength;
-                const pushY = (dy / dist) * overlap * separationStrength;
+                // OPTIMIZED: Use cached invDist
+                const pushX = dx * invDist * overlap * separationStrength;
+                const pushY = dy * invDist * overlap * separationStrength;
                 this.x += pushX;
                 this.y += pushY;
 
                 // Enhanced velocity bounce with minimum push away speed
-                const nx = dx / dist;
-                const ny = dy / dist;
+                // OPTIMIZED: Use cached invDist
+                const nx = dx * invDist;
+                const ny = dy * invDist;
                 const dot = this.vx * nx + this.vy * ny;
                 const bounceFactor = Math.min(BOUNCE_ENERGY_LOSS * 3, 0.99); // Triple the bounce for obstacles too
                 const minBounceSpeed = 0.3; // Minimum speed to ensure push away
@@ -1109,8 +1126,10 @@ export class Agent {
                 this.vy = (this.vy - 2 * dot * ny) * bounceFactor * bounceScale;
 
                 // Ensure minimum push away speed in the correct direction
-                const pushSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                if (pushSpeed < minBounceSpeed) {
+                // OPTIMIZED: Use squared comparison
+                const pushSpeedSq = this.vx * this.vx + this.vy * this.vy;
+                const minBounceSpeedSq = minBounceSpeed * minBounceSpeed;
+                if (pushSpeedSq < minBounceSpeedSq) {
                     this.vx += nx * minBounceSpeed * 0.5; // Add minimum push in normal direction
                     this.vy += ny * minBounceSpeed * 0.5;
                 }
@@ -1121,11 +1140,15 @@ export class Agent {
                 obs.vy -= ny * nudgeStrength;
 
                 // Cap obstacle speed
-                const obstacleSpeed = Math.sqrt(obs.vx * obs.vx + obs.vy * obs.vy);
+                // OPTIMIZED: Use squared comparison and cache inverse
+                const obstacleSpeedSq = obs.vx * obs.vx + obs.vy * obs.vy;
                 const maxObstacleSpeed = OBSTACLE_MAX_SPEED;
-                if (obstacleSpeed > maxObstacleSpeed) {
-                    obs.vx = (obs.vx / obstacleSpeed) * maxObstacleSpeed;
-                    obs.vy = (obs.vy / obstacleSpeed) * maxObstacleSpeed;
+                const maxObstacleSpeedSq = maxObstacleSpeed * maxObstacleSpeed;
+                if (obstacleSpeedSq > maxObstacleSpeedSq) {
+                    const obstacleSpeed = Math.sqrt(obstacleSpeedSq);
+                    const invObstacleSpeed = 1 / obstacleSpeed;
+                    obs.vx = obs.vx * invObstacleSpeed * maxObstacleSpeed;
+                    obs.vy = obs.vy * invObstacleSpeed * maxObstacleSpeed;
                 }
 
                 this.energy -= OBSTACLE_COLLISION_PENALTY;
