@@ -2,7 +2,7 @@
 // Preserves exact neural network architecture and operations
 
 import { matrixMultiply, applySigmoid, randomGaussian } from './utils.js';
-import { NN_WEIGHT_INIT_STD_DEV, NN_MUTATION_STD_DEV_RATIO, NN_MACRO_MUTATION_CHANCE, NN_WEIGHT_CLAMP_MIN, NN_WEIGHT_CLAMP_MAX } from './constants.js';
+import { NN_WEIGHT_INIT_STD_DEV, NN_MUTATION_STD_DEV_RATIO, NN_MACRO_MUTATION_CHANCE, NN_WEIGHT_CLAMP_MIN, NN_WEIGHT_CLAMP_MAX, MUTATION_STRATEGY_DEFAULT, MUTATION_STRATEGY_GAUSSIAN, MUTATION_STRATEGY_CAUCHY, MUTATION_STRATEGY_POLYNOMIAL, ADAPTIVE_MUTATION_ENABLED, ADAPTIVE_MUTATION_MIN_RATE, ADAPTIVE_MUTATION_MAX_RATE, ADAPTIVE_MUTATION_FITNESS_PERCENTILE_LOW, ADAPTIVE_MUTATION_FITNESS_PERCENTILE_HIGH, CAUCHY_SCALE_PARAMETER, POLYNOMIAL_DISTRIBUTION_INDEX } from './constants.js';
 import { queryArrayPool } from './array-pool.js';
 
 // Pool for neural network computation arrays to reduce GC pressure
@@ -206,19 +206,110 @@ export class NeuralNetwork {
         };
     }
 
-    mutate(mutationRate) {
-        const stdDev = mutationRate * NN_MUTATION_STD_DEV_RATIO;
-        const macroStdDev = mutationRate * 3.0; // Keep this relative to mutation rate
+    // Calculate adaptive mutation rate based on fitness percentile
+    static calculateAdaptiveMutationRate(baseRate, fitnessPercentile) {
+        if (!ADAPTIVE_MUTATION_ENABLED || fitnessPercentile === null || fitnessPercentile === undefined) {
+            return baseRate;
+        }
 
-        const mutateMatrix = (matrix) => matrix.map(row => row.map(w => {
-            let newW = w + randomGaussian(0, stdDev);
+        // Higher fitness = lower mutation rate (exploitation)
+        // Lower fitness = higher mutation rate (exploration)
+        let adaptiveRate;
+        if (fitnessPercentile <= ADAPTIVE_MUTATION_FITNESS_PERCENTILE_LOW) {
+            // Low fitness: high mutation (exploration)
+            adaptiveRate = ADAPTIVE_MUTATION_MAX_RATE;
+        } else if (fitnessPercentile >= ADAPTIVE_MUTATION_FITNESS_PERCENTILE_HIGH) {
+            // High fitness: low mutation (exploitation)
+            adaptiveRate = ADAPTIVE_MUTATION_MIN_RATE;
+        } else {
+            // Linear interpolation between min and max
+            const range = ADAPTIVE_MUTATION_FITNESS_PERCENTILE_HIGH - ADAPTIVE_MUTATION_FITNESS_PERCENTILE_LOW;
+            const position = (fitnessPercentile - ADAPTIVE_MUTATION_FITNESS_PERCENTILE_LOW) / range;
+            adaptiveRate = ADAPTIVE_MUTATION_MAX_RATE - (ADAPTIVE_MUTATION_MAX_RATE - ADAPTIVE_MUTATION_MIN_RATE) * position;
+        }
 
-            if (Math.random() < NN_MACRO_MUTATION_CHANCE) {
-                newW += randomGaussian(0, macroStdDev);
-            }
+        // Blend with base rate (50% adaptive, 50% base)
+        return baseRate * 0.5 + adaptiveRate * 0.5;
+    }
 
-            return Math.max(NN_WEIGHT_CLAMP_MIN, Math.min(NN_WEIGHT_CLAMP_MAX, newW));
-        }));
+    // Generate Cauchy-distributed random number
+    static randomCauchy(scale = CAUCHY_SCALE_PARAMETER) {
+        // Cauchy distribution: CDF^-1(U) where U is uniform [0,1]
+        const u = Math.random() - 0.5;
+        return scale * Math.tan(Math.PI * u);
+    }
+
+    // Polynomial mutation for real-valued optimization
+    static polynomialMutation(value, lowerBound, upperBound, eta = POLYNOMIAL_DISTRIBUTION_INDEX) {
+        const delta1 = (value - lowerBound) / (upperBound - lowerBound);
+        const delta2 = (upperBound - value) / (upperBound - lowerBound);
+        const u = Math.random();
+        let deltaq;
+
+        if (u < 0.5) {
+            const xy = 1 - delta1;
+            const val = 2 * u + (1 - 2 * u) * Math.pow(xy, eta + 1);
+            deltaq = Math.pow(val, 1 / (eta + 1)) - 1;
+        } else {
+            const xy = 1 - delta2;
+            const val = 2 * (1 - u) + 2 * (u - 0.5) * Math.pow(xy, eta + 1);
+            deltaq = 1 - Math.pow(val, 1 / (eta + 1));
+        }
+
+        const mutated = value + deltaq * (upperBound - lowerBound);
+        return Math.max(lowerBound, Math.min(upperBound, mutated));
+    }
+
+    mutate(mutationRate, strategy = null, fitnessPercentile = null) {
+        // Apply adaptive mutation rate if enabled
+        let effectiveRate = mutationRate;
+        if (ADAPTIVE_MUTATION_ENABLED && fitnessPercentile !== null && fitnessPercentile !== undefined) {
+            effectiveRate = NeuralNetwork.calculateAdaptiveMutationRate(mutationRate, fitnessPercentile);
+        }
+
+        // Determine mutation strategy
+        const mutationStrategy = strategy || MUTATION_STRATEGY_DEFAULT;
+        const stdDev = effectiveRate * NN_MUTATION_STD_DEV_RATIO;
+        const macroStdDev = effectiveRate * 3.0;
+
+        let mutateMatrix;
+        switch (mutationStrategy) {
+            case MUTATION_STRATEGY_CAUCHY:
+                // Cauchy mutation: longer tails for better escape from local optima
+                mutateMatrix = (matrix) => matrix.map(row => row.map(w => {
+                    let newW = w + NeuralNetwork.randomCauchy(stdDev);
+                    if (Math.random() < NN_MACRO_MUTATION_CHANCE) {
+                        newW += NeuralNetwork.randomCauchy(macroStdDev);
+                    }
+                    return Math.max(NN_WEIGHT_CLAMP_MIN, Math.min(NN_WEIGHT_CLAMP_MAX, newW));
+                }));
+                break;
+
+            case MUTATION_STRATEGY_POLYNOMIAL:
+                // Polynomial mutation: self-adaptive for real-valued optimization
+                mutateMatrix = (matrix) => matrix.map(row => row.map(w => {
+                    let newW = NeuralNetwork.polynomialMutation(w, NN_WEIGHT_CLAMP_MIN, NN_WEIGHT_CLAMP_MAX);
+                    if (Math.random() < NN_MACRO_MUTATION_CHANCE) {
+                        // Apply additional Gaussian mutation for macro mutations
+                        newW += randomGaussian(0, macroStdDev);
+                        newW = Math.max(NN_WEIGHT_CLAMP_MIN, Math.min(NN_WEIGHT_CLAMP_MAX, newW));
+                    }
+                    return newW;
+                }));
+                break;
+
+            case MUTATION_STRATEGY_GAUSSIAN:
+            default:
+                // Gaussian mutation: standard approach (original)
+                mutateMatrix = (matrix) => matrix.map(row => row.map(w => {
+                    let newW = w + randomGaussian(0, stdDev);
+                    if (Math.random() < NN_MACRO_MUTATION_CHANCE) {
+                        newW += randomGaussian(0, macroStdDev);
+                    }
+                    return Math.max(NN_WEIGHT_CLAMP_MIN, Math.min(NN_WEIGHT_CLAMP_MAX, newW));
+                }));
+                break;
+        }
 
         this.weights1 = mutateMatrix(this.weights1);
         this.weights2 = mutateMatrix(this.weights2);

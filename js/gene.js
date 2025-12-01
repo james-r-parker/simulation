@@ -1,59 +1,223 @@
 // Gene-related functions moved from game.js
 
-import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK } from './constants.js';
+import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK, CROSSOVER_TYPE_DEFAULT, CROSSOVER_TYPE_UNIFORM, CROSSOVER_TYPE_ONE_POINT, CROSSOVER_TYPE_MULTI_POINT, CROSSOVER_TYPE_FITNESS_WEIGHTED, CROSSOVER_TYPE_SBX, UNIFORM_CROSSOVER_PROBABILITY, MULTI_POINT_CROSSOVER_POINTS, FITNESS_WEIGHTED_CROSSOVER_ALPHA, SBX_DISTRIBUTION_INDEX, ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE } from './constants.js';
 import { updateDashboard } from './ui.js';
+import { randomGaussian } from './utils.js';
 
-export function crossover(weightsA, weightsB, logger) {
-    const crossoverMatrix = (a, b) => {
-        // Validate that both matrices are proper 2D arrays
-        if (!Array.isArray(a) || !Array.isArray(b) ||
-            a.length === 0 || b.length === 0 ||
-            !Array.isArray(a[0]) || !Array.isArray(b[0])) {
-            logger.error('[GENE] Invalid matrix structure:', { a: a, b: b });
-            // Return a copy of matrix a as fallback
-            return a.map(row => Array.isArray(row) ? [...row] : []);
+// Helper function to validate matrix structure
+function validateMatrices(a, b, logger) {
+    if (!Array.isArray(a) || !Array.isArray(b) ||
+        a.length === 0 || b.length === 0 ||
+        !Array.isArray(a[0]) || !Array.isArray(b[0])) {
+        logger.error('[GENE] Invalid matrix structure:', { a: a, b: b });
+        return false;
+    }
+
+    const rowsA = a.length, colsA = a[0].length;
+    const rowsB = b.length, colsB = b[0].length;
+
+    if (rowsA !== rowsB || colsA !== colsB) {
+        logger.error('[GENE] Matrix dimension mismatch:', { rowsA, colsA, rowsB, colsB });
+        return false;
+    }
+
+    return true;
+}
+
+// Uniform crossover: per-weight random selection from parents
+function uniformCrossoverMatrix(a, b, logger) {
+    if (!validateMatrices(a, b, logger)) {
+        return a.map(row => Array.isArray(row) ? [...row] : []);
+    }
+
+    const newMatrix = [];
+    for (let i = 0; i < a.length; i++) {
+        const newRow = [];
+        for (let j = 0; j < a[i].length; j++) {
+            // Random selection from parent A or B
+            newRow.push(Math.random() < UNIFORM_CROSSOVER_PROBABILITY ? a[i][j] : b[i][j]);
         }
+        newMatrix.push(newRow);
+    }
+    return newMatrix;
+}
 
-        const rowsA = a.length, colsA = a[0].length;
-        const rowsB = b.length, colsB = b[0].length;
+// One-point crossover: single split point (original implementation)
+function onePointCrossoverMatrix(a, b, logger) {
+    if (!validateMatrices(a, b, logger)) {
+        return a.map(row => Array.isArray(row) ? [...row] : []);
+    }
 
-        // Ensure matrices have compatible dimensions
-        if (rowsA !== rowsB || colsA !== colsB) {
-            logger.error('[GENE] Matrix dimension mismatch:', { rowsA, colsA, rowsB, colsB });
-            // Return a copy of matrix a as fallback
-            return a.map(row => [...row]);
-        }
-
-        const splitRow = Math.floor(Math.random() * rowsA);
-        const newMatrix = [];
-        for (let i = 0; i < rowsA; i++) {
-            try {
-                if (i < splitRow) {
-                    newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
-                } else {
-                    newMatrix.push(Array.isArray(b[i]) ? [...b[i]] : []);
-                }
-            } catch (error) {
-                logger.error('[GENE] Error during crossover at row', i, ':', error);
-                // Fallback: use matrix a for this row
+    const splitRow = Math.floor(Math.random() * a.length);
+    const newMatrix = [];
+    for (let i = 0; i < a.length; i++) {
+        try {
+            if (i < splitRow) {
                 newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
+            } else {
+                newMatrix.push(Array.isArray(b[i]) ? [...b[i]] : []);
             }
+        } catch (error) {
+            logger.error('[GENE] Error during crossover at row', i, ':', error);
+            newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
+        }
+    }
+    return newMatrix;
+}
+
+// Multi-point crossover: multiple split points
+function multiPointCrossoverMatrix(a, b, logger) {
+    if (!validateMatrices(a, b, logger)) {
+        return a.map(row => Array.isArray(row) ? [...row] : []);
+    }
+
+    // Generate sorted split points
+    const splitPoints = [];
+    for (let i = 0; i < MULTI_POINT_CROSSOVER_POINTS; i++) {
+        splitPoints.push(Math.floor(Math.random() * a.length));
+    }
+    splitPoints.sort((x, y) => x - y);
+    splitPoints.push(a.length); // Add end point
+
+    const newMatrix = [];
+    let useA = true;
+    let pointIndex = 0;
+
+    for (let i = 0; i < a.length; i++) {
+        if (i >= splitPoints[pointIndex]) {
+            pointIndex++;
+            useA = !useA;
+        }
+        try {
+            newMatrix.push(useA ? [...a[i]] : [...b[i]]);
+        } catch (error) {
+            logger.error('[GENE] Error during multi-point crossover at row', i, ':', error);
+            newMatrix.push(Array.isArray(a[i]) ? [...a[i]] : []);
+        }
+    }
+    return newMatrix;
+}
+
+// Fitness-weighted crossover: blend weights based on parent fitness
+function fitnessWeightedCrossoverMatrix(a, b, fitnessA, fitnessB, logger) {
+    if (!validateMatrices(a, b, logger)) {
+        return a.map(row => Array.isArray(row) ? [...row] : []);
+    }
+
+    // Calculate blending weights (alpha from constants, but adjust based on fitness ratio)
+    const totalFitness = fitnessA + fitnessB;
+    if (totalFitness <= 0) {
+        // Fallback to equal blending if fitnesses are invalid
+        const alpha = FITNESS_WEIGHTED_CROSSOVER_ALPHA;
+        const newMatrix = [];
+        for (let i = 0; i < a.length; i++) {
+            const newRow = [];
+            for (let j = 0; j < a[i].length; j++) {
+                newRow.push(a[i][j] * alpha + b[i][j] * (1 - alpha));
+            }
+            newMatrix.push(newRow);
         }
         return newMatrix;
-    };
+    }
 
+    // Better parent contributes more
+    const fitnessRatio = fitnessA / totalFitness;
+    const alpha = FITNESS_WEIGHTED_CROSSOVER_ALPHA * fitnessRatio + (1 - FITNESS_WEIGHTED_CROSSOVER_ALPHA) * (1 - fitnessRatio);
+    const adjustedAlpha = fitnessA > fitnessB ? alpha : 1 - alpha;
+
+    const newMatrix = [];
+    for (let i = 0; i < a.length; i++) {
+        const newRow = [];
+        for (let j = 0; j < a[i].length; j++) {
+            newRow.push(a[i][j] * adjustedAlpha + b[i][j] * (1 - adjustedAlpha));
+        }
+        newMatrix.push(newRow);
+    }
+    return newMatrix;
+}
+
+// Simulated Binary Crossover (SBX): real-valued optimization technique
+function sbxCrossoverMatrix(a, b, logger) {
+    if (!validateMatrices(a, b, logger)) {
+        return a.map(row => Array.isArray(row) ? [...row] : []);
+    }
+
+    const eta = SBX_DISTRIBUTION_INDEX;
+    const newMatrix = [];
+
+    for (let i = 0; i < a.length; i++) {
+        const newRow = [];
+        for (let j = 0; j < a[i].length; j++) {
+            const x1 = a[i][j];
+            const x2 = b[i][j];
+            const u = Math.random();
+
+            let beta;
+            if (u <= 0.5) {
+                beta = Math.pow(2 * u, 1 / (eta + 1));
+            } else {
+                beta = Math.pow(1 / (2 * (1 - u)), 1 / (eta + 1));
+            }
+
+            const c1 = 0.5 * ((1 + beta) * x1 + (1 - beta) * x2);
+            const c2 = 0.5 * ((1 - beta) * x1 + (1 + beta) * x2);
+
+            // Randomly choose one of the two children
+            newRow.push(Math.random() < 0.5 ? c1 : c2);
+        }
+        newMatrix.push(newRow);
+    }
+    return newMatrix;
+}
+
+export function crossover(weightsA, weightsB, logger, crossoverType = null, fitnessA = null, fitnessB = null) {
     // Validate that both weight objects have the required structure
     if (!weightsA || !weightsB ||
         !weightsA.weights1 || !weightsA.weights2 ||
         !weightsB.weights1 || !weightsB.weights2) {
         logger.error('[GENE] Invalid weights structure:', { weightsA, weightsB });
-        // Return a fallback with empty weights - the neural network will initialize randomly
         return { weights1: [], weights2: [] };
     }
 
+    // Determine crossover type
+    let type = crossoverType || CROSSOVER_TYPE_DEFAULT;
+
+    // For elite parents (high fitness), occasionally use fitness-weighted
+    if (fitnessA !== null && fitnessB !== null && 
+        Math.random() < ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE &&
+        (fitnessA > 0 || fitnessB > 0)) {
+        const avgFitness = (fitnessA + fitnessB) / 2;
+        // Consider "elite" if average fitness is positive (adjust threshold as needed)
+        if (avgFitness > 0) {
+            type = CROSSOVER_TYPE_FITNESS_WEIGHTED;
+        }
+    }
+
+    // Select crossover strategy
+    let crossoverMatrixFn;
+    switch (type) {
+        case CROSSOVER_TYPE_UNIFORM:
+            crossoverMatrixFn = uniformCrossoverMatrix;
+            break;
+        case CROSSOVER_TYPE_ONE_POINT:
+            crossoverMatrixFn = onePointCrossoverMatrix;
+            break;
+        case CROSSOVER_TYPE_MULTI_POINT:
+            crossoverMatrixFn = multiPointCrossoverMatrix;
+            break;
+        case CROSSOVER_TYPE_FITNESS_WEIGHTED:
+            crossoverMatrixFn = (a, b, logger) => fitnessWeightedCrossoverMatrix(a, b, fitnessA || 0, fitnessB || 0, logger);
+            break;
+        case CROSSOVER_TYPE_SBX:
+            crossoverMatrixFn = sbxCrossoverMatrix;
+            break;
+        default:
+            crossoverMatrixFn = uniformCrossoverMatrix; // Default to uniform
+    }
+
     return {
-        weights1: crossoverMatrix(weightsA.weights1, weightsB.weights1),
-        weights2: crossoverMatrix(weightsA.weights2, weightsB.weights2),
+        weights1: crossoverMatrixFn(weightsA.weights1, weightsB.weights1, logger),
+        weights2: crossoverMatrixFn(weightsA.weights2, weightsB.weights2, logger),
     };
 }
 

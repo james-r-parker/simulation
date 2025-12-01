@@ -499,8 +499,123 @@ export class GenePoolDatabase {
         return geneIds[Math.floor(Math.random() * geneIds.length)];
     }
 
+    // Fitness-proportional selection (roulette wheel)
+    selectParentFitnessProportional(pool, specializationType = null) {
+        if (!pool || pool.length === 0) return null;
+
+        // Filter by specialization if specified
+        let candidates = pool;
+        if (specializationType) {
+            candidates = pool.filter(a => a.specializationType === specializationType);
+            if (candidates.length === 0) return null;
+        }
+
+        // Calculate fitness sum (handle negative fitnesses by shifting)
+        const fitnesses = candidates.map(a => a.fitness || 0);
+        const minFitness = Math.min(...fitnesses);
+        const shiftedFitnesses = fitnesses.map(f => f - minFitness + 1); // Shift to make all positive
+        const totalFitness = shiftedFitnesses.reduce((sum, f) => sum + f, 0);
+
+        if (totalFitness <= 0) {
+            // Fallback to random if all fitnesses are invalid
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        // Roulette wheel selection
+        const random = Math.random() * totalFitness;
+        let cumulative = 0;
+        for (let i = 0; i < candidates.length; i++) {
+            cumulative += shiftedFitnesses[i];
+            if (random <= cumulative) {
+                return candidates[i];
+            }
+        }
+
+        // Fallback (shouldn't reach here)
+        return candidates[candidates.length - 1];
+    }
+
+    // Tournament selection
+    selectParentTournament(pool, tournamentSize = 4, tournamentProbability = 0.7, specializationType = null) {
+        if (!pool || pool.length === 0) return null;
+
+        // Filter by specialization if specified
+        let candidates = pool;
+        if (specializationType) {
+            candidates = pool.filter(a => a.specializationType === specializationType);
+            if (candidates.length === 0) return null;
+        }
+
+        const actualTournamentSize = Math.min(tournamentSize, candidates.length);
+        const tournament = [];
+        
+        // Randomly select tournament participants
+        const indices = new Set();
+        while (indices.size < actualTournamentSize) {
+            indices.add(Math.floor(Math.random() * candidates.length));
+        }
+
+        for (const idx of indices) {
+            tournament.push(candidates[idx]);
+        }
+
+        // Sort tournament by fitness
+        tournament.sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
+
+        // Select based on tournament probability
+        if (Math.random() < tournamentProbability) {
+            return tournament[0]; // Best in tournament
+        } else {
+            // Random from tournament
+            return tournament[Math.floor(Math.random() * tournament.length)];
+        }
+    }
+
+    // Rank-based selection
+    selectParentRankBased(pool, selectionPressure = 2.0, specializationType = null) {
+        if (!pool || pool.length === 0) return null;
+
+        // Filter by specialization if specified
+        let candidates = pool;
+        if (specializationType) {
+            candidates = pool.filter(a => a.specializationType === specializationType);
+            if (candidates.length === 0) return null;
+        }
+
+        // Sort by fitness (descending)
+        const sorted = [...candidates].sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
+
+        // Calculate rank probabilities
+        const n = sorted.length;
+        const probabilities = [];
+        let sum = 0;
+        for (let i = 0; i < n; i++) {
+            const rank = i + 1; // Rank 1 is best
+            const prob = Math.pow(2 - selectionPressure, rank - 1) * (selectionPressure - 1) / (Math.pow(2 - selectionPressure, n) - 1);
+            probabilities.push(prob);
+            sum += prob;
+        }
+
+        // Normalize probabilities
+        for (let i = 0; i < probabilities.length; i++) {
+            probabilities[i] /= sum;
+        }
+
+        // Select based on rank probabilities
+        const random = Math.random();
+        let cumulative = 0;
+        for (let i = 0; i < sorted.length; i++) {
+            cumulative += probabilities[i];
+            if (random <= cumulative) {
+                return sorted[i];
+            }
+        }
+
+        return sorted[sorted.length - 1];
+    }
+
     // Helper method: Get a random agent from any gene pool
-    getRandomAgent() {
+    getRandomAgent(selectionType = null) {
         const randomGeneId = this.randomGeneId();
         if (randomGeneId) {
             this.updateCacheAccess(randomGeneId);
@@ -508,12 +623,21 @@ export class GenePoolDatabase {
         const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
-        const randomAgent = pool[Math.floor(Math.random() * pool.length)];
-        return randomAgent;
+        // Use selection method if specified
+        if (selectionType === 'tournament') {
+            return this.selectParentTournament(pool);
+        } else if (selectionType === 'fitness_proportional') {
+            return this.selectParentFitnessProportional(pool);
+        } else if (selectionType === 'rank_based') {
+            return this.selectParentRankBased(pool);
+        }
+
+        // Default: random
+        return pool[Math.floor(Math.random() * pool.length)];
     }
 
     // Helper method: Get a mating pair for a specific geneId
-    getMatingPair() {
+    getMatingPair(selectionTypeParent1 = 'tournament', selectionTypeParent2 = 'fitness_proportional') {
         const randomGeneId = this.randomGeneId();
         if (randomGeneId) {
             this.updateCacheAccess(randomGeneId);
@@ -521,12 +645,26 @@ export class GenePoolDatabase {
         const pool = this.pool[randomGeneId];
         if (!pool || pool.length === 0) return null;
 
-        // Sort by fitness once
-        const sorted = [...pool].sort((a, b) => b.fitness - a.fitness);
+        // Select first parent using specified method
+        let parent1Data;
+        switch (selectionTypeParent1) {
+            case 'tournament':
+                parent1Data = this.selectParentTournament(pool);
+                break;
+            case 'fitness_proportional':
+                parent1Data = this.selectParentFitnessProportional(pool);
+                break;
+            case 'rank_based':
+                parent1Data = this.selectParentRankBased(pool);
+                break;
+            default:
+                // Fallback: elite selection (top 3)
+                const sorted = [...pool].sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
+                const eliteSize = Math.min(3, sorted.length);
+                parent1Data = sorted[Math.floor(Math.random() * eliteSize)];
+        }
 
-        // Select the first parent from the elite (top 3)
-        const eliteSize = Math.min(3, sorted.length);
-        const parent1Data = sorted[Math.floor(Math.random() * eliteSize)];
+        if (!parent1Data) return null;
 
         // Check for specialization compatibility
         if (!parent1Data.specializationType) {
@@ -537,20 +675,39 @@ export class GenePoolDatabase {
             };
         }
 
-        // Filter the pool to find compatible mates (same specialization)
-        const compatibleMates = sorted.filter(agentData => agentData.specializationType === parent1Data.specializationType);
-
-        if (compatibleMates.length < 2) {
-            // Not enough compatible mates, clone the single parent
-            return {
-                parent1: parent1Data,
-                parent2: parent1Data
-            };
+        // Select second parent from compatible mates using specified method
+        let parent2Data;
+        switch (selectionTypeParent2) {
+            case 'tournament':
+                parent2Data = this.selectParentTournament(pool, 4, 0.7, parent1Data.specializationType);
+                break;
+            case 'fitness_proportional':
+                parent2Data = this.selectParentFitnessProportional(pool, parent1Data.specializationType);
+                break;
+            case 'rank_based':
+                parent2Data = this.selectParentRankBased(pool, 2.0, parent1Data.specializationType);
+                break;
+            default:
+                // Fallback: random from compatible mates
+                const compatibleMates = pool.filter(a => a.specializationType === parent1Data.specializationType && a !== parent1Data);
+                if (compatibleMates.length === 0) {
+                    return {
+                        parent1: parent1Data,
+                        parent2: parent1Data
+                    };
+                }
+                parent2Data = compatibleMates[Math.floor(Math.random() * compatibleMates.length)];
         }
 
-        // Select a different second parent from the compatible mates
-        const otherMates = compatibleMates.filter(m => m !== parent1Data);
-        const parent2Data = otherMates[Math.floor(Math.random() * otherMates.length)];
+        // Ensure parent2 is different from parent1
+        if (!parent2Data || parent2Data === parent1Data) {
+            const compatibleMates = pool.filter(a => a.specializationType === parent1Data.specializationType && a !== parent1Data);
+            if (compatibleMates.length > 0) {
+                parent2Data = compatibleMates[Math.floor(Math.random() * compatibleMates.length)];
+            } else {
+                parent2Data = parent1Data; // Clone if no other options
+            }
+        }
 
         return {
             parent1: parent1Data,

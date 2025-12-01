@@ -355,9 +355,66 @@ export const NN_WEIGHT_INIT_STD_DEV = 0.1; // Standard deviation for random weig
 export const NN_MUTATION_STD_DEV_RATIO = 0.3; // Mutation strength as ratio of initial weight std dev
 export const NN_MACRO_MUTATION_CHANCE = 0.02; // Probability of major structural mutations
 
+// Mutation strategies
+export const MUTATION_STRATEGY_GAUSSIAN = 'gaussian'; // Standard Gaussian mutation (exploration)
+export const MUTATION_STRATEGY_CAUCHY = 'cauchy'; // Cauchy distribution (longer tails, better for escaping local optima)
+export const MUTATION_STRATEGY_POLYNOMIAL = 'polynomial'; // Polynomial mutation (self-adaptive)
+export const MUTATION_STRATEGY_DEFAULT = MUTATION_STRATEGY_GAUSSIAN; // Default mutation strategy
+
+// Adaptive mutation parameters
+export const ADAPTIVE_MUTATION_ENABLED = true; // Enable fitness-based adaptive mutation rates
+export const ADAPTIVE_MUTATION_MIN_RATE = 0.04; // Minimum mutation rate (4% for high-fitness agents)
+export const ADAPTIVE_MUTATION_MAX_RATE = 0.15; // Maximum mutation rate (15% for low-fitness agents)
+export const ADAPTIVE_MUTATION_FITNESS_PERCENTILE_LOW = 0.25; // Below this percentile = high mutation
+export const ADAPTIVE_MUTATION_FITNESS_PERCENTILE_HIGH = 0.75; // Above this percentile = low mutation
+
+// Cauchy mutation parameters
+export const CAUCHY_SCALE_PARAMETER = 0.1; // Scale parameter for Cauchy distribution
+
+// Polynomial mutation parameters
+export const POLYNOMIAL_DISTRIBUTION_INDEX = 20; // Distribution index for polynomial mutation (higher = more local)
+
 // Weight constraints
 export const NN_WEIGHT_CLAMP_MIN = -3; // Minimum allowed neural network weight value
 export const NN_WEIGHT_CLAMP_MAX = 3; // Maximum allowed neural network weight value
+
+// --- CROSSOVER CONSTANTS ---
+// Crossover strategies for genetic recombination
+export const CROSSOVER_TYPE_UNIFORM = 'uniform'; // Per-weight random selection from parents
+export const CROSSOVER_TYPE_ONE_POINT = 'one_point'; // Single split point (current default)
+export const CROSSOVER_TYPE_MULTI_POINT = 'multi_point'; // Multiple split points
+export const CROSSOVER_TYPE_FITNESS_WEIGHTED = 'fitness_weighted'; // Blend based on parent fitness
+export const CROSSOVER_TYPE_SBX = 'sbx'; // Simulated Binary Crossover (real-valued optimization)
+export const CROSSOVER_TYPE_DEFAULT = CROSSOVER_TYPE_UNIFORM; // Default crossover strategy
+
+// Crossover parameters
+export const UNIFORM_CROSSOVER_PROBABILITY = 0.5; // Probability of selecting from parent A in uniform crossover
+export const MULTI_POINT_CROSSOVER_POINTS = 3; // Number of split points for multi-point crossover
+export const FITNESS_WEIGHTED_CROSSOVER_ALPHA = 0.6; // Blending factor for fitness-weighted crossover (0.6 = 60% from better parent)
+export const SBX_DISTRIBUTION_INDEX = 20; // Distribution index for SBX (higher = more exploration)
+
+// Elite crossover probability (chance to use fitness-weighted for elite parents)
+export const ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE = 0.3; // 30% chance for elite parents
+
+// --- PARENT SELECTION CONSTANTS ---
+// Selection methods for choosing parents from gene pool
+export const SELECTION_TYPE_FITNESS_PROPORTIONAL = 'fitness_proportional'; // Roulette wheel selection
+export const SELECTION_TYPE_TOURNAMENT = 'tournament'; // Tournament selection
+export const SELECTION_TYPE_RANK_BASED = 'rank_based'; // Rank-based selection
+export const SELECTION_TYPE_RANDOM = 'random'; // Random selection (current default)
+export const SELECTION_TYPE_DEFAULT_PARENT1 = SELECTION_TYPE_TOURNAMENT; // Default for parent 1
+export const SELECTION_TYPE_DEFAULT_PARENT2 = SELECTION_TYPE_FITNESS_PROPORTIONAL; // Default for parent 2
+
+// Tournament selection parameters
+export const TOURNAMENT_SIZE = 4; // Number of candidates in tournament selection
+export const TOURNAMENT_PROBABILITY = 0.7; // Probability of selecting best in tournament (0.7 = 70% chance)
+
+// Rank-based selection parameters
+export const RANK_BASED_SELECTION_PRESSURE = 2.0; // Selection pressure for rank-based (higher = more bias toward top)
+
+// Diversity-aware selection
+export const DIVERSITY_AWARE_SELECTION_ENABLED = true; // Enable diversity checks to avoid inbreeding
+export const MIN_GENETIC_DISTANCE = 0.1; // Minimum genetic distance required between parents (0-1 scale)
 
 // --- GENE POOL CONSTANTS ---
 // Criteria for saving successful agents to the persistent gene pool

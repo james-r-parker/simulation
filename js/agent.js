@@ -1767,9 +1767,59 @@ export class Agent {
             return false;
         }
 
-        const mateScore = mate.speedFactor * (mate.energy / MAX_ENERGY);
-        const selfScore = this.speedFactor * (this.energy / MAX_ENERGY);
+        // Enhanced mate selection with fitness consideration and kinship checks
+        
+        // 1. Kinship check: Avoid mating with close relatives (prevent inbreeding)
+        const relatedness = this.getRelatedness(mate);
+        const MIN_RELATEDNESS_FOR_MATING = KIN_RELATEDNESS_DISTANT; // Allow mating with distant relatives or less
+        if (relatedness > MIN_RELATEDNESS_FOR_MATING) {
+            // Too closely related, reject mating
+            return false;
+        }
 
+        // 2. Calculate fitness scores (ensure both agents have calculated fitness)
+        this.calculateFitness();
+        mate.calculateFitness();
+
+        // 3. Minimum fitness threshold: Require mate to have reasonable fitness
+        const MIN_MATE_FITNESS_THRESHOLD = Math.max(0, this.fitness * 0.3); // At least 30% of self fitness
+        if (mate.fitness < MIN_MATE_FITNESS_THRESHOLD) {
+            return false;
+        }
+
+        // 4. Enhanced mate score: fitness * 0.4 + speedFactor * 0.3 + (energy/MAX_ENERGY) * 0.3
+        // Normalize fitness for scoring (use relative fitness if population context available)
+        const selfFitnessScore = this.fitness || 0;
+        const mateFitnessScore = mate.fitness || 0;
+        
+        // Calculate normalized fitness scores (0-1 scale, relative to current population if available)
+        let selfNormalizedFitness = 0.5; // Default neutral
+        let mateNormalizedFitness = 0.5;
+        
+        if (this.simulation && this.simulation.agents && this.simulation.agents.length > 1) {
+            const livingAgents = this.simulation.agents.filter(a => !a.isDead);
+            if (livingAgents.length > 1) {
+                const fitnesses = livingAgents.map(a => a.fitness || 0);
+                const minFitness = Math.min(...fitnesses);
+                const maxFitness = Math.max(...fitnesses);
+                const range = maxFitness - minFitness;
+                
+                if (range > 0) {
+                    selfNormalizedFitness = (selfFitnessScore - minFitness) / range;
+                    mateNormalizedFitness = (mateFitnessScore - minFitness) / range;
+                }
+            }
+        }
+
+        // Enhanced mate score calculation
+        const mateScore = mateNormalizedFitness * 0.4 + 
+                         mate.speedFactor * 0.3 + 
+                         (mate.energy / MAX_ENERGY) * 0.3;
+        const selfScore = selfNormalizedFitness * 0.4 + 
+                         this.speedFactor * 0.3 + 
+                         (this.energy / MAX_ENERGY) * 0.3;
+
+        // Require mate score to be at least 50% of self score
         if (mateScore < selfScore * 0.5) return false;
 
         this.isPregnant = true;
@@ -1851,7 +1901,23 @@ export class Agent {
 
     birthChild() {
         const parentWeights = this.getWeights();
-        const childWeights = crossover(parentWeights, this.fatherWeights, this.logger);
+        
+        // Calculate parent fitnesses for fitness-weighted crossover
+        this.calculateFitness();
+        const parentFitness = this.fitness || 0;
+        let fatherFitness = 0;
+        if (this.simulation && this.simulation.agents) {
+            // Try to find father agent to get its fitness
+            const fatherAgent = this.simulation.agents.find(a => 
+                a.genealogy && a.genealogy.id === this.genealogy?.parent2Id
+            );
+            if (fatherAgent) {
+                fatherAgent.calculateFitness();
+                fatherFitness = fatherAgent.fitness || 0;
+            }
+        }
+        
+        const childWeights = crossover(parentWeights, this.fatherWeights, this.logger, null, parentFitness, fatherFitness);
 
         // Track goal completion: FIND_MATE goal completed (birth is successful reproduction)
         if (this.goalMemory && this.goalMemory.currentGoal === GOALS.FIND_MATE) {
@@ -1898,7 +1964,40 @@ export class Agent {
 
         // Mutate neural network (only if using parent weights)
         if (useParentWeights) {
-            child.nn.mutate(this.simulation.mutationRate);
+            // Calculate parent fitness percentile for adaptive mutation
+            let fitnessPercentile = null;
+            if (this.simulation && this.simulation.agents && this.simulation.agents.length > 1) {
+                const livingAgents = this.simulation.agents.filter(a => !a.isDead);
+                if (livingAgents.length > 1) {
+                    const fitnesses = livingAgents.map(a => a.fitness || 0).sort((a, b) => a - b);
+                    
+                    // Count how many agents have lower fitness
+                    let lowerCount = 0;
+                    for (const f of fitnesses) {
+                        if (f < parentFitness) lowerCount++;
+                    }
+                    
+                    fitnessPercentile = lowerCount / livingAgents.length;
+                }
+            }
+
+            // Scale mutation rate based on parent fitness
+            // High fitness = lower mutation (exploitation), low fitness = higher mutation (exploration)
+            let adaptiveMutationRate = this.simulation.mutationRate;
+            if (fitnessPercentile !== null) {
+                // Scale: 0.5x for top 25%, 1.5x for bottom 25%, linear in between
+                const scaleFactor = fitnessPercentile >= 0.75 ? 0.5 : 
+                                  fitnessPercentile <= 0.25 ? 1.5 : 
+                                  1.0 + (0.75 - fitnessPercentile) * 0.5; // Linear interpolation
+                adaptiveMutationRate = this.simulation.mutationRate * scaleFactor;
+                
+                // Clamp to reasonable bounds
+                adaptiveMutationRate = Math.max(this.simulation.mutationRate * 0.3, 
+                                               Math.min(this.simulation.mutationRate * 2.0, adaptiveMutationRate));
+            }
+
+            // Apply mutation with fitness-aware rate
+            child.nn.mutate(adaptiveMutationRate, null, fitnessPercentile);
         }
 
         // Mutate inherited traits (preserved from original)

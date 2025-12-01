@@ -690,22 +690,65 @@ export function repopulate(simulation) {
         }
     }
 
+    // Adaptive strategy distribution based on population health
+    // Calculate population fitness trend
+    let fitnessStagnation = 0;
+    if (simulation.fitnessHistory && simulation.fitnessHistory.length >= 6) {
+        const recent = simulation.fitnessHistory.slice(-3);
+        const older = simulation.fitnessHistory.slice(-6, -3);
+        const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+        if (olderAvg > 0) {
+            fitnessStagnation = Math.max(0, 1 - (recentAvg - olderAvg) / Math.abs(olderAvg)); // 0 = improving, 1 = stagnating
+        }
+    }
+
+    // Adaptive strategy probabilities based on population health
+    // When stagnating: more exploration (random, novelty)
+    // When improving: more exploitation (elitism, crossover)
+    const baseElitism = 0.25;
+    const baseCrossover = 0.25;
+    const baseRandom = 0.25;
+    const baseNovelty = 0.25;
+
+    const elitismProb = baseElitism + (1 - fitnessStagnation) * 0.15; // More elitism when improving
+    const crossoverProb = baseCrossover + (1 - fitnessStagnation) * 0.15; // More crossover when improving
+    const randomProb = baseRandom + fitnessStagnation * 0.15; // More random when stagnating
+    const noveltyProb = baseNovelty + fitnessStagnation * 0.15; // More novelty when stagnating
+
+    // Normalize probabilities
+    const total = elitismProb + crossoverProb + randomProb + noveltyProb;
+    const normalizedElitism = elitismProb / total;
+    const normalizedCrossover = crossoverProb / total;
+    const normalizedRandom = randomProb / total;
+
     const roll = Math.random();
 
-    // 25% chance for Elitism (from successful gene pool)
-    if (roll < 0.25) {
-        const gene = simulation.db.getRandomAgent();
+    // Elitism: Use tournament selection for better parent selection
+    if (roll < normalizedElitism) {
+        const gene = simulation.db.getRandomAgent('tournament'); // Use tournament selection
         if (gene) {
+            // Lower mutation for elite agents (preserve good genes)
             spawnAgent(simulation, { gene: gene, mutationRate: simulation.mutationRate / 4 });
         } else {
             spawnAgent(simulation, { gene: null });
         }
     }
-    // 25% chance for Sexual Selection (crossover from gene pool)
-    else if (roll < 0.5) {
-        const matingPair = simulation.db.getMatingPair();
+    // Sexual Selection: Use improved mating pair selection with fitness-weighted crossover
+    else if (roll < normalizedElitism + normalizedCrossover) {
+        const matingPair = simulation.db.getMatingPair('tournament', 'fitness_proportional');
         if (matingPair) {
-            const childWeights = crossover(matingPair.parent1.weights, matingPair.parent2.weights, simulation.logger);
+            // Use fitness-weighted crossover for elite parents
+            const fitness1 = matingPair.parent1.fitness || 0;
+            const fitness2 = matingPair.parent2.fitness || 0;
+            const childWeights = crossover(
+                matingPair.parent1.weights, 
+                matingPair.parent2.weights, 
+                simulation.logger,
+                null, // Use default crossover type (will auto-select fitness-weighted for elite)
+                fitness1,
+                fitness2
+            );
             // CRITICAL: Don't pass neural network structure params - let agent use config defaults
             const childGene = {
                 weights: childWeights,
@@ -719,13 +762,13 @@ export function repopulate(simulation) {
             spawnAgent(simulation, { gene: null });
         }
     }
-    // 25% chance for Random Generation (fresh genetic material)
-    else if (roll < 0.75) {
+    // Random Generation: Fresh genetic material for exploration
+    else if (roll < normalizedElitism + normalizedCrossover + normalizedRandom) {
         spawnAgent(simulation, { gene: null });
     }
-    // 25% chance for Novelty Spawning (explore specializations)
+    // Novelty Spawning: Explore specializations with tournament-selected parent
     else {
-        const parent = simulation.db.getRandomAgent();
+        const parent = simulation.db.getRandomAgent('tournament'); // Use tournament selection
         if (parent) {
             const allTypes = Object.values(SPECIALIZATION_TYPES);
             const novelSpecialization = allTypes[Math.floor(Math.random() * allTypes.length)];
