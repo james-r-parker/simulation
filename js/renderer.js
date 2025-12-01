@@ -589,6 +589,11 @@ export class WebGLRenderer {
 
     updateSparkles() {
         if (!this.sparklesEnabled) return;
+        
+        // DEBUG: Log sparkle state for troubleshooting
+        if (this.sparkles.length > 0 && (!this.sparklePoints || !this.sparklePoints.visible)) {
+            this.logger.debug(`[SPARKLES] ${this.sparkles.length} sparkles exist but sparklePoints is ${this.sparklePoints ? 'not visible' : 'null'}`);
+        }
         // Update and remove expired sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             const sparkle = this.sparkles[i];
@@ -636,11 +641,26 @@ export class WebGLRenderer {
             }
 
             // Reuse existing geometry and Points object if available
+            // If sparklePoints exists but was hidden (count=0), we'll update it in the else branch
             if (!this.sparklePoints) {
+                // CRITICAL: Create proper array copies instead of subarray views
+                // Three.js BufferAttribute needs to own the array data
+                const positionsCopy = new Float32Array(positions);
+                const colorsCopy = new Float32Array(colors);
+                const sizesCopy = new Float32Array(sizes);
+                
                 const geometry = acquireBufferGeometry();
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                const positionAttr = new THREE.BufferAttribute(positionsCopy, 3);
+                positionAttr.count = this.sparkles.length;
+                geometry.setAttribute('position', positionAttr);
+                
+                const colorAttr = new THREE.BufferAttribute(colorsCopy, 3);
+                colorAttr.count = this.sparkles.length;
+                geometry.setAttribute('color', colorAttr);
+                
+                const sizeAttr = new THREE.BufferAttribute(sizesCopy, 1);
+                sizeAttr.count = this.sparkles.length;
+                geometry.setAttribute('size', sizeAttr);
 
                 const material = acquirePointsMaterial({
                     size: 4,
@@ -651,7 +671,20 @@ export class WebGLRenderer {
                 });
 
                 this.sparklePoints = new THREE.Points(geometry, material);
-                this.sparkleGroup.add(this.sparklePoints);
+                this.sparklePoints.visible = true;
+                
+                // CRITICAL: Ensure sparkleGroup is in scene before adding sparklePoints
+                if (this.sparkleGroup.parent !== this.scene) {
+                    this.scene.add(this.sparkleGroup);
+                }
+                
+                // Only add if not already in the group (safety check)
+                if (!this.sparkleGroup.children.includes(this.sparklePoints)) {
+                    this.sparkleGroup.add(this.sparklePoints);
+                }
+                
+                // CRITICAL: Compute bounding sphere for proper rendering
+                geometry.computeBoundingSphere();
             } else {
                 // Update existing attributes instead of creating new ones
                 const geometry = this.sparklePoints.geometry;
@@ -660,37 +693,85 @@ export class WebGLRenderer {
                 const sizeAttr = geometry.attributes.size;
 
                 // Update existing attributes if buffer size matches, otherwise recreate
-                if (posAttr.array.length >= neededSize) {
+                if (posAttr && posAttr.array.length >= neededSize) {
                     posAttr.array.set(positions);
                     posAttr.needsUpdate = true;
                     posAttr.count = this.sparkles.length;
                 } else {
-                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    // CRITICAL: Create proper array copy instead of subarray view
+                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
+                    const positionsCopy = new Float32Array(positions);
+                    const newAttr = new THREE.BufferAttribute(positionsCopy, 3);
+                    newAttr.count = this.sparkles.length;
+                    newAttr.needsUpdate = true;
+                    geometry.setAttribute('position', newAttr);
                 }
 
-                if (colorAttr.array.length >= neededSize) {
+                if (colorAttr && colorAttr.array.length >= neededSize) {
                     colorAttr.array.set(colors);
                     colorAttr.needsUpdate = true;
                     colorAttr.count = this.sparkles.length;
                 } else {
-                    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                    // CRITICAL: Create proper array copy instead of subarray view
+                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
+                    const colorsCopy = new Float32Array(colors);
+                    const newAttr = new THREE.BufferAttribute(colorsCopy, 3);
+                    newAttr.count = this.sparkles.length;
+                    newAttr.needsUpdate = true;
+                    geometry.setAttribute('color', newAttr);
                 }
 
-                if (sizeAttr.array.length >= this.sparkles.length) {
+                if (sizeAttr && sizeAttr.array.length >= this.sparkles.length) {
                     sizeAttr.array.set(sizes);
                     sizeAttr.needsUpdate = true;
                     sizeAttr.count = this.sparkles.length;
                 } else {
-                    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                    // CRITICAL: Create proper array copy instead of subarray view
+                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
+                    const sizesCopy = new Float32Array(sizes);
+                    const newAttr = new THREE.BufferAttribute(sizesCopy, 1);
+                    newAttr.count = this.sparkles.length;
+                    newAttr.needsUpdate = true;
+                    geometry.setAttribute('size', newAttr);
                 }
+                
+                // CRITICAL: Ensure sparklePoints is still in the scene hierarchy and visible
+                if (this.sparkleGroup.parent !== this.scene) {
+                    this.scene.add(this.sparkleGroup);
+                }
+                if (!this.sparkleGroup.children.includes(this.sparklePoints)) {
+                    this.sparkleGroup.add(this.sparklePoints);
+                }
+                
+                // CRITICAL: Always ensure visible and valid when we have sparkles
+                this.sparklePoints.visible = true;
+                
+                // CRITICAL: Recompute bounding sphere when attributes change
+                geometry.computeBoundingSphere();
+                
+                // CRITICAL: Force geometry update to ensure rendering
+                geometry.attributes.position.needsUpdate = true;
+                geometry.attributes.color.needsUpdate = true;
+                geometry.attributes.size.needsUpdate = true;
             }
         } else {
-            // No sparkles - remove Points object but keep it for reuse
+            // No sparkles - hide Points object but keep it for reuse to avoid recreation race conditions
             if (this.sparklePoints) {
-                this.sparkleGroup.remove(this.sparklePoints);
-                if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
-                if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
-                this.sparklePoints = null;
+                // Set count to 0 instead of removing to avoid recreation timing issues
+                const geometry = this.sparklePoints.geometry;
+                if (geometry.attributes.position) {
+                    geometry.attributes.position.count = 0;
+                    geometry.attributes.position.needsUpdate = true;
+                }
+                if (geometry.attributes.color) {
+                    geometry.attributes.color.count = 0;
+                    geometry.attributes.color.needsUpdate = true;
+                }
+                if (geometry.attributes.size) {
+                    geometry.attributes.size.count = 0;
+                    geometry.attributes.size.needsUpdate = true;
+                }
+                this.sparklePoints.visible = false;
             }
         }
     }
