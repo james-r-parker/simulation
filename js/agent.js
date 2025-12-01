@@ -26,6 +26,7 @@ import {
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, EXCEPTIONAL_FITNESS_THRESHOLD,
     MIN_DISTANCE_FOR_MOVEMENT_REWARDS, MIN_ANGLE_CHANGE_FOR_FITNESS, MIN_SPEED_CHANGE_FOR_FITNESS,
     MIN_NAVIGATION_TURN_FOR_FITNESS, MIN_FOOD_APPROACH_DISTANCE,
+    FITNESS_MULTIPLIERS, FITNESS_PENALTIES, SURVIVAL_BONUSES,
     SPAWN_GROWTH_DURATION_FRAMES, SPAWN_GROWTH_MIN_SCALE, SPAWN_GROWTH_MAX_SCALE, SPAWN_SIZE_INTERPOLATION_SPEED,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
@@ -177,6 +178,7 @@ export class Agent {
         this.offspring = 0;
         this.childrenFromSplit = 0;
         this.childrenFromMate = 0;
+        this.reproductionAttempts = 0; // Track reproduction attempts (even if unsuccessful)
         this.kills = 0;
         this.foodEaten = 0;
         this.collisions = 0; // Total number of collisions detected
@@ -1890,6 +1892,9 @@ export class Agent {
     }
 
     tryMate(mate) {
+        // Track reproduction attempt (even if it fails)
+        this.reproductionAttempts++;
+        
         // FRAME-BASED maturation check (independent of game speed)
         const MATURATION_AGE_FRAMES = 600; // REDUCED to 10 seconds at 60 FPS (was 15s/900 frames)
         if (this.framesAlive < MATURATION_AGE_FRAMES || mate.framesAlive < MATURATION_AGE_FRAMES) return false;
@@ -1999,6 +2004,8 @@ export class Agent {
     split() {
         this.logger.info(`[LIFECYCLE] ✂️ Agent ${this.id} (${this.geneId}) is splitting due to high energy (${this.energy.toFixed(1)}).`);
 
+        // Track reproduction attempt
+        this.reproductionAttempts++;
 
         // Halve energy for parent and child
         const childEnergy = this.energy / 2;
@@ -2178,21 +2185,24 @@ export class Agent {
         let temperaturePenalty = 0;
         if (avgTemperature < 1) {
             // Penalty for inactive agents (symmetric to bonus)
-            temperaturePenalty = (1 - avgTemperature) * 100; // Up to 100 points penalty
+            temperaturePenalty = (1 - avgTemperature) * FITNESS_MULTIPLIERS.TEMPERATURE_PENALTY_MAX;
         } else {
             // Bonus for active agents
-            temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 100; // Up to 100 points bonus
+            temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * FITNESS_MULTIPLIERS.TEMPERATURE_BONUS_MAX;
         }
         baseScore += temperatureBonus - temperaturePenalty;
 
         // 1. Productive Actions (Contribute to Base Score)
-        // REBALANCED: Offspring increased from 100 to 150, kills reduced from 300 to 200
-        baseScore += safeNumber(this.offspring || 0, 0) * 150; // Increased from 100
-        baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
+        baseScore += safeNumber(this.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
+        baseScore += safeNumber(this.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS; // Reduced from 50 to 15
         
         // Goal completion bonus: reward agents that successfully complete their goals
         const goalsCompleted = safeNumber(this.goalMemory?.goalsCompleted || 0, 0);
-        baseScore += goalsCompleted * 100; // 100 points per completed goal
+        baseScore += goalsCompleted * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
+        
+        // Reproduction attempt bonus: reward agents that attempt reproduction (even if unsuccessful)
+        const reproductionAttempts = safeNumber(this.reproductionAttempts || 0, 0);
+        baseScore += reproductionAttempts * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
         
         // Movement rewards - NORMALIZED by distance traveled to prevent tiny movements from inflating fitness
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
@@ -2204,20 +2214,20 @@ export class Agent {
             
             // Direction changes: cap and normalize
             const directionChangedNormalized = Math.min(safeNumber(this.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
-            baseScore += directionChangedNormalized * 1.0; // Reduced from 2.0 and normalized
+            baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
             
             // Speed changes: cap and normalize
             const speedChangedNormalized = Math.min(safeNumber(this.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
-            baseScore += speedChangedNormalized * 0.5; // Reduced from 1.0 and normalized
+            baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
         } else {
             // Penalty for minimal movement (agents that barely move)
             const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
-            baseScore -= Math.min(movementPenalty, 50); // Max 50 point penalty for minimal movement
+            baseScore -= Math.min(movementPenalty, FITNESS_PENALTIES.MINIMAL_MOVEMENT);
         }
         
-        baseScore += safeNumber(explorationPercentage, 0) * 100;
-        baseScore += safeNumber(this.foodEaten || 0, 0) * 500;
-        baseScore += safeNumber(this.kills || 0, 0) * 200; // Reduced from 300
+        baseScore += safeNumber(explorationPercentage, 0) * FITNESS_MULTIPLIERS.EXPLORATION; // Increased from 100 to 200
+        baseScore += safeNumber(this.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
+        baseScore += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
 
         // Navigation behavior rewards - NORMALIZED by distance to prevent accumulation from tiny movements
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
@@ -2225,20 +2235,20 @@ export class Agent {
             
             // Normalize navigation rewards by distance
             const turnsTowardsFoodNormalized = safeNumber(this.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += turnsTowardsFoodNormalized * 5; // Reduced from 10 and normalized
+            baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD; // Increased from 5 to 8
             
             const turnsAwayFromObstaclesNormalized = safeNumber(this.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += turnsAwayFromObstaclesNormalized * 5; // Reduced from 10 and normalized
+            baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES; // Increased from 5 to 8
             
             const foodApproachesNormalized = safeNumber(this.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += foodApproachesNormalized * 10; // Reduced from 25 and normalized
+            baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES; // Increased from 10 to 15
         }
 
         const offspring = safeNumber(this.offspring || 0, 0);
         const foodEaten = safeNumber(this.foodEaten || 0, 0);
         // Enhanced synergy bonus: reward agents that both reproduce and eat
         if (offspring > 0 && foodEaten > 0) {
-            baseScore += (offspring * 2 + foodEaten) * 10; // Enhanced from (offspring * foodEaten) * 5
+            baseScore += (offspring * 2 + foodEaten) * FITNESS_MULTIPLIERS.REPRODUCTION_FOOD_SYNERGY;
         }
 
         // 2. Efficiency and Exploration
@@ -2249,21 +2259,21 @@ export class Agent {
         if (energySpent > 0) {
             efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
         }
-        baseScore += efficiency * 15;
+        baseScore += efficiency * FITNESS_MULTIPLIERS.EFFICIENCY; // Increased from 15 to 20
 
         // 3. Penalize repetitive circular movement (lucky food finding)
         const consecutiveTurns = safeNumber(this.consecutiveTurns || 0, 0);
         // Cap consecutive turns to prevent extreme penalties (max 50 turns = 1000 penalty)
         const cappedTurns = Math.min(consecutiveTurns, 50);
-        const circlePenalty = Math.min(cappedTurns * 20, 2000);
+        const circlePenalty = Math.min(cappedTurns * FITNESS_PENALTIES.CIRCULAR_MOVEMENT, 2000);
         baseScore -= circlePenalty;
-        baseScore += safeNumber(this.successfulEscapes || 0, 0) * 75;
+        baseScore += safeNumber(this.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
 
         // 3. Penalties (Applied to Base Score)
         const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
         const collisions = safeNumber(this.collisions || 0, 0);
-        baseScore -= timesHitObstacle * 30;
-        baseScore -= (collisions - timesHitObstacle) * 10;
+        baseScore -= timesHitObstacle * FITNESS_PENALTIES.OBSTACLE_HIT;
+        baseScore -= (collisions - timesHitObstacle) * FITNESS_PENALTIES.WALL_HIT;
 
         // 4. Collision Avoidance Reward (NEW)
         // Use real-time age in seconds for fitness calculation (not affected by focus loss)
@@ -2282,7 +2292,7 @@ export class Agent {
         if (ageInSeconds > 20 && baseScore < 50) {
             // Agents surviving >20s with baseScore <50 get increasingly penalized
             const inactivityDuration = Math.max(0, ageInSeconds - 20);
-            inactivityPenalty = inactivityDuration * 2; // 2 points per second of inactivity beyond 20s
+            inactivityPenalty = inactivityDuration * FITNESS_PENALTIES.INACTIVITY;
         }
 
         // Apply inactivity penalty to base score
@@ -2291,10 +2301,11 @@ export class Agent {
         // 7. REBALANCED SURVIVAL: Use separate bonus instead of multiplier to reduce dominance
         // Separate survival bonus (max 500 points) instead of 3x multiplier
         // This prevents passive survivalists from achieving high fitness
-        const survivalBonus = Math.min(ageInSeconds * 10, 500); // 10 points per second, capped at 500
+        const survivalBonus = Math.min(ageInSeconds * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP);
         // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        // Only applies after surviving longer than 30 seconds to avoid rewarding short-lived agents
-        const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
+        // Only applies after surviving longer than threshold to avoid rewarding short-lived agents
+        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+            (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
 
         // Final fitness = adjusted base score + survival bonuses (not multiplied)
         const finalFitnessValue = safeNumber(adjustedBaseScore + survivalBonus + rawSurvivalBonus, 0);

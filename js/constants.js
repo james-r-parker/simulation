@@ -706,6 +706,70 @@ export const MIN_NAVIGATION_TURN_FOR_FITNESS = 0.15;
  */
 export const MIN_FOOD_APPROACH_DISTANCE = 5;
 
+/**
+ * Fitness reward multipliers for various behaviors.
+ * These constants control how much each behavior contributes to fitness.
+ * @type {Object}
+ * @constant
+ */
+export const FITNESS_MULTIPLIERS = {
+    // Core survival behaviors
+    FOOD_EATEN: 500,              // Points per food item eaten (increased from base)
+    OFFSPRING: 150,               // Points per offspring produced
+    KILLS: 200,                   // Points per agent killed
+    
+    // Exploration and movement
+    EXPLORATION: 200,             // Points per 1% of map explored (increased from 100)
+    CLEVER_TURNS: 15,             // Points per clever turn (reduced from 50 to prevent dominance)
+    EFFICIENCY: 20,               // Points per efficiency unit (distance/energy, increased from 15)
+    
+    // Navigation behaviors (normalized by distance)
+    TURNS_TOWARDS_FOOD: 8,        // Points per normalized turn towards food (increased from 5)
+    TURNS_AWAY_FROM_OBSTACLES: 8, // Points per normalized turn away from obstacles (increased from 5)
+    FOOD_APPROACHES: 15,          // Points per normalized food approach (increased from 10)
+    
+    // Movement patterns (normalized by distance)
+    DIRECTION_CHANGES: 1.0,       // Points per normalized direction change
+    SPEED_CHANGES: 0.5,           // Points per normalized speed change
+    
+    // Advanced behaviors
+    SUCCESSFUL_ESCAPES: 75,       // Points per successful escape
+    GOALS_COMPLETED: 100,         // Points per completed goal
+    REPRODUCTION_ATTEMPT: 5,      // Points per reproduction attempt (even if unsuccessful)
+    
+    // Temperature system
+    TEMPERATURE_BONUS_MAX: 100,   // Maximum temperature bonus points
+    TEMPERATURE_PENALTY_MAX: 100, // Maximum temperature penalty points
+    
+    // Synergy bonuses
+    REPRODUCTION_FOOD_SYNERGY: 10  // Multiplier for (offspring × 2 + foodEaten) synergy
+};
+
+/**
+ * Fitness penalty multipliers for negative behaviors.
+ * @type {Object}
+ * @constant
+ */
+export const FITNESS_PENALTIES = {
+    CIRCULAR_MOVEMENT: 20,        // Points per consecutive turn (capped at 50 turns, max 2000)
+    OBSTACLE_HIT: 30,             // Points per obstacle collision
+    WALL_HIT: 10,                 // Points per wall collision
+    INACTIVITY: 2,                // Points per second of inactivity after 20s (if baseScore < 50)
+    MINIMAL_MOVEMENT: 50          // Maximum penalty for agents that barely move
+};
+
+/**
+ * Survival bonus multipliers.
+ * @type {Object}
+ * @constant
+ */
+export const SURVIVAL_BONUSES = {
+    BASE_MULTIPLIER: 10,          // Points per second of survival
+    BASE_CAP: 500,                // Maximum base survival bonus
+    EXTENDED_THRESHOLD: 30,       // Seconds before extended bonus kicks in
+    EXTENDED_DIVISOR: 10          // Divisor for extended survival bonus
+};
+
 // ============================================================================
 // AGENT SPECIALIZATION
 // ============================================================================
@@ -1519,12 +1583,20 @@ export const MIN_GENETIC_DISTANCE = 0.1;
 
 /**
  * Minimum fitness score required to save agent genes.
- * Reduced from 5000 after formula changes.
+ * 
+ * Calculation for 500-second agent:
+ * - Survival bonus: 500 (capped) + 47 (extended) = 547 points
+ * - Good agent base score: ~12,000-15,000 (food, exploration, navigation, efficiency)
+ * - Total good agent: ~12,500-15,500 points
+ * - Mediocre agent (just surviving): ~5,000-7,000 points
+ * 
+ * Threshold set to 12,000 to ensure only genuinely good agents qualify,
+ * not just agents that survive a long time passively.
  * @type {number}
  * @constant
- * @default 9000
+ * @default 12000
  */
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 12000;
 
 /**
  * Maximum agents saved per gene pool generation.
@@ -1536,19 +1608,27 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
 
 /**
  * Minimum food items consumed to qualify.
+ * 
+ * For a 500-second agent, this should represent active foraging.
+ * At 500 seconds, a good agent should eat at least 15-20 food items.
+ * Set to 12 to ensure active behavior, not just passive survival.
  * @type {number}
  * @constant
- * @default 5
+ * @default 12
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 7;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 12;
 
 /**
  * Minimum lifespan in frames to qualify.
+ * 
+ * For agents living 500 seconds, this threshold should represent
+ * a meaningful portion of their lifespan. Set to 60 seconds (3600 frames)
+ * to ensure agents have demonstrated sustained survival ability.
  * @type {number}
  * @constant
- * @default 2000
+ * @default 3600
  */
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3600;
 
 /**
  * Minimum lifespan in seconds (33.33s).
@@ -1558,20 +1638,28 @@ export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 2000;
 export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / FPS_TARGET;
 
 /**
- * Minimum world exploration percentage required (reduced from 1.1%).
+ * Minimum world exploration percentage required.
+ * 
+ * For a 500-second agent, 2.5% is reasonable but could be higher.
+ * Set to 3.0% to ensure agents actively explore, not just survive in one area.
  * @type {number}
  * @constant
- * @default 1.5
+ * @default 3.0
  */
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 2.5;
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0;
 
 /**
  * Minimum successful food-seeking behaviors.
+ * 
+ * For a 500-second agent, 5 turns is far too low.
+ * A good agent should demonstrate consistent food-seeking behavior.
+ * Set to 20 to ensure active navigation towards food sources.
+ * Note: This is raw count, not normalized (normalization happens in fitness calc).
  * @type {number}
  * @constant
- * @default 5
+ * @default 20
  */
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 5;
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 20;
 
 /**
  * Maximum number of gene pools stored in database.
@@ -1607,12 +1695,15 @@ export const VALIDATION_AGENT_ENERGY = 3000;
 
 /**
  * Fitness threshold for partial credit system (4/5 criteria with exceptional fitness).
- * Reduced from 15000 to 10000 after fitness formula rebalancing.
+ * 
+ * Agents with exceptional fitness (top performers) can qualify with 4/5 criteria.
+ * Set to 18,000 to ensure only truly exceptional agents get this benefit.
+ * This is ~50% higher than the base threshold, representing top 10-20% of agents.
  * @type {number}
  * @constant
- * @default 10000
+ * @default 18000
  */
-export const EXCEPTIONAL_FITNESS_THRESHOLD = 10000;
+export const EXCEPTIONAL_FITNESS_THRESHOLD = 18000;
 
 // ============================================================================
 // SEASONAL ENVIRONMENTAL CYCLE

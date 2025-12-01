@@ -50,13 +50,7 @@ export class WebGLRenderer {
 
         // Scene setup
         this.scene = new THREE.Scene();
-        // Background will be handled by background plane, keep solid color as fallback
-        this.scene.background = new THREE.Color(COLORS.BACKGROUND); // Deep dark blue/black
-
-        // Animated neural network background
-        this.backgroundPlane = null;
-        this.bestAgentNetworkData = null;
-        this.backgroundTime = 0;
+        this.scene.background = new THREE.Color(COLORS.BACKGROUND);
 
         // Obstacle animation tracking
         this.obstaclePulseTime = 0;
@@ -139,9 +133,6 @@ export class WebGLRenderer {
         this.obstacleGroup = new THREE.Group();
         this.rayGroup = new THREE.Group(); // Ray visualization
         
-        // Create animated neural network background (behind everything)
-        this.createNeuralNetworkBackground();
-        
         this.scene.add(this.agentGroup);
         this.scene.add(this.foodGroup);
         this.scene.add(this.pheromoneGroup);
@@ -214,112 +205,6 @@ export class WebGLRenderer {
 
     }
 
-    /**
-     * Create animated neural network background visualization
-     */
-    createNeuralNetworkBackground() {
-        // Create a large plane covering the entire world
-        const planeGeometry = new THREE.PlaneGeometry(this.worldWidth * 2, this.worldHeight * 2);
-        
-        const backgroundShader = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                worldSize: { value: new THREE.Vector2(this.worldWidth, this.worldHeight) },
-                networkData: { value: null }, // Will be updated with best agent's network
-                cameraPos: { value: new THREE.Vector2(0, 0) }
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                void main() {
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                uniform vec2 worldSize;
-                uniform vec2 cameraPos;
-                varying vec2 vUv;
-                
-                // Simple neural network visualization - flowing lines and nodes
-                void main() {
-                    vec2 uv = vUv;
-                    vec2 worldPos = (uv - 0.5) * worldSize + cameraPos;
-                    
-                    // Create flowing grid pattern
-                    float gridSize = 200.0;
-                    vec2 grid = floor(worldPos / gridSize);
-                    vec2 gridUv = fract(worldPos / gridSize);
-                    
-                    // Animated flowing effect
-                    float flow = sin(time * 0.5 + grid.x * 0.1 + grid.y * 0.15) * 0.5 + 0.5;
-                    
-                    // Create node points
-                    float nodeDist = length(gridUv - 0.5);
-                    float node = smoothstep(0.3, 0.1, nodeDist) * flow;
-                    
-                    // Create connecting lines
-                    float lineWidth = 0.02;
-                    float line1 = smoothstep(lineWidth, 0.0, abs(gridUv.x - 0.5)) * flow * 0.3;
-                    float line2 = smoothstep(lineWidth, 0.0, abs(gridUv.y - 0.5)) * flow * 0.3;
-                    
-                    // Combine with faded colors
-                    vec3 color1 = vec3(0.05, 0.1, 0.2); // Deep blue
-                    vec3 color2 = vec3(0.1, 0.05, 0.25); // Purple-blue
-                    vec3 color = mix(color1, color2, flow);
-                    color += vec3(node * 0.1, node * 0.15, node * 0.2); // Cyan nodes
-                    color += vec3(line1 + line2) * vec3(0.05, 0.1, 0.15); // Cyan lines
-                    
-                    // Very low opacity so it doesn't interfere
-                    gl_FragColor = vec4(color, 0.15);
-                }
-            `,
-            transparent: true,
-            depthWrite: false
-        });
-        
-        this.backgroundPlane = new THREE.Mesh(planeGeometry, backgroundShader);
-        this.backgroundPlane.position.set(0, 0, -100); // Behind everything
-        this.scene.add(this.backgroundPlane);
-    }
-
-    /**
-     * Update neural network background with best agent's data
-     */
-    updateNeuralNetworkBackground(bestAgent, frameCount) {
-        if (!this.backgroundPlane) return;
-        
-        const material = this.backgroundPlane.material;
-        if (!material.uniforms) return;
-        
-        // Update time for animation
-        material.uniforms.time.value = frameCount * 0.016; // ~60fps
-        
-        // Update camera position for parallax effect
-        if (this.camera) {
-            material.uniforms.cameraPos.value.set(
-                this.camera.position.x,
-                -this.camera.position.y
-            );
-        }
-        
-        // If we have a best agent with neural network, visualize it
-        if (bestAgent && bestAgent.neuralNetwork && bestAgent.hiddenState) {
-            // Extract network state for visualization
-            const hiddenState = bestAgent.hiddenState;
-            const stateSize = Math.min(hiddenState.length, 32); // Limit for performance
-            
-            // Create texture data from hidden state
-            if (!material.uniforms.networkData.value) {
-                material.uniforms.networkData.value = new Float32Array(stateSize);
-            }
-            
-            const data = material.uniforms.networkData.value;
-            for (let i = 0; i < stateSize; i++) {
-                data[i] = hiddenState[i] || 0;
-            }
-        }
-    }
 
     /**
      * Comprehensive cleanup method to dispose of all WebGL resources
@@ -447,13 +332,6 @@ export class WebGLRenderer {
         }
 
         // 9. Dispose of neural network background
-        if (this.backgroundPlane) {
-            if (this.backgroundPlane.geometry) this.backgroundPlane.geometry.dispose();
-            if (this.backgroundPlane.material) this.backgroundPlane.material.dispose();
-            if (this.scene) this.scene.remove(this.backgroundPlane);
-            this.backgroundPlane = null;
-        }
-
         // 10. Dispose of sparkle system
         if (this.sparkleGroup) {
             while (this.sparkleGroup.children.length > 0) {
@@ -819,10 +697,6 @@ export class WebGLRenderer {
     updateSparkles() {
         if (!this.sparklesEnabled) return;
         
-        // DEBUG: Log sparkle state for troubleshooting
-        if (this.sparkles.length > 0 && (!this.sparklePoints || !this.sparklePoints.visible)) {
-            this.logger.debug(`[SPARKLES] ${this.sparkles.length} sparkles exist but sparklePoints is ${this.sparklePoints ? 'not visible' : 'null'}`);
-        }
         // Update and remove expired sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             const sparkle = this.sparkles[i];
@@ -1157,9 +1031,6 @@ export class WebGLRenderer {
             }
         }
         
-        // Update neural network background
-        this.updateNeuralNetworkBackground(bestAgent, frameCount);
-
         // Group ALL living agents by gene ID first (to prevent disposal of off-screen agents)
         const agentsByGene = new Map();
         const numAgents = agents.length;
@@ -2146,11 +2017,6 @@ export class WebGLRenderer {
     }
 
     render() {
-        // Update background animation time
-        if (this.backgroundPlane && this.backgroundPlane.material.uniforms) {
-            this.backgroundPlane.material.uniforms.time.value += 0.016;
-        }
-        
         // Update sparkles
         this.updateSparkles();
 

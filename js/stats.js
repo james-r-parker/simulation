@@ -8,6 +8,9 @@ import {
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
+    MIN_DISTANCE_FOR_MOVEMENT_REWARDS,
+    FITNESS_MULTIPLIERS,
+    SURVIVAL_BONUSES,
     EXPLORATION_GRID_WIDTH,
     EXPLORATION_GRID_HEIGHT,
     TEMPERATURE_MAX,
@@ -69,17 +72,47 @@ export function copySimulationStats(simulation) {
         }
         baseScore += temperatureBonus - temperaturePenalty;
         
-        // Productive actions - match actual multipliers (REBALANCED)
-        baseScore += safeNumber(a.offspring || 0, 0) * 150; // Increased from 100
-        baseScore += safeNumber(a.cleverTurns || 0, 0) * 50;
-        baseScore += Math.min(safeNumber(a.directionChanged || 0, 0), 500) * 2;
-        baseScore += Math.min(safeNumber(a.speedChanged || 0, 0), 200) * 1;
-        baseScore += safeNumber(explorationPercentage, 0) * 100;
-        baseScore += safeNumber(a.foodEaten || 0, 0) * 500;
-        baseScore += safeNumber(a.kills || 0, 0) * 200; // Reduced from 300
-        baseScore += safeNumber(a.turnsTowardsFood || 0, 0) * 10;
-        baseScore += safeNumber(a.turnsAwayFromObstacles || 0, 0) * 10;
-        baseScore += safeNumber(a.foodApproaches || 0, 0) * 25;
+        // Productive actions - match actual multipliers from agent.js (with normalization)
+        baseScore += safeNumber(a.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
+        baseScore += safeNumber(a.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS;
+        baseScore += safeNumber(explorationPercentage, 0) * FITNESS_MULTIPLIERS.EXPLORATION;
+        baseScore += safeNumber(a.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
+        baseScore += safeNumber(a.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
+        
+        // Reproduction attempts bonus
+        baseScore += safeNumber(a.reproductionAttempts || 0, 0) * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
+        
+        // Goals completed bonus
+        const goalsCompleted = safeNumber(a.goalMemory?.goalsCompleted || 0, 0);
+        baseScore += goalsCompleted * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
+        
+        // Movement rewards - NORMALIZED by distance (matches agent.js)
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            
+            // Direction changes: normalized (matches agent.js)
+            const directionChangedNormalized = Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
+            baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
+            
+            // Speed changes: normalized (matches agent.js)
+            const speedChangedNormalized = Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
+            baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
+            
+            // Navigation rewards - NORMALIZED (matches agent.js)
+            const turnsTowardsFoodNormalized = safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD;
+            
+            const turnsAwayFromObstaclesNormalized = safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES;
+            
+            const foodApproachesNormalized = safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
+            baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES;
+        } else {
+            // Penalty for minimal movement (matches agent.js)
+            const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
+            baseScore -= Math.min(movementPenalty, 50);
+        }
         
         // Enhanced synergy bonus
         const offspring = safeNumber(a.offspring || 0, 0);
@@ -89,16 +122,16 @@ export function copySimulationStats(simulation) {
         }
         
         // Efficiency (no threshold - always calculate)
+        // Reuse distanceTravelled declared above
         let efficiency = 0;
         const energySpent = safeNumber(a.energySpent || 0, 0);
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (energySpent > 0) {
             efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
         }
-        baseScore += efficiency * 15;
+        baseScore += efficiency * FITNESS_MULTIPLIERS.EFFICIENCY;
         
         // Successful escapes
-        baseScore += safeNumber(a.successfulEscapes || 0, 0) * 75;
+        baseScore += safeNumber(a.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
         
         // Penalties - match actual formula (single circle penalty, not double)
         const consecutiveTurns = safeNumber(a.consecutiveTurns || 0, 0);
@@ -128,8 +161,9 @@ export function copySimulationStats(simulation) {
         // Note: Temperature penalty already applied in baseScore calculation above
         
         // REBALANCED SURVIVAL: Separate bonus instead of multiplier
-        const survivalBonus = Math.min(ageInSeconds * 10, 500); // 10 points per second, capped at 500
-        const rawSurvivalBonus = ageInSeconds > 30 ? (ageInSeconds - 30) / 10 : 0;
+        const survivalBonus = Math.min(ageInSeconds * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP);
+        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+            (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
         // Final fitness = adjusted base score + survival bonuses (not multiplied)
         const finalFitness = adjustedBaseScore + survivalBonus + rawSurvivalBonus;
         
@@ -156,10 +190,60 @@ export function copySimulationStats(simulation) {
     
     // Additional fitness component averages for detailed breakdown
     // (avgExplorationPercentage is calculated later in qualification criteria section)
-    const avgDirectionChanged = livingAgents.reduce((sum, a) => sum + Math.min(a.directionChanged || 0, 500), 0) / livingAgents.length;
-    const avgSpeedChanged = livingAgents.reduce((sum, a) => sum + Math.min(a.speedChanged || 0, 200), 0) / livingAgents.length;
+    // Calculate normalized movement and navigation values (matching agent.js calculation)
+    const avgDirectionChanged = livingAgents.reduce((sum, a) => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            const normalized = Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
+            return sum + normalized;
+        }
+        return sum;
+    }, 0) / livingAgents.length;
+    
+    const avgSpeedChanged = livingAgents.reduce((sum, a) => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            const normalized = Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
+            return sum + normalized;
+        }
+        return sum;
+    }, 0) / livingAgents.length;
+    
+    const avgTurnsTowardsFoodNormalized = livingAgents.reduce((sum, a) => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            const normalized = safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+            return sum + normalized;
+        }
+        return sum;
+    }, 0) / livingAgents.length;
+    
+    const avgTurnsAwayFromObstaclesNormalized = livingAgents.reduce((sum, a) => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            const normalized = safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
+            return sum + normalized;
+        }
+        return sum;
+    }, 0) / livingAgents.length;
+    
+    const avgFoodApproachesNormalized = livingAgents.reduce((sum, a) => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            const normalized = safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
+            return sum + normalized;
+        }
+        return sum;
+    }, 0) / livingAgents.length;
+    
     const avgObstacleFreeFrames = livingAgents.reduce((sum, a) => {
-        const obstacleFreeFrames = Math.max(0, (a.framesAlive || 0) - ((a.timesHitObstacle || 0) * 30));
+        const ageInFrames = (a.age || 0) * FPS_TARGET;
+        const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
         return sum + (obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
     }, 0) / livingAgents.length;
 
@@ -338,18 +422,18 @@ Avg Net Base Score: ${avgNetBaseScore.toFixed(1)}
 Avg Survival Bonus: ${avgSurvivalBonus.toFixed(0)} pts
 Avg Raw Survival Bonus: ${avgRawSurvivalBonus.toFixed(1)}
 Fitness Components (Rewards):
-  - Food Eaten: ${(avgFood * 500).toFixed(1)} pts (${avgFood.toFixed(1)} × 500)
-  - Offspring: ${(avgOffspring * 150).toFixed(1)} pts (${avgOffspring.toFixed(2)} × 150)
-  - Kills: ${(avgKills * 200).toFixed(1)} pts (${avgKills.toFixed(2)} × 200)
-  - Turns Towards Food: ${(avgTurnsTowardsFood * 10).toFixed(1)} pts (${avgTurnsTowardsFood.toFixed(2)} × 10)
-  - Turns Away From Obstacles: ${(avgTurnsAwayFromObstacles * 10).toFixed(1)} pts (${avgTurnsAwayFromObstacles.toFixed(2)} × 10)
-  - Food Approaches: ${(avgFoodApproaches * 25).toFixed(1)} pts (${avgFoodApproaches.toFixed(2)} × 25)
-  - Clever Turns: ${(avgCleverTurns * 50).toFixed(1)} pts (${avgCleverTurns.toFixed(2)} × 50)
-  - Exploration: ${(avgExplorationPercentage * 100).toFixed(1)} pts (${avgExplorationPercentage.toFixed(2)}% × 100)
-  - Direction Changes: ${(avgDirectionChanged * 2).toFixed(1)} pts (${avgDirectionChanged.toFixed(1)} × 2, capped)
-  - Speed Changes: ${(avgSpeedChanged * 1).toFixed(1)} pts (${avgSpeedChanged.toFixed(1)} × 1, capped)
+  - Food Eaten: ${(avgFood * FITNESS_MULTIPLIERS.FOOD_EATEN).toFixed(1)} pts (${avgFood.toFixed(1)} × ${FITNESS_MULTIPLIERS.FOOD_EATEN})
+  - Offspring: ${(avgOffspring * FITNESS_MULTIPLIERS.OFFSPRING).toFixed(1)} pts (${avgOffspring.toFixed(2)} × ${FITNESS_MULTIPLIERS.OFFSPRING})
+  - Kills: ${(avgKills * FITNESS_MULTIPLIERS.KILLS).toFixed(1)} pts (${avgKills.toFixed(2)} × ${FITNESS_MULTIPLIERS.KILLS})
+  - Turns Towards Food: ${(avgTurnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD).toFixed(1)} pts (${avgTurnsTowardsFood.toFixed(2)} raw, ${avgTurnsTowardsFoodNormalized.toFixed(2)} normalized × ${FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD})
+  - Turns Away From Obstacles: ${(avgTurnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES).toFixed(1)} pts (${avgTurnsAwayFromObstacles.toFixed(2)} raw, ${avgTurnsAwayFromObstaclesNormalized.toFixed(2)} normalized × ${FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES})
+  - Food Approaches: ${(avgFoodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES).toFixed(1)} pts (${avgFoodApproaches.toFixed(2)} raw, ${avgFoodApproachesNormalized.toFixed(2)} normalized × ${FITNESS_MULTIPLIERS.FOOD_APPROACHES})
+  - Clever Turns: ${(avgCleverTurns * FITNESS_MULTIPLIERS.CLEVER_TURNS).toFixed(1)} pts (${avgCleverTurns.toFixed(2)} × ${FITNESS_MULTIPLIERS.CLEVER_TURNS})
+  - Exploration: ${(avgExplorationPercentage * FITNESS_MULTIPLIERS.EXPLORATION).toFixed(1)} pts (${avgExplorationPercentage.toFixed(2)}% × ${FITNESS_MULTIPLIERS.EXPLORATION})
+  - Direction Changes: ${(avgDirectionChanged * FITNESS_MULTIPLIERS.DIRECTION_CHANGES).toFixed(1)} pts (normalized × ${FITNESS_MULTIPLIERS.DIRECTION_CHANGES}, capped at 500 raw)
+  - Speed Changes: ${(avgSpeedChanged * FITNESS_MULTIPLIERS.SPEED_CHANGES).toFixed(1)} pts (normalized × ${FITNESS_MULTIPLIERS.SPEED_CHANGES}, capped at 200 raw)
   - Obstacle-Free Frames: ${avgObstacleFreeFrames.toFixed(1)} pts
-  - Successful Escapes: ${(avgSuccessfulEscapes * 75).toFixed(1)} pts (${avgSuccessfulEscapes.toFixed(2)} × 75)
+  - Successful Escapes: ${(avgSuccessfulEscapes * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES).toFixed(1)} pts (${avgSuccessfulEscapes.toFixed(2)} × ${FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES})
 Fitness Components (Penalties):
   - Obstacle Collisions: -${(avgWallHits * 30).toFixed(1)} pts (${avgWallHits.toFixed(1)} × 30)
   - Wall Hits: -${((avgCollisions - avgWallHits) * 10).toFixed(1)} pts (${(avgCollisions - avgWallHits).toFixed(1)} × 10)
