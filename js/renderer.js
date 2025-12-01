@@ -13,7 +13,8 @@ import { PheromonePuff } from './pheromone.js';
 import {
     LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY,
     COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING,
-    VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION
+    VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION,
+    MAX_VELOCITY
 } from './constants.js';
 import { queryArrayPool } from './array-pool.js';
 import {
@@ -49,7 +50,22 @@ export class WebGLRenderer {
 
         // Scene setup
         this.scene = new THREE.Scene();
+        // Background will be handled by background plane, keep solid color as fallback
         this.scene.background = new THREE.Color(COLORS.BACKGROUND); // Deep dark blue/black
+
+        // Animated neural network background
+        this.backgroundPlane = null;
+        this.bestAgentNetworkData = null;
+        this.backgroundTime = 0;
+
+        // Obstacle animation tracking
+        this.obstaclePulseTime = 0;
+        this.obstacleParticleSystems = new Map(); // obstacle id -> particle system
+
+        // Agent trail system
+        this.agentTrails = new Map(); // agent id -> trail data
+        this.trailGroup = new THREE.Group();
+        this.scene.add(this.trailGroup);
 
         // Add lighting for cyberpunk aesthetic
         // Ambient light for base illumination
@@ -122,6 +138,10 @@ export class WebGLRenderer {
         this.pheromoneGroup = new THREE.Group();
         this.obstacleGroup = new THREE.Group();
         this.rayGroup = new THREE.Group(); // Ray visualization
+        
+        // Create animated neural network background (behind everything)
+        this.createNeuralNetworkBackground();
+        
         this.scene.add(this.agentGroup);
         this.scene.add(this.foodGroup);
         this.scene.add(this.pheromoneGroup);
@@ -191,6 +211,114 @@ export class WebGLRenderer {
             FOUR_OVER_6: 4 / 6,
             FIVE_OVER_6: 5 / 6
         };
+
+    }
+
+    /**
+     * Create animated neural network background visualization
+     */
+    createNeuralNetworkBackground() {
+        // Create a large plane covering the entire world
+        const planeGeometry = new THREE.PlaneGeometry(this.worldWidth * 2, this.worldHeight * 2);
+        
+        const backgroundShader = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                worldSize: { value: new THREE.Vector2(this.worldWidth, this.worldHeight) },
+                networkData: { value: null }, // Will be updated with best agent's network
+                cameraPos: { value: new THREE.Vector2(0, 0) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec2 worldSize;
+                uniform vec2 cameraPos;
+                varying vec2 vUv;
+                
+                // Simple neural network visualization - flowing lines and nodes
+                void main() {
+                    vec2 uv = vUv;
+                    vec2 worldPos = (uv - 0.5) * worldSize + cameraPos;
+                    
+                    // Create flowing grid pattern
+                    float gridSize = 200.0;
+                    vec2 grid = floor(worldPos / gridSize);
+                    vec2 gridUv = fract(worldPos / gridSize);
+                    
+                    // Animated flowing effect
+                    float flow = sin(time * 0.5 + grid.x * 0.1 + grid.y * 0.15) * 0.5 + 0.5;
+                    
+                    // Create node points
+                    float nodeDist = length(gridUv - 0.5);
+                    float node = smoothstep(0.3, 0.1, nodeDist) * flow;
+                    
+                    // Create connecting lines
+                    float lineWidth = 0.02;
+                    float line1 = smoothstep(lineWidth, 0.0, abs(gridUv.x - 0.5)) * flow * 0.3;
+                    float line2 = smoothstep(lineWidth, 0.0, abs(gridUv.y - 0.5)) * flow * 0.3;
+                    
+                    // Combine with faded colors
+                    vec3 color1 = vec3(0.05, 0.1, 0.2); // Deep blue
+                    vec3 color2 = vec3(0.1, 0.05, 0.25); // Purple-blue
+                    vec3 color = mix(color1, color2, flow);
+                    color += vec3(node * 0.1, node * 0.15, node * 0.2); // Cyan nodes
+                    color += vec3(line1 + line2) * vec3(0.05, 0.1, 0.15); // Cyan lines
+                    
+                    // Very low opacity so it doesn't interfere
+                    gl_FragColor = vec4(color, 0.15);
+                }
+            `,
+            transparent: true,
+            depthWrite: false
+        });
+        
+        this.backgroundPlane = new THREE.Mesh(planeGeometry, backgroundShader);
+        this.backgroundPlane.position.set(0, 0, -100); // Behind everything
+        this.scene.add(this.backgroundPlane);
+    }
+
+    /**
+     * Update neural network background with best agent's data
+     */
+    updateNeuralNetworkBackground(bestAgent, frameCount) {
+        if (!this.backgroundPlane) return;
+        
+        const material = this.backgroundPlane.material;
+        if (!material.uniforms) return;
+        
+        // Update time for animation
+        material.uniforms.time.value = frameCount * 0.016; // ~60fps
+        
+        // Update camera position for parallax effect
+        if (this.camera) {
+            material.uniforms.cameraPos.value.set(
+                this.camera.position.x,
+                -this.camera.position.y
+            );
+        }
+        
+        // If we have a best agent with neural network, visualize it
+        if (bestAgent && bestAgent.neuralNetwork && bestAgent.hiddenState) {
+            // Extract network state for visualization
+            const hiddenState = bestAgent.hiddenState;
+            const stateSize = Math.min(hiddenState.length, 32); // Limit for performance
+            
+            // Create texture data from hidden state
+            if (!material.uniforms.networkData.value) {
+                material.uniforms.networkData.value = new Float32Array(stateSize);
+            }
+            
+            const data = material.uniforms.networkData.value;
+            for (let i = 0; i < stateSize; i++) {
+                data[i] = hiddenState[i] || 0;
+            }
+        }
     }
 
     /**
@@ -295,31 +423,68 @@ export class WebGLRenderer {
             this.activeEffectMeshes = [];
         }
 
-        // 7. Dispose of sparkle system
+        // 7. Dispose of agent trails
+        if (this.agentTrails) {
+            for (const [id, trail] of this.agentTrails.entries()) {
+                if (trail.geometry) trail.geometry.dispose();
+                if (trail.material) trail.material.dispose();
+                if (this.trailGroup) this.trailGroup.remove(trail);
+            }
+            this.agentTrails.clear();
+        }
+        if (this.trailGroup) {
+            if (this.scene) this.scene.remove(this.trailGroup);
+        }
+
+        // 8. Dispose of obstacle particle systems
+        if (this.obstacleParticleSystems) {
+            for (const [id, particles] of this.obstacleParticleSystems.entries()) {
+                if (particles.geometry) particles.geometry.dispose();
+                if (particles.material) particles.material.dispose();
+                if (this.obstacleGroup) this.obstacleGroup.remove(particles);
+            }
+            this.obstacleParticleSystems.clear();
+        }
+
+        // 9. Dispose of neural network background
+        if (this.backgroundPlane) {
+            if (this.backgroundPlane.geometry) this.backgroundPlane.geometry.dispose();
+            if (this.backgroundPlane.material) this.backgroundPlane.material.dispose();
+            if (this.scene) this.scene.remove(this.backgroundPlane);
+            this.backgroundPlane = null;
+        }
+
+        // 10. Dispose of sparkle system
         if (this.sparkleGroup) {
             while (this.sparkleGroup.children.length > 0) {
                 const child = this.sparkleGroup.children[0];
                 if (child.geometry) releaseBufferGeometry(child.geometry);
-                if (child.material) releasePointsMaterial(child.material);
+                if (child.material) {
+                    // ShaderMaterial is not pooled, dispose directly
+                    child.material.dispose();
+                }
                 this.sparkleGroup.remove(child);
             }
             if (this.scene) this.scene.remove(this.sparkleGroup);
         }
         if (this.sparklePoints) {
             if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
-            if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
+            if (this.sparklePoints.material) {
+                // ShaderMaterial is not pooled, dispose directly
+                this.sparklePoints.material.dispose();
+            }
             this.sparklePoints = null;
         }
         if (this.sparkles) {
             this.sparkles.length = 0;
         }
 
-        // 8. Clear agent effects map
+        // 11. Clear agent effects map
         if (this.agentEffects) {
             this.agentEffects.clear();
         }
 
-        // 9. Dispose of shared geometries (if they exist)
+        // 12. Dispose of shared geometries (if they exist)
         if (this.agentGeometry) {
             this.agentGeometry.dispose();
         }
@@ -333,7 +498,7 @@ export class WebGLRenderer {
             this.pheromoneGeometry.dispose();
         }
 
-        // 10. Clear groups from scene
+        // 13. Clear groups from scene
         if (this.scene) {
             if (this.agentGroup) this.scene.remove(this.agentGroup);
             if (this.foodGroup) this.scene.remove(this.foodGroup);
@@ -344,18 +509,18 @@ export class WebGLRenderer {
             if (this.agentEffectsGroup) this.scene.remove(this.agentEffectsGroup);
         }
 
-        // 11. Dispose of post-processing
+        // 14. Dispose of post-processing
         if (this.effectComposer) {
             this.effectComposer.dispose();
             this.effectComposer = null;
         }
 
-        // 12. Dispose of Three.js renderer
+        // 15. Dispose of Three.js renderer
         if (this.renderer) {
             this.renderer.dispose();
         }
 
-        // 13. Clear references to prevent memory leaks
+        // 16. Clear references to prevent memory leaks
         this.scene = null;
         this.camera = null;
         this.renderer = null;
@@ -363,7 +528,7 @@ export class WebGLRenderer {
         this.agentEffects = null;
         this.agentStateMeshes = null;
 
-        // 14. Clear pre-allocated arrays
+        // 17. Clear pre-allocated arrays
         this.tempValidAgents.length = 0;
         this.tempVisibleFood.length = 0;
         this.tempVisiblePheromones.length = 0;
@@ -487,10 +652,67 @@ export class WebGLRenderer {
                 `
             };
 
+            // Create motion blur shader for fast-moving agents
+            const motionBlurShader = {
+                uniforms: {
+                    tDiffuse: { value: null },
+                    strength: { value: 0.5 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D tDiffuse;
+                    uniform float strength;
+                    varying vec2 vUv;
+                    void main() {
+                        vec4 color = texture2D(tDiffuse, vUv);
+                        // Simple directional blur - creates motion effect
+                        // This is a simplified motion blur that works without velocity data
+                        vec2 blurDir = vec2(0.0, 0.0);
+                        float blurAmount = 0.0;
+                        
+                        // Detect bright areas (likely fast-moving agents) and apply blur
+                        float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                        if (brightness > 0.5) {
+                            blurAmount = (brightness - 0.5) * strength;
+                            blurDir = normalize(vUv - vec2(0.5)) * blurAmount;
+                        }
+                        
+                        // Sample along blur direction with fixed loop count (8 samples)
+                        vec4 blurred = color;
+                        if (blurAmount > 0.01) {
+                            const int samples = 8;
+                            for (int i = 1; i <= samples; i++) {
+                                float t = float(i) / float(samples);
+                                vec2 offset = blurDir * t;
+                                blurred += texture2D(tDiffuse, vUv + offset);
+                            }
+                            blurred /= float(samples + 1);
+                        }
+                        
+                        gl_FragColor = blurred;
+                    }
+                `
+            };
+
             // Create effect composer
             this.effectComposer = new EffectComposer(this.renderer);
             this.effectComposer.addPass(renderPass);
             this.effectComposer.addPass(bloomPass);
+
+            // Add motion blur pass (before chromatic aberration for better effect)
+            if (POST_PROCESSING.MOTION_BLUR.ENABLED) {
+                const motionBlurPass = new ShaderPass(motionBlurShader);
+                motionBlurPass.uniforms.strength.value = POST_PROCESSING.MOTION_BLUR.STRENGTH;
+                motionBlurPass.enabled = true;
+                this.effectComposer.addPass(motionBlurPass);
+                this.motionBlurPass = motionBlurPass;
+            }
 
             // Add screen effects if enabled
             if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
@@ -505,7 +727,14 @@ export class WebGLRenderer {
                 this.effectComposer.addPass(vignettePass);
                 this.vignettePass = vignettePass;
             } else {
-                bloomPass.renderToScreen = true; // If no vignette, bloom is last
+                // If no vignette, determine last pass
+                if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
+                    // Chromatic aberration is last
+                } else if (POST_PROCESSING.MOTION_BLUR.ENABLED && this.motionBlurPass) {
+                    this.motionBlurPass.renderToScreen = true;
+                } else {
+                    bloomPass.renderToScreen = true;
+                }
             }
 
             // Store passes for later access
@@ -582,7 +811,7 @@ export class WebGLRenderer {
                 color: color,
                 life: life,
                 maxLife: life,
-                size: 2 + Math.random() * 2
+                size: 4 + Math.random() * 6 // Larger sparkles: 4-10 instead of 2-4
             });
         }
     }
@@ -631,10 +860,12 @@ export class WebGLRenderer {
 
                 const color = acquireColor();
                 color.setHex(sparkle.color);
+                // Brighten sparkle colors significantly
+                color.multiplyScalar(1.8);
                 const opacity = sparkle.life / sparkle.maxLife;
-                colors[i3] = color.r;
-                colors[i3 + 1] = color.g;
-                colors[i3 + 2] = color.b;
+                colors[i3] = Math.min(color.r, 1.0); // Clamp to valid range
+                colors[i3 + 1] = Math.min(color.g, 1.0);
+                colors[i3 + 2] = Math.min(color.b, 1.0);
                 releaseColor(color); // Release after use
 
                 sizes[i] = sparkle.size * opacity;
@@ -662,15 +893,42 @@ export class WebGLRenderer {
                 sizeAttr.count = this.sparkles.length;
                 geometry.setAttribute('size', sizeAttr);
 
-                const material = acquirePointsMaterial({
-                    size: 4,
-                    vertexColors: true,
+                // Create custom shader material for soft circular sparkles
+                const sparkleShaderMaterial = new THREE.ShaderMaterial({
+                    vertexShader: `
+                        attribute float size;
+                        varying vec3 vColor;
+                        varying float vOpacity;
+                        void main() {
+                            // Three.js automatically provides 'color' attribute when vertexColors: true
+                            vColor = color;
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            gl_PointSize = size * (300.0 / -mvPosition.z);
+                            vOpacity = min(size / 3.0, 1.0); // Higher base opacity, clamp to 1.0
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vOpacity;
+                        void main() {
+                            vec2 coord = gl_PointCoord - vec2(0.5);
+                            float dist = length(coord);
+                            // Soft circular falloff with smooth edges - brighter and more visible
+                            float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                            alpha *= vOpacity * 1.5; // Increase opacity by 50%
+                            // Brighten the color for more visibility
+                            vec3 brightColor = vColor * 1.5;
+                            gl_FragColor = vec4(brightColor, alpha);
+                        }
+                    `,
                     transparent: true,
-                    opacity: 0.8,
-                    sizeAttenuation: false
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                    vertexColors: true
                 });
 
-                this.sparklePoints = new THREE.Points(geometry, material);
+                this.sparklePoints = new THREE.Points(geometry, sparkleShaderMaterial);
                 this.sparklePoints.visible = true;
                 
                 // CRITICAL: Ensure sparkleGroup is in scene before adding sparklePoints
@@ -886,6 +1144,22 @@ export class WebGLRenderer {
         // OPTIMIZED: Frustum culling - only render agents visible in camera
         this.updateFrustum();
 
+        // Find best agent for background visualization
+        let bestAgent = null;
+        let bestFitness = -Infinity;
+        for (let i = 0; i < agents.length; i++) {
+            const agent = agents[i];
+            if (!agent || agent.isDead) continue;
+            const fitness = agent.fitness || 0;
+            if (fitness > bestFitness) {
+                bestFitness = fitness;
+                bestAgent = agent;
+            }
+        }
+        
+        // Update neural network background
+        this.updateNeuralNetworkBackground(bestAgent, frameCount);
+
         // Group ALL living agents by gene ID first (to prevent disposal of off-screen agents)
         const agentsByGene = new Map();
         const numAgents = agents.length;
@@ -976,13 +1250,13 @@ export class WebGLRenderer {
                 // Very strong emissive to make agents stand out prominently
                 const emissiveColor = acquireColor();
                 emissiveColor.copy(baseColor);
-                emissiveColor.multiplyScalar(0.8); // Very strong emissive for high visibility
+                emissiveColor.multiplyScalar(1.2); // Brighter emissive for high visibility
                 const bodyMaterial = new THREE.MeshStandardMaterial({
-                    color: baseColor.clone(), // Clone for material (material owns this)
+                    color: baseColor.clone().multiplyScalar(1.3), // Brighter base color
                     emissive: emissiveColor.clone(), // Clone for material
-                    emissiveIntensity: 2.5, // Much higher emissive - agents should be very bright
+                    emissiveIntensity: 5.0, // Much higher emissive - agents should be very bright
                     metalness: 0.0, // No metalness to show pure color
-                    roughness: 0.6, // Higher roughness for matte, crisp appearance
+                    roughness: 0.4, // Lower roughness for more reflective/shiny appearance
                     transparent: false, // No transparency for crisper look
                     opacity: 1.0
                 });
@@ -1113,6 +1387,23 @@ export class WebGLRenderer {
             for (let i = 0; i < renderCount; i++) {
                 const agent = validAgents[i];
 
+                // Calculate speed for enhanced effects
+                const speed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                const speedRatio = Math.min(speed / MAX_VELOCITY, 1.0);
+
+                // Enhanced bloom for fast-moving agents (stored in userData to restore later)
+                if (mesh.body.material) {
+                    if (!mesh.body.userData.baseEmissiveIntensity) {
+                        mesh.body.userData.baseEmissiveIntensity = mesh.body.material.emissiveIntensity || 2.5;
+                    }
+                    const baseEmissive = mesh.body.userData.baseEmissiveIntensity;
+                    if (speedRatio > 0.5) {
+                        mesh.body.material.emissiveIntensity = baseEmissive * (1.0 + speedRatio * 0.3);
+                    } else {
+                        mesh.body.material.emissiveIntensity = baseEmissive;
+                    }
+                }
+
                 // Update body - ensure minimum visible size
                 const renderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE); // Never smaller than minimum size
                 matrix.makeScale(renderSize, renderSize, 1);
@@ -1125,6 +1416,11 @@ export class WebGLRenderer {
                 matrix.makeScale(borderSize, borderSize, 1);
                 matrix.setPosition(agent.x, -agent.y, 0.09); // Slightly behind body (0.09 vs 0.1) to prevent z-fighting
                 mesh.border.setMatrixAt(i, matrix);
+
+                // Add trail for fast-moving agents
+                if (speedRatio > 0.3) {
+                    this.updateAgentTrail(agent, speedRatio);
+                }
             }
 
             // Update instance count
@@ -1408,45 +1704,73 @@ export class WebGLRenderer {
             });
             this.obstacleMeshes = [];
 
-            // Create obstacle meshes
+            // Create obstacle meshes with menacing effects
             obstacles.forEach(obs => {
-                // Use pooled geometry for standard size, create new for custom sizes
-                const geometry = (obs.radius === 1) 
-                    ? acquireCircleGeometry(obs.radius, 32)
-                    : new THREE.CircleGeometry(obs.radius, 32);
-                // Obstacle material - dimmed down so agents are more prominent
+                // Create spiky/jagged geometry for more menacing look
+                const segments = 16;
+                const geometry = new THREE.CircleGeometry(obs.radius, segments);
+                
+                // Modify vertices to create spiky appearance
+                const positions = geometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const i3 = i * 3;
+                    const x = positions.array[i3];
+                    const y = positions.array[i3 + 1];
+                    const dist = Math.sqrt(x * x + y * y);
+                    if (dist > 0.01) { // Skip center vertex
+                        // Add random spikes
+                        const spikeAmount = 0.15;
+                        const angle = Math.atan2(y, x);
+                        const spike = Math.sin(angle * segments * 0.5) * spikeAmount;
+                        const newDist = dist + spike;
+                        positions.array[i3] = (x / dist) * newDist;
+                        positions.array[i3 + 1] = (y / dist) * newDist;
+                    }
+                }
+                positions.needsUpdate = true;
+                geometry.computeVertexNormals();
+
+                // Darker, more menacing obstacle material with pulsing glow
                 const obstacleEmissiveColor = acquireColor();
                 obstacleEmissiveColor.setHex(EMISSIVE_COLORS.OBSTACLE);
-                obstacleEmissiveColor.multiplyScalar(0.2); // Reduced emissive - obstacles should be dimmer
+                obstacleEmissiveColor.multiplyScalar(0.4); // Brighter emissive for pulsing effect
+                
                 const material = new THREE.MeshStandardMaterial({
-                    color: COLORS.OBSTACLE,
-                    emissive: obstacleEmissiveColor.clone(), // Clone for material
-                    emissiveIntensity: 0.4, // Reduced from 1.8 - obstacles should be dimmer than agents
-                    metalness: MATERIAL_PROPERTIES.OBSTACLE.METALNESS,
-                    roughness: MATERIAL_PROPERTIES.OBSTACLE.ROUGHNESS,
-                    transparent: MATERIAL_PROPERTIES.OBSTACLE.TRANSPARENT,
-                    opacity: MATERIAL_PROPERTIES.OBSTACLE.OPACITY
+                    color: new THREE.Color(COLORS.OBSTACLE).multiplyScalar(0.6), // Darker base color
+                    emissive: obstacleEmissiveColor.clone(),
+                    emissiveIntensity: 1.2, // Higher for pulsing effect
+                    metalness: 0.6, // More metallic
+                    roughness: 0.3, // More reflective
+                    transparent: false,
+                    opacity: 1.0
                 });
                 releaseColor(obstacleEmissiveColor);
+                
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(obs.x, -obs.y, 0);
+                mesh.userData.obstacleId = obs.id;
+                mesh.userData.baseEmissiveIntensity = 1.2;
                 this.obstacleGroup.add(mesh);
                 this.obstacleMeshes.push(mesh);
 
-                // Add shadow (hiding radius) - keep basic material for shadow
-                const shadowGeometry = new THREE.RingGeometry(obs.radius, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
+                // Enhanced shadow with pulsing effect
+                const shadowGeometry = new THREE.RingGeometry(obs.radius * 0.9, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
                 const shadowMaterial = new THREE.MeshBasicMaterial({
                     color: 0x000000,
                     transparent: true,
-                    opacity: 0.4
+                    opacity: 0.6 // Darker shadow
                 });
                 const shadowMesh = new THREE.Mesh(shadowGeometry, shadowMaterial);
                 shadowMesh.position.set(obs.x, -obs.y, 0);
+                shadowMesh.userData.obstacleId = obs.id;
                 this.obstacleGroup.add(shadowMesh);
                 this.obstacleMeshes.push(shadowMesh);
+
+                // Add particle system for energy/sparks around obstacle
+                this.createObstacleParticles(obs);
             });
         } else {
-            // Update positions of existing meshes (obstacles moved)
+            // Update positions and animations of existing meshes
             for (let i = 0; i < obstacles.length; i++) {
                 const obs = obstacles[i];
                 const circleMesh = this.obstacleMeshes[i * 2];     // Circle mesh
@@ -1455,10 +1779,168 @@ export class WebGLRenderer {
                 if (circleMesh && shadowMesh) {
                     circleMesh.position.set(obs.x, -obs.y, 0);
                     shadowMesh.position.set(obs.x, -obs.y, 0);
+                    
+                    // Update pulsing glow effect
+                    const pulse = Math.sin(this.obstaclePulseTime * 2 + i) * 0.3 + 0.7;
+                    if (circleMesh.material && circleMesh.userData.baseEmissiveIntensity) {
+                        circleMesh.material.emissiveIntensity = circleMesh.userData.baseEmissiveIntensity * pulse;
+                    }
+                }
+                
+                // Update particle system position
+                const particleSystem = this.obstacleParticleSystems.get(obs.id);
+                if (particleSystem) {
+                    particleSystem.position.set(obs.x, -obs.y, 0.1);
                 }
             }
         }
+        
+        // Update pulse time
+        this.obstaclePulseTime += 0.05;
+    }
 
+    /**
+     * Update agent trail for fast-moving agents
+     */
+    updateAgentTrail(agent, speedRatio) {
+        if (!agent.id) return;
+
+        const trailLength = Math.floor(speedRatio * 8); // 0-8 trail points based on speed
+        if (trailLength < 2) return;
+
+        let trail = this.agentTrails.get(agent.id);
+        if (!trail) {
+            // Create new trail
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(trailLength * 3);
+            const colors = new Float32Array(trailLength * 3);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                linewidth: 2
+            });
+            
+            trail = new THREE.Line(geometry, material);
+            trail.frustumCulled = false;
+            this.trailGroup.add(trail);
+            this.agentTrails.set(agent.id, trail);
+            trail.userData.positions = positions;
+            trail.userData.colors = colors;
+            trail.userData.history = [];
+        }
+
+        // Add current position to history
+        trail.userData.history.push({ x: agent.x, y: agent.y, time: Date.now() });
+        
+        // Keep only recent positions
+        const maxAge = 200; // 200ms
+        const now = Date.now();
+        trail.userData.history = trail.userData.history.filter(p => now - p.time < maxAge);
+        
+        // Update geometry with trail positions
+        const history = trail.userData.history;
+        const positions = trail.userData.positions;
+        const colors = trail.userData.colors;
+        const agentColor = this.hslToRgb(agent.geneColor.h, agent.geneColor.s, agent.geneColor.l);
+        
+        const count = Math.min(history.length, trailLength);
+        for (let i = 0; i < count; i++) {
+            const i3 = i * 3;
+            const point = history[history.length - count + i];
+            positions[i3] = point.x;
+            positions[i3 + 1] = -point.y;
+            positions[i3 + 2] = 0.05;
+            
+            // Fade trail from front to back
+            const alpha = i / count;
+            colors[i3] = agentColor.r * alpha;
+            colors[i3 + 1] = agentColor.g * alpha;
+            colors[i3 + 2] = agentColor.b * alpha;
+        }
+        
+        releaseColor(agentColor);
+        
+        // Create proper array copies for Three.js
+        const positionsCopy = new Float32Array(positions.subarray(0, count * 3));
+        const colorsCopy = new Float32Array(colors.subarray(0, count * 3));
+        
+        trail.geometry.setAttribute('position', new THREE.BufferAttribute(positionsCopy, 3));
+        trail.geometry.setAttribute('color', new THREE.BufferAttribute(colorsCopy, 3));
+        trail.geometry.setDrawRange(0, count);
+        trail.geometry.attributes.position.needsUpdate = true;
+        trail.geometry.attributes.color.needsUpdate = true;
+    }
+
+    /**
+     * Create particle system for obstacle energy/sparks
+     */
+    createObstacleParticles(obstacle) {
+        if (!obstacle.id) return;
+        
+        const particleCount = 20;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+        const sizes = new Float32Array(particleCount);
+        
+        const obstacleColor = new THREE.Color(EMISSIVE_COLORS.OBSTACLE);
+        
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            const angle = (i / particleCount) * Math.PI * 2;
+            const radius = obstacle.radius * (0.8 + Math.random() * 0.4);
+            positions[i3] = Math.cos(angle) * radius;
+            positions[i3 + 1] = Math.sin(angle) * radius;
+            positions[i3 + 2] = 0.1;
+            
+            obstacleColor.toArray(colors, i3);
+            sizes[i] = 2 + Math.random() * 3;
+        }
+        
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        
+        const material = new THREE.ShaderMaterial({
+            vertexShader: `
+                attribute float size;
+                varying vec3 vColor;
+                varying float vOpacity;
+                void main() {
+                    // Three.js automatically provides 'color' attribute when vertexColors: true
+                    vColor = color;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    vOpacity = 0.6;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                varying vec3 vColor;
+                varying float vOpacity;
+                void main() {
+                    vec2 coord = gl_PointCoord - vec2(0.5);
+                    float dist = length(coord);
+                    float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                    alpha *= vOpacity;
+                    gl_FragColor = vec4(vColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            vertexColors: true
+        });
+        
+        const particles = new THREE.Points(geometry, material);
+        particles.position.set(obstacle.x, -obstacle.y, 0.1);
+        this.obstacleGroup.add(particles);
+        this.obstacleParticleSystems.set(obstacle.id, particles);
     }
 
     updateRays(agents, frameCount = 0) {
@@ -1664,6 +2146,11 @@ export class WebGLRenderer {
     }
 
     render() {
+        // Update background animation time
+        if (this.backgroundPlane && this.backgroundPlane.material.uniforms) {
+            this.backgroundPlane.material.uniforms.time.value += 0.016;
+        }
+        
         // Update sparkles
         this.updateSparkles();
 
@@ -1708,7 +2195,10 @@ export class WebGLRenderer {
             if (this.sparklePoints) {
                 this.sparkleGroup.remove(this.sparklePoints);
                 if (this.sparklePoints.geometry) releaseBufferGeometry(this.sparklePoints.geometry);
-                if (this.sparklePoints.material) releasePointsMaterial(this.sparklePoints.material);
+                if (this.sparklePoints.material) {
+                    // ShaderMaterial is not pooled, dispose directly
+                    this.sparklePoints.material.dispose();
+                }
                 this.sparklePoints = null;
             }
             while (this.sparkleGroup.children.length > 0) {

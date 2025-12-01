@@ -212,7 +212,7 @@ export const DEATH_RISK_THRESHOLD = 200;
  * @constant
  * @default 0.5
  */
-export const MAX_THRUST = 0.5;
+export const MAX_THRUST = 0.7;
 
 /**
  * Maximum turning speed in radians per frame.
@@ -220,7 +220,7 @@ export const MAX_THRUST = 0.5;
  * @constant
  * @default 0.1
  */
-export const MAX_ROTATION = 0.1;
+export const MAX_ROTATION = 0.2;
 
 /**
  * Maximum speed an agent can reach in pixels per frame.
@@ -236,7 +236,7 @@ export const MAX_VELOCITY = 8;
  * @constant
  * @default 0.5
  */
-export const SPRINT_BONUS_THRUST = 0.5;
+export const SPRINT_BONUS_THRUST = 0.75;
 
 /**
  * Energy cost per frame when sprinting.
@@ -261,7 +261,7 @@ export const SPRINT_THRESHOLD = 0.9;
  * @constant
  * @default 0.5
  */
-export const FEAR_SPRINT_BONUS = 0.5;
+export const FEAR_SPRINT_BONUS = 0.8;
 
 /**
  * Reduced deadzone for finer speed control (reduced from 0.1).
@@ -279,7 +279,7 @@ export const THRUST_DEADZONE = 0.05;
  * @constant
  * @default 0.35
  */
-export const ACCELERATION_SMOOTHING = 0.35;
+export const ACCELERATION_SMOOTHING = 0.75;
 
 /**
  * Normal deceleration rate when reducing thrust (reduced from 0.15 for smoother stops).
@@ -1524,7 +1524,7 @@ export const MIN_GENETIC_DISTANCE = 0.1;
  * @constant
  * @default 9000
  */
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 9000;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 10000;
 
 /**
  * Maximum agents saved per gene pool generation.
@@ -1540,7 +1540,7 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
  * @constant
  * @default 5
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 7;
 
 /**
  * Minimum lifespan in frames to qualify.
@@ -1563,7 +1563,7 @@ export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE
  * @constant
  * @default 1.5
  */
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 1.5;
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 2.5;
 
 /**
  * Minimum successful food-seeking behaviors.
@@ -2084,6 +2084,11 @@ export const POST_PROCESSING = {
     CHROMATIC_ABERRATION: {
         ENABLED: true,
         OFFSET: 0.001          // Chromatic aberration offset (reduced from 0.001 for subtler effect)
+    },
+    MOTION_BLUR: {
+        ENABLED: true,
+        STRENGTH: 0.3,         // Motion blur strength (0-1)
+        SAMPLES: 8             // Number of blur samples (higher = smoother but slower)
     }
 };
 
