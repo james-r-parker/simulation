@@ -1972,12 +1972,13 @@ export class Agent {
         // Log cleanup for debugging validation issues
         this.logger.debug(`[AGENT-CLEANUP] 🧹 Cleaning up agent ${this.id} (${this.geneId}) - Age: ${this.age.toFixed(1)}s, Fitness: ${this.fitness.toFixed(1)}, Fit: ${this.fit}, Energy: ${this.energy.toFixed(1)}, NN: ${this.nn ? 'present' : 'null'}`);
 
-        // CRITICAL: Extract weights BEFORE cleanup if agent is fit and weights not already extracted
+        // CRITICAL: Extract weights BEFORE cleanup for ALL agents (not just fit ones)
         // This ensures weights are available for validation even after cleanup
-        if (this.fit && this.nn && !this._extractedWeights) {
+        // Validation may need to test non-fit agents, so we extract weights for all
+        if (this.nn && !this._extractedWeights) {
             try {
                 this._extractedWeights = this.nn.getWeights();
-                this.logger.debug(`[AGENT-CLEANUP] Extracted weights for fit agent ${this.id} (${this.geneId}) before cleanup`);
+                this.logger.debug(`[AGENT-CLEANUP] Extracted weights for agent ${this.id} (${this.geneId}) before cleanup (fit: ${this.fit})`);
             } catch (error) {
                 this.logger.debug(`[AGENT-CLEANUP] Could not extract weights for agent ${this.id} (${this.geneId}): ${error.message}`);
             }
@@ -2008,8 +2009,22 @@ export class Agent {
         // Clear gene references to help GC
         if (this.gene) {
             this.gene.fatherWeights = null;
+            // Clear any other gene references that might hold memory
+            this.gene.weights = null; // Weights are stored elsewhere if needed
         }
         this.fatherWeights = null;
+
+        // CRITICAL: Clear genealogy references to break circular dependencies
+        // Genealogy.offspring arrays hold references to child agents, creating circular refs
+        if (this.genealogy) {
+            this.genealogy.offspring = []; // Clear offspring array to break circular refs
+            this.genealogy.parent1Id = null; // Clear parent references
+            this.genealogy.parent2Id = null;
+        }
+
+        // DO NOT clear _extractedWeights - validation needs them after cleanup
+        // The weights are a deep copy, so keeping them doesn't create memory leaks
+        // They will be garbage collected when the agent is fully removed
 
         // Reset behavioral states
         this.dangerSmell = 0;

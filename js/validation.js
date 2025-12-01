@@ -187,26 +187,6 @@ export class ValidationManager {
                     getWeights: () => validationEntry.weights
                 };
 
-                // CRITICAL: Add to gene pool IMMEDIATELY (synchronously) to prevent duplicate validations
-                // This must happen before releasing the lock and cleaning up
-                if (!this.db.pool[geneId]) {
-                    this.db.pool[geneId] = [];
-                }
-                // Add the validated agent to the pool immediately
-                this.db.pool[geneId].push({
-                    id: validationRecord.id,
-                    weights: validationRecord.weights,
-                    fitness: validationRecord.fitness,
-                    geneId: validationRecord.geneId,
-                    specializationType: validationRecord.specializationType
-                });
-                // Sort by fitness and keep only top agents
-                this.db.pool[geneId].sort((a, b) => b.fitness - a.fitness);
-                if (this.db.pool[geneId].length > MAX_AGENTS_TO_SAVE_PER_GENE_POOL) {
-                    this.db.pool[geneId] = this.db.pool[geneId].slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
-                }
-                this.logger.info(`[VALIDATION] ✅ Added ${geneId} to gene pool immediately (early success, fitness: ${validationRecord.fitness.toFixed(1)}, pool size: ${this.db.pool[geneId].length})`);
-
                 // Release spawn lock on successful validation
                 this.releaseSpawnLock(geneId);
 
@@ -216,8 +196,12 @@ export class ValidationManager {
                 // Clean up immediately after successful validation
                 this.validationQueue.delete(geneId);
 
-                // Queue save to IndexedDB (async, but pool is already updated above)
+                // Queue save to IndexedDB - this will handle all limit checks and pool management
+                // This ensures the agent goes through the same validation as all other agents:
+                // - For existing pools: Only added if pool < 10 OR beats worst
+                // - For new pools: Only added if < 500 pools OR beats weakest pool
                 this.db.queueSaveAgent(validationRecord);
+                this.logger.info(`[VALIDATION] ✅ Queued ${geneId} for gene pool (early success, fitness: ${validationRecord.fitness.toFixed(1)})`);
 
                 return { success: true, record: validationRecord };
             }
@@ -273,26 +257,6 @@ export class ValidationManager {
                     getWeights: () => validationEntry.weights // Return stored weights
                 };
 
-                // CRITICAL: Add to gene pool IMMEDIATELY (synchronously) to prevent duplicate validations
-                // This must happen before releasing the lock and cleaning up
-                if (!this.db.pool[geneId]) {
-                    this.db.pool[geneId] = [];
-                }
-                // Add the validated agent to the pool immediately
-                this.db.pool[geneId].push({
-                    id: validationRecord.id,
-                    weights: validationRecord.weights,
-                    fitness: validationRecord.fitness,
-                    geneId: validationRecord.geneId,
-                    specializationType: validationRecord.specializationType
-                });
-                // Sort by fitness and keep only top agents
-                this.db.pool[geneId].sort((a, b) => b.fitness - a.fitness);
-                if (this.db.pool[geneId].length > MAX_AGENTS_TO_SAVE_PER_GENE_POOL) {
-                    this.db.pool[geneId] = this.db.pool[geneId].slice(0, MAX_AGENTS_TO_SAVE_PER_GENE_POOL);
-                }
-                this.logger.info(`[VALIDATION] ✅ Added ${geneId} to gene pool immediately (fitness: ${validationRecord.fitness.toFixed(1)}, pool size: ${this.db.pool[geneId].length})`);
-
                 // Release spawn lock on successful validation
                 this.releaseSpawnLock(geneId);
 
@@ -302,8 +266,12 @@ export class ValidationManager {
                 // Clean up immediately after successful validation
                 this.validationQueue.delete(geneId);
 
-                // Queue save to IndexedDB (async, but pool is already updated above)
+                // Queue save to IndexedDB - this will handle all limit checks and pool management
+                // This ensures the agent goes through the same validation as all other agents:
+                // - For existing pools: Only added if pool < 10 OR beats worst
+                // - For new pools: Only added if < 500 pools OR beats weakest pool
                 this.db.queueSaveAgent(validationRecord);
+                this.logger.info(`[VALIDATION] ✅ Queued ${geneId} for gene pool (fitness: ${validationRecord.fitness.toFixed(1)})`);
 
                 return { success: true, record: validationRecord };
             } else {

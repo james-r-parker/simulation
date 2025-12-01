@@ -341,8 +341,8 @@ export function periodicMemoryCleanup(simulation) {
     if (sessionDurationHours > 1) arraySizeLimit = 400;
     if (sessionDurationHours > 2) arraySizeLimit = 300;
     if (sessionDurationHours > 4) arraySizeLimit = 200;
-    if (sessionDurationHours > 8) arraySizeLimit = 150;
-    if (sessionDurationHours > 24) arraySizeLimit = 100;
+    if (sessionDurationHours > 8) arraySizeLimit = 100; // More aggressive for 8+ hour sessions
+    if (sessionDurationHours > 24) arraySizeLimit = 50; // Very aggressive for 24+ hour sessions
 
     for (const agent of simulation.agents) {
         if (agent && !agent.isDead) {
@@ -436,6 +436,52 @@ export function periodicMemoryCleanup(simulation) {
     simulation.logger.info('[MEMORY] Clearing object pools to prevent memory leaks');
     clearGPUResourcePools();
     neuralArrayPool.clearOldPools();
+
+    // More aggressive cleanup for 8+ hour sessions
+    if (sessionDurationHours >= 8) {
+        simulation.logger.info(`[MEMORY] Performing aggressive cleanup for long session (${sessionDurationHours.toFixed(1)}h)`);
+        
+        // Force GPU cache cleanup more aggressively
+        if (simulation.gpuCompute && simulation.gpuCompute.deepCleanup) {
+            simulation.gpuCompute.deepCleanup(sessionDurationHours, simulation.agents);
+        }
+        if (simulation.gpuPhysics && simulation.gpuPhysics.deepCleanup) {
+            simulation.gpuPhysics.deepCleanup(sessionDurationHours);
+        }
+
+        // Clear validation queue weights after successful validation (they're already saved)
+        let weightsCleared = 0;
+        for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+            if (entry.isValidated && entry.weights) {
+                // Weights are already saved to gene pool, safe to clear
+                entry.weights = null;
+                weightsCleared++;
+            }
+        }
+        if (weightsCleared > 0) {
+            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validated entries`);
+        }
+
+        // More aggressive fitness history cleanup for very long sessions
+        if (sessionDurationHours >= 24 && simulation.fitnessHistory.length > 20) {
+            const keepRecent = 10; // Keep only last 10 entries for 24+ hour sessions
+            simulation.fitnessHistory.splice(0, simulation.fitnessHistory.length - keepRecent);
+            simulation.logger.info(`[MEMORY] Aggressively trimmed fitness history to ${keepRecent} entries (24+ hour session)`);
+        }
+
+        // More aggressive dashboard history cleanup
+        if (sessionDurationHours >= 24 && simulation.dashboardHistory.length > 20) {
+            const keepRecent = 10;
+            simulation.dashboardHistory.splice(0, simulation.dashboardHistory.length - keepRecent);
+            simulation.logger.info(`[MEMORY] Aggressively trimmed dashboard history to ${keepRecent} entries (24+ hour session)`);
+        }
+
+        // Force garbage collection more frequently for very long sessions
+        if (window.gc && sessionDurationHours >= 12) {
+            window.gc();
+            simulation.logger.info('[MEMORY] Forced garbage collection (12+ hour session)');
+        }
+    }
 
     // Log pool statistics for debugging
     const poolStats = {

@@ -428,6 +428,7 @@ export class WebGLRenderer {
                 POST_PROCESSING.BLOOM.RADIUS,
                 POST_PROCESSING.BLOOM.THRESHOLD
             );
+            releaseVector2(bloomSizeVec); // Release after use
 
             // Create vignette shader
             const vignetteShader = {
@@ -1370,6 +1371,7 @@ export class WebGLRenderer {
             // Set instance color and opacity (encode opacity in color alpha)
             const rgbColor = this.hslToRgb(puff.color.h, puff.color.s, puff.color.l);
             color.setRGB(rgbColor.r, rgbColor.g, rgbColor.b);
+            releaseColor(rgbColor); // Release color from hslToRgb
             // Note: Three.js InstancedMesh doesn't support per-instance opacity easily
             // We'll use a uniform opacity for all pheromones
             this.pheromoneInstancedMesh.setColorAt(i, color);

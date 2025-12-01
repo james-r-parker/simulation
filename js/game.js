@@ -817,6 +817,13 @@ export class Simulation {
         // Process dead agents in batches (non-blocking)
         if (this.deadAgentQueue.length === 0) return;
 
+        const queueSize = this.deadAgentQueue.length;
+        
+        // Log warning if queue is getting large (potential memory leak indicator)
+        if (queueSize > 100) {
+            this.logger.warn(`[MEMORY] Dead agent queue is large: ${queueSize} agents. Processing now.`);
+        }
+
         // Group by gene ID and queue for background save
         const agentsByGene = {};
         this.deadAgentQueue.forEach(agent => {
@@ -833,6 +840,10 @@ export class Simulation {
 
         // Clear the queue
         this.deadAgentQueue = [];
+        
+        if (queueSize > 10) {
+            this.logger.debug(`[MEMORY] Processed ${queueSize} dead agents from queue`);
+        }
     }
 
     initPopulation() {
@@ -1743,6 +1754,18 @@ export class Simulation {
                                 // Log regular agent death
                                 this.logger.info(`[LIFECYCLE] 💀 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Fit: ${agent.fit}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
 
+                                // CRITICAL: Extract weights before cleanup for ALL agents (not just fit ones)
+                                // This ensures validation can access weights even after cleanup if needed
+                                // The cleanup() method will also extract weights, but doing it here ensures
+                                // weights are available before any validation processing
+                                if (agent.nn && !agent._extractedWeights) {
+                                    try {
+                                        agent._extractedWeights = agent.nn.getWeights();
+                                    } catch (error) {
+                                        this.logger.debug(`[LIFECYCLE] Could not extract weights before cleanup for agent ${agent.id}: ${error.message}`);
+                                    }
+                                }
+
                                 // CRITICAL: Call cleanup to break circular references before removal
                                 // This allows the agent to be garbage collected immediately
                                 agent.cleanup();
@@ -1765,6 +1788,11 @@ export class Simulation {
 
                     // Periodic performance monitoring (every 1000 frames)
                     if (this.frameCount % 1000 === 0) {
+                        // Process dead agent queue periodically to prevent accumulation
+                        if (this.deadAgentQueue.length > 0) {
+                            this.processDeadAgentQueue();
+                        }
+
                         // Reuse pre-allocated arrays instead of filter()
                         this.livingAgents.length = 0;
                         this.livingFood.length = 0;
@@ -1907,7 +1935,7 @@ export class Simulation {
 
                     // Use enhanced selective trimming for GPU Compute
                     if (this.gpuCompute && this.gpuCompute.deepCleanup) {
-                        this.gpuCompute.deepCleanup(sessionDurationHours);
+                        this.gpuCompute.deepCleanup(sessionDurationHours, this.agents);
                     }
 
                     // Enhanced GPU Physics cleanup

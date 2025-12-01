@@ -2,6 +2,10 @@
 // Reusable pool system for THREE.js objects to eliminate allocations in hot paths
 // Similar to ArrayPool but designed for THREE.js objects with proper reset methods
 
+// Memory leak detection: Track acquired objects in development mode
+const POOL_LEAK_DETECTION = typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__;
+const activeObjects = new WeakMap(); // Track active objects to detect leaks
+
 class ObjectPool {
     constructor(createFn, resetFn, initialCapacity = 50) {
         this.pool = [];
@@ -13,6 +17,7 @@ class ObjectPool {
             created: 0,
             reused: 0
         };
+        this.poolName = 'UnknownPool'; // Set by subclasses for better error messages
 
         // Pre-populate pool
         for (let i = 0; i < initialCapacity; i++) {
@@ -23,24 +28,40 @@ class ObjectPool {
     acquire() {
         this.stats.acquired++;
 
+        let obj;
         if (this.pool.length > 0) {
             this.stats.reused++;
-            const obj = this.pool.pop();
+            obj = this.pool.pop();
             if (this.resetFn) {
                 this.resetFn(obj);
             }
-            return obj;
+        } else {
+            // Pool exhausted, create new object
+            this.stats.created++;
+            obj = this.createFn();
         }
 
-        // Pool exhausted, create new object
-        this.stats.created++;
-        return this.createFn();
+        // Track object for leak detection in development
+        if (POOL_LEAK_DETECTION) {
+            activeObjects.set(obj, {
+                pool: this.poolName,
+                acquiredAt: Date.now(),
+                stack: new Error().stack
+            });
+        }
+
+        return obj;
     }
 
     release(obj) {
         if (!obj) return;
 
         this.stats.released++;
+
+        // Remove from leak tracking
+        if (POOL_LEAK_DETECTION) {
+            activeObjects.delete(obj);
+        }
 
         // Reset object state before returning to pool
         if (this.resetFn) {
@@ -72,15 +93,17 @@ class ObjectPool {
 
 // Pool for simple THREE.js value objects that are safe to reuse indefinitely
 class SimpleObjectPool extends ObjectPool {
-    constructor(createFn, resetFn, initialCapacity = 50) {
+    constructor(createFn, resetFn, initialCapacity = 50, poolName = 'SimpleObjectPool') {
         super(createFn, resetFn, initialCapacity);
+        this.poolName = poolName;
     }
 }
 
 // Pool for THREE.js objects with GPU resources that need periodic clearing
 class GPUResourcePool extends ObjectPool {
-    constructor(createFn, resetFn, disposeFn, initialCapacity = 20) {
+    constructor(createFn, resetFn, disposeFn, initialCapacity = 20, poolName = 'GPUResourcePool') {
         super(createFn, resetFn, initialCapacity);
+        this.poolName = poolName;
         this.disposeFn = disposeFn;
         this.lastClearTime = Date.now();
         this.clearInterval = 60 * 1000; // Clear every 1 minute (more aggressive)
@@ -119,7 +142,8 @@ export const matrix4Pool = new SimpleObjectPool(
         // Reset matrix to identity
         matrix.identity();
     },
-    100 // Higher capacity since these are used frequently
+    100, // Higher capacity since these are used frequently
+    'Matrix4Pool'
 );
 
 // Vector3 pool - safe to reuse indefinitely
@@ -129,7 +153,8 @@ export const vector3Pool = new SimpleObjectPool(
         // Reset vector to zero
         vec.set(0, 0, 0);
     },
-    50
+    50,
+    'Vector3Pool'
 );
 
 // Vector2 pool - safe to reuse indefinitely
@@ -139,7 +164,8 @@ export const vector2Pool = new SimpleObjectPool(
         // Reset vector to zero
         vec.set(0, 0);
     },
-    20
+    20,
+    'Vector2Pool'
 );
 
 // Color pool - safe to reuse indefinitely
@@ -149,7 +175,8 @@ export const colorPool = new SimpleObjectPool(
         // Reset color to black
         color.set(0, 0, 0);
     },
-    50
+    50,
+    'ColorPool'
 );
 
 // Frustum pool - safe to reuse indefinitely
@@ -159,7 +186,8 @@ export const frustumPool = new SimpleObjectPool(
         // Frustum doesn't have a simple reset method, but it's safe to reuse
         // The setFromProjectionMatrix method will overwrite its state
     },
-    10
+    10,
+    'FrustumPool'
 );
 
 // Sphere pool - safe to reuse indefinitely
@@ -170,7 +198,8 @@ export const spherePool = new SimpleObjectPool(
         sphere.center.set(0, 0, 0);
         sphere.radius = 0;
     },
-    20
+    20,
+    'SpherePool'
 );
 
 // CircleGeometry pool - has GPU resources, needs periodic clearing
@@ -183,7 +212,8 @@ export const circleGeometryPool = new GPUResourcePool(
     (geometry) => {
         geometry.dispose();
     },
-    10
+    10,
+    'CircleGeometryPool'
 );
 
 // RingGeometry pool - has GPU resources, needs periodic clearing
@@ -195,7 +225,8 @@ export const ringGeometryPool = new GPUResourcePool(
     (geometry) => {
         geometry.dispose();
     },
-    20
+    20,
+    'RingGeometryPool'
 );
 
 // MeshBasicMaterial pool - has GPU resources, needs periodic clearing
@@ -212,7 +243,8 @@ export const meshBasicMaterialPool = new GPUResourcePool(
     (material) => {
         material.dispose();
     },
-    20
+    20,
+    'MeshBasicMaterialPool'
 );
 
 // MeshStandardMaterial pool - has GPU resources, needs periodic clearing
@@ -233,7 +265,8 @@ export const meshStandardMaterialPool = new GPUResourcePool(
     (material) => {
         material.dispose();
     },
-    30 // Higher capacity since these are used frequently for effects
+    30, // Higher capacity since these are used frequently for effects
+    'MeshStandardMaterialPool'
 );
 
 // Utility functions for easy pool usage
@@ -343,7 +376,8 @@ export const bufferGeometryPool = new GPUResourcePool(
     (geometry) => {
         geometry.dispose();
     },
-    20
+    20,
+    'BufferGeometryPool'
 );
 
 // PointsMaterial pool - has GPU resources, needs periodic clearing
@@ -361,7 +395,8 @@ export const pointsMaterialPool = new GPUResourcePool(
     (material) => {
         material.dispose();
     },
-    10
+    10,
+    'PointsMaterialPool'
 );
 
 // LineBasicMaterial pool - has GPU resources, needs periodic clearing
@@ -378,7 +413,8 @@ export const lineBasicMaterialPool = new GPUResourcePool(
     (material) => {
         material.dispose();
     },
-    10
+    10,
+    'LineBasicMaterialPool'
 );
 
 // BufferAttribute pool - has GPU resources, needs periodic clearing
@@ -475,4 +511,43 @@ export function clearGPUResourcePools() {
     bufferGeometryPool.clearGPUResources();
     pointsMaterialPool.clearGPUResources();
     lineBasicMaterialPool.clearGPUResources();
+}
+
+// Memory leak detection: Check for unreleased objects (development only)
+export function checkPoolLeaks() {
+    if (!POOL_LEAK_DETECTION) {
+        return { leaks: 0, details: [] };
+    }
+
+    // Note: WeakMap doesn't allow iteration, so we can't directly check for leaks
+    // This is a limitation - we'd need a different tracking mechanism for full leak detection
+    // For now, we'll check pool statistics instead
+    const pools = [
+        { name: 'matrix4', pool: matrix4Pool },
+        { name: 'vector3', pool: vector3Pool },
+        { name: 'vector2', pool: vector2Pool },
+        { name: 'color', pool: colorPool },
+        { name: 'frustum', pool: frustumPool },
+        { name: 'sphere', pool: spherePool }
+    ];
+
+    const leaks = [];
+    for (const { name, pool } of pools) {
+        const stats = pool.getStats();
+        const unreleased = stats.acquired - stats.released;
+        if (unreleased > 10) { // Warn if more than 10 objects unreleased
+            leaks.push({
+                pool: name,
+                unreleased,
+                acquired: stats.acquired,
+                released: stats.released,
+                reuseRate: stats.reuseRate
+            });
+        }
+    }
+
+    return {
+        leaks: leaks.length,
+        details: leaks
+    };
 }

@@ -170,6 +170,11 @@ export class GenePoolDatabase {
             // CASE 1: Existing gene pool - must beat worst of top 10
             const existingPool = this.pool[geneId];
 
+            // Ensure pool is sorted by fitness (descending) before checking worst agent
+            if (existingPool.length > 1) {
+                existingPool.sort((a, b) => b.fitness - a.fitness);
+            }
+
             if (existingPool.length >= MAX_AGENTS_TO_SAVE_PER_GENE_POOL) {
                 // Pool is full (10 agents), check if new agent beats the worst
                 const worstInPool = existingPool[existingPool.length - 1]; // Pool is sorted, last is worst
@@ -232,6 +237,25 @@ export class GenePoolDatabase {
         if (this.isProcessingQueue || this.saveQueue.length === 0) return;
 
         this.isProcessingQueue = true;
+
+        // CRITICAL: Enforce strict 500 limit immediately - trim if already over limit
+        // This prevents pool from exceeding limit even temporarily
+        const currentPoolCount = this.getGenePoolCount();
+        if (currentPoolCount > MAX_GENE_POOLS) {
+            const poolsToRemove = currentPoolCount - MAX_GENE_POOLS;
+            this.logger.warn(`[DATABASE] Pool count exceeded limit! Current: ${currentPoolCount}, Max: ${MAX_GENE_POOLS}. Removing ${poolsToRemove} weakest pool(s).`);
+            
+            // Remove weakest pools to get back to limit
+            for (let i = 0; i < poolsToRemove; i++) {
+                const weakest = this.getWeakestGenePool();
+                if (weakest) {
+                    this.logger.log(`[DATABASE] Removing weakest pool: ${weakest.geneId} (max fitness: ${weakest.maxFitness.toFixed(1)})`);
+                    await this.removeGenePool(weakest.geneId);
+                } else {
+                    break; // No more pools to remove
+                }
+            }
+        }
 
         // Group agents by geneId for efficient batching
         const agentsByGene = {};
@@ -579,6 +603,29 @@ export class GenePoolDatabase {
      */
     trimCache(sessionHours = 0) {
         const now = Date.now();
+        
+        // CRITICAL: Immediate enforcement if pool exceeds MAX_GENE_POOLS
+        // Don't wait for adaptive trimming - enforce limit immediately
+        const currentSize = Object.keys(this.pool).length;
+        if (currentSize > MAX_GENE_POOLS) {
+            const poolsToRemove = currentSize - MAX_GENE_POOLS;
+            this.logger.warn(`[DATABASE] trimCache: Pool count exceeded limit! Current: ${currentSize}, Max: ${MAX_GENE_POOLS}. Immediately removing ${poolsToRemove} weakest pool(s).`);
+            
+            // Remove weakest pools to get back to limit
+            for (let i = 0; i < poolsToRemove; i++) {
+                const weakest = this.getWeakestGenePool();
+                if (weakest) {
+                    this.logger.log(`[DATABASE] trimCache: Removing weakest pool: ${weakest.geneId} (max fitness: ${weakest.maxFitness.toFixed(1)})`);
+                    delete this.pool[weakest.geneId];
+                    this.cacheAccessTimes.delete(weakest.geneId);
+                } else {
+                    break; // No more pools to remove
+                }
+            }
+            
+            // After immediate enforcement, continue with adaptive trimming if needed
+        }
+        
         const timeSinceLastTrim = now - this.lastCacheTrimTime;
 
         // Adaptive trimming frequency based on session duration
@@ -596,13 +643,20 @@ export class GenePoolDatabase {
         this.lastCacheTrimTime = now;
 
         // Adaptive cache size limits based on session duration
+        // NOTE: These limits are for adaptive trimming only - we never allow pool to exceed MAX_GENE_POOLS
         let maxCacheEntries = MAX_GENE_POOLS; // Base limit
         if (sessionHours > 2) maxCacheEntries = Math.max(300, MAX_GENE_POOLS * 0.8);
         if (sessionHours > 4) maxCacheEntries = Math.max(200, MAX_GENE_POOLS * 0.6);
         if (sessionHours > 8) maxCacheEntries = Math.max(100, MAX_GENE_POOLS * 0.4);
         if (sessionHours > 24) maxCacheEntries = Math.max(50, MAX_GENE_POOLS * 0.2);
 
-        const currentSize = Object.keys(this.pool).length;
+        // Recalculate current size after immediate enforcement (pools may have been removed)
+        currentSize = Object.keys(this.pool).length;
+        
+        // Ensure we never exceed MAX_GENE_POOLS even with adaptive limits
+        if (currentSize > MAX_GENE_POOLS) {
+            maxCacheEntries = MAX_GENE_POOLS;
+        }
 
         // Track cache size history
         this.cacheSizeHistory.push({ time: now, size: currentSize });

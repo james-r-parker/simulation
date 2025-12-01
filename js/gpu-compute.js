@@ -928,8 +928,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     /**
      * Comprehensive cleanup for long-term stability
      * @param {number} sessionHours - Hours since simulation started
+     * @param {Array} agents - Optional array of current agents in simulation for cache cleanup
      */
-    deepCleanup(sessionHours = 0) {
+    deepCleanup(sessionHours = 0, agents = null) {
         // Trim caches with session-aware limits
         this.trimCache(10, sessionHours);
 
@@ -938,7 +939,29 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.defragmentMemory();
         }
 
-        // Clear weight cache periodically to prevent unbounded growth
+        // Clean up weight cache entries for agents not in simulation
+        if (agents && Array.isArray(agents)) {
+            const activeAgentIds = new Set();
+            for (const agent of agents) {
+                if (agent && !agent.isDead && agent.id) {
+                    activeAgentIds.add(agent.id);
+                }
+            }
+
+            // Remove cache entries for agents that are no longer in simulation
+            let removedCount = 0;
+            for (const [agentId] of this.weightCache.entries()) {
+                if (!activeAgentIds.has(agentId)) {
+                    this.weightCache.delete(agentId);
+                    removedCount++;
+                }
+            }
+            if (removedCount > 0) {
+                this.logger.debug(`GPUCompute weight cache: removed ${removedCount} entries for agents not in simulation`);
+            }
+        }
+
+        // Clear weight cache periodically to prevent unbounded growth (fallback if agents not provided)
         if (this.weightCache.size > 1000) {
             const originalSize = this.weightCache.size;
             // Keep only entries that have been accessed recently (if we had timestamps)

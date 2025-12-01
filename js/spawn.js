@@ -636,39 +636,52 @@ export function repopulate(simulation) {
 
                     // Try to acquire spawn lock
                     if (simulation.validationManager.acquireSpawnLock(geneId)) {
-                        // Double-check we haven't exceeded the limit
-                        if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
-                            simulation.validationManager.releaseSpawnLock(geneId);
-                            break;
-                        }
+                        let lockReleased = false;
+                        try {
+                            // Double-check we haven't exceeded the limit
+                            if (simulation.validationManager.activeValidationAgents >= maxValidationAgents) {
+                                simulation.validationManager.releaseSpawnLock(geneId);
+                                lockReleased = true;
+                                break;
+                            }
 
-                        // Create agent with the candidate's genes for re-testing
-                        const validationGene = {
-                            weights: entry.weights,
-                            geneId: entry.geneId,
-                            specializationType: entry.specializationType,
-                            parent: null // No parent reference for validation spawns
-                        };
+                            // Create agent with the candidate's genes for re-testing
+                            const validationGene = {
+                                weights: entry.weights,
+                                geneId: entry.geneId,
+                                specializationType: entry.specializationType,
+                                parent: null // No parent reference for validation spawns
+                            };
 
-                        simulation.logger.info(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
-                        // Give validation agents extra energy and safe spawning to ensure they can complete their runs
-                        const validationAgent = spawnAgent(simulation, {
-                            gene: validationGene,
-                            energy: VALIDATION_AGENT_ENERGY, // Extra energy for validation agents (from constants)
-                            isValidationAgent: true
-                        });
-                        if (validationAgent) {
-                            simulation.validationManager.activeValidationAgents++;
-                            simulation.logger.info(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
+                            simulation.logger.info(`[VALIDATION] Respawning validation candidate ${geneId} for test run ${entry.attempts + 1}/3 (stored weights)`);
+                            // Give validation agents extra energy and safe spawning to ensure they can complete their runs
+                            const validationAgent = spawnAgent(simulation, {
+                                gene: validationGene,
+                                energy: VALIDATION_AGENT_ENERGY, // Extra energy for validation agents (from constants)
+                                isValidationAgent: true
+                            });
+                            if (validationAgent) {
+                                simulation.validationManager.activeValidationAgents++;
+                                simulation.logger.info(`[VALIDATION] Active validation agents: ${simulation.validationManager.activeValidationAgents}/${maxValidationAgents}`);
 
-                            // Mark as actively being tested to prevent duplicate spawns
-                            entry.isActiveTest = true;
-                            simulation.logger.info(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
-                            return; // Successfully spawned validation agent
-                        } else {
-                            // Release spawn lock if spawning failed
-                            simulation.validationManager.releaseSpawnLock(geneId);
-                            simulation.logger.info(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
+                                // Mark as actively being tested to prevent duplicate spawns
+                                entry.isActiveTest = true;
+                                simulation.logger.info(`[VALIDATION] Marked ${geneId} as active test (run ${entry.attempts + 1})`);
+                                // Lock remains held until agent dies (released in handleValidationDeath)
+                                return; // Successfully spawned validation agent
+                            } else {
+                                // Release spawn lock if spawning failed
+                                simulation.validationManager.releaseSpawnLock(geneId);
+                                lockReleased = true;
+                                simulation.logger.info(`[VALIDATION] Failed to spawn validation agent for ${geneId}, released spawn lock`);
+                            }
+                        } catch (error) {
+                            // Ensure lock is released on any error
+                            if (!lockReleased) {
+                                simulation.validationManager.releaseSpawnLock(geneId);
+                                simulation.logger.warn(`[VALIDATION] Error spawning validation agent for ${geneId}, released spawn lock:`, error);
+                            }
+                            throw error; // Re-throw to allow caller to handle
                         }
                     }
                     break; // Only try one candidate per stagger cycle
