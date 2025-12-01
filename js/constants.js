@@ -193,6 +193,14 @@ export const OBESITY_ENERGY_TAX_DIVISOR = 2000;
  */
 export const LOW_ENERGY_THRESHOLD = 100;
 
+/**
+ * Energy level below which agent is considered at critical death risk
+ * @type {number}
+ * @constant
+ * @default 200
+ */
+export const DEATH_RISK_THRESHOLD = 200;
+
 // ============================================================================
 // AGENT MOVEMENT PHYSICS
 // ============================================================================

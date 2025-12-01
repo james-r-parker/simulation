@@ -12,7 +12,7 @@ import {
     VELOCITY_MOMENTUM,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS, OBSTACLE_MAX_SPEED,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
-    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
+    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, DEATH_RISK_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
     TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_START, TEMPERATURE_GAIN_MOVE, TEMPERATURE_LOSS_PASSIVE, TEMPERATURE_PASSIVE_LOSS_FACTOR,
     TEMPERATURE_OPTIMAL_MIN, TEMPERATURE_OPTIMAL_MAX, TEMPERATURE_COLD_STRESS_THRESHOLD, TEMPERATURE_HEAT_STRESS_THRESHOLD,
     TEMPERATURE_COLD_MODERATE_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD, TEMPERATURE_EFFICIENCY_OPTIMAL,
@@ -157,7 +157,7 @@ export class Agent {
         // All inputs are normalized to [0,1] or [-1,1] ranges for consistent neural network training.
         // The first layer processes (perception + hiddenState) together, which is why hiddenState
         // is included in inputSize. This is the standard RNN architecture pattern.
-        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 41 + this.hiddenState.length;
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 52 + this.hiddenState.length;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -234,7 +234,13 @@ export class Agent {
             justHitObstacle: 0,  // Frames since obstacle collision
             justReproduced: 0,   // Frames since reproduction
             justAttacked: 0,     // Frames since being attacked
-            lowEnergyWarning: 0  // Frames in low energy state
+            lowEnergyWarning: 0,  // Frames in low energy state
+            lastFoodEnergyGain: 0,  // Energy gained from last food eaten (decays over time)
+            lastCollisionDamage: 0,  // Energy lost from last collision (decays over time)
+            lastAttackDamage: 0,     // Energy lost from last attack (decays over time)
+            predatorThreat: 0,       // Current predator threat level (updated each frame)
+            reproductionReadiness: 0, // Current reproduction readiness (updated each frame)
+            mateAvailability: 0      // Current mate availability (updated each frame)
         };
 
         // --- Pre-allocated Memory for Performance ---
@@ -431,9 +437,21 @@ export class Agent {
         let desiredThrust = this.currentThrust * tempEfficiency;
 
         // Energy conservation (resting)
+        // Allow full speed when food is nearby and energy is critical (to reach food before death)
+        const hasNearbyFood = this.targetMemory && this.targetMemory.currentTarget && 
+                              this.targetMemory.currentTarget.type === 'food' &&
+                              this.targetMemory.lastTargetSeen > 0 &&
+                              (this.framesAlive - this.targetMemory.lastTargetSeen) < this.targetMemory.attentionSpan;
+        
         if (this.energy < LOW_ENERGY_THRESHOLD * 0.5) { // Below 50 energy
-            desiredThrust *= 0.3; // Reduce movement to 30% when exhausted
-            this.isResting = true;
+            if (hasNearbyFood && this.energy < DEATH_RISK_THRESHOLD) {
+                // Critical energy + food nearby: allow full speed to reach food
+                this.isResting = false;
+            } else {
+                // No nearby food: conserve energy by reducing movement
+                desiredThrust *= 0.3; // Reduce movement to 30% when exhausted
+                this.isResting = true;
+            }
         } else {
             this.isResting = false;
         }
@@ -611,6 +629,30 @@ export class Agent {
         if (this.eventFlags.justReproduced > 0) this.eventFlags.justReproduced--;
         if (this.eventFlags.justAttacked > 0) this.eventFlags.justAttacked--;
 
+        // Decay food energy gain memory (similar to other event flags)
+        if (this.eventFlags.lastFoodEnergyGain > 0) {
+            this.eventFlags.lastFoodEnergyGain *= 0.95; // Decay by 5% per frame
+            if (this.eventFlags.lastFoodEnergyGain < 0.1) {
+                this.eventFlags.lastFoodEnergyGain = 0; // Clear when too small
+            }
+        }
+
+        // Decay collision damage memory
+        if (this.eventFlags.lastCollisionDamage > 0) {
+            this.eventFlags.lastCollisionDamage *= 0.95; // Decay by 5% per frame
+            if (this.eventFlags.lastCollisionDamage < 0.1) {
+                this.eventFlags.lastCollisionDamage = 0; // Clear when too small
+            }
+        }
+
+        // Decay attack damage memory
+        if (this.eventFlags.lastAttackDamage > 0) {
+            this.eventFlags.lastAttackDamage *= 0.95; // Decay by 5% per frame
+            if (this.eventFlags.lastAttackDamage < 0.1) {
+                this.eventFlags.lastAttackDamage = 0; // Clear when too small
+            }
+        }
+
         // Set low energy warning if energy drops below threshold
         if (this.energy < LOW_ENERGY_THRESHOLD) {
             this.eventFlags.lowEnergyWarning = 30; // Set flag for 30 frames
@@ -658,11 +700,12 @@ export class Agent {
             hitBoundary = true;
         }
 
-        // Apply damage and trigger visual effect for boundary collisions
+            // Apply damage and trigger visual effect for boundary collisions
         if (hitBoundary) {
             const damage = WALL_COLLISION_DAMAGE; // Less damage than obstacle collisions
             this.energy = Math.max(0, this.energy - damage);
             this.fitness -= damage;
+            this.eventFlags.lastCollisionDamage = damage; // Track damage
 
             // Trigger collision visual effect (red glow)
             if (simulation && simulation.renderer) {
@@ -1022,6 +1065,7 @@ export class Agent {
             const energyLost = OBSTACLE_COLLISION_PENALTY / 4;  // Reduced from /2 to /4 for more forgiving wall hits
             this.energy -= energyLost;
             this.collisions++;
+            this.eventFlags.lastCollisionDamage = energyLost; // Track damage
 
             // Add visual effect for wall collisions
             if (simulation.renderer) {
@@ -1088,6 +1132,7 @@ export class Agent {
                 this.collisions++;
                 this.timesHitObstacle++;
                 this.eventFlags.justHitObstacle = 30; // Set flag for 30 frames (~0.5 seconds)
+                this.eventFlags.lastCollisionDamage = OBSTACLE_COLLISION_PENALTY; // Track damage
 
                 // Add visual effect
                 if (simulation.renderer) {
@@ -1153,6 +1198,10 @@ export class Agent {
         let closestMateDist = Infinity;
         let closestMateX = null;
         let closestMateY = null;
+        let closestObstacleDist = Infinity;
+        let closestPredatorDist = Infinity;
+        let closestPredatorSizeRatio = 0;
+        let potentialMatesCount = 0;
 
         // Process sensor rays
         for (let rayIdx = 0; rayIdx < numSensorRays; rayIdx++) {
@@ -1204,6 +1253,10 @@ export class Agent {
                         closestDist = dist;
                         hitType = 4; // Obstacle
                         hitEntity = obs;
+                        // Track closest obstacle for collision risk calculation
+                        if (dist < closestObstacleDist) {
+                            closestObstacleDist = dist;
+                        }
                     }
                 }
             }
@@ -1248,6 +1301,11 @@ export class Agent {
                             hitType = 3; // Larger agent (prey)
                         } else if (this.size < otherAgent.size * 0.9) {
                             hitType = 2; // Smaller agent (predator)
+                            // Track closest predator for threat calculation
+                            if (dist < closestPredatorDist) {
+                                closestPredatorDist = dist;
+                                closestPredatorSizeRatio = otherAgent.size / this.size;
+                            }
                         } else {
                             hitType = 6; // Same size agent
                         }
@@ -1257,6 +1315,14 @@ export class Agent {
                             closestMateDist = dist;
                             closestMateX = otherAgent.x;
                             closestMateY = otherAgent.y;
+                        }
+                        // Count potential mates (similar size, mature, not pregnant, have energy)
+                        if (hitType === 6 || hitType === 3) {
+                            if (otherAgent.framesAlive >= 600 && !otherAgent.isPregnant && 
+                                otherAgent.energy >= MIN_ENERGY_TO_REPRODUCE && 
+                                otherAgent.reproductionCooldown === 0) {
+                                potentialMatesCount++;
+                            }
                         }
                     }
                 }
@@ -1515,6 +1581,55 @@ export class Agent {
         inputs.push(this.eventFlags.justReproduced > 0 ? 1 : 0); // Recently reproduced
         inputs.push(this.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
         inputs.push(this.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
+
+        // Death risk: explicit awareness that low energy = death
+        const deathRisk = this.energy < DEATH_RISK_THRESHOLD ? Math.max(0, (DEATH_RISK_THRESHOLD - this.energy) / DEATH_RISK_THRESHOLD) : 0;
+        inputs.push(Math.min(deathRisk, 1.0)); // Death risk (0-1, where 1 = critical)
+
+        // Food energy gain: explicit awareness that eating food gives energy
+        inputs.push(Math.min(this.eventFlags.lastFoodEnergyGain / MAX_ENERGY, 1.0)); // Food energy gain (0-1, normalized)
+
+        // Food urgency: combines low energy + food visibility to signal "need food now"
+        const foodUrgency = (deathRisk > 0.5 && closestFoodDist < Infinity) ? 1.0 : 0.0;
+        inputs.push(foodUrgency); // Food urgency (0-1, binary: urgent or not)
+
+        // Collision damage: explicit awareness that crashing = energy loss
+        inputs.push(Math.min(this.eventFlags.lastCollisionDamage / MAX_ENERGY, 1.0)); // Collision damage (0-1, normalized)
+
+        // Collision risk: proximity to obstacles (0-1, where 1 = very close)
+        const collisionRisk = closestObstacleDist < Infinity ? (1.0 - Math.min(closestObstacleDist / maxRayDist, 1.0)) : 0.0;
+        inputs.push(Math.min(collisionRisk, 1.0)); // Collision risk (0-1)
+
+        // Predator threat: combined size difference + proximity (0-1)
+        const predatorProximity = closestPredatorDist < Infinity ? (1.0 - Math.min(closestPredatorDist / maxRayDist, 1.0)) : 0.0;
+        const sizeDifference = closestPredatorSizeRatio > 1.1 ? (closestPredatorSizeRatio - 1.0) / 2.0 : 0.0; // Normalize size ratio
+        const predatorThreat = Math.min(predatorProximity * Math.min(sizeDifference, 1.0), 1.0);
+        this.eventFlags.predatorThreat = predatorThreat; // Store for use in other systems
+        inputs.push(Math.min(predatorThreat, 1.0)); // Predator threat (0-1)
+
+        // Attack damage: energy lost from last attack (0-1, normalized)
+        inputs.push(Math.min(this.eventFlags.lastAttackDamage / MAX_ENERGY, 1.0)); // Attack damage (0-1, normalized)
+
+        // Vulnerability: how vulnerable agent is to predators (0-1)
+        const vulnerability = closestPredatorSizeRatio > 1.1 ? 1.0 : (closestPredatorSizeRatio > 1.0 ? (closestPredatorSizeRatio - 1.0) * 10 : 0.0);
+        inputs.push(Math.min(vulnerability, 1.0)); // Vulnerability (0-1)
+
+        // Reproduction readiness: how ready agent is to reproduce (0-1)
+        const energyReadiness = this.energy >= MIN_ENERGY_TO_REPRODUCE ? 1.0 : Math.max(0, this.energy / MIN_ENERGY_TO_REPRODUCE);
+        const cooldownReadiness = this.reproductionCooldown === 0 ? 1.0 : 0.0;
+        const ageReadiness = this.framesAlive >= 600 ? 1.0 : Math.max(0, this.framesAlive / 600);
+        const reproductionReadiness = energyReadiness * cooldownReadiness * ageReadiness;
+        this.eventFlags.reproductionReadiness = reproductionReadiness; // Store for use in other systems
+        inputs.push(Math.min(reproductionReadiness, 1.0)); // Reproduction readiness (0-1)
+
+        // Reproduction benefit: fitness benefit from reproduction (0-1)
+        // Use existing offspring count normalized
+        inputs.push(Math.min(this.offspring / 5, 1.0)); // Reproduction benefit (0-1, normalized)
+
+        // Mate availability: how many potential mates are nearby (0-1)
+        const mateAvailability = Math.min(potentialMatesCount / 5, 1.0);
+        this.eventFlags.mateAvailability = mateAvailability; // Store for use in other systems
+        inputs.push(Math.min(mateAvailability, 1.0)); // Mate availability (0-1)
 
         // Optional: Movement state inputs (enhances learning of movement control)
         // OPTIMIZED: Cache geneticMaxThrust calculation and use cached inverse

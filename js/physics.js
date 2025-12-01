@@ -4,7 +4,7 @@
 import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS,
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
-    MIN_ENERGY_TO_REPRODUCE, LOW_ENERGY_THRESHOLD, MATURATION_AGE_FRAMES,
+    MIN_ENERGY_TO_REPRODUCE, LOW_ENERGY_THRESHOLD, DEATH_RISK_THRESHOLD, MATURATION_AGE_FRAMES,
     COLLISION_SEPARATION_STRENGTH, COLLISION_ENERGY_LOSS_CAP, COLLISION_ENERGY_LOSS_PERCENTAGE,
     COLLISION_QUERY_BUFFER, MAX_AGENT_SIZE_ESTIMATE, PREDATOR_SIZE_RATIO_THRESHOLD,
     PREY_SIZE_RATIO_THRESHOLD, COLLISION_SEPARATION_MULTIPLIER, FOOD_EATEN_INCREMENT,
@@ -332,9 +332,16 @@ export function checkCollisions(simulation) {
                 // FATAL ATTACK (Kill)
                 // If predator wants to attack and is significantly larger, instant kill
                 if (agent.wantsToAttack && isPredator) {
-                    agent.energy += other.energy * 0.8; // Consume remaining energy
+                    const energyGained = other.energy * 0.8;
+                    agent.energy += energyGained; // Consume remaining energy
                     agent.kills++;
                     // Removed: agent.fitness += 20; // Wasted - overwritten by calculateFitness() every frame
+                    // Track attack damage for victim (if they had eventFlags, though they're dead now)
+                    // Note: Attacks are usually fatal, so this is mostly for consistency
+                    if (other.eventFlags) {
+                        other.eventFlags.lastAttackDamage = other.energy; // All energy lost = death
+                        other.eventFlags.justAttacked = 1; // Set flag briefly before death
+                    }
                     other.isDead = true;
                     simulation.logger.log(`[COMBAT] Agent ${agent.geneId} killed agent ${other.geneId}.`);
                 }
@@ -376,6 +383,12 @@ export function checkCollisions(simulation) {
                 }
                 // Removed: agent.fitness += 15; // Wasted - overwritten by calculateFitness() every frame
                 food.isDead = true;
+
+                // Track food energy gain for neural network awareness
+                if (agent.eventFlags) {
+                    agent.eventFlags.justAteFood = 30; // Set flag for 30 frames
+                    agent.eventFlags.lastFoodEnergyGain = food.energyValue; // Track energy gained
+                }
 
                 // Temperature gain from eating
                 agent.temperature = Math.min(TEMPERATURE_MAX, agent.temperature + TEMPERATURE_GAIN_EAT);
@@ -778,6 +791,97 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(agent.eventFlags && agent.eventFlags.justReproduced > 0 ? 1 : 0); // Recently reproduced
         inputs.push(agent.eventFlags && agent.eventFlags.justAttacked > 0 ? 1 : 0); // Recently attacked
         inputs.push(agent.eventFlags && agent.eventFlags.lowEnergyWarning > 0 ? 1 : 0); // Currently in low energy
+
+        // Death risk: explicit awareness that low energy = death
+        const deathRisk = agent.energy < DEATH_RISK_THRESHOLD ? Math.max(0, (DEATH_RISK_THRESHOLD - agent.energy) / DEATH_RISK_THRESHOLD) : 0;
+        inputs.push(Math.min(deathRisk, 1.0)); // Death risk (0-1, where 1 = critical)
+
+        // Food energy gain: explicit awareness that eating food gives energy
+        const lastFoodEnergyGain = agent.eventFlags && agent.eventFlags.lastFoodEnergyGain ? agent.eventFlags.lastFoodEnergyGain : 0;
+        inputs.push(Math.min(lastFoodEnergyGain * invMaxEnergy, 1.0)); // Food energy gain (0-1, normalized)
+
+        // Food urgency: combines low energy + food visibility to signal "need food now"
+        const hasFoodTarget = agent.targetMemory && agent.targetMemory.currentTarget && 
+                              agent.targetMemory.currentTarget.type === 'food' &&
+                              agent.targetMemory.lastTargetSeen > 0 &&
+                              (agent.framesAlive - agent.targetMemory.lastTargetSeen) < agent.targetMemory.attentionSpan;
+        const foodUrgency = (deathRisk > 0.5 && hasFoodTarget) ? 1.0 : 0.0;
+        inputs.push(foodUrgency); // Food urgency (0-1, binary: urgent or not)
+
+        // Collision damage: explicit awareness that crashing = energy loss
+        const lastCollisionDamage = agent.eventFlags && agent.eventFlags.lastCollisionDamage ? agent.eventFlags.lastCollisionDamage : 0;
+        inputs.push(Math.min(lastCollisionDamage * invMaxEnergy, 1.0)); // Collision damage (0-1, normalized)
+
+        // Collision risk: proximity to obstacles (0-1, where 1 = very close)
+        // Note: GPU path doesn't have direct access to closestObstacleDist, use ray data approximation
+        let closestObstacleDist = Infinity;
+        if (agent.lastRayData) {
+            for (const ray of agent.lastRayData) {
+                if (ray.hit && (ray.hitType === 'obstacle_or_edge' || ray.hitTypeValue === 4) && ray.dist < closestObstacleDist) {
+                    closestObstacleDist = ray.dist;
+                }
+            }
+        }
+        const collisionRisk = closestObstacleDist < Infinity ? (1.0 - Math.min(closestObstacleDist / agent.maxRayDist, 1.0)) : 0.0;
+        inputs.push(Math.min(collisionRisk, 1.0)); // Collision risk (0-1)
+
+        // Predator threat: combined size difference + proximity (0-1)
+        // Calculate from ray data
+        let closestPredatorDist = Infinity;
+        let closestPredatorSizeRatio = 0;
+        if (agent.lastRayData) {
+            for (const ray of agent.lastRayData) {
+                if (ray.hit && (ray.hitType === 'larger' || ray.hitTypeValue === 2) && ray.dist < closestPredatorDist) {
+                    closestPredatorDist = ray.dist;
+                    // Approximate size ratio from hit type (larger = predator)
+                    closestPredatorSizeRatio = 1.2; // Conservative estimate for larger agents
+                }
+            }
+        }
+        const predatorProximity = closestPredatorDist < Infinity ? (1.0 - Math.min(closestPredatorDist / agent.maxRayDist, 1.0)) : 0.0;
+        const sizeDifference = closestPredatorSizeRatio > 1.1 ? (closestPredatorSizeRatio - 1.0) / 2.0 : 0.0;
+        const predatorThreat = Math.min(predatorProximity * Math.min(sizeDifference, 1.0), 1.0);
+        if (agent.eventFlags) {
+            agent.eventFlags.predatorThreat = predatorThreat;
+        }
+        inputs.push(Math.min(predatorThreat, 1.0)); // Predator threat (0-1)
+
+        // Attack damage: energy lost from last attack (0-1, normalized)
+        const lastAttackDamage = agent.eventFlags && agent.eventFlags.lastAttackDamage ? agent.eventFlags.lastAttackDamage : 0;
+        inputs.push(Math.min(lastAttackDamage * invMaxEnergy, 1.0)); // Attack damage (0-1, normalized)
+
+        // Vulnerability: how vulnerable agent is to predators (0-1)
+        const vulnerability = closestPredatorSizeRatio > 1.1 ? 1.0 : (closestPredatorSizeRatio > 1.0 ? (closestPredatorSizeRatio - 1.0) * 10 : 0.0);
+        inputs.push(Math.min(vulnerability, 1.0)); // Vulnerability (0-1)
+
+        // Reproduction readiness: how ready agent is to reproduce (0-1)
+        const energyReadiness = agent.energy >= MIN_ENERGY_TO_REPRODUCE ? 1.0 : Math.max(0, agent.energy / MIN_ENERGY_TO_REPRODUCE);
+        const cooldownReadiness = agent.reproductionCooldown === 0 ? 1.0 : 0.0;
+        const ageReadiness = agent.framesAlive >= 600 ? 1.0 : Math.max(0, agent.framesAlive / 600);
+        const reproductionReadiness = energyReadiness * cooldownReadiness * ageReadiness;
+        if (agent.eventFlags) {
+            agent.eventFlags.reproductionReadiness = reproductionReadiness;
+        }
+        inputs.push(Math.min(reproductionReadiness, 1.0)); // Reproduction readiness (0-1)
+
+        // Reproduction benefit: fitness benefit from reproduction (0-1)
+        inputs.push(Math.min((agent.offspring || 0) / 5, 1.0)); // Reproduction benefit (0-1, normalized)
+
+        // Mate availability: how many potential mates are nearby (0-1)
+        // Approximate from ray data - count same-size agents
+        let potentialMatesCount = 0;
+        if (agent.lastRayData) {
+            for (const ray of agent.lastRayData) {
+                if (ray.hit && (ray.hitType === 'same_size_agent' || ray.hitTypeValue === 6)) {
+                    potentialMatesCount++;
+                }
+            }
+        }
+        const mateAvailability = Math.min(potentialMatesCount / 5, 1.0);
+        if (agent.eventFlags) {
+            agent.eventFlags.mateAvailability = mateAvailability;
+        }
+        inputs.push(Math.min(mateAvailability, 1.0)); // Mate availability (0-1)
 
         // Optional: Movement state inputs (enhances learning of movement control)
         // OPTIMIZED: Cache calculations and use multiplication instead of division
