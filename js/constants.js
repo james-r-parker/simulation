@@ -62,7 +62,16 @@ export const MIN_NAVIGATION_TURN_FOR_FITNESS = 0.15; // Minimum turn angle for n
 export const MIN_FOOD_APPROACH_DISTANCE = 5; // Minimum distance improvement to count as food approach
 
 // Neural network and evolution
-export const AGENT_MEMORY_FRAMES = 30; // Number of previous frames stored for temporal decision making (~0.5 seconds at 60fps)
+export const AGENT_MEMORY_FRAMES = 60; // Number of previous frames stored for temporal decision making (~1 second at 60fps)
+export const TARGET_ATTENTION_SPAN_FRAMES = 180; // Frames to remember target after losing sight (~3 seconds at 60fps)
+
+// Goal tracking constants (numeric for performance)
+export const GOALS = {
+    FIND_FOOD: 0,
+    FIND_MATE: 1,
+    AVOID_DANGER: 2,
+    REST: 3
+};
 export const BASE_MUTATION_RATE = 0.1; // Base probability of gene mutations during reproduction
 export const AGENT_SPEED_FACTOR_BASE = 2; // Base multiplier for agent movement speed calculations
 export const AGENT_SPEED_FACTOR_VARIANCE = 3; // Random variance range for speed factor inheritance
@@ -295,16 +304,16 @@ export const POST_PROCESSING = {
     BLOOM: {
         STRENGTH: 0.25, // Bloom intensity (minimal - only for very bright elements)
         RADIUS: 1, // Bloom spread radius (very tight to reduce fuzziness)
-        THRESHOLD: 0.98 // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
+        THRESHOLD: 0.75 // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
     },
     VIGNETTE: {
         ENABLED: true,
-        OFFSET: 0.8, // Vignette offset
+        OFFSET: 5, // Vignette offset
         DARKNESS: 0.1 // Vignette darkness (reduced from 0.5 for subtler effect)
     },
     CHROMATIC_ABERRATION: {
         ENABLED: true,
-        OFFSET: 0.0001 // Chromatic aberration offset (reduced from 0.001 for subtler effect)
+        OFFSET: 0.001 // Chromatic aberration offset (reduced from 0.001 for subtler effect)
     }
 };
 
@@ -404,35 +413,35 @@ export const AGENT_CONFIGS = {
         color: COLORS.AGENTS.FORAGER, // Visual color for forager agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 300, // Maximum distance sensor rays can detect
-        hiddenSize: 24, // Size of neural network hidden layer (increased from 20 for better capacity)
+        hiddenSize: 30, // Size of neural network hidden layer (increased from 24 for better capacity - 25% increase)
         description: 'Specialized in finding and consuming food.'
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: COLORS.AGENTS.PREDATOR, // Visual color for predator agents
         numSensorRays: 24, // Number of sensor rays for detecting environment
         maxRayDist: 350, // Maximum distance sensor rays can detect
-        hiddenSize: 30, // Size of neural network hidden layer (increased from 25 for better capacity)
+        hiddenSize: 38, // Size of neural network hidden layer (increased from 30 for better capacity - 27% increase)
         description: 'Specialized in hunting other agents.'
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: COLORS.AGENTS.REPRODUCER, // Visual color for reproducer agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 250, // Maximum distance sensor rays can detect
-        hiddenSize: 22, // Size of neural network hidden layer (increased from 18 for better capacity)
+        hiddenSize: 28, // Size of neural network hidden layer (increased from 22 for better capacity - 27% increase)
         description: 'Specialized in mating and creating offspring.'
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: COLORS.AGENTS.SCOUT, // Visual color for scout agents
         numSensorRays: 24, // Number of sensor rays for detecting environment
         maxRayDist: 400, // Maximum distance sensor rays can detect
-        hiddenSize: 20, // Size of neural network hidden layer (increased from 15 for better capacity - largest increase needed)
+        hiddenSize: 25, // Size of neural network hidden layer (increased from 20 for better capacity - 25% increase)
         description: 'Specialized in long-range sensing and exploration.'
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: COLORS.AGENTS.DEFENDER, // Visual color for defender agents
         numSensorRays: 16, // Number of sensor rays for detecting environment
         maxRayDist: 350, // Maximum distance sensor rays can detect
-        hiddenSize: 26, // Size of neural network hidden layer (increased from 22 for better capacity)
+        hiddenSize: 32, // Size of neural network hidden layer (increased from 26 for better capacity - 23% increase)
         description: 'Specialized in defending territory and allies.'
     }
 };
@@ -454,7 +463,7 @@ export const CAMERA_Z_POSITION = 1000; // Default camera Z position
 export const CAMERA_FAR_PLANE = 10000; // Camera far clipping plane
 
 // --- RENDERING CONSTANTS ---
-export const AGENT_BORDER_SIZE_MULTIPLIER = 1.1; // Border size relative to agent body
+export const AGENT_BORDER_SIZE_MULTIPLIER = 1.15; // Border size relative to agent body (increased from 1.1 for better visibility)
 export const AGENT_MINIMUM_BORDER_SIZE = 12; // Minimum border size for visibility
 export const POINT_POOL_SIZE = 5000; // Initial point pool allocation size
 

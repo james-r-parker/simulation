@@ -30,6 +30,7 @@ import {
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
     AGENT_MEMORY_FRAMES, BASE_MUTATION_RATE, AGENT_SPEED_FACTOR_BASE, AGENT_SPEED_FACTOR_VARIANCE,
+    TARGET_ATTENTION_SPAN_FRAMES, GOALS,
     WALL_COLLISION_DAMAGE, EDGE_BOUNCE_DAMPING,
     BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
@@ -142,19 +143,21 @@ export class Agent {
         // - Perception inputs: (sensor rays * 5) + (alignment rays * 1) + 33 state/memory inputs
         // - Hidden state: hiddenSize (RNN feedback from previous timestep)
         //
-        // Perception input breakdown (33 total):
+        // Perception input breakdown (41 total):
         //   - 8 base state: hunger, fear, aggression, energy, age, speed, angle diff, shadow
         //   - 4 temperature: current temp, distance from optimal, cold stress, heat stress
         //   - 1 season phase
         //   - 8 memory: previous velocities (4), energy deltas (2), previous danger/aggression (2)
         //   - 3 lifetime metrics: food eaten, obstacles hit, offspring (all normalized to [0,1])
         //   - 5 event flags: just ate, hit obstacle, reproduced, attacked, low energy (binary)
-        //   - 4 movement state: current thrust, current rotation, thrust change, rotation change (NEW)
+        //   - 4 movement state: current thrust, current rotation, thrust change, rotation change
+        //   - 5 target memory: distance, angle, time since seen, type, priority
+        //   - 3 goal memory: current goal, goal priority, goal duration
         //
         // All inputs are normalized to [0,1] or [-1,1] ranges for consistent neural network training.
         // The first layer processes (perception + hiddenState) together, which is why hiddenState
         // is included in inputSize. This is the standard RNN architecture pattern.
-        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 33 + this.hiddenState.length;
+        this.inputSize = (this.numSensorRays * 5) + (this.numAlignmentRays * 1) + 41 + this.hiddenState.length;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -272,6 +275,32 @@ export class Agent {
         // Performance: One-time GPU fallback warning flag
         this.gpuFallbackWarned = false;
         this._cleanedUp = false; // Flag to prevent double cleanup
+
+        // --- TARGET MEMORY (Performance-Optimized) ---
+        // Pre-allocated to avoid GC pressure in hotpath
+        this.targetMemory = {
+            currentTarget: null, // {type: 'food'|'mate'|'location', x, y, id, priority}
+            targetHistory: new Array(5), // Pre-allocated fixed-size array
+            targetHistoryCount: 0, // Track actual count
+            attentionSpan: TARGET_ATTENTION_SPAN_FRAMES, // Constant, no recalculation needed
+            lastTargetSeen: 0 // Frame count, not Date.now() for performance
+        };
+
+        // --- GOAL MEMORY (Performance-Optimized) ---
+        // Use numeric constants for fast comparisons
+        this.goalMemory = {
+            currentGoal: GOALS.FIND_FOOD, // Numeric constant, fast comparison
+            goalPriority: 0.8,
+            goalStartFrame: 0, // Frame count, not timestamp (will be set on first update)
+            goalProgress: 0.0,
+            recentGoals: [], // Pre-allocated as empty, will grow up to 20
+            goalsCompleted: 0 // Track number of goals successfully completed
+        };
+
+        // Cache for expensive calculations (updated every 5 frames)
+        this._cachedTargetDistance = null;
+        this._cachedTargetAngle = null;
+        this._lastTargetCacheUpdate = 0;
 
         // Log agent birth
         this.logger.debug(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}`);
@@ -1115,6 +1144,15 @@ export class Agent {
             return null; // Both intersection points are behind ray origin
         };
 
+        // --- TARGET TRACKING (Performance-Optimized) ---
+        // Track closest food and mate during ray casting
+        let closestFoodDist = Infinity;
+        let closestFoodX = null;
+        let closestFoodY = null;
+        let closestMateDist = Infinity;
+        let closestMateX = null;
+        let closestMateY = null;
+
         // Process sensor rays
         for (let rayIdx = 0; rayIdx < numSensorRays; rayIdx++) {
             const angle = startAngle + rayIdx * sensorAngleStep;
@@ -1193,6 +1231,12 @@ export class Agent {
                         closestDist = dist;
                         hitType = 1; // Food
                         hitEntity = food;
+                        // Track closest food for target memory
+                        if (dist < closestFoodDist) {
+                            closestFoodDist = dist;
+                            closestFoodX = food.x;
+                            closestFoodY = food.y;
+                        }
                     }
                 } else if (entity instanceof Agent) {
                     const otherAgent = entity;
@@ -1207,6 +1251,12 @@ export class Agent {
                             hitType = 6; // Same size agent
                         }
                         hitEntity = otherAgent;
+                        // Track closest mate for target memory (when wanting to reproduce)
+                        if (this.wantsToReproduce && (hitType === 6 || hitType === 3) && dist < closestMateDist) {
+                            closestMateDist = dist;
+                            closestMateX = otherAgent.x;
+                            closestMateY = otherAgent.y;
+                        }
                     }
                 }
             }
@@ -1486,6 +1536,122 @@ export class Agent {
         const rotationChange = this.previousRotation || 0;
         inputs.push(rotationChange * invMaxRotation);
 
+        // --- TARGET MEMORY UPDATE (Performance-Optimized) ---
+        // Update target memory if we see food or mate
+        if (closestFoodDist < Infinity) {
+            // Update or set food target
+            if (!this.targetMemory.currentTarget || this.targetMemory.currentTarget.type !== 'food') {
+                this.targetMemory.currentTarget = {
+                    type: 'food',
+                    x: closestFoodX,
+                    y: closestFoodY,
+                    priority: 1.0
+                };
+            } else {
+                // Update existing target position
+                this.targetMemory.currentTarget.x = closestFoodX;
+                this.targetMemory.currentTarget.y = closestFoodY;
+            }
+            this.targetMemory.lastTargetSeen = this.framesAlive;
+        } else if (this.wantsToReproduce && closestMateDist < Infinity) {
+            // Update or set mate target
+            if (!this.targetMemory.currentTarget || this.targetMemory.currentTarget.type !== 'mate') {
+                this.targetMemory.currentTarget = {
+                    type: 'mate',
+                    x: closestMateX,
+                    y: closestMateY,
+                    priority: 0.8
+                };
+            } else {
+                this.targetMemory.currentTarget.x = closestMateX;
+                this.targetMemory.currentTarget.y = closestMateY;
+            }
+            this.targetMemory.lastTargetSeen = this.framesAlive;
+        }
+
+        // Check target expiration (only every 5 frames for performance)
+        if (this.framesAlive % 5 === 0 && this.targetMemory.currentTarget && this.targetMemory.lastTargetSeen > 0) {
+            const framesSinceSeen = this.framesAlive - this.targetMemory.lastTargetSeen;
+            if (framesSinceSeen > this.targetMemory.attentionSpan) {
+                this.targetMemory.currentTarget = null;
+                this.targetMemory.lastTargetSeen = 0;
+            }
+        }
+
+        // Add target memory inputs to neural network
+        if (this.targetMemory.currentTarget) {
+            // Calculate distance and angle to target (cached, updated every 5 frames)
+            if (this._lastTargetCacheUpdate !== this.framesAlive || this.framesAlive % 5 === 0) {
+                const dx = this.targetMemory.currentTarget.x - this.x;
+                const dy = this.targetMemory.currentTarget.y - this.y;
+                this._cachedTargetDistance = Math.sqrt(dx * dx + dy * dy);
+                this._cachedTargetAngle = Math.atan2(dy, dx);
+                this._lastTargetCacheUpdate = this.framesAlive;
+            }
+            
+            // Normalized distance to target (0-1, where 0 = very close, 1 = very far)
+            const maxDist = this.maxRayDist * 2; // Use 2x ray distance as max
+            inputs.push(Math.min(this._cachedTargetDistance / maxDist, 1.0));
+            
+            // Direction to target (normalized angle difference)
+            let angleToTarget = this._cachedTargetAngle - this.angle;
+            while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
+            while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
+            inputs.push(angleToTarget / Math.PI); // Normalized to [-1, 1]
+            
+            // Time since target was last seen (normalized)
+            const framesSinceSeen = this.framesAlive - this.targetMemory.lastTargetSeen;
+            inputs.push(Math.min(framesSinceSeen / this.targetMemory.attentionSpan, 1.0));
+            
+            // Target type (food=1, mate=0.5, location=0)
+            inputs.push(this.targetMemory.currentTarget.type === 'food' ? 1.0 : 
+                       (this.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
+            
+            // Target priority
+            inputs.push(this.targetMemory.currentTarget.priority || 0.5);
+        } else {
+            // No target - provide zero inputs
+            inputs.push(0); // Distance
+            inputs.push(0); // Angle
+            inputs.push(1); // Time since seen (max = forgotten)
+            inputs.push(0); // Type
+            inputs.push(0); // Priority
+        }
+
+        // --- GOAL MEMORY INPUTS ---
+        // Update goal based on current state
+        const previousGoal = this.goalMemory.currentGoal;
+        if (this.energy < LOW_ENERGY_THRESHOLD) {
+            this.goalMemory.currentGoal = GOALS.REST;
+            this.goalMemory.goalPriority = 1.0;
+        } else if (this.dangerSmell > 0.7 || this.fear > 0.7) {
+            this.goalMemory.currentGoal = GOALS.AVOID_DANGER;
+            this.goalMemory.goalPriority = 0.9;
+        } else if (this.wantsToReproduce && this.energy >= MIN_ENERGY_TO_REPRODUCE) {
+            this.goalMemory.currentGoal = GOALS.FIND_MATE;
+            this.goalMemory.goalPriority = 0.8;
+        } else {
+            this.goalMemory.currentGoal = GOALS.FIND_FOOD;
+            this.goalMemory.goalPriority = 0.7;
+        }
+        
+        // Update goal start frame if goal changed
+        if (previousGoal !== this.goalMemory.currentGoal) {
+            this.goalMemory.goalStartFrame = this.framesAlive;
+            // Add to history (efficient index cycling)
+            const historyIndex = this.goalMemory.recentGoals.length % 20;
+            this.goalMemory.recentGoals[historyIndex] = {
+                goal: previousGoal,
+                duration: this.framesAlive - this.goalMemory.goalStartFrame,
+                frame: this.framesAlive
+            };
+        }
+
+        // Add goal inputs (normalized)
+        inputs.push(this.goalMemory.currentGoal / 3.0); // Normalize goal ID to [0, 1]
+        inputs.push(this.goalMemory.goalPriority);
+        inputs.push(Math.min((this.framesAlive - this.goalMemory.goalStartFrame) / 300, 1.0)); // Goal duration (normalized)
+
         this.lastRayData = rayData;
 
         // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
@@ -1630,6 +1796,11 @@ export class Agent {
         this.offspring++;
         this.childrenFromMate++;
 
+        // Track goal completion: FIND_MATE goal completed
+        if (this.goalMemory && this.goalMemory.currentGoal === GOALS.FIND_MATE) {
+            this.goalMemory.goalsCompleted++;
+        }
+
         // Log successful mating
         this.logger.info(`[LIFECYCLE] 💕 Agent ${this.id} (${this.geneId}) mated with Agent ${mate.id} (${mate.geneId}) - Specialization: ${this.specializationType}, Energy spent: ${REPRODUCE_COST_BASE.toFixed(1)}`);
 
@@ -1670,12 +1841,22 @@ export class Agent {
         this.childrenFromSplit++;
         this.reproductionCooldown = REPRODUCTION_COOLDOWN_FRAMES * 1.5; // Longer cooldown after splitting
 
+        // Track goal completion: FIND_MATE goal completed (splitting is also reproduction)
+        if (this.goalMemory && this.goalMemory.currentGoal === GOALS.FIND_MATE) {
+            this.goalMemory.goalsCompleted++;
+        }
+
         return child;
     }
 
     birthChild() {
         const parentWeights = this.getWeights();
         const childWeights = crossover(parentWeights, this.fatherWeights, this.logger);
+
+        // Track goal completion: FIND_MATE goal completed (birth is successful reproduction)
+        if (this.goalMemory && this.goalMemory.currentGoal === GOALS.FIND_MATE) {
+            this.goalMemory.goalsCompleted++;
+        }
 
         // Log birth of child
         this.logger.info(`[LIFECYCLE] 👶 Agent ${this.id} (${this.geneId}) giving birth to child - Specialization: ${this.specializationType}, Energy spent: ${REPRODUCE_COST_BASE.toFixed(1)}`);
@@ -1768,6 +1949,10 @@ export class Agent {
         // REBALANCED: Offspring increased from 100 to 150, kills reduced from 300 to 200
         baseScore += safeNumber(this.offspring || 0, 0) * 150; // Increased from 100
         baseScore += safeNumber(this.cleverTurns || 0, 0) * 50;
+        
+        // Goal completion bonus: reward agents that successfully complete their goals
+        const goalsCompleted = safeNumber(this.goalMemory?.goalsCompleted || 0, 0);
+        baseScore += goalsCompleted * 100; // 100 points per completed goal
         
         // Movement rewards - NORMALIZED by distance traveled to prevent tiny movements from inflating fitness
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
@@ -2025,6 +2210,28 @@ export class Agent {
         // DO NOT clear _extractedWeights - validation needs them after cleanup
         // The weights are a deep copy, so keeping them doesn't create memory leaks
         // They will be garbage collected when the agent is fully removed
+
+        // Clear target memory (efficient - just set to null)
+        if (this.targetMemory) {
+            this.targetMemory.currentTarget = null;
+            this.targetMemory.targetHistory.length = 0; // Fast clear
+            this.targetMemory.targetHistoryCount = 0;
+            this.targetMemory.lastTargetSeen = 0;
+        }
+
+        // Clear goal memory
+        if (this.goalMemory) {
+            this.goalMemory.currentGoal = null;
+            this.goalMemory.recentGoals.length = 0;
+            this.goalMemory.goalStartFrame = 0;
+            this.goalMemory.goalProgress = 0.0;
+            this.goalMemory.goalsCompleted = 0;
+        }
+
+        // Clear cached calculations
+        this._cachedTargetDistance = null;
+        this._cachedTargetAngle = null;
+        this._lastTargetCacheUpdate = 0;
 
         // Reset behavioral states
         this.dangerSmell = 0;

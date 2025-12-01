@@ -361,6 +361,40 @@ export function periodicMemoryCleanup(simulation) {
                 agent.lastRayData.length = 0;
                 arraysCleared++;
             }
+
+            // Clean up target memory on living agents (efficient)
+            if (agent.targetMemory) {
+                // Limit target history (use index-based, not slice)
+                if (agent.targetMemory.targetHistoryCount > 5) {
+                    // Shift array efficiently
+                    const keepCount = 5;
+                    for (let i = 0; i < keepCount; i++) {
+                        agent.targetMemory.targetHistory[i] = agent.targetMemory.targetHistory[agent.targetMemory.targetHistoryCount - keepCount + i];
+                    }
+                    agent.targetMemory.targetHistoryCount = keepCount;
+                    arraysCleared++;
+                }
+                // Clear expired targets (frame-based check, efficient)
+                if (agent.targetMemory.currentTarget && agent.targetMemory.lastTargetSeen > 0) {
+                    const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
+                    if (framesSinceSeen > agent.targetMemory.attentionSpan) {
+                        agent.targetMemory.currentTarget = null;
+                        agent.targetMemory.lastTargetSeen = 0;
+                    }
+                }
+            }
+
+            // Limit goal memory history
+            if (agent.goalMemory && agent.goalMemory.recentGoals && agent.goalMemory.recentGoals.length > 20) {
+                // Use efficient array trimming
+                const keepCount = 20;
+                for (let i = 0; i < keepCount; i++) {
+                    agent.goalMemory.recentGoals[i] = agent.goalMemory.recentGoals[agent.goalMemory.recentGoals.length - keepCount + i];
+                }
+                agent.goalMemory.recentGoals.length = keepCount;
+                arraysCleared++;
+            }
+
             if (arraysCleared > 0) {
                 agentsCleaned++;
                 simulation.logger.info(`[MEMORY] Cleared ${arraysCleared} large arrays for agent ${agent.geneId} (${arraySizeLimit} limit)`);

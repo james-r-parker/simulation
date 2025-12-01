@@ -4,7 +4,7 @@
 import {
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, OBSTACLE_HIDING_RADIUS,
     MAX_ENERGY, OBESITY_THRESHOLD_ENERGY, MAX_VELOCITY, TWO_PI,
-    MIN_ENERGY_TO_REPRODUCE, MATURATION_AGE_FRAMES,
+    MIN_ENERGY_TO_REPRODUCE, LOW_ENERGY_THRESHOLD, MATURATION_AGE_FRAMES,
     COLLISION_SEPARATION_STRENGTH, COLLISION_ENERGY_LOSS_CAP, COLLISION_ENERGY_LOSS_PERCENTAGE,
     COLLISION_QUERY_BUFFER, MAX_AGENT_SIZE_ESTIMATE, PREDATOR_SIZE_RATIO_THRESHOLD,
     PREY_SIZE_RATIO_THRESHOLD, COLLISION_SEPARATION_MULTIPLIER, FOOD_EATEN_INCREMENT,
@@ -370,6 +370,10 @@ export function checkCollisions(simulation) {
             if (distSq < combinedSizeSq) {
                 agent.energy += food.energyValue;
                 agent.foodEaten++;
+                // Track goal completion: FIND_FOOD goal completed
+                if (agent.goalMemory && agent.goalMemory.currentGoal === 0) { // GOALS.FIND_FOOD
+                    agent.goalMemory.goalsCompleted++;
+                }
                 // Removed: agent.fitness += 15; // Wasted - overwritten by calculateFitness() every frame
                 food.isDead = true;
 
@@ -795,6 +799,90 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         // Note: This is a simplified calculation - full implementation would track previous-previous rotation
         const rotationChange = 0; // Placeholder - would need additional state tracking for accurate calculation
         inputs.push(rotationChange * invMaxRotation);
+
+        // --- TARGET MEMORY INPUTS (Performance-Optimized) ---
+        // Check target expiration (only every 5 frames for performance)
+        if (agent.framesAlive % 5 === 0 && agent.targetMemory && agent.targetMemory.currentTarget && agent.targetMemory.lastTargetSeen > 0) {
+            const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
+            if (framesSinceSeen > agent.targetMemory.attentionSpan) {
+                agent.targetMemory.currentTarget = null;
+                agent.targetMemory.lastTargetSeen = 0;
+            }
+        }
+
+        // Add target memory inputs to neural network
+        if (agent.targetMemory && agent.targetMemory.currentTarget) {
+            // Calculate distance and angle to target (cached, updated every 5 frames)
+            if (!agent._lastTargetCacheUpdate || agent._lastTargetCacheUpdate !== agent.framesAlive || agent.framesAlive % 5 === 0) {
+                const dx = agent.targetMemory.currentTarget.x - agent.x;
+                const dy = agent.targetMemory.currentTarget.y - agent.y;
+                agent._cachedTargetDistance = Math.sqrt(dx * dx + dy * dy);
+                agent._cachedTargetAngle = Math.atan2(dy, dx);
+                agent._lastTargetCacheUpdate = agent.framesAlive;
+            }
+            
+            // Normalized distance to target (0-1, where 0 = very close, 1 = very far)
+            const maxDist = agent.maxRayDist * 2; // Use 2x ray distance as max
+            inputs.push(Math.min(agent._cachedTargetDistance / maxDist, 1.0));
+            
+            // Direction to target (normalized angle difference)
+            let angleToTarget = agent._cachedTargetAngle - agent.angle;
+            while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
+            while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
+            inputs.push(angleToTarget / Math.PI); // Normalized to [-1, 1]
+            
+            // Time since target was last seen (normalized)
+            const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
+            inputs.push(Math.min(framesSinceSeen / agent.targetMemory.attentionSpan, 1.0));
+            
+            // Target type (food=1, mate=0.5, location=0)
+            inputs.push(agent.targetMemory.currentTarget.type === 'food' ? 1.0 : 
+                       (agent.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
+            
+            // Target priority
+            inputs.push(agent.targetMemory.currentTarget.priority || 0.5);
+        } else {
+            // No target - provide zero inputs
+            inputs.push(0); // Distance
+            inputs.push(0); // Angle
+            inputs.push(1); // Time since seen (max = forgotten)
+            inputs.push(0); // Type
+            inputs.push(0); // Priority
+        }
+
+        // --- GOAL MEMORY INPUTS ---
+        // Update goal based on current state (same logic as CPU path)
+        if (agent.goalMemory) {
+            const previousGoal = agent.goalMemory.currentGoal;
+            if (agent.energy < LOW_ENERGY_THRESHOLD) {
+                agent.goalMemory.currentGoal = 3; // GOALS.REST
+                agent.goalMemory.goalPriority = 1.0;
+            } else if (agent.dangerSmell > 0.7 || agent.fear > 0.7) {
+                agent.goalMemory.currentGoal = 2; // GOALS.AVOID_DANGER
+                agent.goalMemory.goalPriority = 0.9;
+            } else if (agent.wantsToReproduce && agent.energy >= MIN_ENERGY_TO_REPRODUCE) {
+                agent.goalMemory.currentGoal = 1; // GOALS.FIND_MATE
+                agent.goalMemory.goalPriority = 0.8;
+            } else {
+                agent.goalMemory.currentGoal = 0; // GOALS.FIND_FOOD
+                agent.goalMemory.goalPriority = 0.7;
+            }
+            
+            // Update goal start frame if goal changed
+            if (previousGoal !== agent.goalMemory.currentGoal) {
+                agent.goalMemory.goalStartFrame = agent.framesAlive;
+            }
+
+            // Add goal inputs (normalized)
+            inputs.push(agent.goalMemory.currentGoal / 3.0); // Normalize goal ID to [0, 1]
+            inputs.push(agent.goalMemory.goalPriority);
+            inputs.push(Math.min((agent.framesAlive - agent.goalMemory.goalStartFrame) / 300, 1.0)); // Goal duration (normalized)
+        } else {
+            // No goal memory - provide zero inputs
+            inputs.push(0); // Goal
+            inputs.push(0); // Priority
+            inputs.push(0); // Duration
+        }
 
         agent.lastInputs = inputs;
         agent.lastRayData = rayData;

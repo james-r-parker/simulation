@@ -131,7 +131,7 @@ export class WebGLRenderer {
         // Agent meshes (instanced for performance)
         this.agentMeshes = new Map(); // geneId -> mesh
         this.agentGeometry = new THREE.CircleGeometry(1, 16);
-        this.agentBorderGeometry = new THREE.RingGeometry(0.95, 1.0, 48); // Increased from 16 to 48 segments for smoother borders
+        this.agentBorderGeometry = new THREE.RingGeometry(0.88, 1.0, 64); // Thicker border (0.88-1.0 instead of 0.95-1.0) with more segments for smoother appearance
 
         // Food geometry - using InstancedMesh
         this.foodGeometry = new THREE.CircleGeometry(1, 8);
@@ -907,18 +907,23 @@ export class WebGLRenderer {
                 });
                 releaseColor(emissiveColor); // Release after cloning
 
-                // Border material - bright but not brighter than body
+                // Border material - darker colors to blend into background
                 const specializationColor = acquireColor();
                 specializationColor.setHex(COLORS.AGENTS[specialization] || COLORS.AGENTS.FORAGER);
+                // Darken the base color significantly (multiply by 0.25 for much darker appearance)
+                specializationColor.multiplyScalar(0.25);
+                
                 const borderEmissiveColor = acquireColor();
                 borderEmissiveColor.setHex(EMISSIVE_COLORS.AGENTS[specialization] || EMISSIVE_COLORS.AGENTS.FORAGER);
-                borderEmissiveColor.multiplyScalar(0.6); // Strong emissive for border
+                // Much darker emissive for subtle glow that blends into background
+                borderEmissiveColor.multiplyScalar(0.15);
+                
                 const borderMaterial = new THREE.MeshStandardMaterial({
-                    color: specializationColor.clone(), // Clone for material
-                    emissive: borderEmissiveColor.clone(), // Clone for material
-                    emissiveIntensity: 1.8, // High emissive - bright but not brighter than body
+                    color: specializationColor.clone(), // Clone for material (darkened)
+                    emissive: borderEmissiveColor.clone(), // Clone for material (very dark)
+                    emissiveIntensity: 0.4, // Low emissive - subtle glow that blends
                     metalness: 0.0, // No metalness
-                    roughness: 0.6, // Higher roughness for crisp look
+                    roughness: 0.8, // Higher roughness for matte, less reflective appearance
                     transparent: false,
                     opacity: 1.0
                 });
@@ -1034,9 +1039,10 @@ export class WebGLRenderer {
                 mesh.body.setMatrixAt(i, matrix);
 
                 // Update border (always visible to show specialization)
+                // Border is rendered slightly behind body to prevent z-fighting/tearing
                 const borderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * AGENT_BORDER_SIZE_MULTIPLIER;
                 matrix.makeScale(borderSize, borderSize, 1);
-                matrix.setPosition(agent.x, -agent.y, 0.1);
+                matrix.setPosition(agent.x, -agent.y, 0.09); // Slightly behind body (0.09 vs 0.1) to prevent z-fighting
                 mesh.border.setMatrixAt(i, matrix);
             }
 
