@@ -49,6 +49,12 @@ import { distanceSquared } from './utils.js';
 import { updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
 import { PerformanceMonitor } from './performance-monitor.js';
+import { updateSeasonalEnvironment } from './environment.js';
+import { updateFertileZones, createFertileZone } from './fertile-zones.js';
+import { buildSpatialGrid } from './spatial-grid.js';
+import { calculateFps, updateGpuCpuTracking, formatFpsDisplay } from './performance-utils.js';
+import { performAutoAdjustment } from './performance-adjustment.js';
+import { updateFitnessChart } from './chart-utils.js';
 
 export class Simulation {
     constructor(container) {
@@ -235,82 +241,22 @@ export class Simulation {
             return null;
         }
 
-        // Initialize grid if needed
-        if (!this.spatialGrid) {
-            this.spatialGrid = [];
-            this.spatialGridEntityIndices = [];
-            const totalCells = this.spatialGridWidth * this.spatialGridHeight;
-            for (let i = 0; i < totalCells; i++) {
-                this.spatialGrid[i] = [];
-                this.spatialGridEntityIndices[i] = [];
-            }
-        }
+        const gridState = this.spatialGrid ? {
+            spatialGrid: this.spatialGrid,
+            spatialGridEntityIndices: this.spatialGridEntityIndices,
+            spatialGridWidth: this.spatialGridWidth,
+            spatialGridHeight: this.spatialGridHeight
+        } : null;
 
-        // Clear previous grid
-        const totalCells = this.spatialGridWidth * this.spatialGridHeight;
-        for (let i = 0; i < totalCells; i++) {
-            this.spatialGrid[i].length = 0;
-            this.spatialGridEntityIndices[i].length = 0;
-        }
-
-        // Assign entities to grid cells
-        for (let i = 0; i < entities.length; i++) {
-            const entity = entities[i];
-            if (!entity || entity.isDead) continue;
-
-            const entityX = entity.x;
-            const entityY = entity.y;
-            const entitySize = entity.size || 0;
-
-            // Calculate grid cell coordinates
-            const cellX = Math.floor(entityX / this.spatialGridCellSize);
-            const cellY = Math.floor(entityY / this.spatialGridCellSize);
-
-            // Entity can span multiple cells if it's large, so check neighboring cells too
-            const cellRadius = Math.ceil(entitySize / this.spatialGridCellSize) + 1;
-            const minCellX = Math.max(0, cellX - cellRadius);
-            const maxCellX = Math.min(this.spatialGridWidth - 1, cellX + cellRadius);
-            const minCellY = Math.max(0, cellY - cellRadius);
-            const maxCellY = Math.min(this.spatialGridHeight - 1, cellY + cellRadius);
-
-            // Add entity to all relevant cells
-            for (let cy = minCellY; cy <= maxCellY; cy++) {
-                for (let cx = minCellX; cx <= maxCellX; cx++) {
-                    const cellIndex = cy * this.spatialGridWidth + cx;
-                    if (cellIndex >= 0 && cellIndex < totalCells) {
-                        this.spatialGrid[cellIndex].push(entity);
-                        this.spatialGridEntityIndices[cellIndex].push(i);
-                    }
-                }
-            }
-        }
-
-        // Build flat arrays for GPU
-        const cellEntityCounts = new Uint32Array(totalCells);
-        const cellStartIndices = new Uint32Array(totalCells);
-        const cellEntityIndices = [];
+        const result = buildSpatialGrid(entities, this.worldWidth, this.worldHeight, this.spatialGridCellSize, gridState);
         
-        // Count entities per cell and build start indices
-        let currentOffset = 0;
-        for (let i = 0; i < totalCells; i++) {
-            const count = this.spatialGridEntityIndices[i].length;
-            cellEntityCounts[i] = count;
-            cellStartIndices[i] = currentOffset;
-            // Add entity indices to flat array
-            for (let j = 0; j < count; j++) {
-                cellEntityIndices.push(this.spatialGridEntityIndices[i][j]);
-            }
-            currentOffset += count;
+        // Store grid arrays for reuse
+        if (result) {
+            this.spatialGrid = result.spatialGrid;
+            this.spatialGridEntityIndices = result.spatialGridEntityIndices;
         }
 
-        return {
-            cellSize: this.spatialGridCellSize,
-            gridWidth: this.spatialGridWidth,
-            gridHeight: this.spatialGridHeight,
-            cellEntityCounts: cellEntityCounts, // Uint32Array: number of entities per cell
-            cellStartIndices: cellStartIndices, // Uint32Array: starting index for each cell
-            cellEntityIndices: new Uint32Array(cellEntityIndices) // Uint32Array: flat array of entity indices
-        };
+        return result;
     }
 
     resize() {
@@ -474,203 +420,13 @@ export class Simulation {
     }
 
     performAutoAdjustment() {
-        // Calculate average FPS over the last 30 seconds
-        const avgFps = this.fpsHistory.reduce((sum, fps) => sum + fps, 0) / this.fpsHistory.length;
-        const minFps = Math.min(...this.fpsHistory);
-        const maxFps = Math.max(...this.fpsHistory);
-
-        // Count living agents
-        const livingAgents = this.agents.filter(a => !a.isDead).length;
-
-        this.logger.info(`[AUTO-ADJUST] FPS: avg=${avgFps.toFixed(1)}, range=${minFps}-${maxFps}, agents=${livingAgents}/${this.maxAgents}, speed=${this.gameSpeed}`);
-
-        // Determine if we need to adjust
-        let adjustmentNeeded = false;
-        let increasePerformance = false;
-        let decreasePerformance = false;
-
-        // If consistently below target FPS, decrease performance
-        if (avgFps < this.targetFps - 5 && minFps < this.targetFps - 10) {
-            decreasePerformance = true;
-            adjustmentNeeded = true;
-            this.logger.info(`[AUTO-ADJUST] ⚠️ Low FPS detected - decreasing performance`);
-        }
-        // If consistently above target FPS with headroom, increase performance
-        else if (avgFps > this.targetFps + 5 && minFps > this.targetFps - 5) {
-            increasePerformance = true;
-            adjustmentNeeded = true;
-            this.logger.info(`[AUTO-ADJUST] ✅ High FPS detected - increasing performance`);
-        } else {
-            this.logger.info(`[AUTO-ADJUST] ➡️ FPS within target range (${this.targetFps} ±5) - no adjustment needed`);
-        }
-
-        if (adjustmentNeeded) {
-            // Prioritize: agents first (more impactful), then speed
-            if (decreasePerformance) {
-                // Decrease performance: reduce agents first, then speed
-                if (this.maxAgents > this.minAgents) {
-                    const oldValue = this.maxAgents;
-                    const newMaxAgents = Math.max(this.minAgents, Math.floor(this.maxAgents * 0.8));
-                    if (newMaxAgents !== this.maxAgents) {
-                        this.maxAgents = newMaxAgents;
-                        this.logger.info(`[AUTO-ADJUST] ↓ Reduced max agents to ${this.maxAgents} (FPS: ${avgFps.toFixed(1)})`);
-                        // Update UI slider
-                        const slider = document.getElementById('maxAgents');
-                        if (slider) slider.value = this.maxAgents;
-                        // Update food scaling
-                        import('./spawn.js').then(module => module.updateFoodScalingFactor(this));
-                        // Show toast notification
-                        if (this.toast) {
-                            this.toast.showAutoAdjust('down', 'max agents', oldValue, newMaxAgents, avgFps);
-                        }
-                        return; // Only make one adjustment per cycle
-                    }
-                }
-                if (this.gameSpeed > this.minGameSpeed) {
-                    const oldValue = this.gameSpeed;
-                    this.gameSpeed = Math.max(this.minGameSpeed, this.gameSpeed - 0.5);
-                    this.logger.info(`[AUTO-ADJUST] ↓ Reduced game speed to ${this.gameSpeed} (FPS: ${avgFps.toFixed(1)})`);
-                    // Update UI slider
-                    const slider = document.getElementById('gameSpeed');
-                    if (slider) slider.value = this.gameSpeed;
-                    // Show toast notification
-                    if (this.toast) {
-                        this.toast.showAutoAdjust('down', 'game speed', oldValue, this.gameSpeed, avgFps);
-                    }
-                    return;
-                }
-            }
-            else if (increasePerformance) {
-                // Increase performance: increase agents first (more impactful), then speed
-                if (this.maxAgents < this.autoMaxAgents) {
-                    // Increase agents more aggressively when performance is consistently good (up to 75% cap)
-                    const oldValue = this.maxAgents;
-                    const newMaxAgents = Math.min(this.autoMaxAgents, Math.floor(this.maxAgents * 1.5));
-                    if (newMaxAgents !== this.maxAgents) {
-                        this.maxAgents = newMaxAgents;
-                        this.logger.info(`[AUTO-ADJUST] ↑ Increased max agents to ${this.maxAgents}/${this.autoMaxAgents} cap (FPS: ${avgFps.toFixed(1)})`);
-                        // Update UI slider
-                        const slider = document.getElementById('maxAgents');
-                        if (slider) slider.value = this.maxAgents;
-                        // Update food scaling
-                        import('./spawn.js').then(module => module.updateFoodScalingFactor(this));
-                        // Show toast notification
-                        if (this.toast) {
-                            this.toast.showAutoAdjust('up', 'max agents', oldValue, newMaxAgents, avgFps);
-                        }
-                        return; // Only make one adjustment per cycle
-                    }
-                }
-                if (this.gameSpeed < this.autoMaxSpeed) {
-                    const oldValue = this.gameSpeed;
-                    this.gameSpeed = Math.min(this.autoMaxSpeed, this.gameSpeed + 0.5);
-                    this.logger.info(`[AUTO-ADJUST] ↑ Increased game speed to ${this.gameSpeed}/${this.autoMaxSpeed} cap (FPS: ${avgFps.toFixed(1)})`);
-                    // Update UI slider
-                    const slider = document.getElementById('gameSpeed');
-                    if (slider) slider.value = this.gameSpeed;
-                    // Show toast notification
-                    if (this.toast) {
-                        this.toast.showAutoAdjust('up', 'game speed', oldValue, this.gameSpeed, avgFps);
-                    }
-                    return;
-                }
-            }
-        } else {
-            this.logger.debug(`[AUTO-ADJUST] No adjustment needed (FPS: ${avgFps.toFixed(1)}, target: ${this.targetFps})`);
-        }
+        performAutoAdjustment(this, this.fpsHistory, this.targetFps, this.logger, this.toast);
     }
 
     updateFitnessChart() {
         const canvas = document.getElementById('fitness-chart');
         if (!canvas || this.fitnessHistory.length < 2) return;
-
-        // Ensure arrays are initialized (backward compatibility)
-        if (!this.averageFitnessHistory) this.averageFitnessHistory = [];
-        if (!this.medianFitnessHistory) this.medianFitnessHistory = [];
-
-        const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-
-        // Clear
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, 0, width, height);
-
-        // Draw grid
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            const y = (height / 4) * i;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-
-        // Get data to plot (last 50 points or all if less)
-        const dataPoints = Math.min(50, this.fitnessHistory.length);
-        const bestData = this.fitnessHistory.slice(-dataPoints);
-        const avgData = (this.averageFitnessHistory || []).slice(-dataPoints);
-        const medianData = (this.medianFitnessHistory || []).slice(-dataPoints);
-        
-        // Find global min/max across all datasets for consistent scaling
-        const allData = [...bestData, ...avgData, ...medianData];
-        const maxFitness = Math.max(...allData, 1);
-        const minFitness = Math.min(...allData, 0);
-        const range = maxFitness - minFitness || 1;
-
-        // Helper function to draw a line
-        const drawLine = (data, color, lineWidth = 2) => {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.beginPath();
-            data.forEach((fitness, i) => {
-                const x = (width / (dataPoints - 1)) * i;
-                const y = height - ((fitness - minFitness) / range) * height;
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-            ctx.stroke();
-        };
-
-        // Draw median (bottom line, dimmer) - represents typical agent
-        if (medianData.length > 0) {
-            drawLine(medianData, 'rgba(100, 200, 255, 0.6)', 1.5);
-        }
-
-        // Draw average (middle line) - represents population health
-        if (avgData.length > 0) {
-            drawLine(avgData, '#0ff', 2);
-        }
-
-        // Draw best (top line, brightest) - represents peak performance
-        drawLine(bestData, '#0f0', 2.5);
-
-        // Draw legend
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        
-        // Best
-        ctx.fillStyle = '#0f0';
-        ctx.fillRect(5, 5, 12, 2);
-        ctx.fillStyle = '#fff';
-        ctx.fillText('Best', 20, 3);
-        
-        // Average
-        ctx.fillStyle = '#0ff';
-        ctx.fillRect(5, 18, 12, 2);
-        ctx.fillStyle = '#fff';
-        ctx.fillText('Avg', 20, 16);
-        
-        // Median
-        ctx.fillStyle = 'rgba(100, 200, 255, 0.6)';
-        ctx.fillRect(5, 31, 12, 2);
-        ctx.fillStyle = '#fff';
-        ctx.fillText('Median', 20, 29);
+        updateFitnessChart(canvas, this.fitnessHistory, this.averageFitnessHistory, this.medianFitnessHistory);
     }
 
     async init() {
@@ -984,101 +740,18 @@ export class Simulation {
     }
 
     updateSeasonalEnvironment(phase, seasonLength) {
-        // Four distinct seasons with different environmental pressures
-        let globalTemperatureModifier = 0;
-        let reproductionBonus = 1.0;
-        let mutationMultiplier = 1.0;
-        let energyDrainMultiplier = 1.0;
-
-        if (phase < 0.25) {
-            // SPRING: Warming temperatures, breeding season, resource recovery
-            globalTemperatureModifier = SEASON_SPRING_TEMP_MODIFIER; // Cool but warming
-            reproductionBonus = SEASON_SPRING_REPRODUCTION_BONUS; // Breeding season bonus
-            this.foodScarcityFactor = SEASON_SPRING_FOOD_SCARCITY; // Abundant food after winter
-            mutationMultiplier = SEASON_SPRING_MUTATION_MULTIPLIER; // Slightly increased variation during reproduction
-        } else if (phase < 0.5) {
-            // SUMMER: Hot temperatures, peak resources, high energy demands
-            globalTemperatureModifier = SEASON_SUMMER_TEMP_MODIFIER; // Hot summer
-            reproductionBonus = SEASON_SUMMER_REPRODUCTION_BONUS; // Continued breeding
-            this.foodScarcityFactor = SEASON_SUMMER_FOOD_SCARCITY; // Normal food availability
-            energyDrainMultiplier = SEASON_SUMMER_ENERGY_DRAIN; // Higher energy demands in heat
-            mutationMultiplier = SEASON_SUMMER_MUTATION_MULTIPLIER; // Normal mutation rate
-        } else if (phase < 0.75) {
-            // FALL: Cooling temperatures, resource preparation, moderate stress
-            globalTemperatureModifier = SEASON_FALL_TEMP_MODIFIER; // Mild temperatures
-            reproductionBonus = SEASON_FALL_REPRODUCTION_BONUS; // Reduced breeding as winter approaches
-            this.foodScarcityFactor = SEASON_FALL_FOOD_SCARCITY; // Resources becoming scarce
-            energyDrainMultiplier = SEASON_FALL_ENERGY_DRAIN; // Moderate energy stress
-        } else {
-            // WINTER: Cold temperatures, severe resource scarcity, survival pressure
-            globalTemperatureModifier = SEASON_WINTER_TEMP_MODIFIER; // Cold winter
-            reproductionBonus = SEASON_WINTER_REPRODUCTION_BONUS; // Very low breeding in winter
-            this.foodScarcityFactor = SEASON_WINTER_FOOD_SCARCITY; // Severe food scarcity
-            energyDrainMultiplier = SEASON_WINTER_ENERGY_DRAIN; // High energy drain in cold
-            mutationMultiplier = SEASON_WINTER_MUTATION_MULTIPLIER; // Reduced mutation during harsh conditions
-        }
-
-        // Apply seasonal environmental effects
-        this.globalTemperatureModifier = globalTemperatureModifier;
-        this.agents.forEach(agent => {
-            if (!agent.isDead) {
-                // Seasonal reproduction modifier
-                // When reproductionBonus > 1.0, suppress reproduction with probability (1.0 / reproductionBonus)
-                // When reproductionBonus < 1.0, suppress reproduction with higher probability
-                if (agent.wantsToReproduce && Math.random() > (1.0 / reproductionBonus)) {
-                    agent.wantsToReproduce = false; // Suppress reproduction outside breeding season
-                }
-
-                // Seasonal energy drain
-                // Apply in summer (phase 0.25-0.5), fall (phase 0.5-0.75), and winter (phase 0.75-1.0)
-                if (phase >= 0.25) { // Summer, fall, and winter
-                    agent.energy -= 0.05 * energyDrainMultiplier;
-                }
-            }
-        });
-
-        // Update mutation rate based on environmental stress
-        this.adaptiveMutationRate *= mutationMultiplier;
-        this.adaptiveMutationRate = Math.max(0.1, Math.min(2.0, this.adaptiveMutationRate));
+        const result = updateSeasonalEnvironment(phase, seasonLength, this.agents, this.adaptiveMutationRate);
+        this.globalTemperatureModifier = result.globalTemperatureModifier;
+        this.foodScarcityFactor = result.foodScarcityFactor;
+        this.adaptiveMutationRate = result.newAdaptiveMutationRate;
     }
 
     updateFertileZones() {
-        // Update and decay fertile zones over time
-        for (let i = this.fertileZones.length - 1; i >= 0; i--) {
-            const zone = this.fertileZones[i];
-            zone.age++;
-            zone.fertility -= zone.decayRate * zone.initialFertility;
-
-            // Remove depleted zones
-            if (zone.fertility <= 0.1) {
-                this.fertileZones.splice(i, 1);
-            }
-        }
+        updateFertileZones(this.fertileZones);
     }
 
     createFertileZone(agent) {
-        // Create nutrient-rich area where agent died
-        // Fertility based on agent's final energy and size (larger, well-fed agents create richer soil)
-        const fertility = Math.min(agent.energy * FERTILE_ZONE_FERTILITY_FACTOR, FERTILE_ZONE_MAX_FERTILITY); // Cap fertility
-
-        if (fertility > FERTILE_ZONE_MIN_FERTILITY) { // Only create zones for agents with significant energy
-            this.fertileZones.push({
-                x: agent.x,
-                y: agent.y,
-                fertility: fertility,
-                initialFertility: fertility,
-                radius: Math.max(FERTILE_ZONE_MIN_RADIUS, agent.size * FERTILE_ZONE_SIZE_FACTOR), // Zone size based on agent size
-                decayRate: FERTILE_ZONE_DECAY_RATE,
-                age: 0
-            });
-
-            // Limit total fertile zones to prevent performance issues
-            if (this.fertileZones.length > FERTILE_ZONE_MAX_COUNT) {
-                // Remove oldest, least fertile zone
-                this.fertileZones.sort((a, b) => (a.fertility / a.initialFertility) - (b.fertility / b.initialFertility));
-                this.fertileZones.shift();
-            }
-        }
+        createFertileZone(agent, this.fertileZones);
     }
 
     async gameLoop() {
@@ -1101,26 +774,22 @@ export class Simulation {
                 this.fpsFrameCount++;
                 const elapsed = now - this.lastFpsUpdate;
                 if (elapsed >= 1000) { // Update FPS every second
-                    this.currentFps = Math.round((this.fpsFrameCount * 1000) / elapsed);
+                    this.currentFps = calculateFps(this.fpsFrameCount, elapsed);
                     this.fpsFrameCount = 0;
                     this.lastFpsUpdate = now;
 
                     // Track GPU vs CPU FPS
                     const gpuCpuElapsed = now - this.lastGpuCpuUpdate;
                     if (gpuCpuElapsed >= 1000) {
-                        // Calculate average FPS for GPU and CPU frames
-                        if (this.gpuFrameCount > 0) {
-                            const gpuFps = Math.round((this.gpuFrameCount * 1000) / gpuCpuElapsed);
-                            this.gpuFpsHistory.push(gpuFps);
-                            if (this.gpuFpsHistory.length > 10) this.gpuFpsHistory.shift(); // Keep last 10 samples
-                            this.avgGpuFps = Math.round(this.gpuFpsHistory.reduce((a, b) => a + b, 0) / this.gpuFpsHistory.length);
-                        }
-                        if (this.cpuFrameCount > 0) {
-                            const cpuFps = Math.round((this.cpuFrameCount * 1000) / gpuCpuElapsed);
-                            this.cpuFpsHistory.push(cpuFps);
-                            if (this.cpuFpsHistory.length > 10) this.cpuFpsHistory.shift(); // Keep last 10 samples
-                            this.avgCpuFps = Math.round(this.cpuFpsHistory.reduce((a, b) => a + b, 0) / this.cpuFpsHistory.length);
-                        }
+                        const { avgGpuFps, avgCpuFps } = updateGpuCpuTracking(
+                            this.gpuFrameCount,
+                            this.cpuFrameCount,
+                            this.gpuFpsHistory,
+                            this.cpuFpsHistory,
+                            gpuCpuElapsed
+                        );
+                        this.avgGpuFps = avgGpuFps;
+                        this.avgCpuFps = avgCpuFps;
 
                         this.gpuFrameCount = 0;
                         this.cpuFrameCount = 0;
@@ -1142,19 +811,9 @@ export class Simulation {
             this.perfMonitor.timeSync('ui', () => {
                 const fpsEl = document.getElementById('info-fps');
                 if (fpsEl) {
-                    let fpsText = `FPS: ${this.currentFps} `;
-                    if (this.avgGpuFps > 0 || this.avgCpuFps > 0) {
-                        fpsText += ` (GPU: ${this.avgGpuFps > 0 ? this.avgGpuFps : 'N/A'}, CPU: ${this.avgCpuFps > 0 ? this.avgCpuFps : 'N/A'})`;
-                    }
-                    fpsEl.textContent = fpsText;
-                    // Color code FPS (green > 30, yellow > 15, red otherwise)
-                    if (this.currentFps >= 30) {
-                        fpsEl.style.color = '#0f0';
-                    } else if (this.currentFps >= 15) {
-                        fpsEl.style.color = '#ff0';
-                    } else {
-                        fpsEl.style.color = '#f00';
-                    }
+                    const { text, color } = formatFpsDisplay(this.currentFps, this.avgGpuFps, this.avgCpuFps);
+                    fpsEl.textContent = text;
+                    fpsEl.style.color = color;
                 }
             });
 

@@ -40,6 +40,16 @@ import {
     clearGPUResourcePools
 } from './three-object-pool.js';
 import { neuralArrayPool } from './neural-network.js';
+import {
+    initializeNeuralBackground, updateNeuralBackground
+} from './neural-background.js';
+import { addSparkles, updateSparkles } from './sparkles.js';
+import { addVisualEffect, updateVisualEffects, updateVisualEffectsRendering } from './visual-effects.js';
+import { setupPostProcessing } from './post-processing.js';
+import { updateRays, initRayColors } from './ray-visualization.js';
+import { updateAgentTrail } from './agent-trails.js';
+import { createObstacleParticles } from './obstacle-effects.js';
+import { hslToRgb } from './utils.js';
 
 export class WebGLRenderer {
     constructor(container, worldWidth, worldHeight, logger) {
@@ -139,7 +149,16 @@ export class WebGLRenderer {
         container.appendChild(this.renderer.domElement);
 
         // Setup post-processing pipeline
-        this.setupPostProcessing();
+        if (this.postProcessingEnabled) {
+            const postProcessingState = setupPostProcessing(this.renderer, this.scene, this.camera, this.container, this.logger);
+            if (postProcessingState) {
+                this.effectComposer = postProcessingState.effectComposer;
+                this.bloomPass = postProcessingState.bloomPass;
+                this.motionBlurPass = postProcessingState.motionBlurPass;
+                this.chromaticPass = postProcessingState.chromaticPass;
+                this.vignettePass = postProcessingState.vignettePass;
+            }
+        }
 
         // Groups for organization
         this.agentGroup = new THREE.Group();
@@ -170,17 +189,7 @@ export class WebGLRenderer {
         // Ray visualization
         this.showRays = false;
         this.rayLineSegments = null;
-        this.rayColors = {
-            default: new THREE.Color(COLORS.RAYS.DEFAULT),
-            noHit: new THREE.Color(COLORS.RAYS.NO_HIT),
-            alignment: new THREE.Color(COLORS.RAYS.ALIGNMENT),
-            food: new THREE.Color(COLORS.RAYS.FOOD),
-            smaller: new THREE.Color(COLORS.RAYS.SMALLER),
-            larger: new THREE.Color(COLORS.RAYS.LARGER),
-            obstacle: new THREE.Color(COLORS.RAYS.OBSTACLE),
-            edge: new THREE.Color(COLORS.RAYS.EDGE),
-            same: new THREE.Color(COLORS.RAYS.SAME)
-        };
+        this.rayColors = initRayColors();
 
         // Agent state visualization
         this.agentStateGroup = new THREE.Group();
@@ -219,409 +228,10 @@ export class WebGLRenderer {
         };
 
         // Initialize neural network background
-        this.initializeNeuralBackground();
+        this.neuralSystem = initializeNeuralBackground(this.logger, this.neuralBackgroundGroup, this.worldWidth, this.worldHeight);
 
     }
 
-    /**
-     * Initialize the neural network background system
-     * Creates neurons (glowing nodes) and synapses (animated connections)
-     */
-    initializeNeuralBackground() {
-        this.logger.log('[RENDER] Initializing neural network background...');
-
-        // Generate neuron positions across the 10x background area
-        this.generateNeuralNodes();
-
-        // Create connections between nearby neurons
-        this.generateNeuralConnections();
-
-        // Create the visual elements (points and lines)
-        this.createNeuralGeometry();
-
-        this.logger.log('[RENDER] Neural network background initialized with',
-            this.neuralNodes.length, 'nodes and', this.neuralConnections.length, 'connections');
-    }
-
-    /**
-     * Generate random neuron positions across the 10x background area
-     * Uses Poisson disk sampling for natural distribution
-     */
-    generateNeuralNodes() {
-        const nodes = [];
-        const minDistance = NEURAL_CONNECTION_DISTANCE * 0.3; // Minimum distance between nodes
-        const maxAttempts = 30;
-
-        // Generate nodes with Poisson disk sampling for natural distribution
-        for (let i = 0; i < NEURAL_NODES_COUNT; i++) {
-            let position = null;
-            let attempts = 0;
-
-            // Try to find a valid position not too close to existing nodes
-            while (attempts < maxAttempts && !position) {
-                const x = (Math.random() - 0.5) * BACKGROUND_WIDTH;
-                const y = (Math.random() - 0.5) * BACKGROUND_HEIGHT;
-
-                // Check distance to all existing nodes
-                let tooClose = false;
-                for (const existingNode of nodes) {
-                    const dx = x - existingNode.x;
-                    const dy = y - existingNode.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance < minDistance) {
-                        tooClose = true;
-                        break;
-                    }
-                }
-
-                if (!tooClose) {
-                    position = { x, y };
-                }
-                attempts++;
-            }
-
-            // If we couldn't find a good position, just place it randomly
-            if (!position) {
-                position = {
-                    x: (Math.random() - 0.5) * BACKGROUND_WIDTH,
-                    y: (Math.random() - 0.5) * BACKGROUND_HEIGHT
-                };
-            }
-
-            // Add some variation properties for animation
-            nodes.push({
-                x: position.x,
-                y: position.y,
-                phase: Math.random() * Math.PI * 2, // Random animation phase
-                type: Math.floor(Math.random() * 3), // 0=primary, 1=secondary, 2=accent
-                size: NEURAL_NODE_SIZE * (0.8 + Math.random() * 0.4), // Slight size variation
-                connections: []
-            });
-        }
-
-        this.neuralNodes = nodes;
-    }
-
-    /**
-     * Generate connections between nearby neurons
-     * Creates a network of synapses with distance-based connectivity
-     */
-    generateNeuralConnections() {
-        const connections = [];
-        const maxDistance = NEURAL_CONNECTION_DISTANCE;
-
-        // For each node, find nearby nodes to connect to
-        for (let i = 0; i < this.neuralNodes.length; i++) {
-            const nodeA = this.neuralNodes[i];
-            const nearbyNodes = [];
-
-            // Find all nodes within connection distance
-            for (let j = 0; j < this.neuralNodes.length; j++) {
-                if (i === j) continue; // Don't connect to self
-
-                const nodeB = this.neuralNodes[j];
-                const dx = nodeB.x - nodeA.x;
-                const dy = nodeB.y - nodeA.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance <= maxDistance) {
-                    nearbyNodes.push({ index: j, distance, node: nodeB });
-                }
-            }
-
-            // Sort by distance and connect to closest nodes (up to MAX_CONNECTIONS_PER_NODE)
-            nearbyNodes.sort((a, b) => a.distance - b.distance);
-
-            for (let k = 0; k < Math.min(MAX_CONNECTIONS_PER_NODE, nearbyNodes.length); k++) {
-                const target = nearbyNodes[k];
-                const connectionIndex = connections.length;
-
-                // Create bidirectional connection
-                connections.push({
-                    from: i,
-                    to: target.index,
-                    distance: target.distance,
-                    energyFlow: Math.random() * Math.PI * 2, // Random flow phase
-                    active: Math.random() > 0.3 // 70% of connections are active
-                });
-
-                // Track connection in both nodes
-                nodeA.connections.push(connectionIndex);
-                target.node.connections.push(connectionIndex);
-            }
-        }
-
-        this.neuralConnections = connections;
-    }
-
-    /**
-     * Create the visual geometry for neurons and synapses
-     * Uses Points for nodes and LineSegments for connections
-     */
-    createNeuralGeometry() {
-        // Create neuron points geometry
-        const nodePositions = new Float32Array(this.neuralNodes.length * 3);
-        const nodeColors = new Float32Array(this.neuralNodes.length * 3);
-        const nodeSizes = new Float32Array(this.neuralNodes.length);
-
-        for (let i = 0; i < this.neuralNodes.length; i++) {
-            const node = this.neuralNodes[i];
-            const color = this.getNeuralNodeColor(node.type);
-
-            nodePositions[i * 3] = node.x;
-            nodePositions[i * 3 + 1] = node.y;
-            nodePositions[i * 3 + 2] = 0;
-
-            nodeColors[i * 3] = ((color >> 16) & 0xff) / 255;
-            nodeColors[i * 3 + 1] = ((color >> 8) & 0xff) / 255;
-            nodeColors[i * 3 + 2] = (color & 0xff) / 255;
-
-            nodeSizes[i] = node.size;
-        }
-
-        // Create points geometry for neurons
-        const nodeGeometry = new THREE.BufferGeometry();
-        nodeGeometry.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3));
-        nodeGeometry.setAttribute('color', new THREE.BufferAttribute(nodeColors, 3));
-        nodeGeometry.setAttribute('size', new THREE.BufferAttribute(nodeSizes, 1));
-
-        // Create custom shader material for glowing neurons
-        const nodeMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0.0 },
-                maxOpacity: { value: NEURAL_MAX_OPACITY }
-            },
-            vertexShader: `
-                attribute float size;
-                attribute vec3 color;
-                varying vec3 vColor;
-                varying float vSize;
-                uniform float time;
-                uniform float maxOpacity;
-
-                void main() {
-                    vColor = color;
-                    vSize = size;
-
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * (300.0 / -mvPosition.z) * (0.8 + 0.4 * sin(time * 0.02 + position.x * 0.01 + position.y * 0.01));
-                    gl_Position = projectionMatrix * mvPosition;
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vColor;
-                varying float vSize;
-                uniform float time;
-                uniform float maxOpacity;
-
-                void main() {
-                    float distance = length(gl_PointCoord - vec2(0.5));
-                    if (distance > 0.5) discard;
-
-                    float alpha = (0.5 - distance) * 2.0;
-                    alpha *= maxOpacity * (0.7 + 0.3 * sin(time * 0.03 + gl_FragCoord.x * 0.01 + gl_FragCoord.y * 0.01));
-
-                    gl_FragColor = vec4(vColor, alpha);
-                }
-            `,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
-        this.neuralBackgroundGroup.add(nodePoints);
-        this.neuralNodePoints = nodePoints;
-
-        // Create connection lines geometry
-        const connectionPositions = new Float32Array(this.neuralConnections.length * 6); // 2 points per line * 3 coords
-        const connectionColors = new Float32Array(this.neuralConnections.length * 6); // 2 colors per line * 3 components
-
-        for (let i = 0; i < this.neuralConnections.length; i++) {
-            const connection = this.neuralConnections[i];
-            const nodeA = this.neuralNodes[connection.from];
-            const nodeB = this.neuralNodes[connection.to];
-            const color = connection.active ? NEURAL_COLORS.SYNAPSES.ACTIVE : NEURAL_COLORS.SYNAPSES.INACTIVE;
-
-            // Start point
-            connectionPositions[i * 6] = nodeA.x;
-            connectionPositions[i * 6 + 1] = nodeA.y;
-            connectionPositions[i * 6 + 2] = 0;
-
-            // End point
-            connectionPositions[i * 6 + 3] = nodeB.x;
-            connectionPositions[i * 6 + 4] = nodeB.y;
-            connectionPositions[i * 6 + 5] = 0;
-
-            // Colors (same for both endpoints)
-            const r = ((color >> 16) & 0xff) / 255;
-            const g = ((color >> 8) & 0xff) / 255;
-            const b = (color & 0xff) / 255;
-
-            connectionColors[i * 6] = r;
-            connectionColors[i * 6 + 1] = g;
-            connectionColors[i * 6 + 2] = b;
-            connectionColors[i * 6 + 3] = r;
-            connectionColors[i * 6 + 4] = g;
-            connectionColors[i * 6 + 5] = b;
-        }
-
-        // Create lines geometry for synapses
-        const connectionGeometry = new THREE.BufferGeometry();
-        connectionGeometry.setAttribute('position', new THREE.BufferAttribute(connectionPositions, 3));
-        connectionGeometry.setAttribute('color', new THREE.BufferAttribute(connectionColors, 3));
-
-        // Create material for animated synapses
-        const connectionMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0.0 },
-                maxOpacity: { value: NEURAL_MAX_OPACITY * 0.8 },
-                sparkProbability: { value: NEURAL_SPARK_PROBABILITY },
-                firingSpeed: { value: NEURAL_FIRING_SPEED }
-            },
-            vertexShader: `
-                attribute vec3 color;
-                varying vec3 vColor;
-                varying vec3 vPosition;
-                uniform float time;
-
-                void main() {
-                    vColor = color;
-                    vPosition = position;
-
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vColor;
-                varying vec3 vPosition;
-                uniform float time;
-                uniform float maxOpacity;
-                uniform float sparkProbability;
-                uniform float firingSpeed;
-
-                // Pseudo-random function
-                float random(vec2 st) {
-                    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-                }
-
-                // Noise function for organic variation
-                float noise(vec2 st) {
-                    vec2 i = floor(st);
-                    vec2 f = fract(st);
-                    float a = random(i);
-                    float b = random(i + vec2(1.0, 0.0));
-                    float c = random(i + vec2(0.0, 1.0));
-                    float d = random(i + vec2(1.0, 1.0));
-                    vec2 u = f * f * (3.0 - 2.0 * f);
-                    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-                }
-
-                void main() {
-                    // Create dramatic firing neuron effects
-                    vec2 pos = vPosition.xy;
-
-                    // Multiple traveling waves at different speeds and directions
-                    float wave1 = sin(pos.x * 0.005 + pos.y * 0.005 + time * firingSpeed) * 0.5 + 0.5;
-                    float wave2 = sin(pos.x * 0.008 - pos.y * 0.003 + time * firingSpeed * 1.5) * 0.5 + 0.5;
-                    float wave3 = sin(pos.x * 0.003 + pos.y * 0.007 + time * firingSpeed * 0.7) * 0.5 + 0.5;
-
-                    // Combine waves for complex firing pattern
-                    float combinedWave = (wave1 + wave2 + wave3) / 3.0;
-
-                    // Random spark flashes that travel along the line
-                    float sparkSeed = random(pos + time * 0.15);
-                    float spark = step(1.0 - sparkProbability, sparkSeed);
-
-                    // Traveling spark effect
-                    float sparkTravel = sin(pos.x * 0.02 + pos.y * 0.02 + time * 0.3) * 0.5 + 0.5;
-                    spark *= sparkTravel;
-
-                    // Neuron-like burst firing (sharp peaks)
-                    float burst = sin(time * 0.2 + pos.x * 0.01 + pos.y * 0.01) * 0.5 + 0.5;
-                    burst = pow(burst, 4.0); // Very sharp peaks for dramatic firing
-
-                    // Chain reaction effect - bursts trigger nearby activity
-                    float chainReaction = sin(time * 0.15 + length(pos) * 0.001) * 0.5 + 0.5;
-                    chainReaction = smoothstep(0.7, 0.9, chainReaction);
-
-                    // Combine all firing effects
-                    float firingIntensity = combinedWave * 0.5 + spark * 1.8 + burst * 0.9 + chainReaction * 0.6;
-
-                    // Add organic noise variation
-                    float organicNoise = noise(pos * 0.01 + time * 0.05) * 0.3;
-
-                    float alpha = maxOpacity * (firingIntensity + organicNoise);
-
-                    // Dynamic color based on firing state
-                    vec3 finalColor = vColor;
-
-                    // White hot flashes for sparks
-                    if (spark > 0.5) {
-                        finalColor = mix(finalColor, vec3(1.0, 1.0, 1.0), 0.8);
-                    }
-                    // Bright cyan bursts for neuron firing
-                    else if (burst > 0.8) {
-                        finalColor = mix(finalColor, vec3(0.0, 1.0, 1.0), 0.6);
-                    }
-                    // Electric blue for active connections
-                    else if (combinedWave > 0.7) {
-                        finalColor = mix(finalColor, vec3(0.2, 0.8, 1.0), 0.4);
-                    }
-
-                    gl_FragColor = vec4(finalColor, alpha);
-                }
-            `,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const connectionLines = new THREE.LineSegments(connectionGeometry, connectionMaterial);
-        this.neuralBackgroundGroup.add(connectionLines);
-        this.neuralConnectionLines = connectionLines;
-    }
-
-    /**
-     * Get color for neural node based on type
-     */
-    getNeuralNodeColor(type) {
-        switch (type) {
-            case 0: return NEURAL_COLORS.NODES.PRIMARY;   // Cyan
-            case 1: return NEURAL_COLORS.NODES.SECONDARY; // Blue
-            case 2: return NEURAL_COLORS.NODES.ACCENT;    // Purple
-            default: return NEURAL_COLORS.NODES.PRIMARY;
-        }
-    }
-
-    /**
-     * Update neural background animation and parallax
-     * Called each frame to animate the network
-     */
-    updateNeuralBackground(cameraX, cameraY, cameraZoom) {
-        // Update animation time
-        this.neuralAnimationTime += NEURAL_PULSE_SPEED;
-
-        // Update parallax offset (background moves slower than camera)
-        this.neuralParallaxOffset.x = cameraX * NEURAL_PARALLAX_FACTOR;
-        this.neuralParallaxOffset.y = cameraY * NEURAL_PARALLAX_FACTOR;
-
-        // Apply parallax to background group
-        this.neuralBackgroundGroup.position.set(
-            this.neuralParallaxOffset.x,
-            this.neuralParallaxOffset.y,
-            -1 // Behind simulation elements
-        );
-
-        // Update shader uniforms
-        if (this.neuralNodePoints && this.neuralNodePoints.material) {
-            this.neuralNodePoints.material.uniforms.time.value = this.neuralAnimationTime;
-        }
-
-        if (this.neuralConnectionLines && this.neuralConnectionLines.material) {
-            this.neuralConnectionLines.material.uniforms.time.value = this.neuralAnimationTime;
-        }
-    }
 
 
     /**
@@ -860,196 +470,18 @@ export class WebGLRenderer {
     }
 
     setupPostProcessing() {
-        this.logger.log('[RENDER] setupPostProcessing called');
-        this.logger.log(`[RENDER] postProcessingEnabled: ${this.postProcessingEnabled}`);
-        
         if (!this.postProcessingEnabled) {
             this.logger.warn('[RENDER] Post-processing disabled, skipping setup');
             return;
         }
-
-        try {
-            this.logger.log('[RENDER] Attempting to create post-processing passes...');
-            // Create render pass
-            const renderPass = new RenderPass(this.scene, this.camera);
-
-            // Get renderer size
-            const sizeVec = acquireVector2();
-            this.renderer.getSize(sizeVec);
-            const width = sizeVec.x || this.container.clientWidth || window.innerWidth;
-            const height = sizeVec.y || this.container.clientHeight || window.innerHeight;
-            releaseVector2(sizeVec);
-
-            // Create bloom pass
-            const bloomSizeVec = acquireVector2();
-            bloomSizeVec.set(width, height);
-            const bloomPass = new UnrealBloomPass(
-                bloomSizeVec,
-                POST_PROCESSING.BLOOM.STRENGTH,
-                POST_PROCESSING.BLOOM.RADIUS,
-                POST_PROCESSING.BLOOM.THRESHOLD
-            );
-            releaseVector2(bloomSizeVec); // Release after use
-
-            // Create vignette shader
-            const vignetteShader = {
-                uniforms: {
-                    tDiffuse: { value: null },
-                    offset: { value: POST_PROCESSING.VIGNETTE.OFFSET },
-                    darkness: { value: POST_PROCESSING.VIGNETTE.DARKNESS }
-                },
-                vertexShader: `
-                    varying vec2 vUv;
-                    void main() {
-                        vUv = uv;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform sampler2D tDiffuse;
-                    uniform float offset;
-                    uniform float darkness;
-                    varying vec2 vUv;
-                    void main() {
-                        vec4 texel = texture2D(tDiffuse, vUv);
-                        vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
-                        float dist = length(uv);
-                        float vignette = smoothstep(0.8, offset, dist);
-                        gl_FragColor = mix(texel, vec4(0.0, 0.0, 0.0, 1.0), vignette * darkness);
-                    }
-                `
-            };
-
-            // Create chromatic aberration shader
-            const chromaticAberrationShader = {
-                uniforms: {
-                    tDiffuse: { value: null },
-                    offset: { value: POST_PROCESSING.CHROMATIC_ABERRATION.OFFSET }
-                },
-                vertexShader: `
-                    varying vec2 vUv;
-                    void main() {
-                        vUv = uv;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform sampler2D tDiffuse;
-                    uniform float offset;
-                    varying vec2 vUv;
-                    void main() {
-                        vec2 uv = vUv;
-                        vec2 offsetVec = (uv - vec2(0.5)) * offset;
-                        float r = texture2D(tDiffuse, uv + offsetVec).r;
-                        float g = texture2D(tDiffuse, uv).g;
-                        float b = texture2D(tDiffuse, uv - offsetVec).b;
-                        gl_FragColor = vec4(r, g, b, 1.0);
-                    }
-                `
-            };
-
-            // Create motion blur shader for fast-moving agents
-            const motionBlurShader = {
-                uniforms: {
-                    tDiffuse: { value: null },
-                    strength: { value: 0.5 }
-                },
-                vertexShader: `
-                    varying vec2 vUv;
-                    void main() {
-                        vUv = uv;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform sampler2D tDiffuse;
-                    uniform float strength;
-                    varying vec2 vUv;
-                    void main() {
-                        vec4 color = texture2D(tDiffuse, vUv);
-                        // Simple directional blur - creates motion effect
-                        // This is a simplified motion blur that works without velocity data
-                        vec2 blurDir = vec2(0.0, 0.0);
-                        float blurAmount = 0.0;
-                        
-                        // Detect bright areas (likely fast-moving agents) and apply blur
-                        float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-                        if (brightness > 0.5) {
-                            blurAmount = (brightness - 0.5) * strength;
-                            blurDir = normalize(vUv - vec2(0.5)) * blurAmount;
-                        }
-                        
-                        // Sample along blur direction with fixed loop count (8 samples)
-                        vec4 blurred = color;
-                        if (blurAmount > 0.01) {
-                            const int samples = 8;
-                            for (int i = 1; i <= samples; i++) {
-                                float t = float(i) / float(samples);
-                                vec2 offset = blurDir * t;
-                                blurred += texture2D(tDiffuse, vUv + offset);
-                            }
-                            blurred /= float(samples + 1);
-                        }
-                        
-                        gl_FragColor = blurred;
-                    }
-                `
-            };
-
-            // Create effect composer
-            this.effectComposer = new EffectComposer(this.renderer);
-            this.effectComposer.addPass(renderPass);
-            this.effectComposer.addPass(bloomPass);
-
-            // Add motion blur pass (before chromatic aberration for better effect)
-            if (POST_PROCESSING.MOTION_BLUR.ENABLED) {
-                const motionBlurPass = new ShaderPass(motionBlurShader);
-                motionBlurPass.uniforms.strength.value = POST_PROCESSING.MOTION_BLUR.STRENGTH;
-                motionBlurPass.enabled = true;
-                this.effectComposer.addPass(motionBlurPass);
-                this.motionBlurPass = motionBlurPass;
-            }
-
-            // Add screen effects if enabled
-            if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
-                const chromaticPass = new ShaderPass(chromaticAberrationShader);
-                this.effectComposer.addPass(chromaticPass);
-                this.chromaticPass = chromaticPass;
-            }
-
-            if (POST_PROCESSING.VIGNETTE.ENABLED) {
-                const vignettePass = new ShaderPass(vignetteShader);
-                vignettePass.renderToScreen = true; // Last pass should render to screen
-                this.effectComposer.addPass(vignettePass);
-                this.vignettePass = vignettePass;
-            } else {
-                // If no vignette, determine last pass
-                if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
-                    // Chromatic aberration is last
-                } else if (POST_PROCESSING.MOTION_BLUR.ENABLED && this.motionBlurPass) {
-                    this.motionBlurPass.renderToScreen = true;
-                } else {
-                    bloomPass.renderToScreen = true;
-                }
-            }
-
-            // Store passes for later access
-            this.bloomPass = bloomPass;
-            
-            // Update bloom pass properties to match constants
-            this.bloomPass.strength = POST_PROCESSING.BLOOM.STRENGTH;
-            this.bloomPass.radius = POST_PROCESSING.BLOOM.RADIUS;
-            this.bloomPass.threshold = POST_PROCESSING.BLOOM.THRESHOLD;
-            
-            this.logger.log(`[RENDER] Bloom pass configured: strength=${this.bloomPass.strength}, radius=${this.bloomPass.radius}, threshold=${this.bloomPass.threshold}`);
-
-            this.logger.log('[RENDER] Post-processing pipeline initialized successfully');
-            this.logger.log(`[RENDER] Bloom: strength=${POST_PROCESSING.BLOOM.STRENGTH}, radius=${POST_PROCESSING.BLOOM.RADIUS}, threshold=${POST_PROCESSING.BLOOM.THRESHOLD}`);
-            this.logger.log(`[RENDER] Vignette: ${POST_PROCESSING.VIGNETTE.ENABLED ? 'enabled' : 'disabled'}`);
-            this.logger.log(`[RENDER] Chromatic Aberration: ${POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED ? 'enabled' : 'disabled'}`);
-        } catch (error) {
-            this.logger.warn('[RENDER] Failed to initialize post-processing, falling back to basic rendering:', error);
-            this.logger.warn('[RENDER] Post-processing error details:', error.message, error.stack);
+        const postProcessingState = setupPostProcessing(this.renderer, this.scene, this.camera, this.container, this.logger);
+        if (postProcessingState) {
+            this.effectComposer = postProcessingState.effectComposer;
+            this.bloomPass = postProcessingState.bloomPass;
+            this.motionBlurPass = postProcessingState.motionBlurPass;
+            this.chromaticPass = postProcessingState.chromaticPass;
+            this.vignettePass = postProcessingState.vignettePass;
+        } else {
             this.postProcessingEnabled = false;
             this.effectComposer = null;
         }
@@ -1057,59 +489,11 @@ export class WebGLRenderer {
 
     // Visual effects system
     addVisualEffect(agent, effectType, gameSpeed = 1) {
-        // NEVER add effects to dead agents
-        if (!agent || agent.isDead) {
-            return;
-        }
-
-        if (!this.agentEffects.has(agent)) {
-            this.agentEffects.set(agent, []);
-        }
-        const effects = this.agentEffects.get(agent);
-
-        // FIXED: Multiply by game speed so effects scale correctly
-        // Slower games (0.5x) should have shorter durations (3.5 frames)
-        // Faster games (3x) should have longer durations (21 frames)
-        const adjustedDuration = Math.max(1, Math.round(EFFECT_DURATION_BASE * gameSpeed));
-
-        effects.push({
-            type: effectType,
-            startFrame: this.currentFrame || 0,
-            duration: adjustedDuration
-        });
-
-        // Add sparkle particles for visual effects
-        this.addSparkles(agent, effectType);
+        addVisualEffect(this.agentEffects, agent, effectType, this.currentFrame, gameSpeed, this.sparkles, this.maxSparkles, this.sparklesEnabled);
     }
 
     addSparkles(agent, effectType) {
-        if (!this.sparklesEnabled) return;
-        if (!agent || agent.isDead) return;
-        if (this.sparkles.length >= this.maxSparkles) return; // Limit for performance
-
-        // Spawn 3-5 sparkles per effect
-        const sparkleCount = 3 + Math.floor(Math.random() * 3);
-        const color = effectType === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
-
-        for (let i = 0; i < sparkleCount; i++) {
-            if (this.sparkles.length >= this.maxSparkles) break;
-
-            const angle = Math.random() * Math.PI * 2;
-            const distance = agent.size * (0.5 + Math.random() * 0.5);
-            const speed = 0.5 + Math.random() * 1.0;
-            const life = 20 + Math.floor(Math.random() * 20); // 20-40 frames
-
-            this.sparkles.push({
-                x: agent.x + Math.cos(angle) * distance,
-                y: agent.y + Math.sin(angle) * distance,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                color: color,
-                life: life,
-                maxLife: life,
-                size: 4 + Math.random() * 6 // Larger sparkles: 4-10 instead of 2-4
-            });
-        }
+        addSparkles(this.sparkles, agent, effectType, this.maxSparkles);
     }
 
     updateSparkles() {
@@ -1327,34 +711,8 @@ export class WebGLRenderer {
     }
 
     updateVisualEffects(currentFrame) {
-        // Initialize agentEffects if not already done (safety check)
-        if (!this.agentEffects) {
-            this.agentEffects = new Map();
-        }
-
         this.currentFrame = currentFrame;
-
-        // Clean up expired effects and dead agents
-        for (const [agent, effects] of this.agentEffects.entries()) {
-            // Remove effects for dead agents immediately
-            if (!agent || agent.isDead) {
-                this.agentEffects.delete(agent);
-                continue;
-            }
-
-            // PERFORMANCE: In-place removal of expired effects to avoid allocation
-            // Iterate backwards to safely splice
-            for (let i = effects.length - 1; i >= 0; i--) {
-                const effect = effects[i];
-                if (currentFrame - effect.startFrame >= effect.duration) {
-                    effects.splice(i, 1);
-                }
-            }
-
-            if (effects.length === 0) {
-                this.agentEffects.delete(agent);
-            }
-        }
+        updateVisualEffects(this.agentEffects, currentFrame);
     }
 
     updateCamera(cameraPos) {
@@ -1385,50 +743,9 @@ export class WebGLRenderer {
 
     // HSL to RGB helper - uses pooled color and caching for performance
     hslToRgb(h, s, l) {
-        // Create cache key (round to reduce cache size)
-        const hRounded = Math.round(h);
-        const sRounded = Math.round(s);
-        const lRounded = Math.round(l);
-        const cacheKey = `${hRounded},${sRounded},${lRounded}`;
-
-        // Check cache first
-        if (this.hslToRgbCache.has(cacheKey)) {
-            const cachedRgb = this.hslToRgbCache.get(cacheKey);
-            const color = acquireColor();
-            color.set(cachedRgb[0], cachedRgb[1], cachedRgb[2]);
-            return color;
-        }
-
-        // Compute HSL to RGB conversion using precomputed constants
-        const hNorm = h * this.MATH_CONSTANTS.ONE_OVER_360;
-        const sNorm = s * this.MATH_CONSTANTS.ONE_OVER_100;
-        const lNorm = l * this.MATH_CONSTANTS.ONE_OVER_100;
-        const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
-        const x = c * (1 - Math.abs((hNorm * 6) % 2 - 1));
-        const m = lNorm - c * 0.5;
-        let r, g, b;
-        if (hNorm < this.MATH_CONSTANTS.ONE_OVER_6) { r = c; g = x; b = 0; }
-        else if (hNorm < this.MATH_CONSTANTS.TWO_OVER_6) { r = x; g = c; b = 0; }
-        else if (hNorm < this.MATH_CONSTANTS.THREE_OVER_6) { r = 0; g = c; b = x; }
-        else if (hNorm < this.MATH_CONSTANTS.FOUR_OVER_6) { r = 0; g = x; b = c; }
-        else if (hNorm < this.MATH_CONSTANTS.FIVE_OVER_6) { r = x; g = 0; b = c; }
-        else { r = c; g = 0; b = x; }
-        
-        const finalR = r + m;
-        const finalG = g + m;
-        const finalB = b + m;
-        
+        const rgb = hslToRgb(h, s, l, this.hslToRgbCache, this.hslCacheMaxSize);
         const color = acquireColor();
-        color.set(finalR, finalG, finalB);
-
-        // Cache the RGB values (limit cache size)
-        if (this.hslToRgbCache.size >= this.hslCacheMaxSize) {
-            // Remove oldest entry (simple FIFO - remove first)
-            const firstKey = this.hslToRgbCache.keys().next().value;
-            this.hslToRgbCache.delete(firstKey);
-        }
-        this.hslToRgbCache.set(cacheKey, [finalR, finalG, finalB]);
-
+        color.set(rgb.r, rgb.g, rgb.b);
         return color;
     }
 
@@ -1708,7 +1025,7 @@ export class WebGLRenderer {
 
                 // Add trail for fast-moving agents
                 if (speedRatio > 0.3) {
-                    this.updateAgentTrail(agent, speedRatio);
+                    updateAgentTrail(this.agentTrails, agent, speedRatio, this.trailGroup, this.logger);
                 }
             }
 
@@ -1738,16 +1055,7 @@ export class WebGLRenderer {
     }
 
     updateVisualEffectsRendering() {
-        // DISABLED: Ring effects are replaced by sparkle particles
-        // This method is kept for potential future use but no longer renders rings
-        // Sparkles are handled separately via updateSparkles() which is called in render()
-        
-        // Hide any existing ring meshes to prevent old rings from showing
-        if (this.activeEffectMeshes) {
-            for (let i = 0; i < this.activeEffectMeshes.length; i++) {
-                this.activeEffectMeshes[i].visible = false;
-            }
-        }
+        updateVisualEffectsRendering(this.agentEffects, this.agentEffectsGroup, this.activeEffectMeshes);
     }
 
     updateFood(foodArray) {
@@ -2056,7 +1364,7 @@ export class WebGLRenderer {
                 this.obstacleMeshes.push(shadowMesh);
 
                 // Add particle system for energy/sparks around obstacle
-                this.createObstacleParticles(obs);
+                createObstacleParticles(obs, this.obstacleParticleSystems, this.obstacleGroup, this.logger);
             });
         } else {
             // Update positions and animations of existing meshes
@@ -2091,352 +1399,29 @@ export class WebGLRenderer {
     /**
      * Update agent trail for fast-moving agents
      */
-    updateAgentTrail(agent, speedRatio) {
-        if (!agent.id) return;
-
-        const trailLength = Math.floor(speedRatio * 8); // 0-8 trail points based on speed
-        if (trailLength < 2) return;
-
-        let trail = this.agentTrails.get(agent.id);
-        if (!trail) {
-            // Create new trail
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(trailLength * 3);
-            const colors = new Float32Array(trailLength * 3);
-            
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            
-            const material = new THREE.LineBasicMaterial({
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.6,
-                linewidth: 2
-            });
-            
-            trail = new THREE.Line(geometry, material);
-            trail.frustumCulled = false;
-            this.trailGroup.add(trail);
-            this.agentTrails.set(agent.id, trail);
-            trail.userData.positions = positions;
-            trail.userData.colors = colors;
-            trail.userData.history = [];
-        }
-
-        // Add current position to history
-        trail.userData.history.push({ x: agent.x, y: agent.y, time: Date.now() });
-        
-        // Keep only recent positions
-        const maxAge = 200; // 200ms
-        const now = Date.now();
-        trail.userData.history = trail.userData.history.filter(p => now - p.time < maxAge);
-        
-        // Update geometry with trail positions
-        const history = trail.userData.history;
-        const positions = trail.userData.positions;
-        const colors = trail.userData.colors;
-        const agentColor = this.hslToRgb(agent.geneColor.h, agent.geneColor.s, agent.geneColor.l);
-        
-        const count = Math.min(history.length, trailLength);
-        for (let i = 0; i < count; i++) {
-            const i3 = i * 3;
-            const point = history[history.length - count + i];
-            positions[i3] = point.x;
-            positions[i3 + 1] = -point.y;
-            positions[i3 + 2] = 0.05;
-            
-            // Fade trail from front to back
-            const alpha = i / count;
-            colors[i3] = agentColor.r * alpha;
-            colors[i3 + 1] = agentColor.g * alpha;
-            colors[i3 + 2] = agentColor.b * alpha;
-        }
-        
-        releaseColor(agentColor);
-        
-        // Create proper array copies for Three.js
-        const positionsCopy = new Float32Array(positions.subarray(0, count * 3));
-        const colorsCopy = new Float32Array(colors.subarray(0, count * 3));
-        
-        trail.geometry.setAttribute('position', new THREE.BufferAttribute(positionsCopy, 3));
-        trail.geometry.setAttribute('color', new THREE.BufferAttribute(colorsCopy, 3));
-        trail.geometry.setDrawRange(0, count);
-        trail.geometry.attributes.position.needsUpdate = true;
-        trail.geometry.attributes.color.needsUpdate = true;
-    }
 
     /**
      * Create particle system for obstacle energy/sparks
      */
-    createObstacleParticles(obstacle) {
-        if (!obstacle.id) return;
-        
-        const particleCount = 20;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
-        const sizes = new Float32Array(particleCount);
-        
-        const obstacleColor = new THREE.Color(EMISSIVE_COLORS.OBSTACLE);
-        
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            const angle = (i / particleCount) * Math.PI * 2;
-            const radius = obstacle.radius * (0.8 + Math.random() * 0.4);
-            positions[i3] = Math.cos(angle) * radius;
-            positions[i3 + 1] = Math.sin(angle) * radius;
-            positions[i3 + 2] = 0.1;
-            
-            obstacleColor.toArray(colors, i3);
-            sizes[i] = 2 + Math.random() * 3;
-        }
-        
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-        
-        const material = new THREE.ShaderMaterial({
-            vertexShader: `
-                attribute float size;
-                varying vec3 vColor;
-                varying float vOpacity;
-                void main() {
-                    // Three.js automatically provides 'color' attribute when vertexColors: true
-                    vColor = color;
-                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * (300.0 / -mvPosition.z);
-                    vOpacity = 0.6;
-                    gl_Position = projectionMatrix * mvPosition;
-                }
-            `,
-            fragmentShader: `
-                varying vec3 vColor;
-                varying float vOpacity;
-                void main() {
-                    vec2 coord = gl_PointCoord - vec2(0.5);
-                    float dist = length(coord);
-                    float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
-                    alpha *= vOpacity;
-                    gl_FragColor = vec4(vColor, alpha);
-                }
-            `,
-            transparent: true,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending,
-            vertexColors: true
-        });
-        
-        const particles = new THREE.Points(geometry, material);
-        particles.position.set(obstacle.x, -obstacle.y, 0.1);
-        this.obstacleGroup.add(particles);
-        this.obstacleParticleSystems.set(obstacle.id, particles);
-    }
 
     updateRays(agents, frameCount = 0) {
-        if (!this.showRays) {
-            // Hide all rays if disabled
-            if (this.rayLineSegments) {
-                this.rayLineSegments.visible = false;
-            }
-            return;
-        }
-
-
-
-        // Frustum culling for rays
-        const frustum = acquireFrustum();
-        const matrix = acquireMatrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(matrix);
-        const tempVec = acquireVector3();
-        const testSphere = acquireSphere();
-        testSphere.center = tempVec; // Reuse the acquired vector
-        testSphere.radius = 0;
-
-        // OPTIMIZED: Only show rays for top 5 agents (or best agent) - use for loop
-        // PERFORMANCE: Reuse temp array instead of allocating
-        const activeAgents = this.tempActiveAgents;
-        activeAgents.length = 0;
-        const numAgents = agents.length;
-        for (let i = 0; i < numAgents; i++) {
-            const agent = agents[i];
-            if (agent && !agent.isDead && agent.lastRayData) {
-                // Frustum check
-                const agentSize = agent.size || 5;
-                this.tempVec.set(agent.x, -agent.y, 0);
-                this.testSphere.center = this.tempVec;
-                this.testSphere.radius = agentSize + agent.maxRayDist; // Check if rays could be in view
-
-                if (this.frustum.intersectsSphere(this.testSphere)) {
-                    activeAgents.push(agent);
-                }
-            }
-        }
-        if (activeAgents.length === 0) {
-            if (this.rayLineSegments) {
-                this.rayLineSegments.visible = false;
-            }
-            return;
-        }
-
-        // Sort by fitness and take top 5
-        const topAgents = activeAgents
-            .sort((a, b) => (b.fitness || 0) - (a.fitness || 0))
-            .slice(0, 5);
-
-
-        // OPTIMIZED: Count total rays needed with for loop
-        let totalRays = 0;
-        for (let i = 0; i < topAgents.length; i++) {
-            const agent = topAgents[i];
-            if (agent && agent.lastRayData) {
-                totalRays += agent.lastRayData.length;
-            }
-        }
-
-        if (totalRays === 0) {
-            if (this.rayLineSegments) {
-                this.rayLineSegments.visible = false;
-            }
-            return;
-        }
-
-        // Use single LineSegments geometry for all rays (much faster)
-        const neededVertexCount = totalRays * 2;
-        if (!this.rayLineSegments || this.rayLineSegments.geometry.attributes.position.count < neededVertexCount) {
-            // Allocate for max rays with growth strategy (1.5x growth factor)
-            const maxRays = Math.max(Math.ceil(totalRays * 1.5), 500);
-            const neededPosSize = maxRays * 2 * 3;
-            const neededColorSize = maxRays * 2 * 3;
-            
-            // Reuse or create buffers with growth strategy
-            if (!this.rayPositionsBuffer || this.rayPositionsBuffer.length < neededPosSize) {
-                this.rayPositionsBuffer = new Float32Array(neededPosSize);
-                this.rayColorsBuffer = new Float32Array(neededColorSize);
-            }
-            
-            // Create or resize geometry
-            if (this.rayLineSegments) {
-                this.rayGroup.remove(this.rayLineSegments);
-                // Release pooled resources
-                releaseBufferGeometry(this.rayLineSegments.geometry);
-                releaseLineBasicMaterial(this.rayLineSegments.material);
-            }
-
-            const positions = this.rayPositionsBuffer.subarray(0, neededPosSize);
-            const colors = this.rayColorsBuffer.subarray(0, neededColorSize);
-            const geometry = acquireBufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-            // Create clean ray material without reflection effects
-            const material = acquireLineBasicMaterial({
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9, // Increased opacity for better visibility
-                linewidth: 2 // Thicker lines for better glow effect
-            });
-
-            this.rayLineSegments = new THREE.LineSegments(geometry, material);
-            this.rayGroup.add(this.rayLineSegments);
-        }
-
-        // Update positions and colors directly in buffer
-        const positions = this.rayLineSegments.geometry.attributes.position.array;
-        const colors = this.rayLineSegments.geometry.attributes.color.array;
-        let bufferIndex = 0;
-
-        // OPTIMIZED: Use for loop instead of forEach
-        let debugLoggedThisFrame = false;
-        const renderCounts = { food: 0, edge: 0, obstacle: 0, smaller: 0, larger: 0, same: 0, none: 0, alignment: 0 };
-
-        for (let i = 0; i < topAgents.length; i++) {
-            const agent = topAgents[i];
-            if (!agent || !agent.lastRayData || agent.isDead) continue;
-
-            // Validate agent position
-            if (typeof agent.x !== 'number' || typeof agent.y !== 'number' ||
-                !isFinite(agent.x) || !isFinite(agent.y)) {
-                return;
-            }
-
-            const agentX = agent.x;
-            const agentY = -agent.y; // Flip Y for Three.js
-
-            // OPTIMIZED: Use for loop instead of forEach
-            const rayData = agent.lastRayData;
-
-            for (let j = 0; j < rayData.length; j++) {
-                const ray = rayData[j];
-                // Validate ray data
-                const angle = typeof ray.angle === 'number' && isFinite(ray.angle) ? ray.angle : 0;
-                const dist = typeof ray.dist === 'number' && isFinite(ray.dist) && ray.dist >= 0 ? ray.dist : 0;
-
-                // Start position
-                positions[bufferIndex * 3] = agentX;
-                positions[bufferIndex * 3 + 1] = agentY;
-                positions[bufferIndex * 3 + 2] = 0;
-
-                // End position
-                const endX = agentX + Math.cos(angle) * dist;
-                const endY = agentY - Math.sin(angle) * dist;
-                positions[(bufferIndex + 1) * 3] = isFinite(endX) ? endX : agentX;
-                positions[(bufferIndex + 1) * 3 + 1] = isFinite(endY) ? endY : agentY;
-                positions[(bufferIndex + 1) * 3 + 2] = 0;
-
-                // Color based on hit type
-                let color = this.rayColors.default;
-
-                if (ray.type === 'alignment') {
-                    color = this.rayColors.alignment;
-                    renderCounts.alignment++;
-                } else if (ray.hit && ray.hitType && ray.hitType !== 'none') {
-                    // Something was hit - color based on hit type
-                    if (ray.hitType === 'food') { color = this.rayColors.food; renderCounts.food++; }
-                    else if (ray.hitType === 'smaller') { color = this.rayColors.smaller; renderCounts.smaller++; }
-                    else if (ray.hitType === 'larger') { color = this.rayColors.larger; renderCounts.larger++; }
-                    else if (ray.hitType === 'obstacle') { color = this.rayColors.obstacle; renderCounts.obstacle++; }
-                    else if (ray.hitType === 'edge') { color = this.rayColors.edge; renderCounts.edge++; }
-                    else if (ray.hitType === 'same') { color = this.rayColors.same; renderCounts.same++; }
-                    else { color = this.rayColors.larger; } // Fallback to red
-                } else if (ray.hit) {
-                    color = this.rayColors.larger; // Red
-                } else {
-                    // No hit - use dull gray color
-                    color = this.rayColors.noHit;
-                    renderCounts.none++;
-                }
-
-                const r = color.r;
-                const g = color.g;
-                const b = color.b;
-
-                // Apply to both start and end points
-                for (let i = 0; i < 2; i++) {
-                    colors[bufferIndex * 3] = r;
-                    colors[bufferIndex * 3 + 1] = g;
-                    colors[bufferIndex * 3 + 2] = b;
-                    bufferIndex++;
-                }
-            }
-        }
-
-        // Update geometry
-        this.rayLineSegments.geometry.attributes.position.needsUpdate = true;
-        this.rayLineSegments.geometry.attributes.color.needsUpdate = true;
-        this.rayLineSegments.geometry.setDrawRange(0, bufferIndex);
-        this.rayLineSegments.visible = true;
-
-
-        // Release pooled objects
-        releaseFrustum(frustum);
-        releaseMatrix4(matrix);
-        releaseVector3(tempVec);
-        releaseSphere(testSphere);
+        const rayState = {
+            rayLineSegments: this.rayLineSegments,
+            rayPositionsBuffer: this.rayPositionsBuffer,
+            rayColorsBuffer: this.rayColorsBuffer,
+            rayColors: this.rayColors
+        };
+        updateRays(this.rayGroup, agents, frameCount, this.showRays, this.worldWidth, this.worldHeight, this.camera, this.frustum, this.tempVec, this.testSphere, this.tempActiveAgents, rayState, this.logger);
+        this.rayLineSegments = rayState.rayLineSegments;
+        this.rayPositionsBuffer = rayState.rayPositionsBuffer;
+        this.rayColorsBuffer = rayState.rayColorsBuffer;
     }
 
     render() {
         // Update neural network background
-        this.updateNeuralBackground(this.camera.position.x, this.camera.position.y, this.camera.zoom);
+        if (this.neuralSystem) {
+            updateNeuralBackground(this.neuralSystem, this.camera.position.x, this.camera.position.y, this.camera.zoom || 1, this.neuralBackgroundGroup);
+        }
 
         // Update sparkles
         this.updateSparkles();
