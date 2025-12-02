@@ -141,6 +141,7 @@ export class Simulation {
         this.showRays = false;
         this.followBest = false;
         this.useGpu = true; // Enable GPU by default
+        this.renderingEnabled = true; // Enable rendering by default
 
         // Dead agent queue for background database saving
         this.deadAgentQueue = [];
@@ -314,6 +315,15 @@ export class Simulation {
 
     resize() {
         resize(this);
+    }
+
+    /**
+     * Toggle rendering on/off while keeping simulation running
+     */
+    toggleRendering() {
+        this.renderingEnabled = !this.renderingEnabled;
+        this.logger.log(`Rendering ${this.renderingEnabled ? 'enabled' : 'disabled'}`);
+        return this.renderingEnabled;
     }
 
     /**
@@ -2132,34 +2142,37 @@ export class Simulation {
             }
             this.perfMonitor.endPhase('camera');
 
-            this.perfMonitor.timeSync('rendering.updates', () => {
-                this.camera.update();
-                // Update renderer data structures
-                const camPos = this.camera.getPosition();
-                this.renderer.updateCamera(camPos);
-                this.renderer.updateAgents(this.agents, this.frameCount);
-                this.renderer.updateFood(this.food);
-                this.renderer.updatePheromones(this.pheromones);
-                // Obstacles already updated after movement
-                this.renderer.updateObstacles(this.obstacles);
-            });
+            // Only update renderer and render if rendering is enabled
+            if (this.renderingEnabled) {
+                this.perfMonitor.timeSync('rendering.updates', () => {
+                    this.camera.update();
+                    // Update renderer data structures
+                    const camPos = this.camera.getPosition();
+                    this.renderer.updateCamera(camPos);
+                    this.renderer.updateAgents(this.agents, this.frameCount);
+                    this.renderer.updateFood(this.food);
+                    this.renderer.updatePheromones(this.pheromones);
+                    // Obstacles already updated after movement
+                    this.renderer.updateObstacles(this.obstacles);
+                });
 
-            // Render the scene
-            this.perfMonitor.startPhase('rendering');
+                // Render the scene
+                this.perfMonitor.startPhase('rendering');
 
-            this.perfMonitor.timeSync('rendering.visualEffects', () => {
-                this.renderer.updateVisualEffects(this.frameCount);
-            });
+                this.perfMonitor.timeSync('rendering.visualEffects', () => {
+                    this.renderer.updateVisualEffects(this.frameCount);
+                });
 
-            this.perfMonitor.timeSync('rendering.rayRendering', () => {
-                this.renderer.updateRays(this.agents, this.frameCount);
-            });
+                this.perfMonitor.timeSync('rendering.rayRendering', () => {
+                    this.renderer.updateRays(this.agents, this.frameCount);
+                });
 
-            this.perfMonitor.timeSync('rendering.render', () => {
-                this.renderer.render();
-            });
+                this.perfMonitor.timeSync('rendering.render', () => {
+                    this.renderer.render();
+                });
 
-            this.perfMonitor.endPhase('rendering');
+                this.perfMonitor.endPhase('rendering');
+            }
 
             this.perfMonitor.startPhase('spawn_agents');
             // Process the agent spawn queue, enforcing the max population limit

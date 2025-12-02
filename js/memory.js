@@ -179,6 +179,30 @@ export function moderateMemoryCleanup(simulation) {
         simulation.db.flush().catch(err => simulation.logger.warn('[MEMORY] Database flush failed:', err));
     }
 
+    // MEMORY LEAK FIX: Clear validation queue weights in moderate cleanup
+    const now = Date.now();
+    let weightsCleared = 0;
+    const weightRetentionTime = 180000; // 3 minutes for moderate cleanup
+    
+    for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+        // Clear weights from validated entries immediately
+        if (entry.isValidated && entry.weights) {
+            entry.weights = null;
+            weightsCleared++;
+        }
+        // Clear weights from entries not actively being tested or not accessed recently
+        else if (!entry.isValidated && entry.weights) {
+            const timeSinceLastAccess = now - entry.lastValidationTime;
+            if (timeSinceLastAccess > weightRetentionTime || (!entry.isActiveTest && timeSinceLastAccess > 120000)) {
+                entry.weights = null;
+                weightsCleared++;
+            }
+        }
+    }
+    if (weightsCleared > 0) {
+        simulation.logger.info(`[MEMORY] Moderate cleanup: Cleared weights from ${weightsCleared} validation queue entries`);
+    }
+
     // Reduce pheromone count moderately
     if (simulation.pheromones.length > 1500) {
         // Remove oldest pheromones (keep newest 70% to maintain behavior)
@@ -257,7 +281,7 @@ export function emergencyMemoryCleanup(simulation) {
         simulation.memoryHistory.splice(0, simulation.memoryHistory.length - 10);
     }
 
-    // MEMORY LEAK FIX: Aggressively clear validation queue weights
+    // MEMORY LEAK FIX: Aggressively clear validation queue weights (emergency cleanup)
     const now = Date.now();
     let weightsCleared = 0;
     let emergencyEntriesRemoved = 0;
@@ -270,12 +294,15 @@ export function emergencyMemoryCleanup(simulation) {
             weightsCleared++;
         }
         // Clear weights from old entries that haven't been accessed recently
-        if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > maxAge)) {
-            entry.weights = null;
-            weightsCleared++;
+        // In emergency mode, clear ALL weights that haven't been accessed in 1 minute
+        if (!entry.isValidated && entry.weights) {
+            if (now - entry.lastValidationTime > maxAge || !entry.isActiveTest) {
+                entry.weights = null;
+                weightsCleared++;
+            }
         }
         // Remove very old entries
-        if (now - entry.lastValidationTime > maxAge) {
+        if (now - entry.lastValidationTime > maxAge * 2) { // 2 minutes for removal
             simulation.validationManager.validationQueue.delete(geneId);
             emergencyEntriesRemoved++;
         }
@@ -368,7 +395,7 @@ export function periodicMemoryCleanup(simulation) {
     if (sessionDurationHours > 2) maxAge = 180000; // 3 minutes
     if (sessionDurationHours > 4) maxAge = 120000; // 2 minutes
 
-    const now = Date.now();
+    let now = Date.now();
     let validationEntriesRemoved = 0;
     for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
         if (now - entry.lastValidationTime > maxAge && !entry.isValidated) {
@@ -558,27 +585,49 @@ export function periodicMemoryCleanup(simulation) {
         simulation.db.cleanupStaleCacheAccessTimes();
     }
 
-    // MEMORY LEAK FIX: Clear validation queue weights more aggressively (not just for 8+ hour sessions)
-    if (sessionDurationHours > 0.5) { // Start clearing weights after 30 minutes
-        let weightsCleared = 0;
-        const now = Date.now();
-        const weightRetentionTime = sessionDurationHours > 24 ? 300000 : 900000; // 5 min for 24+ hour sessions, 15 min otherwise
-        
-        for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
-            // Clear weights from validated entries immediately (they're already saved)
-            if (entry.isValidated && entry.weights) {
-                entry.weights = null;
-                weightsCleared++;
-            }
-            // Clear weights from old entries that haven't been accessed recently
-            else if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > weightRetentionTime)) {
+    // MEMORY LEAK FIX: Clear validation queue weights aggressively to prevent memory leaks
+    // Start clearing weights after just 2 minutes (instead of 30 minutes) to prevent accumulation
+    now = Date.now(); // Update timestamp (now was already declared earlier in function)
+    let weightsCleared = 0;
+    
+    // Use shorter retention time based on session duration and memory pressure
+    // For early sessions (< 30 min), use 2-3 minute retention
+    // For longer sessions, use progressively shorter retention
+    let weightRetentionTime = 180000; // 3 minutes default
+    if (sessionDurationHours > 24) {
+        weightRetentionTime = 120000; // 2 minutes for 24+ hour sessions
+    } else if (sessionDurationHours > 8) {
+        weightRetentionTime = 150000; // 2.5 minutes for 8+ hour sessions
+    } else if (sessionDurationHours > 1) {
+        weightRetentionTime = 180000; // 3 minutes for 1+ hour sessions
+    } else {
+        weightRetentionTime = 180000; // 3 minutes for early sessions
+    }
+    
+    // If memory is growing, be more aggressive
+    if (simulation.memoryGrowthRate > 5) { // Growing > 5MB/min
+        weightRetentionTime = Math.min(weightRetentionTime, 120000); // Max 2 minutes
+    }
+    
+    for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
+        // Clear weights from validated entries immediately (they're already saved)
+        if (entry.isValidated && entry.weights) {
+            entry.weights = null;
+            weightsCleared++;
+        }
+        // Clear weights from entries that haven't been accessed recently
+        // This includes entries that are still in progress but haven't been tested in a while
+        else if (!entry.isValidated && entry.weights) {
+            const timeSinceLastAccess = now - entry.lastValidationTime;
+            // Clear if not accessed recently, OR if not actively being tested
+            if (timeSinceLastAccess > weightRetentionTime || (!entry.isActiveTest && timeSinceLastAccess > 120000)) {
                 entry.weights = null;
                 weightsCleared++;
             }
         }
-        if (weightsCleared > 0) {
-            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (${sessionDurationHours.toFixed(1)}h session)`);
-        }
+    }
+    if (weightsCleared > 0) {
+        simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (retention: ${(weightRetentionTime/1000).toFixed(0)}s, session: ${sessionDurationHours.toFixed(2)}h)`);
     }
 
     // Clear object pools to prevent long-term memory accumulation
@@ -598,10 +647,11 @@ export function periodicMemoryCleanup(simulation) {
             simulation.gpuPhysics.deepCleanup(sessionDurationHours);
         }
 
-        // MEMORY LEAK FIX: More aggressive validation queue weight clearing
+        // MEMORY LEAK FIX: More aggressive validation queue weight clearing for long sessions
         let weightsCleared = 0;
         const now = Date.now();
-        const weightRetentionTime = sessionDurationHours > 24 ? 300000 : 600000; // 5 min for 24+ hour sessions, 10 min otherwise
+        // Use shorter retention for long sessions
+        const weightRetentionTime = sessionDurationHours > 24 ? 120000 : 180000; // 2 min for 24+ hour sessions, 3 min otherwise
         
         for (const [geneId, entry] of simulation.validationManager.validationQueue.entries()) {
             // Clear weights from validated entries immediately (they're already saved)
@@ -610,13 +660,17 @@ export function periodicMemoryCleanup(simulation) {
                 weightsCleared++;
             }
             // Clear weights from old entries that haven't been accessed recently
-            else if (!entry.isValidated && entry.weights && (now - entry.lastValidationTime > weightRetentionTime)) {
-                entry.weights = null;
-                weightsCleared++;
+            // Also clear from entries not actively being tested
+            else if (!entry.isValidated && entry.weights) {
+                const timeSinceLastAccess = now - entry.lastValidationTime;
+                if (timeSinceLastAccess > weightRetentionTime || (!entry.isActiveTest && timeSinceLastAccess > 120000)) {
+                    entry.weights = null;
+                    weightsCleared++;
+                }
             }
         }
         if (weightsCleared > 0) {
-            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (${sessionDurationHours.toFixed(1)}h session)`);
+            simulation.logger.info(`[MEMORY] Cleared weights from ${weightsCleared} validation queue entries (long session: ${sessionDurationHours.toFixed(1)}h)`);
         }
 
         // More aggressive fitness history cleanup for very long sessions

@@ -533,6 +533,62 @@ export function setupUIListeners(simulation) {
         }
     });
 
+    // Toggle render button
+    const toggleRenderBtn = document.getElementById('toggle-render-btn');
+    if (toggleRenderBtn) {
+        // Ensure renderingEnabled property exists
+        if (typeof simulation.renderingEnabled === 'undefined') {
+            simulation.renderingEnabled = true;
+            console.warn('[UI] renderingEnabled was undefined, initializing to true');
+        }
+        
+        // Update button state based on current rendering state
+        const updateButtonState = () => {
+            if (simulation.renderingEnabled) {
+                toggleRenderBtn.textContent = '⏸️';
+                toggleRenderBtn.classList.remove('rendering-disabled');
+                toggleRenderBtn.title = 'Pause Rendering';
+            } else {
+                toggleRenderBtn.textContent = '▶️';
+                toggleRenderBtn.classList.add('rendering-disabled');
+                toggleRenderBtn.title = 'Resume Rendering';
+            }
+        };
+        
+        // Initialize button state
+        updateButtonState();
+        
+        // Remove any existing listener by checking for a stored handler
+        if (toggleRenderBtn._renderToggleHandler) {
+            toggleRenderBtn.removeEventListener('click', toggleRenderBtn._renderToggleHandler);
+        }
+        
+        // Create and store the handler function
+        toggleRenderBtn._renderToggleHandler = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                if (typeof simulation.toggleRendering === 'function') {
+                    const isEnabled = simulation.toggleRendering();
+                    updateButtonState();
+                    simulation.logger.log(`[UI] Rendering toggled: ${isEnabled ? 'enabled' : 'disabled'}`);
+                } else {
+                    console.error('[UI] simulation.toggleRendering is not a function');
+                    simulation.logger.error('[UI] simulation.toggleRendering is not a function');
+                }
+            } catch (error) {
+                console.error('[UI] Error toggling rendering:', error);
+                simulation.logger.error('[UI] Error toggling rendering:', error);
+            }
+        };
+        
+        // Add the event listener
+        toggleRenderBtn.addEventListener('click', toggleRenderBtn._renderToggleHandler, { capture: false, passive: false });
+    } else {
+        console.warn('[UI] Toggle render button not found in DOM');
+        simulation.logger.warn('[UI] Toggle render button not found in DOM');
+    }
+
     // Camera controls (pan and zoom)
     setupCameraControls(simulation);
 

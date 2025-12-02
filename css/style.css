@@ -110,6 +110,45 @@ body {
     font-weight: 600;
 }
 
+.toggle-render-btn {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    position: relative;
+    z-index: 101;
+    pointer-events: auto;
+}
+
+.toggle-render-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    color: var(--neon-cyan);
+    transform: scale(1.05);
+}
+
+.toggle-render-btn.rendering-disabled {
+    border-color: rgba(255, 0, 51, 0.5);
+    color: var(--neon-red);
+}
+
+.toggle-render-btn.rendering-disabled:hover {
+    border-color: var(--neon-red);
+    box-shadow: 0 0 15px rgba(255, 0, 51, 0.3);
+}
+
 /* --- Bottom Controls --- */
 
 #controls {

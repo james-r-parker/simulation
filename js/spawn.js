@@ -630,10 +630,16 @@ export function repopulate(simulation) {
                         entry.weights.weights1.length > 0 && entry.weights.weights2.length > 0;
 
                     if (!isValidWeights) {
-                        simulation.logger.warn(`[VALIDATION] ❌ Cannot spawn validation agent for ${geneId} - invalid or missing weights format`);
-                        simulation.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, entry.weights);
-                        // Remove this corrupted entry from the queue
-                        simulation.validationManager.validationQueue.delete(geneId);
+                        // If weights are missing (cleared for memory), just skip this entry
+                        // It will be re-added when the original agent dies again
+                        if (entry.weights === null) {
+                            simulation.logger.debug(`[VALIDATION] ⏭️ Skipping ${geneId} - weights cleared for memory (will re-add on agent death)`);
+                        } else {
+                            simulation.logger.warn(`[VALIDATION] ❌ Cannot spawn validation agent for ${geneId} - invalid weights format`);
+                            simulation.logger.warn(`[VALIDATION] Expected: {weights1: [...], weights2: [...]}, Got:`, entry.weights);
+                            // Only remove if weights are corrupted (not just null)
+                            simulation.validationManager.validationQueue.delete(geneId);
+                        }
                         simulation.validationManager.releaseSpawnLock(geneId);
                         continue;
                     }

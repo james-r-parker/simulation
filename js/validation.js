@@ -69,6 +69,31 @@ export class ValidationManager {
             return false; // Indicate that validation was skipped
         }
 
+        // Check if entry exists but weights were cleared for memory management
+        const existingEntry = this.validationQueue.get(geneId);
+        if (existingEntry && !existingEntry.weights && !isDeathProcessing) {
+            // Weights were cleared, try to restore them from agent
+            try {
+                if (!weights) {
+                    weights = agent.getWeights();
+                }
+                const isValidWeights = weights &&
+                    typeof weights === 'object' &&
+                    weights.weights1 && weights.weights2 &&
+                    Array.isArray(weights.weights1) && Array.isArray(weights.weights2) &&
+                    weights.weights1.length > 0 && weights.weights2.length > 0;
+                
+                if (isValidWeights) {
+                    existingEntry.weights = weights; // Restore weights
+                    this.logger.debug(`[VALIDATION] 🔄 Restored weights for ${geneId} (were cleared for memory)`);
+                } else {
+                    this.logger.warn(`[VALIDATION] ⚠️ Cannot restore weights for ${geneId} - invalid format`);
+                }
+            } catch (error) {
+                this.logger.warn(`[VALIDATION] ⚠️ Cannot restore weights for ${geneId}: ${error.message}`);
+            }
+        }
+
         if (!this.validationQueue.has(geneId)) {
             try {
                 // Use weights we extracted earlier, or try to get them again
