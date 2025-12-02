@@ -254,13 +254,13 @@ export class WebGLRenderer {
                     mesh.body.geometry.dispose();
                 }
                 if (mesh.body && mesh.body.material) {
-                    mesh.body.material.dispose();
+                    releaseMeshStandardMaterial(mesh.body.material);
                 }
                 if (mesh.border && mesh.border.geometry) {
                     mesh.border.geometry.dispose();
                 }
                 if (mesh.border && mesh.border.material) {
-                    mesh.border.material.dispose();
+                    releaseMeshStandardMaterial(mesh.border.material);
                 }
                 // Remove from scene
                 if (mesh.body && this.agentGroup) this.agentGroup.remove(mesh.body);
@@ -275,7 +275,7 @@ export class WebGLRenderer {
                 this.foodInstancedMesh.geometry.dispose();
             }
             if (this.foodInstancedMesh.material) {
-                this.foodInstancedMesh.material.dispose();
+                releaseMeshStandardMaterial(this.foodInstancedMesh.material);
             }
             if (this.foodGroup) this.foodGroup.remove(this.foodInstancedMesh);
         }
@@ -286,7 +286,7 @@ export class WebGLRenderer {
                 this.pheromoneInstancedMesh.geometry.dispose();
             }
             if (this.pheromoneInstancedMesh.material) {
-                this.pheromoneInstancedMesh.material.dispose();
+                releaseMeshStandardMaterial(this.pheromoneInstancedMesh.material);
             }
             if (this.pheromoneGroup) this.pheromoneGroup.remove(this.pheromoneInstancedMesh);
         }
@@ -857,9 +857,14 @@ export class WebGLRenderer {
                 const emissiveColor = acquireColor();
                 emissiveColor.copy(baseColor);
                 emissiveColor.multiplyScalar(1.2); // Brighter emissive for high visibility
-                const bodyMaterial = new THREE.MeshStandardMaterial({
-                    color: baseColor.clone().multiplyScalar(1.3), // Brighter base color
-                    emissive: emissiveColor.clone(), // Clone for material
+                const bodyColor = acquireColor();
+                bodyColor.copy(baseColor);
+                bodyColor.multiplyScalar(1.3); // Brighter base color
+                const bodyEmissive = acquireColor();
+                bodyEmissive.copy(emissiveColor);
+                const bodyMaterial = acquireMeshStandardMaterial({
+                    color: bodyColor,
+                    emissive: bodyEmissive,
                     emissiveIntensity: 5.0, // Much higher emissive - agents should be very bright
                     metalness: 0.0, // No metalness to show pure color
                     roughness: 0.4, // Lower roughness for more reflective/shiny appearance
@@ -867,6 +872,8 @@ export class WebGLRenderer {
                     opacity: 1.0
                 });
                 releaseColor(emissiveColor); // Release after cloning
+                releaseColor(bodyColor);
+                releaseColor(bodyEmissive);
 
                 // Border material - darker colors to blend into background
                 const specializationColor = acquireColor();
@@ -879,9 +886,13 @@ export class WebGLRenderer {
                 // Much darker emissive for subtle glow that blends into background
                 borderEmissiveColor.multiplyScalar(0.15);
                 
-                const borderMaterial = new THREE.MeshStandardMaterial({
-                    color: specializationColor.clone(), // Clone for material (darkened)
-                    emissive: borderEmissiveColor.clone(), // Clone for material (very dark)
+                const borderColor = acquireColor();
+                borderColor.copy(specializationColor);
+                const borderEmissive = acquireColor();
+                borderEmissive.copy(borderEmissiveColor);
+                const borderMaterial = acquireMeshStandardMaterial({
+                    color: borderColor,
+                    emissive: borderEmissive,
                     emissiveIntensity: 0.4, // Low emissive - subtle glow that blends
                     metalness: 0.0, // No metalness
                     roughness: 0.8, // Higher roughness for matte, less reflective appearance
@@ -890,6 +901,8 @@ export class WebGLRenderer {
                 });
                 releaseColor(specializationColor);
                 releaseColor(borderEmissiveColor);
+                releaseColor(borderColor);
+                releaseColor(borderEmissive);
                 releaseColor(baseColor); // Release baseColor after materials are created
 
                 // Increased from 100 to 200 to handle larger populations per gene
@@ -958,13 +971,31 @@ export class WebGLRenderer {
                 this.agentGroup.remove(mesh.border);
                 // CRITICAL FIX: DO NOT dispose geometry as it is shared
                 // mesh.body.geometry.dispose(); 
-                mesh.body.material.dispose();
+                releaseMeshStandardMaterial(mesh.body.material);
                 // mesh.border.geometry.dispose();
-                mesh.border.material.dispose();
+                releaseMeshStandardMaterial(mesh.border.material);
 
-                // Create new larger meshes
-                const bodyMaterial = mesh.body.material.clone();
-                const borderMaterial = mesh.border.material.clone();
+                // Create new larger meshes - clone material properties to new pooled materials
+                const oldBodyMaterial = mesh.body.material;
+                const oldBorderMaterial = mesh.border.material;
+                const bodyMaterial = acquireMeshStandardMaterial({
+                    color: oldBodyMaterial.color,
+                    emissive: oldBodyMaterial.emissive,
+                    emissiveIntensity: oldBodyMaterial.emissiveIntensity,
+                    metalness: oldBodyMaterial.metalness,
+                    roughness: oldBodyMaterial.roughness,
+                    transparent: oldBodyMaterial.transparent,
+                    opacity: oldBodyMaterial.opacity
+                });
+                const borderMaterial = acquireMeshStandardMaterial({
+                    color: oldBorderMaterial.color,
+                    emissive: oldBorderMaterial.emissive,
+                    emissiveIntensity: oldBorderMaterial.emissiveIntensity,
+                    metalness: oldBorderMaterial.metalness,
+                    roughness: oldBorderMaterial.roughness,
+                    transparent: oldBorderMaterial.transparent,
+                    opacity: oldBorderMaterial.opacity
+                });
                 const newBodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, newCapacity);
                 const newBorderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, newCapacity);
 
@@ -1089,7 +1120,7 @@ export class WebGLRenderer {
             if (this.foodInstancedMesh) {
                 this.foodGroup.remove(this.foodInstancedMesh);
                 this.foodInstancedMesh.geometry.dispose();
-                this.foodInstancedMesh.material.dispose();
+                releaseMeshStandardMaterial(this.foodInstancedMesh.material);
             }
 
             // Create InstancedMesh with capacity for more food
@@ -1098,9 +1129,9 @@ export class WebGLRenderer {
             const foodEmissiveColor = acquireColor();
             foodEmissiveColor.setHex(EMISSIVE_COLORS.FOOD.NORMAL);
             foodEmissiveColor.multiplyScalar(0.2); // Reduced emissive - food should be dimmer
-            const material = new THREE.MeshStandardMaterial({
+            const material = acquireMeshStandardMaterial({
                 color: COLORS.FOOD.NORMAL,
-                emissive: foodEmissiveColor.clone(), // Clone for material
+                emissive: foodEmissiveColor,
                 emissiveIntensity: 0.4, // Reduced from 2.5 - food should be dimmer than agents
                 metalness: MATERIAL_PROPERTIES.FOOD.METALNESS,
                 roughness: MATERIAL_PROPERTIES.FOOD.ROUGHNESS,
@@ -1206,7 +1237,7 @@ export class WebGLRenderer {
             if (this.pheromoneInstancedMesh) {
                 this.pheromoneGroup.remove(this.pheromoneInstancedMesh);
                 this.pheromoneInstancedMesh.geometry.dispose();
-                this.pheromoneInstancedMesh.material.dispose();
+                releaseMeshStandardMaterial(this.pheromoneInstancedMesh.material);
             }
 
             // Create InstancedMesh with capacity for more pheromones
@@ -1215,9 +1246,9 @@ export class WebGLRenderer {
             const pheromoneEmissiveColor = acquireColor();
             pheromoneEmissiveColor.setHex(0x00FFFF); // Default cyan
             pheromoneEmissiveColor.multiplyScalar(0.15); // Reduced emissive - pheromones should be dimmer
-            const material = new THREE.MeshStandardMaterial({
+            const material = acquireMeshStandardMaterial({
                 color: 0x00FFFF,
-                emissive: pheromoneEmissiveColor.clone(), // Clone for material
+                emissive: pheromoneEmissiveColor,
                 emissiveIntensity: 0.3, // Reduced from 1.5 - pheromones should be dimmer than agents
                 metalness: MATERIAL_PROPERTIES.PHEROMONE.METALNESS,
                 roughness: MATERIAL_PROPERTIES.PHEROMONE.ROUGHNESS,
@@ -1297,7 +1328,14 @@ export class WebGLRenderer {
                 } else {
                     mesh.geometry.dispose();
                 }
-                mesh.material.dispose();
+                // Release material based on type
+                if (mesh.material instanceof THREE.MeshStandardMaterial) {
+                    releaseMeshStandardMaterial(mesh.material);
+                } else if (mesh.material instanceof THREE.MeshBasicMaterial) {
+                    releaseMeshBasicMaterial(mesh.material);
+                } else {
+                    mesh.material.dispose();
+                }
             });
             this.obstacleMeshes = [];
 
@@ -1332,9 +1370,12 @@ export class WebGLRenderer {
                 obstacleEmissiveColor.setHex(EMISSIVE_COLORS.OBSTACLE);
                 obstacleEmissiveColor.multiplyScalar(0.4); // Brighter emissive for pulsing effect
                 
-                const material = new THREE.MeshStandardMaterial({
-                    color: new THREE.Color(COLORS.OBSTACLE).multiplyScalar(0.6), // Darker base color
-                    emissive: obstacleEmissiveColor.clone(),
+                const obstacleColor = acquireColor();
+                obstacleColor.setHex(COLORS.OBSTACLE);
+                obstacleColor.multiplyScalar(0.6); // Darker base color
+                const material = acquireMeshStandardMaterial({
+                    color: obstacleColor,
+                    emissive: obstacleEmissiveColor,
                     emissiveIntensity: 1.2, // Higher for pulsing effect
                     metalness: 0.6, // More metallic
                     roughness: 0.3, // More reflective
@@ -1342,6 +1383,7 @@ export class WebGLRenderer {
                     opacity: 1.0
                 });
                 releaseColor(obstacleEmissiveColor);
+                releaseColor(obstacleColor);
                 
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(obs.x, -obs.y, 0);
@@ -1352,7 +1394,7 @@ export class WebGLRenderer {
 
                 // Enhanced shadow with pulsing effect
                 const shadowGeometry = new THREE.RingGeometry(obs.radius * 0.9, obs.radius + OBSTACLE_HIDING_RADIUS, 32);
-                const shadowMaterial = new THREE.MeshBasicMaterial({
+                const shadowMaterial = acquireMeshBasicMaterial({
                     color: 0x000000,
                     transparent: true,
                     opacity: 0.6 // Darker shadow
@@ -1494,13 +1536,13 @@ export class WebGLRenderer {
                     this.agentGroup.remove(mesh.body);
                     // CRITICAL FIX: DO NOT dispose geometry as it is shared
                     // mesh.body.geometry.dispose();
-                    mesh.body.material.dispose();
+                    releaseMeshStandardMaterial(mesh.body.material);
                 }
                 if (mesh.border) {
                     this.agentGroup.remove(mesh.border);
                     // CRITICAL FIX: DO NOT dispose geometry as it is shared
                     // mesh.border.geometry.dispose();
-                    mesh.border.material.dispose();
+                    releaseMeshStandardMaterial(mesh.border.material);
                 }
             }
             this.agentMeshes.clear();
@@ -1510,7 +1552,7 @@ export class WebGLRenderer {
         if (this.foodInstancedMesh) {
             this.foodGroup.remove(this.foodInstancedMesh);
             this.foodInstancedMesh.geometry.dispose();
-            this.foodInstancedMesh.material.dispose();
+            releaseMeshStandardMaterial(this.foodInstancedMesh.material);
             this.foodInstancedMesh = null;
         }
 
@@ -1518,7 +1560,7 @@ export class WebGLRenderer {
         if (this.pheromoneInstancedMesh) {
             this.pheromoneGroup.remove(this.pheromoneInstancedMesh);
             this.pheromoneInstancedMesh.geometry.dispose();
-            this.pheromoneInstancedMesh.material.dispose();
+            releaseMeshStandardMaterial(this.pheromoneInstancedMesh.material);
             this.pheromoneInstancedMesh = null;
         }
 

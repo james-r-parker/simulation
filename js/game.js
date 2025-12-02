@@ -10,7 +10,7 @@ import {
     MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES,
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
-    FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH,
+    FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH, RENDER_FRAME_SKIP,
     SEASON_SPRING_TEMP_MODIFIER, SEASON_SUMMER_TEMP_MODIFIER, SEASON_FALL_TEMP_MODIFIER, SEASON_WINTER_TEMP_MODIFIER,
     SEASON_SPRING_REPRODUCTION_BONUS, SEASON_SUMMER_REPRODUCTION_BONUS, SEASON_FALL_REPRODUCTION_BONUS, SEASON_WINTER_REPRODUCTION_BONUS,
     SEASON_SUMMER_ENERGY_DRAIN, SEASON_FALL_ENERGY_DRAIN, SEASON_WINTER_ENERGY_DRAIN,
@@ -84,6 +84,7 @@ export class Simulation {
         this.generation = 0;
         this.bestAgent = null;
         this.frameCount = 0;
+        this.renderFrameCounter = 0; // Counter for frame skipping in rendering
         this.respawnTimer = 0;
         this.spawnStaggerTimer = 0; // Timer for staggering individual agent spawns
         this.recentPopulationHistory = []; // Track recent population for smoothing
@@ -1827,7 +1828,11 @@ export class Simulation {
                 });
 
                 this.perfMonitor.timeSync('rendering.render', () => {
-                    this.renderer.render();
+                    // Only render every Nth frame based on RENDER_FRAME_SKIP
+                    this.renderFrameCounter++;
+                    if (this.renderFrameCounter % RENDER_FRAME_SKIP === 0) {
+                        this.renderer.render();
+                    }
                 });
 
                 this.perfMonitor.endPhase('rendering');

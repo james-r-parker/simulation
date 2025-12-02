@@ -2301,9 +2301,10 @@ export class Agent {
         // 7. REBALANCED SURVIVAL: Use separate bonus instead of multiplier to reduce dominance
         // Separate survival bonus (max 500 points) instead of 3x multiplier
         // This prevents passive survivalists from achieving high fitness
-        const survivalBonus = Math.min(ageInSeconds * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP);
-        // Add a small bonus for just surviving, rewarding wall-avoiders even if they don't eat.
-        // Only applies after surviving longer than threshold to avoid rewarding short-lived agents
+        // Only applies if agent lives over 500 seconds (agents are living much longer now)
+        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+            Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
+        // Extended bonus for very long-lived agents (reduced impact)
         const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
             (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
 

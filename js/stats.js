@@ -161,7 +161,9 @@ export function copySimulationStats(simulation) {
         // Note: Temperature penalty already applied in baseScore calculation above
         
         // REBALANCED SURVIVAL: Separate bonus instead of multiplier
-        const survivalBonus = Math.min(ageInSeconds * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP);
+        // Only applies if agent lives over 500 seconds (agents are living much longer now)
+        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+            Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
         const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
             (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
         // Final fitness = adjusted base score + survival bonuses (not multiplied)

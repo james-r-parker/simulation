@@ -94,6 +94,16 @@ export const MEMORY_PRESSURE_THRESHOLD = 150 * 1024 * 1024;
  */
 export const SEASON_LENGTH = 3600;
 
+/**
+ * Frame skip ratio for rendering (render 1 in N frames).
+ * Higher values reduce rendering overhead but may make animation less smooth.
+ * Set to 1 to render every frame, 5 to render 1 in 5 frames, etc.
+ * @type {number}
+ * @constant
+ * @default 5
+ */
+export const RENDER_FRAME_SKIP = 3;
+
 // ============================================================================
 // AGENT PHYSICAL PROPERTIES
 // ============================================================================
@@ -764,10 +774,10 @@ export const FITNESS_PENALTIES = {
  * @constant
  */
 export const SURVIVAL_BONUSES = {
-    BASE_MULTIPLIER: 10,          // Points per second of survival
-    BASE_CAP: 500,                // Maximum base survival bonus
-    EXTENDED_THRESHOLD: 30,       // Seconds before extended bonus kicks in
-    EXTENDED_DIVISOR: 10          // Divisor for extended survival bonus
+    BASE_MULTIPLIER: 1,           // Points per second of survival (reduced from 10)
+    BASE_CAP: 500,                 // Maximum base survival bonus
+    EXTENDED_THRESHOLD: 500,       // Seconds before survival bonus kicks in (increased from 30)
+    EXTENDED_DIVISOR: 10           // Divisor for extended survival bonus
 };
 
 // ============================================================================
@@ -2163,13 +2173,13 @@ export const EMISSIVE_COLORS = {
  */
 export const POST_PROCESSING = {
     BLOOM: {
-        STRENGTH: 0.25,        // Bloom intensity (minimal - only for very bright elements)
-        RADIUS: 1,             // Bloom spread radius (very tight to reduce fuzziness)
+        STRENGTH: 0.20,        // Bloom intensity (minimal - only for very bright elements)
+        RADIUS: 0.1,             // Bloom spread radius (very tight to reduce fuzziness)
         THRESHOLD: 0.75        // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
     },
     VIGNETTE: {
         ENABLED: true,
-        OFFSET: 5,             // Vignette offset
+        OFFSET: 1,             // Vignette offset
         DARKNESS: 0.1          // Vignette darkness (reduced from 0.5 for subtler effect)
     },
     CHROMATIC_ABERRATION: {
