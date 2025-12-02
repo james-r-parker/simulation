@@ -68,3 +68,4 @@ export function formatFpsDisplay(currentFps, avgGpuFps, avgCpuFps) {
     return { text: fpsText, color };
 }
 
+

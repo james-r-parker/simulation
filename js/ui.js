@@ -11,7 +11,8 @@ import {
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_GRID_WIDTH,
-    EXPLORATION_GRID_HEIGHT
+    EXPLORATION_GRID_HEIGHT,
+    TARGET_AGE_SECONDS
 } from './constants.js';
 
 const safeNumber = (value, fallback = 0) => {
@@ -2267,8 +2268,9 @@ export function updateDashboard(simulation) {
     if (mutationRateValueEl) mutationRateValueEl.textContent = mutationRatePercent.toFixed(1) + '%';
     if (avgAgeEl) {
         avgAgeEl.textContent = avgAge.toFixed(1);
-        // Color code based on target: green if >60s (1 min), yellow if 30-60s (30s-1min), red if <30s
-        avgAgeEl.style.color = avgAge >= 60 ? '#0f0' : avgAge >= 30 ? '#ff0' : '#f00';
+        // Color code based on target: green if >= target, yellow if >= target/2, red if < target/2
+        const targetHalf = TARGET_AGE_SECONDS / 2;
+        avgAgeEl.style.color = avgAge >= TARGET_AGE_SECONDS ? '#0f0' : avgAge >= targetHalf ? '#ff0' : '#f00';
     }
     if (avgEnergyEl) avgEnergyEl.textContent = avgEnergy.toFixed(1);
     if (avgOffspringEl) avgOffspringEl.textContent = avgOffspring.toFixed(2);

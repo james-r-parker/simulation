@@ -100,3 +100,4 @@ export function updateFitnessChart(canvas, fitnessHistory, averageFitnessHistory
     ctx.fillText('Median', 20, 29);
 }
 
+

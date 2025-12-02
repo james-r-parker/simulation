@@ -391,8 +391,8 @@ export function spawnFood(simulation) {
         const deficit = 1 - (currentFoodCount / targetFoodCount);
         spawnMultiplier = 1.0 + (deficit * 4.0);
     } else {
-        // If we have enough food, we can slow down slightly, but don't starve them
-        spawnMultiplier = 0.5;
+        // If we have enough food, reduce spawning more aggressively to prevent overabundance
+        spawnMultiplier = 0.2;
     }
 
     // Base spawn chance adjusted by multiplier

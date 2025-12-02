@@ -177,6 +177,25 @@ export const REPRODUCE_COST_BASE = 15;
 export const CHILD_STARTING_ENERGY = 1750;
 
 /**
+ * Minimum energy required for asexual reproduction (splitting).
+ * Agents must have this much energy to split and create a clone.
+ * Set to 6000 (well above average energy ~1765 but below MAX_ENERGY).
+ * @type {number}
+ * @constant
+ * @default 6000
+ */
+export const MIN_ENERGY_FOR_SPLITTING = 6000;
+
+/**
+ * Target average age for agents in seconds.
+ * Used for balance tracking and UI display.
+ * @type {number}
+ * @constant
+ * @default 120
+ */
+export const TARGET_AGE_SECONDS = 120;
+
+/**
  * Energy level above which agents suffer obesity penalties.
  * Prevents agents from hoarding too much energy.
  * @type {number}
@@ -383,11 +402,12 @@ export const BRAKING_FRICTION = 0.90;
 
 /**
  * Energy lost per frame just by existing (metabolic cost).
+ * Increased to make survival more challenging and reduce average lifespan.
  * @type {number}
  * @constant
- * @default 0.01
+ * @default 0.018
  */
-export const PASSIVE_LOSS = 0.01;
+export const PASSIVE_LOSS = 0.018;
 
 /**
  * Energy cost multiplier for movement (velocity * this).
@@ -862,7 +882,7 @@ export const FOOD_SPAWN_CAP = 300;
  * @constant
  * @default 0.12
  */
-export const FOOD_SPAWN_RATE = 0.12;
+export const FOOD_SPAWN_RATE = 0.04;
 
 /**
  * Probability that spawned food will be high-value type.
@@ -898,11 +918,12 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400;
 
 /**
  * Base energy value of normal food.
+ * Reduced to decrease food abundance and create more scarcity.
  * @type {number}
  * @constant
- * @default 500
+ * @default 200
  */
-export const FOOD_ENERGY_NORMAL_BASE = 500;
+export const FOOD_ENERGY_NORMAL_BASE = 200;
 
 /**
  * Random variance in normal food energy (± this amount).
@@ -914,11 +935,12 @@ export const FOOD_ENERGY_NORMAL_VARIANCE = 20;
 
 /**
  * Base energy value of high-value food.
+ * Reduced to decrease food abundance and create more scarcity.
  * @type {number}
  * @constant
- * @default 1000
+ * @default 400
  */
-export const FOOD_ENERGY_HIGH_BASE = 1000;
+export const FOOD_ENERGY_HIGH_BASE = 400;
 
 /**
  * Random variance in high-value food energy (± this amount).

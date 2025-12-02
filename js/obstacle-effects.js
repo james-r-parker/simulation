@@ -75,3 +75,4 @@ export function createObstacleParticles(obstacle, particleSystems, obstacleGroup
     particleSystems.set(obstacle.id, particles);
 }
 
+

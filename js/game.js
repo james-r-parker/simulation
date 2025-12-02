@@ -6,7 +6,7 @@ import {
     WORLD_WIDTH, WORLD_HEIGHT, INITIAL_AGENT_ENERGY,
     FOOD_SPAWN_CAP, HIGH_VALUE_FOOD_CHANCE,
     SPECIALIZATION_TYPES,
-    MAX_ENERGY, TWO_PI,
+    MAX_ENERGY, MIN_ENERGY_FOR_SPLITTING, TWO_PI,
     MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES,
     FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
@@ -139,7 +139,7 @@ export class Simulation {
         this.lastMemoryPressureAction = 0;
         this.totalAgentsSpawned = 0; // Total agents created in this simulation run
 
-        this.gameSpeed = 0.5; // Start conservative for auto-adjustment
+        this.gameSpeed = 1; // Start conservative for auto-adjustment
         this.maxAgents = 10; // Start with fewer agents for auto-adjustment
         this.foodSpawnRate = FOOD_SPAWN_RATE; // FURTHER REDUCED from 0.15 to 0.12 to balance food surplus (target ~150-200% buffer instead of 2800%+)
         this.mutationRate = 0.01;
@@ -1320,7 +1320,7 @@ export class Simulation {
                             // When energy is very high, split to create clone
                             // Require agent to be "fit" for splitting
                             if (agent.fit &&
-                                agent.energy > MAX_ENERGY * 0.7 &&
+                                agent.energy > MIN_ENERGY_FOR_SPLITTING &&
                                 agent.reproductionCooldown <= 0 &&
                                 !agent.isPregnant) {
 
@@ -1840,6 +1840,7 @@ export class Simulation {
 
             this.perfMonitor.startPhase('spawn_agents');
             // Process the agent spawn queue, enforcing the max population limit
+            // When at max, allow replacement of weakest agents to make room for new offspring
             if (this.agentSpawnQueue.length > 0) {
                 // Count only living agents for population limit
                 let livingAgents = 0;
@@ -1847,10 +1848,39 @@ export class Simulation {
                     if (!this.agents[i].isDead) livingAgents++;
                 }
                 const availableSlots = this.maxAgents - livingAgents;
+                
                 if (availableSlots > 0) {
+                    // Normal case: spawn up to available slots
                     const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
                     this.agents.push(...newAgents);
                     this.totalAgentsSpawned += newAgents.length; // Track total agents spawned in this run
+                } else if (availableSlots === 0 && this.agentSpawnQueue.length > 0) {
+                    // At max population: replace weakest agents with new offspring
+                    // Sort living agents by fitness (lowest first) to find weakest
+                    const livingAgentsList = [];
+                    for (let i = 0; i < this.agents.length; i++) {
+                        if (!this.agents[i].isDead) {
+                            livingAgentsList.push(this.agents[i]);
+                        }
+                    }
+                    
+                    // Sort by fitness (ascending) - weakest first
+                    livingAgentsList.sort((a, b) => (a.fitness || 0) - (b.fitness || 0));
+                    
+                    // Replace up to the number of queued agents, but limit to reasonable number per frame
+                    const maxReplacements = Math.min(this.agentSpawnQueue.length, 5); // Max 5 replacements per frame
+                    const newAgents = this.agentSpawnQueue.splice(0, maxReplacements);
+                    
+                    // Remove weakest agents to make room
+                    for (let i = 0; i < newAgents.length && i < livingAgentsList.length; i++) {
+                        const weakestAgent = livingAgentsList[i];
+                        weakestAgent.isDead = true;
+                        this.logger.debug(`[REPRODUCTION] Replaced weakest agent ${weakestAgent.id} (fitness: ${weakestAgent.fitness.toFixed(1)}) with new offspring`);
+                    }
+                    
+                    // Add new agents
+                    this.agents.push(...newAgents);
+                    this.totalAgentsSpawned += newAgents.length;
                 }
             }
 
