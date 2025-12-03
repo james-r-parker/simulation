@@ -2,7 +2,7 @@
  * @fileoverview Centralized configuration constants for the blob evolution simulation.
  * All simulation parameters, thresholds, and configuration values are defined here.
  * Constants are organized into logical groups for easy maintenance and understanding.
- */ 
+ */
 
 // ============================================================================
 // SIMULATION CONFIGURATION
@@ -180,12 +180,12 @@ export const CHILD_STARTING_ENERGY = 1750;
 /**
  * Minimum energy required for asexual reproduction (splitting).
  * Agents must have this much energy to split and create a clone.
- * Reduced to 1500 to make splitting more accessible - max energy is ~2500.
+ * REDUCED from 3500 to 5000 to make splitting more achievable (Recommendation 6)
  * @type {number}
  * @constant
- * @default 1500
+ * @default 5000
  */
-export const MIN_ENERGY_FOR_SPLITTING = 3500;
+export const MIN_ENERGY_FOR_SPLITTING = 5000;
 
 /**
  * Target average age for agents in seconds.
@@ -199,20 +199,22 @@ export const TARGET_AGE_SECONDS = 120;
 /**
  * Energy level above which agents suffer obesity penalties.
  * Prevents agents from hoarding too much energy.
+ * INCREASED from 15000 to 20000 to allow splitting accumulation (Recommendation 7)
  * @type {number}
  * @constant
- * @default 15000
+ * @default 20000
  */
-export const OBESITY_THRESHOLD_ENERGY = 15000;
+export const OBESITY_THRESHOLD_ENERGY = 20000;
 
 /**
  * Divisor for calculating obesity energy tax (higher = less tax).
  * Tax = (energy - OBESITY_THRESHOLD_ENERGY) / OBESITY_ENERGY_TAX_DIVISOR
+ * INCREASED from 2000 to 3000 for gentler taxation (Recommendation 7)
  * @type {number}
  * @constant
- * @default 2000
+ * @default 3000
  */
-export const OBESITY_ENERGY_TAX_DIVISOR = 2000;
+export const OBESITY_ENERGY_TAX_DIVISOR = 3000;
 
 /**
  * Energy level that triggers low-energy visual warnings.
@@ -495,12 +497,13 @@ export const TEMPERATURE_LOSS_PASSIVE = 0.015;
 
 /**
  * Max multiplier for passive energy loss at 0 temperature.
- * Reduced from 15.0 for better balance.
+ * REDUCED from 7.0 to 4.0 for better balance (Recommendation 5).
+ * Prevents harsh feedback loops where cold agents die before learning.
  * @type {number}
  * @constant
- * @default 7.0
+ * @default 4.0
  */
-export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 7.0;
+export const TEMPERATURE_PASSIVE_LOSS_FACTOR = 4.0;
 
 /**
  * Minimum temperature for optimal performance.
@@ -754,34 +757,37 @@ export const MIN_FOOD_APPROACH_DISTANCE = 5;
  * @constant
  */
 export const FITNESS_MULTIPLIERS = {
-    // Core survival behaviors
-    FOOD_EATEN: 500,              // Points per food item eaten (increased from base)
+    // Core survival behaviors (REBALANCED - Recommendation 1 & 2)
+    FOOD_EATEN: 150,              // Points per food item eaten (reduced from 500 to prevent dominance)
     OFFSPRING: 150,               // Points per offspring produced
-    KILLS: 200,                   // Points per agent killed
-    
+    KILLS: 400,                   // Points per agent killed (increased from 200 to boost predator viability)
+    PREDATOR_SUCCESS_BONUS: 100,  // Additional bonus for predator specialization successful hunts
+
     // Exploration and movement
     EXPLORATION: 200,             // Points per 1% of map explored (increased from 100)
     CLEVER_TURNS: 15,             // Points per clever turn (reduced from 50 to prevent dominance)
     EFFICIENCY: 20,               // Points per efficiency unit (distance/energy, increased from 15)
-    
-    // Navigation behaviors (normalized by distance)
-    TURNS_TOWARDS_FOOD: 8,        // Points per normalized turn towards food (increased from 5)
-    TURNS_AWAY_FROM_OBSTACLES: 8, // Points per normalized turn away from obstacles (increased from 5)
-    FOOD_APPROACHES: 15,          // Points per normalized food approach (increased from 10)
-    
-    // Movement patterns (normalized by distance)
-    DIRECTION_CHANGES: 1.0,       // Points per normalized direction change
-    SPEED_CHANGES: 0.5,           // Points per normalized speed change
-    
+    EFFICIENCY_BONUS_MAX: 0.5,    // Max multiplier bonus for energy efficiency (Recommendation 3)
+
+    // Navigation behaviors (NO LONGER normalized by distance - Recommendation 4)
+    TURNS_TOWARDS_FOOD: 8,        // Points per turn towards food
+    TURNS_AWAY_FROM_OBSTACLES: 8, // Points per turn away from obstacles
+    FOOD_APPROACHES: 15,          // Points per food approach
+
+    // Movement patterns (NO LONGER normalized by distance - Recommendation 4)
+    DIRECTION_CHANGES: 0.5,       // Points per direction change (reduced from 1.0, no distance normalization)
+    SPEED_CHANGES: 0.25,          // Points per speed change (reduced from 0.5, no distance normalization)
+
     // Advanced behaviors
     SUCCESSFUL_ESCAPES: 75,       // Points per successful escape
     GOALS_COMPLETED: 100,         // Points per completed goal
     REPRODUCTION_ATTEMPT: 5,      // Points per reproduction attempt (even if unsuccessful)
-    
-    // Temperature system
+    FIT_OFFSPRING_BONUS: 300,     // Points per offspring that becomes validated (Recommendation 12)
+
+    // Temperature system (REDUCED PENALTY - Recommendation 13)
     TEMPERATURE_BONUS_MAX: 100,   // Maximum temperature bonus points
     TEMPERATURE_PENALTY_MAX: 100, // Maximum temperature penalty points
-    
+
     // Synergy bonuses
     REPRODUCTION_FOOD_SYNERGY: 10  // Multiplier for (offspring × 2 + foodEaten) synergy
 };
@@ -1328,6 +1334,88 @@ export const RAY_DISTANCE_THRESHOLD = 0.001;
  * @default 0.0001
  */
 export const DIVISION_BY_ZERO_THRESHOLD = 0.0001;
+
+// ============================================================================
+// GENE POOL OPTIMIZATION (RECOMMENDATIONS 3, 4, 8, 9, 10)
+// ============================================================================
+// Enhanced gene pool management for storing truly "best" agents
+
+/**
+ * Maximum size of gene pool (per specialization type).
+ * Prevents pollution with mediocre agents.
+ * @type {number}
+ * @constant
+ * @default 100
+ */
+export const GENE_POOL_MAX_SIZE = 100;
+
+/**
+ * Minimum fitness required to be considered for gene pool.
+ * Agents below this threshold are never saved.
+ * @type {number}
+ * @constant
+ * @default 500
+ */
+export const GENE_POOL_MIN_FITNESS = 500;
+
+/**
+ * Fitness threshold for exceptional agents that are permanently protected.
+ * Elite agents above this threshold are never removed from pool.
+ * @type {number}
+ * @constant
+ * @default 5000
+ */
+export const GENE_POOL_ELITE_FITNESS_THRESHOLD = 5000;
+
+/**
+ * Maximum number of elite agents to protect permanently.
+ * Ensures breakthrough strategies are preserved.
+ * @type {number}
+ * @constant
+ * @default 20
+ */
+export const GENE_POOL_ELITE_PROTECTION_MAX = 20;
+
+/**
+ * When pool is full, replace worst agent if new agent is this much better (ratio).
+ * 0.95 means new agent must have 95%+ of worst agent's fitness to replace.
+ * @type {number}
+ * @constant
+ * @default 0.95
+ */
+export const GENE_POOL_REPLACEMENT_THRESHOLD = 0.95;
+
+/**
+ * Specialization quotas for gene pool diversity.
+ * Ensures each specialization has representation in the pool.
+ * @type {Object}
+ * @constant
+ */
+export const GENE_POOL_SPECIALIZATION_QUOTAS = {
+    forager: 0.30,      // 30% of pool
+    predator: 0.20,     // 20% of pool
+    reproducer: 0.20,   // 20% of pool
+    scout: 0.15,        // 15% of pool
+    defender: 0.15      // 15% of pool
+};
+
+/**
+ * Minimum population median fitness multiplier for pruning stagnant genes.
+ * Genes with fitness < (median × this) are removed during periodic pruning.
+ * @type {number}
+ * @constant
+ * @default 0.5
+ */
+export const GENE_POOL_PRUNE_MULTIPLIER = 0.5;
+
+/**
+ * Frames between gene pool pruning cycles (~3 minutes at 60fps).
+ * @type {number}
+ * @constant
+ * @default 10000
+ */
+export const GENE_POOL_PRUNE_INTERVAL = 10000;
+
 
 // ============================================================================
 // NEURAL NETWORK EVOLUTION

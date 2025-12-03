@@ -36,7 +36,8 @@ import {
     BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
     KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF,
-    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD
+    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD,
+    GENE_POOL_MIN_FITNESS
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -2245,21 +2246,18 @@ export class Agent {
         const reproductionAttempts = safeNumber(this.reproductionAttempts || 0, 0);
         baseScore += reproductionAttempts * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
 
-        // Movement rewards - NORMALIZED by distance traveled to prevent tiny movements from inflating fitness
+        // Movement rewards - NO LONGER normalized by distance (Recommendation 4)
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
         const ageInSeconds = safeNumber(this.age || 0, 0);
 
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            // Normalize movement metrics by distance traveled (per 100 units of distance)
-            const distanceNormalizer = distanceTravelled / 100;
+            // Direction changes: cap but don't normalize (removed distance penalty)
+            const directionChangedCapped = Math.min(safeNumber(this.directionChanged || 0, 0), 500);
+            baseScore += directionChangedCapped * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
 
-            // Direction changes: cap and normalize
-            const directionChangedNormalized = Math.min(safeNumber(this.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
-            baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
-
-            // Speed changes: cap and normalize
-            const speedChangedNormalized = Math.min(safeNumber(this.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
-            baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
+            // Speed changes: cap but don't normalize (removed distance penalty)
+            const speedChangedCapped = Math.min(safeNumber(this.speedChanged || 0, 0), 200);
+            baseScore += speedChangedCapped * FITNESS_MULTIPLIERS.SPEED_CHANGES;
         } else {
             // Penalty for minimal movement (agents that barely move)
             const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
@@ -2270,19 +2268,17 @@ export class Agent {
         baseScore += safeNumber(this.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
         baseScore += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
 
-        // Navigation behavior rewards - NORMALIZED by distance to prevent accumulation from tiny movements
+        // Navigation behavior rewards - NO LONGER normalized by distance (Recommendation 4)
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
+            // Cap navigation metrics (removed distance normalization)
+            const turnsTowardsFood = Math.min(safeNumber(this.turnsTowardsFood || 0, 0), 100);
+            baseScore += turnsTowardsFood * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD;
 
-            // Normalize navigation rewards by distance
-            const turnsTowardsFoodNormalized = safeNumber(this.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD; // Increased from 5 to 8
+            const turnsAwayFromObstacles = Math.min(safeNumber(this.turnsAwayFromObstacles || 0, 0), 100);
+            baseScore += turnsAwayFromObstacles * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES;
 
-            const turnsAwayFromObstaclesNormalized = safeNumber(this.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES; // Increased from 5 to 8
-
-            const foodApproachesNormalized = safeNumber(this.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
-            baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES; // Increased from 10 to 15
+            const foodApproaches = Math.min(safeNumber(this.foodApproaches || 0, 0), 50);
+            baseScore += foodApproaches * FITNESS_MULTIPLIERS.FOOD_APPROACHES;
         }
 
         const offspring = safeNumber(this.offspring || 0, 0);
@@ -2310,6 +2306,7 @@ export class Agent {
         baseScore -= circlePenalty;
         baseScore += safeNumber(this.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
 
+
         // 3. Penalties (Applied to Base Score)
         const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
         const collisions = safeNumber(this.collisions || 0, 0);
@@ -2328,45 +2325,39 @@ export class Agent {
         }
 
         // 6. Activity Requirement Penalty
-        // Penalize agents that survive for extended periods with minimal activity
-        let inactivityPenalty = 0;
+        // Penalize agents that survive long but have very low scores (not learning/participating)
         if (ageInSeconds > 20 && baseScore < 50) {
-            // Agents surviving >20s with baseScore <50 get increasingly penalized
-            const inactivityDuration = Math.max(0, ageInSeconds - 20);
-            inactivityPenalty = inactivityDuration * FITNESS_PENALTIES.INACTIVITY;
+            baseScore -= (ageInSeconds - 20) * FITNESS_PENALTIES.INACTIVITY;
         }
 
-        // Apply inactivity penalty to base score
-        let adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+        // 7. Survival bonus: reward agents for staying alive
+        // More selective survival bonus with threshold (500 seconds before bonus kicks in)
+        let survivalBonus = 0;
+        if (ageInSeconds >= SURVIVAL_BONUSES.EXTENDED_THRESHOLD) {
+            const extendedTime = ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD;
+            survivalBonus = Math.min(extendedTime / SURVIVAL_BONUSES.EXTENDED_DIVISOR, SURVIVAL_BONUSES.BASE_CAP);
+        }
+        baseScore += survivalBonus;
 
-        // 7. REBALANCED SURVIVAL: Use separate bonus instead of multiplier to reduce dominance
-        // Separate survival bonus (max 500 points) instead of 3x multiplier
-        // This prevents passive survivalists from achieving high fitness
-        // Only applies if agent lives over 500 seconds (agents are living much longer now)
-        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
-            Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
-        // Extended bonus for very long-lived agents (reduced impact)
-        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
-            (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
+        // === FINAL FITNESS CALCULATION ===
+        // Apply efficiency-based multiplier (Recommendation 3)
+        let efficiencyBonus = 0;
+        if (distanceTravelled > 0 && energySpent > 0) {
+            const efficiencyRatio = Math.min(distanceTravelled / energySpent / 1000, FITNESS_MULTIPLIERS.EFFICIENCY_BONUS_MAX);
+            efficiencyBonus = baseScore * efficiencyRatio;
+        }
 
-        // Final fitness = adjusted base score + survival bonuses (not multiplied)
-        const finalFitnessValue = safeNumber(adjustedBaseScore + survivalBonus + rawSurvivalBonus, 0);
-        this.fitness = Math.max(0, finalFitnessValue);
+        // Add predator success bonus (Recommendation 2)
+        let predatorBonus = 0;
+        if (this.specializationType === 'predator' && this.kills > 0) {
+            predatorBonus = this.kills * FITNESS_MULTIPLIERS.PREDATOR_SUCCESS_BONUS;
+        }
 
-        // Agent qualification criteria for gene pool entry
-        // Partial credit system: Allow 4/5 criteria if fitness is exceptional
+        this.fitness = Math.max(0, baseScore + efficiencyBonus + predatorBonus);
+
+        // Agent qualification criteria for gene pool entry (using new MIN_FITNESS from constants)
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
-        const criteria = [
-            this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL,
-            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
-            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
-            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
-            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
-        ];
-        const criteriaMet = criteria.filter(Boolean).length;
-
-        // All 5 criteria must pass, OR 4/5 criteria with exceptional fitness (from constants)
-        this.fit = criteriaMet >= 5 || (criteriaMet >= 4 && this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD);
+        this.fit = this.fitness >= GENE_POOL_MIN_FITNESS && foodEaten >= 1 && ageInSeconds >= 3;
     }
 
     getTemperatureEfficiency() {
