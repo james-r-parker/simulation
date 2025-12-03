@@ -140,7 +140,7 @@ export const ENERGY_TO_SIZE_RATIO = 250;
  * Starting energy for newly spawned agents.
  * @type {number}
  * @constant
- * @default 2500
+ * @default 800
  */
 export const INITIAL_AGENT_ENERGY = 800;
 
@@ -170,22 +170,25 @@ export const MIN_ENERGY_TO_REPRODUCE = 200;
 export const REPRODUCE_COST_BASE = 15;
 
 /**
- * Energy given to newborn agents (increased from 700 for better survival).
+ * Energy given to newborn agents.
+ * BALANCED: 75% of parent starting energy (600 vs parent's 800)
+ * Prevents child energy exploit where children > parents
  * @type {number}
  * @constant
- * @default 1750
+ * @default 600
  */
-export const CHILD_STARTING_ENERGY = 1750;
+export const CHILD_STARTING_ENERGY = 600;
 
 /**
  * Minimum energy required for asexual reproduction (splitting).
- * Agents must have this much energy to split and create a clone.
- * REDUCED from 3500 to 5000 to make splitting more achievable (Recommendation 6)
+ * BALANCED: 2.5× starting energy (2000 vs 800 start)
+ * Requires ~26 food items (50 energy each) to reach
+ * Challenging but achievable for skilled agents
  * @type {number}
  * @constant
- * @default 5000
+ * @default 2000
  */
-export const MIN_ENERGY_FOR_SPLITTING = 5000;
+export const MIN_ENERGY_FOR_SPLITTING = 2000;
 
 /**
  * Target average age for agents in seconds.
@@ -418,17 +421,17 @@ export const BRAKING_FRICTION = 0.90;
  * Current avg age 1000s vs 120s target - increasing to 0.05 to aggressively reduce lifespan.
  * @type {number}
  * @constant
- * @default 0.05
+ * @default 0.08
  */
-export const PASSIVE_LOSS = 0.1;
+export const PASSIVE_LOSS = 0.08;
 
 /**
  * Energy cost multiplier for movement (velocity * this).
  * @type {number}
  * @constant
- * @default 0.02
+ * @default 0.03
  */
-export const MOVEMENT_COST_MULTIPLIER = 0.04;
+export const MOVEMENT_COST_MULTIPLIER = 0.03;
 
 /**
  * Energy cost multiplier for rotation (rotation speed * this).
@@ -940,9 +943,9 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400;
  * Further reduced to lower energy buffer toward target range.
  * @type {number}
  * @constant
- * @default 120
+ * @default 70
  */
-export const FOOD_ENERGY_NORMAL_BASE = 50;
+export const FOOD_ENERGY_NORMAL_BASE = 70;
 
 /**
  * Random variance in normal food energy (± this amount).
@@ -958,9 +961,9 @@ export const FOOD_ENERGY_NORMAL_VARIANCE = 20;
  * Further reduced to lower energy buffer, maintaining 2:1 ratio with normal food.
  * @type {number}
  * @constant
- * @default 240
+ * @default 140
  */
-export const FOOD_ENERGY_HIGH_BASE = 100;
+export const FOOD_ENERGY_HIGH_BASE = 140;
 
 /**
  * Random variance in high-value food energy (± this amount).
@@ -1730,7 +1733,7 @@ export const MIN_GENETIC_DISTANCE = 0.1;
  * @constant
  * @default 12000
  */
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 12000;
+export const MIN_FITNESS_TO_SAVE_GENE_POOL = 500;
 
 /**
  * Maximum agents saved per gene pool generation.
@@ -1749,7 +1752,7 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
  * @constant
  * @default 3
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 2;
 
 /**
  * Minimum lifespan in frames to qualify.
@@ -1761,7 +1764,7 @@ export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5;
  * @constant
  * @default 3600
  */
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 3600;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 720;
 
 /**
  * Minimum lifespan in seconds (33.33s).
@@ -1779,7 +1782,7 @@ export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE
  * @constant
  * @default 2.0
  */
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 2.0;
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.5;
 
 /**
  * Minimum successful food-seeking behaviors.
@@ -1791,7 +1794,7 @@ export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 2.0;
  * @constant
  * @default 10
  */
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 10;
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 3;
 
 /**
  * Maximum number of gene pools stored in database.
@@ -1819,11 +1822,12 @@ export const MAX_VALIDATION_QUEUE_SIZE = 50;
 
 /**
  * Energy given to validation agents (boosted from INITIAL_AGENT_ENERGY for fairer testing).
+ * BALANCED: 1.5x starting energy (1200 vs 800) for validation testing
  * @type {number}
  * @constant
- * @default 3000
+ * @default 1200
  */
-export const VALIDATION_AGENT_ENERGY = 3000;
+export const VALIDATION_AGENT_ENERGY = 1200;
 
 /**
  * Fitness threshold for partial credit system (4/5 criteria with exceptional fitness).
@@ -1835,7 +1839,7 @@ export const VALIDATION_AGENT_ENERGY = 3000;
  * @constant
  * @default 18000
  */
-export const EXCEPTIONAL_FITNESS_THRESHOLD = 18000;
+export const EXCEPTIONAL_FITNESS_THRESHOLD = 2000;
 
 // ============================================================================
 // SEASONAL ENVIRONMENTAL CYCLE

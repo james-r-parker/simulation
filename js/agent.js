@@ -2353,11 +2353,25 @@ export class Agent {
             predatorBonus = this.kills * FITNESS_MULTIPLIERS.PREDATOR_SUCCESS_BONUS;
         }
 
+
         this.fitness = Math.max(0, baseScore + efficiencyBonus + predatorBonus);
 
-        // Agent qualification criteria for gene pool entry (using new MIN_FITNESS from constants)
+        // Agent qualification criteria for gene pool entry
+        // Comprehensive multi-criteria check with 4/5 pass rule for exceptional agents
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
-        this.fit = this.fitness >= GENE_POOL_MIN_FITNESS && foodEaten >= 1 && ageInSeconds >= 3;
+        const criteria = [
+            this.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL,
+            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
+            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
+            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
+            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
+        ];
+        const criteriaMet = criteria.filter(Boolean).length;
+
+        // All 5 criteria must pass, OR 4/5 criteria with exceptional fitness
+        // Use new GENE_POOL_MIN_FITNESS as floor, but keep comprehensive checks
+        this.fit = (criteriaMet >= 5 || (criteriaMet >= 4 && this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD))
+            && this.fitness >= GENE_POOL_MIN_FITNESS;
     }
 
     getTemperatureEfficiency() {
