@@ -192,7 +192,7 @@ export class NeuralNetwork {
                 }
                 sum += hidden[j] * this.weights2[j][i];
             }
-            output[i] = 1 / (1 + Math.exp(-sum)); // Sigmoid
+            output[i] = Math.tanh(sum); // Tanh for smoother physics control
         }
 
         return {

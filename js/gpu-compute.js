@@ -146,6 +146,11 @@ fn sigmoid(x: f32) -> f32 {
     return 1.0 / (1.0 + exp(-x));
 }
 
+fn tanh_custom(x: f32) -> f32 {
+    let e2x = exp(2.0 * x);
+    return (e2x - 1.0) / (e2x + 1.0);
+}
+
 @compute @workgroup_size(${workgroupSize}) // Optimized workgroup size for GPU
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let agentIndex = global_id.x;
@@ -242,7 +247,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             j += 1u;
         }
         
-        outputs[outputOffset + i] = sigmoid(sum);
+        outputs[outputOffset + i] = tanh_custom(sum);
     }
     
     // Store new hidden state (direct write, coalesced access)
