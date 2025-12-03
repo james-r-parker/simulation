@@ -284,3 +284,5 @@ export function updateSparkles(sparkles, sparkleGroup, scene, sparkleState, spar
 }
 
 
+
+

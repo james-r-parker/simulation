@@ -366,6 +366,145 @@ export function copySimulationStats(simulation) {
         .map(p => `ID ${p.id}: Fit ${p.fitness.toFixed(0)}, Count ${p.count}`)
         .join('\n');
 
+    // Helper function to calculate statistics (avg, median, p99, min, max)
+    const calculateStats = (values) => {
+        if (!values || values.length === 0) {
+            return { avg: 0, median: 0, p99: 0, min: 0, max: 0 };
+        }
+        const sorted = [...values].sort((a, b) => a - b);
+        const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const p99Index = Math.floor(sorted.length * 0.99);
+        const p99 = sorted[Math.min(p99Index, sorted.length - 1)];
+        const min = sorted[0];
+        const max = sorted[sorted.length - 1];
+        return { avg, median, p99, min, max };
+    };
+
+    // Calculate statistical distributions for all fitness metrics
+    const fitnessValues = livingAgents.map(a => safeNumber(a.fitness, 0));
+    const baseScoreValues = fitnessBreakdown.map(f => f.baseScore);
+    const penaltiesValues = fitnessBreakdown.map(f => f.penalties);
+    const netBaseScoreValues = fitnessBreakdown.map(f => f.netBaseScore);
+    const survivalBonusValues = fitnessBreakdown.map(f => f.survivalBonus);
+    const foodEatenValues = livingAgents.map(a => safeNumber(a.foodEaten || 0, 0));
+    const offspringValues = livingAgents.map(a => safeNumber(a.offspring || 0, 0));
+    const killsValues = livingAgents.map(a => safeNumber(a.kills || 0, 0));
+    const explorationValues = livingAgents.map(a => {
+        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+        return safeNumber(((a.exploredCells?.size || 0) / totalCells * 100), 0);
+    });
+    const cleverTurnsValues = livingAgents.map(a => safeNumber(a.cleverTurns || 0, 0));
+    const turnsTowardsFoodRawValues = livingAgents.map(a => safeNumber(a.turnsTowardsFood || 0, 0));
+    const turnsAwayFromObstaclesRawValues = livingAgents.map(a => safeNumber(a.turnsAwayFromObstacles || 0, 0));
+    const foodApproachesRawValues = livingAgents.map(a => safeNumber(a.foodApproaches || 0, 0));
+    const directionChangedRawValues = livingAgents.map(a => safeNumber(a.directionChanged || 0, 0));
+    const speedChangedRawValues = livingAgents.map(a => safeNumber(a.speedChanged || 0, 0));
+    const successfulEscapesValues = livingAgents.map(a => safeNumber(a.successfulEscapes || 0, 0));
+    const energyValues = livingAgents.map(a => safeNumber(a.energy, 0));
+    const energySpentValues = livingAgents.map(a => safeNumber(a.energySpent || 0, 0));
+    const ageValues = livingAgents.map(a => safeNumber(a.age || 0, 0));
+    const distanceTravelledValues = livingAgents.map(a => safeNumber(a.distanceTravelled || 0, 0));
+    const reproductionAttemptsValues = livingAgents.map(a => safeNumber(a.reproductionAttempts || 0, 0));
+    const childrenFromMateValues = livingAgents.map(a => safeNumber(a.childrenFromMate || 0, 0));
+    const childrenFromSplitValues = livingAgents.map(a => safeNumber(a.childrenFromSplit || 0, 0));
+    
+    // Calculate normalized values for navigation metrics
+    const turnsTowardsFoodNormalizedValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            return safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+        }
+        return 0;
+    });
+    const turnsAwayFromObstaclesNormalizedValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            return safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
+        }
+        return 0;
+    });
+    const foodApproachesNormalizedValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            return safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
+        }
+        return 0;
+    });
+    const directionChangedNormalizedValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            return Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
+        }
+        return 0;
+    });
+    const speedChangedNormalizedValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const distanceNormalizer = distanceTravelled / 100;
+            return Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
+        }
+        return 0;
+    });
+    
+    // Calculate efficiency values
+    const efficiencyValues = livingAgents.map(a => {
+        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        const energySpent = safeNumber(a.energySpent || 0, 0);
+        if (energySpent > 0) {
+            return Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
+        }
+        return 0;
+    });
+
+    // Calculate obstacle-free frames values
+    const obstacleFreeFramesValues = livingAgents.map(a => {
+        const ageInFrames = (a.age || 0) * FPS_TARGET;
+        const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
+        return obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0;
+    });
+
+    // Calculate all statistics
+    const statsFitness = calculateStats(fitnessValues);
+    const statsBaseScore = calculateStats(baseScoreValues);
+    const statsPenalties = calculateStats(penaltiesValues);
+    const statsNetBaseScore = calculateStats(netBaseScoreValues);
+    const statsSurvivalBonus = calculateStats(survivalBonusValues);
+    const statsFoodEaten = calculateStats(foodEatenValues);
+    const statsOffspring = calculateStats(offspringValues);
+    const statsKills = calculateStats(killsValues);
+    const statsExploration = calculateStats(explorationValues);
+    const statsCleverTurns = calculateStats(cleverTurnsValues);
+    const statsTurnsTowardsFoodRaw = calculateStats(turnsTowardsFoodRawValues);
+    const statsTurnsTowardsFoodNorm = calculateStats(turnsTowardsFoodNormalizedValues);
+    const statsTurnsAwayFromObstaclesRaw = calculateStats(turnsAwayFromObstaclesRawValues);
+    const statsTurnsAwayFromObstaclesNorm = calculateStats(turnsAwayFromObstaclesNormalizedValues);
+    const statsFoodApproachesRaw = calculateStats(foodApproachesRawValues);
+    const statsFoodApproachesNorm = calculateStats(foodApproachesNormalizedValues);
+    const statsDirectionChangedRaw = calculateStats(directionChangedRawValues);
+    const statsDirectionChangedNorm = calculateStats(directionChangedNormalizedValues);
+    const statsSpeedChangedRaw = calculateStats(speedChangedRawValues);
+    const statsSpeedChangedNorm = calculateStats(speedChangedNormalizedValues);
+    const statsSuccessfulEscapes = calculateStats(successfulEscapesValues);
+    const statsEnergy = calculateStats(energyValues);
+    const statsEnergySpent = calculateStats(energySpentValues);
+    const statsAge = calculateStats(ageValues);
+    const statsDistanceTravelled = calculateStats(distanceTravelledValues);
+    const statsReproductionAttempts = calculateStats(reproductionAttemptsValues);
+    const statsChildrenFromMate = calculateStats(childrenFromMateValues);
+    const statsChildrenFromSplit = calculateStats(childrenFromSplitValues);
+    const statsEfficiency = calculateStats(efficiencyValues);
+    const statsObstacleFreeFrames = calculateStats(obstacleFreeFramesValues);
+
+    // Format stats helper
+    const formatStats = (stats, decimals = 1) => {
+        return `avg=${stats.avg.toFixed(decimals)}, median=${stats.median.toFixed(decimals)}, p99=${stats.p99.toFixed(decimals)}, min=${stats.min.toFixed(decimals)}, max=${stats.max.toFixed(decimals)}`;
+    };
+
     const report = `
 === SIMULATION REPORT ===
 Time: ${new Date().toLocaleTimeString()}
@@ -434,6 +573,45 @@ Avg Turns Away From Obstacles: ${avgTurnsAwayFromObstacles.toFixed(2)}
 Avg Food Approaches: ${avgFoodApproaches.toFixed(2)}
 Avg Clever Turns: ${avgCleverTurns.toFixed(2)}
 Avg Successful Escapes: ${avgSuccessfulEscapes.toFixed(2)}
+
+-- STATISTICAL DISTRIBUTIONS (avg, median, p99, min, max) --
+Core Fitness Metrics:
+  - Fitness: ${formatStats(statsFitness)}
+  - Base Score: ${formatStats(statsBaseScore)}
+  - Penalties: ${formatStats(statsPenalties)}
+  - Net Base Score: ${formatStats(statsNetBaseScore)}
+  - Survival Bonus: ${formatStats(statsSurvivalBonus, 0)}
+
+Fitness Component Metrics:
+  - Food Eaten: ${formatStats(statsFoodEaten, 1)}
+  - Offspring: ${formatStats(statsOffspring, 2)}
+  - Kills: ${formatStats(statsKills, 2)}
+  - Exploration (%): ${formatStats(statsExploration, 2)}
+  - Clever Turns: ${formatStats(statsCleverTurns, 1)}
+  - Turns Towards Food (raw): ${formatStats(statsTurnsTowardsFoodRaw, 1)}
+  - Turns Towards Food (normalized): ${formatStats(statsTurnsTowardsFoodNorm, 2)}
+  - Turns Away From Obstacles (raw): ${formatStats(statsTurnsAwayFromObstaclesRaw, 1)}
+  - Turns Away From Obstacles (normalized): ${formatStats(statsTurnsAwayFromObstaclesNorm, 2)}
+  - Food Approaches (raw): ${formatStats(statsFoodApproachesRaw, 1)}
+  - Food Approaches (normalized): ${formatStats(statsFoodApproachesNorm, 2)}
+  - Direction Changes (raw): ${formatStats(statsDirectionChangedRaw, 1)}
+  - Direction Changes (normalized): ${formatStats(statsDirectionChangedNorm, 2)}
+  - Speed Changes (raw): ${formatStats(statsSpeedChangedRaw, 1)}
+  - Speed Changes (normalized): ${formatStats(statsSpeedChangedNorm, 2)}
+  - Obstacle-Free Frames: ${formatStats(statsObstacleFreeFrames, 1)}
+  - Successful Escapes: ${formatStats(statsSuccessfulEscapes, 2)}
+  - Efficiency (distance/energy): ${formatStats(statsEfficiency, 2)}
+
+Energy & Survival Metrics:
+  - Energy (current): ${formatStats(statsEnergy, 1)}
+  - Energy Spent: ${formatStats(statsEnergySpent, 1)}
+  - Age (seconds): ${formatStats(statsAge, 1)}
+  - Distance Travelled: ${formatStats(statsDistanceTravelled, 1)}
+
+Reproduction Metrics:
+  - Reproduction Attempts: ${formatStats(statsReproductionAttempts, 1)}
+  - Children From Mate: ${formatStats(statsChildrenFromMate, 1)}
+  - Children From Split: ${formatStats(statsChildrenFromSplit, 1)}
 
 -- FITNESS BREAKDOWN --
 Avg Base Score: ${avgBaseScore.toFixed(1)}

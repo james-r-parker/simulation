@@ -12,7 +12,7 @@ import {
     VELOCITY_MOMENTUM,
     OBSTACLE_COLLISION_PENALTY, OBSTACLE_HIDING_RADIUS, OBSTACLE_MAX_SPEED,
     PHEROMONE_RADIUS, PHEROMONE_DIAMETER, DAMPENING_FACTOR, BRAKING_FRICTION, ROTATION_COST_MULTIPLIER,
-    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, DEATH_RISK_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
+    PASSIVE_LOSS, MOVEMENT_COST_MULTIPLIER, LOW_ENERGY_THRESHOLD, DEATH_RISK_THRESHOLD, MODERATE_ENERGY_THRESHOLD, AGENT_SIZE_ENERGY_LOSS_MULTIPLIER,
     TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_START, TEMPERATURE_GAIN_MOVE, TEMPERATURE_LOSS_PASSIVE, TEMPERATURE_PASSIVE_LOSS_FACTOR,
     TEMPERATURE_OPTIMAL_MIN, TEMPERATURE_OPTIMAL_MAX, TEMPERATURE_COLD_STRESS_THRESHOLD, TEMPERATURE_HEAT_STRESS_THRESHOLD,
     TEMPERATURE_COLD_MODERATE_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD, TEMPERATURE_EFFICIENCY_OPTIMAL,
@@ -418,7 +418,7 @@ export class Agent {
         // OPTIMIZED: Use squared comparison to avoid Math.abs calls
         const targetThrustSq = this.targetThrust * this.targetThrust;
         const currentThrustSq = this.currentThrust * this.currentThrust;
-        
+
         if (targetThrustSq > currentThrustSq) {
             // Accelerating - use acceleration smoothing
             this.currentThrust += (this.targetThrust - this.currentThrust) * ACCELERATION_SMOOTHING;
@@ -440,11 +440,11 @@ export class Agent {
 
         // Energy conservation (resting)
         // Allow full speed when food is nearby and energy is critical (to reach food before death)
-        const hasNearbyFood = this.targetMemory && this.targetMemory.currentTarget && 
-                              this.targetMemory.currentTarget.type === 'food' &&
-                              this.targetMemory.lastTargetSeen > 0 &&
-                              (this.framesAlive - this.targetMemory.lastTargetSeen) < this.targetMemory.attentionSpan;
-        
+        const hasNearbyFood = this.targetMemory && this.targetMemory.currentTarget &&
+            this.targetMemory.currentTarget.type === 'food' &&
+            this.targetMemory.lastTargetSeen > 0 &&
+            (this.framesAlive - this.targetMemory.lastTargetSeen) < this.targetMemory.attentionSpan;
+
         if (this.energy < LOW_ENERGY_THRESHOLD * 0.5) { // Below 50 energy
             if (hasNearbyFood && this.energy < DEATH_RISK_THRESHOLD) {
                 // Critical energy + food nearby: allow full speed to reach food
@@ -522,7 +522,7 @@ export class Agent {
         // CRITICAL: Store the actual rotation rate (with sign) for momentum calculation
         // Don't store magnitude here - we need the direction for proper momentum
         this.previousRotation = this.currentRotation;
-        
+
         // Store rotation magnitude separately for cost calculation (used in update() method)
         // We'll use a separate variable to avoid breaking momentum
         this.rotationMagnitudeForCost = rotationMagnitude;
@@ -671,7 +671,7 @@ export class Agent {
         // OPTIMIZED: Calculate speed squared early for reuse in multiple places
         const MAX_VELOCITY_SQ = MAX_VELOCITY * MAX_VELOCITY;
         let currentSpeedSq = this.vx * this.vx + this.vy * this.vy;
-        
+
         // Cap velocity - OPTIMIZED: Cache sqrt result and use multiplication instead of division
         if (currentSpeedSq > MAX_VELOCITY_SQ) {
             const currentSpeed = Math.sqrt(currentSpeedSq);
@@ -708,7 +708,7 @@ export class Agent {
             hitBoundary = true;
         }
 
-            // Apply damage and trigger visual effect for boundary collisions
+        // Apply damage and trigger visual effect for boundary collisions
         if (hitBoundary) {
             const damage = WALL_COLLISION_DAMAGE; // Less damage than obstacle collisions
             this.energy = Math.max(0, this.energy - damage);
@@ -847,7 +847,7 @@ export class Agent {
         const prevSpeedSq = prevVx * prevVx + prevVy * prevVy;
         const currSpeedSq = currVx * currVx + currVy * currVy;
         const MIN_MOVEMENT_THRESHOLD_SQ = 0.0001; // 0.01^2 to avoid sqrt
-        
+
         if (prevSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ || currSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ) {
             prevAngle = Math.atan2(prevVy, prevVx);
             currAngle = Math.atan2(currVy, currVx);
@@ -887,7 +887,7 @@ export class Agent {
                 // Clever turn if responding to danger, opportunity, or visual information
                 const hasRecentRayHits = this.previousRayHits.some(hits => hits > 0);
                 const isStrategicTurn = this.dangerSmell > 0.5 || this.attackSmell > 0.5 || hasRecentRayHits;
-                
+
                 if (isStrategicTurn) {
                     // Double reward for strategic turns (turning towards food, away from obstacles, or evading danger)
                     this.cleverTurns += angleDiff * 2.0;
@@ -995,7 +995,7 @@ export class Agent {
             this.split();
         }
 
-        if (this.energy <= 0) {
+        if (this.energy < 1) {
             this.isDead = true;
             // CRITICAL: Extract weights BEFORE cleanup so they're available for validation
             if (this.nn && !this._extractedWeights) {
@@ -1343,8 +1343,8 @@ export class Agent {
                         }
                         // Count potential mates (similar size, mature, not pregnant, have energy)
                         if (hitType === 6 || hitType === 3) {
-                            if (otherAgent.framesAlive >= 600 && !otherAgent.isPregnant && 
-                                otherAgent.energy >= MIN_ENERGY_TO_REPRODUCE && 
+                            if (otherAgent.framesAlive >= 600 && !otherAgent.isPregnant &&
+                                otherAgent.energy >= MIN_ENERGY_TO_REPRODUCE &&
                                 otherAgent.reproductionCooldown === 0) {
                                 potentialMatesCount++;
                             }
@@ -1560,20 +1560,20 @@ export class Agent {
         const distanceFromOptimal = Math.abs(this.temperature - optimalCenter);
         inputs.push(Math.min(distanceFromOptimal / (TEMPERATURE_MAX / 2), 1.0)); // Distance from optimal (0-1)
         // Cold stress indicator (0-1, where 1 = severe cold stress)
-        const coldStress = this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ? 
-            1.0 : 
-            (this.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ? 
-                (TEMPERATURE_COLD_MODERATE_THRESHOLD - this.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) : 
+        const coldStress = this.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ?
+            1.0 :
+            (this.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ?
+                (TEMPERATURE_COLD_MODERATE_THRESHOLD - this.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) :
                 0.0);
         inputs.push(Math.min(coldStress, 1.0)); // Cold stress (0-1)
         // Heat stress indicator (0-1, where 1 = severe heat stress)
-        const heatStress = this.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ? 
-            1.0 : 
-            (this.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ? 
-                (this.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) : 
+        const heatStress = this.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ?
+            1.0 :
+            (this.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ?
+                (this.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) :
                 0.0);
         inputs.push(Math.min(heatStress, 1.0)); // Heat stress (0-1)
-        
+
         inputs.push(this.simulation && this.simulation.seasonPhase !== undefined ? this.simulation.seasonPhase : 0.0); // Season phase (0-1)
 
         // Recent memory (temporal awareness) - adds 8 inputs
@@ -1614,9 +1614,33 @@ export class Agent {
         // Food energy gain: explicit awareness that eating food gives energy
         inputs.push(Math.min(this.eventFlags.lastFoodEnergyGain / MAX_ENERGY, 1.0)); // Food energy gain (0-1, normalized)
 
-        // Food urgency: combines low energy + food visibility to signal "need food now"
-        const foodUrgency = (deathRisk > 0.5 && closestFoodDist < Infinity) ? 1.0 : 0.0;
-        inputs.push(foodUrgency); // Food urgency (0-1, binary: urgent or not)
+        // Food urgency: continuous urgency based on hunger and food availability
+        const hungerLevel = 1.0 - (this.energy / MAX_ENERGY); // 0 = full, 1 = starving
+        const foodProximity = closestFoodDist < Infinity ?
+            Math.max(0, 1.0 - (closestFoodDist / (this.maxRayDist * 2))) : 0.0;
+        let foodUrgency = Math.min(hungerLevel * 0.7 + foodProximity * 0.3, 1.0);
+        // Trigger urgency when hunger > 0.3 (30% energy depleted) OR food is very close
+        if (hungerLevel > 0.3 || (foodProximity > 0.5 && hungerLevel > 0.1)) {
+            foodUrgency = Math.max(foodUrgency, 0.5);
+        }
+        inputs.push(foodUrgency); // Food urgency (0-1, continuous: scales with hunger and proximity)
+
+        // Food proximity (0-1, where 1 = food very close)
+        const foodProximityInput = closestFoodDist < Infinity ?
+            Math.max(0, 1.0 - (closestFoodDist / (this.maxRayDist * 2))) : 0.0;
+        inputs.push(foodProximityInput);
+
+        // Food availability score (based on how many food items detected in sensor rays)
+        let foodDetectedCount = 0;
+        if (rayData) {
+            for (const ray of rayData) {
+                if (ray.hit && ray.type === 'sensor' && ray.hitType === 'food') {
+                    foodDetectedCount++;
+                }
+            }
+        }
+        const foodAvailabilityScore = Math.min(foodDetectedCount / 5, 1.0); // Normalize to 0-1
+        inputs.push(foodAvailabilityScore);
 
         // Collision damage: explicit awareness that crashing = energy loss
         inputs.push(Math.min(this.eventFlags.lastCollisionDamage / MAX_ENERGY, 1.0)); // Collision damage (0-1, normalized)
@@ -1661,17 +1685,17 @@ export class Agent {
         const geneticMaxThrust = MAX_THRUST * this.speedFactor;
         const invGeneticMaxThrust = 1 / Math.max(geneticMaxThrust, 0.001);
         const invMaxRotation = 1 / MAX_ROTATION;
-        
+
         // Current thrust level (0-1, normalized by max thrust)
         inputs.push(Math.abs(this.currentThrust) * invGeneticMaxThrust);
-        
+
         // Current rotation rate (-1 to 1, normalized by max rotation)
         inputs.push((this.previousRotation || 0) * invMaxRotation);
-        
+
         // Thrust change (delta from previous frame)
         const thrustChange = this.currentThrust - (this.previousThrust || 0);
         inputs.push(thrustChange * invGeneticMaxThrust);
-        
+
         // Rotation change (delta from previous frame)
         // Approximation: use current rotation rate as indicator of change
         const rotationChange = this.previousRotation || 0;
@@ -1729,25 +1753,25 @@ export class Agent {
                 this._cachedTargetAngle = Math.atan2(dy, dx);
                 this._lastTargetCacheUpdate = this.framesAlive;
             }
-            
+
             // Normalized distance to target (0-1, where 0 = very close, 1 = very far)
             const maxDist = this.maxRayDist * 2; // Use 2x ray distance as max
             inputs.push(Math.min(this._cachedTargetDistance / maxDist, 1.0));
-            
+
             // Direction to target (normalized angle difference)
             let angleToTarget = this._cachedTargetAngle - this.angle;
             while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
             while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
             inputs.push(angleToTarget / Math.PI); // Normalized to [-1, 1]
-            
+
             // Time since target was last seen (normalized)
             const framesSinceSeen = this.framesAlive - this.targetMemory.lastTargetSeen;
             inputs.push(Math.min(framesSinceSeen / this.targetMemory.attentionSpan, 1.0));
-            
+
             // Target type (food=1, mate=0.5, location=0)
-            inputs.push(this.targetMemory.currentTarget.type === 'food' ? 1.0 : 
-                       (this.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
-            
+            inputs.push(this.targetMemory.currentTarget.type === 'food' ? 1.0 :
+                (this.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
+
             // Target priority
             inputs.push(this.targetMemory.currentTarget.priority || 0.5);
         } else {
@@ -1762,20 +1786,37 @@ export class Agent {
         // --- GOAL MEMORY INPUTS ---
         // Update goal based on current state
         const previousGoal = this.goalMemory.currentGoal;
+
+        // Calculate dynamic FIND_FOOD priority based on energy level
+        let findFoodPriority = 0.7; // Base priority
+        if (this.energy < MODERATE_ENERGY_THRESHOLD && this.energy >= LOW_ENERGY_THRESHOLD) {
+            // Moderate hunger: increase priority
+            findFoodPriority = 0.85;
+        } else if (this.energy < LOW_ENERGY_THRESHOLD) {
+            // Low energy: REST takes priority, but FIND_FOOD should be high too
+            findFoodPriority = 0.9;
+        }
+
+        // Goal selection with hunger-based prioritization
         if (this.energy < LOW_ENERGY_THRESHOLD) {
             this.goalMemory.currentGoal = GOALS.REST;
             this.goalMemory.goalPriority = 1.0;
         } else if (this.dangerSmell > 0.7 || this.fear > 0.7) {
             this.goalMemory.currentGoal = GOALS.AVOID_DANGER;
             this.goalMemory.goalPriority = 0.9;
+        } else if (this.energy < MODERATE_ENERGY_THRESHOLD) {
+            // Prioritize food when energy is moderate (hungry but not critical)
+            this.goalMemory.currentGoal = GOALS.FIND_FOOD;
+            this.goalMemory.goalPriority = 0.85;
         } else if (this.wantsToReproduce && this.energy >= MIN_ENERGY_TO_REPRODUCE) {
+            // Only mate when energy is sufficient
             this.goalMemory.currentGoal = GOALS.FIND_MATE;
             this.goalMemory.goalPriority = 0.8;
         } else {
             this.goalMemory.currentGoal = GOALS.FIND_FOOD;
-            this.goalMemory.goalPriority = 0.7;
+            this.goalMemory.goalPriority = findFoodPriority; // Use dynamic priority
         }
-        
+
         // Update goal start frame if goal changed
         if (previousGoal !== this.goalMemory.currentGoal) {
             this.goalMemory.goalStartFrame = this.framesAlive;
@@ -1894,7 +1935,7 @@ export class Agent {
     tryMate(mate) {
         // Track reproduction attempt (even if it fails)
         this.reproductionAttempts++;
-        
+
         // FRAME-BASED maturation check (independent of game speed)
         const MATURATION_AGE_FRAMES = 600; // REDUCED to 10 seconds at 60 FPS (was 15s/900 frames)
         if (this.framesAlive < MATURATION_AGE_FRAMES || mate.framesAlive < MATURATION_AGE_FRAMES) return false;
@@ -1912,7 +1953,7 @@ export class Agent {
         }
 
         // Enhanced mate selection with fitness consideration and kinship checks
-        
+
         // 1. Kinship check: Avoid mating with close relatives (prevent inbreeding)
         const relatedness = this.getRelatedness(mate);
         const MIN_RELATEDNESS_FOR_MATING = KIN_RELATEDNESS_DISTANT; // Allow mating with distant relatives or less
@@ -1935,11 +1976,11 @@ export class Agent {
         // Normalize fitness for scoring (use relative fitness if population context available)
         const selfFitnessScore = this.fitness || 0;
         const mateFitnessScore = mate.fitness || 0;
-        
+
         // Calculate normalized fitness scores (0-1 scale, relative to current population if available)
         let selfNormalizedFitness = 0.5; // Default neutral
         let mateNormalizedFitness = 0.5;
-        
+
         if (this.simulation && this.simulation.agents && this.simulation.agents.length > 1) {
             const livingAgents = this.simulation.agents.filter(a => !a.isDead);
             if (livingAgents.length > 1) {
@@ -1947,7 +1988,7 @@ export class Agent {
                 const minFitness = Math.min(...fitnesses);
                 const maxFitness = Math.max(...fitnesses);
                 const range = maxFitness - minFitness;
-                
+
                 if (range > 0) {
                     selfNormalizedFitness = (selfFitnessScore - minFitness) / range;
                     mateNormalizedFitness = (mateFitnessScore - minFitness) / range;
@@ -1956,12 +1997,12 @@ export class Agent {
         }
 
         // Enhanced mate score calculation
-        const mateScore = mateNormalizedFitness * 0.4 + 
-                         mate.speedFactor * 0.3 + 
-                         (mate.energy / MAX_ENERGY) * 0.3;
-        const selfScore = selfNormalizedFitness * 0.4 + 
-                         this.speedFactor * 0.3 + 
-                         (this.energy / MAX_ENERGY) * 0.3;
+        const mateScore = mateNormalizedFitness * 0.4 +
+            mate.speedFactor * 0.3 +
+            (mate.energy / MAX_ENERGY) * 0.3;
+        const selfScore = selfNormalizedFitness * 0.4 +
+            this.speedFactor * 0.3 +
+            (this.energy / MAX_ENERGY) * 0.3;
 
         // Require mate score to be at least 50% of self score
         if (mateScore < selfScore * 0.5) return false;
@@ -2048,14 +2089,14 @@ export class Agent {
 
     birthChild() {
         const parentWeights = this.getWeights();
-        
+
         // Calculate parent fitnesses for fitness-weighted crossover
         this.calculateFitness();
         const parentFitness = this.fitness || 0;
         let fatherFitness = 0;
         if (this.simulation && this.simulation.agents) {
             // Try to find father agent to get its fitness
-            const fatherAgent = this.simulation.agents.find(a => 
+            const fatherAgent = this.simulation.agents.find(a =>
                 a.genealogy && a.genealogy.id === this.genealogy?.parent2Id
             );
             if (fatherAgent) {
@@ -2063,7 +2104,7 @@ export class Agent {
                 fatherFitness = fatherAgent.fitness || 0;
             }
         }
-        
+
         const childWeights = crossover(parentWeights, this.fatherWeights, this.logger, null, parentFitness, fatherFitness);
 
         // Track goal completion: FIND_MATE goal completed (birth is successful reproduction)
@@ -2118,13 +2159,13 @@ export class Agent {
                 const livingAgents = this.simulation.agents.filter(a => !a.isDead);
                 if (livingAgents.length > 1) {
                     const fitnesses = livingAgents.map(a => a.fitness || 0).sort((a, b) => a - b);
-                    
+
                     // Count how many agents have lower fitness
                     let lowerCount = 0;
                     for (const f of fitnesses) {
                         if (f < parentFitness) lowerCount++;
                     }
-                    
+
                     fitnessPercentile = lowerCount / livingAgents.length;
                 }
             }
@@ -2134,14 +2175,14 @@ export class Agent {
             let adaptiveMutationRate = this.simulation.mutationRate;
             if (fitnessPercentile !== null) {
                 // Scale: 0.5x for top 25%, 1.5x for bottom 25%, linear in between
-                const scaleFactor = fitnessPercentile >= 0.75 ? 0.5 : 
-                                  fitnessPercentile <= 0.25 ? 1.5 : 
-                                  1.0 + (0.75 - fitnessPercentile) * 0.5; // Linear interpolation
+                const scaleFactor = fitnessPercentile >= 0.75 ? 0.5 :
+                    fitnessPercentile <= 0.25 ? 1.5 :
+                        1.0 + (0.75 - fitnessPercentile) * 0.5; // Linear interpolation
                 adaptiveMutationRate = this.simulation.mutationRate * scaleFactor;
-                
+
                 // Clamp to reasonable bounds
-                adaptiveMutationRate = Math.max(this.simulation.mutationRate * 0.3, 
-                                               Math.min(this.simulation.mutationRate * 2.0, adaptiveMutationRate));
+                adaptiveMutationRate = Math.max(this.simulation.mutationRate * 0.3,
+                    Math.min(this.simulation.mutationRate * 2.0, adaptiveMutationRate));
             }
 
             // Apply mutation with fitness-aware rate
@@ -2195,27 +2236,27 @@ export class Agent {
         // 1. Productive Actions (Contribute to Base Score)
         baseScore += safeNumber(this.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
         baseScore += safeNumber(this.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS; // Reduced from 50 to 15
-        
+
         // Goal completion bonus: reward agents that successfully complete their goals
         const goalsCompleted = safeNumber(this.goalMemory?.goalsCompleted || 0, 0);
         baseScore += goalsCompleted * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
-        
+
         // Reproduction attempt bonus: reward agents that attempt reproduction (even if unsuccessful)
         const reproductionAttempts = safeNumber(this.reproductionAttempts || 0, 0);
         baseScore += reproductionAttempts * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
-        
+
         // Movement rewards - NORMALIZED by distance traveled to prevent tiny movements from inflating fitness
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
         const ageInSeconds = safeNumber(this.age || 0, 0);
-        
+
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             // Normalize movement metrics by distance traveled (per 100 units of distance)
             const distanceNormalizer = distanceTravelled / 100;
-            
+
             // Direction changes: cap and normalize
             const directionChangedNormalized = Math.min(safeNumber(this.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
             baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
-            
+
             // Speed changes: cap and normalize
             const speedChangedNormalized = Math.min(safeNumber(this.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
             baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
@@ -2224,7 +2265,7 @@ export class Agent {
             const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
             baseScore -= Math.min(movementPenalty, FITNESS_PENALTIES.MINIMAL_MOVEMENT);
         }
-        
+
         baseScore += safeNumber(explorationPercentage, 0) * FITNESS_MULTIPLIERS.EXPLORATION; // Increased from 100 to 200
         baseScore += safeNumber(this.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
         baseScore += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
@@ -2232,14 +2273,14 @@ export class Agent {
         // Navigation behavior rewards - NORMALIZED by distance to prevent accumulation from tiny movements
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             const distanceNormalizer = distanceTravelled / 100;
-            
+
             // Normalize navigation rewards by distance
             const turnsTowardsFoodNormalized = safeNumber(this.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD; // Increased from 5 to 8
-            
+
             const turnsAwayFromObstaclesNormalized = safeNumber(this.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES; // Increased from 5 to 8
-            
+
             const foodApproachesNormalized = safeNumber(this.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES; // Increased from 10 to 15
         }
@@ -2302,10 +2343,10 @@ export class Agent {
         // Separate survival bonus (max 500 points) instead of 3x multiplier
         // This prevents passive survivalists from achieving high fitness
         // Only applies if agent lives over 500 seconds (agents are living much longer now)
-        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
             Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
         // Extended bonus for very long-lived agents (reduced impact)
-        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
             (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
 
         // Final fitness = adjusted base score + survival bonuses (not multiplied)
@@ -2323,7 +2364,7 @@ export class Agent {
             turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
         ];
         const criteriaMet = criteria.filter(Boolean).length;
-        
+
         // All 5 criteria must pass, OR 4/5 criteria with exceptional fitness (from constants)
         this.fit = criteriaMet >= 5 || (criteriaMet >= 4 && this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD);
     }
@@ -2402,7 +2443,7 @@ export class Agent {
             return;
         }
         this._cleanedUp = true;
-        
+
         // Clear GPU validation flag
         this._gpuWeightsValidated = false;
 

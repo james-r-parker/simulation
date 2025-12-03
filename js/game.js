@@ -1318,8 +1318,8 @@ export class Simulation {
 
                             // === ASEXUAL REPRODUCTION (SPLITTING) ===
                             // When energy is very high, split to create clone
-                            // Require agent to be "fit" for splitting
-                            if (agent.fit &&
+                            // Require agent to be mature (not "fit" - that's too strict and blocks all reproduction)
+                            if (agent.framesAlive >= MATURATION_AGE_FRAMES &&
                                 agent.energy > MIN_ENERGY_FOR_SPLITTING &&
                                 agent.reproductionCooldown <= 0 &&
                                 !agent.isPregnant) {

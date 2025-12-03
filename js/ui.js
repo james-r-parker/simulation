@@ -12,7 +12,13 @@ import {
     MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL,
     EXPLORATION_GRID_WIDTH,
     EXPLORATION_GRID_HEIGHT,
-    TARGET_AGE_SECONDS
+    TARGET_AGE_SECONDS,
+    FITNESS_MULTIPLIERS,
+    FITNESS_PENALTIES,
+    SURVIVAL_BONUSES,
+    MIN_DISTANCE_FOR_MOVEMENT_REWARDS,
+    TEMPERATURE_MAX,
+    FPS_TARGET
 } from './constants.js';
 
 const safeNumber = (value, fallback = 0) => {
@@ -976,6 +982,11 @@ export function closeAgentModal() {
 }
 
 function updateAgentModal(agent, simulation) {
+    // Ensure fitness is up to date for accurate display
+    if (agent && typeof agent.calculateFitness === 'function') {
+        agent.calculateFitness();
+    }
+
     const idEl = document.getElementById('modal-agent-id');
     if (idEl) idEl.textContent = `Agent #${agent.id || '?'}`;
 
@@ -1052,52 +1063,227 @@ function updateAgentModal(agent, simulation) {
         explorationVal.textContent = `${explorationPct.toFixed(1)}%`;
     }
 
+    // Calculate fitness components exactly as in calculateFitness()
+    const safeNum = (val, defaultVal = 0) => {
+        if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
+        return val;
+    };
+
+    const distanceTravelled = safeNum(agent.distanceTravelled || 0, 0);
+    const ageInSeconds = safeNum(agent.age || 0, 0);
+    const energySpent = safeNum(agent.energySpent || 0, 0);
+
+    // Calculate normalized values (matching fitness calculation)
+    let turnsTowardsFoodNormalized = 0;
+    let turnsAwayFromObstaclesNormalized = 0;
+    let foodApproachesNormalized = 0;
+    let directionChangedNormalized = 0;
+    let speedChangedNormalized = 0;
+
+    if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+        const distanceNormalizer = distanceTravelled / 100;
+        turnsTowardsFoodNormalized = safeNum(agent.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+        turnsAwayFromObstaclesNormalized = safeNum(agent.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
+        foodApproachesNormalized = safeNum(agent.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
+        directionChangedNormalized = Math.min(safeNum(agent.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
+        speedChangedNormalized = Math.min(safeNum(agent.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
+    }
+
+    // Temperature bonus/penalty (matching fitness calculation)
+    const avgTemperature = agent.temperatureSamples > 0 ? safeNum(agent.temperatureSum / agent.temperatureSamples, 0) : 0;
+    let temperatureBonus = 0;
+    let temperaturePenalty = 0;
+    if (avgTemperature < 1) {
+        temperaturePenalty = (1 - avgTemperature) * FITNESS_MULTIPLIERS.TEMPERATURE_PENALTY_MAX;
+    } else {
+        temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * FITNESS_MULTIPLIERS.TEMPERATURE_BONUS_MAX;
+    }
+
+    // Calculate base score components (matching fitness calculation)
+    let baseScore = 0;
+    baseScore += temperatureBonus - temperaturePenalty;
+    baseScore += safeNum(agent.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
+    baseScore += safeNum(agent.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS;
+    baseScore += safeNum(agent.goalMemory?.goalsCompleted || 0, 0) * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
+    baseScore += safeNum(agent.reproductionAttempts || 0, 0) * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
+    
+    if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+        baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
+        baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
+    } else {
+        const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
+        baseScore -= Math.min(movementPenalty, FITNESS_PENALTIES.MINIMAL_MOVEMENT);
+    }
+
+    const explorationPct = (agent.exploredCells?.size || 0) / (EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT) * 100;
+    baseScore += safeNum(explorationPct, 0) * FITNESS_MULTIPLIERS.EXPLORATION;
+    baseScore += safeNum(agent.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
+    baseScore += safeNum(agent.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
+
+    if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+        baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD;
+        baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES;
+        baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES;
+    }
+
+    // Synergy bonus
+    const offspring = safeNum(agent.offspring || 0, 0);
+    const foodEaten = safeNum(agent.foodEaten || 0, 0);
+    let synergyBonus = 0;
+    if (offspring > 0 && foodEaten > 0) {
+        synergyBonus = (offspring * 2 + foodEaten) * FITNESS_MULTIPLIERS.REPRODUCTION_FOOD_SYNERGY;
+        baseScore += synergyBonus;
+    }
+
+    // Efficiency
+    let efficiency = 0;
+    if (energySpent > 0) {
+        efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
+        baseScore += efficiency * FITNESS_MULTIPLIERS.EFFICIENCY;
+    }
+
+    // Successful escapes
+    baseScore += safeNum(agent.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
+
+    // Penalties
+    const consecutiveTurns = safeNum(agent.consecutiveTurns || 0, 0);
+    const cappedTurns = Math.min(consecutiveTurns, 50);
+    const circlePenalty = Math.min(cappedTurns * FITNESS_PENALTIES.CIRCULAR_MOVEMENT, 2000);
+    baseScore -= circlePenalty;
+
+    const timesHitObstacle = safeNum(agent.timesHitObstacle || 0, 0);
+    const collisions = safeNum(agent.collisions || 0, 0);
+    const wallHits = collisions - timesHitObstacle;
+    baseScore -= timesHitObstacle * FITNESS_PENALTIES.OBSTACLE_HIT;
+    baseScore -= wallHits * FITNESS_PENALTIES.WALL_HIT;
+
+    // Obstacle-free frames
+    const ageInFrames = ageInSeconds * FPS_TARGET;
+    const obstacleFreeFrames = Math.max(0, ageInFrames - (timesHitObstacle * 30));
+    let obstacleFreeFramesBonus = 0;
+    if (obstacleFreeFrames > 200) {
+        obstacleFreeFramesBonus = (obstacleFreeFrames / 200) * 25;
+        baseScore += obstacleFreeFramesBonus;
+    }
+
+    // Inactivity penalty
+    let inactivityPenalty = 0;
+    if (ageInSeconds > 20 && baseScore < 50) {
+        const inactivityDuration = Math.max(0, ageInSeconds - 20);
+        inactivityPenalty = inactivityDuration * FITNESS_PENALTIES.INACTIVITY;
+    }
+
+    const adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
+
+    // Survival bonuses
+    const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
+    const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
+
+    // Update display values - show both raw and normalized where applicable
     const turnsFoodVal = document.getElementById('modal-turns-food-val');
-    if (turnsFoodVal) turnsFoodVal.textContent = (agent.turnsTowardsFood || 0).toFixed(1);
+    if (turnsFoodVal) {
+        const raw = safeNum(agent.turnsTowardsFood || 0, 0);
+        turnsFoodVal.textContent = `${raw.toFixed(1)} (norm: ${turnsTowardsFoodNormalized.toFixed(2)})`;
+    }
 
     const cleverTurnsVal = document.getElementById('modal-clever-turns-val');
     if (cleverTurnsVal) cleverTurnsVal.textContent = (agent.cleverTurns || 0).toFixed(1);
 
     const directionChangesVal = document.getElementById('modal-direction-changes-val');
-    if (directionChangesVal) directionChangesVal.textContent = (agent.directionChanged || 0).toFixed(1);
+    if (directionChangesVal) {
+        const raw = Math.min(safeNum(agent.directionChanged || 0, 0), 500);
+        directionChangesVal.textContent = `${raw.toFixed(1)} (norm: ${directionChangedNormalized.toFixed(2)})`;
+    }
 
     const speedChangesVal = document.getElementById('modal-speed-changes-val');
-    if (speedChangesVal) speedChangesVal.textContent = (agent.speedChanged || 0).toFixed(1);
+    if (speedChangesVal) {
+        const raw = Math.min(safeNum(agent.speedChanged || 0, 0), 200);
+        speedChangesVal.textContent = `${raw.toFixed(1)} (norm: ${speedChangedNormalized.toFixed(2)})`;
+    }
 
     const turnsObstaclesVal = document.getElementById('modal-turns-obstacles-val');
-    if (turnsObstaclesVal) turnsObstaclesVal.textContent = (agent.turnsAwayFromObstacles || 0).toFixed(1);
+    if (turnsObstaclesVal) {
+        const raw = safeNum(agent.turnsAwayFromObstacles || 0, 0);
+        turnsObstaclesVal.textContent = `${raw.toFixed(1)} (norm: ${turnsAwayFromObstaclesNormalized.toFixed(2)})`;
+    }
 
     const foodApproachesVal = document.getElementById('modal-food-approaches-val');
-    if (foodApproachesVal) foodApproachesVal.textContent = (agent.foodApproaches || 0).toFixed(1);
+    if (foodApproachesVal) {
+        const raw = safeNum(agent.foodApproaches || 0, 0);
+        foodApproachesVal.textContent = `${raw.toFixed(1)} (norm: ${foodApproachesNormalized.toFixed(2)})`;
+    }
 
     const efficiencyVal = document.getElementById('modal-efficiency-val');
     if (efficiencyVal) {
-        const energySpent = agent.energySpent || 0;
-        const distanceTravelled = agent.distanceTravelled || 0;
-        const efficiency = energySpent > 50 ? Math.min(distanceTravelled / energySpent, 10.0) : 0;
         efficiencyVal.textContent = efficiency.toFixed(2);
     }
 
     const obstacleHitsVal = document.getElementById('modal-obstacle-hits-val');
-    if (obstacleHitsVal) obstacleHitsVal.textContent = (agent.timesHitObstacle || 0).toFixed(0);
+    if (obstacleHitsVal) obstacleHitsVal.textContent = timesHitObstacle.toFixed(0);
 
     const collisionsVal = document.getElementById('modal-collisions-val');
-    if (collisionsVal) collisionsVal.textContent = (agent.collisions || 0).toFixed(0);
+    if (collisionsVal) collisionsVal.textContent = collisions.toFixed(0);
+
+    // Add new metrics that are missing
+    const wallHitsVal = document.getElementById('modal-wall-hits-val');
+    if (wallHitsVal) wallHitsVal.textContent = wallHits.toFixed(0);
 
     const survivalBonusVal = document.getElementById('modal-survival-bonus-val');
-    if (survivalBonusVal) survivalBonusVal.textContent = (agent.age || 0).toFixed(1);
+    if (survivalBonusVal) survivalBonusVal.textContent = survivalBonus.toFixed(0);
 
+    const baseScoreVal = document.getElementById('modal-base-score-val');
+    if (baseScoreVal) baseScoreVal.textContent = baseScore.toFixed(1);
+
+    const adjustedBaseScoreVal = document.getElementById('modal-adjusted-base-score-val');
+    if (adjustedBaseScoreVal) adjustedBaseScoreVal.textContent = adjustedBaseScore.toFixed(1);
+
+    const temperatureBonusVal = document.getElementById('modal-temperature-bonus-val');
+    if (temperatureBonusVal) {
+        const tempValue = temperatureBonus > 0 ? `+${temperatureBonus.toFixed(1)}` : `-${temperaturePenalty.toFixed(1)}`;
+        temperatureBonusVal.textContent = tempValue;
+    }
+
+    const goalsCompletedVal = document.getElementById('modal-goals-completed-val');
+    if (goalsCompletedVal) goalsCompletedVal.textContent = (agent.goalMemory?.goalsCompleted || 0).toFixed(0);
+
+    const reproductionAttemptsVal = document.getElementById('modal-reproduction-attempts-val');
+    if (reproductionAttemptsVal) reproductionAttemptsVal.textContent = (agent.reproductionAttempts || 0).toFixed(0);
+
+    const synergyBonusVal = document.getElementById('modal-synergy-bonus-val');
+    if (synergyBonusVal) synergyBonusVal.textContent = synergyBonus > 0 ? `+${synergyBonus.toFixed(1)}` : '0';
+
+    const successfulEscapesVal = document.getElementById('modal-successful-escapes-val');
+    if (successfulEscapesVal) successfulEscapesVal.textContent = (agent.successfulEscapes || 0).toFixed(0);
+
+    const obstacleFreeFramesVal = document.getElementById('modal-obstacle-free-frames-val');
+    if (obstacleFreeFramesVal) {
+        obstacleFreeFramesVal.textContent = `${obstacleFreeFrames.toFixed(0)} (bonus: +${obstacleFreeFramesBonus.toFixed(1)})`;
+    }
+
+    const inactivityPenaltyVal = document.getElementById('modal-inactivity-penalty-val');
+    if (inactivityPenaltyVal) inactivityPenaltyVal.textContent = inactivityPenalty > 0 ? `-${inactivityPenalty.toFixed(1)}` : '0';
+
+    const rawSurvivalBonusVal = document.getElementById('modal-raw-survival-bonus-val');
+    if (rawSurvivalBonusVal) rawSurvivalBonusVal.textContent = rawSurvivalBonus.toFixed(1);
+
+    const distanceTravelledVal = document.getElementById('modal-distance-travelled-val');
+    if (distanceTravelledVal) distanceTravelledVal.textContent = distanceTravelled.toFixed(1);
+
+    const energySpentVal = document.getElementById('modal-energy-spent-val');
+    if (energySpentVal) energySpentVal.textContent = energySpent.toFixed(1);
+
+    // Remove old survival multiplier (no longer used)
     const survivalMultiVal = document.getElementById('modal-survival-multi-val');
     if (survivalMultiVal) {
-        const survivalMultiplier = Math.min(1 + ((agent.age || 0) / 30), 3.0);
-        survivalMultiVal.textContent = `${survivalMultiplier.toFixed(2)}x`;
+        survivalMultiVal.textContent = 'N/A';
+        survivalMultiVal.title = 'Survival multiplier system replaced with bonus system';
     }
 
     const circlePenaltyVal = document.getElementById('modal-circle-penalty-val');
     if (circlePenaltyVal) {
-        const consecutiveTurns = agent.consecutiveTurns || 0;
-        const circlePenalty = Math.min(consecutiveTurns * 20, 2000);
-        circlePenaltyVal.textContent = circlePenalty.toFixed(0);
+        circlePenaltyVal.textContent = `-${circlePenalty.toFixed(0)}`;
     }
 }
 
@@ -1712,6 +1898,26 @@ function showSurvivalPerformanceModal(simulation) {
         return;
     }
 
+    // Helper function to calculate statistics (avg, median, p99, min, max)
+    const calculateStats = (values) => {
+        if (!values || values.length === 0) {
+            return { avg: 0, median: 0, p99: 0, min: 0, max: 0 };
+        }
+        const sorted = [...values].sort((a, b) => a - b);
+        const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const p99Index = Math.floor(sorted.length * 0.99);
+        const p99 = sorted[Math.min(p99Index, sorted.length - 1)];
+        const min = sorted[0];
+        const max = sorted[sorted.length - 1];
+        return { avg, median, p99, min, max };
+    };
+
+    // Format stats helper
+    const formatStats = (stats, decimals = 1) => {
+        return `avg=${stats.avg.toFixed(decimals)}, median=${stats.median.toFixed(decimals)}, p99=${stats.p99.toFixed(decimals)}, min=${stats.min.toFixed(decimals)}, max=${stats.max.toFixed(decimals)}`;
+    };
+
     // Calculate stats (same as updateDashboard)
     const bestFitness = safeNumber(simulation.bestAgent ? simulation.bestAgent.fitness : 0, 0);
     const avgFitness = averageMetric(livingAgents, a => a.fitness);
@@ -1721,6 +1927,31 @@ function showSurvivalPerformanceModal(simulation) {
     const avgKills = averageMetric(livingAgents, a => a.kills);
     const avgCollisions = averageMetric(livingAgents, a => a.collisions);
     const avgWallHits = averageMetric(livingAgents, a => a.timesHitObstacle);
+
+    // Calculate statistical distributions
+    const fitnessValues = livingAgents.map(a => safeNumber(a.fitness, 0));
+    const ageValues = livingAgents.map(a => safeNumber(a.age || 0, 0));
+    const energyValues = livingAgents.map(a => safeNumber(a.energy, 0));
+    const foodValues = livingAgents.map(a => safeNumber(a.foodEaten || 0, 0));
+    const killsValues = livingAgents.map(a => safeNumber(a.kills || 0, 0));
+    const collisionsValues = livingAgents.map(a => safeNumber(a.collisions || 0, 0));
+    const wallHitsValues = livingAgents.map(a => safeNumber(a.timesHitObstacle || 0, 0));
+    const offspringValues = livingAgents.map(a => safeNumber(a.offspring || 0, 0));
+    const energySpentValues = livingAgents.map(a => safeNumber(a.energySpent || 0, 0));
+    const distanceTravelledValues = livingAgents.map(a => safeNumber(a.distanceTravelled || 0, 0));
+    const reproductionAttemptsValues = livingAgents.map(a => safeNumber(a.reproductionAttempts || 0, 0));
+
+    const statsFitness = calculateStats(fitnessValues);
+    const statsAge = calculateStats(ageValues);
+    const statsEnergy = calculateStats(energyValues);
+    const statsFood = calculateStats(foodValues);
+    const statsKills = calculateStats(killsValues);
+    const statsCollisions = calculateStats(collisionsValues);
+    const statsWallHits = calculateStats(wallHitsValues);
+    const statsOffspring = calculateStats(offspringValues);
+    const statsEnergySpent = calculateStats(energySpentValues);
+    const statsDistanceTravelled = calculateStats(distanceTravelledValues);
+    const statsReproductionAttempts = calculateStats(reproductionAttemptsValues);
 
     const matureAgents = livingAgents.filter(a => a.age >= 10).length; // 10 seconds = 600 frames
     const maturationRate = (matureAgents / livingAgents.length) * 100;
@@ -1768,6 +1999,45 @@ function showSurvivalPerformanceModal(simulation) {
                             <div class="stat-cell"><strong>Collision-Free:</strong> <span class="${collisionFreePercent >= 50 ? 'highlight-green' : collisionFreePercent >= 25 ? 'highlight-yellow' : 'highlight-red'}">${collisionFreePercent.toFixed(1)}%</span></div>
                             <div class="stat-cell"><strong>Learning Rate:</strong> ${simulation.fitnessHistory.length >= 2 ? ((simulation.fitnessHistory[simulation.fitnessHistory.length - 1] - simulation.fitnessHistory[simulation.fitnessHistory.length - 2]) / 2).toFixed(1) : 'N/A'}</div>
                             <div class="stat-cell"><strong>Population Δ:</strong> ${livingAgents.length - (simulation.previousPopulationCount || livingAgents.length)}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #444;">
+                        <h3 style="margin-bottom: 15px; color: #00BCD4;">📈 Statistical Distributions</h3>
+                        <div class="compact-stats-grid" style="font-size: 0.85em;">
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Fitness:</strong><br/><span style="color: #fff;">${formatStats(statsFitness)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Age (s):</strong><br/><span style="color: #fff;">${formatStats(statsAge)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Energy:</strong><br/><span style="color: #fff;">${formatStats(statsEnergy)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Food Eaten:</strong><br/><span style="color: #fff;">${formatStats(statsFood, 1)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Kills:</strong><br/><span style="color: #fff;">${formatStats(statsKills, 2)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Collisions:</strong><br/><span style="color: #fff;">${formatStats(statsCollisions, 1)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Wall Hits:</strong><br/><span style="color: #fff;">${formatStats(statsWallHits, 1)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Offspring:</strong><br/><span style="color: #fff;">${formatStats(statsOffspring, 2)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Energy Spent:</strong><br/><span style="color: #fff;">${formatStats(statsEnergySpent, 1)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Distance Travelled:</strong><br/><span style="color: #fff;">${formatStats(statsDistanceTravelled, 1)}</span></div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-cell"><strong style="color: #4CAF50;">Reproduction Attempts:</strong><br/><span style="color: #fff;">${formatStats(statsReproductionAttempts, 1)}</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>

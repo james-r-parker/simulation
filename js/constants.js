@@ -154,11 +154,12 @@ export const MAX_ENERGY = 25000;
 
 /**
  * Minimum energy required to attempt reproduction.
+ * Reduced to enable reproduction with food scarcity.
  * @type {number}
  * @constant
- * @default 250
+ * @default 200
  */
-export const MIN_ENERGY_TO_REPRODUCE = 250;
+export const MIN_ENERGY_TO_REPRODUCE = 200;
 
 /**
  * Base energy cost for reproduction attempts.
@@ -179,12 +180,12 @@ export const CHILD_STARTING_ENERGY = 1750;
 /**
  * Minimum energy required for asexual reproduction (splitting).
  * Agents must have this much energy to split and create a clone.
- * Set to 6000 (well above average energy ~1765 but below MAX_ENERGY).
+ * Reduced to 1500 to make splitting more accessible - max energy is ~2500.
  * @type {number}
  * @constant
- * @default 6000
+ * @default 1500
  */
-export const MIN_ENERGY_FOR_SPLITTING = 6000;
+export const MIN_ENERGY_FOR_SPLITTING = 3500;
 
 /**
  * Target average age for agents in seconds.
@@ -229,6 +230,15 @@ export const LOW_ENERGY_THRESHOLD = 100;
  * @default 200
  */
 export const DEATH_RISK_THRESHOLD = 200;
+
+/**
+ * Energy level below which agents prioritize food-seeking over mating.
+ * Agents above this threshold can pursue mating, below prioritize food.
+ * @type {number}
+ * @constant
+ * @default 500
+ */
+export const MODERATE_ENERGY_THRESHOLD = 500;
 
 // ============================================================================
 // AGENT MOVEMENT PHYSICS
@@ -403,11 +413,12 @@ export const BRAKING_FRICTION = 0.90;
 /**
  * Energy lost per frame just by existing (metabolic cost).
  * Increased to make survival more challenging and reduce average lifespan.
+ * Current avg age 1000s vs 120s target - increasing to 0.05 to aggressively reduce lifespan.
  * @type {number}
  * @constant
- * @default 0.018
+ * @default 0.05
  */
-export const PASSIVE_LOSS = 0.018;
+export const PASSIVE_LOSS = 0.05;
 
 /**
  * Energy cost multiplier for movement (velocity * this).
@@ -878,11 +889,12 @@ export const FOOD_SPAWN_CAP = 300;
 
 /**
  * Probability per frame of attempting to spawn new food.
+ * Reduced to lower energy buffer from 269.6% toward 150-200% target.
  * @type {number}
  * @constant
- * @default 0.12
+ * @default 0.02
  */
-export const FOOD_SPAWN_RATE = 0.04;
+export const FOOD_SPAWN_RATE = 0.02;
 
 /**
  * Probability that spawned food will be high-value type.
@@ -919,11 +931,12 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400;
 /**
  * Base energy value of normal food.
  * Reduced to decrease food abundance and create more scarcity.
+ * Further reduced to lower energy buffer toward target range.
  * @type {number}
  * @constant
- * @default 200
+ * @default 120
  */
-export const FOOD_ENERGY_NORMAL_BASE = 200;
+export const FOOD_ENERGY_NORMAL_BASE = 120;
 
 /**
  * Random variance in normal food energy (± this amount).
@@ -936,11 +949,12 @@ export const FOOD_ENERGY_NORMAL_VARIANCE = 20;
 /**
  * Base energy value of high-value food.
  * Reduced to decrease food abundance and create more scarcity.
+ * Further reduced to lower energy buffer, maintaining 2:1 ratio with normal food.
  * @type {number}
  * @constant
- * @default 400
+ * @default 240
  */
-export const FOOD_ENERGY_HIGH_BASE = 400;
+export const FOOD_ENERGY_HIGH_BASE = 240;
 
 /**
  * Random variance in high-value food energy (± this amount).
@@ -1641,14 +1655,13 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
 /**
  * Minimum food items consumed to qualify.
  * 
- * For a 500-second agent, this should represent active foraging.
- * At 500 seconds, a good agent should eat at least 15-20 food items.
- * Set to 12 to ensure active behavior, not just passive survival.
+ * Reduced from 5 to 3 - with current food scarcity, max observed is 4.0.
+ * Still requires active foraging behavior, not just passive survival.
  * @type {number}
  * @constant
- * @default 12
+ * @default 3
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 12;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 5;
 
 /**
  * Minimum lifespan in frames to qualify.
@@ -1672,26 +1685,25 @@ export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE
 /**
  * Minimum world exploration percentage required.
  * 
- * For a 500-second agent, 2.5% is reasonable but could be higher.
- * Set to 3.0% to ensure agents actively explore, not just survive in one area.
+ * Reduced from 3.0% to 2.0% - with current scarcity, max observed is 2.08%.
+ * Still ensures agents actively explore, not just survive in one area.
  * @type {number}
  * @constant
- * @default 3.0
+ * @default 2.0
  */
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 3.0;
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 2.0;
 
 /**
  * Minimum successful food-seeking behaviors.
  * 
- * For a 500-second agent, 5 turns is far too low.
- * A good agent should demonstrate consistent food-seeking behavior.
- * Set to 20 to ensure active navigation towards food sources.
+ * Reduced from 15 to 10 - with current scarcity, avg is 6.47, max observed is 55.3.
+ * Still ensures active navigation towards food sources.
  * Note: This is raw count, not normalized (normalization happens in fitness calc).
  * @type {number}
  * @constant
- * @default 20
+ * @default 10
  */
-export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 20;
+export const MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL = 10;
 
 /**
  * Maximum number of gene pools stored in database.
