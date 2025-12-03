@@ -142,7 +142,7 @@ export const ENERGY_TO_SIZE_RATIO = 250;
  * @constant
  * @default 2500
  */
-export const INITIAL_AGENT_ENERGY = 2500;
+export const INITIAL_AGENT_ENERGY = 800;
 
 /**
  * Maximum energy an agent can accumulate.
@@ -420,7 +420,7 @@ export const BRAKING_FRICTION = 0.90;
  * @constant
  * @default 0.05
  */
-export const PASSIVE_LOSS = 0.05;
+export const PASSIVE_LOSS = 0.1;
 
 /**
  * Energy cost multiplier for movement (velocity * this).
@@ -428,7 +428,7 @@ export const PASSIVE_LOSS = 0.05;
  * @constant
  * @default 0.02
  */
-export const MOVEMENT_COST_MULTIPLIER = 0.02;
+export const MOVEMENT_COST_MULTIPLIER = 0.04;
 
 /**
  * Energy cost multiplier for rotation (rotation speed * this).
@@ -760,7 +760,7 @@ export const FITNESS_MULTIPLIERS = {
     // Core survival behaviors (REBALANCED - Recommendation 1 & 2)
     FOOD_EATEN: 150,              // Points per food item eaten (reduced from 500 to prevent dominance)
     OFFSPRING: 150,               // Points per offspring produced
-    KILLS: 400,                   // Points per agent killed (increased from 200 to boost predator viability)
+    KILLS: 500,                   // Points per agent killed (increased to boost predator viability)
     PREDATOR_SUCCESS_BONUS: 100,  // Additional bonus for predator specialization successful hunts
 
     // Exploration and movement
@@ -811,7 +811,7 @@ export const FITNESS_PENALTIES = {
  * @constant
  */
 export const SURVIVAL_BONUSES = {
-    BASE_MULTIPLIER: 1,           // Points per second of survival (reduced from 10)
+    BASE_MULTIPLIER: 5,           // Points per second of survival (increased from 1 to reward longevity)
     BASE_CAP: 500,                 // Maximum base survival bonus
     EXTENDED_THRESHOLD: 500,       // Seconds before survival bonus kicks in (increased from 30)
     EXTENDED_DIVISOR: 10           // Divisor for extended survival bonus
@@ -942,7 +942,7 @@ export const FOOD_SPAWN_NEAR_AGENT_DISTANCE_MAX = 400;
  * @constant
  * @default 120
  */
-export const FOOD_ENERGY_NORMAL_BASE = 120;
+export const FOOD_ENERGY_NORMAL_BASE = 50;
 
 /**
  * Random variance in normal food energy (± this amount).
@@ -960,7 +960,7 @@ export const FOOD_ENERGY_NORMAL_VARIANCE = 20;
  * @constant
  * @default 240
  */
-export const FOOD_ENERGY_HIGH_BASE = 240;
+export const FOOD_ENERGY_HIGH_BASE = 100;
 
 /**
  * Random variance in high-value food energy (± this amount).
