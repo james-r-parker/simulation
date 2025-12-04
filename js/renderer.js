@@ -250,14 +250,8 @@ export class WebGLRenderer {
         // 1. Dispose of agent meshes and materials
         if (this.agentMeshes) {
             for (const [geneId, mesh] of this.agentMeshes.entries()) {
-                if (mesh.body && mesh.body.geometry) {
-                    mesh.body.geometry.dispose();
-                }
                 if (mesh.body && mesh.body.material) {
                     releaseMeshStandardMaterial(mesh.body.material);
-                }
-                if (mesh.border && mesh.border.geometry) {
-                    mesh.border.geometry.dispose();
                 }
                 if (mesh.border && mesh.border.material) {
                     releaseMeshStandardMaterial(mesh.border.material);

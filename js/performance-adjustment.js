@@ -128,3 +128,4 @@ export function performAutoAdjustment(simulation, fpsHistory, targetFps, logger,
 
 
 
+

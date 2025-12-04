@@ -345,7 +345,8 @@ export function createNeuralGeometry(nodes, connections, neuralBackgroundGroup, 
                 // Add organic noise variation
                 float organicNoise = noise(pos * 0.01 + time * 0.05) * 0.3;
 
-                float alpha = maxOpacity * (firingIntensity + organicNoise);
+                // Boost alpha for more visibility
+                float alpha = maxOpacity * (firingIntensity + organicNoise) * 1.5;
 
                 // Dynamic color based on firing state
                 vec3 finalColor = vColor;
@@ -363,7 +364,8 @@ export function createNeuralGeometry(nodes, connections, neuralBackgroundGroup, 
                     finalColor = mix(finalColor, vec3(0.2, 0.8, 1.0), 0.4);
                 }
 
-                gl_FragColor = vec4(finalColor, alpha);
+                // Boost final color for vibrancy
+                gl_FragColor = vec4(finalColor * 1.2, alpha);
             }
         `,
         transparent: true,
@@ -501,3 +503,4 @@ export function disposeNeuralBackground(neuralSystem, neuralBackgroundGroup) {
     if (neuralSystem.nodes) neuralSystem.nodes.length = 0;
     if (neuralSystem.connections) neuralSystem.connections.length = 0;
 }
+

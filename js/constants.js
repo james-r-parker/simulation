@@ -102,7 +102,7 @@ export const SEASON_LENGTH = 3600;
  * @constant
  * @default 5
  */
-export const RENDER_FRAME_SKIP = 3;
+export const RENDER_FRAME_SKIP = 1;
 
 // ============================================================================
 // AGENT PHYSICAL PROPERTIES
@@ -2651,7 +2651,7 @@ export const NEURAL_SYNAPSE_WIDTH = 1.5;
  * @constant
  * @default 0.02
  */
-export const NEURAL_PULSE_SPEED = 0.02;
+export const NEURAL_PULSE_SPEED = 0.05;
 
 /**
  * Animation speed for energy flow along synapses (pixels per frame).
@@ -2659,7 +2659,7 @@ export const NEURAL_PULSE_SPEED = 0.02;
  * @constant
  * @default 2
  */
-export const NEURAL_ENERGY_FLOW_SPEED = 2;
+export const NEURAL_ENERGY_FLOW_SPEED = 4;
 
 /**
  * Maximum opacity for neural elements (0-1 range).
@@ -2677,7 +2677,7 @@ export const NEURAL_MAX_OPACITY = 0.08;
  * @constant
  * @default 0.02
  */
-export const NEURAL_SPARK_PROBABILITY = 0.02;
+export const NEURAL_SPARK_PROBABILITY = 0.05;
 
 /**
  * Speed of traveling waves along synapses (pixels per frame).
@@ -2686,7 +2686,7 @@ export const NEURAL_SPARK_PROBABILITY = 0.02;
  * @constant
  * @default 0.08
  */
-export const NEURAL_FIRING_SPEED = 0.08;
+export const NEURAL_FIRING_SPEED = 0.15;
 
 /**
  * Number of simultaneous wave patterns for complex firing.
