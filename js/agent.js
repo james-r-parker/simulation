@@ -160,21 +160,23 @@ export class Agent {
         // The first layer processes (perception + hiddenState) together, which is why hiddenState
         // is included in inputSize. This is the standard RNN architecture pattern.
         // Dynamic input sizing: Calculate based on actual input groups to prevent crashes from mismatches
-        const PERCEPTION_INPUTS = 
+        const PERCEPTION_INPUTS =
             (this.numSensorRays * 5) +     // Ray sensors
             (this.numAlignmentRays * 1) +  // Alignment rays
-            8 +   // Base state (hunger, fear, aggression, energy, age, speed, angle sin, angle cos)
+            9 +   // Base state (hunger, fear, aggression, energy, age, speed, angle sin, angle cos, in shadow)
             4 +   // Temperature
             1 +   // Season
             8 +   // Recent memory
             3 +   // Lifetime metrics
             5 +   // Event flags
-            11 +  // Awareness metrics (Death risk, Food urgency, Collision risk, etc.)
+            13 +  // Awareness metrics (Death risk, Food energy gain, Food urgency, Food proximity, Food availability, Collision damage, Collision risk, Predator threat, Attack damage, Vulnerability, Reproduction readiness, Reproduction benefit, Mate availability)
             4 +   // Movement state (Thrust/Rot + deltas)
             6 +   // Target memory (Dist, Sin, Cos, Time, Type, Prio)
             6;    // Goal memory (Food, Mate, Danger, Rest, Prio, Duration)
 
-        this.inputSize = PERCEPTION_INPUTS + this.hiddenState.length;
+        // CRITICAL: Do NOT add hiddenSize here - NeuralNetwork constructor adds it automatically
+        // The RNN architecture stores weights for both perception AND recurrent hidden state in weights1
+        this.inputSize = PERCEPTION_INPUTS;
         this.outputSize = 5;
 
         // Now that sizes are defined, initialize the neural network
@@ -368,14 +370,14 @@ export class Agent {
 
 
         const result = this.nn.forward(inputs, this.hiddenState);
-        
+
         // Apply "Leak" to memory. 
         // This mimics a biological decay of short-term memory, preventing saturation loops.
         // 0.9 means memory fades by 10% every frame if not reinforced.
         for (let i = 0; i < result.hiddenState.length; i++) {
-            result.hiddenState[i] *= 0.9; 
+            result.hiddenState[i] *= 0.9;
         }
-        
+
         this.hiddenState = result.hiddenState;
 
         // Store output for UI visualization (CPU path)
@@ -397,7 +399,7 @@ export class Agent {
 
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
         // Tanh outputs are already -1 to 1, so no mapping needed
-        let rawThrust = output[0]; 
+        let rawThrust = output[0];
         const rotationOutput = output[1];
         const sprintIntensity = output[2]; // [0, 1] - continuous intensity, not binary
         this.wantsToReproduce = output[3] > 0.8;
@@ -410,7 +412,7 @@ export class Agent {
         // 1. Calculate target thrust (allow negative for reverse)
         // Remove the deadzone logic to allow fine motor control
         let geneticMaxThrust = MAX_THRUST * this.speedFactor;
-        
+
         // 2. Allow "Turbo" control - scale the thrust cap based on sprint intensity
         // Instead of hardcoded sprint thresholds, let the output scale the thrust cap
         if (sprintIntensity > 0.5) {
@@ -421,7 +423,7 @@ export class Agent {
         } else {
             this.isSprinting = false;
         }
-        
+
         this.targetThrust = rawThrust * geneticMaxThrust;
 
         // Re-enable braking logic: if thrust is less than 10% of max, engage brakes
@@ -2255,7 +2257,7 @@ export class Agent {
 
         // REMOVED: Direction and speed change rewards to prevent twitchy behavior
         // These encouraged agents to vibrate in place to farm points without actually exploring or hunting
-        
+
         if (distanceTravelled <= MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             // Penalty for minimal movement (agents that barely move)
             const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
@@ -2301,22 +2303,22 @@ export class Agent {
             // Vector to target
             const dx = this.targetMemory.currentTarget.x - this.x;
             const dy = this.targetMemory.currentTarget.y - this.y;
-            
+
             // Normalize target vector
-            const dist = Math.sqrt(dx*dx + dy*dy);
+            const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 0.1) {
                 const nx = dx / dist;
                 const ny = dy / dist;
 
                 // Normalize agent velocity
-                const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
                 if (speed > 0.1) {
                     const vnx = this.vx / speed;
                     const vny = this.vy / speed;
 
                     // Dot product: 1.0 = heading straight for it, -1.0 = heading away
                     const alignment = (nx * vnx) + (ny * vny);
-                    
+
                     // Only reward positive alignment (moving towards target)
                     if (alignment > 0) {
                         baseScore += alignment * 5.0; // Significant reward for purposeful movement
