@@ -1227,6 +1227,109 @@ export const PHEROMONE_FADE_RATE = 0.005;
 export const DANGER_PHEROMONE_THRESHOLD = 30;
 
 // ============================================================================
+// AGENT VOICE/SHOUTING SYSTEM
+// ============================================================================
+// Instant communication system for urgent events
+
+/**
+ * Duration in frames that shouts remain audible.
+ * @type {number}
+ * @constant
+ * @default 60
+ */
+export const SHOUT_DURATION_FRAMES = 60; // 1 second at 60 FPS
+
+/**
+ * Base hearing range in pixels (multiplied by shout intensity).
+ * @type {number}
+ * @constant
+ * @default 200
+ */
+export const SHOUT_BASE_RANGE = 200;
+
+/**
+ * Probability per frame that a defender will shout when seeing a predator.
+ * @type {number}
+ * @constant
+ * @default 0.3
+ */
+export const SHOUT_PREDATOR_ALERT_CHANCE = 0.3;
+
+/**
+ * Minimum threat level (0-1) to trigger predator alert shout.
+ * @type {number}
+ * @constant
+ * @default 0.7
+ */
+export const SHOUT_PREDATOR_ALERT_THRESHOLD = 0.7;
+
+/**
+ * Probability per frame that a forager will shout when finding food.
+ * @type {number}
+ * @constant
+ * @default 0.1
+ */
+export const SHOUT_FOOD_FOUND_CHANCE = 0.1;
+
+/**
+ * Probability per frame that an agent will shout when low on energy.
+ * @type {number}
+ * @constant
+ * @default 0.05
+ */
+export const SHOUT_HELP_REQUEST_CHANCE = 0.05;
+
+/**
+ * Shout type identifiers.
+ * @type {Object}
+ * @constant
+ */
+export const SHOUT_TYPES = {
+    PREDATOR_ALERT: 'predator_alert',
+    FOOD_FOUND: 'food_found',
+    HELP_REQUEST: 'help_request',
+    MATE_CALL: 'mate_call'
+};
+
+/**
+ * Pheromone colors by type (vibrant for visibility with post-processing).
+ * @type {Object}
+ * @constant
+ */
+export const PHEROMONE_COLORS = {
+    danger: {
+        base: 0xFF2020,      // Bright red
+        emissive: 0xFF4400,  // Red-orange glow
+        h: 0,                // Hue for HSL
+        s: 100,              // Saturation
+        l: 55                // Lightness
+    },
+    attack: {
+        base: 0x00FF40,      // Vivid green
+        emissive: 0x80FF00,  // Yellow-green glow
+        h: 130,              // Hue for HSL
+        s: 100,              // Saturation
+        l: 50                // Lightness
+    },
+    reproduction: {
+        base: 0xFF1493,      // Hot pink
+        emissive: 0xFF00FF,  // Magenta glow
+        h: 328,              // Hue for HSL
+        s: 100,              // Saturation
+        l: 54                // Lightness
+    }
+};
+
+/**
+ * Pheromone emissive intensity multiplier for better bloom effect.
+ * @type {number}
+ * @constant
+ * @default 2.0
+ */
+export const PHEROMONE_EMISSIVE_BOOST = 2.0;
+
+
+// ============================================================================
 // PHYSICS & COLLISION
 // ============================================================================
 // Dampening, separation, and combat mechanics

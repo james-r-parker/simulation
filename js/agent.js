@@ -36,7 +36,10 @@ import {
     BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
     KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF,
-    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD
+    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD,
+    SHOUT_DURATION_FRAMES, SHOUT_BASE_RANGE, SHOUT_TYPES,
+    SHOUT_PREDATOR_ALERT_CHANCE, SHOUT_PREDATOR_ALERT_THRESHOLD,
+    SHOUT_FOOD_FOUND_CHANCE, SHOUT_HELP_REQUEST_CHANCE
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -171,7 +174,8 @@ export class Agent {
             13 +  // Awareness metrics (Death risk, Food energy gain, Food urgency, Food proximity, Food availability, Collision damage, Collision risk, Predator threat, Attack damage, Vulnerability, Reproduction readiness, Reproduction benefit, Mate availability)
             4 +   // Movement state (Thrust/Rot + deltas)
             6 +   // Target memory (Dist, Sin, Cos, Time, Type, Prio)
-            6;    // Goal memory (Food, Mate, Danger, Rest, Prio, Duration)
+            6 +   // Goal memory (Food, Mate, Danger, Rest, Prio, Duration)
+            4;    // Shout inputs (predator alert, food found, help request, mate call)
 
         // CRITICAL: Do NOT add hiddenSize here - NeuralNetwork constructor adds it automatically
         // The RNN architecture stores weights for both perception AND recurrent hidden state in weights1
@@ -333,6 +337,10 @@ export class Agent {
         this._cachedInvSpeed = 0;
         this._cachedVelocityAngle = 0;
         this._lastSpeedCacheUpdate = 0;
+
+        // --- VOICE/SHOUTING SYSTEM ---
+        this.currentShout = null; // {type: string, intensity: number, frame: number}
+        this.heardShouts = []; // Array of {type, distance, direction, intensity}
 
         // Log agent birth
         const mutationProcess = this.gene?.mutationProcess || 'unknown';
@@ -579,6 +587,9 @@ export class Agent {
                 // because GPU will overwrite it on the next iteration anyway
             }
         }
+
+        // Check for threats and emit shouts if needed
+        this.checkForThreatsAndShout();
 
         // Calculate age using real time instead of frame count for consistency when focus is lost
         this.age = (Date.now() - this.birthTime) / 1000; // Age in seconds
@@ -867,7 +878,7 @@ export class Agent {
         let angleDiff = 0;
         let turnDirection = 0;
 
-            // Only calculate if moving to avoid noise
+        // Only calculate if moving to avoid noise
         // OPTIMIZED: Use squared comparison to avoid Math.abs
         const prevSpeedSq = prevVx * prevVx + prevVy * prevVy;
         // OPTIMIZED: Reuse cached current speed squared if available
@@ -1600,6 +1611,51 @@ export class Agent {
         // PERFORMANCE: Release pheromone query array back to pool
         queryArrayPool.release(nearbyPuffs);
 
+        // --- SHOUT DETECTION (Performance: Zero cost, piggybacks on existing agent queries) ---
+        // Clear previous heard shouts
+        this.heardShouts.length = 0;
+
+        // Check if nearby agents are shouting (reuse nearbyEntities from pheromone query or query again)
+        // We need to query for agents within max hearing range
+        const maxHearingRange = SHOUT_BASE_RANGE * 3.0; // Max intensity is 3.0
+        this.queryRange.x = x - maxHearingRange;
+        this.queryRange.y = y - maxHearingRange;
+        this.queryRange.w = maxHearingRange * 2;
+        this.queryRange.h = maxHearingRange * 2;
+
+        const nearbyAgents = quadtree.query(this.queryRange);
+        for (const point of nearbyAgents) {
+            const entity = point.data;
+            
+            if (entity instanceof Agent && entity !== this && entity.currentShout) {
+                const shout = entity.currentShout;
+                
+                // Check if shout is still active
+                if ((entity.framesAlive - shout.frame) <= SHOUT_DURATION_FRAMES) {
+                    const dx = entity.x - x;
+                    const dy = entity.y - y;
+                    const distSq = dx * dx + dy * dy;
+                    const hearingRange = SHOUT_BASE_RANGE * shout.intensity;
+                    const hearingRangeSq = hearingRange * hearingRange;
+                    
+                    if (distSq < hearingRangeSq) {
+                        const dist = Math.sqrt(distSq);
+                        const strength = 1.0 - (dist / hearingRange);
+                        
+                        this.heardShouts.push({
+                            type: shout.type,
+                            distance: dist,
+                            direction: Math.atan2(dy, dx),
+                            intensity: strength
+                        });
+                    }
+                }
+            }
+        }
+
+        // Release query array
+        queryArrayPool.release(nearbyAgents);
+
         for (const obs of obstacles) {
             // OPTIMIZED: Use cached x, y coordinates
             const dist = distance(x, y, obs.x, obs.y);
@@ -1926,6 +1982,35 @@ export class Agent {
         inputs.push(this.goalMemory.goalPriority);
         inputs.push(Math.min((this.framesAlive - this.goalMemory.goalStartFrame) / 300, 1.0)); // Goal duration (normalized)
 
+        // Add shout inputs to neural network (4 new inputs)
+        // Aggregate shouts by type for neural network inputs
+        const shoutInputs = {
+            predatorAlert: 0,
+            foodFound: 0,
+            helpRequest: 0,
+            mateCall: 0
+        };
+        for (const heard of this.heardShouts) {
+            switch (heard.type) {
+                case SHOUT_TYPES.PREDATOR_ALERT:
+                    shoutInputs.predatorAlert = Math.max(shoutInputs.predatorAlert, heard.intensity);
+                    break;
+                case SHOUT_TYPES.FOOD_FOUND:
+                    shoutInputs.foodFound = Math.max(shoutInputs.foodFound, heard.intensity);
+                    break;
+                case SHOUT_TYPES.HELP_REQUEST:
+                    shoutInputs.helpRequest = Math.max(shoutInputs.helpRequest, heard.intensity);
+                    break;
+                case SHOUT_TYPES.MATE_CALL:
+                    shoutInputs.mateCall = Math.max(shoutInputs.mateCall, heard.intensity);
+                    break;
+            }
+        }
+        inputs.push(shoutInputs.predatorAlert);
+        inputs.push(shoutInputs.foodFound);
+        inputs.push(shoutInputs.helpRequest);
+        inputs.push(shoutInputs.mateCall);
+
         this.lastRayData = rayData;
 
         // DEBUG: Minimal ray tracing confirmation (only when rays are actually hitting things)
@@ -2016,7 +2101,10 @@ export class Agent {
 
 
         // Reduced spawn rates to prevent pheromone accumulation
-        if (this.fear > 0.5 && Math.random() < 0.1) { // Reduced from 0.3 to 0.1
+        // Only emit danger pheromone if there's an actual predator threat, not just from low energy
+        // This prevents dying agents from emitting false danger signals
+        const hasPredatorThreat = predatorProximity > 0 || this.dangerSmell > 0.3;
+        if (this.fear > 0.5 && hasPredatorThreat && Math.random() < 0.1) { // Reduced from 0.3 to 0.1
             spawnPheromone(this.simulation, this.x, this.y, 'danger');
         }
         if (this.aggression > 0.5 && Math.random() < 0.1) { // Reduced from 0.3 to 0.1
@@ -2027,6 +2115,78 @@ export class Agent {
             spawnPheromone(this.simulation, this.x, this.y, 'reproduction');
         }
     }
+
+    /**
+     * Emit a shout that nearby agents can hear
+     * @param {string} type - Shout type from SHOUT_TYPES
+     * @param {number} intensity - Loudness multiplier (affects range)
+     */
+    shout(type, intensity = 1.0) {
+        this.currentShout = {
+            type: type,
+            intensity: Math.max(0.1, Math.min(3.0, intensity)), // Clamp 0.1-3.0
+            frame: this.framesAlive
+        };
+    }
+
+    /**
+     * Check for threats and emit warning shouts
+     * Called each frame after perception
+     * 
+     * NOTE: This works alongside the existing emitPheromones() method.
+     * - Shouts: Instant, far-reaching alerts (200-600px range)
+     * - Pheromones: Persistent trails that linger (60px radius, fade slowly)
+     */
+    checkForThreatsAndShout() {
+        // Clear previous shout if expired
+        if (this.currentShout &&
+            (this.framesAlive - this.currentShout.frame) > SHOUT_DURATION_FRAMES) {
+            this.currentShout = null;
+        }
+
+        // Defender specialty: Alert nearby allies when predator spotted
+        if (this.specializationType === SPECIALIZATION_TYPES.DEFENDER) {
+            let predatorThreat = 0;
+
+            if (this.lastRayData) {
+                for (const ray of this.lastRayData) {
+                    if (ray.hit && ray.hitTypeName === 'larger') {
+                        const intensity = 1.0 - (ray.dist / this.maxRayDist);
+                        predatorThreat = Math.max(predatorThreat, intensity);
+                    }
+                }
+            }
+
+            // Shout warning if significant threat detected (instant, far-reaching)
+            if (predatorThreat > SHOUT_PREDATOR_ALERT_THRESHOLD &&
+                Math.random() < SHOUT_PREDATOR_ALERT_CHANCE) {
+                this.shout(SHOUT_TYPES.PREDATOR_ALERT, predatorThreat * 2.0);
+            }
+        }
+
+        // Forager specialty: Alert when finding food
+        if (this.specializationType === SPECIALIZATION_TYPES.FORAGER) {
+            if (this.eventFlags.justAteFood > 0 &&
+                Math.random() < SHOUT_FOOD_FOUND_CHANCE) {
+                this.shout(SHOUT_TYPES.FOOD_FOUND, 1.5);
+            }
+        }
+
+        // Any agent: Call for help when critically low on energy
+        if (this.energy < DEATH_RISK_THRESHOLD &&
+            Math.random() < SHOUT_HELP_REQUEST_CHANCE) {
+            this.shout(SHOUT_TYPES.HELP_REQUEST, 1.0);
+        }
+
+        // Reproducer specialty: Mate call when ready to reproduce
+        if (this.specializationType === SPECIALIZATION_TYPES.REPRODUCER &&
+            this.wantsToReproduce &&
+            this.energy > MIN_ENERGY_TO_REPRODUCE &&
+            Math.random() < 0.1) {
+            this.shout(SHOUT_TYPES.MATE_CALL, 1.2);
+        }
+    }
+
 
     tryMate(mate) {
         // Track reproduction attempt (even if it fails)
@@ -2767,6 +2927,12 @@ export class Agent {
         this.inputs.length = 0;
         this.rayData.length = 0;
         this.exploredCells.clear(); // Reset exploration tracking
+
+        // Clear shout data
+        this.currentShout = null;
+        if (this.heardShouts) {
+            this.heardShouts.length = 0;
+        }
 
         // Clear neural network results
         this.lastInputs = null;

@@ -16,7 +16,8 @@ import {
     NEURAL_PARALLAX_FACTOR, NEURAL_NODE_SIZE,
     NEURAL_PULSE_SPEED, NEURAL_ENERGY_FLOW_SPEED, NEURAL_MAX_OPACITY,
     NEURAL_SPARK_PROBABILITY, NEURAL_FIRING_SPEED, NEURAL_WAVE_COUNT,
-    NEURAL_COLORS
+    NEURAL_COLORS,
+    PHEROMONE_COLORS, PHEROMONE_EMISSIVE_BOOST
 } from './constants.js';
 import {
     acquireMatrix4, releaseMatrix4,
@@ -1463,14 +1464,19 @@ export class WebGLRenderer {
 
             // Create InstancedMesh with capacity for more pheromones
             const maxPheromones = Math.max(neededCount * 2, 2000);
-            // Pheromone material - dimmed down so agents are more prominent
+            // Pheromone material - vibrant colors for better visibility
+            // Get color based on pheromone type (use first pheromone's type as default, or danger as fallback)
+            const pheromoneType = visiblePheromones.length > 0 ? visiblePheromones[0].type : 'danger';
+            const colorConfig = PHEROMONE_COLORS[pheromoneType] || PHEROMONE_COLORS.danger;
+
             const pheromoneEmissiveColor = acquireColor();
-            pheromoneEmissiveColor.setHex(0x00FFFF); // Default cyan
-            pheromoneEmissiveColor.multiplyScalar(0.15); // Reduced emissive - pheromones should be dimmer
+            pheromoneEmissiveColor.setHex(colorConfig.emissive);
+            pheromoneEmissiveColor.multiplyScalar(PHEROMONE_EMISSIVE_BOOST); // Boost for bloom effect
+
             const material = acquireMeshStandardMaterial({
-                color: 0x00FFFF,
+                color: colorConfig.base,
                 emissive: pheromoneEmissiveColor,
-                emissiveIntensity: 0.3, // Reduced from 1.5 - pheromones should be dimmer than agents
+                emissiveIntensity: MATERIAL_PROPERTIES.PHEROMONE.EMISSIVE_INTENSITY, // Use constant (1.5)
                 metalness: MATERIAL_PROPERTIES.PHEROMONE.METALNESS,
                 roughness: MATERIAL_PROPERTIES.PHEROMONE.ROUGHNESS,
                 transparent: MATERIAL_PROPERTIES.PHEROMONE.TRANSPARENT,
@@ -1542,10 +1548,13 @@ export class WebGLRenderer {
                 instanceMatrix.setPosition(puff.x, -puff.y, 0);
                 this.pheromoneInstancedMesh.setMatrixAt(i, instanceMatrix);
 
-                // Set instance color and opacity (encode opacity in color alpha)
-                const rgbColor = this.hslToRgb(puff.color.h, puff.color.s, puff.color.l);
+                // Set instance color based on pheromone type
+                const colorConfig = PHEROMONE_COLORS[puff.type] || PHEROMONE_COLORS.danger;
+                const rgbColor = this.hslToRgb(colorConfig.h, colorConfig.s, colorConfig.l);
                 color.setRGB(rgbColor.r, rgbColor.g, rgbColor.b);
-                releaseColor(rgbColor); // Release color from hslToRgb
+                // Brighten for better visibility
+                color.multiplyScalar(1.5);
+                releaseColor(rgbColor);
                 // Note: Three.js InstancedMesh doesn't support per-instance opacity easily
                 // We'll use a uniform opacity for all pheromones
                 this.pheromoneInstancedMesh.setColorAt(i, color);

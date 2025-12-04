@@ -107,3 +107,6 @@ export function updateFitnessChart(canvas, fitnessHistory, averageFitnessHistory
 
 
 
+
+
+
