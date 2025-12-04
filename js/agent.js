@@ -1168,6 +1168,25 @@ export class Agent {
         }
 
         this.emitPheromones();
+
+        // =========================================================================
+        // PERFORMANCE OPTIMIZATION: Cache nearby agents for fitness calculation
+        // =========================================================================
+        // Query quadtree ONCE per frame and cache results to avoid repeated
+        // expensive queries during calculateFitness() calls (which happen during
+        // mating, reproduction, and validation)
+        const nearbyRange = 200; // Same range used in fitness calculation
+        const queryRect = rectanglePool.acquire();
+        queryRect.x = this.x - nearbyRange;
+        queryRect.y = this.y - nearbyRange;
+        queryRect.w = nearbyRange * 2;
+        queryRect.h = nearbyRange * 2;
+
+        this._nearbyAgentsCache = quadtree.query(queryRect);
+        this._nearbyAgentsCacheFrame = this.framesAlive;
+
+        rectanglePool.release(queryRect);
+
         // PERFORMANCE: Calculate fitness every 10 frames instead of every frame
         // Fitness is still calculated on death (see cleanup method) and periodically for UI
         if (this.framesAlive % 10 === 0) {
@@ -2195,9 +2214,40 @@ export class Agent {
             child.nn.mutate(adaptiveMutationRate, null, fitnessPercentile);
         }
 
-        // Mutate inherited traits (preserved from original)
-        child.speedFactor = Math.max(1, child.speedFactor + randomGaussian(0, 0.05));
-        child.maxRayDist = Math.max(50, child.maxRayDist + randomGaussian(0, 5));
+        // =========================================================================
+        // SPECIALIZATION-AWARE PHYSICAL MUTATION
+        // =========================================================================
+        // Bias physical traits based on Job Description
+        // Predators evolve speed, Scouts evolve vision, Defenders evolve tankiness
+
+        let speedMutationRate = 0.05;
+        let visionMutationRate = 5;
+
+        // 1. Bias Speed Evolution
+        if (child.specializationType === 'predator') {
+            // Predators favor speed mutations (higher variance, slight upward bias)
+            speedMutationRate = 0.1;
+            if (Math.random() < 0.6) child.speedFactor += 0.1; // 60% chance to get faster
+        } else if (child.specializationType === 'defender') {
+            // Defenders favor stability/mass over raw speed (tankiness)
+            if (Math.random() < 0.6) child.speedFactor -= 0.05; // Tend towards tankiness
+        }
+
+        // Apply Speed Mutation
+        child.speedFactor = Math.max(1, child.speedFactor + randomGaussian(0, speedMutationRate));
+
+        // 2. Bias Vision Evolution
+        if (child.specializationType === 'scout') {
+            // Scouts aggressively evolve vision range
+            visionMutationRate = 15;
+            if (Math.random() < 0.6) child.maxRayDist += 10;
+        } else if (child.specializationType === 'forager') {
+            // Foragers optimize for medium range (efficiency)
+            if (child.maxRayDist > 200 && Math.random() < 0.5) child.maxRayDist -= 5;
+        }
+
+        // Apply Vision Mutation
+        child.maxRayDist = Math.max(50, child.maxRayDist + randomGaussian(0, visionMutationRate));
 
         this.fatherWeights = null;
         return child;
@@ -2335,12 +2385,122 @@ export class Agent {
         baseScore -= circlePenalty;
         baseScore += safeNumber(this.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
 
-
-        // 3. Penalties (Applied to Base Score)
+        // =========================================================================
+        // UNIVERSAL PENALTIES (The "Don't Crash" Enforcement)
+        // =========================================================================
         const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
         const collisions = safeNumber(this.collisions || 0, 0);
+
+        // MASSIVE penalty for hitting obstacles (30 → 500)
+        // This forces "Avoid Obstacle" input to become the dominant signal
         baseScore -= timesHitObstacle * FITNESS_PENALTIES.OBSTACLE_HIT;
+
+        // Increased penalty for hitting walls (10 → 100)
         baseScore -= (collisions - timesHitObstacle) * FITNESS_PENALTIES.WALL_HIT;
+
+        // Penalty for wasting energy (Efficiency - prevents spinning/vibrating)
+        // Reuse distanceTravelled and energySpent declared earlier in the method
+        if (energySpent > 100) {
+            const efficiencyRatio = distanceTravelled / energySpent;
+            // Penalize low efficiency (spinning in place)
+            if (efficiencyRatio < 0.5) {
+                baseScore -= FITNESS_PENALTIES.EFFICIENCY_LOW;
+            }
+        }
+
+        // =========================================================================
+        // SPECIALIZATION BONUSES ("Act Like Your Name")
+        // =========================================================================
+        // Use cached neighborhood data from update() to avoid expensive quadtree queries
+        let jobPerformanceBonus = 0;
+
+        if (this._nearbyAgentsCache && this._nearbyAgentsCacheFrame === this.framesAlive) {
+            const neighbors = this._nearbyAgentsCache;
+
+            switch (this.specializationType) {
+
+                // --- PREDATOR: Reward Hunting & Aggression ---
+                case 'predator':
+                    // Reward 1: Kills (Massive bonus)
+                    jobPerformanceBonus += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_KILLS;
+
+                    // Reward 2: High-speed pursuit of prey
+                    // Check if we're moving fast and detecting smaller agents (prey)
+                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    if (speed > 1.0 && this.aggression > 0.5) {
+                        // Check lastRayData for prey signals (smaller agents)
+                        const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');
+                        if (detectingPrey) {
+                            jobPerformanceBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_PURSUIT; // Points per frame for high-speed pursuit
+                        }
+                    }
+                    break;
+
+                // --- SCOUT/FORAGER: Reward Flocking & Discovery ---
+                case 'scout':
+                case 'forager':
+                    let alignmentScore = 0;
+                    let flockCount = 0;
+
+                    // Flocking Logic (Reynolds): Alignment
+                    for (const point of neighbors) {
+                        const other = point.data || point;
+                        // Type guard: check if it's an agent
+                        if (other && other.specializationType && !other.isDead && other !== this) {
+                            // Flock with friendly types (scouts and foragers flock together)
+                            const isFriendly = (other.specializationType === 'scout' || other.specializationType === 'forager');
+                            if (isFriendly) {
+                                // Calculate dot product of velocities (alignment measure)
+                                const dot = (this.vx * other.vx) + (this.vy * other.vy);
+                                alignmentScore += dot;
+                                flockCount++;
+                            }
+                        }
+                    }
+
+                    // Reward moving in the same direction as neighbors (Cohesion/Alignment)
+                    if (flockCount > 0) {
+                        jobPerformanceBonus += (alignmentScore / flockCount) * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_FLOCKING;
+                    }
+
+                    // Reward Exploration heavily for Scouts
+                    if (this.specializationType === 'scout') {
+                        jobPerformanceBonus += exploredCellsSize * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_EXPLORATION;
+                    }
+                    break;
+
+                // --- DEFENDER: Reward Guarding Weak Allies ---
+                case 'defender':
+                    let guardingBonus = 0;
+                    for (const point of neighbors) {
+                        const other = point.data || point;
+                        // Type guard: check if it's an agent
+                        if (other && other.specializationType && !other.isDead && other !== this) {
+                            // Identify "Weak" allies: Young (< 20 seconds old), Pregnant, or Foragers
+                            const isVulnerable = (other.age < 20) || other.isPregnant || (other.specializationType === 'forager');
+
+                            if (isVulnerable) {
+                                // Positioned near vulnerable ally - reward based on aggression (posturing)
+                                if (this.aggression > 0.5) {
+                                    guardingBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_GUARDING; // Active guarding
+                                } else {
+                                    guardingBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_GUARDING * 0.1; // Passive guarding
+                                }
+                            }
+                        }
+                    }
+                    jobPerformanceBonus += Math.min(guardingBonus, 50); // Cap per frame to prevent exploitation
+                    break;
+            }
+        }
+
+        baseScore += jobPerformanceBonus;
+
+        // =========================================================================
+        // STANDARD SURVIVAL METRICS (The Baseline)
+        // =========================================================================
+        // Re-extract variables that were declared earlier but need to be used here
+        // (avoiding redeclaration issues)
 
         // 4. Collision Avoidance Reward (NEW)
         // Use real-time age in seconds for fitness calculation (not affected by focus loss)

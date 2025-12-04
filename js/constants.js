@@ -792,7 +792,14 @@ export const FITNESS_MULTIPLIERS = {
     TEMPERATURE_PENALTY_MAX: 100, // Maximum temperature penalty points
 
     // Synergy bonuses
-    REPRODUCTION_FOOD_SYNERGY: 10  // Multiplier for (offspring × 2 + foodEaten) synergy
+    REPRODUCTION_FOOD_SYNERGY: 10,  // Multiplier for (offspring × 2 + foodEaten) synergy
+
+    // Job Performance Bonuses (Specialization-Specific Rewards)
+    JOB_PERFORMANCE_KILLS: 1000,      // Predator: massive bonus per kill
+    JOB_PERFORMANCE_FLOCKING: 2.0,    // Scout/Forager: points per unit of velocity alignment
+    JOB_PERFORMANCE_GUARDING: 10,     // Defender: points per vulnerable ally guarded (per frame)
+    JOB_PERFORMANCE_PURSUIT: 5,       // Predator: points per frame of high-speed pursuit
+    JOB_PERFORMANCE_EXPLORATION: 5.0  // Scout: multiplier for exploration cells bonus
 };
 
 /**
@@ -802,10 +809,11 @@ export const FITNESS_MULTIPLIERS = {
  */
 export const FITNESS_PENALTIES = {
     CIRCULAR_MOVEMENT: 20,        // Points per consecutive turn (capped at 50 turns, max 2000)
-    OBSTACLE_HIT: 30,             // Points per obstacle collision
-    WALL_HIT: 10,                 // Points per wall collision
+    OBSTACLE_HIT: 500,            // Points per obstacle collision (MASSIVELY INCREASED to force avoidance learning)
+    WALL_HIT: 100,                // Points per wall collision (increased from 10)
     INACTIVITY: 2,                // Points per second of inactivity after 20s (if baseScore < 50)
-    MINIMAL_MOVEMENT: 50          // Maximum penalty for agents that barely move
+    MINIMAL_MOVEMENT: 50,         // Maximum penalty for agents that barely move
+    EFFICIENCY_LOW: 200           // Penalty for low efficiency (distance/energy < 0.5, prevents spinning)
 };
 
 /**
