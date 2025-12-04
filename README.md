@@ -63,12 +63,14 @@ Blob Evolution is an **artificial life simulation** where digital organisms evol
 
 **Evolution**: Agents with higher fitness scores (based on survival, reproduction, food consumption, and exploration) are more likely to pass their genes to the next generation.
 
-**Specialization**: Five distinct agent types evolve:
-- **Foragers** (Lime): Specialized in finding and consuming food efficiently
-- **Predators** (Red): Specialized in hunting other agents for energy
-- **Reproducers** (Cyan): Specialized in mating and creating offspring
-- **Scouts** (Yellow): Specialized in long-range sensing and exploration
-- **Defenders** (Orange): Specialized in defending territory and allies
+**Specialization**: Five distinct agent types evolve with **unique visual shapes** for instant recognition:
+- 🔺 **Predators** (Red Triangle): Sharp, aggressive hunters that point in their movement direction
+- ⬡ **Reproducers** (Cyan Hexagon): Organic, hive-like breeders specialized in creating offspring
+- ◆ **Scouts** (Yellow Diamond): Sleek explorers with long-range sensing capabilities
+- ◼ **Defenders** (Orange Square): Solid, blocky protectors that defend territory and allies
+- ● **Foragers** (Lime Circle): Efficient food-finders with balanced capabilities
+
+Each shape rotates to face the agent's movement direction, creating a dynamic, visually rich simulation where you can instantly identify agent roles and strategies.
 
 ### Environmental Systems
 
@@ -151,11 +153,18 @@ Every blob has a **mini-brain** - a recurrent neural network that processes sens
 - **Pheromone Trails**: Up to 2,000 chemical markers for communication
 
 ### 🧬 Specialization System
-Each specialization has unique characteristics:
+Each specialization has unique characteristics and **distinct visual shapes**:
 - **Neural Network Size**: 25-38 hidden neurons (varies by type)
 - **Sensor Rays**: 16-24 rays with 250-400 pixel range
-- **Color Coding**: Visual distinction for easy identification
+- **Visual Shapes**: Low-polygon geometries (3-32 segments) for instant identification:
+  - **Triangle** (3 segments) - Predators point forward like arrows
+  - **Hexagon** (6 segments) - Reproducers have organic, hive-like appearance
+  - **Diamond** (4 segments) - Scouts are sleek and directional
+  - **Square** (4 segments, rotated 45°) - Defenders are solid and stable
+  - **Circle** (32 segments) - Foragers are smooth and efficient
+- **Color Coding**: Neon cyberpunk palette for visual distinction
 - **Evolved Behaviors**: Each type develops unique survival strategies over generations
+- **Performance**: Shapes use circular collision physics for optimal speed and stability
 
 ---
 

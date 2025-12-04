@@ -1,6 +1,6 @@
 // Gene-related functions moved from game.js
 
-import { MIN_FITNESS_TO_SAVE_GENE_POOL, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK, CROSSOVER_TYPE_DEFAULT, CROSSOVER_TYPE_UNIFORM, CROSSOVER_TYPE_ONE_POINT, CROSSOVER_TYPE_MULTI_POINT, CROSSOVER_TYPE_FITNESS_WEIGHTED, CROSSOVER_TYPE_SBX, UNIFORM_CROSSOVER_PROBABILITY, MULTI_POINT_CROSSOVER_POINTS, FITNESS_WEIGHTED_CROSSOVER_ALPHA, SBX_DISTRIBUTION_INDEX, ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE } from './constants.js';
+import { GENE_POOL_MIN_FITNESS, MAX_AGENTS_TO_SAVE_PER_GENE_POOL, MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL, MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL, MAX_VALIDATIONS_PER_PERIODIC_CHECK, CROSSOVER_TYPE_DEFAULT, CROSSOVER_TYPE_UNIFORM, CROSSOVER_TYPE_ONE_POINT, CROSSOVER_TYPE_MULTI_POINT, CROSSOVER_TYPE_FITNESS_WEIGHTED, CROSSOVER_TYPE_SBX, UNIFORM_CROSSOVER_PROBABILITY, MULTI_POINT_CROSSOVER_POINTS, FITNESS_WEIGHTED_CROSSOVER_ALPHA, SBX_DISTRIBUTION_INDEX, ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE } from './constants.js';
 import { updateDashboard } from './ui.js';
 import { randomGaussian } from './utils.js';
 
@@ -183,7 +183,7 @@ export function crossover(weightsA, weightsB, logger, crossoverType = null, fitn
     let type = crossoverType || CROSSOVER_TYPE_DEFAULT;
 
     // For elite parents (high fitness), occasionally use fitness-weighted
-    if (fitnessA !== null && fitnessB !== null && 
+    if (fitnessA !== null && fitnessB !== null &&
         Math.random() < ELITE_FITNESS_WEIGHTED_CROSSOVER_CHANCE &&
         (fitnessA > 0 || fitnessB > 0)) {
         const avgFitness = (fitnessA + fitnessB) / 2;
@@ -272,15 +272,15 @@ export function updateFitnessTracking(simulation) {
 
     // Track fitness for adaptive mutation and charting
     const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
-    
+
     // Calculate average and median fitness (reuse livingAgents from above)
     let averageFitness = 0;
     let medianFitness = 0;
-    
+
     if (livingAgents.length > 0) {
         const fitnesses = livingAgents.map(a => a.fitness).sort((a, b) => a - b);
         averageFitness = fitnesses.reduce((a, b) => a + b, 0) / fitnesses.length;
-        
+
         // Calculate median
         const mid = Math.floor(fitnesses.length / 2);
         if (fitnesses.length % 2 === 0) {
@@ -289,12 +289,12 @@ export function updateFitnessTracking(simulation) {
             medianFitness = fitnesses[mid];
         }
     }
-    
+
     // Track all three metrics
     simulation.fitnessHistory.push(bestFitness);
     simulation.averageFitnessHistory.push(averageFitness);
     simulation.medianFitnessHistory.push(medianFitness);
-    
+
     if (simulation.fitnessHistory.length > simulation.fitnessHistorySize) {
         simulation.fitnessHistory.shift();
         simulation.averageFitnessHistory.shift();

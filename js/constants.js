@@ -861,35 +861,45 @@ export const AGENT_CONFIGS = {
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 300,      // Maximum distance sensor rays can detect
         hiddenSize: 30,      // Size of neural network hidden layer (increased from 24 for better capacity - 25% increase)
-        description: 'Specialized in finding and consuming food.'
+        description: 'Specialized in finding and consuming food.',
+        shape: 'circle',      // Standard efficient shape
+        rotationOffset: 0     // No rotation needed
     },
     [SPECIALIZATION_TYPES.PREDATOR]: {
         color: 0xFF0033,      // Visual color for predator agents (neon red)
         numSensorRays: 24,    // Number of sensor rays for detecting environment
         maxRayDist: 350,      // Maximum distance sensor rays can detect
         hiddenSize: 38,       // Size of neural network hidden layer (increased from 30 for better capacity - 27% increase)
-        description: 'Specialized in hunting other agents.'
+        description: 'Specialized in hunting other agents.',
+        shape: 'triangle',    // Aggressive, sharp shape
+        rotationOffset: -Math.PI / 2 // Point triangle forward (default points up/right depending on geom)
     },
     [SPECIALIZATION_TYPES.REPRODUCER]: {
         color: 0x00F0FF,     // Visual color for reproducer agents (neon cyan)
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 250,      // Maximum distance sensor rays can detect
         hiddenSize: 28,       // Size of neural network hidden layer (increased from 22 for better capacity - 27% increase)
-        description: 'Specialized in mating and creating offspring.'
+        description: 'Specialized in mating and creating offspring.',
+        shape: 'hexagon',     // Organic, hive-like shape
+        rotationOffset: 0
     },
     [SPECIALIZATION_TYPES.SCOUT]: {
         color: 0xFFFF00,      // Visual color for scout agents (neon yellow)
         numSensorRays: 24,    // Number of sensor rays for detecting environment
         maxRayDist: 400,      // Maximum distance sensor rays can detect
         hiddenSize: 25,       // Size of neural network hidden layer (increased from 20 for better capacity - 25% increase)
-        description: 'Specialized in long-range sensing and exploration.'
+        description: 'Specialized in long-range sensing and exploration.',
+        shape: 'diamond',     // Sleek, directional shape
+        rotationOffset: 0
     },
     [SPECIALIZATION_TYPES.DEFENDER]: {
         color: 0xFF6600,      // Visual color for defender agents (neon orange)
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 350,      // Maximum distance sensor rays can detect
         hiddenSize: 32,       // Size of neural network hidden layer (increased from 26 for better capacity - 23% increase)
-        description: 'Specialized in defending territory and allies.'
+        description: 'Specialized in defending territory and allies.',
+        shape: 'square',      // Solid, blocky shape
+        rotationOffset: Math.PI / 4 // Rotate 45 deg to make it a diamond/square mix or just flat
     }
 };
 
@@ -1727,23 +1737,6 @@ export const MIN_GENETIC_DISTANCE = 0.1;
 // GENE POOL MANAGEMENT
 // ============================================================================
 // Qualification thresholds, storage limits, and validation
-
-/**
- * Minimum fitness score required to save agent genes.
- * 
- * Calculation for 500-second agent:
- * - Survival bonus: 500 (capped) + 47 (extended) = 547 points
- * - Good agent base score: ~12,000-15,000 (food, exploration, navigation, efficiency)
- * - Total good agent: ~12,500-15,500 points
- * - Mediocre agent (just surviving): ~5,000-7,000 points
- * 
- * Threshold set to 12,000 to ensure only genuinely good agents qualify,
- * not just agents that survive a long time passively.
- * @type {number}
- * @constant
- * @default 12000
- */
-export const MIN_FITNESS_TO_SAVE_GENE_POOL = 500;
 
 /**
  * Maximum agents saved per gene pool generation.

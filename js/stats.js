@@ -2,7 +2,7 @@
 
 
 import {
-    MIN_FITNESS_TO_SAVE_GENE_POOL,
+    GENE_POOL_MIN_FITNESS,
     MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
@@ -57,7 +57,7 @@ export function copySimulationStats(simulation) {
     const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
     const avgCollisions = livingAgents.reduce((sum, a) => sum + (a.collisions || 0), 0) / livingAgents.length;
     const avgWallHits = livingAgents.reduce((sum, a) => sum + (a.timesHitObstacle || 0), 0) / livingAgents.length;
-    
+
     // Navigation behavior tracking (NEW) - with safety checks to prevent Infinity
     const safeNumber = (val, defaultVal = 0) => {
         if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
@@ -68,17 +68,17 @@ export function copySimulationStats(simulation) {
     const avgFoodApproaches = livingAgents.reduce((sum, a) => sum + safeNumber(a.foodApproaches || 0, 0), 0) / livingAgents.length;
     const avgCleverTurns = livingAgents.reduce((sum, a) => sum + safeNumber(a.cleverTurns || 0, 0), 0) / livingAgents.length;
     const avgSuccessfulEscapes = livingAgents.reduce((sum, a) => sum + safeNumber(a.successfulEscapes || 0, 0), 0) / livingAgents.length;
-    
+
     // Detailed fitness breakdown - with safety checks to prevent Infinity
     // NOTE: This breakdown matches the actual calculateFitness() formula in agent.js
     const fitnessBreakdown = livingAgents.map(a => {
         const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
         const explorationPercentage = safeNumber((a.exploredCells?.size || 0) / totalCells * 100, 0);
         const ageInSeconds = safeNumber(a.age || 0, 0);
-        
+
         // Match actual calculateFitness() formula multipliers (updated after Phase 2 changes)
         let baseScore = 0;
-        
+
         // Temperature system (symmetric bonus/penalty - 100 points each)
         const avgTemperature = a.temperatureSamples > 0 ? safeNumber(a.temperatureSum / a.temperatureSamples, 0) : 0;
         let temperatureBonus = 0;
@@ -89,41 +89,41 @@ export function copySimulationStats(simulation) {
             temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * 100; // Up to 100 points bonus
         }
         baseScore += temperatureBonus - temperaturePenalty;
-        
+
         // Productive actions - match actual multipliers from agent.js (with normalization)
         baseScore += safeNumber(a.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
         baseScore += safeNumber(a.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS;
         baseScore += safeNumber(explorationPercentage, 0) * FITNESS_MULTIPLIERS.EXPLORATION;
         baseScore += safeNumber(a.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
         baseScore += safeNumber(a.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
-        
+
         // Reproduction attempts bonus
         baseScore += safeNumber(a.reproductionAttempts || 0, 0) * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
-        
+
         // Goals completed bonus
         const goalsCompleted = safeNumber(a.goalMemory?.goalsCompleted || 0, 0);
         baseScore += goalsCompleted * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
-        
+
         // Movement rewards - NORMALIZED by distance (matches agent.js)
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             const distanceNormalizer = distanceTravelled / 100;
-            
+
             // Direction changes: normalized (matches agent.js)
             const directionChangedNormalized = Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
             baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
-            
+
             // Speed changes: normalized (matches agent.js)
             const speedChangedNormalized = Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
             baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
-            
+
             // Navigation rewards - NORMALIZED (matches agent.js)
             const turnsTowardsFoodNormalized = safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += turnsTowardsFoodNormalized * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD;
-            
+
             const turnsAwayFromObstaclesNormalized = safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += turnsAwayFromObstaclesNormalized * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES;
-            
+
             const foodApproachesNormalized = safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
             baseScore += foodApproachesNormalized * FITNESS_MULTIPLIERS.FOOD_APPROACHES;
         } else {
@@ -131,14 +131,14 @@ export function copySimulationStats(simulation) {
             const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
             baseScore -= Math.min(movementPenalty, 50);
         }
-        
+
         // Enhanced synergy bonus
         const offspring = safeNumber(a.offspring || 0, 0);
         const foodEaten = safeNumber(a.foodEaten || 0, 0);
         if (offspring > 0 && foodEaten > 0) {
             baseScore += (offspring * 2 + foodEaten) * 10; // Enhanced from (offspring * foodEaten) * 5
         }
-        
+
         // Efficiency (no threshold - always calculate)
         // Reuse distanceTravelled declared above
         let efficiency = 0;
@@ -147,50 +147,50 @@ export function copySimulationStats(simulation) {
             efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
         }
         baseScore += efficiency * FITNESS_MULTIPLIERS.EFFICIENCY;
-        
+
         // Successful escapes
         baseScore += safeNumber(a.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
-        
+
         // Penalties - match actual formula (single circle penalty, not double)
         const consecutiveTurns = safeNumber(a.consecutiveTurns || 0, 0);
         const cappedTurns = Math.min(consecutiveTurns, 50);
         const circlePenalty = Math.min(cappedTurns * 20, 2000); // Fixed: single penalty, not double
-        const penalties = 
+        const penalties =
             circlePenalty +
             safeNumber(a.timesHitObstacle || 0, 0) * 30 +
             (safeNumber(a.collisions || 0, 0) - safeNumber(a.timesHitObstacle || 0, 0)) * 10;
-        
+
         // Collision avoidance reward
         const ageInFrames = ageInSeconds * FPS_TARGET;
         const obstacleFreeFrames = Math.max(0, ageInFrames - (safeNumber(a.timesHitObstacle || 0, 0) * 30));
         if (obstacleFreeFrames > 200) {
             baseScore += (obstacleFreeFrames / 200) * 25;
         }
-        
+
         // Inactivity penalty
         let inactivityPenalty = 0;
         if (ageInSeconds > 20 && baseScore < 50) {
             const inactivityDuration = Math.max(0, ageInSeconds - 20);
             inactivityPenalty = inactivityDuration * 2;
         }
-        
+
         // Apply inactivity penalty
         let adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
         // Note: Temperature penalty already applied in baseScore calculation above
-        
+
         // REBALANCED SURVIVAL: Separate bonus instead of multiplier
         // Only applies if agent lives over 500 seconds (agents are living much longer now)
-        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
             Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
-        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+        const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
             (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
         // Final fitness = adjusted base score + survival bonuses (not multiplied)
         const finalFitness = adjustedBaseScore + survivalBonus + rawSurvivalBonus;
-        
+
         const finalBaseScore = safeNumber(baseScore, 0);
         const finalPenalties = safeNumber(penalties, 0);
         const finalNetBaseScore = safeNumber(adjustedBaseScore, 0); // Use adjusted base score (after penalties and inactivity)
-        
+
         return {
             fitness: safeNumber(a.fitness, 0),
             baseScore: finalBaseScore,
@@ -201,13 +201,13 @@ export function copySimulationStats(simulation) {
             finalFitness: safeNumber(a.fitness, 0)
         };
     });
-    
+
     const avgBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.baseScore, 0) / livingAgents.length;
     const avgPenalties = fitnessBreakdown.reduce((sum, f) => sum + f.penalties, 0) / livingAgents.length;
     const avgNetBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.netBaseScore, 0) / livingAgents.length;
     const avgSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.survivalBonus, 0) / livingAgents.length;
     const avgRawSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.rawSurvivalBonus, 0) / livingAgents.length;
-    
+
     // Additional fitness component averages for detailed breakdown
     // (avgExplorationPercentage is calculated later in qualification criteria section)
     // Calculate normalized movement and navigation values (matching agent.js calculation)
@@ -220,7 +220,7 @@ export function copySimulationStats(simulation) {
         }
         return sum;
     }, 0) / livingAgents.length;
-    
+
     const avgSpeedChanged = livingAgents.reduce((sum, a) => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
@@ -230,7 +230,7 @@ export function copySimulationStats(simulation) {
         }
         return sum;
     }, 0) / livingAgents.length;
-    
+
     const avgTurnsTowardsFoodNormalized = livingAgents.reduce((sum, a) => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
@@ -240,7 +240,7 @@ export function copySimulationStats(simulation) {
         }
         return sum;
     }, 0) / livingAgents.length;
-    
+
     const avgTurnsAwayFromObstaclesNormalized = livingAgents.reduce((sum, a) => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
@@ -250,7 +250,7 @@ export function copySimulationStats(simulation) {
         }
         return sum;
     }, 0) / livingAgents.length;
-    
+
     const avgFoodApproachesNormalized = livingAgents.reduce((sum, a) => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
@@ -260,7 +260,7 @@ export function copySimulationStats(simulation) {
         }
         return sum;
     }, 0) / livingAgents.length;
-    
+
     const avgObstacleFreeFrames = livingAgents.reduce((sum, a) => {
         const ageInFrames = (a.age || 0) * FPS_TARGET;
         const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
@@ -279,10 +279,10 @@ export function copySimulationStats(simulation) {
     const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
     const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
     const qualifiedAgents = livingAgents.filter(a => a.fit).length;
-    
+
     // Calculate qualification criteria breakdown
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-    const agentsMeetingFitness = livingAgents.filter(a => a.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingFitness = livingAgents.filter(a => a.fitness >= GENE_POOL_MIN_FITNESS).length;
     const agentsMeetingFood = livingAgents.filter(a => (a.foodEaten || 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
     const agentsMeetingAge = livingAgents.filter(a => (a.age || 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {
@@ -290,7 +290,7 @@ export function copySimulationStats(simulation) {
         return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
     }).length;
     const agentsMeetingNavigation = livingAgents.filter(a => (a.turnsTowardsFood || 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL).length;
-    
+
     // Calculate average exploration percentage
     const avgExplorationPercentage = livingAgents.reduce((sum, a) => {
         const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
@@ -408,7 +408,7 @@ export function copySimulationStats(simulation) {
     const reproductionAttemptsValues = livingAgents.map(a => safeNumber(a.reproductionAttempts || 0, 0));
     const childrenFromMateValues = livingAgents.map(a => safeNumber(a.childrenFromMate || 0, 0));
     const childrenFromSplitValues = livingAgents.map(a => safeNumber(a.childrenFromSplit || 0, 0));
-    
+
     // Calculate normalized values for navigation metrics
     const turnsTowardsFoodNormalizedValues = livingAgents.map(a => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
@@ -450,7 +450,7 @@ export function copySimulationStats(simulation) {
         }
         return 0;
     });
-    
+
     // Calculate efficiency values
     const efficiencyValues = livingAgents.map(a => {
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
@@ -546,13 +546,13 @@ Validation Queue: ${validationQueueSize}
 
 -- QUALIFICATION CRITERIA --
 Gene Pool Qualification Thresholds:
-  - Fitness: ≥${MIN_FITNESS_TO_SAVE_GENE_POOL}
+  - Fitness: ≥${GENE_POOL_MIN_FITNESS}
   - Food Eaten: ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL} items
   - Age: ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s (${MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL} frames)
   - Exploration: ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}% map coverage
   - Navigation: ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL} turns towards food
 Agents Meeting Each Criterion:
-  - Fitness ≥${MIN_FITNESS_TO_SAVE_GENE_POOL}: ${agentsMeetingFitness} / ${livingAgents.length} (${((agentsMeetingFitness / livingAgents.length) * 100).toFixed(1)}%)
+  - Fitness ≥${GENE_POOL_MIN_FITNESS}: ${agentsMeetingFitness} / ${livingAgents.length} (${((agentsMeetingFitness / livingAgents.length) * 100).toFixed(1)}%)
   - Food ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}: ${agentsMeetingFood} / ${livingAgents.length} (${((agentsMeetingFood / livingAgents.length) * 100).toFixed(1)}%)
   - Age ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s: ${agentsMeetingAge} / ${livingAgents.length} (${((agentsMeetingAge / livingAgents.length) * 100).toFixed(1)}%)
   - Exploration ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%: ${agentsMeetingExploration} / ${livingAgents.length} (${((agentsMeetingExploration / livingAgents.length) * 100).toFixed(1)}%)

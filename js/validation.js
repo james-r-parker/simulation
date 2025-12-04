@@ -6,7 +6,7 @@ import {
     MAX_VALIDATION_QUEUE_SIZE,
     VALIDATION_COOLDOWN_MS,
     VALIDATION_CLEANUP_TIMEOUT_MS,
-    MIN_FITNESS_TO_SAVE_GENE_POOL,
+    GENE_POOL_MIN_FITNESS,
     MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
     MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
@@ -82,7 +82,7 @@ export class ValidationManager {
                     weights.weights1 && weights.weights2 &&
                     Array.isArray(weights.weights1) && Array.isArray(weights.weights2) &&
                     weights.weights1.length > 0 && weights.weights2.length > 0;
-                
+
                 if (isValidWeights) {
                     existingEntry.weights = weights; // Restore weights
                     this.logger.debug(`[VALIDATION] 🔄 Restored weights for ${geneId} (were cleared for memory)`);
@@ -167,7 +167,7 @@ export class ValidationManager {
             const names = ['Fitness', 'Food', 'Age', 'Exploration', 'Navigation'];
             return `${names[i]}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
         }).join(' | ');
-        
+
         this.logger.info(`[VALIDATION] ${geneId} (ID: ${agent.id}) - Run ${runNumber}: Fitness ${currentFitness.toFixed(1)} (${source})`);
         this.logger.info(`[VALIDATION] ${geneId} - Run ${runNumber} Criteria: ${criteriaStatus}`);
         this.logger.info(`[VALIDATION] ${geneId} - Run ${runNumber} Summary: ${criteriaDetails.criteriaMet}/5 criteria met, Fit: ${agent.fit ? 'YES' : 'NO'}`);
@@ -182,7 +182,7 @@ export class ValidationManager {
                 this.logger.info(`[VALIDATION] 🎉 ${geneId} PASSED EARLY VALIDATION`);
                 this.logger.info(`[VALIDATION] ========================================`);
                 this.logger.info(`[VALIDATION] Early Success: ${successfulRuns}/${validationEntry.attempts} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
-                
+
                 // Log criteria details for successful runs
                 validationEntry.scores.forEach((score, index) => {
                     if (validationEntry.fitResults[index]) {
@@ -232,7 +232,7 @@ export class ValidationManager {
             }
         }
 
-            // Check if agent has completed required validation runs (full 3-run cycle)
+        // Check if agent has completed required validation runs (full 3-run cycle)
         if (validationEntry.attempts >= VALIDATION_REQUIRED_RUNS && !validationEntry.isValidated) {
             const avgScore = validationEntry.scores.reduce((a, b) => a + b, 0) / validationEntry.scores.length;
             const bestScore = Math.max(...validationEntry.scores);
@@ -242,16 +242,16 @@ export class ValidationManager {
             this.logger.info(`[VALIDATION] ${geneId} VALIDATION COMPLETE`);
             this.logger.info(`[VALIDATION] ========================================`);
             this.logger.info(`[VALIDATION] Overall Results: ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
-            
+
             // Detailed breakdown of each run
             validationEntry.scores.forEach((score, index) => {
                 const fit = validationEntry.fitResults[index];
                 const status = score === bestScore ? '🏆 BEST' : fit ? '✅ PASS' : '❌ FAIL';
                 const criteriaDetails = validationEntry.criteriaDetails[index];
-                
+
                 this.logger.info(`[VALIDATION] ────────────────────────────────────────`);
                 this.logger.info(`[VALIDATION] Run ${index + 1}: ${status} | Fitness: ${score.toFixed(1)}`);
-                
+
                 if (criteriaDetails) {
                     const criteriaStatus = criteriaDetails.criteria.map(c => {
                         return `${c.name}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
@@ -260,7 +260,7 @@ export class ValidationManager {
                     this.logger.info(`[VALIDATION] Run ${index + 1} Details: ${criteriaDetails.criteriaMet}/5 criteria met`);
                 }
             });
-            
+
             this.logger.info(`[VALIDATION] ========================================`);
 
             if (successfulRuns >= 2) { // Require at least 2 out of 3 runs to be successful
@@ -305,7 +305,7 @@ export class ValidationManager {
                 this.logger.info(`[VALIDATION] 💥 ${geneId} FAILED VALIDATION`);
                 this.logger.info(`[VALIDATION] ========================================`);
                 this.logger.info(`[VALIDATION] Failure Reason: Only ${successfulRuns}/${VALIDATION_REQUIRED_RUNS} runs passed | Average Fitness: ${avgScore.toFixed(1)}`);
-                
+
                 // Log which runs failed and why
                 validationEntry.scores.forEach((score, index) => {
                     if (!validationEntry.fitResults[index]) {
@@ -319,7 +319,7 @@ export class ValidationManager {
                     }
                 });
                 this.logger.info(`[VALIDATION] ========================================`);
-                
+
                 validationEntry.isValidated = false;
 
                 // Show toast notification for failed validation
@@ -555,10 +555,10 @@ export class ValidationManager {
             // Calculate final fitness before logging
             agent.calculateFitness();
             const criteriaDetails = this.getCriteriaDetails(agent);
-            
+
             this.logger.info(`[VALIDATION] 💥 Validation agent ${agent.id} (${agent.geneId}) died`);
             this.logger.info(`[VALIDATION] Run ${validationEntry.attempts + 1}/${VALIDATION_REQUIRED_RUNS} completed: Fitness ${agent.fitness.toFixed(1)}, Fit: ${agent.fit ? 'YES' : 'NO'}`);
-            
+
             if (criteriaDetails) {
                 const criteriaStatus = criteriaDetails.criteria.map(c => {
                     return `${c.name}: ${c.passed ? '✅' : '❌'} (${c.value.toFixed(1)}/${c.threshold.toFixed(1)})`;
@@ -638,8 +638,8 @@ export class ValidationManager {
             {
                 name: 'Fitness',
                 value: fitness,
-                threshold: MIN_FITNESS_TO_SAVE_GENE_POOL,
-                passed: fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL
+                threshold: GENE_POOL_MIN_FITNESS,
+                passed: fitness >= GENE_POOL_MIN_FITNESS
             },
             {
                 name: 'Food Eaten',

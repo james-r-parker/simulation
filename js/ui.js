@@ -4,7 +4,7 @@ import { updateMemoryStats, handleMemoryPressure } from './memory.js';
 import { updateFoodScalingFactor } from './spawn.js';
 import { copySimulationStats } from './stats.js';
 import {
-    MIN_FITNESS_TO_SAVE_GENE_POOL,
+    GENE_POOL_MIN_FITNESS,
     MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
     MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL,
     MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
@@ -548,7 +548,7 @@ export function setupUIListeners(simulation) {
             simulation.renderingEnabled = true;
             console.warn('[UI] renderingEnabled was undefined, initializing to true');
         }
-        
+
         // Update button state based on current rendering state
         const updateButtonState = () => {
             if (simulation.renderingEnabled) {
@@ -561,17 +561,17 @@ export function setupUIListeners(simulation) {
                 toggleRenderBtn.title = 'Resume Rendering';
             }
         };
-        
+
         // Initialize button state
         updateButtonState();
-        
+
         // Remove any existing listener by checking for a stored handler
         if (toggleRenderBtn._renderToggleHandler) {
             toggleRenderBtn.removeEventListener('click', toggleRenderBtn._renderToggleHandler);
         }
-        
+
         // Create and store the handler function
-        toggleRenderBtn._renderToggleHandler = function(e) {
+        toggleRenderBtn._renderToggleHandler = function (e) {
             e.preventDefault();
             e.stopPropagation();
             try {
@@ -588,7 +588,7 @@ export function setupUIListeners(simulation) {
                 simulation.logger.error('[UI] Error toggling rendering:', error);
             }
         };
-        
+
         // Add the event listener
         toggleRenderBtn.addEventListener('click', toggleRenderBtn._renderToggleHandler, { capture: false, passive: false });
     } else {
@@ -1106,7 +1106,7 @@ function updateAgentModal(agent, simulation) {
     baseScore += safeNum(agent.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS;
     baseScore += safeNum(agent.goalMemory?.goalsCompleted || 0, 0) * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
     baseScore += safeNum(agent.reproductionAttempts || 0, 0) * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
-    
+
     if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
         baseScore += directionChangedNormalized * FITNESS_MULTIPLIERS.DIRECTION_CHANGES;
         baseScore += speedChangedNormalized * FITNESS_MULTIPLIERS.SPEED_CHANGES;
@@ -1176,9 +1176,9 @@ function updateAgentModal(agent, simulation) {
     const adjustedBaseScore = Math.max(0, baseScore - inactivityPenalty);
 
     // Survival bonuses
-    const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+    const survivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
         Math.min((ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) * SURVIVAL_BONUSES.BASE_MULTIPLIER, SURVIVAL_BONUSES.BASE_CAP) : 0;
-    const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ? 
+    const rawSurvivalBonus = ageInSeconds > SURVIVAL_BONUSES.EXTENDED_THRESHOLD ?
         (ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD) / SURVIVAL_BONUSES.EXTENDED_DIVISOR : 0;
 
     // Update display values - show both raw and normalized where applicable
@@ -1760,27 +1760,27 @@ function showGeneticDiversityModal(simulation) {
                                 </thead>
                                 <tbody>
                                     ${validationQueue.map(([geneId, entry]) => {
-                                        const bestScore = entry.scores.length > 0 ? Math.max(...entry.scores) : 0;
-                                        const avgScore = entry.scores.length > 0 ? entry.scores.reduce((a, b) => a + b, 0) / entry.scores.length : 0;
-                                        const fitRuns = entry.fitResults.filter(fit => fit).length;
-                                        const totalRuns = entry.attempts;
-                                        const timeSinceLast = Date.now() - entry.lastValidationTime;
-                                        const timeAgo = timeSinceLast < 60000 ? `${Math.floor(timeSinceLast / 1000)}s` : `${Math.floor(timeSinceLast / 60000)}m`;
+        const bestScore = entry.scores.length > 0 ? Math.max(...entry.scores) : 0;
+        const avgScore = entry.scores.length > 0 ? entry.scores.reduce((a, b) => a + b, 0) / entry.scores.length : 0;
+        const fitRuns = entry.fitResults.filter(fit => fit).length;
+        const totalRuns = entry.attempts;
+        const timeSinceLast = Date.now() - entry.lastValidationTime;
+        const timeAgo = timeSinceLast < 60000 ? `${Math.floor(timeSinceLast / 1000)}s` : `${Math.floor(timeSinceLast / 60000)}m`;
 
-                                        let status = 'In Progress';
-                                        let statusClass = 'status-progress';
-                                        if (entry.isValidated) {
-                                            status = 'Validated';
-                                            statusClass = 'status-validated';
-                                        } else if (totalRuns >= 3) {
-                                            status = fitRuns >= 2 ? 'Passed' : 'Failed';
-                                            statusClass = fitRuns >= 2 ? 'status-passed' : 'status-failed';
-                                        } else if (entry.attempts >= 5) {
-                                            status = 'Stuck';
-                                            statusClass = 'status-stuck';
-                                        }
+        let status = 'In Progress';
+        let statusClass = 'status-progress';
+        if (entry.isValidated) {
+            status = 'Validated';
+            statusClass = 'status-validated';
+        } else if (totalRuns >= 3) {
+            status = fitRuns >= 2 ? 'Passed' : 'Failed';
+            statusClass = fitRuns >= 2 ? 'status-passed' : 'status-failed';
+        } else if (entry.attempts >= 5) {
+            status = 'Stuck';
+            statusClass = 'status-stuck';
+        }
 
-                                        return `
+        return `
                                     <tr>
                                         <td class="gene-id-cell">${geneId}</td>
                                         <td>${totalRuns}/3</td>
@@ -1791,7 +1791,7 @@ function showGeneticDiversityModal(simulation) {
                                         <td>${timeAgo} ago</td>
                                     </tr>
                                         `;
-                                    }).join('')}
+    }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -2171,14 +2171,14 @@ function showReproductionModal(simulation) {
                         <div class="stat-row">
                             <div class="stat-cell"><strong>By Specialization:</strong></div>
                             <div class="stat-cell">${Object.entries(specializationReproduction).map(([type, data]) =>
-                                `${type}:${data.count}→${data.totalOffspring}(${data.sexualOffspring}♡)`
-                            ).join(' | ')}</div>
+        `${type}:${data.count}→${data.totalOffspring}(${data.sexualOffspring}♡)`
+    ).join(' | ')}</div>
                         </div>
                         <div class="stat-row">
                             <div class="stat-cell"><strong>Recent Generations:</strong></div>
                             <div class="stat-cell">${Object.entries(generationStats).sort(([a], [b]) => parseInt(b) - parseInt(a)).slice(0, 3).map(([gen, data]) =>
-                                `G${gen}:${data.count}→${data.totalOffspring}(${(data.totalOffspring / data.count).toFixed(1)})`
-                            ).join(' | ')}</div>
+        `G${gen}:${data.count}→${data.totalOffspring}(${(data.totalOffspring / data.count).toFixed(1)})`
+    ).join(' | ')}</div>
                         </div>
                         <div class="stat-row">
                             <div class="stat-cell"><strong>Status:</strong></div>
@@ -2246,7 +2246,7 @@ function showQualificationModal(simulation) {
 
     // Calculate qualification criteria breakdown
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= GENE_POOL_MIN_FITNESS).length;
     const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
     const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {
@@ -2264,7 +2264,7 @@ function showQualificationModal(simulation) {
 
     // Calculate agents meeting ALL criteria (qualified agents)
     const qualifiedAgents = livingAgents.filter(a => {
-        const fitnessOk = safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
+        const fitnessOk = safeNumber(a.fitness, 0) >= GENE_POOL_MIN_FITNESS;
         const foodOk = safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
         const ageOk = safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL;
         const explorationOk = ((a.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
@@ -2275,7 +2275,7 @@ function showQualificationModal(simulation) {
     // Calculate specialization distribution for qualified agents
     const qualifiedSpecializations = {};
     livingAgents.forEach(agent => {
-        const fitnessOk = safeNumber(agent.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL;
+        const fitnessOk = safeNumber(agent.fitness, 0) >= GENE_POOL_MIN_FITNESS;
         const foodOk = safeNumber(agent.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL;
         const ageOk = safeNumber(agent.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL;
         const explorationOk = ((agent.exploredCells?.size || 0) / totalCells) * 100 >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
@@ -2299,7 +2299,7 @@ function showQualificationModal(simulation) {
                     <div class="compact-summary-bar">
                         <div class="summary-item"><strong>Qualified:</strong> <span class="${qualifiedAgents > 0 ? 'highlight-green' : 'highlight-red'}">${qualifiedAgents}/${livingAgents.length}</span></div>
                         <div class="summary-item"><strong>Rate:</strong> ${((qualifiedAgents / livingAgents.length) * 100).toFixed(1)}%</div>
-                        <div class="summary-item"><strong>Thresholds:</strong> F≥${MIN_FITNESS_TO_SAVE_GENE_POOL}, Food≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}, Age≥${MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL}s, Exp≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%, Nav≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}</div>
+                        <div class="summary-item"><strong>Thresholds:</strong> F≥${GENE_POOL_MIN_FITNESS}, Food≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}, Age≥${MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL}s, Exp≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%, Nav≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}</div>
                     </div>
 
                     <div class="compact-stats-grid">
@@ -2322,8 +2322,8 @@ function showQualificationModal(simulation) {
                         <div class="stat-row">
                             <div class="stat-cell"><strong>Qualified Specializations:</strong></div>
                             <div class="stat-cell">${Object.entries(qualifiedSpecializations).length > 0 ?
-                                Object.entries(qualifiedSpecializations).map(([type, count]) => `${type}:${count}`).join(' | ') :
-                                'None yet'}</div>
+            Object.entries(qualifiedSpecializations).map(([type, count]) => `${type}:${count}`).join(' | ') :
+            'None yet'}</div>
                         </div>
                         <div class="stat-row">
                             <div class="stat-cell"><strong>Status:</strong></div>
@@ -2437,7 +2437,7 @@ export function updateDashboard(simulation) {
 
     // Calculate qualification criteria breakdown
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= MIN_FITNESS_TO_SAVE_GENE_POOL).length;
+    const agentsMeetingFitness = livingAgents.filter(a => safeNumber(a.fitness, 0) >= GENE_POOL_MIN_FITNESS).length;
     const agentsMeetingFood = livingAgents.filter(a => safeNumber(a.foodEaten || 0, 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
     const agentsMeetingAge = livingAgents.filter(a => safeNumber(a.age || 0, 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
     const agentsMeetingExploration = livingAgents.filter(a => {

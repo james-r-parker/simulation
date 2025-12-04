@@ -11,7 +11,7 @@ import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGEN
 import { Food } from './food.js';
 import { PheromonePuff } from './pheromone.js';
 import {
-    LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY,
+    LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, AGENT_CONFIGS,
     COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING,
     VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION,
     MAX_VELOCITY,
@@ -175,8 +175,27 @@ export class WebGLRenderer {
 
         // Agent meshes (instanced for performance)
         this.agentMeshes = new Map(); // geneId -> mesh
-        this.agentGeometry = new THREE.CircleGeometry(1, 16);
-        this.agentBorderGeometry = new THREE.RingGeometry(0.88, 1.0, 64); // Thicker border (0.88-1.0 instead of 0.95-1.0) with more segments for smoother appearance
+
+        // Create specialized geometries for each agent type
+        // Using CircleGeometry with different segment counts to create shapes
+        // All shapes fit within the same collision radius for consistent physics
+        this.agentGeometries = {
+            circle: new THREE.CircleGeometry(1, 32),      // Forager - smooth circle
+            triangle: new THREE.CircleGeometry(1, 3),     // Predator - sharp triangle
+            hexagon: new THREE.CircleGeometry(1, 6),      // Reproducer - organic hexagon
+            diamond: new THREE.CircleGeometry(1, 4),      // Scout - sleek diamond
+            square: new THREE.CircleGeometry(1, 4)        // Defender - solid square
+        };
+
+        // Create border geometries (slightly larger for outline effect)
+        // Using scaled-up versions of the same shapes for consistent borders
+        this.agentBorderGeometries = {
+            circle: new THREE.CircleGeometry(1, 32),
+            triangle: new THREE.CircleGeometry(1, 3),
+            hexagon: new THREE.CircleGeometry(1, 6),
+            diamond: new THREE.CircleGeometry(1, 4),
+            square: new THREE.CircleGeometry(1, 4)
+        };
 
         // Food geometry - using InstancedMesh
         this.foodGeometry = new THREE.CircleGeometry(1, 8);
@@ -394,11 +413,19 @@ export class WebGLRenderer {
         }
 
         // 12. Dispose of shared geometries (if they exist)
-        if (this.agentGeometry) {
-            this.agentGeometry.dispose();
+        if (this.agentGeometries) {
+            for (const key in this.agentGeometries) {
+                if (this.agentGeometries[key]) {
+                    this.agentGeometries[key].dispose();
+                }
+            }
         }
-        if (this.agentBorderGeometry) {
-            this.agentBorderGeometry.dispose();
+        if (this.agentBorderGeometries) {
+            for (const key in this.agentBorderGeometries) {
+                if (this.agentBorderGeometries[key]) {
+                    this.agentBorderGeometries[key].dispose();
+                }
+            }
         }
         if (this.foodGeometry) {
             this.foodGeometry.dispose();
@@ -910,8 +937,22 @@ export class WebGLRenderer {
 
                 // Increased from 100 to 200 to handle larger populations per gene
                 const maxInstances = MAX_INSTANCES_PER_BATCH;
-                const bodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, maxInstances);
-                const borderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, maxInstances);
+
+                // Get the shape configuration for this specialization
+                const config = AGENT_CONFIGS[specialization];
+                const shapeType = config?.shape || 'circle';
+                const rotationOffset = config?.rotationOffset || 0;
+
+                // Select the appropriate geometry based on shape
+                const bodyGeometry = this.agentGeometries[shapeType] || this.agentGeometries.circle;
+                const borderGeometry = this.agentBorderGeometries[shapeType] || this.agentBorderGeometries.circle;
+
+                const bodyMesh = new THREE.InstancedMesh(bodyGeometry, bodyMaterial, maxInstances);
+                const borderMesh = new THREE.InstancedMesh(borderGeometry, borderMaterial, maxInstances);
+
+                // Store rotation offset for later use when positioning agents
+                bodyMesh.userData.rotationOffset = rotationOffset;
+                borderMesh.userData.rotationOffset = rotationOffset;
 
                 bodyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 borderMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -1046,14 +1087,21 @@ export class WebGLRenderer {
 
                 // Update body - ensure minimum visible size
                 const renderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE); // Never smaller than minimum size
-                matrix.makeScale(renderSize, renderSize, 1);
+                const rotationOffset = mesh.body.userData.rotationOffset || 0;
+
+                // Apply rotation to make shapes point in the direction of movement
+                // agent.angle is the direction the agent is facing
+                // rotationOffset adjusts for the default orientation of the geometry
+                matrix.makeRotationZ(agent.angle + rotationOffset);
+                matrix.scale(acquireVector3().set(renderSize, renderSize, 1));
                 matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
                 mesh.body.setMatrixAt(i, matrix);
 
                 // Update border (always visible to show specialization)
                 // Border is rendered slightly behind body to prevent z-fighting/tearing
                 const borderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * AGENT_BORDER_SIZE_MULTIPLIER;
-                matrix.makeScale(borderSize, borderSize, 1);
+                matrix.makeRotationZ(agent.angle + rotationOffset);
+                matrix.scale(acquireVector3().set(borderSize, borderSize, 1));
                 matrix.setPosition(agent.x, -agent.y, 0.09); // Slightly behind body (0.09 vs 0.1) to prevent z-fighting
                 mesh.border.setMatrixAt(i, matrix);
 
