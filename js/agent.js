@@ -36,8 +36,7 @@ import {
     BOUNCE_ENERGY_LOSS, COLLISION_SEPARATION_STRENGTH, COLLISION_NUDGE_STRENGTH,
     KIN_RELATEDNESS_SELF, KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_RELATEDNESS_GRANDPARENT,
     KIN_RELATEDNESS_DISTANT, KIN_RELATEDNESS_MAX_GENERATION_DIFF,
-    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD,
-    GENE_POOL_MIN_FITNESS
+    TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -328,6 +327,13 @@ export class Agent {
         this._cachedTargetAngle = null;
         this._lastTargetCacheUpdate = 0;
 
+        // Cache for speed calculations (updated each frame in update())
+        this._cachedSpeedSq = 0;
+        this._cachedSpeed = 0;
+        this._cachedInvSpeed = 0;
+        this._cachedVelocityAngle = 0;
+        this._lastSpeedCacheUpdate = 0;
+
         // Log agent birth
         const mutationProcess = this.gene?.mutationProcess || 'unknown';
         this.logger.debug(`[LIFECYCLE] 🎉 Agent ${this.id} (${this.geneId}) born - Specialization: ${this.specializationType}, Energy: ${this.energy.toFixed(1)}, Parent: ${parent ? parent.id + ' (' + parent.geneId + ')' : 'none'}, Mutation: ${mutationProcess}`);
@@ -431,7 +437,14 @@ export class Agent {
         this.isBraking = Math.abs(this.targetThrust) < (geneticMaxThrust * 0.1);
 
         // 3. Calculate current speed (needed for rotation efficiency calculation)
-        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        // OPTIMIZED: Reuse cached speed if available, otherwise calculate
+        let currentSpeed;
+        if (this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0) {
+            currentSpeed = this._cachedSpeed;
+        } else {
+            const speedSq = this.vx * this.vx + this.vy * this.vy;
+            currentSpeed = speedSq > 0 ? Math.sqrt(speedSq) : 0;
+        }
 
         // 4. DIRECT CONTROL: Remove the automatic braking logic block
         // Instead, simply interpolate current thrust towards output
@@ -576,7 +589,7 @@ export class Agent {
 
         // Smooth size growth effect for newly spawned agents (grow from 30% to 100% size over SIZE_GROWTH_FRAMES)
 
-        // Calculate base size from energy (used for both spawn effect and normal sizing)
+        // OPTIMIZED: Calculate base size from energy once and reuse throughout method
         const energyBasedSize = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
 
         // During spawn growth, scale from min to max of energy-based size
@@ -671,15 +684,29 @@ export class Agent {
         let currentSpeedSq = this.vx * this.vx + this.vy * this.vy;
 
         // Cap velocity - OPTIMIZED: Cache sqrt result and use multiplication instead of division
+        let currentSpeed = 0;
+        let invCurrentSpeed = 0;
         if (currentSpeedSq > MAX_VELOCITY_SQ) {
-            const currentSpeed = Math.sqrt(currentSpeedSq);
-            const invCurrentSpeed = 1 / currentSpeed;
+            currentSpeed = Math.sqrt(currentSpeedSq);
+            invCurrentSpeed = 1 / currentSpeed;
             const ratio = MAX_VELOCITY * invCurrentSpeed;
             this.vx *= ratio;
             this.vy *= ratio;
             // Recalculate after capping
             currentSpeedSq = MAX_VELOCITY_SQ;
+            currentSpeed = MAX_VELOCITY;
+            invCurrentSpeed = 1 / MAX_VELOCITY;
+        } else if (currentSpeedSq > 0) {
+            currentSpeed = Math.sqrt(currentSpeedSq);
+            invCurrentSpeed = 1 / currentSpeed;
         }
+
+        // Cache speed calculations for reuse in other methods
+        this._cachedSpeedSq = currentSpeedSq;
+        this._cachedSpeed = currentSpeed;
+        this._cachedInvSpeed = invCurrentSpeed;
+        this._cachedVelocityAngle = Math.atan2(this.vy, this.vx);
+        this._lastSpeedCacheUpdate = this.framesAlive;
 
         this.x += this.vx;
         this.y += this.vy;
@@ -734,8 +761,8 @@ export class Agent {
 
         // 2. Temperature Logic
         // Increase temp based on movement (FPS-normalized)
-        // OPTIMIZED: Reuse currentSpeedSq from velocity capping
-        const currentSpeed = currentSpeedSq > 0 ? Math.sqrt(currentSpeedSq) : 0;
+        // OPTIMIZED: Reuse cached speed from velocity capping
+        // currentSpeed already calculated above
         const invMaxVelocity = 1 / MAX_VELOCITY;
         const speedRatio = Math.min(currentSpeed * invMaxVelocity, 1.0);
         const fpsNormalization = this.simulation && this.simulation.currentFps ?
@@ -840,15 +867,17 @@ export class Agent {
         let angleDiff = 0;
         let turnDirection = 0;
 
-        // Only calculate if moving to avoid noise
+            // Only calculate if moving to avoid noise
         // OPTIMIZED: Use squared comparison to avoid Math.abs
         const prevSpeedSq = prevVx * prevVx + prevVy * prevVy;
-        const currSpeedSq = currVx * currVx + currVy * currVy;
+        // OPTIMIZED: Reuse cached current speed squared if available
+        const currSpeedSq = this._lastSpeedCacheUpdate === this.framesAlive ? this._cachedSpeedSq : (currVx * currVx + currVy * currVy);
         const MIN_MOVEMENT_THRESHOLD_SQ = 0.0001; // 0.01^2 to avoid sqrt
 
         if (prevSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ || currSpeedSq > MIN_MOVEMENT_THRESHOLD_SQ) {
             prevAngle = Math.atan2(prevVy, prevVx);
-            currAngle = Math.atan2(currVy, currVx);
+            // OPTIMIZED: Reuse cached velocity angle if available
+            currAngle = this._lastSpeedCacheUpdate === this.framesAlive ? this._cachedVelocityAngle : Math.atan2(currVy, currVx);
             angleDiff = Math.abs(currAngle - prevAngle);
             if (angleDiff > Math.PI) angleDiff = TWO_PI - angleDiff;
 
@@ -860,7 +889,8 @@ export class Agent {
 
             // Track speed changes to reward dynamic movement (not constant speed circles)
             const prevSpeed = Math.sqrt(prevSpeedSq);
-            const currSpeed = Math.sqrt(currSpeedSq);
+            // OPTIMIZED: Reuse cached current speed if available
+            const currSpeed = this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0 ? this._cachedSpeed : Math.sqrt(currSpeedSq);
             const speedDiff = Math.abs(currSpeed - prevSpeed);
             // Increased threshold and reduced multiplier to prevent tiny speed changes from accumulating
             if (speedDiff > MIN_SPEED_CHANGE_FOR_FITNESS) {
@@ -980,7 +1010,7 @@ export class Agent {
         // Only update if spawn growth is complete (to avoid conflicts)
 
         if (spawnProgress >= 1.0) {
-            const energyBasedSize = Math.max(MIN_AGENT_SIZE, BASE_SIZE + (this.energy / ENERGY_TO_SIZE_RATIO));
+            // OPTIMIZED: Reuse energyBasedSize calculated earlier in update()
             this.targetSize = energyBasedSize;
 
             // Interpolate actual size towards target size for smooth visual effect
@@ -1198,6 +1228,14 @@ export class Agent {
         // Reset ray hits counter at start of each frame
         this.rayHits = 0;
 
+        // OPTIMIZED: Cache coordinates to avoid repeated property access
+        const x = this.x;
+        const y = this.y;
+        const negX = -x;
+        const negY = -y;
+        const worldWidthMinusX = worldWidth - x;
+        const worldHeightMinusY = worldHeight - y;
+
         // Reuse pre-allocated arrays
         this.inputs.length = 0;
         this.rayData.length = 0; // Clear rayData to prevent accumulation
@@ -1215,17 +1253,20 @@ export class Agent {
         const alignAngleStep = TWO_PI / numAlignmentRays;
 
         // Helper for ray-circle intersection
-        const rayCircleIntersect = (rayX, rayY, rayDirX, rayDirY, circleX, circleY, circleRadius) => {
-            const ocX = circleX - rayX;
-            const ocY = circleY - rayY;
+        // OPTIMIZED: Use cached x, y coordinates
+        const rayCircleIntersect = (rayDirX, rayDirY, circleX, circleY, circleRadius) => {
+            const ocX = circleX - x;
+            const ocY = circleY - y;
             const b = (ocX * rayDirX + ocY * rayDirY);
             const c = (ocX * ocX + ocY * ocY) - circleRadius * circleRadius;
             const discriminant = b * b - c;
 
             if (discriminant < 0) return null; // No intersection
 
-            const t1 = b - Math.sqrt(discriminant);
-            const t2 = b + Math.sqrt(discriminant);
+            // OPTIMIZED: Cache sqrt calculation
+            const sqrtDiscriminant = Math.sqrt(discriminant);
+            const t1 = b - sqrtDiscriminant;
+            const t2 = b + sqrtDiscriminant;
 
             if (t1 > RAY_DISTANCE_THRESHOLD) return t1; // First intersection point in front of ray origin
             if (t2 > RAY_DISTANCE_THRESHOLD) return t2; // Second intersection point in front of ray origin (if t1 was behind)
@@ -1256,11 +1297,12 @@ export class Agent {
             let hitEntity = null;
 
             // Check for world edge collisions
+            // OPTIMIZED: Use cached coordinate calculations
             let distToEdge = Infinity;
-            if (rayDirX < 0) distToEdge = Math.min(distToEdge, -this.x / rayDirX);
-            if (rayDirX > 0) distToEdge = Math.min(distToEdge, (worldWidth - this.x) / rayDirX);
-            if (rayDirY < 0) distToEdge = Math.min(distToEdge, -this.y / rayDirY);
-            if (rayDirY > 0) distToEdge = Math.min(distToEdge, (worldHeight - this.y) / rayDirY);
+            if (rayDirX < 0) distToEdge = Math.min(distToEdge, negX / rayDirX);
+            if (rayDirX > 0) distToEdge = Math.min(distToEdge, worldWidthMinusX / rayDirX);
+            if (rayDirY < 0) distToEdge = Math.min(distToEdge, negY / rayDirY);
+            if (rayDirY > 0) distToEdge = Math.min(distToEdge, worldHeightMinusY / rayDirY);
 
             if (distToEdge > 0 && distToEdge < closestDist) {
                 closestDist = distToEdge;
@@ -1269,12 +1311,15 @@ export class Agent {
 
             // OPTIMIZED: Query quadtree for nearby obstacles instead of checking all 500
             // Calculate ray bounding box for spatial query
-            const rayEndX = this.x + rayDirX * maxRayDist;
-            const rayEndY = this.y + rayDirY * maxRayDist;
-            const rayBoundsMinX = Math.min(this.x, rayEndX);
-            const rayBoundsMaxX = Math.max(this.x, rayEndX);
-            const rayBoundsMinY = Math.min(this.y, rayEndY);
-            const rayBoundsMaxY = Math.max(this.y, rayEndY);
+            // OPTIMIZED: Cache ray direction * maxRayDist calculations
+            const rayEndOffsetX = rayDirX * maxRayDist;
+            const rayEndOffsetY = rayDirY * maxRayDist;
+            const rayEndX = x + rayEndOffsetX;
+            const rayEndY = y + rayEndOffsetY;
+            const rayBoundsMinX = Math.min(x, rayEndX);
+            const rayBoundsMaxX = Math.max(x, rayEndX);
+            const rayBoundsMinY = Math.min(y, rayEndY);
+            const rayBoundsMaxY = Math.max(y, rayEndY);
             const rayBoundsCenterX = (rayBoundsMinX + rayBoundsMaxX) / 2;
             const rayBoundsCenterY = (rayBoundsMinY + rayBoundsMaxY) / 2;
             const rayBoundsHalfWidth = (rayBoundsMaxX - rayBoundsMinX) / 2 + 50; // +50 for safety margin
@@ -1296,6 +1341,7 @@ export class Agent {
                         hitType = 4; // Obstacle
                         hitEntity = obs;
                         // Track closest obstacle for collision risk calculation
+                        // OPTIMIZED: Direct comparison (dist already calculated)
                         if (dist < closestObstacleDist) {
                             closestObstacleDist = dist;
                         }
@@ -1309,8 +1355,9 @@ export class Agent {
 
             // Query quadtree for nearby entities (agents and food)
             // Reuse pre-allocated Rectangle
-            this.queryRange.x = this.x - maxRayDist;
-            this.queryRange.y = this.y - maxRayDist;
+            // OPTIMIZED: Use cached x, y coordinates
+            this.queryRange.x = x - maxRayDist;
+            this.queryRange.y = y - maxRayDist;
             this.queryRange.w = maxRayDist * 2;
             this.queryRange.h = maxRayDist * 2;
 
@@ -1322,7 +1369,7 @@ export class Agent {
 
                 if (entity.isFood) {
                     const food = entity;
-                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, food.x, food.y, food.size);
+                    const dist = rayCircleIntersect(rayDirX, rayDirY, food.x, food.y, food.size);
                     if (dist !== null && dist > 0 && dist < closestDist) {
                         closestDist = dist;
                         hitType = 1; // Food
@@ -1336,7 +1383,7 @@ export class Agent {
                     }
                 } else if (entity instanceof Agent) {
                     const otherAgent = entity;
-                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, otherAgent.x, otherAgent.y, otherAgent.size);
+                    const dist = rayCircleIntersect(rayDirX, rayDirY, otherAgent.x, otherAgent.y, otherAgent.size);
                     if (dist !== null && dist > 0 && dist < closestDist) {
                         closestDist = dist;
                         if (this.size > otherAgent.size * 1.1) {
@@ -1428,21 +1475,25 @@ export class Agent {
             let closestDist = maxRayDist;
 
             let distToEdge = Infinity;
-            if (rayDirX < 0) distToEdge = Math.min(distToEdge, -this.x / rayDirX);
-            if (rayDirX > 0) distToEdge = Math.min(distToEdge, (worldWidth - this.x) / rayDirX);
-            if (rayDirY < 0) distToEdge = Math.min(distToEdge, -this.y / rayDirY);
-            if (rayDirY > 0) distToEdge = Math.min(distToEdge, (worldHeight - this.y) / rayDirY);
+            // OPTIMIZED: Use cached coordinate calculations
+            if (rayDirX < 0) distToEdge = Math.min(distToEdge, negX / rayDirX);
+            if (rayDirX > 0) distToEdge = Math.min(distToEdge, worldWidthMinusX / rayDirX);
+            if (rayDirY < 0) distToEdge = Math.min(distToEdge, negY / rayDirY);
+            if (rayDirY > 0) distToEdge = Math.min(distToEdge, worldHeightMinusY / rayDirY);
             if (distToEdge > 0 && distToEdge < closestDist) {
                 closestDist = distToEdge;
             }
 
             // OPTIMIZED: Query quadtree for nearby obstacles instead of checking all 500
-            const rayEndX = this.x + rayDirX * maxRayDist;
-            const rayEndY = this.y + rayDirY * maxRayDist;
-            const rayBoundsMinX = Math.min(this.x, rayEndX);
-            const rayBoundsMaxX = Math.max(this.x, rayEndX);
-            const rayBoundsMinY = Math.min(this.y, rayEndY);
-            const rayBoundsMaxY = Math.max(this.y, rayEndY);
+            // OPTIMIZED: Cache ray direction * maxRayDist calculations
+            const rayEndOffsetX = rayDirX * maxRayDist;
+            const rayEndOffsetY = rayDirY * maxRayDist;
+            const rayEndX = x + rayEndOffsetX;
+            const rayEndY = y + rayEndOffsetY;
+            const rayBoundsMinX = Math.min(x, rayEndX);
+            const rayBoundsMaxX = Math.max(x, rayEndX);
+            const rayBoundsMinY = Math.min(y, rayEndY);
+            const rayBoundsMaxY = Math.max(y, rayEndY);
             const rayBoundsCenterX = (rayBoundsMinX + rayBoundsMaxX) / 2;
             const rayBoundsCenterY = (rayBoundsMinY + rayBoundsMaxY) / 2;
             const rayBoundsHalfWidth = (rayBoundsMaxX - rayBoundsMinX) / 2 + 50;
@@ -1468,8 +1519,9 @@ export class Agent {
             queryArrayPool.release(nearbyPoints);
 
             // Reuse pre-allocated Rectangle
-            this.queryRange.x = this.x - maxRayDist;
-            this.queryRange.y = this.y - maxRayDist;
+            // OPTIMIZED: Use cached x, y coordinates
+            this.queryRange.x = x - maxRayDist;
+            this.queryRange.y = y - maxRayDist;
             this.queryRange.w = maxRayDist * 2;
             this.queryRange.h = maxRayDist * 2;
 
@@ -1481,7 +1533,7 @@ export class Agent {
 
                 const r = entity.isFood ? entity.size : (entity.size || 0);
                 if (r > 0) {
-                    const dist = rayCircleIntersect(this.x, this.y, rayDirX, rayDirY, entity.x, entity.y, r);
+                    const dist = rayCircleIntersect(rayDirX, rayDirY, entity.x, entity.y, r);
                     if (dist !== null && dist > 0 && dist < closestDist) {
                         closestDist = dist;
                     }
@@ -1522,8 +1574,9 @@ export class Agent {
         let inShadow = false;
 
         // Reuse pre-allocated Rectangle
-        this.smellRadius.x = this.x - PHEROMONE_RADIUS;
-        this.smellRadius.y = this.y - PHEROMONE_RADIUS;
+        // OPTIMIZED: Use cached x, y coordinates
+        this.smellRadius.x = x - PHEROMONE_RADIUS;
+        this.smellRadius.y = y - PHEROMONE_RADIUS;
         this.smellRadius.w = PHEROMONE_DIAMETER;
         this.smellRadius.h = PHEROMONE_DIAMETER;
 
@@ -1531,7 +1584,8 @@ export class Agent {
         for (const entity of nearbyPuffs) {
             if (entity.data instanceof PheromonePuff) {
                 const pheromone = entity.data;
-                const dist = distance(this.x, this.y, pheromone.x, pheromone.y);
+                // OPTIMIZED: Use cached x, y coordinates
+                const dist = distance(x, y, pheromone.x, pheromone.y);
                 if (dist < PHEROMONE_RADIUS) {
                     const intensity = 1.0 - (dist / PHEROMONE_RADIUS);
                     if (pheromone.type === 'danger') {
@@ -1547,7 +1601,8 @@ export class Agent {
         queryArrayPool.release(nearbyPuffs);
 
         for (const obs of obstacles) {
-            const dist = distance(this.x, this.y, obs.x, obs.y);
+            // OPTIMIZED: Use cached x, y coordinates
+            const dist = distance(x, y, obs.x, obs.y);
             if (dist < obs.radius + OBSTACLE_HIDING_RADIUS) {
                 inShadow = true;
                 break;
@@ -1557,8 +1612,16 @@ export class Agent {
         this.dangerSmell = dangerSmell;
         this.attackSmell = attackSmell;
 
-        const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        const velocityAngle = Math.atan2(this.vy, this.vx);
+        // OPTIMIZED: Reuse cached speed and velocity angle if available
+        let currentSpeed;
+        let velocityAngle;
+        if (this._lastSpeedCacheUpdate === this.framesAlive) {
+            currentSpeed = this._cachedSpeed;
+            velocityAngle = this._cachedVelocityAngle;
+        } else {
+            currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            velocityAngle = Math.atan2(this.vy, this.vx);
+        }
         const angleDifference = (velocityAngle - this.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
         inputs.push((MAX_ENERGY - this.energy) / MAX_ENERGY); // Hunger
@@ -1765,10 +1828,14 @@ export class Agent {
         // Add target memory inputs to neural network
         if (this.targetMemory.currentTarget) {
             // Calculate distance and angle to target (cached, updated every 5 frames)
+            // OPTIMIZED: Use cached x, y coordinates
             if (this._lastTargetCacheUpdate !== this.framesAlive || this.framesAlive % 5 === 0) {
-                const dx = this.targetMemory.currentTarget.x - this.x;
-                const dy = this.targetMemory.currentTarget.y - this.y;
-                this._cachedTargetDistance = Math.sqrt(dx * dx + dy * dy);
+                const dx = this.targetMemory.currentTarget.x - x;
+                const dy = this.targetMemory.currentTarget.y - y;
+                // OPTIMIZED: Cache dx and dy squared for potential reuse
+                const dxSq = dx * dx;
+                const dySq = dy * dy;
+                this._cachedTargetDistance = Math.sqrt(dxSq + dySq);
                 this._cachedTargetAngle = Math.atan2(dy, dx);
                 this._lastTargetCacheUpdate = this.framesAlive;
             }
@@ -1908,8 +1975,12 @@ export class Agent {
 
         // DEFENDER TERRITORIAL BONUS: Increased aggression when intruders detected in territory
         if (this.specializationType === 'defender') {
-            const distFromTerritory = Math.sqrt((this.x - this.territoryCenterX) ** 2 + (this.y - this.territoryCenterY) ** 2);
-            this.isInTerritory = distFromTerritory < this.territoryRadius;
+            // OPTIMIZED: Use squared distance for comparison, only calculate sqrt if needed
+            const dx = this.x - this.territoryCenterX;
+            const dy = this.y - this.territoryCenterY;
+            const distSq = dx * dx + dy * dy;
+            const territoryRadiusSq = this.territoryRadius * this.territoryRadius;
+            this.isInTerritory = distSq < territoryRadiusSq;
 
             // Extra aggression when in territory and seeing prey (intruders)
             if (this.isInTerritory && preyProximity > 0) {
@@ -2354,14 +2425,15 @@ export class Agent {
             const dx = this.targetMemory.currentTarget.x - this.x;
             const dy = this.targetMemory.currentTarget.y - this.y;
 
-            // Normalize target vector
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            // OPTIMIZED: Reuse cached target distance if available
+            const dist = this._cachedTargetDistance || Math.sqrt(dx * dx + dy * dy);
             if (dist > 0.1) {
                 const nx = dx / dist;
                 const ny = dy / dist;
 
                 // Normalize agent velocity
-                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                // OPTIMIZED: Reuse cached speed if available
+                const speed = this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0 ? this._cachedSpeed : Math.sqrt(this.vx * this.vx + this.vy * this.vy);
                 if (speed > 0.1) {
                     const vnx = this.vx / speed;
                     const vny = this.vy / speed;
@@ -2426,7 +2498,8 @@ export class Agent {
 
                     // Reward 2: High-speed pursuit of prey
                     // Check if we're moving fast and detecting smaller agents (prey)
-                    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                    // OPTIMIZED: Reuse cached speed if available
+                    const speed = this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0 ? this._cachedSpeed : Math.sqrt(this.vx * this.vx + this.vy * this.vy);
                     if (speed > 1.0 && this.aggression > 0.5) {
                         // Check lastRayData for prey signals (smaller agents)
                         const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');

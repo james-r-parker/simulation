@@ -504,3 +504,4 @@ export function disposeNeuralBackground(neuralSystem, neuralBackgroundGroup) {
     if (neuralSystem.connections) neuralSystem.connections.length = 0;
 }
 
+

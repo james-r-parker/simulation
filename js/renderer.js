@@ -6,23 +6,18 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { Agent } from './agent.js';
 import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGENT_MINIMUM_BORDER_SIZE } from './constants.js';
-import { Food } from './food.js';
-import { PheromonePuff } from './pheromone.js';
 import {
-    LOW_ENERGY_THRESHOLD, OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, MAX_ENERGY, AGENT_CONFIGS,
+    OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, AGENT_CONFIGS,
     COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING,
     VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION,
     MAX_VELOCITY,
-    BACKGROUND_SIZE_MULTIPLIER, BACKGROUND_WIDTH, BACKGROUND_HEIGHT,
     NEURAL_NODES_COUNT, NEURAL_CONNECTION_DISTANCE, MAX_CONNECTIONS_PER_NODE,
-    NEURAL_PARALLAX_FACTOR, NEURAL_NODE_SIZE, NEURAL_SYNAPSE_WIDTH,
+    NEURAL_PARALLAX_FACTOR, NEURAL_NODE_SIZE,
     NEURAL_PULSE_SPEED, NEURAL_ENERGY_FLOW_SPEED, NEURAL_MAX_OPACITY,
     NEURAL_SPARK_PROBABILITY, NEURAL_FIRING_SPEED, NEURAL_WAVE_COUNT,
     NEURAL_COLORS
 } from './constants.js';
-import { queryArrayPool } from './array-pool.js';
 import {
     acquireMatrix4, releaseMatrix4,
     acquireVector3, releaseVector3,
