@@ -10,6 +10,7 @@ import {
     NEURAL_SPARK_PROBABILITY, NEURAL_FIRING_SPEED, NEURAL_WAVE_COUNT,
     NEURAL_COLORS
 } from './constants.js';
+import { acquireVector2, releaseVector2 } from './three-object-pool.js';
 
 /**
  * Generate random neuron positions across the background area
@@ -399,13 +400,17 @@ export function initializeNeuralBackground(logger, neuralBackgroundGroup, worldW
     logger.log('[RENDER] Neural network background initialized with',
         nodes.length, 'nodes and', connections.length, 'connections');
 
+    // CRITICAL: Use pooled Vector2 to prevent memory leak
+    const parallaxOffset = acquireVector2();
+    parallaxOffset.set(0, 0);
+
     return {
         nodes,
         connections,
         nodePoints,
         connectionLines,
         animationTime: 0,
-        parallaxOffset: new THREE.Vector2(0, 0)
+        parallaxOffset
     };
 }
 
@@ -443,7 +448,56 @@ export function updateNeuralBackground(neuralSystem, cameraX, cameraY, cameraZoo
     }
 }
 
+/**
+ * Dispose of neural background resources to prevent memory leaks
+ * Call this when destroying the renderer
+ * @param {Object} neuralSystem - Neural system state from initializeNeuralBackground
+ * @param {THREE.Group} neuralBackgroundGroup - Three.js group for neural background
+ */
+export function disposeNeuralBackground(neuralSystem, neuralBackgroundGroup) {
+    if (!neuralSystem) return;
 
+    // Dispose of node points geometry and material
+    if (neuralSystem.nodePoints) {
+        if (neuralSystem.nodePoints.geometry) {
+            // Dispose of buffer attributes
+            const geometry = neuralSystem.nodePoints.geometry;
+            geometry.dispose();
+        }
+        if (neuralSystem.nodePoints.material) {
+            // ShaderMaterial is not pooled, dispose directly
+            neuralSystem.nodePoints.material.dispose();
+        }
+        if (neuralBackgroundGroup) {
+            neuralBackgroundGroup.remove(neuralSystem.nodePoints);
+        }
+        neuralSystem.nodePoints = null;
+    }
 
+    // Dispose of connection lines geometry and material
+    if (neuralSystem.connectionLines) {
+        if (neuralSystem.connectionLines.geometry) {
+            // Dispose of buffer attributes
+            const geometry = neuralSystem.connectionLines.geometry;
+            geometry.dispose();
+        }
+        if (neuralSystem.connectionLines.material) {
+            // ShaderMaterial is not pooled, dispose directly
+            neuralSystem.connectionLines.material.dispose();
+        }
+        if (neuralBackgroundGroup) {
+            neuralBackgroundGroup.remove(neuralSystem.connectionLines);
+        }
+        neuralSystem.connectionLines = null;
+    }
 
+    // CRITICAL: Release pooled Vector2 to prevent memory leak
+    if (neuralSystem.parallaxOffset) {
+        releaseVector2(neuralSystem.parallaxOffset);
+        neuralSystem.parallaxOffset = null;
+    }
 
+    // Clear arrays
+    if (neuralSystem.nodes) neuralSystem.nodes.length = 0;
+    if (neuralSystem.connections) neuralSystem.connections.length = 0;
+}

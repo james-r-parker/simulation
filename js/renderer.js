@@ -41,7 +41,7 @@ import {
 } from './three-object-pool.js';
 import { neuralArrayPool } from './neural-network.js';
 import {
-    initializeNeuralBackground, updateNeuralBackground
+    initializeNeuralBackground, updateNeuralBackground, disposeNeuralBackground
 } from './neural-background.js';
 import { addSparkles, updateSparkles } from './sparkles.js';
 import { addVisualEffect, updateVisualEffects, updateVisualEffectsRendering } from './visual-effects.js';
@@ -124,7 +124,7 @@ export class WebGLRenderer {
         this.sparkleSizesBuffer = null;
         this.rayPositionsBuffer = null;
         this.rayColorsBuffer = null;
-        
+
         // Reusable sparkle Points object to avoid recreation
         this.sparklePoints = null;
 
@@ -166,7 +166,7 @@ export class WebGLRenderer {
         this.pheromoneGroup = new THREE.Group();
         this.obstacleGroup = new THREE.Group();
         this.rayGroup = new THREE.Group(); // Ray visualization
-        
+
         this.scene.add(this.agentGroup);
         this.scene.add(this.foodGroup);
         this.scene.add(this.pheromoneGroup);
@@ -360,6 +360,15 @@ export class WebGLRenderer {
         }
 
         // 9. Dispose of neural network background
+        if (this.neuralSystem) {
+            disposeNeuralBackground(this.neuralSystem, this.neuralBackgroundGroup);
+            this.neuralSystem = null;
+        }
+        if (this.neuralBackgroundGroup) {
+            if (this.scene) this.scene.remove(this.neuralBackgroundGroup);
+            this.neuralBackgroundGroup = null;
+        }
+
         // 10. Dispose of sparkle system
         if (this.sparkleGroup) {
             while (this.sparkleGroup.children.length > 0) {
@@ -498,7 +507,7 @@ export class WebGLRenderer {
 
     updateSparkles() {
         if (!this.sparklesEnabled) return;
-        
+
         // Update and remove expired sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             const sparkle = this.sparkles[i];
@@ -515,19 +524,23 @@ export class WebGLRenderer {
 
         // Update sparkle meshes - reuse when possible
         if (this.sparkles.length > 0) {
+            // CRITICAL: Cap buffer size to prevent unbounded growth (max 10,000 sparkles)
+            const MAX_SPARKLE_COUNT = 10000;
+            const cappedSparkleCount = Math.min(this.sparkles.length, MAX_SPARKLE_COUNT);
+
             // Reuse or create buffers with growth strategy (1.5x growth factor)
-            const neededSize = this.sparkles.length * 3;
+            const neededSize = cappedSparkleCount * 3;
             if (!this.sparklePositionsBuffer || this.sparklePositionsBuffer.length < neededSize) {
                 const growSize = Math.ceil(neededSize * 1.5); // Allocate 1.5x to reduce reallocations
                 this.sparklePositionsBuffer = new Float32Array(growSize);
                 this.sparkleColorsBuffer = new Float32Array(growSize);
-                this.sparkleSizesBuffer = new Float32Array(Math.ceil(this.sparkles.length * 1.5));
+                this.sparkleSizesBuffer = new Float32Array(Math.ceil(cappedSparkleCount * 1.5));
             }
             const positions = this.sparklePositionsBuffer.subarray(0, neededSize);
             const colors = this.sparkleColorsBuffer.subarray(0, neededSize);
-            const sizes = this.sparkleSizesBuffer.subarray(0, this.sparkles.length);
+            const sizes = this.sparkleSizesBuffer.subarray(0, cappedSparkleCount);
 
-            for (let i = 0; i < this.sparkles.length; i++) {
+            for (let i = 0; i < cappedSparkleCount; i++) {
                 const sparkle = this.sparkles[i];
                 const i3 = i * 3;
                 positions[i3] = sparkle.x;
@@ -555,18 +568,18 @@ export class WebGLRenderer {
                 const positionsCopy = new Float32Array(positions);
                 const colorsCopy = new Float32Array(colors);
                 const sizesCopy = new Float32Array(sizes);
-                
+
                 const geometry = acquireBufferGeometry();
                 const positionAttr = new THREE.BufferAttribute(positionsCopy, 3);
                 positionAttr.count = this.sparkles.length;
                 geometry.setAttribute('position', positionAttr);
-                
+
                 const colorAttr = new THREE.BufferAttribute(colorsCopy, 3);
-                colorAttr.count = this.sparkles.length;
+                colorAttr.count = cappedSparkleCount;
                 geometry.setAttribute('color', colorAttr);
-                
+
                 const sizeAttr = new THREE.BufferAttribute(sizesCopy, 1);
-                sizeAttr.count = this.sparkles.length;
+                sizeAttr.count = cappedSparkleCount;
                 geometry.setAttribute('size', sizeAttr);
 
                 // Create custom shader material for soft circular sparkles
@@ -606,17 +619,17 @@ export class WebGLRenderer {
 
                 this.sparklePoints = new THREE.Points(geometry, sparkleShaderMaterial);
                 this.sparklePoints.visible = true;
-                
+
                 // CRITICAL: Ensure sparkleGroup is in scene before adding sparklePoints
                 if (this.sparkleGroup.parent !== this.scene) {
                     this.scene.add(this.sparkleGroup);
                 }
-                
+
                 // Only add if not already in the group (safety check)
                 if (!this.sparkleGroup.children.includes(this.sparklePoints)) {
                     this.sparkleGroup.add(this.sparklePoints);
                 }
-                
+
                 // CRITICAL: Compute bounding sphere for proper rendering
                 geometry.computeBoundingSphere();
             } else {
@@ -630,13 +643,12 @@ export class WebGLRenderer {
                 if (posAttr && posAttr.array.length >= neededSize) {
                     posAttr.array.set(positions);
                     posAttr.needsUpdate = true;
-                    posAttr.count = this.sparkles.length;
+                    posAttr.count = cappedSparkleCount;
                 } else {
                     // CRITICAL: Create proper array copy instead of subarray view
-                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
                     const positionsCopy = new Float32Array(positions);
                     const newAttr = new THREE.BufferAttribute(positionsCopy, 3);
-                    newAttr.count = this.sparkles.length;
+                    newAttr.count = cappedSparkleCount;
                     newAttr.needsUpdate = true;
                     geometry.setAttribute('position', newAttr);
                 }
@@ -644,31 +656,28 @@ export class WebGLRenderer {
                 if (colorAttr && colorAttr.array.length >= neededSize) {
                     colorAttr.array.set(colors);
                     colorAttr.needsUpdate = true;
-                    colorAttr.count = this.sparkles.length;
+                    colorAttr.count = cappedSparkleCount;
                 } else {
                     // CRITICAL: Create proper array copy instead of subarray view
-                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
                     const colorsCopy = new Float32Array(colors);
                     const newAttr = new THREE.BufferAttribute(colorsCopy, 3);
-                    newAttr.count = this.sparkles.length;
+                    newAttr.count = cappedSparkleCount;
                     newAttr.needsUpdate = true;
                     geometry.setAttribute('color', newAttr);
                 }
 
-                if (sizeAttr && sizeAttr.array.length >= this.sparkles.length) {
+                if (sizeAttr && sizeAttr.array.length >= cappedSparkleCount) {
                     sizeAttr.array.set(sizes);
                     sizeAttr.needsUpdate = true;
-                    sizeAttr.count = this.sparkles.length;
+                    sizeAttr.count = cappedSparkleCount;
                 } else {
-                    // CRITICAL: Create proper array copy instead of subarray view
-                    // Note: Three.js automatically handles old attribute cleanup when setAttribute is called
                     const sizesCopy = new Float32Array(sizes);
                     const newAttr = new THREE.BufferAttribute(sizesCopy, 1);
-                    newAttr.count = this.sparkles.length;
+                    newAttr.count = cappedSparkleCount;
                     newAttr.needsUpdate = true;
                     geometry.setAttribute('size', newAttr);
                 }
-                
+
                 // CRITICAL: Ensure sparklePoints is still in the scene hierarchy and visible
                 if (this.sparkleGroup.parent !== this.scene) {
                     this.scene.add(this.sparkleGroup);
@@ -676,13 +685,13 @@ export class WebGLRenderer {
                 if (!this.sparkleGroup.children.includes(this.sparklePoints)) {
                     this.sparkleGroup.add(this.sparklePoints);
                 }
-                
+
                 // CRITICAL: Always ensure visible and valid when we have sparkles
                 this.sparklePoints.visible = true;
-                
+
                 // CRITICAL: Recompute bounding sphere when attributes change
                 geometry.computeBoundingSphere();
-                
+
                 // CRITICAL: Force geometry update to ensure rendering
                 geometry.attributes.position.needsUpdate = true;
                 geometry.attributes.color.needsUpdate = true;
@@ -765,7 +774,7 @@ export class WebGLRenderer {
                 bestAgent = agent;
             }
         }
-        
+
         // Group ALL living agents by gene ID first (to prevent disposal of off-screen agents)
         const agentsByGene = new Map();
         const numAgents = agents.length;
@@ -880,12 +889,12 @@ export class WebGLRenderer {
                 specializationColor.setHex(COLORS.AGENTS[specialization] || COLORS.AGENTS.FORAGER);
                 // Darken the base color significantly (multiply by 0.25 for much darker appearance)
                 specializationColor.multiplyScalar(0.25);
-                
+
                 const borderEmissiveColor = acquireColor();
                 borderEmissiveColor.setHex(EMISSIVE_COLORS.AGENTS[specialization] || EMISSIVE_COLORS.AGENTS.FORAGER);
                 // Much darker emissive for subtle glow that blends into background
                 borderEmissiveColor.multiplyScalar(0.15);
-                
+
                 const borderColor = acquireColor();
                 borderColor.copy(specializationColor);
                 const borderEmissive = acquireColor();
@@ -1344,7 +1353,7 @@ export class WebGLRenderer {
                 // Create spiky/jagged geometry for more menacing look
                 const segments = 16;
                 const geometry = new THREE.CircleGeometry(obs.radius, segments);
-                
+
                 // Modify vertices to create spiky appearance
                 const positions = geometry.attributes.position;
                 for (let i = 0; i < positions.count; i++) {
@@ -1369,7 +1378,7 @@ export class WebGLRenderer {
                 const obstacleEmissiveColor = acquireColor();
                 obstacleEmissiveColor.setHex(EMISSIVE_COLORS.OBSTACLE);
                 obstacleEmissiveColor.multiplyScalar(0.4); // Brighter emissive for pulsing effect
-                
+
                 const obstacleColor = acquireColor();
                 obstacleColor.setHex(COLORS.OBSTACLE);
                 obstacleColor.multiplyScalar(0.6); // Darker base color
@@ -1384,7 +1393,7 @@ export class WebGLRenderer {
                 });
                 releaseColor(obstacleEmissiveColor);
                 releaseColor(obstacleColor);
-                
+
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(obs.x, -obs.y, 0);
                 mesh.userData.obstacleId = obs.id;
@@ -1418,14 +1427,14 @@ export class WebGLRenderer {
                 if (circleMesh && shadowMesh) {
                     circleMesh.position.set(obs.x, -obs.y, 0);
                     shadowMesh.position.set(obs.x, -obs.y, 0);
-                    
+
                     // Update pulsing glow effect
                     const pulse = Math.sin(this.obstaclePulseTime * 2 + i) * 0.3 + 0.7;
                     if (circleMesh.material && circleMesh.userData.baseEmissiveIntensity) {
                         circleMesh.material.emissiveIntensity = circleMesh.userData.baseEmissiveIntensity * pulse;
                     }
                 }
-                
+
                 // Update particle system position
                 const particleSystem = this.obstacleParticleSystems.get(obs.id);
                 if (particleSystem) {
@@ -1433,7 +1442,7 @@ export class WebGLRenderer {
                 }
             }
         }
-        
+
         // Update pulse time
         this.obstaclePulseTime += 0.05;
     }
