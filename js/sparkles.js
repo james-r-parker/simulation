@@ -16,20 +16,52 @@ import {
  * @param {number} maxSparkles - Maximum number of sparkles allowed
  */
 export function addSparkles(sparkles, agent, effectType, maxSparkles) {
-    if (!agent || agent.isDead) return;
+    // Special case: death effects can be added even for dead agents (they're added right as they die)
+    if (!agent) return;
+    if (effectType !== 'death' && agent.isDead) return;
     if (sparkles.length >= maxSparkles) return; // Limit for performance
 
-    // Spawn 3-5 sparkles per effect
-    const sparkleCount = 3 + Math.floor(Math.random() * 3);
-    const color = effectType === 'collision' ? EMISSIVE_COLORS.EFFECTS.COLLISION : EMISSIVE_COLORS.EFFECTS.EATING;
+    // Death effects are more dramatic - more particles
+    let sparkleCount, color;
+    if (effectType === 'death') {
+        sparkleCount = 12 + Math.floor(Math.random() * 8); // 12-20 particles for dramatic death
+        // Dark purple/red for death effect - more dramatic
+        color = EMISSIVE_COLORS.EFFECTS.DEATH;
+    } else if (effectType === 'shout') {
+        sparkleCount = 5 + Math.floor(Math.random() * 4); // 5-8 particles for shout (more than normal)
+        color = EMISSIVE_COLORS.EFFECTS.SHOUT;
+    } else if (effectType === 'collision') {
+        sparkleCount = 3 + Math.floor(Math.random() * 3);
+        color = EMISSIVE_COLORS.EFFECTS.COLLISION;
+    } else {
+        sparkleCount = 3 + Math.floor(Math.random() * 3);
+        color = EMISSIVE_COLORS.EFFECTS.EATING;
+    }
 
     for (let i = 0; i < sparkleCount; i++) {
         if (sparkles.length >= maxSparkles) break;
 
         const angle = Math.random() * Math.PI * 2;
-        const distance = agent.size * (0.5 + Math.random() * 0.5);
-        const speed = 0.5 + Math.random() * 1.0;
-        const life = 20 + Math.floor(Math.random() * 20); // 20-40 frames
+        let distance, speed, life, size;
+        
+        if (effectType === 'death') {
+            // Death effect: particles burst outward more dramatically
+            distance = agent.size * (0.3 + Math.random() * 0.4); // Start closer to center
+            speed = 1.5 + Math.random() * 2.5; // Faster, more dramatic burst
+            life = 40 + Math.floor(Math.random() * 40); // 40-80 frames - longer duration
+            size = 6 + Math.random() * 10; // Larger particles: 6-16
+        } else if (effectType === 'shout') {
+            // Shout effect: particles expand outward in a ring pattern (like sound waves)
+            distance = agent.size * (0.8 + Math.random() * 0.4); // Start further out
+            speed = 0.8 + Math.random() * 1.2; // Moderate speed - like sound waves expanding
+            life = 25 + Math.floor(Math.random() * 20); // 25-45 frames - medium duration
+            size = 5 + Math.random() * 7; // Medium-large particles: 5-12
+        } else {
+            distance = agent.size * (0.5 + Math.random() * 0.5);
+            speed = 0.5 + Math.random() * 1.0;
+            life = 20 + Math.floor(Math.random() * 20); // 20-40 frames
+            size = 4 + Math.random() * 6; // Larger sparkles: 4-10 instead of 2-4
+        }
 
         sparkles.push({
             x: agent.x + Math.cos(angle) * distance,
@@ -39,7 +71,7 @@ export function addSparkles(sparkles, agent, effectType, maxSparkles) {
             color: color,
             life: life,
             maxLife: life,
-            size: 4 + Math.random() * 6 // Larger sparkles: 4-10 instead of 2-4
+            size: size
         });
     }
 }

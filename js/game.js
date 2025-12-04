@@ -1500,6 +1500,11 @@ export class Simulation {
                             // NUTRIENT CYCLING: Create fertile zone from decomposed agent
                             this.createFertileZone(agent);
 
+                            // AMAZING DEATH EFFECT: Add dramatic visual effect when agent dies
+                            if (this.renderer) {
+                                this.renderer.addVisualEffect(agent, 'death', this.gameSpeed);
+                            }
+
                             // PERFORMANCE: Release collision tracking Set back to pool
                             if (agent.processedCollisions) {
                                 collisionSetPool.release(agent.processedCollisions);

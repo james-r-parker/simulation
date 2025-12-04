@@ -2403,7 +2403,9 @@ export const EMISSIVE_COLORS = {
     },
     EFFECTS: {
         COLLISION: 0xFF1A4D,  // Brighter red glow
-        EATING: 0x4AFF2E       // Brighter green glow
+        EATING: 0x4AFF2E,      // Brighter green glow
+        DEATH: 0x8B008B,       // Dark magenta/purple for dramatic death effect
+        SHOUT: 0x00FFFF        // Bright cyan for shout/communication effects
     }
 };
 

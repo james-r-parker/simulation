@@ -16,8 +16,11 @@ import { addSparkles } from './sparkles.js';
  * @param {boolean} sparklesEnabled - Whether sparkles are enabled
  */
 export function addVisualEffect(agentEffects, agent, effectType, currentFrame, gameSpeed, sparkles, maxSparkles, sparklesEnabled) {
-    // NEVER add effects to dead agents
-    if (!agent || agent.isDead) {
+    // Special case: death effects can be added even for dead agents (they're added right as they die)
+    if (!agent) {
+        return;
+    }
+    if (effectType !== 'death' && agent.isDead) {
         return;
     }
 
@@ -56,8 +59,8 @@ export function updateVisualEffects(agentEffects, currentFrame) {
 
     // Clean up expired effects and dead agents
     for (const [agent, effects] of agentEffects.entries()) {
-        // Remove effects for dead agents immediately
-        if (!agent || agent.isDead) {
+        // Remove effects for dead agents immediately (except death effects which are one-time)
+        if (!agent || (agent.isDead && !effects.some(e => e.type === 'death'))) {
             agentEffects.delete(agent);
             continue;
         }

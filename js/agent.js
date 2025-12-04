@@ -2161,6 +2161,10 @@ export class Agent {
             if (predatorThreat > SHOUT_PREDATOR_ALERT_THRESHOLD &&
                 Math.random() < SHOUT_PREDATOR_ALERT_CHANCE) {
                 this.shout(SHOUT_TYPES.PREDATOR_ALERT, predatorThreat * 2.0);
+                // Add visual effect for shout
+                if (this.simulation && this.simulation.renderer) {
+                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                }
             }
         }
 
@@ -2169,6 +2173,10 @@ export class Agent {
             if (this.eventFlags.justAteFood > 0 &&
                 Math.random() < SHOUT_FOOD_FOUND_CHANCE) {
                 this.shout(SHOUT_TYPES.FOOD_FOUND, 1.5);
+                // Add visual effect for shout
+                if (this.simulation && this.simulation.renderer) {
+                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                }
             }
         }
 
@@ -2176,6 +2184,10 @@ export class Agent {
         if (this.energy < DEATH_RISK_THRESHOLD &&
             Math.random() < SHOUT_HELP_REQUEST_CHANCE) {
             this.shout(SHOUT_TYPES.HELP_REQUEST, 1.0);
+            // Add visual effect for shout
+            if (this.simulation && this.simulation.renderer) {
+                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+            }
         }
 
         // Reproducer specialty: Mate call when ready to reproduce
@@ -2184,6 +2196,10 @@ export class Agent {
             this.energy > MIN_ENERGY_TO_REPRODUCE &&
             Math.random() < 0.1) {
             this.shout(SHOUT_TYPES.MATE_CALL, 1.2);
+            // Add visual effect for shout
+            if (this.simulation && this.simulation.renderer) {
+                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+            }
         }
     }
 
