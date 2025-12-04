@@ -6,7 +6,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { POST_PROCESSING } from './constants.js';
+import { POST_PROCESSING, POST_PROCESSING_ENABLED } from './constants.js';
 import {
     acquireVector2, releaseVector2
 } from './three-object-pool.js';
@@ -161,7 +161,8 @@ export function setupPostProcessing(renderer, scene, camera, container, logger) 
         let vignettePass = null;
 
         // Add motion blur pass (before chromatic aberration for better effect)
-        if (POST_PROCESSING.MOTION_BLUR.ENABLED) {
+        // Respect POST_PROCESSING_ENABLED constant - enable if post-processing is enabled
+        if (POST_PROCESSING_ENABLED && POST_PROCESSING.MOTION_BLUR.ENABLED) {
             motionBlurPass = new ShaderPass(motionBlurShader);
             motionBlurPass.uniforms.strength.value = POST_PROCESSING.MOTION_BLUR.STRENGTH;
             motionBlurPass.enabled = true;
@@ -169,20 +170,21 @@ export function setupPostProcessing(renderer, scene, camera, container, logger) 
         }
 
         // Add screen effects if enabled
-        if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
+        // Respect POST_PROCESSING_ENABLED constant - enable if post-processing is enabled
+        if (POST_PROCESSING_ENABLED && POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED) {
             chromaticPass = new ShaderPass(chromaticAberrationShader);
             effectComposer.addPass(chromaticPass);
         }
 
-        if (POST_PROCESSING.VIGNETTE.ENABLED) {
+        if (POST_PROCESSING_ENABLED && POST_PROCESSING.VIGNETTE.ENABLED) {
             vignettePass = new ShaderPass(vignetteShader);
             vignettePass.renderToScreen = true; // Last pass should render to screen
             effectComposer.addPass(vignettePass);
         } else {
             // If no vignette, determine last pass
-            if (POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED && chromaticPass) {
+            if (POST_PROCESSING_ENABLED && POST_PROCESSING.CHROMATIC_ABERRATION.ENABLED && chromaticPass) {
                 chromaticPass.renderToScreen = true;
-            } else if (POST_PROCESSING.MOTION_BLUR.ENABLED && motionBlurPass) {
+            } else if (POST_PROCESSING_ENABLED && POST_PROCESSING.MOTION_BLUR.ENABLED && motionBlurPass) {
                 motionBlurPass.renderToScreen = true;
             } else {
                 bloomPass.renderToScreen = true;

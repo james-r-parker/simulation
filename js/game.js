@@ -1812,18 +1812,34 @@ export class Simulation {
                 // Render the scene
                 this.perfMonitor.startPhase('rendering');
 
-                this.perfMonitor.timeSync('rendering.visualEffects', () => {
-                    this.renderer.updateVisualEffects(this.frameCount);
-                });
+                // PERFORMANCE: Only update visual effects and rays on render frames
+                // Use adaptive frame skip if FPS is low
+                let adaptiveFrameSkip = RENDER_FRAME_SKIP;
+                if (this.currentFps > 0 && this.currentFps < 30) {
+                    adaptiveFrameSkip = Math.min(RENDER_FRAME_SKIP * 2, 4);
+                } else if (this.currentFps > 0 && this.currentFps < 45) {
+                    adaptiveFrameSkip = Math.min(RENDER_FRAME_SKIP + 1, 3);
+                }
+                
+                this.renderFrameCounter++;
+                const isRenderFrame = (this.renderFrameCounter % adaptiveFrameSkip === 0);
+                
+                if (isRenderFrame) {
+                    this.perfMonitor.timeSync('rendering.visualEffects', () => {
+                        this.renderer.updateVisualEffects(this.frameCount);
+                    });
 
-                this.perfMonitor.timeSync('rendering.rayRendering', () => {
-                    this.renderer.updateRays(this.agents, this.frameCount);
-                });
+                    this.perfMonitor.timeSync('rendering.rayRendering', () => {
+                        // Only update rays if they're enabled
+                        if (this.showRays) {
+                            this.renderer.updateRays(this.agents, this.frameCount);
+                        }
+                    });
+                }
 
                 this.perfMonitor.timeSync('rendering.render', () => {
                     // Only render every Nth frame based on RENDER_FRAME_SKIP
-                    this.renderFrameCounter++;
-                    if (this.renderFrameCounter % RENDER_FRAME_SKIP === 0) {
+                    if (isRenderFrame) {
                         this.renderer.render();
                     }
                 });

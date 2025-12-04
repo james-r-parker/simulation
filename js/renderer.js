@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGENT_MINIMUM_BORDER_SIZE } from './constants.js';
 import {
     OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, AGENT_CONFIGS,
-    COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING,
+    COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING, POST_PROCESSING_ENABLED,
     VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION,
     MAX_VELOCITY,
     NEURAL_NODES_COUNT, NEURAL_CONNECTION_DISTANCE, MAX_CONNECTIONS_PER_NODE,
@@ -57,10 +57,11 @@ export class WebGLRenderer {
 
         // Post-processing setup (initialize early so it's available when setupPostProcessing is called)
         this.effectComposer = null;
-        this.postProcessingEnabled = true; // Can be toggled for performance
+        this.postProcessingEnabled = POST_PROCESSING_ENABLED; // Use constant for initial state
 
         // Scene setup
         this.scene = new THREE.Scene();
+        // Background color is long-lived, create normally (not pooled)
         this.scene.background = new THREE.Color(COLORS.BACKGROUND);
 
         // Obstacle animation tracking
@@ -78,7 +79,9 @@ export class WebGLRenderer {
         this.neuralConnections = [];
         this.neuralEnergyFlows = [];
         this.neuralAnimationTime = 0;
-        this.neuralParallaxOffset = new THREE.Vector2(0, 0);
+        // PERFORMANCE: Use pooled Vector2 for neural parallax offset
+        this.neuralParallaxOffset = acquireVector2();
+        this.neuralParallaxOffset.set(0, 0);
         this.scene.add(this.neuralBackgroundGroup);
 
         // Add lighting for cyberpunk aesthetic
@@ -96,8 +99,8 @@ export class WebGLRenderer {
 
         // Camera setup (orthographic for 2D)
         const aspect = container.clientWidth / container.clientHeight;
-        // Smaller viewSize = see less world = things appear larger (was 0.6, now 0.4)
-        const viewSize = Math.max(worldWidth, worldHeight) * VIEW_SIZE_RATIO;
+        // PERFORMANCE: Use precomputed baseViewSize instead of recalculating
+        const viewSize = this.baseViewSize;
         this.camera = new THREE.OrthographicCamera(
             -viewSize * aspect, viewSize * aspect,
             viewSize, -viewSize,
@@ -105,13 +108,15 @@ export class WebGLRenderer {
         );
         this.camera.position.z = CAMERA_Z_POSITION;
 
-        // Cached frustum for performance (reused across all culling operations)
-        this.frustum = new THREE.Frustum();
-        this.frustumMatrix = new THREE.Matrix4();
+        // PERFORMANCE: Use pooled objects for frustum culling
+        this.frustum = acquireFrustum();
+        this.frustumMatrix = acquireMatrix4();
 
-        // Reusable objects for frustum culling to avoid allocations
-        this.tempVec = new THREE.Vector3();
-        this.testSphere = new THREE.Sphere(this.tempVec, 0);
+        // PERFORMANCE: Use pooled objects for frustum culling to avoid allocations
+        this.tempVec = acquireVector3();
+        this.testSphere = acquireSphere();
+        this.testSphere.center = this.tempVec;
+        this.testSphere.radius = 0;
 
         // Reusable buffers for sparkles and rays to avoid allocations
         this.sparklePositionsBuffer = null;
@@ -129,6 +134,37 @@ export class WebGLRenderer {
         this.tempVisiblePheromones = [];
         this.tempActiveAgents = [];
         this.tempActiveEffects = [];
+
+        // PERFORMANCE: Dirty tracking for positions to avoid unnecessary matrix updates
+        this.agentPositions = new Map(); // agent -> {x, y, angle, size}
+        this.foodPositions = new Map(); // food -> {x, y, size}
+        this.pheromonePositions = new Map(); // pheromone -> {x, y, size}
+        
+        // PERFORMANCE: Camera position tracking for conditional neural background updates
+        this.lastCameraX = 0;
+        this.lastCameraY = 0;
+        this.lastCameraZoom = 1;
+        this.cameraMovementThreshold = 50; // Only update neural background if camera moved >50 units
+
+        // PERFORMANCE: Precomputed math constants to avoid repeated calculations
+        this.ONE_OVER_MAX_VELOCITY = 1 / MAX_VELOCITY;
+        this.maxWorldDimension = Math.max(worldWidth, worldHeight);
+        this.baseViewSize = this.maxWorldDimension * VIEW_SIZE_RATIO;
+        
+        // PERFORMANCE: Cached math values for common operations
+        this.cachedAgentMinSize = AGENT_MINIMUM_BORDER_SIZE;
+        this.cachedBorderMultiplier = AGENT_BORDER_SIZE_MULTIPLIER;
+        this.cachedFrustumSafetyMargin = this.cachedAgentMinSize * 3 + 50; // Used in frustum culling
+        
+        // PERFORMANCE: Reusable math variables to avoid allocations
+        this.tempSpeedSquared = 0;
+        this.tempSpeed = 0;
+        this.tempSpeedRatio = 0;
+        this.tempRenderSize = 0;
+        this.tempBorderSize = 0;
+        this.tempDx = 0;
+        this.tempDy = 0;
+        this.tempDz = 0;
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({
@@ -466,6 +502,14 @@ export class WebGLRenderer {
         this.tempActiveAgents.length = 0;
         this.tempActiveEffects.length = 0;
 
+        // 18. Release pooled Three.js objects
+        // Note: We don't release frustum, matrix, vector3, sphere, or vector2 as they're cached for reuse
+        // But we should release the neuralParallaxOffset Vector2 since it's a long-lived object
+        if (this.neuralParallaxOffset) {
+            releaseVector2(this.neuralParallaxOffset);
+            this.neuralParallaxOffset = null;
+        }
+
         this.logger.log('[RENDER] WebGL renderer disposed successfully');
     }
 
@@ -522,7 +566,14 @@ export class WebGLRenderer {
     }
 
     updateSparkles() {
-        if (!this.sparklesEnabled) return;
+        // PERFORMANCE: Early exit if disabled or empty
+        if (!this.sparklesEnabled || this.sparkles.length === 0) {
+            // Hide sparkle points if they exist
+            if (this.sparklePoints) {
+                this.sparklePoints.visible = false;
+            }
+            return;
+        }
 
         // Update and remove expired sparkles
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
@@ -536,6 +587,14 @@ export class WebGLRenderer {
             if (sparkle.life <= 0) {
                 this.sparkles.splice(i, 1);
             }
+        }
+
+        // PERFORMANCE: Early exit if all sparkles expired
+        if (this.sparkles.length === 0) {
+            if (this.sparklePoints) {
+                this.sparklePoints.visible = false;
+            }
+            return;
         }
 
         // Update sparkle meshes - reuse when possible
@@ -749,10 +808,10 @@ export class WebGLRenderer {
         this.camera.position.x = cameraPos.x;
         this.camera.position.y = -cameraPos.y; // Flip Y for Three.js
 
+        // PERFORMANCE: Use precomputed baseViewSize
         // Update camera zoom and projection
         const aspect = this.container.clientWidth / this.container.clientHeight;
-        const baseViewSize = Math.max(this.worldWidth, this.worldHeight) * VIEW_SIZE_RATIO;
-        const viewSize = baseViewSize * cameraPos.zoom;
+        const viewSize = this.baseViewSize * cameraPos.zoom;
 
         this.camera.left = -viewSize * aspect;
         this.camera.right = viewSize * aspect;
@@ -821,8 +880,34 @@ export class WebGLRenderer {
 
         // Use reusable Vector3/Sphere for culling to reduce garbage
 
-        // Update/create meshes for each gene ID
+        // PERFORMANCE: Early frustum culling for entire gene groups
+        // Check if any agent in the gene group is visible before processing
+        const visibleGeneGroups = new Map();
         for (const [geneId, geneAgents] of agentsByGene.entries()) {
+            // Quick check: if any agent in group is potentially visible, include the group
+            let hasVisibleAgent = false;
+            for (let j = 0; j < geneAgents.length && !hasVisibleAgent; j++) {
+                const agent = geneAgents[j];
+                if (!agent || agent.isDead) continue;
+                
+                // PERFORMANCE: Use cached calculations
+                this.tempVec.set(agent.x, -agent.y, 0);
+                this.testSphere.center = this.tempVec;
+                this.tempRenderSize = Math.max(agent.size, this.cachedAgentMinSize);
+                this.testSphere.radius = this.tempRenderSize * 3 + 50;
+                
+                if (this.frustum.intersectsSphere(this.testSphere)) {
+                    hasVisibleAgent = true;
+                }
+            }
+            
+            if (hasVisibleAgent) {
+                visibleGeneGroups.set(geneId, geneAgents);
+            }
+        }
+
+        // Update/create meshes for each gene ID (only process visible groups)
+        for (const [geneId, geneAgents] of visibleGeneGroups.entries()) {
 
             if (!this.agentMeshes.has(geneId)) {
                 // Create new mesh for this gene ID (allocate for max possible)
@@ -976,11 +1061,14 @@ export class WebGLRenderer {
                     typeof agent.size === 'number' && isFinite(agent.size) && agent.size > 0 &&
                     !agent.isDead) {
 
+                    // PERFORMANCE: Use cached frustum safety margin
                     // Frustum culling - only include agents visible on screen
                     this.tempVec.set(agent.x, -agent.y, 0);
                     this.testSphere.center = this.tempVec;
                     // Use larger safety margin to prevent premature culling at edges
-                    this.testSphere.radius = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * 3 + 50;
+                    // PERFORMANCE: Cache the max calculation
+                    this.tempRenderSize = Math.max(agent.size, this.cachedAgentMinSize);
+                    this.testSphere.radius = this.tempRenderSize * 3 + 50;
 
                     if (this.frustum.intersectsSphere(this.testSphere)) {
                         validAgents.push(agent);
@@ -996,6 +1084,7 @@ export class WebGLRenderer {
                 mesh.border.count = 0;
                 mesh.body.instanceMatrix.needsUpdate = true;
                 mesh.border.instanceMatrix.needsUpdate = true;
+                releaseMatrix4(matrix); // Release matrix before continue
                 continue;
             }
 
@@ -1035,8 +1124,11 @@ export class WebGLRenderer {
                     transparent: oldBorderMaterial.transparent,
                     opacity: oldBorderMaterial.opacity
                 });
-                const newBodyMesh = new THREE.InstancedMesh(this.agentGeometry, bodyMaterial, newCapacity);
-                const newBorderMesh = new THREE.InstancedMesh(this.agentBorderGeometry, borderMaterial, newCapacity);
+                // Use the same geometry as the original mesh (geometry is shared)
+                const bodyGeometry = mesh.body.geometry;
+                const borderGeometry = mesh.border.geometry;
+                const newBodyMesh = new THREE.InstancedMesh(bodyGeometry, bodyMaterial, newCapacity);
+                const newBorderMesh = new THREE.InstancedMesh(borderGeometry, borderMaterial, newCapacity);
 
                 newBodyMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
                 newBorderMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -1060,58 +1152,110 @@ export class WebGLRenderer {
                 this.logger.warn(`[RENDER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
             }
 
+            // PERFORMANCE: Batch material updates - find max speed ratio first
+            // Use cached math variables to avoid repeated calculations
+            let maxSpeedRatio = 0;
             for (let i = 0; i < renderCount; i++) {
                 const agent = validAgents[i];
+                // PERFORMANCE: Cache speed calculation
+                this.tempSpeedSquared = agent.vx * agent.vx + agent.vy * agent.vy;
+                this.tempSpeed = Math.sqrt(this.tempSpeedSquared);
+                this.tempSpeedRatio = Math.min(this.tempSpeed * this.ONE_OVER_MAX_VELOCITY, 1.0);
+                if (this.tempSpeedRatio > maxSpeedRatio) {
+                    maxSpeedRatio = this.tempSpeedRatio;
+                }
+            }
+            
+            // PERFORMANCE: Batch update material emissive intensity once per mesh instead of per-agent
+            if (mesh.body.material) {
+                if (!mesh.body.userData.baseEmissiveIntensity) {
+                    mesh.body.userData.baseEmissiveIntensity = mesh.body.material.emissiveIntensity || 2.5;
+                }
+                const baseEmissive = mesh.body.userData.baseEmissiveIntensity;
+                if (maxSpeedRatio > 0.5) {
+                    mesh.body.material.emissiveIntensity = baseEmissive * (1.0 + maxSpeedRatio * 0.3);
+                } else {
+                    mesh.body.material.emissiveIntensity = baseEmissive;
+                }
+            }
 
-                // Calculate speed for enhanced effects
-                const speed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
-                const speedRatio = Math.min(speed / MAX_VELOCITY, 1.0);
-
-                // Enhanced bloom for fast-moving agents (stored in userData to restore later)
-                if (mesh.body.material) {
-                    if (!mesh.body.userData.baseEmissiveIntensity) {
-                        mesh.body.userData.baseEmissiveIntensity = mesh.body.material.emissiveIntensity || 2.5;
+            // PERFORMANCE: Track which agents need matrix updates (dirty tracking)
+            let needsMatrixUpdate = false;
+            for (let i = 0; i < renderCount; i++) {
+                const agent = validAgents[i];
+                const lastPos = this.agentPositions.get(agent);
+                const currentPos = { x: agent.x, y: agent.y, angle: agent.angle, size: agent.size };
+                
+                // PERFORMANCE: Cache differences to avoid repeated Math.abs calls
+                if (!lastPos) {
+                    needsMatrixUpdate = true;
+                    this.agentPositions.set(agent, currentPos);
+                } else {
+                    this.tempDx = lastPos.x - currentPos.x;
+                    this.tempDy = lastPos.y - currentPos.y;
+                    this.tempDz = lastPos.angle - currentPos.angle;
+                    const dSize = lastPos.size - currentPos.size;
+                    // Check if position changed significantly (dirty check)
+                    if (Math.abs(this.tempDx) > 0.1 ||
+                        Math.abs(this.tempDy) > 0.1 ||
+                        Math.abs(this.tempDz) > 0.01 ||
+                        Math.abs(dSize) > 0.1) {
+                        needsMatrixUpdate = true;
+                        this.agentPositions.set(agent, currentPos);
                     }
-                    const baseEmissive = mesh.body.userData.baseEmissiveIntensity;
-                    if (speedRatio > 0.5) {
-                        mesh.body.material.emissiveIntensity = baseEmissive * (1.0 + speedRatio * 0.3);
-                    } else {
-                        mesh.body.material.emissiveIntensity = baseEmissive;
+                }
+            }
+
+            // Only update matrices if positions changed
+            if (needsMatrixUpdate) {
+                for (let i = 0; i < renderCount; i++) {
+                    const agent = validAgents[i];
+
+                    // PERFORMANCE: Reuse cached speed calculation from earlier loop if available
+                    // Calculate speed for trail effects (cache to avoid recalculation)
+                    this.tempSpeedSquared = agent.vx * agent.vx + agent.vy * agent.vy;
+                    this.tempSpeed = Math.sqrt(this.tempSpeedSquared);
+                    this.tempSpeedRatio = Math.min(this.tempSpeed * this.ONE_OVER_MAX_VELOCITY, 1.0);
+
+                    // PERFORMANCE: Cache render size calculations
+                    this.tempRenderSize = Math.max(agent.size, this.cachedAgentMinSize); // Never smaller than minimum size
+                    const rotationOffset = mesh.body.userData.rotationOffset || 0;
+
+                    // Apply rotation to make shapes point in the direction of movement
+                    // agent.angle is the direction the agent is facing
+                    // rotationOffset adjusts for the default orientation of the geometry
+                    matrix.makeRotationZ(agent.angle + rotationOffset);
+                    const scaleVec = acquireVector3();
+                    scaleVec.set(this.tempRenderSize, this.tempRenderSize, 1);
+                    matrix.scale(scaleVec);
+                    matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
+                    mesh.body.setMatrixAt(i, matrix);
+                    releaseVector3(scaleVec);
+
+                    // PERFORMANCE: Cache border size calculation
+                    this.tempBorderSize = this.tempRenderSize * this.cachedBorderMultiplier;
+                    matrix.makeRotationZ(agent.angle + rotationOffset);
+                    const borderScaleVec = acquireVector3();
+                    borderScaleVec.set(this.tempBorderSize, this.tempBorderSize, 1);
+                    matrix.scale(borderScaleVec);
+                    matrix.setPosition(agent.x, -agent.y, 0.09); // Slightly behind body (0.09 vs 0.1) to prevent z-fighting
+                    mesh.border.setMatrixAt(i, matrix);
+                    releaseVector3(borderScaleVec);
+
+                    // Add trail for fast-moving agents
+                    if (this.tempSpeedRatio > 0.3) {
+                        updateAgentTrail(this.agentTrails, agent, this.tempSpeedRatio, this.trailGroup, this.logger);
                     }
                 }
 
-                // Update body - ensure minimum visible size
-                const renderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE); // Never smaller than minimum size
-                const rotationOffset = mesh.body.userData.rotationOffset || 0;
-
-                // Apply rotation to make shapes point in the direction of movement
-                // agent.angle is the direction the agent is facing
-                // rotationOffset adjusts for the default orientation of the geometry
-                matrix.makeRotationZ(agent.angle + rotationOffset);
-                matrix.scale(acquireVector3().set(renderSize, renderSize, 1));
-                matrix.setPosition(agent.x, -agent.y, 0.1); // Flip Y, slightly in front
-                mesh.body.setMatrixAt(i, matrix);
-
-                // Update border (always visible to show specialization)
-                // Border is rendered slightly behind body to prevent z-fighting/tearing
-                const borderSize = Math.max(agent.size, AGENT_MINIMUM_BORDER_SIZE) * AGENT_BORDER_SIZE_MULTIPLIER;
-                matrix.makeRotationZ(agent.angle + rotationOffset);
-                matrix.scale(acquireVector3().set(borderSize, borderSize, 1));
-                matrix.setPosition(agent.x, -agent.y, 0.09); // Slightly behind body (0.09 vs 0.1) to prevent z-fighting
-                mesh.border.setMatrixAt(i, matrix);
-
-                // Add trail for fast-moving agents
-                if (speedRatio > 0.3) {
-                    updateAgentTrail(this.agentTrails, agent, speedRatio, this.trailGroup, this.logger);
-                }
+                // Only mark for update if matrices actually changed
+                mesh.body.instanceMatrix.needsUpdate = true;
+                mesh.border.instanceMatrix.needsUpdate = true;
             }
 
             // Update instance count
             mesh.body.count = renderCount;
             mesh.border.count = renderCount;
-
-            mesh.body.instanceMatrix.needsUpdate = true;
-            mesh.border.instanceMatrix.needsUpdate = true;
 
             // Release pooled matrix
             releaseMatrix4(matrix);
@@ -1200,51 +1344,82 @@ export class WebGLRenderer {
             this.foodGroup.add(this.foodInstancedMesh);
         }
 
-        // Update instances
+        // PERFORMANCE: Dirty tracking for food - only update matrices when positions changed
+        let foodNeedsUpdate = false;
         const instanceMatrix = acquireMatrix4();
         const color = acquireColor();
         for (let i = 0; i < neededCount; i++) {
             const food = visibleFood[i];
-
-            // Set instance matrix
-            instanceMatrix.makeScale(food.size, food.size, 1);
-            instanceMatrix.setPosition(food.x, -food.y, 0);
-            this.foodInstancedMesh.setMatrixAt(i, instanceMatrix);
-
-            // Set instance color (consider rotting state)
-            const energyRatio = food.energyValue / food.initialEnergy;
-            let foodColor;
-
-            if (food.isHighValue) {
-                // High-value food: Bright green → Brown
-                if (energyRatio > 0.5) {
-                    foodColor = COLORS.FOOD.HIGH_VALUE; // Fresh bright green
-                } else if (energyRatio > 0.2) {
-                    foodColor = 0x8B4513; // Brown (rotting)
-                } else {
-                    foodColor = 0x654321; // Dark brown (almost rotten)
-                }
+            const lastPos = this.foodPositions.get(food);
+            const currentPos = { x: food.x, y: food.y, size: food.size, energyValue: food.energyValue };
+            
+            // PERFORMANCE: Cache differences to avoid repeated Math.abs calls
+            if (!lastPos) {
+                foodNeedsUpdate = true;
+                this.foodPositions.set(food, currentPos);
             } else {
-                // Normal food: Green → Brown
-                if (energyRatio > 0.5) {
-                    foodColor = COLORS.FOOD.NORMAL; // Fresh green
-                } else if (energyRatio > 0.2) {
-                    foodColor = 0x8B4513; // Brown (rotting)
-                } else {
-                    foodColor = 0x654321; // Dark brown (almost rotten)
+                this.tempDx = lastPos.x - currentPos.x;
+                this.tempDy = lastPos.y - currentPos.y;
+                const dSize = lastPos.size - currentPos.size;
+                const dEnergy = lastPos.energyValue - currentPos.energyValue;
+                // Check if position or state changed
+                if (Math.abs(this.tempDx) > 0.1 ||
+                    Math.abs(this.tempDy) > 0.1 ||
+                    Math.abs(dSize) > 0.1 ||
+                    Math.abs(dEnergy) > 0.01) {
+                    foodNeedsUpdate = true;
+                    this.foodPositions.set(food, currentPos);
                 }
             }
-
-            color.setHex(foodColor);
-            this.foodInstancedMesh.setColorAt(i, color);
         }
 
-        // Update instance count and mark for update
+        // Only update matrices if positions changed
+        if (foodNeedsUpdate) {
+            for (let i = 0; i < neededCount; i++) {
+                const food = visibleFood[i];
+
+                // Set instance matrix
+                instanceMatrix.makeScale(food.size, food.size, 1);
+                instanceMatrix.setPosition(food.x, -food.y, 0);
+                this.foodInstancedMesh.setMatrixAt(i, instanceMatrix);
+
+                // Set instance color (consider rotting state)
+                const energyRatio = food.energyValue / food.initialEnergy;
+                let foodColor;
+
+                if (food.isHighValue) {
+                    // High-value food: Bright green → Brown
+                    if (energyRatio > 0.5) {
+                        foodColor = COLORS.FOOD.HIGH_VALUE; // Fresh bright green
+                    } else if (energyRatio > 0.2) {
+                        foodColor = 0x8B4513; // Brown (rotting)
+                    } else {
+                        foodColor = 0x654321; // Dark brown (almost rotten)
+                    }
+                } else {
+                    // Normal food: Green → Brown
+                    if (energyRatio > 0.5) {
+                        foodColor = COLORS.FOOD.NORMAL; // Fresh green
+                    } else if (energyRatio > 0.2) {
+                        foodColor = 0x8B4513; // Brown (rotting)
+                    } else {
+                        foodColor = 0x654321; // Dark brown (almost rotten)
+                    }
+                }
+
+                color.setHex(foodColor);
+                this.foodInstancedMesh.setColorAt(i, color);
+            }
+
+            // Only mark for update if matrices actually changed
+            this.foodInstancedMesh.instanceMatrix.needsUpdate = true;
+            if (this.foodInstancedMesh.instanceColor) {
+                this.foodInstancedMesh.instanceColor.needsUpdate = true;
+            }
+        }
+
+        // Update instance count
         this.foodInstancedMesh.count = neededCount;
-        this.foodInstancedMesh.instanceMatrix.needsUpdate = true;
-        if (this.foodInstancedMesh.instanceColor) {
-            this.foodInstancedMesh.instanceColor.needsUpdate = true;
-        }
 
         // Release pooled objects
         releaseMatrix4(instanceMatrix);
@@ -1317,32 +1492,74 @@ export class WebGLRenderer {
             }
         }
 
-        // Update instances
+        // PERFORMANCE: Dirty tracking for pheromones - only update matrices when positions changed
+        let pheromoneNeedsUpdate = false;
         const instanceMatrix = acquireMatrix4();
         const color = acquireColor();
         for (let i = 0; i < neededCount; i++) {
             const puff = visiblePheromones[i];
-
-            // Set instance matrix
-            instanceMatrix.makeScale(puff.size, puff.size, 1);
-            instanceMatrix.setPosition(puff.x, -puff.y, 0);
-            this.pheromoneInstancedMesh.setMatrixAt(i, instanceMatrix);
-
-            // Set instance color and opacity (encode opacity in color alpha)
-            const rgbColor = this.hslToRgb(puff.color.h, puff.color.s, puff.color.l);
-            color.setRGB(rgbColor.r, rgbColor.g, rgbColor.b);
-            releaseColor(rgbColor); // Release color from hslToRgb
-            // Note: Three.js InstancedMesh doesn't support per-instance opacity easily
-            // We'll use a uniform opacity for all pheromones
-            this.pheromoneInstancedMesh.setColorAt(i, color);
+            const lastPos = this.pheromonePositions.get(puff);
+            const currentPos = { 
+                x: puff.x, 
+                y: puff.y, 
+                size: puff.size, 
+                colorH: puff.color.h, 
+                colorS: puff.color.s, 
+                colorL: puff.color.l 
+            };
+            
+            // PERFORMANCE: Cache differences to avoid repeated Math.abs calls
+            if (!lastPos) {
+                pheromoneNeedsUpdate = true;
+                this.pheromonePositions.set(puff, currentPos);
+            } else {
+                this.tempDx = lastPos.x - currentPos.x;
+                this.tempDy = lastPos.y - currentPos.y;
+                const dSize = lastPos.size - currentPos.size;
+                const dColorH = lastPos.colorH - currentPos.colorH;
+                const dColorS = lastPos.colorS - currentPos.colorS;
+                const dColorL = lastPos.colorL - currentPos.colorL;
+                // Check if position or color changed
+                if (Math.abs(this.tempDx) > 0.1 ||
+                    Math.abs(this.tempDy) > 0.1 ||
+                    Math.abs(dSize) > 0.1 ||
+                    Math.abs(dColorH) > 0.01 ||
+                    Math.abs(dColorS) > 0.01 ||
+                    Math.abs(dColorL) > 0.01) {
+                    pheromoneNeedsUpdate = true;
+                    this.pheromonePositions.set(puff, currentPos);
+                }
+            }
         }
 
-        // Update instance count and mark for update
+        // Only update matrices if positions changed
+        if (pheromoneNeedsUpdate) {
+            for (let i = 0; i < neededCount; i++) {
+                const puff = visiblePheromones[i];
+
+                // Set instance matrix
+                instanceMatrix.makeScale(puff.size, puff.size, 1);
+                instanceMatrix.setPosition(puff.x, -puff.y, 0);
+                this.pheromoneInstancedMesh.setMatrixAt(i, instanceMatrix);
+
+                // Set instance color and opacity (encode opacity in color alpha)
+                const rgbColor = this.hslToRgb(puff.color.h, puff.color.s, puff.color.l);
+                color.setRGB(rgbColor.r, rgbColor.g, rgbColor.b);
+                releaseColor(rgbColor); // Release color from hslToRgb
+                // Note: Three.js InstancedMesh doesn't support per-instance opacity easily
+                // We'll use a uniform opacity for all pheromones
+                this.pheromoneInstancedMesh.setColorAt(i, color);
+            }
+
+            // Only mark for update if matrices actually changed
+            this.pheromoneInstancedMesh.instanceMatrix.needsUpdate = true;
+            if (this.pheromoneInstancedMesh.instanceColor) {
+                this.pheromoneInstancedMesh.instanceColor.needsUpdate = true;
+            }
+        }
+
+        // Update instance count
         this.pheromoneInstancedMesh.count = neededCount;
-        this.pheromoneInstancedMesh.instanceMatrix.needsUpdate = true;
-        if (this.pheromoneInstancedMesh.instanceColor) {
-            this.pheromoneInstancedMesh.instanceColor.needsUpdate = true;
-        }
 
         // Release pooled objects
         releaseMatrix4(instanceMatrix);
@@ -1506,16 +1723,36 @@ export class WebGLRenderer {
     }
 
     render() {
-        // Update neural network background
+        // PERFORMANCE: Conditional neural background updates - only update if camera moved significantly
         if (this.neuralSystem) {
-            updateNeuralBackground(this.neuralSystem, this.camera.position.x, this.camera.position.y, this.camera.zoom || 1, this.neuralBackgroundGroup);
+            const cameraX = this.camera.position.x;
+            const cameraY = this.camera.position.y;
+            const cameraZoom = this.camera.zoom || 1;
+            // PERFORMANCE: Cache differences to avoid repeated Math.abs calls
+            this.tempDx = cameraX - this.lastCameraX;
+            this.tempDy = cameraY - this.lastCameraY;
+            this.tempDz = cameraZoom - this.lastCameraZoom;
+            const dx = Math.abs(this.tempDx);
+            const dy = Math.abs(this.tempDy);
+            const dz = Math.abs(this.tempDz);
+            
+            if (dx > this.cameraMovementThreshold || dy > this.cameraMovementThreshold || dz > 0.1) {
+                updateNeuralBackground(this.neuralSystem, cameraX, cameraY, cameraZoom, this.neuralBackgroundGroup);
+                this.lastCameraX = cameraX;
+                this.lastCameraY = cameraY;
+                this.lastCameraZoom = cameraZoom;
+            }
         }
 
-        // Update sparkles
-        this.updateSparkles();
+        // PERFORMANCE: Skip sparkles update when empty or disabled
+        if (this.sparklesEnabled && this.sparkles.length > 0) {
+            this.updateSparkles();
+        }
 
-        // Render visual effects
-        this.updateVisualEffectsRendering();
+        // PERFORMANCE: Skip visual effects when no active effects
+        if (this.agentEffects && this.agentEffects.size > 0) {
+            this.updateVisualEffectsRendering();
+        }
 
         // Use post-processing if enabled, otherwise use basic render
         if (this.postProcessingEnabled && this.effectComposer) {

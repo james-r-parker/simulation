@@ -97,12 +97,21 @@ export const SEASON_LENGTH = 3600;
 /**
  * Frame skip ratio for rendering (render 1 in N frames).
  * Higher values reduce rendering overhead but may make animation less smooth.
- * Set to 1 to render every frame, 5 to render 1 in 5 frames, etc.
+ * Set to 1 to render every frame, 2 to render every other frame, etc.
  * @type {number}
  * @constant
- * @default 5
+ * @default 2
  */
-export const RENDER_FRAME_SKIP = 1;
+export const RENDER_FRAME_SKIP = 2;
+
+/**
+ * Enable or disable post-processing effects (bloom, motion blur, etc.).
+ * Disabling can significantly improve performance on lower-end devices.
+ * @type {boolean}
+ * @constant
+ * @default false
+ */
+export const POST_PROCESSING_ENABLED = true;
 
 // ============================================================================
 // AGENT PHYSICAL PROPERTIES
@@ -1379,7 +1388,7 @@ export const GENE_POOL_MAX_SIZE = 100;
  * @constant
  * @default 500
  */
-export const GENE_POOL_MIN_FITNESS = 500;
+export const GENE_POOL_MIN_FITNESS = 2000;
 
 /**
  * Fitness threshold for exceptional agents that are permanently protected.
@@ -2307,16 +2316,16 @@ export const POST_PROCESSING = {
         THRESHOLD: 0.75        // Brightness threshold for bloom (very high - only bloom extremely bright areas like food)
     },
     VIGNETTE: {
-        ENABLED: true,
+        ENABLED: true,         // Enabled when POST_PROCESSING_ENABLED is true
         OFFSET: 1,             // Vignette offset
         DARKNESS: 0.1          // Vignette darkness (reduced from 0.5 for subtler effect)
     },
     CHROMATIC_ABERRATION: {
-        ENABLED: true,
+        ENABLED: true,         // Enabled when POST_PROCESSING_ENABLED is true
         OFFSET: 0.001          // Chromatic aberration offset (reduced from 0.001 for subtler effect)
     },
     MOTION_BLUR: {
-        ENABLED: true,
+        ENABLED: true,         // Enabled when POST_PROCESSING_ENABLED is true
         STRENGTH: 0.3,         // Motion blur strength (0-1)
         SAMPLES: 8             // Number of blur samples (higher = smoother but slower)
     }
