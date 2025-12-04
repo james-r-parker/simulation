@@ -2434,6 +2434,15 @@ export class Agent {
                             jobPerformanceBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_PURSUIT; // Points per frame for high-speed pursuit
                         }
                     }
+
+                    // Reward 3: Pursuit attempts (NEW - helps learning even without kills)
+                    // Reward for approaching detected prey, even if kill fails
+                    if (this.aggression > 0.7 && this.wantsToAttack) {
+                        const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');
+                        if (detectingPrey) {
+                            jobPerformanceBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_PURSUIT_ATTEMPT;
+                        }
+                    }
                     break;
 
                 // --- SCOUT/FORAGER: Reward Flocking & Discovery ---
@@ -2490,6 +2499,20 @@ export class Agent {
                         }
                     }
                     jobPerformanceBonus += Math.min(guardingBonus, 50); // Cap per frame to prevent exploitation
+                    break;
+
+                // --- REPRODUCER: Reward Reproduction Success ---
+                case 'reproducer':
+                    // Bonus for successful splits (in addition to base offspring reward)
+                    const childrenFromSplit = safeNumber(this.childrenFromSplit || 0, 0);
+                    if (childrenFromSplit > 0) {
+                        jobPerformanceBonus += childrenFromSplit * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_REPRODUCTION;
+                    }
+
+                    // Bonus for mating attempts (even if unsuccessful)
+                    if (this.wantsToReproduce && this.energy > MIN_ENERGY_TO_REPRODUCE) {
+                        jobPerformanceBonus += 5; // Small bonus per frame spent seeking mates
+                    }
                     break;
             }
         }

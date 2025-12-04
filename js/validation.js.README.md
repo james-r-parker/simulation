@@ -50,9 +50,9 @@ Agents are added to validation queue when they die and meet qualification criter
 
 **Criteria** (all must be met):
 - `agent.fit === true`: Agent meets comprehensive fitness requirements
-- `agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (9000)
+- `agent.fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (2000)
 - `agent.foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL` (5)
-- `agent.age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (33.33 seconds)
+- `agent.age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (25 seconds)
 - `explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL` (1.5%)
 - `agent.turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL` (5)
 - Gene ID not already in gene pool
@@ -199,9 +199,9 @@ Periodically checks for agents that should be validated.
 
 Agents must meet ALL of the following to qualify for validation:
 
-1. **Fitness**: `fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (9000)
+1. **Fitness**: `fitness >= MIN_FITNESS_TO_SAVE_GENE_POOL` (2000)
 2. **Food Eaten**: `foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL` (5)
-3. **Age**: `age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (33.33 seconds)
+3. **Age**: `age >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL` (25 seconds)
 4. **Exploration**: `explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL` (1.5%)
 5. **Navigation**: `turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL` (5)
 
@@ -216,12 +216,12 @@ From `constants.js`:
 - `VALIDATION_CLEANUP_TIMEOUT_MS`: 600000 (10 minutes, cleanup timeout)
 - `MAX_VALIDATIONS_PER_PERIODIC_CHECK`: 2 (agents added per check)
 - `VALIDATION_AGENT_ENERGY`: 3000 (energy for validation agents)
-- `MIN_FITNESS_TO_SAVE_GENE_POOL`: 9000 (minimum fitness)
+- `MIN_FITNESS_TO_SAVE_GENE_POOL`: 2000 (minimum fitness)
 - `MIN_FOOD_EATEN_TO_SAVE_GENE_POOL`: 5 (minimum food eaten)
-- `MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL`: 33.33 (minimum age)
+- `MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL`: 25 (minimum age)
 - `MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL`: 1.5 (minimum exploration)
 - `MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL`: 5 (minimum navigation)
-- `EXCEPTIONAL_FITNESS_THRESHOLD`: 10000 (exceptional fitness threshold)
+- `EXCEPTIONAL_FITNESS_THRESHOLD`: 4000 (exceptional fitness threshold)
 
 ## Performance Impact
 
