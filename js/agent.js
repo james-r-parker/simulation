@@ -309,6 +309,11 @@ export class Agent {
         // Performance: One-time GPU fallback warning flag
         this.gpuFallbackWarned = false;
         this._cleanedUp = false; // Flag to prevent double cleanup
+        
+        // OPTIMIZED: Cache for cos/sin calculations
+        this._lastThrustAngle = null;
+        this._cachedCosAngle = 0;
+        this._cachedSinAngle = 0;
 
         // --- TARGET MEMORY (Performance-Optimized) ---
         // Pre-allocated to avoid GC pressure in hotpath
@@ -540,8 +545,14 @@ export class Agent {
         // 9. Apply thrust in the direction of the angle
         // Note: Velocity momentum removed - update() already applies DAMPENING_FACTOR for physics friction
         // The acceleration/deceleration smoothing above provides the movement smoothness
-        const finalThrustX = Math.cos(this.angle) * desiredThrust;
-        const finalThrustY = Math.sin(this.angle) * desiredThrust;
+        // OPTIMIZED: Cache cos/sin calculations if angle hasn't changed
+        if (this._lastThrustAngle !== this.angle) {
+            this._cachedCosAngle = Math.cos(this.angle);
+            this._cachedSinAngle = Math.sin(this.angle);
+            this._lastThrustAngle = this.angle;
+        }
+        const finalThrustX = this._cachedCosAngle * desiredThrust;
+        const finalThrustY = this._cachedSinAngle * desiredThrust;
 
         this.vx += finalThrustX;
         this.vy += finalThrustY;

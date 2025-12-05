@@ -327,8 +327,11 @@ export class Simulation {
 
         // 7. Clear arrays and references
         // Clean up all living agents before clearing arrays
-        for (const agent of this.agents) {
-            if (!agent.isDead) {
+        // OPTIMIZED: Use for loop instead of for...of
+        const agentsLen = this.agents.length;
+        for (let i = 0; i < agentsLen; i++) {
+            const agent = this.agents[i];
+            if (agent && !agent.isDead) {
                 agent.cleanup();
                 this.logger.debug(`[LIFECYCLE] 🔄 Agent ${agent.id} (${agent.geneId}) cleaned up during simulation reset - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}`);
             }
@@ -541,9 +544,12 @@ export class Simulation {
         let minDist = Infinity;
 
         // Count living agents first to provide feedback if none exist
+        // OPTIMIZED: Use for loop instead of for...of
         let livingAgents = 0;
-        for (const agent of this.agents) {
-            if (!agent.isDead) {
+        const agentsLen = this.agents.length;
+        for (let i = 0; i < agentsLen; i++) {
+            const agent = this.agents[i];
+            if (agent && !agent.isDead) {
                 livingAgents++;
                 const dx = agent.x - worldX;
                 const dy = agent.y - worldY;
@@ -623,38 +629,52 @@ export class Simulation {
             this.logger.warn(`[MEMORY] Dead agent queue is large: ${queueSize} agents. Processing now.`);
         }
 
-        // MEMORY LEAK FIX: Clean up position tracking Maps for dead agents
-        let positionMapCleanups = 0;
-        for (const agent of this.deadAgentQueue) {
-            if (this.lastAgentPositions.has(agent)) {
-                this.lastAgentPositions.delete(agent);
-                positionMapCleanups++;
+        // OPTIMIZED: Process in smaller chunks to avoid blocking main thread
+        const CHUNK_SIZE = 10;
+        const processChunk = () => {
+            const chunk = this.deadAgentQueue.splice(0, CHUNK_SIZE);
+            if (chunk.length === 0) return;
+
+            // MEMORY LEAK FIX: Clean up position tracking Maps for dead agents
+            let positionMapCleanups = 0;
+            const chunkLen = chunk.length;
+            for (let i = 0; i < chunkLen; i++) {
+                const agent = chunk[i];
+                if (this.lastAgentPositions.has(agent)) {
+                    this.lastAgentPositions.delete(agent);
+                    positionMapCleanups++;
+                }
             }
-        }
-        if (positionMapCleanups > 0) {
-            this.logger.debug(`[MEMORY] Cleaned up ${positionMapCleanups} dead agent entries from position tracking Map`);
-        }
-
-        // Group by gene ID and queue for background save
-        const agentsByGene = {};
-        this.deadAgentQueue.forEach(agent => {
-            if (!agentsByGene[agent.geneId]) {
-                agentsByGene[agent.geneId] = [];
+            if (positionMapCleanups > 0) {
+                this.logger.debug(`[MEMORY] Cleaned up ${positionMapCleanups} dead agent entries from position tracking Map`);
             }
-            agentsByGene[agent.geneId].push(agent);
-        });
 
-        // Queue each gene pool for background save
-        for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
-            this.db.queueSaveGenePool(geneId, geneAgents);
-        }
+            // Group by gene ID and queue for background save
+            // OPTIMIZED: Use for loop instead of forEach
+            const agentsByGene = {};
+            for (let i = 0; i < chunkLen; i++) {
+                const agent = chunk[i];
+                if (!agentsByGene[agent.geneId]) {
+                    agentsByGene[agent.geneId] = [];
+                }
+                agentsByGene[agent.geneId].push(agent);
+            }
 
-        // Clear the queue
-        this.deadAgentQueue = [];
+            // Queue each gene pool for background save
+            for (const [geneId, geneAgents] of Object.entries(agentsByGene)) {
+                this.db.queueSaveGenePool(geneId, geneAgents);
+            }
 
-        if (queueSize > 10) {
-            this.logger.debug(`[MEMORY] Processed ${queueSize} dead agents from queue`);
-        }
+            // Continue processing if more items remain
+            if (this.deadAgentQueue.length > 0) {
+                setTimeout(processChunk, 0); // Defer next chunk
+            }
+        };
+
+        // Start processing first chunk
+        processChunk();
+
+        // Note: Queue size logging moved to processChunk if needed
     }
 
     initPopulation() {
@@ -854,8 +874,10 @@ export class Simulation {
                 let needsRebuild = false;
                 const thresholdSq = this.quadtreeRebuildThreshold * this.quadtreeRebuildThreshold;
 
+                // OPTIMIZED: Early exit optimization - check agents first, skip food check if rebuild needed
                 // Check agents for movement
-                for (let j = 0; j < this.agents.length; j++) {
+                const agentsLen = this.agents.length;
+                for (let j = 0; j < agentsLen && !needsRebuild; j++) {
                     const agent = this.agents[j];
                     if (agent && !agent.isDead) {
                         const lastPos = this.lastAgentPositions.get(agent);
@@ -874,7 +896,8 @@ export class Simulation {
 
                 // Check food for movement (only if agents didn't trigger rebuild)
                 if (!needsRebuild) {
-                    for (let j = 0; j < this.food.length; j++) {
+                    const foodLen = this.food.length;
+                    for (let j = 0; j < foodLen && !needsRebuild; j++) {
                         const food = this.food[j];
                         if (food && !food.isDead) {
                             const lastPos = this.lastFoodPositions.get(food);
@@ -1037,7 +1060,8 @@ export class Simulation {
                         this.perfMonitor.timeSync('perception.entityFiltering', () => {
                             // Find maximum maxRayDist among all active agents
                             let maxRayDist = 0;
-                            for (let j = 0; j < activeAgents.length; j++) {
+                            const activeAgentsLen = activeAgents.length;
+                            for (let j = 0; j < activeAgentsLen; j++) {
                                 const agent = activeAgents[j];
                                 if (agent && !agent.isDead && agent.maxRayDist > maxRayDist) {
                                     maxRayDist = agent.maxRayDist;
@@ -1045,47 +1069,52 @@ export class Simulation {
                             }
 
                             // If no agents, skip entity filtering
-                            if (maxRayDist > 0 && activeAgents.length > 0) {
+                            if (maxRayDist > 0 && activeAgentsLen > 0) {
                                 const maxRayDistSq = maxRayDist * maxRayDist;
 
                                 // Filter food - only include if within maxRayDist of any agent
-                                for (let j = 0; j < this.food.length; j++) {
+                                // OPTIMIZED: Cache food length and use early exit
+                                const foodLen = this.food.length;
+                                for (let j = 0; j < foodLen; j++) {
                                     const food = this.food[j];
-                                    if (food && !food.isDead) {
-                                        // Check if food is within range of any agent
-                                        let inRange = false;
-                                        const foodSize = food.size || 0;
-                                        const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
+                                    if (!food || food.isDead) continue;
+                                    
+                                    // Check if food is within range of any agent
+                                    let inRange = false;
+                                    const foodSize = food.size || 0;
+                                    const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
 
-                                        for (let k = 0; k < activeAgents.length; k++) {
-                                            const agent = activeAgents[k];
-                                            if (agent && !agent.isDead) {
-                                                const distSq = distanceSquared(agent.x, agent.y, food.x, food.y);
-                                                if (distSq <= maxCheckDistSq) {
-                                                    inRange = true;
-                                                    break; // Early exit once found
-                                                }
+                                    for (let k = 0; k < activeAgentsLen && !inRange; k++) {
+                                        const agent = activeAgents[k];
+                                        if (agent && !agent.isDead) {
+                                            const distSq = distanceSquared(agent.x, agent.y, food.x, food.y);
+                                            if (distSq <= maxCheckDistSq) {
+                                                inRange = true;
+                                                break; // Early exit once found
                                             }
                                         }
+                                    }
 
-                                        if (inRange) {
-                                            this.allEntities.push(food);
-                                        }
+                                    if (inRange) {
+                                        this.allEntities.push(food);
                                     }
                                 }
 
                                 // Always include all active agents (they need to detect each other)
-                                for (let j = 0; j < activeAgents.length; j++) {
+                                for (let j = 0; j < activeAgentsLen; j++) {
                                     this.allEntities.push(activeAgents[j]);
                                 }
                             } else {
                                 // Fallback: include all entities if no agents or maxRayDist is 0
-                                for (let j = 0; j < this.food.length; j++) {
-                                    if (!this.food[j].isDead) {
-                                        this.allEntities.push(this.food[j]);
+                                // OPTIMIZED: Cache food length
+                                const foodLen = this.food.length;
+                                for (let j = 0; j < foodLen; j++) {
+                                    const food = this.food[j];
+                                    if (food && !food.isDead) {
+                                        this.allEntities.push(food);
                                     }
                                 }
-                                for (let j = 0; j < activeAgents.length; j++) {
+                                for (let j = 0; j < activeAgentsLen; j++) {
                                     this.allEntities.push(activeAgents[j]);
                                 }
                             }
@@ -1595,13 +1624,24 @@ export class Simulation {
                 updateMemoryStats(this, false);
                 handleMemoryPressure(this);
             }
-            // UI updates
-            if (this.frameCount % 100 === 0) updateInfo(this);
+            // UI updates - OPTIMIZED: Batch UI updates with requestAnimationFrame
+            if (this.frameCount % 100 === 0) {
+                if (typeof requestIdleCallback !== 'undefined') {
+                    requestIdleCallback(() => {
+                        updateInfo(this);
+                    }, { timeout: 50 });
+                } else {
+                    updateInfo(this);
+                }
+            }
 
             // Periodic agent data cleanup - prevent array accumulation
             // PERFORMANCE: Reduced interval from 30 to 10 frames for more aggressive cleanup
             if (this.frameCount % 10 === 0) { // More frequent cleanup: every ~0.17 seconds at 60 FPS
-                for (const agent of this.agents) {
+                // OPTIMIZED: Use for loop instead of for...of
+                const agentsLen = this.agents.length;
+                for (let i = 0; i < agentsLen; i++) {
+                    const agent = this.agents[i];
                     if (agent && !agent.isDead) {
                         // Limit array sizes to prevent unbounded growth
                         // PERFORMANCE: Lowered limits from 1000/500 to 500/250 for more aggressive cleanup
@@ -1633,11 +1673,19 @@ export class Simulation {
                 this.validationManager.resyncActiveAgentsCount(this);
             }
 
-            // Dashboard updates (only when focused)
+            // Dashboard updates (only when focused) - OPTIMIZED: Defer with requestIdleCallback
             if (this.frameCount % 30 === 0 && document.hasFocus()) {
-                this.perfMonitor.timeSync('ui', () => {
-                    updateDashboard(this);
-                });
+                if (typeof requestIdleCallback !== 'undefined') {
+                    requestIdleCallback(() => {
+                        this.perfMonitor.timeSync('ui', () => {
+                            updateDashboard(this);
+                        });
+                    }, { timeout: 100 });
+                } else {
+                    this.perfMonitor.timeSync('ui', () => {
+                        updateDashboard(this);
+                    });
+                }
             }
             // Periodic comprehensive memory cleanup - use real time to avoid throttling
             if (now - this.lastMemoryCleanupTime >= 83333) { // ~5000 frames at 60fps = 83333ms (~83 seconds)
@@ -1730,14 +1778,19 @@ export class Simulation {
                 }
 
                 // Find the absolute best living agent using priority system
+                // OPTIMIZED: Reuse activeAgents array if available, otherwise build efficiently
                 let targetAgent = null;
-                if (this.agents.length > 0) {
-                    const livingAgents = [];
-                    for (let i = 0; i < this.agents.length; i++) {
-                        const agent = this.agents[i];
-                        if (!agent.isDead && typeof agent.x === 'number' && typeof agent.y === 'number' &&
-                            isFinite(agent.x) && isFinite(agent.y)) {
-                            livingAgents.push(agent);
+                const agentsLen = this.agents.length;
+                if (agentsLen > 0) {
+                    // OPTIMIZED: Reuse activeAgents if it's already built, otherwise build it
+                    const livingAgents = this.activeAgents.length > 0 ? this.activeAgents : [];
+                    if (livingAgents.length === 0) {
+                        for (let i = 0; i < agentsLen; i++) {
+                            const agent = this.agents[i];
+                            if (agent && !agent.isDead && typeof agent.x === 'number' && typeof agent.y === 'number' &&
+                                isFinite(agent.x) && isFinite(agent.y)) {
+                                livingAgents.push(agent);
+                            }
                         }
                     }
 

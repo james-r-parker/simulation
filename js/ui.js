@@ -395,11 +395,14 @@ function generateHistoricalContextText() {
 
         // Add detailed timeline for context
         contextText += 'RECENT TIMELINE (last 8 data points):\n';
-        recentEntries.forEach((entry, index) => {
+        // OPTIMIZED: Use for loop instead of forEach
+        const recentEntriesLen = recentEntries.length;
+        for (let index = 0; index < recentEntriesLen; index++) {
+            const entry = recentEntries[index];
             const timeAgo = index === 0 ? 'NOW' : `${index * 0.5}min ago`;
             const fitnessChange = index === 0 ? '' : ` (${entry.data.fitnessDelta >= 0 ? '+' : ''}${entry.data.fitnessDelta.toFixed(0)})`;
             contextText += `${timeAgo}: Gen ${entry.data.generation}, Best ${entry.data.bestFitness.toFixed(0)}${fitnessChange}, Pop ${entry.data.population}, Div ${entry.data.geneIdCount}\n`;
-        });
+        }
     }
 
     return contextText.trim();
@@ -666,7 +669,15 @@ export function setupUIListeners(simulation) {
         });
     }
 
-    window.addEventListener('resize', () => resize(simulation));
+    // OPTIMIZED: Debounce resize events for better performance
+    let resizeTimeout = null;
+    window.addEventListener('resize', () => {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            resize(simulation);
+            resizeTimeout = null;
+        }, 100); // 100ms debounce
+    });
 
     // Handle page visibility changes to maintain wake lock
     document.addEventListener('visibilitychange', async () => {
@@ -790,9 +801,12 @@ export function setupUIListeners(simulation) {
             document.getElementById('controls')
         ];
 
-        elements.forEach(el => {
+        // OPTIMIZED: Use for loop instead of forEach
+        const elementsLen = elements.length;
+        for (let i = 0; i < elementsLen; i++) {
+            const el = elements[i];
             if (el) el.classList.add('fullscreen-hidden');
-        });
+        }
 
         uiVisible = false;
         console.log('[FULLSCREEN] 👁️ UI hidden for fullscreen immersion');
@@ -808,9 +822,12 @@ export function setupUIListeners(simulation) {
             document.getElementById('controls')
         ];
 
-        elements.forEach(el => {
+        // OPTIMIZED: Use for loop instead of forEach
+        const elementsLen = elements.length;
+        for (let i = 0; i < elementsLen; i++) {
+            const el = elements[i];
             if (el) el.classList.remove('fullscreen-hidden');
-        });
+        }
 
         uiVisible = true;
         console.log('[FULLSCREEN] 👁️ UI shown');
@@ -1482,10 +1499,10 @@ export function setupCameraControls(simulation) {
             const touch2 = touches[1];
             const centerX = (touch1.clientX + touch2.clientX) / 2;
             const centerY = (touch1.clientY + touch2.clientY) / 2;
-            const distance = Math.sqrt(
-                Math.pow(touch2.clientX - touch1.clientX, 2) +
-                Math.pow(touch2.clientY - touch1.clientY, 2)
-            );
+            // OPTIMIZED: Use multiplication instead of Math.pow
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
             return {
                 centerX: centerX,
                 centerY: centerY,
@@ -1506,8 +1523,16 @@ export function setupCameraControls(simulation) {
         e.preventDefault();
     });
 
+    // OPTIMIZED: Throttle mousemove for better performance
+    let mouseMoveThrottle = null;
     canvas.addEventListener('mousemove', (e) => {
         if (!isDragging || simulation.followBest) return;
+
+        // Throttle to ~60fps (16ms)
+        if (mouseMoveThrottle) return;
+        mouseMoveThrottle = requestAnimationFrame(() => {
+            mouseMoveThrottle = null;
+        });
 
         const deltaX = e.clientX - lastMouseX;
         const deltaY = e.clientY - lastMouseY;
@@ -1633,6 +1658,7 @@ export function setupCameraControls(simulation) {
         simulation.logger.debug(`[CAMERA-CLICK] screen(${mouseX.toFixed(1)}, ${mouseY.toFixed(1)}) normalized(${normalizedX.toFixed(3)}, ${normalizedY.toFixed(3)}) world(${worldX.toFixed(1)}, ${worldY.toFixed(1)}) camera(${simulation.camera.x.toFixed(1)}, ${simulation.camera.y.toFixed(1)}) zoom(${simulation.camera.zoom.toFixed(3)})`);
     });
 
+    // OPTIMIZED: Passive wheel listener for better scroll performance
     canvas.addEventListener('wheel', (e) => {
         if (simulation.followBest) return; // Disable when following best agent
 
@@ -1645,7 +1671,7 @@ export function setupCameraControls(simulation) {
             simulation.worldWidth, simulation.worldHeight, aspect);
 
         e.preventDefault();
-    });
+    }, { passive: false }); // Keep non-passive since we call preventDefault
 }
 
 export function resize(simulation) {
@@ -2123,7 +2149,10 @@ function showReproductionModal(simulation) {
 
     // Calculate specialization-based reproduction
     const specializationReproduction = {};
-    livingAgents.forEach(agent => {
+    // OPTIMIZED: Use for loop instead of forEach
+    const livingAgentsLen = livingAgents.length;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const agent = livingAgents[i];
         const type = agent.specializationType || 'Unknown';
         if (!specializationReproduction[type]) {
             specializationReproduction[type] = {
@@ -2137,18 +2166,20 @@ function showReproductionModal(simulation) {
         specializationReproduction[type].totalOffspring += safeNumber(agent.childrenFromMate || 0, 0) + safeNumber(agent.childrenFromSplit || 0, 0);
         specializationReproduction[type].sexualOffspring += safeNumber(agent.childrenFromMate || 0, 0);
         specializationReproduction[type].asexualOffspring += safeNumber(agent.childrenFromSplit || 0, 0);
-    });
+    }
 
     // Calculate generation distribution
+    // OPTIMIZED: Use for loop instead of forEach
     const generationStats = {};
-    livingAgents.forEach(agent => {
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const agent = livingAgents[i];
         const gen = agent.generation || 0;
         if (!generationStats[gen]) {
             generationStats[gen] = { count: 0, totalOffspring: 0 };
         }
         generationStats[gen].count++;
         generationStats[gen].totalOffspring += safeNumber(agent.childrenFromMate || 0, 0) + safeNumber(agent.childrenFromSplit || 0, 0);
-    });
+    }
 
     // Build modal content
     modal.innerHTML = `

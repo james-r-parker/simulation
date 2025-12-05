@@ -146,10 +146,10 @@ export function checkCollisions(simulation) {
                 }
 
                 // Simple bump physics to prevent overlap
-                // Simple bump physics to prevent overlap
-                const overlap = combinedSize - Math.sqrt(distSq);
+                // OPTIMIZED: Cache sqrt calculation - only compute once
+                const dist = Math.sqrt(distSq) || 1;
+                const overlap = combinedSize - dist;
                 if (overlap > 0) {
-                    const dist = Math.sqrt(distSq) || 1;
 
                     // 1. Resolve Overlap (Position Correction)
                     const separationStrength = COLLISION_SEPARATION_STRENGTH;
@@ -462,7 +462,9 @@ export function checkCollisions(simulation) {
                     agent.vy = (agent.vy - 2 * dot * ny) * bounceFactor * bounceScale;
 
                     // Ensure minimum push away speed in the correct direction
-                    const pushSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+                    // OPTIMIZED: Cache speed calculation
+                    const pushSpeedSq = agent.vx * agent.vx + agent.vy * agent.vy;
+                    const pushSpeed = pushSpeedSq > 0 ? Math.sqrt(pushSpeedSq) : 0;
                     if (pushSpeed < minBounceSpeed) {
                         agent.vx += nx * minBounceSpeed * 0.5; // Add minimum push in normal direction
                         agent.vy += ny * minBounceSpeed * 0.5;
@@ -484,11 +486,14 @@ export function checkCollisions(simulation) {
                     obstacle.vy -= ny * nudgeStrength;
 
                     // Cap obstacle speed
-                    const obstacleSpeed = Math.sqrt(obstacle.vx * obstacle.vx + obstacle.vy * obstacle.vy);
+                    // OPTIMIZED: Cache speed calculation
+                    const obstacleSpeedSq = obstacle.vx * obstacle.vx + obstacle.vy * obstacle.vy;
+                    const obstacleSpeed = obstacleSpeedSq > 0 ? Math.sqrt(obstacleSpeedSq) : 0;
                     const maxObstacleSpeed = OBSTACLE_MAX_SPEED;
                     if (obstacleSpeed > maxObstacleSpeed) {
-                        obstacle.vx = (obstacle.vx / obstacleSpeed) * maxObstacleSpeed;
-                        obstacle.vy = (obstacle.vy / obstacleSpeed) * maxObstacleSpeed;
+                        const invObstacleSpeed = 1 / obstacleSpeed;
+                        obstacle.vx = (obstacle.vx * invObstacleSpeed) * maxObstacleSpeed;
+                        obstacle.vy = (obstacle.vy * invObstacleSpeed) * maxObstacleSpeed;
                     }
 
                     // Only process one obstacle collision per agent per frame
@@ -740,7 +745,9 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const invAge60 = 1 / 60;
         const invObesityThreshold = 1 / OBESITY_THRESHOLD_ENERGY;
 
-        const currentSpeed = Math.sqrt(agent.vx * agent.vx + agent.vy * agent.vy);
+        // OPTIMIZED: Cache speed and angle calculations
+        const speedSq = agent.vx * agent.vx + agent.vy * agent.vy;
+        const currentSpeed = speedSq > 0 ? Math.sqrt(speedSq) : 0;
         const velocityAngle = Math.atan2(agent.vy, agent.vx);
         const angleDifference = (velocityAngle - agent.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
@@ -927,7 +934,9 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             if (!agent._lastTargetCacheUpdate || agent._lastTargetCacheUpdate !== agent.framesAlive || agent.framesAlive % 5 === 0) {
                 const dx = agent.targetMemory.currentTarget.x - agent.x;
                 const dy = agent.targetMemory.currentTarget.y - agent.y;
-                agent._cachedTargetDistance = Math.sqrt(dx * dx + dy * dy);
+                // OPTIMIZED: Cache distance squared, only compute sqrt when needed
+                const distSq = dx * dx + dy * dy;
+                agent._cachedTargetDistance = distSq > 0 ? Math.sqrt(distSq) : 0;
                 agent._cachedTargetAngle = Math.atan2(dy, dx);
                 agent._lastTargetCacheUpdate = agent.framesAlive;
             }

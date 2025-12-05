@@ -36,8 +36,15 @@ import {
 } from './constants.js';
 
 export function copySimulationStats(simulation) {
-    // Gather all current stats
-    const livingAgents = simulation.agents.filter(a => !a.isDead);
+    // Gather all current stats - OPTIMIZED: Use for loop instead of filter
+    const livingAgents = [];
+    const agentsLen = simulation.agents.length;
+    for (let i = 0; i < agentsLen; i++) {
+        const agent = simulation.agents[i];
+        if (agent && !agent.isDead) {
+            livingAgents.push(agent);
+        }
+    }
     if (livingAgents.length === 0) {
         alert('No living agents to analyze');
         return;
@@ -45,33 +52,66 @@ export function copySimulationStats(simulation) {
 
     // Calculate stats (same as updateDashboard)
     const bestFitness = simulation.bestAgent ? simulation.bestAgent.fitness : 0;
-    const geneIdCount = new Set(livingAgents.map(a => a.geneId)).size;
+    // OPTIMIZED: Use for loop instead of map
+    const geneIdSet = new Set();
+    const livingAgentsLen = livingAgents.length;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        geneIdSet.add(livingAgents[i].geneId);
+    }
+    const geneIdCount = geneIdSet.size;
     const genePoolHealth = simulation.db.getGenePoolHealth();
     const genePoolCount = genePoolHealth.genePoolCount;
 
-    const avgFitness = livingAgents.reduce((sum, a) => sum + a.fitness, 0) / livingAgents.length;
-    const avgAge = livingAgents.reduce((sum, a) => sum + a.age, 0) / livingAgents.length;
-    const avgEnergy = livingAgents.reduce((sum, a) => sum + a.energy, 0) / livingAgents.length;
-    const avgOffspring = livingAgents.reduce((sum, a) => sum + a.offspring, 0) / livingAgents.length;
-    const avgFood = livingAgents.reduce((sum, a) => sum + a.foodEaten, 0) / livingAgents.length;
-    const avgKills = livingAgents.reduce((sum, a) => sum + a.kills, 0) / livingAgents.length;
-    const avgCollisions = livingAgents.reduce((sum, a) => sum + (a.collisions || 0), 0) / livingAgents.length;
-    const avgWallHits = livingAgents.reduce((sum, a) => sum + (a.timesHitObstacle || 0), 0) / livingAgents.length;
+    // OPTIMIZED: Use for loops instead of reduce for better performance
+    let sumFitness = 0, sumAge = 0, sumEnergy = 0, sumOffspring = 0, sumFood = 0, sumKills = 0, sumCollisions = 0, sumWallHits = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        sumFitness += a.fitness;
+        sumAge += a.age;
+        sumEnergy += a.energy;
+        sumOffspring += a.offspring;
+        sumFood += a.foodEaten;
+        sumKills += a.kills;
+        sumCollisions += (a.collisions || 0);
+        sumWallHits += (a.timesHitObstacle || 0);
+    }
+    const avgFitness = sumFitness / livingAgentsLen;
+    const avgAge = sumAge / livingAgentsLen;
+    const avgEnergy = sumEnergy / livingAgentsLen;
+    const avgOffspring = sumOffspring / livingAgentsLen;
+    const avgFood = sumFood / livingAgentsLen;
+    const avgKills = sumKills / livingAgentsLen;
+    const avgCollisions = sumCollisions / livingAgentsLen;
+    const avgWallHits = sumWallHits / livingAgentsLen;
 
     // Navigation behavior tracking (NEW) - with safety checks to prevent Infinity
     const safeNumber = (val, defaultVal = 0) => {
         if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
         return val;
     };
-    const avgTurnsTowardsFood = livingAgents.reduce((sum, a) => sum + safeNumber(a.turnsTowardsFood || 0, 0), 0) / livingAgents.length;
-    const avgTurnsAwayFromObstacles = livingAgents.reduce((sum, a) => sum + safeNumber(a.turnsAwayFromObstacles || 0, 0), 0) / livingAgents.length;
-    const avgFoodApproaches = livingAgents.reduce((sum, a) => sum + safeNumber(a.foodApproaches || 0, 0), 0) / livingAgents.length;
-    const avgCleverTurns = livingAgents.reduce((sum, a) => sum + safeNumber(a.cleverTurns || 0, 0), 0) / livingAgents.length;
-    const avgSuccessfulEscapes = livingAgents.reduce((sum, a) => sum + safeNumber(a.successfulEscapes || 0, 0), 0) / livingAgents.length;
+    // OPTIMIZED: Use for loops instead of reduce
+    let sumTurnsTowardsFood = 0, sumTurnsAwayFromObstacles = 0, sumFoodApproaches = 0, sumCleverTurns = 0, sumSuccessfulEscapes = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        sumTurnsTowardsFood += safeNumber(a.turnsTowardsFood || 0, 0);
+        sumTurnsAwayFromObstacles += safeNumber(a.turnsAwayFromObstacles || 0, 0);
+        sumFoodApproaches += safeNumber(a.foodApproaches || 0, 0);
+        sumCleverTurns += safeNumber(a.cleverTurns || 0, 0);
+        sumSuccessfulEscapes += safeNumber(a.successfulEscapes || 0, 0);
+    }
+    const avgTurnsTowardsFood = sumTurnsTowardsFood / livingAgentsLen;
+    const avgTurnsAwayFromObstacles = sumTurnsAwayFromObstacles / livingAgentsLen;
+    const avgFoodApproaches = sumFoodApproaches / livingAgentsLen;
+    const avgCleverTurns = sumCleverTurns / livingAgentsLen;
+    const avgSuccessfulEscapes = sumSuccessfulEscapes / livingAgentsLen;
 
     // Detailed fitness breakdown - with safety checks to prevent Infinity
     // NOTE: This breakdown matches the actual calculateFitness() formula in agent.js
-    const fitnessBreakdown = livingAgents.map(a => {
+    // OPTIMIZED: Use for loop instead of map
+    const fitnessBreakdown = [];
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        const breakdown = (() => {
         const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
         const explorationPercentage = safeNumber((a.exploredCells?.size || 0) / totalCells * 100, 0);
         const ageInSeconds = safeNumber(a.age || 0, 0);
@@ -200,111 +240,110 @@ export function copySimulationStats(simulation) {
             rawSurvivalBonus: safeNumber(rawSurvivalBonus, 0),
             finalFitness: safeNumber(a.fitness, 0)
         };
-    });
+        })();
+        fitnessBreakdown.push(breakdown);
+    }
 
-    const avgBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.baseScore, 0) / livingAgents.length;
-    const avgPenalties = fitnessBreakdown.reduce((sum, f) => sum + f.penalties, 0) / livingAgents.length;
-    const avgNetBaseScore = fitnessBreakdown.reduce((sum, f) => sum + f.netBaseScore, 0) / livingAgents.length;
-    const avgSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.survivalBonus, 0) / livingAgents.length;
-    const avgRawSurvivalBonus = fitnessBreakdown.reduce((sum, f) => sum + f.rawSurvivalBonus, 0) / livingAgents.length;
+    // OPTIMIZED: Use for loops instead of reduce
+    let sumBaseScore = 0, sumPenalties = 0, sumNetBaseScore = 0, sumSurvivalBonus = 0, sumRawSurvivalBonus = 0;
+    const fitnessBreakdownLen = fitnessBreakdown.length;
+    for (let i = 0; i < fitnessBreakdownLen; i++) {
+        const f = fitnessBreakdown[i];
+        sumBaseScore += f.baseScore;
+        sumPenalties += f.penalties;
+        sumNetBaseScore += f.netBaseScore;
+        sumSurvivalBonus += f.survivalBonus;
+        sumRawSurvivalBonus += f.rawSurvivalBonus;
+    }
+    const avgBaseScore = sumBaseScore / fitnessBreakdownLen;
+    const avgPenalties = sumPenalties / fitnessBreakdownLen;
+    const avgNetBaseScore = sumNetBaseScore / fitnessBreakdownLen;
+    const avgSurvivalBonus = sumSurvivalBonus / fitnessBreakdownLen;
+    const avgRawSurvivalBonus = sumRawSurvivalBonus / fitnessBreakdownLen;
 
     // Additional fitness component averages for detailed breakdown
     // (avgExplorationPercentage is calculated later in qualification criteria section)
     // Calculate normalized movement and navigation values (matching agent.js calculation)
-    const avgDirectionChanged = livingAgents.reduce((sum, a) => {
+    // OPTIMIZED: Use for loops instead of reduce
+    let sumDirectionChanged = 0, sumSpeedChanged = 0, sumTurnsTowardsFoodNormalized = 0;
+    let sumTurnsAwayFromObstaclesNormalized = 0, sumFoodApproachesNormalized = 0, sumObstacleFreeFrames = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             const distanceNormalizer = distanceTravelled / 100;
-            const normalized = Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
-            return sum + normalized;
+            const invDistanceNormalizer = 1 / Math.max(distanceNormalizer, 1);
+            sumDirectionChanged += Math.min(safeNumber(a.directionChanged || 0, 0), 500) * invDistanceNormalizer;
+            sumSpeedChanged += Math.min(safeNumber(a.speedChanged || 0, 0), 200) * invDistanceNormalizer;
+            sumTurnsTowardsFoodNormalized += safeNumber(a.turnsTowardsFood || 0, 0) * invDistanceNormalizer;
+            sumTurnsAwayFromObstaclesNormalized += safeNumber(a.turnsAwayFromObstacles || 0, 0) * invDistanceNormalizer;
+            sumFoodApproachesNormalized += safeNumber(a.foodApproaches || 0, 0) * invDistanceNormalizer;
         }
-        return sum;
-    }, 0) / livingAgents.length;
-
-    const avgSpeedChanged = livingAgents.reduce((sum, a) => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            const normalized = Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
-            return sum + normalized;
-        }
-        return sum;
-    }, 0) / livingAgents.length;
-
-    const avgTurnsTowardsFoodNormalized = livingAgents.reduce((sum, a) => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            const normalized = safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
-            return sum + normalized;
-        }
-        return sum;
-    }, 0) / livingAgents.length;
-
-    const avgTurnsAwayFromObstaclesNormalized = livingAgents.reduce((sum, a) => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            const normalized = safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
-            return sum + normalized;
-        }
-        return sum;
-    }, 0) / livingAgents.length;
-
-    const avgFoodApproachesNormalized = livingAgents.reduce((sum, a) => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            const normalized = safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
-            return sum + normalized;
-        }
-        return sum;
-    }, 0) / livingAgents.length;
-
-    const avgObstacleFreeFrames = livingAgents.reduce((sum, a) => {
         const ageInFrames = (a.age || 0) * FPS_TARGET;
         const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
-        return sum + (obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
-    }, 0) / livingAgents.length;
+        sumObstacleFreeFrames += (obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
+    }
+    const avgDirectionChanged = sumDirectionChanged / livingAgentsLen;
+    const avgSpeedChanged = sumSpeedChanged / livingAgentsLen;
+    const avgTurnsTowardsFoodNormalized = sumTurnsTowardsFoodNormalized / livingAgentsLen;
+    const avgTurnsAwayFromObstaclesNormalized = sumTurnsAwayFromObstaclesNormalized / livingAgentsLen;
+    const avgFoodApproachesNormalized = sumFoodApproachesNormalized / livingAgentsLen;
+    const avgObstacleFreeFrames = sumObstacleFreeFrames / livingAgentsLen;
 
     const MATURATION_SECONDS = 10; // Updated to match new MATURATION_AGE_FRAMES (600 frames = 10s)
-    const matureAgents = livingAgents.filter(a => a.age >= MATURATION_SECONDS).length;
-    const maturationRate = (matureAgents / livingAgents.length) * 100;
-    const maxAge = Math.max(...livingAgents.map(a => a.age), 0);
-
-    const totalSexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromMate || 0), 0);
-    const totalAsexualOffspring = livingAgents.reduce((sum, a) => sum + (a.childrenFromSplit || 0), 0);
+    // OPTIMIZED: Use for loops instead of filter/map/reduce
+    let matureAgents = 0, maxAge = 0, totalSexualOffspring = 0, totalAsexualOffspring = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        if (a.age >= MATURATION_SECONDS) matureAgents++;
+        if (a.age > maxAge) maxAge = a.age;
+        totalSexualOffspring += (a.childrenFromMate || 0);
+        totalAsexualOffspring += (a.childrenFromSplit || 0);
+    }
+    const maturationRate = (matureAgents / livingAgentsLen) * 100;
 
     const reproductionRate = simulation.reproductionRate || 0;
-    const collisionFreeAgents = livingAgents.filter(a => (a.timesHitObstacle || 0) === 0).length;
-    const collisionFreePercent = (collisionFreeAgents / livingAgents.length) * 100;
-    const qualifiedAgents = livingAgents.filter(a => a.fit).length;
+    // OPTIMIZED: Use for loops instead of filter
+    let collisionFreeAgents = 0, qualifiedAgents = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        if ((a.timesHitObstacle || 0) === 0) collisionFreeAgents++;
+        if (a.fit) qualifiedAgents++;
+    }
+    const collisionFreePercent = (collisionFreeAgents / livingAgentsLen) * 100;
 
     // Calculate qualification criteria breakdown
+    // OPTIMIZED: Use for loops instead of filter/reduce
     const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-    const agentsMeetingFitness = livingAgents.filter(a => a.fitness >= GENE_POOL_MIN_FITNESS).length;
-    const agentsMeetingFood = livingAgents.filter(a => (a.foodEaten || 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL).length;
-    const agentsMeetingAge = livingAgents.filter(a => (a.age || 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL).length;
-    const agentsMeetingExploration = livingAgents.filter(a => {
-        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
-        return explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL;
-    }).length;
-    const agentsMeetingNavigation = livingAgents.filter(a => (a.turnsTowardsFood || 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL).length;
-
-    // Calculate average exploration percentage
-    const avgExplorationPercentage = livingAgents.reduce((sum, a) => {
-        const explorationPercentage = ((a.exploredCells?.size || 0) / totalCells) * 100;
-        return sum + explorationPercentage;
-    }, 0) / livingAgents.length;
+    const invTotalCells = 1 / totalCells;
+    let agentsMeetingFitness = 0, agentsMeetingFood = 0, agentsMeetingAge = 0, agentsMeetingExploration = 0, agentsMeetingNavigation = 0;
+    let sumExplorationPercentage = 0;
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        if (a.fitness >= GENE_POOL_MIN_FITNESS) agentsMeetingFitness++;
+        if ((a.foodEaten || 0) >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL) agentsMeetingFood++;
+        if ((a.age || 0) >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL) agentsMeetingAge++;
+        const explorationPercentage = ((a.exploredCells?.size || 0) * invTotalCells) * 100;
+        if (explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL) agentsMeetingExploration++;
+        if ((a.turnsTowardsFood || 0) >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL) agentsMeetingNavigation++;
+        sumExplorationPercentage += explorationPercentage;
+    }
+    const avgExplorationPercentage = sumExplorationPercentage / livingAgentsLen;
 
     let learningRate = 0;
     if (simulation.fitnessHistory.length >= 2) {
         const recent = simulation.fitnessHistory.slice(-5);
         const older = simulation.fitnessHistory.slice(-10, -5);
         if (older.length > 0) {
-            const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-            const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
-            learningRate = (recentAvg - olderAvg) / older.length;
+            // OPTIMIZED: Use for loops instead of reduce
+            let recentSum = 0, olderSum = 0;
+            const recentLen = recent.length;
+            const olderLen = older.length;
+            for (let i = 0; i < recentLen; i++) recentSum += recent[i];
+            for (let i = 0; i < olderLen; i++) olderSum += older[i];
+            const recentAvg = recentSum / recentLen;
+            const olderAvg = olderSum / olderLen;
+            learningRate = (recentAvg - olderAvg) / olderLen;
         }
     }
 
@@ -335,15 +374,34 @@ export function copySimulationStats(simulation) {
     const validationQueueSize = simulation.validationManager ? simulation.validationManager.validationQueue.size : 0;
 
     // Calculate detailed food statistics
-    const livingFood = simulation.food.filter(f => !f.isDead);
-    const highValueFood = livingFood.filter(f => f.isHighValue);
-    const normalFood = livingFood.filter(f => !f.isHighValue);
-
-    const totalFoodEnergy = livingFood.reduce((sum, f) => sum + f.energyValue, 0);
-    const avgFoodEnergy = livingFood.length > 0 ? totalFoodEnergy / livingFood.length : 0;
-
-    const highValueEnergy = highValueFood.reduce((sum, f) => sum + f.energyValue, 0);
-    const normalEnergy = normalFood.reduce((sum, f) => sum + f.energyValue, 0);
+    // OPTIMIZED: Use for loops instead of filter/reduce
+    const livingFood = [];
+    const highValueFood = [];
+    const normalFood = [];
+    const foodLen = simulation.food.length;
+    for (let i = 0; i < foodLen; i++) {
+        const f = simulation.food[i];
+        if (f && !f.isDead) {
+            livingFood.push(f);
+            if (f.isHighValue) {
+                highValueFood.push(f);
+            } else {
+                normalFood.push(f);
+            }
+        }
+    }
+    const livingFoodLen = livingFood.length;
+    let totalFoodEnergy = 0, highValueEnergy = 0, normalEnergy = 0;
+    for (let i = 0; i < livingFoodLen; i++) {
+        const f = livingFood[i];
+        totalFoodEnergy += f.energyValue;
+        if (f.isHighValue) {
+            highValueEnergy += f.energyValue;
+        } else {
+            normalEnergy += f.energyValue;
+        }
+    }
+    const avgFoodEnergy = livingFoodLen > 0 ? totalFoodEnergy / livingFoodLen : 0;
 
     const foodSpawnRate = simulation.foodSpawnRate;
     const foodScarcityFactor = simulation.foodScarcityFactor;
@@ -359,12 +417,27 @@ export function copySimulationStats(simulation) {
     const energyBuffer = energyNeededPerSecond > 0 ? ((energyProvidedPerSecond / energyNeededPerSecond) - 1) * 100 : 0;
 
     // Get detailed gene pool information
+    // OPTIMIZED: Use for loops instead of sort/map
     const genePools = simulation.db.getGenePoolHealth().pools || [];
-    const topGenePools = genePools
-        .sort((a, b) => b.fitness - a.fitness)
-        .slice(0, 5)
-        .map(p => `ID ${p.id}: Fit ${p.fitness.toFixed(0)}, Count ${p.count}`)
-        .join('\n');
+    const genePoolsLen = genePools.length;
+    // Manual sort for top 5 (more efficient than full sort)
+    const topGenePools = [];
+    for (let i = 0; i < Math.min(5, genePoolsLen); i++) {
+        let maxIdx = i;
+        for (let j = i + 1; j < genePoolsLen; j++) {
+            if (genePools[j].fitness > genePools[maxIdx].fitness) {
+                maxIdx = j;
+            }
+        }
+        if (maxIdx !== i) {
+            const temp = genePools[i];
+            genePools[i] = genePools[maxIdx];
+            genePools[maxIdx] = temp;
+        }
+        const p = genePools[i];
+        topGenePools.push(`ID ${p.id}: Fit ${p.fitness.toFixed(0)}, Count ${p.count}`);
+    }
+    const topGenePoolsStr = topGenePools.join('\n');
 
     // Helper function to calculate statistics (avg, median, p99, min, max)
     const calculateStats = (values) => {
@@ -382,91 +455,103 @@ export function copySimulationStats(simulation) {
     };
 
     // Calculate statistical distributions for all fitness metrics
-    const fitnessValues = livingAgents.map(a => safeNumber(a.fitness, 0));
-    const baseScoreValues = fitnessBreakdown.map(f => f.baseScore);
-    const penaltiesValues = fitnessBreakdown.map(f => f.penalties);
-    const netBaseScoreValues = fitnessBreakdown.map(f => f.netBaseScore);
-    const survivalBonusValues = fitnessBreakdown.map(f => f.survivalBonus);
-    const foodEatenValues = livingAgents.map(a => safeNumber(a.foodEaten || 0, 0));
-    const offspringValues = livingAgents.map(a => safeNumber(a.offspring || 0, 0));
-    const killsValues = livingAgents.map(a => safeNumber(a.kills || 0, 0));
-    const explorationValues = livingAgents.map(a => {
-        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
-        return safeNumber(((a.exploredCells?.size || 0) / totalCells * 100), 0);
-    });
-    const cleverTurnsValues = livingAgents.map(a => safeNumber(a.cleverTurns || 0, 0));
-    const turnsTowardsFoodRawValues = livingAgents.map(a => safeNumber(a.turnsTowardsFood || 0, 0));
-    const turnsAwayFromObstaclesRawValues = livingAgents.map(a => safeNumber(a.turnsAwayFromObstacles || 0, 0));
-    const foodApproachesRawValues = livingAgents.map(a => safeNumber(a.foodApproaches || 0, 0));
-    const directionChangedRawValues = livingAgents.map(a => safeNumber(a.directionChanged || 0, 0));
-    const speedChangedRawValues = livingAgents.map(a => safeNumber(a.speedChanged || 0, 0));
-    const successfulEscapesValues = livingAgents.map(a => safeNumber(a.successfulEscapes || 0, 0));
-    const energyValues = livingAgents.map(a => safeNumber(a.energy, 0));
-    const energySpentValues = livingAgents.map(a => safeNumber(a.energySpent || 0, 0));
-    const ageValues = livingAgents.map(a => safeNumber(a.age || 0, 0));
-    const distanceTravelledValues = livingAgents.map(a => safeNumber(a.distanceTravelled || 0, 0));
-    const reproductionAttemptsValues = livingAgents.map(a => safeNumber(a.reproductionAttempts || 0, 0));
-    const childrenFromMateValues = livingAgents.map(a => safeNumber(a.childrenFromMate || 0, 0));
-    const childrenFromSplitValues = livingAgents.map(a => safeNumber(a.childrenFromSplit || 0, 0));
+    // OPTIMIZED: Use for loops instead of map
+    const fitnessValues = [];
+    const baseScoreValues = [];
+    const penaltiesValues = [];
+    const netBaseScoreValues = [];
+    const survivalBonusValues = [];
+    const foodEatenValues = [];
+    const offspringValues = [];
+    const killsValues = [];
+    const explorationValues = [];
+    const cleverTurnsValues = [];
+    const turnsTowardsFoodRawValues = [];
+    const turnsAwayFromObstaclesRawValues = [];
+    const foodApproachesRawValues = [];
+    const directionChangedRawValues = [];
+    const speedChangedRawValues = [];
+    const successfulEscapesValues = [];
+    const energyValues = [];
+    const energySpentValues = [];
+    const ageValues = [];
+    const distanceTravelledValues = [];
+    const reproductionAttemptsValues = [];
+    const childrenFromMateValues = [];
+    const childrenFromSplitValues = [];
+    
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
+        fitnessValues.push(safeNumber(a.fitness, 0));
+        foodEatenValues.push(safeNumber(a.foodEaten || 0, 0));
+        offspringValues.push(safeNumber(a.offspring || 0, 0));
+        killsValues.push(safeNumber(a.kills || 0, 0));
+        explorationValues.push(safeNumber(((a.exploredCells?.size || 0) * invTotalCells * 100), 0));
+        cleverTurnsValues.push(safeNumber(a.cleverTurns || 0, 0));
+        turnsTowardsFoodRawValues.push(safeNumber(a.turnsTowardsFood || 0, 0));
+        turnsAwayFromObstaclesRawValues.push(safeNumber(a.turnsAwayFromObstacles || 0, 0));
+        foodApproachesRawValues.push(safeNumber(a.foodApproaches || 0, 0));
+        directionChangedRawValues.push(safeNumber(a.directionChanged || 0, 0));
+        speedChangedRawValues.push(safeNumber(a.speedChanged || 0, 0));
+        successfulEscapesValues.push(safeNumber(a.successfulEscapes || 0, 0));
+        energyValues.push(safeNumber(a.energy, 0));
+        energySpentValues.push(safeNumber(a.energySpent || 0, 0));
+        ageValues.push(safeNumber(a.age || 0, 0));
+        distanceTravelledValues.push(safeNumber(a.distanceTravelled || 0, 0));
+        reproductionAttemptsValues.push(safeNumber(a.reproductionAttempts || 0, 0));
+        childrenFromMateValues.push(safeNumber(a.childrenFromMate || 0, 0));
+        childrenFromSplitValues.push(safeNumber(a.childrenFromSplit || 0, 0));
+    }
+    for (let i = 0; i < fitnessBreakdownLen; i++) {
+        const f = fitnessBreakdown[i];
+        baseScoreValues.push(f.baseScore);
+        penaltiesValues.push(f.penalties);
+        netBaseScoreValues.push(f.netBaseScore);
+        survivalBonusValues.push(f.survivalBonus);
+    }
 
     // Calculate normalized values for navigation metrics
-    const turnsTowardsFoodNormalizedValues = livingAgents.map(a => {
+    // OPTIMIZED: Use for loops instead of map
+    const turnsTowardsFoodNormalizedValues = [];
+    const turnsAwayFromObstaclesNormalizedValues = [];
+    const foodApproachesNormalizedValues = [];
+    const directionChangedNormalizedValues = [];
+    const speedChangedNormalizedValues = [];
+    const efficiencyValues = [];
+    const obstacleFreeFramesValues = [];
+    
+    for (let i = 0; i < livingAgentsLen; i++) {
+        const a = livingAgents[i];
         const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
         if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
             const distanceNormalizer = distanceTravelled / 100;
-            return safeNumber(a.turnsTowardsFood || 0, 0) / Math.max(distanceNormalizer, 1);
+            const invDistanceNormalizer = 1 / Math.max(distanceNormalizer, 1);
+            turnsTowardsFoodNormalizedValues.push(safeNumber(a.turnsTowardsFood || 0, 0) * invDistanceNormalizer);
+            turnsAwayFromObstaclesNormalizedValues.push(safeNumber(a.turnsAwayFromObstacles || 0, 0) * invDistanceNormalizer);
+            foodApproachesNormalizedValues.push(safeNumber(a.foodApproaches || 0, 0) * invDistanceNormalizer);
+            directionChangedNormalizedValues.push(Math.min(safeNumber(a.directionChanged || 0, 0), 500) * invDistanceNormalizer);
+            speedChangedNormalizedValues.push(Math.min(safeNumber(a.speedChanged || 0, 0), 200) * invDistanceNormalizer);
+        } else {
+            turnsTowardsFoodNormalizedValues.push(0);
+            turnsAwayFromObstaclesNormalizedValues.push(0);
+            foodApproachesNormalizedValues.push(0);
+            directionChangedNormalizedValues.push(0);
+            speedChangedNormalizedValues.push(0);
         }
-        return 0;
-    });
-    const turnsAwayFromObstaclesNormalizedValues = livingAgents.map(a => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            return safeNumber(a.turnsAwayFromObstacles || 0, 0) / Math.max(distanceNormalizer, 1);
-        }
-        return 0;
-    });
-    const foodApproachesNormalizedValues = livingAgents.map(a => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            return safeNumber(a.foodApproaches || 0, 0) / Math.max(distanceNormalizer, 1);
-        }
-        return 0;
-    });
-    const directionChangedNormalizedValues = livingAgents.map(a => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            return Math.min(safeNumber(a.directionChanged || 0, 0), 500) / Math.max(distanceNormalizer, 1);
-        }
-        return 0;
-    });
-    const speedChangedNormalizedValues = livingAgents.map(a => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            const distanceNormalizer = distanceTravelled / 100;
-            return Math.min(safeNumber(a.speedChanged || 0, 0), 200) / Math.max(distanceNormalizer, 1);
-        }
-        return 0;
-    });
-
-    // Calculate efficiency values
-    const efficiencyValues = livingAgents.map(a => {
-        const distanceTravelled = safeNumber(a.distanceTravelled || 0, 0);
+        
+        // Calculate efficiency values
         const energySpent = safeNumber(a.energySpent || 0, 0);
         if (energySpent > 0) {
-            return Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
+            efficiencyValues.push(Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0));
+        } else {
+            efficiencyValues.push(0);
         }
-        return 0;
-    });
-
-    // Calculate obstacle-free frames values
-    const obstacleFreeFramesValues = livingAgents.map(a => {
+        
+        // Calculate obstacle-free frames values
         const ageInFrames = (a.age || 0) * FPS_TARGET;
         const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
-        return obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0;
-    });
+        obstacleFreeFramesValues.push(obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
+    }
 
     // Calculate all statistics
     const statsFitness = calculateStats(fitnessValues);
@@ -552,12 +637,12 @@ Gene Pool Qualification Thresholds:
   - Exploration: ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}% map coverage
   - Navigation: ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL} turns towards food
 Agents Meeting Each Criterion:
-  - Fitness ≥${GENE_POOL_MIN_FITNESS}: ${agentsMeetingFitness} / ${livingAgents.length} (${((agentsMeetingFitness / livingAgents.length) * 100).toFixed(1)}%)
-  - Food ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}: ${agentsMeetingFood} / ${livingAgents.length} (${((agentsMeetingFood / livingAgents.length) * 100).toFixed(1)}%)
-  - Age ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s: ${agentsMeetingAge} / ${livingAgents.length} (${((agentsMeetingAge / livingAgents.length) * 100).toFixed(1)}%)
-  - Exploration ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%: ${agentsMeetingExploration} / ${livingAgents.length} (${((agentsMeetingExploration / livingAgents.length) * 100).toFixed(1)}%)
-  - Navigation ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}: ${agentsMeetingNavigation} / ${livingAgents.length} (${((agentsMeetingNavigation / livingAgents.length) * 100).toFixed(1)}%)
-  - ALL CRITERIA MET (Qualified): ${qualifiedAgents} / ${livingAgents.length} (${((qualifiedAgents / livingAgents.length) * 100).toFixed(1)}%)
+  - Fitness ≥${GENE_POOL_MIN_FITNESS}: ${agentsMeetingFitness} / ${livingAgentsLen} (${((agentsMeetingFitness / livingAgentsLen) * 100).toFixed(1)}%)
+  - Food ≥${MIN_FOOD_EATEN_TO_SAVE_GENE_POOL}: ${agentsMeetingFood} / ${livingAgentsLen} (${((agentsMeetingFood / livingAgentsLen) * 100).toFixed(1)}%)
+  - Age ≥${(MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL / 60).toFixed(1)}s: ${agentsMeetingAge} / ${livingAgentsLen} (${((agentsMeetingAge / livingAgentsLen) * 100).toFixed(1)}%)
+  - Exploration ≥${MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL}%: ${agentsMeetingExploration} / ${livingAgentsLen} (${((agentsMeetingExploration / livingAgentsLen) * 100).toFixed(1)}%)
+  - Navigation ≥${MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL}: ${agentsMeetingNavigation} / ${livingAgentsLen} (${((agentsMeetingNavigation / livingAgentsLen) * 100).toFixed(1)}%)
+  - ALL CRITERIA MET (Qualified): ${qualifiedAgents} / ${livingAgentsLen} (${((qualifiedAgents / livingAgentsLen) * 100).toFixed(1)}%)
 Avg Exploration: ${avgExplorationPercentage.toFixed(2)}%
 Avg Turns Towards Food: ${avgTurnsTowardsFood.toFixed(2)}
 
