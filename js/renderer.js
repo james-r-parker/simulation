@@ -858,6 +858,7 @@ export class WebGLRenderer {
 
         // Group ALL living agents by gene ID first (to prevent disposal of off-screen agents)
         const agentsByGene = new Map();
+        const livingAgentsSet = new Set(); // Track all living agents for cleanup
         const numAgents = agents.length;
         for (let i = 0; i < numAgents; i++) {
             const agent = agents[i];
@@ -865,10 +866,25 @@ export class WebGLRenderer {
 
             if (!agent.geneId) continue;
 
+            livingAgentsSet.add(agent); // Track living agent
+
             if (!agentsByGene.has(agent.geneId)) {
                 agentsByGene.set(agent.geneId, []);
             }
             agentsByGene.get(agent.geneId).push(agent);
+        }
+
+        // BUG FIX: Clean up agentPositions Map - remove entries for agents no longer in agents array
+        // This prevents dead agents from being rendered with stale position data
+        let cleanedPositions = 0;
+        for (const [agent] of this.agentPositions.entries()) {
+            if (!agent || agent.isDead || !livingAgentsSet.has(agent)) {
+                this.agentPositions.delete(agent);
+                cleanedPositions++;
+            }
+        }
+        if (cleanedPositions > 0) {
+            this.logger.debug(`[RENDER] Cleaned up ${cleanedPositions} stale entries from agentPositions Map`);
         }
 
         // Remove old meshes for gene IDs that no longer exist (truly extinct)
@@ -1048,7 +1064,7 @@ export class WebGLRenderer {
                 bodyMesh.frustumCulled = false;
                 borderMesh.frustumCulled = false;
 
-                this.agentMeshes.set(geneId, { body: bodyMesh, border: borderMesh, maxCapacity: maxInstances });
+                this.agentMeshes.set(geneId, { body: bodyMesh, border: borderMesh, maxCapacity: maxInstances, lastValidCount: 0 });
                 this.agentGroup.add(bodyMesh);
                 this.agentGroup.add(borderMesh);
             }
@@ -1147,6 +1163,7 @@ export class WebGLRenderer {
                 mesh.body = newBodyMesh;
                 mesh.border = newBorderMesh;
                 mesh.maxCapacity = newCapacity;
+                mesh.lastValidCount = 0; // Reset count tracking for resized mesh
 
                 this.agentGroup.add(newBodyMesh);
                 this.agentGroup.add(newBorderMesh);
@@ -1157,6 +1174,12 @@ export class WebGLRenderer {
             if (renderCount < validCount) {
                 this.logger.warn(`[RENDER] Gene ${geneId}: Can only render ${renderCount} of ${validCount} visible agents (capacity limit)`);
             }
+
+            // BUG FIX: Track previous valid count and force update if count decreased
+            // This ensures dead agents are immediately removed from rendering
+            const previousCount = mesh.lastValidCount || 0;
+            const countDecreased = renderCount < previousCount;
+            mesh.lastValidCount = renderCount;
 
             // PERFORMANCE: Batch material updates - find max speed ratio first
             // Use cached math variables to avoid repeated calculations
@@ -1186,7 +1209,8 @@ export class WebGLRenderer {
             }
 
             // PERFORMANCE: Track which agents need matrix updates (dirty tracking)
-            let needsMatrixUpdate = false;
+            // BUG FIX: Force update if count decreased to clear stale matrices
+            let needsMatrixUpdate = countDecreased;
             for (let i = 0; i < renderCount; i++) {
                 const agent = validAgents[i];
                 const lastPos = this.agentPositions.get(agent);
@@ -1252,6 +1276,21 @@ export class WebGLRenderer {
                     if (this.tempSpeedRatio > 0.3) {
                         updateAgentTrail(this.agentTrails, agent, this.tempSpeedRatio, this.trailGroup, this.logger);
                     }
+                }
+
+                // BUG FIX: Clear matrices for instances beyond the valid count
+                // This prevents dead agents from being rendered with stale position data
+                if (countDecreased && previousCount > renderCount) {
+                    // Clear matrices for removed instances by setting them to identity matrix (invisible/off-screen)
+                    const identityMatrix = acquireMatrix4();
+                    identityMatrix.identity();
+                    // Set scale to 0 to make them invisible
+                    identityMatrix.makeScale(0, 0, 0);
+                    for (let i = renderCount; i < previousCount && i < mesh.maxCapacity; i++) {
+                        mesh.body.setMatrixAt(i, identityMatrix);
+                        mesh.border.setMatrixAt(i, identityMatrix);
+                    }
+                    releaseMatrix4(identityMatrix);
                 }
 
                 // Only mark for update if matrices actually changed
