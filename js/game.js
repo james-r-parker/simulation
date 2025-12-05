@@ -193,7 +193,7 @@ export class Simulation {
         this.activeAgents = []; // Pre-allocate active agents array
         this.allEntities = []; // Pre-allocate all entities array
         this.collisionQueryRange = new Rectangle(0, 0, 0, 0); // Pre-allocate collision query range
-        
+
         // PERFORMANCE: Spatial grid for ray tracing optimization
         this.spatialGridEnabled = true; // Enable spatial partitioning
         this.spatialGridCellSize = 200; // Size of each grid cell (pixels) - balances performance vs accuracy
@@ -243,7 +243,7 @@ export class Simulation {
         } : null;
 
         const result = buildSpatialGrid(entities, this.worldWidth, this.worldHeight, this.spatialGridCellSize, gridState);
-        
+
         // Store grid arrays for reuse
         if (result) {
             this.spatialGrid = result.spatialGrid;
@@ -617,7 +617,7 @@ export class Simulation {
         if (this.deadAgentQueue.length === 0) return;
 
         const queueSize = this.deadAgentQueue.length;
-        
+
         // Log warning if queue is getting large (potential memory leak indicator)
         if (queueSize > 100) {
             this.logger.warn(`[MEMORY] Dead agent queue is large: ${queueSize} agents. Processing now.`);
@@ -651,7 +651,7 @@ export class Simulation {
 
         // Clear the queue
         this.deadAgentQueue = [];
-        
+
         if (queueSize > 10) {
             this.logger.debug(`[MEMORY] Processed ${queueSize} dead agents from queue`);
         }
@@ -849,11 +849,11 @@ export class Simulation {
 
                 // PERFORMANCE: Quadtree caching - only rebuild if entities moved significantly
                 this.perfMonitor.startPhase(`quadtree_${i}`);
-                
+
                 // Check if quadtree needs rebuilding by comparing current positions to last positions
                 let needsRebuild = false;
                 const thresholdSq = this.quadtreeRebuildThreshold * this.quadtreeRebuildThreshold;
-                
+
                 // Check agents for movement
                 for (let j = 0; j < this.agents.length; j++) {
                     const agent = this.agents[j];
@@ -871,7 +871,7 @@ export class Simulation {
                         }
                     }
                 }
-                
+
                 // Check food for movement (only if agents didn't trigger rebuild)
                 if (!needsRebuild) {
                     for (let j = 0; j < this.food.length; j++) {
@@ -891,7 +891,7 @@ export class Simulation {
                         }
                     }
                 }
-                
+
                 // Only rebuild if entities moved significantly or this is first frame
                 if (needsRebuild || this.lastAgentPositions.size === 0) {
                     // This ensures all collision queries use current entity positions
@@ -914,7 +914,7 @@ export class Simulation {
 
                                 // Add to active agents list
                                 this.activeAgents.push(agent);
-                                
+
                                 // Update position tracking
                                 this.lastAgentPositions.set(agent, { x: agent.x, y: agent.y });
                             } else if (agent && agent.isDead) {
@@ -928,7 +928,7 @@ export class Simulation {
                                 // Use Point pool instead of allocating new objects
                                 const point = this.pointPool.acquire(food.x, food.y, food, food.size / 2 || 2.5);
                                 this.quadtree.insert(point);
-                                
+
                                 // Update position tracking
                                 this.lastFoodPositions.set(food, { x: food.x, y: food.y });
                             } else if (food && food.isDead) {
@@ -1031,7 +1031,7 @@ export class Simulation {
 
                         // Build arrays with current state - Reuse allEntities
                         this.allEntities.length = 0;
-                        
+
                         // PERFORMANCE: Filter entities to only include those within maxRayDist of any agent
                         // This is mathematically correct - entities beyond maxRayDist cannot be detected anyway
                         this.perfMonitor.timeSync('perception.entityFiltering', () => {
@@ -1043,11 +1043,11 @@ export class Simulation {
                                     maxRayDist = agent.maxRayDist;
                                 }
                             }
-                            
+
                             // If no agents, skip entity filtering
                             if (maxRayDist > 0 && activeAgents.length > 0) {
                                 const maxRayDistSq = maxRayDist * maxRayDist;
-                                
+
                                 // Filter food - only include if within maxRayDist of any agent
                                 for (let j = 0; j < this.food.length; j++) {
                                     const food = this.food[j];
@@ -1056,7 +1056,7 @@ export class Simulation {
                                         let inRange = false;
                                         const foodSize = food.size || 0;
                                         const maxCheckDistSq = (maxRayDist + foodSize) * (maxRayDist + foodSize);
-                                        
+
                                         for (let k = 0; k < activeAgents.length; k++) {
                                             const agent = activeAgents[k];
                                             if (agent && !agent.isDead) {
@@ -1067,13 +1067,13 @@ export class Simulation {
                                                 }
                                             }
                                         }
-                                        
+
                                         if (inRange) {
                                             this.allEntities.push(food);
                                         }
                                     }
                                 }
-                                
+
                                 // Always include all active agents (they need to detect each other)
                                 for (let j = 0; j < activeAgents.length; j++) {
                                     this.allEntities.push(activeAgents[j]);
@@ -1312,10 +1312,10 @@ export class Simulation {
                             }
 
                             // === ASEXUAL REPRODUCTION (SPLITTING) ===
-                            // When energy is very high, split to create clone
+                            // Strategic splitting with environmental awareness
                             // Require agent to be mature (not "fit" - that's too strict and blocks all reproduction)
                             if (agent.framesAlive >= MATURATION_AGE_FRAMES &&
-                                agent.energy > MIN_ENERGY_FOR_SPLITTING &&
+                                agent.shouldSplit() &&
                                 agent.reproductionCooldown <= 0 &&
                                 !agent.isPregnant) {
 
@@ -1337,186 +1337,186 @@ export class Simulation {
                     // Process dead agents - queue qualifying ones for database save, remove all dead agents
                     this.perfMonitor.timeSync('deadAgentProcessing', () => {
                         for (let j = this.agents.length - 1; j >= 0; j--) {
-                        const agent = this.agents[j];
-                        if (agent.isDead) {
-                            // CRITICAL: Extract weights IMMEDIATELY when agent dies, before any cleanup
-                            // This ensures we can add agents to validation even if cleanup occurs later
-                            let agentWeights = null;
-                            let hasValidWeights = false;
-                            
-                            // Try multiple methods to extract weights
-                            // 1. Check if weights were already extracted and stored
-                            if (agent._extractedWeights) {
-                                agentWeights = agent._extractedWeights;
-                                hasValidWeights = agentWeights &&
-                                    typeof agentWeights === 'object' &&
-                                    agentWeights.weights1 && agentWeights.weights2 &&
-                                    Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
-                                    agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
-                            }
-                            // 2. Try to get weights from neural network if it exists
-                            else if (agent.nn) {
-                                try {
-                                    agentWeights = agent.getWeights();
+                            const agent = this.agents[j];
+                            if (agent.isDead) {
+                                // CRITICAL: Extract weights IMMEDIATELY when agent dies, before any cleanup
+                                // This ensures we can add agents to validation even if cleanup occurs later
+                                let agentWeights = null;
+                                let hasValidWeights = false;
+
+                                // Try multiple methods to extract weights
+                                // 1. Check if weights were already extracted and stored
+                                if (agent._extractedWeights) {
+                                    agentWeights = agent._extractedWeights;
                                     hasValidWeights = agentWeights &&
                                         typeof agentWeights === 'object' &&
                                         agentWeights.weights1 && agentWeights.weights2 &&
                                         Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
                                         agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
-                                } catch (error) {
-                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via nn.getWeights(): ${error.message}`);
                                 }
-                            }
-                            // 3. Try to call getWeights() directly even if nn is null (might be a method override)
-                            else if (typeof agent.getWeights === 'function') {
-                                try {
-                                    agentWeights = agent.getWeights();
-                                    hasValidWeights = agentWeights &&
-                                        typeof agentWeights === 'object' &&
-                                        agentWeights.weights1 && agentWeights.weights2 &&
-                                        Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
-                                        agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
-                                } catch (error) {
-                                    this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via getWeights(): ${error.message}`);
+                                // 2. Try to get weights from neural network if it exists
+                                else if (agent.nn) {
+                                    try {
+                                        agentWeights = agent.getWeights();
+                                        hasValidWeights = agentWeights &&
+                                            typeof agentWeights === 'object' &&
+                                            agentWeights.weights1 && agentWeights.weights2 &&
+                                            Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                            agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                    } catch (error) {
+                                        this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via nn.getWeights(): ${error.message}`);
+                                    }
                                 }
-                            }
-                            
-                            // Store weights on agent temporarily so validation can access them even after cleanup
-                            if (hasValidWeights && agentWeights) {
-                                agent._extractedWeights = agentWeights;
-                            } else {
-                                // Log why we couldn't extract weights for debugging
-                                if (!agent.nn && typeof agent.getWeights !== 'function') {
-                                    this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) has no neural network and no getWeights method`);
+                                // 3. Try to call getWeights() directly even if nn is null (might be a method override)
+                                else if (typeof agent.getWeights === 'function') {
+                                    try {
+                                        agentWeights = agent.getWeights();
+                                        hasValidWeights = agentWeights &&
+                                            typeof agentWeights === 'object' &&
+                                            agentWeights.weights1 && agentWeights.weights2 &&
+                                            Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                            agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                    } catch (error) {
+                                        this.logger.debug(`[VALIDATION] Could not extract weights from agent ${agent.id} (${agent.geneId}) via getWeights(): ${error.message}`);
+                                    }
                                 }
-                            }
 
-                            // Check if this agent was in validation queue first (highest priority)
-                            if (this.validationManager.isInValidation(agent.geneId) && agent.isValidationAgent) {
-                                // This is a SPAWNED validation test agent - handle specially
-                                this.logger.info(`[LIFECYCLE] ⚔️ Validation test agent ${agent.id} (${agent.geneId}) died during testing - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
-                                // Handle validation agent death
-                                this.validationManager.handleValidationDeath(agent, this.db);
-                                // Validation agents get cleaned up in handleValidationDeath if validation completes,
-                                // or they get respawned if validation continues - don't clean up here
+                                // Store weights on agent temporarily so validation can access them even after cleanup
+                                if (hasValidWeights && agentWeights) {
+                                    agent._extractedWeights = agentWeights;
+                                } else {
+                                    // Log why we couldn't extract weights for debugging
+                                    if (!agent.nn && typeof agent.getWeights !== 'function') {
+                                        this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) has no neural network and no getWeights method`);
+                                    }
+                                }
 
-                                // CRITICAL: Skip the rest of death processing for validation agents
-                                // They are handled entirely by handleValidationDeath
+                                // Check if this agent was in validation queue first (highest priority)
+                                if (this.validationManager.isInValidation(agent.geneId) && agent.isValidationAgent) {
+                                    // This is a SPAWNED validation test agent - handle specially
+                                    this.logger.info(`[LIFECYCLE] ⚔️ Validation test agent ${agent.id} (${agent.geneId}) died during testing - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
+                                    // Handle validation agent death
+                                    this.validationManager.handleValidationDeath(agent, this.db);
+                                    // Validation agents get cleaned up in handleValidationDeath if validation completes,
+                                    // or they get respawned if validation continues - don't clean up here
+
+                                    // CRITICAL: Skip the rest of death processing for validation agents
+                                    // They are handled entirely by handleValidationDeath
+                                    this.agents.splice(j, 1);
+                                    j--; // Adjust index since we removed an element
+                                    continue;
+                                } else if (this.validationManager.isInValidation(agent.geneId)) {
+                                    // This is an ORIGINAL agent whose gene is in validation - treat as normal death
+                                    // but log that it died during validation testing
+                                    this.logger.info(`[LIFECYCLE] 💥 Original agent ${agent.id} (${agent.geneId}) died while gene undergoing validation - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
+                                    // Continue with normal death processing below
+                                }
+
+                                if (agent.fit) {
+                                    // Agent meets comprehensive fit criteria - check if gene pool exists
+                                    const genePoolExists = this.db.pool[agent.geneId] !== undefined;
+
+                                    if (genePoolExists) {
+                                        // CASE 1: Existing gene pool - skip validation, go directly to save queue
+                                        this.logger.info(`[LIFECYCLE] 🏆 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (saved to gene pool)`);
+                                        this.db.queueSaveAgent(agent);
+                                    } else {
+                                        // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
+                                        this.logger.info(`[LIFECYCLE] 🎯 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (entering validation)`);
+
+                                        // Use weights extracted earlier (before any cleanup)
+                                        if (!hasValidWeights || !agentWeights) {
+                                            // Try one more time to get weights if we have the method
+                                            if (typeof agent.getWeights === 'function' && !agentWeights) {
+                                                try {
+                                                    agentWeights = agent.getWeights();
+                                                    hasValidWeights = agentWeights &&
+                                                        typeof agentWeights === 'object' &&
+                                                        agentWeights.weights1 && agentWeights.weights2 &&
+                                                        Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
+                                                        agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
+                                                    if (hasValidWeights) {
+                                                        agent._extractedWeights = agentWeights;
+                                                    }
+                                                } catch (error) {
+                                                    // Ignore - we'll skip validation
+                                                }
+                                            }
+
+                                            if (!hasValidWeights || !agentWeights) {
+                                                this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no valid neural network weights (nn: ${agent.nn ? 'exists' : 'null'}, getWeights: ${typeof agent.getWeights}, extracted: ${agent._extractedWeights ? 'yes' : 'no'})`);
+                                                // Continue to cleanup - agent can't enter validation without weights
+                                            } else {
+                                                // We got weights on retry, continue with validation
+                                            }
+                                        }
+
+                                        if (hasValidWeights && agentWeights) {
+                                            // Temporarily attach weights to agent if neural network is missing
+                                            // This allows addToValidationQueue to work properly
+                                            const originalNN = agent.nn;
+                                            if (!agent.nn && agentWeights) {
+                                                // Create a temporary getWeights function that returns the extracted weights
+                                                agent.getWeights = () => agentWeights;
+                                            }
+
+                                            const result = this.validationManager.addToValidationQueue(agent, false);
+
+                                            // Restore original state if we modified it
+                                            if (!originalNN && agentWeights) {
+                                                // Only delete if we added it (check if it's our temporary function)
+                                                if (agent.getWeights && !agent.nn) {
+                                                    delete agent.getWeights;
+                                                }
+                                            }
+
+                                            this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) validation entry result: ${result}`);
+                                        }
+                                    }
+                                } else if (hasValidatedAncestor(agent, this)) {
+                                    // Children of validated agents get saved to gene pool automatically
+                                    this.logger.info(`[LIFECYCLE] 👼 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (auto-saved as validated descendant)`);
+                                    this.db.queueSaveAgent(agent);
+                                }
+                                else {
+                                    // Log regular agent death
+                                    this.logger.info(`[LIFECYCLE] 💀 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Fit: ${agent.fit}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
+
+                                    // CRITICAL: Extract weights before cleanup for ALL agents (not just fit ones)
+                                    // This ensures validation can access weights even after cleanup if needed
+                                    // The cleanup() method will also extract weights, but doing it here ensures
+                                    // weights are available before any validation processing
+                                    if (agent.nn && !agent._extractedWeights) {
+                                        try {
+                                            agent._extractedWeights = agent.nn.getWeights();
+                                        } catch (error) {
+                                            this.logger.debug(`[LIFECYCLE] Could not extract weights before cleanup for agent ${agent.id}: ${error.message}`);
+                                        }
+                                    }
+
+                                    // CRITICAL: Call cleanup to break circular references before removal
+                                    // This allows the agent to be garbage collected immediately
+                                    agent.cleanup();
+                                }
+
+                                // NUTRIENT CYCLING: Create fertile zone from decomposed agent
+                                this.createFertileZone(agent);
+
+                                // AMAZING DEATH EFFECT: Add dramatic visual effect when agent dies
+                                if (this.renderer) {
+                                    this.renderer.addVisualEffect(agent, 'death', this.gameSpeed);
+                                }
+
+                                // PERFORMANCE: Release collision tracking Set back to pool
+                                if (agent.processedCollisions) {
+                                    collisionSetPool.release(agent.processedCollisions);
+                                    agent.processedCollisions = null;
+                                }
+
+                                // Remove ALL dead agents from active array to prevent memory leaks
                                 this.agents.splice(j, 1);
                                 j--; // Adjust index since we removed an element
-                                continue;
-                            } else if (this.validationManager.isInValidation(agent.geneId)) {
-                                // This is an ORIGINAL agent whose gene is in validation - treat as normal death
-                                // but log that it died during validation testing
-                                this.logger.info(`[LIFECYCLE] 💥 Original agent ${agent.id} (${agent.geneId}) died while gene undergoing validation - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
-                                // Continue with normal death processing below
                             }
-
-                            if (agent.fit) {
-                                // Agent meets comprehensive fit criteria - check if gene pool exists
-                                const genePoolExists = this.db.pool[agent.geneId] !== undefined;
-
-                                if (genePoolExists) {
-                                    // CASE 1: Existing gene pool - skip validation, go directly to save queue
-                                    this.logger.info(`[LIFECYCLE] 🏆 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (saved to gene pool)`);
-                                    this.db.queueSaveAgent(agent);
-                                } else {
-                                    // CASE 2: New gene pool - enter validation (agent must be fit to enter initially)
-                                    this.logger.info(`[LIFECYCLE] 🎯 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (entering validation)`);
-
-                                    // Use weights extracted earlier (before any cleanup)
-                                    if (!hasValidWeights || !agentWeights) {
-                                        // Try one more time to get weights if we have the method
-                                        if (typeof agent.getWeights === 'function' && !agentWeights) {
-                                            try {
-                                                agentWeights = agent.getWeights();
-                                                hasValidWeights = agentWeights &&
-                                                    typeof agentWeights === 'object' &&
-                                                    agentWeights.weights1 && agentWeights.weights2 &&
-                                                    Array.isArray(agentWeights.weights1) && Array.isArray(agentWeights.weights2) &&
-                                                    agentWeights.weights1.length > 0 && agentWeights.weights2.length > 0;
-                                                if (hasValidWeights) {
-                                                    agent._extractedWeights = agentWeights;
-                                                }
-                                            } catch (error) {
-                                                // Ignore - we'll skip validation
-                                            }
-                                        }
-                                        
-                                        if (!hasValidWeights || !agentWeights) {
-                                            this.logger.warn(`[VALIDATION] ⚠️ Skipping validation for agent ${agent.id} (${agent.geneId}) - no valid neural network weights (nn: ${agent.nn ? 'exists' : 'null'}, getWeights: ${typeof agent.getWeights}, extracted: ${agent._extractedWeights ? 'yes' : 'no'})`);
-                                            // Continue to cleanup - agent can't enter validation without weights
-                                        } else {
-                                            // We got weights on retry, continue with validation
-                                        }
-                                    }
-                                    
-                                    if (hasValidWeights && agentWeights) {
-                                        // Temporarily attach weights to agent if neural network is missing
-                                        // This allows addToValidationQueue to work properly
-                                        const originalNN = agent.nn;
-                                        if (!agent.nn && agentWeights) {
-                                            // Create a temporary getWeights function that returns the extracted weights
-                                            agent.getWeights = () => agentWeights;
-                                        }
-
-                                        const result = this.validationManager.addToValidationQueue(agent, false);
-                                        
-                                        // Restore original state if we modified it
-                                        if (!originalNN && agentWeights) {
-                                            // Only delete if we added it (check if it's our temporary function)
-                                            if (agent.getWeights && !agent.nn) {
-                                                delete agent.getWeights;
-                                            }
-                                        }
-                                        
-                                        this.logger.debug(`[VALIDATION] Agent ${agent.id} (${agent.geneId}) validation entry result: ${result}`);
-                                    }
-                                }
-                            } else if (hasValidatedAncestor(agent, this)) {
-                                // Children of validated agents get saved to gene pool automatically
-                                this.logger.info(`[LIFECYCLE] 👼 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType} (auto-saved as validated descendant)`);
-                                this.db.queueSaveAgent(agent);
-                            }
-                            else {
-                                // Log regular agent death
-                                this.logger.info(`[LIFECYCLE] 💀 Agent ${agent.id} (${agent.geneId}) died - Age: ${agent.age.toFixed(1)}s, Fitness: ${agent.fitness.toFixed(1)}, Fit: ${agent.fit}, Energy: ${agent.energy.toFixed(1)}, Specialization: ${agent.specializationType}`);
-
-                                // CRITICAL: Extract weights before cleanup for ALL agents (not just fit ones)
-                                // This ensures validation can access weights even after cleanup if needed
-                                // The cleanup() method will also extract weights, but doing it here ensures
-                                // weights are available before any validation processing
-                                if (agent.nn && !agent._extractedWeights) {
-                                    try {
-                                        agent._extractedWeights = agent.nn.getWeights();
-                                    } catch (error) {
-                                        this.logger.debug(`[LIFECYCLE] Could not extract weights before cleanup for agent ${agent.id}: ${error.message}`);
-                                    }
-                                }
-
-                                // CRITICAL: Call cleanup to break circular references before removal
-                                // This allows the agent to be garbage collected immediately
-                                agent.cleanup();
-                            }
-
-                            // NUTRIENT CYCLING: Create fertile zone from decomposed agent
-                            this.createFertileZone(agent);
-
-                            // AMAZING DEATH EFFECT: Add dramatic visual effect when agent dies
-                            if (this.renderer) {
-                                this.renderer.addVisualEffect(agent, 'death', this.gameSpeed);
-                            }
-
-                            // PERFORMANCE: Release collision tracking Set back to pool
-                            if (agent.processedCollisions) {
-                                collisionSetPool.release(agent.processedCollisions);
-                                agent.processedCollisions = null;
-                            }
-
-                            // Remove ALL dead agents from active array to prevent memory leaks
-                            this.agents.splice(j, 1);
-                            j--; // Adjust index since we removed an element
-                        }
                         }
                     });
 
@@ -1827,10 +1827,10 @@ export class Simulation {
                 } else if (this.currentFps > 0 && this.currentFps < 45) {
                     adaptiveFrameSkip = Math.min(RENDER_FRAME_SKIP + 1, 3);
                 }
-                
+
                 this.renderFrameCounter++;
                 const isRenderFrame = (this.renderFrameCounter % adaptiveFrameSkip === 0);
-                
+
                 if (isRenderFrame) {
                     this.perfMonitor.timeSync('rendering.visualEffects', () => {
                         this.renderer.updateVisualEffects(this.frameCount);
@@ -1871,7 +1871,7 @@ export class Simulation {
                     if (!this.agents[i].isDead) livingAgents++;
                 }
                 const availableSlots = this.maxAgents - livingAgents;
-                
+
                 if (availableSlots > 0) {
                     // Normal case: spawn up to available slots
                     const newAgents = this.agentSpawnQueue.splice(0, availableSlots);
@@ -1886,21 +1886,21 @@ export class Simulation {
                             livingAgentsList.push(this.agents[i]);
                         }
                     }
-                    
+
                     // Sort by fitness (ascending) - weakest first
                     livingAgentsList.sort((a, b) => (a.fitness || 0) - (b.fitness || 0));
-                    
+
                     // Replace up to the number of queued agents, but limit to reasonable number per frame
                     const maxReplacements = Math.min(this.agentSpawnQueue.length, 5); // Max 5 replacements per frame
                     const newAgents = this.agentSpawnQueue.splice(0, maxReplacements);
-                    
+
                     // Remove weakest agents to make room
                     for (let i = 0; i < newAgents.length && i < livingAgentsList.length; i++) {
                         const weakestAgent = livingAgentsList[i];
                         weakestAgent.isDead = true;
                         this.logger.debug(`[REPRODUCTION] Replaced weakest agent ${weakestAgent.id} (fitness: ${weakestAgent.fitness.toFixed(1)}) with new offspring`);
                     }
-                    
+
                     // Add new agents
                     this.agents.push(...newAgents);
                     this.totalAgentsSpawned += newAgents.length;

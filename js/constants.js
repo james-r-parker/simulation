@@ -840,6 +840,82 @@ export const SURVIVAL_BONUSES = {
 };
 
 // ============================================================================
+// NEW FITNESS CATEGORY SYSTEM
+// ============================================================================
+// Transparent 3-category fitness scoring for better debuggability and balance
+
+/**
+ * Fitness category weights.
+ * Total fitness = (Survival × 0.3) + (Action × 0.3) + (Specialization × 0.4)
+ * @type {Object}
+ * @constant
+ */
+export const FITNESS_CATEGORIES = {
+    SURVIVAL_WEIGHT: 0.3,         // 30% of total fitness
+    ACTION_WEIGHT: 0.3,           // 30% of total fitness
+    SPECIALIZATION_WEIGHT: 0.4    // 40% of total fitness (job performance matters most)
+};
+
+/**
+ * Survival score components - staying alive and healthy.
+ * @type {Object}
+ * @constant
+ */
+export const SURVIVAL_SCORING = {
+    AGE_MULTIPLIER: 5,                    // Points per second alive
+    TEMPERATURE_EFFICIENCY_BONUS: 100,    // Max bonus for maintaining optimal temp
+    DAMAGE_AVOIDANCE_BONUS: 0.5,          // Per frame without collision
+    ENERGY_EFFICIENCY_MULTIPLIER: 20      // Distance / Energy ratio reward
+};
+
+/**
+ * Action score components - interacting with the world.
+ * @type {Object}
+ * @constant
+ */
+export const ACTION_SCORING = {
+    FOOD_EATEN: 150,                      // Per food item consumed
+    EXPLORATION_PERCENT: 200,             // Per 1% of map explored
+    MOVEMENT_DISTANCE: 0.5,               // Per pixel traveled (meaningful movement only)
+    GOAL_COMPLETION: 100,                 // Per goal successfully completed
+    NAVIGATION_QUALITY: 8                 // Turns towards food, away from obstacles
+};
+
+/**
+ * Specialization score components - job-specific performance.
+ * Each agent type has unique scoring criteria.
+ * @type {Object}
+ * @constant
+ */
+export const SPECIALIZATION_SCORING = {
+    // Predator: Hunting effectiveness
+    PREDATOR_DAMAGE_DEALT: 10,            // Per point of damage dealt
+    PREDATOR_KILLS: 500,                  // Per successful kill
+    PREDATOR_PURSUIT_TIME: 2,             // Per frame actively pursuing prey
+
+    // Forager: Food gathering efficiency
+    FORAGER_FOOD_EFFICIENCY: 1.5,         // Multiplier for energy gained vs spent
+    FORAGER_GATHERING_RATE: 100,          // Bonus for food per minute rate
+    FORAGER_SHARING_BONUS: 25,            // Per food found shout
+
+    // Scout: Exploration and information
+    SCOUT_UNIQUE_SECTORS: 5,              // Per unique sector visited
+    SCOUT_INFORMATION_SHARING: 25,        // Per shout made (alerts)
+    SCOUT_VISION_UTILIZATION: 2,          // Bonus for using long-range vision
+
+    // Defender: Protection and territory
+    DEFENDER_DAMAGE_MITIGATED: 15,        // Per point of damage prevented
+    DEFENDER_TIME_NEAR_ALLIES: 1,         // Per frame near allies (guarding)
+    DEFENDER_PREDATOR_INTERCEPTION: 100,  // Per predator confronted
+    DEFENDER_PATROL_BONUS: 0.5,           // Per frame actively patrolling territory
+
+    // Reproducer: Reproduction success
+    REPRODUCER_OFFSPRING: 200,            // Per offspring created
+    REPRODUCER_OFFSPRING_SURVIVAL: 300,   // Per offspring that survives 30+ seconds
+    REPRODUCER_SPLIT_BONUS: 250           // Per asexual split
+};
+
+// ============================================================================
 // AGENT SPECIALIZATION
 // ============================================================================
 // Types, configurations, and visual appearance
@@ -1364,12 +1440,21 @@ export const SHOUT_PREDATOR_ALERT_THRESHOLD = 0.7;
 export const SHOUT_FOOD_FOUND_CHANCE = 0.1;
 
 /**
- * Probability per frame that an agent will shout when low on energy.
+ * Probability per frame that an agent will shout when requesting help (low energy, under attack).
  * @type {number}
  * @constant
  * @default 0.05
  */
 export const SHOUT_HELP_REQUEST_CHANCE = 0.05;
+
+/**
+ * Probability per frame that a predator will shout when pursuing prey.
+ * Enables pack hunting coordination.
+ * @type {number}
+ * @constant
+ * @default 0.2
+ */
+export const SHOUT_ATTACK_COORDINATION_CHANCE = 0.2;
 
 /**
  * Shout type identifiers.
@@ -1380,7 +1465,8 @@ export const SHOUT_TYPES = {
     PREDATOR_ALERT: 'predator_alert',
     FOOD_FOUND: 'food_found',
     HELP_REQUEST: 'help_request',
-    MATE_CALL: 'mate_call'
+    MATE_CALL: 'mate_call',
+    ATTACK_COORDINATION: 'attack_coordination'  // Predator pack hunting
 };
 
 /**

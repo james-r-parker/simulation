@@ -1,7 +1,7 @@
 import { NeuralNetwork } from './neural-network.js';
 import {
     BASE_SIZE, ENERGY_TO_SIZE_RATIO, MAX_ENERGY, MIN_ENERGY_TO_REPRODUCE, MIN_AGENT_SIZE,
-    REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY,
+    REPRODUCE_COST_BASE, CHILD_STARTING_ENERGY, MIN_ENERGY_FOR_SPLITTING,
     REPRODUCTION_COOLDOWN_FRAMES, PREGNANCY_DURATION_FRAMES,
     OBESITY_THRESHOLD_ENERGY, OBESITY_ENERGY_TAX_DIVISOR,
     MAX_THRUST, MAX_ROTATION, MAX_VELOCITY, SPRINT_BONUS_THRUST,
@@ -27,6 +27,7 @@ import {
     MIN_DISTANCE_FOR_MOVEMENT_REWARDS, MIN_ANGLE_CHANGE_FOR_FITNESS, MIN_SPEED_CHANGE_FOR_FITNESS,
     MIN_NAVIGATION_TURN_FOR_FITNESS, MIN_FOOD_APPROACH_DISTANCE,
     FITNESS_MULTIPLIERS, FITNESS_PENALTIES, SURVIVAL_BONUSES,
+    FITNESS_CATEGORIES, SURVIVAL_SCORING, ACTION_SCORING, SPECIALIZATION_SCORING,
     SPAWN_GROWTH_DURATION_FRAMES, SPAWN_GROWTH_MIN_SCALE, SPAWN_GROWTH_MAX_SCALE, SPAWN_SIZE_INTERPOLATION_SPEED,
     EXPLORATION_CELL_WIDTH, EXPLORATION_CELL_HEIGHT, EXPLORATION_GRID_WIDTH, EXPLORATION_GRID_HEIGHT,
     WORLD_WIDTH, WORLD_HEIGHT,
@@ -39,7 +40,7 @@ import {
     TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD,
     SHOUT_DURATION_FRAMES, SHOUT_BASE_RANGE, SHOUT_TYPES,
     SHOUT_PREDATOR_ALERT_CHANCE, SHOUT_PREDATOR_ALERT_THRESHOLD,
-    SHOUT_FOOD_FOUND_CHANCE, SHOUT_HELP_REQUEST_CHANCE,
+    SHOUT_FOOD_FOUND_CHANCE, SHOUT_HELP_REQUEST_CHANCE, SHOUT_ATTACK_COORDINATION_CHANCE,
     INK_DURATION, INK_SIZE, INK_FADE_RATE, INK_BLINDNESS_THRESHOLD, INK_BLINDNESS_FACTOR,
     PREDATOR_ADRENALINE_SPEED_MULT, PREDATOR_ADRENALINE_RAY_MULT, PREDATOR_ADRENALINE_DECAY,
     SCOUT_ENERGY_COST_MULTIPLIER, SCOUT_FOOD_ALERT_CHANCE
@@ -179,7 +180,7 @@ export class Agent {
             4 +   // Movement state (Thrust/Rot + deltas)
             6 +   // Target memory (Dist, Sin, Cos, Time, Type, Prio)
             6 +   // Goal memory (Food, Mate, Danger, Rest, Prio, Duration)
-            4;    // Shout inputs (predator alert, food found, help request, mate call)
+            5;    // Shout inputs (predator alert, food found, help request, mate call, attack coordination)
 
         // CRITICAL: Do NOT add hiddenSize here - NeuralNetwork constructor adds it automatically
         // The RNN architecture stores weights for both perception AND recurrent hidden state in weights1
@@ -2041,12 +2042,13 @@ export class Agent {
         inputs.push(Math.min((this.framesAlive - this.goalMemory.goalStartFrame) / 300, 1.0)); // Goal duration (normalized)
 
         // Add shout inputs to neural network (4 new inputs)
-        // Aggregate shouts by type for neural network inputs
+        // Aggregate shouts by type        // Process heard shouts - Now 5 types total
         const shoutInputs = {
             predatorAlert: 0,
             foodFound: 0,
             helpRequest: 0,
-            mateCall: 0
+            mateCall: 0,
+            attackCoordination: 0  // NEW - predator pack hunting
         };
         for (const heard of this.heardShouts) {
             switch (heard.type) {
@@ -2062,12 +2064,16 @@ export class Agent {
                 case SHOUT_TYPES.MATE_CALL:
                     shoutInputs.mateCall = Math.max(shoutInputs.mateCall, heard.intensity);
                     break;
+                case SHOUT_TYPES.ATTACK_COORDINATION:
+                    shoutInputs.attackCoordination = Math.max(shoutInputs.attackCoordination, heard.intensity);
+                    break;
             }
         }
         inputs.push(shoutInputs.predatorAlert);
         inputs.push(shoutInputs.foodFound);
         inputs.push(shoutInputs.helpRequest);
         inputs.push(shoutInputs.mateCall);
+        inputs.push(shoutInputs.attackCoordination);  // NEW - 67th input
 
         this.lastRayData = rayData;
 
@@ -2178,9 +2184,23 @@ export class Agent {
         }
 
         // INK CLOUD EMISSION
-        // Foragers emit ink when in high fear (defensive)
-        if (this.specializationType === SPECIALIZATION_TYPES.FORAGER && this.fear > 0.8 && Math.random() < 0.05) {
-            spawnPheromone(this.simulation, this.x, this.y, 'ink');
+        // Foragers emit ink deterministically when attacked or threatened by close predators
+        if (this.specializationType === SPECIALIZATION_TYPES.FORAGER) {
+            // Trigger 1: Just attacked (within last 5 frames)
+            if (this.eventFlags.justAttacked > 0 && this.eventFlags.justAttacked <= 5) {
+                spawnPheromone(this.simulation, this.x, this.y, 'ink');
+            }
+            // Trigger 2: High fear AND detected predator very close (< 50 pixels)
+            else if (this.fear > 0.8) {
+                const closePredator = this.lastRayData?.some(r =>
+                    r.hit &&
+                    r.hitTypeName === 'larger' &&
+                    r.dist < 50
+                );
+                if (closePredator) {
+                    spawnPheromone(this.simulation, this.x, this.y, 'ink');
+                }
+            }
         }
         // Reproducers emit ink when pregnant (protective)
         if (this.specializationType === SPECIALIZATION_TYPES.REPRODUCER && this.isPregnant && Math.random() < 0.02) {
@@ -2295,6 +2315,21 @@ export class Agent {
             // Add visual effect for shout with specific type
             if (this.simulation && this.simulation.renderer) {
                 this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.MATE_CALL);
+            }
+        }
+
+        // === PREDATOR SPECIALTY: Attack Coordination ===
+        // Predators coordinate attacks when pursuing prey
+        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR) {
+            if (this.aggression > 0.7 && this.wantsToAttack) {
+                const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');
+                if (detectingPrey && Math.random() < SHOUT_ATTACK_COORDINATION_CHANCE) {
+                    this.shout(SHOUT_TYPES.ATTACK_COORDINATION, 1.5);
+                    // Visual effect
+                    if (this.simulation && this.simulation.renderer) {
+                        this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.ATTACK_COORDINATION);
+                    }
+                }
             }
         }
     }
@@ -2600,335 +2635,349 @@ export class Agent {
         return this.energy < LOW_ENERGY_THRESHOLD;
     }
 
+    /**
+     * Determine if agent should attempt asexual splitting.
+     * For Reproducers: considers environment (food abundance, safety).
+     * For others: only splits at very high energy (old behavior).
+     * @returns {boolean} True if conditions are favorablefor splitting
+     */
+    shouldSplit() {
+        // Base requirement: minimum energy
+        if (this.energy < MIN_ENERGY_FOR_SPLITTING) {
+            return false;
+        }
+
+        // Reproducer specialty: strategic splitting
+        if (this.specializationType === SPECIALIZATION_TYPES.REPRODUCER) {
+            // Strategy 1: Surrounded by food (3+ food items visible)
+            let nearbyFoodCount = 0;
+            if (this.lastRayData) {
+                for (const ray of this.lastRayData) {
+                    // foodType is 2.0 in ray hitting logic
+                    if (ray.hit && ray.hitType === 2.0) {
+                        nearbyFoodCount++;
+                    }
+                }
+            }
+
+            if (nearbyFoodCount >= 3) {
+                return true; // Split when surrounded by resources
+            }
+
+            // Strategy 2: Safe zone (no predators nearby AND high energy)
+            const predatorNearby = this.lastRayData?.some(r =>
+                r.hit && r.hitTypeName === 'larger'
+            );
+
+            if (!predatorNearby && this.energy > MIN_ENERGY_FOR_SPLITTING * 1.5) {
+                return true; // Split when safe and well-fed
+            }
+
+            // Fall through to default check below
+        }
+
+        // Default: only split at very high energy (old behavior for non-reproducers)
+        return this.energy > MIN_ENERGY_FOR_SPLITTING * 2;
+    }
+
     mutate() {
         this.nn.mutate(this.simulation.mutationRate);
         this.weights = this.getWeights();
     }
 
-    calculateFitness() {
-        // Safety: Ensure all tracking variables are numbers to prevent Infinity/NaN
+    /**
+     * Calculate Survival Score - staying alive and healthy
+     * Focus: Age, temperature efficiency, damage avoidance, energy efficiency
+     * @returns {number} Survival score
+     */
+    calculateSurvivalScore() {
         const safeNumber = (val, defaultVal = 0) => {
             if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
             return val;
         };
 
-        // Calculate exploration percentage
+        let score = 0;
+        const ageInSeconds = safeNumber(this.age || 0, 0);
+        const ageInFrames = ageInSeconds * FPS_TARGET;
+
+        // 1. Age-based survival reward
+        score += ageInSeconds * SURVIVAL_SCORING.AGE_MULTIPLIER;
+
+        // 2. Temperature efficiency bonus
+        const avgTemperature = this.temperatureSamples > 0 ? this.temperatureSum / this.temperatureSamples : TEMPERATURE_START;
+        if (avgTemperature >= TEMPERATURE_OPTIMAL_MIN && avgTemperature <= TEMPERATURE_OPTIMAL_MAX) {
+            const optimalRange = TEMPERATURE_OPTIMAL_MAX - TEMPERATURE_OPTIMAL_MIN;
+            const centerTemp = (TEMPERATURE_OPTIMAL_MAX + TEMPERATURE_OPTIMAL_MIN) / 2;
+            const distanceFromCenter = Math.abs(avgTemperature - centerTemp);
+            const efficiency = 1.0 - (distanceFromCenter / (optimalRange / 2));
+            score += efficiency * SURVIVAL_SCORING.TEMPERATURE_EFFICIENCY_BONUS;
+        }
+
+        // 3. Damage avoidance bonus (reward collision-free time)
+        const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
+        const collisions = safeNumber(this.collisions || 0, 0);
+        const totalCollisions = timesHitObstacle + (collisions - timesHitObstacle);
+        const collisionFreeFrames = Math.max(0, ageInFrames - (totalCollisions * 30));
+        if (collisionFreeFrames > 200) {
+            score += collisionFreeFrames * SURVIVAL_SCORING.DAMAGE_AVOIDANCE_BONUS;
+        }
+
+        // 4. Energy efficiency (distance traveled per energy spent)
+        const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
+        const energySpent = safeNumber(this.energySpent || 0, 0);
+        if (energySpent > 0 && distanceTravelled > 0) {
+            const efficiency = Math.min(distanceTravelled / energySpent, 10.0);
+            score += efficiency * SURVIVAL_SCORING.ENERGY_EFFICIENCY_MULTIPLIER;
+        }
+
+        return Math.max(0, score);
+    }
+
+    /**
+     * Calculate Action Score - interacting with the world
+     * Focus: Food, exploration, movement, goals
+     * @returns {number} Action score
+     */
+    calculateActionScore() {
+        const safeNumber = (val, defaultVal = 0) => {
+            if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
+            return val;
+        };
+
+        let score = 0;
+
+        // 1. Food consumption
+        const foodEaten = safeNumber(this.foodEaten || 0, 0);
+        score += foodEaten * ACTION_SCORING.FOOD_EATEN;
+
+        // 2. Exploration
         const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
         const exploredCellsSize = safeNumber(this.exploredCells?.size || 0, 0);
         const explorationPercentage = (exploredCellsSize / totalCells) * 100;
+        score += explorationPercentage * ACTION_SCORING.EXPLORATION_PERCENT;
 
-        let baseScore = 0;
-
-        // Temperature-based fitness (symmetric bonus/penalty system)
-        const avgTemperature = this.temperatureSamples > 0 ? this.temperatureSum / this.temperatureSamples : 0;
-        let temperatureBonus = 0;
-        let temperaturePenalty = 0;
-        if (avgTemperature < 1) {
-            // Penalty for inactive agents (symmetric to bonus)
-            temperaturePenalty = (1 - avgTemperature) * FITNESS_MULTIPLIERS.TEMPERATURE_PENALTY_MAX;
-        } else {
-            // Bonus for active agents
-            temperatureBonus = (avgTemperature / TEMPERATURE_MAX) * FITNESS_MULTIPLIERS.TEMPERATURE_BONUS_MAX;
-        }
-        baseScore += temperatureBonus - temperaturePenalty;
-
-        // 1. Productive Actions (Contribute to Base Score)
-        baseScore += safeNumber(this.offspring || 0, 0) * FITNESS_MULTIPLIERS.OFFSPRING;
-        baseScore += safeNumber(this.cleverTurns || 0, 0) * FITNESS_MULTIPLIERS.CLEVER_TURNS; // Reduced from 50 to 15
-
-        // Goal completion bonus: reward agents that successfully complete their goals
-        const goalsCompleted = safeNumber(this.goalMemory?.goalsCompleted || 0, 0);
-        baseScore += goalsCompleted * FITNESS_MULTIPLIERS.GOALS_COMPLETED;
-
-        // Reproduction attempt bonus: reward agents that attempt reproduction (even if unsuccessful)
-        const reproductionAttempts = safeNumber(this.reproductionAttempts || 0, 0);
-        baseScore += reproductionAttempts * FITNESS_MULTIPLIERS.REPRODUCTION_ATTEMPT;
-
-        // Movement rewards - NO LONGER normalized by distance (Recommendation 4)
+        // 3. Meaningful movement (distance traveled, excluding circular motion)
         const distanceTravelled = safeNumber(this.distanceTravelled || 0, 0);
-        const ageInSeconds = safeNumber(this.age || 0, 0);
-
-        // REMOVED: Direction and speed change rewards to prevent twitchy behavior
-        // These encouraged agents to vibrate in place to farm points without actually exploring or hunting
-
-        if (distanceTravelled <= MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            // Penalty for minimal movement (agents that barely move)
-            const movementPenalty = (MIN_DISTANCE_FOR_MOVEMENT_REWARDS - distanceTravelled) / 10;
-            baseScore -= Math.min(movementPenalty, FITNESS_PENALTIES.MINIMAL_MOVEMENT);
-        }
-
-        baseScore += safeNumber(explorationPercentage, 0) * FITNESS_MULTIPLIERS.EXPLORATION; // Increased from 100 to 200
-        baseScore += safeNumber(this.foodEaten || 0, 0) * FITNESS_MULTIPLIERS.FOOD_EATEN;
-        baseScore += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.KILLS;
-
-        // Navigation behavior rewards - NO LONGER normalized by distance (Recommendation 4)
-        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
-            // Cap navigation metrics (removed distance normalization)
-            const turnsTowardsFood = Math.min(safeNumber(this.turnsTowardsFood || 0, 0), 100);
-            baseScore += turnsTowardsFood * FITNESS_MULTIPLIERS.TURNS_TOWARDS_FOOD;
-
-            const turnsAwayFromObstacles = Math.min(safeNumber(this.turnsAwayFromObstacles || 0, 0), 100);
-            baseScore += turnsAwayFromObstacles * FITNESS_MULTIPLIERS.TURNS_AWAY_FROM_OBSTACLES;
-
-            const foodApproaches = Math.min(safeNumber(this.foodApproaches || 0, 0), 50);
-            baseScore += foodApproaches * FITNESS_MULTIPLIERS.FOOD_APPROACHES;
-        }
-
-        const offspring = safeNumber(this.offspring || 0, 0);
-        const foodEaten = safeNumber(this.foodEaten || 0, 0);
-        // Enhanced synergy bonus: reward agents that both reproduce and eat
-        if (offspring > 0 && foodEaten > 0) {
-            baseScore += (offspring * 2 + foodEaten) * FITNESS_MULTIPLIERS.REPRODUCTION_FOOD_SYNERGY;
-        }
-
-        // 2. Efficiency and Exploration
-        // REMOVED THRESHOLD: Always calculate efficiency, even for early deaths
-        let efficiency = 0;
-        const energySpent = safeNumber(this.energySpent || 0, 0);
-        // Reuse distanceTravelled declared above
-        if (energySpent > 0) {
-            efficiency = Math.min(distanceTravelled / Math.max(energySpent, 1), 10.0);
-        }
-        baseScore += efficiency * FITNESS_MULTIPLIERS.EFFICIENCY; // Increased from 15 to 20
-
-        // Velocity Alignment Reward: Reward the agent if its velocity vector is actually carrying it closer to a target
-        if (this.targetMemory && this.targetMemory.currentTarget && this._cachedTargetDistance) {
-            // Vector to target
-            const dx = this.targetMemory.currentTarget.x - this.x;
-            const dy = this.targetMemory.currentTarget.y - this.y;
-
-            // OPTIMIZED: Reuse cached target distance if available
-            const dist = this._cachedTargetDistance || Math.sqrt(dx * dx + dy * dy);
-            if (dist > 0.1) {
-                const nx = dx / dist;
-                const ny = dy / dist;
-
-                // Normalize agent velocity
-                // OPTIMIZED: Reuse cached speed if available
-                const speed = this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0 ? this._cachedSpeed : Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                if (speed > 0.1) {
-                    const vnx = this.vx / speed;
-                    const vny = this.vy / speed;
-
-                    // Dot product: 1.0 = heading straight for it, -1.0 = heading away
-                    const alignment = (nx * vnx) + (ny * vny);
-
-                    // Only reward positive alignment (moving towards target)
-                    if (alignment > 0) {
-                        baseScore += alignment * 5.0; // Significant reward for purposeful movement
-                    }
-                }
-            }
-        }
-
-        // 3. Penalize repetitive circular movement (lucky food finding)
         const consecutiveTurns = safeNumber(this.consecutiveTurns || 0, 0);
-        // Cap consecutive turns to prevent extreme penalties (max 50 turns = 1000 penalty)
-        const cappedTurns = Math.min(consecutiveTurns, 50);
-        const circlePenalty = Math.min(cappedTurns * FITNESS_PENALTIES.CIRCULAR_MOVEMENT, 2000);
-        baseScore -= circlePenalty;
-        baseScore += safeNumber(this.successfulEscapes || 0, 0) * FITNESS_MULTIPLIERS.SUCCESSFUL_ESCAPES;
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            // Penalize circular movement by reducing the movement score
+            const circularPenalty = Math.min(consecutiveTurns * 10, distanceTravelled * 0.5);
+            const effectiveDistance = Math.max(0, distanceTravelled - circularPenalty);
+            score += effectiveDistance * ACTION_SCORING.MOVEMENT_DISTANCE;
+        }
 
-        // =========================================================================
-        // UNIVERSAL PENALTIES (The "Don't Crash" Enforcement)
-        // =========================================================================
-        const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
-        const collisions = safeNumber(this.collisions || 0, 0);
+        // 4. Goal completion
+        const goalsCompleted = safeNumber(this.goalMemory?.goalsCompleted || 0, 0);
+        score += goalsCompleted * ACTION_SCORING.GOAL_COMPLETION;
 
-        // MASSIVE penalty for hitting obstacles (30 → 500)
-        // This forces "Avoid Obstacle" input to become the dominant signal
-        baseScore -= timesHitObstacle * FITNESS_PENALTIES.OBSTACLE_HIT;
+        // 5. Navigation quality (turning towards food, away from obstacles)
+        if (distanceTravelled > MIN_DISTANCE_FOR_MOVEMENT_REWARDS) {
+            const turnsTowardsFood = Math.min(safeNumber(this.turnsTowardsFood || 0, 0), 100);
+            const turnsAwayFromObstacles = Math.min(safeNumber(this.turnsAwayFromObstacles || 0, 0), 100);
+            const foodApproaches = Math.min(safeNumber(this.foodApproaches || 0, 0), 50);
 
-        // Increased penalty for hitting walls (10 → 100)
-        baseScore -= (collisions - timesHitObstacle) * FITNESS_PENALTIES.WALL_HIT;
+            score += (turnsTowardsFood + turnsAwayFromObstacles + foodApproaches) * ACTION_SCORING.NAVIGATION_QUALITY;
+        }
 
-        // Penalty for wasting energy (Efficiency - prevents spinning/vibrating)
-        // Reuse distanceTravelled and energySpent declared earlier in the method
-        if (energySpent > 100) {
-            const efficiencyRatio = distanceTravelled / energySpent;
-            // Penalize low efficiency (spinning in place)
-            if (efficiencyRatio < 0.5) {
-                baseScore -= FITNESS_PENALTIES.EFFICIENCY_LOW;
+        return Math.max(0, score);
+    }
+
+    /**
+     * Calculate Specialization Score - job-specific performance
+     * Each agent type has unique scoring criteria
+     * @returns {number} Specialization score
+     */
+    calculateSpecializationScore() {
+        const safeNumber = (val, defaultVal = 0) => {
+            if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
+            return val;
+        };
+
+        let score = 0;
+        const ageInSeconds = safeNumber(this.age || 0, 0);
+        const exploredCellsSize = safeNumber(this.exploredCells?.size || 0, 0);
+
+        switch (this.specializationType) {
+            case SPECIALIZATION_TYPES.PREDATOR: {
+                // Track damage dealt (estimate from kills and attacks)
+                const kills = safeNumber(this.kills || 0, 0);
+                const estimatedDamage = kills * 100; // Rough estimate
+                score += estimatedDamage * SPECIALIZATION_SCORING.PREDATOR_DAMAGE_DEALT;
+                score += kills * SPECIALIZATION_SCORING.PREDATOR_KILLS;
+
+                // Pursuit time: frames spent with high aggression and speed
+                // This is an approximation - we don't currently track exact pursuit frames
+                if (this.aggression > 0.5 && this.wantsToAttack) {
+                    score += SPECIALIZATION_SCORING.PREDATOR_PURSUIT_TIME;
+                }
+                break;
+            }
+
+            case SPECIALIZATION_TYPES.FORAGER: {
+                // Food efficiency: energy gained per food eaten
+                const foodEaten = safeNumber(this.foodEaten || 0, 0);
+                if (foodEaten > 0) {
+                    const avgEnergyPerFood = this.energy / Math.max(foodEaten, 1);
+                    score += avgEnergyPerFood * SPECIALIZATION_SCORING.FORAGER_FOOD_EFFICIENCY;
+                }
+
+                // Gathering rate: food per minute
+                if (ageInSeconds > 0) {
+                    const foodPerMinute = (foodEaten / ageInSeconds) * 60;
+                    score += foodPerMinute * SPECIALIZATION_SCORING.FORAGER_GATHERING_RATE;
+                }
+
+                // Information sharing bonus (shouts when finding food)
+                // Approximation based on food eaten and shout chance
+                const estimatedShouts = foodEaten * 0.1; // Rough estimate
+                score += estimatedShouts * SPECIALIZATION_SCORING.FORAGER_SHARING_BONUS;
+                break;
+            }
+
+            case SPECIALIZATION_TYPES.SCOUT: {
+                // Unique sectors visited
+                score += exploredCellsSize * SPECIALIZATION_SCORING.SCOUT_UNIQUE_SECTORS;
+
+                // Information sharing (shouts made)
+                // Scouts shout more frequently - estimate based on exploration
+                const estimatedShouts = exploredCellsSize * 0.05;
+                score += estimatedShouts * SPECIALIZATION_SCORING.SCOUT_INFORMATION_SHARING;
+
+                // Vision utilization: bonus for using long-range sensors
+                // Use maxRayDist as a proxy for vision usage
+                if (this.maxRayDist > 300) {
+                    const visionBonus = (this.maxRayDist - 300) / 10;
+                    score += visionBonus * SPECIALIZATION_SCORING.SCOUT_VISION_UTILIZATION;
+                }
+                break;
+            }
+
+            case SPECIALIZATION_TYPES.DEFENDER: {
+                // Damage mitigated: estimate from defensive positioning
+                // Defenders have damage reduction - estimate mitigation from aggression time
+                const estimatedMitigation = this.aggression > 0.5 ? ageInSeconds * FPS_TARGET * 0.1 : 0;
+                score += estimatedMitigation * SPECIALIZATION_SCORING.DEFENDER_DAMAGE_MITIGATED;
+
+                // Time near allies: estimate from frames alive with aggression
+                // This is simplified - actual ally proximity would need cached data
+                const estimatedGuardingFrames = ageInSeconds * FPS_TARGET * 0.3;
+                score += estimatedGuardingFrames * SPECIALIZATION_SCORING.DEFENDER_TIME_NEAR_ALLIES;
+
+                // Predator interception: estimate from confrontations
+                const estimatedInterceptions = safeNumber(this.kills || 0, 0);
+                score += estimatedInterceptions * SPECIALIZATION_SCORING.DEFENDER_PREDATOR_INTERCEPTION;
+
+                // Patrol bonus: time spent moving in territory
+                if (this.isInTerritory) {
+                    const patrolFrames = ageInSeconds * FPS_TARGET * 0.5;
+                    score += patrolFrames * SPECIALIZATION_SCORING.DEFENDER_PATROL_BONUS;
+                }
+                break;
+            }
+
+            case SPECIALIZATION_TYPES.REPRODUCER: {
+                // Offspring count
+                const offspring = safeNumber(this.offspring || 0, 0);
+                score += offspring * SPECIALIZATION_SCORING.REPRODUCER_OFFSPRING;
+
+                // Offspring survival: simplified - assume some offspring survived
+                // In reality would need to track actual offspring survival
+                const estimatedSurvivors = offspring * 0.3; // 30% survival estimate
+                score += estimatedSurvivors * SPECIALIZATION_SCORING.REPRODUCER_OFFSPRING_SURVIVAL;
+
+                // Split bonus
+                const childrenFromSplit = safeNumber(this.childrenFromSplit || 0, 0);
+                score += childrenFromSplit * SPECIALIZATION_SCORING.REPRODUCER_SPLIT_BONUS;
+                break;
             }
         }
 
-        // =========================================================================
-        // SPECIALIZATION BONUSES ("Act Like Your Name")
-        // =========================================================================
-        // Use cached neighborhood data from update() to avoid expensive quadtree queries
-        let jobPerformanceBonus = 0;
+        return Math.max(0, score);
+    }
 
-        if (this._nearbyAgentsCache && this._nearbyAgentsCacheFrame === this.framesAlive) {
-            const neighbors = this._nearbyAgentsCache;
+    calculateFitness() {
+        // NEW: 3-Category Fitness System
+        // Total Fitness = (Survival × 0.3) + (Action × 0.3) + (Specialization × 0.4)
 
-            switch (this.specializationType) {
+        // Calculate the 3 component scores
+        const survivalScore = this.calculateSurvivalScore();
+        const actionScore = this.calculateActionScore();
+        const specializationScore = this.calculateSpecializationScore();
 
-                // --- PREDATOR: Reward Hunting & Aggression ---
-                case 'predator':
-                    // Reward 1: Kills (Massive bonus)
-                    jobPerformanceBonus += safeNumber(this.kills || 0, 0) * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_KILLS;
+        // Apply category weights
+        const weightedSurvival = survivalScore * FITNESS_CATEGORIES.SURVIVAL_WEIGHT;
+        const weightedAction = actionScore * FITNESS_CATEGORIES.ACTION_WEIGHT;
+        const weightedSpecialization = specializationScore * FITNESS_CATEGORIES.SPECIALIZATION_WEIGHT;
 
-                    // Reward 2: High-speed pursuit of prey
-                    // Check if we're moving fast and detecting smaller agents (prey)
-                    // OPTIMIZED: Reuse cached speed if available
-                    const speed = this._lastSpeedCacheUpdate === this.framesAlive && this._cachedSpeed > 0 ? this._cachedSpeed : Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-                    if (speed > 1.0 && this.aggression > 0.5) {
-                        // Check lastRayData for prey signals (smaller agents)
-                        const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');
-                        if (detectingPrey) {
-                            jobPerformanceBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_PURSUIT; // Points per frame for high-speed pursuit
-                        }
-                    }
+        // Calculate total fitness
+        this.fitness = weightedSurvival + weightedAction + weightedSpecialization;
 
-                    // Reward 3: Pursuit attempts (NEW - helps learning even without kills)
-                    // Reward for approaching detected prey, even if kill fails
-                    if (this.aggression > 0.7 && this.wantsToAttack) {
-                        const detectingPrey = this.lastRayData?.some(r => r.hit && r.hitTypeName === 'smaller');
-                        if (detectingPrey) {
-                            jobPerformanceBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_PURSUIT_ATTEMPT;
-                        }
-                    }
-                    break;
+        // Store breakdown for debugging/UI (will be used by getFitnessBreakdown)
+        this._fitnessBreakdown = {
+            survival: survivalScore,
+            action: actionScore,
+            specialization: specializationScore,
+            weightedSurvival,
+            weightedAction,
+            weightedSpecialization,
+            total: this.fitness
+        };
 
-                // --- SCOUT/FORAGER: Reward Flocking & Discovery ---
-                case 'scout':
-                case 'forager':
-                    let alignmentScore = 0;
-                    let flockCount = 0;
+        // Gene pool qualification - IMPROVED: Weighted criteria instead of all-or-nothing
+        const safeNumber = (val, defaultVal = 0) => {
+            if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
+            return val;
+        };
 
-                    // Flocking Logic (Reynolds): Alignment
-                    for (const point of neighbors) {
-                        const other = point.data || point;
-                        // Type guard: check if it's an agent
-                        if (other && other.specializationType && !other.isDead && other !== this) {
-                            // Flock with friendly types (scouts and foragers flock together)
-                            const isFriendly = (other.specializationType === 'scout' || other.specializationType === 'forager');
-                            if (isFriendly) {
-                                // Calculate dot product of velocities (alignment measure)
-                                const dot = (this.vx * other.vx) + (this.vy * other.vy);
-                                alignmentScore += dot;
-                                flockCount++;
-                            }
-                        }
-                    }
-
-                    // Reward moving in the same direction as neighbors (Cohesion/Alignment)
-                    if (flockCount > 0) {
-                        jobPerformanceBonus += (alignmentScore / flockCount) * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_FLOCKING;
-                    }
-
-                    // Reward Exploration heavily for Scouts
-                    if (this.specializationType === 'scout') {
-                        jobPerformanceBonus += exploredCellsSize * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_EXPLORATION;
-                    }
-                    break;
-
-                // --- DEFENDER: Reward Guarding Weak Allies ---
-                case 'defender':
-                    let guardingBonus = 0;
-                    for (const point of neighbors) {
-                        const other = point.data || point;
-                        // Type guard: check if it's an agent
-                        if (other && other.specializationType && !other.isDead && other !== this) {
-                            // Identify "Weak" allies: Young (< 20 seconds old), Pregnant, or Foragers
-                            const isVulnerable = (other.age < 20) || other.isPregnant || (other.specializationType === 'forager');
-
-                            if (isVulnerable) {
-                                // Positioned near vulnerable ally - reward based on aggression (posturing)
-                                if (this.aggression > 0.5) {
-                                    guardingBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_GUARDING; // Active guarding
-                                } else {
-                                    guardingBonus += FITNESS_MULTIPLIERS.JOB_PERFORMANCE_GUARDING * 0.1; // Passive guarding
-                                }
-                            }
-                        }
-                    }
-                    jobPerformanceBonus += Math.min(guardingBonus, 50); // Cap per frame to prevent exploitation
-                    break;
-
-                // --- REPRODUCER: Reward Reproduction Success ---
-                case 'reproducer':
-                    // Bonus for successful splits (in addition to base offspring reward)
-                    const childrenFromSplit = safeNumber(this.childrenFromSplit || 0, 0);
-                    if (childrenFromSplit > 0) {
-                        jobPerformanceBonus += childrenFromSplit * FITNESS_MULTIPLIERS.JOB_PERFORMANCE_REPRODUCTION;
-                    }
-
-                    // Bonus for mating attempts (even if unsuccessful)
-                    if (this.wantsToReproduce && this.energy > MIN_ENERGY_TO_REPRODUCE) {
-                        jobPerformanceBonus += 5; // Small bonus per frame spent seeking mates
-                    }
-                    break;
-            }
-        }
-
-        baseScore += jobPerformanceBonus;
-
-        // =========================================================================
-        // STANDARD SURVIVAL METRICS (The Baseline)
-        // =========================================================================
-        // Re-extract variables that were declared earlier but need to be used here
-        // (avoiding redeclaration issues)
-
-        // 4. Collision Avoidance Reward (NEW)
-        // Use real-time age in seconds for fitness calculation (not affected by focus loss)
-        // Reuse ageInSeconds declared above
-        const ageInFrames = ageInSeconds * FPS_TARGET; // Convert to equivalent frames for compatibility
-
-        // Reward agents that survive without hitting obstacles
-        const obstacleFreeFrames = Math.max(0, ageInFrames - (timesHitObstacle * 30));
-        if (obstacleFreeFrames > 200) {
-            baseScore += (obstacleFreeFrames / 200) * 25;
-        }
-
-        // 6. Activity Requirement Penalty
-        // Penalize agents that survive long but have very low scores (not learning/participating)
-        if (ageInSeconds > 20 && baseScore < 50) {
-            baseScore -= (ageInSeconds - 20) * FITNESS_PENALTIES.INACTIVITY;
-        }
-
-        // 7. Survival bonus: reward agents for staying alive
-        // More selective survival bonus with threshold (500 seconds before bonus kicks in)
-        let survivalBonus = 0;
-        if (ageInSeconds >= SURVIVAL_BONUSES.EXTENDED_THRESHOLD) {
-            const extendedTime = ageInSeconds - SURVIVAL_BONUSES.EXTENDED_THRESHOLD;
-            survivalBonus = Math.min(extendedTime / SURVIVAL_BONUSES.EXTENDED_DIVISOR, SURVIVAL_BONUSES.BASE_CAP);
-        }
-        baseScore += survivalBonus;
-
-        // === FINAL FITNESS CALCULATION ===
-        // Apply efficiency-based multiplier (Recommendation 3)
-        let efficiencyBonus = 0;
-        if (distanceTravelled > 0 && energySpent > 0) {
-            const efficiencyRatio = Math.min(distanceTravelled / energySpent / 1000, FITNESS_MULTIPLIERS.EFFICIENCY_BONUS_MAX);
-            efficiencyBonus = baseScore * efficiencyRatio;
-        }
-
-        // Add predator success bonus (Recommendation 2)
-        let predatorBonus = 0;
-        if (this.specializationType === 'predator' && this.kills > 0) {
-            predatorBonus = this.kills * FITNESS_MULTIPLIERS.PREDATOR_SUCCESS_BONUS;
-        }
-
-
-        this.fitness = Math.max(0, baseScore + efficiencyBonus + predatorBonus);
-
-        // Agent qualification criteria for gene pool entry
-        // Comprehensive multi-criteria check with 4/5 pass rule for exceptional agents
+        const totalCells = EXPLORATION_GRID_WIDTH * EXPLORATION_GRID_HEIGHT;
+        const exploredCellsSize = safeNumber(this.exploredCells?.size || 0, 0);
+        const explorationPercentage = (exploredCellsSize / totalCells) * 100;
+        const foodEaten = safeNumber(this.foodEaten || 0, 0);
+        const ageInSeconds = safeNumber(this.age || 0, 0);
         const turnsTowardsFood = safeNumber(this.turnsTowardsFood || 0, 0);
-        const criteria = [
-            this.fitness >= GENE_POOL_MIN_FITNESS,
-            foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL,
-            ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL,
-            explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL,
-            turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL
-        ];
-        const criteriaMet = criteria.filter(Boolean).length;
 
-        // All 5 criteria must pass, OR 4/5 criteria with exceptional fitness
-        // Use new GENE_POOL_MIN_FITNESS as floor, but keep comprehensive checks
-        this.fit = (criteriaMet >= 5 || (criteriaMet >= 4 && this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD))
-            && this.fitness >= GENE_POOL_MIN_FITNESS;
+        // Weighted criteria (6 points possible, need 4 to qualify)
+        const criteriaWeight = (
+            (this.fitness >= GENE_POOL_MIN_FITNESS ? 2 : 0) +     // Fitness is worth 2 points
+            (foodEaten >= MIN_FOOD_EATEN_TO_SAVE_GENE_POOL ? 1 : 0) +
+            (ageInSeconds >= MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL ? 1 : 0) +
+            (explorationPercentage >= MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL ? 1 : 0) +
+            (turnsTowardsFood >= MIN_TURNS_TOWARDS_FOOD_TO_SAVE_GENE_POOL ? 1 : 0)
+        );
+
+        // Need 4/6 points to qualify (or exceptional fitness as fallback)
+        this.fit = criteriaWeight >= 4 || this.fitness > EXCEPTIONAL_FITNESS_THRESHOLD;
+    }
+
+    /**
+     * Get detailed fitness breakdown for UI display
+     * @returns {Object} Fitness breakdown with all categories
+     */
+    getFitnessBreakdown() {
+        // Ensure fitness is calculated
+        if (!this._fitnessBreakdown) {
+            this.calculateFitness();
+        }
+
+        return {
+            survival: {
+                score: this._fitnessBreakdown.survival,
+                weighted: this._fitnessBreakdown.weightedSurvival,
+                percentage: (this._fitnessBreakdown.weightedSurvival / this.fitness * 100).toFixed(1)
+            },
+            action: {
+                score: this._fitnessBreakdown.action,
+                weighted: this._fitnessBreakdown.weightedAction,
+                percentage: (this._fitnessBreakdown.weightedAction / this.fitness * 100).toFixed(1)
+            },
+            specialization: {
+                score: this._fitnessBreakdown.specialization,
+                weighted: this._fitnessBreakdown.weightedSpecialization,
+                percentage: (this._fitnessBreakdown.weightedSpecialization / this.fitness * 100).toFixed(1)
+            },
+            total: this.fitness,
+            fit: this.fit
+        };
     }
 
     getTemperatureEfficiency() {
