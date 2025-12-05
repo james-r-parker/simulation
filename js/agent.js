@@ -1630,8 +1630,13 @@ export class Agent {
             if (entity instanceof Agent && entity !== this && entity.currentShout) {
                 const shout = entity.currentShout;
                 
+                // Get shout duration based on shouting agent's specialization (defenders shout twice as long)
+                const shoutDuration = entity.specializationType === SPECIALIZATION_TYPES.DEFENDER 
+                    ? SHOUT_DURATION_FRAMES * 2 
+                    : SHOUT_DURATION_FRAMES;
+                
                 // Check if shout is still active
-                if ((entity.framesAlive - shout.frame) <= SHOUT_DURATION_FRAMES) {
+                if ((entity.framesAlive - shout.frame) <= shoutDuration) {
                     const dx = entity.x - x;
                     const dy = entity.y - y;
                     const distSq = dx * dx + dy * dy;
@@ -2122,6 +2127,12 @@ export class Agent {
      * @param {number} intensity - Loudness multiplier (affects range)
      */
     shout(type, intensity = 1.0) {
+        // PREDATORS NEVER SHOUT FOR DANGER - they are the danger
+        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR && 
+            type === SHOUT_TYPES.PREDATOR_ALERT) {
+            return; // Prevent predators from ever shouting for danger
+        }
+        
         this.currentShout = {
             type: type,
             intensity: Math.max(0.1, Math.min(3.0, intensity)), // Clamp 0.1-3.0
@@ -2138,13 +2149,19 @@ export class Agent {
      * - Pheromones: Persistent trails that linger (60px radius, fade slowly)
      */
     checkForThreatsAndShout() {
+        // Get shout duration based on specialization (defenders shout twice as long)
+        const shoutDuration = this.specializationType === SPECIALIZATION_TYPES.DEFENDER 
+            ? SHOUT_DURATION_FRAMES * 2 
+            : SHOUT_DURATION_FRAMES;
+        
         // Clear previous shout if expired
         if (this.currentShout &&
-            (this.framesAlive - this.currentShout.frame) > SHOUT_DURATION_FRAMES) {
+            (this.framesAlive - this.currentShout.frame) > shoutDuration) {
             this.currentShout = null;
         }
 
         // Defender specialty: Alert nearby allies when predator spotted
+        // PREDATORS NEVER SHOUT FOR DANGER - they are the danger (enforced in shout() method)
         if (this.specializationType === SPECIALIZATION_TYPES.DEFENDER) {
             let predatorThreat = 0;
 
@@ -2161,9 +2178,9 @@ export class Agent {
             if (predatorThreat > SHOUT_PREDATOR_ALERT_THRESHOLD &&
                 Math.random() < SHOUT_PREDATOR_ALERT_CHANCE) {
                 this.shout(SHOUT_TYPES.PREDATOR_ALERT, predatorThreat * 2.0);
-                // Add visual effect for shout
+                // Add visual effect for shout with specific type
                 if (this.simulation && this.simulation.renderer) {
-                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.PREDATOR_ALERT);
                 }
             }
         }
@@ -2173,9 +2190,9 @@ export class Agent {
             if (this.eventFlags.justAteFood > 0 &&
                 Math.random() < SHOUT_FOOD_FOUND_CHANCE) {
                 this.shout(SHOUT_TYPES.FOOD_FOUND, 1.5);
-                // Add visual effect for shout
+                // Add visual effect for shout with specific type
                 if (this.simulation && this.simulation.renderer) {
-                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.FOOD_FOUND);
                 }
             }
         }
@@ -2184,9 +2201,9 @@ export class Agent {
         if (this.energy < DEATH_RISK_THRESHOLD &&
             Math.random() < SHOUT_HELP_REQUEST_CHANCE) {
             this.shout(SHOUT_TYPES.HELP_REQUEST, 1.0);
-            // Add visual effect for shout
+            // Add visual effect for shout with specific type
             if (this.simulation && this.simulation.renderer) {
-                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.HELP_REQUEST);
             }
         }
 
@@ -2196,9 +2213,9 @@ export class Agent {
             this.energy > MIN_ENERGY_TO_REPRODUCE &&
             Math.random() < 0.1) {
             this.shout(SHOUT_TYPES.MATE_CALL, 1.2);
-            // Add visual effect for shout
+            // Add visual effect for shout with specific type
             if (this.simulation && this.simulation.renderer) {
-                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed);
+                this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.MATE_CALL);
             }
         }
     }

@@ -177,7 +177,7 @@ export class Simulation {
         this.lastMemoryPressureCheckTime = Date.now();
 
         // WebGL Renderer
-        this.renderer = new WebGLRenderer(container, this.worldWidth, this.worldHeight, this.logger);
+        this.renderer = new WebGLRenderer(container, this.worldWidth, this.worldHeight, this.logger, this);
 
         // GPU Compute (WebGPU for RTX 4090 and high-end GPUs)
         this.gpuCompute = new GPUCompute(this.logger);
@@ -745,7 +745,9 @@ export class Simulation {
     }
 
     createFertileZone(agent) {
-        createFertileZone(agent, this.fertileZones);
+        // Pass temperature modifier to affect decomposition rate based on season
+        const temperatureModifier = this.globalTemperatureModifier !== undefined ? this.globalTemperatureModifier : 0;
+        createFertileZone(agent, this.fertileZones, temperatureModifier);
     }
 
     async gameLoop() {
@@ -1850,6 +1852,13 @@ export class Simulation {
                 });
 
                 this.perfMonitor.endPhase('rendering');
+            }
+
+            // CRITICAL: Cleanup visual effects and sparkles even when rendering is disabled
+            // This prevents memory leaks when rendering is paused
+            this.renderer.updateVisualEffects(this.frameCount);
+            if (this.renderer.sparklesEnabled && this.renderer.sparkles.length > 0) {
+                this.renderer.updateSparkles();
             }
 
             this.perfMonitor.startPhase('spawn_agents');

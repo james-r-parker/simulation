@@ -1216,7 +1216,7 @@ export const PHEROMONE_DIAMETER = PHEROMONE_RADIUS * 2;
  * @constant
  * @default 0.005
  */
-export const PHEROMONE_FADE_RATE = 0.005;
+export const PHEROMONE_FADE_RATE = 0.00167; // Reduced to 1/3 of original (0.005/3) so pheromones last 3x longer
 
 /**
  * Intensity threshold above which pheromones signal danger.
@@ -2127,7 +2127,8 @@ export const SEASON_WINTER_FOOD_SCARCITY = 0.4;
 export const FERTILE_ZONE_MAX_COUNT = 100;
 
 /**
- * Energy-to-fertility conversion factor for dead agents.
+ * Size-to-fertility conversion factor for dead agents.
+ * Fertility is based on agent size (biomass) since dead agents have 0 energy.
  * @type {number}
  * @constant
  * @default 0.05
@@ -2189,6 +2190,17 @@ export const FERTILE_ZONE_SPAWN_CHANCE = 0.4;
  * @default 200
  */
 export const FERTILE_ZONE_INFLUENCE_DISTANCE = 200;
+
+/**
+ * Temperature effect multiplier on fertile zone creation.
+ * Warmer temperatures (positive modifier) increase decomposition rate and fertility.
+ * Colder temperatures (negative modifier) decrease decomposition rate and fertility.
+ * Applied as: fertility = baseFertility * (1.0 + temperatureModifier * TEMP_EFFECT_MULTIPLIER)
+ * @type {number}
+ * @constant
+ * @default 0.02
+ */
+export const FERTILE_ZONE_TEMP_EFFECT_MULTIPLIER = 0.02;
 
 // ============================================================================
 // KIN RECOGNITION & SOCIAL BEHAVIOR
@@ -2405,7 +2417,11 @@ export const EMISSIVE_COLORS = {
         COLLISION: 0xFF1A4D,  // Brighter red glow
         EATING: 0x4AFF2E,      // Brighter green glow
         DEATH: 0x8B008B,       // Dark magenta/purple for dramatic death effect
-        SHOUT: 0x00FFFF        // Bright cyan for shout/communication effects
+        SHOUT: 0x00FFFF,       // Bright cyan for generic shout/communication effects (fallback)
+        SHOUT_PREDATOR_ALERT: 0xFF3333,  // Bright red for predator alert shouts (danger)
+        SHOUT_FOOD_FOUND: 0x00FF00,      // Bright green for food found shouts
+        SHOUT_HELP_REQUEST: 0xFFAA00,    // Orange/yellow for help request shouts
+        SHOUT_MATE_CALL: 0xFF00FF        // Bright magenta/pink for mate call shouts
     }
 };
 

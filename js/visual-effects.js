@@ -8,14 +8,15 @@ import { addSparkles } from './sparkles.js';
  * Add a visual effect for an agent
  * @param {Map} agentEffects - Map of agent to effects array
  * @param {Object} agent - Agent to add effect for
- * @param {string} effectType - Type of effect ('collision' or 'eating')
+ * @param {string} effectType - Type of effect ('collision', 'eating', 'shout', etc.)
  * @param {number} currentFrame - Current frame number
  * @param {number} gameSpeed - Current game speed multiplier
  * @param {Array} sparkles - Sparkles array (optional, for sparkle effects)
  * @param {number} maxSparkles - Maximum sparkles allowed
  * @param {boolean} sparklesEnabled - Whether sparkles are enabled
+ * @param {string} shoutType - Optional shout type for shout effects (PREDATOR_ALERT, FOOD_FOUND, etc.)
  */
-export function addVisualEffect(agentEffects, agent, effectType, currentFrame, gameSpeed, sparkles, maxSparkles, sparklesEnabled) {
+export function addVisualEffect(agentEffects, agent, effectType, currentFrame, gameSpeed, sparkles, maxSparkles, sparklesEnabled, shoutType = null) {
     // Special case: death effects can be added even for dead agents (they're added right as they die)
     if (!agent) {
         return;
@@ -37,12 +38,13 @@ export function addVisualEffect(agentEffects, agent, effectType, currentFrame, g
     effects.push({
         type: effectType,
         startFrame: currentFrame || 0,
-        duration: adjustedDuration
+        duration: adjustedDuration,
+        shoutType: shoutType // Store shout type for rendering
     });
 
     // Add sparkle particles for visual effects
     if (sparkles && sparklesEnabled) {
-        addSparkles(sparkles, agent, effectType, maxSparkles);
+        addSparkles(sparkles, agent, effectType, maxSparkles, shoutType);
     }
 }
 

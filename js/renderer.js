@@ -48,8 +48,9 @@ import { createObstacleParticles } from './obstacle-effects.js';
 import { hslToRgb } from './utils.js';
 
 export class WebGLRenderer {
-    constructor(container, worldWidth, worldHeight, logger) {
+    constructor(container, worldWidth, worldHeight, logger, simulation) {
         this.logger = logger;
+        this.simulation = simulation;
         this.logger.log('[RENDER] Renderer constructor started.');
 
         this.container = container;
@@ -558,12 +559,16 @@ export class WebGLRenderer {
     }
 
     // Visual effects system
-    addVisualEffect(agent, effectType, gameSpeed = 1) {
-        addVisualEffect(this.agentEffects, agent, effectType, this.currentFrame, gameSpeed, this.sparkles, this.maxSparkles, this.sparklesEnabled);
+    addVisualEffect(agent, effectType, gameSpeed = 1, shoutType = null) {
+        if(this.simulation?.renderingEnabled) {
+            addVisualEffect(this.agentEffects, agent, effectType, this.currentFrame, gameSpeed, this.sparkles, this.maxSparkles, this.sparklesEnabled, shoutType);
+        }
     }
 
     addSparkles(agent, effectType) {
-        addSparkles(this.sparkles, agent, effectType, this.maxSparkles);
+        if(this.simulation?.renderingEnabled && this.sparklesEnabled) {
+            addSparkles(this.sparkles, agent, effectType, this.maxSparkles);
+        }
     }
 
     updateSparkles() {

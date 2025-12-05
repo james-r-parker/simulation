@@ -114,3 +114,5 @@ export function buildSpatialGrid(entities, worldWidth, worldHeight, cellSize, gr
 
 
 
+
+

@@ -405,10 +405,62 @@ export function spawnFood(simulation) {
     if (Math.random() > foodSpawnChance) return;
 
     let x, y;
+    let pos = null;
 
-    // IMPROVED: Configurable chance to spawn food near agents to help them find food more easily
+    // PRIORITY 1: Favor fertile zones (nutrient-rich areas from decomposed agents)
+    // This ensures nutrient cycling - food spawns where agents died, creating a natural ecosystem
+    if (simulation.fertileZones && simulation.fertileZones.length > 0) {
+        // Check if we should spawn in fertile zones (higher chance when fertile zones exist)
+        const fertileZoneRoll = Math.random();
+        if (fertileZoneRoll < FERTILE_ZONE_SPAWN_CHANCE) {
+            // Select fertile zone weighted by fertility level (more fertile zones more likely to be selected)
+            const totalFertility = simulation.fertileZones.reduce((sum, zone) => sum + Math.max(0, zone.fertility), 0);
+            
+            if (totalFertility > 0) {
+                let randomValue = Math.random() * totalFertility;
+                let selectedZone = null;
+
+                for (const zone of simulation.fertileZones) {
+                    if (zone.fertility > 0) {
+                        randomValue -= zone.fertility;
+                        if (randomValue <= 0) {
+                            selectedZone = zone;
+                            break;
+                        }
+                    }
+                }
+
+                if (selectedZone) {
+                    // Spawn within the fertile zone radius
+                    const angle = Math.random() * Math.PI * 2;
+                    const spawnDistance = Math.random() * selectedZone.radius;
+                    x = selectedZone.x + Math.cos(angle) * spawnDistance;
+                    y = selectedZone.y + Math.sin(angle) * spawnDistance;
+
+                    // Ensure within world bounds
+                    x = Math.max(50, Math.min(simulation.worldWidth - 50, x));
+                    y = Math.max(50, Math.min(simulation.worldHeight - 50, y));
+
+                    // Check if position is safe (not in obstacle or too close to other food)
+                    let safe = true;
+                    if (simulation.obstacles && simulation.obstacles.some(o => o && distance(x, y, o.x, o.y) < o.radius + 30)) {
+                        safe = false;
+                    }
+                    if (simulation.food && simulation.food.some(f => f && !f.isDead && distance(x, y, f.x, f.y) < 20)) {
+                        safe = false;
+                    }
+
+                    if (safe) {
+                        pos = { x, y };
+                    }
+                }
+            }
+        }
+    }
+
+    // PRIORITY 2: Spawn near agents (if no fertile zone was selected)
     // This helps agents learn food-seeking behavior by making food more accessible
-    if (livingAgentsCount > 0 && Math.random() < FOOD_SPAWN_NEAR_AGENTS_CHANCE) {
+    if (!pos && livingAgentsCount > 0 && Math.random() < FOOD_SPAWN_NEAR_AGENTS_CHANCE) {
         // Build array of living agents with valid positions (only when needed)
         const activeAgents = [];
         for (let i = 0; i < simulation.agents.length; i++) {
@@ -440,64 +492,18 @@ export function spawnFood(simulation) {
                     safe = false;
                 }
 
-                // If not safe, fall back to random spawn
-                if (!safe) {
-                    const pos = randomSpawnAvoidCluster(simulation);
-                    x = pos.x;
-                    y = pos.y;
-                }
-            } else {
-                // Agent was invalid, fall back to random spawn
-                const pos = randomSpawnAvoidCluster(simulation);
-                x = pos.x;
-                y = pos.y;
-            }
-        } else {
-            // No active agents with valid positions, fall back to random spawn
-            const pos = randomSpawnAvoidCluster(simulation);
-            x = pos.x;
-            y = pos.y;
-        }
-    } else {
-        // 70% random spawn, but with nutrient cycling: prefer fertile zones
-        let pos;
-
-        // Chance to spawn in fertile zones (nutrient-rich areas from decomposed agents)
-        if (simulation.fertileZones && simulation.fertileZones.length > 0 && Math.random() < FERTILE_ZONE_SPAWN_CHANCE) {
-            // Select fertile zone weighted by fertility level
-            const totalFertility = simulation.fertileZones.reduce((sum, zone) => sum + zone.fertility, 0);
-            let randomValue = Math.random() * totalFertility;
-
-            let selectedZone = null;
-            for (const zone of simulation.fertileZones) {
-                randomValue -= zone.fertility;
-                if (randomValue <= 0) {
-                    selectedZone = zone;
-                    break;
+                if (safe) {
+                    pos = { x, y };
                 }
             }
-
-            if (selectedZone) {
-                // Spawn within the fertile zone radius
-                const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * selectedZone.radius;
-                x = selectedZone.x + Math.cos(angle) * distance;
-                y = selectedZone.y + Math.sin(angle) * distance;
-
-                // Ensure within world bounds
-                x = Math.max(50, Math.min(simulation.worldWidth - 50, x));
-                y = Math.max(50, Math.min(simulation.worldHeight - 50, y));
-
-                pos = { x, y };
-            }
         }
+    }
 
-        // Fall back to random spawn if no fertile zone selected
-        if (!pos) {
-            pos = randomSpawnAvoidCluster(simulation);
-            x = pos.x;
-            y = pos.y;
-        }
+    // PRIORITY 3: Fall back to random spawn if no fertile zone or agent-based spawn succeeded
+    if (!pos) {
+        pos = randomSpawnAvoidCluster(simulation);
+        x = pos.x;
+        y = pos.y;
     }
 
     if (simulation.food.length < FOOD_SPAWN_CAP) {

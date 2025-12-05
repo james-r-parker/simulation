@@ -12,10 +12,11 @@ import {
  * Add sparkles for a visual effect
  * @param {Array} sparkles - Array of sparkle objects
  * @param {Object} agent - Agent that triggered the effect
- * @param {string} effectType - Type of effect ('collision' or 'eating')
+ * @param {string} effectType - Type of effect ('collision', 'eating', 'shout', etc.)
  * @param {number} maxSparkles - Maximum number of sparkles allowed
+ * @param {string} shoutType - Optional shout type for shout effects (PREDATOR_ALERT, FOOD_FOUND, etc.)
  */
-export function addSparkles(sparkles, agent, effectType, maxSparkles) {
+export function addSparkles(sparkles, agent, effectType, maxSparkles, shoutType = null) {
     // Special case: death effects can be added even for dead agents (they're added right as they die)
     if (!agent) return;
     if (effectType !== 'death' && agent.isDead) return;
@@ -29,7 +30,18 @@ export function addSparkles(sparkles, agent, effectType, maxSparkles) {
         color = EMISSIVE_COLORS.EFFECTS.DEATH;
     } else if (effectType === 'shout') {
         sparkleCount = 5 + Math.floor(Math.random() * 4); // 5-8 particles for shout (more than normal)
-        color = EMISSIVE_COLORS.EFFECTS.SHOUT;
+        // Use different colors based on shout type
+        if (shoutType === 'predator_alert') {
+            color = EMISSIVE_COLORS.EFFECTS.SHOUT_PREDATOR_ALERT;
+        } else if (shoutType === 'food_found') {
+            color = EMISSIVE_COLORS.EFFECTS.SHOUT_FOOD_FOUND;
+        } else if (shoutType === 'help_request') {
+            color = EMISSIVE_COLORS.EFFECTS.SHOUT_HELP_REQUEST;
+        } else if (shoutType === 'mate_call') {
+            color = EMISSIVE_COLORS.EFFECTS.SHOUT_MATE_CALL;
+        } else {
+            color = EMISSIVE_COLORS.EFFECTS.SHOUT; // Fallback to generic shout color
+        }
     } else if (effectType === 'collision') {
         sparkleCount = 3 + Math.floor(Math.random() * 3);
         color = EMISSIVE_COLORS.EFFECTS.COLLISION;
