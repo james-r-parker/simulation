@@ -39,7 +39,10 @@ import {
     TERRITORY_RADIUS, RAY_DISTANCE_THRESHOLD, DIVISION_BY_ZERO_THRESHOLD,
     SHOUT_DURATION_FRAMES, SHOUT_BASE_RANGE, SHOUT_TYPES,
     SHOUT_PREDATOR_ALERT_CHANCE, SHOUT_PREDATOR_ALERT_THRESHOLD,
-    SHOUT_FOOD_FOUND_CHANCE, SHOUT_HELP_REQUEST_CHANCE
+    SHOUT_FOOD_FOUND_CHANCE, SHOUT_HELP_REQUEST_CHANCE,
+    INK_DURATION, INK_SIZE, INK_FADE_RATE, INK_BLINDNESS_THRESHOLD, INK_BLINDNESS_FACTOR,
+    PREDATOR_ADRENALINE_SPEED_MULT, PREDATOR_ADRENALINE_RAY_MULT, PREDATOR_ADRENALINE_DECAY,
+    SCOUT_ENERGY_COST_MULTIPLIER, SCOUT_FOOD_ALERT_CHANCE
 } from './constants.js';
 import { distance, randomGaussian, generateGeneId, geneIdToColor, generateId } from './utils.js';
 import { Rectangle } from './quadtree.js';
@@ -78,6 +81,7 @@ export class Agent {
         this.age = 0;
         this.framesAlive = 0;
         this.temperature = TEMPERATURE_START;
+        this.adrenaline = 0.0; // Predator adrenaline level (0-1)
 
         // Temperature tracking for fitness calculation
         this.temperatureSum = 0;
@@ -503,6 +507,11 @@ export class Agent {
             if (this.dangerSmell > 0.5) this.successfulEscapes++;
         }
 
+        // PREDATOR ADRENALINE: Speed boost when hunting
+        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR && this.adrenaline > 0) {
+            desiredThrust *= (1.0 + (this.adrenaline * (PREDATOR_ADRENALINE_SPEED_MULT - 1.0)));
+        }
+
         // 8. Smooth rotation with momentum
         this.targetRotation = rotationOutput * MAX_ROTATION;
 
@@ -841,6 +850,11 @@ export class Agent {
         const movementLoss = Math.min(currentSpeedSq * movementCostMultiplier * invMovementEfficiency, 5);
 
         let energyLoss = sizeLoss + movementLoss;
+
+        // SCOUT EFFICIENCY: Scouts use less energy for movement
+        if (this.specializationType === SPECIALIZATION_TYPES.SCOUT) {
+            energyLoss *= SCOUT_ENERGY_COST_MULTIPLIER;
+        }
 
         if (this.framesAlive > 1) {
             energyLoss += passiveLoss;
@@ -1233,6 +1247,11 @@ export class Agent {
         if (this.framesAlive % 10 === 0) {
             this.calculateFitness();
         }
+
+        // Update Adrenaline (Predators only)
+        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR && this.adrenaline > 0) {
+            this.adrenaline = Math.max(0, this.adrenaline - PREDATOR_ADRENALINE_DECAY);
+        }
     }
 
     perceiveWorld(quadtree, obstacles, worldWidth, worldHeight) {
@@ -1254,7 +1273,7 @@ export class Agent {
         const rayData = this.rayData;
         let rayDataIndex = 0;
 
-        const maxRayDist = this.maxRayDist;
+        const maxRayDist = this.maxRayDist * (this.specializationType === SPECIALIZATION_TYPES.PREDATOR ? (1.0 + this.adrenaline * (PREDATOR_ADRENALINE_RAY_MULT - 1.0)) : 1.0);
         const numSensorRays = this.numSensorRays;
         const numAlignmentRays = this.numAlignmentRays;
 
@@ -1603,9 +1622,43 @@ export class Agent {
                         dangerSmell = Math.max(dangerSmell, intensity);
                     } else if (pheromone.type === 'attack') {
                         attackSmell = Math.max(attackSmell, intensity);
+                    } else if (pheromone.type === 'ink') {
+                        // INK BLINDNESS: Reduce vision range if in ink cloud
+                        if (intensity > INK_BLINDNESS_THRESHOLD) {
+                            // Reduce maxRayDist for this frame (affects subsequent ray casts if we were doing them dynamically,
+                            // but here we just set a flag or modify the effective range for inputs)
+                            // Since rays are already cast, we can't change their length retrospectively for this frame's physics,
+                            // but we can affect the inputs to the neural network to simulate blindness.
+                            // Better yet, we should have applied this BEFORE ray casting.
+                            // However, since we are in the middle of perceiveWorld, let's apply a "blindness" factor to the inputs.
+                            // Actually, let's just track it and apply it to the inputs.
+                            // For simplicity in this iteration, we'll just reduce the effective maxRayDist for the NEXT frame
+                            // by modifying a temporary property, or we can assume the agent is blinded and zero out some inputs.
+
+                            // Let's go with a simpler approach: If blinded, reduce the perceived distance of things (make them seem further away or invisible)
+                            // Or, we can just reduce the 'normalizedDist' in the inputs.
+
+                            // REVISION: We can't easily re-cast rays.
+                            // Let's just set a blindness flag.
+                            this.isBlinded = true;
+                        }
                     }
                 }
             }
+        }
+
+        // Apply blindness effect to inputs if detected
+        // We need to iterate over the inputs we just added and dampen them if blinded.
+        // Since we pushed them to `inputs` array, we can modify them.
+        // The first `numSensorRays + numAlignmentRays` inputs are distances.
+        if (this.isBlinded) {
+            for (let i = 0; i < numSensorRays + numAlignmentRays; i++) {
+                // Reduce visibility: things appear further away (smaller input value)
+                // normalizedDist = 1.0 - (dist / maxRayDist).
+                // If we multiply by factor < 1, we simulate reduced range.
+                inputs[i] *= (1.0 - INK_BLINDNESS_FACTOR);
+            }
+            this.isBlinded = false; // Reset for next frame
         }
 
         // PERFORMANCE: Release pheromone query array back to pool
@@ -1626,15 +1679,15 @@ export class Agent {
         const nearbyAgents = quadtree.query(this.queryRange);
         for (const point of nearbyAgents) {
             const entity = point.data;
-            
+
             if (entity instanceof Agent && entity !== this && entity.currentShout) {
                 const shout = entity.currentShout;
-                
+
                 // Get shout duration based on shouting agent's specialization (defenders shout twice as long)
-                const shoutDuration = entity.specializationType === SPECIALIZATION_TYPES.DEFENDER 
-                    ? SHOUT_DURATION_FRAMES * 2 
+                const shoutDuration = entity.specializationType === SPECIALIZATION_TYPES.DEFENDER
+                    ? SHOUT_DURATION_FRAMES * 2
                     : SHOUT_DURATION_FRAMES;
-                
+
                 // Check if shout is still active
                 if ((entity.framesAlive - shout.frame) <= shoutDuration) {
                     const dx = entity.x - x;
@@ -1642,11 +1695,11 @@ export class Agent {
                     const distSq = dx * dx + dy * dy;
                     const hearingRange = SHOUT_BASE_RANGE * shout.intensity;
                     const hearingRangeSq = hearingRange * hearingRange;
-                    
+
                     if (distSq < hearingRangeSq) {
                         const dist = Math.sqrt(distSq);
                         const strength = 1.0 - (dist / hearingRange);
-                        
+
                         this.heardShouts.push({
                             type: shout.type,
                             distance: dist,
@@ -2044,6 +2097,10 @@ export class Agent {
                     // 'smaller' hit type means "I am larger", so the other agent is PREY
                     else if (ray.hitTypeName === 'smaller') {
                         preyProximity = Math.max(preyProximity, intensity);
+                        // PREDATOR ADRENALINE: Boost when seeing prey
+                        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR) {
+                            this.adrenaline = Math.min(1.0, this.adrenaline + 0.05); // Build up adrenaline
+                        }
                     }
                     // COOPERATIVE HUNTING: Detect other predators for pack behavior
                     else if (ray.hitTypeName === 'larger' || ray.hitTypeName === 'same') {
@@ -2119,6 +2176,16 @@ export class Agent {
         if (this.wantsToReproduce && Math.random() < 0.05) { // Reduced from 0.2 to 0.05
             spawnPheromone(this.simulation, this.x, this.y, 'reproduction');
         }
+
+        // INK CLOUD EMISSION
+        // Foragers emit ink when in high fear (defensive)
+        if (this.specializationType === SPECIALIZATION_TYPES.FORAGER && this.fear > 0.8 && Math.random() < 0.05) {
+            spawnPheromone(this.simulation, this.x, this.y, 'ink');
+        }
+        // Reproducers emit ink when pregnant (protective)
+        if (this.specializationType === SPECIALIZATION_TYPES.REPRODUCER && this.isPregnant && Math.random() < 0.02) {
+            spawnPheromone(this.simulation, this.x, this.y, 'ink');
+        }
     }
 
     /**
@@ -2128,11 +2195,11 @@ export class Agent {
      */
     shout(type, intensity = 1.0) {
         // PREDATORS NEVER SHOUT FOR DANGER - they are the danger
-        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR && 
+        if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR &&
             type === SHOUT_TYPES.PREDATOR_ALERT) {
             return; // Prevent predators from ever shouting for danger
         }
-        
+
         this.currentShout = {
             type: type,
             intensity: Math.max(0.1, Math.min(3.0, intensity)), // Clamp 0.1-3.0
@@ -2150,10 +2217,10 @@ export class Agent {
      */
     checkForThreatsAndShout() {
         // Get shout duration based on specialization (defenders shout twice as long)
-        const shoutDuration = this.specializationType === SPECIALIZATION_TYPES.DEFENDER 
-            ? SHOUT_DURATION_FRAMES * 2 
+        const shoutDuration = this.specializationType === SPECIALIZATION_TYPES.DEFENDER
+            ? SHOUT_DURATION_FRAMES * 2
             : SHOUT_DURATION_FRAMES;
-        
+
         // Clear previous shout if expired
         if (this.currentShout &&
             (this.framesAlive - this.currentShout.frame) > shoutDuration) {
@@ -2190,6 +2257,18 @@ export class Agent {
             if (this.eventFlags.justAteFood > 0 &&
                 Math.random() < SHOUT_FOOD_FOUND_CHANCE) {
                 this.shout(SHOUT_TYPES.FOOD_FOUND, 1.5);
+                // Add visual effect for shout with specific type
+                if (this.simulation && this.simulation.renderer) {
+                    this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.FOOD_FOUND);
+                }
+            }
+        }
+
+        // Scout specialty: Alert when finding food (higher chance)
+        if (this.specializationType === SPECIALIZATION_TYPES.SCOUT) {
+            if (this.eventFlags.justAteFood > 0 &&
+                Math.random() < SCOUT_FOOD_ALERT_CHANCE) {
+                this.shout(SHOUT_TYPES.FOOD_FOUND, 2.0); // Louder shout
                 // Add visual effect for shout with specific type
                 if (this.simulation && this.simulation.renderer) {
                     this.simulation.renderer.addVisualEffect(this, 'shout', this.simulation.gameSpeed, SHOUT_TYPES.FOOD_FOUND);

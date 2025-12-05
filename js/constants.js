@@ -858,6 +858,98 @@ export const SPECIALIZATION_TYPES = {
     DEFENDER: 'defender'    // Territory defense specialists
 };
 
+// ============================================================================
+// SPECIALIZATION TUNING
+// ============================================================================
+
+/**
+ * Predator adrenaline speed multiplier.
+ * @type {number}
+ * @constant
+ * @default 1.3
+ */
+export const PREDATOR_ADRENALINE_SPEED_MULT = 1.3;
+
+/**
+ * Predator adrenaline ray length multiplier.
+ * @type {number}
+ * @constant
+ * @default 1.5
+ */
+export const PREDATOR_ADRENALINE_RAY_MULT = 1.5;
+
+/**
+ * Predator adrenaline decay rate per frame.
+ * @type {number}
+ * @constant
+ * @default 0.01
+ */
+export const PREDATOR_ADRENALINE_DECAY = 0.01;
+
+/**
+ * Damage reduction factor for Defenders against Predators.
+ * @type {number}
+ * @constant
+ * @default 0.5
+ */
+export const DEFENDER_DAMAGE_REDUCTION = 0.5;
+
+/**
+ * Energy cost multiplier for Scouts.
+ * @type {number}
+ * @constant
+ * @default 0.7
+ */
+export const SCOUT_ENERGY_COST_MULTIPLIER = 0.7;
+
+/**
+ * Chance for Scouts to shout when finding food.
+ * @type {number}
+ * @constant
+ * @default 0.5
+ */
+export const SCOUT_FOOD_ALERT_CHANCE = 0.5;
+
+/**
+ * Ink Cloud duration in frames.
+ * @type {number}
+ * @constant
+ * @default 300
+ */
+export const INK_DURATION = 300;
+
+/**
+ * Ink Cloud size (radius).
+ * @type {number}
+ * @constant
+ * @default 80
+ */
+export const INK_SIZE = 80;
+
+/**
+ * Ink Cloud fade rate per frame.
+ * @type {number}
+ * @constant
+ * @default 0.003
+ */
+export const INK_FADE_RATE = 0.003;
+
+/**
+ * Ink Cloud blindness threshold (intensity required to cause blindness).
+ * @type {number}
+ * @constant
+ * @default 0.3
+ */
+export const INK_BLINDNESS_THRESHOLD = 0.3;
+
+/**
+ * Ink Cloud blindness factor (how much vision is reduced).
+ * @type {number}
+ * @constant
+ * @default 0.1
+ */
+export const INK_BLINDNESS_FACTOR = 0.1;
+
 /**
  * Agent specialization configurations.
  * Each specialization has unique neural network size and sensor capabilities.
@@ -1317,6 +1409,13 @@ export const PHEROMONE_COLORS = {
         h: 328,              // Hue for HSL
         s: 100,              // Saturation
         l: 54                // Lightness
+    },
+    ink: {
+        base: 0x111111,      // Black/Dark Grey
+        emissive: 0x000000,  // No emissive
+        h: 0,                // Hue
+        s: 0,                // Saturation
+        l: 10                // Lightness
     }
 };
 

@@ -15,7 +15,8 @@ import {
     TEMPERATURE_HEAT_STRESS_THRESHOLD, TEMPERATURE_HEAT_MODERATE_THRESHOLD,
     KIN_RELATEDNESS_PARENT_CHILD, KIN_RELATEDNESS_SIBLINGS, KIN_PREDATION_REDUCTION_THRESHOLD,
     KIN_ATTACK_PREVENTION_PARENT, KIN_ATTACK_PREVENTION_CHANCE,
-    MAX_THRUST, MAX_ROTATION
+    MAX_THRUST, MAX_ROTATION,
+    DEFENDER_DAMAGE_REDUCTION, SPECIALIZATION_TYPES
 } from './constants.js';
 import { Rectangle } from './quadtree.js';
 import { distance } from './utils.js';
@@ -229,7 +230,13 @@ export function checkCollisions(simulation) {
                         }
                         // Transfer energy (eating)
                         const biteSize = BITE_SIZE; // Energy transferred per frame
-                        const energyLost = Math.min(agent.energy, biteSize);
+                        let energyLost = Math.min(agent.energy, biteSize);
+
+                        // DEFENDER RESISTANCE: Defenders take less damage from predators
+                        if (agent.specializationType === SPECIALIZATION_TYPES.DEFENDER) {
+                            energyLost *= DEFENDER_DAMAGE_REDUCTION;
+                        }
+
                         agent.energy -= energyLost;
                         other.energy += energyLost;
                         other.foodEaten += FOOD_EATEN_INCREMENT;
@@ -745,7 +752,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(currentSpeed * invMaxVelocity); // Speed ratio
         inputs.push(angleDifference * invPi); // Velocity-angle difference
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
-        
+
         // Enhanced temperature inputs (4 inputs instead of 1)
         inputs.push(agent.temperature * invTempMax); // Current temperature (0-1)
         // Distance from optimal range (0-1, where 0 = optimal, 1 = max distance)
@@ -754,20 +761,20 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const distanceFromOptimal = Math.abs(agent.temperature - optimalCenter);
         inputs.push(Math.min(distanceFromOptimal / (TEMPERATURE_MAX / 2), 1.0)); // Distance from optimal (0-1)
         // Cold stress indicator (0-1, where 1 = severe cold stress)
-        const coldStress = agent.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ? 
-            1.0 : 
-            (agent.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ? 
-                (TEMPERATURE_COLD_MODERATE_THRESHOLD - agent.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) : 
+        const coldStress = agent.temperature < TEMPERATURE_COLD_STRESS_THRESHOLD ?
+            1.0 :
+            (agent.temperature < TEMPERATURE_COLD_MODERATE_THRESHOLD ?
+                (TEMPERATURE_COLD_MODERATE_THRESHOLD - agent.temperature) / (TEMPERATURE_COLD_MODERATE_THRESHOLD - TEMPERATURE_COLD_STRESS_THRESHOLD) :
                 0.0);
         inputs.push(Math.min(coldStress, 1.0)); // Cold stress (0-1)
         // Heat stress indicator (0-1, where 1 = severe heat stress)
-        const heatStress = agent.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ? 
-            1.0 : 
-            (agent.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ? 
-                (agent.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) : 
+        const heatStress = agent.temperature > TEMPERATURE_HEAT_STRESS_THRESHOLD ?
+            1.0 :
+            (agent.temperature > TEMPERATURE_HEAT_MODERATE_THRESHOLD ?
+                (agent.temperature - TEMPERATURE_HEAT_MODERATE_THRESHOLD) / (TEMPERATURE_HEAT_STRESS_THRESHOLD - TEMPERATURE_HEAT_MODERATE_THRESHOLD) :
                 0.0);
         inputs.push(Math.min(heatStress, 1.0)); // Heat stress (0-1)
-        
+
         inputs.push(simulation.seasonPhase !== undefined ? simulation.seasonPhase : 0.0); // Season phase (0-1)
 
         // Recent memory (temporal awareness) - adds 8 inputs
@@ -801,10 +808,10 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(Math.min(lastFoodEnergyGain * invMaxEnergy, 1.0)); // Food energy gain (0-1, normalized)
 
         // Food urgency: combines low energy + food visibility to signal "need food now"
-        const hasFoodTarget = agent.targetMemory && agent.targetMemory.currentTarget && 
-                              agent.targetMemory.currentTarget.type === 'food' &&
-                              agent.targetMemory.lastTargetSeen > 0 &&
-                              (agent.framesAlive - agent.targetMemory.lastTargetSeen) < agent.targetMemory.attentionSpan;
+        const hasFoodTarget = agent.targetMemory && agent.targetMemory.currentTarget &&
+            agent.targetMemory.currentTarget.type === 'food' &&
+            agent.targetMemory.lastTargetSeen > 0 &&
+            (agent.framesAlive - agent.targetMemory.lastTargetSeen) < agent.targetMemory.attentionSpan;
         const foodUrgency = (deathRisk > 0.5 && hasFoodTarget) ? 1.0 : 0.0;
         inputs.push(foodUrgency); // Food urgency (0-1, binary: urgent or not)
 
@@ -888,17 +895,17 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const geneticMaxThrust = MAX_THRUST * agent.speedFactor;
         const invGeneticMaxThrust = 1 / Math.max(geneticMaxThrust, 0.001);
         const invMaxRotation = 1 / MAX_ROTATION;
-        
+
         // Current thrust level (0-1, normalized by max thrust)
         inputs.push(Math.abs(agent.currentThrust || 0) * invGeneticMaxThrust);
-        
+
         // Current rotation rate (-1 to 1, normalized by max rotation)
         inputs.push((agent.previousRotation || 0) * invMaxRotation);
-        
+
         // Thrust change (delta from previous frame)
         const thrustChange = (agent.currentThrust || 0) - (agent.previousThrust || 0);
         inputs.push(thrustChange * invGeneticMaxThrust);
-        
+
         // Rotation change (delta from previous frame)
         // Note: This is a simplified calculation - full implementation would track previous-previous rotation
         const rotationChange = 0; // Placeholder - would need additional state tracking for accurate calculation
@@ -924,25 +931,25 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
                 agent._cachedTargetAngle = Math.atan2(dy, dx);
                 agent._lastTargetCacheUpdate = agent.framesAlive;
             }
-            
+
             // Normalized distance to target (0-1, where 0 = very close, 1 = very far)
             const maxDist = agent.maxRayDist * 2; // Use 2x ray distance as max
             inputs.push(Math.min(agent._cachedTargetDistance / maxDist, 1.0));
-            
+
             // Direction to target (normalized angle difference)
             let angleToTarget = agent._cachedTargetAngle - agent.angle;
             while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
             while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
             inputs.push(angleToTarget / Math.PI); // Normalized to [-1, 1]
-            
+
             // Time since target was last seen (normalized)
             const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
             inputs.push(Math.min(framesSinceSeen / agent.targetMemory.attentionSpan, 1.0));
-            
+
             // Target type (food=1, mate=0.5, location=0)
-            inputs.push(agent.targetMemory.currentTarget.type === 'food' ? 1.0 : 
-                       (agent.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
-            
+            inputs.push(agent.targetMemory.currentTarget.type === 'food' ? 1.0 :
+                (agent.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
+
             // Target priority
             inputs.push(agent.targetMemory.currentTarget.priority || 0.5);
         } else {
@@ -971,7 +978,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
                 agent.goalMemory.currentGoal = 0; // GOALS.FIND_FOOD
                 agent.goalMemory.goalPriority = 0.7;
             }
-            
+
             // Update goal start frame if goal changed
             if (previousGoal !== agent.goalMemory.currentGoal) {
                 agent.goalMemory.goalStartFrame = agent.framesAlive;
