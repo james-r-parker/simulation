@@ -166,6 +166,12 @@ export class Simulation {
         this.wakeLock = null;
         this.wakeLockEnabled = false;
 
+        // Background simulation state tracking
+        this.isPageVisible = true;
+        this.backgroundIntervalId = null;
+        this.useBackgroundTimer = false;
+        this.animationFrameId = null;
+
         // Dashboard tracking
         this.dashboardHistory = []; // Track metrics for dashboard
         this.dashboardHistorySize = 100; // Keep last 100 data points
@@ -263,6 +269,10 @@ export class Simulation {
     toggleRendering() {
         this.renderingEnabled = !this.renderingEnabled;
         this.logger.log(`Rendering ${this.renderingEnabled ? 'enabled' : 'disabled'}`);
+        
+        // Switch timer mode to run as fast as possible when rendering is disabled
+        this._switchTimerMode();
+        
         return this.renderingEnabled;
     }
 
@@ -280,10 +290,14 @@ export class Simulation {
         this.logger.log('Destroying simulation and cleaning up resources...');
         this.destroyed = true;
 
-        // 1. Cancel the game loop animation frame
-        if (this.animationFrameId) {
+        // 1. Cancel the game loop animation frame and background timer
+        if (this.animationFrameId !== null) {
             cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = undefined;
+            this.animationFrameId = null;
+        }
+        if (this.backgroundIntervalId !== null) {
+            clearInterval(this.backgroundIntervalId);
+            this.backgroundIntervalId = null;
         }
 
         // 2. Remove event listeners
@@ -412,6 +426,17 @@ export class Simulation {
             });
         }
 
+        // Visibility change listeners
+        if (this._handleVisibilityChange) {
+            document.removeEventListener('visibilitychange', this._handleVisibilityChange);
+        }
+        if (this._handleFocus) {
+            window.removeEventListener('focus', this._handleFocus);
+        }
+        if (this._handleBlur) {
+            window.removeEventListener('blur', this._handleBlur);
+        }
+
         // UI event listeners are handled by the UI module's cleanup
         // The UI module should have its own cleanup method
     }
@@ -515,6 +540,9 @@ export class Simulation {
         // Add click listener for agent selection
         this.renderer.renderer.domElement.addEventListener('click', (e) => this.handleCanvasClick(e));
 
+        // Setup visibility change handlers for background simulation
+        this._setupVisibilityHandlers();
+
         // Start the game loop only after everything is initialized
         this.gameLoop().catch(error => {
             this.logger.error('Error starting game loop:', error);
@@ -572,6 +600,134 @@ export class Simulation {
         } else {
             // This shouldn't happen, but just in case
             this.logger.warn('[AGENT-SELECT] No closest agent found despite living agents existing');
+        }
+    }
+
+    /**
+     * Setup visibility change handlers to maintain simulation speed when page is hidden
+     */
+    _setupVisibilityHandlers() {
+        // Bind handlers to preserve 'this' context
+        this._handleVisibilityChange = this._handleVisibilityChange.bind(this);
+        this._handleFocus = this._handleFocus.bind(this);
+        this._handleBlur = this._handleBlur.bind(this);
+
+        // Listen for visibility changes (tab switching, minimizing, etc.)
+        document.addEventListener('visibilitychange', this._handleVisibilityChange);
+        
+        // Listen for window focus/blur as backup (some browsers may not fire visibilitychange)
+        window.addEventListener('focus', this._handleFocus);
+        window.addEventListener('blur', this._handleBlur);
+
+        // Initialize visibility state
+        this.isPageVisible = !document.hidden && document.hasFocus();
+        
+        // Always ensure correct timer mode based on rendering state and visibility
+        // If rendering is disabled, this will start the fast interval
+        // If page is hidden and rendering is enabled, this will start the FPS-limited interval
+        this._switchTimerMode();
+    }
+
+    /**
+     * Handle visibility change event
+     */
+    _handleVisibilityChange() {
+        const wasVisible = this.isPageVisible;
+        this.isPageVisible = !document.hidden && document.hasFocus();
+
+        if (wasVisible !== this.isPageVisible) {
+            this._switchTimerMode();
+        }
+    }
+
+    /**
+     * Handle window focus event
+     */
+    _handleFocus() {
+        if (!this.isPageVisible) {
+            this.isPageVisible = true;
+            this._switchTimerMode();
+        }
+    }
+
+    /**
+     * Handle window blur event
+     */
+    _handleBlur() {
+        // Only switch if page is actually hidden (not just unfocused but still visible)
+        if (this.isPageVisible && document.hidden) {
+            this.isPageVisible = false;
+            this._switchTimerMode();
+        }
+    }
+
+    /**
+     * Switch between requestAnimationFrame and setInterval based on visibility
+     * When rendering is disabled, runs as fast as possible regardless of visibility
+     */
+    _switchTimerMode() {
+        if (this.destroyed) return;
+
+        // If rendering is disabled, ALWAYS use fast interval (run as fast as possible)
+        // Never slow down the background sim when rendering is off
+        if (!this.renderingEnabled) {
+            // Cancel any pending rAF - we never want rAF when rendering is disabled
+            if (this.animationFrameId !== null) {
+                cancelAnimationFrame(this.animationFrameId);
+                this.animationFrameId = null;
+            }
+            // Always restart the fast interval to ensure it's running at max speed
+            // This handles cases where the interval might have been stopped or is using slower timing
+            if (this.backgroundIntervalId !== null) {
+                clearInterval(this.backgroundIntervalId);
+                this.backgroundIntervalId = null;
+            }
+            // Start fast interval (0ms = as fast as possible, browser will throttle to ~4-5ms minimum)
+            this.backgroundIntervalId = setInterval(() => {
+                if (!this.destroyed) {
+                    this.gameLoop().catch(error => {
+                        this.logger.error('Error in game loop:', error);
+                    });
+                }
+            }, 0);
+            this.useBackgroundTimer = true;
+            this.logger.info('[VISIBILITY] Rendering disabled - running at maximum speed (never slowing down)');
+            return;
+        }
+
+        // Rendering is enabled - use normal timing based on visibility
+        if (this.isPageVisible) {
+            // Page is visible - use requestAnimationFrame
+            if (this.useBackgroundTimer) {
+                // Stop background timer
+                if (this.backgroundIntervalId !== null) {
+                    clearInterval(this.backgroundIntervalId);
+                    this.backgroundIntervalId = null;
+                }
+                this.useBackgroundTimer = false;
+                this.logger.info('[VISIBILITY] Switched to foreground mode (requestAnimationFrame)');
+            }
+        } else {
+            // Page is hidden - use setInterval for consistent timing at 144fps
+            if (!this.useBackgroundTimer) {
+                // Cancel any pending rAF
+                if (this.animationFrameId !== null) {
+                    cancelAnimationFrame(this.animationFrameId);
+                    this.animationFrameId = null;
+                }
+                // Start background timer at 144fps for faster background simulation
+                const BACKGROUND_FPS = 144;
+                const intervalMs = 1000 / BACKGROUND_FPS;
+                this.backgroundIntervalId = setInterval(() => {
+                    if (!this.destroyed) {
+                        this.gameLoop().catch(error => {
+                            this.logger.error('Error in game loop:', error);
+                        });
+                    }
+                }, intervalMs);
+                this.useBackgroundTimer = true;
+                this.logger.info(`[VISIBILITY] Switched to background mode (setInterval @ ${intervalMs.toFixed(2)}ms, ${BACKGROUND_FPS}fps)`);
+            }
         }
     }
 
@@ -2012,10 +2168,38 @@ export class Simulation {
             }
         }
 
-        this.animationFrameId = requestAnimationFrame(() => {
-            this.gameLoop().catch(error => {
-                this.logger.error('Error in game loop:', error);
+        // Schedule next frame using appropriate timer based on visibility
+        this._scheduleNextFrame();
+    }
+
+    /**
+     * Schedule the next game loop frame using the appropriate timer
+     * Uses requestAnimationFrame when visible and rendering enabled
+     * Uses setInterval when rendering disabled (runs as fast as possible)
+     * NEVER slows down the background sim when rendering is disabled
+     */
+    _scheduleNextFrame() {
+        if (this.destroyed) return;
+
+        // CRITICAL: If rendering is disabled, NEVER use rAF - always use fast interval
+        // This ensures the background sim never slows down
+        if (!this.renderingEnabled) {
+            // Ensure fast interval is running (should already be, but double-check)
+            if (this.backgroundIntervalId === null) {
+                this._switchTimerMode(); // This will start the fast interval
+            }
+            return; // setInterval handles all scheduling when rendering is disabled
+        }
+
+        // Rendering is enabled - use normal timing based on visibility
+        // Only schedule with rAF if we're in foreground mode
+        if (this.isPageVisible && !this.useBackgroundTimer) {
+            this.animationFrameId = requestAnimationFrame(() => {
+                this.gameLoop().catch(error => {
+                    this.logger.error('Error in game loop:', error);
+                });
             });
-        });
+        }
+        // If in background mode with rendering enabled, setInterval is already running
     }
 }
