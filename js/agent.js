@@ -422,12 +422,19 @@ export class Agent {
         }
 
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
-        // Tanh outputs are already -1 to 1, so no mapping needed
-        let rawThrust = output[0];
-        const rotationOutput = output[1];
-        const sprintIntensity = output[2]; // [0, 1] - continuous intensity, not binary
-        this.wantsToReproduce = output[3] > 0.8;
-        this.wantsToAttack = output[4] > 0.8;
+        // Tanh outputs are naturally [-1, 1] - no clamping needed for smoother movement control
+        // Only validate for NaN/Infinity to prevent crashes
+        const safeValue = (val) => (typeof val === 'number' && isFinite(val)) ? val : 0;
+        
+        let rawThrust = safeValue(output[0]);
+        const rotationOutput = safeValue(output[1]);
+        // Sprint intensity: tanh outputs [-1, 1], but we want [0, 1] for intensity
+        // Remap from [-1, 1] to [0, 1] for smoother control
+        const sprintIntensity = Math.max(0, Math.min(1, (safeValue(output[2]) + 1) / 2));
+        const mateOutput = safeValue(output[3]);
+        const attackOutput = safeValue(output[4]);
+        this.wantsToReproduce = mateOutput > 0.8;
+        this.wantsToAttack = attackOutput > 0.8;
 
         // Kin recognition: Reduce attack willingness toward close relatives
         // This will be checked during collision resolution
@@ -1895,19 +1902,19 @@ export class Agent {
         const invMaxRotation = 1 / MAX_ROTATION;
 
         // Current thrust level (0-1, normalized by max thrust)
-        inputs.push(Math.abs(this.currentThrust) * invGeneticMaxThrust);
+        inputs.push(Math.max(0, Math.min(1, Math.abs(this.currentThrust) * invGeneticMaxThrust)));
 
         // Current rotation rate (-1 to 1, normalized by max rotation)
-        inputs.push((this.previousRotation || 0) * invMaxRotation);
+        inputs.push(Math.max(-1, Math.min(1, (this.previousRotation || 0) * invMaxRotation)));
 
         // Thrust change (delta from previous frame)
         const thrustChange = this.currentThrust - (this.previousThrust || 0);
-        inputs.push(thrustChange * invGeneticMaxThrust);
+        inputs.push(Math.max(-1, Math.min(1, thrustChange * invGeneticMaxThrust)));
 
         // Rotation change (delta from previous frame)
         // Approximation: use current rotation rate as indicator of change
         const rotationChange = this.previousRotation || 0;
-        inputs.push(rotationChange * invMaxRotation);
+        inputs.push(Math.max(-1, Math.min(1, rotationChange * invMaxRotation)));
 
         // --- TARGET MEMORY UPDATE (Performance-Optimized) ---
         // Update target memory if we see food or mate
@@ -2702,6 +2709,11 @@ export class Agent {
      * @returns {number} Survival score
      */
     calculateSurvivalScore() {
+        // FIXED: Use framesAlive instead of ageInSeconds * FPS_TARGET for frame-based calculations
+        // This prevents fitness inflation when FPS drops to 1 and then recovers.
+        // Previously, when FPS dropped, age (real-time) continued increasing while framesAlive
+        // stayed low. On recovery, ageInFrames = age * 60 would be massively inflated,
+        // causing collisionFreeFrames to be huge and giving agents unfair fitness bonuses.
         const safeNumber = (val, defaultVal = 0) => {
             if (typeof val !== 'number' || !isFinite(val)) return defaultVal;
             return val;
@@ -2709,9 +2721,10 @@ export class Agent {
 
         let score = 0;
         const ageInSeconds = safeNumber(this.age || 0, 0);
-        const ageInFrames = ageInSeconds * FPS_TARGET;
+        // Use actual framesAlive instead of ageInSeconds * FPS_TARGET
+        const framesAlive = safeNumber(this.framesAlive || 0, 0);
 
-        // 1. Age-based survival reward
+        // 1. Age-based survival reward (use real-time age for consistency)
         score += ageInSeconds * SURVIVAL_SCORING.AGE_MULTIPLIER;
 
         // 2. Temperature efficiency bonus
@@ -2725,10 +2738,11 @@ export class Agent {
         }
 
         // 3. Damage avoidance bonus (reward collision-free time)
+        // FIXED: Use actual framesAlive instead of ageInFrames derived from real-time age
         const timesHitObstacle = safeNumber(this.timesHitObstacle || 0, 0);
         const collisions = safeNumber(this.collisions || 0, 0);
         const totalCollisions = timesHitObstacle + (collisions - timesHitObstacle);
-        const collisionFreeFrames = Math.max(0, ageInFrames - (totalCollisions * 30));
+        const collisionFreeFrames = Math.max(0, framesAlive - (totalCollisions * 30));
         if (collisionFreeFrames > 200) {
             score += collisionFreeFrames * SURVIVAL_SCORING.DAMAGE_AVOIDANCE_BONUS;
         }
@@ -2864,14 +2878,18 @@ export class Agent {
             }
 
             case SPECIALIZATION_TYPES.DEFENDER: {
+                // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET
+                // This prevents fitness inflation when FPS drops and recovers
+                const framesAlive = safeNumber(this.framesAlive || 0, 0);
+                
                 // Damage mitigated: estimate from defensive positioning
                 // Defenders have damage reduction - estimate mitigation from aggression time
-                const estimatedMitigation = this.aggression > 0.5 ? ageInSeconds * FPS_TARGET * 0.1 : 0;
+                const estimatedMitigation = this.aggression > 0.5 ? framesAlive * 0.1 : 0;
                 score += estimatedMitigation * SPECIALIZATION_SCORING.DEFENDER_DAMAGE_MITIGATED;
 
                 // Time near allies: estimate from frames alive with aggression
                 // This is simplified - actual ally proximity would need cached data
-                const estimatedGuardingFrames = ageInSeconds * FPS_TARGET * 0.3;
+                const estimatedGuardingFrames = framesAlive * 0.3;
                 score += estimatedGuardingFrames * SPECIALIZATION_SCORING.DEFENDER_TIME_NEAR_ALLIES;
 
                 // Predator interception: estimate from confrontations
@@ -2880,7 +2898,7 @@ export class Agent {
 
                 // Patrol bonus: time spent moving in territory
                 if (this.isInTerritory) {
-                    const patrolFrames = ageInSeconds * FPS_TARGET * 0.5;
+                    const patrolFrames = framesAlive * 0.5;
                     score += patrolFrames * SPECIALIZATION_SCORING.DEFENDER_PATROL_BONUS;
                 }
                 break;

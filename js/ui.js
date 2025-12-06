@@ -1175,8 +1175,9 @@ function updateAgentModal(agent, simulation) {
     baseScore -= wallHits * FITNESS_PENALTIES.WALL_HIT;
 
     // Obstacle-free frames
-    const ageInFrames = ageInSeconds * FPS_TARGET;
-    const obstacleFreeFrames = Math.max(0, ageInFrames - (timesHitObstacle * 30));
+    // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET to prevent inflation on FPS drops
+    const framesAlive = safeNum(agent.framesAlive || 0, 0);
+    const obstacleFreeFrames = Math.max(0, framesAlive - (timesHitObstacle * 30));
     let obstacleFreeFramesBonus = 0;
     if (obstacleFreeFrames > 200) {
         obstacleFreeFramesBonus = (obstacleFreeFrames / 200) * 25;

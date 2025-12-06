@@ -569,7 +569,8 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             // }
 
             // PERFORMANCE: Use cached inverse for multiplication instead of division
-            const normalizedDist = 1.0 - (Math.min(distance, maxRayDist) * invMaxRayDist);
+            // Clamp normalized distance to [0, 1] range
+            const normalizedDist = Math.max(0, Math.min(1, 1.0 - (Math.min(distance, maxRayDist) * invMaxRayDist)));
             inputs.push(normalizedDist);
 
             // PERFORMANCE: Use pooled array instead of allocating new one
@@ -751,17 +752,18 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const velocityAngle = Math.atan2(agent.vy, agent.vx);
         const angleDifference = (velocityAngle - agent.angle + Math.PI * 3) % TWO_PI - Math.PI;
 
-        inputs.push((MAX_ENERGY - agent.energy) * invMaxEnergy); // Hunger
-        inputs.push(Math.min(agent.dangerSmell, 1)); // Fear
-        inputs.push(Math.min(agent.attackSmell + (agent.energy * invObesityThreshold), 1)); // Aggression
-        inputs.push(agent.energy * invMaxEnergy); // Energy ratio
-        inputs.push(Math.min(agent.age * invAge60, 1)); // Age ratio
-        inputs.push(currentSpeed * invMaxVelocity); // Speed ratio
-        inputs.push(angleDifference * invPi); // Velocity-angle difference
+        // Clamp all inputs to valid ranges to prevent neural network instability
+        inputs.push(Math.max(0, Math.min(1, (MAX_ENERGY - agent.energy) * invMaxEnergy))); // Hunger [0, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.dangerSmell))); // Fear [0, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.attackSmell + (agent.energy * invObesityThreshold)))); // Aggression [0, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.energy * invMaxEnergy))); // Energy ratio [0, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.age * invAge60))); // Age ratio [0, 1]
+        inputs.push(Math.max(0, Math.min(1, currentSpeed * invMaxVelocity))); // Speed ratio [0, 1]
+        inputs.push(Math.max(-1, Math.min(1, angleDifference * invPi))); // Velocity-angle difference [-1, 1]
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
 
         // Enhanced temperature inputs (4 inputs instead of 1)
-        inputs.push(agent.temperature * invTempMax); // Current temperature (0-1)
+        inputs.push(Math.max(0, Math.min(1, agent.temperature * invTempMax))); // Current temperature [0, 1]
         // Distance from optimal range (0-1, where 0 = optimal, 1 = max distance)
         const optimalCenter = (TEMPERATURE_OPTIMAL_MIN + TEMPERATURE_OPTIMAL_MAX) / 2;
         const optimalRange = TEMPERATURE_OPTIMAL_MAX - TEMPERATURE_OPTIMAL_MIN;
@@ -785,14 +787,15 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(simulation.seasonPhase !== undefined ? simulation.seasonPhase : 0.0); // Season phase (0-1)
 
         // Recent memory (temporal awareness) - adds 8 inputs
-        inputs.push(agent.previousVelocities[1].vx * invMaxVelocity); // Previous velocity X (1 frame ago)
-        inputs.push(agent.previousVelocities[1].vy * invMaxVelocity); // Previous velocity Y (1 frame ago)
-        inputs.push(agent.previousVelocities[2].vx * invMaxVelocity); // Previous velocity X (2 frames ago)
-        inputs.push(agent.previousVelocities[2].vy * invMaxVelocity); // Previous velocity Y (2 frames ago)
-        inputs.push((agent.previousEnergies[0] - agent.energy) * invMaxEnergy); // Energy delta (last frame)
-        inputs.push(Math.min(agent.previousDanger[1], 1)); // Previous danger (1 frame ago)
-        inputs.push(Math.min(agent.previousAggression[1], 1)); // Previous aggression (1 frame ago)
-        inputs.push((agent.previousEnergies[1] - agent.previousEnergies[2]) * invMaxEnergy); // Energy delta (2 frames ago)
+        // Clamp velocity and energy delta inputs to valid ranges
+        inputs.push(Math.max(-1, Math.min(1, agent.previousVelocities[1].vx * invMaxVelocity))); // Previous velocity X (1 frame ago) [-1, 1]
+        inputs.push(Math.max(-1, Math.min(1, agent.previousVelocities[1].vy * invMaxVelocity))); // Previous velocity Y (1 frame ago) [-1, 1]
+        inputs.push(Math.max(-1, Math.min(1, agent.previousVelocities[2].vx * invMaxVelocity))); // Previous velocity X (2 frames ago) [-1, 1]
+        inputs.push(Math.max(-1, Math.min(1, agent.previousVelocities[2].vy * invMaxVelocity))); // Previous velocity Y (2 frames ago) [-1, 1]
+        inputs.push(Math.max(-1, Math.min(1, (agent.previousEnergies[0] - agent.energy) * invMaxEnergy))); // Energy delta (last frame) [-1, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.previousDanger[1] || 0))); // Previous danger (1 frame ago) [0, 1]
+        inputs.push(Math.max(0, Math.min(1, agent.previousAggression[1] || 0))); // Previous aggression (1 frame ago) [0, 1]
+        inputs.push(Math.max(-1, Math.min(1, (agent.previousEnergies[1] - agent.previousEnergies[2]) * invMaxEnergy))); // Energy delta (2 frames ago) [-1, 1]
 
         // Lifetime experience metrics (career achievements accessible to NN)
         inputs.push(Math.min(agent.foodEaten / 10, 1)); // Career nutrition score (0-1 scale)
@@ -808,11 +811,11 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
         // Death risk: explicit awareness that low energy = death
         const deathRisk = agent.energy < DEATH_RISK_THRESHOLD ? Math.max(0, (DEATH_RISK_THRESHOLD - agent.energy) / DEATH_RISK_THRESHOLD) : 0;
-        inputs.push(Math.min(deathRisk, 1.0)); // Death risk (0-1, where 1 = critical)
+        inputs.push(Math.max(0, Math.min(1, deathRisk))); // Death risk [0, 1], where 1 = critical
 
         // Food energy gain: explicit awareness that eating food gives energy
         const lastFoodEnergyGain = agent.eventFlags && agent.eventFlags.lastFoodEnergyGain ? agent.eventFlags.lastFoodEnergyGain : 0;
-        inputs.push(Math.min(lastFoodEnergyGain * invMaxEnergy, 1.0)); // Food energy gain (0-1, normalized)
+        inputs.push(Math.max(0, Math.min(1, lastFoodEnergyGain * invMaxEnergy))); // Food energy gain [0, 1], normalized
 
         // Food urgency: combines low energy + food visibility to signal "need food now"
         const hasFoodTarget = agent.targetMemory && agent.targetMemory.currentTarget &&
@@ -824,7 +827,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
         // Collision damage: explicit awareness that crashing = energy loss
         const lastCollisionDamage = agent.eventFlags && agent.eventFlags.lastCollisionDamage ? agent.eventFlags.lastCollisionDamage : 0;
-        inputs.push(Math.min(lastCollisionDamage * invMaxEnergy, 1.0)); // Collision damage (0-1, normalized)
+        inputs.push(Math.max(0, Math.min(1, lastCollisionDamage * invMaxEnergy))); // Collision damage [0, 1], normalized
 
         // Collision risk: proximity to obstacles (0-1, where 1 = very close)
         // Note: GPU path doesn't have direct access to closestObstacleDist, use ray data approximation
@@ -837,7 +840,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             }
         }
         const collisionRisk = closestObstacleDist < Infinity ? (1.0 - Math.min(closestObstacleDist / agent.maxRayDist, 1.0)) : 0.0;
-        inputs.push(Math.min(collisionRisk, 1.0)); // Collision risk (0-1)
+        inputs.push(Math.max(0, Math.min(1, collisionRisk))); // Collision risk [0, 1]
 
         // Predator threat: combined size difference + proximity (0-1)
         // Calculate from ray data
@@ -858,15 +861,15 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         if (agent.eventFlags) {
             agent.eventFlags.predatorThreat = predatorThreat;
         }
-        inputs.push(Math.min(predatorThreat, 1.0)); // Predator threat (0-1)
+        inputs.push(Math.max(0, Math.min(1, predatorThreat))); // Predator threat [0, 1]
 
         // Attack damage: energy lost from last attack (0-1, normalized)
         const lastAttackDamage = agent.eventFlags && agent.eventFlags.lastAttackDamage ? agent.eventFlags.lastAttackDamage : 0;
-        inputs.push(Math.min(lastAttackDamage * invMaxEnergy, 1.0)); // Attack damage (0-1, normalized)
+        inputs.push(Math.max(0, Math.min(1, lastAttackDamage * invMaxEnergy))); // Attack damage [0, 1], normalized
 
         // Vulnerability: how vulnerable agent is to predators (0-1)
         const vulnerability = closestPredatorSizeRatio > 1.1 ? 1.0 : (closestPredatorSizeRatio > 1.0 ? (closestPredatorSizeRatio - 1.0) * 10 : 0.0);
-        inputs.push(Math.min(vulnerability, 1.0)); // Vulnerability (0-1)
+        inputs.push(Math.max(0, Math.min(1, vulnerability))); // Vulnerability [0, 1]
 
         // Reproduction readiness: how ready agent is to reproduce (0-1)
         const energyReadiness = agent.energy >= MIN_ENERGY_TO_REPRODUCE ? 1.0 : Math.max(0, agent.energy / MIN_ENERGY_TO_REPRODUCE);
@@ -876,7 +879,7 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         if (agent.eventFlags) {
             agent.eventFlags.reproductionReadiness = reproductionReadiness;
         }
-        inputs.push(Math.min(reproductionReadiness, 1.0)); // Reproduction readiness (0-1)
+        inputs.push(Math.max(0, Math.min(1, reproductionReadiness))); // Reproduction readiness [0, 1]
 
         // Reproduction benefit: fitness benefit from reproduction (0-1)
         inputs.push(Math.min((agent.offspring || 0) / 5, 1.0)); // Reproduction benefit (0-1, normalized)
@@ -904,19 +907,19 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const invMaxRotation = 1 / MAX_ROTATION;
 
         // Current thrust level (0-1, normalized by max thrust)
-        inputs.push(Math.abs(agent.currentThrust || 0) * invGeneticMaxThrust);
+        inputs.push(Math.max(0, Math.min(1, Math.abs(agent.currentThrust || 0) * invGeneticMaxThrust)));
 
         // Current rotation rate (-1 to 1, normalized by max rotation)
-        inputs.push((agent.previousRotation || 0) * invMaxRotation);
+        inputs.push(Math.max(-1, Math.min(1, (agent.previousRotation || 0) * invMaxRotation)));
 
         // Thrust change (delta from previous frame)
         const thrustChange = (agent.currentThrust || 0) - (agent.previousThrust || 0);
-        inputs.push(thrustChange * invGeneticMaxThrust);
+        inputs.push(Math.max(-1, Math.min(1, thrustChange * invGeneticMaxThrust)));
 
         // Rotation change (delta from previous frame)
         // Note: This is a simplified calculation - full implementation would track previous-previous rotation
         const rotationChange = 0; // Placeholder - would need additional state tracking for accurate calculation
-        inputs.push(rotationChange * invMaxRotation);
+        inputs.push(Math.max(-1, Math.min(1, rotationChange * invMaxRotation)));
 
         // --- TARGET MEMORY INPUTS (Performance-Optimized) ---
         // Check target expiration (only every 5 frames for performance)
@@ -943,24 +946,24 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
 
             // Normalized distance to target (0-1, where 0 = very close, 1 = very far)
             const maxDist = agent.maxRayDist * 2; // Use 2x ray distance as max
-            inputs.push(Math.min(agent._cachedTargetDistance / maxDist, 1.0));
+            inputs.push(Math.max(0, Math.min(1, agent._cachedTargetDistance / maxDist)));
 
             // Direction to target (normalized angle difference)
             let angleToTarget = agent._cachedTargetAngle - agent.angle;
             while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
             while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
-            inputs.push(angleToTarget / Math.PI); // Normalized to [-1, 1]
+            inputs.push(Math.max(-1, Math.min(1, angleToTarget / Math.PI))); // Normalized to [-1, 1]
 
             // Time since target was last seen (normalized)
             const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
-            inputs.push(Math.min(framesSinceSeen / agent.targetMemory.attentionSpan, 1.0));
+            inputs.push(Math.max(0, Math.min(1, framesSinceSeen / agent.targetMemory.attentionSpan)));
 
             // Target type (food=1, mate=0.5, location=0)
             inputs.push(agent.targetMemory.currentTarget.type === 'food' ? 1.0 :
                 (agent.targetMemory.currentTarget.type === 'mate' ? 0.5 : 0.0));
 
-            // Target priority
-            inputs.push(agent.targetMemory.currentTarget.priority || 0.5);
+            // Target priority (clamp to [0, 1])
+            inputs.push(Math.max(0, Math.min(1, agent.targetMemory.currentTarget.priority || 0.5)));
         } else {
             // No target - provide zero inputs
             inputs.push(0); // Distance

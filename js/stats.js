@@ -201,8 +201,9 @@ export function copySimulationStats(simulation) {
             (safeNumber(a.collisions || 0, 0) - safeNumber(a.timesHitObstacle || 0, 0)) * 10;
 
         // Collision avoidance reward
-        const ageInFrames = ageInSeconds * FPS_TARGET;
-        const obstacleFreeFrames = Math.max(0, ageInFrames - (safeNumber(a.timesHitObstacle || 0, 0) * 30));
+        // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET to prevent inflation on FPS drops
+        const framesAlive = safeNumber(a.framesAlive || 0, 0);
+        const obstacleFreeFrames = Math.max(0, framesAlive - (safeNumber(a.timesHitObstacle || 0, 0) * 30));
         if (obstacleFreeFrames > 200) {
             baseScore += (obstacleFreeFrames / 200) * 25;
         }
@@ -279,8 +280,9 @@ export function copySimulationStats(simulation) {
             sumTurnsAwayFromObstaclesNormalized += safeNumber(a.turnsAwayFromObstacles || 0, 0) * invDistanceNormalizer;
             sumFoodApproachesNormalized += safeNumber(a.foodApproaches || 0, 0) * invDistanceNormalizer;
         }
-        const ageInFrames = (a.age || 0) * FPS_TARGET;
-        const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
+        // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET to prevent inflation on FPS drops
+        const framesAlive = safeNumber(a.framesAlive || 0, 0);
+        const obstacleFreeFrames = Math.max(0, framesAlive - ((a.timesHitObstacle || 0) * 30));
         sumObstacleFreeFrames += (obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
     }
     const avgDirectionChanged = sumDirectionChanged / livingAgentsLen;
@@ -548,8 +550,9 @@ export function copySimulationStats(simulation) {
         }
         
         // Calculate obstacle-free frames values
-        const ageInFrames = (a.age || 0) * FPS_TARGET;
-        const obstacleFreeFrames = Math.max(0, ageInFrames - ((a.timesHitObstacle || 0) * 30));
+        // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET to prevent inflation on FPS drops
+        const framesAlive = safeNumber(a.framesAlive || 0, 0);
+        const obstacleFreeFrames = Math.max(0, framesAlive - ((a.timesHitObstacle || 0) * 30));
         obstacleFreeFramesValues.push(obstacleFreeFrames > 200 ? (obstacleFreeFrames / 200) * 25 : 0);
     }
 
