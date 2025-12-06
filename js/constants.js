@@ -1679,7 +1679,7 @@ export const GENE_POOL_MAX_SIZE = 100;
  * @constant
  * @default 800
  */
-export const GENE_POOL_MIN_FITNESS = 800;
+export const GENE_POOL_MIN_FITNESS = 1200;
 
 /**
  * Fitness threshold for exceptional agents that are permanently protected.
@@ -2067,7 +2067,7 @@ export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1;
  * @constant
  * @default 300
  */
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 300;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 500;
 
 /**
  * Minimum lifespan in seconds (33.33s).
