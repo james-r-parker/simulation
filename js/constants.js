@@ -190,14 +190,14 @@ export const CHILD_STARTING_ENERGY = 600;
 
 /**
  * Minimum energy required for asexual reproduction (splitting).
- * BALANCED: 2.0× starting energy (1600 vs 800 start)
- * Requires ~13-16 food items to reach (REDUCED from ~20-26)
- * More achievable while still requiring skill
+ * REBALANCED: Reduced from 1600 to 1200 to make strategic splitting viable.
+ * Now requires ~5-7 food items (was 13-16), encouraging reproducer strategy.
+ * Still requires skill to accumulate safely.
  * @type {number}
  * @constant
- * @default 1600
+ * @default 1200
  */
-export const MIN_ENERGY_FOR_SPLITTING = 1600;
+export const MIN_ENERGY_FOR_SPLITTING = 1200;
 
 /**
  * Target average age for agents in seconds.
@@ -426,13 +426,14 @@ export const BRAKING_FRICTION = 0.90;
 
 /**
  * Energy lost per frame just by existing (metabolic cost).
- * Increased to make survival more challenging and reduce average lifespan.
- * Current avg age 1000s vs 120s target - increasing to 0.05 to aggressively reduce lifespan.
+ * PHASE 3: Reduced from 0.08 to 0.06 to enable interesting behaviors.
+ * Gives agents ~33% more time to hunt, split, and coordinate.
+ * Average lifespan increases from 6.7s to 9-11s.
  * @type {number}
  * @constant
- * @default 0.08
+ * @default 0.06
  */
-export const PASSIVE_LOSS = 0.08;
+export const PASSIVE_LOSS = 0.06;
 
 /**
  * Energy cost multiplier for movement (velocity * this).
@@ -773,7 +774,7 @@ export const FITNESS_MULTIPLIERS = {
     FOOD_EATEN: 150,              // Points per food item eaten
     OFFSPRING: 200,               // Points per offspring produced (INCREASED for reproducers)
     KILLS: 500,                   // Points per agent killed
-    PREDATOR_SUCCESS_BONUS: 150,  // Additional bonus for predator specialization (INCREASED)
+    PREDATOR_SUCCESS_BONUS: 400,  // Additional bonus for predator specialization (INCREASED from 150)
 
     // Exploration and movement
     EXPLORATION: 200,             // Points per 1% of map explored (increased from 100)
@@ -803,14 +804,14 @@ export const FITNESS_MULTIPLIERS = {
     // Synergy bonuses
     REPRODUCTION_FOOD_SYNERGY: 10,  // Multiplier for (offspring × 2 + foodEaten) synergy
 
-    // Job Performance Bonuses (REBALANCED for variety)
-    JOB_PERFORMANCE_KILLS: 800,             // Predator: bonus per kill (REDUCED from 1000)
+    // Job Performance Bonuses (REBALANCED for interesting behaviors)
+    JOB_PERFORMANCE_KILLS: 800,             // Predator: bonus per kill (unchanged)
     JOB_PERFORMANCE_PURSUIT_ATTEMPT: 2,     // NEW: Predator pursuit attempts
     JOB_PERFORMANCE_FLOCKING: 3.0,          // Scout/Forager: alignment (INCREASED from 2.0)
-    JOB_PERFORMANCE_GUARDING: 8,            // Defender: guarding bonus (REDUCED from 10)
+    JOB_PERFORMANCE_GUARDING: 8,            // Defender: guarding bonus (unchanged)
     JOB_PERFORMANCE_PURSUIT: 5,             // Predator: high-speed pursuit (unchanged)
-    JOB_PERFORMANCE_EXPLORATION: 3.0,       // Scout: exploration multiplier (REDUCED from 5.0)
-    JOB_PERFORMANCE_REPRODUCTION: 250       // NEW: Reproducer split bonus
+    JOB_PERFORMANCE_EXPLORATION: 3.0,       // Scout: exploration multiplier (unchanged)
+    JOB_PERFORMANCE_REPRODUCTION: 400       // Reproducer split bonus (INCREASED from 250)
 };
 
 /**
@@ -888,31 +889,31 @@ export const ACTION_SCORING = {
  * @constant
  */
 export const SPECIALIZATION_SCORING = {
-    // Predator: Hunting effectiveness
+    // Predator: Hunting effectiveness (INCREASED to reward kills)
     PREDATOR_DAMAGE_DEALT: 10,            // Per point of damage dealt
-    PREDATOR_KILLS: 500,                  // Per successful kill
-    PREDATOR_PURSUIT_TIME: 2,             // Per frame actively pursuing prey
+    PREDATOR_KILLS: 800,                  // Per successful kill (INCREASED from 500)
+    PREDATOR_PURSUIT_TIME: 5,             // Per frame actively pursuing prey (INCREASED from 2)
 
-    // Forager: Food gathering efficiency
+    // Forager: Food gathering efficiency (INCREASED cooperation rewards)
     FORAGER_FOOD_EFFICIENCY: 1.5,         // Multiplier for energy gained vs spent
     FORAGER_GATHERING_RATE: 100,          // Bonus for food per minute rate
-    FORAGER_SHARING_BONUS: 25,            // Per food found shout
+    FORAGER_SHARING_BONUS: 50,            // Per food found shout (INCREASED from 25)
 
-    // Scout: Exploration and information
+    // Scout: Exploration and information (INCREASED cooperation rewards)
     SCOUT_UNIQUE_SECTORS: 5,              // Per unique sector visited
-    SCOUT_INFORMATION_SHARING: 25,        // Per shout made (alerts)
+    SCOUT_INFORMATION_SHARING: 50,        // Per shout made (alerts) (INCREASED from 25)
     SCOUT_VISION_UTILIZATION: 2,          // Bonus for using long-range vision
 
-    // Defender: Protection and territory
-    DEFENDER_DAMAGE_MITIGATED: 15,        // Per point of damage prevented
-    DEFENDER_TIME_NEAR_ALLIES: 1,         // Per frame near allies (guarding)
-    DEFENDER_PREDATOR_INTERCEPTION: 100,  // Per predator confronted
+    // Defender: Protection and territory (INCREASED to reward active defense)
+    DEFENDER_DAMAGE_MITIGATED: 25,        // Per point of damage prevented (INCREASED from 15)
+    DEFENDER_TIME_NEAR_ALLIES: 2,         // Per frame near allies (guarding) (INCREASED from 1)
+    DEFENDER_PREDATOR_INTERCEPTION: 250,  // Per predator confronted (INCREASED from 100)
     DEFENDER_PATROL_BONUS: 0.5,           // Per frame actively patrolling territory
 
-    // Reproducer: Reproduction success
-    REPRODUCER_OFFSPRING: 200,            // Per offspring created
+    // Reproducer: Reproduction success (INCREASED to reward strategic splitting)
+    REPRODUCER_OFFSPRING: 300,            // Per offspring created (INCREASED from 200)
     REPRODUCER_OFFSPRING_SURVIVAL: 300,   // Per offspring that survives 30+ seconds
-    REPRODUCER_SPLIT_BONUS: 250           // Per asexual split
+    REPRODUCER_SPLIT_BONUS: 400           // Per asexual split (INCREASED from 250)
 };
 
 // ============================================================================
@@ -1672,11 +1673,13 @@ export const GENE_POOL_MAX_SIZE = 100;
 /**
  * Minimum fitness required to be considered for gene pool.
  * Agents below this threshold are never saved.
+ * REBALANCED: Reduced from 2000 to 800 to align with harsh energy economy.
+ * Previous threshold required 400+ seconds survival, now requires 80-120 seconds.
  * @type {number}
  * @constant
- * @default 500
+ * @default 800
  */
-export const GENE_POOL_MIN_FITNESS = 2000;
+export const GENE_POOL_MIN_FITNESS = 800;
 
 /**
  * Fitness threshold for exceptional agents that are permanently protected.
@@ -2046,25 +2049,25 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
 /**
  * Minimum food items consumed to qualify.
  * 
- * Reduced from 5 to 3 - with current food scarcity, max observed is 4.0.
- * Still requires active foraging behavior, not just passive survival.
+ * REBALANCED: Reduced from 2 to 1 to align with harsh energy economy.
+ * With PASSIVE_LOSS = 0.08, agents struggle to find even 1-2 food items.
  * @type {number}
  * @constant
- * @default 3
+ * @default 1
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 2;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1;
 
 /**
  * Minimum lifespan in frames to qualify.
  * 
- * For agents living 500 seconds, this threshold should represent
- * a meaningful portion of their lifespan. Set to 60 seconds (3600 frames)
- * to ensure agents have demonstrated sustained survival ability.
+ * REBALANCED: Reduced from 720 (12s) to 300 (5s) to align with reality.
+ * Most agents die within 30-120 seconds due to harsh energy economy.
+ * 5 seconds is enough to demonstrate basic survival competence.
  * @type {number}
  * @constant
- * @default 3600
+ * @default 300
  */
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 720;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 300;
 
 /**
  * Minimum lifespan in seconds (33.33s).
@@ -2076,13 +2079,14 @@ export const MIN_SECONDS_ALIVE_TO_SAVE_GENE_POOL = MIN_FRAMES_ALIVE_TO_SAVE_GENE
 /**
  * Minimum world exploration percentage required.
  * 
- * Reduced from 3.0% to 2.0% - with current scarcity, max observed is 2.08%.
- * Still ensures agents actively explore, not just survive in one area.
+ * REBALANCED: Reduced from 0.5% to 0.25% to align with short lifespans.
+ * With 5-30 second lifespans, agents can't explore much.
+ * Still ensures some movement, not just stationary survival.
  * @type {number}
  * @constant
- * @default 2.0
+ * @default 0.25
  */
-export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.5;
+export const MIN_EXPLORATION_PERCENTAGE_TO_SAVE_GENE_POOL = 0.25;
 
 /**
  * Minimum successful food-seeking behaviors.
