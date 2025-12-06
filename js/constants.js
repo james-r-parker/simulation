@@ -1679,7 +1679,7 @@ export const GENE_POOL_MAX_SIZE = 100;
  * @constant
  * @default 800
  */
-export const GENE_POOL_MIN_FITNESS = 1200;
+export const GENE_POOL_MIN_FITNESS = 1750;
 
 /**
  * Fitness threshold for exceptional agents that are permanently protected.
@@ -2055,7 +2055,7 @@ export const MAX_AGENTS_TO_SAVE_PER_GENE_POOL = 10;
  * @constant
  * @default 1
  */
-export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1;
+export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 2;
 
 /**
  * Minimum lifespan in frames to qualify.
@@ -2067,7 +2067,7 @@ export const MIN_FOOD_EATEN_TO_SAVE_GENE_POOL = 1;
  * @constant
  * @default 300
  */
-export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 500;
+export const MIN_FRAMES_ALIVE_TO_SAVE_GENE_POOL = 600;
 
 /**
  * Minimum lifespan in seconds (33.33s).
@@ -2122,7 +2122,7 @@ export const VALIDATION_REQUIRED_RUNS = 3;
  * @constant
  * @default 50
  */
-export const MAX_VALIDATION_QUEUE_SIZE = 50;
+export const MAX_VALIDATION_QUEUE_SIZE = 500;
 
 /**
  * Energy given to validation agents (boosted from INITIAL_AGENT_ENERGY for fairer testing).
@@ -2131,7 +2131,7 @@ export const MAX_VALIDATION_QUEUE_SIZE = 50;
  * @constant
  * @default 1200
  */
-export const VALIDATION_AGENT_ENERGY = 1200;
+export const VALIDATION_AGENT_ENERGY = 1750;
 
 /**
  * Fitness threshold for partial credit system (4/5 criteria with exceptional fitness).
