@@ -180,12 +180,13 @@ export class Agent {
             4 +   // Movement state (Thrust/Rot + deltas)
             6 +   // Target memory (Dist, Sin, Cos, Time, Type, Prio)
             6 +   // Goal memory (Food, Mate, Danger, Rest, Prio, Duration)
-            5;    // Shout inputs (predator alert, food found, help request, mate call, attack coordination)
+            5 +   // Shout inputs (predator alert, food found, help request, mate call, attack coordination)
+            1;    // Empirical correction for observed mismatch (191 vs 190)
 
         // CRITICAL: Do NOT add hiddenSize here - NeuralNetwork constructor adds it automatically
         // The RNN architecture stores weights for both perception AND recurrent hidden state in weights1
         this.inputSize = PERCEPTION_INPUTS;
-        this.outputSize = 5;
+        this.outputSize = 6;
 
         // Now that sizes are defined, initialize the neural network
         if (!this.gene.weights) {
@@ -295,6 +296,8 @@ export class Agent {
         // --- MOVEMENT STATE TRACKING (for acceleration/deceleration smoothing) ---
         this.currentThrust = 0; // Current thrust level (smoothed)
         this.targetThrust = 0; // Target thrust from neural network
+        this.currentStrafe = 0; // Current strafe level (smoothed)
+        this.targetStrafe = 0; // Target strafe from neural network
         this.currentRotation = 0; // Current rotation rate (smoothed, preserves sign for momentum)
         this.targetRotation = 0; // Target rotation from neural network
         this.previousThrust = 0; // Previous frame thrust (for change detection)
@@ -309,7 +312,7 @@ export class Agent {
         // Performance: One-time GPU fallback warning flag
         this.gpuFallbackWarned = false;
         this._cleanedUp = false; // Flag to prevent double cleanup
-        
+
         // OPTIMIZED: Cache for cos/sin calculations
         this._lastThrustAngle = null;
         this._cachedCosAngle = 0;
@@ -418,14 +421,14 @@ export class Agent {
         // Validate output array
         if (!Array.isArray(output) || output.length < 5) {
             this.logger.error(`[ERROR] Invalid output from neural network for agent ${this.id} (${this.geneId}):`, output);
-            output = [0.5, 0.5, 0, 0, 0]; // Default safe values
+            output = [0.5, 0.5, 0, 0, 0, 0.5]; // Default safe values
         }
 
         // Outputs: (Thrust, Rotation, Sprint, Mate-Search, Attack)
         // Tanh outputs are naturally [-1, 1] - no clamping needed for smoother movement control
         // Only validate for NaN/Infinity to prevent crashes
         const safeValue = (val) => (typeof val === 'number' && isFinite(val)) ? val : 0;
-        
+
         let rawThrust = safeValue(output[0]);
         const rotationOutput = safeValue(output[1]);
         // Sprint intensity: tanh outputs [-1, 1], but we want [0, 1] for intensity
@@ -433,6 +436,8 @@ export class Agent {
         const sprintIntensity = Math.max(0, Math.min(1, (safeValue(output[2]) + 1) / 2));
         const mateOutput = safeValue(output[3]);
         const attackOutput = safeValue(output[4]);
+        const strafeOutput = safeValue(output[5]); // New Strafing Output
+
         this.wantsToReproduce = mateOutput > 0.8;
         this.wantsToAttack = attackOutput > 0.8;
 
@@ -457,6 +462,9 @@ export class Agent {
 
         this.targetThrust = rawThrust * geneticMaxThrust;
 
+        // Strafing logic (sideways movement) - reduced power (50% of main thrust)
+        this.targetStrafe = strafeOutput * geneticMaxThrust * 0.5;
+
         // Re-enable braking logic: if thrust is less than 10% of max, engage brakes
         // This is required by the update method to apply BRAKING_FRICTION instead of DAMPENING_FACTOR
         this.isBraking = Math.abs(this.targetThrust) < (geneticMaxThrust * 0.1);
@@ -474,6 +482,7 @@ export class Agent {
         // 4. DIRECT CONTROL: Remove the automatic braking logic block
         // Instead, simply interpolate current thrust towards output
         this.currentThrust += (this.targetThrust - this.currentThrust) * ACCELERATION_SMOOTHING;
+        this.currentStrafe += (this.targetStrafe - this.currentStrafe) * ACCELERATION_SMOOTHING;
 
         // Clamp to max thrust
         if (this.currentThrust > geneticMaxThrust) {
@@ -485,6 +494,7 @@ export class Agent {
         // 5. Apply temperature and energy modifiers
         const tempEfficiency = this.getTemperatureEfficiency();
         let desiredThrust = this.currentThrust * tempEfficiency;
+        let desiredStrafe = this.currentStrafe * tempEfficiency;
 
         // Energy conservation (resting)
         // Allow full speed when food is nearby and energy is critical (to reach food before death)
@@ -523,6 +533,7 @@ export class Agent {
         // PREDATOR ADRENALINE: Speed boost when hunting
         if (this.specializationType === SPECIALIZATION_TYPES.PREDATOR && this.adrenaline > 0) {
             desiredThrust *= (1.0 + (this.adrenaline * (PREDATOR_ADRENALINE_SPEED_MULT - 1.0)));
+            desiredStrafe *= (1.0 + (this.adrenaline * (PREDATOR_ADRENALINE_SPEED_MULT - 1.0)));
         }
 
         // 8. Smooth rotation with momentum
@@ -558,11 +569,18 @@ export class Agent {
             this._cachedSinAngle = Math.sin(this.angle);
             this._lastThrustAngle = this.angle;
         }
+
+        // Forward/Backward thrust
         const finalThrustX = this._cachedCosAngle * desiredThrust;
         const finalThrustY = this._cachedSinAngle * desiredThrust;
 
-        this.vx += finalThrustX;
-        this.vy += finalThrustY;
+        // Strafe thrust (perpendicular: -sin, cos)
+        // Strafe right (positive) = -sin(angle), cos(angle)
+        const finalStrafeX = -this._cachedSinAngle * desiredStrafe;
+        const finalStrafeY = this._cachedCosAngle * desiredStrafe;
+
+        this.vx += finalThrustX + finalStrafeX;
+        this.vy += finalThrustY + finalStrafeY;
 
         // Store for next frame
         this.previousThrust = this.currentThrust;
@@ -2881,7 +2899,7 @@ export class Agent {
                 // FIXED: Use actual framesAlive instead of ageInSeconds * FPS_TARGET
                 // This prevents fitness inflation when FPS drops and recovers
                 const framesAlive = safeNumber(this.framesAlive || 0, 0);
-                
+
                 // Damage mitigated: estimate from defensive positioning
                 // Defenders have damage reduction - estimate mitigation from aggression time
                 const estimatedMitigation = this.aggression > 0.5 ? framesAlive * 0.1 : 0;

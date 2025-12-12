@@ -36,7 +36,7 @@ export class GPUCompute {
             const adapter = await navigator.gpu.requestAdapter({
                 // powerPreference: 'high-performance'
             });
-            
+
             if (!adapter) {
                 this.logger.warn('No GPU adapter found, falling back to CPU');
                 return false;
@@ -65,7 +65,7 @@ export class GPUCompute {
                 }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Device request timeout')), GPU_INIT_TIMEOUT_MS))
             ]);
-            
+
             // Check if device is already lost (from previous hang)
             try {
                 const lostInfo = await Promise.race([
@@ -79,9 +79,9 @@ export class GPUCompute {
             } catch (e) {
                 // Device lost promise might reject, that's okay
             }
-            
+
             this.queue = this.device.queue;
-            
+
             // Set up device lost handler
             this.device.lost.then((info) => {
                 this.logger.warn('GPU Compute device lost:', info);
@@ -98,10 +98,10 @@ export class GPUCompute {
             }).catch(() => {
                 // Ignore errors from lost promise
             });
-            
+
             this.initialized = true;
             this.useGPU = true;
-            
+
             // console.log('WebGPU initialized successfully - using GPU acceleration');
             return true;
         } catch (error) {
@@ -209,7 +209,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             j += 1u;
         }
         
-        hidden[i] = sigmoid(sum);
+        hidden[i] = tanh_custom(sum); // Tanh activation for hidden layer
     }
     
     // Second layer: hidden -> output (output is always small, so standard loop)
@@ -306,34 +306,34 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             this.weightCache.set(agent, hash);
             return true; // Needs upload
         }
-        
+
         // Quick check: sample only first weight of each matrix (ultra-fast)
         const w1First = weights1[0]?.[0] || 0;
         const w2First = weights2[0]?.[0] || 0;
-        
+
         // If first weights match cached, likely unchanged (99% of cases)
         if (Math.abs(cached.first1 - w1First) < 0.0001 && Math.abs(cached.first2 - w2First) < 0.0001) {
             return false; // Probably unchanged
         }
-        
+
         // Changed - recompute full hash
         const hash = this.fastHashWeights(weights1, weights2);
         if (hash.hash1 !== cached.hash1 || hash.hash2 !== cached.hash2) {
             this.weightCache.set(agent, hash);
             return true; // Changed, needs upload
         }
-        
+
         // Hash matches but first weight different (rare) - update cache
         cached.first1 = w1First;
         cached.first2 = w2First;
         return false;
     }
-    
+
     // Ultra-fast hash - samples multiple points across the matrix for better coverage
     fastHashWeights(weights1, weights2) {
         let hash1 = 0, hash2 = 0;
         const sampleSize = 5; // Increased sample size for better coverage
-        
+
         // Sample weights from different parts of the matrix for better coverage
         const maxRows1 = weights1.length;
         const maxRows2 = weights2.length;
@@ -365,7 +365,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 }
             }
         }
-        
+
         return {
             hash1,
             hash2,
@@ -379,17 +379,17 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         if (!this.useGPU || !this.initialized || agents.length < this.minAgentsForGPU) {
             return null; // Fall back to CPU
         }
-        
+
         // Check if device is lost (device.lost is a promise, check if device exists)
         if (!this.device || !this.initialized) {
             return null;
         }
-        
+
         // Prevent concurrent GPU operations (buffer mapping conflict)
         if (this.processing) {
             return null; // Skip if already processing, agents will use CPU
         }
-        
+
         this.processing = true;
 
         try {
@@ -410,20 +410,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             });
 
             const results = {};
-            
+
             // Process all specializations in parallel (use Promise.all for true parallelism)
             const specializationPromises = [];
-            
+
             for (const [spec, specAgents] of Object.entries(agentsBySpecialization)) {
                 if (specAgents.length === 0) continue;
-                
+
                 specializationPromises.push(this.processSpecialization(spec, specAgents).then(result => {
                     if (result) results[spec] = true;
                 }).catch(error => {
                     this.logger.warn(`WebGPU processing failed for ${spec}, falling back to CPU:`, error);
                 }));
             }
-            
+
             // Wait for all specializations to complete
             await Promise.all(specializationPromises);
 
@@ -462,11 +462,13 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         }
 
         // Get or create buffers for this specialization
-        const bufferKey = `${inputSize}_${hiddenSize}_${outputSize}`;
+        // CRITICAL: Include 'spec' in key to prevent different specializations with same dimensions
+        // from sharing buffers, which causes race conditions during parallel mapping.
+        const bufferKey = `${spec}_${inputSize}_${hiddenSize}_${outputSize}`;
         let buffers = this.bufferCache.get(bufferKey);
-        
+
         const maxAgents = Math.max(numValidAgents, 256); // Allocate for at least 256 agents
-        
+
         if (!buffers || buffers.maxAgents < numValidAgents) {
             // Create or resize buffers with DOUBLE-BUFFERING for staging
             const uniformBufferSize = 6 * 4; // 6 u32s (24 bytes)
@@ -544,7 +546,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             const inputOffset = idx * inputSize;
             const perceptionInputs = agent.lastInputs;
             const hiddenState = agent.hiddenState;
-            
+
             // PERFORMANCE: Direct copy without fallback (inputs should always be valid)
             let i = inputOffset;
             for (let j = 0; j < perceptionSize; j++) {
@@ -594,30 +596,30 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 const w2Len = w.weights2 ? w.weights2.length : 0;
                 const w1RowLen = w.weights1 && w.weights1[0] ? w.weights1[0].length : 0;
                 const w2RowLen = w.weights2 && w.weights2[0] ? w.weights2[0].length : 0;
-                
-                const weight1Valid = w1Len >= expectedWeight1RowsMin && 
-                                     w1Len <= expectedWeight1RowsMax &&
-                                     w1RowLen === hiddenSize;
+
+                const weight1Valid = w1Len >= expectedWeight1RowsMin &&
+                    w1Len <= expectedWeight1RowsMax &&
+                    w1RowLen === hiddenSize;
                 const weight2Valid = w2Len === expectedWeight2Rows && w2RowLen === outputSize;
-                
+
                 if (!weight1Valid || !weight2Valid) {
                     // Weight dimensions don't match - force reinitialization
                     this.logger.warn(`[GPU-COMPUTE] Agent ${agent.id} has incompatible weights. Expected w1=${expectedWeight1RowsMin}-${expectedWeight1RowsMax}x${hiddenSize}, w2=${expectedWeight2Rows}x${outputSize}. Got w1=${w1Len}x${w1RowLen}, w2=${w2Len}x${w2RowLen}. Reinitializing.`);
-                    
+
                     // Force neural network to reinitialize with correct dimensions
                     agent.nn = new NeuralNetwork(perceptionSize, hiddenSize, outputSize, null, agent.logger);
                     agent.gene.weights = agent.nn.getWeights(); // Update gene with new weights
                     agent.inputSize = perceptionSize + hiddenSize;
-                    
+
                     // Clear weight cache for this agent
                     this.weightCache.delete(agent);
-                    
+
                     // Get new weights after reinitialization
                     const newW = agent.nn.getWeights();
                     w.weights1 = newW.weights1;
                     w.weights2 = newW.weights2;
                 }
-                
+
                 // Mark as validated to skip future checks
                 agent._gpuWeightsValidated = true;
             }
@@ -687,7 +689,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         // OPTIMIZATION: Batch all uploads in command encoder for better GPU scheduling
         const encoder = this.device.createCommandEncoder();
-        
+
         // Upload inputs (always needed)
         this.queue.writeBuffer(buffers.inputs, 0, inputs, 0, numValidAgents * inputSize);
 
@@ -754,10 +756,19 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         // PERFORMANCE: Map both buffers in parallel instead of sequentially
         // Map and read results (with error handling)
         try {
-            await Promise.all([
-                buffers.stagingOutputs[stagingIndex].mapAsync(GPUMapMode.READ),
-                buffers.stagingHiddenStates[stagingIndex].mapAsync(GPUMapMode.READ)
-            ]);
+            const promises = [];
+
+            // Safe mapping: only map if currently unmapped
+            if (buffers.stagingOutputs[stagingIndex].mapState === 'unmapped') {
+                promises.push(buffers.stagingOutputs[stagingIndex].mapAsync(GPUMapMode.READ));
+            }
+            if (buffers.stagingHiddenStates[stagingIndex].mapState === 'unmapped') {
+                promises.push(buffers.stagingHiddenStates[stagingIndex].mapAsync(GPUMapMode.READ));
+            }
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+            }
 
             const outputArray = new Float32Array(buffers.stagingOutputs[stagingIndex].getMappedRange());
             const hiddenStateArray = new Float32Array(buffers.stagingHiddenStates[stagingIndex].getMappedRange());
@@ -782,7 +793,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                 // Use subarray for zero-copy views, then direct assignment
                 const outputView = outputArray.subarray(outputOffset, outputOffset + outputSize);
                 const hiddenView = hiddenStateArray.subarray(hiddenOffset, hiddenOffset + hiddenSize);
-                
+
                 // Direct assignment from views (faster than manual loop with bounds checking)
                 // Pre-allocated arrays ensure correct size, so we can use direct assignment
                 for (let i = 0; i < outputSize; i++) {

@@ -376,7 +376,7 @@ export const ROTATION_MOMENTUM = 0.75;
  * @constant
  * @default 0.7
  */
-export const ROTATION_EFFICIENCY_AT_MAX_SPEED = 0.7;
+export const ROTATION_EFFICIENCY_AT_MAX_SPEED = 0.9;
 
 /**
  * Sprint intensity multiplier (1.0 to 1.5x max thrust).
@@ -991,9 +991,9 @@ export const SCOUT_FOOD_ALERT_CHANCE = 0.5;
  * Ink Cloud duration in frames.
  * @type {number}
  * @constant
- * @default 300
+ * @default 150
  */
-export const INK_DURATION = 300;
+export const INK_DURATION = 150;
 
 /**
  * Ink Cloud size (radius).
@@ -1038,7 +1038,7 @@ export const AGENT_CONFIGS = {
         color: 0xCCFF00,      // Visual color for forager agents (neon lime)
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 300,      // Maximum distance sensor rays can detect
-        hiddenSize: 30,      // Size of neural network hidden layer (increased from 24 for better capacity - 25% increase)
+        hiddenSize: 64,      // Size of neural network hidden layer (increased to 64 for brain capacity)
         description: 'Specialized in finding and consuming food.',
         shape: 'circle',      // Standard efficient shape
         rotationOffset: 0     // No rotation needed
@@ -1047,7 +1047,7 @@ export const AGENT_CONFIGS = {
         color: 0xFF0033,      // Visual color for predator agents (neon red)
         numSensorRays: 24,    // Number of sensor rays for detecting environment
         maxRayDist: 350,      // Maximum distance sensor rays can detect
-        hiddenSize: 38,       // Size of neural network hidden layer (increased from 30 for better capacity - 27% increase)
+        hiddenSize: 64,       // Size of neural network hidden layer (increased to 64 for brain capacity)
         description: 'Specialized in hunting other agents.',
         shape: 'triangle',    // Aggressive, sharp shape
         rotationOffset: -Math.PI / 2 // Point triangle forward (default points up/right depending on geom)
@@ -1056,7 +1056,7 @@ export const AGENT_CONFIGS = {
         color: 0x00F0FF,     // Visual color for reproducer agents (neon cyan)
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 250,      // Maximum distance sensor rays can detect
-        hiddenSize: 28,       // Size of neural network hidden layer (increased from 22 for better capacity - 27% increase)
+        hiddenSize: 64,       // Size of neural network hidden layer (increased to 64 for brain capacity)
         description: 'Specialized in mating and creating offspring.',
         shape: 'hexagon',     // Organic, hive-like shape
         rotationOffset: 0
@@ -1065,7 +1065,7 @@ export const AGENT_CONFIGS = {
         color: 0xFFFF00,      // Visual color for scout agents (neon yellow)
         numSensorRays: 24,    // Number of sensor rays for detecting environment
         maxRayDist: 400,      // Maximum distance sensor rays can detect
-        hiddenSize: 25,       // Size of neural network hidden layer (increased from 20 for better capacity - 25% increase)
+        hiddenSize: 64,       // Size of neural network hidden layer (increased to 64 for brain capacity)
         description: 'Specialized in long-range sensing and exploration.',
         shape: 'diamond',     // Sleek, directional shape
         rotationOffset: 0
@@ -1074,7 +1074,7 @@ export const AGENT_CONFIGS = {
         color: 0xFF6600,      // Visual color for defender agents (neon orange)
         numSensorRays: 16,    // Number of sensor rays for detecting environment
         maxRayDist: 350,      // Maximum distance sensor rays can detect
-        hiddenSize: 32,       // Size of neural network hidden layer (increased from 26 for better capacity - 23% increase)
+        hiddenSize: 64,       // Size of neural network hidden layer (increased to 64 for brain capacity)
         description: 'Specialized in defending territory and allies.',
         shape: 'square',      // Solid, blocky shape
         rotationOffset: Math.PI / 4 // Rotate 45 deg to make it a diamond/square mix or just flat
@@ -1704,9 +1704,9 @@ export const GENE_POOL_ELITE_PROTECTION_MAX = 20;
  * 0.95 means new agent must have 95%+ of worst agent's fitness to replace.
  * @type {number}
  * @constant
- * @default 0.95
+ * @default 1.0
  */
-export const GENE_POOL_REPLACEMENT_THRESHOLD = 0.95;
+export const GENE_POOL_REPLACEMENT_THRESHOLD = 1.0;
 
 /**
  * Specialization quotas for gene pool diversity.
@@ -1811,7 +1811,7 @@ export const ADAPTIVE_MUTATION_ENABLED = true;
  * @constant
  * @default 0.04
  */
-export const ADAPTIVE_MUTATION_MIN_RATE = 0.04;
+export const ADAPTIVE_MUTATION_MIN_RATE = 0.01;
 
 /**
  * Maximum mutation rate (15% for low-fitness agents).
@@ -1819,7 +1819,7 @@ export const ADAPTIVE_MUTATION_MIN_RATE = 0.04;
  * @constant
  * @default 0.15
  */
-export const ADAPTIVE_MUTATION_MAX_RATE = 0.15;
+export const ADAPTIVE_MUTATION_MAX_RATE = 0.20;
 
 /**
  * Below this percentile = high mutation.
@@ -2131,7 +2131,7 @@ export const MAX_VALIDATION_QUEUE_SIZE = 500;
  * @constant
  * @default 1200
  */
-export const VALIDATION_AGENT_ENERGY = 1750;
+export const VALIDATION_AGENT_ENERGY = INITIAL_AGENT_ENERGY;
 
 /**
  * Fitness threshold for partial credit system (4/5 criteria with exceptional fitness).

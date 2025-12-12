@@ -106,8 +106,10 @@ export class NeuralNetwork {
     }
 
     initRandomWeights(rows, cols) {
+        // Xavier/Glorot initialization for Tanh (sqrt(2 / (fan_in + fan_out)))
+        const stdDev = Math.sqrt(2.0 / (rows + cols));
         return Array.from({ length: rows }, () =>
-            Array.from({ length: cols }, () => randomGaussian(0, NN_WEIGHT_INIT_STD_DEV))
+            Array.from({ length: cols }, () => randomGaussian(0, stdDev))
         );
     }
 
@@ -170,7 +172,7 @@ export class NeuralNetwork {
                 }
                 sum += hiddenState[j] * this.weights1[weights1Index][i];
             }
-            hidden[i] = 1 / (1 + Math.exp(-sum)); // Sigmoid
+            hidden[i] = Math.tanh(sum); // Tanh (better optimization than Sigmoid)
         }
 
         // Second layer: hidden -> output (direct computation)

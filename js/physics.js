@@ -742,7 +742,6 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         const invMaxEnergy = 1 / MAX_ENERGY;
         const invMaxVelocity = 1 / MAX_VELOCITY;
         const invTempMax = 1 / TEMPERATURE_MAX;
-        const invPi = 1 / Math.PI;
         const invAge60 = 1 / 60;
         const invObesityThreshold = 1 / OBESITY_THRESHOLD_ENERGY;
 
@@ -759,7 +758,10 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         inputs.push(Math.max(0, Math.min(1, agent.energy * invMaxEnergy))); // Energy ratio [0, 1]
         inputs.push(Math.max(0, Math.min(1, agent.age * invAge60))); // Age ratio [0, 1]
         inputs.push(Math.max(0, Math.min(1, currentSpeed * invMaxVelocity))); // Speed ratio [0, 1]
-        inputs.push(Math.max(-1, Math.min(1, angleDifference * invPi))); // Velocity-angle difference [-1, 1]
+        inputs.push(Math.max(0, Math.min(1, currentSpeed * invMaxVelocity))); // Speed ratio [0, 1]
+        // Continuous representation of velocity relative to facing angle (matching agent.js)
+        inputs.push(Math.sin(angleDifference));
+        inputs.push(Math.cos(angleDifference));
         inputs.push(inShadow ? 1 : 0); // In obstacle shadow
 
         // Enhanced temperature inputs (4 inputs instead of 1)
@@ -900,6 +902,45 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         }
         inputs.push(Math.min(mateAvailability, 1.0)); // Mate availability (0-1)
 
+        // Missing inputs compared to agent.js to match Awareness metrics (added back)
+        // agent.js has 13 inputs for Awareness, physics.js only had 11
+        // Need to add: Food Proximity & Food Availability
+
+        // Food proximity (0-1, where 1 = food very close)
+        // Recalculate or reuse if possible
+        let foodProximityInput = 0.0; // Default
+        if (hasFoodTarget) { // Reusing flag calculated earlier for urgency
+            foodProximityInput = Math.max(0, 1.0 - (agent._cachedTargetDistance / (agent.maxRayDist * 2)));
+        } else {
+            // Fallback to searching ray data if no target memory but maybe sensor data
+            // For performance in GPU path we stick to simpler heuristic or explicit calc
+            // Let's rely on what we can derive
+            // Actually, we can reuse 'foodUrgency' logic's partials if we separated them,
+            // but let's just use input ray data
+            let closestFoodDistForProx = Infinity;
+            if (agent.lastRayData) {
+                for (const ray of agent.lastRayData) {
+                    if (ray.hit && (ray.hitType === 'food' || ray.hitTypeValue === 1) && ray.dist < closestFoodDistForProx) {
+                        closestFoodDistForProx = ray.dist;
+                    }
+                }
+            }
+            foodProximityInput = closestFoodDistForProx < Infinity ? Math.max(0, 1.0 - (closestFoodDistForProx / (agent.maxRayDist * 2))) : 0.0;
+        }
+        inputs.push(foodProximityInput); // Food proximity
+
+        // Food availability score (based on how many food items detected in sensor rays)
+        let foodDetectedCount = 0;
+        if (agent.lastRayData) {
+            for (const ray of agent.lastRayData) {
+                if (ray.hit && (ray.hitType === 'food' || ray.hitTypeValue === 1)) {
+                    foodDetectedCount++;
+                }
+            }
+        }
+        const foodAvailabilityScore = Math.min(foodDetectedCount / 5, 1.0); // Normalize to 0-1
+        inputs.push(foodAvailabilityScore); // Food availability
+
         // Optional: Movement state inputs (enhances learning of movement control)
         // OPTIMIZED: Cache calculations and use multiplication instead of division
         const geneticMaxThrust = MAX_THRUST * agent.speedFactor;
@@ -948,11 +989,12 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
             const maxDist = agent.maxRayDist * 2; // Use 2x ray distance as max
             inputs.push(Math.max(0, Math.min(1, agent._cachedTargetDistance / maxDist)));
 
-            // Direction to target (normalized angle difference)
+            // Direction to target (continuous representation using sin/cos)
             let angleToTarget = agent._cachedTargetAngle - agent.angle;
             while (angleToTarget > Math.PI) angleToTarget -= TWO_PI;
             while (angleToTarget < -Math.PI) angleToTarget += TWO_PI;
-            inputs.push(Math.max(-1, Math.min(1, angleToTarget / Math.PI))); // Normalized to [-1, 1]
+            inputs.push(Math.sin(angleToTarget));
+            inputs.push(Math.cos(angleToTarget));
 
             // Time since target was last seen (normalized)
             const framesSinceSeen = agent.framesAlive - agent.targetMemory.lastTargetSeen;
@@ -967,7 +1009,8 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
         } else {
             // No target - provide zero inputs
             inputs.push(0); // Distance
-            inputs.push(0); // Angle
+            inputs.push(0); // Angle sin
+            inputs.push(0); // Angle cos
             inputs.push(1); // Time since seen (max = forgotten)
             inputs.push(0); // Type
             inputs.push(0); // Priority
@@ -996,16 +1039,56 @@ export function convertGpuRayResultsToInputs(simulation, gpuRayResults, gpuAgent
                 agent.goalMemory.goalStartFrame = agent.framesAlive;
             }
 
-            // Add goal inputs (normalized)
-            inputs.push(agent.goalMemory.currentGoal / 3.0); // Normalize goal ID to [0, 1]
+            // Add goal inputs (one-hot encoded to match agent.js)
+            inputs.push(agent.goalMemory.currentGoal === 0 ? 1 : 0); // Food
+            inputs.push(agent.goalMemory.currentGoal === 1 ? 1 : 0); // Mate
+            inputs.push(agent.goalMemory.currentGoal === 2 ? 1 : 0); // Danger
+            inputs.push(agent.goalMemory.currentGoal === 3 ? 1 : 0); // Rest
             inputs.push(agent.goalMemory.goalPriority);
             inputs.push(Math.min((agent.framesAlive - agent.goalMemory.goalStartFrame) / 300, 1.0)); // Goal duration (normalized)
         } else {
             // No goal memory - provide zero inputs
-            inputs.push(0); // Goal
+            inputs.push(0); // Food
+            inputs.push(0); // Mate
+            inputs.push(0); // Danger
+            inputs.push(0); // Rest
             inputs.push(0); // Priority
             inputs.push(0); // Duration
         }
+
+        // --- SHOUT INPUTS (5 inputs) ---
+        // Match agent.js structure
+        const shoutInputs = {
+            predatorAlert: 0,
+            foodFound: 0,
+            helpRequest: 0,
+            mateCall: 0,
+            attackCoordination: 0
+        };
+
+        if (agent.heardShouts && agent.heardShouts.length > 0) {
+            for (const heard of agent.heardShouts) {
+                // Approximate type mapping if raw strings are used, or assume direct mapping
+                // agent.js uses SHOUT_TYPES values (0-4)
+                // heard values might be objects with type property
+                let shoutType = heard.type;
+
+                // physics.js doesn't import SHOUT_TYPES implicitly, but we can infer logical mapping
+                // Defaulting to explicit check or raw values
+                // 0: PREDATOR_ALERT, 1: FOOD_FOUND, 2: HELP_REQUEST, 3: MATE_CALL, 4: ATTACK_COORDINATION
+                if (shoutType === 0 || shoutType === 'predator') shoutInputs.predatorAlert = Math.max(shoutInputs.predatorAlert, heard.intensity);
+                else if (shoutType === 1 || shoutType === 'food') shoutInputs.foodFound = Math.max(shoutInputs.foodFound, heard.intensity);
+                else if (shoutType === 2 || shoutType === 'help') shoutInputs.helpRequest = Math.max(shoutInputs.helpRequest, heard.intensity);
+                else if (shoutType === 3 || shoutType === 'mate') shoutInputs.mateCall = Math.max(shoutInputs.mateCall, heard.intensity);
+                else if (shoutType === 4 || shoutType === 'attack') shoutInputs.attackCoordination = Math.max(shoutInputs.attackCoordination, heard.intensity);
+            }
+        }
+
+        inputs.push(shoutInputs.predatorAlert);
+        inputs.push(shoutInputs.foodFound);
+        inputs.push(shoutInputs.helpRequest);
+        inputs.push(shoutInputs.mateCall);
+        inputs.push(shoutInputs.attackCoordination);
 
         agent.lastInputs = inputs;
         agent.lastRayData = rayData;
