@@ -8,7 +8,7 @@ import {
     SPECIALIZATION_TYPES,
     MIN_ENERGY_FOR_SPLITTING,
     MATURATION_AGE_FRAMES, PREGNANCY_DURATION_FRAMES,
-    FPS_TARGET, AUTO_ADJUST_COOLDOWN, MIN_AGENTS, MAX_AGENTS_LIMIT,
+    MIN_AGENTS, MAX_AGENTS_LIMIT,
     MIN_GAME_SPEED, MAX_GAME_SPEED, MEMORY_PRESSURE_THRESHOLD,
     FOOD_SPAWN_RATE, BASE_MUTATION_RATE, SEASON_LENGTH, RENDER_FRAME_SKIP,
     GPU_INIT_TIMEOUT_MS, AGENT_CONFIGS, OBSTACLE_COUNT, GPU_MAX_OBSTACLES
@@ -46,7 +46,6 @@ import { updateSeasonalEnvironment } from './environment.js';
 import { updateFertileZones, createFertileZone } from './fertile-zones.js';
 import { buildSpatialGrid } from './spatial-grid.js';
 import { calculateFps, updateGpuCpuTracking, formatFpsDisplay } from './performance-utils.js';
-import { performAutoAdjustment } from './performance-adjustment.js';
 import { updateFitnessChart } from './chart-utils.js';
 
 export class Simulation {
@@ -88,6 +87,7 @@ export class Simulation {
         this.lastFpsUpdate = Date.now();
         this.fpsFrameCount = 0;
         this.currentFps = 0;
+        this.lastPerfLogTime = 0; // Time-based performance logging
 
         // GPU vs CPU FPS tracking
         this.gpuFrameCount = 0;
@@ -100,19 +100,10 @@ export class Simulation {
         this.currentFrameUsedGpu = false;
         this.currentFrameGpuAgentIds = new Set();
 
-        // Auto-performance adjustment
-        this.fpsHistory = []; // Track last 30 seconds of FPS
-        this.lastAutoAdjustTime = Date.now();
-        this.autoAdjustEnabled = false; // Disable by default
-        this.targetFps = FPS_TARGET;
-        this.adjustmentCooldown = AUTO_ADJUST_COOLDOWN; // 15 seconds between adjustments
         this.minAgents = MIN_AGENTS;
         this.maxAgentsLimit = MAX_AGENTS_LIMIT;
         this.minGameSpeed = MIN_GAME_SPEED;
         this.maxGameSpeed = MAX_GAME_SPEED;
-        // Auto-adjust caps at 75% of maximum to leave headroom for manual adjustment
-        this.autoMaxAgents = Math.floor(this.maxAgentsLimit * 0.75); // 75 agents
-        this.autoMaxSpeed = this.maxGameSpeed * 0.75; // 7.5x speed
 
         // Memory monitoring
         this.memoryHistory = [];
@@ -441,9 +432,6 @@ export class Simulation {
         // The UI module should have its own cleanup method
     }
 
-    performAutoAdjustment() {
-        performAutoAdjustment(this, this.fpsHistory, this.targetFps, this.logger, this.toast);
-    }
 
     updateFitnessChart() {
         const canvas = document.getElementById('fitness-chart');
@@ -989,23 +977,6 @@ export class Simulation {
                 }
             });
 
-            // Auto-performance adjustment
-            if (this.autoAdjustEnabled) {
-                this.perfMonitor.timeSync('autoAdjust', () => {
-                    // Track FPS history (keep last 30 seconds)
-                    this.fpsHistory.push(this.currentFps);
-                    if (this.fpsHistory.length > 30) {
-                        this.fpsHistory.shift();
-                    }
-
-                    // Auto-adjust every 30 seconds if we have enough history (only when focused)
-                    const timeSinceLastAdjust = now - this.lastAutoAdjustTime;
-                    if (timeSinceLastAdjust >= this.adjustmentCooldown && this.fpsHistory.length >= 10 && document.hasFocus()) {
-                        this.performAutoAdjustment();
-                        this.lastAutoAdjustTime = now;
-                    }
-                });
-            }
 
             // Track if this frame used GPU or CPU
             this.currentFrameUsedGpu = false;
@@ -1307,7 +1278,6 @@ export class Simulation {
                             gpuRayTracingSucceeded = true;
                         } else {
                             this.logger.warn(`[RAY-TRACE] GPU ray tracing failed - results: ${gpuRayResults}, length: ${gpuRayResults ? gpuRayResults.length : 'N/A'}`);
-                            // Force CPU fallback when GPU fails
                             gpuRayTracingSucceeded = false;
                         }
 
@@ -1333,55 +1303,26 @@ export class Simulation {
                     }
                 }
 
-                // CPU perception fallback (ONLY if GPU ray tracing failed)
+                // GPU ray tracing should always succeed - no CPU fallback
                 if (!gpuRayTracingSucceeded && activeAgents.length > 0) {
-                    // Debug: Log why we're falling back to CPU
-                    this.logger.warn(`[CPU-FALLBACK] Frame ${this.frameCount}: GPU ray tracing failed, using CPU for ${activeAgents.length} agents`);
-
-                    this.perfMonitor.timeSync('perception.cpuFallback', () => {
-                        for (let j = 0; j < activeAgents.length; j++) {
-                            const agent = activeAgents[j];
-                            try {
-                                const perception = agent.perceiveWorld(this.quadtree, this.obstacles, this.worldWidth, this.worldHeight);
-                                agent.lastInputs = perception.inputs;
-                                agent.lastRayData = perception.rayData;
-                            } catch (perceptionError) {
-                                // If even CPU perception fails, provide safe fallback inputs
-                                this.logger.error(`[CPU-PERCEPTION-ERROR] Agent ${agent.id} (${agent.geneId}) CPU perception failed:`, perceptionError);
-                                agent.lastInputs = new Array(agent.inputSize).fill(0.5); // Safe neutral inputs
-                                agent.lastRayData = [];
-                            }
-                        }
-                    });
-
-                    // Track GPU failures to potentially disable GPU temporarily
-                    if (!this.gpuFailureCount) this.gpuFailureCount = 0;
-                    this.gpuFailureCount++;
-
-                    // If GPU fails repeatedly, temporarily disable it
-                    if (this.gpuFailureCount >= 10 && this.useGpu) {
-                        this.logger.warn(`[GPU-DISABLE] Too many GPU failures (${this.gpuFailureCount}), temporarily disabling GPU acceleration`);
-                        this.useGpu = false;
-                        // Reset failure count and try to re-enable GPU after some time
-                        this.gpuFailureCount = 0;
-                        setTimeout(() => {
-                            if (this.gpuCompute && this.gpuCompute.isAvailable()) {
-                                this.logger.info('[GPU-REENABLE] Re-enabling GPU acceleration after cooldown');
-                                this.useGpu = true;
-                            }
-                        }, 30000); // 30 second cooldown
-                    }
-                } else if (gpuRayTracingSucceeded) {
-                    // Reset failure count on success
-                    this.gpuFailureCount = 0;
+                    this.logger.error(`[ERROR] Frame ${this.frameCount}: GPU ray tracing failed for ${activeAgents.length} agents`);
                 }
 
                 // Neural network processing now happens in parallel with ray tracing above
 
                 if (!gpuNeuralNetSucceeded) {
-                    this.logger.warn('GPU Neural Network processing failed, using CPU');
+                    this.logger.error('GPU Neural Network processing failed');
                 }
                 this.perfMonitor.endPhase(`perception_${i}`);
+
+                // Skip frame if GPU data is not ready - agents need GPU perception data
+                if (!gpuRayTracingSucceeded || !gpuNeuralNetSucceeded) {
+                    if (this.frameCount % 60 === 0) { // Log once per second
+                        this.logger.warn(`[SKIP] Frame ${this.frameCount}: Skipping agent updates - GPU data not ready (rayTracing: ${gpuRayTracingSucceeded}, neuralNet: ${gpuNeuralNetSucceeded})`);
+                    }
+                    // Skip to next iteration without updating agents
+                    continue;
+                }
 
                 // CRITICAL FIX: Always check collisions to prevent tunneling
                 // Both agents can move, so we must check every iteration
@@ -2155,7 +2096,11 @@ export class Simulation {
 
             // End frame timing and log performance report every 5 seconds
             this.perfMonitor.endFrame();
-            if (this.frameCount % (FPS_TARGET * 5) === 0) {
+            // Use time-based check instead of frame-based to work correctly at any FPS
+            // Reuse 'now' variable declared earlier in the function
+            if (!this.lastPerfLogTime) this.lastPerfLogTime = now;
+            if (now - this.lastPerfLogTime >= 5000) { // 5 seconds
+                this.lastPerfLogTime = now;
                 this.perfMonitor.timeSync('logging', () => {
                     this.perfMonitor.logReport();
 

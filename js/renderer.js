@@ -2,14 +2,10 @@
 // Handles all rendering, simulation logic preserved
 
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { CAMERA_Z_POSITION, CAMERA_FAR_PLANE, AGENT_BORDER_SIZE_MULTIPLIER, AGENT_MINIMUM_BORDER_SIZE } from './constants.js';
 import {
     OBSTACLE_HIDING_RADIUS, SPECIALIZATION_TYPES, AGENT_CONFIGS,
-    COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES, POST_PROCESSING, POST_PROCESSING_ENABLED,
+    COLORS, EMISSIVE_COLORS, MATERIAL_PROPERTIES,
     VIEW_SIZE_RATIO, EFFECT_DURATION_BASE, MAX_INSTANCES_PER_BATCH, EFFECT_FADE_DURATION,
     MAX_VELOCITY,
     NEURAL_NODES_COUNT, NEURAL_CONNECTION_DISTANCE, MAX_CONNECTIONS_PER_NODE,
@@ -41,7 +37,6 @@ import {
 } from './neural-background.js';
 import { addSparkles, updateSparkles } from './sparkles.js';
 import { addVisualEffect, updateVisualEffects, updateVisualEffectsRendering } from './visual-effects.js';
-import { setupPostProcessing } from './post-processing.js';
 import { updateRays, initRayColors } from './ray-visualization.js';
 import { updateAgentTrail } from './agent-trails.js';
 import { createObstacleParticles } from './obstacle-effects.js';
@@ -57,9 +52,6 @@ export class WebGLRenderer {
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
 
-        // Post-processing setup (initialize early so it's available when setupPostProcessing is called)
-        this.effectComposer = null;
-        this.postProcessingEnabled = POST_PROCESSING_ENABLED; // Use constant for initial state
 
         // Scene setup
         this.scene = new THREE.Scene();
@@ -181,17 +173,6 @@ export class WebGLRenderer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         container.appendChild(this.renderer.domElement);
 
-        // Setup post-processing pipeline
-        if (this.postProcessingEnabled) {
-            const postProcessingState = setupPostProcessing(this.renderer, this.scene, this.camera, this.container, this.logger);
-            if (postProcessingState) {
-                this.effectComposer = postProcessingState.effectComposer;
-                this.bloomPass = postProcessingState.bloomPass;
-                this.motionBlurPass = postProcessingState.motionBlurPass;
-                this.chromaticPass = postProcessingState.chromaticPass;
-                this.vignettePass = postProcessingState.vignettePass;
-            }
-        }
 
         // Groups for organization
         this.agentGroup = new THREE.Group();
@@ -478,11 +459,6 @@ export class WebGLRenderer {
             if (this.agentEffectsGroup) this.scene.remove(this.agentEffectsGroup);
         }
 
-        // 14. Dispose of post-processing
-        if (this.effectComposer) {
-            this.effectComposer.dispose();
-            this.effectComposer = null;
-        }
 
         // 15. Dispose of Three.js renderer
         if (this.renderer) {
@@ -534,29 +510,8 @@ export class WebGLRenderer {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
 
-        // Resize post-processing render targets
-        if (this.effectComposer) {
-            this.effectComposer.setSize(width, height);
-        }
     }
 
-    setupPostProcessing() {
-        if (!this.postProcessingEnabled) {
-            this.logger.warn('[RENDER] Post-processing disabled, skipping setup');
-            return;
-        }
-        const postProcessingState = setupPostProcessing(this.renderer, this.scene, this.camera, this.container, this.logger);
-        if (postProcessingState) {
-            this.effectComposer = postProcessingState.effectComposer;
-            this.bloomPass = postProcessingState.bloomPass;
-            this.motionBlurPass = postProcessingState.motionBlurPass;
-            this.chromaticPass = postProcessingState.chromaticPass;
-            this.vignettePass = postProcessingState.vignettePass;
-        } else {
-            this.postProcessingEnabled = false;
-            this.effectComposer = null;
-        }
-    }
 
     // Visual effects system
     addVisualEffect(agent, effectType, gameSpeed = 1, shoutType = null) {
@@ -1807,35 +1762,14 @@ export class WebGLRenderer {
             this.updateVisualEffectsRendering();
         }
 
-        // Use post-processing if enabled, otherwise use basic render
-        if (this.postProcessingEnabled && this.effectComposer) {
-            try {
-                this.effectComposer.render();
-            } catch (error) {
-                // Fallback to basic render if post-processing fails
-                this.logger.warn('[RENDER] Post-processing render failed, using basic render:', error);
-                this.renderer.render(this.scene, this.camera);
-            }
-        } else {
-            this.renderer.render(this.scene, this.camera);
-        }
+        // Basic render
+        this.renderer.render(this.scene, this.camera);
     }
 
     setShowRays(show) {
         this.showRays = show;
     }
 
-    setPostProcessingEnabled(enabled) {
-        this.postProcessingEnabled = enabled;
-        if (!enabled && this.effectComposer) {
-            // Clean up post-processing
-            this.effectComposer.dispose();
-            this.effectComposer = null;
-        } else if (enabled && !this.effectComposer) {
-            // Reinitialize post-processing
-            this.setupPostProcessing();
-        }
-    }
 
     setSparklesEnabled(enabled) {
         this.sparklesEnabled = enabled !== false;

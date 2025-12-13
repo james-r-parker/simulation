@@ -85,3 +85,4 @@ export function formatFpsDisplay(currentFps, avgGpuFps, avgCpuFps) {
 
 
 
+

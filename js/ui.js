@@ -18,7 +18,6 @@ import {
     SURVIVAL_BONUSES,
     MIN_DISTANCE_FOR_MOVEMENT_REWARDS,
     TEMPERATURE_MAX,
-    FPS_TARGET
 } from './constants.js';
 
 const safeNumber = (value, fallback = 0) => {
@@ -522,12 +521,6 @@ export function setupUIListeners(simulation) {
         simulation.logger.log('GPU usage:', simulation.useGpu ? 'enabled' : 'disabled');
     });
 
-    const autoAdjustCheckbox = document.getElementById('autoAdjust');
-    autoAdjustCheckbox.checked = simulation.autoAdjustEnabled;
-    autoAdjustCheckbox.addEventListener('change', e => {
-        simulation.autoAdjustEnabled = e.target.checked;
-        simulation.logger.log('Auto-adjust:', simulation.autoAdjustEnabled ? 'enabled' : 'disabled');
-    });
 
     const aiSummaryModeCheckbox = document.getElementById('aiSummaryMode');
     aiSummaryModeCheckbox.checked = isAISummaryModeEnabled;
@@ -2643,7 +2636,6 @@ export function cleanupUIEventListeners() {
     const showRaysCheckbox = document.getElementById('showRays');
     const followBestCheckbox = document.getElementById('followBest');
     const useGpuCheckbox = document.getElementById('useGpu');
-    const autoAdjustCheckbox = document.getElementById('autoAdjust');
     const copyStatsBtn = document.getElementById('copyStats');
     const clearStorageBtn = document.getElementById('clearStorage');
     const fullscreenBtn = document.getElementById('fullscreenBtn');
