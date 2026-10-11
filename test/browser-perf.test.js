@@ -25,15 +25,25 @@ describe('parseArgs', () => {
             out: 'bench/legacy-baseline.json',
             headed: false,
             allowFallback: false,
+            cdp: '',
         });
     });
 
     it('applies overrides', () => {
-        expect(parseArgs(['--seconds=5', '--out=/tmp/x.json', '--headed', '--allow-fallback'])).toEqual({
+        expect(
+            parseArgs([
+                '--seconds=5',
+                '--out=/tmp/x.json',
+                '--headed',
+                '--allow-fallback',
+                '--cdp=http://127.0.0.1:9222',
+            ]),
+        ).toEqual({
             seconds: 5,
             out: '/tmp/x.json',
             headed: true,
             allowFallback: true,
+            cdp: 'http://127.0.0.1:9222',
         });
     });
 
