@@ -1,5 +1,12 @@
 {
-  "coverage": {},
+  "coverage": {
+    "scripts": {
+      "lines": 76.55,
+      "branches": 73.26,
+      "functions": 87.77,
+      "statements": 77.55
+    }
+  },
   "floors": {
     "js/sim": {
       "lines": 90,
