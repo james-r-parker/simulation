@@ -319,7 +319,7 @@ agent outside the world; an alive slot in the free-list or a free slot marked al
 
 Each stream is `fork(createRng(config.seed), name)`, so draws on one stream never shift another. `hashWorld` covers
 `tick`, `nextId`, `population`, every agent array of every slot, food, obstacles, fertile zones, both pheromone grids
-and the ledger. `writeSnapshot` packs per agent `x, y, angle, size, energy / maxEnergy` as float32 and `spec`, `lineageId`, `genomeId` and the slot through a `Uint32Array` view of the same buffer, then per food `x, y, radius`, at the offsets
+and the ledger. `writeSnapshot` packs per agent `x, y, angle, size, energy / maxEnergy` as float32 and `spec`, `lineageId`, `genomeId` and the slot through a `Uint32Array` view of the same buffer, then per food `x, y, radius` and per obstacle `x, y, radius`, at the offsets
 `snapshotLayout(config)` gives.
 
 ## Diagnostics (Phase 3)
