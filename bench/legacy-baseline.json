@@ -1,0 +1,178 @@
+{
+  "metrics": {
+    "browser.frame_p50_ms": 5,
+    "browser.frame_p95_ms": 7.9,
+    "browser.frame_p99_ms": 8.7,
+    "browser.main_long_tasks": 1
+  },
+  "frames": 4096,
+  "phases": {
+    "perception": {
+      "time": "5.71",
+      "percentage": "105.6",
+      "p95": "10.60",
+      "subPhases": {
+        "rayTracing": {
+          "time": "2.56",
+          "percentage": "44.7",
+          "p95": "4.90"
+        },
+        "spatialGrid": {
+          "time": "0.18",
+          "percentage": "3.2",
+          "p95": "0.30"
+        },
+        "gpuRayResultProcessing": {
+          "time": "0.08",
+          "percentage": "1.5",
+          "p95": "0.20"
+        },
+        "entityFiltering": {
+          "time": "0.03",
+          "percentage": "0.4",
+          "p95": "0.10"
+        },
+        "neuralNetwork": {
+          "time": "0.01",
+          "percentage": "0.1",
+          "p95": "0.10"
+        }
+      }
+    },
+    "physics": {
+      "time": "2.37",
+      "percentage": "43.8",
+      "p95": "4.00",
+      "subPhases": {
+        "agentUpdates": {
+          "time": "1.15",
+          "percentage": "48.7",
+          "p95": "2.00"
+        },
+        "collisions": {
+          "time": "0.02",
+          "percentage": "0.9",
+          "p95": "0.10"
+        },
+        "entityUpdates": {
+          "time": "0.01",
+          "percentage": "0.2",
+          "p95": "0.10"
+        }
+      }
+    },
+    "rendering": {
+      "time": "1.07",
+      "percentage": "19.8",
+      "p95": "2.20",
+      "subPhases": {
+        "render": {
+          "time": "0.62",
+          "percentage": "57.7",
+          "p95": "1.80"
+        },
+        "updates": {
+          "time": "0.45",
+          "percentage": "42.3",
+          "p95": "0.70"
+        },
+        "visualEffects": {
+          "time": "0.00",
+          "percentage": "0.2",
+          "p95": "0.00"
+        },
+        "rayRendering": {
+          "time": "0.00",
+          "percentage": "0.0",
+          "p95": "0.00"
+        }
+      }
+    },
+    "quadtree": {
+      "time": "0.03",
+      "percentage": "0.5",
+      "p95": "0.10"
+    },
+    "ui": {
+      "time": "0.02",
+      "percentage": "0.4",
+      "p95": "0.10"
+    },
+    "spawn_agents": {
+      "time": "0.01",
+      "percentage": "0.2",
+      "p95": "0.10"
+    },
+    "memory": {
+      "time": "0.00",
+      "percentage": "0.1",
+      "p95": "0.00"
+    },
+    "cleanup": {
+      "time": "0.00",
+      "percentage": "0.1",
+      "p95": "0.00"
+    },
+    "deadEntityRemoval": {
+      "time": "0.00",
+      "percentage": "0.1",
+      "p95": "0.00"
+    },
+    "environmentEvents": {
+      "time": "0.00",
+      "percentage": "0.1",
+      "p95": "0.00"
+    },
+    "spawning": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "camera": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "obstacles": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "housekeeping": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "spawn": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "pheromoneUpdates": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "reproduction": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "deadAgentProcessing": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    },
+    "other": {
+      "time": "0.00",
+      "percentage": "0.0",
+      "p95": "0.00"
+    }
+  },
+  "browser": "154.0.8037.94",
+  "gpuAdapter": "nvidia / lovelace",
+  "agentCount": 10,
+  "seconds": 60,
+  "commit": "b63de2a7c7eb465e333e74960f70bccf748c4496",
+  "recordedAt": "2026-10-11T16:00:22.288Z"
+}
