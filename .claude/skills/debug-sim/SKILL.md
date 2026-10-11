@@ -19,7 +19,8 @@ failing test, then fix. A fix without a reproducing test is a guess.
 ## Steps
 
 1. **Find the run.** Every headless run (`eval`, `train`, `replay`, a test that opts in) logs its `seed`,
-   `configHash` and `runId` in its first `RunStarted` event.
+   `configHash`, `configOverrides`, `policy` and `runId` in its first `RunStarted` event; an eval's own log
+   (`.sim/logs/eval-<id>.jsonl`) starts with `EvalStarted`.
 
     ```bash
     ls -t .sim/logs/ | head -3
@@ -39,10 +40,10 @@ failing test, then fix. A fix without a reproducing test is a guess.
 3. **Replay.** Reproduce from the seed and config, stopping just after the event's tick:
 
     ```bash
-    npm run replay -- --seed <seed> --config <config.json> --ticks <tick + 1> --dump <scratch>/world.json
+    npm run replay -- --seed <seed> --config <config.json> --policy <policy> --ticks <tick + 1> --dump <tick>
     ```
 
-    `--dump` writes the world state (agents, food, archive summary) for inspection. A replay that diverges from the
+    `--dump <tick>` writes the world state at that tick to `.sim/dumps/<runId>-<tick>.json` for inspection. A replay that diverges from the
     logged run is itself the bug: something read `Math.random`, wall-clock time or iteration order of a `Map` keyed by
     object - check the `conventions` gate output and the RNG streams the code uses.
 
@@ -50,8 +51,8 @@ failing test, then fix. A fix without a reproducing test is a guess.
    `test/evo/` that asserts the correct behaviour and fails today. Prefer a minimal world (a few agents, scripted
    positions) over the full replay once the cause is understood.
 
-5. **Performance problems.** For `bench.*`, run `npm run bench` and read the per-phase split (hash, sense, think,
-   physics, lifecycle). For the browser, open DevTools Performance, record 10 s, and look for long tasks on the main
+5. **Performance problems.** For `bench.*`, run `npm run bench` and read the per-phase split (`environment`, `hash`, `sense`,
+   `brain`, `physics`, `lifecycle`, `field`). For the browser, open DevTools Performance, record 10 s, and look for long tasks on the main
    thread and a GC sawtooth; `window.__perf()` in dev builds (`dev-workflow-and-gate.md` Phase 2) returns the frame-time breakdown. A regression is
    confirmed only against a baseline recorded on the same machine.
 

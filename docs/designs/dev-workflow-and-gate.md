@@ -123,9 +123,10 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
 
 **Targets:** browser.frame_p95_ms, browser.main_long_tasks
 
-- In dev builds, `window.__perf()` returns the stats of `Simulation.perfMonitor` (a `PerformanceMonitor`) as JSON:
-  the per-phase breakdown `PerformanceMonitor.getReport` already gives, plus frame-time p50 and p99, which Phase 2
-  adds beside its p95.
+- In dev builds, `window.__perf()` returns `{ app: 'legacy', frameMs: { p50, p95, p99 }, phases }` from
+  `Simulation.perfMonitor` (a `PerformanceMonitor`), where `phases` is
+  the per-phase breakdown `PerformanceMonitor.getReport` already gives; Phase 2 adds frame-time p50 and p99 beside
+  its p95.
 - `scripts/browser-perf.mjs` starts `vite`, opens the app in Chromium through Playwright with
   `--enable-unsafe-webgpu`, waits 60 s, and reads `window.__perf()` and the long-task count from a
   `PerformanceObserver`.

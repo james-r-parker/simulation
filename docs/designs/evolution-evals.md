@@ -51,7 +51,7 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 | Grid   | x (10 bins over 0..1)                                                                    | y (10 bins)                                                       |
 | ------ | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Life   | Bite share of energy gained: `biteEnergy / (foodEnergy + biteEnergy)`, 0 when both are 0 | Children per 10000 ticks alive, over 0..5, the top bin open-ended |
-| Motion | Mean speed over `maxVelocity`, clamped to 1                                              | Mean `                                                            | turnRate | `over`maxTurn` |
+| Motion | Mean speed over `maxVelocity`, clamped to 1                                              | Mean absolute `turnRate` over `maxTurn`                           |
 
 ## Eval runner
 
@@ -59,9 +59,10 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 (`scripts/eval.mjs`):
 
 - Seeds are `n` consecutive entries of `evals/seeds.json` (32 fixed seeds) from `--seed-offset` (default 0). Defaults: `--seeds 8`, `--ticks 200000`,
-  `--policy baseline-v5`, the default config.
+  `--policy baseline-v5`, the default config. `--policy live` runs `LIVE_POLICY`.
 - `max(1, min(n, cpus - 1))` workers run one seed each through `scripts/eval-worker.mjs`.
-- A worker builds the world with `createWorld`, steps it with the policy, feeds `js/evo/observer.js` every tick, and
+- A worker builds the world with `createWorld`, steps it with the policy's `brain`, then each tick feeds `js/evo/observer.js`, calls the policy's `onEvent` for each
+  new record and its `afterStep(world)`, and
   takes a checkpoint every 1000 ticks.
 - The report is JSON: `version`, `policy`, `fitnessName`, the full resolved `config` and its `configHash`, `ticks`,
   `seeds`, the commit sha, and per metric the per-seed values (or `null` and `reason`), mean and standard deviation.
@@ -80,9 +81,9 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 | `js/evo/elo.js`                  | `expectedScore`, `updateElo`              | Elo with K = 32 from 1500 (Phase 4)                                                                                             |
 | `js/evo/league.js`               | `matchPolicy`, `playMatch`, `runLeague`   | Head-to-head games between champion files (Phase 4)                                                                             |
 
-`POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log }` plus policy-specific fields;
-all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent? }`.
-`brain` holds the core's policy hooks; `log` is the run's `simLog`. `fitness(observer, slot, config)` reads only observer state, never world
+`POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log, observer }` plus policy-specific fields;
+all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent?, afterStep? }`.
+`brain` holds the core's policy hooks and is what `createWorld` and `step` receive; `log` is the run's `simLog`. `fitness(observer, slot, config)` reads only observer state, never world
 arrays, so it is valid after the slot has been reused. `onEvent` receives each event-ring record after the observer.
 
 ### Observer counters
@@ -90,16 +91,16 @@ arrays, so it is valid after the slot has been reused. `onEvent` receives each e
 The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick on `AgentBorn`, and handles each tick's
 `AgentDied` records before its `AgentBorn` records.
 
-| Counter                          | Source                                                                            |
-| -------------------------------- | --------------------------------------------------------------------------------- |
-| `foodEnergy`, `biteEnergy`       | World arrays of the same name each tick; final values from `AgentDied`            |
-| `children`                       | `AgentBorn` with this slot's `genomeId` as `parentA` or `parentB`                 |
-| `kills`                          | `AgentDied` with `by` equal to this slot's `genomeId`                             |
-| `cellsVisited`                   | Distinct 200 px cells (a 72 x 41 bitset per slot) entered, sampled every 10 ticks |
-| `collisions`                     | Ticks on which `lastLoss` became `collision`                                      |
-| `distance`                       | Sum of speed per tick                                                             |
-| `turnsTowardsFood`               | Ticks with `                                                                      | turnRate | > 0.1 x maxTurn` turning towards the nearest food ray hit |
-| `speedSum`, `turnSum`, `samples` | Sampled every 100 ticks for the motion grid                                       |
+| Counter                          | Source                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `foodEnergy`, `biteEnergy`       | World arrays of the same name each tick; final values from `AgentDied`                         |
+| `children`                       | `AgentBorn` with this slot's `genomeId` as `parentA` or `parentB`                              |
+| `kills`                          | `AgentDied` with `by` equal to this slot's `genomeId`                                          |
+| `cellsVisited`                   | Distinct 200 px cells (a 72 x 41 bitset per slot) entered, sampled every 10 ticks              |
+| `collisions`                     | Ticks on which `lastLoss` became `collision`                                                   |
+| `distance`                       | Sum of speed per tick                                                                          |
+| `turnsTowardsFood`               | Ticks with absolute `turnRate` above `0.1 x maxTurn`, turning towards the nearest food ray hit |
+| `speedSum`, `turnSum`, `samples` | Sampled every 100 ticks for the motion grid                                                    |
 
 `fitnessV5` maps `calculateFitness` in the legacy `js/agent.js` onto these counters with `ageTicks / 60` in place of
 wall-clock seconds and `cellsVisited` in place of the legacy exploration grid; `fitnessName` is `v5`. It keeps the
@@ -129,6 +130,7 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
 
 - Refuses, exiting 2 with the reason, unless both reports have the same seeds and ticks, at least 8 seeds, and
   configs that hash equal with the `--allow-config-diff` keys removed. Different policies are allowed.
+- `compareReports(before, after, { level })` uses `level` 0.95 unless given.
 - For each metric, a BCa bootstrap interval (10000 resamples, `fork(createRng(1), 'bootstrap')`) of the mean of the
   per-seed differences, paired by seed.
 - The verdict is `better` or `worse` when the 95% interval excludes 0 strictly in the metric's direction, otherwise
@@ -137,14 +139,15 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
   Prints a table; `--json` prints JSON.
 
 `evals/experiments.json` is the ledger the `run-evolution-loop` skill writes: entries with `id` (`E<n>`), `date`,
-`branch`, `hypothesis`, `prediction`, `targets`, `before`, `after`, `verdicts`, `effect` (`better`, `worse`,
+`branch`, `hypothesis`, `prediction`, `targets`, `beforePolicy` and `afterPolicy` (default `live`), `before` and
+`after` (report path or artifact URL), `verdicts`, `effect` (`better`, `worse`,
 `no-difference`, `exploit`) and `note`. `scripts/check-experiments.mjs` validates it against
 `evals/experiments.schema.json` in the `conventions` gate.
 
 Experiment `E0` is the calibration: `baseline-v5` on seeds 1-8 against seeds 9-16 (`--seed-offset 8`), which must
 give no `better` or `worse` verdict on any metric named as a Target in any design doc.
 
-The `eval-smoke` gate (tier 2) runs `npm run eval -- --seeds 2 --ticks 10000 --config evals/smoke-config.json`
+The `eval-smoke` gate (tier 2) runs `npm run eval -- --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json`
 (`maxAgents` 150) and fails on a worker error or a report that fails `validateReport`.
 
 ## Anti-exploit suite (Phase 3)
@@ -222,7 +225,7 @@ The scripted controllers, `evals/micro-world.json` and `test/evo/anti-exploit.te
 | Evolution metrics       | Phase 1 records `evals/baselines/baseline-v5.json` at 8 seeds x 200000 ticks; Phase 2 records `E0`, which must show no verdict on any Target metric. Later docs judge their Targets against the baseline with `eval:compare`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Determinism             | Each seed's world is the resolved config with that `seed`; the observer's samples draw from a forked `eval` stream, the bootstrap from `fork(createRng(1), 'bootstrap')`, the controllers from `scripted`. Reports are keyed by seed, so worker scheduling does not change them                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Config and persistence  | No new `createConfig` keys. New formats: the eval report, `evals/experiments.json` with its schema, `evals/micro-world.json`, the champion file and `evals/league.json`, defined above. No IndexedDB change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Logging and diagnostics | `scripts/eval.mjs` writes `.sim/logs/eval-<id>.jsonl`: `EvalStarted` (policy, seeds, ticks, configHash), `SeedFinished` (seed, wallMs, worldHash), `SeedFailed` (seed, tick, error, stack), `EvalFinished` (out). `eval-compare.mjs` prints `CompareRefused` with the mismatched field and exits 2. `check-experiments.mjs` names the entry and the schema path that failed. `league.mjs` logs `MatchPlayed` (seed, a, b, result, eloBefore, eloAfter). `--follow` logs `FollowSample` (tick, genomeId, x, y, energy, outputs). A failed seed reproduces with `npm run replay -- --policy <name> --seed <s> --ticks <tick>`. With `OTEL_EXPORTER_OTLP_ENDPOINT` set, checkpoint population, births and deaths go out through `scripts/lib/otel.mjs` tagged with policy and seed                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Logging and diagnostics | `scripts/eval.mjs` writes `.sim/logs/eval-<id>.jsonl`: `EvalStarted` (policy, seeds, ticks, configHash), `SeedFinished` (seed, wallMs, worldHash), `SeedFailed` (seed, tick, error, stack), `EvalFinished` (out). `eval-compare.mjs` prints `CompareRefused` with the mismatched field and exits 2. `check-experiments.mjs` names the entry and the schema path that failed. `league.mjs` logs `MatchPlayed` (seed, a, b, result, eloBefore, eloAfter). `--follow` logs `FollowSample` (tick, genomeId, x, y, energy, outputs). A failed seed reproduces with `npm run replay -- --policy <name> --config <file> --seed <s> --ticks <tick>`. With `OTEL_EXPORTER_OTLP_ENDPOINT` set, checkpoint population, births and deaths go out through `scripts/lib/otel.mjs` tagged with policy and seed                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Browser compatibility   | N/A - evals run in Node only; `browser.*` metrics are only defined here and are measured by `scripts/browser-perf.mjs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Docs                    | `AGENTS.md` Commands: `npm run eval` (Phase 1), `eval:compare` (Phase 2), `league` (Phase 4); the `run-evolution-loop` skill's commands, ledger fields and calibration step (Phase 2). This doc becomes `Implemented` when Phase 4 lands                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Verification            | `scripts/check.sh` green including `eval-smoke`; the steps in Verification below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

@@ -28,7 +28,7 @@ asks", for exactly these actions. `AGENTS.md` Hard rules lists them as the one e
 - No actor pushes to a branch it did not create, edits `main`, merges, closes a PR or issue it did not open,
   force-pushes or deletes a branch.
 - A re-rank never moves a doc whose `**Priority:**` reason starts with `pinned`.
-- Experiment PRs change only `js/evo/`, `js/sim/config-defaults.js` (with its golden hash) and `evals/`.
+- Experiment PRs change only `js/evo/`, `js/sim/config-defaults.js` with `test/sim/golden.test.js`, and `evals/`.
 
 The guard is a repository ruleset on `main`: changes only through pull requests, no bypass for GitHub Actions or
 apps, force-push and deletion blocked. The workflows' `GITHUB_TOKEN` cannot be scoped to one branch, so the ruleset,
@@ -37,10 +37,10 @@ not the token, protects `main`.
 ## Nightly history (Phase 1)
 
 `.github/workflows/nightly.yml` ([quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) Phase 2) gains two jobs that run on the schedule
-and on `workflow_dispatch` of `main`:
+and on `workflow_dispatch`, only when the evaluated ref is `main`:
 
 - **`nightly-eval`** (`contents: read`, `timeout-minutes: 150`): `npm run eval -- --seeds 8 --ticks 100000 --policy
-<LIVE_POLICY>` and uploads the report and `.sim/logs/eval-*.jsonl` as the `nightly-eval` artifact. It skips the run
+live` and uploads the report and `.sim/logs/eval-*.jsonl` as the `nightly-eval` artifact. It skips the run
   when the newest history line already has this sha and policy.
 - **`history`** (`needs: nightly-eval`, `contents: write`, `issues: write`, concurrency group `eval-history`): downloads
   the report and runs `node scripts/history-append.mjs --report <file>` then `node scripts/trend.mjs`, and pushes
@@ -77,7 +77,7 @@ this repo). It runs the `improve-weekly` skill:
 5. Posts a summary comment on the pinned `Weekly improvement report` issue listing each proposal with its reason.
 
 **Experiments run on CI.** `.github/workflows/experiment.yml` runs on a `run-experiment` label: two jobs (`before` on
-the PR's merge-base, `after` on its head), each `npm run eval -- --seeds 8 --ticks 200000` with `timeout-minutes:
+the PR's merge-base, `after` on its head), each `npm run eval -- --seeds 8 --ticks 200000 --policy <p>` (`p` the ledger entry's `beforePolicy` or `afterPolicy`) with `timeout-minutes:
 360`, then a `compare` job that runs `npm run eval:compare` with the ledger entry's `targets` and posts the table on
 the PR. Report artifacts' URLs go into the entry's `before` and `after`.
 
@@ -93,7 +93,8 @@ the PR. Report artifacts' URLs go into the entry's `before` and `after`.
 - Each candidate is re-run on seeds 9-16; it is a **winner** when it is still `better` on `--primary` there.
 - Writes `evals/sweeps/<key>-<date>.json`: per value the report artifact paths and each verdict, for both seed sets.
 - `--propose` opens a draft PR whose single commit changes the default in `js/sim/config-defaults.js` and the
-  golden `worldHash` together, with the sweep table in the body; a second draft PR rebaselines
+  golden `worldHash` together, with the sweep table in the body; the body warns that the new `rulesHash` invalidates `public/champions/v1/` and `evals/league.json`; a second
+  draft PR rebaselines
   `evals/baselines/` once the first merges.
 - `evals/sweep-plan.json` lists `{ key, values, primary }` entries; the weekly routine sweeps one a week, in order,
   through `.github/workflows/sweep.yml` (same shape as `experiment.yml`).
@@ -102,7 +103,7 @@ the PR. Report artifacts' URLs go into the entry's `before` and `after`.
 
 - `scripts/check.sh --ci` writes `TestResults/gates.json`: each gate's status (`passed`, `failed`, `skipped`) and
   seconds. The `check` and `nightly` jobs upload it as the `gates` artifact on every run.
-- `evals/experiments.schema.json` gains `predicted` (metric to `better`, `worse` or `no-difference`), `predictionAt`
+- `evals/experiments.schema.json` gains, in Phase 1, `predicted` (metric to `better`, `worse` or `no-difference`), `predictionAt`
   and `resultAt`; `predictionAt` is required when `predicted` is present. Entries without `predicted` are not counted.
 - `npm run retro` (`scripts/retro.mjs`) writes `evals/retros/R<n>.json` (the next `n` after the highest present):
     - **prediction hit rate:** the share of entries with `predicted` whose every predicted verdict matched;
@@ -135,7 +136,8 @@ These are user actions, done once when Phase 1 is built:
 **Targets:** none - process; the loop measures, it changes no metric itself
 
 `scripts/lib/history.mjs`, `scripts/lib/trend.mjs`, their CLIs, the `nightly-eval` and `history` jobs,
-`experiment.yml`, the `improve-weekly` skill, the routine prompt, and the `AGENTS.md` exception.
+`experiment.yml`, the ledger fields `predicted`, `predictionAt` and `resultAt`, the `improve-weekly` skill, the
+routine prompt, and the `AGENTS.md` exception.
 
 ### Phase 2 - Config sweeps
 
@@ -147,7 +149,7 @@ These are user actions, done once when Phase 1 is built:
 
 **Targets:** none - process
 
-`TestResults/gates.json`, the ledger fields, `scripts/lib/retro.mjs`, `scripts/retro.mjs`,
+`TestResults/gates.json`, `scripts/lib/retro.mjs`, `scripts/retro.mjs`,
 `scripts/lib/dashboard.mjs`, `scripts/dashboard-data.mjs`, `evals/dashboard/index.html`, and the routine's retro and
 dashboard steps.
 
@@ -171,15 +173,16 @@ dashboard steps.
 
 ### Phase 1 - Nightly history, trends and the weekly routine
 
-| #   | Task                                                                                                                                                                                       | Nature       | Depends on             |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------------------- |
-| T1  | Add `scripts/lib/history.mjs` and `scripts/history-append.mjs` with tests                                                                                                                  | [mechanical] | -                      |
-| T2  | Add `scripts/lib/trend.mjs` and `scripts/trend.mjs` with tests and the nightly dry-run test                                                                                                | [judgement]  | T1                     |
-| T3  | Add the `nightly-eval` and `history` jobs to `nightly.yml`                                                                                                                                 | [mechanical] | T2                     |
-| T4  | Add `.github/workflows/experiment.yml`                                                                                                                                                     | [judgement]  | T3                     |
-| T5  | Add the `improve-weekly` skill and `.claude/routines/weekly-improvement.md`                                                                                                                | [judgement]  | T4                     |
-| T6  | Update `AGENTS.md` (standing permissions, workflow), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) and the `run-evolution-loop` skill; list the Setup steps in the PR | [mechanical] | T5                     |
-| T7  | Conformance review of Phase 1                                                                                                                                                              | [judgement]  | T1, T2, T3, T4, T5, T6 |
+| #   | Task                                                                                                                                                                                       | Nature       | Depends on                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | --------------------------- |
+| T1  | Add `scripts/lib/history.mjs` and `scripts/history-append.mjs` with tests                                                                                                                  | [mechanical] | -                           |
+| T2  | Add `scripts/lib/trend.mjs` and `scripts/trend.mjs` with tests and the nightly dry-run test                                                                                                | [judgement]  | T1                          |
+| T3  | Add the `nightly-eval` and `history` jobs to `nightly.yml`                                                                                                                                 | [mechanical] | T2                          |
+| T4  | Add `.github/workflows/experiment.yml`                                                                                                                                                     | [judgement]  | T3                          |
+| T5a | Add `predicted`, `predictionAt` and `resultAt` to the ledger schema with tests                                                                                                             | [mechanical] | -                           |
+| T5  | Add the `improve-weekly` skill and `.claude/routines/weekly-improvement.md`                                                                                                                | [judgement]  | T4                          |
+| T6  | Update `AGENTS.md` (standing permissions, workflow), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) and the `run-evolution-loop` skill; list the Setup steps in the PR | [mechanical] | T5, T5a                     |
+| T7  | Conformance review of Phase 1                                                                                                                                                              | [judgement]  | T1, T2, T3, T4, T5, T5a, T6 |
 
 ### Phase 2 - Config sweeps
 
@@ -191,14 +194,13 @@ dashboard steps.
 
 ### Phase 3 - Retros and dashboard
 
-| #   | Task                                                                                                                           | Nature       | Depends on              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------------------- |
-| T11 | Write `TestResults/gates.json` from `scripts/check.sh --ci` and upload it from both workflows                                  | [mechanical] | T10                     |
-| T12 | Add `predicted`, `predictionAt` and `resultAt` to the ledger schema with tests                                                 | [mechanical] | T10                     |
-| T13 | Add `scripts/lib/retro.mjs`, `scripts/retro.mjs` and `npm run retro` with tests                                                | [judgement]  | T11, T12                |
-| T14 | Add `scripts/lib/dashboard.mjs`, `scripts/dashboard-data.mjs`, `evals/dashboard/index.html` and `npm run dashboard` with tests | [judgement]  | T12                     |
-| T15 | Add the routine's retro and dashboard steps                                                                                    | [mechanical] | T13, T14                |
-| T16 | Conformance review of Phase 3                                                                                                  | [judgement]  | T11, T12, T13, T14, T15 |
+| #   | Task                                                                                                                           | Nature       | Depends on         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |
+| T11 | Write `TestResults/gates.json` from `scripts/check.sh --ci` and upload it from both workflows                                  | [mechanical] | T10                |
+| T13 | Add `scripts/lib/retro.mjs`, `scripts/retro.mjs` and `npm run retro` with tests                                                | [judgement]  | T11                |
+| T14 | Add `scripts/lib/dashboard.mjs`, `scripts/dashboard-data.mjs`, `evals/dashboard/index.html` and `npm run dashboard` with tests | [judgement]  | T10                |
+| T15 | Add the routine's retro and dashboard steps                                                                                    | [mechanical] | T13, T14           |
+| T16 | Conformance review of Phase 3                                                                                                  | [judgement]  | T11, T13, T14, T15 |
 
 ## Verification
 

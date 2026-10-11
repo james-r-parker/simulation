@@ -89,10 +89,10 @@ End the doc with a **Delivery requirements** table using exactly the rows in STY
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Architecture            | Which of `js/sim`, `js/evo`, the worker, the renderer or the UI each piece lives in; new modules and exported functions by name                                      |
 | Unit tests              | `test/<area>/<module>.test.js` files and the behaviours each pins (edge cases, failure paths, reference comparisons); every task that adds behaviour lists its tests |
-| Headless e2e            | The golden run: seed, config overrides, tick count and the `worldHash` it asserts; or the `eval:smoke` run                                                           |
+| Headless e2e            | The golden run: seed, config overrides, tick count and the `worldHash` it asserts; or the `eval-smoke` run                                                           |
 | Performance budget      | The `bench.*` / `browser.*` numbers before and after, and the regression threshold the gate enforces                                                                 |
 | Evolution metrics       | The `eval.*` metrics, seeds and ticks, and the `eval:compare` verdict that counts as done                                                                            |
-| Determinism             | RNG streams used (`rng.fork('<name>')`); what replays from seed and config; what does not and why                                                                    |
+| Determinism             | RNG streams used (`fork(rng, '<name>')`); what replays from seed and config; what does not and why                                                                   |
 | Config and persistence  | Each new key in `createConfig` with type and default; schema version bumps and their upgrade path                                                                    |
 | Logging and diagnostics | Each new `simLog` event: name, level, fields; what every failure path logs; the `npm run replay` command that reproduces it                                          |
 | Browser compatibility   | Browsers verified; fallbacks when a feature is missing                                                                                                               |
