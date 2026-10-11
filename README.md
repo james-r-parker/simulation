@@ -184,7 +184,7 @@ Dive deep into the code architecture:
 - [**`physics.js`** - Collision Engine](js/physics.js.README.md): Spatial queries and interaction detection
 
 ### 💾 Data & Infrastructure
-- [**`database-worker.js`** - Persistence Layer](js/database-worker.js.README.md): IndexedDB management in Web Worker
+- [**`public/database-worker.js`** - Persistence Layer](js/database-worker.js.README.md): IndexedDB management in Web Worker
 - [**`memory.js`** - Resource Management](js/memory.js.README.md): Garbage collection and memory optimization
 - [**`validation.js`** - Quality Assurance](js/validation.js.README.md): Rigorous testing system for evolved behaviors
 - [**`ui.js`** - User Interface](js/ui.js.README.md): Real-time stats, controls, and visualization
@@ -196,6 +196,21 @@ Dive deep into the code architecture:
 - [**`utils.js`** - Helper Functions](js/utils.js.README.md): Math utilities, color generation, and common operations
 - [**`renderer.js`** - Visual Engine](js/renderer.js.README.md): WebGL rendering pipeline
 - [**`camera.js`** - Viewport Control](js/camera.js.README.md): Smooth camera following and world navigation
+
+---
+
+## 🛠️ Developing
+
+Work on the simulation is planned and checked the same way every time:
+
+- [AGENTS.md](AGENTS.md) - the quick reference: where things are, commands, workflow and hard rules.
+- [docs/designs/README.md](docs/designs/README.md) - the design docs and the build queue. Every change starts from one.
+- `scripts/check.sh` - the local gate (conventions, design index, format, lint, typecheck, tests, build); CI runs the same script.
+
+```bash
+npm ci
+scripts/check.sh
+```
 
 ---
 
