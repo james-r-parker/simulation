@@ -2,6 +2,9 @@ import js from '@eslint/js';
 import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 
+const MATH_MSG = 'Not bit-exact across engines: use js/sim/det-math.js, or + - * / and Math.sqrt.';
+const POW_MSG = 'The ** operator is not bit-exact across engines: multiply out or use det-math.js.';
+
 // Lint covers the new code only. Legacy modules under js/ join as they are replaced
 // (docs/designs/worker-and-renderer.md widens this list and the tsconfig include together).
 export default [
@@ -73,11 +76,39 @@ export default [
             'no-restricted-properties': [
                 'error',
                 { object: 'Math', property: 'random', message: 'Use js/sim/rng.js so runs are replayable.' },
+                { object: 'Math', property: 'sin', message: MATH_MSG },
+                { object: 'Math', property: 'cos', message: MATH_MSG },
+                { object: 'Math', property: 'tan', message: MATH_MSG },
+                { object: 'Math', property: 'asin', message: MATH_MSG },
+                { object: 'Math', property: 'acos', message: MATH_MSG },
+                { object: 'Math', property: 'atan', message: MATH_MSG },
+                { object: 'Math', property: 'atan2', message: MATH_MSG },
+                { object: 'Math', property: 'sinh', message: MATH_MSG },
+                { object: 'Math', property: 'cosh', message: MATH_MSG },
+                { object: 'Math', property: 'tanh', message: MATH_MSG },
+                { object: 'Math', property: 'asinh', message: MATH_MSG },
+                { object: 'Math', property: 'acosh', message: MATH_MSG },
+                { object: 'Math', property: 'atanh', message: MATH_MSG },
+                { object: 'Math', property: 'exp', message: MATH_MSG },
+                { object: 'Math', property: 'expm1', message: MATH_MSG },
+                { object: 'Math', property: 'log', message: MATH_MSG },
+                { object: 'Math', property: 'log2', message: MATH_MSG },
+                { object: 'Math', property: 'log10', message: MATH_MSG },
+                { object: 'Math', property: 'log1p', message: MATH_MSG },
+                { object: 'Math', property: 'pow', message: MATH_MSG },
+                { object: 'Math', property: 'cbrt', message: MATH_MSG },
+                { object: 'Math', property: 'hypot', message: MATH_MSG },
+                { object: 'Math', property: 'clz32', message: MATH_MSG },
                 { object: 'Date', property: 'now', message: 'Simulation time is counted in ticks.' },
                 { object: 'performance', property: 'now', message: 'Simulation time is counted in ticks.' },
             ],
             'no-restricted-imports': ['error', { paths: ['three'], patterns: ['three/*', '../*.js'] }],
             'no-console': 'error',
+            'no-restricted-syntax': [
+                'error',
+                { selector: "BinaryExpression[operator='**']", message: POW_MSG },
+                { selector: "AssignmentExpression[operator='**=']", message: POW_MSG },
+            ],
         },
     },
     {
