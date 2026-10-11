@@ -39,7 +39,7 @@ every 1000 ticks from tick 1000. "After burn-in" means from tick 10000.
 | `eval.qd_score`              | higher | Sum over occupied archive cells of the elite's mean fitness, over the total cell count; `null` without an archive                                                                                                 |
 | `eval.coverage`              | higher | Occupied fraction of the policy's archive cells; `null` without an archive                                                                                                                                        |
 | `eval.champion_elo`          | watch  | The candidate's Elo after its league games (`npm run league`, Phase 4)                                                                                                                                            |
-| `eval.champion_win_rate`     | watch  | Wins plus half the draws over games played by the candidate (Phase 4)                                                                                                                                             |
+| `eval.champion_win_rate`     | watch  | Wins plus half the draws over games played by the candidate (Phase 4); `null` with no games                                                                                                                       |
 | `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, `headless-sim-core.md`)                                                                                                                                        |
 | `bench.phase_ms.<phase>@<n>` | lower  | Median ms per tick of one `STEP_PHASES` phase at `n` agents                                                                                                                                                       |
 | `browser.frame_p95_ms`       | lower  | 95th percentile frame time over a 60 s run (`scripts/browser-perf.mjs`, `dev-workflow-and-gate.md`)                                                                                                               |
@@ -72,7 +72,7 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 | `js/evo/observer.js`             | `createObserver`, `observe`, `checkpoint` | Per-slot counters (below), reset on `AgentBorn`; checkpoint samples into typed arrays                                           |
 | `js/evo/metrics.js`              | `computeMetrics`                          | Observer state to the Metrics table values for one seed, `null` with a reason where undefined                                   |
 | `js/evo/policies/index.js`       | `POLICIES`, `getPolicy`, `LIVE_POLICY`    | Name to policy; an unknown name throws listing the known ones; `LIVE_POLICY` names the policy the browser and nightly evals run |
-| `js/evo/policies/baseline-v5.js` | `baselineV5`                              | The legacy approach on the new core (below)                                                                                     |
+| `js/evo/policies/baseline-v5.js` | `createBaselineV5`                        | The legacy approach on the new core (below)                                                                                     |
 | `js/evo/fitness-v5.js`           | `fitnessV5`                               | The legacy fitness formula on observer counters, in ticks                                                                       |
 | `js/evo/report.js`               | `buildReport`, `validateReport`           | Report shape and its validation                                                                                                 |
 | `js/evo/compare.js`              | `compareReports`, `bootstrapInterval`     | BCa intervals and verdicts (Phase 2)                                                                                            |
@@ -80,8 +80,9 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 | `js/evo/elo.js`                  | `expectedScore`, `updateElo`              | Elo with K = 32 from 1500 (Phase 4)                                                                                             |
 | `js/evo/league.js`               | `matchPolicy`, `playMatch`, `runLeague`   | Head-to-head games between champion files (Phase 4)                                                                             |
 
-A policy is `{ name, brain, fitnessName, fitness, archive?, onEvent? }`. `brain` is the core's
-`{ initBrain, childBrain, initSpec? }`. `fitness(observer, slot, config)` reads only observer state, never world
+`POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log }` plus policy-specific fields;
+all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent? }`.
+`brain` holds the core's policy hooks; `log` is the run's `simLog`. `fitness(observer, slot, config)` reads only observer state, never world
 arrays, so it is valid after the slot has been reused. `onEvent` receives each event-ring record after the observer.
 
 ### Observer counters
@@ -153,13 +154,15 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 `initialFood` 60, 4 obstacles, `minAgents` 0), by calling `step` with `overrides.brain` set to the controller writing
 `world.outputs`. Controller randomness draws from a forked `scripted` stream.
 
-| Controller   | Behaviour                                            |
-| ------------ | ---------------------------------------------------- |
-| `foodSeeker` | Turns towards the nearest food ray hit and thrusts   |
-| `spinner`    | Full turn, half thrust, never steers                 |
-| `wanderer`   | Thrust with a random slow turn; turns away from food |
-| `bumper`     | Turns towards the nearest agent ray hit and thrusts  |
-| `sitter`     | No thrust, no turn                                   |
+| Controller          | Behaviour                                                                        |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `foodSeeker`        | Turns towards the nearest food ray hit and thrusts                               |
+| `spinner`           | Full turn, half thrust, never steers                                             |
+| `wanderer`          | Thrust with a random slow turn; turns away from food                             |
+| `bumper`            | Turns towards the nearest agent ray hit and thrusts                              |
+| `sitter`            | No thrust, no turn                                                               |
+| `explorerAfterMeal` | Seeks food until it has eaten 500, then thrusts straight and turns only at walls |
+| `biteSeeker`        | A non-hunter that steers towards the nearest bigger agent ray hit                |
 
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness is at most half the `foodSeeker`'s. Against `fitnessV5` the exploiters that exceed that bound are marked
@@ -168,9 +171,9 @@ fitness to the suite with no expected failures.
 
 ## Champion league (Phase 4)
 
-- A champion file is JSON: `version` 1, `name`, `configHash`, `layout` (`inputCount`, `brainHidden`,
-  `outputCount`), `specialisation`, `weights` (base64 little-endian float32). `league.js` rejects a file whose
-  `layout` or `configHash` differs from the running config.
+- A champion file is JSON: `version` 1, `name`, `rulesHash`, `layout` (`inputCount`, `brainHidden`,
+  `outputCount`), `specialisation`, optional `cell` (its archive cell), `weights` (base64 little-endian float32).
+  `league.js` rejects a file whose `layout` or `rulesHash` differs from the running config.
 - `evals/league.json` lists the admitted champions, each with its Elo.
 - `matchPolicy(a, b)` builds a policy whose `initBrain` writes `a`'s weights into even slots and `b`'s into odd ones,
   whose `initSpec` returns that champion's specialisation, and whose `childBrain` is `baseline-v5`'s.
