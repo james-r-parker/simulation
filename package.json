@@ -30,21 +30,21 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "9.39.1",
+    "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.0",
-    "@types/node": "24.19.2",
+    "@types/node": "26.6.4",
     "@vitest/coverage-v8": "5.0.3",
     "dependency-cruiser": "18.5.0",
-    "eslint": "9.39.1",
-    "eslint-plugin-jsdoc": "61.4.1",
+    "eslint": "10.12.0",
+    "eslint-plugin-jsdoc": "65.2.1",
     "globals": "17.13.0",
     "jscpd": "5.4.1",
     "prettier": "3.9.10",
-    "three": "0.160.1",
-    "typescript": "5.9.3",
-    "vite": "7.2.4",
+    "three": "0.186.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
     "vitest": "5.0.3",
-    "wrangler": "4.51.0"
+    "wrangler": "4.149.0"
   },
   "engines": {
     "node": ">=24"
