@@ -1,0 +1,8 @@
+{
+  "minTokens": 50,
+  "threshold": 0,
+  "reporters": ["console"],
+  "format": ["javascript"],
+  "gitignore": true,
+  "absolute": false
+}
