@@ -40,11 +40,11 @@ every 1000 ticks from tick 1000. "After burn-in" means from tick 10000.
 | `eval.coverage`              | higher | Occupied fraction of the policy's archive cells; `null` without an archive                                                                                                                                        |
 | `eval.champion_elo`          | watch  | The candidate's Elo after its league games (`npm run league`, Phase 4)                                                                                                                                            |
 | `eval.champion_win_rate`     | watch  | Wins plus half the draws over games played by the candidate (Phase 4); `null` with no games                                                                                                                       |
-| `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, `headless-sim-core.md`)                                                                                                                                        |
+| `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, [headless-sim-core.md](headless-sim-core.md))                                                                                                                  |
 | `bench.phase_ms.<phase>@<n>` | lower  | Median ms per tick of one `STEP_PHASES` phase at `n` agents                                                                                                                                                       |
-| `browser.frame_p95_ms`       | lower  | 95th percentile frame time over a 60 s run (`scripts/browser-perf.mjs`, `dev-workflow-and-gate.md`)                                                                                                               |
+| `browser.frame_p95_ms`       | lower  | 95th percentile frame time over a 60 s run (`scripts/browser-perf.mjs`, [dev-workflow-and-gate.md](dev-workflow-and-gate.md))                                                                                     |
 | `browser.main_long_tasks`    | lower  | Main-thread long tasks over the same 60 s run                                                                                                                                                                     |
-| `browser.gc_pause_ms`        | lower  | Total GC pause over the same 60 s run (`worker-and-renderer.md`)                                                                                                                                                  |
+| `browser.gc_pause_ms`        | lower  | Total GC pause over the same 60 s run ([worker-and-renderer.md](worker-and-renderer.md))                                                                                                                          |
 
 The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; an agent with no sample is excluded.
 
@@ -104,7 +104,7 @@ The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick o
 `fitnessV5` maps `calculateFitness` in the legacy `js/agent.js` onto these counters with `ageTicks / 60` in place of
 wall-clock seconds and `cellsVisited` in place of the legacy exploration grid; `fitnessName` is `v5`. It keeps the
 legacy weights (`FITNESS_CATEGORIES`, `SURVIVAL_SCORING`, `ACTION_SCORING`, `SPECIALIZATION_SCORING`) and the
-estimated terms recorded in `legacy-audit.md` FIT-3 and FIT-5, copied as named constants.
+estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, copied as named constants.
 
 ### `baseline-v5`
 
@@ -166,7 +166,7 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness is at most half the `foodSeeker`'s. Against `fitnessV5` the exploiters that exceed that bound are marked
-`test.fails`, each naming the `legacy-audit.md` finding it demonstrates; `evolution-rework.md` Phase 1 adds its
+`test.fails`, each naming the [legacy-audit.md](legacy-audit.md) finding it demonstrates; [evolution-rework.md](evolution-rework.md) Phase 1 adds its
 fitness to the suite with no expected failures.
 
 ## Champion league (Phase 4)
@@ -278,6 +278,6 @@ The scripted controllers, `evals/micro-world.json` and `test/evo/anti-exploit.te
 4. Experiment `E0` in `evals/experiments.json` shows no `better` or `worse` on any Target metric.
 5. `npm run replay -- --policy baseline-v5 --seed 1 --ticks 5000 --follow <genomeId>` logs `FollowSample` until that
    agent dies.
-6. `npx vitest run test/evo/anti-exploit.test.js` passes, with each expected failure naming its `legacy-audit.md`
+6. `npx vitest run test/evo/anti-exploit.test.js` passes, with each expected failure naming its [legacy-audit.md](legacy-audit.md)
    finding.
 7. `npm run league -- <champion.json>` against an empty league plays no games and leaves the candidate at Elo 1500.
