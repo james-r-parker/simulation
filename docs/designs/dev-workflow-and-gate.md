@@ -1,8 +1,6 @@
 # Development workflow and gate
 
-**Status:** In progress - Phase 1 built (design docs, skills, `scripts/check.sh`, CI); Phase 2 captures the legacy browser baseline.
-**Validated:** f68041f (2026-10-11)
-**Priority:** 1 - every later doc measures against the legacy baseline this phase records
+**Status:** Implemented - workflow, gate and CI (Phase 1), and the legacy browser baseline in `bench/legacy-baseline.json` (Phase 2).
 
 The repo is planned, built and checked the same way in every session:
 
@@ -119,7 +117,7 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
 
 ### Phase 1 - Workflow, gate and CI (built)
 
-### Phase 2 - Legacy browser baseline
+### Phase 2 - Legacy browser baseline (built)
 
 **Targets:** browser.frame_p95_ms, browser.main_long_tasks
 
@@ -127,8 +125,8 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
   `phases` is the per-phase breakdown `PerformanceMonitor.getReport` already gives. `PerformanceMonitor` keeps only
   60 frames, so `installPerfProbe` in `js/dev/perf-probe.js` wraps `Simulation.perfMonitor.endFrame` and keeps the
   last 4096 frame times in its own ring. The probe lives outside `js/game.js` because legacy files only shrink.
-- `scripts/browser-perf.mjs` starts `vite`, opens the app in Chromium through Playwright with
-  `--enable-unsafe-webgpu`, waits 60 s, and reads `window.__perf()` and the long-task count from a
+- `scripts/browser-perf.mjs` (`npm run perf:browser`; `--seconds=<n>`, default 60, `--out=<path>` and `--headed`) starts `vite`, opens the app in Chromium through Playwright with
+  `--enable-unsafe-webgpu`, waits the run length, and reads `window.__perf()` and the long-task count from a
   `PerformanceObserver`.
 - It writes `bench/legacy-baseline.json`: the metrics, the browser version, the GPU adapter string, the agent count
   and the commit sha.

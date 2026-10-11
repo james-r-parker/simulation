@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/`.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 3 - every later doc (evals, evolution, worker) runs on this core
+**Priority:** 2 - every later doc (evals, evolution, worker) runs on this core
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 `js/sim/` is the simulation: a deterministic, DOM-free, struct-of-arrays world advanced one fixed tick at a time.
