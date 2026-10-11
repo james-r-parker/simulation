@@ -1,6 +1,7 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
 import { brainLayout } from './brain-layout.js';
+import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
@@ -159,6 +160,7 @@ export function allocateWorld(config) {
     allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
+    world.events = createEventRing(config.eventCapacity);
     return world;
 }
 
