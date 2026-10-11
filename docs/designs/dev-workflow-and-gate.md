@@ -132,8 +132,9 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
   `PerformanceObserver`.
 - It writes `bench/legacy-baseline.json`: the metrics, the browser version, the GPU adapter string, the agent count
   and the commit sha.
-- When headless Chromium has no WebGPU adapter, the script exits 1 with that message; `--headed` runs a visible
-  browser instead.
+- When Chromium has no WebGPU adapter, or only a software fallback such as SwiftShader, the script exits 1 naming
+  it; `--allow-fallback` records a fallback anyway, marked as such. WSL Chromium only has SwiftShader, so the
+  baseline is recorded in Windows Chrome on the real GPU through `--cdp=<url>` (see `sim-notes.md`).
 
 ## Delivery requirements
 
