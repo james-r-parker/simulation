@@ -15,8 +15,9 @@ Partly built - the note says which phases are real.
 
 - [Development workflow and gate](dev-workflow-and-gate.md) - Phase 1 built (design docs, skills, `scripts/check.sh`, CI); Phase 2 captures the legacy browser baseline _(validated f68041f, 2026-10-11)_
 
-## Reference (1)
+## Reference (2)
 
 Not designs of the simulation - audits, research, learnings and guides.
 
+- [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
