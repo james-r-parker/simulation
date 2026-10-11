@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["js/sim/**/*.js", "js/evo/**/*.js", "scripts/**/*.mjs", "test/**/*.js"]
+  "include": ["js/sim/**/*.js", "js/evo/**/*.js", "js/dev/**/*.js", "scripts/**/*.mjs", "test/**/*.js"]
 }

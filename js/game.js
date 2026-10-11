@@ -42,6 +42,7 @@ import { distanceSquared } from './utils.js';
 import { updatePeriodicValidation, hasValidatedAncestor } from './gene.js';
 import { ValidationManager } from './validation.js';
 import { PerformanceMonitor } from './performance-monitor.js';
+import { installPerfProbe } from './dev/perf-probe.js';
 import { updateSeasonalEnvironment } from './environment.js';
 import { updateFertileZones, createFertileZone } from './fertile-zones.js';
 import { buildSpatialGrid } from './spatial-grid.js';
@@ -50,13 +51,12 @@ import { updateFitnessChart } from './chart-utils.js';
 
 export class Simulation {
     constructor(container) {
-        // Set log level based on environment - DEBUG for dev, INFO for production
         const isProduction = typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__;
         this.logger = new Logger(isProduction ? LOG_LEVELS.INFO : LOG_LEVELS.DEBUG);
 
-        // Performance monitoring framework - disabled in production for performance
         this.perfMonitor = new PerformanceMonitor(this.logger, 60); // 60-frame rolling average
         this.perfMonitor.setEnabled(!isProduction); // Enable only in development
+        if (!isProduction) installPerfProbe(window, this.perfMonitor);
         this.logger.log('Simulation constructor started.');
 
         this.agents = [];

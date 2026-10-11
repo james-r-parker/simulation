@@ -11,7 +11,7 @@ export default [
     js.configs.recommended,
     // Coding standards (AGENTS.md, Coding standards): small single-purpose modules and functions.
     {
-        files: ['js/sim/**/*.js', 'js/evo/**/*.js', 'scripts/**/*.{js,mjs}'],
+        files: ['js/sim/**/*.js', 'js/evo/**/*.js', 'js/dev/**/*.js', 'scripts/**/*.{js,mjs}'],
         plugins: { jsdoc },
         rules: {
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
@@ -23,7 +23,14 @@ export default [
         },
     },
     {
-        files: ['js/sim/**/*.js', 'js/evo/**/*.js', 'scripts/**/*.{js,mjs}', 'test/**/*.js', '*.config.js'],
+        files: [
+            'js/sim/**/*.js',
+            'js/evo/**/*.js',
+            'js/dev/**/*.js',
+            'scripts/**/*.{js,mjs}',
+            'test/**/*.js',
+            '*.config.js',
+        ],
         rules: {
             eqeqeq: ['error', 'always'],
             curly: ['error', 'all'],
