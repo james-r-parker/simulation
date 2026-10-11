@@ -19,29 +19,46 @@ try {
     window.__longTasks = -1;
 }`;
 
+/** @type {Record<string, 'headed' | 'allowFallback'>} */
+const BOOLEAN_FLAGS = { '--headed': 'headed', '--allow-fallback': 'allowFallback' };
+
+/**
+ * Parses one `--name=value` argument into the options.
+ * @param {Record<string, unknown>} options The options being built.
+ * @param {string} arg The argument.
+ * @returns {boolean} Whether the argument was a recognised value flag.
+ */
+function applyValueFlag(options, arg) {
+    const [name, value] = [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)];
+    if (!arg.includes('=') || value === '' || !['--seconds', '--out', '--cdp'].includes(name)) {
+        return false;
+    }
+    if (name === '--seconds') {
+        const seconds = Number(value);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            throw new Error(`--seconds must be a positive number, got "${arg}"`);
+        }
+        options.seconds = seconds;
+    } else {
+        options[name.slice(2)] = value;
+    }
+    return true;
+}
+
 /**
  * Parses the command line.
  * @param {string[]} argv Arguments after the script name.
- * @returns {{ seconds: number, out: string, headed: boolean, allowFallback: boolean }} The run options.
+ * @returns {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} The run options.
  */
 export function parseArgs(argv) {
-    const options = { seconds: DEFAULT_SECONDS, out: DEFAULT_OUT, headed: false, allowFallback: false };
+    /** @type {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} */
+    const options = { seconds: DEFAULT_SECONDS, out: DEFAULT_OUT, headed: false, allowFallback: false, cdp: '' };
     for (const arg of argv) {
-        if (arg === '--headed') {
-            options.headed = true;
-        } else if (arg === '--allow-fallback') {
-            options.allowFallback = true;
-        } else if (arg.startsWith('--seconds=')) {
-            const seconds = Number(arg.slice('--seconds='.length));
-            if (!Number.isFinite(seconds) || seconds <= 0) {
-                throw new Error(`--seconds must be a positive number, got "${arg}"`);
-            }
-            options.seconds = seconds;
-        } else if (arg.startsWith('--out=') && arg.length > '--out='.length) {
-            options.out = arg.slice('--out='.length);
-        } else {
+        if (arg in BOOLEAN_FLAGS) {
+            options[BOOLEAN_FLAGS[arg]] = true;
+        } else if (!applyValueFlag(options, arg)) {
             throw new Error(
-                `Unknown argument "${arg}"; expected --seconds=<n>, --out=<path>, --headed or --allow-fallback`,
+                `Unknown argument "${arg}"; expected --seconds=<n>, --out=<path>, --headed, --cdp=<url> or --allow-fallback`,
             );
         }
     }
@@ -134,13 +151,16 @@ export function describeAdapter(adapter, allowFallback) {
  * @returns {Promise<{ server: import('vite').ViteDevServer, url: string }>} The server and its URL.
  */
 async function startServer() {
-    const server = await createServer({ server: { port: 0, open: false, strictPort: false }, logLevel: 'error' });
+    const server = await createServer({
+        server: { host: '127.0.0.1', port: 0, open: false, strictPort: false },
+        logLevel: 'error',
+    });
     await server.listen();
     const address = server.httpServer?.address();
     if (!address || typeof address === 'string') {
         throw new Error('Vite dev server did not report a port');
     }
-    return { server, url: `http://localhost:${address.port}/` };
+    return { server, url: `http://127.0.0.1:${address.port}/` };
 }
 
 /**
@@ -181,8 +201,20 @@ async function measure(browser, url, seconds, allowFallback) {
 }
 
 /**
+ * Connects to a running Chrome over CDP, or launches Playwright's Chromium.
+ * @param {{ headed: boolean, cdp: string }} options Parsed options.
+ * @returns {Promise<import('@playwright/test').Browser>} The browser.
+ */
+function openBrowser(options) {
+    if (options.cdp) {
+        return chromium.connectOverCDP(options.cdp);
+    }
+    return chromium.launch({ headless: !options.headed, args: ['--enable-unsafe-webgpu'] });
+}
+
+/**
  * Runs the whole measurement and writes the baseline file.
- * @param {{ seconds: number, out: string, headed: boolean, allowFallback: boolean }} options Parsed options.
+ * @param {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} options Parsed options.
  * @returns {Promise<void>}
  */
 async function run(options) {
@@ -190,8 +222,9 @@ async function run(options) {
     /** @type {import('@playwright/test').Browser | null} */
     let browser = null;
     try {
-        browser = await chromium.launch({ headless: !options.headed, args: ['--enable-unsafe-webgpu'] });
-        console.log(`Measuring ${url} for ${options.seconds} s (${options.headed ? 'headed' : 'headless'})`);
+        browser = await openBrowser(options);
+        const mode = options.cdp ? `over CDP at ${options.cdp}` : options.headed ? 'headed' : 'headless';
+        console.log(`Measuring ${url} for ${options.seconds} s (${mode})`);
         const readings = await measure(browser, url, options.seconds, options.allowFallback);
         const baseline = buildBaseline({
             ...readings,
