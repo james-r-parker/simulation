@@ -7,8 +7,8 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
-1. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the static gates and the coverage ratchet must exist before the first `js/sim` module is written
-2. [Headless sim core](headless-sim-core.md) - every later doc (evals, evolution, worker) runs on this core
+1. [Headless sim core](headless-sim-core.md) - every later doc (evals, evolution, worker) runs on this core
+2. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 2 mutates and benchmarks the `js/sim` modules that headless-sim-core Phase 2 adds
 3. [Evolution evals](evolution-evals.md) - the evolution rework is judged against the baseline this doc records
 4. [Evolution rework](evolution-rework.md) - better evolution is what makes a run worth watching, and it needs the evals to prove it
 5. [Worker and renderer](worker-and-renderer.md) - the browser is where the simulation is watched, and it needs the core and the live policy first
@@ -20,7 +20,13 @@ Describe shipped code. Trust these, and fix them when the code moves.
 
 - [Development workflow and gate](dev-workflow-and-gate.md) - workflow, gate and CI (Phase 1), and the legacy browser baseline in `bench/legacy-baseline.json` (Phase 2)
 
-## Proposed (6)
+## In progress (1)
+
+Partly built - the note says which phases are real.
+
+- [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 1 built (tiers, `deps`, `dupes`, coverage ratchet, shuffled tests, pre-commit hook); Phase 2 adds mutation testing, the browser smoke and benchmark compar... _(validated cea2d24, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
+
+## Proposed (5)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -28,7 +34,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 - [Headless sim core](headless-sim-core.md) - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/` _(validated bd49bce, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
-- [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 1 adds the static gates, the coverage ratchet, the pre-commit hook and the tier flag before any sim code lands _(validated bd49bce, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 
 ## Reference (2)

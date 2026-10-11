@@ -32,12 +32,15 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Install                                          | `npm ci`                                                                                                                                        |
 | Run the app                                      | `npm run dev` (Vite, http://localhost:5173)                                                                                                     |
-| Full local gate                                  | `scripts/check.sh` (conventions, designs-index, format, lint, typecheck, test, build)                                                           |
+| Full local gate (tier 2, what a PR needs)        | `scripts/check.sh` (conventions, designs-index, format, lint, typecheck, deps, dupes, test with coverage, ratchet, build)                       |
 | Apply Prettier, regenerate the index, then check | `scripts/check.sh --fix`                                                                                                                        |
 | What CI runs                                     | `scripts/check.sh --ci`                                                                                                                         |
 | Docs-only change                                 | `scripts/check.sh --fix --docs` (conventions, designs-index, format, design-doc tests; what CI runs when `scripts/change-scope.sh` says `docs`) |
 | Only failures and the summary                    | `scripts/check.sh --quiet`                                                                                                                      |
 | A subset of gates                                | `scripts/check.sh --only=lint,typecheck`                                                                                                        |
+| The pre-commit checks on the staged files        | `scripts/check.sh --tier 1` (the `.githooks/pre-commit` hook; `npm ci` turns it on through `prepare`)                                           |
+| The nightly tier; list a tier's gates            | `scripts/check.sh --tier 3`; `scripts/check.sh --list --tier 1`                                                                                 |
+| Replay a shuffled test order                     | `TEST_SEED=<seed> scripts/check.sh --only=test` (the seed is on the `test (seed <n>)` line)                                                     |
 | Read a failed gate                               | The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the next run). Do not rerun the tool to see why                         |
 | Tests                                            | `npm test`; one file: `npx vitest run test/designs-index.test.js`                                                                               |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                        |
