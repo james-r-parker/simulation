@@ -1,0 +1,156 @@
+import { describe, expect, it } from 'vitest';
+import { createConfig } from '../../js/sim/config.js';
+import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
+import { INVARIANT, assertInvariants } from '../../js/sim/invariants.js';
+import { allocAgent, allocateWorld } from '../../js/sim/world.js';
+
+const SMALL = {
+    maxAgents: 4,
+    maxFood: 4,
+    initialAgents: 0,
+    minAgents: 0,
+    initialFood: 0,
+    maxEnergy: 1000,
+    initialEnergy: 100,
+    worldWidth: 2000,
+    worldHeight: 1000,
+};
+
+/**
+ * A valid world with three agents inside the bounds, each holding 10 energy.
+ * @returns {ReturnType<typeof allocateWorld>}
+ */
+function validWorld() {
+    const world = allocateWorld(createConfig(SMALL));
+    for (let i = 0; i < 3; i++) {
+        const slot = allocAgent(world);
+        world.x[slot] = 10 + i;
+        world.y[slot] = 20 + i;
+        addEnergy(world, slot, 10, ENERGY_SOURCE.INITIAL);
+    }
+    return world;
+}
+
+/**
+ * @param {ReturnType<typeof allocateWorld>} world
+ * @returns {any} the error thrown by `assertInvariants`
+ */
+function violationOf(world) {
+    try {
+        assertInvariants(world);
+    } catch (error) {
+        return error;
+    }
+    throw new Error('expected assertInvariants to throw');
+}
+
+describe('assertInvariants', () => {
+    it('passes a valid world', () => {
+        expect(() => assertInvariants(validWorld())).not.toThrow();
+    });
+
+    it('exposes a frozen name map', () => {
+        expect(Object.isFrozen(INVARIANT)).toBe(true);
+    });
+
+    it('ignores dead slots holding junk', () => {
+        const world = validWorld();
+        world.x[3] = Number.NaN;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('rejects a non-finite agent value with its slot', () => {
+        const world = validWorld();
+        world.vy[1] = Infinity;
+        const error = violationOf(world);
+        expect(error).toMatchObject({ invariant: INVARIANT.FINITE, slot: 1, value: Infinity, tick: 0 });
+        expect(error.message).toContain('vy');
+    });
+
+    it('rejects a NaN agent value', () => {
+        const world = validWorld();
+        world.energy[2] = Number.NaN;
+        const error = violationOf(world);
+        expect(error.invariant).toBe(INVARIANT.FINITE);
+        expect(error.slot).toBe(2);
+        expect(error.value).toBeNaN();
+    });
+
+    it('rejects a NaN in alive food with the food slot and array name', () => {
+        const world = validWorld();
+        world.foodAlive[2] = 1;
+        world.foodCount = 1;
+        world.foodValue[2] = Number.NaN;
+        const error = violationOf(world);
+        expect(error.invariant).toBe(INVARIANT.FINITE);
+        expect(error.slot).toBe(2);
+        expect(error.message).toContain('foodValue');
+    });
+
+    it('accepts finite alive food and ignores dead food', () => {
+        const world = validWorld();
+        world.foodAlive[0] = 1;
+        world.foodX[1] = Number.NaN;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it.each([
+        ['x', -1],
+        ['x', 2001],
+        ['y', -0.5],
+        ['y', 1000.5],
+    ])('rejects an agent with %s = %s outside the world', (name, value) => {
+        const world = validWorld();
+        world[name][1] = value;
+        expect(violationOf(world)).toMatchObject({ invariant: INVARIANT.IN_WORLD, slot: 1, value });
+    });
+
+    it('accepts an agent exactly on the world edge', () => {
+        const world = validWorld();
+        world.x[0] = 2000;
+        world.y[0] = 1000;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('rejects a population count that differs from the alive agents', () => {
+        const world = validWorld();
+        world.population = 5;
+        expect(violationOf(world)).toMatchObject({ invariant: INVARIANT.POPULATION, slot: -1, value: 3 });
+    });
+
+    it('accepts tiny ledger drift', () => {
+        const world = validWorld();
+        world.ledger[0] += 1e-9;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('rejects larger ledger drift with the difference as its value', () => {
+        const world = validWorld();
+        world.ledger[1] += 0.5;
+        const error = violationOf(world);
+        expect(error).toMatchObject({ invariant: INVARIANT.LEDGER, slot: -1 });
+        expect(error.value).toBeCloseTo(0.5, 9);
+    });
+
+    it('reports the tick', () => {
+        const world = validWorld();
+        world.tick = 42;
+        world.ledger[0] += 5;
+        expect(violationOf(world).tick).toBe(42);
+    });
+
+    it('reports the first broken invariant when several are broken', () => {
+        const world = validWorld();
+        world.population = 9;
+        world.ledger[0] += 5;
+        world.x[0] = -3;
+        world.y[2] = Number.NaN;
+        expect(violationOf(world).invariant).toBe(INVARIANT.FINITE);
+        world.y[2] = 20;
+        expect(violationOf(world).invariant).toBe(INVARIANT.IN_WORLD);
+        world.x[0] = 5;
+        expect(violationOf(world).invariant).toBe(INVARIANT.POPULATION);
+        world.population = 3;
+        expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
+    });
+});
