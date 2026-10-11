@@ -32,13 +32,14 @@ Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Evolution evals](evolution-evals.md) - Phase 1 builds the eval runner, the metrics and the `baseline-v5` baseline on the headless sim core _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
-- [Headless sim core](headless-sim-core.md) - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/` _(validated bd49bce, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
+- [Headless sim core](headless-sim-core.md) - Phase 1 builds the deterministic maths, RNG, config, world state, events, energy, placement and spatial hash in `js/sim/` _(validated d675c32, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 
-## Reference (2)
+## Reference (3)
 
 Not designs of the simulation - audits, research, learnings and guides.
 
+- [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
