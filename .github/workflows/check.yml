@@ -1,0 +1,66 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # One job, always named check, whichever path it takes - so `gh pr checks` (and a required check, should the repo
+  # ever get one) sees a result on every PR.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The whole history, so scripts/change-scope.sh can diff a PR against its base branch. (An expression like
+          # `cond && 0 || 1` always yields 1: 0 is falsy in GitHub expressions.)
+          fetch-depth: 0
+
+      # docs: every changed path is Markdown that no build or test reads beyond the design-doc tests
+      # (scripts/change-scope.sh). Pushes to main and anything unclassifiable take the full path.
+      - name: Change scope
+        id: scope
+        run: |
+          scope=full
+          if [[ "${{ github.event_name }}" == pull_request ]]; then
+            scope="$(scripts/change-scope.sh "origin/${{ github.base_ref }}" || echo full)"
+          fi
+          echo "scope=$scope" >>"$GITHUB_OUTPUT"
+          echo "Change scope: $scope"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Local gate
+        if: steps.scope.outputs.scope != 'docs'
+        run: scripts/check.sh --ci
+
+      # conventions, designs-index, format and the tests that read this repo's Markdown.
+      - name: Local gate (docs only)
+        if: steps.scope.outputs.scope == 'docs'
+        run: scripts/check.sh --ci --docs
+
+      - name: Upload check logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: check-logs
+          path: |
+            TestResults/
+            .checklogs/
+          if-no-files-found: ignore
+          include-hidden-files: true
