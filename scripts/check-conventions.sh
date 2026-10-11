@@ -7,7 +7,7 @@
 #   performance.now: runs must replay from seed and config (docs/designs/STYLE.md, Tests and diagnostics).
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
 # - Legacy code only shrinks: each js/*.js and js/constants/*.js file stays within its line count in
-#   scripts/legacy-size-budget.json, and no new file appears there - new code goes in a linted module (AGENTS.md,
+#   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (AGENTS.md,
 #   Coding standards). Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
@@ -52,7 +52,7 @@ while IFS= read -r line; do
 done < <(node -e '
 const fs = require("fs");
 const { execSync } = require("child_process");
-const budget = JSON.parse(fs.readFileSync("scripts/legacy-size-budget.json", "utf8"));
+const budget = JSON.parse(fs.readFileSync("scripts/quality-baseline.json", "utf8")).legacyLines;
 const files = execSync("git ls-files --cached --others --exclude-standard -- \":(glob)js/*.js\" \":(glob)js/constants/*.js\"")
   .toString().split("\n").filter((f) => f && fs.existsSync(f));
 for (const file of files) {
@@ -65,7 +65,7 @@ for (const file of files) {
   }
 }
 for (const file of Object.keys(budget)) {
-  if (!files.includes(file)) console.log(`scripts/legacy-size-budget.json: ${file} no longer exists - remove its entry`);
+  if (!files.includes(file)) console.log(`${file}: no longer exists - remove its entry from scripts/quality-baseline.json legacyLines`);
 }')
 
 if [[ -d public ]]; then
