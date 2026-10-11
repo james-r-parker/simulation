@@ -124,7 +124,7 @@ order.
 
 **Targets:** none - test and gate tooling; `bench-compare` reads `bench.*` metrics but moves none
 
-Phase 2 is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, which adds the `js/sim` modules Stryker mutates and the
+When Phase 1 lands, this doc's rank moves behind [headless-sim-core.md](headless-sim-core.md): Phase 2 is built after its Phase 2, which adds the `js/sim` modules Stryker mutates and the
 `npm run bench` that `bench-compare` runs.
 
 - **Mutation.** `stryker.config.json` uses `@stryker-mutator/vitest-runner`, mutates `js/sim/**/*.js` and

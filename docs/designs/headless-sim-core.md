@@ -3,7 +3,7 @@
 **Status:** Proposed - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/`.
 **Validated:** bd49bce (2026-10-11)
 **Priority:** 3 - every later doc (evals, evolution, worker) runs on this core
-**Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
+**Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 `js/sim/` is the simulation: a deterministic, DOM-free, struct-of-arrays world advanced one fixed tick at a time.
 It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Worker ([worker-and-renderer.md](worker-and-renderer.md)).
@@ -14,7 +14,7 @@ It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Wo
 - Per-tick code allocates nothing: state, scratch buffers and the contact list are typed arrays sized at
   `createWorld`.
 - `js/sim/` imports nothing outside `js/sim/`. Defaults copied from `js/constants/` name their source constant.
-- It replaces the legacy defects recorded in [legacy-audit.md](legacy-audit.md) under NN-1 to NN-9, IN-1 to IN-8, LIFE-1 to LIFE-5,
+- It replaces the legacy defects recorded in [legacy-audit.md](legacy-audit.md) under NN-1 to NN-4, NN-6 to NN-8, IN-1 to IN-8, FIT-4, LIFE-1 to LIFE-5,
   PERF-1 to PERF-7, DET-1 and DET-4.
 
 ## Modules
@@ -74,8 +74,8 @@ hashes run the same physics and brains at different population sizes. "new" in S
 | -------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `seed`                                                         | `1`                              | new                                                                                                         |
 | `worldWidth`, `worldHeight`                                    | `14400`, `8100`                  | `WORLD_WIDTH`, `WORLD_HEIGHT`                                                                               |
-| `maxAgents`, `initialAgents`, `minAgents`                      | `500`, `100`, `20`               |
-| `immigrationInterval`                                          | `600`                            | new                                                                                                         | new |
+| `maxAgents`, `initialAgents`, `minAgents`                      | `500`, `100`, `20`               | new                                                                                                         |
+| `immigrationInterval`                                          | `600`                            | new                                                                                                         |
 | `maxFood`, `initialFood`                                       | `800`, `300`                     | new; `FOOD_SPAWN_CAP`                                                                                       |
 | `foodSpawnRate`                                                | `0.02`                           | `FOOD_SPAWN_RATE`                                                                                           |
 | `foodEnergy`, `foodEnergyVariance`                             | `70`, `20`                       | `FOOD_ENERGY_NORMAL_BASE`, `FOOD_ENERGY_NORMAL_VARIANCE`                                                    |
@@ -126,7 +126,7 @@ The season phase is `(tick % seasonLength) / seasonLength`: one `seasonLength` i
 
 `createWorld(config, policy)` forks the RNG streams onto `world.rng`, allocates every array once, places
 `obstacleCount` obstacles, `initialFood` food and `initialAgents` agents, and gives each agent a brain through
-`policy.initBrain`. Agent arrays have `maxAgents` slots:
+`policy.initBrain`, pushing `AgentBorn` with cause `initial` for each; callers drain the ring before the first `step`. Agent arrays have `maxAgents` slots:
 
 | Array                                                      | Type           | Holds                                                                                                                                         |
 | ---------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -149,13 +149,13 @@ and `tick`. `allocAgent` takes the lowest free slot; `freeAgent` zeroes the slot
 
 `policy` holds the brain hooks the core calls:
 
-| Hook                                           | Called                                                                 | Does                                                                                                   |
-| ---------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `initSpec?(world, slot, rng)`                  | For an initial, floor or immigrant agent, after its ids are assigned   | Returns the specialisation index; without it `spawn` draws one                                         |
-| `initBrain(world, slot, rng)`                  | After `initSpec`                                                       | Writes the slot's `weights` row                                                                        |
-| `onMate?(world, mother, father)`               | When a mating starts a pregnancy, after `fatherWeights` is copied      | Lets the policy keep per-mother state about the father                                                 |
-| `childBrain(world, child, mother, cause, rng)` | At a birth (`cause` `mate` or `split`), after the child's ids and spec | Writes the child's row from the mother's `weights` and `fatherWeights` (both the parent's for a split) |
-| `onDeath?(world, slot, cause)`                 | In `reap`, before `freeAgent`                                          | Lets the policy read the dying agent's rows                                                            |
+| Hook                                               | Called                                                                 | Does                                                                                                   |
+| -------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `initSpec?(world, slot, rng)`                      | For an initial, floor or immigrant agent, after its ids are assigned   | Returns the specialisation index; without it `spawn` draws one                                         |
+| `initBrain(world, slot, rng)`                      | After `initSpec`                                                       | Writes the slot's `weights` row                                                                        |
+| `onMate?(world, mother, father)`                   | When a mating starts a pregnancy, after `fatherWeights` is copied      | Lets the policy keep per-mother state about the father                                                 |
+| `childBrain(world, child, mother, { cause, rng })` | At a birth (`cause` `mate` or `split`), after the child's ids and spec | Writes the child's row from the mother's `weights` and `fatherWeights` (both the parent's for a split) |
+| `onDeath?(world, slot, cause)`                     | In `reap`, before `freeAgent`                                          | Lets the policy read the dying agent's rows                                                            |
 
 A new agent's slot is allocated, then `genomeId`, `lineageId`, `parentA`, `parentB` and `spec` are set, then the
 brain hook runs, then the agent is placed and `AgentBorn` is pushed. `js/evo/` supplies the real policies;
@@ -329,7 +329,7 @@ new event-ring records into log events. Nothing is logged per agent per tick.
 
 | Event                | Level | Fields                                                                                                                                                                                 |
 | -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RunStarted`         | info  | `runId`, `seed`, `configHash`, `ticks`                                                                                                                                                 |
+| `RunStarted`         | info  | `runId`, `seed`, `configHash`, `configOverrides`, `policy`, `ticks`                                                                                                                    |
 | `AgentBorn`          | debug | `tick`, `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause` (`mate`, `split`, `floor`, `immigrant`, `initial`)                                                      |
 | `AgentDied`          | debug | `tick`, `slot`, `genomeId`, `cause` (`starved`, `eaten`, `collision`, `old-age`), `by` (`lastBiter` when `eaten`, else 0), `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy` |
 | `BirthBlocked`       | warn  | `tick`, `slot`, `cause` (`capacity`, `energy`)                                                                                                                                         |
@@ -429,13 +429,13 @@ maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<
 
 ### Phase 3 - Diagnostics and replay
 
-| #   | Task                                                                                                                                                     | Nature       | Depends on         |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T21 | Add `js/sim/log.js` with tests                                                                                                                           | [judgement]  | T20                |
-| T22 | Add `scripts/replay.mjs`, `scripts/lib/jsonl-sink.mjs`, `npm run replay` and `test/replay.test.js`                                                       | [judgement]  | T21                |
-| T23 | Add `scripts/lib/otel.mjs` with exact-pinned OpenTelemetry packages, wire it into `replay.mjs` and `bench.mjs`; add `docker-compose.yml` and `.mcp.json` | [judgement]  | T22                |
-| T24 | Update `AGENTS.md` and the `debug-sim` skill; record the Aspire CLI version in [sim-notes.md](sim-notes.md)                                              | [mechanical] | T23                |
-| T25 | Conformance review of Phase 3                                                                                                                            | [judgement]  | T21, T22, T23, T24 |
+| #   | Task                                                                                                                                                                             | Nature       | Depends on         |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T21 | Add `js/sim/log.js` with tests                                                                                                                                                   | [judgement]  | T20                |
+| T22 | Add `scripts/replay.mjs`, `scripts/lib/jsonl-sink.mjs`, `npm run replay` and `test/replay.test.js`                                                                               | [judgement]  | T21                |
+| T23 | Add `scripts/lib/otel.mjs` with exact-pinned OpenTelemetry packages, wire it into `replay.mjs` and `bench.mjs`; add `docker-compose.yml` and `.mcp.json`                         | [judgement]  | T22                |
+| T24 | Update `AGENTS.md` and the `debug-sim` skill (`--dump <tick>` writing `.sim/dumps/`, and the `STEP_PHASES` names); record the Aspire CLI version in [sim-notes.md](sim-notes.md) | [mechanical] | T23                |
+| T25 | Conformance review of Phase 3                                                                                                                                                    | [judgement]  | T21, T22, T23, T24 |
 
 ## Verification
 

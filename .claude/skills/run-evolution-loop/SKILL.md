@@ -37,8 +37,8 @@ Write the prediction first. A prediction written after the result is not a predi
 
     ```bash
     git worktree add <scratch>/before origin/main
-    (cd <scratch>/before && npm ci && npm run eval -- --seeds 8 --ticks 200000 --out ../before.json)
-    npm run eval -- --seeds 8 --ticks 200000 --out <scratch>/after.json
+    (cd <scratch>/before && npm ci && npm run eval -- --seeds 8 --ticks 200000 --policy <beforePolicy> --out ../before.json)
+    npm run eval -- --seeds 8 --ticks 200000 --policy <afterPolicy> --out <scratch>/after.json
     ```
 
 - `bench.*` metrics: `npm run bench` on an otherwise idle machine; compare with `bench/baseline.json`.
