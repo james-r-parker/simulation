@@ -37,7 +37,10 @@ tier below it.
 - `--list` prints the gates the other flags select, one per line, and runs nothing.
 - `--docs`, `--only=` and the `docs-tests` gate keep their meaning. `docs-tests` belongs to no tier and runs only
   when `--docs` or `--only` names it.
-- A gate named in a tier but not yet built, or whose inputs do not exist, reports `skipped`.
+- A gate named in a tier but not yet built, or whose inputs do not exist, reports `skipped`. `test-related` reports
+  `skipped` in tiers 2 and 3, which run the full `test` gate, and `ratchet` reports `skipped` unless a passing `test`
+  gate ran in the same run.
+- A `TEST_SEED` that is not a non-negative integer exits 2.
 - [headless-sim-core.md](headless-sim-core.md) adds `bench-check` and [evolution-evals.md](evolution-evals.md) adds `eval-smoke` to tier 2;
   [improvement-loop.md](improvement-loop.md) adds the `nightly-eval` and `history` jobs beside tier 3 in `nightly.yml`.
 

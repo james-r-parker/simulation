@@ -4,11 +4,11 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Scopes the ratchet tracks, as repo-relative path prefixes. */
-export const SCOPES = ['js/sim', 'js/evo', 'scripts'];
+const SCOPES = ['js/sim', 'js/evo', 'scripts'];
 /** Coverage metrics tracked per scope. */
-export const METRICS = ['lines', 'branches', 'functions', 'statements'];
+const METRICS = ['lines', 'branches', 'functions', 'statements'];
 /** Percentage points a metric may fall below its baseline before the check fails. */
-export const TOLERANCE = 0.1;
+const TOLERANCE = 0.1;
 
 /**
  * @typedef {{total: number, covered: number}} Counts
