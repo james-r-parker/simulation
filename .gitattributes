@@ -1,0 +1,11 @@
+# Normalise to LF in the repo and the working tree, so tests and generated files are byte-stable.
+* text=auto eol=lf
+
+*.sh text eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.mp4 binary

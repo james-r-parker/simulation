@@ -8,7 +8,15 @@
     "serve": "npx http-server -p 8000 -c-1",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "wrangler pages deploy dist"
+    "deploy": "wrangler pages deploy dist",
+    "check": "scripts/check.sh",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "designs:index": "node scripts/designs-index.mjs --write"
   },
   "keywords": [
     "simulation",
@@ -20,12 +28,19 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "eslint": "^9.39.1",
-    "eslint-plugin-jsdoc": "^61.4.1",
-    "three": "^0.160.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.2.4",
-    "wrangler": "^4.50.0"
+    "@eslint/js": "9.39.1",
+    "@types/node": "24.19.2",
+    "eslint": "9.39.1",
+    "eslint-plugin-jsdoc": "61.4.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "three": "0.160.1",
+    "typescript": "5.9.3",
+    "vite": "7.2.4",
+    "vitest": "5.0.3",
+    "wrangler": "4.51.0"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

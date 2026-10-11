@@ -1,0 +1,24 @@
+# Generated
+docs/designs/README.md
+package-lock.json
+dist/
+
+# Legacy code and docs, formatted as they are replaced (docs/designs/worker-and-renderer.md removes them).
+# New code under js/sim/ and js/evo/ is formatted from the first line.
+js/**
+!js/sim/
+!js/sim/**
+!js/evo/
+!js/evo/**
+css/
+public/
+index.html
+*.README.md
+README.md
+COLLISION_LOGIC.md
+DEPLOY.md
+QUICKSTART.md
+manifest.json
+wrangler.toml
+vite.config.js
+start-server.*
