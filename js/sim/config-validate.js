@@ -1,10 +1,9 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
+import { brainLayout } from './brain-layout.js';
+
 const MAX_SEED = 4294967295; // 2^32 - 1
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
-const RAY_CHANNELS = 8;
-const EXTRA_INPUTS = 15;
-const OUTPUT_COUNT = 5;
 const SEASON_COUNT = 4;
 const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus'];
 const SPECIALISATION_KEYS = ['forager', 'predator', 'reproducer', 'scout', 'defender'];
@@ -252,22 +251,11 @@ function checkRelations(config) {
 }
 
 /**
- * Number of floats in one brain's weight array, for the config's ray count and hidden size.
- * @param {Record<string, any>} config the config
- * @returns {number}
- */
-function weightCount(config) {
-    const inputs = config.rayCount * RAY_CHANNELS + EXTRA_INPUTS;
-    const hidden = config.brainHidden;
-    return inputs * hidden + hidden * hidden + hidden + hidden * OUTPUT_COUNT + OUTPUT_COUNT;
-}
-
-/**
  * @param {Record<string, any>} config the config
  * @returns {void}
  */
 function checkCrossKey(config) {
-    const floats = config.maxAgents * weightCount(config);
+    const floats = config.maxAgents * brainLayout(config).weightCount;
     if (floats > MAX_WEIGHT_FLOATS) {
         fail(
             'maxAgents',
