@@ -9,6 +9,8 @@
 #   scripts/check.sh --docs    # a docs-only change (scripts/change-scope.sh): conventions, designs-index, format and
 #                              # the design-doc tests; combines with --fix and --ci
 #   scripts/check.sh --quiet   # print only failed gates and the summary line
+#   scripts/check.sh --tier 1  # tier 1 (pre-commit), 2 (default, the PR gate) or 3 (nightly); not with --only/--docs
+#   scripts/check.sh --list    # print the gates the other flags select, one per line, and run nothing
 #
 # A failed gate prints a digest under its line (failed tests with their assertion, type errors, lint problems,
 # unformatted files; at most 40 lines) and keeps its full log in .checklogs/<gate>.log until the next run. Read those
@@ -23,29 +25,63 @@ CI=0
 DOCS=0
 QUIET=0
 ONLY=""
-for arg in "$@"; do
+TIER=""
+LIST=0
+args=("$@")
+i=0
+while [[ $i -lt ${#args[@]} ]]; do
+  arg="${args[$i]}"
+  i=$((i + 1))
   case "$arg" in
+    --tier)
+      [[ $i -lt ${#args[@]} ]] || { echo "--tier needs a value (1, 2 or 3)" >&2; exit 2; }
+      TIER="${args[$i]}"; i=$((i + 1)) ;;
+    --tier=*) TIER="${arg#--tier=}" ;;
+    --list) LIST=1 ;;
     --fix) FIX=1 ;;
     --ci) CI=1 ;;
     --docs) DOCS=1 ;;
     --quiet) QUIET=1 ;;
     --only=*) ONLY="${arg#--only=}" ;;
-    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
 
-# docs-tests runs only when named (by --docs or --only): the full gate's test step already runs those tests.
-GATES="conventions,designs-index,format,lint,typecheck,test,build,docs-tests"
+# Gates in run order, by tier (each tier includes the one below). docs-tests belongs to no tier: it runs only when named
+# (by --docs or --only), because the test gate already runs those tests.
+TIER1_GATES="conventions,format,lint,test-related"
+TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,build,browser-smoke"
+TIER3_GATES="$TIER2_GATES,mutation,bench-compare"
+GATES="$TIER3_GATES,docs-tests"
+if [[ -n "$TIER" ]]; then
+  [[ -z "$ONLY" && $DOCS -eq 0 ]] || { echo "--tier cannot be combined with --only or --docs" >&2; exit 2; }
+  case "$TIER" in
+    1) ONLY="$TIER1_GATES" ;;
+    2) ONLY="$TIER2_GATES" ;;
+    3) ONLY="$TIER3_GATES" ;;
+    *) echo "unknown tier: $TIER (expected 1, 2 or 3)" >&2; exit 2 ;;
+  esac
+fi
 if [[ $DOCS -eq 1 ]]; then
   [[ -z "$ONLY" ]] || { echo "--docs and --only cannot be combined" >&2; exit 2; }
   ONLY="conventions,designs-index,format,docs-tests"
 fi
+[[ -n "$ONLY" ]] || ONLY="$TIER2_GATES"
 if [[ -n "$ONLY" ]]; then
   IFS=',' read -ra requested <<<"$ONLY"
   for gate in "${requested[@]}"; do
     [[ ",$GATES," == *",$gate,"* ]] || { echo "unknown gate: $gate (expected one of $GATES)" >&2; exit 2; }
   done
+fi
+
+if [[ $LIST -eq 1 ]]; then
+  # Print in run order, whatever order --only gave them.
+  IFS=',' read -ra all <<<"$GATES"
+  for gate in "${all[@]}"; do
+    [[ ",$ONLY," == *",$gate,"* ]] && echo "$gate"
+  done
+  exit 0
 fi
 
 [[ -d node_modules ]] || { echo "node_modules is missing - run: npm ci" >&2; exit 1; }
@@ -131,7 +167,29 @@ run_gate format "$BIN/prettier" --check .
 
 run_gate lint "$BIN/eslint" --max-warnings 0 .
 
+# Not yet built gates report skipped; each is its own function so it is filled in separately.
+# gate_test_related: the tests related to the staged files (vitest related).
+gate_test_related() { skip_gate test-related "not built yet"; }
+# gate_deps: layering rules from .dependency-cruiser.cjs (dependency-cruiser).
+gate_deps() { skip_gate deps "not built yet"; }
+# gate_dupes: copy-paste detection (jscpd with .jscpd.json).
+gate_dupes() { skip_gate dupes "not built yet"; }
+# gate_ratchet: coverage and quality numbers may not fall (scripts/quality-ratchet.mjs).
+gate_ratchet() { skip_gate ratchet "not built yet"; }
+# gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh).
+gate_browser_smoke() { skip_gate browser-smoke "not built yet"; }
+# gate_mutation: mutation testing score (stryker).
+gate_mutation() { skip_gate mutation "not built yet"; }
+# gate_bench_compare: main-versus-branch benchmarks (scripts/bench-compare.mjs).
+gate_bench_compare() { skip_gate bench-compare "not built yet"; }
+
+gate_test_related
+
 run_gate typecheck "$BIN/tsc" -p tsconfig.json --pretty false
+
+gate_deps
+
+gate_dupes
 
 # run_tests <junit file> <vitest args...>: in CI the results also go to TestResults/<junit file> for the workflow to
 # upload.
@@ -157,6 +215,8 @@ else
   skip_gate test "no tests yet"
 fi
 
+gate_ratchet
+
 # The tests that read this repo's Markdown (the design-doc lint over every doc, and the index). Only when named: the
 # test gate above already runs them.
 if [[ ",$ONLY," == *",docs-tests,"* ]]; then
@@ -177,6 +237,12 @@ build_app() {
   return "$status"
 }
 run_gate build build_app
+
+gate_browser_smoke
+
+gate_mutation
+
+gate_bench_compare
 
 [[ $FAILED -eq 0 ]] && rmdir "$LOG_DIR" 2>/dev/null
 
