@@ -1,8 +1,8 @@
-# Database Worker Documentation (`database-worker.js`)
+# Database Worker Documentation (`public/database-worker.js`)
 
 ## Overview
 
-The `database-worker.js` module runs in a separate Web Worker thread to handle all IndexedDB operations. This prevents database I/O from blocking the main simulation loop, ensuring smooth performance even when saving large amounts of data.
+The `public/database-worker.js` module (served at `/database-worker.js`) runs in a separate Web Worker thread to handle all IndexedDB operations. This prevents database I/O from blocking the main simulation loop, ensuring smooth performance even when saving large amounts of data.
 
 ## Why It Exists
 
