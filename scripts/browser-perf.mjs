@@ -22,13 +22,15 @@ try {
 /**
  * Parses the command line.
  * @param {string[]} argv Arguments after the script name.
- * @returns {{ seconds: number, out: string, headed: boolean }} The run options.
+ * @returns {{ seconds: number, out: string, headed: boolean, allowFallback: boolean }} The run options.
  */
 export function parseArgs(argv) {
-    const options = { seconds: DEFAULT_SECONDS, out: DEFAULT_OUT, headed: false };
+    const options = { seconds: DEFAULT_SECONDS, out: DEFAULT_OUT, headed: false, allowFallback: false };
     for (const arg of argv) {
         if (arg === '--headed') {
             options.headed = true;
+        } else if (arg === '--allow-fallback') {
+            options.allowFallback = true;
         } else if (arg.startsWith('--seconds=')) {
             const seconds = Number(arg.slice('--seconds='.length));
             if (!Number.isFinite(seconds) || seconds <= 0) {
@@ -38,7 +40,9 @@ export function parseArgs(argv) {
         } else if (arg.startsWith('--out=') && arg.length > '--out='.length) {
             options.out = arg.slice('--out='.length);
         } else {
-            throw new Error(`Unknown argument "${arg}"; expected --seconds=<n>, --out=<path> or --headed`);
+            throw new Error(
+                `Unknown argument "${arg}"; expected --seconds=<n>, --out=<path>, --headed or --allow-fallback`,
+            );
         }
     }
     return options;
@@ -107,13 +111,22 @@ export function buildBaseline({
 }
 
 /**
- * Formats a GPUAdapterInfo-like object as one line.
- * @param {any} info The adapter info.
- * @returns {string} Vendor, architecture and description.
+ * Describes the WebGPU adapter as one line, refusing a software fallback adapter unless allowed.
+ * @param {{ vendor: string, architecture: string, description: string, fallback: boolean } | null} adapter Adapter fields.
+ * @param {boolean} allowFallback Accept a software adapter such as SwiftShader.
+ * @returns {string} Vendor, architecture and description, with "(fallback)" for a software adapter.
  */
-function describeAdapter(info) {
-    const parts = [info?.vendor, info?.architecture, info?.description].filter(Boolean);
-    return parts.length > 0 ? parts.join(' / ') : 'unknown adapter';
+export function describeAdapter(adapter, allowFallback) {
+    if (adapter === null) {
+        throw new Error('No WebGPU adapter available in this Chromium. Re-run with --headed to use a visible browser.');
+    }
+    const name = [adapter.vendor, adapter.architecture, adapter.description].filter(Boolean).join(' / ') || 'unknown';
+    if (adapter.fallback && !allowFallback) {
+        throw new Error(
+            `WebGPU adapter "${name}" is a software fallback, not the GPU; pass --allow-fallback to record it anyway.`,
+        );
+    }
+    return adapter.fallback ? `${name} (fallback)` : name;
 }
 
 /**
@@ -135,21 +148,23 @@ async function startServer() {
  * @param {import('@playwright/test').Browser} browser The launched browser.
  * @param {string} url The app URL.
  * @param {number} seconds Run length.
+ * @param {boolean} allowFallback Accept a software WebGPU adapter.
  * @returns {Promise<{ perf: any, longTasks: number, gpuAdapter: string, agentCount: number | null }>} Raw readings.
  */
-async function measure(browser, url, seconds) {
+async function measure(browser, url, seconds, allowFallback) {
     const page = await browser.newPage();
     await page.addInitScript(LONG_TASK_SCRIPT);
     await page.goto(url);
-    const gpuAdapter = await page.evaluate(async () => {
-        const adapter = await /** @type {any} */ (navigator).gpu?.requestAdapter();
-        return adapter ? (adapter.info ?? {}) : null;
+    const adapter = await page.evaluate(async () => {
+        const found = await /** @type {any} */ (navigator).gpu?.requestAdapter({ powerPreference: 'high-performance' });
+        if (!found) {
+            return null;
+        }
+        const info = found.info ?? {};
+        const fallback = Boolean(found.isFallbackAdapter ?? info.isFallbackAdapter);
+        return { vendor: info.vendor, architecture: info.architecture, description: info.description, fallback };
     });
-    if (gpuAdapter === null) {
-        throw new Error(
-            'No WebGPU adapter available in this Chromium. Re-run with --headed to use a visible browser with a GPU.',
-        );
-    }
+    const gpuAdapter = describeAdapter(adapter, allowFallback);
     await page.waitForFunction(() => typeof (/** @type {any} */ (globalThis).__perf) === 'function', null, {
         timeout: PERF_READY_TIMEOUT_MS,
     });
@@ -162,12 +177,12 @@ async function measure(browser, url, seconds) {
             agentCount: w.currentSimulation?.agents?.length ?? null,
         };
     });
-    return { ...readings, gpuAdapter: describeAdapter(gpuAdapter) };
+    return { ...readings, gpuAdapter };
 }
 
 /**
  * Runs the whole measurement and writes the baseline file.
- * @param {{ seconds: number, out: string, headed: boolean }} options Parsed options.
+ * @param {{ seconds: number, out: string, headed: boolean, allowFallback: boolean }} options Parsed options.
  * @returns {Promise<void>}
  */
 async function run(options) {
@@ -177,7 +192,7 @@ async function run(options) {
     try {
         browser = await chromium.launch({ headless: !options.headed, args: ['--enable-unsafe-webgpu'] });
         console.log(`Measuring ${url} for ${options.seconds} s (${options.headed ? 'headed' : 'headless'})`);
-        const readings = await measure(browser, url, options.seconds);
+        const readings = await measure(browser, url, options.seconds, options.allowFallback);
         const baseline = buildBaseline({
             ...readings,
             browserVersion: browser.version(),

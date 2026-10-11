@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBaseline, parseArgs } from '../scripts/browser-perf.mjs';
+import { buildBaseline, describeAdapter, parseArgs } from '../scripts/browser-perf.mjs';
 
 const perf = {
     app: 'legacy',
@@ -20,14 +20,20 @@ const meta = {
 
 describe('parseArgs', () => {
     it('defaults to 60 seconds, the baseline path and headless', () => {
-        expect(parseArgs([])).toEqual({ seconds: 60, out: 'bench/legacy-baseline.json', headed: false });
+        expect(parseArgs([])).toEqual({
+            seconds: 60,
+            out: 'bench/legacy-baseline.json',
+            headed: false,
+            allowFallback: false,
+        });
     });
 
     it('applies overrides', () => {
-        expect(parseArgs(['--seconds=5', '--out=/tmp/x.json', '--headed'])).toEqual({
+        expect(parseArgs(['--seconds=5', '--out=/tmp/x.json', '--headed', '--allow-fallback'])).toEqual({
             seconds: 5,
             out: '/tmp/x.json',
             headed: true,
+            allowFallback: true,
         });
     });
 
@@ -57,5 +63,23 @@ describe('buildBaseline', () => {
         const bad = { ...perf, frameMs: { ...perf.frameMs, p95: NaN } };
         expect(() => buildBaseline({ perf: bad, ...meta })).toThrow('frameMs.p95');
         expect(() => buildBaseline({ perf: { ...perf, frameMs: {} }, ...meta })).toThrow('frameMs.p50');
+    });
+});
+
+describe('describeAdapter', () => {
+    const swiftshader = { vendor: 'google', architecture: 'swiftshader', description: '', fallback: true };
+
+    it('names a hardware adapter', () => {
+        const gpu = { vendor: 'nvidia', architecture: 'lovelace', description: 'RTX 4090', fallback: false };
+        expect(describeAdapter(gpu, false)).toBe('nvidia / lovelace / RTX 4090');
+    });
+
+    it('refuses a software fallback adapter unless allowed', () => {
+        expect(() => describeAdapter(swiftshader, false)).toThrow('--allow-fallback');
+        expect(describeAdapter(swiftshader, true)).toBe('google / swiftshader (fallback)');
+    });
+
+    it('fails when there is no adapter', () => {
+        expect(() => describeAdapter(null, true)).toThrow('No WebGPU adapter');
     });
 });
