@@ -190,8 +190,8 @@ describe('buildHash', () => {
         for (const circle of circles) {
             for (const cell of cellsOf(hash, circle)) {
                 const at = hash.cellStart[cell] + (cellContents(hash).get(cell) ?? []).indexOf(circle.id);
-                expect(hash.boxX[at]).toBe(Math.fround(circle.x - circle.r));
-                expect(hash.boxY[at]).toBe(Math.fround(circle.y - circle.r));
+                expect(hash.boxX[at]).toBe(Math.fround(circle.x) - Math.fround(circle.r));
+                expect(hash.boxY[at]).toBe(Math.fround(circle.y) - Math.fround(circle.r));
             }
         }
     });

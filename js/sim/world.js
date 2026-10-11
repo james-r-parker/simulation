@@ -153,6 +153,7 @@ export function allocateWorld(config) {
         foodCount: 0,
         ledger: new Float64Array(2),
         point: new Float64Array(2),
+        transferGained: 0,
         season: new Float64Array(2),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),

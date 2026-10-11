@@ -145,6 +145,15 @@ describe('transferEnergy', () => {
         expect(world.ledger).toEqual(new Float64Array([0, 0]));
     });
 
+    it('records what the receiver stored in transferGained', () => {
+        const world = worldWith();
+        world.energy[0] = 50;
+        world.energy[1] = world.config.maxEnergy - 5;
+        expect(transferEnergy(world, 0, 1, 20)).toBe(20);
+        expect(world.transferGained).toBe(5);
+        expect(world.ledger[1]).toBe(15);
+    });
+
     it('does not set lastLoss', () => {
         const world = worldWith();
         world.energy[0] = 50;
