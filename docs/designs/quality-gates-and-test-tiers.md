@@ -39,7 +39,7 @@ tier below it.
   when `--docs` or `--only` names it.
 - A gate named in a tier but not yet built, or whose inputs do not exist, reports `skipped`.
 - `headless-sim-core.md` adds `bench-check` and `evolution-evals.md` adds `eval-smoke` to tier 2;
-  `improvement-loop.md` adds the nightly eval to tier 3.
+  `improvement-loop.md` adds the `nightly-eval` and `history` jobs beside tier 3 in `nightly.yml`.
 
 ## Layering and duplication
 
