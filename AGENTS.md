@@ -104,20 +104,20 @@ own.
 
 ### Size limits (enforced)
 
-| Limit                              | Value                                                                     | Gate                              |
-| ---------------------------------- | ------------------------------------------------------------------------- | --------------------------------- |
-| Lines per source file              | 300 (blank lines and comments excluded)                                   | `lint` (`max-lines`)              |
-| Lines per test file                | 400                                                                       | `lint` (`max-lines`)              |
-| Lines per function                 | 50                                                                        | `lint` (`max-lines-per-function`) |
-| Cyclomatic complexity per function | 10                                                                        | `lint` (`complexity`)             |
-| Nesting depth                      | 3                                                                         | `lint` (`max-depth`)              |
-| Parameters per function            | 4 - pass an options object beyond that                                    | `lint` (`max-params`)             |
-| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`                  | `conventions`                     |
-| Legacy files                       | Only shrink; no new files beside them (`scripts/legacy-size-budget.json`) | `conventions`                     |
+| Limit                              | Value                                                                                  | Gate                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------- |
+| Lines per source file              | 300 (blank lines and comments excluded)                                                | `lint` (`max-lines`)              |
+| Lines per test file                | 400                                                                                    | `lint` (`max-lines`)              |
+| Lines per function                 | 50                                                                                     | `lint` (`max-lines-per-function`) |
+| Cyclomatic complexity per function | 10                                                                                     | `lint` (`complexity`)             |
+| Nesting depth                      | 3                                                                                      | `lint` (`max-depth`)              |
+| Parameters per function            | 4 - pass an options object beyond that                                                 | `lint` (`max-params`)             |
+| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`                               | `conventions`                     |
+| Legacy files                       | Only shrink; no new files beside them (`scripts/quality-baseline.json`, `legacyLines`) | `conventions`                     |
 
 A limit is a signal to split, never a target to pad up to. Do not silence a limit with `eslint-disable`; split the
-module or function instead. When a legacy file shrinks, lower its budget in the same commit; when it is deleted,
-remove its entry.
+module or function instead. When a legacy file shrinks, lower its budget (`legacyLines` in `scripts/quality-baseline.json`) in the same
+commit; when it is deleted, remove its entry.
 
 ### Module design
 
