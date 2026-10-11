@@ -1,10 +1,10 @@
 {
   "coverage": {
     "scripts": {
-      "lines": 76.55,
-      "branches": 73.26,
+      "lines": 76.79,
+      "branches": 73.62,
       "functions": 87.77,
-      "statements": 77.55
+      "statements": 77.77
     }
   },
   "floors": {
