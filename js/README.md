@@ -218,14 +218,14 @@ This directory contains all the JavaScript modules for the Blob Evolution simula
 - `flush()` - Ensure all queued saves complete
 
 **Key Features**:
-- Uses Web Worker (`database-worker.js`) for non-blocking operations
+- Uses Web Worker (`public/database-worker.js`) for non-blocking operations
 - Stores top 3 per gene ID (not just top 10 overall)
 - Async operations prevent UI blocking
 - Queue-based saving for performance
 
 ---
 
-#### `database-worker.js`
+#### `public/database-worker.js`
 **Purpose**: Web Worker for IndexedDB operations.
 
 **Functions**:
