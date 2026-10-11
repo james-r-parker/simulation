@@ -6,7 +6,15 @@ import globals from 'globals';
 // (docs/designs/worker-and-renderer.md widens this list and the tsconfig include together).
 export default [
     {
-        ignores: ['dist/**', 'node_modules/**', 'public/**', 'js/*.js', 'js/constants/**', 'vite.config.js'],
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'public/**',
+            'js/*.js',
+            'js/constants/**',
+            'vite.config.js',
+            'test/fixtures/**',
+        ],
     },
     js.configs.recommended,
     // Coding standards (AGENTS.md, Coding standards): small single-purpose modules and functions.
