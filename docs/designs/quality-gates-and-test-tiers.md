@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 adds the static gates, the coverage ratchet, the pre-commit hook and the tier flag before any sim code lands.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 2 - the static gates and the coverage ratchet must exist before the first `js/sim` module is written
+**Priority:** 1 - the static gates and the coverage ratchet must exist before the first `js/sim` module is written
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the
