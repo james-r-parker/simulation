@@ -154,3 +154,7 @@ evals/results/
 
 # Test results from scripts/check.sh --ci
 TestResults/
+
+# Quality gate reports and coverage output
+reports/
+coverage/
