@@ -1,9 +1,12 @@
 # Headless sim core
 
-**Status:** Proposed - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/`.
-**Validated:** bd49bce (2026-10-11)
+**Status:** Proposed - Phase 1 builds the deterministic maths, RNG, config, world state, events, energy, placement and spatial hash in `js/sim/`.
+**Validated:** d675c32 (2026-10-11)
 **Priority:** 1 - every later doc (evals, evolution, worker) runs on this core
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
+
+> Companion: [headless-sim-core-contracts.md](headless-sim-core-contracts.md) fixes the layouts, update orders and edge
+> cases every task builds against. Read it before building any task here.
 
 `js/sim/` is the simulation: a deterministic, DOM-free, struct-of-arrays world advanced one fixed tick at a time.
 It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Worker ([worker-and-renderer.md](worker-and-renderer.md)).
@@ -19,34 +22,37 @@ It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Wo
 
 ## Modules
 
-| Module                      | Exports                                                                | Does                                                                                         |
-| --------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `js/sim/det-math.js`        | `detSin`, `detCos`, `detExp`, `detLog`, `detTanh`                      | Engine-independent transcendental functions from `+ - * /` and `Math.floor` only             |
-| `js/sim/fnv.js`             | `fnv64Init`, `fnv64Bytes`, `fnv64Hex`                                  | 64-bit FNV-1a in two 32-bit lanes                                                            |
-| `js/sim/rng.js`             | `createRng`, `fork`, `nextFloat`, `nextInt`, `nextGaussian`            | sfc32; `fork(rng, name)` derives an independent stream; Gaussian by Box-Muller on `det-math` |
-| `js/sim/config-defaults.js` | `DEFAULTS`                                                             | The default for every config key                                                             |
-| `js/sim/config.js`          | `createConfig`, `configHash`, `rulesHash`                              | Frozen, validated config from defaults plus overrides; FNV hashes of its canonical JSON      |
-| `js/sim/world.js`           | `createWorld`, `allocAgent`, `freeAgent`                               | Typed-array state, RNG streams, slot free-list                                               |
-| `js/sim/spatial-hash.js`    | `createSpatialHash`, `buildHash`, `cellRange`                          | Uniform grid built by counting sort; a circle goes in every cell its bounding box overlaps   |
-| `js/sim/world-hash.js`      | `hashWorld`                                                            | FNV-1a over every world array, as a 16-character hex string                                  |
-| `js/sim/invariants.js`      | `assertInvariants`                                                     | Throws naming the first broken invariant                                                     |
-| `js/sim/brain.js`           | `brainLayout`, `forwardAll`                                            | Per-agent Elman RNN weights, biases and hidden state; one batched pass                       |
-| `js/sim/ray-march.js`       | `castRays`                                                             | DDA ray walk over the hash plus direct obstacle tests; nearest hit per ray                   |
-| `js/sim/body-inputs.js`     | `writeBodyInputs`                                                      | The 15 body-state inputs                                                                     |
-| `js/sim/sensors.js`         | `senseAll`                                                             | Fills `world.inputs` from `castRays` and `writeBodyInputs`                                   |
-| `js/sim/physics.js`         | `actAll`, `integrate`, `resolveContacts`                               | Outputs to motion; walls and obstacles; agent pairs resolved once into the contact list      |
-| `js/sim/environment.js`     | `updateSeason`, `moveObstacles`, `addFertileZone`, `decayFertileZones` | Season phase and modifiers; obstacle motion; fertile zones                                   |
-| `js/sim/food.js`            | `spawnFood`, `ageFood`                                                 | Food spawning and rot                                                                        |
-| `js/sim/pheromones.js`      | `depositPheromone`, `updatePheromones`, `samplePheromones`             | Two-channel grid field with decay and diffusion                                              |
-| `js/sim/events.js`          | `createEventRing`, `pushEvent`, `readEvents`                           | Fixed-size ring of typed event records                                                       |
-| `js/sim/energy.js`          | `applyCosts`, `addEnergy`, `removeEnergy`                              | Per-tick costs; every energy change, recorded in the ledger                                  |
-| `js/sim/feeding.js`         | `feed`                                                                 | Eating food and bites, from the contact list                                                 |
-| `js/sim/reproduction.js`    | `mate`, `advancePregnancies`, `splitAll`                               | Mating, pregnancies, splits and child placement                                              |
-| `js/sim/population.js`      | `reap`, `fillFloor`                                                    | Deaths and the population floor                                                              |
-| `js/sim/birth-policy.js`    | `cloneWithNoisePolicy`                                                 | Reference brain policy: Gaussian init; child = parent weights plus Gaussian noise            |
-| `js/sim/step.js`            | `step`, `STEP_PHASES`                                                  | One tick: the phases below in order; per-phase overrides                                     |
-| `js/sim/snapshot.js`        | `snapshotLayout`, `writeSnapshot`                                      | Packs render state into a caller-owned `ArrayBuffer`                                         |
-| `js/sim/log.js` (Phase 3)   | `createSimLog`, `drainEvents`                                          | Structured events to an injected sink, with levels                                           |
+| Module                      | Exports                                                                            | Does                                                                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `js/sim/det-math.js`        | `detSin`, `detCos`, `detExp`, `detLog`, `detTanh`                                  | Engine-independent transcendental functions from `+ - * /` and `Math.floor` only                                                |
+| `js/sim/fnv.js`             | `fnv64Init`, `fnv64Bytes`, `fnv64Hex`                                              | 64-bit FNV-1a in two 32-bit lanes                                                                                               |
+| `js/sim/rng.js`             | `createRng`, `fork`, `nextFloat`, `nextInt`, `nextGaussian`                        | sfc32; `fork(rng, name)` derives an independent stream; Gaussian by Box-Muller on `det-math`                                    |
+| `js/sim/config-defaults.js` | `DEFAULTS`                                                                         | The default for every config key                                                                                                |
+| `js/sim/config-validate.js` | `validateConfig`                                                                   | The per-key type, range and cross-key rules                                                                                     |
+| `js/sim/config.js`          | `createConfig`, `configHash`, `rulesHash`                                          | Frozen, validated config from defaults plus overrides; FNV hashes of its canonical JSON                                         |
+| `js/sim/world.js`           | `allocateWorld`, `allocAgent`, `freeAgent`                                         | Typed-array state, RNG streams, slot free-list                                                                                  |
+| `js/sim/spawn.js`           | `createWorld`, `placeClear`, `placeObstacles`, `spawnFoodItem`, `spawnAgent`       | `createWorld` over `allocateWorld`; rejection-sampled placement; one food item; one agent with ids, spec, brain and `AgentBorn` |
+| `js/sim/spatial-hash.js`    | `createSpatialHash`, `buildHash`, `cellRange`                                      | Uniform grid built by counting sort; a circle goes in every cell its bounding box overlaps                                      |
+| `js/sim/world-hash.js`      | `hashWorld`                                                                        | FNV-1a over every world array, as a 16-character hex string                                                                     |
+| `js/sim/invariants.js`      | `assertInvariants`                                                                 | Throws naming the first broken invariant                                                                                        |
+| `js/sim/brain.js`           | `brainLayout`, `forwardAll`                                                        | Per-agent Elman RNN weights, biases and hidden state; one batched pass                                                          |
+| `js/sim/ray-march.js`       | `castRays`                                                                         | DDA ray walk over the hash plus direct obstacle tests; nearest hit per ray                                                      |
+| `js/sim/body-inputs.js`     | `writeBodyInputs`                                                                  | The 15 body-state inputs                                                                                                        |
+| `js/sim/sensors.js`         | `senseAll`                                                                         | Fills `world.inputs` from `castRays` and `writeBodyInputs`                                                                      |
+| `js/sim/physics.js`         | `actAll`, `integrate`, `resolveContacts`                                           | Outputs to motion; walls and obstacles; agent pairs resolved once into the contact list                                         |
+| `js/sim/kin.js`             | `isKin`                                                                            | Whether two agents are parent and child or siblings                                                                             |
+| `js/sim/environment.js`     | `seasonAt`, `updateSeason`, `moveObstacles`, `addFertileZone`, `decayFertileZones` | Season phase and modifiers; obstacle motion; fertile zones                                                                      |
+| `js/sim/food.js`            | `spawnFood`, `ageFood`                                                             | Food spawning and rot                                                                                                           |
+| `js/sim/pheromones.js`      | `depositPheromone`, `updatePheromones`, `samplePheromones`                         | Two-channel grid field with decay and diffusion                                                                                 |
+| `js/sim/events.js`          | `createEventRing`, `pushEvent`, `readEvents`                                       | Fixed-size ring of typed event records                                                                                          |
+| `js/sim/energy.js`          | `applyCosts`, `addEnergy`, `removeEnergy`                                          | Per-tick costs; every energy change, recorded in the ledger                                                                     |
+| `js/sim/feeding.js`         | `feed`                                                                             | Eating food and bites, from the contact list                                                                                    |
+| `js/sim/reproduction.js`    | `mate`, `advancePregnancies`, `splitAll`                                           | Mating, pregnancies, splits and child placement                                                                                 |
+| `js/sim/population.js`      | `reap`, `fillFloor`                                                                | Deaths and the population floor                                                                                                 |
+| `js/sim/birth-policy.js`    | `cloneWithNoisePolicy`                                                             | Reference brain policy: Gaussian init; child = parent weights plus Gaussian noise                                               |
+| `js/sim/step.js`            | `step`, `STEP_PHASES`                                                              | One tick: the phases below in order; per-phase overrides                                                                        |
+| `js/sim/snapshot.js`        | `snapshotLayout`, `writeSnapshot`                                                  | Packs render state into a caller-owned `ArrayBuffer`                                                                            |
+| `js/sim/log.js` (Phase 3)   | `createSimLog`, `drainEvents`                                                      | Structured events to an injected sink, with levels                                                                              |
 
 Every module has `test/sim/<module>.test.js`.
 
@@ -69,6 +75,8 @@ An unknown key, a wrong type or an out-of-range value throws an `Error` naming t
 expected. `configHash(config)` is stable across key order. `rulesHash(config)` hashes the same JSON without `seed`,
 `maxAgents`, `initialAgents`, `minAgents`, `immigrationInterval` and `checkInvariants`: two configs with equal rules
 hashes run the same physics and brains at different population sizes. "new" in Source marks a key with no legacy constant.
+The contracts file adds eleven keys (`restitution`, the food-target constants, `fertileZoneRadius` and others) and
+gives every key's type and range.
 
 | Key                                                            | Default                          | Source                                                                                                      |
 | -------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -303,8 +311,7 @@ sizeEnergyLoss x size) x energyDrain`, where `m` is the specialisation's cost mo
 | Food eaten (after the `maxEnergy` cap); initial and floor energy | Costs, sprint, `mateCost`, wall and obstacle damage, energy of the dead at death | Bites, `childEnergy`, split halves |
 
 `assertInvariants(world, config)` throws on the first of: a NaN or infinite value in agent or food state; an alive
-agent outside the world; an alive slot in the free-list or a free slot marked alive; the alive count differing from
-`population`; total alive energy differing from ledger in minus ledger out by more than 1e-6 x the total.
+agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive count differing from `population`; total alive energy differing from ledger in minus ledger out by more than 1e-6 x the total.
 
 ### Determinism
 
@@ -355,8 +362,10 @@ new event-ring records into log events. Nothing is logged per agent per tick.
 
 **Targets:** none - foundation; nothing steps yet
 
-`det-math.js`, `fnv.js`, `rng.js`, `config-defaults.js`, `config.js`, `world.js`, `spatial-hash.js`,
-`world-hash.js` and `invariants.js`, with their tests, and the banned-`Math` lint rule for `js/sim/`.
+`det-math.js`, `fnv.js`, `rng.js`, `config-defaults.js`, `config.js`, `config-validate.js`, `world.js`, `events.js`, `energy.js`,
+`spawn.js`, `spatial-hash.js`, `world-hash.js` and `invariants.js`, with their tests, and the banned-`Math` lint rule
+for `js/sim/`. `createWorld` places obstacles, food and agents through `spawn.js`, so the modules it needs are in this
+phase.
 
 ### Phase 2 - Sensors, brain, physics, lifecycle and step
 
@@ -399,43 +408,44 @@ maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<
 
 ### Phase 1 - Numerics, RNG, config, world state and spatial hash
 
-| #   | Task                                                                                | Nature       | Depends on                     |
-| --- | ----------------------------------------------------------------------------------- | ------------ | ------------------------------ |
-| T1  | Add `js/sim/det-math.js` and the banned-`Math` lint rules for `js/sim/`, with tests | [judgement]  | -                              |
-| T2  | Add `js/sim/fnv.js` with tests                                                      | [mechanical] | -                              |
-| T3  | Add `js/sim/rng.js` with tests                                                      | [judgement]  | T1                             |
-| T4  | Add `js/sim/config-defaults.js` and `js/sim/config.js` with tests                   | [judgement]  | T2                             |
-| T5  | Add `js/sim/world.js` with tests                                                    | [judgement]  | T3, T4                         |
-| T6  | Add `js/sim/spatial-hash.js` with the brute-force reference test                    | [judgement]  | T5                             |
-| T7  | Add `js/sim/world-hash.js` with tests                                               | [mechanical] | T2, T5                         |
-| T8  | Add `js/sim/invariants.js` with a test per invariant                                | [judgement]  | T5                             |
-| T9  | Conformance review of Phase 1                                                       | [judgement]  | T1, T2, T3, T4, T5, T6, T7, T8 |
+| #   | Task                                                                                           | Nature       | Depends on                              |
+| --- | ---------------------------------------------------------------------------------------------- | ------------ | --------------------------------------- |
+| T1  | Add `js/sim/det-math.js` and the banned-`Math` lint rules for `js/sim/`, with tests            | [judgement]  | -                                       |
+| T2  | Add `js/sim/fnv.js` with tests                                                                 | [mechanical] | -                                       |
+| T3  | Add `js/sim/rng.js` with tests                                                                 | [judgement]  | T1, T2                                  |
+| T4  | Add `js/sim/config-defaults.js`, `js/sim/config-validate.js` and `js/sim/config.js` with tests | [judgement]  | T2                                      |
+| T5  | Add `js/sim/world.js` (`allocateWorld`, `allocAgent`, `freeAgent`) with tests                  | [judgement]  | T3, T4                                  |
+| T6  | Add `js/sim/events.js` and `js/sim/energy.js` with tests                                       | [mechanical] | T5                                      |
+| T7  | Add `js/sim/spawn.js` with `createWorld`, with tests                                           | [judgement]  | T6                                      |
+| T8  | Add `js/sim/spatial-hash.js` with the brute-force reference test                               | [judgement]  | T5                                      |
+| T9  | Add `js/sim/world-hash.js` with tests                                                          | [mechanical] | T2, T5                                  |
+| T10 | Add `js/sim/invariants.js` with a test per invariant                                           | [judgement]  | T6                                      |
+| T11 | Conformance review of Phase 1                                                                  | [judgement]  | T1, T2, T3, T4, T5, T6, T7, T8, T9, T10 |
 
 ### Phase 2 - Sensors, brain, physics, lifecycle and step
 
-| #   | Task                                                                                                                                             | Nature       | Depends on                                       |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------------------------------------ |
-| T10 | Add `js/sim/environment.js` and `js/sim/pheromones.js` with tests                                                                                | [judgement]  | T9                                               |
-| T11 | Add `js/sim/events.js` and `js/sim/energy.js` with tests                                                                                         | [mechanical] | T9                                               |
-| T12 | Add `js/sim/ray-march.js`, `js/sim/body-inputs.js` and `js/sim/sensors.js` with the brute-force and micro-world tests                            | [judgement]  | T10                                              |
-| T13 | Add `js/sim/brain.js` with the naive reference test                                                                                              | [judgement]  | T12                                              |
-| T14 | Add `js/sim/physics.js` with tests                                                                                                               | [judgement]  | T11                                              |
-| T15 | Add `js/sim/food.js` with tests                                                                                                                  | [judgement]  | T10, T11                                         |
-| T16 | Add `js/sim/feeding.js`, `js/sim/reproduction.js`, `js/sim/population.js` and `js/sim/birth-policy.js` with tests                                | [judgement]  | T13, T14, T15                                    |
-| T17 | Add `js/sim/step.js`, `js/sim/snapshot.js`, `test/sim/golden.test.js`, `scripts/alloc-check.mjs` and its test                                    | [judgement]  | T12, T16                                         |
-| T18 | Add `scripts/bench.mjs`, `npm run bench`, `bench/baseline.json`, the `bench-check` gate, and the `AGENTS.md` command                             | [judgement]  | T17                                              |
-| T19 | Add `scripts/browser-hash.mjs` and `scripts/browser/hash-worker.js` with the worker-globals lint override; [sim-notes.md](sim-notes.md) findings | [judgement]  | T18                                              |
-| T20 | Conformance review of Phase 2                                                                                                                    | [judgement]  | T10, T11, T12, T13, T14, T15, T16, T17, T18, T19 |
+| #   | Task                                                                                                                                             | Nature      | Depends on                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------- |
+| T12 | Add `js/sim/environment.js`, `js/sim/pheromones.js` and `js/sim/kin.js` with tests                                                               | [judgement] | T11                                         |
+| T13 | Add `js/sim/ray-march.js`, `js/sim/body-inputs.js` and `js/sim/sensors.js` with the brute-force and micro-world tests                            | [judgement] | T12                                         |
+| T14 | Add `js/sim/brain.js` with the naive reference test                                                                                              | [judgement] | T13                                         |
+| T15 | Add `js/sim/physics.js` with tests                                                                                                               | [judgement] | T11                                         |
+| T16 | Add `js/sim/food.js` with tests                                                                                                                  | [judgement] | T12                                         |
+| T17 | Add `js/sim/feeding.js`, `js/sim/reproduction.js`, `js/sim/population.js` and `js/sim/birth-policy.js` with tests                                | [judgement] | T14, T15, T16                               |
+| T18 | Add `js/sim/step.js`, `js/sim/snapshot.js`, `test/sim/golden.test.js`, `scripts/alloc-check.mjs` and its test                                    | [judgement] | T13, T17                                    |
+| T19 | Add `scripts/bench.mjs`, `npm run bench`, `bench/baseline.json`, the `bench-check` gate, and the `AGENTS.md` command                             | [judgement] | T18                                         |
+| T20 | Add `scripts/browser-hash.mjs` and `scripts/browser/hash-worker.js` with the worker-globals lint override; [sim-notes.md](sim-notes.md) findings | [judgement] | T19                                         |
+| T21 | Conformance review of Phase 2                                                                                                                    | [judgement] | T12, T13, T14, T15, T16, T17, T18, T19, T20 |
 
 ### Phase 3 - Diagnostics and replay
 
-| #   | Task                                                                                                                                                                             | Nature       | Depends on         |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T21 | Add `js/sim/log.js` with tests                                                                                                                                                   | [judgement]  | T20                |
-| T22 | Add `scripts/replay.mjs`, `scripts/lib/jsonl-sink.mjs`, `npm run replay` and `test/replay.test.js`                                                                               | [judgement]  | T21                |
-| T23 | Add `scripts/lib/otel.mjs` with exact-pinned OpenTelemetry packages, wire it into `replay.mjs` and `bench.mjs`; add `docker-compose.yml` and `.mcp.json`                         | [judgement]  | T22                |
-| T24 | Update `AGENTS.md` and the `debug-sim` skill (`--dump <tick>` writing `.sim/dumps/`, and the `STEP_PHASES` names); record the Aspire CLI version in [sim-notes.md](sim-notes.md) | [mechanical] | T23                |
-| T25 | Conformance review of Phase 3                                                                                                                                                    | [judgement]  | T21, T22, T23, T24 |
+| #   | Task                                                                                                                                                                                                                    | Nature       | Depends on         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T22 | Add `js/sim/log.js` with tests                                                                                                                                                                                          | [judgement]  | T21                |
+| T23 | Add `scripts/replay.mjs`, `scripts/lib/jsonl-sink.mjs`, `npm run replay` and `test/replay.test.js`                                                                                                                      | [judgement]  | T22                |
+| T24 | Record the Aspire CLI version in [sim-notes.md](sim-notes.md); add `scripts/lib/otel.mjs` with exact-pinned OpenTelemetry packages, wire it into `replay.mjs` and `bench.mjs`; add `docker-compose.yml` and `.mcp.json` | [judgement]  | T23                |
+| T25 | Update `AGENTS.md` and the `debug-sim` skill (`--dump <tick>` writing `.sim/dumps/`, and the `STEP_PHASES` names)                                                                                                       | [mechanical] | T24                |
+| T26 | Conformance review of Phase 3                                                                                                                                                                                           | [judgement]  | T22, T23, T24, T25 |
 
 ## Verification
 
