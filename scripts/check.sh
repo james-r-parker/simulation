@@ -68,6 +68,7 @@ if [[ $DOCS -eq 1 ]]; then
   ONLY="conventions,designs-index,format,docs-tests"
 fi
 [[ -n "$ONLY" ]] || ONLY="$TIER2_GATES"
+[[ -z "${TEST_SEED:-}" || "$TEST_SEED" =~ ^[0-9]+$ ]] || { echo "TEST_SEED must be a non-negative integer, got: $TEST_SEED" >&2; exit 2; }
 if [[ -n "$ONLY" ]]; then
   IFS=',' read -ra requested <<<"$ONLY"
   for gate in "${requested[@]}"; do
