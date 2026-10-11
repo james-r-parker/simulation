@@ -195,10 +195,12 @@ Unused fields are 0.
 - `removeEnergy(world, slot, amount, cause)`: removes `min(amount, energy)`, so energy never goes below 0; adds the
   removed amount to `ledger[1]`, sets `lastLoss = cause` when it removed more than 0, and returns it.
 - `transferEnergy(world, giver, receiver, amount)` moves energy between agents without touching the ledger, and
-  returns what the giver lost; the caller sets `lastLoss` and `lastBiter` for a bite. The giver loses
+  returns what the giver lost, and sets `world.transferGained` (not hashed) to what the receiver stored; the caller
+  sets `lastLoss` and `lastBiter` for a bite and adds `transferGained` to the biter's `biteEnergy`. The giver loses
   `t = min(amount, giver energy)`, the receiver gains `min(t, maxEnergy - receiver energy)`, and any remainder goes to
   `ledger[1]`. Bites, `childEnergy` and split halves are transfers.
-- The agent arrays `foodEnergy` and `biteEnergy` accumulate the amounts actually stored.
+- The agent arrays `foodEnergy` and `biteEnergy` accumulate the amounts actually stored: the feeding code adds
+  `addEnergy`'s return value and `transferGained`.
 - Food the eater cannot hold is left out of the ledger: food energy only enters the ledger once an agent stores it.
 - At death the dead agent's remaining energy goes to `ledger[1]` before `freeAgent`.
 - `size` is recomputed after every change to `energy`: `max(minSize, baseSize + energy / energyToSize)`.
@@ -285,7 +287,7 @@ Grandparents and cousins are not kin.
   ids `slot`; then food, ascending slot, as ids `maxAgents + slot`. Within a cell, entries keep that order.
 - A pair is resolved only in the cell `(colOf(max(minX_i, minX_j)), rowOf(max(minY_i, minY_j)))`: the lower-left
   corner of the two bounding boxes' intersection. The boxes are the ones at build time: `buildHash` stores each
-  entry's `minX` and `minY` in `hash.boxX` and `hash.boxY`. The overlap test uses current positions.
+  entry's `minX` and `minY`, computed in float64, in `hash.boxX` and `hash.boxY` (`Float64Array`). The overlap test uses current positions.
 - `hash.range` is shared: a caller finishes with one `cellRange` result before calling it again.
 
 ### Agent contacts
@@ -443,3 +445,14 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 - `--dump <tick>` writes the world's arrays and scalars as JSON, typed arrays as plain number arrays.
 - `StepBudgetExceeded` uses `--budget-ms <n>` (default 8) in `replay.mjs`.
 - The Aspire dashboard image tag is pinned by T24, next to the CLI version.
+
+## Built in Phase 1
+
+- Functions that need the config read it from `world.config`: `assertInvariants(world)`, `placeObstacles(world)`,
+  `spawnFoodItem(world)` and `spawnAgent(world, policy, cause)`.
+- Module-level scratch state is allowed only for fixed-size buffers that no result depends on across calls:
+  `det-math.js` (the bit view), `rng.js` (the FNV state for `fork`) and `world-hash.js` (the scalar buffer, the
+  digest and a per-world cache of byte views). A world's arrays are never reassigned after `allocateWorld`.
+- The contact list (`world.contacts`, `Int32Array(2 x maxContacts)`, and `world.contactCount`) is allocated by the
+  physics task in Phase 2, with `resolveContacts`.
+- `buildHash` throws on entry overflow without a tick; `step` adds the tick when it rethrows.

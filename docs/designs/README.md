@@ -20,19 +20,19 @@ Describe shipped code. Trust these, and fix them when the code moves.
 
 - [Development workflow and gate](dev-workflow-and-gate.md) - workflow, gate and CI (Phase 1), and the legacy browser baseline in `bench/legacy-baseline.json` (Phase 2)
 
-## In progress (1)
+## In progress (2)
 
 Partly built - the note says which phases are real.
 
+- [Headless sim core](headless-sim-core.md) - Phase 1 built (deterministic maths, FNV, RNG, config, world state, events, energy, placement, spatial hash, world hash, invariants); Phase 2 adds sensors, brain... _(validated 5047728, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 1 built (tiers, `deps`, `dupes`, coverage ratchet, shuffled tests, pre-commit hook); Phase 2 adds mutation testing, the browser smoke and benchmark compar... _(validated cea2d24, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 
-## Proposed (5)
+## Proposed (4)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Evolution evals](evolution-evals.md) - Phase 1 builds the eval runner, the metrics and the `baseline-v5` baseline on the headless sim core _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
-- [Headless sim core](headless-sim-core.md) - Phase 1 builds the deterministic maths, RNG, config, world state, events, energy, placement and spatial hash in `js/sim/` _(validated d675c32, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 
