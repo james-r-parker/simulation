@@ -110,6 +110,7 @@ export function transferEnergy(world, giver, receiver, amount) {
     energy[giver] -= moved;
     energy[receiver] += gained;
     ledger[1] += moved - gained;
+    world.transferGained = gained;
     updateSize(world, giver);
     updateSize(world, receiver);
     return moved;

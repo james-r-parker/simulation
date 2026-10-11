@@ -9,8 +9,8 @@
  * @property {Int32Array} cellStart `cols * rows + 1` offsets into `entries`
  * @property {Int32Array} cellCount per-cell scratch for the count and insert passes
  * @property {Int32Array} entries circle ids, grouped by cell
- * @property {Float32Array} boxX per entry, the circle's `minX` at build time
- * @property {Float32Array} boxY per entry, the circle's `minY` at build time
+ * @property {Float64Array} boxX per entry, the circle's `minX` at build time
+ * @property {Float64Array} boxY per entry, the circle's `minY` at build time
  * @property {Int32Array} range `[col0, row0, col1, row1]` written by `cellRange`
  * @property {number} entryCount entries used by the last build
  */
@@ -33,8 +33,8 @@ export function createSpatialHash(config) {
         cellStart: new Int32Array(cols * rows + 1),
         cellCount: new Int32Array(cols * rows),
         entries: new Int32Array(capacity),
-        boxX: new Float32Array(capacity),
-        boxY: new Float32Array(capacity),
+        boxX: new Float64Array(capacity),
+        boxY: new Float64Array(capacity),
         range: new Int32Array(4),
         entryCount: 0,
     };
