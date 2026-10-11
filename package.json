@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json",
-    "designs:index": "node scripts/designs-index.mjs --write"
+    "designs:index": "node scripts/designs-index.mjs --write",
+    "perf:browser": "node scripts/browser-perf.mjs"
   },
   "keywords": [
     "simulation",
@@ -29,6 +30,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "9.39.1",
+    "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
     "eslint": "9.39.1",
     "eslint-plugin-jsdoc": "61.4.1",
