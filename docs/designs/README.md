@@ -27,7 +27,7 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Evolution evals](evolution-evals.md) - Phase 1 builds the eval runner, the metrics and the `baseline-v5` baseline on the headless sim core _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md))_
 - [Headless sim core](headless-sim-core.md) - Phase 1 builds the deterministic maths, RNG, config, world state and spatial hash in `js/sim/` _(validated bd49bce, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
-- [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
+- [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 1 adds the static gates, the coverage ratchet, the pre-commit hook and the tier flag before any sim code lands _(validated bd49bce, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 
 ## Reference (2)
