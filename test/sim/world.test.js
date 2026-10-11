@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
+import { EVENT_STRIDE } from '../../js/sim/events.js';
 import { TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
 
 const SMALL = {
@@ -54,6 +55,13 @@ describe('allocateWorld', () => {
             Math.ceil(w.config.worldWidth / w.config.pheromoneCellSize) *
                 Math.ceil(w.config.worldHeight / w.config.pheromoneCellSize),
         );
+    });
+
+    it('allocates an event ring with the configured capacity', () => {
+        const w = smallWorld();
+        expect(w.events.capacity).toBe(w.config.eventCapacity);
+        expect(w.events.data.length).toBe(w.config.eventCapacity * EVENT_STRIDE);
+        expect(w.events.count).toBe(0);
     });
 
     it('starts with zeroed scalars and unset rng', () => {
