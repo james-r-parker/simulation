@@ -25,3 +25,7 @@ updates:
       npm-security:
         applies-to: security-updates
         patterns: ['*']
+    # Node stays on the current LTS (package.json engines); @types/node moves major with it, by hand.
+    ignore:
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
