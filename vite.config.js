@@ -24,8 +24,8 @@ export default defineConfig(({ command, mode }) => {
           // Use relative paths for assets
           assetFileNames: 'assets/[name].[ext]',
           // Split vendor libraries into separate chunks for better caching
-          manualChunks: {
-            vendor: ['three']
+          manualChunks(id) {
+            if (id.includes('/node_modules/three/')) return 'vendor';
           }
         }
       }

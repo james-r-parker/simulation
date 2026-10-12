@@ -45,5 +45,9 @@ module.exports = {
         doNotFollow: { path: 'node_modules' },
         exclude: { path: '^test/fixtures/' },
         tsPreCompilationDeps: false,
+        enhancedResolveOptions: {
+            exportsFields: ['exports'],
+            conditionNames: ['import', 'require', 'node', 'default', 'types'],
+        },
     },
 };
