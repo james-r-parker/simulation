@@ -1,4 +1,10 @@
-// Moves energy between agents and the world ledger, and keeps each agent's size in step with its energy.
+// Moves energy between agents and the world ledger, keeps each agent's size in step with its energy, and charges per-tick costs.
+
+import { OUTPUT_COUNT } from './brain-layout.js';
+import { specParams } from './spec-params.js';
+import { TIMER_CAP } from './world.js';
+
+const SPRINT_OUT = 2;
 
 /** Why an agent last lost energy, stored in `lastLoss`; `NONE` means it has not lost any. */
 export const LOSS_CAUSE = Object.freeze({
@@ -114,4 +120,47 @@ export function transferEnergy(world, giver, receiver, amount) {
     updateSize(world, giver);
     updateSize(world, receiver);
     return moved;
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} the energy the agent loses this tick
+ */
+function tickCost(world, slot) {
+    const c = world.config;
+    const m = specParams(c, world.spec[slot]).moveCostMultiplier;
+    const vx = world.vx[slot];
+    const vy = world.vy[slot];
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    const drain = c.seasons[world.season[0]].energyDrain;
+    let cost =
+        (c.passiveLoss +
+            c.movementCost * (speed * speed) * m +
+            c.turnCost * Math.abs(world.turnRate[slot]) * m +
+            c.sizeEnergyLoss * world.size[slot]) *
+        drain;
+    if (world.outputs[slot * OUTPUT_COUNT + SPRINT_OUT] > 0) {
+        cost += c.sprintCost;
+    }
+    return cost;
+}
+
+/**
+ * Ages every alive agent, ticks its cooldown and timers, and charges its per-tick energy cost (loss cause `cost`).
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+export function applyCosts(world) {
+    const { alive, ageTicks, cooldown, ateTimer, bittenTimer } = world;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 0) {
+            continue;
+        }
+        ageTicks[slot] += 1;
+        cooldown[slot] = Math.max(0, cooldown[slot] - 1);
+        ateTimer[slot] = Math.min(TIMER_CAP, ateTimer[slot] + 1);
+        bittenTimer[slot] = Math.min(TIMER_CAP, bittenTimer[slot] + 1);
+        removeEnergy(world, slot, tickCost(world, slot), LOSS_CAUSE.COST);
+    }
 }
