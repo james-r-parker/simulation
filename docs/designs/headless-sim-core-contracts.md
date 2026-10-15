@@ -456,3 +456,16 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 - The contact list (`world.contacts`, `Int32Array(2 x maxContacts)`, and `world.contactCount`) is allocated by the
   physics task in Phase 2, with `resolveContacts`.
 - `buildHash` throws on entry overflow without a tick; `step` adds the tick when it rethrows.
+
+## Settled while building Phase 2
+
+- Outputs are indexed from 0: thrust 0, turn 1, sprint 2, mate 3, bite 4.
+- The movement cost term is `movementCost x (speed x speed) x m`.
+- A child is placed after the energy transfer, so the touching distance uses both agents' post-transfer sizes. Its
+  `angle` is `theta - PI` with `theta` in `[0, 2 PI)`, already inside `[-PI, PI)`.
+- A blocked split starts no cooldown, so `BirthBlocked` repeats each tick while the world is full.
+- `fatherWeights`, `fatherId` and `fatherLineage` keep their values after a birth; only the next mating overwrites
+  them.
+- `isReadyToMate(world, slot)` in `reproduction.js` (mature, not pregnant, cooldown 0, energy above
+  `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0.
+- `specParams(config, index)` in `spec-params.js` looks a specialisation up by index in fixed name order.
