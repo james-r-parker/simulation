@@ -181,6 +181,7 @@ export function allocateWorld(config) {
         ...rayTables(config.rayCount),
         visionBySpec: visionTable(config),
         rayScratch: new Float64Array(RAY_SCRATCH),
+        brainScratch: new Float64Array(config.brainHidden),
     };
     allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);
