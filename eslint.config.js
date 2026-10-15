@@ -20,7 +20,7 @@ export default [
         ],
     },
     js.configs.recommended,
-    // Coding standards (AGENTS.md, Coding standards): small single-purpose modules and functions.
+    // Coding standards (docs/coding-standards.md and the AGENTS.md size limits): small single-purpose modules and functions.
     {
         files: ['js/sim/**/*.js', 'js/evo/**/*.js', 'js/dev/**/*.js', 'scripts/**/*.{js,mjs}'],
         plugins: { jsdoc },

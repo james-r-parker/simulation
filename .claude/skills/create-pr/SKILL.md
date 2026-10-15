@@ -25,7 +25,7 @@ scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or th
 2. **Tests and logs present:** every behaviour in the diff has a test that pins it, a bug fix has a test that failed
    before the fix, and every new decision point or failure path emits a `simLog` event (once `simLog` exists, with
    `headless-sim-core.md`). Missing either blocks the PR; add them, do not defer them.
-3. **Coding standards:** the diff meets AGENTS.md, Coding standards - each new module has a one-line purpose and a
+3. **Coding standards:** the diff meets [docs/coding-standards.md](../../../docs/coding-standards.md) and the AGENTS.md size limits - each new module has a one-line purpose and a
    test file, no size limit is dodged with `eslint-disable`, errors are loud, hot paths allocate nothing.
 4. **Measurements attached:** if the phase has `**Targets:**`, run the comparison for each target and keep the
    output for the PR body: `npm run bench` against `bench/baseline.json` for `bench.*`, `node

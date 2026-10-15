@@ -95,7 +95,7 @@ them.
 
 ## Coding standards
 
-[AGENTS.md](../../AGENTS.md) (Coding standards) states the rules; `eslint.config.js` enforces the measurable ones on
+[docs/coding-standards.md](../coding-standards.md) states the rules (with the size limits in [AGENTS.md](../../AGENTS.md)); `eslint.config.js` enforces the measurable ones on
 `js/sim`, `js/evo` and `scripts`:
 
 | Rule                     | Limit                                                    |

@@ -49,7 +49,7 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Measure the legacy app's frame times in Chrome   | `npm run perf:browser` (`-- --cdp=http://127.0.0.1:9222` for Windows Chrome on the GPU; writes `bench/legacy-baseline.json`)                                      |
 | Replay a world and log its events                | `npm run replay -- --seed <n> --ticks <n>` (`--config <file.json>`, `--dump <tick>`, `--level debug`, `--check-invariants`); logs go to `.sim/logs/<runId>.jsonl` |
 | Telemetry dashboard (Aspire)                     | `bash -lic 'npm run aspire:dashboard'`, then run with `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`; UI at http://127.0.0.1:18888                           |
-| Tests                                            | `npm test`; one file: `npx vitest run test/designs-index.test.js`                                                                                                 |
+| Tests                                            | `npm test`; one file: `npx vitest run <file>`; one test: `npx vitest run -t '<name>'`                                                                             |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                                          |
 | Production build / deploy                        | `npm run build`; `npm run deploy` (Cloudflare Pages) - deploy only when the user asks                                                                             |
 
@@ -106,11 +106,18 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 - Search with `rg` and `fd`, not `grep -r` and `find`; use `ast-grep` (`sg`) for structural matches.
 - Use `-` rather than em dashes in docs.
 
+## Boundaries
+
+- Never weaken, skip or delete a test, or lower a ratchet baseline, to make a change pass. Fix the code, or stop and
+  say why the test is wrong.
+- Never report a run as passing when it was interrupted, timed out, skipped or not run. Say what ran and what it
+  printed; report a failed command rather than guessing why.
+- Add or upgrade a dependency only when the user asks or a design doc names it.
+- Stay in scope: touch only the files the task needs, and do not reformat or refactor unrelated code.
+
 ## Coding standards
 
-The legacy app grew 2,000-line files (`agent.js`, `game.js`, `ui.js`) that mix simulation, rendering, persistence
-and UI, and cannot be tested. New code is the opposite: small modules that each do one job and are tested on their
-own.
+New code is small modules that each do one job and are tested on their own.
 
 ### Size limits (enforced)
 
@@ -129,76 +136,13 @@ A limit is a signal to split, never a target to pad up to. Do not silence a limi
 module or function instead. When a legacy file shrinks, lower its budget (`legacyLines` in `scripts/quality-baseline.json`) in the same
 commit; when it is deleted, remove its entry.
 
-### Module design
-
-- **One responsibility per module.** A module's name says what it does (`spatial-hash.js`, `mutation.js`), and its
-  header comment says it in one line. If the description needs "and", it is two modules.
-- **Pure core, thin shell.** Simulation and evolution logic are pure functions over plain data and typed arrays.
-  Side effects - DOM, rendering, IndexedDB, workers, files, timers, logging sinks - live in thin adapters at the edge
-  that are swapped for fakes in tests.
-- **Dependencies are passed in, not reached for.** Functions take what they need (config, RNG, world state) as
-  arguments. No module-level mutable state, no singletons, no globals like `window.currentSimulation`.
-- **No import-time side effects.** Importing a module never touches the DOM, starts a timer or allocates large
-  buffers; construction happens in an explicit `create...` or `init` call.
-- **One-way dependencies.** `js/sim` depends on nothing in the app; `js/evo` depends on `js/sim`; the worker,
-  renderer and UI depend on both, never the reverse. No circular imports.
-- **Small public surface.** Export only what other modules use; everything exported has a JSDoc comment with types
-  (`lint` enforces it in `js/sim`, `js/evo` and `scripts`).
-- **Config, not constants in code.** Tunables come from `createConfig` with named defaults; no magic numbers in
-  logic. A number that needs a comment to explain it is a config key or a named constant.
-
-### Correctness
-
-- **Fail loudly.** Invalid input throws an `Error` with a message that names the value and what was expected. Never
-  fall back silently - the legacy code randomised mismatched brain weights and kept their old fitness, which
-  corrupted evolution for months.
-- **Validate at the boundary.** Data from IndexedDB, files, workers or the user is checked once where it enters;
-  internal code trusts its typed inputs.
-- **Determinism.** Same seed and config, same result: no `Math.random`, wall-clock time, or iteration over objects
-  or `Map`s keyed by identity in anything that affects the simulation.
-- **No dead code.** No commented-out code, unused exports, or `TODO`/`FIXME` comments (`lint` rejects them). Work
-  that remains belongs in a design doc task.
-
-### Performance (hot paths)
-
-- Per-tick code allocates nothing: preallocated typed arrays (struct-of-arrays), no closures, object literals,
-  `map`/`filter` chains or string building inside the tick.
-- Every hot-path change ships with a benchmark, and claims of speed carry `bench` numbers against the baseline.
-- Optimise only what a benchmark or profile shows is slow; keep everything else simple.
-
-### Tests
-
-- **Test behaviour, not implementation.** Assert on outputs and observable state through the public API.
-- **Fast and isolated.** Unit tests need no browser, GPU, network or timers, and finish in milliseconds; each test
-  builds its own small world.
-- **Reference tests for clever code.** Optimised code (spatial hash, batched matmul, ray march) is checked against a
-  naive reference implementation on random seeded inputs.
-- **Arrange, act, assert**, one behaviour per test, named for the behaviour (`it('rejects a genome with the wrong
-architecture')`).
-
-### Changes and reviews
-
-- **Small PRs, one concern each.** One phase per PR, one task per commit, and every commit passes the gate.
-- **Refactor separately.** A refactor with no behaviour change is its own commit; it never rides along with a
-  feature or a fix.
-- **Boy-scout rule, within reason.** Leave touched code a little better, but put unrelated cleanups in their own PR.
-- **Review checklist.** Before `create-pr`: the gate is green; each new module has a one-line purpose and a test
-  file; no limit was dodged; errors are loud; hot paths allocate nothing; docs and Status lines moved with the code.
-
-## Testing
-
-- `scripts/check.sh` runs every test; `npx vitest run <file>` runs one file, `npx vitest run -t '<name>'` one test.
-- Lint and typecheck cover the new code only (`js/sim/`, `js/evo/`, `scripts/`, `test/`); legacy modules join as
-  they are replaced. Prettier covers everything except the legacy files listed in `.prettierignore`.
-- Simulation tests run headless on a seeded world. They never use `Math.random`, wall-clock time, a real GPU or a
-  browser.
-- `test/designs-index.test.js` lints every real design doc and checks the committed index is current.
+Read [docs/coding-standards.md](docs/coding-standards.md) before writing code: module design, correctness,
+hot-path performance, tests and reviews. In short: one job per module, pure core with a thin shell, fail loudly,
+per-tick code allocates nothing, test behaviour against a naive reference for clever code, one task per commit.
 
 ## Debugging
 
-Follow the `debug-sim` skill. For the legacy app: the browser console, the dev performance monitor (the
-`PerformanceMonitor` class in `js/performance-monitor.js`, held as `perfMonitor` by `Simulation` in `js/game.js`) and
-DevTools Performance recordings.
+Follow the `debug-sim` skill; for the legacy app, the browser console and `window.__perf()` in dev builds.
 
 ## Environment and tools
 

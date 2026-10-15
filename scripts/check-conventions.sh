@@ -7,8 +7,8 @@
 #   performance.now: runs must replay from seed and config (docs/designs/STYLE.md, Tests and diagnostics).
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
 # - Legacy code only shrinks: each js/*.js and js/constants/*.js file stays within its line count in
-#   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (AGENTS.md,
-#   Coding standards). Lower a budget when a file shrinks; remove the entry when the file is deleted.
+#   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (docs/coding-standards.md).
+#   Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
