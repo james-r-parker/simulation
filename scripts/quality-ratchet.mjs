@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compareMutation, listSurvivors, raiseMutation, scoreScopes } from './lib/mutation-score.mjs';
 
 /** Scopes the ratchet tracks, as repo-relative path prefixes. */
 const SCOPES = ['js/sim', 'js/evo', 'scripts'];
@@ -127,19 +128,43 @@ function readJson(path, what) {
 }
 
 /**
+ * Checks or raises the mutation baselines from the Stryker report.
+ * @param {string} mode `--check` or `--write`
+ * @param {string} root repo root
+ * @returns {number} exit status
+ */
+function mutationMain(mode, root) {
+    const baselinePath = join(root, 'scripts/quality-baseline.json');
+    const report = readJson(join(root, 'reports/mutation/mutation.json'), 'mutation report');
+    const baseline = readJson(baselinePath, 'quality baseline');
+    const scores = scoreScopes(report);
+    if (mode === '--write') {
+        writeFileSync(baselinePath, `${JSON.stringify(raiseMutation(scores, baseline), null, 2)}\n`);
+        return 0;
+    }
+    const failures = compareMutation(scores, baseline, listSurvivors(report));
+    failures.forEach((message) => console.error(message));
+    return failures.length === 0 ? 0 : 1;
+}
+
+/**
  * Runs the CLI.
  * @param {string[]} argv arguments after the script name
  * @param {string} root repo root
  * @returns {number} exit status
  */
 export function main(argv, root) {
-    const mode = argv[0];
-    if (argv.length !== 1 || (mode !== '--check' && mode !== '--write')) {
-        console.error('usage: quality-ratchet.mjs --check | --write');
+    const [mode, ...rest] = argv;
+    const mutation = rest.length === 1 && rest[0] === '--mutation';
+    if ((mode !== '--check' && mode !== '--write') || (rest.length > 0 && !mutation)) {
+        console.error('usage: quality-ratchet.mjs --check | --write [--mutation]');
         return 2;
     }
     const baselinePath = join(root, 'scripts/quality-baseline.json');
     try {
+        if (mutation) {
+            return mutationMain(mode, root);
+        }
         const summary = readJson(join(root, 'coverage/coverage-summary.json'), 'coverage summary');
         const baseline = readJson(baselinePath, 'quality baseline');
         const measured = measureScopes(summary, root);

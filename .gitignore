@@ -158,3 +158,6 @@ TestResults/
 # Quality gate reports and coverage output
 reports/
 coverage/
+
+# Stryker sandbox (mutation testing)
+.stryker-tmp/
