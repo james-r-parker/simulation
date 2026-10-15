@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 builds the eval runner, the metrics and the `baseline-v5` baseline on the headless sim core.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 2 - the evolution rework is judged against the baseline this doc records
+**Priority:** 1 - the evolution rework is judged against the baseline this doc records
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
 Evals measure what a simulation run produces: whether agents eat, live, breed, diversify and keep changing. Every
