@@ -61,6 +61,10 @@ the nightly - set out in [quality-gates-and-test-tiers.md](quality-gates-and-tes
 | `dupes`         | `jscpd` with `.jscpd.json` over `js/sim`, `js/evo` and `scripts`                                                                                     |
 | `test`          | `vitest run --coverage`, shuffled from `TEST_SEED` (printed as `test (seed <n>)`); fails when `js/sim` or `js/evo` has code and `test/` has no tests |
 | `ratchet`       | `node scripts/quality-ratchet.mjs --check` against `scripts/quality-baseline.json`, after a passing `test`                                           |
+| `bench-check`   | `node scripts/bench-check.mjs` on `bench.step_ms@500` against `bench/baseline.json`; local only, skipped under `--ci`                                |
+| `browser-smoke` | `scripts/browser-smoke.sh`: the built app in Chromium (Playwright image, or `SMOKE_LOCAL=1`)                                                         |
+| `mutation`      | Tier 3: `stryker run`, then the ratchet on the mutation score; skipped under Vitest 5                                                                |
+| `bench-compare` | Tier 3: `node scripts/bench-compare.mjs`, branch against base, fails a median rise over 10%                                                          |
 | `build`         | `vite build` into a temporary directory                                                                                                              |
 | `docs-tests`    | `vitest run test/designs-index.test.js`; only when named by `--docs` or `--only`                                                                     |
 

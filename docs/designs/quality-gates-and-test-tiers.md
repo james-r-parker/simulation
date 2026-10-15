@@ -1,8 +1,6 @@
 # Quality gates and test tiers
 
-**Status:** In progress - Phase 1 built (tiers, `deps`, `dupes`, coverage ratchet, shuffled tests, pre-commit hook); Phase 2 adds mutation testing, the browser smoke and benchmark comparison.
-**Validated:** cea2d24 (2026-10-11)
-**Priority:** 1 - Phase 2 mutates and benchmarks the `js/sim` modules that headless-sim-core Phase 2 adds
+**Status:** Implemented - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2).
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the
@@ -123,7 +121,7 @@ order.
 - Shuffled test order with a printed seed.
 - `.githooks/pre-commit` and the `prepare` script.
 
-### Phase 2 - Mutation, browser smoke and benchmark comparison
+### Phase 2 - Mutation, browser smoke and benchmark comparison (built)
 
 **Targets:** none - test and gate tooling; `bench-compare` reads `bench.*` metrics but moves none
 
@@ -133,7 +131,11 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
 - **Mutation.** `stryker.config.json` uses `@stryker-mutator/vitest-runner`, mutates `js/sim/**/*.js` and
   `js/evo/**/*.js`, and sets `reporters` to `clear-text` and `json`, writing `reports/mutation/mutation.json`. The
   `mutation` gate fails when a scope's score drops more than 0.1 points below its `mutation` baseline. Its digest
-  lists the surviving mutants by file, line and mutator.
+  lists the surviving mutants by file, line and mutator. Stryker runs the tests through `vitest.stryker.config.js`,
+  which leaves out the golden runs and the allocation check. The score is detected over detected plus undetected
+  (`scripts/lib/mutation-score.mjs`). Stryker's vitest-runner 10 kills no mutant under Vitest 5, so the gate reports
+  `skipped` while `STRYKER_MAX_VITEST` in `scripts/check.sh` is at or below the installed Vitest major; see
+  [sim-notes.md](sim-notes.md).
 - **Browser smoke.** `test/browser/smoke.spec.js` (Playwright, reusing the `@playwright/test` pin from
   [dev-workflow-and-gate.md](dev-workflow-and-gate.md) Phase 2) runs against `vite preview` of a `vite build` into a temporary directory that
   `scripts/browser-smoke.sh` creates and removes. It asserts:
@@ -149,18 +151,22 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
 - **Where the smoke runs.** Inside the image `mcr.microsoft.com/playwright:v<version>-noble`, where `<version>` is
   the exact `@playwright/test` pin. `scripts/browser-smoke.sh` runs Playwright directly when it is already in that
   image (`PLAYWRIGHT_BROWSERS_PATH` is `/ms-playwright`). Otherwise it runs the image with Docker, mounting the repo
-  at `/work` with its `node_modules`. Without Docker it reports `skipped`, and under `--ci` it fails.
+  at `/work` with its `node_modules`. Without Docker it reports `skipped` (the script exits 3), and under `--ci` it
+  fails. `SMOKE_LOCAL=1` runs Playwright directly with the locally installed Chromium, for a machine without Docker;
+  CI never sets it. The allowlist is `{ "patterns": [...] }`, and Playwright's output goes to `.checklogs/playwright`.
 - **CI.** `.github/workflows/check.yml` gains a second job, `browser-smoke`, with `container:` set to that image. It
   runs `scripts/check.sh --ci --only=browser-smoke` on `full`-scope changes, and the `check` job skips the gate.
 - **Benchmark comparison.** `scripts/bench-compare.mjs --base <ref>`:
     - checks the base out with `git worktree add` into a directory under `os.tmpdir()`, runs
       `npm ci --ignore-scripts` there, and removes the worktree on exit, including on failure;
-    - runs `npm run bench -- --json` five times in each tree, alternating;
+    - runs `npm run bench -- --json --sizes=500` five times in each tree, alternating (`--sizes=` and `--runs=`
+      override; a run takes about 6 minutes);
     - compares the median of every `bench.*` metric and fails when the head median exceeds the base median by more
       than 10%.
 
     The base defaults to the merge-base with `origin/main`. On `main` it is the last `origin/main` commit more than
-    25 hours old. A base equal to `HEAD`, or one without a `bench` script, reports `skipped`.
+    25 hours old. A base equal to `HEAD`, or one without a `bench` script, reports `skipped` (exit 3); the gate asks
+    first with `--skip-check`.
 
 - **Nightly.** `.github/workflows/nightly.yml` runs at 03:00 UTC and on `workflow_dispatch` with a `ref` input. Its
   job, `nightly`, runs on `ubuntu-latest` with `timeout-minutes: 60`, checks out with `fetch-depth: 0`, installs
