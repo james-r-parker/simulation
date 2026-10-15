@@ -1,0 +1,254 @@
+import { describe, expect, it } from 'vitest';
+import { castRays } from '../../js/sim/ray-march.js';
+import { detCos, detSin } from '../../js/sim/det-math.js';
+import { createRng, nextFloat } from '../../js/sim/rng.js';
+import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
+
+const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7 };
+const VISION = 300;
+
+/**
+ * @param {ReturnType<typeof senseWorld>} w
+ * @param {number} slot
+ * @param {number} ray
+ * @returns {number[]} the eight values of a ray
+ */
+function rayValues(w, slot, ray) {
+    const base = slot * w.layout.inputCount + ray * 8;
+    return Array.from(w.inputs.subarray(base, base + 8));
+}
+
+/**
+ * @param {ReturnType<typeof senseWorld>} w
+ * @param {number} slot
+ */
+function cast(w, slot) {
+    castRays(w, rebuild(w), slot);
+}
+
+describe('castRays classes', () => {
+    it('sees food', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addFood(w, 600, 500, 20);
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.prox]).toBeCloseTo(1 - 80 / VISION, 6);
+        expect(r.slice(1)).toEqual([1, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it.each([
+        ['a bigger agent', 40, CH.bigger],
+        ['a smaller agent', 10, CH.smaller],
+        ['a similar agent', 21, CH.similar],
+    ])('classifies %s', (_name, otherSize, channel) => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addAgent(w, 600, 500, otherSize);
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.prox]).toBeCloseTo(1 - (100 - otherSize) / VISION, 6);
+        expect(r.slice(1).map((v, i) => (i + 1 === channel ? 1 : 0))).toEqual(r.slice(1));
+    });
+
+    it('lets kin override size', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const child = addAgent(w, 600, 500, 40);
+        w.parentA[child] = w.genomeId[me];
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.kin]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.bigger]).toBe(0);
+    });
+
+    it('sees a cousin as non-kin', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const cousin = addAgent(w, 600, 500, 20);
+        w.parentA[me] = 7;
+        w.parentA[cousin] = 8;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.kin]).toBe(0);
+    });
+
+    it('sees a wall', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 900, 500, 20);
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.prox]).toBeCloseTo(1 - 100 / VISION, 6);
+        expect(r[CH.wall]).toBe(1);
+    });
+
+    it('sees a wall along each axis and ignores one beyond vision', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 100, 500, 20);
+        cast(w, me);
+        expect(rayValues(w, me, 2)[CH.prox]).toBeCloseTo(1 - 100 / VISION, 6);
+        expect(rayValues(w, me, 1)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it('sees an obstacle', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        w.obsX[0] = 650;
+        w.obsY[0] = 500;
+        w.obsRadius[0] = 50;
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.prox]).toBeCloseTo(1 - 100 / VISION, 6);
+        expect(r[CH.obstacle]).toBe(1);
+    });
+
+    it('writes all zeros for no hit', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        w.inputs.fill(9);
+        cast(w, me);
+        for (let k = 0; k < 4; k++) {
+            expect(rayValues(w, me, k)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+        }
+    });
+
+    it('gives distance 0 when the origin is inside a circle', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addFood(w, 505, 500, 30);
+        cast(w, me);
+        expect(rayValues(w, me, 0).slice(0, 2)).toEqual([1, 1]);
+    });
+
+    it('hits a big agent centred in a neighbouring cell', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addAgent(w, 500 + 128 * 2, 500, 120);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.bigger]).toBe(1);
+    });
+
+    it('takes the food over an agent at the same distance, and the agent over an obstacle', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addAgent(w, 600, 500, 20);
+        addFood(w, 600, 500, 20);
+        w.obsX[0] = 600;
+        w.obsY[0] = 500;
+        w.obsRadius[0] = 20;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.food]).toBe(1);
+        w.foodAlive[0] = 0;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+    });
+
+    it('breaks equal agent distances by the lower slot', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        addAgent(w, 600, 500, 40);
+        addAgent(w, 600, 500, 40);
+        w.size[2] = 10;
+        w.x[2] = 590;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.bigger]).toBe(1);
+    });
+
+    it('turns the rays with the heading', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        w.angle[me] = Math.PI / 2;
+        addFood(w, 500, 600, 20);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.food]).toBe(1);
+    });
+});
+
+/**
+ * Reference caster: tests every circle, obstacle and wall with the ray-circle formula.
+ * @param {ReturnType<typeof senseWorld>} w
+ * @param {number} me
+ * @param {number} k
+ * @returns {{t: number, kind: number, idx: number}}
+ */
+function brute(w, me, k) {
+    const cH = detCos(w.angle[me]);
+    const sH = detSin(w.angle[me]);
+    const dx = cH * w.rayCos[k] - sH * w.raySin[k];
+    const dy = sH * w.rayCos[k] + cH * w.raySin[k];
+    const range = w.visionBySpec[w.spec[me]];
+    let best = { t: Infinity, kind: 3, idx: 0 };
+    /** @param {number} cx @param {number} cy @param {number} r @param {number} kind @param {number} idx */
+    const test = (cx, cy, r, kind, idx) => {
+        const ox = w.x[me] - cx;
+        const oy = w.y[me] - cy;
+        const b = dx * ox + dy * oy;
+        const c = ox * ox + oy * oy - r * r;
+        if (b * b - c < 0) {
+            return;
+        }
+        let t = -b - Math.sqrt(b * b - c);
+        if (t < 0) {
+            t = c <= 0 ? 0 : -1;
+        }
+        const better = t < best.t || (t === best.t && (kind < best.kind || (kind === best.kind && idx < best.idx)));
+        if (t >= 0 && t <= range && better) {
+            best = { t, kind, idx };
+        }
+    };
+    for (let i = 0; i < w.obsX.length; i++) {
+        test(w.obsX[i], w.obsY[i], w.obsRadius[i], 2, i);
+    }
+    const W = w.config.worldWidth;
+    const tx = dx < 0 ? -w.x[me] / dx : dx > 0 ? (W - w.x[me]) / dx : Infinity;
+    const ty = dy < 0 ? -w.y[me] / dy : dy > 0 ? (W - w.y[me]) / dy : Infinity;
+    if (Math.min(tx, ty) <= range && Math.min(tx, ty) < best.t) {
+        best = { t: Math.min(tx, ty), kind: 3, idx: 0 };
+    }
+    for (let f = 0; f < w.foodAlive.length; f++) {
+        if (w.foodAlive[f]) {
+            test(w.foodX[f], w.foodY[f], w.foodRadius[f], 0, f);
+        }
+    }
+    for (let a = 0; a < w.alive.length; a++) {
+        if (w.alive[a] && a !== me) {
+            test(w.x[a], w.y[a], w.size[a], 1, a);
+        }
+    }
+    return best;
+}
+
+describe('castRays against a brute-force caster', () => {
+    it.each(Array.from({ length: 30 }, (_, i) => i + 1))('matches on seeded world %i', (seed) => {
+        const rng = createRng(seed);
+        const w = senseWorld({ rayCount: 8, maxAgents: 12, maxFood: 40 });
+        const place = () => 20 + nextFloat(rng) * (1000 - 2 * 20);
+        for (let i = 0; i < 12; i++) {
+            const a = addAgent(w, place(), place(), 10 + nextFloat(rng) * 40);
+            w.angle[a] = (nextFloat(rng) - 0.5) * 6;
+            w.spec[a] = Math.floor(nextFloat(rng) * 4);
+        }
+        for (let i = 0; i < 40; i++) {
+            addFood(w, place(), place(), 5 + nextFloat(rng) * 25);
+        }
+        for (let i = 0; i < 2; i++) {
+            w.obsX[i] = place();
+            w.obsY[i] = place();
+            w.obsRadius[i] = 20 + nextFloat(rng) * 80;
+        }
+        const hash = rebuild(w);
+        for (let me = 0; me < 12; me++) {
+            castRays(w, hash, me);
+            for (let k = 0; k < 8; k++) {
+                const ref = brute(w, me, k);
+                const got = rayValues(w, me, k);
+                const range = w.visionBySpec[w.spec[me]];
+                const expected = ref.t === Infinity ? 0 : 1 - ref.t / range;
+                expect(got[0]).toBeCloseTo(expected, 5);
+                const kinds = [[1], [2, 3, 4, 5], [7], [6]][ref.kind];
+                const hot = got.slice(1).flatMap((v, n) => (v === 1 ? [n + 1] : []));
+                expect(hot.length).toBe(ref.t === Infinity ? 0 : 1);
+                expect(hot.every((c) => kinds.includes(c))).toBe(true);
+            }
+        }
+    });
+});
