@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { compareStep, main } from '../scripts/bench-check.mjs';
-import { benchSize, formatLines, formatMetrics, median, parseArgs } from '../scripts/bench.mjs';
+import { benchSize, formatLines, formatMetrics, median, parseArgs, recordMetrics } from '../scripts/bench.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the three sizes, text output', () => {
@@ -45,6 +45,25 @@ describe('benchSize', () => {
         expect(metrics['bench.step_ms@8']).toBeGreaterThan(0);
         expect(Object.keys(metrics)).toContain('bench.phase_ms.brain@8');
     }, 60000);
+});
+
+describe('recordMetrics', () => {
+    const all = { 'bench.step_ms@100': 1.5, 'bench.phase_ms.brain@100': 0.5 };
+
+    it('records the step and each phase with phase and agents attributes', () => {
+        const record = vi.fn();
+        recordMetrics({ enabled: true, record, shutdown: async () => {} }, all);
+
+        expect(record).toHaveBeenCalledWith('sim.step_ms', 1.5, { phase: 'step', agents: 100 });
+        expect(record).toHaveBeenCalledWith('sim.step_ms', 0.5, { phase: 'brain', agents: 100 });
+    });
+
+    it('records nothing when disabled', () => {
+        const record = vi.fn();
+        recordMetrics({ enabled: false, record, shutdown: async () => {} }, all);
+
+        expect(record).not.toHaveBeenCalled();
+    });
 });
 
 describe('compareStep', () => {
