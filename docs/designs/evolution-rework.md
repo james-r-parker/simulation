@@ -143,13 +143,17 @@ cell holds an **elite** and a **challenger**: a genome row, its `sigma`, and Wel
 
 ## Trainer (Phase 3)
 
-`npm run train -- --generations <g> --episodes <e> [--workers <n>] [--resume <archive.json>] --out <dir>`
+`npm run train -- --generations <g> [--episodes <e>] [--workers <n>] [--resume <archive.json>] --out <dir>`
 (`scripts/train.mjs`):
 
 - Episode `k` of generation `g` runs on `evals/train-seeds.json` entry `(g x e + k) mod 256` (256 seeds disjoint
   from `evals/seeds.json`), with the default config and `initialAgents` 100, for 20000 ticks. Its initial agents and
   immigrants come from a frozen copy of the archive.
-- Workers default to `cpus - 1`. Each episode returns its offers in death order, each tagged with its `archiveRef` and
+- Episodes run on the shared `scripts/lib/worker-pool.mjs` from [evolution-evals.md](evolution-evals.md) (Using every core),
+  with its default worker count. `--episodes` defaults to 32, a fixed number so the archive never depends on the
+  machine; 32 episodes keep all 32 threads busy for a whole generation. The pool returns episodes in index order,
+  so `--workers 1` and `--workers 32` produce byte-identical archives.
+- `train.mjs` prints the CPU use for each generation. Each episode returns its offers in death order, each tagged with its `archiveRef` and
   `isClone`; `mergeEpisode` applies them offer by offer in episode-index order.
 - A failed episode stops the run with exit 1 and `TrainEpisodeFailed`.
 - `--resume` checks the archive's `layout` and `rulesHash` against the config.
@@ -229,13 +233,13 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 
 ### Phase 3 - Headless trainer and champions
 
-| #   | Task                                                                                                                                                        | Nature       | Depends on         |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T15 | Add `js/evo/trainer.js`, `scripts/train.mjs`, `scripts/train-worker.mjs`, `evals/train-seeds.json`, `npm run train` and the `AGENTS.md` command, with tests | [judgement]  | T14                |
-| T16 | Add `scripts/train-export.mjs`, `npm run train:export` and `js/evo/policies/champions-v1.js`, with tests                                                    | [judgement]  | T15                |
-| T17 | Train, export `public/champions/v1/`, run `champions-v1` against `baseline-v5`, admit the champions, record experiment `E3`                                 | [mechanical] | T16                |
-| T18 | Update [sim-notes.md](sim-notes.md) and the `run-evolution-loop` skill                                                                                      | [mechanical] | T17                |
-| T19 | Conformance review of Phase 3                                                                                                                               | [judgement]  | T15, T16, T17, T18 |
+| #   | Task                                                                                                                                                                                                                                             | Nature       | Depends on         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |
+| T15 | Add `js/evo/trainer.js`, `scripts/train.mjs`, `scripts/train-worker.mjs`, `evals/train-seeds.json`, `npm run train` and the `AGENTS.md` command, with tests; `test/evo/trainer.test.js` checks that one and four workers give identical archives | [judgement]  | T14                |
+| T16 | Add `scripts/train-export.mjs`, `npm run train:export` and `js/evo/policies/champions-v1.js`, with tests                                                                                                                                         | [judgement]  | T15                |
+| T17 | Train, export `public/champions/v1/`, run `champions-v1` against `baseline-v5`, admit the champions, record experiment `E3`                                                                                                                      | [mechanical] | T16                |
+| T18 | Update [sim-notes.md](sim-notes.md) and the `run-evolution-loop` skill                                                                                                                                                                           | [mechanical] | T17                |
+| T19 | Conformance review of Phase 3                                                                                                                                                                                                                    | [judgement]  | T15, T16, T17, T18 |
 
 ## Verification
 
