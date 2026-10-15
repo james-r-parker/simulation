@@ -266,12 +266,51 @@ gate_bench_check() {
     run_gate bench-check bench_check
   fi
 }
-# gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh).
-gate_browser_smoke() { skip_gate browser-smoke "not built yet"; }
-# gate_mutation: mutation testing score (stryker).
-gate_mutation() { skip_gate mutation "not built yet"; }
-# gate_bench_compare: main-versus-branch benchmarks (scripts/bench-compare.mjs).
-gate_bench_compare() { skip_gate bench-compare "not built yet"; }
+# gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh). It needs the Playwright image: skipped
+# without Docker (a failure under --ci). In CI the `check` job leaves it to the browser-smoke job, which passes --only.
+gate_browser_smoke() {
+  if [[ $CI -eq 1 && -z "$ONLY" ]]; then
+    skip_gate browser-smoke "runs in the browser-smoke job"
+  elif [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
+    && ! docker info >/dev/null 2>&1; then
+    skip_gate browser-smoke "no Docker (SMOKE_LOCAL=1 uses the local Chromium)"
+  else
+    run_gate browser-smoke scripts/browser-smoke.sh
+  fi
+}
+# gate_mutation: mutation testing score (stryker.config.json), then the ratchet on reports/mutation/mutation.json.
+# Under --fix a passing gate raises the mutation baselines (never lowers them).
+# The first Vitest major the installed Stryker vitest-runner cannot drive; raise it when Stryker supports it.
+STRYKER_MAX_VITEST=5
+mutation_run() { npx stryker run && node scripts/quality-ratchet.mjs --check --mutation; }
+gate_mutation() {
+  if [[ ! -d node_modules/@stryker-mutator/core ]]; then
+    skip_gate mutation "stryker is not installed"
+  elif ! tracked 'js/sim/*.js'; then
+    skip_gate mutation "no js/sim code yet"
+  elif [[ "$(node -p "require('./node_modules/vitest/package.json').version.split('.')[0]")" -ge "$STRYKER_MAX_VITEST" ]]; then
+    # Stryker's vitest-runner 10 kills no mutant under Vitest 5 (docs/designs/sim-notes.md, 2026-10-15).
+    skip_gate mutation "the Stryker vitest-runner does not support Vitest 5 yet"
+  else
+    local failed_before=$FAILED
+    run_gate mutation mutation_run
+    if [[ $FIX -eq 1 && $FAILED -eq $failed_before ]] && wanted mutation; then
+      node scripts/quality-ratchet.mjs --write --mutation
+    fi
+  fi
+}
+# gate_bench_compare: main-versus-branch benchmarks (scripts/bench-compare.mjs), five alternating runs per tree at
+# 500 agents (about 10 runs of 15-20 s plus an npm ci). Exit 3 from --skip-check is a skip, with the reason on stdout.
+gate_bench_compare() {
+  wanted bench-compare || return 0
+  local reason status=0
+  reason="$(node scripts/bench-compare.mjs --skip-check 2>&1)" || status=$?
+  if [[ $status -eq 3 ]]; then
+    skip_gate bench-compare "${reason#skipped: }"
+  else
+    run_gate bench-compare node scripts/bench-compare.mjs --sizes=500
+  fi
+}
 
 gate_test_related
 
