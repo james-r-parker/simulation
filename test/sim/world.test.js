@@ -38,6 +38,7 @@ describe('allocateWorld', () => {
             expect(w.visionBySpec[s.index]).toBe(s.visionRange);
         }
         expect(w.rayScratch.length).toBeGreaterThan(0);
+        expect(w.brainScratch.length).toBe(w.config.brainHidden);
     });
 
     it('sizes the agent arrays from the config', () => {
