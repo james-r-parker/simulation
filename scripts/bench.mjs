@@ -8,6 +8,7 @@ import { createConfig } from '../js/sim/config.js';
 import { clearEvents } from '../js/sim/events.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { STEP_PHASES, step } from '../js/sim/step.js';
+import { createMetrics } from './lib/otel.mjs';
 
 const DEFAULT_SIZES = [100, 250, 500];
 const WARMUP_TICKS = 500;
@@ -119,10 +120,28 @@ export function benchSize(size) {
 }
 
 /**
- * @param {string[]} argv command-line arguments after the script name
+ * Records each size's step and phase medians as `sim.step_ms` (attributes `phase`, `agents`) when metrics are enabled.
+ * @param {import('./lib/otel.mjs').Metrics} metrics the recorder
+ * @param {Record<string, number>} all the flat metric object from `formatMetrics`
  * @returns {void}
  */
-export function main(argv) {
+export function recordMetrics(metrics, all) {
+    if (!metrics.enabled) {
+        return;
+    }
+    for (const [key, value] of Object.entries(all)) {
+        const match = /^bench\.(?:step_ms|phase_ms\.(.+))@(\d+)$/.exec(key);
+        if (match !== null) {
+            metrics.record('sim.step_ms', value, { phase: match[1] ?? 'step', agents: Number(match[2]) });
+        }
+    }
+}
+
+/**
+ * @param {string[]} argv command-line arguments after the script name
+ * @returns {Promise<void>}
+ */
+export async function main(argv) {
     const { sizes, json } = parseArgs(argv);
     /** @type {Record<string, number>} */
     const all = {};
@@ -130,8 +149,11 @@ export function main(argv) {
         Object.assign(all, benchSize(size));
     }
     console.log(json ? JSON.stringify(all, null, 2) : formatLines(all));
+    const metrics = await createMetrics();
+    recordMetrics(metrics, all);
+    await metrics.shutdown();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    main(process.argv.slice(2));
+    await main(process.argv.slice(2));
 }
