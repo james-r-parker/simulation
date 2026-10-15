@@ -88,7 +88,12 @@ function startMating(world, policy, mother, father) {
     removeEnergy(world, father, mateCost, LOSS_CAUSE.COST);
     world.cooldown[mother] = cooldownFor(world, mother, 1);
     world.cooldown[father] = cooldownFor(world, father, 1);
-    world.fatherWeights.set(world.weights.subarray(father * count, (father + 1) * count), mother * count);
+    const { weights, fatherWeights } = world;
+    const from = father * count;
+    const to = mother * count;
+    for (let i = 0; i < count; i++) {
+        fatherWeights[to + i] = weights[from + i];
+    }
     world.fatherId[mother] = world.genomeId[father];
     world.fatherLineage[mother] = world.lineageId[father];
     world.pregnancy[mother] = pregnancyTicks;
