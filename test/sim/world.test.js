@@ -64,6 +64,12 @@ describe('allocateWorld', () => {
         expect(w.events.count).toBe(0);
     });
 
+    it('allocates the contact list from maxContacts', () => {
+        const w = smallWorld();
+        expect(w.contacts.length).toBe(2 * w.config.maxContacts);
+        expect(w.contactCount).toBe(0);
+    });
+
     it('starts with zeroed scalars and unset rng', () => {
         const w = smallWorld();
         expect([w.tick, w.nextId, w.population, w.foodCount]).toEqual([0, 1, 0, 0]);
