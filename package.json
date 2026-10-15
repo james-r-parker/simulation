@@ -20,7 +20,8 @@
     "designs:index": "node scripts/designs-index.mjs --write",
     "perf:browser": "node scripts/browser-perf.mjs",
     "browser:hash": "node scripts/browser-hash.mjs",
-    "bench": "node scripts/bench.mjs"
+    "bench": "node scripts/bench.mjs",
+    "aspire:dashboard": "aspire dashboard run --frontend-url http://127.0.0.1:18888 --otlp-grpc-url http://127.0.0.1:4317 --otlp-http-url http://127.0.0.1:4318 --allow-anonymous"
   },
   "keywords": [
     "simulation",
@@ -33,6 +34,10 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-metrics": "2.12.0",
     "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
     "@vitest/coverage-v8": "5.0.3",

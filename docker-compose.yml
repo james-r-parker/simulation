@@ -1,0 +1,12 @@
+# Local telemetry dashboard for scripts that export OpenTelemetry metrics (scripts/lib/otel.mjs).
+# Run: docker compose up aspire-dashboard, then open http://127.0.0.1:18888.
+services:
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13.5.2
+    ports:
+      - '127.0.0.1:18888:18888'
+      - '127.0.0.1:4317:18889'
+      - '127.0.0.1:4318:18890'
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: 'true'
+      DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: http://0.0.0.0:18890
