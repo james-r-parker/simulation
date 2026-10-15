@@ -115,4 +115,8 @@ export default [
         files: ['scripts/**/*.{js,mjs}', 'test/**/*.js', '*.config.js'],
         languageOptions: { globals: { ...globals.node } },
     },
+    {
+        files: ['scripts/browser/**/*.js'],
+        languageOptions: { globals: { ...globals.worker } },
+    },
 ];

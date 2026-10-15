@@ -11,6 +11,13 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["js/sim/**/*.js", "js/evo/**/*.js", "js/dev/**/*.js", "scripts/**/*.mjs", "test/**/*.js"],
+  "include": [
+    "js/sim/**/*.js",
+    "js/evo/**/*.js",
+    "js/dev/**/*.js",
+    "scripts/**/*.mjs",
+    "scripts/browser/**/*.js",
+    "test/**/*.js"
+  ],
   "exclude": ["test/fixtures"]
 }

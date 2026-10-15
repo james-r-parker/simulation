@@ -3,8 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from '@playwright/test';
-import { createServer } from 'vite';
+import { withBrowserSession } from './lib/browser-session.mjs';
 
 const DEFAULT_SECONDS = 60;
 const DEFAULT_OUT = 'bench/legacy-baseline.json';
@@ -147,23 +146,6 @@ export function describeAdapter(adapter, allowFallback) {
 }
 
 /**
- * Starts the Vite dev server on a free port.
- * @returns {Promise<{ server: import('vite').ViteDevServer, url: string }>} The server and its URL.
- */
-async function startServer() {
-    const server = await createServer({
-        server: { host: '127.0.0.1', port: 0, open: false, strictPort: false },
-        logLevel: 'error',
-    });
-    await server.listen();
-    const address = server.httpServer?.address();
-    if (!address || typeof address === 'string') {
-        throw new Error('Vite dev server did not report a port');
-    }
-    return { server, url: `http://127.0.0.1:${address.port}/` };
-}
-
-/**
  * Loads the app and measures it for the run length.
  * @param {import('@playwright/test').Browser} browser The launched browser.
  * @param {string} url The app URL.
@@ -201,28 +183,12 @@ async function measure(browser, url, seconds, allowFallback) {
 }
 
 /**
- * Connects to a running Chrome over CDP, or launches Playwright's Chromium.
- * @param {{ headed: boolean, cdp: string }} options Parsed options.
- * @returns {Promise<import('@playwright/test').Browser>} The browser.
- */
-function openBrowser(options) {
-    if (options.cdp) {
-        return chromium.connectOverCDP(options.cdp);
-    }
-    return chromium.launch({ headless: !options.headed, args: ['--enable-unsafe-webgpu'] });
-}
-
-/**
  * Runs the whole measurement and writes the baseline file.
  * @param {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} options Parsed options.
  * @returns {Promise<void>}
  */
-async function run(options) {
-    const { server, url } = await startServer();
-    /** @type {import('@playwright/test').Browser | null} */
-    let browser = null;
-    try {
-        browser = await openBrowser(options);
+function run(options) {
+    return withBrowserSession({ ...options, args: ['--enable-unsafe-webgpu'] }, async ({ browser, url }) => {
         const mode = options.cdp ? `over CDP at ${options.cdp}` : options.headed ? 'headed' : 'headless';
         console.log(`Measuring ${url} for ${options.seconds} s (${mode})`);
         const readings = await measure(browser, url, options.seconds, options.allowFallback);
@@ -242,10 +208,7 @@ async function run(options) {
             console.log(`${name}: ${value}`);
         }
         console.log(`Wrote ${outPath}`);
-    } finally {
-        await browser?.close();
-        await server.close();
-    }
+    });
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
