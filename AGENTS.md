@@ -32,7 +32,7 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Install                                          | `npm ci`                                                                                                                                        |
 | Run the app                                      | `npm run dev` (Vite, http://localhost:5173)                                                                                                     |
-| Full local gate (tier 2, what a PR needs)        | `scripts/check.sh` (conventions, designs-index, format, lint, typecheck, deps, dupes, test with coverage, ratchet, build)                       |
+| Full local gate (tier 2, what a PR needs)        | `scripts/check.sh` (conventions, designs-index, format, lint, typecheck, deps, dupes, test with coverage, ratchet, bench-check, build)          |
 | Apply Prettier, regenerate the index, then check | `scripts/check.sh --fix`                                                                                                                        |
 | What CI runs                                     | `scripts/check.sh --ci`                                                                                                                         |
 | Docs-only change                                 | `scripts/check.sh --fix --docs` (conventions, designs-index, format, design-doc tests; what CI runs when `scripts/change-scope.sh` says `docs`) |
@@ -42,11 +42,12 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | The nightly tier; list a tier's gates            | `scripts/check.sh --tier 3`; `scripts/check.sh --list --tier 1`                                                                                 |
 | Replay a shuffled test order                     | `TEST_SEED=<seed> scripts/check.sh --only=test` (the seed is on the `test (seed <n>)` line)                                                     |
 | Read a failed gate                               | The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the next run). Do not rerun the tool to see why                         |
+| Benchmark the sim core (step and phase ms)       | `npm run bench` (`-- --json`, `-- --sizes=500`; `bench/baseline.json` is what `bench-check` compares)                                           |
 | Tests                                            | `npm test`; one file: `npx vitest run test/designs-index.test.js`                                                                               |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                        |
 | Production build / deploy                        | `npm run build`; `npm run deploy` (Cloudflare Pages) - deploy only when the user asks                                                           |
 
-Commands that arrive with planned design docs: `npm run bench`, `npm run eval`, `npm run eval:compare`,
+Commands that arrive with planned design docs: `npm run eval`, `npm run eval:compare`,
 `npm run train`, `npm run replay` and `node scripts/browser-perf.mjs`. The docs that add them say how they work.
 
 ## Build order
