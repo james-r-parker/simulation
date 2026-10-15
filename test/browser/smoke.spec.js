@@ -8,7 +8,6 @@ const SCREENSHOT = '.checklogs/browser-smoke.png';
 
 const allowlist = JSON.parse(readFileSync(new URL('./known-console-errors.json', import.meta.url), 'utf8'));
 /** @type {RegExp[]} */
-/** @type {RegExp[]} */
 const knownErrors = allowlist.patterns.map((/** @type {string} */ pattern) => new RegExp(pattern));
 
 test('the app loads, animates and logs no unexpected errors', async ({ page }) => {

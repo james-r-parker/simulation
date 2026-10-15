@@ -184,6 +184,9 @@ function runBench(cwd, sizes) {
  * @param {string} baseSha the commit to check out
  * @param {(dir: string) => void} work the work to do in the worktree
  * @param {string} cwd the repository
+ *
+ * The bench runs are synchronous, so a SIGTERM sent to this process alone is handled only after the running bench
+ * exits; Ctrl-C reaches the whole process group and cleans up at once.
  */
 function withWorktree(baseSha, work, cwd) {
     const dir = join(mkdtempSync(join(tmpdir(), 'bench-compare-')), 'base');
