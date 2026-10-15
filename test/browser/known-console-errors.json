@@ -1,0 +1,3 @@
+{
+  "patterns": ["GPU ray tracing failed", "GPU Neural Network processing failed"]
+}
