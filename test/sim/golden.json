@@ -1,0 +1,22 @@
+{
+  "cases": [
+    { "name": "default", "overrides": {}, "ticks": 5000, "worldHash": "9d12e1fdb23244c4" },
+    {
+      "name": "busy",
+      "overrides": {
+        "worldWidth": 2400,
+        "worldHeight": 1600,
+        "obstacleCount": 4,
+        "maxAgents": 150,
+        "minAgents": 30,
+        "maturityTicks": 200,
+        "reproductionCooldown": 150,
+        "pregnancyTicks": 200,
+        "mateMinEnergy": 100,
+        "splitMinEnergy": 900
+      },
+      "ticks": 5000,
+      "worldHash": "bc456558116b7ed5"
+    }
+  ]
+}
