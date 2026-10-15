@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built (tiers, `deps`, `dupes`, coverage ratchet, shuffled tests, pre-commit hook); Phase 2 adds mutation testing, the browser smoke and benchmark comparison.
 **Validated:** cea2d24 (2026-10-11)
-**Priority:** 2 - Phase 2 mutates and benchmarks the `js/sim` modules that headless-sim-core Phase 2 adds
+**Priority:** 1 - Phase 2 mutates and benchmarks the `js/sim` modules that headless-sim-core Phase 2 adds
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the

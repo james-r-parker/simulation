@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5`.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 4 - better evolution is what makes a run worth watching, and it needs the evals to prove it
+**Priority:** 3 - better evolution is what makes a run worth watching, and it needs the evals to prove it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 `js/evo/` decides which brains get born. The headless sim core runs bodies and brains; evolution supplies the

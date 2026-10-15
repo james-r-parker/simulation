@@ -5,8 +5,8 @@ description: Use when the simulation misbehaves or a bug report arrives - agents
 
 # debug-sim
 
-> Note: `simLog`, `.sim/logs/` and `npm run replay` arrive with `headless-sim-core.md`. For the legacy app (`js/*.js`
-> outside `js/sim` and `js/evo`), use step 5 only: the browser console and the dev performance monitor.
+> For the legacy app (`js/*.js` outside `js/sim` and `js/evo`), use step 5 only: the browser console and the dev
+> performance monitor.
 
 ## Overview
 
@@ -40,10 +40,13 @@ failing test, then fix. A fix without a reproducing test is a guess.
 3. **Replay.** Reproduce from the seed and config, stopping just after the event's tick:
 
     ```bash
-    npm run replay -- --seed <seed> --config <config.json> --policy <policy> --ticks <tick + 1> --dump <tick>
+    npm run replay -- --seed <seed> --config <config.json> --ticks <tick + 1> --dump <tick> --level debug --check-invariants
     ```
 
-    `--dump <tick>` writes the world state at that tick to `.sim/dumps/<runId>-<tick>.json` for inspection. A replay that diverges from the
+    `--dump <tick>` writes the world state at that tick to `.sim/dumps/<runId>-<tick>.json` for inspection;
+    `--check-invariants` stops at the first broken invariant and logs `InvariantViolated`. `--policy` arrives with
+    `evolution-evals.md`; until then replay runs the `clone-with-noise` reference policy. To watch metrics, run
+    `bash -lic 'npm run aspire:dashboard'` and set `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`. A replay that diverges from the
     logged run is itself the bug: something read `Math.random`, wall-clock time or iteration order of a `Map` keyed by
     object - check the `conventions` gate output and the RNG streams the code uses.
 
