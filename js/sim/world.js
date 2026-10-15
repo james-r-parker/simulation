@@ -115,7 +115,11 @@ function allocZonesAndPheromones(world) {
     allocRows(world, singles(Uint8Array, ['zoneAlive']), fertileZoneMax);
     allocRows(world, singles(Float32Array, ['zoneX', 'zoneY']), fertileZoneMax);
     allocRows(world, singles(Float64Array, ['zoneFertility', 'zoneInitial']), fertileZoneMax);
-    const cells = Math.ceil(worldWidth / pheromoneCellSize) * Math.ceil(worldHeight / pheromoneCellSize);
+    world.pheromoneGrid = Object.freeze({
+        cols: Math.ceil(worldWidth / pheromoneCellSize),
+        rows: Math.ceil(worldHeight / pheromoneCellSize),
+    });
+    const cells = world.pheromoneGrid.cols * world.pheromoneGrid.rows;
     allocRows(world, singles(Float32Array, ['danger', 'attack', 'pheromoneScratch']), cells);
 }
 
@@ -154,6 +158,8 @@ export function allocateWorld(config) {
         ledger: new Float64Array(2),
         point: new Float64Array(2),
         transferGained: 0,
+        contacts: new Int32Array(2 * config.maxContacts),
+        contactCount: 0,
         season: new Float64Array(2),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),
