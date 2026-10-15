@@ -19,7 +19,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "designs:index": "node scripts/designs-index.mjs --write",
     "perf:browser": "node scripts/browser-perf.mjs",
-    "browser:hash": "node scripts/browser-hash.mjs"
+    "browser:hash": "node scripts/browser-hash.mjs",
+    "bench": "node scripts/bench.mjs"
   },
   "keywords": [
     "simulation",

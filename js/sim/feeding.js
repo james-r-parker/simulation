@@ -11,8 +11,6 @@ import { specParams } from './spec-params.js';
 /** Index of the bite output in an agent's output row. */
 const BITE_OUTPUT = 4;
 
-/** The specialisation keys in index order, so a lookup by index scans without allocating. */
-
 /**
  * Eats one food if the agent's circle overlaps it.
  * @param {Record<string, any>} world the world

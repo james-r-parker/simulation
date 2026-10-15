@@ -4,20 +4,12 @@
 
 /**
  * @param {World} world the world
- * @returns {{cols: number, rows: number}} the grid size, built once by `allocateWorld`
- */
-function gridSize(world) {
-    return world.pheromoneGrid;
-}
-
-/**
- * @param {World} world the world
  * @param {number} x world x
  * @param {number} y world y
  * @returns {number} the index of the clamped cell holding the point
  */
 function cellIndex(world, x, y) {
-    const { cols, rows } = gridSize(world);
+    const { cols, rows } = world.pheromoneGrid;
     const size = world.config.pheromoneCellSize;
     const col = Math.min(cols - 1, Math.max(0, Math.floor(x / size)));
     const row = Math.min(rows - 1, Math.max(0, Math.floor(y / size)));
@@ -86,7 +78,7 @@ function neighbourCount(c, { cols, rows }) {
 function updateGrid(world, grid) {
     const { pheromoneDecay, pheromoneDiffusion } = world.config;
     const s = world.pheromoneScratch;
-    const size = gridSize(world);
+    const size = world.pheromoneGrid;
     const k = pheromoneDiffusion / 4;
     for (let c = 0; c < grid.length; c++) {
         grid[c] = grid[c] * (1 - pheromoneDecay);
