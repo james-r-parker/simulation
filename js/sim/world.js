@@ -7,6 +7,9 @@ import { detCos, detSin } from './det-math.js';
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
 
+/** Elements of the per-world ray-march scratch row. */
+export const RAY_SCRATCH = 18;
+
 const PI = 3.141592653589793;
 const BYTE_PAIR = 0x0102;
 
@@ -139,6 +142,19 @@ function rayTables(rayCount) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Float64Array} the vision range of each specialisation, indexed by its `index`
+ */
+function visionTable(config) {
+    const specs = Object.values(config.specialisations);
+    const table = new Float64Array(Math.max(...specs.map((s) => s.index)) + 1);
+    for (const s of specs) {
+        table[s.index] = s.visionRange;
+    }
+    return table;
+}
+
+/**
  * Allocates every world array once; `rng` is filled in later by `createWorld`.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {World}
@@ -163,6 +179,8 @@ export function allocateWorld(config) {
         season: new Float64Array(2),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),
+        visionBySpec: visionTable(config),
+        rayScratch: new Float64Array(RAY_SCRATCH),
     };
     allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);

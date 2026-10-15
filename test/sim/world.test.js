@@ -32,6 +32,14 @@ function fillSlot(world, slot) {
 }
 
 describe('allocateWorld', () => {
+    it('tabulates the vision range by specialisation index and allocates the ray scratch', () => {
+        const w = smallWorld();
+        for (const s of Object.values(w.config.specialisations)) {
+            expect(w.visionBySpec[s.index]).toBe(s.visionRange);
+        }
+        expect(w.rayScratch.length).toBeGreaterThan(0);
+    });
+
     it('sizes the agent arrays from the config', () => {
         const w = smallWorld();
         const { inputCount, weightCount } = w.layout;
