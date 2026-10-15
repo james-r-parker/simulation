@@ -120,6 +120,7 @@ describe('parseArgs', () => {
         expect(() => parseArgs(['--seed', 'x', '--ticks', '5'])).toThrow('--seed must be an integer');
         expect(() => parseArgs(['--seed', '1', '--ticks', '5', '--level', 'loud'])).toThrow('--level');
         expect(() => parseArgs(['--fast'])).toThrow('unknown argument');
+        expect(() => parseArgs(['--seed', '1', '--ticks', '5', '--dump', '0'])).toThrow('--dump');
     });
 });
 
