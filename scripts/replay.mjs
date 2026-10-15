@@ -50,7 +50,7 @@ function intValue(flag, text, min) {
 const VALUE_FLAGS = {
     '--seed': (value, flag) => ['seed', intValue(flag, value, 0)],
     '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1)],
-    '--dump': (value, flag) => ['dump', intValue(flag, value, 0)],
+    '--dump': (value, flag) => ['dump', intValue(flag, value, 1)],
     '--budget-ms': (value, flag) => ['budgetMs', intValue(flag, value, 0)],
     '--config': (value) => ['config', String(value)],
     '--level': (value) => ['level', parseLevel(value)],
@@ -182,7 +182,12 @@ function logViolation(log, error, tick) {
     if (cause === null || cause === undefined || cause.invariant === undefined) {
         return false;
     }
-    log.log('error', 'InvariantViolated', { tick, invariant: cause.invariant, slot: cause.slot, value: cause.value });
+    log.log('error', 'InvariantViolated', {
+        tick: cause.tick ?? tick,
+        invariant: cause.invariant,
+        slot: cause.slot,
+        value: cause.value,
+    });
     return true;
 }
 
