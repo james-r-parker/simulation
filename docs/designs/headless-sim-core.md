@@ -1,8 +1,6 @@
 # Headless sim core
 
-**Status:** In progress - Phases 1 and 2 built (the whole deterministic sim core, `step`, bench at 4.0 ms per tick for 500 agents, golden hashes matching in Chromium); Phase 3 adds logging and replay.
-**Validated:** 0074760 (2026-10-15)
-**Priority:** 1 - every later doc (evals, evolution, worker) runs on this core
+**Status:** Implemented - the deterministic sim core in `js/sim/` (Phases 1 and 2) and its diagnostics: the sim log, `npm run replay` and opt-in OpenTelemetry (Phase 3).
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 > Companion: [headless-sim-core-contracts.md](headless-sim-core-contracts.md) fixes the layouts, update orders and edge
@@ -354,8 +352,9 @@ new event-ring records into log events. Nothing is logged per agent per tick.
 - `scripts/lib/otel.mjs` exports metrics only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, with service name
   `blob-evolution`. `replay.mjs` sends `sim.population`, `sim.births` and `sim.deaths` per checkpoint; `bench.mjs`
   sends `sim.step_ms` per phase per run.
-- `docker-compose.yml` runs the Aspire dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, exact tag) bound to
-  `127.0.0.1:18888`, with OTLP on 4317 and 4318. `.mcp.json` registers the Aspire MCP server pointed at
+- `npm run aspire:dashboard` runs the Aspire CLI's standalone dashboard bound to `127.0.0.1:18888`, with OTLP on 4317
+  and 4318. `docker-compose.yml` runs the same dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, exact tag) where
+  Docker is installed. `.mcp.json` registers the Aspire MCP server pointed at
   `http://localhost:18888`, using the command line of the Aspire CLI version recorded in [sim-notes.md](sim-notes.md).
 
 ## Phases
@@ -383,7 +382,7 @@ maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<
 - `scripts/browser-hash.mjs` starts `vite`, runs the golden world in a Chromium module worker
   (`scripts/browser/hash-worker.js`) through Playwright, and exits 1 unless the hash equals the golden one.
 
-### Phase 3 - Diagnostics and replay
+### Phase 3 - Diagnostics and replay (built)
 
 **Targets:** none - debuggability
 
@@ -457,5 +456,5 @@ maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<
 3. `node scripts/browser-hash.mjs` prints the golden `worldHash` from a Chromium worker.
 4. `npm run replay -- --seed 1 --ticks 2000` run twice prints identical checkpoint hashes and writes
    `.sim/logs/<runId>.jsonl` with `RunStarted`, `Checkpoint` and `RunFinished`.
-5. With `docker compose up aspire-dashboard` running and `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`,
+5. With `npm run aspire:dashboard` (or `docker compose up aspire-dashboard`) running and `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`,
    `npm run replay` shows `sim.population` in the dashboard at `http://127.0.0.1:18888`.

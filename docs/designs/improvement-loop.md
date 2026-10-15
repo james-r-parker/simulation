@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 6 - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
+**Priority:** 5 - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
 **Depends on:** [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The improvement loop proposes measured changes between sessions:
