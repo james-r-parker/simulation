@@ -25,7 +25,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 
 Partly built - the note says which phases are real.
 
-- [Headless sim core](headless-sim-core.md) - Phase 1 built (deterministic maths, FNV, RNG, config, world state, events, energy, placement, spatial hash, world hash, invariants); Phase 2 adds sensors, brain... _(validated 5047728, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
+- [Headless sim core](headless-sim-core.md) - Phases 1 and 2 built (the whole deterministic sim core, `step`, bench at 4.0 ms per tick for 500 agents, golden hashes matching in Chromium); Phase 3 adds loggi... _(validated 0074760, 2026-10-15)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 1 built (tiers, `deps`, `dupes`, coverage ratchet, shuffled tests, pre-commit hook); Phase 2 adds mutation testing, the browser smoke and benchmark compar... _(validated cea2d24, 2026-10-11)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 
 ## Proposed (5)

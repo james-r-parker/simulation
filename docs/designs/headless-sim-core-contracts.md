@@ -469,6 +469,10 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
   them.
 - `isReadyToMate(world, slot)` in `reproduction.js` (mature, not pregnant, cooldown 0, energy above
   `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0.
+- `actAll` adds thrust along the heading as computed in double precision before it is stored in the `Float32Array`;
+  sensing later reads the stored float32 `angle`.
+- Mating does not mark a pair as done: pregnancy and the cooldown stop an agent mating twice in one tick, so a
+  config with `reproductionCooldown` 0 lets a father mate again with another partner in the same tick.
 - `specParams(config, index)` in `spec-params.js` looks a specialisation up by index in fixed name order.
 - Snapshot sections are packed back to back: food starts right after the last alive agent and obstacles right after
   the last food. The buffer from `snapshotLayout` is sized for `maxAgents`, `maxFood` and `obstacleCount`; the
