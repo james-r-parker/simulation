@@ -29,6 +29,8 @@ describe('check.sh --list', () => {
             expect(tier2).toContain(gate);
         }
         expect(tier2).toContain('browser-smoke');
+        const order = tier2.filter((gate) => ['ratchet', 'bench-check', 'build'].includes(gate));
+        expect(order).toEqual(['ratchet', 'bench-check', 'build']);
     });
 
     it('lists every tier 2 gate in tier 3, plus mutation and bench-compare', () => {

@@ -51,7 +51,7 @@ done
 # Gates in run order, by tier (each tier includes the one below). docs-tests belongs to no tier: it runs only when named
 # (by --docs or --only), because the test gate already runs those tests.
 TIER1_GATES="conventions,format,lint,test-related"
-TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,build,browser-smoke"
+TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,bench-check,build,browser-smoke"
 TIER3_GATES="$TIER2_GATES,mutation,bench-compare"
 GATES="$TIER3_GATES,docs-tests"
 if [[ -n "$TIER" ]]; then
@@ -247,6 +247,25 @@ gate_ratchet() {
     skip_gate ratchet "needs a passing test gate in the same run"
   fi
 }
+# gate_bench_check: the step time at 500 agents stays within 15% of bench/baseline.json (scripts/bench-check.mjs).
+bench_check() {
+  local out status
+  out="$(mktemp)"
+  node scripts/bench.mjs --json --sizes=500 >"$out" || { rm -f "$out"; return 1; }
+  node scripts/bench-check.mjs bench/baseline.json "$out"
+  status=$?
+  rm -f "$out"
+  return "$status"
+}
+gate_bench_check() {
+  if [[ $CI -eq 1 ]]; then
+    skip_gate bench-check "baseline is machine-specific"
+  elif [[ ! -f bench/baseline.json ]]; then
+    skip_gate bench-check "no bench/baseline.json"
+  else
+    run_gate bench-check bench_check
+  fi
+}
 # gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh).
 gate_browser_smoke() { skip_gate browser-smoke "not built yet"; }
 # gate_mutation: mutation testing score (stryker).
@@ -313,6 +332,8 @@ if [[ $FIX -eq 1 && $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
 fi
 
 gate_ratchet
+
+gate_bench_check
 
 # The tests that read this repo's Markdown (the design-doc lint over every doc, and the index). Only when named: the
 # test gate above already runs them.
