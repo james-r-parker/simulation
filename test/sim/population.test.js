@@ -140,3 +140,17 @@ describe('fillFloor', () => {
         expect(event(w, 2)[2]).toBe(2);
     });
 });
+
+describe('reap event fields for a later slot', () => {
+    it('records the dying slot and its ids when the slot is not 0', () => {
+        const w = lifeWorld();
+        addBlob(w, { energy: 100 });
+        const s = addBlob(w, { energy: 0, spec: 2, ageTicks: 7 });
+        const id = w.genomeId[s];
+        w.tick = 3;
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0).slice(0, 5)).toEqual([EVENT_TYPE.AGENT_DIED, 3, s, id, DEATH_CAUSE.STARVED]);
+        expect(w.alive[0]).toBe(1);
+        expect(w.events.count).toBe(1);
+    });
+});

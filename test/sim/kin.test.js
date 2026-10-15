@@ -66,4 +66,21 @@ describe('isKin', () => {
         expect(isKin(w, 0, 1)).toBe(false);
         expect(isKin(w, 0, 0)).toBe(false);
     });
+
+    it('finds a shared parent whichever order the pair is asked in', () => {
+        const w = build([
+            [10, 1, 2],
+            [13, 5, 1],
+            [14, 2, 9],
+        ]);
+        expect(isKin(w, 0, 1)).toBe(true);
+        expect(isKin(w, 1, 0)).toBe(true);
+        expect(isKin(w, 0, 2)).toBe(true);
+        expect(isKin(w, 2, 0)).toBe(true);
+    });
+
+    it('does not make an agent with parents its own kin', () => {
+        const w = build([[10, 3, 4]]);
+        expect(isKin(w, 0, 0)).toBe(false);
+    });
 });

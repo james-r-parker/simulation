@@ -52,6 +52,17 @@ describe('writeBodyInputs', () => {
         expect(v[2]).toBeCloseTo(-2 / c.maxVelocity, 5);
     });
 
+    it('rotates the velocity into a heading that is neither axis', () => {
+        const { w, slot } = ready();
+        w.angle[slot] = 0.5;
+        w.vx[slot] = 3;
+        w.vy[slot] = 2;
+        const v = body(w, slot);
+        const maxV = w.config.maxVelocity;
+        expect(v[1]).toBeCloseTo((3 * Math.cos(0.5) + 2 * Math.sin(0.5)) / maxV, 5);
+        expect(v[2]).toBeCloseTo((-3 * Math.sin(0.5) + 2 * Math.cos(0.5)) / maxV, 5);
+    });
+
     it('writes the turn rate over maxTurn', () => {
         const { w, slot } = ready();
         w.turnRate[slot] = w.config.maxTurn / 2;

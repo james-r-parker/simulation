@@ -68,7 +68,9 @@ describe('createSimLog', () => {
     });
 
     it('throws on an unknown configured level, naming it', () => {
-        expect(() => createSimLog(() => {}, { level: /** @type {any} */ ('loud') })).toThrow(/"loud"/);
+        expect(() => createSimLog(() => {}, { level: /** @type {any} */ ('loud') })).toThrow(
+            'log: unknown level "loud", expected one of debug, info, warn, error',
+        );
     });
 
     it('throws on an unknown record level, naming it', () => {
@@ -180,5 +182,77 @@ describe('drainEvents', () => {
         const o = pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 1);
         world.events.data[o + 3] = 7;
         expect(() => drainEvents(world, collect('debug').log)).toThrow(/cause code 7/);
+    });
+
+    it('logs AgentBorn with every field at its record offset', () => {
+        const world = build();
+        world.events.count = 0;
+        pushEvent(world.events, EVENT_TYPE.AGENT_DIED, 0);
+        const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, 11);
+        world.events.data.set([2, 31, 32, 4, 5, 6, BORN_CAUSE.SPLIT], o + 2);
+        const { records, log } = collect('debug');
+        drainEvents(world, { level: log.level, log: log.log });
+        expect(records[1]).toEqual({
+            level: 'debug',
+            event: 'AgentBorn',
+            tick: 11,
+            slot: 2,
+            genomeId: 31,
+            lineageId: 32,
+            spec: 4,
+            parentA: 5,
+            parentB: 6,
+            cause: 'split',
+        });
+    });
+
+    it('names every death cause', () => {
+        const world = build();
+        world.events.count = 0;
+        for (const cause of Object.values(DEATH_CAUSE)) {
+            const o = pushEvent(world.events, EVENT_TYPE.AGENT_DIED, 1);
+            world.events.data[o + 4] = cause;
+        }
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records.map((r) => r.cause)).toEqual(['starved', 'eaten', 'collision', 'old-age']);
+    });
+
+    it('names every blocked cause', () => {
+        const world = build();
+        world.events.count = 0;
+        for (const cause of Object.values(BLOCKED_CAUSE)) {
+            const o = pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 1);
+            world.events.data[o + 3] = cause;
+        }
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records.map((r) => r.cause)).toEqual(['capacity', 'energy']);
+    });
+
+    it('does not hand records below the log level to the log at all', () => {
+        const world = build();
+        world.events.count = 0;
+        pushEvent(world.events, EVENT_TYPE.AGENT_BORN, 1);
+        pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, 1);
+        pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 1);
+        /** @type {string[]} */
+        const seen = [];
+        drainEvents(world, { level: 'warn', log: (_level, event) => seen.push(event) });
+        expect(seen).toEqual(['BirthBlocked']);
+    });
+
+    it.each([
+        ['AgentBorn', EVENT_TYPE.AGENT_BORN, 8],
+        ['AgentDied', EVENT_TYPE.AGENT_DIED, 4],
+        ['BirthBlocked', EVENT_TYPE.BIRTH_BLOCKED, 3],
+    ])('names the %s event in an unknown cause error', (event, type, offset) => {
+        const world = build();
+        world.events.count = 0;
+        const o = pushEvent(world.events, type, 1);
+        world.events.data[o + offset] = 9;
+        expect(() => drainEvents(world, collect('debug').log)).toThrow(
+            `drainEvents: ${event} has unknown cause code 9`,
+        );
     });
 });

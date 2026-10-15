@@ -141,3 +141,43 @@ describe('ageFood', () => {
         expect(w.foodAge[0]).toBe(3);
     });
 });
+
+describe('spawnFood exact rules', () => {
+    it('divides the spawn rate by foodSpawnAgentDivisor', () => {
+        const w = smallWorld({ ...BASE, foodSpawnAgentDivisor: 2, foodSpawnRate: 1, foodRefillBoost: 0 });
+        // 1 * 8 / 2 = 4 per tick
+        spawnFood(w);
+        expect(w.foodCount).toBe(4);
+    });
+
+    it('does not add an extra item when the draw equals the fraction', () => {
+        const probe = smallWorld(BASE);
+        const draw = nextFloat(probe.rng.food);
+        // expected = rate * 8 = draw, so whole is 0 and the fraction is the draw itself
+        const w = smallWorld({ ...BASE, foodTargetMin: 0, foodSurplusRate: 1, foodSpawnRate: draw / 8 });
+        spawnFood(w);
+        expect(w.foodCount).toBe(0);
+    });
+
+    it('adds an extra item when the draw is just under the fraction', () => {
+        const probe = smallWorld(BASE);
+        const draw = nextFloat(probe.rng.food);
+        const w = smallWorld({ ...BASE, foodTargetMin: 0, foodSurplusRate: 1, foodSpawnRate: (draw * 1.01) / 8 });
+        spawnFood(w);
+        expect(w.foodCount).toBe(1);
+    });
+});
+
+describe('ageFood on dead slots', () => {
+    it('does not age or remove food slots that are not alive', () => {
+        const w = smallWorld({ ...BASE, foodMaxAge: 3 });
+        fill(w, 2);
+        w.foodAlive[0] = 0;
+        w.foodAge[0] = 9;
+        w.foodCount = 1;
+        ageFood(w);
+        expect(w.foodAge[0]).toBe(9);
+        expect(w.foodCount).toBe(1);
+        expect(w.foodAlive[1]).toBe(1);
+    });
+});

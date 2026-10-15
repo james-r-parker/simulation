@@ -99,3 +99,23 @@ describe('det-math range reduction', () => {
         expect(worst).toBeLessThan(1e-15);
     });
 });
+
+describe('det-math series tails', () => {
+    // The top Taylor coefficient of the log series only shows when the mantissa is far from 1 (|s| near 0.17).
+    it('detLog stays within 1e-15 relative of Math.log where the mantissa is farthest from 1', () => {
+        const points = [0.7072, 0.71, 0.75, 1.3, 1.4, 1.41, 1.4142, 2.828, 5.65, 11.3];
+        for (const x of points) {
+            expect(Math.abs(detLog(x) - Math.log(x)) / Math.abs(Math.log(x))).toBeLessThan(1e-15);
+        }
+    });
+
+    it('detTanh saturates far beyond the range detExp accepts', () => {
+        expect(detTanh(400)).toBe(1);
+        expect(detTanh(-1e6)).toBe(-1);
+    });
+
+    it('detTanh is exactly 1 and not yet saturated just past the knee', () => {
+        expect(detTanh(20.5)).toBe(1);
+        expect(Math.abs(detTanh(19.999) - Math.tanh(19.999))).toBeLessThan(1e-15);
+    });
+});

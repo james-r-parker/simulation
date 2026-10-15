@@ -116,3 +116,30 @@ describe('forwardAll', () => {
         expect(Array.from(world.outputs.subarray(0, 5))).toEqual([0.25, 0.25, 0.25, 0.25, 0.25]);
     });
 });
+
+describe('forwardAll contract details', () => {
+    it('keeps the sign of a negative-zero bias when every input and hidden product is -0 or skipped', () => {
+        const world = smallWorld();
+        const { weightCount, inputCount, hidden, wIn, wRec, bHidden } = world.layout;
+        world.alive[0] = 1;
+        world.weights.fill(0, 0, weightCount);
+        world.weights.fill(1, wIn, wIn + inputCount * hidden);
+        world.weights.fill(-1, wRec, wRec + hidden * hidden);
+        world.weights.fill(-0, bHidden, bHidden + hidden);
+        forwardAll(world);
+        for (let j = 0; j < hidden; j++) {
+            expect(Object.is(world.hidden[j], -0)).toBe(true);
+        }
+    });
+
+    it('does not write into the outputs of the next slot', () => {
+        const world = smallWorld();
+        const { outputCount } = world.layout;
+        randomise(world, 3, [0]);
+        world.outputs.fill(0.5, outputCount, 2 * outputCount);
+        forwardAll(world);
+        expect(Array.from(world.outputs.subarray(outputCount, 2 * outputCount))).toEqual(
+            new Array(outputCount).fill(0.5),
+        );
+    });
+});

@@ -217,4 +217,17 @@ describe('buildHash', () => {
         hash.entries = new Int32Array(4);
         expect(() => buildHash(hash, world)).toThrow(/entries/);
     });
+
+    it('accepts exactly as many entries as the capacity holds', () => {
+        const { world, hash } = setup();
+        world.alive[0] = 1;
+        world.x[0] = 500;
+        world.y[0] = 450;
+        world.size[0] = 10;
+        hash.entries = new Int32Array(1);
+        buildHash(hash, world);
+        expect(hash.entryCount).toBe(1);
+        hash.entries = new Int32Array(0);
+        expect(() => buildHash(hash, world)).toThrow('spatial hash needs 1 entries but holds 0');
+    });
 });
