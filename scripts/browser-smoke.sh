@@ -49,7 +49,7 @@ fi
 
 if docker info >/dev/null 2>&1; then
   version="$(node -p 'require("./package.json").devDependencies["@playwright/test"]')"
-  exec docker run --rm --ipc=host -v "$PWD:/work" -w /work \
+  exec docker run --rm --ipc=host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
     "mcr.microsoft.com/playwright:v${version}-noble" scripts/browser-smoke.sh
 fi
 

@@ -155,7 +155,7 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
   fails. `SMOKE_LOCAL=1` runs Playwright directly with the locally installed Chromium, for a machine without Docker;
   CI never sets it. The allowlist is `{ "patterns": [...] }`, and Playwright's output goes to `.checklogs/playwright`.
 - **CI.** `.github/workflows/check.yml` gains a second job, `browser-smoke`, with `container:` set to that image. It
-  runs `scripts/check.sh --ci --only=browser-smoke` on `full`-scope changes, and the `check` job skips the gate.
+  runs `scripts/check.sh --ci --only=browser-smoke` on every change that is not docs-only, and the `check` job skips the gate.
 - **Benchmark comparison.** `scripts/bench-compare.mjs --base <ref>`:
     - checks the base out with `git worktree add` into a directory under `os.tmpdir()`, runs
       `npm ci --ignore-scripts` there, and removes the worktree on exit, including on failure;
