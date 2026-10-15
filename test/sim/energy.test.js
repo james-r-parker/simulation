@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy, updateSize } from '../../js/sim/energy.js';
+import {
+    ENERGY_SOURCE,
+    LOSS_CAUSE,
+    addEnergy,
+    applyCosts,
+    removeEnergy,
+    transferEnergy,
+    updateSize,
+} from '../../js/sim/energy.js';
 import { createConfig } from '../../js/sim/config.js';
-import { allocAgent, allocateWorld } from '../../js/sim/world.js';
+import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
+import { TIMER_CAP, allocAgent, allocateWorld } from '../../js/sim/world.js';
 
 const SMALL = {
     maxAgents: 4,
@@ -229,5 +238,52 @@ describe('energy ledger balance', () => {
         addEnergy(world, 2, 999, ENERGY_SOURCE.IMMIGRANT);
         transferEnergy(world, 2, 0, 7);
         expect(aliveEnergy(world)).toBe(world.ledger[0] - world.ledger[1]);
+    });
+});
+
+describe('applyCosts', () => {
+    it('ages, cools down, ticks timers and charges the formula cost with cause cost', () => {
+        const world = worldWith(1);
+        world.energy[0] = 100;
+        world.spec[0] = 3;
+        world.vx[0] = 3;
+        world.vy[0] = 4;
+        world.turnRate[0] = -0.2;
+        world.size[0] = 20;
+        world.cooldown[0] = 5;
+        world.ateTimer[0] = TIMER_CAP;
+        const c = world.config;
+        const expected =
+            (c.passiveLoss + c.movementCost * 25 * 0.7 + c.turnCost * 0.2 * 0.7 + c.sizeEnergyLoss * 20) * 1;
+        applyCosts(world);
+        expect(world.ageTicks[0]).toBe(1);
+        expect(world.cooldown[0]).toBe(4);
+        expect(world.ateTimer[0]).toBe(TIMER_CAP);
+        expect(world.bittenTimer[0]).toBe(1);
+        expect(world.energy[0]).toBeCloseTo(100 - expected, 4);
+        expect(world.lastLoss[0]).toBe(LOSS_CAUSE.COST);
+        expect(world.ledger[1]).toBeCloseTo(expected, 4);
+    });
+
+    it('scales by the season drain, adds sprintCost while sprinting and floors cooldown at 0', () => {
+        const world = worldWith(2);
+        world.energy.fill(100);
+        world.season[0] = 3;
+        world.outputs[OUTPUT_COUNT + 2] = 0.5;
+        world.size.fill(20);
+        applyCosts(world);
+        const c = world.config;
+        const base = (c.passiveLoss + c.sizeEnergyLoss * 20) * c.seasons[3].energyDrain;
+        expect(world.energy[0]).toBeCloseTo(100 - base, 6);
+        expect(world.energy[1]).toBeCloseTo(100 - base - c.sprintCost, 6);
+        expect(world.cooldown[0]).toBe(0);
+    });
+
+    it('skips free slots and never drives energy below 0', () => {
+        const world = worldWith(1);
+        world.energy[0] = 0.001;
+        applyCosts(world);
+        expect(world.energy[0]).toBe(0);
+        expect(world.ageTicks[1]).toBe(0);
     });
 });

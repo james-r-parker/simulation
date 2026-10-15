@@ -2,26 +2,12 @@
 
 import { detCos, detSin } from './det-math.js';
 import { samplePheromone } from './pheromones.js';
+import { isReadyToMate } from './reproduction.js';
 import { TIMER_CAP } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
 
 const SPEC_DIVISOR = 4;
-
-/**
- * @param {World} world the world
- * @param {number} slot an agent slot
- * @returns {boolean} true when mature, not pregnant, off cooldown and above `mateMinEnergy`
- */
-function readyToMate(world, slot) {
-    const { maturityTicks, mateMinEnergy } = world.config;
-    return (
-        world.ageTicks[slot] >= maturityTicks &&
-        world.pregnancy[slot] === 0 &&
-        world.cooldown[slot] === 0 &&
-        world.energy[slot] > mateMinEnergy
-    );
-}
 
 /**
  * Writes body inputs 1 to 15 at `rayCount x 8` into the agent's inputs row.
@@ -46,7 +32,7 @@ export function writeBodyInputs(world, slot) {
     out[o + 3] = world.turnRate[slot] / maxTurn;
     out[o + 4] = world.size[slot] / (baseSize + maxEnergy / energyToSize);
     out[o + 5] = world.pregnancy[slot] > 0 ? 1 : 0;
-    out[o + 6] = readyToMate(world, slot) ? 1 : 0;
+    out[o + 6] = isReadyToMate(world, slot) ? 1 : 0;
     out[o + 7] = samplePheromone(world, world.danger, x, y);
     out[o + 8] = samplePheromone(world, world.attack, x, y);
     out[o + 9] = detSin(phase);
