@@ -43,6 +43,7 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Replay a shuffled test order                     | `TEST_SEED=<seed> scripts/check.sh --only=test` (the seed is on the `test (seed <n>)` line)                                                     |
 | Read a failed gate                               | The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the next run). Do not rerun the tool to see why                         |
 | Benchmark the sim core (step and phase ms)       | `npm run bench` (`-- --json`, `-- --sizes=500`; `bench/baseline.json` is what `bench-check` compares)                                           |
+| Check the golden hashes in Chromium              | `npm run browser:hash` (`-- --cdp=<url>` to use a running Chrome)                                                                               |
 | Tests                                            | `npm test`; one file: `npx vitest run test/designs-index.test.js`                                                                               |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                        |
 | Production build / deploy                        | `npm run build`; `npm run deploy` (Cloudflare Pages) - deploy only when the user asks                                                           |
