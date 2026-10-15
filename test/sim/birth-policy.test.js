@@ -105,3 +105,44 @@ describe('childBrain', () => {
         expect(nextGaussian(opts.rng)).toBe(nextGaussian(reference));
     });
 });
+
+describe('cloneWithNoisePolicy exact values', () => {
+    const world = () => smallWorld({ brainHidden: 16, rayCount: 8 });
+
+    it('writes each weight from the gaussian stream into the slot row only', () => {
+        const w = world();
+        const { layout } = w;
+        const n = layout.weightCount;
+        w.weights.fill(9);
+        cloneWithNoisePolicy({ initScale: 2.5 }).initBrain(w, 1, createRng(11));
+        const ref = createRng(11);
+        for (let i = 0; i < n; i++) {
+            let expected = 0;
+            if (i < layout.bHidden) {
+                expected = (nextGaussian(ref) * 2.5) / Math.sqrt(layout.inputCount + layout.hidden);
+            } else if (i >= layout.wOut && i < layout.bOut) {
+                expected = (nextGaussian(ref) * 2.5) / Math.sqrt(layout.hidden);
+            }
+            expect(w.weights[n + i]).toBe(Math.fround(expected));
+        }
+        expect(w.weights[0]).toBe(9);
+        expect(w.weights[2 * n]).toBe(9);
+    });
+
+    it('writes the child row as the mother row plus sigma-scaled noise and leaves other rows alone', () => {
+        const w = world();
+        const n = w.layout.weightCount;
+        w.weights.fill(9);
+        for (let i = 0; i < n; i++) {
+            w.weights[n + i] = i / 100;
+        }
+        const rng = createRng(21);
+        cloneWithNoisePolicy({ mutationSigma: 0.3 }).childBrain(w, 2, 1, { cause: 0, rng });
+        const ref = createRng(21);
+        for (let i = 0; i < n; i++) {
+            expect(w.weights[2 * n + i]).toBe(Math.fround(Math.fround(i / 100) + nextGaussian(ref) * 0.3));
+        }
+        expect(w.weights[3 * n]).toBe(9);
+        expect(w.weights[n + 1]).toBe(Math.fround(1 / 100));
+    });
+});

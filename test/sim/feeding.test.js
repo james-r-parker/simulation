@@ -225,3 +225,77 @@ describe('feed: biting', () => {
         expect(w.ledger[0] - w.ledger[1]).toBeCloseTo(total, 9);
     });
 });
+
+describe('feed: exact boundaries', () => {
+    it('does not let a second overlapping agent eat food already eaten', () => {
+        const w = smallWorld();
+        const a = agent(w, { x: 3, y: 3, energy: 20 });
+        const b = agent(w, { x: 2, y: 2, energy: 20 });
+        w.size[a] = 10;
+        w.size[b] = 10;
+        food(w, 3, 3, 6);
+        run(w);
+        expect(w.energy[a]).toBe(26);
+        expect(w.energy[b]).toBe(20);
+        expect(w.foodCount).toBe(0);
+    });
+
+    it.each([
+        ['just inside along a diagonal', 5.9, 8, true],
+        ['exactly touching along a diagonal', 9, 12, false],
+    ])('eats food %s', (_name, dx, dy, eaten) => {
+        const w = smallWorld();
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        w.size[a] = 10;
+        const f = food(w, 100 + dx, 100 + dy, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(eaten ? 0 : 1);
+    });
+
+    it('eats food in a cell away from the first row and column', () => {
+        const w = smallWorld();
+        const a = agent(w, { x: 300, y: 300, energy: 20 });
+        w.size[a] = 10;
+        const f = food(w, 300, 300, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(0);
+        expect(w.energy[a]).toBe(27);
+    });
+
+    it('does not let a dead slot with stale fields eat', () => {
+        const w = smallWorld();
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        w.size[a] = 10;
+        w.alive[a] = 0;
+        const f = food(w, 100, 100, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+        expect(w.energy[a]).toBe(20);
+    });
+
+    it.each([
+        ['at exactly huntSizeRatio', 20, 0],
+        ['just above huntSizeRatio', 21, 1],
+    ])('bites a victim %s', (_name, biterSize, bites) => {
+        const w = smallWorld({ huntSizeRatio: 2 });
+        agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 50 });
+        w.size[0] = biterSize;
+        w.size[1] = 10;
+        run(w, [0, 1]);
+        expect(w.energy[1]).toBe(50 - bites * w.config.biteEnergy);
+    });
+
+    it('ignores contacts past contactCount', () => {
+        const w = smallWorld();
+        agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 50 });
+        w.contacts[0] = 0;
+        w.contacts[1] = 1;
+        w.contactCount = 0;
+        const hash = createSpatialHash(w.config);
+        buildHash(hash, w);
+        feed(w, hash);
+        expect(w.energy[1]).toBe(50);
+    });
+});

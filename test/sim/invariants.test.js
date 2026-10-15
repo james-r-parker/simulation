@@ -153,4 +153,65 @@ describe('assertInvariants', () => {
         world.population = 3;
         expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
     });
+
+    it('names the four invariants', () => {
+        expect({ ...INVARIANT }).toEqual({
+            FINITE: 'finite',
+            IN_WORLD: 'in-world',
+            POPULATION: 'population',
+            LEDGER: 'ledger',
+        });
+    });
+
+    it('accepts an agent at the origin corner', () => {
+        const world = validWorld();
+        world.x[0] = 0;
+        world.y[0] = 0;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('states the bounds in the x and y messages', () => {
+        const world = validWorld();
+        world.x[1] = -1;
+        expect(violationOf(world).message).toContain('x is outside [0, 2000]');
+        world.x[1] = 5;
+        world.y[1] = -1;
+        expect(violationOf(world).message).toContain('y is outside [0, 1000]');
+    });
+
+    it('states the counts in the population message', () => {
+        const world = validWorld();
+        world.population = 5;
+        expect(violationOf(world).message).toContain('3 agents are alive but world.population is 5');
+    });
+
+    it('states both sides in the ledger message', () => {
+        const world = validWorld();
+        world.ledger[1] += 0.5;
+        expect(violationOf(world).message).toContain('alive energy 30 differs from ledger in - out 29.5');
+    });
+
+    it('leaves the energy of dead slots out of the ledger sum', () => {
+        const world = validWorld();
+        world.energy[3] = 500;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('scales the ledger tolerance with the alive energy', () => {
+        const world = validWorld();
+        world.ledger[1] -= 2e-5;
+        expect(() => assertInvariants(world)).not.toThrow();
+        world.ledger[1] -= 2e-5;
+        expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
+    });
+
+    it('uses an absolute ledger tolerance of 1e-6 when the alive energy is below 1', () => {
+        const world = allocateWorld(createConfig(SMALL));
+        const slot = allocAgent(world);
+        addEnergy(world, slot, 0.5, ENERGY_SOURCE.INITIAL);
+        world.ledger[0] += 5e-7;
+        expect(() => assertInvariants(world)).not.toThrow();
+        world.ledger[0] += 1e-6;
+        expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
+    });
 });

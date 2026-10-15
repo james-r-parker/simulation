@@ -67,6 +67,10 @@ describe('nextInt', () => {
         }
     });
 
+    it('scales the float draw by n', () => {
+        expect(nextInt(createRng(1), 1000)).toBe(Math.floor(PINNED[0] * 1000));
+    });
+
     it('returns 0 for n = 1 and accepts n = 2^32', () => {
         const rng = createRng(5);
         expect(nextInt(rng, 1)).toBe(0);

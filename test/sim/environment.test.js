@@ -114,3 +114,26 @@ describe('fertile zones', () => {
         expect(w.zoneFertility[0]).toBe(0);
     });
 });
+
+describe('moveObstacles at the wall', () => {
+    it('does not bounce an obstacle that only touches a wall', () => {
+        const w = smallWorld();
+        setObstacle(w, 0, [40, 40, -10, -10, 30]);
+        setObstacle(w, 1, [960, 960, 10, 10, 30]);
+        moveObstacles(w);
+        expect([w.obsX[0], w.obsY[0], w.obsVx[0], w.obsVy[0]]).toEqual([30, 30, -10, -10]);
+        expect([w.obsX[1], w.obsY[1], w.obsVx[1], w.obsVy[1]]).toEqual([970, 970, 10, 10]);
+    });
+});
+
+describe('decayFertileZones on free slots', () => {
+    it('leaves the contents of a free zone slot untouched', () => {
+        const w = smallWorld({ fertileZoneDecay: 0.25 });
+        w.zoneX[1] = 5;
+        w.zoneY[1] = 6;
+        w.zoneFertility[1] = 7;
+        w.zoneInitial[1] = 8;
+        decayFertileZones(w);
+        expect([w.zoneAlive[1], w.zoneX[1], w.zoneY[1], w.zoneFertility[1], w.zoneInitial[1]]).toEqual([0, 5, 6, 7, 8]);
+    });
+});

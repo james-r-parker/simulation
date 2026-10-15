@@ -7,10 +7,10 @@
       "statements": 86.65
     },
     "js/sim": {
-      "lines": 99.79,
-      "branches": 99.44,
+      "lines": 99.93,
+      "branches": 100,
       "functions": 100,
-      "statements": 99.8
+      "statements": 99.93
     }
   },
   "floors": {

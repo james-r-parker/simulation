@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
 import { TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
@@ -173,5 +173,42 @@ describe('removeFood', () => {
 
     it('throws on a dead food slot', () => {
         expect(() => removeFood(smallWorld(), 0)).toThrow(/not alive/);
+    });
+});
+
+describe('allocateWorld platform check', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('refuses a big-endian platform', () => {
+        const config = createConfig(SMALL);
+        vi.stubGlobal(
+            'Uint16Array',
+            class {
+                constructor() {
+                    /** @type {ArrayBuffer} */
+                    this.buffer = Uint8Array.of(0x01, 0x02).buffer;
+                }
+            },
+        );
+        expect(() => allocateWorld(config)).toThrow(
+            'allocateWorld requires a little-endian platform; this one is big-endian',
+        );
+    });
+});
+
+describe('freeAgent hidden row', () => {
+    it('zeroes the freed slot hidden row and leaves the other rows and the scratch row', () => {
+        const w = smallWorld();
+        const h = w.layout.hidden;
+        for (let slot = 0; slot < 8; slot++) {
+            allocAgent(w);
+        }
+        w.hidden.fill(1);
+        freeAgent(w, 6);
+        expect(Array.from(w.hidden.subarray(6 * h, 7 * h))).toEqual(new Array(h).fill(0));
+        expect(w.hidden.subarray(0, 6 * h).every((/** @type {number} */ v) => v === 1)).toBe(true);
+        expect(w.hidden.subarray(7 * h).every((/** @type {number} */ v) => v === 1)).toBe(true);
     });
 });

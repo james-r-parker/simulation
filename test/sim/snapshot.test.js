@@ -47,3 +47,46 @@ describe('writeSnapshot', () => {
         expect(() => writeSnapshot(world, views)).toThrow(/needs/);
     });
 });
+
+describe('writeSnapshot exact layout', () => {
+    /**
+     * @param {ReturnType<typeof smallWorld>} world the world
+     * @returns {{f32: Float32Array, u32: Uint32Array}} views over a fresh buffer of the exact size
+     */
+    function freshViews(world) {
+        return createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+    }
+
+    it('writes every agent field at its own offset and leaves the rest of the buffer zero', () => {
+        const world = smallWorld({ maxEnergy: 1000 });
+        world.alive[3] = 1;
+        world.x[3] = 11;
+        world.y[3] = 12;
+        world.angle[3] = 1.5;
+        world.size[3] = 13;
+        world.energy[3] = 250;
+        world.spec[3] = 4;
+        world.lineageId[3] = 21;
+        world.genomeId[3] = 22;
+        const views = freshViews(world);
+        writeSnapshot(world, views);
+        const { f32, u32 } = views;
+        expect(Array.from(f32.subarray(4, 8))).toEqual([11, 12, 1.5, 13]);
+        expect(f32[8]).toBe(0.25);
+        expect(Array.from(u32.subarray(9, 13))).toEqual([4, 21, 22, 3]);
+        expect(Array.from(u32.subarray(0, 4))).toEqual([0, 1, 0, 2]);
+        const obstacleStart = 4 + 9;
+        expect(f32[obstacleStart]).toBe(world.obsX[0]);
+        expect(f32[obstacleStart + 6]).toBe(0);
+        expect(Array.from(u32.subarray(obstacleStart + 6))).toEqual(new Array(u32.length - obstacleStart - 6).fill(0));
+    });
+
+    it('accepts a buffer of exactly the layout size and rejects one word less', () => {
+        const world = smallWorld();
+        const { bytes } = snapshotLayout(world.config);
+        expect(() => writeSnapshot(world, createSnapshotViews(new ArrayBuffer(bytes)))).not.toThrow();
+        expect(() => writeSnapshot(world, createSnapshotViews(new ArrayBuffer(bytes - 4)))).toThrow(
+            `writeSnapshot: buffer holds ${bytes - 4} bytes, the config needs ${bytes}`,
+        );
+    });
+});

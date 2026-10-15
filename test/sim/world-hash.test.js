@@ -152,4 +152,30 @@ describe('hashWorld', () => {
         delete world.rng.food;
         expect(() => hashWorld(world)).toThrow(/world\.rng\.food is missing/);
     });
+
+    it('throws when world.rng is undefined', () => {
+        const world = makeWorld();
+        world.rng = undefined;
+        expect(() => hashWorld(world)).toThrow(
+            'hashWorld needs the RNG streams: world.rng is null; call createWorld first',
+        );
+    });
+
+    it('throws naming a stream that is null', () => {
+        const world = makeWorld();
+        world.rng.spawn = null;
+        expect(() => hashWorld(world)).toThrow(/world\.rng\.spawn is missing/);
+    });
+
+    it('throws naming a stream whose state is not a Uint32Array', () => {
+        const world = makeWorld();
+        world.rng.mutation = { s: [1, 2, 3, 4] };
+        expect(() => hashWorld(world)).toThrow(/world\.rng\.mutation is missing/);
+    });
+
+    it.each(['x', 'zoneX'])('throws naming %s when it is not a typed array', (name) => {
+        const world = makeWorld();
+        world[name] = null;
+        expect(() => hashWorld(world)).toThrow(`hashWorld: world.${name} is missing or is not a typed array`);
+    });
 });
