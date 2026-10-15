@@ -8,6 +8,7 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text-summary', 'json-summary'],
             include: ['js/sim/**', 'js/evo/**', 'scripts/**/*.{js,mjs}'],
+            exclude: ['scripts/alloc-check.mjs'], // runs in a child process under --expose-gc
             reportsDirectory: 'coverage',
         },
     },

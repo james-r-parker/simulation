@@ -427,8 +427,9 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
   `npm run bench -- --json --sizes=500` and compares `bench.step_ms@500` with `bench/baseline.json`.
 - If `bench.step_ms@500` cannot get under 8 ms, the PR states the measured value and the profile, and the target is
   agreed with the user; it is never lowered silently.
-- `test/sim/golden.json` holds the golden config overrides, tick count and expected hash; `golden.test.js` and
-  `scripts/browser-hash.mjs` both read it.
+- `test/sim/golden.json` holds named cases, each with config overrides, a tick count and the expected hash;
+  `golden.test.js` and `scripts/browser-hash.mjs` both read it. `default` is the shipped config; `busy` is a
+  2400 x 1600 world crowded enough that random brains mate, split, bite, hit the floor and receive immigrants.
 - `test/sim/helpers/test-policy.js` is a minimal policy (zero weights, spec 0) for tests that run before
   `birth-policy.js` exists (T7 onwards).
 - The `eslint.config.js` override for `scripts/browser/` (worker globals) goes after the Node-globals block so that
@@ -469,3 +470,6 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 - `isReadyToMate(world, slot)` in `reproduction.js` (mature, not pregnant, cooldown 0, energy above
   `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0.
 - `specParams(config, index)` in `spec-params.js` looks a specialisation up by index in fixed name order.
+- Snapshot sections are packed back to back: food starts right after the last alive agent and obstacles right after
+  the last food. The buffer from `snapshotLayout` is sized for `maxAgents`, `maxFood` and `obstacleCount`; the
+  header's counts say where each section ends.
