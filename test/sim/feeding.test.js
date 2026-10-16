@@ -186,6 +186,23 @@ describe('feed: biting', () => {
         expect(w.energy[1]).toBe(50);
     });
 
+    it('scales the bite by the biter specialisation biteMultiplier', () => {
+        const w = smallWorld({ specialisations: { predator: { biteMultiplier: 4 } } });
+        agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 50 });
+        run(w, pair);
+        expect(w.energy[1]).toBe(50 - 4 * w.config.biteEnergy);
+        expect(w.biteEnergy[0]).toBe(4 * w.config.biteEnergy);
+    });
+
+    it('applies biteMultiplier together with the victim biteTakenMultiplier', () => {
+        const w = smallWorld({ specialisations: { predator: { biteMultiplier: 4 } } });
+        agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 50, spec: DEFENDER });
+        run(w, pair);
+        expect(w.energy[1]).toBe(50 - 4 * w.config.biteEnergy * 0.5);
+    });
+
     it('takes biteTakenMultiplier of the bite from a defender', () => {
         const w = duel();
         w.spec[1] = DEFENDER;

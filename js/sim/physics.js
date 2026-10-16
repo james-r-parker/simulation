@@ -18,7 +18,7 @@ export function actAll(world) {
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             const o = i * OUTPUT_COUNT;
-            turnRate[i] = outputs[o + OUTPUT_INDEX.TURN] * maxTurn;
+            turnRate[i] = outputs[o + OUTPUT_INDEX.TURN] * maxTurn * world.turnBySpec[world.spec[i]];
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -28,7 +28,7 @@ export function actAll(world) {
             angle[i] = a;
             let thrust = outputs[o + OUTPUT_INDEX.THRUST] * maxThrust * thrustEfficiency(config, world.temperature[i]);
             if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
-                thrust *= 1 + sprintMultiplier;
+                thrust *= 1 + sprintMultiplier * world.sprintBySpec[world.spec[i]];
             }
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);
@@ -105,7 +105,8 @@ function moveAgent(world, slot) {
     vx[slot] *= damping;
     vy[slot] *= damping;
     const sprinting = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
-    const cap = sprinting ? maxVelocity * (1 + sprintMultiplier) : maxVelocity;
+    const boost = world.sprintBySpec[world.spec[slot]];
+    const cap = sprinting ? maxVelocity * (1 + sprintMultiplier * boost) : maxVelocity;
     const speed = Math.sqrt(vx[slot] * vx[slot] + vy[slot] * vy[slot]);
     if (speed > cap) {
         const s = cap / speed;
