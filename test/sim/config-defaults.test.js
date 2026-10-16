@@ -38,4 +38,30 @@ describe('DEFAULTS', () => {
         const hunters = Object.entries(DEFAULTS.specialisations).filter(([, s]) => s.canHunt);
         expect(hunters.map(([name]) => name)).toEqual(['predator']);
     });
+
+    it('holds the seventeen temperature keys and the season modifiers', () => {
+        const keys = Object.keys(DEFAULTS).filter((key) => key.startsWith('temperature'));
+        expect(keys).toHaveLength(17);
+        expect(DEFAULTS.temperatureMax).toBe(100);
+        expect(DEFAULTS.temperatureStart).toBe(50);
+        expect([DEFAULTS.temperatureGainMove, DEFAULTS.temperatureGainEat, DEFAULTS.temperatureLossPassive]).toEqual([
+            0.025, 2, 0.015,
+        ]);
+        expect([DEFAULTS.temperatureSeasonSlope, DEFAULTS.temperaturePassiveLossFactor]).toEqual([0.03, 4]);
+        expect([
+            DEFAULTS.temperatureColdStress,
+            DEFAULTS.temperatureColdModerate,
+            DEFAULTS.temperatureOptimalMin,
+            DEFAULTS.temperatureOptimalMax,
+            DEFAULTS.temperatureHeatModerate,
+            DEFAULTS.temperatureHeatStress,
+        ]).toEqual([30, 40, 40, 65, 70, 85]);
+        expect([
+            DEFAULTS.temperatureEfficiencyColdSevere,
+            DEFAULTS.temperatureEfficiencyColdModerate,
+            DEFAULTS.temperatureEfficiencyHeatModerate,
+            DEFAULTS.temperatureEfficiencyHeatSevere,
+        ]).toEqual([0.3, 0.7, 0.8, 0.4]);
+        expect(DEFAULTS.seasons.map((/** @type {any} */ s) => s.temperatureModifier)).toEqual([-5, 15, 5, -15]);
+    });
 });

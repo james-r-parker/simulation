@@ -14,10 +14,10 @@ const BASE = {
     foodRefillBoost: 1,
     foodSurplusRate: 0.5,
     seasons: [
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1 },
-        { foodScarcity: 0.5, energyDrain: 1, reproductionBonus: 1 },
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1 },
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1 },
+        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
+        { foodScarcity: 0.5, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
+        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
+        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
     ],
 };
 

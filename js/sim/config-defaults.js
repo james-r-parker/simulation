@@ -71,10 +71,10 @@ export const DEFAULTS = deepFreeze({
     maturityTicks: 600, // MATURATION_AGE_FRAMES
     seasonLength: 3600, // SEASON_LENGTH
     seasons: [
-        { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5 }, // spring, SEASON_*
-        { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2 }, // summer, SEASON_*
-        { foodScarcity: 0.8, energyDrain: 1.1, reproductionBonus: 0.7 }, // autumn, SEASON_*
-        { foodScarcity: 0.4, energyDrain: 1.8, reproductionBonus: 0.3 }, // winter, SEASON_*
+        { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5, temperatureModifier: -5 }, // spring, SEASON_*
+        { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2, temperatureModifier: 15 }, // summer, SEASON_*
+        { foodScarcity: 0.8, energyDrain: 1.1, reproductionBonus: 0.7, temperatureModifier: 5 }, // autumn, SEASON_*
+        { foodScarcity: 0.4, energyDrain: 1.8, reproductionBonus: 0.3, temperatureModifier: -15 }, // winter, SEASON_*
     ],
     fertileZoneMax: 100, // FERTILE_ZONE_MAX_COUNT
     fertileZoneSpawnChance: 0.4, // FERTILE_ZONE_SPAWN_CHANCE
@@ -142,4 +142,21 @@ export const DEFAULTS = deepFreeze({
     fertileZoneRadius: 150, // new
     fertileZoneFertility: 0.05, // FERTILE_ZONE_FERTILITY_FACTOR
     placementTries: 100, // new
+    temperatureMax: 100, // TEMPERATURE_MAX
+    temperatureStart: 50, // TEMPERATURE_START
+    temperatureGainMove: 0.025, // TEMPERATURE_GAIN_MOVE
+    temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
+    temperatureLossPassive: 0.015, // TEMPERATURE_LOSS_PASSIVE
+    temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
+    temperaturePassiveLossFactor: 4, // TEMPERATURE_PASSIVE_LOSS_FACTOR
+    temperatureColdStress: 30, // TEMPERATURE_COLD_STRESS_THRESHOLD
+    temperatureColdModerate: 40, // TEMPERATURE_COLD_MODERATE_THRESHOLD
+    temperatureOptimalMin: 40, // TEMPERATURE_OPTIMAL_MIN
+    temperatureOptimalMax: 65, // TEMPERATURE_OPTIMAL_MAX
+    temperatureHeatModerate: 70, // TEMPERATURE_HEAT_MODERATE_THRESHOLD
+    temperatureHeatStress: 85, // TEMPERATURE_HEAT_STRESS_THRESHOLD
+    temperatureEfficiencyColdSevere: 0.3, // TEMPERATURE_EFFICIENCY_COLD_SEVERE
+    temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
+    temperatureEfficiencyHeatModerate: 0.8, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE
+    temperatureEfficiencyHeatSevere: 0.4, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE
 });
