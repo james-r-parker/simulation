@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 3 - the browser is where the simulation is watched, and it needs the core and the live policy first
+**Priority:** 4 - the browser is where the simulation is watched, and it needs the core and the live policy first
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The browser app runs the simulation in a dedicated worker and only draws on the main thread:
