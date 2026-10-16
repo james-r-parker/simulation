@@ -101,6 +101,31 @@ function foodSeeker() {
     return eachAlive(seekFood);
 }
 
+/**
+ * The thrusts of the constant-thrust controllers, as fractions of full thrust: the speeds the body-temperature sweep
+ * compares (body-temperature.md). `thrust40` steers and moves as `foodSeeker` does.
+ */
+export const CONSTANT_THRUSTS = Object.freeze({
+    thrust0: 0,
+    thrust20: 0.2,
+    thrust40: 0.4,
+    thrust60: 0.6,
+    thrust100: 1,
+});
+
+/**
+ * A controller that steers towards the nearest food as `foodSeeker` does but always thrusts at one level.
+ * @param {number} thrust the thrust output, 0 to 1
+ * @returns {ControllerFactory}
+ */
+function constantThrust(thrust) {
+    return () =>
+        eachAlive((world, slot) => {
+            const k = nearestClassRay(world, slot, CH_FOOD, CH_FOOD);
+            write(world, slot, thrust, turnTowards(k, world.config.rayCount));
+        });
+}
+
 /** @type {ControllerFactory} */
 function spinner() {
     return eachAlive((world, slot) => write(world, slot, 0.5, 1));
@@ -184,4 +209,9 @@ export const SCRIPTED_CONTROLLERS = Object.freeze({
     sitter,
     explorerAfterMeal,
     biteSeeker,
+    thrust0: constantThrust(CONSTANT_THRUSTS.thrust0),
+    thrust20: constantThrust(CONSTANT_THRUSTS.thrust20),
+    thrust40: constantThrust(CONSTANT_THRUSTS.thrust40),
+    thrust60: constantThrust(CONSTANT_THRUSTS.thrust60),
+    thrust100: constantThrust(CONSTANT_THRUSTS.thrust100),
 });

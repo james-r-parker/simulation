@@ -3,7 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
-import { MEAL_ENERGY, SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
+import { CONSTANT_THRUSTS, MEAL_ENERGY, SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
 /** The seeking thrust as the Float32 outputs row stores it. */
 const SEEK = Math.fround(SEEK_THRUST);
@@ -47,11 +47,37 @@ function out(world, slot = 0) {
 }
 
 describe('SCRIPTED_CONTROLLERS', () => {
-    it('is frozen and names the seven controllers', () => {
+    it('is frozen and names the seven controllers and the five constant-thrust ones', () => {
         expect(Object.isFrozen(SCRIPTED_CONTROLLERS)).toBe(true);
         expect(Object.keys(SCRIPTED_CONTROLLERS).sort()).toEqual(
-            ['bumper', 'biteSeeker', 'explorerAfterMeal', 'foodSeeker', 'sitter', 'spinner', 'wanderer'].sort(),
+            [
+                'bumper',
+                'biteSeeker',
+                'explorerAfterMeal',
+                'foodSeeker',
+                'sitter',
+                'spinner',
+                'wanderer',
+                'thrust0',
+                'thrust20',
+                'thrust40',
+                'thrust60',
+                'thrust100',
+            ].sort(),
         );
+    });
+
+    it('each constant-thrust controller writes its thrust and the foodSeeker steering', () => {
+        expect(Object.values(CONSTANT_THRUSTS)).toEqual([0, 0.2, 0.4, 0.6, 1]);
+        for (const [name, thrust] of Object.entries(CONSTANT_THRUSTS)) {
+            const { world, run } = setup(/** @type {keyof typeof SCRIPTED_CONTROLLERS} */ (name));
+            hit(world, 0, 1, CH.food);
+            hit(world, 1, RAYS - 1, CH.food);
+            run(world);
+            expect(out(world, 0), name).toEqual([Math.fround(thrust), 1, 0, 0, 0]);
+            expect(out(world, 1), name).toEqual([Math.fround(thrust), -1, 0, 0, 0]);
+            expect(out(world, 2), name).toEqual([Math.fround(thrust), 0, 0, 0, 0]);
+        }
     });
 
     it('foodSeeker turns to the positive side for food on ray 1 and the negative side for ray 15, thrusting', () => {
