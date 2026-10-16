@@ -4,7 +4,7 @@
 // pool sustains while every worker is busy.
 import { availableParallelism, cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { cpuUse } from './eval.mjs';
+import { cpuUse } from './lib/cpu-use.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
 const DEFAULT_COUNTS = [1, 8, 16, 24, 32];

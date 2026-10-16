@@ -4,9 +4,10 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildReport, validateReport } from '../js/evo/report.js';
+import { buildReport, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
+import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
 import { runPool } from './lib/worker-pool.mjs';
@@ -105,28 +106,6 @@ export function pickSeeds(seeds, offset) {
         throw new Error(`--seeds + --seed-offset must be <= ${all.length}, got ${seeds + offset}\n${USAGE}`);
     }
     return all.slice(offset, offset + seeds);
-}
-
-/**
- * @typedef {{ user: number, nice: number, sys: number, idle: number, irq: number }} CpuTimes
- */
-
-/**
- * @param {readonly { times: CpuTimes }[]} before `os.cpus()` at the start of the interval
- * @param {readonly { times: CpuTimes }[]} after `os.cpus()` at its end
- * @returns {{ pct: number, threads: number }} the share of CPU time not idle (0 to 100) and the thread count
- */
-export function cpuUse(before, after) {
-    let busy = 0;
-    let total = 0;
-    after.forEach((cpu, i) => {
-        const a = cpu.times;
-        const b = before[i].times;
-        const all = a.user + a.nice + a.sys + a.irq + a.idle - (b.user + b.nice + b.sys + b.irq + b.idle);
-        total += all;
-        busy += all - (a.idle - b.idle);
-    });
-    return { pct: total > 0 ? (100 * busy) / total : 0, threads: after.length };
 }
 
 /**
@@ -241,7 +220,8 @@ function resolveRun(options) {
         seeds: pickSeeds(count, seedOffset),
         overrides,
         sha,
-        runId: `${policyName}-${sha}-${count}x${ticks}`,
+        // A non-zero offset names a different seed list, so it must not overwrite the offset-0 report or log.
+        runId: `${policyName}-${sha}-${count}x${ticks}${seedOffset > 0 ? `-o${seedOffset}` : ''}`,
     };
 }
 
@@ -309,7 +289,7 @@ export async function runEval(options) {
         seeds,
         ticks,
         workers,
-        configHash: configHash(config),
+        configHash: configHash(seedlessConfig(config)),
     });
     const cpu = startCpuReport(print);
     const started = performance.now();

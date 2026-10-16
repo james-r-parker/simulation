@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { validateReport } from '../js/evo/report.js';
-import { cpuUse, parseArgs, pickSeeds, runEval } from '../scripts/eval.mjs';
+import { parseArgs, pickSeeds, runEval } from '../scripts/eval.mjs';
+import { cpuUse } from '../scripts/lib/cpu-use.mjs';
 
 const SMALL = { maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
 /** @type {string} */
@@ -50,6 +51,25 @@ describe('runEval', () => {
             .split('\n')
             .map((line) => JSON.parse(line));
         expect(lines.map((l) => l.event)).toEqual(['EvalStarted', 'SeedFinished', 'SeedFinished', 'EvalFinished']);
+        const report = JSON.parse(readFileSync(join(dir, 'c.json'), 'utf8'));
+        expect(lines[0].configHash).toBe(report.configHash);
+    }, 60_000);
+
+    it('names the run after a non-zero seed offset so it does not overwrite the offset-0 run', async () => {
+        await runEval({
+            seeds: 1,
+            ticks: 100,
+            seedOffset: 8,
+            policy: 'baseline-v5',
+            configOverrides: SMALL,
+            out: join(dir, 'd.json'),
+            logDir: join(dir, 'logs'),
+            workers: 1,
+            sha: 'test',
+        });
+        expect(readFileSync(join(dir, 'logs', 'eval-baseline-v5-test-1x100-o8.jsonl'), 'utf8')).toContain(
+            'EvalStarted',
+        );
     }, 60_000);
 });
 
