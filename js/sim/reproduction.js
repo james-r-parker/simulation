@@ -3,7 +3,8 @@
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
-import { canMatePair } from './mate-eligibility.js';
+import { readyToMate } from './mate-eligibility.js';
+import { findMate } from './mate-search.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { TIMER_CAP, allocAgent } from './world.js';
@@ -63,20 +64,22 @@ function startMating(world, policy, mother, father) {
 }
 
 /**
- * Walks the contact list in order and starts a pregnancy for each eligible pair that wins the lifecycle draw.
+ * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
+ * and starts a pregnancy when one wins the lifecycle draw. Uses the hash built this tick.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function mate(world, policy) {
-    const { contacts, contactCount } = world;
+    const { alive } = world;
     const { reproductionBonus } = world.config.seasons[world.season[0]];
     const chance = Math.min(1, reproductionBonus / world.config.mateChanceScale);
-    for (let i = 0; i < contactCount; i++) {
-        const a = Math.min(contacts[2 * i], contacts[2 * i + 1]);
-        const b = Math.max(contacts[2 * i], contacts[2 * i + 1]);
-        if (canMatePair(world, a, b) && nextFloat(world.rng.lifecycle) < chance) {
-            startMating(world, policy, a, b);
+    for (let a = 0; a < alive.length; a++) {
+        if (alive[a] === 1 && readyToMate(world, a)) {
+            const b = findMate(world, a, chance);
+            if (b >= 0) {
+                startMating(world, policy, a, b);
+            }
         }
     }
 }
