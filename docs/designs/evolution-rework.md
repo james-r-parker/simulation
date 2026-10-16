@@ -101,7 +101,7 @@ end of an eval at the last tick:
 | `scout`        | `2 x cells300`                               |
 | `defender`     | `0.5 x kinBitesAbsorbed`                     |
 
-`test/evo/anti-exploit.test.js` ([evolution-evals.md](evolution-evals.md)) runs against `fitnessV1` with no expected failures, including
+`test/evo/anti-exploit.slow.test.js` ([evolution-evals.md](evolution-evals.md)) runs against `fitnessV1` with no expected failures, including
 `explorerAfterMeal` and `biteSeeker`.
 
 ## Archive
@@ -259,7 +259,7 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 
 ## Verification
 
-1. `scripts/check.sh` is green, and `test/evo/anti-exploit.test.js` passes with no expected failures.
+1. `scripts/check.sh` is green, and `test/evo/anti-exploit.slow.test.js` passes with no expected failures.
 2. A genome with a different `brainHidden` passed to `assertGenomeFits` throws naming `brainHidden`.
 3. `npm run eval:compare -- <baseline-v5.json> <map-elites-v1.json>` shows `better` on `eval.food_energy_per_1k` and
    `eval.median_lifespan`.

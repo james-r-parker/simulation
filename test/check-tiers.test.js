@@ -121,3 +121,42 @@ describe('check.sh test gate seed', () => {
         expect(readFileSync(argsFile, 'utf8')).toContain('--sequence.seed=4242');
     });
 });
+
+describe('check.sh test scope', () => {
+    /**
+     * Runs the test gate with a fake vitest that records its arguments and TEST_SCOPE.
+     * @param {...string} args check.sh arguments
+     * @returns {{stdout: string, argv: string, scope: string}} the output, the runner's arguments and its scope
+     */
+    function gate(...args) {
+        const dir = mkdtempSync(join(tmpdir(), 'fake-vitest-'));
+        const out = join(dir, 'out.txt');
+        const fake = join(dir, 'vitest');
+        writeFileSync(fake, `#!/usr/bin/env bash\necho "$@" > "${out}"\necho "scope=\${TEST_SCOPE:-}" >> "${out}"\n`, {
+            mode: 0o755,
+        });
+        const env = Object.fromEntries(Object.entries(ENV).filter(([key]) => key !== 'TEST_SCOPE'));
+        const result = spawnSync('scripts/check.sh', ['--only=test,ratchet', ...args], {
+            encoding: 'utf8',
+            env: { ...env, TEST_SEED: '7', VITEST_BIN: fake, CHECK_LOG_DIR: join(dir, 'logs') },
+        });
+        const [argv, scope] = readFileSync(out, 'utf8').trim().split('\n');
+        rmSync(dir, { recursive: true, force: true });
+        return { stdout: result.stdout, argv, scope };
+    }
+
+    it('runs the fast tests without coverage under --ci, and skips the ratchet', () => {
+        const run = gate('--ci');
+        expect(run.stdout).toContain('test (fast, seed 7)');
+        expect(run.scope).toBe('scope=fast');
+        expect(run.argv).not.toContain('--coverage');
+        expect(run.stdout).toMatch(/ratchet\s+skipped \(coverage is measured on the full suite/);
+    });
+
+    it('runs every test with coverage under --ci --full', () => {
+        const run = gate('--ci', '--full');
+        expect(run.stdout).toContain('test (seed 7)');
+        expect(run.scope).toBe('scope=');
+        expect(run.argv).toContain('--coverage');
+    });
+});

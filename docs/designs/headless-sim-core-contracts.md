@@ -421,14 +421,14 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 
 - Playwright and its pin exist (`@playwright/test` 1.64.0). Under WSL, `browser-hash.mjs` runs Playwright's Chromium:
   hashing needs no GPU.
-- `test/sim/golden.test.js` sets a 120 s timeout. Its first expected hash is a self-pin: the task that adds it runs
+- `test/sim/golden.slow.test.js` sets a 120 s timeout. Its first expected hash is a self-pin: the task that adds it runs
   it, commits the value, and says so in the commit body.
 - `npm run bench -- --json` prints one flat object of `"bench.<metric>": number`. `bench-check` runs
   `npm run bench -- --json --sizes=500` and compares `bench.step_ms@500` with `bench/baseline.json`.
 - If `bench.step_ms@500` cannot get under 8 ms, the PR states the measured value and the profile, and the target is
   agreed with the user; it is never lowered silently.
 - `test/sim/golden.json` holds named cases, each with config overrides, a tick count and the expected hash;
-  `golden.test.js` and `scripts/browser-hash.mjs` both read it. `default` is the shipped config; `busy` is a
+  `golden.slow.test.js` and `scripts/browser-hash.mjs` both read it. `default` is the shipped config; `busy` is a
   2400 x 1600 world crowded enough that random brains mate, split, bite, hit the floor and receive immigrants.
 - `test/sim/helpers/test-policy.js` is a minimal policy (zero weights, spec 0) for tests that run before
   `birth-policy.js` exists (T7 onwards).
