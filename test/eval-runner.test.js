@@ -8,6 +8,15 @@ import { main, parseArgs, pickSeeds, startCpuReport } from '../scripts/eval.mjs'
 import { cpuUse } from '../scripts/lib/cpu-use.mjs';
 
 const SMALL = { maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
+/** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
+const UNPLACEABLE = {
+    worldWidth: 1000,
+    worldHeight: 1000,
+    obstacleCount: 100,
+    obstacleMinRadius: 120,
+    obstacleMaxRadius: 120,
+    placementTries: 1,
+};
 /** @type {string} */
 let dir;
 
@@ -137,7 +146,7 @@ describe('main', () => {
 
     it('exits 1, logs SeedFailed and prints a reproduce line when a seed fails', async () => {
         const config = join(dir, 'bad.json');
-        writeFileSync(config, JSON.stringify({ ...SMALL, eventCapacity: 5 }));
+        writeFileSync(config, JSON.stringify({ ...SMALL, ...UNPLACEABLE }));
         const { code, err } = await runMain(
             [
                 '--seeds',

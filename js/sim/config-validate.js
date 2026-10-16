@@ -3,6 +3,9 @@
 import { brainLayout } from './brain-layout.js';
 
 const MAX_SEED = 4294967295; // 2^32 - 1
+const PI = 3.141592653589793;
+const MAX_U16 = 65535;
+const MAX_EVENTS_PER_SLOT = 6; // up to 3 call, release or refuse events, 1 death and 1 birth
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
 const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];
@@ -14,6 +17,9 @@ const SPECIALISATION_FIELDS = [
     'moveCostMultiplier',
     'biteTakenMultiplier',
     'cooldownMultiplier',
+    'biteMultiplier',
+    'turnMultiplier',
+    'sprintBoost',
 ];
 
 /**
@@ -146,6 +152,19 @@ const RULES = {
     temperatureEfficiencyColdModerate: EFFICIENCY,
     temperatureEfficiencyHeatModerate: EFFICIENCY,
     temperatureEfficiencyHeatSevere: EFFICIENCY,
+    antennaAngle: num(0, PI),
+    antennaReach: positive(),
+    callRadius: positive(),
+    callTicks: int(1, MAX_U16),
+    alarmCost: num(0),
+    huntCallCost: num(0),
+    smokeCost: num(0),
+    smokeRadius: positive(),
+    smokeTicks: int(1, MAX_U16),
+    smokeCooldown: int(0, MAX_U16),
+    smokeThreshold: UNIT,
+    packWindow: int(1),
+    maxClouds: int(0, 256),
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
@@ -314,6 +333,12 @@ function checkCrossKey(config) {
             'maxAgents',
             config.maxAgents,
             `at most ${MAX_WEIGHT_FLOATS} / weightCount (maxAgents x weightCount is ${floats})`,
+        );
+    }
+    const events = MAX_EVENTS_PER_SLOT * config.maxAgents;
+    if (config.eventCapacity < events) {
+        throw new Error(
+            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents (${events})`,
         );
     }
     const largest = Math.max(

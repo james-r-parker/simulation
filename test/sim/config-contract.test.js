@@ -3,7 +3,8 @@ import { createConfig, configHash } from '../../js/sim/config.js';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { validateConfig } from '../../js/sim/config-validate.js';
 
-const SPEC_FIELDS = 'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier';
+const SPEC_FIELDS =
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, sprintBoost';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.
@@ -181,6 +182,22 @@ describe('validateConfig error text', () => {
     it('accepts weight storage just under the limit', () => {
         expect(() => createConfig({ maxAgents: 197, rayCount: 64, brainHidden: 128 })).not.toThrow();
         expect(() => createConfig({ maxAgents: 198, rayCount: 64, brainHidden: 128 })).toThrow(/maxAgents/);
+    });
+
+    it('states the event capacity and the product', () => {
+        expect(message(() => createConfig({ maxAgents: 500, eventCapacity: 2999 }))).toBe(
+            'eventCapacity: 2999 is below 6 x maxAgents (3000)',
+        );
+    });
+
+    it('accepts an event capacity of exactly 6 x maxAgents', () => {
+        expect(() => createConfig({ maxAgents: 500, eventCapacity: 3000 })).not.toThrow();
+    });
+
+    it('checks the weight storage before the event capacity', () => {
+        expect(() => createConfig({ maxAgents: 4096, rayCount: 64, brainHidden: 128, eventCapacity: 1 })).toThrow(
+            /maxAgents.*weightCount/,
+        );
     });
 
     it('states the largest radius when the hash cell is too small', () => {
