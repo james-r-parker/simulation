@@ -25,7 +25,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 
 Partly built - the note says which phases are real.
 
-- [Evolution evals](evolution-evals.md) - Phase 1 is built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel` and the recorded `baseline-v5` baseline. Phase... _(validated fc4ca30, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
+- [Evolution evals](evolution-evals.md) - Phases 1 and 2 are built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel`, the `baseline-v5` baseline, `eval:com... _(validated fc4ca30, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 
 ## Proposed (4)
 

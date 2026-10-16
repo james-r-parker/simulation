@@ -1,6 +1,6 @@
 # Evolution evals
 
-**Status:** In progress - Phase 1 is built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel` and the recorded `baseline-v5` baseline. Phase 2 (compare, ledger and smoke gate) is next.
+**Status:** In progress - Phases 1 and 2 are built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel`, the `baseline-v5` baseline, `eval:compare`, the experiments ledger with calibration `E0`, and the `eval-smoke` gate. Phase 3 (anti-exploit suite) is next.
 **Validated:** fc4ca30 (2026-10-16)
 **Priority:** 1 - the evolution rework is judged against the baseline this doc records
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -138,14 +138,17 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
 
 ## Compare (Phase 2)
 
-`npm run eval:compare -- <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>]`
+`npm run eval:compare -- <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--json]`
 (`scripts/eval-compare.mjs`):
 
 - Refuses, exiting 2 with the reason, unless both reports have the same seeds and ticks, at least 8 seeds, and
-  configs that hash equal with the `--allow-config-diff` keys removed. Different policies are allowed.
+  configs that hash equal with the `--allow-config-diff` keys removed; it prints `CompareRefused <field>` (`seeds`,
+  `seedCount`, `ticks` or `config`). Different policies are allowed. `--allow-seed-diff` skips only the same-seeds
+  check and pairs the arms by position; it exists for calibration.
 - `compareReports(before, after, { level })` uses `level` 0.95 unless given.
 - For each metric, a BCa bootstrap interval (10000 resamples, `fork(createRng(1), 'bootstrap')`) of the mean of the
-  per-seed differences, paired by seed.
+  per-seed differences, paired by seed. Each metric forks its own stream, so its interval does not depend on the
+  other metrics. The normal CDF and its inverse are computed with `detExp` and `detLog`.
 - The verdict is `better` or `worse` when the 95% interval excludes 0 strictly in the metric's direction, otherwise
   `no-difference`; `watch` metrics, `null` metrics and fitness metrics of different `fitnessName`s get `-`.
 - `--targets` marks those metrics; `--fail-on-worse` exits 1 if any metric is `worse`, or with `--targets` any target.
@@ -154,14 +157,18 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
 `evals/experiments.json` is the ledger the `run-evolution-loop` skill writes: entries with `id` (`E<n>`), `date`,
 `branch`, `hypothesis`, `prediction`, `targets`, `beforePolicy` and `afterPolicy` (default `live`), `before` and
 `after` (report path or artifact URL), `verdicts`, `effect` (`better`, `worse`,
-`no-difference`, `exploit`) and `note`. `scripts/check-experiments.mjs` validates it against
-`evals/experiments.schema.json` in the `conventions` gate.
+`no-difference`, `exploit`) and `note`, under a top-level `experiments` array; ids are unique and increasing.
+`scripts/check-experiments.mjs` validates it against `evals/experiments.schema.json` in the `conventions` gate, with
+a small validator for the schema subset it uses (`scripts/lib/json-schema-lite.mjs`), not a new dependency.
 
 Experiment `E0` is the calibration: `baseline-v5` on seeds 1-8 against seeds 9-16 (`--seed-offset 8`), which must
-give no `better` or `worse` verdict on any metric named as a Target in any design doc.
+give no `better` or `worse` verdict on any metric named as a Target in any design doc. The second arm is
+`evals/baselines/baseline-v5-o8.json`. Recorded 2026-10-16: every Target `no-difference`; one non-Target false
+positive (`eval.p90_fitness.scout` `worse`), the expected rate across 21 compared metrics.
 
 The `eval-smoke` gate (tier 2) runs `npm run eval -- --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json`
-(`maxAgents` 150) and fails on a worker error or a report that fails `validateReport`.
+(`maxAgents` 150) into a temporary `--out` and fails on a worker error or a report that fails `validateReport`; it
+takes about 6 s on the dev machine.
 
 ## Anti-exploit suite (Phase 3)
 
@@ -230,7 +237,7 @@ the `minAgents` floor: the default world does not sustain unevolved brains ([sim
 which is what [evolution-rework.md](evolution-rework.md) is measured against. Each seed of the default eval took 77 s
 on 8 workers.
 
-### Phase 2 - Compare, ledger and smoke gate
+### Phase 2 - Compare, ledger and smoke gate (built)
 
 **Targets:** none - process
 
