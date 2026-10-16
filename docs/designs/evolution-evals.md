@@ -1,6 +1,6 @@
 # Evolution evals
 
-**Status:** In progress - Phases 1 and 2 are built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel`, the `baseline-v5` baseline, `eval:compare`, the experiments ledger with calibration `E0`, and the `eval-smoke` gate. Phase 3 (anti-exploit suite) is next.
+**Status:** In progress - Phases 1 to 3 are built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel`, the `baseline-v5` baseline, `eval:compare`, the experiments ledger with calibration `E0`, the `eval-smoke` gate and the anti-exploit suite. Phase 4 (champion league) is next.
 **Validated:** fc4ca30 (2026-10-16)
 **Priority:** 1 - the evolution rework is judged against the baseline this doc records
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -190,7 +190,9 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness is at most half the `foodSeeker`'s. Against `fitnessV5` the exploiters that exceed that bound are marked
 `test.fails`, each naming the [legacy-audit.md](legacy-audit.md) finding it demonstrates; [evolution-rework.md](evolution-rework.md) Phase 1 adds its
-fitness to the suite with no expected failures.
+fitness to the suite with no expected failures. As built, the `sitter`, `spinner`, `bumper` and `explorerAfterMeal`
+fail the bound under `fitnessV5`, all for FIT-8 (pay for age, distance and exploration without food); the `wanderer`
+and `biteSeeker` stay under half. Controllers write thrust and turn only (sprint, mate and bite are 0).
 
 ## Champion league (Phase 4)
 
@@ -243,7 +245,7 @@ on 8 workers.
 
 `eval:compare`, the ledger and its schema check, calibration experiment `E0`, and the `eval-smoke` gate.
 
-### Phase 3 - Anti-exploit suite
+### Phase 3 - Anti-exploit suite (built)
 
 **Targets:** none - guards fitness
 
