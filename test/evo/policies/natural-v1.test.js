@@ -165,19 +165,30 @@ describe('childBrain', () => {
     });
 });
 
-describe('in a real world', () => {
-    it('is deterministic: the same seed gives the same hash and sigma', () => {
-        const a = run(3, 400, true);
-        const b = run(3, 400, true);
-        expect(a.hash).toBe(b.hash);
-        expect(Array.from(a.policy.sigma)).toEqual(Array.from(b.policy.sigma));
-    });
+/** Real worlds share CI's few cores with the golden runs, so these get more than the 5 s default. */
+const REAL_WORLD_TIMEOUT_MS = 30_000;
 
-    it('steps bit-identically with and without an observer, and breeds children', () => {
-        const withObserver = run(4, 600, true);
-        const replay = run(4, 600, false);
-        expect(replay.hash).toBe(withObserver.hash);
-        const bred = Array.from(replay.policy.sigma).filter((s) => s !== 0 && s !== SIGMA_START);
-        expect(bred.length).toBeGreaterThan(0);
-    });
+describe('in a real world', () => {
+    it(
+        'is deterministic: the same seed gives the same hash and sigma',
+        () => {
+            const a = run(3, 400, true);
+            const b = run(3, 400, true);
+            expect(a.hash).toBe(b.hash);
+            expect(Array.from(a.policy.sigma)).toEqual(Array.from(b.policy.sigma));
+        },
+        REAL_WORLD_TIMEOUT_MS,
+    );
+
+    it(
+        'steps bit-identically with and without an observer, and breeds children',
+        () => {
+            const withObserver = run(4, 600, true);
+            const replay = run(4, 600, false);
+            expect(replay.hash).toBe(withObserver.hash);
+            const bred = Array.from(replay.policy.sigma).filter((s) => s !== 0 && s !== SIGMA_START);
+            expect(bred.length).toBeGreaterThan(0);
+        },
+        REAL_WORLD_TIMEOUT_MS,
+    );
 });

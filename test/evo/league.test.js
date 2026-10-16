@@ -101,7 +101,7 @@ describe('playMatch', () => {
         expect(playMatch(a, b, 7, options)).toEqual(first);
         expect(first.aliveA + first.aliveB).toBeLessThanOrEqual(500);
         expect(first.aliveA + first.aliveB).toBeGreaterThan(0);
-    });
+    }, 30_000);
 
     it('with no ticks, every founder is alive and the game is a draw', () => {
         expect(playMatch(champion('a', 1), champion('b', 2), 7, { ticks: 0 })).toEqual({
