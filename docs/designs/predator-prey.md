@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 gives agents scent direction, alarm and hunt calls and defensive smoke in the sim core and retunes catching.
 **Validated:** 2538127 (2026-10-16)
-**Priority:** 3 - built after body-temperature.md, whose 19-input layout it extends, and before the trainer (evolution-rework.md Phase 3)
+**Priority:** 2 - builds on the 19-input layout of body-temperature.md, and comes before the trainer (evolution-rework.md Phase 3)
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core
