@@ -4,6 +4,7 @@
 import { checkpoint } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
+import { createCombatCounters, observeCombat } from './observer-combat.js';
 import { createLog } from './growable-log.js';
 import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -79,6 +80,7 @@ export function createObserver(config, rng) {
         checkpointCount: 0,
         series: createLog(SERIES_FIELDS),
         dominantLineage: 0,
+        combat: createCombatCounters(config),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
@@ -96,6 +98,7 @@ export function createObserver(config, rng) {
  * @returns {void}
  */
 export function observe(observer, world, fitness) {
+    observeCombat(observer.combat, world);
     applyEvents(observer, world, fitness);
     if (world.tick === 0) {
         return;

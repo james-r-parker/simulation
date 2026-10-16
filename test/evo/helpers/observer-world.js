@@ -42,13 +42,25 @@ export function pushBorn(world, f) {
 /**
  * Pushes an `AgentDied` record.
  * @param {any} world the world
- * @param {Record<string, number>} f slot, genomeId and optional cause, by, spec, lineageId, ageTicks, foodEnergy, biteEnergy
+ * @param {Record<string, number>} f slot, genomeId and optional cause, by, spec, lineageId, ageTicks, foodEnergy, biteEnergy, prevBiter
  * @returns {void}
  */
 export function pushDied(world, f) {
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_DIED, world.tick - 1);
     const values = [f.slot, f.genomeId, f.cause ?? 0, f.by ?? 0, f.spec ?? 0, f.lineageId ?? f.genomeId];
-    world.events.data.set([...values, f.ageTicks ?? 0, f.foodEnergy ?? 0, f.biteEnergy ?? 0], o + 2);
+    world.events.data.set([...values, f.ageTicks ?? 0, f.foodEnergy ?? 0, f.biteEnergy ?? 0, f.prevBiter ?? 0], o + 2);
+}
+
+/**
+ * Pushes an `AlarmCalled` or `SmokeReleased` record (fields: slot, genomeId, spec, x, y).
+ * @param {any} world the world
+ * @param {number} type an `EVENT_TYPE` code
+ * @param {number} slot the caller's slot
+ * @returns {void}
+ */
+export function pushCall(world, type, slot) {
+    const o = pushEvent(world.events, type, world.tick - 1);
+    world.events.data.set([slot, world.genomeId[slot], world.spec[slot], world.x[slot], world.y[slot]], o + 2);
 }
 
 /**
