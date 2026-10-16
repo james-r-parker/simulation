@@ -165,3 +165,14 @@ item). The median distance to the nearest food is about 250 px. With the floor a
 `foodSeeker` grows from 100 agents to 213 (thrust 0.4) or 324 (thrust 0.25) in 20000 ticks, but dies out by tick 7200
 at thrust 0.6 or 1: the world rewards steering to food at a moderate speed and punishes rushing. Evolved
 `map-elites-v1` populations stay near the floor of 100, so the gap is in what evolution finds, not in the economy.
+
+### 2026-10-16 - Selection, survival weight and exploits
+
+On the reachable-births world, `map-elites-v1` agents rush: they eat 84% more than `baseline-v5` but agents that eat die
+26% sooner. Raising `fitnessV1`'s survival weight from 0.02 to 0.4 changed nothing while archive parents were drawn
+uniformly across cells; with a four-draw cell tournament (`map-elites-v1q`) it traded food for lifespan (4-seed, 60000
+ticks: survival 0.02 -> 1.0 moved fed lifespan 4266 -> 4932 and food 119 -> 94). Uncapped survival 0.5 at 16 seeds closed
+the fed-lifespan gap to -11% and one seed broke out to a self-sustaining population of 237, but it pays agents that
+never eat, so the sitter, spinner and bumper beat the foodSeeker again. Survival capped at food eaten (E9) or paid only
+after 500 food (E10) is exploit-safe and gives fed lifespan -28% and -23.5%. The full-thrust scripted foodSeeker starves
+on this economy, so the anti-exploit reference seeks at thrust 0.4.

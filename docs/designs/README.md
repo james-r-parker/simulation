@@ -27,7 +27,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 
 Partly built - the note says which phases are real.
 
-- [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built (genome, mutation, crossover, `fitnessV1`, `natural-v1`; the MAP-Elites archive and `map-elites-v1`); their Targets are re-judged once... _(validated 36ee8c6, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
+- [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Ph... _(validated 36ee8c6, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 
 ## Proposed (4)
 

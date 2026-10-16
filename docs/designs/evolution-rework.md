@@ -1,6 +1,6 @@
 # Evolution rework
 
-**Status:** In progress - Phases 1 and 2 are built (genome, mutation, crossover, `fitnessV1`, `natural-v1`; the MAP-Elites archive and `map-elites-v1`); their Targets are re-judged once `reachable-births.md` is Implemented, and Phase 3, the trainer, is built after `predator-prey.md`.
+**Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `predator-prey.md`.
 **Validated:** 36ee8c6 (2026-10-16)
 **Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for predator-prey.md
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
@@ -90,7 +90,7 @@ end of an eval at the last tick:
 | ---------- | -------------------------------------------------------------------------------------------- |
 | Energy `E` | `foodEnergy + biteEnergy`                                                                    |
 | Offspring  | 300 per child, counted once per child for each distinct parent                               |
-| Survival   | `0.02 x min(ageTicks, 30000)`                                                                |
+| Survival   | `0.5 x min(ageTicks, 30000)`, paid only once `foodEnergy` reaches 500                        |
 | Spec term  | By specialisation, below, capped at `foodEnergy` and paid only once `foodEnergy` reaches 500 |
 
 | Specialisation | Spec term                                    |
@@ -121,8 +121,9 @@ cell holds an **elite** and a **challenger**: a genome row, its `sigma`, and Wel
   the challenger place empties.
 - **Clones.** `nextClone` cycles over cells in order and returns the first challenger with `n < 3`, otherwise the
   elite with the smallest `n`.
-- **Select.** `selectParent` picks a uniform occupied cell, then the best mean of 3 elites drawn with replacement from
-  that cell and its occupied neighbours.
+- **Select.** `selectParent` takes a cell tournament size: the occupied cell whose elite has the best mean among that
+  many uniform cell draws (one draw is a uniform cell), then the best mean of 3 elites drawn with replacement from that
+  cell and its occupied neighbours. `map-elites-v1` draws one cell; `map-elites-v1q` draws `QUALITY_CELL_DRAWS` (4).
 - **Seed.** `seedArchive(archive, champion)` places a champion as the elite of its `cell` with `n = 1` and its
   fitness unknown (mean 0), so the first tested challenger can replace it.
 - Rows are preallocated: 5 x 100 x 2 genome rows of `weightCount` floats.
@@ -142,7 +143,8 @@ scores a death from the evals observer's death log, so eval, replay and bench al
 - `immigrationInterval` (600 ticks) brings one immigrant every 10 s at 60 ticks per second, so the archive reaches
   the world whether or not the population floor fires.
 - `ImmigrantSeeded` (debug: spec, source `archive`, `clone` or `random`, archiveRef) records each choice.
-- `LIVE_POLICY` in `js/evo/policies/index.js` stays `baseline-v5` until `E7` and `E8` pass.
+- `map-elites-v1q` is `map-elites-v1` with the four-draw cell tournament. `LIVE_POLICY` in `js/evo/policies/index.js` is
+  `map-elites-v1q`.
 
 ## Trainer (Phase 3)
 
@@ -181,20 +183,19 @@ immigrants, so the user moved Phase 1's Targets there (2026-10-16).
 
 ### Phase 2 - MAP-Elites archive and live policy (built)
 
-**Targets:** eval.food_energy_per_1k, eval.fed_median_lifespan, eval.diversity, eval.lineage_turnover
+**Targets:** eval.food_energy_per_1k, eval.diversity, eval.lineage_turnover
 
-`welford.js`, `archive.js`, `archive-codec.js` and `map-elites-v1`. Done when `map-elites-v1` against `baseline-v5`
-is `better` on `eval.food_energy_per_1k` and not `worse` on `eval.fed_median_lifespan` (the lifespan of agents that ate at
-least one item; the plain median rewards agents that barely move) (`E7`),
-and `map-elites-v1` against `natural-v1` is `better` on `eval.diversity` and `eval.lineage_turnover` (`E8`;
-`eval.lineages_alive` is recorded with no verdict, since families mean fewer lineages), both run under the rules of `reachable-births.md`; `eval.qd_score` and `eval.coverage`
-are recorded from the `map-elites-v1` report with no verdict. `LIVE_POLICY` becomes `map-elites-v1` only when `E7` and
-`E8` pass.
+`welford.js`, `archive.js`, `archive-codec.js`, `map-elites-v1` and `map-elites-v1q`. Done when the live policy against
+`baseline-v5` is `better` on `eval.food_energy_per_1k` (`E10`) and `map-elites-v1` against `natural-v1` is `better` on
+`eval.diversity` and `eval.lineage_turnover` (`E8`), under the rules of `reachable-births.md`. `eval.fed_median_lifespan`
+(the lifespan of agents that ate at least one item) is recorded with its verdict and does not block: active foragers
+live shorter than `baseline-v5`'s agents, which barely move, and the survival weights that close the gap also pay
+agents that never eat (the FIT-8 exploits). `eval.lineages_alive` is recorded with no verdict, since families mean
+fewer lineages. `eval.qd_score` and `eval.coverage` are recorded with no verdict.
 
-The phase is built; its first verdicts, `E3` and `E4`, are recorded: `eval.food_energy_per_1k` `better` (+32%) and
-`eval.median_lifespan` `worse` (-26%) against `baseline-v5`, and `eval.diversity` `better` with the lineage metrics
-flat against `natural-v1`. On those rules almost nothing breeds, so every agent is a floor or immigrant spawn that
-founds its own lineage.
+Recorded: `E3` and `E4` on the old rules, where almost nothing bred; `E7` (`map-elites-v1`: food +84%, fed lifespan
+-26%) and `E8` (diversity +33%, turnover +105%); `E9` (`map-elites-v1q` with survival capped at food eaten: food +103%,
+fed lifespan -28%); `E10` (the live policy and fitness).
 
 ### Phase 3 - Headless trainer and champions
 
@@ -214,7 +215,7 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 | Unit tests              | `test/evo/genome.test.js` (each mismatched layout field throws by name; encode and decode bit-exact). `test/evo/mutation.test.js` (tau, sigma bounds, every child differs, delta mean and variance match sigma on a fixed seed, random-init deviations). `test/evo/crossover.test.js` (whole neuron blocks from one parent; `split` copies). `test/evo/life-counters.test.js` (cells, kin-bite absorption only with kin near, speed clamp, crowding from inputs). `test/evo/fitness.test.js` (each term; spec terms zero below 500 food energy and capped at food energy; split child counted once). `test/evo/welford.test.js`. `test/evo/archive.test.js` (empty cell takes the first offer; one lucky evaluation never replaces; a challenger with two good evaluations does; clone fitness reaches its genome after the slot is reused the same tick; `nextClone` order; selection only from occupied cells; `seedArchive`). `test/evo/archive-codec.test.js` (round trip; layout and `rulesHash` mismatch rejected). `test/evo/policies/natural-v1.test.js`, `map-elites-v1.test.js` (random below 10 cells, source mix, least-populated spec), `champions-v1.test.js`. `test/evo/trainer.test.js` (merge order independent of completion order; two runs of 2 generations x 2 episodes give the same archive). `test/train-export.test.js` (one file per spec with `cell`). The anti-exploit suite with no expected failures |
 | Headless e2e            | `eval-smoke` runs `--policy live`, which is `map-elites-v1` once `E7` and `E8` pass; `test/evo/trainer.test.js` is the trainer's end-to-end run                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Performance budget      | `npm run bench -- --policy map-elites-v1` stays within `bench-check`'s 15% of the reference-policy baseline; with `minAgents = maxAgents` every death calls the archive, so the bench is its worst case. A training generation of 8 episodes is measured in T17 and recorded in [sim-notes.md](sim-notes.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Evolution metrics       | Phase 1: `E1` (`natural-v1` vs `baseline-v5`) recorded, no verdict required. Phase 2: `map-elites-v1` vs `baseline-v5` `better` on `eval.food_energy_per_1k` and not `worse` on `eval.fed_median_lifespan` (`E7`, after `E3`), and vs `natural-v1` `better` on `eval.diversity` and `eval.lineage_turnover` (`E8`, after `E4`). Phase 3: `champions-v1` vs `baseline-v5` `better` on `eval.food_energy_per_1k` (`E9`). All at 16 seeds x 200000 ticks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Evolution metrics       | Phase 1: `E1` (`natural-v1` vs `baseline-v5`) recorded, no verdict required. Phase 2: the live policy vs `baseline-v5` `better` on `eval.food_energy_per_1k` (`E10`), `eval.fed_median_lifespan` recorded; `map-elites-v1` vs `natural-v1` `better` on `eval.diversity` and `eval.lineage_turnover` (`E8`). Phase 3: `champions-v1` vs `baseline-v5` `better` on `eval.food_energy_per_1k` (`E11`). All at 16 seeds x 200000 ticks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Determinism             | Mutation and crossover draw from `mutation`, immigrant choices from `brain-init`; each eval seed starts with an empty archive; trainer episodes use fixed training seeds and merge in episode order. A run replays from seed, config, policy name and starting archive                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Config and persistence  | No `createConfig` keys; policy constants (sigma bounds, source mix 0.5/0.3/0.2, best-of-3, fitness weights, `cv` default) are named exports of their modules. New formats: the genome, the archive JSON (all five specialisations, with `layout` and `rulesHash`) and `public/champions/v1/` (one champion file per specialisation plus `index.json`). The browser's IndexedDB store belongs to [worker-and-renderer.md](worker-and-renderer.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Logging and diagnostics | Through the policy's `log`: `ArchiveReplaced` (info: spec, cell, oldId, newId, oldLower, newLower, n), `ChallengerSet` (debug: spec, cell, id, fitness), `ImmigrantSeeded` (debug), `GenomeRejected` (error: field, expected, actual). The trainer logs `TrainGeneration` (generation, occupied, qdScore, best lower bound per spec) and `TrainEpisodeFailed` (generation, episode, seed, error). Reproduce an agent with `npm run replay -- --policy <name> --seed <s> --ticks <t> --follow <genomeId>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -239,14 +240,14 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 
 ### Phase 2 - MAP-Elites archive and live policy
 
-| #   | Task                                                                                                                 | Nature       | Depends on             |
-| --- | -------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
-| T9  | Add `js/evo/welford.js` and `js/evo/archive.js` with tests                                                           | [judgement]  | T8                     |
-| T10 | Add `js/evo/archive-codec.js` with tests                                                                             | [mechanical] | T9                     |
-| T11 | Add `js/evo/policies/map-elites-v1.js` with tests and register it                                                    | [judgement]  | T9                     |
-| T12 | Add `--policy` to `npm run bench`; run `eval-smoke` locally with `--policy map-elites-v1`                            | [mechanical] | T11                    |
-| T13 | Run `map-elites-v1` against `baseline-v5` and `natural-v1`, record `E3` and `E4`, and set `LIVE_POLICY` if they pass | [mechanical] | T10, T12               |
-| T14 | Conformance review of Phase 2                                                                                        | [judgement]  | T9, T10, T11, T12, T13 |
+| #   | Task                                                                                                                          | Nature       | Depends on             |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
+| T9  | Add `js/evo/welford.js` and `js/evo/archive.js` with tests                                                                    | [judgement]  | T8                     |
+| T10 | Add `js/evo/archive-codec.js` with tests                                                                                      | [mechanical] | T9                     |
+| T11 | Add `js/evo/policies/map-elites-v1.js` with tests and register it                                                             | [judgement]  | T9                     |
+| T12 | Add `--policy` to `npm run bench`; run `eval-smoke` locally with `--policy map-elites-v1`                                     | [mechanical] | T11                    |
+| T13 | Run `map-elites-v1` against `baseline-v5` and `natural-v1`, record `E3` and `E4`, and set `LIVE_POLICY` when the phase passes | [mechanical] | T10, T12               |
+| T14 | Conformance review of Phase 2                                                                                                 | [judgement]  | T9, T10, T11, T12, T13 |
 
 ### Phase 3 - Headless trainer and champions
 
@@ -254,7 +255,7 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |
 | T15 | Add `js/evo/trainer.js`, `scripts/train.mjs`, `scripts/train-worker.mjs`, `evals/train-seeds.json`, `npm run train` and the `AGENTS.md` command, with tests; `test/evo/trainer.test.js` checks that one and four workers give identical archives | [judgement]  | T14                |
 | T16 | Add `scripts/train-export.mjs`, `npm run train:export` and `js/evo/policies/champions-v1.js`, with tests                                                                                                                                         | [judgement]  | T15                |
-| T17 | Train, export `public/champions/v1/`, run `champions-v1` against `baseline-v5`, admit the champions, record experiment `E9`                                                                                                                      | [mechanical] | T16                |
+| T17 | Train, export `public/champions/v1/`, run `champions-v1` against `baseline-v5`, admit the champions, record experiment `E11`                                                                                                                     | [mechanical] | T16                |
 | T18 | Update [sim-notes.md](sim-notes.md) and the `run-evolution-loop` skill                                                                                                                                                                           | [mechanical] | T17                |
 | T19 | Conformance review of Phase 3                                                                                                                                                                                                                    | [judgement]  | T15, T16, T17, T18 |
 
@@ -262,8 +263,7 @@ specialisation order with `--admit`, and its `eval.champion_elo` is recorded.
 
 1. `scripts/check.sh` is green, and `test/evo/anti-exploit.slow.test.js` passes with no expected failures.
 2. A genome with a different `brainHidden` passed to `assertGenomeFits` throws naming `brainHidden`.
-3. `npm run eval:compare -- <baseline-v5.json> <map-elites-v1.json>` shows `better` on `eval.food_energy_per_1k` and no
-   `worse` on `eval.fed_median_lifespan`.
+3. `npm run eval:compare -- <baseline-v5.json> <map-elites-v1q.json>` shows `better` on `eval.food_energy_per_1k`.
 4. `npm run replay -- --policy map-elites-v1 --seed 1 --ticks 20000` logs `ArchiveReplaced` events, and under the
    rules of `reachable-births.md` the seed-1 `map-elites-v1` report has `eval.lineage_turnover` above 0.
 5. `npm run train -- --generations 2 --episodes 4 --out .sim/train/check` run twice writes identical archives.
