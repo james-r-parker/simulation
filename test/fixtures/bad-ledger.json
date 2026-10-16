@@ -1,0 +1,17 @@
+{
+  "experiments": [
+    {
+      "id": "E1",
+      "date": "2026-10-16",
+      "branch": "feat/x",
+      "hypothesis": "h",
+      "prediction": "p",
+      "targets": [],
+      "before": "a.json",
+      "after": "b.json",
+      "verdicts": {},
+      "effect": "maybe",
+      "note": ""
+    }
+  ]
+}

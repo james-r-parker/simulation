@@ -29,6 +29,7 @@ describe('check.sh --list', () => {
             expect(tier2).toContain(gate);
         }
         expect(tier2).toContain('browser-smoke');
+        expect(tier2).toContain('eval-smoke');
         const order = tier2.filter((gate) => ['ratchet', 'bench-check', 'build'].includes(gate));
         expect(order).toEqual(['ratchet', 'bench-check', 'build']);
     });
@@ -43,6 +44,10 @@ describe('check.sh --list', () => {
 
     it('defaults to tier 2', () => {
         expect(check('--list').lines).toEqual(check('--list', '--tier', '2').lines);
+    });
+
+    it('keeps eval-smoke out of the docs-only path', () => {
+        expect(check('--list', '--docs').lines).not.toContain('eval-smoke');
     });
 
     it('leaves docs-tests out of every tier but lists it when named', () => {

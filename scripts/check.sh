@@ -51,7 +51,7 @@ done
 # Gates in run order, by tier (each tier includes the one below). docs-tests belongs to no tier: it runs only when named
 # (by --docs or --only), because the test gate already runs those tests.
 TIER1_GATES="conventions,format,lint,test-related"
-TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,bench-check,build,browser-smoke"
+TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,bench-check,build,browser-smoke,eval-smoke"
 TIER3_GATES="$TIER2_GATES,mutation,bench-compare"
 GATES="$TIER3_GATES,docs-tests"
 if [[ -n "$TIER" ]]; then
@@ -278,6 +278,21 @@ gate_browser_smoke() {
     run_gate browser-smoke scripts/browser-smoke.sh
   fi
 }
+# gate_eval_smoke: a two-seed, 10000-tick live eval on evals/smoke-config.json (maxAgents 150) must finish with no worker
+# error and a report that passes validateReport (eval.mjs validates before writing and exits 1 otherwise). The report goes
+# to a temporary directory. The eval's own output is the log, so a failure's digest shows the reason.
+eval_smoke() {
+  local out status
+  out="$(mktemp -d)"
+  node scripts/eval.mjs --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json \
+    --out "$out/report.json"
+  status=$?
+  rm -rf "$out"
+  return "$status"
+}
+gate_eval_smoke() {
+  run_gate eval-smoke eval_smoke
+}
 # gate_mutation: mutation testing score (stryker.config.json), then the ratchet on reports/mutation/mutation.json.
 # Under --fix a passing gate raises the mutation baselines (never lowers them).
 # The first Vitest major the installed Stryker vitest-runner cannot drive; raise it when Stryker supports it.
@@ -396,6 +411,8 @@ build_app() {
 run_gate build build_app
 
 gate_browser_smoke
+
+gate_eval_smoke
 
 gate_mutation
 
