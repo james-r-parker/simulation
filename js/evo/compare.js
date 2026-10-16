@@ -263,7 +263,8 @@ function checkComparable(before, after, { allowConfigDiff, allowSeedDiff }) {
  * @returns {number} |before mean|, or |after mean| when that is 0 (0 when both are)
  */
 function reference(beforeMean, afterMean) {
-    return Math.abs(beforeMean ?? 0) || Math.abs(afterMean ?? 0);
+    // Rows with a null seed value return before this, so a null mean only arises with no values; Number(null) is 0.
+    return Math.abs(Number(beforeMean)) || Math.abs(Number(afterMean));
 }
 
 /**
