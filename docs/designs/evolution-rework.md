@@ -1,8 +1,8 @@
 # Evolution rework
 
-**Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `predator-prey.md`.
+**Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `predator-prey.md`, the renderer and the world gate in Phase 3.
 **Validated:** 36ee8c6 (2026-10-16)
-**Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for predator-prey.md
+**Priority:** 3 - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and the tuning nights
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 `js/evo/` decides which brains get born. The headless sim core runs bodies and brains; evolution supplies the
@@ -222,6 +222,17 @@ fed lifespan -28%); `E10` (the live policy and fitness).
 **Targets:** eval.food_energy_per_1k
 
 Phase 3 is built after [predator-prey.md](predator-prey.md) is `Implemented`: champions are trained on its brain layout.
+
+The trainer bakes the world's rules into its champions, so a later rules change means retraining and resetting the
+league. Phase 3 therefore also waits for the world gate (user, 2026-10-16): [worker-and-renderer.md](worker-and-renderer.md)
+is built so runs can be watched, and tuning nights continue until the live policy's world shows all of these:
+
+- Self-sustaining: `eval.born_share` above 0.7 and `eval.floor_episodes` a small fraction of today's.
+- A real arms race: `eval.catch_rate` and `eval.escape_rate` both above 0 on every seed of a 16-seed run.
+- Families: `eval.alarm_response` above 0 with an interval excluding 0.
+- A smooth climb: on the skill ladder (random brains, a sloppy forager, `foodSeeker`, a forager that flees, no floor),
+  each rung outlives and out-breeds the rung below.
+- The user has watched it in the renderer and signed it off.
 
 `trainer.js`, `npm run train`, `npm run train:export`, `public/champions/v1/` and `champions-v1`. Done when
 `champions-v1` is `better` than `baseline-v5` on the Target; each champion is admitted to the league in
