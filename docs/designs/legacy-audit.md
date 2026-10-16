@@ -7,7 +7,7 @@ Each finding names the file, the symbol, what the code does and what that breaks
 (`NN-2`, `FIT-4`) that other design docs cite as evidence.
 
 - Nothing here is fixed in place. The **Removed by** column names the design doc whose replacement module makes the
-  finding obsolete; the legacy file is deleted in [worker-and-renderer.md](worker-and-renderer.md) Phase 3.
+  finding obsolete; the legacy file is deleted in [worker-and-renderer.md](worker-and-renderer.md) Phase 5.
 - Replacement docs: [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [worker-and-renderer.md](worker-and-renderer.md).
 - A finding that no longer matches the code is removed in the PR that changes the code, and the stamp is restamped.
 

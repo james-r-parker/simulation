@@ -5,7 +5,7 @@
 **Priority:** 5 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
-The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 3 deletes the legacy
+The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 5 deletes the legacy
 app's files; this doc removes everything the legacy app left behind in the tooling, tests and docs, makes sure none
 of it can come back, and leaves the repo documented for a reader who has never seen the old app.
 
