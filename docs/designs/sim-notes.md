@@ -119,3 +119,11 @@ sits at 0.1416, which is `sqrt(2) x 0.1`, the expected distance between two unre
 inherited. `cloneWithNoisePolicy` collapses to the floor the same way (seed 1, 20000 ticks), so this is the default
 world, not the policy. The evolution rework has to get agents past the floor before inheritance can show up in the
 metrics.
+
+### 2026-10-16 - Full thrust costs about 30 times standing still
+
+`applyCosts` charges `movementCost x speed^2` (0.03 x 8^2 = 1.92 per tick at `maxVelocity`) on top of `passiveLoss`
+0.06. In the anti-exploit micro-world a `foodSeeker` at full thrust eats about 500 energy and still dies at about 450
+ticks, while a `sitter` lives about 3900 ticks on its starting 800. Under `fitnessV5` that makes sitting, spinning and
+bumping outscore seeking food ([legacy-audit.md](legacy-audit.md) FIT-8). It also caps what any agent eats in a life,
+so `explorerAfterMeal` switches after 140 food energy rather than 500.
