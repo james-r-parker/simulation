@@ -67,25 +67,25 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
   capped at the task count. `npm run bench:parallel` measured the default (below).
 - `eval:compare` and the league run all their tasks - both arms, every pairing - through one pool, so a default
   8-seed comparison keeps 16 threads busy rather than 8 twice.
-- A worker builds the world with `createWorld`, steps it with the policy's `brain`, then each tick feeds `js/evo/observer.js`, calls the policy's `onEvent` for each
+- A worker builds the world with `createWorld`, steps it with the policy's `brain` and the observer's `observerPhases` overrides, then each tick feeds `js/evo/observer.js`, calls the policy's `onEvent` for each
   new record and its `afterStep(world)`, and
   takes a checkpoint every 1000 ticks.
 - The report is JSON: `version`, `policy`, `fitnessName`, the full resolved `config` and its `configHash`, `ticks`,
   `seeds`, the commit sha, and per metric the per-seed values (or `null` and `reason`), mean and standard deviation.
 - `--out` defaults to `evals/results/<policy>-<sha>-<n>x<t>.json` (gitignored).
 
-| Module                           | Exports                                   | Does                                                                                                                            |
-| -------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `js/evo/observer.js`             | `createObserver`, `observe`, `checkpoint` | Per-slot counters (below), reset on `AgentBorn`; checkpoint samples into typed arrays                                           |
-| `js/evo/metrics.js`              | `computeMetrics`                          | Observer state to the Metrics table values for one seed, `null` with a reason where undefined                                   |
-| `js/evo/policies/index.js`       | `POLICIES`, `getPolicy`, `LIVE_POLICY`    | Name to policy; an unknown name throws listing the known ones; `LIVE_POLICY` names the policy the browser and nightly evals run |
-| `js/evo/policies/baseline-v5.js` | `createBaselineV5`                        | The legacy approach on the new core (below)                                                                                     |
-| `js/evo/fitness-v5.js`           | `fitnessV5`                               | The legacy fitness formula on observer counters, in ticks                                                                       |
-| `js/evo/report.js`               | `buildReport`, `validateReport`           | Report shape and its validation                                                                                                 |
-| `js/evo/compare.js`              | `compareReports`, `bootstrapInterval`     | BCa intervals and verdicts (Phase 2)                                                                                            |
-| `js/evo/scripted.js`             | `SCRIPTED_CONTROLLERS`                    | Hand-written controllers for the anti-exploit suite (Phase 3)                                                                   |
-| `js/evo/elo.js`                  | `expectedScore`, `updateElo`              | Elo with K = 32 from 1500 (Phase 4)                                                                                             |
-| `js/evo/league.js`               | `matchPolicy`, `playMatch`, `runLeague`   | Head-to-head games between champion files (Phase 4)                                                                             |
+| Module                           | Exports                                                     | Does                                                                                                                            |
+| -------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `js/evo/observer.js`             | `createObserver`, `observe`, `checkpoint`, `observerPhases` | Per-slot counters (below), reset on `AgentBorn`; checkpoint samples into typed arrays                                           |
+| `js/evo/metrics.js`              | `computeMetrics`                                            | Observer state to the Metrics table values for one seed, `null` with a reason where undefined                                   |
+| `js/evo/policies/index.js`       | `POLICIES`, `getPolicy`, `LIVE_POLICY`                      | Name to policy; an unknown name throws listing the known ones; `LIVE_POLICY` names the policy the browser and nightly evals run |
+| `js/evo/policies/baseline-v5.js` | `createBaselineV5`                                          | The legacy approach on the new core (below)                                                                                     |
+| `js/evo/fitness-v5.js`           | `fitnessV5`                                                 | The legacy fitness formula on observer counters, in ticks                                                                       |
+| `js/evo/report.js`               | `buildReport`, `validateReport`                             | Report shape and its validation                                                                                                 |
+| `js/evo/compare.js`              | `compareReports`, `bootstrapInterval`                       | BCa intervals and verdicts (Phase 2)                                                                                            |
+| `js/evo/scripted.js`             | `SCRIPTED_CONTROLLERS`                                      | Hand-written controllers for the anti-exploit suite (Phase 3)                                                                   |
+| `js/evo/elo.js`                  | `expectedScore`, `updateElo`                                | Elo with K = 32 from 1500 (Phase 4)                                                                                             |
+| `js/evo/league.js`               | `matchPolicy`, `playMatch`, `runLeague`                     | Head-to-head games between champion files (Phase 4)                                                                             |
 
 `POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log, observer }` plus policy-specific fields;
 all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent?, afterStep? }`.
@@ -97,16 +97,17 @@ arrays, so it is valid after the slot has been reused. `onEvent` receives each e
 The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick on `AgentBorn`, and handles each tick's
 `AgentDied` records before its `AgentBorn` records.
 
-| Counter                          | Source                                                                                         |
-| -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `foodEnergy`, `biteEnergy`       | World arrays of the same name each tick; final values from `AgentDied`                         |
-| `children`                       | `AgentBorn` with this slot's `genomeId` as `parentA` or `parentB`                              |
-| `kills`                          | `AgentDied` with `by` equal to this slot's `genomeId`                                          |
-| `cellsVisited`                   | Distinct 200 px cells (a 72 x 41 bitset per slot) entered, sampled every 10 ticks              |
-| `collisions`                     | Ticks on which `lastLoss` became `collision`                                                   |
-| `distance`                       | Sum of speed per tick                                                                          |
-| `turnsTowardsFood`               | Ticks with absolute `turnRate` above `0.1 x maxTurn`, turning towards the nearest food ray hit |
-| `speedSum`, `turnSum`, `samples` | Sampled every 100 ticks for the motion grid                                                    |
+| Counter                          | Source                                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `foodEnergy`, `biteEnergy`       | World arrays of the same name each tick; final values from `AgentDied`                                                                                 |
+| `children`                       | `AgentBorn` with this slot's `genomeId` as `parentA` or `parentB`                                                                                      |
+| `childrenFromSplit`              | The `children` born by a split                                                                                                                         |
+| `kills`                          | `AgentDied` with `by` equal to this slot's `genomeId`                                                                                                  |
+| `cellsVisited`                   | Distinct 200 px cells (a 72 x 41 bitset per slot) entered, sampled every 10 ticks                                                                      |
+| `collisions`                     | Ticks on which `lastLoss` is `collision` right after the physics phase (`observerPhases`, a `step` override; `applyCosts` resets it later in the tick) |
+| `distance`                       | Sum of speed per tick                                                                                                                                  |
+| `turnsTowardsFood`               | Ticks with absolute `turnRate` above `0.1 x maxTurn`, turning towards the nearest food ray hit                                                         |
+| `speedSum`, `turnSum`, `samples` | Sampled every 100 ticks for the motion grid                                                                                                            |
 
 `fitnessV5` maps `calculateFitness` in the legacy `js/agent.js` onto these counters with `ageTicks / 60` in place of
 wall-clock seconds and `cellsVisited` in place of the legacy exploration grid; `fitnessName` is `v5`. It keeps the
