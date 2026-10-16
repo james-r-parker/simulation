@@ -40,7 +40,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), {}));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(12 + 10 + 4);
+        expect(keys).toHaveLength(13 + 10 + 4);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
@@ -58,6 +58,27 @@ describe('computeMetrics on hand-built state', () => {
         expect(m['eval.births_per_1k'].value).toBe(2);
         expect(m['eval.predation_per_1k'].value).toBe(3);
         expect(m['eval.floor_episodes'].value).toBe(2);
+    });
+
+    it('is null with a reason for eval.born_share when no agent entered after burn-in', () => {
+        const o = bareObserver();
+        o.birthsAfterBurnIn[BORN_CAUSE.MATE] = 0;
+        o.births[BORN_CAUSE.INITIAL] = 100;
+        expect(computeMetrics(o, {})['eval.born_share']).toEqual({
+            value: null,
+            reason: 'no agent entered after burn-in',
+        });
+    });
+
+    it('reads eval.born_share as mating and split entries over all entries after burn-in', () => {
+        const o = bareObserver();
+        o.birthsAfterBurnIn[BORN_CAUSE.MATE] = 3;
+        o.birthsAfterBurnIn[BORN_CAUSE.SPLIT] = 1;
+        o.birthsAfterBurnIn[BORN_CAUSE.FLOOR] = 4;
+        o.birthsAfterBurnIn[BORN_CAUSE.IMMIGRANT] = 0;
+        o.births[BORN_CAUSE.INITIAL] = 100;
+        o.births[BORN_CAUSE.MATE] = 40;
+        expect(computeMetrics(o, {})['eval.born_share']).toEqual({ value: 0.5 });
     });
 
     it('takes the median lifespan over mature deaths only, averaging the middle pair', () => {

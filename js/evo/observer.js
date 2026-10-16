@@ -68,6 +68,7 @@ export function createObserver(config, rng) {
         ticks: 0,
         agentTicks: 0,
         births: new Float64Array(BORN_CAUSES),
+        birthsAfterBurnIn: new Float64Array(BORN_CAUSES),
         deathsByCause: new Float64Array(DEATH_CAUSES),
         foodEnergyDead: 0,
         floorEpisodes: 0,

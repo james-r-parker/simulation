@@ -107,6 +107,12 @@ describe('validateReport', () => {
         expect(() => validateReport(report)).toThrow(`invalid report: ${path} must be`);
     });
 
+    it('accepts a report without eval.born_share, as recorded before the metric existed', () => {
+        const report = sample();
+        expect(report.metrics['eval.born_share']).toBeUndefined();
+        expect(() => validateReport(report)).not.toThrow();
+    });
+
     it('rejects a non-object report', () => {
         expect(() => validateReport(null)).toThrow('invalid report: report must be');
     });
