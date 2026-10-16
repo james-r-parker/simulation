@@ -45,9 +45,9 @@ describe('DEFAULTS', () => {
         expect(DEFAULTS.temperatureMax).toBe(100);
         expect(DEFAULTS.temperatureStart).toBe(50);
         expect([DEFAULTS.temperatureGainMove, DEFAULTS.temperatureGainEat, DEFAULTS.temperatureLossPassive]).toEqual([
-            0.0125, 2, 0.0075,
+            0.01, 2, 0.0075,
         ]);
-        expect([DEFAULTS.temperatureSeasonSlope, DEFAULTS.temperaturePassiveLossFactor]).toEqual([0.03, 4]);
+        expect([DEFAULTS.temperatureSeasonSlope, DEFAULTS.temperaturePassiveLossFactor]).toEqual([0.03, 2]);
         expect([
             DEFAULTS.temperatureColdStress,
             DEFAULTS.temperatureColdModerate,
@@ -61,7 +61,7 @@ describe('DEFAULTS', () => {
             DEFAULTS.temperatureEfficiencyColdModerate,
             DEFAULTS.temperatureEfficiencyHeatModerate,
             DEFAULTS.temperatureEfficiencyHeatSevere,
-        ]).toEqual([0.3, 0.7, 0.8, 0.4]);
+        ]).toEqual([0.3, 0.7, 0.9, 0.6]);
         expect(DEFAULTS.seasons.map((/** @type {any} */ s) => s.temperatureModifier)).toEqual([-5, 15, 5, -15]);
     });
 });

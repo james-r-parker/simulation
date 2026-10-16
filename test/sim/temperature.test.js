@@ -10,7 +10,13 @@ import {
 } from '../../js/sim/temperature.js';
 
 // The legacy rates, pinned so these tests check the formulas rather than the tuned defaults.
-const LEGACY_RATES = { temperatureGainMove: 0.025, temperatureLossPassive: 0.015 };
+const LEGACY_RATES = {
+    temperatureGainMove: 0.025,
+    temperatureLossPassive: 0.015,
+    temperaturePassiveLossFactor: 4,
+    temperatureEfficiencyHeatModerate: 0.8,
+    temperatureEfficiencyHeatSevere: 0.4,
+};
 const config = createConfig(LEGACY_RATES);
 
 /** The per-season loss multiplier at the defaults: spring, summer, autumn, winter. */
