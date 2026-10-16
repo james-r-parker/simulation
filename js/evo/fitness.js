@@ -54,8 +54,10 @@ export function fitnessV1(observer, counters, slot, config) {
     const food = observer.foodEnergy[slot];
     let score = food + observer.biteEnergy[slot];
     score += FITNESS_V1.OFFSPRING * observer.children[slot];
-    // Survival is paid only up to the energy eaten, so living long without eating does not score.
-    score += Math.min(FITNESS_V1.SURVIVAL_RATE * Math.min(observer.ageTicks[slot], FITNESS_V1.SURVIVAL_CAP), food);
+    // Survival is paid only once the agent has eaten SPEC_THRESHOLD, so living long without eating does not score.
+    if (food >= FITNESS_V1.SPEC_THRESHOLD) {
+        score += FITNESS_V1.SURVIVAL_RATE * Math.min(observer.ageTicks[slot], FITNESS_V1.SURVIVAL_CAP);
+    }
     if (food >= FITNESS_V1.SPEC_THRESHOLD) {
         score += Math.min(specTerm(observer, counters, slot, config), food);
     }
