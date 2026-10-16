@@ -34,6 +34,13 @@ describe('depositPheromone', () => {
         expect(w.attack[0]).toBe(5);
     });
 
+    it('deposits on the hunt grid like the others', () => {
+        const w = build();
+        depositPheromone(w, w.hunt, 250, 340);
+        expect(w.hunt[3 * COLS + 2]).toBe(1);
+        expect(total(w.danger) + total(w.attack)).toBe(0);
+    });
+
     it('clamps points outside the world to the edge cells', () => {
         const w = build();
         depositPheromone(w, w.danger, -50, -50);
@@ -63,6 +70,25 @@ describe('updatePheromones', () => {
         const decayed = total(w.attack) * (1 - 0.1);
         updatePheromones(w);
         expect(Math.abs(total(w.attack) - decayed) / decayed).toBeLessThan(1e-6);
+    });
+
+    it('decays and diffuses the hunt grid like the others', () => {
+        const w = build();
+        w.hunt[55] = 1;
+        updatePheromones(w);
+        expect(w.hunt[55]).toBeCloseTo(0.9 * (1 - 0.4), 6);
+        expect(w.hunt[54]).toBeCloseTo(0.9 * 0.1, 6);
+        expect(total(w.danger) + total(w.attack)).toBe(0);
+    });
+
+    it('conserves the hunt total apart from decay', () => {
+        const w = build();
+        for (const c of [0, 9, 90, 99, 5, 40, 55]) {
+            w.hunt[c] = 3;
+        }
+        const decayed = total(w.hunt) * (1 - 0.1);
+        updatePheromones(w);
+        expect(Math.abs(total(w.hunt) - decayed) / decayed).toBeLessThan(1e-6);
     });
 
     it('diffuses a corner cell to its two neighbours only', () => {

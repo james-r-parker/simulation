@@ -5,12 +5,9 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.j
 import { isKin } from './kin.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
-import { OUTPUT_COUNT } from './brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
-
-/** Index of the bite output in an agent's output row. */
-const BITE_OUTPUT = 4;
 
 /**
  * Eats one food if the agent's circle overlaps it.
@@ -83,7 +80,7 @@ function bites(world, biter, victim) {
     const { config, outputs, size, spec } = world;
     return (
         specParams(config, spec[biter]).canHunt &&
-        outputs[biter * OUTPUT_COUNT + BITE_OUTPUT] > 0 &&
+        outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
         !isKin(world, biter, victim) &&
         size[biter] > config.huntSizeRatio * size[victim]
     );
@@ -103,7 +100,13 @@ function applyBite(world, biter, victim) {
     world.biteEnergy[biter] += world.transferGained;
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
-    world.lastBiter[victim] = world.genomeId[biter];
+    const biterId = world.genomeId[biter];
+    if (world.lastBiter[victim] !== biterId) {
+        world.prevBiter[victim] = world.lastBiter[victim];
+        world.prevBiteTick[victim] = world.lastBiteTick[victim];
+    }
+    world.lastBiter[victim] = biterId;
+    world.lastBiteTick[victim] = world.tick;
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
     depositPheromone(world, world.danger, x[victim], y[victim]);

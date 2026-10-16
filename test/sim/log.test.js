@@ -112,7 +112,7 @@ describe('drainEvents', () => {
         const world = build();
         world.events.count = 0;
         const o = pushEvent(world.events, EVENT_TYPE.AGENT_DIED, 7);
-        world.events.data.set([5, 9, DEATH_CAUSE.EATEN, 4, 3, 8, 100, 1.5, 2.5], o + 2);
+        world.events.data.set([5, 9, DEATH_CAUSE.EATEN, 4, 3, 8, 100, 1.5, 2.5, 6], o + 2);
         const { records, log } = collect('debug');
         drainEvents(world, log);
         expect(records).toEqual([
@@ -129,6 +129,7 @@ describe('drainEvents', () => {
                 ageTicks: 100,
                 foodEnergy: 1.5,
                 biteEnergy: 2.5,
+                prevBiter: 6,
             },
         ]);
     });
@@ -167,6 +168,46 @@ describe('drainEvents', () => {
         const { records, log } = collect('debug');
         drainEvents(world, log);
         expect(records.map((r) => r.cause)).toEqual(['initial', 'mate', 'split', 'floor', 'immigrant']);
+    });
+
+    it('logs the call and smoke events at debug with their fields', () => {
+        const world = build();
+        world.events.count = 0;
+        const call = (/** @type {number} */ type, /** @type {number[]} */ fields) => {
+            const o = pushEvent(world.events, type, 9);
+            world.events.data.set(fields, o + 2);
+        };
+        call(EVENT_TYPE.ALARM_CALLED, [3, 30, 0, 100.5, 200.5]);
+        call(EVENT_TYPE.SMOKE_RELEASED, [4, 40, 2, 110, 210, 6]);
+        call(EVENT_TYPE.PACK_CALLED, [5, 50, 1, 120, 220]);
+        call(EVENT_TYPE.SMOKE_REFUSED, [6, 60]);
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            { level: 'debug', event: 'AlarmCalled', tick: 9, slot: 3, genomeId: 30, spec: 0, x: 100.5, y: 200.5 },
+            {
+                level: 'debug',
+                event: 'SmokeReleased',
+                tick: 9,
+                slot: 4,
+                genomeId: 40,
+                spec: 2,
+                x: 110,
+                y: 210,
+                cloud: 6,
+            },
+            { level: 'debug', event: 'PackCalled', tick: 9, slot: 5, genomeId: 50, spec: 1, x: 120, y: 220 },
+            { level: 'debug', event: 'SmokeRefused', tick: 9, slot: 6, genomeId: 60 },
+        ]);
+    });
+
+    it('skips the call and smoke events above debug', () => {
+        const world = build();
+        world.events.count = 0;
+        pushEvent(world.events, EVENT_TYPE.ALARM_CALLED, 1);
+        const { records, log } = collect('info');
+        drainEvents(world, log);
+        expect(records).toEqual([]);
     });
 
     it('throws on an unknown event type, naming it', () => {

@@ -46,6 +46,13 @@ const COVERED = [
     'fatherWeights',
     'fatherId',
     'fatherLineage',
+    'lastBiteTick',
+    'prevBiter',
+    'prevBiteTick',
+    'alarmTimer',
+    'huntTimer',
+    'smokeTimer',
+    'heard',
     'hidden',
     'foodAlive',
     'foodX',
@@ -65,6 +72,10 @@ const COVERED = [
     'zoneInitial',
     'danger',
     'attack',
+    'hunt',
+    'cloudX',
+    'cloudY',
+    'cloudTtl',
     'ledger',
 ];
 
@@ -114,12 +125,15 @@ describe('hashWorld', () => {
         expect(hashWorld(world)).not.toBe(before);
     });
 
-    it.each(['tick', 'nextId', 'population', 'foodCount'])('changes when the scalar %s changes', (name) => {
-        const world = makeWorld();
-        const before = hashWorld(world);
-        world[name] += 1;
-        expect(hashWorld(world)).not.toBe(before);
-    });
+    it.each(['tick', 'nextId', 'population', 'foodCount', 'cloudCount'])(
+        'changes when the scalar %s changes',
+        (name) => {
+            const world = makeWorld();
+            const before = hashWorld(world);
+            world[name] += 1;
+            expect(hashWorld(world)).not.toBe(before);
+        },
+    );
 
     it.each(['inputs', 'outputs'])('ignores %s, which are recomputed every tick', (name) => {
         const world = makeWorld();

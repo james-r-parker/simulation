@@ -4,6 +4,7 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
 import { CONSTANT_THRUSTS, MEAL_ENERGY, SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
+import { OUTPUT_COUNT, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 /** The seeking thrust as the Float32 outputs row stores it. */
 const SEEK = Math.fround(SEEK_THRUST);
@@ -32,7 +33,7 @@ function setup(name, seed = 1) {
  * @param {number} [proximity]
  */
 function hit(world, slot, k, channel, proximity = 0.5) {
-    const base = slot * world.layout.inputCount + k * 8;
+    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
     world.inputs[base] = proximity;
     world.inputs[base + channel] = 1;
 }
@@ -40,10 +41,10 @@ function hit(world, slot, k, channel, proximity = 0.5) {
 /**
  * @param {Record<string, any>} world
  * @param {number} [slot]
- * @returns {number[]} the slot's [thrust, turn, sprint, mate, bite]
+ * @returns {number[]} the slot's [thrust, turn, sprint, mate, bite, alarm, smoke, hunt]
  */
 function out(world, slot = 0) {
-    return Array.from(world.outputs.subarray(slot * 5, slot * 5 + 5));
+    return Array.from(world.outputs.subarray(slot * OUTPUT_COUNT, (slot + 1) * OUTPUT_COUNT));
 }
 
 describe('SCRIPTED_CONTROLLERS', () => {
@@ -74,9 +75,9 @@ describe('SCRIPTED_CONTROLLERS', () => {
             hit(world, 0, 1, CH.food);
             hit(world, 1, RAYS - 1, CH.food);
             run(world);
-            expect(out(world, 0), name).toEqual([Math.fround(thrust), 1, 0, 0, 0]);
-            expect(out(world, 1), name).toEqual([Math.fround(thrust), -1, 0, 0, 0]);
-            expect(out(world, 2), name).toEqual([Math.fround(thrust), 0, 0, 0, 0]);
+            expect(out(world, 0), name).toEqual([Math.fround(thrust), 1, 0, 0, 0, 0, 0, 0]);
+            expect(out(world, 1), name).toEqual([Math.fround(thrust), -1, 0, 0, 0, 0, 0, 0]);
+            expect(out(world, 2), name).toEqual([Math.fround(thrust), 0, 0, 0, 0, 0, 0, 0]);
         }
     });
 
@@ -85,9 +86,9 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 1, RAYS - 1, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0]);
-        expect(out(world, 1)).toEqual([SEEK, -1, 0, 0, 0]);
-        expect(out(world, 2)).toEqual([SEEK, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([SEEK, -1, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 2)).toEqual([SEEK, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('foodSeeker picks the nearest food and ignores other classes', () => {
@@ -104,14 +105,14 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         world.outputs.fill(0.7);
         run(world);
-        expect(out(world, 0)).toEqual([0, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('spinner turns fully with half thrust whatever it sees', () => {
         const { world, run } = setup('spinner');
         hit(world, 0, 13, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([0.5, 1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([0.5, 1, 0, 0, 0, 0, 0, 0]);
     });
 
     it('bumper turns towards the nearest agent of any class and ignores food', () => {
@@ -121,8 +122,8 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 4, CH.food, 0.99);
         hit(world, 1, 12, CH.kin, 0.4);
         run(world);
-        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0]);
-        expect(out(world, 1)).toEqual([1, -1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
         expect(out(world, 2)[1]).toBe(0);
     });
 
@@ -131,7 +132,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 2, CH.smaller, 0.9);
         hit(world, 0, 14, CH.bigger, 0.3);
         run(world);
-        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
     });
 
     it('wanderer turns away from food and otherwise turns slowly and randomly', () => {
@@ -139,7 +140,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 2, CH.food);
         for (let i = 0; i < 50; i++) {
             run(world);
-            expect(out(world, 0)).toEqual([1, -1, 0, 0, 0]);
+            expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
             expect(Math.abs(out(world, 1)[1])).toBeLessThanOrEqual(0.3);
         }
         const turns = new Set();
@@ -155,18 +156,18 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 0, 0, CH.wall, 0.9);
         run(world);
-        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0]);
         world.foodEnergy[0] += MEAL_ENERGY;
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0]);
         world.inputs.fill(0);
         hit(world, 0, 1, CH.food);
         hit(world, 0, 1, CH.wall, 0.2);
         run(world);
-        expect(out(world, 0)).toEqual([1, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
         hit(world, 0, 1, CH.wall, 0.9);
         run(world);
-        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
     });
 
     it('explorerAfterMeal restarts the meal count when a slot gets a new genome', () => {
@@ -191,7 +192,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
                 world.outputs.every((/** @type {number} */ v) => v >= -1 && v <= 1),
                 name,
             ).toBe(true);
-            expect(out(world, 5), name).toEqual([0, 0, 0, 0, 0]);
+            expect(out(world, 5), name).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
         }
     });
 

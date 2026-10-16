@@ -10,6 +10,7 @@ import {
 } from '../../js/evo/life-counters.js';
 import { addBorn, nextTick, observed, pushBorn } from './helpers/observer-world.js';
 import { addBlob } from '../sim/helpers/life-world.js';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 /** @returns {{world: any, observer: any, counters: any}} */
 function setup() {
@@ -107,7 +108,7 @@ describe('crowdingMean', () => {
      * @param {number} channel
      */
     function setRay(world, slot, ray, proximity, channel) {
-        const base = slot * world.layout.inputCount + ray * 8;
+        const base = slot * world.layout.inputCount + ray * RAY_CHANNELS;
         world.inputs[base] = proximity;
         world.inputs[base + channel] = 1;
     }

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
+import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createConfig } from '../../js/sim/config.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
-import { TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
+import { HEARD_STRIDE, TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
 
 const SMALL = {
     maxAgents: 8,
@@ -15,9 +17,12 @@ const SMALL = {
     fertileZoneMax: 3,
 };
 
-/** @returns {ReturnType<typeof allocateWorld>} */
-function smallWorld() {
-    return allocateWorld(createConfig(SMALL));
+/**
+ * @param {Record<string, any>} [over] config overrides
+ * @returns {ReturnType<typeof allocateWorld>}
+ */
+function smallWorld(over = {}) {
+    return allocateWorld(createConfig({ ...SMALL, ...over }));
 }
 
 /**
@@ -41,12 +46,40 @@ describe('allocateWorld', () => {
         expect(w.brainScratch.length).toBe(w.config.brainHidden);
     });
 
+    it('tabulates the bite, turn and sprint multipliers and the antenna by specialisation', () => {
+        const w = smallWorld({
+            antennaAngle: 0.5,
+            specialisations: { predator: { biteMultiplier: 4, sprintBoost: 1.6 } },
+        });
+        expect(Array.from(w.biteBySpec)).toEqual([1, 4, 1, 1, 1]);
+        expect(Array.from(w.turnBySpec)).toEqual([1, 1, 1, 1, 1]);
+        expect(Array.from(w.sprintBySpec)).toEqual([1, 1.6, 1, 1, 1]);
+        expect(w.antennaCos).toEqual(new Float64Array([detCos(0.5)]));
+        expect(w.antennaSin).toEqual(new Float64Array([detSin(0.5)]));
+    });
+
+    it('allocates the call, bite, cloud and hunt arrays with their types and sizes', () => {
+        const w = smallWorld({ maxClouds: 5 });
+        for (const name of ['alarmTimer', 'huntTimer', 'smokeTimer']) {
+            expect([w[name].length, w[name]]).toEqual([8, expect.any(Uint16Array)]);
+        }
+        for (const name of ['lastBiteTick', 'prevBiter', 'prevBiteTick']) {
+            expect([w[name].length, w[name]]).toEqual([8, expect.any(Uint32Array)]);
+        }
+        expect([w.heard.length, w.heard]).toEqual([8 * HEARD_STRIDE, expect.any(Float32Array)]);
+        expect([w.cloudX.length, w.cloudY.length, w.cloudTtl.length]).toEqual([5, 5, 5]);
+        expect(w.cloudTtl).toBeInstanceOf(Uint16Array);
+        expect(w.cloudCount).toBe(0);
+        expect(w.hunt).toBeInstanceOf(Float32Array);
+        expect(w.hunt.length).toBe(w.danger.length);
+    });
+
     it('sizes the agent arrays from the config', () => {
         const w = smallWorld();
         const { inputCount, weightCount } = w.layout;
         expect(w.alive.length).toBe(8);
         expect(w.inputs.length).toBe(8 * inputCount);
-        expect(w.outputs.length).toBe(8 * 5);
+        expect(w.outputs.length).toBe(8 * OUTPUT_COUNT);
         expect(w.weights.length).toBe(8 * weightCount);
         expect(w.fatherWeights.length).toBe(8 * weightCount);
         expect(w.hidden.length).toBe(9 * 3);
@@ -195,6 +228,24 @@ describe('allocateWorld platform check', () => {
         expect(() => allocateWorld(config)).toThrow(
             'allocateWorld requires a little-endian platform; this one is big-endian',
         );
+    });
+});
+
+describe('freeAgent new rows', () => {
+    it('zeroes the timers, heard row and bite bookkeeping of the freed slot only', () => {
+        const w = smallWorld();
+        allocAgent(w);
+        allocAgent(w);
+        for (const name of ['alarmTimer', 'huntTimer', 'smokeTimer', 'lastBiteTick', 'prevBiter', 'prevBiteTick']) {
+            w[name].fill(3);
+        }
+        w.heard.fill(0.5);
+        freeAgent(w, 0);
+        for (const name of ['alarmTimer', 'huntTimer', 'smokeTimer', 'lastBiteTick', 'prevBiter', 'prevBiteTick']) {
+            expect([name, w[name][0], w[name][1]]).toEqual([name, 0, 3]);
+        }
+        expect(Array.from(w.heard.subarray(0, HEARD_STRIDE))).toEqual(new Array(HEARD_STRIDE).fill(0));
+        expect(w.heard[HEARD_STRIDE]).toBe(0.5);
     });
 });
 

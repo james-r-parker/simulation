@@ -10,6 +10,9 @@ export const TIMER_CAP = 30;
 /** Elements of the per-world ray-march scratch row. */
 export const RAY_SCRATCH = 18;
 
+/** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
+export const HEARD_STRIDE = 6;
+
 const PI = 3.141592653589793;
 const BYTE_PAIR = 0x0102;
 
@@ -70,6 +73,9 @@ function agentSpecs(layout) {
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
         ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
+        ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick']),
+        ...singles(Uint16Array, ['alarmTimer', 'huntTimer', 'smokeTimer']),
+        [Float32Array, 'heard', HEARD_STRIDE],
         [Float32Array, 'inputs', layout.inputCount],
         [Float32Array, 'outputs', layout.outputCount],
         [Float32Array, 'weights', layout.weightCount],
@@ -123,7 +129,7 @@ function allocZonesAndPheromones(world) {
         rows: Math.ceil(worldHeight / pheromoneCellSize),
     });
     const cells = world.pheromoneGrid.cols * world.pheromoneGrid.rows;
-    allocRows(world, singles(Float32Array, ['danger', 'attack', 'pheromoneScratch']), cells);
+    allocRows(world, singles(Float32Array, ['danger', 'attack', 'hunt', 'pheromoneScratch']), cells);
 }
 
 /**
@@ -143,15 +149,26 @@ function rayTables(rayCount) {
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
- * @returns {Float64Array} the vision range of each specialisation, indexed by its `index`
+ * @param {string} field a numeric field of each specialisation entry
+ * @returns {Float64Array} that field of each specialisation, indexed by its `index`
  */
-function visionTable(config) {
+function specTable(config, field) {
     const specs = Object.values(config.specialisations);
     const table = new Float64Array(Math.max(...specs.map((s) => s.index)) + 1);
     for (const s of specs) {
-        table[s.index] = s.visionRange;
+        table[s.index] = s[field];
     }
     return table;
+}
+
+/**
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+function allocClouds(world) {
+    const { maxClouds } = world.config;
+    allocRows(world, singles(Float32Array, ['cloudX', 'cloudY']), maxClouds);
+    allocRows(world, singles(Uint16Array, ['cloudTtl']), maxClouds);
 }
 
 /**
@@ -179,13 +196,20 @@ export function allocateWorld(config) {
         season: new Float64Array(2),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),
-        visionBySpec: visionTable(config),
+        visionBySpec: specTable(config, 'visionRange'),
+        biteBySpec: specTable(config, 'biteMultiplier'),
+        turnBySpec: specTable(config, 'turnMultiplier'),
+        sprintBySpec: specTable(config, 'sprintBoost'),
+        antennaCos: new Float64Array([detCos(config.antennaAngle)]),
+        antennaSin: new Float64Array([detSin(config.antennaAngle)]),
+        cloudCount: 0,
         rayScratch: new Float64Array(RAY_SCRATCH),
         brainScratch: new Float64Array(config.brainHidden),
     };
     allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
+    allocClouds(world);
     world.events = createEventRing(config.eventCapacity);
     return world;
 }

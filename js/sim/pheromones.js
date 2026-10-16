@@ -1,4 +1,4 @@
-// Danger and attack pheromone grids: deposit, decay, diffusion and sampling.
+// Danger, attack and hunt pheromone grids: deposit, decay, diffusion and sampling.
 
 /** @typedef {import('./world.js').World} World */
 
@@ -19,7 +19,7 @@ function cellIndex(world, x, y) {
 /**
  * Adds a deposit to the cell under a point, capped at `pheromoneMax`.
  * @param {World} world the world
- * @param {Float32Array} grid `world.danger` or `world.attack`
+ * @param {Float32Array} grid `world.danger`, `world.attack` or `world.hunt`
  * @param {number} x world x
  * @param {number} y world y
  * @returns {void}
@@ -33,7 +33,7 @@ export function depositPheromone(world, grid, x, y) {
 /**
  * Reads the cell under a point, clamped to 0..1.
  * @param {World} world the world
- * @param {Float32Array} grid `world.danger` or `world.attack`
+ * @param {Float32Array} grid `world.danger`, `world.attack` or `world.hunt`
  * @param {number} x world x
  * @param {number} y world y
  * @returns {number}
@@ -90,11 +90,12 @@ function updateGrid(world, grid) {
 }
 
 /**
- * Decays then diffuses both pheromone grids.
+ * Decays then diffuses the danger, attack and hunt grids.
  * @param {World} world the world
  * @returns {void}
  */
 export function updatePheromones(world) {
     updateGrid(world, world.danger);
     updateGrid(world, world.attack);
+    updateGrid(world, world.hunt);
 }

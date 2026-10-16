@@ -1,4 +1,4 @@
-// Fixed-stride per-tick event ring: codes for births, deaths, blocked births and floor spawns, and the push/read/clear helpers.
+// Fixed-stride per-tick event ring: codes for births, deaths, blocked births, floor spawns, calls and smoke, and the push/read/clear helpers.
 
 /** Number of Float64 fields per event record. */
 export const EVENT_STRIDE = 12;
@@ -9,6 +9,10 @@ export const EVENT_TYPE = Object.freeze({
     AGENT_DIED: 2,
     BIRTH_BLOCKED: 3,
     POPULATION_FLOOR: 4,
+    ALARM_CALLED: 5,
+    SMOKE_RELEASED: 6,
+    PACK_CALLED: 7,
+    SMOKE_REFUSED: 8,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

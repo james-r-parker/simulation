@@ -29,6 +29,16 @@ function deathCause(world, slot) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {number} slot a slot that was eaten
+ * @returns {number} the genome id of the biter before the last one when it bit within `packWindow` ticks, else 0
+ */
+function packPartner(world, slot) {
+    const recent = world.tick - world.prevBiteTick[slot] <= world.config.packWindow;
+    return recent ? world.prevBiter[slot] : 0;
+}
+
+/**
  * Pushes `AgentDied` for a slot.
  * @param {World} world the world
  * @param {number} slot the dying agent
@@ -47,6 +57,7 @@ function pushDied(world, slot, cause) {
     d[o + 8] = world.ageTicks[slot];
     d[o + 9] = world.foodEnergy[slot];
     d[o + 10] = world.biteEnergy[slot];
+    d[o + 11] = cause === DEATH_CAUSE.EATEN ? packPartner(world, slot) : 0;
 }
 
 /**

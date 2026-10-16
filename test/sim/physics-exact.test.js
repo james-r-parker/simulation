@@ -64,7 +64,7 @@ describe('actAll heading', () => {
         actAll(w);
         expect(w.vx[0]).toBeCloseTo(w.config.maxThrust * Math.cos(0.5), 6);
         expect(w.vy[0]).toBeCloseTo(w.config.maxThrust * Math.sin(0.5), 6);
-        expect(OUTPUT_COUNT).toBe(5);
+        expect(OUTPUT_COUNT).toBe(8);
     });
 });
 

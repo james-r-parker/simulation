@@ -1,6 +1,7 @@
 // The observer's per-tick counters for every alive agent: age and energy copies, distance, turns towards food,
 // visited cells and the 100-tick motion samples; and collisions, counted right after the physics phase.
 
+import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { LOSS_CAUSE } from '../sim/energy.js';
 import { markCell } from './cell-grid.js';
 
@@ -16,7 +17,6 @@ export const MOTION_SAMPLE_TICKS = 100;
 /** A turn counts only above this fraction of `maxTurn`. */
 export const TURN_THRESHOLD = 0.1;
 
-const RAY_CHANNELS = 8;
 const FOOD_CHANNEL = 1;
 
 /**

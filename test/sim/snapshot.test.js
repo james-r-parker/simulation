@@ -8,8 +8,14 @@ import { testPolicy } from './helpers/test-policy.js';
 describe('snapshotLayout', () => {
     it('sizes the buffer for the config maxima', () => {
         const layout = snapshotLayout(smallWorld().config);
-        expect(layout).toMatchObject({ headerWords: 4, agentStride: 9, foodStride: 3, obstacleStride: 3 });
-        expect(layout.bytes).toBe((4 + 8 * 9 + 4 * 3 + 2 * 3) * 4);
+        expect(layout).toMatchObject({
+            headerWords: 5,
+            agentStride: 9,
+            foodStride: 3,
+            obstacleStride: 3,
+            cloudStride: 3,
+        });
+        expect(layout.bytes).toBe((5 + 8 * 9 + 4 * 3 + 2 * 3 + 32 * 3) * 4);
     });
 });
 
@@ -31,14 +37,27 @@ describe('writeSnapshot', () => {
         const { f32, u32 } = createSnapshotViews(buffer);
         writeSnapshot(world, { f32, u32 });
 
-        expect(Array.from(u32.subarray(0, 4))).toEqual([12, 2, 1, world.config.obstacleCount]);
-        expect(u32[4 + 8]).toBe(0);
-        expect(u32[4 + 9 + 8]).toBe(2);
-        expect(f32[4 + 9]).toBe(world.x[2]);
-        expect(f32[4 + 9 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(22, 25))).toEqual([5, 6, 7]);
-        expect(f32[25]).toBe(world.obsX[0]);
-        expect(f32[27]).toBe(world.obsRadius[0]);
+        expect(Array.from(u32.subarray(0, 5))).toEqual([12, 2, 1, world.config.obstacleCount, 0]);
+        expect(u32[5 + 8]).toBe(0);
+        expect(u32[5 + 9 + 8]).toBe(2);
+        expect(f32[5 + 9]).toBe(world.x[2]);
+        expect(f32[5 + 9 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
+        expect(Array.from(f32.subarray(23, 26))).toEqual([5, 6, 7]);
+        expect(f32[26]).toBe(world.obsX[0]);
+        expect(f32[28]).toBe(world.obsRadius[0]);
+    });
+
+    it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
+        const world = smallWorld({ smokeTicks: 200 });
+        world.cloudCount = 2;
+        world.cloudX.set([10, 30]);
+        world.cloudY.set([20, 40]);
+        world.cloudTtl.set([100, 50]);
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const start = 5 + 2 * 3;
+        expect(views.u32[4]).toBe(2);
+        expect(Array.from(views.f32.subarray(start, start + 9))).toEqual([10, 20, 0.5, 30, 40, 0.25, 0, 0, 0]);
     });
 
     it('throws when the buffer is too small', () => {
@@ -71,11 +90,11 @@ describe('writeSnapshot exact layout', () => {
         const views = freshViews(world);
         writeSnapshot(world, views);
         const { f32, u32 } = views;
-        expect(Array.from(f32.subarray(4, 8))).toEqual([11, 12, 1.5, 13]);
-        expect(f32[8]).toBe(0.25);
-        expect(Array.from(u32.subarray(9, 13))).toEqual([4, 21, 22, 3]);
-        expect(Array.from(u32.subarray(0, 4))).toEqual([0, 1, 0, 2]);
-        const obstacleStart = 4 + 9;
+        expect(Array.from(f32.subarray(5, 9))).toEqual([11, 12, 1.5, 13]);
+        expect(f32[9]).toBe(0.25);
+        expect(Array.from(u32.subarray(10, 14))).toEqual([4, 21, 22, 3]);
+        expect(Array.from(u32.subarray(0, 5))).toEqual([0, 1, 0, 2, 0]);
+        const obstacleStart = 5 + 9;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);
         expect(f32[obstacleStart + 6]).toBe(0);
         expect(Array.from(u32.subarray(obstacleStart + 6))).toEqual(new Array(u32.length - obstacleStart - 6).fill(0));
