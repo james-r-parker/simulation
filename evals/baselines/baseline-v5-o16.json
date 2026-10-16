@@ -150,7 +150,7 @@
     190896, 587535, 50850, 285273, 45220, 521459, 912822, 481629, 573144, 941591, 32714, 192673, 200460, 597883, 174238,
     553445
   ],
-  "sha": "e3560e6",
+  "sha": "c85af91",
   "metrics": {
     "eval.behaviour_coverage": {
       "values": [0.1, 0.11, 0.11, 0.1, 0.1, 0.1, 0.1, 0.1, 0.11, 0.1, 0.1, 0.1, 0.1, 0.11, 0.1, 0.1],
@@ -259,6 +259,14 @@
       "reasons": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
       "mean": 0.14452274764172543,
       "sd": 0.0004399614832570063
+    },
+    "eval.fed_median_lifespan": {
+      "values": [
+        5413, 5273, 5254, 5406.5, 5469, 5333.5, 5165, 5398.5, 5319, 5233.5, 5377, 5245, 5306.5, 5127, 5254, 5329
+      ],
+      "reasons": [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+      "mean": 5306.46875,
+      "sd": 93.29620727375077
     },
     "eval.floor_episodes": {
       "values": [2485, 2501, 2466, 2472, 2498, 2495, 2529, 2516, 2432, 2603, 2417, 2538, 2470, 2536, 2470, 2498],
