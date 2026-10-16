@@ -22,6 +22,7 @@ const SPECIALISATION_FIELDS = [
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound
  * @property {number} [max] inclusive upper bound
+ * @property {number} [lt] exclusive upper bound
  */
 
 /**
@@ -91,6 +92,9 @@ const RULES = {
     mateMinEnergy: num(0),
     mateCost: num(0),
     childEnergy: positive(),
+    mateRange: num(0),
+    childEnergyShare: { type: 'num', gt: 0, lt: 1 },
+    childEnergyMin: positive(),
     splitMinEnergy: num(0),
     maxAgeTicks: int(1),
     reproductionCooldown: int(0),
@@ -152,7 +156,20 @@ function fail(path, value, rule) {
 function describe(rule) {
     const kind = rule.type === 'int' ? 'an integer' : 'a finite number';
     const lower = rule.gt !== undefined ? `> ${rule.gt}` : `>= ${rule.min}`;
+    if (rule.lt !== undefined) {
+        return `${kind} ${lower} and < ${rule.lt}`;
+    }
     return rule.max !== undefined && rule.max !== Infinity ? `${kind} ${lower} and <= ${rule.max}` : `${kind} ${lower}`;
+}
+
+/**
+ * @param {number} n the value
+ * @param {Rule} rule the rule
+ * @returns {boolean} true when `n` is within the rule's bounds
+ */
+function inBounds(n, rule) {
+    const lowOk = rule.gt !== undefined ? n > rule.gt : n >= /** @type {number} */ (rule.min);
+    return lowOk && n <= (rule.max ?? Infinity) && n < (rule.lt ?? Infinity);
 }
 
 /**
@@ -171,8 +188,7 @@ function checkScalar(path, value, rule) {
     }
     const typeOk = rule.type === 'int' ? Number.isInteger(value) : Number.isFinite(value);
     const n = /** @type {number} */ (value);
-    const lowOk = rule.gt !== undefined ? n > rule.gt : n >= /** @type {number} */ (rule.min);
-    if (!typeOk || !lowOk || n > (rule.max ?? Infinity)) {
+    if (!typeOk || !inBounds(n, rule)) {
         fail(path, value, describe(rule));
     }
 }

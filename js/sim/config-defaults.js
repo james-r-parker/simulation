@@ -62,6 +62,9 @@ export const DEFAULTS = deepFreeze({
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     childEnergy: 600, // CHILD_STARTING_ENERGY
+    mateRange: 100, // new: the largest edge-to-edge gap between two mates
+    childEnergyShare: 0.4, // new: the share of its energy a mother gives a child
+    childEnergyMin: 200, // new: the smallest gift a mating birth may make
     splitMinEnergy: 1200, // MIN_ENERGY_FOR_SPLITTING
     maxAgeTicks: 36000, // new
     reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
