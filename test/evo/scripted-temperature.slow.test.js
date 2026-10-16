@@ -24,12 +24,34 @@ function populationAfter(name) {
     return world.population;
 }
 
+// Each run takes about 10 s alone and several times that under the gate's coverage instrumentation, so each case has
+// its own generous timeout.
+const TIMEOUT_MS = 300_000;
+
 describe('body temperature sweet spot', () => {
-    it('a forager at a gentle speed grows while a sitter freezes and a rusher overheats out', () => {
-        expect(populationAfter('thrust0')).toBe(0);
-        expect(populationAfter('thrust100')).toBe(0);
-        expect(populationAfter('thrust20')).toBeGreaterThan(config100());
-    }, 120_000);
+    it(
+        'a sitter freezes',
+        () => {
+            expect(populationAfter('thrust0')).toBe(0);
+        },
+        TIMEOUT_MS,
+    );
+
+    it(
+        'a rusher overheats out',
+        () => {
+            expect(populationAfter('thrust100')).toBe(0);
+        },
+        TIMEOUT_MS,
+    );
+
+    it(
+        'a forager at a gentle speed grows',
+        () => {
+            expect(populationAfter('thrust20')).toBeGreaterThan(config100());
+        },
+        TIMEOUT_MS,
+    );
 });
 
 /** @returns {number} the starting population, which the gentle forager must exceed */
