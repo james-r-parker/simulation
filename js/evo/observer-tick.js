@@ -19,23 +19,38 @@ const RAY_CHANNELS = 8;
 const FOOD_CHANNEL = 1;
 
 /**
+ * Index of the ray with the nearest hit whose class flag is in `first..last` (channels within a ray); the first of
+ * equal distances.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot an alive agent
+ * @param {number} first first class channel
+ * @param {number} last last class channel
+ * @returns {number} the ray index, or -1 when no ray hits such a thing
+ */
+export function nearestClassRay(world, slot, first, last) {
+    const stride = world.layout.inputCount;
+    let best = -1;
+    let bestProximity = -1;
+    for (let k = 0; k < world.config.rayCount; k++) {
+        const base = slot * stride + k * RAY_CHANNELS;
+        for (let c = first; c <= last && world.inputs[base] > bestProximity; c++) {
+            if (world.inputs[base + c] === 1) {
+                bestProximity = world.inputs[base];
+                best = k;
+            }
+        }
+    }
+    return best;
+}
+
+/**
  * Index of the ray with the nearest food hit among the rays that hit food; the first of equal distances.
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive agent
  * @returns {number} the ray index, or -1 when no ray sees food
  */
 export function nearestFoodRay(world, slot) {
-    const stride = world.layout.inputCount;
-    let best = -1;
-    let bestProximity = -1;
-    for (let k = 0; k < world.config.rayCount; k++) {
-        const base = slot * stride + k * RAY_CHANNELS;
-        if (world.inputs[base + FOOD_CHANNEL] === 1 && world.inputs[base] > bestProximity) {
-            bestProximity = world.inputs[base];
-            best = k;
-        }
-    }
-    return best;
+    return nearestClassRay(world, slot, FOOD_CHANNEL, FOOD_CHANNEL);
 }
 
 /**
