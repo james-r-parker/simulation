@@ -16,7 +16,18 @@ import { runReplay } from '../../../scripts/replay.mjs';
 import { dispatchEvents, runSeed } from '../../../scripts/eval-worker.mjs';
 import { setup } from '../helpers/map-elites-world.js';
 
-const OVERRIDES = { maxAgents: 60, initialAgents: 30, minAgents: 10, rayCount: 4, brainHidden: 6 };
+const OVERRIDES = {
+    maxAgents: 60,
+    initialAgents: 30,
+    minAgents: 10,
+    rayCount: 4,
+    brainHidden: 6,
+    worldWidth: 2400,
+    worldHeight: 1600,
+    maxFood: 120,
+    initialFood: 80,
+    obstacleCount: 4,
+};
 
 describe('map-elites-v1 shape', () => {
     it('is registered and exposes the archive and the per-slot state', () => {
