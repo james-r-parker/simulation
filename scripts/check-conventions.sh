@@ -10,6 +10,7 @@
 #   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (docs/coding-standards.md).
 #   Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
+# - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -76,6 +77,10 @@ if [[ -d public ]]; then
     done < <(git ls-files --cached --others --exclude-standard -- "js/$name" "js/**/$name")
   done < <(git ls-files --cached --others --exclude-standard -- 'public/*.js')
 fi
+
+while IFS= read -r line; do
+  fail "$line"
+done < <(node scripts/check-experiments.mjs)
 
 while IFS= read -r file; do
   [[ -f "$file" ]] || continue
