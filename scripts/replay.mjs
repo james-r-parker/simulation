@@ -2,20 +2,22 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
+import { getPolicy, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../js/sim/events.js';
 import { createSimLog, drainEvents, LOG_LEVEL } from '../js/sim/log.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
+import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
 
 const CHECKPOINT_INTERVAL = 1000;
 const DEFAULT_BUDGET_MS = 8;
+const DEFAULT_POLICY = 'baseline-v5';
 const USAGE =
-    'usage: replay --seed <n> --ticks <n> [--config <file.json>] [--dump <tick>] [--level debug|info|warn|error] [--budget-ms <n>] [--check-invariants]';
+    'usage: replay --seed <n> --ticks <n> [--config <file.json>] [--dump <tick>] [--level debug|info|warn|error] [--budget-ms <n>] [--check-invariants] [--policy <name>] [--follow <genomeId>]';
 
 /** World fields that are not state data: config, derived tables, hash grid, event ring and row lists. */
 const DUMP_SKIPPED = new Set(['config', 'layout', 'hash', 'events', 'agentRows', 'foodRows', 'birthOptions']);
@@ -43,6 +45,8 @@ function intValue(flag, text, min) {
  * @property {keyof typeof LOG_LEVEL} level
  * @property {number} budgetMs
  * @property {boolean} checkInvariants
+ * @property {string} policy a key of `POLICIES`
+ * @property {number | null} follow genome id to follow
  */
 
 /** Value parsers by flag; each returns the option key and its parsed value. */
@@ -52,6 +56,8 @@ const VALUE_FLAGS = {
     '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1)],
     '--dump': (value, flag) => ['dump', intValue(flag, value, 1)],
     '--budget-ms': (value, flag) => ['budgetMs', intValue(flag, value, 0)],
+    '--follow': (value, flag) => ['follow', intValue(flag, value, 1)],
+    '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
     '--level': (value) => ['level', parseLevel(value)],
 };
@@ -70,6 +76,8 @@ export function parseArgs(argv) {
         level: 'info',
         budgetMs: DEFAULT_BUDGET_MS,
         checkInvariants: false,
+        policy: DEFAULT_POLICY,
+        follow: null,
     };
     for (let i = 0; i < argv.length; i++) {
         const flag = argv[i];
@@ -86,6 +94,17 @@ export function parseArgs(argv) {
         throw new Error(`--seed and --ticks are required\n${USAGE}`);
     }
     return opts;
+}
+
+/**
+ * @param {string | undefined} value a policy name
+ * @returns {string} the name, if known
+ */
+function parsePolicy(value) {
+    if (value === undefined || !Object.hasOwn(POLICIES, value)) {
+        throw new Error(`--policy: Unknown policy "${value}"; known: ${Object.keys(POLICIES).join(', ')}\n${USAGE}`);
+    }
+    return value;
 }
 
 /**
@@ -164,6 +183,8 @@ function countEvents(world) {
  * @property {keyof typeof LOG_LEVEL} [level]
  * @property {number} [budgetMs]
  * @property {boolean} [checkInvariants]
+ * @property {string} [policy] a key of `POLICIES`, default baseline-v5
+ * @property {number | null} [follow] genome id to follow
  * @property {string} logDir directory for `<runId>.jsonl`
  * @property {string} dumpDir directory for `<runId>-<tick>.json`
  * @property {import('./lib/otel.mjs').Metrics} [metrics]
@@ -213,12 +234,12 @@ function checkpoint(options, world, totals) {
 
 /**
  * Runs the tick loop; returns false if an invariant violation stopped it.
- * @param {ReplayOptions & {log: any, runId: string, policy: any, world: Record<string, any>}} ctx run context
+ * @param {ReplayOptions & {log: any, runId: string, policy: any, world: Record<string, any>, follower: import('./lib/follow.mjs').Follower | null}} ctx run context
  * @param {string[]} hashes receives each checkpoint hash
  * @returns {boolean} whether the run completed
  */
 function runTicks(ctx, hashes) {
-    const { world, policy, log, ticks, budgetMs = DEFAULT_BUDGET_MS, stepFn = step } = ctx;
+    const { world, policy, log, ticks, budgetMs = DEFAULT_BUDGET_MS, stepFn = step, follower } = ctx;
     const totals = { births: 0, deaths: 0 };
     for (let t = 0; t < ticks; t++) {
         const start = performance.now();
@@ -235,6 +256,7 @@ function runTicks(ctx, hashes) {
         totals.births += births;
         totals.deaths += deaths;
         drainEvents(world, log);
+        follower?.update(world);
         if (stepMs > budgetMs) {
             log.log('warn', 'StepBudgetExceeded', { tick: world.tick, stepMs, budgetMs });
         }
@@ -259,6 +281,26 @@ function writeDump(ctx, world) {
 }
 
 /**
+ * @param {ReplayOptions} options the run options
+ * @param {Record<string, any>} config the world config
+ * @param {import('../js/sim/log.js').SimLog} log the log
+ * @returns {{policyName: string, policy: any}} the policy name and its brain hooks
+ */
+function buildPolicy(options, config, log) {
+    const policyName = options.policy ?? DEFAULT_POLICY;
+    return { policyName, policy: getPolicy(policyName).create({ config, log }).brain };
+}
+
+/**
+ * @param {import('../js/sim/log.js').SimLog} log the log
+ * @param {number | null | undefined} follow the genome id to follow, if any
+ * @returns {import('./lib/follow.mjs').Follower | null} the follower
+ */
+function createFollowerFor(log, follow) {
+    return follow ? createFollower(log, follow) : null;
+}
+
+/**
  * Runs one replay: logs to `<logDir>/<runId>.jsonl`, prints each checkpoint, and dumps the world if asked.
  * @param {ReplayOptions} options the run options
  * @returns {Promise<{runId: string, hashes: string[], finalHash: string, ok: boolean}>} the result; `ok` is false on an invariant violation
@@ -272,13 +314,14 @@ export async function runReplay(options) {
     rmSync(logPath, { force: true });
     const jsonl = createJsonlSink(logPath);
     const log = createSimLog(jsonl.sink, { level });
-    const policy = cloneWithNoisePolicy();
+    const { policyName, policy } = buildPolicy(options, config, log);
     log.log('info', 'RunStarted', {
         runId,
         seed,
         configHash: configHash(config),
         configOverrides,
-        policy: 'clone-with-noise',
+        policy: policyName,
+        follow: options.follow ?? null,
         ticks,
     });
     const ctx = {
@@ -288,6 +331,7 @@ export async function runReplay(options) {
         log,
         runId,
         policy,
+        follower: createFollowerFor(log, options.follow),
         world: createWorld(config, policy),
     };
     /** @type {string[]} */
@@ -295,6 +339,7 @@ export async function runReplay(options) {
     const ok = runTicks(ctx, hashes);
     const finalHash = hashWorld(ctx.world);
     if (ok) {
+        ctx.follower?.finish(ctx.world);
         log.log('info', 'RunFinished', { tick: ctx.world.tick, worldHash: finalHash });
     }
     await jsonl.close();
