@@ -27,6 +27,33 @@ describe('initSpec', () => {
     });
 });
 
+describe('initBrain genome check', () => {
+    it('logs GenomeRejected at error and rethrows when an archive row does not fit the world layout', () => {
+        const { policy, world, records } = setup();
+        fill(policy, { spec: 0, count: 12 });
+        const fits = policy.archive.layout.weightCount;
+        world.layout = { ...world.layout, weightCount: fits + 1 };
+        const rng = createRng(2);
+        let thrown = null;
+        for (let i = 0; i < 50 && thrown === null; i++) {
+            try {
+                policy.brain.initBrain(world, 0, rng);
+            } catch (e) {
+                thrown = e;
+            }
+        }
+        expect(String(thrown)).toMatch(/weights\.length: expected \d+, got \d+/);
+        const rejected = records.filter((r) => r.event === 'GenomeRejected');
+        expect(rejected).toHaveLength(1);
+        expect(rejected[0]).toMatchObject({
+            level: 'error',
+            field: 'weights.length',
+            expected: fits + 1,
+            actual: fits,
+        });
+    });
+});
+
 describe('initBrain sources', () => {
     it('seeds randomly, drawing nothing, while the archive has fewer than 10 cells', () => {
         const { policy, world, records } = setup();

@@ -26,7 +26,20 @@ export const GENOME_SPECS = Object.freeze(['forager', 'predator', 'reproducer', 
  * @returns {never}
  */
 function mismatch(field, actual, expected) {
-    throw new Error(`genome.${field}: expected ${expected}, got ${actual}`);
+    return rejectGenome(undefined, { field: `genome.${field}`, expected, actual });
+}
+
+/**
+ * Logs `GenomeRejected` (error) when a log is given, then throws; the one way a genome is refused.
+ * @param {import('../sim/log.js').SimLog | undefined} log the policy's log
+ * @param {{ field: string, expected: unknown, actual: unknown, message?: string }} what the mismatched field; `message`
+ *   replaces the default error text
+ * @returns {never}
+ * @throws {Error} always
+ */
+export function rejectGenome(log, { field, expected, actual, message }) {
+    log?.log('error', 'GenomeRejected', { field, expected, actual });
+    throw new Error(message ?? `${field}: expected ${expected}, got ${actual}`);
 }
 
 /**

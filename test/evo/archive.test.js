@@ -287,6 +287,22 @@ describe('seedArchive and metrics', () => {
         expect(occupiedCount(archive)).toBe(0);
     });
 
+    it('logs GenomeRejected at error before refusing a champion with the wrong row length', () => {
+        const archive = createArchive(layout);
+        /** @type {any[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        const champion = { spec: 0, cell: 1, id: 1, sigma: 0.1, weights: new Float32Array(3) };
+        expect(() => seedArchive(archive, champion, log)).toThrow(/weights\.length: expected \d+, got 3/);
+        expect(() => seedArchive(archive, { ...champion, cell: -1 }, log)).toThrow(/bad spec 0 or cell -1/);
+        expect(records.map((r) => [r.event, r.level, r.field])).toEqual([
+            ['GenomeRejected', 'error', 'weights.length'],
+            ['GenomeRejected', 'error', 'spec/cell'],
+        ]);
+        expect(records[0]).toMatchObject({ expected: layout.weightCount, actual: 3 });
+        expect(occupiedCount(archive)).toBe(0);
+    });
+
     it('counts occupied cells, coverage and the qd score over all 500 cells', () => {
         const archive = createArchive(layout);
         offer(archive, mk(1, 50, { cell: 1 }));

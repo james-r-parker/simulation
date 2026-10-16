@@ -6,7 +6,7 @@
 // A clone's `archiveRef` is `spec * 100 + cell` (the doc's encoding); the policy also keeps the cloned genome's
 // id (`refId`), and a clone's fitness is added only to the place in that cell that still holds `refId`.
 
-import { GENOME_SPECS } from './genome.js';
+import { GENOME_SPECS, rejectGenome } from './genome.js';
 import { WELFORD_STRIDE, welfordAdd, welfordMean, welfordSd } from './welford.js';
 import { nextInt } from '../sim/rng.js';
 
@@ -134,8 +134,9 @@ export function archiveCv(archive) {
     if (k < CV_MIN_GENOMES) {
         return CV_DEFAULT;
     }
-    const sorted = scratch.subarray(0, k).sort();
-    return k % 2 === 1 ? sorted[k >> 1] : (sorted[k / 2 - 1] + sorted[k / 2]) / 2;
+    scratch.fill(Infinity, k);
+    scratch.sort();
+    return k % 2 === 1 ? scratch[k >> 1] : (scratch[k / 2 - 1] + scratch[k / 2]) / 2;
 }
 
 /**
@@ -319,9 +320,11 @@ export function offer(archive, item, log) {
  * @param {Archive} archive the archive
  * @param {{ spec?: number, specialisation?: string, cell: number, id: number, sigma: number, weights: Float32Array }} champion
  *   `spec` is the index; `specialisation` (a decoded genome's name) is used when `spec` is absent
+ * @param {import('../sim/log.js').SimLog} [log] receives `GenomeRejected` when the champion is refused
  * @returns {void}
+ * @throws {Error} naming the field when the cell or the row length does not fit
  */
-export function seedArchive(archive, champion) {
+export function seedArchive(archive, champion, log) {
     const spec = champion.spec ?? GENOME_SPECS.indexOf(/** @type {string} */ (champion.specialisation));
     if (
         spec < 0 ||
@@ -330,7 +333,19 @@ export function seedArchive(archive, champion) {
         champion.cell < 0 ||
         champion.cell >= CELLS
     ) {
-        throw new Error(`seedArchive: bad spec ${spec} or cell ${champion.cell}`);
+        rejectGenome(log, {
+            field: 'spec/cell',
+            expected: `spec < ${SPEC_COUNT}, cell < ${CELLS}`,
+            actual: `${spec}/${champion.cell}`,
+            message: `seedArchive: bad spec ${spec} or cell ${champion.cell}`,
+        });
+    }
+    if (champion.weights.length !== archive.layout.weightCount) {
+        rejectGenome(log, {
+            field: 'weights.length',
+            expected: archive.layout.weightCount,
+            actual: champion.weights.length,
+        });
     }
     const elite = placeOf(spec, champion.cell, ELITE);
     fillPlace(archive, elite, { row: champion.weights, sigma: champion.sigma, id: champion.id });

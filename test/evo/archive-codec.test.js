@@ -3,6 +3,7 @@ import { createArchive, nextClone, offer, selectParent } from '../../js/evo/arch
 import { decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { createSimLog } from '../../js/sim/log.js';
 import { createRng, nextGaussian } from '../../js/sim/rng.js';
 
 const config = createConfig({ rayCount: 2, brainHidden: 4 });
@@ -78,6 +79,20 @@ describe('archive codec', () => {
         expect(() => decodeArchive(json, createConfig({ rayCount: 2, brainHidden: 5 }))).toThrow(/layout\.brainHidden/);
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config)).toThrow(/rulesHash/);
         expect(() => decodeArchive({ ...json, version: 2 }, config)).toThrow(/version/);
+    });
+
+    it('logs GenomeRejected with the field, expected and actual when it rejects', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        /** @type {any[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config, log)).toThrow(/rulesHash/);
+        expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }), log)).toThrow(/inputCount/);
+        expect(records.map((r) => [r.event, r.level, r.field, r.actual])).toEqual([
+            ['GenomeRejected', 'error', 'archive.rulesHash', 'x'],
+            ['GenomeRejected', 'error', 'archive.layout.inputCount', json.layout.inputCount],
+        ]);
+        expect(records[1].expected).toBe(brainLayout(createConfig({ rayCount: 3, brainHidden: 4 })).inputCount);
     });
 
     it('rejects an unknown specialisation', () => {
