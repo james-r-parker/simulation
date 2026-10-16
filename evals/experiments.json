@@ -522,7 +522,7 @@
         "eval.qd_score": "-"
       },
       "effect": "no-difference",
-      "note": "Seeds 1-16 against 17-32 with --allow-seed-diff and the 5% rule: no better or worse verdict on any metric."
+      "note": "Seeds 1-16 against 17-32 with --allow-seed-diff and the 5% rule: no better or worse verdict on any metric. Its baseline-v5 reports were replaced by the E14 re-recording at the halved temperature rates; the before/after reports of E12 are kept under evals/experiments/."
     },
     {
       "id": "E12",
@@ -566,7 +566,7 @@
         "eval.qd_score": "worse"
       },
       "effect": "worse",
-      "note": "16 seeds, --allow-config-diff for the temperature keys and seasons. food +15% and births +17% better, but fed_median_lifespan -17% worse and floor_episodes +57% worse: evolved agents still rush and now also pay for heat. Scripted constant-thrust foragers show the intended sweet spot (thrust 0.2 grows to 393 agents; thrust 0 and 1 die out), so the rules work but evolution has not found the gentle speed. Phase not merged; the user decides the next step."
+      "note": "16 seeds, --allow-config-diff for the temperature keys and seasons. food +15% and births +17% better, but fed_median_lifespan -17% worse and floor_episodes +57% worse: evolved agents still rush and now also pay for heat. Scripted constant-thrust foragers show the intended sweet spot (thrust 0.2 grows to 393 agents; thrust 0 and 1 die out), so the rules work but evolution has not found the gentle speed. Phase not merged; the user decides the next step. Its baseline-v5 reports were replaced by the E14 re-recording at the halved temperature rates; the before/after reports of E12 are kept under evals/experiments/."
     },
     {
       "id": "E13",
@@ -582,6 +582,94 @@
       "verdicts": {},
       "effect": "exploit",
       "note": "Ungated survival 0.5 per tick fails the anti-exploit bound under body temperature: in the micro-world the sitter still lives ~3850 ticks and scores 1.19x the foodSeeker, the spinner 1.26x and the bumper 0.98x. Reverted; the 16-seed eval was not run."
+    },
+    {
+      "id": "E14",
+      "date": "2026-10-16",
+      "branch": "feat/body-temperature",
+      "hypothesis": "At the halved temperature rates, two 16-seed samples of baseline-v5 are not told apart.",
+      "prediction": "No better or worse verdict on any Target metric.",
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
+      "beforePolicy": "baseline-v5",
+      "afterPolicy": "baseline-v5",
+      "before": "evals/baselines/baseline-v5.json",
+      "after": "evals/baselines/baseline-v5-o16.json",
+      "verdicts": {
+        "eval.behaviour_coverage": "no-difference",
+        "eval.births_per_1k": "no-difference",
+        "eval.born_share": "-",
+        "eval.champion_elo": "-",
+        "eval.champion_win_rate": "-",
+        "eval.coverage": "-",
+        "eval.diversity": "no-difference",
+        "eval.fed_median_lifespan": "no-difference",
+        "eval.floor_episodes": "no-difference",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.lineage_turnover": "no-difference",
+        "eval.lineages_alive": "no-difference",
+        "eval.mean_fitness.defender": "no-difference",
+        "eval.mean_fitness.forager": "no-difference",
+        "eval.mean_fitness.predator": "no-difference",
+        "eval.mean_fitness.reproducer": "no-difference",
+        "eval.mean_fitness.scout": "no-difference",
+        "eval.median_lifespan": "no-difference",
+        "eval.motion_coverage": "-",
+        "eval.p90_fitness.defender": "no-difference",
+        "eval.p90_fitness.forager": "no-difference",
+        "eval.p90_fitness.predator": "no-difference",
+        "eval.p90_fitness.reproducer": "no-difference",
+        "eval.p90_fitness.scout": "no-difference",
+        "eval.population_mean": "-",
+        "eval.predation_per_1k": "-",
+        "eval.predator_share_cv": "-",
+        "eval.qd_score": "-"
+      },
+      "effect": "no-difference",
+      "note": "Seeds 1-16 against 17-32: no better or worse verdict on any metric."
+    },
+    {
+      "id": "E15",
+      "date": "2026-10-16",
+      "branch": "feat/body-temperature",
+      "hypothesis": "At half the legacy heating and cooling rates (temperatureGainMove 0.0125, temperatureLossPassive 0.0075), body temperature does not make the live policy worse on fed lifespan, food or births.",
+      "prediction": "no worse on the three Targets (the 4-seed sweep on seeds 29-32 was within 5%).",
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v1q",
+      "before": "evals/experiments/E10-map-elites-v1q.json",
+      "after": "evals/experiments/E15-map-elites-v1q.json",
+      "verdicts": {
+        "eval.behaviour_coverage": "no-difference",
+        "eval.births_per_1k": "better",
+        "eval.born_share": "-",
+        "eval.champion_elo": "-",
+        "eval.champion_win_rate": "-",
+        "eval.coverage": "better",
+        "eval.diversity": "no-difference",
+        "eval.fed_median_lifespan": "worse",
+        "eval.floor_episodes": "worse",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.lineage_turnover": "no-difference",
+        "eval.lineages_alive": "no-difference",
+        "eval.mean_fitness.defender": "worse",
+        "eval.mean_fitness.forager": "worse",
+        "eval.mean_fitness.predator": "worse",
+        "eval.mean_fitness.reproducer": "worse",
+        "eval.mean_fitness.scout": "worse",
+        "eval.median_lifespan": "no-difference",
+        "eval.motion_coverage": "-",
+        "eval.p90_fitness.defender": "worse",
+        "eval.p90_fitness.forager": "worse",
+        "eval.p90_fitness.predator": "worse",
+        "eval.p90_fitness.reproducer": "worse",
+        "eval.p90_fitness.scout": "worse",
+        "eval.population_mean": "-",
+        "eval.predation_per_1k": "-",
+        "eval.predator_share_cv": "-",
+        "eval.qd_score": "worse"
+      },
+      "effect": "worse",
+      "note": "16 seeds. births +5.4% better, food +2.5% no-difference, fed_median_lifespan -5.4% worse (just past the 5% rule; the legacy rates gave -17%), floor_episodes +23%. Not merged; the user decides."
     }
   ]
 }
