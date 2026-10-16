@@ -7,6 +7,10 @@ describe('DEFAULTS', () => {
         expect(() => validateConfig(DEFAULTS)).not.toThrow();
     });
 
+    it('sets the birth keys', () => {
+        expect([DEFAULTS.mateRange, DEFAULTS.childEnergyShare, DEFAULTS.childEnergyMin]).toEqual([100, 0.4, 200]);
+    });
+
     it('is frozen at every level', () => {
         expect(Object.isFrozen(DEFAULTS)).toBe(true);
         expect(Object.isFrozen(DEFAULTS.seasons)).toBe(true);

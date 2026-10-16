@@ -76,6 +76,19 @@ describe('validateConfig types and ranges', () => {
         expect(() => createConfig({ huntSizeRatio: 0.9 })).toThrow(/huntSizeRatio/);
     });
 
+    it('rejects a negative mateRange and accepts 0', () => {
+        expect(() => createConfig({ mateRange: -1 })).toThrow(/mateRange/);
+        expect(() => createConfig({ mateRange: 0 })).not.toThrow();
+    });
+
+    it.each([0, 1, -0.1, 1.5])('rejects childEnergyShare %s', (value) => {
+        expect(() => createConfig({ childEnergyShare: value })).toThrow(/childEnergyShare.*> 0 and < 1/);
+    });
+
+    it('rejects a childEnergyMin of 0', () => {
+        expect(() => createConfig({ childEnergyMin: 0 })).toThrow(/childEnergyMin.*> 0/);
+    });
+
     it('rejects a seasonLength below 4', () => {
         expect(() => createConfig({ seasonLength: 3 })).toThrow(/seasonLength/);
     });
