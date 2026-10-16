@@ -19,6 +19,9 @@ const SMALL = {
     // The legacy temperature rates, pinned so these cost tests check formulas rather than tuned defaults.
     temperatureGainMove: 0.025,
     temperatureLossPassive: 0.015,
+    temperaturePassiveLossFactor: 4,
+    temperatureEfficiencyHeatModerate: 0.8,
+    temperatureEfficiencyHeatSevere: 0.4,
     initialFood: 0,
     maxEnergy: 100,
     initialEnergy: 10,

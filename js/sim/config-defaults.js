@@ -144,11 +144,11 @@ export const DEFAULTS = deepFreeze({
     placementTries: 100, // new
     temperatureMax: 100, // TEMPERATURE_MAX
     temperatureStart: 50, // TEMPERATURE_START
-    temperatureGainMove: 0.0125, // TEMPERATURE_GAIN_MOVE
+    temperatureGainMove: 0.01, // TEMPERATURE_GAIN_MOVE (tuned, E17)
     temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
-    temperaturePassiveLossFactor: 4, // TEMPERATURE_PASSIVE_LOSS_FACTOR
+    temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)
     temperatureColdStress: 30, // TEMPERATURE_COLD_STRESS_THRESHOLD
     temperatureColdModerate: 40, // TEMPERATURE_COLD_MODERATE_THRESHOLD
     temperatureOptimalMin: 40, // TEMPERATURE_OPTIMAL_MIN
@@ -157,6 +157,6 @@ export const DEFAULTS = deepFreeze({
     temperatureHeatStress: 85, // TEMPERATURE_HEAT_STRESS_THRESHOLD
     temperatureEfficiencyColdSevere: 0.3, // TEMPERATURE_EFFICIENCY_COLD_SEVERE
     temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
-    temperatureEfficiencyHeatModerate: 0.8, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE
-    temperatureEfficiencyHeatSevere: 0.4, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE
+    temperatureEfficiencyHeatModerate: 0.9, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE (tuned, E17)
+    temperatureEfficiencyHeatSevere: 0.6, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE (tuned, E17)
 });

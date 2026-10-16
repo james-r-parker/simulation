@@ -424,7 +424,8 @@ describe('actAll temperature', () => {
         [75, 0.8],
         [90, 0.4],
     ])('scales thrust at temperature %f by %f, sprint included', (t, efficiency) => {
-        const w = setup();
+        // The earlier heat efficiencies, pinned so this checks the formula rather than the tuned defaults.
+        const w = setup({ temperatureEfficiencyHeatModerate: 0.8, temperatureEfficiencyHeatSevere: 0.4 });
         put(w, 0, { angle: 0, temperature: t });
         put(w, 1, { angle: 0, temperature: t });
         setOut(w, 0, [1, 0, 0, 0, 0]);
