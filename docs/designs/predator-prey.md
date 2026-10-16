@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 gives agents scent direction, alarm and hunt calls and defensive smoke in the sim core and retunes catching.
 **Validated:** cb43167 (2026-10-16)
-**Priority:** 3 - built between the MAP-Elites archive (evolution-rework.md Phase 2, judged after reachable-births.md) and the trainer (Phase 3)
+**Priority:** 2 - built between the MAP-Elites archive (evolution-rework.md Phase 2, judged after reachable-births.md) and the trainer (Phase 3)
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core
