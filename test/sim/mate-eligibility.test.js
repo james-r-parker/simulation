@@ -49,10 +49,10 @@ describe('canMatePair', () => {
 
     it('refuses a lower-slot mother at or below childEnergyMin / childEnergyShare', () => {
         const w = pair();
-        w.energy[0] = 500;
+        w.energy[0] = 400;
         expect(canMatePair(w, 0, 1)).toBe(false);
         expect(canMatePair(w, 1, 0)).toBe(false);
-        w.energy[0] = 501;
+        w.energy[0] = 401;
         expect(canMatePair(w, 0, 1)).toBe(true);
     });
 

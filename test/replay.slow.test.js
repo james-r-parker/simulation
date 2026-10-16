@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { runReplay } from '../scripts/replay.mjs';
 
 const CONFIG = { initialAgents: 20, minAgents: 20, maxAgents: 40 };
+// The economy the follow test needs so that agent 1 starves within the run.
+const HARSH = { movementCost: 0.03, foodEnergy: 70, foodTargetPerAgent: 1.5 };
 
 /**
  * @param {Record<string, any>} extra run options
@@ -100,7 +102,7 @@ describe('runReplay', () => {
 
 describe('runReplay with --follow', () => {
     it('logs FollowSample every 10 ticks until the genome dies, then FollowEnded and nothing more', async () => {
-        const { records } = await run({ ticks: 3000, follow: 1 });
+        const { records } = await run({ ticks: 3000, follow: 1, configOverrides: { ...CONFIG, ...HARSH } });
 
         const follow = records.filter((r) => r.event.startsWith('Follow'));
         const samples = follow.filter((r) => r.event === 'FollowSample');

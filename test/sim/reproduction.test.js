@@ -203,20 +203,20 @@ describe('advancePregnancies', () => {
 
     it('blocks a birth when the mother has too little energy', () => {
         const w = lifeWorld();
-        const a = addBlob(w, { pregnancy: 1, energy: 499 });
+        const a = addBlob(w, { pregnancy: 1, energy: 399 });
         advancePregnancies(w, recordingPolicy([]));
         expect(w.population).toBe(1);
-        expect(w.energy[a]).toBe(499);
+        expect(w.energy[a]).toBe(399);
         expect(event(w, 0).slice(0, 4)).toEqual([EVENT_TYPE.BIRTH_BLOCKED, 0, a, BLOCKED_CAUSE.ENERGY]);
     });
 
     it('gives birth when the gift is exactly childEnergyMin', () => {
         const w = lifeWorld();
-        const a = addBlob(w, { pregnancy: 1, energy: 500 });
+        const a = addBlob(w, { pregnancy: 1, energy: 400 });
         advancePregnancies(w, recordingPolicy([]));
         expect(w.population).toBe(2);
         expect(w.energy[1]).toBe(200);
-        expect(w.energy[a]).toBe(300);
+        expect(w.energy[a]).toBe(200);
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });
 
@@ -232,14 +232,14 @@ describe('advancePregnancies', () => {
 describe('splitAll', () => {
     it('gives one child half the energy, both parents the splitter, and a longer cooldown', () => {
         const w = lifeWorld();
-        const a = addBlob(w, { energy: 2000, spec: 2 });
+        const a = addBlob(w, { energy: 1700, spec: 2 });
         const id = w.genomeId[a];
         /** @type {string[]} */
         const log = [];
         splitAll(w, recordingPolicy(log));
         expect(w.population).toBe(2);
-        expect(w.energy[a]).toBe(1000);
-        expect(w.energy[1]).toBe(1000);
+        expect(w.energy[a]).toBe(850);
+        expect(w.energy[1]).toBe(850);
         expect([w.parentA[1], w.parentB[1]]).toEqual([id, id]);
         expect(w.lineageId[1]).toBe(w.lineageId[a]);
         expect(w.spec[1]).toBe(2);
@@ -255,7 +255,7 @@ describe('splitAll', () => {
         addBlob(w, { energy: 2000, ageTicks: 10, pregnancy: 4 });
         addBlob(w, { energy: 2000, ageTicks: 10, cooldown: 2 });
         addBlob(w, { energy: 2000, ageTicks: 9 });
-        addBlob(w, { energy: 1200, ageTicks: 10 });
+        addBlob(w, { energy: 900, ageTicks: 10 });
         splitAll(w, recordingPolicy([]));
         expect(w.population).toBe(4);
         expect(w.events.count).toBe(0);

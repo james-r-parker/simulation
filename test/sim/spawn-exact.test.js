@@ -24,6 +24,7 @@ function empty(over = {}) {
             rayCount: 4,
             brainHidden: 3,
             maxFood: 10,
+            foodEnergy: 70,
             initialFood: 0,
             obstacleCount: 0,
             fertileZoneMax: 4,
