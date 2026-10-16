@@ -96,7 +96,8 @@ function bites(world, biter, victim) {
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
-    transferEnergy(world, victim, biter, config.biteEnergy * taken);
+    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
+    transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
