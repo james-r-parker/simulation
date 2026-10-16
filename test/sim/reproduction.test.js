@@ -152,8 +152,8 @@ describe('advancePregnancies', () => {
         expect(w.parentA[c]).toBe(motherId);
         expect(w.parentB[c]).toBe(w.genomeId[1]);
         expect(w.spec[c]).toBe(2);
-        expect(w.energy[c]).toBe(w.config.childEnergy);
-        expect(w.energy[0]).toBe(85);
+        expect(w.energy[c]).toBeCloseTo(685 * w.config.childEnergyShare, 9);
+        expect(w.energy[0]).toBeCloseTo(685 * (1 - w.config.childEnergyShare), 9);
         expect([w.vx[c], w.vy[c]]).toEqual([0, 0]);
         expect([w.ateTimer[c], w.bittenTimer[c]]).toEqual([TIMER_CAP, TIMER_CAP]);
         const dist = Math.hypot(w.x[c] - w.x[0], w.y[c] - w.y[0]);
@@ -203,11 +203,21 @@ describe('advancePregnancies', () => {
 
     it('blocks a birth when the mother has too little energy', () => {
         const w = lifeWorld();
-        const a = addBlob(w, { pregnancy: 1, energy: 600 });
+        const a = addBlob(w, { pregnancy: 1, energy: 499 });
         advancePregnancies(w, recordingPolicy([]));
         expect(w.population).toBe(1);
-        expect(w.energy[a]).toBe(600);
+        expect(w.energy[a]).toBe(499);
         expect(event(w, 0).slice(0, 4)).toEqual([EVENT_TYPE.BIRTH_BLOCKED, 0, a, BLOCKED_CAUSE.ENERGY]);
+    });
+
+    it('gives birth when the gift is exactly childEnergyMin', () => {
+        const w = lifeWorld();
+        const a = addBlob(w, { pregnancy: 1, energy: 500 });
+        advancePregnancies(w, recordingPolicy([]));
+        expect(w.population).toBe(2);
+        expect(w.energy[1]).toBe(200);
+        expect(w.energy[a]).toBe(300);
+        expect(imbalance(w)).toBeCloseTo(0, 9);
     });
 
     it('ignores agents that are not pregnant', () => {

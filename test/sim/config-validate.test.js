@@ -8,6 +8,10 @@ describe('validateConfig unknown and missing keys', () => {
         expect(() => createConfig({ bogus: 1 })).toThrow(/config\.bogus.*no such key/);
     });
 
+    it('rejects childEnergy, which the share and minimum replaced', () => {
+        expect(() => createConfig({ childEnergy: 600 })).toThrow(/config\.childEnergy.*no such key/);
+    });
+
     it('rejects an unknown key inside a season', () => {
         const seasons = structuredClone(DEFAULTS.seasons);
         seasons[1].extra = 1;
