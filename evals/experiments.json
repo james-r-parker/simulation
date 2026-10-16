@@ -567,6 +567,21 @@
       },
       "effect": "worse",
       "note": "16 seeds, --allow-config-diff for the temperature keys and seasons. food +15% and births +17% better, but fed_median_lifespan -17% worse and floor_episodes +57% worse: evolved agents still rush and now also pay for heat. Scripted constant-thrust foragers show the intended sweet spot (thrust 0.2 grows to 393 agents; thrust 0 and 1 die out), so the rules work but evolution has not found the gentle speed. Phase not merged; the user decides the next step."
+    },
+    {
+      "id": "E13",
+      "date": "2026-10-16",
+      "branch": "feat/body-temperature",
+      "hypothesis": "With body temperature making sitters die young, fitnessV1 can pay survival without the 500-food gate, lengthening the lives of agents that eat without reopening the FIT-8 exploits.",
+      "prediction": "anti-exploit bound passes for sitter, spinner and bumper; then fed_median_lifespan better than E12.",
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v1q",
+      "before": "evals/experiments/E12-map-elites-v1q.json",
+      "after": "not run: the anti-exploit suite failed first",
+      "verdicts": {},
+      "effect": "exploit",
+      "note": "Ungated survival 0.5 per tick fails the anti-exploit bound under body temperature: in the micro-world the sitter still lives ~3850 ticks and scores 1.19x the foodSeeker, the spinner 1.26x and the bumper 0.98x. Reverted; the 16-seed eval was not run."
     }
   ]
 }
