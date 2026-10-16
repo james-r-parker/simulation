@@ -8,7 +8,7 @@ import { detCos, detSin } from './det-math.js';
 export const TIMER_CAP = 30;
 
 /** Elements of the per-world ray-march scratch row. */
-export const RAY_SCRATCH = 18;
+export const RAY_SCRATCH = 19;
 
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
@@ -207,6 +207,7 @@ export function allocateWorld(config) {
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
         rayScratch: new Float64Array(RAY_SCRATCH),
+        nearObstacles: new Int32Array(config.obstacleCount),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(config.brainHidden),
     };

@@ -38,6 +38,38 @@ function obstacle(w, i, x, y, r) {
     w.obsRadius[i] = r;
 }
 
+describe('castRays obstacles at the range edge', () => {
+    it('sees an obstacle whose surface is exactly at the vision range, and none just beyond', () => {
+        const at = senseWorld();
+        const me = addAgent(at, 500, 500, 20);
+        obstacle(at, 0, 500 + VISION + 40, 500, 40);
+        obstacle(at, 1, 5000, 5000, 10);
+        cast(at, me);
+        expect(rayValues(at, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 1, 0]);
+        const beyond = senseWorld();
+        const you = addAgent(beyond, 500, 500, 20);
+        obstacle(beyond, 0, 500 + VISION + 41, 500, 40);
+        obstacle(beyond, 1, 5000, 5000, 10);
+        cast(beyond, you);
+        expect(rayValues(beyond, you, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it('sees the nearer of two listed obstacles and an obstacle the agent stands inside', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        obstacle(w, 0, 700, 500, 50);
+        obstacle(w, 1, 600, 500, 30);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[0]).toBeCloseTo(1 - 70 / VISION, 6);
+        const inside = senseWorld();
+        const you = addAgent(inside, 500, 500, 20);
+        obstacle(inside, 0, 510, 500, 100);
+        obstacle(inside, 1, 5000, 5000, 10);
+        cast(inside, you);
+        expect(rayValues(inside, you, 0)).toEqual([1, 0, 0, 0, 0, 0, 0, 1, 0]);
+    });
+});
+
 describe('castRays range boundary', () => {
     it('sees a hit at exactly the vision range with proximity 0', () => {
         const w = senseWorld();

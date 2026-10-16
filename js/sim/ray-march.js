@@ -33,6 +33,10 @@ const STEP_Y = 15;
 /** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
 export const COS_H = 16;
 export const SIN_H = 17;
+const NEAR_COUNT = 18;
+
+/** Squared-distance slack in `listNearObstacles`, far above rounding error. */
+const NEAR_SLACK = 1.000001;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;
@@ -89,12 +93,35 @@ function rayCircle(s, cx, cy, r) {
 }
 
 /**
+ * Lists, in ascending index, the obstacles a ray from the agent could hit within its range: those whose surface lies
+ * within `RANGE` of the origin. An obstacle further out is rejected by `consider` for every ray anyway, so testing only
+ * the listed ones gives the same hits. The slack makes rounding keep an obstacle rather than drop one.
+ * @param {World} world the world
+ * @returns {void}
+ */
+function listNearObstacles(world) {
+    const { obsX, obsY, obsRadius, nearObstacles, rayScratch: s } = world;
+    let count = 0;
+    for (let i = 0; i < obsX.length; i++) {
+        const dx = obsX[i] - s[OX];
+        const dy = obsY[i] - s[OY];
+        const reach = s[RANGE] + obsRadius[i];
+        if (dx * dx + dy * dy <= reach * reach * NEAR_SLACK) {
+            nearObstacles[count++] = i;
+        }
+    }
+    s[NEAR_COUNT] = count;
+}
+
+/**
  * @param {World} world the world
  * @returns {void}
  */
 function testObstacles(world) {
-    const { obsX, obsY, obsRadius, rayScratch: s } = world;
-    for (let i = 0; i < obsX.length; i++) {
+    const { obsX, obsY, obsRadius, nearObstacles, rayScratch: s } = world;
+    const count = s[NEAR_COUNT];
+    for (let n = 0; n < count; n++) {
+        const i = nearObstacles[n];
         consider(s, rayCircle(s, obsX[i], obsY[i], obsRadius[i]), OBSTACLE, i);
     }
 }
@@ -324,6 +351,7 @@ export function castRays(world, hash, slot) {
     s[RANGE] = world.visionBySpec[world.spec[slot]];
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
+    listNearObstacles(world);
     for (let k = 0; k < world.config.rayCount; k++) {
         castRay(world, hash, slot, k);
     }
