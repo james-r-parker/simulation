@@ -17,7 +17,7 @@ it.
   elites and challengers.
 - The live policy keeps natural births. The archive seeds the initial agents and every immigrant, so archived
   behaviours keep re-entering the world as new lineages.
-- It replaces the legacy defects recorded in [legacy-audit.md](legacy-audit.md) under NN-5, NN-9, FIT-1 to FIT-7 and SEL-1 to SEL-5.
+- It replaces the legacy defects recorded in [legacy-audit.md](legacy-audit.md) under NN-5, NN-9, FIT-1 to FIT-8 and SEL-1 to SEL-5.
 
 ## Modules
 

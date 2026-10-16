@@ -177,15 +177,15 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 `initialFood` 60, 4 obstacles, `minAgents` 0), by calling `step` with `overrides.brain` set to the controller writing
 `world.outputs`. Controller randomness draws from a forked `scripted` stream.
 
-| Controller          | Behaviour                                                                        |
-| ------------------- | -------------------------------------------------------------------------------- |
-| `foodSeeker`        | Turns towards the nearest food ray hit and thrusts                               |
-| `spinner`           | Full turn, half thrust, never steers                                             |
-| `wanderer`          | Thrust with a random slow turn; turns away from food                             |
-| `bumper`            | Turns towards the nearest agent ray hit and thrusts                              |
-| `sitter`            | No thrust, no turn                                                               |
-| `explorerAfterMeal` | Seeks food until it has eaten 500, then thrusts straight and turns only at walls |
-| `biteSeeker`        | A non-hunter that steers towards the nearest bigger agent ray hit                |
+| Controller          | Behaviour                                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `foodSeeker`        | Turns towards the nearest food ray hit and thrusts                                                   |
+| `spinner`           | Full turn, half thrust, never steers                                                                 |
+| `wanderer`          | Thrust with a random slow turn; turns away from food                                                 |
+| `bumper`            | Turns towards the nearest agent ray hit and thrusts                                                  |
+| `sitter`            | No thrust, no turn                                                                                   |
+| `explorerAfterMeal` | Seeks food until it has eaten 140 (two average items), then thrusts straight and turns only at walls |
+| `biteSeeker`        | A non-hunter that steers towards the nearest bigger agent ray hit                                    |
 
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness is at most half the `foodSeeker`'s. Against `fitnessV5` the exploiters that exceed that bound are marked
