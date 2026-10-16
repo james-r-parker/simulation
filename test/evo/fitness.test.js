@@ -62,11 +62,11 @@ describe('fitnessV1 terms', () => {
         expect(score('scout', { children: 3 })).toBe(900);
     });
 
-    it('pays 0.5 per tick alive, capped at 30000 ticks and at the food energy eaten', () => {
+    it('pays 0.5 per tick alive, capped at 30000 ticks, only once 500 food energy is eaten', () => {
         expect(score('scout', { ageTicks: 1000 })).toBe(0);
-        expect(score('scout', { ageTicks: 1000, foodEnergy: 200 })).toBeCloseTo(200 + 200, 9);
-        expect(score('scout', { ageTicks: 300, foodEnergy: 400 })).toBeCloseTo(400 + 150, 9);
-        expect(score('scout', { ageTicks: 90000, foodEnergy: 20000 })).toBeCloseTo(20000 + 15000 + 2 * 0, 0);
+        expect(score('scout', { ageTicks: 1000, foodEnergy: 499 })).toBe(499);
+        expect(score('scout', { ageTicks: 1000, foodEnergy: 500 })).toBeCloseTo(500 + 500, 9);
+        expect(score('scout', { ageTicks: 90000, foodEnergy: 500 })).toBeCloseTo(500 + 15000, 9);
     });
 
     it('adds no spec term below 500 food energy, and pays it at 500', () => {
