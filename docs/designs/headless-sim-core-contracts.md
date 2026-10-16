@@ -81,7 +81,7 @@ The core needs these beyond the design doc's Config table. All are "new" in Sour
 | `restitution`             | `0.5`   | Elasticity of agent-agent impulses                                              |
 | `splitCooldownMultiplier` | `1.5`   | The split cooldown factor                                                       |
 | `mateChanceScale`         | `1.5`   | Mating chance is `min(1, reproductionBonus / mateChanceScale)`                  |
-| `foodTargetPerAgent`      | `1.5`   | Food target `min(maxFood, max(foodTargetMin, foodTargetPerAgent x population))` |
+| `foodTargetPerAgent`      | `8`     | Food target `min(maxFood, max(foodTargetMin, foodTargetPerAgent x population))` |
 | `foodTargetMin`           | `50`    | As above                                                                        |
 | `foodRefillBoost`         | `4`     | `b = 1 + foodRefillBoost x (1 - food / target)` below target                    |
 | `foodSurplusRate`         | `0.2`   | `b` at or above target                                                          |
@@ -198,7 +198,7 @@ Unused fields are 0.
   returns what the giver lost, and sets `world.transferGained` (not hashed) to what the receiver stored; the caller
   sets `lastLoss` and `lastBiter` for a bite and adds `transferGained` to the biter's `biteEnergy`. The giver loses
   `t = min(amount, giver energy)`, the receiver gains `min(t, maxEnergy - receiver energy)`, and any remainder goes to
-  `ledger[1]`. Bites, `childEnergy` and split halves are transfers.
+  `ledger[1]`. Bites, child gifts (`energy x childEnergyShare`) and split halves are transfers.
 - The agent arrays `foodEnergy` and `biteEnergy` accumulate the amounts actually stored: the feeding code adds
   `addEnergy`'s return value and `transferGained`.
 - Food the eater cannot hold is left out of the ledger: food energy only enters the ledger once an agent stores it.
@@ -365,13 +365,19 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 
 ### Mating and births
 
-- Mating checks run over the contact list in list order. A pair that mated this tick is not checked again.
-- The mating draw is one `lifecycle` `nextFloat`, drawn only for pairs that pass every other condition.
+- `mate` walks alive slots `a` in ascending order. For each `a` that is ready (`readyToMate`), `findMate` scans the
+  hash cells covered by `size[a] + mateRange` in row-major order, entries in entry order, and takes the first `b > a`
+  whose edge-to-edge gap is below `mateRange` (0 is the contact test of `resolvePair`), which passes `canMatePair`
+  and wins the draw. A `b` is taken only in the first scanned cell that contains it. The lower slot is the mother.
+  The hash is the one built in the `physics` phase, so a body pushed across a cell edge by `resolveContacts` can be
+  missed for a tick.
+- The mating draw is one `lifecycle` `nextFloat`, drawn only for pairs that pass every other condition. Readiness is
+  re-checked for every `a` and `b`, so no agent is in two matings in one tick.
 - Each pays `mateCost` with `removeEnergy` (cause `cost`) and sets `cooldown` to
   `reproductionCooldown x cooldownMultiplier` rounded down. The lower slot copies the other's `weights` row into
   `fatherWeights` and sets `fatherId`, `fatherLineage` and `pregnancy = pregnancyTicks`; then `policy.onMate`.
-- A birth needs `population < maxAgents` (else `BirthBlocked` `capacity`) and mother energy above `childEnergy`
-  (else `energy`). The child takes `childEnergy` by transfer, `parentA` is the mother's `genomeId`, `parentB`
+- A birth needs `population < maxAgents` (else `BirthBlocked` `capacity`) and a gift `energy[mother] x childEnergyShare`
+  of at least `childEnergyMin` (else `energy`). The child takes the gift by transfer, `parentA` is the mother's `genomeId`, `parentB`
   `fatherId`, `lineageId` the mother's.
 - A split needs a free slot (else `BirthBlocked` `capacity`); the child takes `energy / 2` by transfer, both parents
   are the splitter, and the cooldown is `reproductionCooldown x cooldownMultiplier x splitCooldownMultiplier`
@@ -467,12 +473,14 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 - A blocked split starts no cooldown, so `BirthBlocked` repeats each tick while the world is full.
 - `fatherWeights`, `fatherId` and `fatherLineage` keep their values after a birth; only the next mating overwrites
   them.
-- `isReadyToMate(world, slot)` in `reproduction.js` (mature, not pregnant, cooldown 0, energy above
-  `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0.
+- `isReadyToMate(world, slot)` in `mate-eligibility.js` (mature, not pregnant, cooldown 0, energy above
+  `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0. `canMatePair`
+  adds the pair conditions, including that the lower slot holds more than `childEnergyMin / childEnergyShare`.
 - `actAll` adds thrust along the heading as computed in double precision before it is stored in the `Float32Array`;
   sensing later reads the stored float32 `angle`.
-- Mating does not mark a pair as done: pregnancy and the cooldown stop an agent mating twice in one tick, so a
-  config with `reproductionCooldown` 0 lets a father mate again with another partner in the same tick.
+- Mating does not mark a pair as done: pregnancy and the cooldown, re-checked by `readyToMate` for every `a` and `b`,
+  stop an agent mating twice in one tick, so a config with `reproductionCooldown` 0 lets a father mate again with
+  another partner in the same tick.
 - `specParams(config, index)` in `spec-params.js` looks a specialisation up by index in fixed name order.
 - Snapshot sections are packed back to back: food starts right after the last alive agent and obstacles right after
   the last food. The buffer from `snapshotLayout` is sized for `maxAgents`, `maxFood` and `obstacleCount`; the
