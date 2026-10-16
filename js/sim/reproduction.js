@@ -1,9 +1,9 @@
 // Mating, pregnancies, splits and child placement.
 
-import { OUTPUT_COUNT } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { canMatePair } from './mate-eligibility.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { TIMER_CAP, allocAgent } from './world.js';
@@ -19,46 +19,6 @@ import { TIMER_CAP, allocAgent } from './world.js';
 
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
-const MATE_OUT = 3;
-
-/**
- * @param {World} world the world
- * @param {number} slot an alive agent
- * @returns {boolean} true when mature, not pregnant, off cooldown and above `mateMinEnergy`
- */
-export function isReadyToMate(world, slot) {
-    const { maturityTicks, mateMinEnergy } = world.config;
-    return (
-        world.ageTicks[slot] >= maturityTicks &&
-        world.pregnancy[slot] === 0 &&
-        world.cooldown[slot] === 0 &&
-        world.energy[slot] > mateMinEnergy
-    );
-}
-
-/**
- * @param {World} world the world
- * @param {number} slot an alive agent
- * @returns {boolean} true when ready to mate and the brain wants to
- */
-function readyToMate(world, slot) {
-    return isReadyToMate(world, slot) && world.outputs[slot * OUTPUT_COUNT + MATE_OUT] > 0;
-}
-
-/**
- * @param {World} world the world
- * @param {number} a an agent slot
- * @param {number} b another agent slot
- * @returns {boolean} true when both are ready, share a specialisation and their sizes are within `huntSizeRatio`
- */
-function canMatePair(world, a, b) {
-    if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
-        return false;
-    }
-    const ratio = world.size[a] / world.size[b];
-    const limit = world.config.huntSizeRatio;
-    return ratio <= limit && ratio >= 1 / limit;
-}
 
 /**
  * @param {World} world the world
