@@ -1,8 +1,9 @@
-// Writes an agent's fifteen body inputs after its ray block.
+// Writes an agent's nineteen body inputs after its ray block.
 
 import { detCos, detSin } from './det-math.js';
 import { isReadyToMate } from './mate-eligibility.js';
 import { samplePheromone } from './pheromones.js';
+import { temperatureInputs } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -10,7 +11,7 @@ import { TIMER_CAP } from './world.js';
 const SPEC_DIVISOR = 4;
 
 /**
- * Writes body inputs 1 to 15 at `rayCount x 8` into the agent's inputs row.
+ * Writes body inputs 1 to 19 at `rayCount x 8` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @returns {void}
@@ -41,4 +42,5 @@ export function writeBodyInputs(world, slot) {
     out[o + 12] = 1 - world.bittenTimer[slot] / TIMER_CAP;
     out[o + 13] = world.spec[slot] / SPEC_DIVISOR;
     out[o + 14] = world.ageTicks[slot] / maxAgeTicks;
+    temperatureInputs(world.config, world.temperature[slot], out, o + 15);
 }
