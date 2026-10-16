@@ -29,3 +29,15 @@ describe('policies', () => {
         expect(() => getPolicy('toString')).toThrow(/Unknown policy/);
     });
 });
+
+describe('map-elites-v1q', () => {
+    it('is map-elites-v1 under its own name with the four-draw parent tournament', async () => {
+        const { createConfig } = await import('../../../js/sim/config.js');
+        const { QUALITY_CELL_DRAWS } = await import('../../../js/evo/policies/index.js');
+        const config = createConfig({ maxAgents: 20, initialAgents: 10, minAgents: 5 });
+        const policy = getPolicy('map-elites-v1q').create({ config, log: { log() {} } });
+        expect(policy.name).toBe('map-elites-v1q');
+        expect(policy.archive).toBeDefined();
+        expect(QUALITY_CELL_DRAWS).toBe(4);
+    });
+});
