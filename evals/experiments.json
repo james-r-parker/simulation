@@ -46,7 +46,7 @@
         "eval.qd_score": "-"
       },
       "effect": "no-difference",
-      "note": "Calibration: seeds 1-8 against seeds 9-16 (--seed-offset 8), compared with --allow-seed-diff (paired by position). All five Targets no-difference. One non-Target false positive: eval.p90_fitness.scout worse (-237, interval [-538, -40]), the expected rate across 21 compared metrics."
+      "note": "Calibration: seeds 1-8 against seeds 9-16 (--seed-offset 8), compared with --allow-seed-diff (paired by position). All five Targets no-difference. One non-Target false positive: eval.p90_fitness.scout worse (-237, interval [-538, -40]), the expected rate across 18 metrics given a verdict."
     }
   ]
 }

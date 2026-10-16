@@ -78,9 +78,15 @@ if [[ -d public ]]; then
   done < <(git ls-files --cached --others --exclude-standard -- 'public/*.js')
 fi
 
+# Captured rather than piped, so a crash (no output, non-zero exit) still fails the gate.
+experiments_out="$(node scripts/check-experiments.mjs 2>&1)"
+experiments_status=$?
 while IFS= read -r line; do
-  fail "$line"
-done < <(node scripts/check-experiments.mjs)
+  [[ -n "$line" ]] && fail "$line"
+done <<<"$experiments_out"
+if ((experiments_status != 0)) && [[ -z "$experiments_out" ]]; then
+  fail "experiments: scripts/check-experiments.mjs exited $experiments_status with no output"
+fi
 
 while IFS= read -r file; do
   [[ -f "$file" ]] || continue
