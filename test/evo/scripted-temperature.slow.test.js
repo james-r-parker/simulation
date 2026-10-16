@@ -64,9 +64,12 @@ describe('body temperature cold band', () => {
             const brain = createBaselineV5().brain;
             const world = createWorld(config, brain);
             const run = SCRIPTED_CONTROLLERS.foodSeeker({ world, rng: fork(createRng(1), 'scripted') });
+            /** @type {Map<number, number>} slot to the genome that started cold there */
+            const starters = new Map();
             for (let slot = 0; slot < world.alive.length; slot++) {
                 if (world.alive[slot]) {
                     world.temperature[slot] = COLD_START;
+                    starters.set(slot, world.genomeId[slot]);
                 }
             }
             const ate = new Set();
@@ -74,7 +77,7 @@ describe('body temperature cold band', () => {
             for (let t = 0; t < COLD_TICKS && !recovered; t++) {
                 step(world, brain, { brain: run });
                 for (let slot = 0; slot < world.alive.length; slot++) {
-                    if (!world.alive[slot]) {
+                    if (!world.alive[slot] || starters.get(slot) !== world.genomeId[slot]) {
                         continue;
                     }
                     if (world.foodEnergy[slot] > 0) {
