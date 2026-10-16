@@ -30,7 +30,7 @@ scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or th
 4. **Measurements attached:** if the phase has `**Targets:**`, run the comparison for each target and keep the
    output for the PR body: `npm run bench` against `bench/baseline.json` for `bench.*`, `node
 scripts/browser-perf.mjs` against `bench/legacy-baseline.json` for `browser.*`, and `npm run eval:compare` for
-   `eval.*` (the `run-evolution-loop` skill, at least 8 seeds). A target that moved the wrong way blocks the PR.
+   `eval.*` (the `run-evolution-loop` skill, at least 16 seeds). A target that moved the wrong way blocks the PR.
    These commands arrive with `headless-sim-core.md`, `evolution-evals.md` and `dev-workflow-and-gate.md` Phase 2;
    before then, a phase with Targets cannot be marked built.
 5. **Docs in sync:** if the change touched config keys, npm scripts, gate commands, log events or behaviour
