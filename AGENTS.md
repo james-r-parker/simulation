@@ -50,13 +50,14 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Measure the legacy app's frame times in Chrome   | `npm run perf:browser` (`-- --cdp=http://127.0.0.1:9222` for Windows Chrome on the GPU; writes `bench/legacy-baseline.json`)                                                                                                                      |
 | Replay a world and log its events                | `npm run replay -- --seed <n> --ticks <n>` (`--config <file.json>`, `--dump <tick>`, `--level debug`, `--check-invariants`, `--policy <name>`, `--follow <genomeId>`); logs go to `.sim/logs/<runId>.jsonl`                                       |
 | Evaluate a policy on fixed seeds                 | `npm run eval -- --seeds <n> --ticks <t> --policy <name>` (`--seed-offset <k>`, `--config <file.json>`, `--out <path>`, `--workers <n>`; seeds come from `evals/seeds.json`; reports go to `evals/results/`, logs to `.sim/logs/eval-<id>.jsonl`) |
+| Compare two eval reports                         | `npm run eval:compare -- <before.json> <after.json>` (`--targets <m,...>`, `--fail-on-worse`, `--allow-config-diff <key,...>`, `--allow-seed-diff`, `--json`; BCa intervals on per-seed differences; exits 2 on a refusal)                        |
 | Telemetry dashboard (Aspire)                     | `bash -lic 'npm run aspire:dashboard'`, then run with `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`; UI at http://127.0.0.1:18888                                                                                                           |
 | Tests                                            | `npm test`; one file: `npx vitest run <file>`; one test: `npx vitest run -t '<name>'`                                                                                                                                                             |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                                                                                                                          |
 | Production build / deploy                        | `npm run build`; `npm run deploy` (Cloudflare Pages) - deploy only when the user asks                                                                                                                                                             |
 
-Commands that arrive with planned design docs: `npm run eval:compare` and `npm run train`. The docs
-that add them say how they work.
+Commands that arrive with planned design docs: `npm run train`. The doc
+that adds it says how it works.
 
 ## Build order
 
