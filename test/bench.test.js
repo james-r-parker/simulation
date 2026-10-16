@@ -3,7 +3,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { compareStep, main } from '../scripts/bench-check.mjs';
-import { benchSize, formatLines, formatMetrics, median, parseArgs, recordMetrics } from '../scripts/bench.mjs';
+import {
+    benchSize,
+    formatLines,
+    formatMetrics,
+    main as benchMain,
+    median,
+    parseArgs,
+    recordMetrics,
+} from '../scripts/bench.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the three sizes, text output', () => {
@@ -12,6 +20,16 @@ describe('parseArgs', () => {
 
     it('reads --sizes and --json', () => {
         expect(parseArgs(['--json', '--sizes=500'])).toEqual({ sizes: [500], json: true });
+    });
+
+    it('reads --policy as a separate or joined value', () => {
+        expect(parseArgs(['--policy', 'natural-v1'])).toMatchObject({ policy: 'natural-v1' });
+        expect(parseArgs(['--policy=baseline-v5']).policy).toBe('baseline-v5');
+    });
+
+    it('rejects an unknown or missing policy with the known names and usage', () => {
+        expect(() => parseArgs(['--policy', 'nope'])).toThrow(/Unknown policy "nope"; known: .*\nusage: bench/);
+        expect(() => parseArgs(['--policy'])).toThrow('--policy needs');
     });
 
     it('rejects a bad size and an unknown flag', () => {
@@ -44,6 +62,23 @@ describe('benchSize', () => {
         const metrics = benchSize(8);
         expect(metrics['bench.step_ms@8']).toBeGreaterThan(0);
         expect(Object.keys(metrics)).toContain('bench.phase_ms.brain@8');
+    }, 60000);
+
+    it('benches a named policy with its hooks', () => {
+        const metrics = benchSize(8, 'natural-v1');
+        expect(metrics['bench.step_ms@8']).toBeGreaterThan(0);
+    }, 60000);
+});
+
+describe('main', () => {
+    it('reports the policy that ran', async () => {
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            await benchMain(['--sizes=8', '--json', '--policy', 'natural-v1']);
+            expect(JSON.parse(log.mock.calls[0][0])).toMatchObject({ policy: 'natural-v1' });
+        } finally {
+            log.mockRestore();
+        }
     }, 60000);
 });
 
