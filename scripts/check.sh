@@ -4,7 +4,9 @@
 # Usage:
 #   scripts/check.sh           # check everything
 #   scripts/check.sh --fix     # apply Prettier and regenerate the design index first
-#   scripts/check.sh --ci      # what CI runs (JUnit test results in TestResults/)
+#   scripts/check.sh --ci      # what CI runs (JUnit test results in TestResults/); the test gate runs only the fast tests
+#                              # (TEST_SCOPE=fast: no *.slow.test.js files) and the coverage ratchet is skipped
+#   scripts/check.sh --ci --full   # CI with every test and the ratchet (what the nightly runs)
 #   scripts/check.sh --only=conventions,format     # a subset of gates
 #   scripts/check.sh --docs    # a docs-only change (scripts/change-scope.sh): conventions, designs-index, format and
 #                              # the design-doc tests; combines with --fix and --ci
@@ -22,6 +24,7 @@ cd "$ROOT"
 
 FIX=0
 CI=0
+FULL=0
 DOCS=0
 QUIET=0
 ONLY=""
@@ -40,10 +43,11 @@ while [[ $i -lt ${#args[@]} ]]; do
     --list) LIST=1 ;;
     --fix) FIX=1 ;;
     --ci) CI=1 ;;
+    --full) FULL=1 ;;
     --docs) DOCS=1 ;;
     --quiet) QUIET=1 ;;
     --only=*) ONLY="${arg#--only=}" ;;
-    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -241,7 +245,9 @@ gate_dupes() {
 }
 # gate_ratchet: coverage and quality numbers may not fall (scripts/quality-ratchet.mjs).
 gate_ratchet() {
-  if [[ $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
+  if [[ $FAST_TESTS -eq 1 ]]; then
+    skip_gate ratchet "coverage is measured on the full suite locally and in the nightly run"
+  elif [[ $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
     run_gate ratchet node scripts/quality-ratchet.mjs --check
   else
     skip_gate ratchet "needs a passing test gate in the same run"
@@ -355,12 +361,18 @@ tracked() { [[ -n "$(git ls-files --cached --others --exclude-standard -- "$@" |
 # VITEST_BIN swaps the runner (the tests of this script use it to avoid running vitest inside vitest).
 seeded_tests() {
   echo "test order seed: $1"
-  run_tests junit.xml --coverage --sequence.shuffle --sequence.seed="$1"
+  if [[ $FAST_TESTS -eq 1 ]]; then
+    echo "test scope: fast (the *.slow.test.js files are left out; no coverage)"
+    TEST_SCOPE=fast run_tests junit.xml --sequence.shuffle --sequence.seed="$1"
+  else
+    run_tests junit.xml --coverage --sequence.shuffle --sequence.seed="$1"
+  fi
 }
 run_test_gate() {
   wanted test || return 0
   local seed="${TEST_SEED:-$RANDOM}"
   GATE_LABEL="test (seed $seed)"
+  [[ $FAST_TESTS -eq 1 ]] && GATE_LABEL="test (fast, seed $seed)"
   TEST_RAN=1
   run_gate test seeded_tests "$seed"
   GATE_LABEL=""
@@ -368,6 +380,9 @@ run_test_gate() {
   return 0
 }
 
+# CI runs the fast tests only; --full (the nightly) and every local run run them all, with coverage.
+FAST_TESTS=0
+[[ $CI -eq 1 && $FULL -eq 0 ]] && FAST_TESTS=1
 TEST_RAN=0
 TEST_OK=0
 FAILED_BEFORE_TEST=$FAILED
@@ -381,7 +396,7 @@ else
 fi
 
 # Under --fix, a passing test gate raises the coverage baselines (never lowers them).
-if [[ $FIX -eq 1 && $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
+if [[ $FIX -eq 1 && $FAST_TESTS -eq 0 && $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
   node scripts/quality-ratchet.mjs --write
 fi
 

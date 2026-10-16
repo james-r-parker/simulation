@@ -12,6 +12,9 @@ tier below it.
 | 2    | Every PR in CI; the default  | The full gate, plus layering, duplication and coverage | The CI job's 15-minute timeout |
 | 3    | Nightly in CI, and on demand | Mutation testing and main-vs-branch benchmarks         | 60 minutes                     |
 
+Tier 2 runs the whole test suite when run locally. In CI (`--ci`) the `test` gate runs only the fast tests, so the
+`check` job stays quick on a small runner; see [Fast tests in CI](#fast-tests-in-ci).
+
 ## Tiers
 
 | Gate            | Tier | Runs                                                                                                        |
@@ -39,6 +42,8 @@ tier below it.
   `skipped` in tiers 2 and 3, which run the full `test` gate, and `ratchet` reports `skipped` unless a passing `test`
   gate ran in the same run.
 - A `TEST_SEED` that is not a non-negative integer exits 2.
+- `--ci` runs the fast tests in the `test` gate and skips `ratchet`; `--full` (with `--ci`) keeps every test and the
+  ratchet. Without `--ci`, every run is full.
 - [headless-sim-core.md](headless-sim-core.md) adds `bench-check` and [evolution-evals.md](evolution-evals.md) adds `eval-smoke` to tier 2;
   [improvement-loop.md](improvement-loop.md) adds the `nightly-eval` and `history` jobs beside tier 3 in `nightly.yml`.
 
@@ -91,6 +96,30 @@ Only the `test` gate passes `--coverage`; `test-related` and `docs-tests` run un
 Under `--fix`, `scripts/check.sh` applies Prettier and regenerates the index first, as before, then runs
 `quality-ratchet.mjs --write` straight after a passing `test` gate. When `test` fails or is not selected, the write
 is skipped.
+
+## Fast tests in CI
+
+Tests that run real worlds for many ticks, a worker pool, a full eval, a bench or a child process are slow: on a
+two-core runner with coverage they made the `test` gate take about 285 s. They live in `*.slow.test.js` files:
+
+- A module with both kinds keeps its fast cases in the mirrored `<module>.test.js` that `conventions` requires, and
+  its slow cases, moved unchanged, in `<module>.slow.test.js` beside it (`test/eval-runner.slow.test.js`,
+  `test/replay.slow.test.js`, `test/league.slow.test.js`, `test/bench.slow.test.js`, `test/bench-policy.slow.test.js`,
+  `test/otel.slow.test.js`, `test/evo/policies/map-elites-v1.slow.test.js` and `natural-v1.slow.test.js`).
+- A suite with no single mirrored module is slow as a whole: `test/sim/golden.slow.test.js`,
+  `test/sim/step-alloc.slow.test.js` and `test/evo/anti-exploit.slow.test.js`.
+- New slow tests go in a `.slow.test.js` file; a test that takes more than about half a second on the dev machine is
+  a candidate. The fast tests still cover every module's behaviour at unit level.
+
+`vitest.config.js` reads `TEST_SCOPE`. Unset, `npx vitest run` and `npm test` run every file. `TEST_SCOPE=fast` adds
+`**/*.slow.test.js` to `exclude`. `scripts/check.sh --ci` sets it for the `test` gate, drops `--coverage` (the fast
+subset's coverage is not comparable to the baselines) and labels the gate `test (fast, seed <n>)`. The `ratchet` gate
+then reports `skipped (coverage is measured on the full suite locally and in the nightly run)`, and `--fix` does not
+write baselines after a fast run.
+
+Every other run is full: `scripts/check.sh` locally (the `create-pr` skill runs `scripts/check.sh --fix` before every
+push, so the whole suite and the ratchet pass before each PR), and the nightly workflow, which passes `--ci --full`.
+A slow test that breaks therefore shows up in the pre-push check or the next nightly run, not in the PR's CI job.
 
 ## Test order
 
@@ -170,7 +199,7 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
 
 - **Nightly.** `.github/workflows/nightly.yml` runs at 03:00 UTC and on `workflow_dispatch` with a `ref` input. Its
   job, `nightly`, runs on `ubuntu-latest` with `timeout-minutes: 60`, checks out with `fetch-depth: 0`, installs
-  Node 24 through `actions/setup-node`, runs `scripts/check.sh --ci --tier 3`, and uploads `.checklogs/`, `reports/`
+  Node 24 through `actions/setup-node`, runs `scripts/check.sh --ci --full --tier 3` (every test and the ratchet), and uploads `.checklogs/`, `reports/`
   and `TestResults/` as the `nightly-reports` artifact.
 
 ## Delivery requirements

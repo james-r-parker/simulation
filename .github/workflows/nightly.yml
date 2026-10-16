@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Tier 3: every PR gate plus mutation testing and the main-versus-branch benchmark comparison
+  # Tier 3 with every test and the coverage ratchet (--full; the check job runs the fast tests only): every PR gate plus mutation testing and the main-versus-branch benchmark comparison
   # (docs/designs/quality-gates-and-test-tiers.md).
   nightly:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
         run: npm ci
 
       - name: Tier 3 gate
-        run: scripts/check.sh --ci --tier 3
+        run: scripts/check.sh --ci --full --tier 3
 
       - name: Upload reports
         if: always()

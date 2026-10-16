@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
     test: {
         include: ['test/sim/**/*.test.js', 'test/evo/**/*.test.js'],
-        exclude: ['test/sim/golden.test.js', 'test/sim/step-alloc.test.js'],
+        exclude: ['test/sim/golden.slow.test.js', 'test/sim/step-alloc.slow.test.js'],
         environment: 'node',
     },
 });

@@ -28,7 +28,7 @@ asks", for exactly these actions. `AGENTS.md` Hard rules lists them as the one e
 - No actor pushes to a branch it did not create, edits `main`, merges, closes a PR or issue it did not open,
   force-pushes or deletes a branch.
 - A re-rank never moves a doc whose `**Priority:**` reason starts with `pinned`.
-- Experiment PRs change only `js/evo/`, `js/sim/config-defaults.js` with `test/sim/golden.test.js`, and `evals/`.
+- Experiment PRs change only `js/evo/`, `js/sim/config-defaults.js` with `test/sim/golden.slow.test.js`, and `evals/`.
 
 The guard is a repository ruleset on `main`: changes only through pull requests, no bypass for GitHub Actions or
 apps, force-push and deletion blocked. The workflows' `GITHUB_TOKEN` cannot be scoped to one branch, so the ruleset,

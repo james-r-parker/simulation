@@ -32,10 +32,11 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Install                                          | `npm ci`                                                                                                                                                                                                                                          |
 | Run the app                                      | `npm run dev` (Vite, http://localhost:5173)                                                                                                                                                                                                       |
-| Full local gate (tier 2, what a PR needs)        | `scripts/check.sh` (conventions, designs-index, format, lint, typecheck, deps, dupes, test with coverage, ratchet, bench-check, build, eval-smoke)                                                                                                |
+| Full local gate (tier 2, what a PR needs)        | `scripts/check.sh` (every test, including `*.slow.test.js`; conventions, designs-index, format, lint, typecheck, deps, dupes, test with coverage, ratchet, bench-check, build, eval-smoke)                                                        |
 | Apply Prettier, regenerate the index, then check | `scripts/check.sh --fix`                                                                                                                                                                                                                          |
 | What CI runs                                     | `scripts/check.sh --ci`                                                                                                                                                                                                                           |
 | Docs-only change                                 | `scripts/check.sh --fix --docs` (conventions, designs-index, format, design-doc tests; what CI runs when `scripts/change-scope.sh` says `docs`)                                                                                                   |
+| Only the fast tests (no `*.slow.test.js`)        | `TEST_SCOPE=fast npx vitest run`                                                                                                                                                                                                                  |
 | Only failures and the summary                    | `scripts/check.sh --quiet`                                                                                                                                                                                                                        |
 | A subset of gates                                | `scripts/check.sh --only=lint,typecheck`                                                                                                                                                                                                          |
 | The pre-commit checks on the staged files        | `scripts/check.sh --tier 1` (the `.githooks/pre-commit` hook; `npm ci` turns it on through `prepare`)                                                                                                                                             |
@@ -135,6 +136,10 @@ New code is small modules that each do one job and are tested on their own.
 | Parameters per function            | 4 - pass an options object beyond that                                                 | `lint` (`max-params`)             |
 | Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`                               | `conventions`                     |
 | Legacy files                       | Only shrink; no new files beside them (`scripts/quality-baseline.json`, `legacyLines`) | `conventions`                     |
+
+A test that runs a real world for many ticks, a worker pool or a full eval (about 0.5 s or more) goes in
+`<module>.slow.test.js` beside the mirrored test; CI runs only the fast tests, every local run runs all
+(`docs/designs/quality-gates-and-test-tiers.md`).
 
 A limit is a signal to split, never a target to pad up to. Do not silence a limit with `eslint-disable`; split the
 module or function instead. When a legacy file shrinks, lower its budget (`legacyLines` in `scripts/quality-baseline.json`) in the same
