@@ -13,6 +13,9 @@ export const RAY_SCRATCH = 18;
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
 
+/** Elements of the per-world call scratch row: the calling slot, the `heard` offset and the call's strength. */
+export const CALL_SCRATCH = 3;
+
 const PI = 3.141592653589793;
 const BYTE_PAIR = 0x0102;
 
@@ -204,6 +207,7 @@ export function allocateWorld(config) {
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
         rayScratch: new Float64Array(RAY_SCRATCH),
+        callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(config.brainHidden),
     };
     allocAgentArrays(world, layout);
