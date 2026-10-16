@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LOSS_CAUSE } from '../../js/sim/energy.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { LOSS_CAUSE, applyCosts } from '../../js/sim/energy.js';
+import { feed } from '../../js/sim/feeding.js';
+import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { fillFloor, reap } from '../../js/sim/population.js';
 import { addBlob, imbalance, lifeWorld, recordingPolicy } from './helpers/life-world.js';
@@ -187,5 +190,35 @@ describe('reap event fields for a later slot', () => {
         expect(event(w, 0).slice(0, 5)).toEqual([EVENT_TYPE.AGENT_DIED, 3, s, id, DEATH_CAUSE.STARVED]);
         expect(w.alive[0]).toBe(1);
         expect(w.events.count).toBe(1);
+    });
+});
+
+describe('reap after a bite in the same tick', () => {
+    it.each([
+        ['leaves a sliver of energy that the tick costs then remove', 5.0001],
+        ['takes all the energy', 3],
+    ])('records eaten when the bite %s', (_n, victimEnergy) => {
+        const w = lifeWorld();
+        w.tick = 9;
+        const hunter = addBlob(w, { spec: 1, energy: 500, x: 100, y: 100, bittenTimer: 30, ateTimer: 30 });
+        const prey = addBlob(w, { spec: 0, energy: victimEnergy, x: 101, y: 100 });
+        w.size[hunter] = 20;
+        w.size[prey] = 5;
+        w.outputs[hunter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1;
+        w.contacts[0] = hunter;
+        w.contacts[1] = prey;
+        w.contactCount = 1;
+        const hash = createSpatialHash(w.config);
+        buildHash(hash, w);
+        const preyId = w.genomeId[prey];
+        feed(w, hash);
+        applyCosts(w);
+        reap(w, recordingPolicy([]));
+        expect(w.alive[prey]).toBe(0);
+        const died = Array.from({ length: w.events.count }, (_v, i) => event(w, i)).find(
+            (e) => e[0] === EVENT_TYPE.AGENT_DIED && e[3] === preyId,
+        );
+        expect(died?.[4]).toBe(DEATH_CAUSE.EATEN);
+        expect(died?.[5]).toBe(w.genomeId[hunter]);
     });
 });
