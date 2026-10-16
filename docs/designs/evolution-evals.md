@@ -164,7 +164,7 @@ a small validator for the schema subset it uses (`scripts/lib/json-schema-lite.m
 Experiment `E0` is the calibration: `baseline-v5` on seeds 1-8 against seeds 9-16 (`--seed-offset 8`), which must
 give no `better` or `worse` verdict on any metric named as a Target in any design doc. The second arm is
 `evals/baselines/baseline-v5-o8.json`. Recorded 2026-10-16: every Target `no-difference`; one non-Target false
-positive (`eval.p90_fitness.scout` `worse`), the expected rate across 21 compared metrics.
+positive (`eval.p90_fitness.scout` `worse`), the expected rate across 18 metrics given a verdict.
 
 The `eval-smoke` gate (tier 2) runs `npm run eval -- --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json`
 (`maxAgents` 150) into a temporary `--out` and fails on a worker error or a report that fails `validateReport`; it

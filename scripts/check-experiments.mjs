@@ -82,19 +82,28 @@ export function checkLedger(ledger, schema) {
 }
 
 /**
+ * @param {string | URL} path a JSON file
+ * @returns {{ value?: any, problem?: string }} the parsed value, or why it could not be read
+ */
+function readJson(path) {
+    try {
+        return { value: JSON.parse(readFileSync(path, 'utf8')) };
+    } catch (error) {
+        return { problem: `${String(path)}: ${error instanceof Error ? error.message : String(error)}` };
+    }
+}
+
+/**
  * Reads, validates and reports the ledger files.
  * @param {string | URL} ledgerPath the ledger file
  * @param {string | URL} schemaPath the schema file
  * @returns {string[]} the problems
  */
 export function checkFiles(ledgerPath = LEDGER, schemaPath = SCHEMA) {
-    let ledger;
-    try {
-        ledger = JSON.parse(readFileSync(ledgerPath, 'utf8'));
-    } catch (error) {
-        return [`${String(ledgerPath)}: ${error instanceof Error ? error.message : String(error)}`];
-    }
-    return checkLedger(ledger, JSON.parse(readFileSync(schemaPath, 'utf8')));
+    const ledger = readJson(ledgerPath);
+    const schema = readJson(schemaPath);
+    const unreadable = [ledger, schema].flatMap((read) => (read.problem === undefined ? [] : [read.problem]));
+    return unreadable.length > 0 ? unreadable : checkLedger(ledger.value, schema.value);
 }
 
 /* v8 ignore start -- thin CLI; the exported functions are tested */

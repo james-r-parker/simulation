@@ -106,6 +106,9 @@ describe('the real ledger', () => {
 
     it('reports an unreadable file as a problem', () => {
         expect(checkFiles('/nonexistent/ledger.json')[0]).toContain('/nonexistent/ledger.json');
+        expect(checkFiles(undefined, '/nonexistent/schema.json')).toEqual([
+            expect.stringContaining('/nonexistent/schema.json'),
+        ]);
     });
 });
 
