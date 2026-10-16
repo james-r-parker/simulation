@@ -4,8 +4,10 @@
 // world and the event ring advance exactly as `step` advances them) and times each call.
 import { fileURLToPath } from 'node:url';
 import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
+import { getPolicy } from '../js/evo/policies/index.js';
 import { createConfig } from '../js/sim/config.js';
-import { clearEvents } from '../js/sim/events.js';
+import { clearEvents, EVENT_STRIDE, readEvents } from '../js/sim/events.js';
+import { createSimLog } from '../js/sim/log.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { STEP_PHASES, step } from '../js/sim/step.js';
 import { createMetrics } from './lib/otel.mjs';
@@ -14,29 +16,63 @@ const DEFAULT_SIZES = [100, 250, 500];
 const WARMUP_TICKS = 500;
 const MEASURED_TICKS = 2000;
 
+const USAGE = 'usage: bench [--json] [--sizes=100,250,500] [--policy <name>]';
+
+/**
+ * @param {string} arg a `--sizes=...` argument
+ * @returns {number[]} the sizes
+ * @throws {Error} when any size is not a positive integer
+ */
+function parseSizes(arg) {
+    const sizes = arg
+        .slice('--sizes='.length)
+        .split(',')
+        .map((part) => Number(part));
+    if (sizes.length === 0 || sizes.some((n) => !Number.isInteger(n) || n < 1)) {
+        throw new Error(`--sizes must be comma-separated positive integers, got: ${arg}`);
+    }
+    return sizes;
+}
+
+/**
+ * @param {string | undefined} name the policy name given to `--policy`
+ * @returns {string} the name
+ * @throws {Error} when it is missing or not a registered policy (the `getPolicy` error, plus usage)
+ */
+function parsePolicy(name) {
+    if (name === undefined || name === '') {
+        throw new Error(`--policy needs a policy name\n${USAGE}`);
+    }
+    try {
+        getPolicy(name);
+    } catch (error) {
+        throw new Error(`${error instanceof Error ? error.message : error}\n${USAGE}`, { cause: error });
+    }
+    return name;
+}
+
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{sizes: number[], json: boolean}} parsed options
+ * @returns {{sizes: number[], json: boolean, policy?: string}} parsed options; `policy` is set only with `--policy`
  */
 export function parseArgs(argv) {
-    let sizes = DEFAULT_SIZES;
-    let json = false;
-    for (const arg of argv) {
+    /** @type {{sizes: number[], json: boolean, policy?: string}} */
+    const opts = { sizes: DEFAULT_SIZES, json: false };
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
         if (arg === '--json') {
-            json = true;
+            opts.json = true;
         } else if (arg.startsWith('--sizes=')) {
-            sizes = arg
-                .slice('--sizes='.length)
-                .split(',')
-                .map((part) => Number(part));
-            if (sizes.length === 0 || sizes.some((n) => !Number.isInteger(n) || n < 1)) {
-                throw new Error(`--sizes must be comma-separated positive integers, got: ${arg}`);
-            }
+            opts.sizes = parseSizes(arg);
+        } else if (arg === '--policy') {
+            opts.policy = parsePolicy(argv[++i]);
+        } else if (arg.startsWith('--policy=')) {
+            opts.policy = parsePolicy(arg.slice('--policy='.length));
         } else {
-            throw new Error(`unknown argument: ${arg} (expected --json or --sizes=100,250,500)`);
+            throw new Error(`unknown argument: ${arg} (expected --json, --sizes=100,250,500 or --policy <name>)`);
         }
     }
-    return { sizes, json };
+    return opts;
 }
 
 /**
@@ -86,19 +122,49 @@ export function formatLines(metrics) {
 }
 
 /**
+ * Builds what the bench steps: the reference policy, or the named policy with its per-tick hooks.
+ * @param {Record<string, any>} config the world config
+ * @param {string | undefined} name a registered policy name, or undefined for the reference policy
+ * @returns {{brain: any, advance: (world: Record<string, any>) => void}} the brain and one timed tick
+ */
+function createSubject(config, name) {
+    if (name === undefined) {
+        const brain = cloneWithNoisePolicy();
+        return { brain, advance: (world) => step(world, brain) };
+    }
+    const log = createSimLog(() => {}, { level: 'error' });
+    const policy = getPolicy(name).create({ config, log });
+    return {
+        brain: policy.brain,
+        advance(world) {
+            step(world, policy.brain);
+            if (policy.onEvent !== undefined) {
+                const count = readEvents(world.events);
+                for (let i = 0; i < count; i++) {
+                    policy.onEvent(world, i * EVENT_STRIDE);
+                }
+            }
+            policy.afterStep?.(world);
+        },
+    };
+}
+
+/**
  * @param {number} size population size, held fixed by min = max = initial
+ * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
  * @returns {Record<string, number>} the metrics for that size
  */
-export function benchSize(size) {
-    const policy = cloneWithNoisePolicy();
-    const world = createWorld(createConfig({ initialAgents: size, minAgents: size, maxAgents: size }), policy);
+export function benchSize(size, policyName) {
+    const config = createConfig({ initialAgents: size, minAgents: size, maxAgents: size });
+    const { brain, advance } = createSubject(config, policyName);
+    const world = createWorld(config, brain);
     for (let i = 0; i < WARMUP_TICKS; i++) {
-        step(world, policy);
+        advance(world);
     }
     const stepTimes = new Float64Array(MEASURED_TICKS);
     for (let i = 0; i < MEASURED_TICKS; i++) {
         const start = performance.now();
-        step(world, policy);
+        advance(world);
         stepTimes[i] = performance.now() - start;
     }
     const phaseTimes = STEP_PHASES.map(() => new Float64Array(MEASURED_TICKS));
@@ -106,7 +172,7 @@ export function benchSize(size) {
         clearEvents(world.events);
         for (let p = 0; p < STEP_PHASES.length; p++) {
             const start = performance.now();
-            STEP_PHASES[p].run(world, policy);
+            STEP_PHASES[p].run(world, brain);
             phaseTimes[p][i] = performance.now() - start;
         }
         world.tick += 1;
@@ -142,13 +208,17 @@ export function recordMetrics(metrics, all) {
  * @returns {Promise<void>}
  */
 export async function main(argv) {
-    const { sizes, json } = parseArgs(argv);
+    const { sizes, json, policy } = parseArgs(argv);
     /** @type {Record<string, number>} */
     const all = {};
     for (const size of sizes) {
-        Object.assign(all, benchSize(size));
+        Object.assign(all, benchSize(size, policy));
     }
-    console.log(json ? JSON.stringify(all, null, 2) : formatLines(all));
+    if (json) {
+        console.log(JSON.stringify(policy === undefined ? all : { policy, ...all }, null, 2));
+    } else {
+        console.log(policy === undefined ? formatLines(all) : `policy ${policy}\n${formatLines(all)}`);
+    }
     const metrics = await createMetrics();
     recordMetrics(metrics, all);
     await metrics.shutdown();
