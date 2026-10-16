@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { castRays } from '../../js/sim/ray-march.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
-import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
+import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
@@ -164,6 +164,90 @@ describe('castRays classes', () => {
     });
 });
 
+describe('castRays smoke', () => {
+    it('stops at a cloud, writing proximity and the smoke flag on channel 8', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 200, 500, 20);
+        addCloud(w, 400, 500);
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.prox]).toBeCloseTo(1 - (400 - w.config.smokeRadius - 200) / VISION, 6);
+        expect(r[CH.smoke]).toBe(1);
+        expect(r.slice(1, 8)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+    });
+
+    it('sees nothing behind a cloud', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 200, 500, 20);
+        addCloud(w, 300, 500);
+        addFood(w, 400, 500, 20);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.food]).toBe(0);
+        expect(rayValues(w, me, 0)[CH.smoke]).toBe(1);
+    });
+
+    it('still sees an agent in front of a cloud', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 200, 500, 20);
+        addCloud(w, 400, 500);
+        addAgent(w, 280, 500, 20);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.smoke]).toBe(0);
+        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+    });
+
+    it('hits a cloud at distance 0 when the ray starts inside it', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 400, 500, 20);
+        addCloud(w, 420, 500);
+        cast(w, me);
+        for (let k = 0; k < 4; k++) {
+            const r = rayValues(w, me, k);
+            expect([r[CH.prox], r[CH.smoke]]).toEqual([1, 1]);
+        }
+    });
+
+    it('leaves the rays beside a cloud unchanged', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 200, 500, 20);
+        addFood(w, 200, 600, 20);
+        cast(w, me);
+        const before = [0, 1, 2, 3].map((k) => rayValues(w, me, k));
+        addCloud(w, 500, 500);
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.smoke]).toBe(1);
+        for (const k of [1, 2, 3]) {
+            expect(rayValues(w, me, k)).toEqual(before[k]);
+        }
+    });
+
+    it('ignores a cloud beyond the vision range', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 100, 500, 20);
+        addCloud(w, 100 + VISION + w.config.smokeRadius + 10, 500);
+        cast(w, me);
+        expect(rayValues(w, me, 0)).toEqual(new Array(9).fill(0));
+    });
+
+    it('ranks smoke after the wall at an equal distance', () => {
+        const w = senseWorld({ smokeRadius: 100 });
+        const me = addAgent(w, 700, 500, 20);
+        addCloud(w, 1100, 500);
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect([r[CH.wall], r[CH.smoke]]).toEqual([1, 0]);
+    });
+
+    it('writes no smoke flag without clouds', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 200, 500, 20);
+        cast(w, me);
+        for (let k = 0; k < 4; k++) {
+            expect(rayValues(w, me, k)[CH.smoke]).toBe(0);
+        }
+    });
+});
+
 /**
  * Reference caster: tests every circle, obstacle and wall with the ray-circle formula.
  * @param {ReturnType<typeof senseWorld>} w
@@ -215,13 +299,16 @@ function brute(w, me, k) {
             test(w.x[a], w.y[a], w.size[a], 1, a);
         }
     }
+    for (let c = 0; c < w.cloudCount; c++) {
+        test(w.cloudX[c], w.cloudY[c], w.config.smokeRadius, 4, c);
+    }
     return best;
 }
 
 describe('castRays against a brute-force caster', () => {
     it.each(Array.from({ length: 30 }, (_, i) => i + 1))('matches on seeded world %i', (seed) => {
         const rng = createRng(seed);
-        const w = senseWorld({ rayCount: 8, maxAgents: 12, maxFood: 40 });
+        const w = senseWorld({ rayCount: 8, maxAgents: 12, maxFood: 40, smokeRadius: 60 });
         const place = () => 20 + nextFloat(rng) * (1000 - 2 * 20);
         for (let i = 0; i < 12; i++) {
             const a = addAgent(w, place(), place(), 10 + nextFloat(rng) * 40);
@@ -236,6 +323,9 @@ describe('castRays against a brute-force caster', () => {
             w.obsY[i] = place();
             w.obsRadius[i] = 20 + nextFloat(rng) * 80;
         }
+        for (let i = 0; i < 3; i++) {
+            addCloud(w, place(), place());
+        }
         const hash = rebuild(w);
         for (let me = 0; me < 12; me++) {
             castRays(w, hash, me);
@@ -245,7 +335,7 @@ describe('castRays against a brute-force caster', () => {
                 const range = w.visionBySpec[w.spec[me]];
                 const expected = ref.t === Infinity ? 0 : 1 - ref.t / range;
                 expect(got[0]).toBeCloseTo(expected, 5);
-                const kinds = [[1], [2, 3, 4, 5], [7], [6]][ref.kind];
+                const kinds = [[1], [2, 3, 4, 5], [7], [6], [8]][ref.kind];
                 const hot = got.slice(1).flatMap((v, n) => (v === 1 ? [n + 1] : []));
                 expect(hot.length).toBe(ref.t === Infinity ? 0 : 1);
                 expect(hot.every((c) => kinds.includes(c))).toBe(true);

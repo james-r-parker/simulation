@@ -57,6 +57,22 @@ export function addFood(w, x, y, r) {
 }
 
 /**
+ * Appends a smoke cloud of the config's radius with a long life.
+ * @param {ReturnType<typeof smallWorld>} w the world
+ * @param {number} x centre x
+ * @param {number} y centre y
+ * @returns {number} the cloud index
+ */
+export function addCloud(w, x, y) {
+    const i = w.cloudCount;
+    w.cloudX[i] = x;
+    w.cloudY[i] = y;
+    w.cloudTtl[i] = w.config.smokeTicks;
+    w.cloudCount += 1;
+    return i;
+}
+
+/**
  * Rebuilds the world's hash.
  * @param {ReturnType<typeof smallWorld>} w the world
  * @returns {ReturnType<typeof smallWorld>['hash']}
