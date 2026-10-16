@@ -25,14 +25,35 @@ function foodEnergyPer1k(observer) {
  * @returns {import('./metrics-stats.js').MetricResult} the median `ageTicks` of deaths at or past `maturityTicks`
  */
 function medianLifespan(observer) {
+    return matureLifespan(observer, 0, 'no mature death');
+}
+
+/**
+ * Median age at death of mature agents that ate at least one food item's worth (`config.foodEnergy`), so agents that
+ * live long by not moving do not count.
+ * @param {Record<string, any>} observer the observer
+ * @returns {{ value: number | null, reason?: string }}
+ */
+function fedMedianLifespan(observer) {
+    return matureLifespan(observer, observer.config.foodEnergy, 'no mature death after a meal');
+}
+
+/**
+ * @param {Record<string, any>} observer the observer
+ * @param {number} minFood the least food energy a death needs to count
+ * @param {string} reason the null reason when none counts
+ * @returns {{ value: number | null, reason?: string }} the median age at death of the mature deaths that count
+ */
+function matureLifespan(observer, minFood, reason) {
     /** @type {number[]} */
     const ages = [];
-    for (let i = 0; i < observer.deathCount; i++) {
-        if (observer.deaths.ageTicks[i] >= observer.config.maturityTicks) {
-            ages.push(observer.deaths.ageTicks[i]);
+    const { deaths, deathCount, config } = observer;
+    for (let i = 0; i < deathCount; i++) {
+        if (deaths.ageTicks[i] >= config.maturityTicks && deaths.foodEnergy[i] >= minFood) {
+            ages.push(deaths.ageTicks[i]);
         }
     }
-    return ages.length > 0 ? ok(quantile(ages, 0.5)) : none('no mature death');
+    return ages.length > 0 ? ok(quantile(ages, 0.5)) : none(reason);
 }
 
 /**
@@ -69,6 +90,7 @@ export function computeMetrics(observer, _world, options = {}) {
     const all = {
         'eval.food_energy_per_1k': foodEnergyPer1k(observer),
         'eval.median_lifespan': medianLifespan(observer),
+        'eval.fed_median_lifespan': fedMedianLifespan(observer),
         'eval.births_per_1k': per1k(births[BORN_CAUSE.MATE] + births[BORN_CAUSE.SPLIT], agentTicks),
         'eval.population_mean': series.populationMean(observer),
         'eval.floor_episodes': ok(observer.floorEpisodes),

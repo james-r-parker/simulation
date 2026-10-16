@@ -13,6 +13,7 @@ const BOOTSTRAP_SEED = 1;
 const DIRECTIONS = {
     'eval.food_energy_per_1k': 'higher',
     'eval.median_lifespan': 'higher',
+    'eval.fed_median_lifespan': 'higher',
     'eval.births_per_1k': 'higher',
     'eval.population_mean': 'watch',
     'eval.floor_episodes': 'lower',
