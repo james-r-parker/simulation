@@ -126,6 +126,48 @@ describe('validateConfig types and ranges', () => {
     });
 });
 
+describe('validateConfig predator-prey keys', () => {
+    it.each([
+        ['antennaAngle', -0.1],
+        ['antennaAngle', 3.2],
+        ['antennaReach', 0],
+        ['callRadius', 0],
+        ['callTicks', 0],
+        ['callTicks', 65536],
+        ['callTicks', 1.5],
+        ['alarmCost', -1],
+        ['huntCallCost', -1],
+        ['smokeCost', -1],
+        ['smokeRadius', 0],
+        ['smokeTicks', 0],
+        ['smokeTicks', 65536],
+        ['smokeCooldown', -1],
+        ['smokeCooldown', 65536],
+        ['smokeThreshold', 1.1],
+        ['packWindow', 0],
+        ['maxClouds', -1],
+        ['maxClouds', 257],
+    ])('rejects %s = %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+    });
+
+    it('accepts each key at its bounds', () => {
+        expect(() => createConfig({ antennaAngle: 0, alarmCost: 0, smokeCooldown: 0, maxClouds: 0 })).not.toThrow();
+        expect(() => createConfig({ antennaAngle: Math.PI, callTicks: 65535, maxClouds: 256 })).not.toThrow();
+    });
+
+    it.each(['biteMultiplier', 'turnMultiplier', 'sprintBoost'])('rejects a zero %s', (field) => {
+        expect(() => createConfig({ specialisations: { predator: { [field]: 0 } } })).toThrow(new RegExp(field));
+    });
+
+    it('defaults every specialisation multiplier to 1', () => {
+        const config = createConfig();
+        for (const spec of Object.values(config.specialisations)) {
+            expect([spec.biteMultiplier, spec.turnMultiplier, spec.sprintBoost]).toEqual([1, 1, 1]);
+        }
+    });
+});
+
 describe('validateConfig cross-key rules', () => {
     it('rejects initialAgents above maxAgents', () => {
         expect(() => createConfig({ maxAgents: 50, initialAgents: 60, minAgents: 1 })).toThrow(

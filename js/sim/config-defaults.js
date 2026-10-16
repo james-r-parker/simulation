@@ -96,6 +96,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
+            biteMultiplier: 1,
+            turnMultiplier: 1,
+            sprintBoost: 1,
         },
         predator: {
             index: 1,
@@ -104,6 +107,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
+            biteMultiplier: 1,
+            turnMultiplier: 1,
+            sprintBoost: 1,
         },
         reproducer: {
             index: 2,
@@ -112,6 +118,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 0.5,
+            biteMultiplier: 1,
+            turnMultiplier: 1,
+            sprintBoost: 1,
         },
         scout: {
             index: 3,
@@ -120,6 +129,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 0.7,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
+            biteMultiplier: 1,
+            turnMultiplier: 1,
+            sprintBoost: 1,
         },
         defender: {
             index: 4,
@@ -128,6 +140,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 0.5,
             cooldownMultiplier: 1,
+            biteMultiplier: 1,
+            turnMultiplier: 1,
+            sprintBoost: 1,
         },
     },
     checkInvariants: false, // new
@@ -159,4 +174,17 @@ export const DEFAULTS = deepFreeze({
     temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
     temperatureEfficiencyHeatModerate: 0.9, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE (tuned, E17)
     temperatureEfficiencyHeatSevere: 0.6, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE (tuned, E17)
+    antennaAngle: 0.8, // new: radians either side of the heading
+    antennaReach: 150, // new: 1.5 pheromone cells
+    callRadius: 300, // SHOUT_BASE_RANGE (200)
+    callTicks: 60, // SHOUT_DURATION_FRAMES
+    alarmCost: 4, // new
+    huntCallCost: 4, // new
+    smokeCost: 20, // new
+    smokeRadius: 80, // new
+    smokeTicks: 180, // new
+    smokeCooldown: 600, // new
+    smokeThreshold: 0.8, // new: the smoke output must exceed it
+    packWindow: 120, // new: ticks between two biters for a shared kill
+    maxClouds: 32, // new
 });

@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { runSeed } from '../scripts/eval-worker.mjs';
 
 const SMALL = { maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+/** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
+const UNPLACEABLE = {
+    worldWidth: 1000,
+    worldHeight: 1000,
+    obstacleCount: 100,
+    obstacleMinRadius: 120,
+    obstacleMaxRadius: 120,
+    placementTries: 1,
+};
 
 describe('runSeed (direct)', () => {
     it('returns the metrics, hash and checkpoints for a seed', () => {
@@ -24,7 +33,7 @@ describe('runSeed (direct)', () => {
     });
 
     it('names the seed and tick when the world fails', () => {
-        expect(() => runSeed({ seed: 9, ticks: 50, policy: 'baseline-v5', overrides: { eventCapacity: 5 } })).toThrow(
+        expect(() => runSeed({ seed: 9, ticks: 50, policy: 'baseline-v5', overrides: UNPLACEABLE })).toThrow(
             /^seed 9 failed at tick 0: /,
         );
     });
