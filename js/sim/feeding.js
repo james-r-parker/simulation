@@ -7,6 +7,7 @@ import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
 import { OUTPUT_COUNT } from './brain-layout.js';
 import { specParams } from './spec-params.js';
+import { gainTemperature } from './temperature.js';
 
 /** Index of the bite output in an agent's output row. */
 const BITE_OUTPUT = 4;
@@ -27,6 +28,8 @@ function tryEat(world, slot, food) {
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
         const stored = addEnergy(world, slot, world.foodValue[food], ENERGY_SOURCE.FOOD);
         world.foodEnergy[slot] += stored;
+        const { temperatureGainEat, foodEnergy } = world.config;
+        gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
         world.ateTimer[slot] = 0;
         removeFood(world, food);
     }
@@ -98,6 +101,7 @@ function applyBite(world, biter, victim) {
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
     transferEnergy(world, victim, biter, config.biteEnergy * taken);
     world.biteEnergy[biter] += world.transferGained;
+    gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     world.lastBiter[victim] = world.genomeId[biter];
     world.bittenTimer[victim] = 0;

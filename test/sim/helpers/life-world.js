@@ -43,6 +43,7 @@ export function addBlob(w, fields = {}) {
     w.lineageId[slot] = w.genomeId[slot];
     w.x[slot] = 500;
     w.y[slot] = 500;
+    w.temperature[slot] = w.config.temperatureStart;
     addEnergy(w, slot, 1000, ENERGY_SOURCE.INITIAL);
     for (const [k, v] of Object.entries(fields)) {
         if (k === 'mateOut') {

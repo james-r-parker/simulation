@@ -32,7 +32,7 @@ const SMALL = {
 function worldWith(n = 2) {
     const world = allocateWorld(createConfig(SMALL));
     for (let i = 0; i < n; i++) {
-        allocAgent(world);
+        world.temperature[allocAgent(world)] = world.config.temperatureStart;
     }
     return world;
 }
@@ -285,5 +285,70 @@ describe('applyCosts', () => {
         applyCosts(world);
         expect(world.energy[0]).toBe(0);
         expect(world.ageTicks[1]).toBe(0);
+    });
+});
+
+describe('applyCosts temperature', () => {
+    /**
+     * @param {number} t the starting temperature
+     * @param {Record<string, any>} [over] config overrides
+     * @returns {ReturnType<typeof allocateWorld>} a world with one 100-energy sitter of size 20 at `t`
+     */
+    function sitter(t, over = {}) {
+        const world = allocateWorld(createConfig({ ...SMALL, ...over }));
+        const slot = allocAgent(world);
+        world.energy[slot] = 100;
+        world.size[slot] = 20;
+        world.temperature[slot] = t;
+        return world;
+    }
+
+    it('charges a cold sitter passiveMultiplier of the stepped temperature times the passive and size terms', () => {
+        const world = sitter(20);
+        const c = world.config;
+        applyCosts(world);
+        const stepped = 20 - 0.015 * 1.15;
+        expect(world.temperature[0]).toBeCloseTo(stepped, 5);
+        const multiplier = 1 + ((40 - stepped) / 40) * 3;
+        expect(world.ledger[1]).toBeCloseTo((c.passiveLoss + c.sizeEnergyLoss * 20) * multiplier, 6);
+    });
+
+    it('charges a hot sitter more and the movement terms at the same rate', () => {
+        const world = sitter(80);
+        const c = world.config;
+        world.vx[0] = 3;
+        world.vy[0] = 4;
+        world.turnRate[0] = 0.1;
+        applyCosts(world);
+        const stepped = 80 + (5 / 8) * 0.025 - 0.015 * 1.15;
+        const multiplier = 1 + ((stepped - 65) / 35) * 3;
+        const expected = (c.passiveLoss + c.sizeEnergyLoss * 20) * multiplier + c.movementCost * 25 + c.turnCost * 0.1;
+        expect(world.ledger[1]).toBeCloseTo(expected, 6);
+    });
+
+    it('charges the plain cost inside the optimal band', () => {
+        const world = sitter(50);
+        const c = world.config;
+        applyCosts(world);
+        expect(world.ledger[1]).toBeCloseTo(c.passiveLoss + c.sizeEnergyLoss * 20, 6);
+    });
+
+    it('reproduces the earlier cost when temperaturePassiveLossFactor is 1', () => {
+        const world = sitter(5, { temperaturePassiveLossFactor: 1 });
+        world.vx[0] = 6;
+        world.turnRate[0] = -0.15;
+        world.season[0] = 2;
+        const c = world.config;
+        applyCosts(world);
+        const earlier = (c.passiveLoss + c.movementCost * 36 + c.turnCost * 0.15 + c.sizeEnergyLoss * 20) * 1.1;
+        expect(world.ledger[1]).toBeCloseTo(earlier, 6);
+    });
+
+    it('steps the temperature of alive agents only', () => {
+        const world = sitter(50);
+        world.temperature[1] = 50;
+        applyCosts(world);
+        expect(world.temperature[0]).toBeLessThan(50);
+        expect(world.temperature[1]).toBe(50);
     });
 });

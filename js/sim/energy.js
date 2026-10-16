@@ -2,6 +2,7 @@
 
 import { OUTPUT_COUNT } from './brain-layout.js';
 import { specParams } from './spec-params.js';
+import { passiveMultiplier, stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
 const SPRINT_OUT = 2;
@@ -134,12 +135,10 @@ function tickCost(world, slot) {
     const vy = world.vy[slot];
     const speed = Math.sqrt(vx * vx + vy * vy);
     const drain = c.seasons[world.season[0]].energyDrain;
+    const standing =
+        (c.passiveLoss + c.sizeEnergyLoss * world.size[slot]) * passiveMultiplier(c, world.temperature[slot]);
     let cost =
-        (c.passiveLoss +
-            c.movementCost * (speed * speed) * m +
-            c.turnCost * Math.abs(world.turnRate[slot]) * m +
-            c.sizeEnergyLoss * world.size[slot]) *
-        drain;
+        (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
     if (world.outputs[slot * OUTPUT_COUNT + SPRINT_OUT] > 0) {
         cost += c.sprintCost;
     }
@@ -147,7 +146,8 @@ function tickCost(world, slot) {
 }
 
 /**
- * Ages every alive agent, ticks its cooldown and timers, and charges its per-tick energy cost (loss cause `cost`).
+ * Ages every alive agent, ticks its cooldown and timers, steps its temperature, and charges its per-tick energy cost
+ * (loss cause `cost`); the passive and size terms are multiplied by `passiveMultiplier` of the new temperature.
  * @param {import('./world.js').World} world the world
  * @returns {void}
  */
@@ -161,6 +161,7 @@ export function applyCosts(world) {
         cooldown[slot] = Math.max(0, cooldown[slot] - 1);
         ateTimer[slot] = Math.min(TIMER_CAP, ateTimer[slot] + 1);
         bittenTimer[slot] = Math.min(TIMER_CAP, bittenTimer[slot] + 1);
+        stepTemperature(world, slot);
         removeEnergy(world, slot, tickCost(world, slot), LOSS_CAUSE.COST);
     }
 }

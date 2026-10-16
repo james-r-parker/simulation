@@ -1,6 +1,7 @@
 // The conditions for mating: one agent being ready, and a pair being allowed to mate.
 
 import { OUTPUT_COUNT } from './brain-layout.js';
+import { blocksMating } from './temperature.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -9,7 +10,8 @@ const MATE_OUT = 3;
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, not pregnant, off cooldown and above `mateMinEnergy`
+ * @returns {boolean} true when mature, not pregnant, off cooldown, above `mateMinEnergy` and not past a temperature stress
+ *   threshold
  */
 export function isReadyToMate(world, slot) {
     const { maturityTicks, mateMinEnergy } = world.config;
@@ -17,7 +19,8 @@ export function isReadyToMate(world, slot) {
         world.ageTicks[slot] >= maturityTicks &&
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
-        world.energy[slot] > mateMinEnergy
+        world.energy[slot] > mateMinEnergy &&
+        !blocksMating(world.config, world.temperature[slot])
     );
 }
 

@@ -3,6 +3,7 @@
 import { OUTPUT_COUNT } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
+import { thrustEfficiency } from './temperature.js';
 
 const PI = 3.141592653589793;
 const TURN_OUT = 1;
@@ -28,7 +29,7 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            let thrust = outputs[o + THRUST_OUT] * maxThrust;
+            let thrust = outputs[o + THRUST_OUT] * maxThrust * thrustEfficiency(config, world.temperature[i]);
             if (outputs[o + SPRINT_OUT] > 0) {
                 thrust *= 1 + sprintMultiplier;
             }

@@ -299,3 +299,55 @@ describe('feed: exact boundaries', () => {
         expect(w.energy[1]).toBe(50);
     });
 });
+
+describe('feed: temperature', () => {
+    it('warms an eater by temperatureGainEat x stored / foodEnergy, for each food', () => {
+        const w = smallWorld();
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        w.temperature[a] = 50;
+        food(w, 100, 100, w.config.foodEnergy);
+        food(w, 105, 100, w.config.foodEnergy / 2);
+        run(w);
+        expect(w.temperature[a]).toBeCloseTo(50 + 2 + 1, 5);
+    });
+
+    it('uses the energy stored, which is below the food value at maxEnergy', () => {
+        const w = smallWorld({ maxEnergy: 1000 });
+        const a = agent(w, { x: 100, y: 100, energy: 995 });
+        w.temperature[a] = 50;
+        food(w, 100, 100, 100);
+        run(w);
+        expect(w.foodEnergy[a]).toBe(5);
+        expect(w.temperature[a]).toBeCloseTo(50 + (2 * 5) / 100, 5);
+    });
+
+    it('caps at temperatureMax', () => {
+        const w = smallWorld();
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        w.temperature[a] = 99;
+        food(w, 100, 100, 100);
+        run(w);
+        expect(w.temperature[a]).toBe(100);
+    });
+
+    it('warms the biter by temperatureGainEat x transferGained / foodEnergy and not the victim', () => {
+        const w = smallWorld();
+        const biter = agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        const victim = agent(w, { x: 110, y: 100, energy: 50 });
+        w.temperature[biter] = 50;
+        w.temperature[victim] = 50;
+        run(w, [0, 1]);
+        expect(w.config.biteEnergy).toBe(5);
+        expect(w.temperature[biter]).toBeCloseTo(50.1, 5);
+        expect(w.temperature[victim]).toBe(50);
+    });
+
+    it('uses the energy the biter could store when it is nearly full', () => {
+        const w = smallWorld({ maxEnergy: 2000 });
+        const biter = agent(w, { x: 100, y: 100, energy: 1998, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 50 });
+        w.temperature[biter] = 50;
+        run(w, [0, 1]);
+        expect(w.temperature[biter]).toBeCloseTo(50 + (2 * 2) / 100, 5);
+    });
+});
