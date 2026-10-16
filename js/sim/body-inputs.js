@@ -11,18 +11,37 @@ import { TIMER_CAP } from './world.js';
 
 const SPEC_DIVISOR = 4;
 
+// The season phase is the same for every agent in a tick, so its sine and cosine are computed once per phase value.
+// This is a pure memo of `detSin` and `detCos`, so it cannot change a result.
+let seasonPhase = NaN;
+let seasonSin = 0;
+let seasonCos = 0;
+
+/**
+ * Refreshes the memoised season sine and cosine when `phase` differs from the last one.
+ * @param {number} phase the season phase in radians
+ * @returns {void}
+ */
+function seasonTrig(phase) {
+    if (phase !== seasonPhase) {
+        seasonPhase = phase;
+        seasonSin = detSin(phase);
+        seasonCos = detCos(phase);
+    }
+}
+
 /**
  * Writes body inputs 0 to 18 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
+ * @param {number} [cH] the cosine of the agent's heading, when the caller has it
+ * @param {number} [sH] the sine of the agent's heading, when the caller has it
  * @returns {void}
  */
-export function writeBodyInputs(world, slot) {
+export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH = detSin(world.angle[slot])) {
     const { maxEnergy, maxVelocity, maxTurn, baseSize, energyToSize, maxAgeTicks, rayCount } = world.config;
     const o = slot * world.layout.inputCount + rayCount * RAY_CHANNELS;
     const out = world.inputs;
-    const cH = detCos(world.angle[slot]);
-    const sH = detSin(world.angle[slot]);
     const vx = world.vx[slot];
     const vy = world.vy[slot];
     const x = world.x[slot];
@@ -37,8 +56,9 @@ export function writeBodyInputs(world, slot) {
     out[o + 6] = isReadyToMate(world, slot) ? 1 : 0;
     out[o + 7] = samplePheromone(world, world.danger, x, y);
     out[o + 8] = samplePheromone(world, world.attack, x, y);
-    out[o + 9] = detSin(phase);
-    out[o + 10] = detCos(phase);
+    seasonTrig(phase);
+    out[o + 9] = seasonSin;
+    out[o + 10] = seasonCos;
     out[o + 11] = 1 - world.ateTimer[slot] / TIMER_CAP;
     out[o + 12] = 1 - world.bittenTimer[slot] / TIMER_CAP;
     out[o + 13] = world.spec[slot] / SPEC_DIVISOR;

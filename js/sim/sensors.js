@@ -1,6 +1,7 @@
 // Fills every alive agent's inputs row: ray block, then the body and scent inputs.
 
 import { writeBodyInputs } from './body-inputs.js';
+import { detCos, detSin } from './det-math.js';
 import { castRays } from './ray-march.js';
 import { writeScentInputs } from './scent-inputs.js';
 
@@ -15,8 +16,10 @@ export function senseAll(world, hash) {
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             castRays(world, hash, slot);
-            writeBodyInputs(world, slot);
-            writeScentInputs(world, slot);
+            const cH = detCos(world.angle[slot]);
+            const sH = detSin(world.angle[slot]);
+            writeBodyInputs(world, slot, cH, sH);
+            writeScentInputs(world, slot, cH, sH);
         }
     }
 }
