@@ -65,7 +65,7 @@ export function parseArgs(argv) {
             valueFlags: VALUE_FLAGS,
             usage: USAGE,
             defaults: {
-                seeds: 8,
+                seeds: 16,
                 ticks: 200000,
                 policy: LIVE_POLICY,
                 seedOffset: 0,
@@ -166,7 +166,7 @@ function failureRecord(error) {
 
 /**
  * @typedef {object} EvalOptions
- * @property {number} [seeds] default 8
+ * @property {number} [seeds] default 16
  * @property {number} ticks
  * @property {string} [policy] a key of `POLICIES`, default the live policy
  * @property {number} [seedOffset] default 0
@@ -194,7 +194,7 @@ function failureDetail(message) {
  *   resolved run: the config overrides have `seed` removed, since each task sets its own
  */
 function resolveRun(options) {
-    const { seeds: count = 8, ticks, seedOffset = 0, configOverrides = {} } = options;
+    const { seeds: count = 16, ticks, seedOffset = 0, configOverrides = {} } = options;
     const policyName = options.policy ?? LIVE_POLICY;
     const overrides = Object.fromEntries(Object.entries(configOverrides).filter(([key]) => key !== 'seed'));
     const sha = options.sha ?? gitSha();

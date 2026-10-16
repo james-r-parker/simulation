@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { bootstrapInterval, compareReports, metricDirection, normalCdf, normalQuantile } from '../../js/evo/compare.js';
+import {
+    bootstrapInterval,
+    compareReports,
+    metricDirection,
+    MIN_EFFECT,
+    normalCdf,
+    normalQuantile,
+} from '../../js/evo/compare.js';
 import { configHash } from '../../js/sim/config.js';
 
-const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8];
-const BASE = [10, 12, 9, 11, 13, 10, 12, 11];
+const SEEDS = Array.from({ length: 16 }, (_, i) => i + 1);
+const BASE = [10, 12, 9, 11, 13, 10, 12, 11, 10, 12, 9, 11, 13, 10, 12, 11];
 
 /**
  * @param {Record<string, number[] | (number | null)[]>} metrics values per metric
@@ -135,6 +142,38 @@ describe('compareReports verdicts', () => {
         expect(back['bench.step_ms@500']).toBe('better');
     });
 
+    it('gives no-difference for a tiny shift whose interval excludes 0, and a verdict past 5%', () => {
+        const tiny = { 'eval.diversity': shift(BASE, 0.3) };
+        const [small] = compareReports(report({ 'eval.diversity': BASE }), report(tiny)).rows;
+        expect(small.low).toBeGreaterThan(0);
+        expect(small.verdict).toBe('no-difference');
+        expect(small.effect).toBeCloseTo(0.35 / 11.1875, 2);
+        const big = compareReports(report({ 'eval.diversity': BASE }), report({ 'eval.diversity': shift(BASE, 0.7) }));
+        expect(big.rows[0].effect).toBeGreaterThan(0.05);
+        expect(big.rows[0].verdict).toBe('better');
+        expect(big.minEffect).toBe(MIN_EFFECT);
+        expect(big.seedCount).toBe(16);
+    });
+
+    it('uses |after mean| when the before mean is 0, and no-difference when both are 0', () => {
+        const zeros = BASE.map(() => 0);
+        const alt = BASE.map((_, i) => 1 + (i % 2) * 0.1);
+        const [grown] = compareReports(report({ 'eval.diversity': zeros }), report({ 'eval.diversity': alt })).rows;
+        expect(grown.effect).toBeCloseTo(1, 12);
+        expect(grown.verdict).toBe('better');
+        const [flat] = compareReports(report({ 'eval.diversity': zeros }), report({ 'eval.diversity': zeros })).rows;
+        expect(flat.effect).toBeNull();
+        expect(flat.verdict).toBe('no-difference');
+    });
+
+    it('minEffect overrides the threshold', () => {
+        const before = report({ 'eval.diversity': BASE });
+        const after = report({ 'eval.diversity': shift(BASE, 0.3) });
+        expect(compareReports(before, after, { minEffect: 0.01 }).rows[0].verdict).toBe('better');
+        expect(compareReports(before, after, { minEffect: 0.5 }).rows[0].verdict).toBe('no-difference');
+        expect(compareReports(before, after, { minEffect: 0 }).rows[0].verdict).toBe('better');
+    });
+
     it('is reproducible and independent of metric order', () => {
         const after = report({ a: shift(BASE, 0.3), 'eval.diversity': shift(BASE, 0.3) });
         const swapped = report({ 'eval.diversity': shift(BASE, 0.3), a: shift(BASE, 0.3) });
@@ -145,14 +184,14 @@ describe('compareReports verdicts', () => {
 
     it('gives - for null values, unknown metrics (with a note) and differing fitnessName', () => {
         const before = report({
-            'eval.qd_score': [1, 2, 3, 4, 5, 6, 7, null],
+            'eval.qd_score': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, null],
             mystery: BASE,
             'eval.p90_fitness.all': BASE,
             'eval.diversity': BASE,
         });
         const after = report(
             {
-                'eval.qd_score': [2, 3, 4, 5, 6, 7, 8, 9],
+                'eval.qd_score': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
                 mystery: shift(BASE, 5),
                 'eval.p90_fitness.all': shift(BASE, 5),
                 'eval.diversity': shift(BASE, 5),
@@ -192,8 +231,8 @@ describe('compareReports refusals', () => {
     }
     const m = { 'eval.diversity': BASE };
 
-    it('refuses different seeds, ticks, configs and fewer than 8 seeds', () => {
-        expect(refusedField(report(m), report(m, { seeds: [1, 2, 3, 4, 5, 6, 7, 9] }))).toBe('seeds');
+    it('refuses different seeds, ticks, configs and fewer than 16 seeds', () => {
+        expect(refusedField(report(m), report(m, { seeds: [...SEEDS.slice(0, 15), 17] }))).toBe('seeds');
         expect(refusedField(report(m), report(m, { ticks: 2000 }))).toBe('ticks');
         expect(refusedField(report(m), report(m, { config: { maxAgents: 200, foodRate: 1 } }))).toBe('config');
         expect(refusedField(report(m, { seeds: [1, 2, 3] }), report(m, { seeds: [1, 2, 3] }))).toBe('seedCount');
@@ -219,8 +258,8 @@ describe('compareReports refusals', () => {
         expect(refusedField(old, next)).toBe('config');
     });
 
-    it('allowSeedDiff pairs by position but still needs equal counts, ticks and 8 seeds', () => {
-        const other = report(m, { seeds: [9, 10, 11, 12, 13, 14, 15, 16] });
+    it('allowSeedDiff pairs by position but still needs equal counts, ticks and 16 seeds', () => {
+        const other = report(m, { seeds: SEEDS.map((x) => x + 16) });
         expect(refusedField(report(m), other, { allowSeedDiff: true })).toBeUndefined();
         expect(compareReports(report(m), other, { allowSeedDiff: true }).paired).toBe(false);
         expect(compareReports(report(m), report(m)).paired).toBe(true);

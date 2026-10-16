@@ -1,12 +1,12 @@
 // Eval compare: BCa intervals and verdicts between two reports (`npm run eval:compare`).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { compareReports } from '../js/evo/compare.js';
+import { compareReports, MIN_EFFECT } from '../js/evo/compare.js';
 import { validateReport } from '../js/evo/report.js';
 import { parseFlags } from './lib/cli-args.mjs';
 
 const USAGE =
-    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--json]';
+    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--json]';
 
 /**
  * @param {string | undefined} value a comma-separated list
@@ -21,22 +21,43 @@ function list(value, flag) {
 }
 
 /**
+ * @param {string | undefined} value a fraction
+ * @param {string} flag the flag name
+ * @returns {number} the number, within 0..1
+ */
+function fraction(value, flag) {
+    const n = value === undefined || value.trim() === '' ? NaN : Number(value);
+    if (!(n >= 0 && n <= 1)) {
+        throw new Error(`${flag} needs a fraction from 0 to 1, got ${value}\n${USAGE}`);
+    }
+    return n;
+}
+
+/**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, json: boolean }}
+ * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, json: boolean }}
  *   parsed options
  */
 export function parseArgs(argv) {
     const flagged = argv.filter(
-        (arg, i) => arg.startsWith('--') || (i > 0 && /^--(targets|allow-config-diff)$/.test(argv[i - 1])),
+        (arg, i) => arg.startsWith('--') || (i > 0 && /^--(targets|allow-config-diff|min-effect)$/.test(argv[i - 1])),
     );
     const files = argv.filter((arg) => !flagged.includes(arg));
     const opts = parseFlags(flagged, {
         valueFlags: {
             '--targets': (value, flag) => ['targets', list(value, flag)],
             '--allow-config-diff': (value, flag) => ['allowConfigDiff', list(value, flag)],
+            '--min-effect': (value, flag) => ['minEffect', fraction(value, flag)],
         },
         booleanFlags: { '--fail-on-worse': 'failOnWorse', '--json': 'json', '--allow-seed-diff': 'allowSeedDiff' },
-        defaults: { targets: [], allowConfigDiff: [], failOnWorse: false, json: false, allowSeedDiff: false },
+        defaults: {
+            minEffect: MIN_EFFECT,
+            targets: [],
+            allowConfigDiff: [],
+            failOnWorse: false,
+            json: false,
+            allowSeedDiff: false,
+        },
         usage: USAGE,
     });
     if (files.length !== 2) {
@@ -52,17 +73,24 @@ export function parseArgs(argv) {
 const fmt = (n) => (n === null ? '-' : String(Number(n.toPrecision(4))));
 
 /**
+ * @param {number | null} effect a relative change
+ * @returns {string} a signed percentage with one decimal, or `-` for null
+ */
+const pct = (effect) => (effect === null ? '-' : `${effect >= 0 ? '+' : ''}${(effect * 100).toFixed(1)}%`);
+
+/**
  * @param {{ rows: any[], level: number, paired: boolean }} result the comparison
  * @param {readonly string[]} targets the target metric names
  * @returns {string[]} the table lines
  */
 export function formatTable({ rows, level, paired }, targets) {
-    const head = ['metric', 'before', 'after', 'diff', `${Math.round(level * 100)}% interval`, 'verdict', ''];
+    const head = ['metric', 'before', 'after', 'diff', 'effect', `${Math.round(level * 100)}% interval`, 'verdict', ''];
     const body = rows.map((r) => [
         r.metric,
         fmt(r.before),
         fmt(r.after),
         fmt(r.diff),
+        pct(r.effect),
         r.low === null ? '-' : `[${fmt(r.low)}, ${fmt(r.high)}]`,
         r.verdict,
         targets.includes(r.metric) ? '*' : '',
@@ -107,6 +135,7 @@ function refuse({ error }, field, reason) {
 function run(args, { print, error }) {
     const [before, after] = args.files.map(loadReport);
     const result = compareReports(before, after, {
+        minEffect: args.minEffect,
         allowConfigDiff: args.allowConfigDiff,
         allowSeedDiff: args.allowSeedDiff,
     });
