@@ -1,16 +1,18 @@
 // Eval worker: runs one seed of one policy for N ticks and returns its metrics (see `scripts/eval.mjs`).
 import { isMainThread } from 'node:worker_threads';
 import { computeMetrics } from '../js/evo/metrics.js';
-import { checkpoint, createObserver, observe, observerPhases } from '../js/evo/observer.js';
+import { checkpoint, createObserver, observerPhases } from '../js/evo/observer.js';
 import { getPolicy } from '../js/evo/policies/index.js';
 import { createConfig } from '../js/sim/config.js';
-import { EVENT_STRIDE, readEvents } from '../js/sim/events.js';
 import { createSimLog } from '../js/sim/log.js';
 import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
+import { feedPolicy } from './lib/feed-policy.mjs';
 import { serveTasks } from './lib/worker-pool.mjs';
+
+export { dispatchEvents } from './lib/feed-policy.mjs';
 
 const CHECKPOINT_INTERVAL = 1000;
 
@@ -21,23 +23,6 @@ const CHECKPOINT_INTERVAL = 1000;
  * @property {string} policy a key of `POLICIES`
  * @property {Record<string, any>} overrides config overrides (the `--config` object, or `{}`)
  */
-
-/**
- * Gives the policy each event record of the tick: `onEvent(world, offset)`, where `offset` is the record's start
- * index in `world.events.data` (`offset + 0` is the type, `offset + 1` the tick).
- * @param {Record<string, any>} policy the policy
- * @param {Record<string, any>} world the world
- * @returns {void}
- */
-export function dispatchEvents(policy, world) {
-    if (policy.onEvent === undefined) {
-        return;
-    }
-    const count = readEvents(world.events);
-    for (let i = 0; i < count; i++) {
-        policy.onEvent(world, i * EVENT_STRIDE);
-    }
-}
 
 /**
  * @param {ArrayLike<number>} values numbers
@@ -62,9 +47,7 @@ function runTicks({ ticks }, { policy, observer, world }) {
     const checkpoints = [];
     for (let t = 0; t < ticks; t++) {
         step(world, policy.brain, phases);
-        observe(observer, world, policy.fitness);
-        dispatchEvents(policy, world);
-        policy.afterStep?.(world);
+        feedPolicy({ policy, observer }, world);
         if (world.tick % CHECKPOINT_INTERVAL === 0 && world.tick >= CHECKPOINT_INTERVAL) {
             checkpoint(observer, world);
             checkpoints.push({
@@ -96,14 +79,17 @@ export function runSeed(task) {
     let checkpoints;
     try {
         world = createWorld(config, policy.brain);
-        observe(observer, world, policy.fitness);
-        dispatchEvents(policy, world);
+        feedPolicy({ policy, observer }, world);
         checkpoints = runTicks(task, { policy, observer, world });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`seed ${seed} failed at tick ${world?.tick ?? 0}: ${message}`, { cause: error });
     }
-    const metrics = computeMetrics(observer, world, { fitness: policy.fitness, fitnessName: policy.fitnessName });
+    const metrics = computeMetrics(observer, world, {
+        fitness: policy.fitness,
+        fitnessName: policy.fitnessName,
+        archive: policy.archive,
+    });
     return {
         seed,
         metrics,

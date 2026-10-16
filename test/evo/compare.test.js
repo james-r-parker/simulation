@@ -71,6 +71,12 @@ describe('bootstrapInterval', () => {
         expect(bootstrapInterval([0, 0, 0])).toEqual({ low: 0, high: 0 });
     });
 
+    it('gives a finite ordered interval when the jackknife squares underflow to 0', () => {
+        const { low, high } = bootstrapInterval([0, 0, 0, 3e-170]);
+        expect(Number.isFinite(low) && Number.isFinite(high)).toBe(true);
+        expect(low).toBeLessThanOrEqual(high);
+    });
+
     it('rejects a bad sample or level', () => {
         expect(() => bootstrapInterval([1])).toThrow();
         expect(() => bootstrapInterval([1, 2], 1)).toThrow();

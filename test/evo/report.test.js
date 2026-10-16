@@ -14,6 +14,22 @@ function sample() {
     return buildReport({ policy: 'p', fitnessName: 'v5', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed });
 }
 
+describe('buildReport with ragged metrics', () => {
+    it('reports "not computed" for a metric a seed lacks or leaves without a reason', () => {
+        const report = buildReport({
+            policy: 'p',
+            fitnessName: 'v5',
+            config,
+            ticks: 100,
+            seeds: [1, 2],
+            sha: 'abc',
+            perSeed: [{ 'eval.a': { value: 1 } }, { 'eval.a': { value: null }, 'eval.b': { value: 2 } }],
+        });
+        expect(report.metrics['eval.a'].reasons).toEqual([null, 'not computed']);
+        expect(report.metrics['eval.b'].reasons).toEqual(['not computed', null]);
+    });
+});
+
 describe('buildReport', () => {
     it('stores the config without its seed and hashes that object', () => {
         const report = sample();

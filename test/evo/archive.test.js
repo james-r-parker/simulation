@@ -167,6 +167,31 @@ describe('lower bound and cv', () => {
     });
 });
 
+describe('cv with an even count of measured genomes', () => {
+    it('averages the middle pair of sd / mean ratios', () => {
+        const archive = createArchive(layout);
+        for (let c = 0; c < 6; c++) {
+            const o = placeOf(0, c, ELITE);
+            archive.occupied[o] = 1;
+            welfordAdd(archive.stats, o * 3, 10);
+            welfordAdd(archive.stats, o * 3, 10 + 2 * (c + 1));
+        }
+        const ratios = [0, 1, 2, 3, 4, 5].map((c) => (Math.SQRT2 * (c + 1)) / (10 + c + 1));
+        expect(archiveCv(archive)).toBeCloseTo((ratios[2] + ratios[3]) / 2, 12);
+    });
+});
+
+describe('offer by descriptors', () => {
+    it('bins speed and crowding into the cell when no cell is given, and defaults both to 0', () => {
+        const archive = createArchive(layout);
+        const base = { ...mk(1, 10), cell: undefined };
+        offer(archive, { ...base, speed: 0.35, crowding: 0.72 });
+        offer(archive, { ...base, id: 2 });
+        expect(archive.occupied[placeOf(0, 73, ELITE)]).toBe(1);
+        expect(archive.occupied[placeOf(0, 0, ELITE)]).toBe(1);
+    });
+});
+
 describe('nextClone', () => {
     it('returns the first challenger with n < 3 in cell order, cycling', () => {
         const archive = createArchive(layout);
@@ -249,6 +274,17 @@ describe('seedArchive and metrics', () => {
         offer(archive, { ...mk(7, 30), spec: 1 });
         cloneOf1(archive);
         expect(archive.ids[o]).toBe(7);
+    });
+
+    it('throws on an unknown specialisation, a bad cell or a fractional cell', () => {
+        const archive = createArchive(layout);
+        const champion = { cell: 5, id: 1, sigma: 0.1, weights: new Float32Array(layout.weightCount) };
+        expect(() => seedArchive(archive, { ...champion, specialisation: 'nope' })).toThrow(/seedArchive: bad spec -1/);
+        expect(() => seedArchive(archive, { ...champion, spec: 5 })).toThrow(/bad spec 5/);
+        expect(() => seedArchive(archive, { ...champion, spec: 0, cell: CELLS })).toThrow(/cell 100/);
+        expect(() => seedArchive(archive, { ...champion, spec: 0, cell: -1 })).toThrow(/cell -1/);
+        expect(() => seedArchive(archive, { ...champion, spec: 0, cell: 1.5 })).toThrow(/cell 1.5/);
+        expect(occupiedCount(archive)).toBe(0);
     });
 
     it('counts occupied cells, coverage and the qd score over all 500 cells', () => {

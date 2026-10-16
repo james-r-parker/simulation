@@ -3,13 +3,16 @@
 // the phase pass then calls STEP_PHASES[i].run in step's order (clearEvents first, tick incremented last, so the
 // world and the event ring advance exactly as `step` advances them) and times each call.
 import { fileURLToPath } from 'node:url';
+import { createObserver, observerPhases } from '../js/evo/observer.js';
 import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
 import { getPolicy } from '../js/evo/policies/index.js';
 import { createConfig } from '../js/sim/config.js';
-import { clearEvents, EVENT_STRIDE, readEvents } from '../js/sim/events.js';
+import { clearEvents } from '../js/sim/events.js';
 import { createSimLog } from '../js/sim/log.js';
+import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { STEP_PHASES, step } from '../js/sim/step.js';
+import { feedPolicy } from './lib/feed-policy.mjs';
 import { createMetrics } from './lib/otel.mjs';
 
 const DEFAULT_SIZES = [100, 250, 500];
@@ -122,30 +125,32 @@ export function formatLines(metrics) {
 }
 
 /**
- * Builds what the bench steps: the reference policy, or the named policy with its per-tick hooks.
+ * Builds what the bench steps: the reference policy, or the named policy fed by an eval observer exactly as
+ * `scripts/eval-worker.mjs` feeds it (observe, event hooks, `afterStep`), so a policy that learns from the run
+ * (`map-elites-v1`) does its archive work inside the timed tick.
  * @param {Record<string, any>} config the world config
  * @param {string | undefined} name a registered policy name, or undefined for the reference policy
- * @returns {{brain: any, advance: (world: Record<string, any>) => void}} the brain and one timed tick
+ * @returns {{brain: any, advance: (world: Record<string, any>) => void, observe: (world: Record<string, any>) => void,
+ *   policy?: Record<string, any>}} the brain, one timed tick, the feed for the freshly created world, and the policy
  */
-function createSubject(config, name) {
+export function createSubject(config, name) {
     if (name === undefined) {
         const brain = cloneWithNoisePolicy();
-        return { brain, advance: (world) => step(world, brain) };
+        return { brain, advance: (world) => step(world, brain), observe: () => {} };
     }
     const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy(name).create({ config, log });
+    const observer = createObserver(config, fork(createRng(config.seed), 'eval'));
+    const policy = getPolicy(name).create({ config, log, observer });
+    const phases = observerPhases(observer);
+    const run = { policy, observer };
     return {
         brain: policy.brain,
+        policy,
         advance(world) {
-            step(world, policy.brain);
-            if (policy.onEvent !== undefined) {
-                const count = readEvents(world.events);
-                for (let i = 0; i < count; i++) {
-                    policy.onEvent(world, i * EVENT_STRIDE);
-                }
-            }
-            policy.afterStep?.(world);
+            step(world, policy.brain, phases);
+            feedPolicy(run, world);
         },
+        observe: (world) => feedPolicy(run, world),
     };
 }
 
@@ -156,8 +161,9 @@ function createSubject(config, name) {
  */
 export function benchSize(size, policyName) {
     const config = createConfig({ initialAgents: size, minAgents: size, maxAgents: size });
-    const { brain, advance } = createSubject(config, policyName);
+    const { brain, advance, observe } = createSubject(config, policyName);
     const world = createWorld(config, brain);
+    observe(world);
     for (let i = 0; i < WARMUP_TICKS; i++) {
         advance(world);
     }

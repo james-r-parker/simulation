@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bin, behaviourCoverage, GRID_SAMPLE, sampleDeaths } from '../../js/evo/metrics-grids.js';
 import { createRng, fork } from '../../js/sim/rng.js';
+import { observed } from './helpers/observer-world.js';
 import { addDeath, bareObserver } from './helpers/metrics-observer.js';
 
 /** A mature death with samples. */
@@ -76,6 +77,12 @@ describe('behaviourCoverage', () => {
         addDeath(o, { ageTicks: 1000, samples: 1, biteEnergy: 4, children: 100 }); // (9, 9) open-ended
         addDeath(o, { ageTicks: 1000, samples: 1, biteEnergy: 4, children: 100 }); // same cell
         expect(behaviourCoverage(o).life.value).toBe(0.03);
+    });
+
+    it('puts a death at age 0 in the bottom row of the life grid', () => {
+        const o = observed({ maturityTicks: 0 }).observer;
+        addDeath(o, { ageTicks: 0, samples: 1, children: 3 });
+        expect(behaviourCoverage(o).life.value).toBe(0.01);
     });
 
     it('bins the motion grid by mean speed and turn, clamped to 1', () => {

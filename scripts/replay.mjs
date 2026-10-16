@@ -2,7 +2,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createObserver, observe, observerPhases } from '../js/evo/observer.js';
+import { createObserver, observerPhases } from '../js/evo/observer.js';
 import { getPolicy, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../js/sim/events.js';
@@ -11,7 +11,7 @@ import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
-import { dispatchEvents } from './eval-worker.mjs';
+import { feedPolicy } from './lib/feed-policy.mjs';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
@@ -215,21 +215,6 @@ function checkpoint(options, world, totals) {
         metrics.record('sim.deaths', totals.deaths, attrs);
     }
     return worldHash;
-}
-
-/**
- * Feeds the eval observer and the policy's event hooks the way `scripts/eval-worker.mjs` does, so a policy that
- * learns from the run (`map-elites-v1`) replays an eval exactly. Neither touches the world.
- * @param {{policy: any, observer: any}} run the policy object and its observer
- * @param {Record<string, any>} world the world, just stepped (or just created)
- * @returns {void}
- */
-function feedPolicy({ policy, observer }, world) {
-    observe(observer, world, policy.fitness);
-    dispatchEvents(policy, world);
-    if (world.tick > 0) {
-        policy.afterStep?.(world);
-    }
 }
 
 /**
