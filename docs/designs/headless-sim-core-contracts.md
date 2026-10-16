@@ -89,6 +89,7 @@ The core needs these beyond the design doc's Config table. All are "new" in Sour
 | `fertileZoneRadius`       | `150`   | Food from a zone lands within this distance of its centre                       |
 | `fertileZoneFertility`    | `0.05`  | `FERTILE_ZONE_FERTILITY_FACTOR`: a zone starts at `size x` this                 |
 | `placementTries`          | `100`   | Rejection-sampling attempts before `placeClear` throws                          |
+| `temperatureSeasonSlope`  | `0.03`  | Scales a season's `temperatureModifier` into the temperature loss multiplier    |
 
 `TIMER_CAP` (30, the cap on `ateTimer` and `bittenTimer`) is a named constant in `world.js`, not a key: it is bound to
 the `Uint8Array` storage.
@@ -114,15 +115,23 @@ Validation runs after the merge. Integer means `Number.isInteger`. A failure thr
 | `damping`, `highFoodChance`, `fertileZoneSpawnChance`, `pheromoneDecay`, `restitution`, `fertileZoneDecay` | `0 .. 1`                                                                                                                       |
 | `pheromoneDiffusion`                                                                                       | `0 .. 1`                                                                                                                       |
 | `huntSizeRatio`                                                                                            | `>= 1`                                                                                                                         |
+| `temperatureMax`                                                                                           | `> 0`; `temperatureStart` `0 .. temperatureMax`                                                                                |
+| `temperatureGainMove`, `temperatureGainEat`, `temperatureLossPassive`, `temperatureSeasonSlope`            | `>= 0`                                                                                                                         |
+| `temperaturePassiveLossFactor`                                                                             | `>= 1`                                                                                                                         |
+| `temperatureColdStress`                                                                                    | `> 0`                                                                                                                          |
+| `temperatureEfficiencyColdSevere`, `...ColdModerate`, `...HeatModerate`, `...HeatSevere`                   | `> 0` and `<= 1`                                                                                                               |
 | `initialEnergy`                                                                                            | `> 0` and `<= maxEnergy`; `minSize <= baseSize`                                                                                |
 | Every other number                                                                                         | Finite and `>= 0`; sizes, radii, energies and the divisors `energyToSize`, `foodSpawnAgentDivisor` and `mateChanceScale` `> 0` |
 | `checkInvariants`                                                                                          | Boolean                                                                                                                        |
 
+Cross-key rule: `0 < temperatureColdStress < temperatureColdModerate <= temperatureOptimalMax < temperatureHeatModerate
+<= temperatureHeatStress < temperatureMax` and `temperatureColdStress < temperatureOptimalMin <= temperatureOptimalMax`.
 Cross-key rule: `maxAgents x weightCount` is at most 2^24 (64 MB per weight array). Cross-key rule: the largest radius - `baseSize + maxEnergy / energyToSize`, `foodRadius`, `highFoodRadius` - must be
 below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it is 125 against 128.
 
 - `seasons` is an array of exactly four objects in the order spring, summer, autumn, winter, each with exactly the
-  keys `foodScarcity`, `energyDrain`, `reproductionBonus`, each finite and `>= 0`. The season index is
+  keys `foodScarcity`, `energyDrain`, `reproductionBonus`, each finite and `>= 0`, and `temperatureModifier`, finite
+  and of either sign. The season index is
   `Math.floor(phase x 4)`.
 - `specialisations` is an object with exactly the keys `forager`, `predator`, `reproducer`, `scout`, `defender`. Each
   value has exactly `index` (fixed: 0, 1, 2, 3, 4 in that order), `visionRange` (`> 0`), `canHunt` (boolean),
@@ -138,7 +147,7 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it 
 
 ### Arrays
 
-The design doc's World state table, plus:
+The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 | Group         | Arrays (type)                                                                                                             |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -203,6 +212,8 @@ Unused fields are 0.
   `addEnergy`'s return value and `transferGained`.
 - Food the eater cannot hold is left out of the ledger: food energy only enters the ledger once an agent stores it.
 - At death the dead agent's remaining energy goes to `ledger[1]` before `freeAgent`.
+- Temperature is not energy: `gainTemperature(world, slot, amount)` in `temperature.js` adds `amount` and caps at
+  `temperatureMax`, and touches no ledger.
 - `size` is recomputed after every change to `energy`: `max(minSize, baseSize + energy / energyToSize)`.
 
 ## Placement - `spawn.js`
@@ -226,7 +237,7 @@ Unused fields are 0.
 - `spawnAgent(world, config, policy, cause)` uses the `spawn` stream: allocates the slot; sets `genomeId = nextId++`,
   `lineageId = genomeId`, `parentA = parentB = 0`; spec from `policy.initSpec` or `nextInt(spawn, 5)`; then
   `policy.initBrain` with the `brain-init` stream; then the position by `placeClear` with the radius for
-  `initialEnergy`, `angle = nextFloat x 2 PI - PI`, zero velocity, `ateTimer = bittenTimer = TIMER_CAP`, energy by
+  `initialEnergy`, `angle = nextFloat x 2 PI - PI`, zero velocity, `ateTimer = bittenTimer = TIMER_CAP`, `temperature = temperatureStart`, energy by
   `addEnergy`; then pushes `AgentBorn`.
 - `createWorld(config, policy)` lives here, not in `world.js`, so that `spawn.js` can import `world.js` without a
   cycle: it calls `allocateWorld(config)`, forks the streams, then places obstacles, then `initialFood` food items,
@@ -239,8 +250,9 @@ Unused fields are 0.
 - Each function visits slots `0 .. maxAgents - 1` and acts on a slot if it is alive when visited. An agent born
   earlier in the same function at a higher slot is visited; one at a lower slot is not.
 - `applyCosts`, per alive agent: `ageTicks += 1`; `cooldown = max(0, cooldown - 1)`;
-  `ateTimer = min(TIMER_CAP, ateTimer + 1)`; the same for `bittenTimer`; then the cost by `removeEnergy` with cause
-  `cost`. A newborn's first increment is on the tick after its birth.
+  `ateTimer = min(TIMER_CAP, ateTimer + 1)`; the same for `bittenTimer`; then `stepTemperature(world, slot)`; then the
+  cost by `removeEnergy` with cause `cost`, whose passive and size terms are multiplied by `passiveMultiplier` of the
+  stepped temperature. A newborn's first increment is on the tick after its birth.
 - `advancePregnancies`: `pregnancy -= 1` where it is above 0; at 0, the birth is attempted.
 - `reap`, per alive agent: `ageTicks >= maxAgeTicks` dies of `old-age` first; otherwise energy at 0 dies of the
   cause mapped from `lastLoss` (none or `cost` to `starved`, `bite` to `eaten`, `collision` to `collision`). `by` is
@@ -254,10 +266,21 @@ Unused fields are 0.
 ### Motion and body inputs
 
 - `actAll`: `turnRate = out2 x maxTurn`; `angle += turnRate`, then `angle -= 2 PI` when `angle >= PI` or
-  `angle += 2 PI` when `angle < -PI` (one conditional); thrust `out1 x maxThrust`, times `1 + sprintMultiplier` when
+  `angle += 2 PI` when `angle < -PI` (one conditional); thrust `out1 x maxThrust x thrustEfficiency(config, temperature)`, times `1 + sprintMultiplier` when
   sprinting, is added to `vx`, `vy` along the new heading.
 - `integrate`: `vx *= damping`, `vy *= damping`; when `speed = Math.sqrt(vx x vx + vy x vy)` exceeds the cap,
   `s = cap / speed`, `vx *= s`, `vy *= s`; then `x += vx`, `y += vy`.
+- `stepTemperature`: `speed = Math.sqrt(vx x vx + vy x vy)` of the velocity left by `integrate` and
+  `resolveContacts`; `loss = max(0, 1 - seasons[world.season[0]].temperatureModifier x temperatureSeasonSlope)`;
+  `next = temperature + min(speed / maxVelocity, 1) x temperatureGainMove - temperatureLossPassive x loss`, clamped to
+  `0 .. temperatureMax`. `actAll` runs before `applyCosts`, so it reads the temperature of the end of the previous tick.
+- Body inputs 16 to 19 (0-based offsets 15 to 18 from `rayCount x 8`) come from `temperatureInputs(config, t, out,
+offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)` with `middle` the mean of
+  `temperatureOptimalMin` and `temperatureOptimalMax`; cold stress, 1 below `temperatureColdStress`, else
+  `(temperatureColdModerate - t) / (temperatureColdModerate - temperatureColdStress)` below `temperatureColdModerate`,
+  else 0; heat stress, 1 above `temperatureHeatStress`, else
+  `(t - temperatureHeatModerate) / (temperatureHeatStress - temperatureHeatModerate)` above `temperatureHeatModerate`,
+  else 0.
 - Body inputs 2 and 3: forward `(vx x cH + vy x sH) / maxVelocity`, lateral `(-vx x sH + vy x cH) / maxVelocity`.
 - The season: `seasonAt(config, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick.
@@ -267,6 +290,9 @@ Unused fields are 0.
 - `feed` visits alive agents in ascending slot. Each eats every alive food it overlaps, found through `cellRange`
   of its circle, cells ascending and entries in cell order. Food is removed when eaten even if the eater stored
   only part of it.
+- Eating raises the eater's temperature by `temperatureGainEat x stored / foodEnergy` (`stored` is what `addEnergy`
+  returned), and a bite raises the biter's by `temperatureGainEat x transferGained / foodEnergy`; both through
+  `gainTemperature`. The victim's is unchanged.
 - Eating runs over all agents first; then bites run over the contact list in list order.
 - A bite moves `biteEnergy x biteTakenMultiplier` with `transferEnergy`; the victim's `lastLoss` becomes `bite` and
   its `lastBiter` the biter's `genomeId`.
@@ -365,7 +391,7 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 
 ### Mating and births
 
-- `mate` walks alive slots `a` in ascending order. For each `a` that is ready (`readyToMate`), `findMate` scans the
+- `mate` walks alive slots `a` in ascending order. For each `a` that is ready (`readyToMate`; `isReadyToMate` is false when `temperature < temperatureColdStress` or `temperature > temperatureHeatStress`, and the block draws nothing), `findMate` scans the
   hash cells covered by `size[a] + mateRange` in row-major order, entries in entry order, and takes the first `b > a`
   whose edge-to-edge gap is below `mateRange` (0 is the contact test of `resolvePair`), which passes `canMatePair`
   and wins the draw. A `b` is taken only in the first scanned cell that contains it. The lower slot is the mother.
@@ -383,7 +409,7 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
   are the splitter, and the cooldown is `reproductionCooldown x cooldownMultiplier x splitCooldownMultiplier`
   rounded down.
 - Child placement: `theta = nextFloat x 2 PI` on `lifecycle`; centre at the parent's plus `(r_parent + r_child)` along
-  `theta`, clamped to `[r, size - r]`; `angle = theta - PI` wrapped; zero velocity; timers at `TIMER_CAP`.
+  `theta`, clamped to `[r, size - r]`; `angle = theta - PI` wrapped; zero velocity; timers at `TIMER_CAP`; `temperature = temperatureStart`.
 - `childBrain` gets `world.birthOptions`, one object reused for every birth: its `cause` and `rng` (the `mutation`
   stream) are set before each call.
 
@@ -401,7 +427,7 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 FNV-1a over raw little-endian bytes, in this order:
 
 1. `tick`, `nextId`, `population`, `foodCount`, as one `Uint32Array(4)`.
-2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order. `hidden` is
+2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order (`temperature` follows `lastLoss`). `hidden` is
    hashed without its scratch row. `inputs` and `outputs` are left out: they are recomputed every tick.
 3. Food, obstacles, zones, in the order of this file's Arrays table; then `danger`, `attack` and `ledger`.
 4. The six RNG streams' `s` arrays, in the Determinism table order.
@@ -474,7 +500,7 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
 - `fatherWeights`, `fatherId` and `fatherLineage` keep their values after a birth; only the next mating overwrites
   them.
 - `isReadyToMate(world, slot)` in `mate-eligibility.js` (mature, not pregnant, cooldown 0, energy above
-  `mateMinEnergy`) is shared by body input 7 and `mate`, which also needs the mate output above 0. `canMatePair`
+  `mateMinEnergy`, temperature not past a stress threshold) is shared by body input 7 and `mate`, which also needs the mate output above 0. `canMatePair`
   adds the pair conditions, including that the lower slot holds more than `childEnergyMin / childEnergyShare`.
 - `actAll` adds thrust along the heading as computed in double precision before it is stored in the `Float32Array`;
   sensing later reads the stored float32 `angle`.

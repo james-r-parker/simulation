@@ -32,11 +32,12 @@ It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Wo
 | `js/sim/brain-layout.js`     | `OUTPUT_COUNT`, `brainLayout`                                                                                      | Offsets of the blocks in one agent's weight row; shared by config validation, the world and the brain                           |
 | `js/sim/spawn.js`            | `createWorld`, `placeClear`, `placeObstacles`, `spawnFoodItem`, `spawnAgent`                                       | `createWorld` over `allocateWorld`; rejection-sampled placement; one food item; one agent with ids, spec, brain and `AgentBorn` |
 | `js/sim/spatial-hash.js`     | `createSpatialHash`, `buildHash`, `cellRange`                                                                      | Uniform grid built by counting sort; a circle goes in every cell its bounding box overlaps                                      |
+| `js/sim/temperature.js`      | `stepTemperature`, `gainTemperature`, `passiveMultiplier`, `thrustEfficiency`, `blocksMating`, `temperatureInputs` | The body-temperature rules as functions of the world and one temperature value; allocates nothing                               |
 | `js/sim/world-hash.js`       | `hashWorld`                                                                                                        | FNV-1a over every world array, as a 16-character hex string                                                                     |
 | `js/sim/invariants.js`       | `assertInvariants`                                                                                                 | Throws naming the first broken invariant                                                                                        |
 | `js/sim/brain.js`            | `forwardAll`                                                                                                       | Per-agent Elman RNN weights, biases and hidden state; one batched pass                                                          |
 | `js/sim/ray-march.js`        | `castRays`                                                                                                         | DDA ray walk over the hash plus direct obstacle tests; nearest hit per ray                                                      |
-| `js/sim/body-inputs.js`      | `writeBodyInputs`                                                                                                  | The 15 body-state inputs                                                                                                        |
+| `js/sim/body-inputs.js`      | `writeBodyInputs`                                                                                                  | The 19 body-state inputs, four of them temperature                                                                              |
 | `js/sim/sensors.js`          | `senseAll`                                                                                                         | Fills `world.inputs` from `castRays` and `writeBodyInputs`                                                                      |
 | `js/sim/physics.js`          | `actAll`, `integrate`, `resolveContacts`                                                                           | Outputs to motion; walls and obstacles; agent pairs resolved once into the contact list                                         |
 | `js/sim/kin.js`              | `isKin`                                                                                                            | Whether two agents are parent and child or siblings                                                                             |
@@ -44,9 +45,9 @@ It runs unchanged in Node (tests, bench, evals, trainer, replay) and in a Web Wo
 | `js/sim/food.js`             | `spawnFood`, `ageFood`                                                                                             | Food spawning and rot                                                                                                           |
 | `js/sim/pheromones.js`       | `depositPheromone`, `updatePheromones`, `samplePheromones`                                                         | Two-channel grid field with decay and diffusion                                                                                 |
 | `js/sim/events.js`           | `createEventRing`, `pushEvent`, `readEvents`, `clearEvents`, the event type and cause codes                        | Fixed-size ring of typed event records                                                                                          |
-| `js/sim/energy.js`           | `addEnergy`, `removeEnergy`, `transferEnergy`, `updateSize`, `LOSS_CAUSE`, `ENERGY_SOURCE`; `applyCosts` (Phase 2) | Per-tick costs; every energy change, recorded in the ledger                                                                     |
-| `js/sim/feeding.js`          | `feed`                                                                                                             | Eating food and bites, from the contact list                                                                                    |
-| `js/sim/mate-eligibility.js` | `isReadyToMate`, `readyToMate`, `canMatePair`                                                                      | The mating conditions; `reproduction.js` and `body-inputs.js` import `isReadyToMate` from it                                    |
+| `js/sim/energy.js`           | `addEnergy`, `removeEnergy`, `transferEnergy`, `updateSize`, `LOSS_CAUSE`, `ENERGY_SOURCE`; `applyCosts` (Phase 2) | Per-tick costs, with the temperature step; every energy change, recorded in the ledger                                          |
+| `js/sim/feeding.js`          | `feed`                                                                                                             | Eating food and bites, from the contact list; each raises the eater's temperature                                               |
+| `js/sim/mate-eligibility.js` | `isReadyToMate`, `readyToMate`, `canMatePair`                                                                      | The mating conditions, including the temperature block; `reproduction.js` and `body-inputs.js` import `isReadyToMate` from it   |
 | `js/sim/mate-search.js`      | `findMate`                                                                                                         | The first partner within `mateRange` of one agent that passes `canMatePair` and wins the draw                                   |
 | `js/sim/reproduction.js`     | `mate`, `advancePregnancies`, `splitAll`                                                                           | Mating over `findMate`, pregnancies, splits and child placement                                                                 |
 | `js/sim/population.js`       | `reap`, `fillFloor`                                                                                                | Deaths and the population floor                                                                                                 |
@@ -77,7 +78,7 @@ An unknown key, a wrong type or an out-of-range value throws an `Error` naming t
 expected. `configHash(config)` is stable across key order. `rulesHash(config)` hashes the same JSON without `seed`,
 `maxAgents`, `initialAgents`, `minAgents`, `immigrationInterval` and `checkInvariants`: two configs with equal rules
 hashes run the same physics and brains at different population sizes. "new" in Source marks a key with no legacy constant.
-The contracts file adds eleven keys (`restitution`, the food-target constants, `fertileZoneRadius` and others) and
+The contracts file adds twelve keys (`restitution`, the food-target constants, `fertileZoneRadius`, `temperatureSeasonSlope` and others) and
 gives every key's type and range.
 
 | Key                                                            | Default                           | Source                                                                                                            |
@@ -108,7 +109,16 @@ gives every key's type and range.
 | `maxAgeTicks`                                                  | `36000`                           | new                                                                                                               |
 | `reproductionCooldown`, `pregnancyTicks`, `maturityTicks`      | `300`, `480`, `600`               | `REPRODUCTION_COOLDOWN_FRAMES`, `PREGNANCY_DURATION_FRAMES`, `MATURATION_AGE_FRAMES`                              |
 | `seasonLength`                                                 | `3600`                            | `SEASON_LENGTH`                                                                                                   |
-| `seasons`                                                      | The Seasons table                 | `SEASON_*`                                                                                                        |
+| `seasons`                                                      | The Seasons table                 | `SEASON_*`, with `temperatureModifier` from `SEASON_*_TEMP_MODIFIER`                                              |
+| `temperatureMax`, `temperatureStart`                           | `100`, `50`                       | `TEMPERATURE_MAX` (the minimum, 0, is fixed), `TEMPERATURE_START`                                                 |
+| `temperatureGainMove`, `temperatureGainEat`                    | `0.025`, `2`                      | `TEMPERATURE_GAIN_MOVE`, `TEMPERATURE_GAIN_EAT`                                                                   |
+| `temperatureLossPassive`, `temperatureSeasonSlope`             | `0.015`, `0.03`                   | `TEMPERATURE_LOSS_PASSIVE`, new (scales the seasons' `temperatureModifier`)                                       |
+| `temperaturePassiveLossFactor`                                 | `4`                               | `TEMPERATURE_PASSIVE_LOSS_FACTOR`                                                                                 |
+| `temperatureColdStress`, `temperatureColdModerate`             | `30`, `40`                        | `TEMPERATURE_COLD_STRESS_THRESHOLD`, `TEMPERATURE_COLD_MODERATE_THRESHOLD`                                        |
+| `temperatureOptimalMin`, `temperatureOptimalMax`               | `40`, `65`                        | `TEMPERATURE_OPTIMAL_MIN`, `TEMPERATURE_OPTIMAL_MAX`                                                              |
+| `temperatureHeatModerate`, `temperatureHeatStress`             | `70`, `85`                        | `TEMPERATURE_HEAT_MODERATE_THRESHOLD`, `TEMPERATURE_HEAT_STRESS_THRESHOLD`                                        |
+| `temperatureEfficiencyColdSevere`, `...ColdModerate`           | `0.3`, `0.7`                      | `TEMPERATURE_EFFICIENCY_COLD_SEVERE`, `TEMPERATURE_EFFICIENCY_COLD_MODERATE`                                      |
+| `temperatureEfficiencyHeatModerate`, `...HeatSevere`           | `0.8`, `0.4`                      | `TEMPERATURE_EFFICIENCY_HEAT_MODERATE`, `TEMPERATURE_EFFICIENCY_HEAT_SEVERE`                                      |
 | `fertileZoneMax`, `fertileZoneSpawnChance`, `fertileZoneDecay` | `100`, `0.4`, `0.001`             | `FERTILE_ZONE_MAX_COUNT`, `FERTILE_ZONE_SPAWN_CHANCE`, `FERTILE_ZONE_DECAY_RATE`                                  |
 | `pheromoneCellSize`, `pheromoneDecay`                          | `100`, `0.00167`                  | new, `PHEROMONE_FADE_RATE`                                                                                        |
 | `pheromoneDiffusion`, `pheromoneDeposit`, `pheromoneMax`       | `0.05`, `1`, `5`                  | new                                                                                                               |
@@ -116,12 +126,12 @@ gives every key's type and range.
 | `specialisations`                                              | The Specialisations table         | `AGENT_CONFIGS`, `DEFENDER_DAMAGE_REDUCTION`, `SCOUT_ENERGY_COST_MULTIPLIER`; new                                 |
 | `checkInvariants`                                              | `false`                           | new                                                                                                               |
 
-| Season (phase quarter) | `foodScarcity` | `energyDrain` | `reproductionBonus` |
-| ---------------------- | -------------- | ------------- | ------------------- |
-| Spring (0 - 0.25)      | 1.2            | 1.0           | 1.5                 |
-| Summer (0.25 - 0.5)    | 1.0            | 1.3           | 1.2                 |
-| Autumn (0.5 - 0.75)    | 0.8            | 1.1           | 0.7                 |
-| Winter (0.75 - 1)      | 0.4            | 1.8           | 0.3                 |
+| Season (phase quarter) | `foodScarcity` | `energyDrain` | `reproductionBonus` | `temperatureModifier` |
+| ---------------------- | -------------- | ------------- | ------------------- | --------------------- |
+| Spring (0 - 0.25)      | 1.2            | 1.0           | 1.5                 | -5                    |
+| Summer (0.25 - 0.5)    | 1.0            | 1.3           | 1.2                 | 15                    |
+| Autumn (0.5 - 0.75)    | 0.8            | 1.1           | 0.7                 | 5                     |
+| Winter (0.75 - 1)      | 0.4            | 1.8           | 0.3                 | -15                   |
 
 The season phase is `(tick % seasonLength) / seasonLength`: one `seasonLength` is a full year.
 
@@ -147,6 +157,7 @@ The season phase is `(tick % seasonLength) / seasonLength`: one `seasonLength` i
 | `energy`, `foodEnergy`, `biteEnergy`                       | `Float64Array` | Current energy; totals gained from food and from bites                                                                                        |
 | `ageTicks`, `cooldown`, `pregnancy`                        | `Uint32Array`  | Ticks alive; ticks until mating or splitting is allowed; ticks left of a pregnancy (0 = none)                                                 |
 | `ateTimer`, `bittenTimer`, `lastLoss`                      | `Uint8Array`   | Ticks since eating and since being bitten (capped at 30); cause of the last energy loss                                                       |
+| `temperature`                                              | `Float32Array` | Body temperature, 0 to `temperatureMax`; a new agent starts at `temperatureStart`                                                             |
 | `genomeId`, `lineageId`, `parentA`, `parentB`, `lastBiter` | `Uint32Array`  | Ids from `world.nextId`; `lineageId` is the founding immigrant's `genomeId`; `lastBiter` is the `genomeId` of the last agent to bite this one |
 | `inputs`, `outputs`                                        | `Float32Array` | `maxAgents x inputCount`, `maxAgents x OUTPUT_COUNT`                                                                                          |
 | `weights`, `fatherWeights`                                 | `Float32Array` | `maxAgents x weightCount` each: own brain; a pregnant mother's copy of the father's                                                           |
@@ -204,7 +215,7 @@ The bench times each phase by calling its `run` directly.
 
 ### Sensing
 
-`brainLayout(config).inputCount` is `rayCount x 8 + 15` (143 at 16 rays). Rays are evenly spaced over 360 degrees
+`brainLayout(config).inputCount` is `rayCount x 8 + 19` (147 at 16 rays). Rays are evenly spaced over 360 degrees
 from the heading. A ray walks the cells it crosses (DDA), tests every circle in a cell, and stops at the first cell
 whose nearest hit lies inside that cell's stretch of the ray; the obstacles and the walls are tested directly.
 
@@ -213,26 +224,30 @@ whose nearest hit lies inside that cell's stretch of the ray; the obstacles and 
 | 1       | Proximity: `1 - distance / visionRange`, 0 for no hit                                                                                                                         |
 | 2-8     | One-hot class: food, bigger agent (size ratio above `huntSizeRatio`), smaller agent (below `1 / huntSizeRatio`), similar agent, kin (see Kin, overrides size), wall, obstacle |
 
-| Body input | Value                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------- |
-| 1          | `energy / maxEnergy`                                                                   |
-| 2, 3       | Forward and lateral velocity over `maxVelocity`                                        |
-| 4          | `turnRate / maxTurn`                                                                   |
-| 5          | `size / (baseSize + maxEnergy / energyToSize)`                                         |
-| 6          | Pregnant (0 or 1)                                                                      |
-| 7          | Ready to mate: mature, not pregnant, cooldown 0, energy above `mateMinEnergy` (0 or 1) |
-| 8, 9       | `danger` and `attack` pheromone at the agent's cell, clamped to 0..1                   |
-| 10, 11     | `detSin` and `detCos` of `2 pi x` season phase                                         |
-| 12         | `1 - ateTimer / 30`                                                                    |
-| 13         | `1 - bittenTimer / 30`                                                                 |
-| 14         | Specialisation index / 4                                                               |
-| 15         | `ageTicks / maxAgeTicks`                                                               |
+| Body input | Value                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1          | `energy / maxEnergy`                                                                                                            |
+| 2, 3       | Forward and lateral velocity over `maxVelocity`                                                                                 |
+| 4          | `turnRate / maxTurn`                                                                                                            |
+| 5          | `size / (baseSize + maxEnergy / energyToSize)`                                                                                  |
+| 6          | Pregnant (0 or 1)                                                                                                               |
+| 7          | Ready to mate: mature, not pregnant, cooldown 0, energy above `mateMinEnergy`, temperature not past a stress threshold (0 or 1) |
+| 8, 9       | `danger` and `attack` pheromone at the agent's cell, clamped to 0..1                                                            |
+| 10, 11     | `detSin` and `detCos` of `2 pi x` season phase                                                                                  |
+| 12         | `1 - ateTimer / 30`                                                                                                             |
+| 13         | `1 - bittenTimer / 30`                                                                                                          |
+| 14         | Specialisation index / 4                                                                                                        |
+| 15         | `ageTicks / maxAgeTicks`                                                                                                        |
+| 16         | `temperature / temperatureMax`                                                                                                  |
+| 17         | Distance of `temperature` from the middle of the optimal band, over `temperatureMax / 2`, capped at 1                           |
+| 18         | Cold stress: 1 below `temperatureColdStress`, falling linearly to 0 at `temperatureColdModerate`                                |
+| 19         | Heat stress: 0 up to `temperatureHeatModerate`, rising linearly to 1 at `temperatureHeatStress`, 1 above                        |
 
 ### Brain
 
 `brainLayout(config)` returns `inputCount` and the offsets into one agent's weight row: `wIn`
 (`inputCount x brainHidden`), `wRec` (`brainHidden x brainHidden`), `bHidden`, `wOut` (`brainHidden x OUTPUT_COUNT`),
-`bOut`, and `weightCount` (5797 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
+`bOut`, and `weightCount` (5925 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
 copies it over the slot's `hidden` row:
 
 - `h' = detTanh(wIn x + wRec h + bHidden)`;
@@ -250,8 +265,12 @@ Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 5:
 
 ### Physics
 
-- `actAll` sets `turnRate`, turns, and adds thrust to velocity. `integrate` applies `damping`, caps speed at
+- `actAll` sets `turnRate`, turns, and adds thrust to velocity, scaled by `thrustEfficiency` of the agent's `temperature` as it stood at the end of the previous tick. `integrate` applies `damping`, caps speed at
   `maxVelocity` (x `1 + sprintMultiplier` while sprinting), and moves.
+- **Thrust efficiency.** Thrust, sprint included, is multiplied by an efficiency set by the temperature `t`:
+  `temperatureEfficiencyColdSevere` below `temperatureColdStress`, `temperatureEfficiencyColdModerate` below
+  `temperatureColdModerate`, 1 up to `temperatureOptimalMax`, `temperatureEfficiencyHeatModerate` below
+  `temperatureHeatStress`, and `temperatureEfficiencyHeatSevere` from there up.
 - An agent crossing a wall or entering an obstacle is pushed out, has its normal velocity reflected, and loses
   `wallDamage` or `obstacleDamage` with loss cause `collision`. Damage applies on the tick of impact only; an agent
   already touching and moving away takes none.
@@ -259,13 +278,15 @@ Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 5:
 ### Lifecycle
 
 - **Eating.** An agent overlapping food gains the food's energy up to `maxEnergy`; the food is removed and `ateTimer`
-  resets.
+  resets. The eater's `temperature` rises by `temperatureGainEat x stored / foodEnergy`, with `stored` the energy it
+  took, capped at `temperatureMax`.
 - **Biting.** For each contact where one agent `canHunt`, wants to bite, is not kin and is more than
   `huntSizeRatio` times the other's size, the victim loses `biteEnergy` (x 0.5 for a defender) and the biter gains
   exactly that amount up to `maxEnergy`. The biter deposits `pheromoneDeposit` of `attack` and the victim of
-  `danger` at their cells; the victim's `bittenTimer` resets and its loss cause is `bite`.
+  `danger` at their cells; the victim's `bittenTimer` resets and its loss cause is `bite`. The biter's `temperature` rises by
+  `temperatureGainEat x gained / foodEnergy`, with `gained` the energy it received; the victim's is unchanged.
 - **Mating.** Agents are walked in slot order; for each agent that wants to mate and is ready (mature, not pregnant,
-  cooldown 0, above `mateMinEnergy`), `findMate` looks for a partner within `mateRange` (edge to edge, no contact
+  cooldown 0, above `mateMinEnergy`, `temperature` from `temperatureColdStress` to `temperatureHeatStress` inclusive), `findMate` looks for a partner within `mateRange` (edge to edge, no contact
   needed) that is also ready and wanting, of the same specialisation, with size ratio within
   `1 / huntSizeRatio .. huntSizeRatio`, where the lower slot (the mother) holds more than
   `childEnergyMin / childEnergyShare`. Mating happens with probability `min(1, reproductionBonus / 1.5)` (a
@@ -280,9 +301,15 @@ Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 5:
   `reproductionCooldown x 1.5`. With no free slot nothing happens and `BirthBlocked` is pushed.
 - **Placement.** A child appears touching its parent at an angle drawn from the `lifecycle` stream, clamped inside
   the world, with the parent's `lineageId` and specialisation, and `AgentBorn` is pushed.
-- **Costs.** Each tick an agent loses `(passiveLoss + movementCost x speed^2 x m + turnCost x |turnRate| x m +
-sizeEnergyLoss x size) x energyDrain`, where `m` is the specialisation's cost modifier, plus `sprintCost` while
-  sprinting. Loss cause `cost`.
+- **Temperature.** `applyCosts` first steps each alive agent's temperature:
+  `temperature += min(speed / maxVelocity, 1) x temperatureGainMove - temperatureLossPassive x L`, clamped to 0 to
+  `temperatureMax`, with `L = max(0, 1 - temperatureModifier x temperatureSeasonSlope)` for the current season: a
+  warmer season cools an agent more slowly. A new agent, whether spawned or born, starts at `temperatureStart`.
+- **Costs.** After the temperature step, each tick an agent loses `((passiveLoss + sizeEnergyLoss x size) x P +
+movementCost x speed^2 x m + turnCost x |turnRate| x m) x energyDrain`, where `m` is the specialisation's cost
+  modifier and `P` the passive multiplier of the stepped temperature, plus `sprintCost` while sprinting. `P` is 1
+  from `temperatureOptimalMin` to `temperatureOptimalMax` and rises linearly to `temperaturePassiveLossFactor` at 0
+  and at `temperatureMax`. Loss cause `cost`.
 - **Death.** Energy at or below 0, or `ageTicks` reaching `maxAgeTicks`, frees the slot, adds a fertile zone, and
   pushes `AgentDied` with cause `starved` (`cost`), `eaten` (`bite`), `collision` or `old-age`.
 - **Kin.** Two agents are kin when one is the other's parent (its `parentA` or `parentB` equals the other's
@@ -317,7 +344,7 @@ sizeEnergyLoss x size) x energyDrain`, where `m` is the specialisation's cost mo
 | Food eaten (after the `maxEnergy` cap); initial and floor energy | Costs, sprint, `mateCost`, wall and obstacle damage, energy of the dead at death | Bites, child gifts, split halves |
 
 `assertInvariants(world, config)` throws on the first of: a NaN or infinite value in agent or food state; an alive
-agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive count differing from `population`; total alive energy differing from ledger in minus ledger out by more than 1e-6 x the total.
+agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive count differing from `population`; an alive agent whose `temperature` is not finite or lies outside `[0, temperatureMax]`; total alive energy differing from ledger in minus ledger out by more than 1e-6 x the total.
 
 ### Determinism
 
@@ -331,7 +358,7 @@ agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive co
 | `lifecycle`  | Mating draws, child placement angle                |
 
 Each stream is `fork(createRng(config.seed), name)`, so draws on one stream never shift another. `hashWorld` covers
-`tick`, `nextId`, `population`, every agent array of every slot, food, obstacles, fertile zones, both pheromone grids
+`tick`, `nextId`, `population`, every agent array of every slot (`temperature` follows `lastLoss`), food, obstacles, fertile zones, both pheromone grids
 and the ledger. `writeSnapshot` packs per agent `x, y, angle, size, energy / maxEnergy` as float32 and `spec`, `lineageId`, `genomeId` and the slot through a `Uint32Array` view of the same buffer, then per food `x, y, radius` and per obstacle `x, y, radius`, at the offsets
 `snapshotLayout(config)` gives.
 
