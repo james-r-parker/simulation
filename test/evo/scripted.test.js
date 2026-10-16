@@ -48,7 +48,7 @@ function out(world, slot = 0) {
 }
 
 describe('SCRIPTED_CONTROLLERS', () => {
-    it('is frozen and names the seven controllers and the five constant-thrust ones', () => {
+    it('is frozen and names the seven controllers, the five constant-thrust ones and the four combat ones', () => {
         expect(Object.isFrozen(SCRIPTED_CONTROLLERS)).toBe(true);
         expect(Object.keys(SCRIPTED_CONTROLLERS).sort()).toEqual(
             [
@@ -64,6 +64,10 @@ describe('SCRIPTED_CONTROLLERS', () => {
                 'thrust40',
                 'thrust60',
                 'thrust100',
+                'hunter',
+                'fleer',
+                'alarmSpammer',
+                'smokeSpammer',
             ].sort(),
         );
     });
