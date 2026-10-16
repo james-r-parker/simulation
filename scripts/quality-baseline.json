@@ -1,10 +1,10 @@
 {
   "coverage": {
     "scripts": {
-      "lines": 89.58,
-      "branches": 83.09,
-      "functions": 94.44,
-      "statements": 89.96
+      "lines": 89.6,
+      "branches": 83.18,
+      "functions": 94.48,
+      "statements": 89.99
     },
     "js/sim": {
       "lines": 99.93,
@@ -13,10 +13,10 @@
       "statements": 99.93
     },
     "js/evo": {
-      "lines": 99.83,
-      "branches": 98.16,
+      "lines": 99.85,
+      "branches": 98.28,
       "functions": 100,
-      "statements": 99.85
+      "statements": 99.86
     }
   },
   "floors": {
