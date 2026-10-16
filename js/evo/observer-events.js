@@ -3,7 +3,7 @@
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { ensureRoom } from './growable-log.js';
 
-/** Floor episodes are counted only from this tick. */
+/** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
 export const BURN_IN_TICKS = 10000;
 
 /**

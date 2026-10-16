@@ -1,9 +1,9 @@
 // Metrics read from the observer's checkpoint series: population, diversity, lineages and dominance turnover.
 
+import { BURN_IN_TICKS } from './observer-events.js';
 import { mean, none, ok, stddev } from './metrics-stats.js';
 
-/** Checkpoints at or after this tick are after burn-in. */
-export const BURN_IN_TICKS = 10000;
+export { BURN_IN_TICKS };
 /** A newly dominant lineage must be absent from this many previous checkpoints to count as turnover. */
 export const TURNOVER_WINDOW = 10;
 /** Turnover is reported per this many ticks after burn-in. */

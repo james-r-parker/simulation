@@ -52,13 +52,22 @@ function collectMetrics(perSeed) {
  */
 
 /**
+ * The config as a report stores it: without `seed`, since each seed's world is this config with that seed.
+ * @param {Readonly<Record<string, any>>} config a resolved config
+ * @returns {Record<string, any>} a copy without `seed`
+ */
+export function seedlessConfig(config) {
+    return Object.fromEntries(Object.entries(config).filter(([key]) => key !== 'seed'));
+}
+
+/**
  * Builds the report. Each seed's world is `config` with that seed, so the stored config has no `seed`, and
  * `configHash` is `configHash` of that stored object.
  * @param {BuildReportInput} input the run's results
  * @returns {Record<string, any>} the report
  */
 export function buildReport({ policy, fitnessName, config, ticks, seeds, sha, perSeed }) {
-    const rest = Object.fromEntries(Object.entries(config).filter(([key]) => key !== 'seed'));
+    const rest = seedlessConfig(config);
     return {
         version: REPORT_VERSION,
         policy,

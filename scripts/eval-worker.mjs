@@ -97,6 +97,7 @@ export function runSeed(task) {
     try {
         world = createWorld(config, policy.brain);
         observe(observer, world, policy.fitness);
+        dispatchEvents(policy, world);
         checkpoints = runTicks(task, { policy, observer, world });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
