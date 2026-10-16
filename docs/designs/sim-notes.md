@@ -176,3 +176,15 @@ the fed-lifespan gap to -11% and one seed broke out to a self-sustaining populat
 never eat, so the sitter, spinner and bumper beat the foodSeeker again. Survival capped at food eaten (E9) or paid only
 after 500 food (E10) is exploit-safe and gives fed lifespan -28% and -23.5%. The full-thrust scripted foodSeeker starves
 on this economy, so the anti-exploit reference seeks at thrust 0.4.
+
+### 2026-10-16 - Body temperature: the sweet spot
+
+With body temperature on the reachable-births defaults (seed 1, floor and immigration off, 20000 ticks), constant-thrust
+scripted foragers (the foodSeeker's steering): thrust 0 dies out by tick 4453 at a mean temperature of 24; thrust 0.2
+grows from 100 to 393 agents (1927 births) at a mean of 49.7, inside the 40-65 band; thrust 0.4 grows to 217 (mean 73);
+0.6 to 163 (mean 81); thrust 1 dies out by tick 6295 (mean 78). Moving gently pays, and both sitting and rushing cost.
+The legacy `temperatureGainMove` 0.025 and `temperatureLossPassive` 0.015 give this shape, so they stay. In the
+micro-world a sitter now dies at about tick 3850 against 9180 with the passive multiplier off (2.4x sooner). The legacy
+`js/agent.js` scaled cooling by `1 + modifier x 0.07`, so hot seasons cooled faster, against its own comment; the port
+follows the comment (`1 - modifier x 0.03`). A 2000 x 1000 test world with the default 25 obstacles can fail food
+placement ("no point clear of obstacles"), which the eval-runner slow test now avoids with 4 obstacles.
