@@ -4,7 +4,7 @@ import { LIVE_POLICY, POLICIES, getPolicy } from '../../../js/evo/policies/index
 describe('policies', () => {
     it('registers baseline-v5 as the live policy', () => {
         expect(LIVE_POLICY).toBe('baseline-v5');
-        expect(Object.keys(POLICIES)).toEqual(['baseline-v5', 'natural-v1']);
+        expect(Object.keys(POLICIES)).toEqual(['baseline-v5', 'map-elites-v1', 'natural-v1']);
         expect(getPolicy('baseline-v5')).toBe(POLICIES['baseline-v5']);
     });
 
@@ -20,7 +20,7 @@ describe('policies', () => {
     });
 
     it('lists the known names when the name is unknown', () => {
-        expect(() => getPolicy('nope')).toThrow('Unknown policy "nope"; known: baseline-v5, natural-v1');
+        expect(() => getPolicy('nope')).toThrow('Unknown policy "nope"; known: baseline-v5, map-elites-v1, natural-v1');
     });
 
     it('does not resolve inherited object keys', () => {
