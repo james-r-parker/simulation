@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
-import { buildHash, cellRange, createSpatialHash } from '../../js/sim/spatial-hash.js';
+import { buildHash, cellOf, cellRange, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
 
 const SMALL = {
@@ -229,5 +229,14 @@ describe('buildHash', () => {
         expect(hash.entryCount).toBe(1);
         hash.entries = new Int32Array(0);
         expect(() => buildHash(hash, world)).toThrow('spatial hash needs 1 entries but holds 0');
+    });
+});
+
+describe('cellOf', () => {
+    it('floors a coordinate into a cell and clamps it to the grid', () => {
+        expect(cellOf(0, CELL, 7)).toBe(0);
+        expect(cellOf(CELL, CELL, 7)).toBe(1);
+        expect(cellOf(-5, CELL, 7)).toBe(0);
+        expect(cellOf(99999, CELL, 7)).toBe(7);
     });
 });

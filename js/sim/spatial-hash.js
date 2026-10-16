@@ -47,7 +47,7 @@ export function createSpatialHash(config) {
  * @param {number} last the last valid cell index
  * @returns {number}
  */
-function cellOf(v, cellSize, last) {
+export function cellOf(v, cellSize, last) {
     const c = Math.floor(v / cellSize);
     return c < 0 ? 0 : c > last ? last : c;
 }
