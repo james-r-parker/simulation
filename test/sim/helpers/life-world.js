@@ -58,19 +58,6 @@ export function addBlob(w, fields = {}) {
 }
 
 /**
- * Records `(a, b)` as the only contact.
- * @param {any} w the world
- * @param {number} a a slot
- * @param {number} b a slot
- * @returns {void}
- */
-export function contact(w, a, b) {
-    w.contacts[0] = a;
-    w.contacts[1] = b;
-    w.contactCount = 1;
-}
-
-/**
  * @param {any} w the world
  * @returns {number} agent energy plus ledger outflow minus ledger inflow (zero when the books balance)
  */

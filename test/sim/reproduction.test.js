@@ -4,7 +4,8 @@ import { advancePregnancies, mate, splitAll } from '../../js/sim/reproduction.js
 import { nextFloat } from '../../js/sim/rng.js';
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { LOSS_CAUSE } from '../../js/sim/energy.js';
-import { addBlob, contact, imbalance, lifeWorld, recordingPolicy } from './helpers/life-world.js';
+import { buildHash } from '../../js/sim/spatial-hash.js';
+import { addBlob, imbalance, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 const MATE = { mateOut: 1, energy: 700 };
 
@@ -26,15 +27,15 @@ function lifecycleState(w) {
 }
 
 /**
- * A world with two mating-ready agents in contact.
+ * A world with two mating-ready agents.
  * @param {Record<string, any>} [over] config overrides
  * @returns {any}
  */
 function pair(over = {}) {
     const w = lifeWorld(over);
-    const a = addBlob(w, { ...MATE, spec: 2 });
-    const b = addBlob(w, { ...MATE, spec: 2 });
-    contact(w, a, b);
+    addBlob(w, { ...MATE, spec: 2 });
+    addBlob(w, { ...MATE, spec: 2 });
+    buildHash(w.hash, w);
     return w;
 }
 
@@ -59,9 +60,8 @@ describe('mate', () => {
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });
 
-    it('works whichever way round the contact lists the pair, and without an onMate hook', () => {
+    it('works without an onMate hook', () => {
         const w = pair();
-        contact(w, 1, 0);
         mate(w, { childBrain() {} });
         expect(w.pregnancy[0]).toBe(w.config.pregnancyTicks);
     });
@@ -119,9 +119,10 @@ describe('mate', () => {
         expect(lifecycleState(w)).toEqual(Array.from(ref.s));
     });
 
-    it('does not pay or draw when there are no contacts', () => {
-        const w = pair();
-        w.contactCount = 0;
+    it('does not pay or draw when no partner is within mateRange', () => {
+        const w = pair({ mateRange: 100 });
+        w.x[1] = 500 + w.size[0] + w.size[1] + 101;
+        buildHash(w.hash, w);
         const before = lifecycleState(w);
         mate(w, recordingPolicy([]));
         expect(lifecycleState(w)).toEqual(before);

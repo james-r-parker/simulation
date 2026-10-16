@@ -4,7 +4,8 @@ import { advancePregnancies, mate, splitAll } from '../../js/sim/reproduction.js
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { nextFloat } from '../../js/sim/rng.js';
 import { createConfig } from '../../js/sim/config.js';
-import { addBlob, contact, lifeWorld, recordingPolicy } from './helpers/life-world.js';
+import { buildHash } from '../../js/sim/spatial-hash.js';
+import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 const MATE = { mateOut: 1, energy: 700 };
 
@@ -19,13 +20,13 @@ function event(w, i) {
 
 /**
  * @param {Record<string, any>} [over] config overrides
- * @returns {any} a world with two mating-ready agents in contact
+ * @returns {any} a world with two mating-ready agents
  */
 function pair(over = {}) {
     const w = lifeWorld(over);
-    const a = addBlob(w, { ...MATE, spec: 2 });
-    const b = addBlob(w, { ...MATE, spec: 2 });
-    contact(w, a, b);
+    addBlob(w, { ...MATE, spec: 2 });
+    addBlob(w, { ...MATE, spec: 2 });
+    buildHash(w.hash, w);
     return w;
 }
 
@@ -62,10 +63,11 @@ describe('mate thresholds', () => {
 
     it('copies the father weights into the mother row of a higher mother slot', () => {
         const w = lifeWorld();
-        addBlob(w, { ...MATE, spec: 2 });
+        const far = addBlob(w, { ...MATE, spec: 2 });
+        w.x[far] = 100;
         const m = addBlob(w, { ...MATE, spec: 2 });
         const f = addBlob(w, { ...MATE, spec: 2 });
-        contact(w, f, m);
+        buildHash(w.hash, w);
         const n = w.layout.weightCount;
         for (let i = 0; i < 4 * n; i++) {
             w.weights[i] = i + 1;
