@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol.
 **Validated:** bd49bce (2026-10-11)
-**Priority:** 2 - the browser is where the simulation is watched, and it needs the core and the live policy first
+**Priority:** 3 - the browser is where the simulation is watched, and it needs the core and the live policy first
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The browser app runs the simulation in a dedicated worker and only draws on the main thread:
@@ -69,7 +69,7 @@ Every `js/worker/` module except `sim-worker.js` has `test/worker/<module>.test.
 | worker to main | `ready`                  | `configHash`, `rulesHash`, `layout` (`snapshotLayout` offsets), `policy`, `seed`                                                                            |
 | worker to main | `snapshot`               | `buffer` (transferred), `tick`, `agentCount`, `foodCount`, `obstacleCount`                                                                                  |
 | worker to main | `stats`                  | Every 250 ms of wall time: the Stats table                                                                                                                  |
-| worker to main | `field`                  | Every 250 ms: both pheromone grids as one `Float32Array` copy                                                                                               |
+| worker to main | `field`                  | Every 250 ms: the danger, attack and hunt pheromone grids as one `Float32Array` copy                                                                        |
 | worker to main | `ticker`                 | `items`: `{ tick, kind, text, genomeId?, lineageId? }`                                                                                                      |
 | worker to main | `inspect`                | With each snapshot while an agent is selected: its inputs, hidden and outputs and counters; `{ gone: true }` once it dies, after which the selection clears |
 | worker to main | `archive`                | `json` (`encodeArchive`)                                                                                                                                    |
@@ -121,6 +121,8 @@ counts, and the policy's `log` records:
   `0.35 + 0.4 x energy / maxEnergy`.
 - Food and obstacles are one `InstancedMesh` each from the snapshot; pheromones are one quad textured by a
   `DataTexture` refreshed from each `field` message.
+- Smoke clouds are one `InstancedMesh` of translucent discs from the snapshot's cloud section; `AlarmCalled` and
+  `PackCalled` ticker events draw expanding rings ([predator-prey.md](predator-prey.md)).
 - `interpolateInto(prev, next, alpha, out)` matches agents by slot and `genomeId` through a preallocated slot map,
   blends positions and angles (shortest arc), and places new agents at their newest position. `alpha` is the time
   since `next` arrived over the interval between `prev` and `next`, clamped to 0..1; with one snapshot it is 1.

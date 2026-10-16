@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 is built (genome, mutation, crossover, `fitnessV1`, `natural-v1`); its Targets are judged with Phase 2, the MAP-Elites archive and live policy, which is next.
 **Validated:** 36ee8c6 (2026-10-16)
-**Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it
+**Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for predator-prey.md
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 `js/evo/` decides which brains get born. The headless sim core runs bodies and brains; evolution supplies the
@@ -189,6 +189,8 @@ from the `map-elites-v1` report with no verdict.
 ### Phase 3 - Headless trainer and champions
 
 **Targets:** eval.food_energy_per_1k
+
+Phase 3 is built after [predator-prey.md](predator-prey.md) is `Implemented`: champions are trained on its brain layout.
 
 `trainer.js`, `npm run train`, `npm run train:export`, `public/champions/v1/` and `champions-v1`. Done when
 `champions-v1` is `better` than `baseline-v5` on the Target; each champion is admitted to the league in
