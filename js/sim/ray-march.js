@@ -30,8 +30,9 @@ const T_STEP_X = 12;
 const T_STEP_Y = 13;
 const STEP_X = 14;
 const STEP_Y = 15;
-const COS_H = 16;
-const SIN_H = 17;
+/** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
+export const COS_H = 16;
+export const SIN_H = 17;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;
