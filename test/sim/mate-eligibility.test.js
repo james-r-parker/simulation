@@ -47,6 +47,21 @@ describe('canMatePair', () => {
         expect(canMatePair(pair(), 0, 1)).toBe(true);
     });
 
+    it('refuses a lower-slot mother at or below childEnergyMin / childEnergyShare', () => {
+        const w = pair();
+        w.energy[0] = 500;
+        expect(canMatePair(w, 0, 1)).toBe(false);
+        expect(canMatePair(w, 1, 0)).toBe(false);
+        w.energy[0] = 501;
+        expect(canMatePair(w, 0, 1)).toBe(true);
+    });
+
+    it('does not ask the father to hold that much', () => {
+        const w = pair();
+        w.energy[1] = 300;
+        expect(canMatePair(w, 0, 1)).toBe(true);
+    });
+
     it.each([
         ['a different specialisation', (/** @type {any} */ w) => (w.spec[1] = 3)],
         ['one not ready', (/** @type {any} */ w) => (w.cooldown[1] = 1)],

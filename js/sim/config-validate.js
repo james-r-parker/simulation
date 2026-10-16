@@ -91,7 +91,6 @@ const RULES = {
     huntSizeRatio: num(1),
     mateMinEnergy: num(0),
     mateCost: num(0),
-    childEnergy: positive(),
     mateRange: num(0),
     childEnergyShare: { type: 'num', gt: 0, lt: 1 },
     childEnergyMin: positive(),

@@ -119,7 +119,8 @@ function placeChild(world, child, mother) {
 
 /**
  * Allocates a child of `mother`, runs the brain hook, moves its energy in, places it and pushes `AgentBorn`.
- * A mating birth needs more energy than `childEnergy`; a split gives half the mother's energy. Either needs a free slot.
+ * A mating birth gives `childEnergyShare` of the mother's energy, and is blocked when that is below `childEnergyMin`;
+ * a split gives half. Either needs a free slot.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @param {number} mother the mother or splitter
@@ -127,17 +128,17 @@ function placeChild(world, child, mother) {
  * @returns {number} the child slot, or -1 when the birth was blocked
  */
 function giveBirth(world, policy, mother, cause) {
-    const { maxAgents, childEnergy } = world.config;
+    const { maxAgents, childEnergyShare, childEnergyMin } = world.config;
     const isMate = cause === BORN_CAUSE.MATE;
     if (world.population >= maxAgents) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
-    if (isMate && !(world.energy[mother] > childEnergy)) {
+    const gift = world.energy[mother] * (isMate ? childEnergyShare : 0.5);
+    if (isMate && gift < childEnergyMin) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;
     }
-    const gift = isMate ? childEnergy : world.energy[mother] / 2;
     const child = allocAgent(world);
     world.genomeId[child] = world.nextId++;
     world.lineageId[child] = world.lineageId[mother];

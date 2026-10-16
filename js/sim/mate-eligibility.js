@@ -34,10 +34,15 @@ export function readyToMate(world, slot) {
  * @param {World} world the world
  * @param {number} a an agent slot
  * @param {number} b another agent slot
- * @returns {boolean} true when both are ready, share a specialisation and their sizes are within `huntSizeRatio`
+ * @returns {boolean} true when both are ready, share a specialisation, their sizes are within `huntSizeRatio` and the
+ *   lower slot, the mother, holds more than `childEnergyMin / childEnergyShare`
  */
 export function canMatePair(world, a, b) {
     if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
+        return false;
+    }
+    const { childEnergyMin, childEnergyShare } = world.config;
+    if (!(world.energy[Math.min(a, b)] > childEnergyMin / childEnergyShare)) {
         return false;
     }
     const ratio = world.size[a] / world.size[b];
