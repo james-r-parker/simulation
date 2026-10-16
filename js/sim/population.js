@@ -12,7 +12,8 @@ import { freeAgent } from './world.js';
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {number} a `DEATH_CAUSE`, or -1 when the agent survives
+ * @returns {number} a `DEATH_CAUSE`, or -1 when the agent survives; a bite this tick counts as eaten even when the
+ *   tick's costs took the last of the energy and overwrote `lastLoss`
  */
 function deathCause(world, slot) {
     if (world.ageTicks[slot] >= world.config.maxAgeTicks) {
@@ -22,7 +23,8 @@ function deathCause(world, slot) {
         return -1;
     }
     const loss = world.lastLoss[slot];
-    if (loss === LOSS_CAUSE.BITE) {
+    const bittenThisTick = world.lastBiter[slot] !== 0 && world.lastBiteTick[slot] === world.tick;
+    if (loss === LOSS_CAUSE.BITE || bittenThisTick) {
         return DEATH_CAUSE.EATEN;
     }
     return loss === LOSS_CAUSE.COLLISION ? DEATH_CAUSE.COLLISION : DEATH_CAUSE.STARVED;
