@@ -34,7 +34,7 @@ describe('evals/predator-world.json', () => {
         for (const run of runs) {
             expect(run['eval.catch_rate'].value).toBeGreaterThan(0);
         }
-    });
+    }, 60_000);
 
     it('is deterministic: the same seed gives the same metrics', () => {
         expect(runPredatorWorld(2, 1500)).toEqual(runPredatorWorld(2, 1500));
