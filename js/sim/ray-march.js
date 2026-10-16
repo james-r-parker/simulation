@@ -11,6 +11,7 @@ const FOOD = 0;
 const AGENT = 1;
 const OBSTACLE = 2;
 const WALL = 3;
+const SMOKE = 4;
 
 // Indices into `world.rayScratch`.
 const OX = 0;
@@ -40,12 +41,13 @@ const CH_SIMILAR = 4;
 const CH_KIN = 5;
 const CH_WALL = 6;
 const CH_OBSTACLE = 7;
+const CH_SMOKE = 8;
 
 /**
  * Keeps a hit when it is nearer than the best so far, or equal and ranked earlier by kind then index.
  * @param {Float64Array} s the ray scratch
  * @param {number} t distance along the ray, or a negative number for no hit
- * @param {number} kind FOOD, AGENT, OBSTACLE or WALL
+ * @param {number} kind FOOD, AGENT, OBSTACLE, WALL or SMOKE
  * @param {number} index the circle's index within its kind
  * @returns {void}
  */
@@ -93,6 +95,23 @@ function testObstacles(world) {
     const { obsX, obsY, obsRadius, rayScratch: s } = world;
     for (let i = 0; i < obsX.length; i++) {
         consider(s, rayCircle(s, obsX[i], obsY[i], obsRadius[i]), OBSTACLE, i);
+    }
+}
+
+/**
+ * Offers each live smoke cloud to the current ray; returns at once when there are none.
+ * @param {World} world the world
+ * @returns {void}
+ */
+function testClouds(world) {
+    const count = world.cloudCount;
+    if (count === 0) {
+        return;
+    }
+    const { cloudX, cloudY, rayScratch: s } = world;
+    const radius = world.config.smokeRadius;
+    for (let i = 0; i < count; i++) {
+        consider(s, rayCircle(s, cloudX[i], cloudY[i], radius), SMOKE, i);
     }
 }
 
@@ -218,6 +237,9 @@ function walkCells(world, hash, slot) {
     }
 }
 
+/** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
+const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_BIGGER, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
+
 /**
  * @param {World} world the world
  * @param {number} slot the casting agent
@@ -236,6 +258,19 @@ function agentChannel(world, slot) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {number} slot the casting agent
+ * @returns {number} the channel offset of the current ray's best hit
+ */
+function hitChannel(world, slot) {
+    const kind = world.rayScratch[BEST_KIND];
+    if (kind === AGENT) {
+        return agentChannel(world, slot);
+    }
+    return CHANNEL_OF_KIND[kind];
+}
+
+/**
  * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`.
  * @param {World} world the world
  * @param {number} slot the casting agent
@@ -249,14 +284,7 @@ function writeRay(world, slot, base) {
         return;
     }
     inputs[base] = 1 - s[BEST_T] / s[RANGE];
-    const kind = s[BEST_KIND];
-    if (kind === FOOD) {
-        inputs[base + CH_FOOD] = 1;
-    } else if (kind === AGENT) {
-        inputs[base + agentChannel(world, slot)] = 1;
-    } else {
-        inputs[base + (kind === WALL ? CH_WALL : CH_OBSTACLE)] = 1;
-    }
+    inputs[base + hitChannel(world, slot)] = 1;
 }
 
 /**
@@ -276,6 +304,7 @@ function castRay(world, hash, slot, k) {
     s[BEST_INDEX] = 0;
     testObstacles(world);
     testWalls(world);
+    testClouds(world);
     walkCells(world, hash, slot);
     writeRay(world, slot, slot * world.layout.inputCount + k * RAY_CHANNELS);
 }
