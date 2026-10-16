@@ -1,0 +1,144 @@
+# Reachable births
+
+**Status:** Proposed - Phase 1 lets willing agents mate at a short distance, sizes a child's energy as a share of its mother's, lowers the split threshold and re-records the baselines.
+**Validated:** 78552ba (2026-10-16)
+**Priority:** 2 - built before the MAP-Elites archive is judged (evolution-rework.md Phase 2): selection needs births
+**Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
+
+Births are reachable on the default world: the population lives above the `minAgents` floor, so agents have families,
+kin and lineages for evolution to select on. Four rules do it.
+
+- Two willing, ready agents within `mateRange` of each other mate. Touching is not required.
+- A mother gives a child `childEnergyShare` of her energy at birth, never less than `childEnergyMin`.
+- A mother must hold more than `childEnergyMin / childEnergyShare` to start a mating.
+- `splitMinEnergy` is 900.
+
+The rules live in `js/sim/`. There is no new RNG stream, no new event and no change to the brain layout.
+
+## Modules
+
+| Module                                          | Exports                                       | Does                                                                                                             |
+| ----------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `js/sim/mate-eligibility.js` (new)              | `isReadyToMate`, `readyToMate`, `canMatePair` | The mating conditions; `reproduction.js` and `body-inputs.js` import `isReadyToMate` from it                     |
+| `js/sim/mate-search.js` (new)                   | `findMate`                                    | The first partner within `mateRange` of one agent that passes `canMatePair` and wins the draw; allocates nothing |
+| [reproduction.js](../../js/sim/reproduction.js) | `mate`, `advancePregnancies`, `splitAll`      | `mate` walks agents in slot order and calls `findMate`; `giveBirth` sizes the child's energy                     |
+
+Every module has `test/sim/<module>.test.js`.
+
+## Rules
+
+### Mating
+
+`mate(world, policy)` walks alive slots `a` in ascending order. For each `a` with `readyToMate(world, a)` it calls
+`findMate(world, a, chance)`, where `chance` is `min(1, reproductionBonus / mateChanceScale)`. A found partner `b`
+starts a mating with `startMating(world, policy, a, b)`; the lower slot is the mother.
+
+`canMatePair(world, a, b)` holds when both are `readyToMate`, share a specialisation, have a size ratio within
+`1 / huntSizeRatio .. huntSizeRatio`, and the lower slot has energy above `childEnergyMin / childEnergyShare`.
+
+`findMate` calls `cellRange(world.hash, x, y, size[a] + mateRange)` once, then scans the cells it covers in row-major
+order, entries in entry order. For each entry `b`:
+
+1. `b` is an agent (`b < hash.maxAgents`), `alive[b]` is 1 and `b > a`.
+2. `b` is taken only in the first scanned cell that contains it: column `max(cell of b's box minX, range col0)` and row
+   `max(cell of b's box minY, range row0)`, cell indices clamped as `cellOf` clamps them in
+   [spatial-hash.js](../../js/sim/spatial-hash.js).
+3. The gap `distance(a, b) - size[a] - size[b]` is below `mateRange`. `mateRange` 0 is the contact test of
+   `resolvePair` in [physics.js](../../js/sim/physics.js).
+4. `canMatePair(world, a, b)` holds.
+5. One `lifecycle` `nextFloat` is below `chance`. The draw is made only for a pair that passed 1 to 4.
+
+The first pair to pass 1 to 5 ends the search for `a`. No agent is in two matings in one tick: the mother has a
+pregnancy and a cooldown, the father has a cooldown, and readiness is re-checked for every `a` and `b`.
+
+> Note: The hash is the one built in the `physics` phase, before `resolveContacts` separates overlaps, so a body pushed
+> across a cell edge by that step can be missed for a tick.
+
+### Births
+
+- A mating birth takes `energy[mother] x childEnergyShare` from the mother by `transferEnergy`. The birth is blocked
+  with `BirthBlocked` cause `energy` when that gift is below `childEnergyMin`.
+- A split gives `energy / 2`; it needs energy above `splitMinEnergy`.
+
+## Config
+
+All keys are in `rulesHash`.
+
+| Key                | Type             | Default | Used by                                                |
+| ------------------ | ---------------- | ------- | ------------------------------------------------------ |
+| `mateRange`        | number >= 0 (px) | `100`   | `findMate`: largest edge-to-edge gap between two mates |
+| `childEnergyShare` | number in (0, 1) | `0.4`   | `giveBirth` and `canMatePair`                          |
+| `childEnergyMin`   | number > 0       | `200`   | `giveBirth` and `canMatePair`                          |
+| `splitMinEnergy`   | number >= 0      | `900`   | `splitAll`                                             |
+
+The Config defaults are set in T6. `childEnergy` is not a key.
+
+## Cost
+
+`findMate` runs for each ready agent with the mate output on. It scans the cells that the body plus `mateRange` covers:
+9 to 25 at `hashCellSize` 128, depending on agent size (the largest radius is 125). `cellRange` is called once per
+agent `a`, not inside the entry loop, and reuses `hash.range`, so nothing is allocated. `mate` no longer walks the
+contact list. `bench.step_ms@500` stays within `bench-check`'s 15% of `bench/baseline.json`, judged on a world with real
+agent sizes.
+
+## Phases
+
+### Phase 1 - Reachable births (rules, retune and re-record)
+
+**Targets:** eval.births_per_1k, eval.floor_episodes, eval.population_mean, bench.step_ms@500
+
+`mate-eligibility.js`, `mate-search.js`, the four config keys and the re-recorded baselines. Done when, at 8 seeds x
+200000 ticks, `map-elites-v1` under these rules against the `map-elites-v1` report recorded as experiment `E3`
+(`eval:compare` with `--allow-config-diff childEnergy,childEnergyShare,childEnergyMin,mateRange,splitMinEnergy`) is
+`better` on `eval.births_per_1k` and `better` (lower) on `eval.floor_episodes`, and the mean of the 8 per-seed
+`eval.population_mean` values in the new report is at least 120 (the floor 100 plus 20%). `baseline-v5`,
+`baseline-v5-o8` and the calibration are re-recorded under these rules as experiment `E5`. The verdict is experiment
+`E6`.
+
+## Delivery requirements
+
+| Concern                 | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Architecture            | All in `js/sim/`: `mate-eligibility.js` and `mate-search.js` (Modules table), `mate` and `giveBirth` in `reproduction.js`, keys in `config-defaults.js` and `config-validate.js`. `STEP_PHASES` is unchanged. `js/evo/`, the worker and the renderer are untouched; the snapshot layout is unchanged                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Unit tests              | `test/sim/mate-search.test.js` (a pair inside and outside `mateRange` on a hand-built hash; `mateRange` 0 equals the contact test; a pair spanning a cell edge is found once; a dead slot and a `b < a` are never returned; each `canMatePair` condition; agrees with an O(n^2) reference applying the same greedy rule over 200 seeded random worlds). `test/sim/mate-eligibility.test.js` (the moved conditions, and a mother at or below `childEnergyMin / childEnergyShare` is refused). `test/sim/reproduction.test.js` and `reproduction.thresholds.test.js` (mating from placed bodies with the hash built, not `contact`; gift `energy x childEnergyShare`; `BirthBlocked` `energy` below `childEnergyMin`; split unchanged; over many random small worlds no agent is in two matings in one tick). `test/sim/config-validate.test.js` (`mateRange` below 0, `childEnergyShare` 0 and 1, `childEnergy` an unknown key after T5). `test/sim/step-alloc.test.js` (no per-tick allocation with mating active). `test/evo/compare.test.js` (`--allow-config-diff` tolerates a key present in one config and absent in the other) |
+| Headless e2e            | `test/sim/golden.test.js`: both golden cases (default and `busy`, seed 1, 5000 ticks) are re-pinned in T4 (mate range), T5 (child energy) and T6 (defaults), each in its own commit whose body says why, and no other task changes a `worldHash`. `npm run browser:hash` reproduces both in Chromium. `eval-smoke` runs `--policy live`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Performance budget      | `bench.step_ms@500` stays within `bench-check`'s 15% of the committed `bench/baseline.json`; `bench.phase_ms.lifecycle@500` is reported before and after. `scripts/alloc-check.mjs` shows no per-tick allocation with mating active. `npm run bench -- --policy map-elites-v1` is run at the Config defaults. The baseline entry is not raised                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Evolution metrics       | `map-elites-v1` against the `E3` report at 8 seeds x 200000 ticks: `better` on `eval.births_per_1k`, `better` on `eval.floor_episodes`, and the mean of the per-seed `eval.population_mean` at least 120 in the new report; recorded as `E6`. `eval.lineages_alive`, `eval.lineage_turnover` and `eval.diversity` are recorded with no verdict. `baseline-v5` and its calibration are recorded as `E5` and give no verdict on `eval.food_energy_per_1k`, `eval.median_lifespan`, `eval.diversity`, `eval.lineage_turnover` or `eval.lineages_alive`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Determinism             | No new RNG stream: the mating draw is one `lifecycle` `nextFloat` per eligible pair. Pairs are chosen greedily by slot: the lower slot chooses first and is the mother, and partners are taken in cell then entry order, not by distance. The O(n^2) reference test applies the same rule. A run replays bit-exact from seed, config and policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Config and persistence  | The keys in the Config table with types and defaults. All are in `rulesHash`, so `rulesHash` changes: a champion file written under other rules is rejected by `validateChampion` (`evals/league.json` lists none). Archives and genomes are unaffected (layout unchanged); no IndexedDB schema change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Logging and diagnostics | No new event: `AgentBorn` carries the mating births and `BirthBlocked` `energy` the energy check. `Checkpoint` carries `births`. `findMate` logs nothing and throws nothing. Reproduce with `npm run replay -- --seed 1 --ticks 60000 --level debug` and count `AgentBorn` and `BirthBlocked`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Browser compatibility   | N/A - `js/sim/` is DOM-free and runs unchanged in the worker; Chromium bit-exactness is checked by `npm run browser:hash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Docs                    | [headless-sim-core.md](headless-sim-core.md): the config table row for `childEnergy`, the energy ledger transfer row naming `childEnergy`, the Mating and Births rules, the `reproduction.js` row and the Modules table. [headless-sim-core-contracts.md](headless-sim-core-contracts.md): the ledger note naming `childEnergy`, "Mating and births", and the settled note on `isReadyToMate` and on mating not marking a pair as done. `docs/designs/sim-notes.md` `## Learned while building` entry for the swept defaults. This doc becomes the as-built description of the four rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Verification            | `scripts/check.sh` green; the `bench`, `eval:compare` and `browser:hash` output attached to the PR; the steps in Verification below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+## Task breakdown
+
+### Phase 1 - Reachable births (rules, retune and re-record)
+
+| #   | Task                                                                                                                                                                                                                                                                                                              | Nature       | Depends on                                   |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------- |
+| T1  | Add `mateRange`, `childEnergyShare` and `childEnergyMin` to `config-defaults.js` and `config-validate.js` beside `childEnergy`; no `worldHash` change; update the config tests                                                                                                                                    | [mechanical] | -                                            |
+| T2  | Move `isReadyToMate`, `readyToMate` and `canMatePair` to `js/sim/mate-eligibility.js` with tests; no behaviour change                                                                                                                                                                                             | [mechanical] | -                                            |
+| T3  | Add `js/sim/mate-search.js` with `findMate` and its tests, including the O(n^2) reference comparison, the dedupe and dead-slot cases and an allocation check                                                                                                                                                      | [judgement]  | T1, T2                                       |
+| T4  | Rewrite `mate` over `findMate`; move the mating tests off `contact`; add the no-double-mating test; re-pin both golden hashes                                                                                                                                                                                     | [judgement]  | T3                                           |
+| T5  | Switch `giveBirth` to `energy x childEnergyShare` with the `childEnergyMin` check, add the mother-energy condition to `canMatePair`, remove `childEnergy`; re-pin both golden hashes                                                                                                                              | [mechanical] | T4                                           |
+| T6  | Sweep `mateRange` (50, 75, 100, 125), `childEnergyShare` (0.3, 0.4, 0.5) and `splitMinEnergy` (900, 1000, 1200) on `map-elites-v1` at 2 seeds x 60000 ticks; set the defaults, re-pin both golden hashes, run `npm run browser:hash`. If no setting reaches a population mean of 120, stop and report to the user | [judgement]  | T5                                           |
+| T7  | Add the `test/evo/compare.test.js` case for a key present in one config and absent in the other; fix `reducedHash` in `js/evo/compare.js` if it fails                                                                                                                                                             | [mechanical] | -                                            |
+| T8  | Run `npm run bench` and `bench-check` on real agent sizes; when `bench.step_ms@500` regresses more than 15%, narrow the scan                                                                                                                                                                                      | [judgement]  | T6                                           |
+| T9  | Update `headless-sim-core.md`, `headless-sim-core-contracts.md` (every place in the Docs row) and `sim-notes.md`                                                                                                                                                                                                  | [mechanical] | T6                                           |
+| T10 | Re-record `evals/baselines/baseline-v5.json` and `baseline-v5-o8.json` and record calibration experiment `E5`                                                                                                                                                                                                     | [mechanical] | T8                                           |
+| T11 | Run `map-elites-v1` against the `E3` report with `--allow-config-diff childEnergy,childEnergyShare,childEnergyMin,mateRange,splitMinEnergy` and record `E6`                                                                                                                                                       | [mechanical] | T7, T10                                      |
+| T12 | Conformance review of Phase 1                                                                                                                                                                                                                                                                                     | [judgement]  | T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11 |
+
+## Verification
+
+1. `scripts/check.sh` is green.
+2. `npm run bench` shows `bench.step_ms@500` within 15% of `bench/baseline.json`, and `bench-check` passes.
+3. `npm run browser:hash` reproduces both golden hashes in Chromium.
+4. `npm run eval:compare -- evals/experiments/E3-map-elites-v1.json <new map-elites-v1 report> --allow-config-diff childEnergy,childEnergyShare,childEnergyMin,mateRange,splitMinEnergy`
+   prints `better` for `eval.births_per_1k` and `eval.floor_episodes`, and the mean of the 8 per-seed
+   `eval.population_mean` values in the new report is at least 120.
+5. Calibration `E5` shows no `better` or `worse` on `eval.food_energy_per_1k`, `eval.median_lifespan`,
+   `eval.diversity`, `eval.lineage_turnover` or `eval.lineages_alive`.
+6. `npm run replay -- --seed 1 --ticks 60000 --level debug` shows `AgentBorn` events with cause `mate` and a population
+   above 100 at the last `Checkpoint`.
