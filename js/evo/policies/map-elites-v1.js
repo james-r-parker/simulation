@@ -17,7 +17,8 @@ import { brainLayout } from '../../sim/brain-layout.js';
 
 /**
  * Builds the map-elites-v1 policy object.
- * @param {Record<string, any>} options the eval runner's `{ config, log, observer }`
+ * @param {Record<string, any>} options the eval runner's `{ config, log, observer }`, plus `name` and `cellDraws` for
+ *   a variant
  * @returns {Record<string, any>} `{ name, brain, fitnessName, fitness, afterStep, onEvent, archive, sigma,
  *   fatherSigma, archiveRef, refId, isClone, counters }`
  */
@@ -28,7 +29,7 @@ export function createMapElitesV1(options) {
     const archive = createArchive(brainLayout(config));
     const n = config.maxAgents;
     const clones = { isClone: new Uint8Array(n), archiveRef: new Int32Array(n).fill(-1), refId: new Float64Array(n) };
-    const { initSpec, initBrain } = createSeeder({ archive, birth, clones, log });
+    const { initSpec, initBrain } = createSeeder({ archive, birth, clones, log, cellDraws: options.cellDraws });
     const { onDeath, onEvent } = createOffers({
         config,
         archive,
@@ -48,7 +49,7 @@ export function createMapElitesV1(options) {
     }
 
     return {
-        name: 'map-elites-v1',
+        name: options.name ?? 'map-elites-v1',
         brain: { initSpec, initBrain, onMate: birth.onMate, childBrain, onDeath },
         fitnessName: 'v1',
         fitness: createFitnessV1(counters),

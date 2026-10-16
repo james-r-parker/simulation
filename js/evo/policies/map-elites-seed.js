@@ -39,16 +39,17 @@ export function leastPopulatedSpec(world, slot, counts) {
  * @param {Record<string, any>} archive the archive
  * @param {number} spec the specialisation
  * @param {any} rng the `brain-init` stream
+ * @param {number} cellDraws the parent cell tournament size (`selectParent`)
  * @returns {{source: 'archive' | 'clone' | 'random', ref: ReturnType<typeof selectParent>}} the source; `ref` is null for
  *   random, or when the specialisation has no genome to give
  */
-function draw(archive, spec, rng) {
+function draw(archive, spec, rng, cellDraws) {
     if (occupiedCount(/** @type {any} */ (archive)) < MIN_ARCHIVE_CELLS) {
         return { source: 'random', ref: null };
     }
     const u = nextFloat(rng);
     if (u < ARCHIVE_SHARE) {
-        const ref = selectParent(/** @type {any} */ (archive), spec, rng);
+        const ref = selectParent(/** @type {any} */ (archive), spec, rng, cellDraws);
         return { source: ref === null ? 'random' : 'archive', ref };
     }
     if (u < CLONE_SHARE_END) {
@@ -72,11 +73,11 @@ function checkRow(row, layout, log) {
 }
 
 /**
- * @param {Record<string, any>} options `{ config, archive, birth, clones, log }`: the shared per-slot state in
+ * @param {Record<string, any>} options `{ config, archive, birth, clones, log, cellDraws }`: the shared per-slot state in
  *   `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`
  * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
  */
-export function createSeeder({ archive, birth, clones, log }) {
+export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     const counts = new Int32Array(GENOME_SPECS.length);
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
@@ -89,7 +90,7 @@ export function createSeeder({ archive, birth, clones, log }) {
     function initBrain(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
         const { layout } = world;
         const row = rowOf(own, world.weights, { slot, count: layout.weightCount });
-        const { source, ref } = draw(archive, world.spec[slot], rng);
+        const { source, ref } = draw(archive, world.spec[slot], rng, cellDraws);
         clones.isClone[slot] = 0;
         clones.archiveRef[slot] = -1;
         clones.refId[slot] = 0;

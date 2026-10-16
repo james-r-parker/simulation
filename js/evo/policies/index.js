@@ -8,9 +8,16 @@ import { createNaturalV1 } from './natural-v1.js';
 export const LIVE_POLICY = 'baseline-v5';
 
 /** @type {Readonly<Record<string, {create: (options: Record<string, any>) => Record<string, any>}>>} */
+/** `map-elites-v1q`'s parent cell tournament: the best elite of this many uniform cell draws. */
+export const QUALITY_CELL_DRAWS = 4;
+
 export const POLICIES = Object.freeze({
     'baseline-v5': Object.freeze({ create: createBaselineV5 }),
     'map-elites-v1': Object.freeze({ create: createMapElitesV1 }),
+    'map-elites-v1q': Object.freeze({
+        create: (/** @type {Record<string, any>} */ options) =>
+            createMapElitesV1({ ...options, name: 'map-elites-v1q', cellDraws: QUALITY_CELL_DRAWS }),
+    }),
     'natural-v1': Object.freeze({ create: createNaturalV1 }),
 });
 
@@ -23,5 +30,5 @@ export function getPolicy(name) {
     if (!Object.hasOwn(POLICIES, name)) {
         throw new Error(`Unknown policy "${name}"; known: ${Object.keys(POLICIES).join(', ')}`);
     }
-    return POLICIES[name];
+    return /** @type {Record<string, any>} */ (POLICIES)[name];
 }
