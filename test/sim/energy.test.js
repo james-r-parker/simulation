@@ -16,6 +16,9 @@ const SMALL = {
     maxAgents: 4,
     initialAgents: 0,
     minAgents: 0,
+    // The legacy temperature rates, pinned so these cost tests check formulas rather than tuned defaults.
+    temperatureGainMove: 0.025,
+    temperatureLossPassive: 0.015,
     initialFood: 0,
     maxEnergy: 100,
     initialEnergy: 10,

@@ -6,11 +6,11 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 
-const TICKS = 7000;
+const TICKS = 10000;
 
 /**
  * Runs one constant-thrust controller on the default world with no floor and no immigrants.
- * @param {string} name a `SCRIPTED_CONTROLLERS` key
+ * @param {keyof typeof SCRIPTED_CONTROLLERS} name a `SCRIPTED_CONTROLLERS` key
  * @returns {number} the population at the end
  */
 function populationAfter(name) {
