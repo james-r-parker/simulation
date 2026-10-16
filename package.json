@@ -22,6 +22,7 @@
     "browser:hash": "node scripts/browser-hash.mjs",
     "bench": "node scripts/bench.mjs",
     "replay": "node scripts/replay.mjs",
+    "eval": "node scripts/eval.mjs",
     "aspire:dashboard": "aspire dashboard run --frontend-url http://127.0.0.1:18888 --otlp-grpc-url http://127.0.0.1:4317 --otlp-http-url http://127.0.0.1:4318 --allow-anonymous"
   },
   "keywords": [
