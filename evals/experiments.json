@@ -47,6 +47,48 @@
       },
       "effect": "no-difference",
       "note": "Calibration: seeds 1-8 against seeds 9-16 (--seed-offset 8), compared with --allow-seed-diff (paired by position). All five Targets no-difference. One non-Target false positive: eval.p90_fitness.scout worse (-237, interval [-538, -40]), the expected rate across 18 metrics given a verdict."
+    },
+    {
+      "id": "E1",
+      "date": "2026-10-16",
+      "branch": "feat/evolution-rework-phase-1",
+      "hypothesis": "natural-v1 (versioned genome, self-adaptive mutation, neuron crossover, fitnessV1) evolves agents that eat more and live longer than baseline-v5.",
+      "prediction": "better on eval.food_energy_per_1k and eval.median_lifespan; worse on no directional metric.",
+      "targets": ["eval.food_energy_per_1k", "eval.median_lifespan"],
+      "beforePolicy": "baseline-v5",
+      "afterPolicy": "natural-v1",
+      "before": "evals/baselines/baseline-v5.json",
+      "after": "evals/experiments/E1-natural-v1.json",
+      "verdicts": {
+        "eval.behaviour_coverage": "no-difference",
+        "eval.births_per_1k": "no-difference",
+        "eval.champion_elo": "-",
+        "eval.champion_win_rate": "-",
+        "eval.coverage": "-",
+        "eval.diversity": "worse",
+        "eval.floor_episodes": "better",
+        "eval.food_energy_per_1k": "worse",
+        "eval.lineage_turnover": "no-difference",
+        "eval.lineages_alive": "better",
+        "eval.mean_fitness.defender": "-",
+        "eval.mean_fitness.forager": "-",
+        "eval.mean_fitness.predator": "-",
+        "eval.mean_fitness.reproducer": "-",
+        "eval.mean_fitness.scout": "-",
+        "eval.median_lifespan": "better",
+        "eval.motion_coverage": "-",
+        "eval.p90_fitness.defender": "-",
+        "eval.p90_fitness.forager": "-",
+        "eval.p90_fitness.predator": "-",
+        "eval.p90_fitness.reproducer": "-",
+        "eval.p90_fitness.scout": "-",
+        "eval.population_mean": "-",
+        "eval.predation_per_1k": "-",
+        "eval.predator_share_cv": "-",
+        "eval.qd_score": "-"
+      },
+      "effect": "worse",
+      "note": "Target food_energy_per_1k worse (-3.3, [-5.4, -1.3]); median_lifespan better (+684). Both arms sit on the minAgents floor with about 0.005 births per 1000 agent-ticks, so nothing is selected: the lifespan gain is the smaller initial weights moving agents less. Not merged; blocked on the default world sustaining births."
     }
   ]
 }
