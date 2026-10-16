@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "d1c182ffc18aae82"
+      "worldHash": "1b695d9519178e89"
     },
     {
       "name": "busy",
@@ -21,7 +21,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 5000,
-      "worldHash": "9ec73ae5d0c5084d"
+      "worldHash": "763191155752874d"
     }
   ]
 }

@@ -47,12 +47,9 @@ describe('allocateWorld', () => {
     });
 
     it('tabulates the bite, turn and sprint multipliers and the antenna by specialisation', () => {
-        const w = smallWorld({
-            antennaAngle: 0.5,
-            specialisations: { predator: { biteMultiplier: 4, sprintBoost: 1.6 } },
-        });
+        const w = smallWorld({ antennaAngle: 0.5 });
         expect(Array.from(w.biteBySpec)).toEqual([1, 4, 1, 1, 1]);
-        expect(Array.from(w.turnBySpec)).toEqual([1, 1, 1, 1, 1]);
+        expect(Array.from(w.turnBySpec)).toEqual([1, 0.7, 1, 1, 1]);
         expect(Array.from(w.sprintBySpec)).toEqual([1, 1.6, 1, 1, 1]);
         expect(w.antennaCos).toEqual(new Float64Array([detCos(0.5)]));
         expect(w.antennaSin).toEqual(new Float64Array([detSin(0.5)]));

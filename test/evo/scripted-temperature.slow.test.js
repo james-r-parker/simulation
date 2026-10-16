@@ -60,7 +60,15 @@ describe('body temperature cold band', () => {
     it(
         'a foodSeeker started below the cold stress threshold moves, eats and rises above it',
         () => {
-            const config = createConfig({ seed: 1, initialAgents: 30, minAgents: 0, immigrationInterval: 0 });
+            // This pins body temperature, not predation, so the predator keeps the neutral multipliers: the tuned ones
+            // slow the scripted foodSeeker's warm-up past COLD_TICKS.
+            const config = createConfig({
+                seed: 1,
+                initialAgents: 30,
+                minAgents: 0,
+                immigrationInterval: 0,
+                specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
+            });
             const brain = createBaselineV5().brain;
             const world = createWorld(config, brain);
             const run = SCRIPTED_CONTROLLERS.foodSeeker({ world, rng: fork(createRng(1), 'scripted') });
