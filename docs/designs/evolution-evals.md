@@ -1,8 +1,6 @@
 # Evolution evals
 
-**Status:** In progress - Phases 1 to 3 are built: the observer, metrics, `baseline-v5`, `npm run eval` on a worker pool, `npm run bench:parallel`, the `baseline-v5` baseline, `eval:compare`, the experiments ledger with calibration `E0`, the `eval-smoke` gate and the anti-exploit suite. Phase 4 (champion league) is next.
-**Validated:** fc4ca30 (2026-10-16)
-**Priority:** 1 - the evolution rework is judged against the baseline this doc records
+**Status:** Implemented - the observer, metrics, `baseline-v5` and `npm run eval` on a worker pool with `npm run bench:parallel` and the recorded baseline (Phase 1); `eval:compare`, the experiments ledger with calibration `E0` and the `eval-smoke` gate (Phase 2); the anti-exploit suite (Phase 3); Elo and the champion league (Phase 4).
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
 Evals measure what a simulation run produces: whether agents eat, live, breed, diversify and keep changing. Every
@@ -38,7 +36,7 @@ every 1000 ticks from tick 1000. "After burn-in" means from tick 10000.
 | `eval.mean_fitness.<spec>`   | higher | Mean of the same fitnesses; same `fitnessName` rule                                                                                                                                                               |
 | `eval.qd_score`              | higher | Sum over occupied archive cells of the elite's mean fitness, over the total cell count; `null` without an archive                                                                                                 |
 | `eval.coverage`              | higher | Occupied fraction of the policy's archive cells; `null` without an archive                                                                                                                                        |
-| `eval.champion_elo`          | watch  | The candidate's Elo after its league games (`npm run league`, Phase 4)                                                                                                                                            |
+| `eval.champion_elo`          | watch  | The candidate's Elo after its league games (`npm run league`)                                                                                                                                                     |
 | `eval.champion_win_rate`     | watch  | Wins plus half the draws over games played by the candidate (Phase 4); `null` with no games                                                                                                                       |
 | `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, [headless-sim-core.md](headless-sim-core.md))                                                                                                                  |
 | `bench.phase_ms.<phase>@<n>` | lower  | Median ms per tick of one `STEP_PHASES` phase at `n` agents                                                                                                                                                       |
@@ -197,17 +195,21 @@ and `biteSeeker` stay under half. Controllers write thrust and turn only (sprint
 ## Champion league (Phase 4)
 
 - A champion file is JSON: `version` 1, `name`, `rulesHash`, `layout` (`inputCount`, `brainHidden`,
-  `outputCount`), `specialisation`, optional `cell` (its archive cell), `weights` (base64 little-endian float32).
-  `league.js` rejects a file whose `layout` or `rulesHash` differs from the running config.
-- `evals/league.json` lists the admitted champions, each with its Elo.
+  `outputCount`), `specialisation` (the spec index, 0 to 4), optional `cell` (its archive cell), `weights` (base64
+  little-endian float32, encoded without `Buffer`). `league.js` rejects a file whose `layout` or `rulesHash` differs
+  from the running config, naming the field.
+- `evals/league.json` is `{ "version": 1, "champions": [{ "file", "name", "elo" }] }`, `file` relative to the repo.
 - `matchPolicy(a, b)` builds a policy whose `initBrain` writes `a`'s weights into even slots and `b`'s into odd ones,
   whose `initSpec` returns that champion's specialisation, and whose `childBrain` is `baseline-v5`'s.
-- `playMatch(a, b, seed)` runs a 100-agent world with that policy and `minAgents` 0 for 50000 ticks. A side's agents
-  are those whose `lineageId` is one of its founders' `genomeId`s. The side with more agents alive at the end wins;
-  equal counts are a draw.
+- `playMatch(a, b, seed)` runs a 100-agent world with that policy, `minAgents` 0 and no immigration for 50000 ticks,
+  stopping early once both sides have died out. A side's agents are those whose `lineageId` is one of its founders'
+  `genomeId`s. The side with more agents alive at the end wins; when both died out, the side whose last agent lived
+  longer wins; otherwise it is a draw. The extinction rule is there because the default world does not sustain
+  unevolved brains ([sim-notes.md](sim-notes.md)): without it every such game ends 0-0.
 - `npm run league -- <candidate.json> [--admit]` (`scripts/league.mjs`) plays the candidate against every admitted
   champion on the first 8 seeds and updates only the candidate's Elo, game by game in seed then list order, from 1500.
-  It reports `eval.champion_elo` and `eval.champion_win_rate`; `--admit` appends the candidate with that Elo.
+  It reports `eval.champion_elo` and `eval.champion_win_rate`; `--admit` appends the candidate with that Elo. The
+  candidate is side A; games run on the worker pool (`scripts/league-worker.mjs`, `--workers`, `--ticks`).
 
 ## Using every core
 
@@ -251,7 +253,7 @@ on 8 workers.
 
 The scripted controllers, `evals/micro-world.json` and `test/evo/anti-exploit.test.js`.
 
-### Phase 4 - Champion league
+### Phase 4 - Champion league (built)
 
 **Targets:** none - creates `eval.champion_elo` and `eval.champion_win_rate`
 
