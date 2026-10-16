@@ -45,7 +45,7 @@ describe('DEFAULTS', () => {
         expect(DEFAULTS.temperatureMax).toBe(100);
         expect(DEFAULTS.temperatureStart).toBe(50);
         expect([DEFAULTS.temperatureGainMove, DEFAULTS.temperatureGainEat, DEFAULTS.temperatureLossPassive]).toEqual([
-            0.025, 2, 0.015,
+            0.0125, 2, 0.0075,
         ]);
         expect([DEFAULTS.temperatureSeasonSlope, DEFAULTS.temperaturePassiveLossFactor]).toEqual([0.03, 4]);
         expect([

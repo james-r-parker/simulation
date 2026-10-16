@@ -9,7 +9,9 @@ import {
     thrustEfficiency,
 } from '../../js/sim/temperature.js';
 
-const config = createConfig();
+// The legacy rates, pinned so these tests check the formulas rather than the tuned defaults.
+const LEGACY_RATES = { temperatureGainMove: 0.025, temperatureLossPassive: 0.015 };
+const config = createConfig(LEGACY_RATES);
 
 /** The per-season loss multiplier at the defaults: spring, summer, autumn, winter. */
 const LOSS = [1.15, 0.55, 0.85, 1.45];
@@ -68,7 +70,7 @@ describe('stepTemperature', () => {
         stepTemperature(cold, 0);
         expect(cold.temperature[0]).toBe(0);
         const hot = fakeWorld(99.999, 8, 0);
-        hot.config = createConfig({ temperatureLossPassive: 0 });
+        hot.config = createConfig({ ...LEGACY_RATES, temperatureLossPassive: 0 });
         stepTemperature(hot, 0);
         expect(hot.temperature[0]).toBe(100);
     });
@@ -77,7 +79,7 @@ describe('stepTemperature', () => {
         const seasons = structuredClone(config.seasons);
         seasons[0].temperatureModifier = 60;
         const world = fakeWorld(50, 0, 0);
-        world.config = createConfig({ seasons });
+        world.config = createConfig({ ...LEGACY_RATES, seasons });
         stepTemperature(world, 0);
         expect(world.temperature[0]).toBe(50);
     });
@@ -113,7 +115,7 @@ describe('passiveMultiplier', () => {
     });
 
     it('is 1 everywhere when the factor is 1', () => {
-        const flat = createConfig({ temperaturePassiveLossFactor: 1 });
+        const flat = createConfig({ ...LEGACY_RATES, temperaturePassiveLossFactor: 1 });
         for (const t of [0, 10, 50, 90, 100]) {
             expect(passiveMultiplier(flat, t)).toBe(1);
         }
@@ -180,7 +182,7 @@ describe('temperatureInputs', () => {
     });
 
     it('is 1 above the heat threshold when the moderate and stress thresholds coincide', () => {
-        const same = createConfig({ temperatureHeatModerate: 85 });
+        const same = createConfig({ ...LEGACY_RATES, temperatureHeatModerate: 85 });
         const out = new Float32Array(4);
         temperatureInputs(same, 85.5, out, 0);
         expect(out[3]).toBe(1);

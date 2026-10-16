@@ -144,9 +144,9 @@ export const DEFAULTS = deepFreeze({
     placementTries: 100, // new
     temperatureMax: 100, // TEMPERATURE_MAX
     temperatureStart: 50, // TEMPERATURE_START
-    temperatureGainMove: 0.025, // TEMPERATURE_GAIN_MOVE
+    temperatureGainMove: 0.0125, // TEMPERATURE_GAIN_MOVE
     temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
-    temperatureLossPassive: 0.015, // TEMPERATURE_LOSS_PASSIVE
+    temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 4, // TEMPERATURE_PASSIVE_LOSS_FACTOR
     temperatureColdStress: 30, // TEMPERATURE_COLD_STRESS_THRESHOLD
