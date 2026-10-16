@@ -1,8 +1,6 @@
 # Reachable births
 
-**Status:** Proposed - Phase 1 lets willing agents mate at a short distance, sizes a child's energy as a share of its mother's, lowers the split threshold, sets the food economy and re-records the baselines.
-**Validated:** 78552ba (2026-10-16)
-**Priority:** 2 - built before the MAP-Elites archive is judged (evolution-rework.md Phase 2): selection needs births
+**Status:** Implemented - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; judged by `E6` (births 150x, floor episodes halved) and recalibrated as `E5`.
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 Births are reachable on the default world: the population lives above the `minAgents` floor, so agents have families,
@@ -90,7 +88,7 @@ agent sizes.
 
 ## Phases
 
-### Phase 1 - Reachable births (rules, retune and re-record)
+### Phase 1 - Reachable births (rules, retune and re-record) (built)
 
 **Targets:** eval.births_per_1k, eval.floor_episodes, bench.step_ms@500
 
