@@ -18,6 +18,7 @@ describe('computeMetrics on hand-built state', () => {
         const m = computeMetrics(bareObserver(), {}, { fitness });
         expect(m['eval.food_energy_per_1k']).toEqual({ value: null, reason: 'no agent-ticks' });
         expect(m['eval.median_lifespan']).toEqual({ value: null, reason: 'no mature death' });
+        expect(m['eval.fed_median_lifespan']).toEqual({ value: null, reason: 'no mature death after a meal' });
         expect(m['eval.floor_episodes']).toEqual({ value: 0 });
         expect(m['eval.behaviour_coverage'].reason).toBe('no sampled mature death');
         expect(m['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
@@ -40,7 +41,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), {}));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(13 + 10 + 4);
+        expect(keys).toHaveLength(14 + 10 + 4);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
@@ -87,6 +88,18 @@ describe('computeMetrics on hand-built state', () => {
             addDeath(o, { ageTicks });
         }
         expect(computeMetrics(o, {})['eval.median_lifespan'].value).toBe(70);
+    });
+
+    it('takes the fed median lifespan over mature deaths that ate at least one food item', () => {
+        const o = bareObserver();
+        const meal = o.config.foodEnergy;
+        addDeath(o, { ageTicks: 5000, foodEnergy: 0 });
+        addDeath(o, { ageTicks: 4000, foodEnergy: meal - 1 });
+        addDeath(o, { ageTicks: 10, foodEnergy: meal * 3 });
+        addDeath(o, { ageTicks: 300, foodEnergy: meal });
+        addDeath(o, { ageTicks: 500, foodEnergy: meal * 2 });
+        expect(computeMetrics(o, {})['eval.fed_median_lifespan'].value).toBe(400);
+        expect(computeMetrics(o, {})['eval.median_lifespan'].value).toBe(2250);
     });
 
     it('combines series, grid and fitness metrics', () => {
