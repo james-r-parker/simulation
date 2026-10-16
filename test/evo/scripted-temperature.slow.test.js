@@ -7,6 +7,8 @@ import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 
 const TICKS = 10000;
+const COLD_START = 20;
+const COLD_TICKS = 3000;
 
 /**
  * Runs one constant-thrust controller on the default world with no floor and no immigrants.
@@ -49,6 +51,42 @@ describe('body temperature sweet spot', () => {
         'a forager at a gentle speed grows',
         () => {
             expect(populationAfter('thrust20')).toBeGreaterThan(config100());
+        },
+        TIMEOUT_MS,
+    );
+});
+
+describe('body temperature cold band', () => {
+    it(
+        'a foodSeeker started below the cold stress threshold moves, eats and rises above it',
+        () => {
+            const config = createConfig({ seed: 1, initialAgents: 30, minAgents: 0, immigrationInterval: 0 });
+            const brain = createBaselineV5().brain;
+            const world = createWorld(config, brain);
+            const run = SCRIPTED_CONTROLLERS.foodSeeker({ world, rng: fork(createRng(1), 'scripted') });
+            for (let slot = 0; slot < world.alive.length; slot++) {
+                if (world.alive[slot]) {
+                    world.temperature[slot] = COLD_START;
+                }
+            }
+            const ate = new Set();
+            let recovered = false;
+            for (let t = 0; t < COLD_TICKS && !recovered; t++) {
+                step(world, brain, { brain: run });
+                for (let slot = 0; slot < world.alive.length; slot++) {
+                    if (!world.alive[slot]) {
+                        continue;
+                    }
+                    if (world.foodEnergy[slot] > 0) {
+                        ate.add(slot);
+                    }
+                    if (ate.has(slot) && world.temperature[slot] > config.temperatureColdStress) {
+                        recovered = true;
+                    }
+                }
+            }
+            expect(ate.size).toBeGreaterThan(0);
+            expect(recovered).toBe(true);
         },
         TIMEOUT_MS,
     );
