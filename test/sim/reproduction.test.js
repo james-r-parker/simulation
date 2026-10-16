@@ -156,6 +156,7 @@ describe('advancePregnancies', () => {
         expect(w.energy[0]).toBeCloseTo(685 * (1 - w.config.childEnergyShare), 9);
         expect([w.vx[c], w.vy[c]]).toEqual([0, 0]);
         expect([w.ateTimer[c], w.bittenTimer[c]]).toEqual([TIMER_CAP, TIMER_CAP]);
+        expect(w.temperature[c]).toBe(w.config.temperatureStart);
         const dist = Math.hypot(w.x[c] - w.x[0], w.y[c] - w.y[0]);
         expect(dist).toBeCloseTo(w.size[0] + w.size[c], 3);
         expect(w.angle[c]).toBeGreaterThanOrEqual(-Math.PI);
@@ -226,6 +227,25 @@ describe('advancePregnancies', () => {
         advancePregnancies(w, recordingPolicy([]));
         expect(w.events.count).toBe(0);
         expect(w.population).toBe(1);
+    });
+});
+
+describe('temperature of a newborn', () => {
+    it('starts a mating child and a split child at temperatureStart, in a slot holding a stale value', () => {
+        const w = pair({ temperatureStart: 55 });
+        const policy = recordingPolicy([]);
+        mate(w, policy);
+        w.temperature[2] = 3;
+        for (let i = 0; i < w.config.pregnancyTicks; i++) {
+            advancePregnancies(w, policy);
+        }
+        expect(w.population).toBe(3);
+        expect(w.temperature[2]).toBe(55);
+        const s = lifeWorld({ temperatureStart: 55 });
+        addBlob(s, { energy: 1700, spec: 2 });
+        s.temperature[1] = 3;
+        splitAll(s, policy);
+        expect(s.temperature[1]).toBe(55);
     });
 });
 

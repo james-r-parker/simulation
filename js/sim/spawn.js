@@ -236,6 +236,7 @@ export function spawnAgent(world, policy, cause) {
     world.angle[slot] = nextFloat(world.rng.spawn) * TWO_PI - PI;
     world.ateTimer[slot] = TIMER_CAP;
     world.bittenTimer[slot] = TIMER_CAP;
+    world.temperature[slot] = c.temperatureStart;
     addEnergy(world, slot, c.initialEnergy, source);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);
     const d = world.events.data;

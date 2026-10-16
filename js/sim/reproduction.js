@@ -115,6 +115,7 @@ function placeChild(world, child, mother) {
     world.vy[child] = 0;
     world.ateTimer[child] = TIMER_CAP;
     world.bittenTimer[child] = TIMER_CAP;
+    world.temperature[child] = world.config.temperatureStart;
 }
 
 /**

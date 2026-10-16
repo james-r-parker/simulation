@@ -6,6 +6,7 @@ export const INVARIANT = Object.freeze({
     IN_WORLD: 'in-world',
     POPULATION: 'population',
     LEDGER: 'ledger',
+    TEMPERATURE: 'temperature',
 });
 
 /** Relative tolerance on the ledger comparison. */
@@ -149,6 +150,25 @@ function checkLedger(world) {
 }
 
 /**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkTemperature(world) {
+    const max = world.config.temperatureMax;
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        const value = world.temperature[slot];
+        if (world.alive[slot] === 1 && !(value >= 0 && value <= max)) {
+            throw violation(
+                INVARIANT.TEMPERATURE,
+                world,
+                { slot: slot, value: value },
+                `temperature is not finite or is outside [0, ${max}]`,
+            );
+        }
+    }
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -158,4 +178,5 @@ export function assertInvariants(world) {
     checkInWorld(world);
     checkPopulation(world);
     checkLedger(world);
+    checkTemperature(world);
 }

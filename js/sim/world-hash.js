@@ -21,6 +21,7 @@ const AGENT_ARRAYS = [
     'ateTimer',
     'bittenTimer',
     'lastLoss',
+    'temperature',
     'genomeId',
     'lineageId',
     'parentA',
