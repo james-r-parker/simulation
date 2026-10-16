@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
+import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { observe } from '../../js/evo/observer.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
@@ -10,6 +11,16 @@ describe('observer events', () => {
         observe(observer, world);
         expect([observer.genomeId[2], observer.lineageId[2], observer.spec[2]]).toEqual([7, 3, 4]);
         expect(observer.births[BORN_CAUSE.MATE]).toBe(1);
+    });
+
+    it('counts births by cause again from BURN_IN_TICKS, not before', () => {
+        const { world, observer } = observed();
+        pushBorn(world, { slot: 1, genomeId: 5, cause: BORN_CAUSE.MATE, tick: BURN_IN_TICKS - 1 });
+        pushBorn(world, { slot: 2, genomeId: 6, cause: BORN_CAUSE.SPLIT, tick: BURN_IN_TICKS });
+        pushBorn(world, { slot: 3, genomeId: 7, cause: BORN_CAUSE.FLOOR, tick: BURN_IN_TICKS });
+        observe(observer, world);
+        expect(Array.from(observer.births)).toEqual([0, 1, 1, 1, 0]);
+        expect(Array.from(observer.birthsAfterBurnIn)).toEqual([0, 0, 1, 1, 0]);
     });
 
     it('resets every counter when a new agent is born into a slot', () => {

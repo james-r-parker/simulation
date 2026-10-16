@@ -36,6 +36,23 @@ function medianLifespan(observer) {
 }
 
 /**
+ * @param {Record<string, any>} observer the observer
+ * @returns {import('./metrics-stats.js').MetricResult} agents that entered by a mating or split, over all agents that
+ *   entered (mating, split, initial, floor, immigrant), counting entries at or after `BURN_IN_TICKS`
+ */
+function bornShare(observer) {
+    const entries = observer.birthsAfterBurnIn;
+    let total = 0;
+    for (let cause = 0; cause < entries.length; cause++) {
+        total += entries[cause];
+    }
+    if (total === 0) {
+        return none('no agent entered after burn-in');
+    }
+    return ok((entries[BORN_CAUSE.MATE] + entries[BORN_CAUSE.SPLIT]) / total);
+}
+
+/**
  * Computes every Phase 1 metric from the observer after the run. `bench.*` and `browser.*` are not here.
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
  * @param {Record<string, any>} _world the world at the end (the observer already holds what the metrics need)
@@ -55,6 +72,7 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.births_per_1k': per1k(births[BORN_CAUSE.MATE] + births[BORN_CAUSE.SPLIT], agentTicks),
         'eval.population_mean': series.populationMean(observer),
         'eval.floor_episodes': ok(observer.floorEpisodes),
+        'eval.born_share': bornShare(observer),
         'eval.predation_per_1k': per1k(deathsByCause[DEATH_CAUSE.EATEN], agentTicks),
         'eval.diversity': series.diversity(observer),
         'eval.lineages_alive': series.lineagesAlive(observer),

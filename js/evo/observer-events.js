@@ -110,6 +110,9 @@ function finishDeath(observer, d, o, fitness) {
 function startBirth(observer, d, o) {
     const slot = d[o + 2];
     observer.births[d[o + 8]] += 1;
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        observer.birthsAfterBurnIn[d[o + 8]] += 1;
+    }
     if (observer.ghosts.has(d[o + 3])) {
         return;
     }
