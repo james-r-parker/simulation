@@ -26,7 +26,7 @@ export const DEFAULTS = deepFreeze({
     maxFood: 800, // FOOD_SPAWN_CAP
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
-    foodEnergy: 70, // FOOD_ENERGY_NORMAL_BASE
+    foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
     foodEnergyVariance: 20, // FOOD_ENERGY_NORMAL_VARIANCE
     highFoodChance: 0.1, // HIGH_VALUE_FOOD_CHANCE
     highFoodEnergy: 140, // FOOD_ENERGY_HIGH_BASE
@@ -51,7 +51,7 @@ export const DEFAULTS = deepFreeze({
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
     maxEnergy: 25000, // MAX_ENERGY
     passiveLoss: 0.06, // PASSIVE_LOSS
-    movementCost: 0.03, // MOVEMENT_COST_MULTIPLIER
+    movementCost: 0.015, // MOVEMENT_COST_MULTIPLIER x 0.5
     turnCost: 0.1, // ROTATION_COST_MULTIPLIER
     sizeEnergyLoss: 0.00025, // AGENT_SIZE_ENERGY_LOSS_MULTIPLIER
     baseSize: 25, // BASE_SIZE
@@ -62,9 +62,9 @@ export const DEFAULTS = deepFreeze({
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates
-    childEnergyShare: 0.4, // new: the share of its energy a mother gives a child
+    childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
     childEnergyMin: 200, // new: the smallest gift a mating birth may make
-    splitMinEnergy: 1200, // MIN_ENERGY_FOR_SPLITTING
+    splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
     maxAgeTicks: 36000, // new
     reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
@@ -134,7 +134,7 @@ export const DEFAULTS = deepFreeze({
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
     mateChanceScale: 1.5, // new
-    foodTargetPerAgent: 1.5, // new
+    foodTargetPerAgent: 8, // new
     foodTargetMin: 50, // new
     foodRefillBoost: 4, // new
     foodSurplusRate: 0.2, // new

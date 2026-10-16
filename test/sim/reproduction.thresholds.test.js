@@ -134,7 +134,7 @@ describe('pregnancy and split guards', () => {
 
     it('hands out consecutive genome ids', () => {
         const w = lifeWorld();
-        addBlob(w, { energy: 2000 });
+        addBlob(w, { energy: 1700 });
         const next = w.nextId;
         splitAll(w, recordingPolicy([]));
         expect(w.genomeId[1]).toBe(next);
