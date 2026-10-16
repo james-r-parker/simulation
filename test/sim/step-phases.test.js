@@ -12,6 +12,7 @@ const rec = vi.hoisted(() => (/** @type {string} */ name) => (/** @type {any[]} 
     calls.push([name, ...args]);
 });
 
+vi.mock('../../js/sim/calls.js', () => ({ signalAll: rec('signalAll') }));
 vi.mock('../../js/sim/energy.js', () => ({ applyCosts: rec('applyCosts') }));
 vi.mock('../../js/sim/events.js', () => ({ clearEvents: rec('clearEvents') }));
 vi.mock('../../js/sim/environment.js', () => ({
@@ -36,6 +37,7 @@ vi.mock('../../js/sim/reproduction.js', () => ({
     splitAll: rec('splitAll'),
 }));
 vi.mock('../../js/sim/sensors.js', () => ({ senseAll: rec('senseAll') }));
+vi.mock('../../js/sim/smoke.js', () => ({ ageSmoke: rec('ageSmoke') }));
 vi.mock('../../js/sim/spatial-hash.js', () => ({ buildHash: rec('buildHash') }));
 
 /**
@@ -61,6 +63,7 @@ describe('step phase bodies', () => {
             ['buildHash', hash, world],
             ['senseAll', world, hash],
             ['forwardAll', world],
+            ['signalAll', world, hash],
             ['actAll', world],
             ['integrate', world],
             ['buildHash', hash, world],
@@ -76,6 +79,7 @@ describe('step phase bodies', () => {
             ['ageFood', world],
             ['decayFertileZones', world],
             ['updatePheromones', world],
+            ['ageSmoke', world],
             ['assertInvariants', world],
         ]);
         expect(world.tick).toBe(4);

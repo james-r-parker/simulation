@@ -1,4 +1,5 @@
 // One simulation tick: the phases in order, per-phase overrides, and the tick and phase added to any failure.
+import { signalAll } from './calls.js';
 import { applyCosts } from './energy.js';
 import { clearEvents } from './events.js';
 import { decayFertileZones, moveObstacles, updateSeason } from './environment.js';
@@ -11,6 +12,7 @@ import { fillFloor, reap } from './population.js';
 import { updatePheromones } from './pheromones.js';
 import { advancePregnancies, mate, splitAll } from './reproduction.js';
 import { senseAll } from './sensors.js';
+import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -53,6 +55,14 @@ function brain(world) {
  * @param {World} world the world
  * @returns {void}
  */
+function signal(world) {
+    signalAll(world, world.hash);
+}
+
+/**
+ * @param {World} world the world
+ * @returns {void}
+ */
 function physics(world) {
     actAll(world);
     integrate(world);
@@ -84,6 +94,7 @@ function field(world) {
     ageFood(world);
     decayFertileZones(world);
     updatePheromones(world);
+    ageSmoke(world);
 }
 
 /**
@@ -111,6 +122,7 @@ export const STEP_PHASES = Object.freeze([
     phase('hash', hash),
     phase('sense', sense),
     phase('brain', brain),
+    phase('signal', signal),
     phase('physics', physics),
     phase('lifecycle', lifecycle),
     phase('field', field),
