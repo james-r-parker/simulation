@@ -1,7 +1,8 @@
-// Fills every alive agent's inputs row: ray block, then body inputs.
+// Fills every alive agent's inputs row: ray block, then the body and scent inputs.
 
 import { writeBodyInputs } from './body-inputs.js';
 import { castRays } from './ray-march.js';
+import { writeScentInputs } from './scent-inputs.js';
 
 /**
  * Senses for all alive agents in ascending slot order.
@@ -15,6 +16,7 @@ export function senseAll(world, hash) {
         if (alive[slot] === 1) {
             castRays(world, hash, slot);
             writeBodyInputs(world, slot);
+            writeScentInputs(world, slot);
         }
     }
 }

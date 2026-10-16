@@ -4,7 +4,7 @@ import { STEP_PHASES, step } from '../../js/sim/step.js';
 import { smallWorld } from './helpers/small-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
-const NAMES = ['environment', 'hash', 'sense', 'brain', 'physics', 'lifecycle', 'field', 'invariants'];
+const NAMES = ['environment', 'hash', 'sense', 'brain', 'signal', 'physics', 'lifecycle', 'field', 'invariants'];
 
 /**
  * @param {string[]} log receives each phase name as it runs
@@ -88,7 +88,7 @@ describe('step', () => {
     });
 
     it('runs the invariants phase only when the config asks for it', () => {
-        const run = STEP_PHASES[7].run;
+        const run = STEP_PHASES[NAMES.indexOf('invariants')].run;
         const off = smallWorld({ checkInvariants: false });
         off.population = 5;
         expect(() => run(off, testPolicy)).not.toThrow();
