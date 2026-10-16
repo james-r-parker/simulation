@@ -78,6 +78,20 @@ describe('forwardAll', () => {
         }
     });
 
+    it.each([4, 7, 8, 32])('matches the reference with %i hidden units (unrolled and tail paths)', (brainHidden) => {
+        for (let seed = 1; seed <= 6; seed++) {
+            const world = smallWorld({ brainHidden });
+            randomise(world, seed, [1, 4]);
+            const expected = [1, 4].map((s) => reference(world, s));
+            forwardAll(world);
+            [1, 4].forEach((slot, n) => {
+                const { hidden: H, outputCount: OUT } = world.layout;
+                expect(Array.from(world.hidden.subarray(slot * H, (slot + 1) * H))).toEqual(expected[n].hidden);
+                expect(Array.from(world.outputs.subarray(slot * OUT, (slot + 1) * OUT))).toEqual(expected[n].outputs);
+            });
+        }
+    });
+
     it('lets the old hidden state change the outputs', () => {
         const a = smallWorld();
         const b = smallWorld();
