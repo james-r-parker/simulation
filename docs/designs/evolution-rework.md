@@ -1,7 +1,7 @@
 # Evolution rework
 
-**Status:** Proposed - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5`.
-**Validated:** bd49bce (2026-10-11)
+**Status:** In progress - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5`.
+**Validated:** 36ee8c6 (2026-10-16)
 **Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 

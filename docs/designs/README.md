@@ -21,11 +21,16 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Headless sim core](headless-sim-core.md) - the deterministic sim core in `js/sim/` (Phases 1 and 2) and its diagnostics: the sim log, `npm run replay` and opt-in OpenTelemetry (Phase 3)
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test...
 
-## Proposed (4)
+## In progress (1)
+
+Partly built - the note says which phases are real.
+
+- [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated 36ee8c6, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
+
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
-- [Evolution rework](evolution-rework.md) - Phase 1 replaces the genome, mutation, crossover and fitness, judged against `baseline-v5` _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol _(validated bd49bce, 2026-10-11)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots _(validated 9f73367, 2026-10-15)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
