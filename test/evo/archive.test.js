@@ -321,3 +321,20 @@ describe('seedArchive and metrics', () => {
 function cloneOf1(archive) {
     offer(archive, { ...mk(99, 35, { isClone: true, archiveRef: 105, refId: 7 }), spec: 1 });
 }
+
+describe('selectParent cell tournament', () => {
+    it('with one cell draw picks the same parent as before, and with more draws favours the better elite', () => {
+        const archive = createArchive(layout);
+        offer(archive, mk(1, 10, { cell: 5 }));
+        offer(archive, mk(2, 1000, { cell: 77 }));
+        const rng = () => createRng(9);
+        const one = selectParent(archive, 0, rng());
+        expect(selectParent(archive, 0, rng(), 1)).toEqual(one);
+        let best = 0;
+        for (let s = 1; s <= 200; s++) {
+            best += selectParent(archive, 0, createRng(s), 4)?.cell === 77 ? 1 : 0;
+        }
+        // Four uniform draws over two cells miss the better one with chance 1/16.
+        expect(best).toBeGreaterThan(170);
+    });
+});

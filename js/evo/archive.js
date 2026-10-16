@@ -376,22 +376,41 @@ function collectNear(archive, spec, cell) {
 }
 
 /**
- * Picks a parent: a uniform occupied cell of the specialisation, then the best mean of `NEIGHBOUR_DRAWS` elites drawn
- * with replacement from that cell and its occupied 8-neighbours.
+ * @param {Archive} archive the archive
+ * @param {number} spec specialisation index
+ * @param {number} pick the index among the specialisation's occupied cells
+ * @returns {number} that occupied cell
+ */
+function uniformCell(archive, spec, pick) {
+    let left = pick;
+    let cell = 0;
+    while (archive.occupied[placeOf(spec, cell, ELITE)] === 0 || left-- > 0) {
+        cell++;
+    }
+    return cell;
+}
+
+/**
+ * Picks a parent: the occupied cell of the specialisation whose elite has the best mean among `cellDraws` uniform
+ * draws (one draw is a uniform cell), then the best mean of `NEIGHBOUR_DRAWS` elites drawn with replacement from that
+ * cell and its occupied 8-neighbours.
  * @param {Archive} archive the archive
  * @param {number} spec specialisation index
  * @param {import('../sim/rng.js').Rng} rng the stream to draw from
+ * @param {number} [cellDraws] uniform cell draws in the cell tournament; 1 picks a uniform cell
  * @returns {ReturnType<typeof refOf> | null} the chosen elite, or null when the specialisation has no genome
  */
-export function selectParent(archive, spec, rng) {
+export function selectParent(archive, spec, rng, cellDraws = 1) {
     const total = occupiedCount(archive, spec);
     if (total === 0) {
         return null;
     }
-    let pick = nextInt(rng, total);
-    let cell = 0;
-    while (archive.occupied[placeOf(spec, cell, ELITE)] === 0 || pick-- > 0) {
-        cell++;
+    let cell = uniformCell(archive, spec, nextInt(rng, total));
+    for (let i = 1; i < cellDraws; i++) {
+        const other = uniformCell(archive, spec, nextInt(rng, total));
+        const eliteMean = (/** @type {number} */ c) =>
+            welfordMean(archive.stats, placeOf(spec, c, ELITE) * WELFORD_STRIDE);
+        cell = eliteMean(other) > eliteMean(cell) ? other : cell;
     }
     const k = collectNear(archive, spec, cell);
     const mean = (/** @type {number} */ p) => welfordMean(archive.stats, p * WELFORD_STRIDE);
