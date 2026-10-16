@@ -11,9 +11,11 @@ describe('createCellGrid', () => {
 });
 
 describe('markCell', () => {
-    const grid = createCellGrid({ worldWidth: 1000, worldHeight: 1000 }, 100, 2);
+    /** @returns {ReturnType<typeof createCellGrid>} a fresh 10 x 10 grid of 100 px cells for 2 slots */
+    const fresh = () => createCellGrid({ worldWidth: 1000, worldHeight: 1000 }, 100, 2);
 
     it('is true only the first time a slot enters a cell, and slots are independent', () => {
+        const grid = fresh();
         expect(markCell(grid, 0, 150, 250)).toBe(true);
         expect(markCell(grid, 0, 199, 299)).toBe(false);
         expect(markCell(grid, 1, 150, 250)).toBe(true);
@@ -21,6 +23,7 @@ describe('markCell', () => {
     });
 
     it('clamps points outside the world into the edge cells', () => {
+        const grid = fresh();
         expect(markCell(grid, 0, -5, -5)).toBe(true);
         expect(markCell(grid, 0, 0, 0)).toBe(false);
         expect(markCell(grid, 0, 5000, 5000)).toBe(true);
@@ -28,6 +31,9 @@ describe('markCell', () => {
     });
 
     it('starts again after clearCells, without touching other slots', () => {
+        const grid = fresh();
+        markCell(grid, 0, 150, 250);
+        markCell(grid, 1, 150, 250);
         clearCells(grid, 0);
         expect(markCell(grid, 0, 150, 250)).toBe(true);
         expect(markCell(grid, 1, 150, 250)).toBe(false);
