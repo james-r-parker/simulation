@@ -15,8 +15,8 @@
       ],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "baseline-v5",
-      "before": "evals/baselines/baseline-v5.json",
-      "after": "evals/baselines/baseline-v5-o8.json",
+      "before": "evals/experiments/E0-baseline-v5-floor20.json",
+      "after": "evals/experiments/E0-baseline-v5-o8-floor20.json",
       "verdicts": {
         "eval.behaviour_coverage": "no-difference",
         "eval.births_per_1k": "no-difference",
@@ -57,7 +57,7 @@
       "targets": ["eval.food_energy_per_1k", "eval.median_lifespan"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "natural-v1",
-      "before": "evals/baselines/baseline-v5.json",
+      "before": "evals/experiments/E0-baseline-v5-floor20.json",
       "after": "evals/experiments/E1-natural-v1.json",
       "verdicts": {
         "eval.behaviour_coverage": "no-difference",
@@ -89,6 +89,54 @@
       },
       "effect": "worse",
       "note": "Target food_energy_per_1k worse (-3.3, [-5.4, -1.3]); median_lifespan better (+684). Both arms sit on the minAgents floor with about 0.005 births per 1000 agent-ticks, so nothing is selected: the lifespan gain is the smaller initial weights moving agents less. Not merged; blocked on the default world sustaining births."
+    },
+    {
+      "id": "E2",
+      "date": "2026-10-16",
+      "branch": "chore/raise-population-floor",
+      "hypothesis": "With minAgents raised from 20 to 100, two independent 8-seed samples of baseline-v5 are still not told apart by eval:compare.",
+      "prediction": "No better or worse verdict on any Target metric; at most about one false positive among the others.",
+      "targets": [
+        "eval.food_energy_per_1k",
+        "eval.median_lifespan",
+        "eval.diversity",
+        "eval.lineage_turnover",
+        "eval.lineages_alive"
+      ],
+      "beforePolicy": "baseline-v5",
+      "afterPolicy": "baseline-v5",
+      "before": "evals/baselines/baseline-v5.json",
+      "after": "evals/baselines/baseline-v5-o8.json",
+      "verdicts": {
+        "eval.behaviour_coverage": "no-difference",
+        "eval.births_per_1k": "worse",
+        "eval.champion_elo": "-",
+        "eval.champion_win_rate": "-",
+        "eval.coverage": "-",
+        "eval.diversity": "no-difference",
+        "eval.floor_episodes": "no-difference",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.lineage_turnover": "no-difference",
+        "eval.lineages_alive": "no-difference",
+        "eval.mean_fitness.defender": "no-difference",
+        "eval.mean_fitness.forager": "no-difference",
+        "eval.mean_fitness.predator": "no-difference",
+        "eval.mean_fitness.reproducer": "no-difference",
+        "eval.mean_fitness.scout": "no-difference",
+        "eval.median_lifespan": "no-difference",
+        "eval.motion_coverage": "-",
+        "eval.p90_fitness.defender": "no-difference",
+        "eval.p90_fitness.forager": "no-difference",
+        "eval.p90_fitness.predator": "no-difference",
+        "eval.p90_fitness.reproducer": "no-difference",
+        "eval.p90_fitness.scout": "no-difference",
+        "eval.population_mean": "-",
+        "eval.predation_per_1k": "-",
+        "eval.predator_share_cv": "-",
+        "eval.qd_score": "-"
+      },
+      "effect": "no-difference",
+      "note": "Recalibration after the floor change: seeds 1-8 against 9-16 with --allow-seed-diff. All five Targets no-difference; one non-Target false positive (eval.births_per_1k worse, both arms near 0.0005). E0 and E1 used the floor-20 reports kept under evals/experiments/."
     }
   ]
 }

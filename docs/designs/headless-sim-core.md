@@ -82,7 +82,7 @@ gives every key's type and range.
 | -------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `seed`                                                         | `1`                              | new                                                                                                         |
 | `worldWidth`, `worldHeight`                                    | `14400`, `8100`                  | `WORLD_WIDTH`, `WORLD_HEIGHT`                                                                               |
-| `maxAgents`, `initialAgents`, `minAgents`                      | `500`, `100`, `20`               | new                                                                                                         |
+| `maxAgents`, `initialAgents`, `minAgents`                      | `500`, `100`, `100`              | new (`minAgents` raised from 20 on 2026-10-16, [sim-notes.md](sim-notes.md))                                |
 | `immigrationInterval`                                          | `600`                            | new                                                                                                         |
 | `maxFood`, `initialFood`                                       | `800`, `300`                     | new; `FOOD_SPAWN_CAP`                                                                                       |
 | `foodSpawnRate`                                                | `0.02`                           | `FOOD_SPAWN_RATE`                                                                                           |

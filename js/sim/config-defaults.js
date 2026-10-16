@@ -21,7 +21,7 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 20, // new
+    minAgents: 100, // new
     immigrationInterval: 600, // new
     maxFood: 800, // FOOD_SPAWN_CAP
     initialFood: 300, // new

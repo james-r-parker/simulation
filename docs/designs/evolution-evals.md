@@ -162,7 +162,8 @@ a small validator for the schema subset it uses (`scripts/lib/json-schema-lite.m
 Experiment `E0` is the calibration: `baseline-v5` on seeds 1-8 against seeds 9-16 (`--seed-offset 8`), which must
 give no `better` or `worse` verdict on any metric named as a Target in any design doc. The second arm is
 `evals/baselines/baseline-v5-o8.json`. Recorded 2026-10-16: every Target `no-difference`; one non-Target false
-positive (`eval.p90_fitness.scout` `worse`), the expected rate across 18 metrics given a verdict.
+positive (`eval.p90_fitness.scout` `worse`), the expected rate across 18 metrics given a verdict. It was rerun as
+`E2` when the population floor changed.
 
 The `eval-smoke` gate (tier 2) runs `npm run eval -- --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json`
 (`maxAgents` 150) into a temporary `--out` and fails on a worker error or a report that fails `validateReport`; it
@@ -242,7 +243,8 @@ The observer, metrics, `fitness-v5`, `baseline-v5`, the runner on `scripts/lib/w
 `evals/seeds.json`, `evals/baselines/baseline-v5.json`, and `--policy` and `--follow` for replay. The baseline sits on
 the `minAgents` floor: the default world does not sustain unevolved brains ([sim-notes.md](sim-notes.md), 2026-10-16),
 which is what [evolution-rework.md](evolution-rework.md) is measured against. Each seed of the default eval took 77 s
-on 8 workers.
+on 8 workers. After `minAgents` rose from 20 to 100 the baseline was re-recorded (about 245 s per seed) and
+recalibrated as `E2`; the floor-20 reports are kept under `evals/experiments/` for `E0` and `E1`.
 
 ### Phase 2 - Compare, ledger and smoke gate (built)
 
