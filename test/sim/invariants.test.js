@@ -176,13 +176,51 @@ describe('assertInvariants', () => {
         expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
     });
 
-    it('names the five invariants', () => {
+    describe('calls', () => {
+        it('accepts live clouds with a positive ttl and free slots with 0', () => {
+            const world = validWorld();
+            world.cloudCount = 2;
+            world.cloudTtl[0] = 5;
+            world.cloudTtl[1] = 1;
+            expect(() => assertInvariants(world)).not.toThrow();
+        });
+
+        it.each([
+            ['cloudCount above maxClouds', (/** @type {any} */ w) => (w.cloudCount = w.config.maxClouds + 1)],
+            ['a live cloud with ttl 0', (/** @type {any} */ w) => (w.cloudCount = 1)],
+            ['a free cloud slot with ttl above 0', (/** @type {any} */ w) => (w.cloudTtl[3] = 4)],
+            ['an alarm timer above callTicks', (/** @type {any} */ w) => (w.alarmTimer[1] = w.config.callTicks + 1)],
+            ['a hunt timer above callTicks', (/** @type {any} */ w) => (w.huntTimer[1] = w.config.callTicks + 1)],
+            [
+                'a smoke timer above smokeCooldown',
+                (/** @type {any} */ w) => (w.smokeTimer[1] = w.config.smokeCooldown + 1),
+            ],
+            ['an alarm loudness above 1', (/** @type {any} */ w) => (w.heard[6] = 1.5)],
+            ['a hunt loudness below 0', (/** @type {any} */ w) => (w.heard[9] = -0.5)],
+        ])('throws the calls invariant for %s', (_name, damage) => {
+            const world = validWorld();
+            damage(world);
+            const error = violationOf(world);
+            expect(error.invariant).toBe(INVARIANT.CALLS);
+            expect(error.message).toMatch(/invariant calls violated at tick 0, slot -?\d+, value /);
+        });
+
+        it('reports the slot and value of a bad timer', () => {
+            const world = validWorld();
+            world.smokeTimer[2] = world.config.smokeCooldown + 7;
+            const error = violationOf(world);
+            expect([error.slot, error.value]).toEqual([2, world.config.smokeCooldown + 7]);
+        });
+    });
+
+    it('names the six invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
             POPULATION: 'population',
             LEDGER: 'ledger',
             TEMPERATURE: 'temperature',
+            CALLS: 'calls',
         });
     });
 

@@ -1,13 +1,9 @@
 // Hand-written controllers for the anti-exploit suite: each replaces the `brain` phase and writes `world.outputs`
 // for every alive agent from its ray inputs, so a fitness function can be scored against a known behaviour.
 
+import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
-
-const RAY_CHANNELS = 8;
-const OUTPUTS = 5;
-const THRUST = 0;
-const TURN = 1;
 
 // Class flag channels within a ray (see js/sim/ray-march.js).
 const CH_FOOD = 1;
@@ -66,10 +62,10 @@ function turnTowards(k, rayCount) {
  * @returns {void}
  */
 function write(world, slot, thrust, turn) {
-    const o = slot * OUTPUTS;
-    world.outputs.fill(0, o, o + OUTPUTS);
-    world.outputs[o + THRUST] = thrust;
-    world.outputs[o + TURN] = turn;
+    const o = slot * OUTPUT_COUNT;
+    world.outputs.fill(0, o, o + OUTPUT_COUNT);
+    world.outputs[o + OUTPUT_INDEX.THRUST] = thrust;
+    world.outputs[o + OUTPUT_INDEX.TURN] = turn;
 }
 
 /**

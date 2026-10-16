@@ -1,5 +1,6 @@
 // Casts each agent's rays through the spatial hash, writing proximity and class one-hot to its inputs row.
 
+import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { isKin } from './kin.js';
 
@@ -10,9 +11,6 @@ const FOOD = 0;
 const AGENT = 1;
 const OBSTACLE = 2;
 const WALL = 3;
-
-/** Values written per ray: proximity and seven class flags. */
-export const RAY_CHANNELS = 8;
 
 // Indices into `world.rayScratch`.
 const OX = 0;
@@ -238,7 +236,7 @@ function agentChannel(world, slot) {
 }
 
 /**
- * Writes the current ray's best hit as eight input values at `base`.
+ * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`.
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} base index of the ray's first value in `world.inputs`
@@ -262,7 +260,7 @@ function writeRay(world, slot, base) {
 }
 
 /**
- * Casts ray `k` of an agent and writes its eight values.
+ * Casts ray `k` of an agent and writes its `RAY_CHANNELS` values.
  * @param {World} world the world
  * @param {SpatialHash} hash the hash
  * @param {number} slot the casting agent
@@ -283,7 +281,7 @@ function castRay(world, hash, slot, k) {
 }
 
 /**
- * Casts all of an agent's rays and writes `rayCount x 8` values at the start of its inputs row.
+ * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
  * @param {World} world the world
  * @param {SpatialHash} hash the hash built for this tick
  * @param {number} slot the alive agent

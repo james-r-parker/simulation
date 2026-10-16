@@ -1,11 +1,9 @@
 // The conditions for mating: one agent being ready, and a pair being allowed to mate.
 
-import { OUTPUT_COUNT } from './brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { blocksMating } from './temperature.js';
 
 /** @typedef {import('./world.js').World} World */
-
-const MATE_OUT = 3;
 
 /**
  * @param {World} world the world
@@ -30,7 +28,7 @@ export function isReadyToMate(world, slot) {
  * @returns {boolean} true when ready to mate and the brain wants to
  */
 export function readyToMate(world, slot) {
-    return isReadyToMate(world, slot) && world.outputs[slot * OUTPUT_COUNT + MATE_OUT] > 0;
+    return isReadyToMate(world, slot) && world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MATE] > 0;
 }
 
 /**

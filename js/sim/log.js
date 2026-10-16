@@ -99,6 +99,7 @@ function emitDied(log, d, o) {
         ageTicks: d[o + 8],
         foodEnergy: d[o + 9],
         biteEnergy: d[o + 10],
+        prevBiter: d[o + 11],
     });
 }
 
@@ -128,6 +129,59 @@ function emitFloor(log, d, o) {
     log.log('info', 'PopulationFloor', { tick: d[o + 1], added: d[o + 2] });
 }
 
+/**
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {{slot: number, genomeId: number, spec: number, x: number, y: number}} the caller fields of a call record
+ */
+function callerFields(d, o) {
+    return { slot: d[o + 2], genomeId: d[o + 3], spec: d[o + 4], x: d[o + 5], y: d[o + 6] };
+}
+
+/**
+ * Emits one `AlarmCalled` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitAlarm(log, d, o) {
+    log.log('debug', 'AlarmCalled', { tick: d[o + 1], ...callerFields(d, o) });
+}
+
+/**
+ * Emits one `PackCalled` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitPack(log, d, o) {
+    log.log('debug', 'PackCalled', { tick: d[o + 1], ...callerFields(d, o) });
+}
+
+/**
+ * Emits one `SmokeReleased` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitSmoke(log, d, o) {
+    log.log('debug', 'SmokeReleased', { tick: d[o + 1], ...callerFields(d, o), cloud: d[o + 7] });
+}
+
+/**
+ * Emits one `SmokeRefused` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitRefused(log, d, o) {
+    log.log('debug', 'SmokeRefused', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -135,6 +189,10 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.AGENT_DIED]: { level: LOG_LEVEL.debug, emit: emitDied },
     [EVENT_TYPE.BIRTH_BLOCKED]: { level: LOG_LEVEL.warn, emit: emitBlocked },
     [EVENT_TYPE.POPULATION_FLOOR]: { level: LOG_LEVEL.info, emit: emitFloor },
+    [EVENT_TYPE.ALARM_CALLED]: { level: LOG_LEVEL.debug, emit: emitAlarm },
+    [EVENT_TYPE.SMOKE_RELEASED]: { level: LOG_LEVEL.debug, emit: emitSmoke },
+    [EVENT_TYPE.PACK_CALLED]: { level: LOG_LEVEL.debug, emit: emitPack },
+    [EVENT_TYPE.SMOKE_REFUSED]: { level: LOG_LEVEL.debug, emit: emitRefused },
 });
 
 /**

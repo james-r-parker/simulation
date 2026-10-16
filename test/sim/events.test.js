@@ -14,7 +14,16 @@ import {
 describe('event codes', () => {
     it('exports the record stride and the frozen code sets', () => {
         expect(EVENT_STRIDE).toBe(12);
-        expect(EVENT_TYPE).toEqual({ AGENT_BORN: 1, AGENT_DIED: 2, BIRTH_BLOCKED: 3, POPULATION_FLOOR: 4 });
+        expect(EVENT_TYPE).toEqual({
+            AGENT_BORN: 1,
+            AGENT_DIED: 2,
+            BIRTH_BLOCKED: 3,
+            POPULATION_FLOOR: 4,
+            ALARM_CALLED: 5,
+            SMOKE_RELEASED: 6,
+            PACK_CALLED: 7,
+            SMOKE_REFUSED: 8,
+        });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({ STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 });
         expect(BLOCKED_CAUSE).toEqual({ CAPACITY: 0, ENERGY: 1 });

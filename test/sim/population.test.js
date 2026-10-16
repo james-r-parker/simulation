@@ -141,6 +141,41 @@ describe('fillFloor', () => {
     });
 });
 
+describe('reap AgentDied field 11 (prevBiter)', () => {
+    /**
+     * @param {Record<string, number>} fields extra slot values for an eaten agent
+     * @param {number} tick the death tick
+     * @returns {number} field 11 of the AgentDied record
+     */
+    function prevBiterField(fields, tick) {
+        const w = lifeWorld({ packWindow: 120 });
+        addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.BITE, lastBiter: 77, ...fields });
+        w.tick = tick;
+        reap(w, recordingPolicy([]));
+        return event(w, 0)[11];
+    }
+
+    it('names the previous biter when it bit at most packWindow ticks before the death', () => {
+        expect(prevBiterField({ prevBiter: 55, prevBiteTick: 80 }, 200)).toBe(55);
+    });
+
+    it('is 0 when the previous bite is older than packWindow ticks', () => {
+        expect(prevBiterField({ prevBiter: 55, prevBiteTick: 79 }, 200)).toBe(0);
+    });
+
+    it('is 0 when there was no previous biter', () => {
+        expect(prevBiterField({ prevBiter: 0, prevBiteTick: 199 }, 200)).toBe(0);
+    });
+
+    it('is 0 for a death that was not eaten', () => {
+        const w = lifeWorld();
+        addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.COST, prevBiter: 55, prevBiteTick: 10 });
+        w.tick = 12;
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0)[11]).toBe(0);
+    });
+});
+
 describe('reap event fields for a later slot', () => {
     it('records the dying slot and its ids when the slot is not 0', () => {
         const w = lifeWorld();

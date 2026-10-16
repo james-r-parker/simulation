@@ -1,5 +1,6 @@
-// Writes an agent's nineteen body inputs after its ray block.
+// Writes an agent's first nineteen body inputs after its ray block; scent-inputs.js writes the rest.
 
+import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { isReadyToMate } from './mate-eligibility.js';
 import { samplePheromone } from './pheromones.js';
@@ -11,14 +12,14 @@ import { TIMER_CAP } from './world.js';
 const SPEC_DIVISOR = 4;
 
 /**
- * Writes body inputs 1 to 19 at `rayCount x 8` into the agent's inputs row.
+ * Writes body inputs 0 to 18 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @returns {void}
  */
 export function writeBodyInputs(world, slot) {
     const { maxEnergy, maxVelocity, maxTurn, baseSize, energyToSize, maxAgeTicks, rayCount } = world.config;
-    const o = slot * world.layout.inputCount + rayCount * 8;
+    const o = slot * world.layout.inputCount + rayCount * RAY_CHANNELS;
     const out = world.inputs;
     const cH = detCos(world.angle[slot]);
     const sH = detSin(world.angle[slot]);

@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { castRays } from '../../js/sim/ray-march.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
-const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7 };
+const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
 const VISION = 300;
 
 /**
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} slot
  * @param {number} ray
- * @returns {number[]} the eight values of a ray
+ * @returns {number[]} the `RAY_CHANNELS` values of a ray
  */
 function rayValues(w, slot, ray) {
-    const base = slot * w.layout.inputCount + ray * 8;
-    return Array.from(w.inputs.subarray(base, base + 8));
+    const base = slot * w.layout.inputCount + ray * RAY_CHANNELS;
+    return Array.from(w.inputs.subarray(base, base + RAY_CHANNELS));
 }
 
 /**
@@ -43,7 +44,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 500 + VISION + 20, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('ignores a hit just beyond the vision range', () => {
@@ -51,7 +52,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 500 + VISION + 21, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('reaches a hit at exactly the range that lies in the next hash cell', () => {
@@ -59,7 +60,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 468, 500, 20);
         addFood(w, 768 + 20, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0]);
     });
 });
 
@@ -91,7 +92,7 @@ describe('castRays tie-breaking', () => {
         addAgent(w, 600, 500, 40);
         addAgent(w, 570, 500, 10);
         cast(w, me);
-        expect(rayValues(w, me, 0).slice(1)).toEqual([0, 1, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0).slice(1)).toEqual([0, 1, 0, 0, 0, 0, 0, 0]);
     });
 });
 
@@ -111,7 +112,7 @@ describe('castRays geometry edges', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 480, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('finds the wall along an axis the ray does not move on when the origin is on that edge', () => {
@@ -130,7 +131,7 @@ describe('castRays geometry edges', () => {
         const me = addAgent(w, 500, 500, 20);
         w.inputs.fill(9);
         cast(w, me);
-        const after = me * w.layout.inputCount + w.config.rayCount * 8;
+        const after = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
         expect(w.inputs[after]).toBe(9);
         expect(w.inputs[after - 1]).toBe(0);
     });

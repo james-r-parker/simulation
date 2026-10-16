@@ -31,6 +31,13 @@ const AGENT_ARRAYS = [
     'fatherWeights',
     'fatherId',
     'fatherLineage',
+    'lastBiteTick',
+    'prevBiter',
+    'prevBiteTick',
+    'alarmTimer',
+    'huntTimer',
+    'smokeTimer',
+    'heard',
 ];
 
 /** Arrays hashed after the agents: food, obstacles, fertile zones, pheromones, then the ledger. */
@@ -53,14 +60,18 @@ const FIELD_ARRAYS = [
     'zoneInitial',
     'danger',
     'attack',
+    'hunt',
+    'cloudX',
+    'cloudY',
+    'cloudTtl',
     'ledger',
 ];
 
 /** RNG streams hashed by their `s` state, in the design doc's Determinism table order. */
 const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
 
-/** Scalars hashed first, as one `Uint32Array(4)`: tick, nextId, population, foodCount. */
-const scalars = new Uint32Array(4);
+/** Scalars hashed first, as one `Uint32Array(5)`: tick, nextId, population, foodCount, cloudCount. */
+const scalars = new Uint32Array(5);
 const scalarBytes = new Uint8Array(scalars.buffer, scalars.byteOffset, scalars.byteLength);
 const digest = new Uint32Array(2);
 
@@ -147,6 +158,7 @@ export function hashWorld(world) {
     scalars[1] = world.nextId;
     scalars[2] = world.population;
     scalars[3] = world.foodCount;
+    scalars[4] = world.cloudCount;
     fnv64Init(digest);
     fnv64Bytes(digest, scalarBytes);
     for (const bytes of views.agents) {

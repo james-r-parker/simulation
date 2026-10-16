@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy } from '../../js/sim/energy.js';
 import { allocAgent } from '../../js/sim/world.js';
@@ -8,7 +9,6 @@ import { smallWorld } from './helpers/small-world.js';
 const FORAGER = 0;
 const PREDATOR = 1;
 const DEFENDER = 4;
-const BITE = 4;
 
 /**
  * @param {ReturnType<typeof smallWorld>} w
@@ -22,7 +22,7 @@ function agent(w, a) {
     w.spec[slot] = a.spec ?? FORAGER;
     w.genomeId[slot] = a.genomeId ?? slot + 1;
     addEnergy(w, slot, a.energy, ENERGY_SOURCE.INITIAL);
-    w.outputs[slot * 5 + BITE] = a.bite ? 1 : 0;
+    w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = a.bite ? 1 : 0;
     w.ateTimer[slot] = 30;
     w.bittenTimer[slot] = 30;
     return slot;
@@ -209,6 +209,26 @@ describe('feed: biting', () => {
         run(w, pair);
         expect(w.lastBiter[0]).toBe(w.genomeId[1]);
         expect(w.lastBiter[1]).toBe(0);
+    });
+
+    it('keeps the previous biter and its tick only when a new biter bites', () => {
+        const w = smallWorld();
+        const victim = agent(w, { x: 100, y: 100, energy: 500, genomeId: 9 });
+        const first = agent(w, { x: 110, y: 100, energy: 2000, spec: PREDATOR, bite: true, genomeId: 11 });
+        const second = agent(w, { x: 90, y: 100, energy: 2000, spec: PREDATOR, bite: true, genomeId: 12 });
+        w.tick = 5;
+        run(w, [victim, first]);
+        expect([w.lastBiter[victim], w.lastBiteTick[victim], w.prevBiter[victim]]).toEqual([11, 5, 0]);
+        w.tick = 6;
+        run(w, [victim, first]);
+        expect([w.lastBiter[victim], w.lastBiteTick[victim], w.prevBiter[victim], w.prevBiteTick[victim]]).toEqual([
+            11, 6, 0, 0,
+        ]);
+        w.tick = 9;
+        run(w, [victim, second]);
+        expect([w.lastBiter[victim], w.lastBiteTick[victim], w.prevBiter[victim], w.prevBiteTick[victim]]).toEqual([
+            12, 9, 11, 6,
+        ]);
     });
 
     it('throws on a specialisation index that does not exist', () => {

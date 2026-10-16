@@ -1,28 +1,31 @@
-// Packs the renderable part of a world (alive agents, alive food, obstacles) into one ArrayBuffer.
+// Packs the renderable part of a world (alive agents, alive food, obstacles, smoke clouds) into one ArrayBuffer.
 
-const HEADER_WORDS = 4;
+const HEADER_WORDS = 5;
 const AGENT_STRIDE = 9;
 const FOOD_STRIDE = 3;
 const OBSTACLE_STRIDE = 3;
+const CLOUD_STRIDE = 3;
 const WORD_BYTES = 4;
 
 /**
  * Sizes the snapshot buffer for a config.
  * @param {Readonly<Record<string, any>>} config the validated config
- * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number}}
+ * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number, cloudStride: number}}
  */
 export function snapshotLayout(config) {
     const words =
         HEADER_WORDS +
         config.maxAgents * AGENT_STRIDE +
         config.maxFood * FOOD_STRIDE +
-        config.obstacleCount * OBSTACLE_STRIDE;
+        config.obstacleCount * OBSTACLE_STRIDE +
+        config.maxClouds * CLOUD_STRIDE;
     return {
         bytes: words * WORD_BYTES,
         headerWords: HEADER_WORDS,
         agentStride: AGENT_STRIDE,
         foodStride: FOOD_STRIDE,
         obstacleStride: OBSTACLE_STRIDE,
+        cloudStride: CLOUD_STRIDE,
     };
 }
 
@@ -85,16 +88,39 @@ function writeFood(world, f32, start) {
 }
 
 /**
- * Writes the world into the buffer: header, alive agents by ascending slot, alive food, obstacles.
+ * Writes the live clouds in index order: `x`, `y` and the remaining life as a share of `smokeTicks`.
+ * @param {import('./world.js').World} world the world
+ * @param {Float32Array} f32 the float view
+ * @param {number} start the first word of the section
+ * @returns {void}
+ */
+function writeClouds(world, f32, start) {
+    const { cloudX, cloudY, cloudTtl, cloudCount } = world;
+    const { smokeTicks } = world.config;
+    let w = start;
+    for (let i = 0; i < cloudCount; i++) {
+        f32[w] = cloudX[i];
+        f32[w + 1] = cloudY[i];
+        f32[w + 2] = cloudTtl[i] / smokeTicks;
+        w += CLOUD_STRIDE;
+    }
+}
+
+/**
+ * Writes the world into the buffer: header, alive agents by ascending slot, alive food, obstacles, live clouds.
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views views from `createSnapshotViews`
  * @returns {void}
  */
 export function writeSnapshot(world, views) {
     const { f32, u32 } = views;
-    const { maxAgents, maxFood, obstacleCount } = world.config;
+    const { maxAgents, maxFood, obstacleCount, maxClouds } = world.config;
     const need =
-        (HEADER_WORDS + maxAgents * AGENT_STRIDE + maxFood * FOOD_STRIDE + obstacleCount * OBSTACLE_STRIDE) *
+        (HEADER_WORDS +
+            maxAgents * AGENT_STRIDE +
+            maxFood * FOOD_STRIDE +
+            obstacleCount * OBSTACLE_STRIDE +
+            maxClouds * CLOUD_STRIDE) *
         WORD_BYTES;
     if (f32.byteLength < need) {
         throw new Error(`writeSnapshot: buffer holds ${f32.byteLength} bytes, the config needs ${need}`);
@@ -111,4 +137,6 @@ export function writeSnapshot(world, views) {
         w += OBSTACLE_STRIDE;
     }
     u32[3] = obstacleCount;
+    u32[4] = world.cloudCount;
+    writeClouds(world, f32, w);
 }

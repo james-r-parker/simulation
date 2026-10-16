@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { LOSS_CAUSE } from '../../js/sim/energy.js';
 import { countCollisions, countTick, nearestFoodRay, turnsTowardsFood } from '../../js/evo/observer-tick.js';
 import { addBorn, nextTick, observed } from './helpers/observer-world.js';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 /**
- * Sets one ray's proximity and food flag in an agent's inputs row (4 rays, 8 channels each).
+ * Sets one ray's proximity and food flag in an agent's inputs row (4 rays, `RAY_CHANNELS` channels each).
  * @param {any} world the world
  * @param {number} slot the agent
  * @param {number} ray the ray index
@@ -13,7 +14,7 @@ import { addBorn, nextTick, observed } from './helpers/observer-world.js';
  * @returns {void}
  */
 function setRay(world, slot, ray, proximity, food = 1) {
-    const base = slot * world.layout.inputCount + ray * 8;
+    const base = slot * world.layout.inputCount + ray * RAY_CHANNELS;
     world.inputs[base] = proximity;
     world.inputs[base + 1] = food;
 }

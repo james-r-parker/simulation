@@ -1,5 +1,7 @@
 // Debug-only world checks that throw on the first broken invariant, run when `config.checkInvariants` is set.
 
+import { HEARD_STRIDE } from './world.js';
+
 /** Names of the invariants, in the order `assertInvariants` checks them. */
 export const INVARIANT = Object.freeze({
     FINITE: 'finite',
@@ -7,6 +9,7 @@ export const INVARIANT = Object.freeze({
     POPULATION: 'population',
     LEDGER: 'ledger',
     TEMPERATURE: 'temperature',
+    CALLS: 'calls',
 });
 
 /** Relative tolerance on the ledger comparison. */
@@ -169,6 +172,68 @@ function checkTemperature(world) {
 }
 
 /**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkClouds(world) {
+    const { maxClouds } = world.config;
+    const count = world.cloudCount;
+    if (!(count >= 0 && count <= maxClouds)) {
+        throw violation(INVARIANT.CALLS, world, { slot: -1, value: count }, `cloudCount is outside [0, ${maxClouds}]`);
+    }
+    for (let i = 0; i < maxClouds; i++) {
+        const ttl = world.cloudTtl[i];
+        if (i < count !== ttl > 0) {
+            throw violation(INVARIANT.CALLS, world, { slot: -1, value: ttl }, `cloud ${i} has ttl ${ttl}`);
+        }
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot an alive slot
+ * @param {number} value a timer value
+ * @param {number} limit its largest legal value
+ * @returns {void}
+ */
+function checkTimer(world, slot, value, limit) {
+    if (value > limit) {
+        throw violation(INVARIANT.CALLS, world, { slot, value }, `timer is above its limit ${limit}`);
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot an alive slot
+ * @returns {void}
+ */
+function checkSlotCalls(world, slot) {
+    const { callTicks, smokeCooldown } = world.config;
+    checkTimer(world, slot, world.alarmTimer[slot], callTicks);
+    checkTimer(world, slot, world.huntTimer[slot], callTicks);
+    checkTimer(world, slot, world.smokeTimer[slot], smokeCooldown);
+    for (let k = 0; k < 2; k++) {
+        const loudness = world.heard[slot * HEARD_STRIDE + 3 * k];
+        if (!(loudness >= 0 && loudness <= 1)) {
+            throw violation(INVARIANT.CALLS, world, { slot, value: loudness }, 'heard loudness is outside [0, 1]');
+        }
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkCalls(world) {
+    checkClouds(world);
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1) {
+            checkSlotCalls(world, slot);
+        }
+    }
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -179,4 +244,5 @@ export function assertInvariants(world) {
     checkPopulation(world);
     checkLedger(world);
     checkTemperature(world);
+    checkCalls(world);
 }

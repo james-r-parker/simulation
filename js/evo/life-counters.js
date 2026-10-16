@@ -5,6 +5,7 @@
 // order, so a slot freed and refilled in one tick keeps only the last newborn's counters (like the observer).
 // `resetLifeSlot` is exported for callers that track births themselves.
 
+import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { isKin } from '../sim/kin.js';
 import { specParams } from '../sim/spec-params.js';
@@ -19,7 +20,6 @@ export const CROWDING_SAMPLE_TICKS = 100;
 /** A kin agent within this distance (px) of a bitten agent makes the bite count as absorbed. */
 export const KIN_RANGE = 300;
 
-const RAY_CHANNELS = 8;
 const FIRST_AGENT_CHANNEL = 2;
 const LAST_AGENT_CHANNEL = 5;
 /** After a step, `bittenTimer` is 1 exactly when `feed` reset it this tick (`applyCosts` then adds 1). */

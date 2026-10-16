@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { senseAll } from '../../js/sim/sensors.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -14,7 +15,7 @@ describe('senseAll', () => {
         w.inputs.fill(7, dead * w.layout.inputCount, (dead + 1) * w.layout.inputCount);
         senseAll(w, rebuild(w));
         const { inputCount } = w.layout;
-        const rayEnd = w.config.rayCount * 8;
+        const rayEnd = w.config.rayCount * RAY_CHANNELS;
         expect(w.inputs[a * inputCount + 1]).toBe(1);
         expect(w.inputs[b * inputCount + 6]).toBe(1);
         expect(w.inputs[a * inputCount + rayEnd]).toBe(1);

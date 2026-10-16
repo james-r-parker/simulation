@@ -1,11 +1,9 @@
 // Moves energy between agents and the world ledger, keeps each agent's size in step with its energy, and charges per-tick costs.
 
-import { OUTPUT_COUNT } from './brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { passiveMultiplier, stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
-
-const SPRINT_OUT = 2;
 
 /** Why an agent last lost energy, stored in `lastLoss`; `NONE` means it has not lost any. */
 export const LOSS_CAUSE = Object.freeze({
@@ -139,7 +137,7 @@ function tickCost(world, slot) {
         (c.passiveLoss + c.sizeEnergyLoss * world.size[slot]) * passiveMultiplier(c, world.temperature[slot]);
     let cost =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
-    if (world.outputs[slot * OUTPUT_COUNT + SPRINT_OUT] > 0) {
+    if (world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0) {
         cost += c.sprintCost;
     }
     return cost;

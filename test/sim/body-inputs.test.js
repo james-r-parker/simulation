@@ -3,6 +3,7 @@ import { writeBodyInputs } from '../../js/sim/body-inputs.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { depositPheromone } from '../../js/sim/pheromones.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 /**
  * @param {ReturnType<typeof senseWorld>} w
@@ -11,7 +12,7 @@ import { addAgent, senseWorld } from './helpers/sense-world.js';
  */
 function body(w, slot) {
     writeBodyInputs(w, slot);
-    const base = slot * w.layout.inputCount + w.config.rayCount * 8;
+    const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
     return Array.from(w.inputs.subarray(base, base + 19));
 }
 
@@ -122,7 +123,7 @@ describe('writeBodyInputs', () => {
     it('writes after the ray block and touches nothing before it', () => {
         const { w, slot } = ready();
         writeBodyInputs(w, slot);
-        const rays = w.config.rayCount * 8;
+        const rays = w.config.rayCount * RAY_CHANNELS;
         expect(Array.from(w.inputs.subarray(0, rays)).every((v) => v === 0)).toBe(true);
         expect(w.inputs[rays]).toBeGreaterThan(0);
     });
@@ -137,13 +138,14 @@ describe('writeBodyInputs', () => {
         expect(body(w, slot).slice(15)).toEqual([1, 0.95, 0, 1].map(Math.fround));
     });
 
-    it('ends the body block at the last input and leaves the next slot row alone', () => {
+    it('ends at offset 18 and leaves the scent inputs and the next slot row alone', () => {
         const { w, slot } = ready();
         const next = addAgent(w, 700, 700, 25);
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
-        const end = slot * w.layout.inputCount + w.config.rayCount * 8 + 19;
-        expect(end).toBe((slot + 1) * w.layout.inputCount);
+        const end = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        expect(end + 13).toBe((slot + 1) * w.layout.inputCount);
+        expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(
             w.inputs
                 .subarray(next * w.layout.inputCount, (next + 1) * w.layout.inputCount)

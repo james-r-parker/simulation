@@ -3,19 +3,20 @@ import { castRays } from '../../js/sim/ray-march.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
+import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
-const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7 };
+const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
 const VISION = 300;
 
 /**
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} slot
  * @param {number} ray
- * @returns {number[]} the eight values of a ray
+ * @returns {number[]} the `RAY_CHANNELS` values of a ray
  */
 function rayValues(w, slot, ray) {
-    const base = slot * w.layout.inputCount + ray * 8;
-    return Array.from(w.inputs.subarray(base, base + 8));
+    const base = slot * w.layout.inputCount + ray * RAY_CHANNELS;
+    return Array.from(w.inputs.subarray(base, base + RAY_CHANNELS));
 }
 
 /**
@@ -34,7 +35,7 @@ describe('castRays classes', () => {
         cast(w, me);
         const r = rayValues(w, me, 0);
         expect(r[CH.prox]).toBeCloseTo(1 - 80 / VISION, 6);
-        expect(r.slice(1)).toEqual([1, 0, 0, 0, 0, 0, 0]);
+        expect(r.slice(1)).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it.each([
@@ -86,7 +87,7 @@ describe('castRays classes', () => {
         const me = addAgent(w, 100, 500, 20);
         cast(w, me);
         expect(rayValues(w, me, 2)[CH.prox]).toBeCloseTo(1 - 100 / VISION, 6);
-        expect(rayValues(w, me, 1)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 1)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('sees an obstacle', () => {
@@ -107,7 +108,7 @@ describe('castRays classes', () => {
         w.inputs.fill(9);
         cast(w, me);
         for (let k = 0; k < 4; k++) {
-            expect(rayValues(w, me, k)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+            expect(rayValues(w, me, k)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
         }
     });
 

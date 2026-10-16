@@ -1,14 +1,11 @@
 // Moves agents: steering and thrust, damping, wall and obstacle bounces, and agent-agent contact impulses.
 
-import { OUTPUT_COUNT } from './brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { thrustEfficiency } from './temperature.js';
 
 const PI = 3.141592653589793;
-const TURN_OUT = 1;
-const THRUST_OUT = 0;
-const SPRINT_OUT = 2;
 
 /**
  * Turns, wraps the heading to [-PI, PI) and adds thrust along the new heading for every alive agent.
@@ -21,7 +18,7 @@ export function actAll(world) {
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             const o = i * OUTPUT_COUNT;
-            turnRate[i] = outputs[o + TURN_OUT] * maxTurn;
+            turnRate[i] = outputs[o + OUTPUT_INDEX.TURN] * maxTurn;
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -29,8 +26,8 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            let thrust = outputs[o + THRUST_OUT] * maxThrust * thrustEfficiency(config, world.temperature[i]);
-            if (outputs[o + SPRINT_OUT] > 0) {
+            let thrust = outputs[o + OUTPUT_INDEX.THRUST] * maxThrust * thrustEfficiency(config, world.temperature[i]);
+            if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
                 thrust *= 1 + sprintMultiplier;
             }
             vx[i] += thrust * detCos(a);
@@ -107,7 +104,7 @@ function moveAgent(world, slot) {
     const { damping, maxVelocity, sprintMultiplier } = config;
     vx[slot] *= damping;
     vy[slot] *= damping;
-    const sprinting = world.outputs[slot * OUTPUT_COUNT + SPRINT_OUT] > 0;
+    const sprinting = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
     const cap = sprinting ? maxVelocity * (1 + sprintMultiplier) : maxVelocity;
     const speed = Math.sqrt(vx[slot] * vx[slot] + vy[slot] * vy[slot]);
     if (speed > cap) {
