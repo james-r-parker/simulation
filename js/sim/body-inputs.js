@@ -1,8 +1,8 @@
 // Writes an agent's fifteen body inputs after its ray block.
 
 import { detCos, detSin } from './det-math.js';
+import { isReadyToMate } from './mate-eligibility.js';
 import { samplePheromone } from './pheromones.js';
-import { isReadyToMate } from './reproduction.js';
 import { TIMER_CAP } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
