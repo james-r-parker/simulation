@@ -2,7 +2,7 @@
 
 import { CELLS, CHALLENGER, ELITE, createArchive, placeOf } from './archive.js';
 import { decodeWeights, encodeWeights } from './base64.js';
-import { GENOME_SPECS } from './genome.js';
+import { GENOME_SPECS, rejectGenome } from './genome.js';
 import { WELFORD_STRIDE } from './welford.js';
 import { brainLayout } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
@@ -85,38 +85,44 @@ function decodePlace(archive, place, entry) {
 /**
  * @param {Record<string, any>} json the object `encodeArchive` returns, after a JSON round trip
  * @param {Readonly<Record<string, any>>} config the running config
+ * @param {import('../sim/log.js').SimLog} [log] receives `GenomeRejected`
  * @returns {void}
  * @throws {Error} naming the mismatched field
  */
-function assertFits(json, config) {
+function assertFits(json, config, log) {
     if (json.version !== ARCHIVE_VERSION) {
-        throw new Error(`archive.version: expected ${ARCHIVE_VERSION}, got ${json.version}`);
+        rejectGenome(log, { field: 'archive.version', expected: ARCHIVE_VERSION, actual: json.version });
     }
     const want = layoutStamp(brainLayout(config));
     for (const [field, value] of Object.entries(want)) {
         if (json.layout?.[field] !== value) {
-            throw new Error(`archive.layout.${field}: expected ${value}, got ${json.layout?.[field]}`);
+            rejectGenome(log, { field: `archive.layout.${field}`, expected: value, actual: json.layout?.[field] });
         }
     }
     if (json.rulesHash !== rulesHash(config)) {
-        throw new Error(`archive.rulesHash: expected ${rulesHash(config)}, got ${json.rulesHash}`);
+        rejectGenome(log, { field: 'archive.rulesHash', expected: rulesHash(config), actual: json.rulesHash });
     }
 }
 
 /**
  * @param {Record<string, any>} json the object `encodeArchive` returns, after a JSON round trip
  * @param {Readonly<Record<string, any>>} config the running config
+ * @param {import('../sim/log.js').SimLog} [log] receives `GenomeRejected` before a throw
  * @returns {import('./archive.js').Archive} an archive that behaves identically to the encoded one
  * @throws {Error} when the layout or `rulesHash` does not match the config (the message names the field), or a
  *   cell is malformed
  */
-export function decodeArchive(json, config) {
-    assertFits(json, config);
+export function decodeArchive(json, config, log) {
+    assertFits(json, config, log);
     const archive = createArchive(brainLayout(config));
     for (const entry of json.cells) {
         const spec = GENOME_SPECS.indexOf(entry.specialisation);
         if (spec < 0 || !Number.isInteger(entry.cell) || entry.cell < 0 || entry.cell >= CELLS) {
-            throw new Error(`archive.cells: bad specialisation ${entry.specialisation} or cell ${entry.cell}`);
+            rejectGenome(log, {
+                field: 'archive.cells',
+                expected: 'a known specialisation and a cell in range',
+                actual: `${entry.specialisation}/${entry.cell}`,
+            });
         }
         decodePlace(archive, placeOf(spec, entry.cell, ELITE), entry.elite);
         if (entry.challenger) {

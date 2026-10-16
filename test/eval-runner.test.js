@@ -44,6 +44,26 @@ describe('runEval', () => {
         expect(a.report.fitnessName).toBe('v5');
     }, 60_000);
 
+    it('gives map-elites-v1 identical reports for 1 and 2 workers, with the archive metrics set', async () => {
+        const go = (/** @type {string} */ name, /** @type {number} */ workers) =>
+            runEval({
+                seeds: 2,
+                ticks: 3000,
+                policy: 'map-elites-v1',
+                configOverrides: { ...SMALL, maturityTicks: 100 },
+                out: join(dir, `${name}.json`),
+                logDir: join(dir, 'logs'),
+                workers,
+                sha: 'test',
+            });
+        const [a, b] = [await go('me1', 1), await go('me2', 2)];
+        expect(a.report).toEqual(b.report);
+        expect(readFileSync(join(dir, 'me1.json'), 'utf8')).toBe(readFileSync(join(dir, 'me2.json'), 'utf8'));
+        for (const name of ['eval.coverage', 'eval.qd_score']) {
+            expect(a.report.metrics[name].mean).toBeGreaterThan(0);
+        }
+    }, 60_000);
+
     it('logs the start, each seed and the finish', async () => {
         await run('c', 2);
         const lines = readFileSync(join(dir, 'logs', 'eval-baseline-v5-test-2x2000.jsonl'), 'utf8')

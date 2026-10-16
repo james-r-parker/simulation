@@ -22,7 +22,7 @@ function createPending(slots, wc) {
         isClone: new Uint8Array(slots),
         archiveRef: new Int32Array(slots),
         refId: new Float64Array(slots),
-        row: (/** @type {number} */ slot) => rows.subarray(slot * wc, (slot + 1) * wc),
+        views: Array.from({ length: slots }, (_, slot) => rows.subarray(slot * wc, (slot + 1) * wc)),
         save(/** @type {any} */ world, /** @type {number} */ slot, /** @type {Record<string, any>} */ from) {
             rows.set(world.weights.subarray(slot * wc, (slot + 1) * wc), slot * wc);
             p.sigma[slot] = from.sigma[slot];
@@ -36,6 +36,43 @@ function createPending(slots, wc) {
 }
 
 /**
+ * @param {Record<string, any>} options `{ pending, observer, counters }`
+ * @returns {(d: Float64Array, o: number, row: number) => import("../../evo/archive.js").Offer} builds the offer for a mature death
+ *   from the pending row, the descriptors and the score of the death-log row; it fills and returns one reused object
+ */
+function createOfferBuilder({ pending, observer, counters }) {
+    const item = {
+        spec: 0,
+        cell: 0,
+        row: pending.views[0],
+        sigma: 0,
+        id: 0,
+        fitness: 0,
+        isClone: false,
+        archiveRef: 0,
+        refId: 0,
+    };
+    return (d, o, row) => {
+        const slot = d[o + 2];
+        if (pending.id[slot] !== d[o + 3]) {
+            throw new Error(`map-elites-v1: no pending row for genome ${d[o + 3]} in slot ${slot}`);
+        }
+        const { samples, speedSum, fitness } = observer.deaths;
+        const speed = samples[row] === 0 ? 0 : Math.min(1, speedSum[row] / samples[row]);
+        item.spec = d[o + 6];
+        item.cell = cellOf(speed, crowdingMean(counters, slot));
+        item.row = pending.views[slot];
+        item.sigma = pending.sigma[slot];
+        item.id = d[o + 3];
+        item.fitness = fitness[row];
+        item.isClone = pending.isClone[slot] === 1;
+        item.archiveRef = pending.archiveRef[slot];
+        item.refId = pending.refId[slot];
+        return item;
+    };
+}
+
+/**
  * @param {Record<string, any>} options `{ config, archive, observer, counters, clones, sigma, log }`; `clones` is
  *   `{ isClone, archiveRef, refId }` and `sigma` the per-slot step sizes
  * @returns {{onDeath: Function, onEvent: Function}} the two hooks; both do nothing without an `observer`, which
@@ -44,6 +81,7 @@ function createPending(slots, wc) {
 export function createOffers({ config, archive, observer, counters, clones, sigma, log }) {
     const pending = createPending(config.maxAgents, archive.layout.weightCount);
     const from = { ...clones, sigma };
+    const offerOf = createOfferBuilder({ pending, observer, counters });
     let deathsSeen = 0;
 
     function onDeath(/** @type {any} */ world, /** @type {number} */ slot) {
@@ -60,27 +98,6 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
             throw new Error(`map-elites-v1: death log row ${row} is not genome ${genomeId} or unscored`);
         }
         return row;
-    }
-
-    /** The offer for a mature death: the pending row, the descriptors and score from the log row. */
-    function offerOf(/** @type {Float64Array} */ d, /** @type {number} */ o, /** @type {number} */ row) {
-        const slot = d[o + 2];
-        if (pending.id[slot] !== d[o + 3]) {
-            throw new Error(`map-elites-v1: no pending row for genome ${d[o + 3]} in slot ${slot}`);
-        }
-        const { samples, speedSum, fitness } = observer.deaths;
-        const speed = samples[row] === 0 ? 0 : Math.min(1, speedSum[row] / samples[row]);
-        return {
-            spec: d[o + 6],
-            cell: cellOf(speed, crowdingMean(counters, slot)),
-            row: pending.row(slot),
-            sigma: pending.sigma[slot],
-            id: d[o + 3],
-            fitness: fitness[row],
-            isClone: pending.isClone[slot] === 1,
-            archiveRef: pending.archiveRef[slot],
-            refId: pending.refId[slot],
-        };
     }
 
     function onEvent(/** @type {any} */ world, /** @type {number} */ o) {

@@ -2,7 +2,7 @@
 // specialisation, then a genome from the archive, a clone of one, or a random one.
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
-import { GENOME_SPECS } from '../../evo/genome.js';
+import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat } from '../../sim/rng.js';
 import { rowOf } from './natural-birth.js';
@@ -59,6 +59,19 @@ function draw(archive, spec, rng) {
 }
 
 /**
+ * Refuses an archive row that does not fit the world's layout: logs `GenomeRejected`, then throws.
+ * @param {Float32Array} row the archive genome's weights
+ * @param {{weightCount: number}} layout the world's brain layout
+ * @param {import('../../sim/log.js').SimLog | undefined} log the policy's log
+ * @returns {void}
+ */
+function checkRow(row, layout, log) {
+    if (row.length !== layout.weightCount) {
+        rejectGenome(log, { field: 'weights.length', expected: layout.weightCount, actual: row.length });
+    }
+}
+
+/**
  * @param {Record<string, any>} options `{ config, archive, birth, clones, log }`: the shared per-slot state in
  *   `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`
  * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
@@ -84,10 +97,12 @@ export function createSeeder({ archive, birth, clones, log }) {
             randomWeights(row, layout, rng);
             birth.sigma[slot] = SIGMA_START;
         } else if (source === 'archive') {
+            checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
             mutateWeights(row, birth.sigma[slot], rng);
         } else {
+            checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = ref.sigma;
             clones.isClone[slot] = 1;
