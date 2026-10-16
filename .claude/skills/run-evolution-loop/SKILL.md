@@ -33,14 +33,14 @@ Write the prediction first. A prediction written after the result is not a predi
 
 ## 2. Run
 
-- Never fewer than **8 seeds** per arm; the same seed list on both arms (`--seeds` takes a count from the fixed
+- Never fewer than **16 seeds** per arm (the `eval` default; `eval:compare` refuses fewer); the same seed list on both arms (`--seeds` takes a count from the fixed
   benchmark seed list, so two runs with the same count share seeds).
 - Run both arms on the same machine, from builds that do not change during the run:
 
     ```bash
     git worktree add <scratch>/before origin/main
-    (cd <scratch>/before && npm ci && npm run eval -- --seeds 8 --ticks 200000 --policy <beforePolicy> --out ../before.json)
-    npm run eval -- --seeds 8 --ticks 200000 --policy <afterPolicy> --out <scratch>/after.json
+    (cd <scratch>/before && npm ci && npm run eval -- --seeds 16 --ticks 200000 --policy <beforePolicy> --out ../before.json)
+    npm run eval -- --seeds 16 --ticks 200000 --policy <afterPolicy> --out <scratch>/after.json
     ```
 
 - `bench.*` metrics: `npm run bench` on an otherwise idle machine; compare with `bench/baseline.json`.
@@ -52,7 +52,9 @@ For every metric that moved:
 
 1. **Noise.** `npm run eval:compare -- <before>.json <after>.json --targets <m,...> --fail-on-worse` reports a BCa
    bootstrap 95% interval and a verdict per metric, marks the targets and exits 1 if a target is `worse` (`--json`
-   for the verdicts to record). `no-difference` means no difference - do not round it up to "slightly better". With
+   for the verdicts to record). `no-difference` means no difference - do not round it up to "slightly better". A verdict needs the interval to
+   exclude 0 and a mean change of at least 5% of the before mean (`--min-effect`, shown as the `effect` column), so a
+   tiny but precise shift stays `no-difference`. With
    about 25 metrics, one `better` or `worse` off the targets is expected by chance at 95% (see `E0`).
 2. **Exploits.** A fitness jump without a matching move in `eval.food_energy_per_1k` or `eval.median_lifespan` is a
    suspected exploit. Replay the best agent (`npm run replay -- --policy <name> --seed <s> --ticks <t> --follow <genome-id>`) and
@@ -63,8 +65,8 @@ For every metric that moved:
 
 ## Calibration
 
-`E0` in the ledger compares `baseline-v5` on seeds 1-8 with seeds 9-16 (`npm run eval -- --seed-offset 8`, then
-`eval:compare --allow-seed-diff`); it must give no verdict on any Target metric. Rerun it when the metrics, the
+Calibration compares `baseline-v5` on seeds 1-16 with seeds 17-32 (`npm run eval -- --seed-offset 16 --out
+evals/baselines/baseline-v5-o16.json`, then `eval:compare --allow-seed-diff`); it must give no verdict on any Target metric. Rerun it when the metrics, the
 bootstrap or the default config change, as a new entry.
 
 ## 4. Record
@@ -101,7 +103,7 @@ was kept or reverted, and what waits for approval.
 
 ## Red flags
 
-- Fewer than 8 seeds, or different seeds on the two arms.
+- Fewer than 16 seeds, or different seeds on the two arms.
 - A prediction written after the result.
 - Calling `no-difference` an improvement.
 - A fitness gain with no gain in food or lifespan, accepted without a replay.
