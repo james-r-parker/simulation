@@ -48,7 +48,7 @@ describe('fitnessV1 terms', () => {
     it('names the doc weights', () => {
         expect(FITNESS_V1).toMatchObject({
             OFFSPRING: 300,
-            SURVIVAL_RATE: 0.02,
+            SURVIVAL_RATE: 0.5,
             SURVIVAL_CAP: 30000,
             SPEC_THRESHOLD: 500,
         });
@@ -62,9 +62,11 @@ describe('fitnessV1 terms', () => {
         expect(score('scout', { children: 3 })).toBe(900);
     });
 
-    it('pays 0.02 per tick alive, capped at 30000 ticks', () => {
-        expect(score('scout', { ageTicks: 1000 })).toBeCloseTo(20, 9);
-        expect(score('scout', { ageTicks: 90000 })).toBeCloseTo(600, 9);
+    it('pays 0.5 per tick alive, capped at 30000 ticks and at the food energy eaten', () => {
+        expect(score('scout', { ageTicks: 1000 })).toBe(0);
+        expect(score('scout', { ageTicks: 1000, foodEnergy: 200 })).toBeCloseTo(200 + 200, 9);
+        expect(score('scout', { ageTicks: 300, foodEnergy: 400 })).toBeCloseTo(400 + 150, 9);
+        expect(score('scout', { ageTicks: 90000, foodEnergy: 20000 })).toBeCloseTo(20000 + 15000 + 2 * 0, 0);
     });
 
     it('adds no spec term below 500 food energy, and pays it at 500', () => {
