@@ -171,3 +171,59 @@ describe('validateConfig cross-key rules', () => {
         expect(() => createConfig({ highFoodRadius: 200 })).toThrow(/hashCellSize/);
     });
 });
+
+describe('validateConfig temperature keys', () => {
+    it.each([
+        ['temperatureMax', 0],
+        ['temperatureStart', -1],
+        ['temperatureStart', 101],
+        ['temperatureGainMove', -0.1],
+        ['temperatureGainEat', -1],
+        ['temperatureLossPassive', -0.1],
+        ['temperatureSeasonSlope', -0.1],
+        ['temperaturePassiveLossFactor', 0.9],
+        ['temperatureColdStress', 0],
+        ['temperatureEfficiencyColdSevere', 0],
+        ['temperatureEfficiencyColdModerate', 1.1],
+        ['temperatureEfficiencyHeatModerate', -0.1],
+        ['temperatureEfficiencyHeatSevere', NaN],
+    ])('rejects %s = %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+    });
+
+    it('accepts a start at either end and an efficiency of exactly 1', () => {
+        expect(() => createConfig({ temperatureStart: 0 })).not.toThrow();
+        expect(() => createConfig({ temperatureStart: 100 })).not.toThrow();
+        expect(() => createConfig({ temperatureEfficiencyHeatSevere: 1 })).not.toThrow();
+        expect(() => createConfig({ temperaturePassiveLossFactor: 1 })).not.toThrow();
+    });
+
+    it.each([
+        ['temperatureColdStress', 40, /temperatureColdStress.*< temperatureColdModerate/],
+        ['temperatureColdModerate', 66, /temperatureColdModerate.*<= temperatureOptimalMax/],
+        ['temperatureOptimalMin', 30, /temperatureColdStress.*< temperatureOptimalMin/],
+        ['temperatureOptimalMax', 70, /temperatureOptimalMax.*< temperatureHeatModerate/],
+        ['temperatureHeatModerate', 86, /temperatureHeatModerate.*<= temperatureHeatStress/],
+        ['temperatureHeatStress', 100, /temperatureHeatStress.*< temperatureMax/],
+    ])('refuses %s = %s, which breaks the ordering', (key, value, pattern) => {
+        expect(() => createConfig({ [key]: value })).toThrow(pattern);
+    });
+
+    it('accepts the equalities the ordering allows', () => {
+        expect(() => createConfig({ temperatureColdModerate: 65 })).not.toThrow();
+        expect(() => createConfig({ temperatureHeatModerate: 85 })).not.toThrow();
+        expect(() => createConfig({ temperatureOptimalMin: 65 })).not.toThrow();
+    });
+
+    it('accepts a negative season temperatureModifier and refuses a non-finite or missing one', () => {
+        const seasons = structuredClone(DEFAULTS.seasons);
+        seasons[3].temperatureModifier = -40;
+        expect(() => createConfig({ seasons })).not.toThrow();
+        seasons[3].temperatureModifier = NaN;
+        expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier/);
+        seasons[3].temperatureModifier = Infinity;
+        expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier/);
+        delete seasons[3].temperatureModifier;
+        expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier.*missing/);
+    });
+});

@@ -26,7 +26,7 @@ describe('createConfig', () => {
     });
 
     it('replaces an array whole instead of merging it', () => {
-        const season = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1 };
+        const season = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
         const config = createConfig({ seasons: [season, season, season, season] });
         expect(config.seasons[3]).toEqual(season);
         expect(() => createConfig({ seasons: [season] })).toThrow(/seasons/);

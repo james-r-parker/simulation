@@ -5,7 +5,7 @@ import { brainLayout } from './brain-layout.js';
 const MAX_SEED = 4294967295; // 2^32 - 1
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
-const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus'];
+const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];
 const SPECIALISATION_KEYS = ['forager', 'predator', 'reproducer', 'scout', 'defender'];
 const SPECIALISATION_FIELDS = [
     'index',
@@ -43,6 +43,10 @@ const positive = () => ({ type: 'num', gt: 0 });
 const BOOL = { type: 'bool' };
 /** @type {Rule} */
 const UNIT = num(0, 1);
+/** @type {Rule} a finite number of either sign */
+const SIGNED = { type: 'num', min: -Infinity };
+/** @type {Rule} a thrust efficiency: above 0, at most 1 */
+const EFFICIENCY = { type: 'num', gt: 0, max: 1 };
 
 /** @type {Record<string, Rule>} */
 const RULES = {
@@ -125,6 +129,23 @@ const RULES = {
     fertileZoneRadius: positive(),
     fertileZoneFertility: num(0),
     placementTries: int(1),
+    temperatureMax: positive(),
+    temperatureStart: num(0),
+    temperatureGainMove: num(0),
+    temperatureGainEat: num(0),
+    temperatureLossPassive: num(0),
+    temperatureSeasonSlope: num(0),
+    temperaturePassiveLossFactor: num(1),
+    temperatureColdStress: positive(),
+    temperatureColdModerate: num(0),
+    temperatureOptimalMin: num(0),
+    temperatureOptimalMax: num(0),
+    temperatureHeatModerate: num(0),
+    temperatureHeatStress: num(0),
+    temperatureEfficiencyColdSevere: EFFICIENCY,
+    temperatureEfficiencyColdModerate: EFFICIENCY,
+    temperatureEfficiencyHeatModerate: EFFICIENCY,
+    temperatureEfficiencyHeatSevere: EFFICIENCY,
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
@@ -135,6 +156,18 @@ const AT_MOST = [
     ['obstacleMinRadius', 'obstacleMaxRadius'],
     ['initialEnergy', 'maxEnergy'],
     ['minSize', 'baseSize'],
+    ['temperatureStart', 'temperatureMax'],
+    ['temperatureColdModerate', 'temperatureOptimalMax'],
+    ['temperatureOptimalMin', 'temperatureOptimalMax'],
+    ['temperatureHeatModerate', 'temperatureHeatStress'],
+];
+
+/** Pairs `[smaller, larger]`: the first key's value must be below the second's. */
+const BELOW = [
+    ['temperatureColdStress', 'temperatureColdModerate'],
+    ['temperatureColdStress', 'temperatureOptimalMin'],
+    ['temperatureOptimalMax', 'temperatureHeatModerate'],
+    ['temperatureHeatStress', 'temperatureMax'],
 ];
 
 /**
@@ -227,7 +260,7 @@ function checkSeasons(seasons) {
     seasons.forEach((season, i) => {
         checkExactKeys(`seasons[${i}]`, season, SEASON_KEYS);
         for (const key of SEASON_KEYS) {
-            checkScalar(`seasons[${i}].${key}`, season[key], num(0));
+            checkScalar(`seasons[${i}].${key}`, season[key], key === 'temperatureModifier' ? SIGNED : num(0));
         }
     });
 }
@@ -261,6 +294,11 @@ function checkRelations(config) {
     for (const [small, large] of AT_MOST) {
         if (config[small] > config[large]) {
             fail(small, config[small], `<= ${large} (${config[large]})`);
+        }
+    }
+    for (const [small, large] of BELOW) {
+        if (!(config[small] < config[large])) {
+            fail(small, config[small], `< ${large} (${config[large]})`);
         }
     }
 }
