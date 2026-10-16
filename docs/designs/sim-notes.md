@@ -183,8 +183,21 @@ With body temperature on the reachable-births defaults (seed 1, floor and immigr
 scripted foragers (the foodSeeker's steering): thrust 0 dies out by tick 4453 at a mean temperature of 24; thrust 0.2
 grows from 100 to 393 agents (1927 births) at a mean of 49.7, inside the 40-65 band; thrust 0.4 grows to 217 (mean 73);
 0.6 to 163 (mean 81); thrust 1 dies out by tick 6295 (mean 78). Moving gently pays, and both sitting and rushing cost.
-The legacy `temperatureGainMove` 0.025 and `temperatureLossPassive` 0.015 give this shape, so they stay. In the
+The legacy `temperatureGainMove` 0.025 and `temperatureLossPassive` 0.015 give this shape, but the live policy's
+fed lifespan was 17% down at them, so T10 later tuned the defaults (next entry). In the
 micro-world a sitter now dies at about tick 3850 against 9180 with the passive multiplier off (2.4x sooner). The legacy
 `js/agent.js` scaled cooling by `1 + modifier x 0.07`, so hot seasons cooled faster, against its own comment; the port
 follows the comment (`1 - modifier x 0.03`). A 2000 x 1000 test world with the default 25 obstacles can fail food
 placement ("no point clear of obstacles"), which the eval-runner slow test now avoids with 4 obstacles.
+
+### 2026-10-16 - Body temperature: tuning the live policy's rates
+
+The live policy (`map-elites-v1q`) lived 17% shorter at the legacy rates (E12). Halving `temperatureGainMove` and
+`temperatureLossPassive` (E15) cut that to -5.4%, just past the 5% rule, so the rates alone did not
+close it. A sweep of seven candidates (A-G) on seeds 29-32 then softened the extremes:
+`temperaturePassiveLossFactor` 4 to 2 with heat efficiencies 0.9 and 0.6 (candidate C, 16 seeds: fed lifespan -1.2%, food -2.9%, births +0.1%, none a verdict) and C with
+`temperatureGainMove` 0.01 (candidate H: -1.9%, +1.9%, +3.5%, none a verdict). H is the default. A sitter and a
+full-thrust agent still die (the scripted check ends with 0 agents at thrust 0 and at thrust 100, and 332 at thrust 20), while two softer
+candidates (F and G) let thrust 100 survive and were dropped. Both C and H still read `worse` on `eval.floor_episodes`
+(+11.1% and +9.5%) and on several fitness means and p90s, and `better` on coverage; these are recorded (E16, E17) and
+were not part of the pass rule, which names only fed lifespan, food and births.
