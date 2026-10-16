@@ -233,7 +233,8 @@ describe('findMate allocation', () => {
         const w = placed(points);
         const run = () => {
             for (let i = 0; i < 20000; i++) {
-                findMate(w, i % 40, 0);
+                // A chance of 0.5 keeps the lifecycle draw inside the measured loop.
+                findMate(w, i % 40, 0.5);
             }
         };
         run();
