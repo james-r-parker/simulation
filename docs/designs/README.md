@@ -7,9 +7,9 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
-1. [Evolution rework](evolution-rework.md) - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for predator-prey.md
-2. [Predator and prey](predator-prey.md) - builds on the 19-input layout of body-temperature.md, and comes before the trainer (evolution-rework.md Phase 3)
-3. [Worker and renderer](worker-and-renderer.md) - the browser is where the simulation is watched, and it needs the core and the live policy first
+1. [Predator and prey](predator-prey.md) - finishes the world rules; tuning nights and the trainer build on them
+2. [Worker and renderer](worker-and-renderer.md) - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
+3. [Evolution rework](evolution-rework.md) - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and the tuning nights
 4. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
 5. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last stage of v6: nothing legacy is left and every doc describes the app as built
 
