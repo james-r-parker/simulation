@@ -5,6 +5,7 @@ import { addAgent, senseWorld } from './helpers/sense-world.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
+const NEUTRAL = { specialisations: { predator: { turnMultiplier: 1, sprintBoost: 1 } } };
 const TUNED = { specialisations: { predator: { turnMultiplier: 0.7, sprintBoost: 1.6 } } };
 
 /**
@@ -23,7 +24,7 @@ function put(w, { spec, out, vx = 0, y = 500 }) {
 
 describe('specialisation tables in actAll', () => {
     it('reproduces the multiplier-1 numbers exactly for every specialisation', () => {
-        const w = senseWorld();
+        const w = senseWorld(NEUTRAL);
         const slots = [0, 1, 2, 3, 4].map((spec) => put(w, { spec, out: [1, 1, 1, 0, 0], y: 100 + 100 * spec }));
         actAll(w);
         const { maxTurn, maxThrust, sprintMultiplier } = w.config;
@@ -72,7 +73,7 @@ describe('specialisation tables in integrate', () => {
     });
 
     it('keeps the multiplier-1 cap exact', () => {
-        const w = senseWorld();
+        const w = senseWorld(NEUTRAL);
         const slot = put(w, { spec: PREDATOR, out: [0, 0, 1, 0, 0], vx: 100 });
         integrate(w);
         expect(w.vx[slot]).toBeCloseTo(w.config.maxVelocity * (1 + w.config.sprintMultiplier), 6);

@@ -58,7 +58,7 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
-    huntSizeRatio: 1.1, // PREDATOR_SIZE_RATIO_THRESHOLD
+    huntSizeRatio: 1.05, // PREDATOR_SIZE_RATIO_THRESHOLD
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates
@@ -107,9 +107,9 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
-            biteMultiplier: 1,
-            turnMultiplier: 1,
-            sprintBoost: 1,
+            biteMultiplier: 4,
+            turnMultiplier: 0.7,
+            sprintBoost: 1.6,
         },
         reproducer: {
             index: 2,

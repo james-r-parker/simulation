@@ -29,38 +29,31 @@ function watch(world, { ticks, prey }) {
 }
 
 describe('a scripted hunter against a stationary prey', () => {
-    // T8b sets the predator multipliers; with the neutral defaults a bite takes 5 energy a tick and the kill takes longer.
-    it.fails('kills the prey within 120 ticks (passes once T8b tunes the predator)', () => {
+    it('kills the prey within 120 ticks', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         const { diedAt } = watch(world, { ticks: KILL_TICKS, prey: stillBrain });
         expect(diedAt).toBeGreaterThan(0);
         expect(world.biteEnergy[HUNTER]).toBeGreaterThan(0);
     });
 
-    // The same needs a hunter just over the 5% size margin, which only T8b's huntSizeRatio of 1.05 allows.
-    it.fails(
-        'kills the prey within 120 ticks with a hunter just over the size margin (passes once T8b tunes it)',
-        () => {
-            const world = createArena({ gap: 200, hunterEnergy: 1200 });
-            const { diedAt } = watch(world, { ticks: KILL_TICKS, prey: stillBrain });
-            expect(diedAt).toBeGreaterThan(0);
-        },
-    );
+    // The same needs a hunter just over the 5% size margin, which the huntSizeRatio of 1.05 allows.
+    it('kills the prey within 120 ticks with a hunter just over the size margin', () => {
+        const world = createArena({ gap: 200, hunterEnergy: 1200 });
+        const { diedAt } = watch(world, { ticks: KILL_TICKS, prey: stillBrain });
+        expect(diedAt).toBeGreaterThan(0);
+    });
 });
 
 describe('a sprinting prey turning away from the hunter', () => {
-    // The hunter only chases a prey in the smaller class, which needs T8b's huntSizeRatio of 1.05 at this size margin.
-    it.fails(
-        'is not bitten while the hunter, which is just over the size margin, burns its burst (passes once T8b tunes it)',
-        () => {
-            const world = createArena({ gap: 200, hunterEnergy: 1200, preyHeading: Math.PI / 2 });
-            const { bites, pursuit, diedAt } = watch(world, { ticks: ESCAPE_TICKS, prey: fleeBrain(false) });
-            expect(bites).toBe(0);
-            expect(diedAt).toBe(-1);
-            expect(pursuit).toBeGreaterThan(30);
-            expect(world.alive[PREY]).toBe(1);
-        },
-    );
+    // The hunter only chases a prey in the smaller class, which needs the huntSizeRatio of 1.05 at this size margin.
+    it('is not bitten while the hunter, which is just over the size margin, burns its burst', () => {
+        const world = createArena({ gap: 200, hunterEnergy: 1200, preyHeading: Math.PI / 2 });
+        const { bites, pursuit, diedAt } = watch(world, { ticks: ESCAPE_TICKS, prey: fleeBrain(false) });
+        expect(bites).toBe(0);
+        expect(diedAt).toBe(-1);
+        expect(pursuit).toBeGreaterThan(30);
+        expect(world.alive[PREY]).toBe(1);
+    });
 });
 
 describe('smoke released behind a fleeing prey', () => {

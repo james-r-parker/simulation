@@ -9,6 +9,8 @@ import { smallWorld } from './helpers/small-world.js';
 const FORAGER = 0;
 const PREDATOR = 1;
 const DEFENDER = 4;
+/** The neutral predator, so these tests read in whole `biteEnergy` units. */
+const NEUTRAL = { specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } } };
 
 /**
  * @param {ReturnType<typeof smallWorld>} w
@@ -134,7 +136,7 @@ describe('feed: biting', () => {
      * @returns {ReturnType<typeof smallWorld>}
      */
     function duel(over = {}) {
-        const w = smallWorld();
+        const w = smallWorld(NEUTRAL);
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true, ...over });
         agent(w, { x: 110, y: 100, energy: 50 });
         return w;
@@ -314,7 +316,7 @@ describe('feed: exact boundaries', () => {
         ['at exactly huntSizeRatio', 20, 0],
         ['just above huntSizeRatio', 21, 1],
     ])('bites a victim %s', (_name, biterSize, bites) => {
-        const w = smallWorld({ huntSizeRatio: 2 });
+        const w = smallWorld({ huntSizeRatio: 2, ...NEUTRAL });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50 });
         w.size[0] = biterSize;
@@ -368,7 +370,7 @@ describe('feed: temperature', () => {
     });
 
     it('warms the biter by temperatureGainEat x transferGained / foodEnergy and not the victim', () => {
-        const w = smallWorld();
+        const w = smallWorld(NEUTRAL);
         const biter = agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         const victim = agent(w, { x: 110, y: 100, energy: 50 });
         w.temperature[biter] = 50;
