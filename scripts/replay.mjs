@@ -9,6 +9,7 @@ import { createSimLog, drainEvents, LOG_LEVEL } from '../js/sim/log.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
+import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
@@ -21,20 +22,6 @@ const USAGE =
 
 /** World fields that are not state data: config, derived tables, hash grid, event ring and row lists. */
 const DUMP_SKIPPED = new Set(['config', 'layout', 'hash', 'events', 'agentRows', 'foodRows', 'birthOptions']);
-
-/**
- * @param {string} flag the flag name
- * @param {string | undefined} text the flag's value
- * @param {number} min the smallest allowed value
- * @returns {number} the value as an integer
- */
-function intValue(flag, text, min) {
-    const value = Number(text);
-    if (text === undefined || !Number.isInteger(value) || value < min) {
-        throw new Error(`${flag} must be an integer >= ${min}, got: ${text}\n${USAGE}`);
-    }
-    return value;
-}
 
 /**
  * @typedef {object} ReplayArgs
@@ -52,11 +39,11 @@ function intValue(flag, text, min) {
 /** Value parsers by flag; each returns the option key and its parsed value. */
 /** @type {Record<string, (value: string | undefined, flag: string) => [string, any]>} */
 const VALUE_FLAGS = {
-    '--seed': (value, flag) => ['seed', intValue(flag, value, 0)],
-    '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1)],
-    '--dump': (value, flag) => ['dump', intValue(flag, value, 1)],
-    '--budget-ms': (value, flag) => ['budgetMs', intValue(flag, value, 0)],
-    '--follow': (value, flag) => ['follow', intValue(flag, value, 1)],
+    '--seed': (value, flag) => ['seed', intValue(flag, value, 0, USAGE)],
+    '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1, USAGE)],
+    '--dump': (value, flag) => ['dump', intValue(flag, value, 1, USAGE)],
+    '--budget-ms': (value, flag) => ['budgetMs', intValue(flag, value, 0, USAGE)],
+    '--follow': (value, flag) => ['follow', intValue(flag, value, 1, USAGE)],
     '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
     '--level': (value) => ['level', parseLevel(value)],
@@ -67,29 +54,24 @@ const VALUE_FLAGS = {
  * @returns {ReplayArgs} parsed options
  */
 export function parseArgs(argv) {
-    /** @type {ReplayArgs} */
-    const opts = {
-        seed: -1,
-        ticks: -1,
-        config: null,
-        dump: null,
-        level: 'info',
-        budgetMs: DEFAULT_BUDGET_MS,
-        checkInvariants: false,
-        policy: DEFAULT_POLICY,
-        follow: null,
-    };
-    for (let i = 0; i < argv.length; i++) {
-        const flag = argv[i];
-        if (flag === '--check-invariants') {
-            opts.checkInvariants = true;
-        } else if (Object.hasOwn(VALUE_FLAGS, flag)) {
-            const [key, parsed] = VALUE_FLAGS[flag](argv[++i], flag);
-            Object.assign(opts, { [key]: parsed });
-        } else {
-            throw new Error(`unknown argument: ${flag}\n${USAGE}`);
-        }
-    }
+    const opts = /** @type {ReplayArgs} */ (
+        parseFlags(argv, {
+            valueFlags: VALUE_FLAGS,
+            booleanFlags: { '--check-invariants': 'checkInvariants' },
+            usage: USAGE,
+            defaults: {
+                seed: -1,
+                ticks: -1,
+                config: null,
+                dump: null,
+                level: 'info',
+                budgetMs: DEFAULT_BUDGET_MS,
+                checkInvariants: false,
+                policy: DEFAULT_POLICY,
+                follow: null,
+            },
+        })
+    );
     if (opts.seed < 0 || opts.ticks < 1) {
         throw new Error(`--seed and --ticks are required\n${USAGE}`);
     }

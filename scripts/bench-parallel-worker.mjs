@@ -1,4 +1,5 @@
 // Bench-parallel worker: builds the bench world, steps it, and returns its ticks and loop time (see `scripts/bench-parallel.mjs`).
+import { isMainThread } from 'node:worker_threads';
 import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
 import { createConfig } from '../js/sim/config.js';
 import { createWorld } from '../js/sim/spawn.js';
@@ -29,4 +30,6 @@ export function runBenchTask({ seed, ticks, agents }) {
     return { ticks, elapsedMs: performance.now() - start };
 }
 
-serveTasks(runBenchTask);
+if (!isMainThread) {
+    serveTasks(runBenchTask);
+}

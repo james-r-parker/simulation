@@ -64,3 +64,18 @@ describe('resolvePoolSize', () => {
         expect(resolvePoolSize(undefined, 1)).toBe(1);
     });
 });
+
+describe('runPool worker errors', () => {
+    it('rejects when the worker throws outside serveTasks', async () => {
+        const url = new URL('./fixtures/throwing-worker.mjs', import.meta.url);
+        const error = await runPool([{ value: 0 }], { workerUrl: url, workers: 1 }).catch((e) => e);
+        expect(error.message).toMatch(/task 0 failed: top-level boom/);
+    });
+});
+
+describe('serveTasks', () => {
+    it('throws outside a worker thread', async () => {
+        const { serveTasks } = await import('../scripts/lib/worker-pool.mjs');
+        expect(() => serveTasks(() => 1)).toThrow(/worker thread/);
+    });
+});
