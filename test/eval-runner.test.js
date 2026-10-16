@@ -16,8 +16,8 @@ beforeAll(() => {
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe('parseArgs', () => {
-    it('defaults to 8 seeds, 200000 ticks and the live policy', () => {
-        expect(parseArgs([])).toMatchObject({ seeds: 8, ticks: 200000, policy: 'baseline-v5', seedOffset: 0 });
+    it('defaults to 16 seeds, 200000 ticks and the live policy', () => {
+        expect(parseArgs([])).toMatchObject({ seeds: 16, ticks: 200000, policy: 'baseline-v5', seedOffset: 0 });
     });
 
     it('maps live to the live policy and reads every flag', () => {

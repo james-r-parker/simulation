@@ -5,7 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configHash } from '../js/sim/config.js';
 import { main, parseArgs } from '../scripts/eval-compare.mjs';
 
-const BASE = [10, 12, 9, 11, 13, 10, 12, 11];
+const BASE = [10, 12, 9, 11, 13, 10, 12, 11, 10, 12, 9, 11, 13, 10, 12, 11];
+const SEEDS = Array.from({ length: 16 }, (_, i) => i + 1);
 /** @type {string} */
 let dir;
 
@@ -25,7 +26,7 @@ function report(diversity, over = {}) {
         config,
         configHash: configHash(config),
         ticks: 1000,
-        seeds: [1, 2, 3, 4, 5, 6, 7, 8],
+        seeds: SEEDS,
         sha: 'abc',
         metrics: { 'eval.diversity': { values: diversity, reasons, mean, sd: 0 } },
         ...over,
@@ -93,7 +94,16 @@ describe('parseArgs', () => {
             json: true,
             allowSeedDiff: false,
             allowConfigDiff: ['k'],
+            minEffect: 0.05,
         });
+    });
+
+    it('reads --min-effect and validates it is a fraction', () => {
+        expect(parseArgs(['a', 'b', '--min-effect', '0.1']).minEffect).toBe(0.1);
+        for (const bad of ['2', '-0.1', 'x', '']) {
+            expect(() => parseArgs(['a', 'b', '--min-effect', bad])).toThrow(/fraction/);
+        }
+        expect(() => parseArgs(['a', 'b', '--min-effect'])).toThrow(/fraction/);
     });
 
     it('rejects a wrong file count and unknown flags', () => {
@@ -107,7 +117,7 @@ describe('main exit codes', () => {
     it('exits 0 and prints a table with the targets marked', () => {
         const { code, out } = run([same, better, '--targets', 'eval.diversity']);
         expect(code).toBe(0);
-        expect(out[0]).toMatch(/metric\s+before\s+after\s+diff\s+95% interval\s+verdict/);
+        expect(out[0]).toMatch(/metric\s+before\s+after\s+diff\s+effect\s+95% interval\s+verdict/);
         expect(out[0]).toMatch(/eval\.diversity.*better\s+\*/);
     });
 
@@ -115,6 +125,15 @@ describe('main exit codes', () => {
         const { out } = run([same, better, '--json']);
         const result = JSON.parse(out[0]);
         expect(result.rows[0].verdict).toBe('better');
+        expect(result.rows[0].effect).toBeGreaterThan(0.2);
+        expect(result.minEffect).toBe(0.05);
+    });
+
+    it('shows the relative effect and honours --min-effect', () => {
+        expect(run([same, better]).out[0]).toMatch(/eval\.diversity.*\+27\.\d%.*better/);
+        const tiny = write('tiny.json', report(BASE.map((v, i) => v + 0.3 + (i % 2) * 0.1)));
+        expect(run([same, tiny]).out[0]).toMatch(/\+3\.\d%.*no-difference/);
+        expect(run([same, tiny, '--min-effect', '0.01']).out[0]).toMatch(/\+3\.\d%.*better/);
     });
 
     it('exits 1 on a worse verdict only with --fail-on-worse', () => {
@@ -133,7 +152,7 @@ describe('main exit codes', () => {
     });
 
     it('--allow-seed-diff compares different seed lists and says so in the table', () => {
-        const offset = write('offset.json', report(BASE, { seeds: [9, 10, 11, 12, 13, 14, 15, 16] }));
+        const offset = write('offset.json', report(BASE, { seeds: SEEDS.map((x) => x + 16) }));
         expect(run([same, offset]).code).toBe(2);
         const { code, out } = run([same, offset, '--allow-seed-diff']);
         expect(code).toBe(0);

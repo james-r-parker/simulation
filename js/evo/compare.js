@@ -5,7 +5,8 @@ import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 
 export const RESAMPLES = 10000;
-export const MIN_SEEDS = 8;
+export const MIN_SEEDS = 16;
+export const MIN_EFFECT = 0.05;
 const BOOTSTRAP_SEED = 1;
 
 /** Metric directions by exact name; the families below cover the parameterised names. */
@@ -257,15 +258,25 @@ function checkComparable(before, after, { allowConfigDiff, allowSeedDiff }) {
 }
 
 /**
+ * @param {number | null} beforeMean the before mean
+ * @param {number | null} afterMean the after mean
+ * @returns {number} |before mean|, or |after mean| when that is 0 (0 when both are)
+ */
+function reference(beforeMean, afterMean) {
+    return Math.abs(beforeMean ?? 0) || Math.abs(afterMean ?? 0);
+}
+
+/**
+ * A verdict needs the interval to exclude 0 and the mean difference to be at least `minEffect` of the reference.
  * @param {'higher' | 'lower'} direction the better direction
- * @param {number} low interval low
- * @param {number} high interval high
+ * @param {{ low: number, high: number, diff: number, ref: number, minEffect: number }} stats interval, mean paired
+ *   difference, reference magnitude and minimum relative effect
  * @returns {'better' | 'worse' | 'no-difference'} the verdict
  */
-function verdictFor(direction, low, high) {
+function verdictFor(direction, { low, high, diff, ref, minEffect }) {
     const up = low > 0;
     const down = high < 0;
-    if (!up && !down) {
+    if ((!up && !down) || ref === 0 || Math.abs(diff) < minEffect * ref) {
         return 'no-difference';
     }
     return up === (direction === 'higher') ? 'better' : 'worse';
@@ -277,6 +288,8 @@ function verdictFor(direction, low, high) {
  * @property {number | null} before mean in the before report
  * @property {number | null} after mean in the after report
  * @property {number | null} diff mean of the paired differences, null when not comparable
+ * @property {number | null} effect diff relative to the reference (|before mean|, else |after mean|); null when
+ *   there is no diff or both means are 0
  * @property {number | null} low interval low
  * @property {number | null} high interval high
  * @property {'better' | 'worse' | 'no-difference' | '-'} verdict the verdict
@@ -287,10 +300,10 @@ function verdictFor(direction, low, high) {
  * @param {string} metric the metric name
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {number} level the confidence level
+ * @param {{ level: number, minEffect: number }} options the confidence level and the minimum relative effect for a verdict
  * @returns {CompareRow} the row
  */
-function compareMetric(metric, before, after, level) {
+function compareMetric(metric, before, after, { level, minEffect }) {
     const b = before.metrics[metric];
     const a = after.metrics[metric];
     const row = {
@@ -298,6 +311,7 @@ function compareMetric(metric, before, after, level) {
         before: b.mean,
         after: a.mean,
         diff: null,
+        effect: null,
         low: null,
         high: null,
         verdict: /** @type {CompareRow['verdict']} */ ('-'),
@@ -312,25 +326,33 @@ function compareMetric(metric, before, after, level) {
     }
     const diffs = a.values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b.values[i]);
     const { low, high } = bootstrapInterval(diffs, level);
-    const filled = { ...row, diff: mean(diffs), low, high };
+    const diff = mean(diffs);
+    const ref = reference(b.mean, a.mean);
+    const filled = { ...row, diff, effect: ref === 0 ? null : diff / ref, low, high };
     if (direction === null) {
         return { ...filled, note: 'unknown metric' };
     }
-    return direction === 'watch' ? filled : { ...filled, verdict: verdictFor(direction, low, high) };
+    return direction === 'watch'
+        ? filled
+        : { ...filled, verdict: verdictFor(direction, { low, high, diff, ref, minEffect }) };
 }
 
 /**
  * Compares two reports run on the same seeds, ticks and (up to `allowConfigDiff`) config. Different policies are fine.
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {{ level?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean }} [options] the interval
- *   level (0.95), config keys allowed to differ, and whether different seed lists (of equal length) may be paired by
+ * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean }} [options] the
+ *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ, and whether different seed lists (of equal length) may be paired by
  *   position - for the calibration experiment, where the two arms are independent samples, not paired by seed
- * @returns {{ level: number, paired: boolean, seeds: number[], rows: CompareRow[] }} `paired` is true when the arms
- *   share seeds; one row per metric present in both reports, sorted by name
+ * @returns {{ level: number, minEffect: number, paired: boolean, seedCount: number, seeds: number[], rows: CompareRow[] }}
+ *   `paired` is true when the arms share seeds; one row per metric present in both reports, sorted by name
  * @throws {Error} with `field` set when the reports cannot be compared
  */
-export function compareReports(before, after, { level = 0.95, allowConfigDiff = [], allowSeedDiff = false } = {}) {
+export function compareReports(
+    before,
+    after,
+    { level = 0.95, minEffect = MIN_EFFECT, allowConfigDiff = [], allowSeedDiff = false } = {},
+) {
     checkComparable(before, after, { allowConfigDiff, allowSeedDiff });
     const names = Object.keys(before.metrics)
         .filter((name) => Object.hasOwn(after.metrics, name))
@@ -338,8 +360,10 @@ export function compareReports(before, after, { level = 0.95, allowConfigDiff = 
     const paired = before.seeds.every((/** @type {number} */ seed, /** @type {number} */ i) => seed === after.seeds[i]);
     return {
         level,
+        minEffect,
         paired,
+        seedCount: before.seeds.length,
         seeds: [...before.seeds],
-        rows: names.map((name) => compareMetric(name, before, after, level)),
+        rows: names.map((name) => compareMetric(name, before, after, { level, minEffect })),
     };
 }
