@@ -54,7 +54,7 @@ describe('runReplay', () => {
         expect(named('RunStarted')).toMatchObject({
             runId: result.runId,
             seed: 1,
-            policy: 'clone-with-noise',
+            policy: 'baseline-v5',
             ticks: 1000,
         });
         expect(named('Checkpoint')).toMatchObject({ tick: 1000, worldHash: result.hashes[0] });
@@ -101,6 +101,44 @@ describe('runReplay', () => {
     });
 });
 
+describe('runReplay with --follow', () => {
+    it('logs FollowSample every 10 ticks until the genome dies, then FollowEnded and nothing more', async () => {
+        const { records } = await run({ ticks: 3000, follow: 1 });
+
+        const follow = records.filter((r) => r.event.startsWith('Follow'));
+        const samples = follow.filter((r) => r.event === 'FollowSample');
+        const ended = follow.filter((r) => r.event === 'FollowEnded');
+        expect(samples.length).toBeGreaterThan(0);
+        expect(samples.map((r) => r.tick)).toEqual(samples.map((_, i) => (i + 1) * 10));
+        expect(samples[0]).toMatchObject({ level: 'info', genomeId: 1 });
+        expect(Object.keys(samples[0])).toEqual(['level', 'event', 'tick', 'genomeId', 'x', 'y', 'energy', 'outputs']);
+        expect(samples[0].outputs.every((/** @type {unknown} */ v) => typeof v === 'number')).toBe(true);
+        expect(ended).toHaveLength(1);
+        expect(ended[0]).toMatchObject({ genomeId: 1, reason: 'died' });
+        expect(ended[0].tick).toBeLessThan(3000);
+        expect(ended[0].tick).toBeGreaterThanOrEqual(samples.at(-1).tick);
+        expect(follow.at(-1)).toBe(ended[0]);
+    }, 60000);
+
+    it('ends with "run ended" when the agent outlives the run, and warns if the genome never appears', async () => {
+        const alive = await run({ ticks: 100, follow: 1 });
+        const never = await run({ ticks: 100, follow: 999999 });
+
+        expect(alive.records.filter((r) => r.event === 'FollowEnded')).toMatchObject([
+            { tick: 100, reason: 'run ended' },
+        ]);
+        expect(never.records.filter((r) => r.event.startsWith('Follow'))).toMatchObject([
+            { level: 'warn', event: 'FollowNeverSeen', genomeId: 999999 },
+        ]);
+    });
+
+    it('logs nothing about following when --follow is absent', async () => {
+        const { records } = await run({ ticks: 50 });
+
+        expect(records.some((r) => r.event.startsWith('Follow'))).toBe(false);
+    });
+});
+
 describe('parseArgs', () => {
     it('reads every flag', () => {
         const argv = '--seed 3 --ticks 50 --config c.json --dump 7 --level debug --budget-ms 2 --check-invariants';
@@ -112,7 +150,22 @@ describe('parseArgs', () => {
             level: 'debug',
             budgetMs: 2,
             checkInvariants: true,
+            policy: 'baseline-v5',
+            follow: null,
         });
+    });
+
+    it('reads --policy and --follow', () => {
+        const args = parseArgs('--seed 1 --ticks 5 --policy baseline-v5 --follow 4'.split(' '));
+
+        expect(args).toMatchObject({ policy: 'baseline-v5', follow: 4 });
+    });
+
+    it('rejects an unknown policy, listing the known ones, and a bad --follow', () => {
+        expect(() => parseArgs('--seed 1 --ticks 5 --policy nope'.split(' '))).toThrow(
+            /Unknown policy "nope"; known: baseline-v5[\s\S]*usage: replay/,
+        );
+        expect(() => parseArgs('--seed 1 --ticks 5 --follow 0'.split(' '))).toThrow('--follow must be an integer >= 1');
     });
 
     it('rejects missing, bad and unknown arguments', () => {
