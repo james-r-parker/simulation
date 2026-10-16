@@ -3,6 +3,7 @@
 
 import { checkpoint } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
+import { createCellGrid } from './cell-grid.js';
 import { createLog } from './growable-log.js';
 import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -56,17 +57,11 @@ const DEATH_CAUSES = 4;
  */
 export function createObserver(config, rng) {
     const n = config.maxAgents;
-    const cellCols = Math.ceil(config.worldWidth / CELL_SIZE);
-    const cellRows = Math.ceil(config.worldHeight / CELL_SIZE);
-    const cellBytes = Math.ceil((cellCols * cellRows) / 8);
     const observer = {
         config,
         rng,
         slotArrays: Object.keys(SLOT_TYPES),
-        cellCols,
-        cellRows,
-        cellBytes,
-        cellBits: new Uint8Array(n * cellBytes),
+        ...createCellGrid(config, CELL_SIZE, n),
         slotOf: new Map(),
         ghosts: new Set(),
         deathFields: DEATH_FIELDS,

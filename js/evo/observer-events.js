@@ -1,6 +1,7 @@
 // The observer's event handling: a tick's AgentDied and AgentBorn records, PopulationFloor and the slot reset.
 
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { clearCells } from './cell-grid.js';
 import { ensureRoom } from './growable-log.js';
 
 /** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
@@ -16,7 +17,7 @@ export function resetSlot(observer, slot) {
     for (const name of observer.slotArrays) {
         observer[name][slot] = 0;
     }
-    observer.cellBits.fill(0, slot * observer.cellBytes, (slot + 1) * observer.cellBytes);
+    clearCells(observer, slot);
 }
 
 /**

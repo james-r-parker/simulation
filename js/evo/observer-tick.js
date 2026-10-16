@@ -2,6 +2,7 @@
 // visited cells and the 100-tick motion samples; and collisions, counted right after the physics phase.
 
 import { LOSS_CAUSE } from '../sim/energy.js';
+import { markCell } from './cell-grid.js';
 
 /** Grid cell edge, in world px, for `cellsVisited`. */
 export const CELL_SIZE = 200;
@@ -84,14 +85,7 @@ export function turnsTowardsFood(world, slot) {
  * @returns {void}
  */
 function visitCell(observer, world, slot) {
-    const { cellCols, cellRows, cellBytes, cellBits } = observer;
-    const cx = Math.min(cellCols - 1, Math.max(0, Math.floor(world.x[slot] / CELL_SIZE)));
-    const cy = Math.min(cellRows - 1, Math.max(0, Math.floor(world.y[slot] / CELL_SIZE)));
-    const bit = cy * cellCols + cx;
-    const at = slot * cellBytes + (bit >> 3);
-    const mask = 1 << (bit & 7);
-    if ((cellBits[at] & mask) === 0) {
-        cellBits[at] |= mask;
+    if (markCell(observer, slot, world.x[slot], world.y[slot])) {
         observer.cellsVisited[slot] += 1;
     }
 }

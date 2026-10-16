@@ -8,6 +8,7 @@
 import { EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { isKin } from '../sim/kin.js';
 import { specParams } from '../sim/spec-params.js';
+import { clearCells, createCellGrid, markCell } from './cell-grid.js';
 
 /** Grid cell edge, in world px, for `cells300`. */
 export const LIFE_CELL_SIZE = 300;
@@ -30,14 +31,8 @@ const BITTEN_THIS_TICK = 1;
  */
 export function createLifeCounters(config) {
     const n = config.maxAgents;
-    const cellCols = Math.ceil(config.worldWidth / LIFE_CELL_SIZE);
-    const cellRows = Math.ceil(config.worldHeight / LIFE_CELL_SIZE);
-    const cellBytes = Math.ceil((cellCols * cellRows) / 8);
     return {
-        cellCols,
-        cellRows,
-        cellBytes,
-        cellBits: new Uint8Array(n * cellBytes),
+        ...createCellGrid(config, LIFE_CELL_SIZE, n),
         cells300: new Uint32Array(n),
         kinBitesAbsorbed: new Float64Array(n),
         crowdingSum: new Float64Array(n),
@@ -56,7 +51,7 @@ export function resetLifeSlot(counters, slot) {
     counters.kinBitesAbsorbed[slot] = 0;
     counters.crowdingSum[slot] = 0;
     counters.crowdingSamples[slot] = 0;
-    counters.cellBits.fill(0, slot * counters.cellBytes, (slot + 1) * counters.cellBytes);
+    clearCells(counters, slot);
 }
 
 /**
@@ -87,14 +82,7 @@ export function crowdingMean(counters, slot) {
  * @returns {void}
  */
 function visitCell(counters, world, slot) {
-    const { cellCols, cellRows, cellBytes, cellBits } = counters;
-    const cx = Math.min(cellCols - 1, Math.max(0, Math.floor(world.x[slot] / LIFE_CELL_SIZE)));
-    const cy = Math.min(cellRows - 1, Math.max(0, Math.floor(world.y[slot] / LIFE_CELL_SIZE)));
-    const bit = cy * cellCols + cx;
-    const at = slot * cellBytes + (bit >> 3);
-    const mask = 1 << (bit & 7);
-    if ((cellBits[at] & mask) === 0) {
-        cellBits[at] |= mask;
+    if (markCell(counters, slot, world.x[slot], world.y[slot])) {
         counters.cells300[slot] += 1;
     }
 }
