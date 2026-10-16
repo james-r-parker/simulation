@@ -5,7 +5,7 @@ import { createMapElitesV1 } from './map-elites-v1.js';
 import { createNaturalV1 } from './natural-v1.js';
 
 /** The policy the browser and nightly evals run. */
-export const LIVE_POLICY = 'baseline-v5';
+export const LIVE_POLICY = 'map-elites-v1q';
 
 /** @type {Readonly<Record<string, {create: (options: Record<string, any>) => Record<string, any>}>>} */
 /** `map-elites-v1q`'s parent cell tournament: the best elite of this many uniform cell draws. */

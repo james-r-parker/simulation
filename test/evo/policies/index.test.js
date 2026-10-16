@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { LIVE_POLICY, POLICIES, getPolicy } from '../../../js/evo/policies/index.js';
 
 describe('policies', () => {
-    it('registers baseline-v5 as the live policy', () => {
-        expect(LIVE_POLICY).toBe('baseline-v5');
+    it('registers map-elites-v1q as the live policy', () => {
+        expect(LIVE_POLICY).toBe('map-elites-v1q');
         expect(Object.keys(POLICIES)).toEqual(['baseline-v5', 'map-elites-v1', 'map-elites-v1q', 'natural-v1']);
         expect(getPolicy('baseline-v5')).toBe(POLICIES['baseline-v5']);
     });

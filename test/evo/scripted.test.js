@@ -3,7 +3,10 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
-import { MEAL_ENERGY, SCRIPTED_CONTROLLERS } from '../../js/evo/scripted.js';
+import { MEAL_ENERGY, SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
+
+/** The seeking thrust as the Float32 outputs row stores it. */
+const SEEK = Math.fround(SEEK_THRUST);
 
 const RAYS = 16;
 const CH = { food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7 };
@@ -56,9 +59,9 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 1, RAYS - 1, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0]);
-        expect(out(world, 1)).toEqual([1, -1, 0, 0, 0]);
-        expect(out(world, 2)).toEqual([1, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([SEEK, -1, 0, 0, 0]);
+        expect(out(world, 2)).toEqual([SEEK, 0, 0, 0, 0]);
     });
 
     it('foodSeeker picks the nearest food and ignores other classes', () => {
@@ -126,7 +129,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 0, 0, CH.wall, 0.9);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0]);
         world.foodEnergy[0] += MEAL_ENERGY;
         run(world);
         expect(out(world, 0)).toEqual([1, 1, 0, 0, 0]);

@@ -4,7 +4,7 @@
 /** The v1 weights, named so a change is one visible edit. */
 export const FITNESS_V1 = Object.freeze({
     OFFSPRING: 300,
-    SURVIVAL_RATE: 0.02,
+    SURVIVAL_RATE: 0.5,
     SURVIVAL_CAP: 30000,
     SPEC_THRESHOLD: 500,
     FORAGER: 0.2,
@@ -54,7 +54,8 @@ export function fitnessV1(observer, counters, slot, config) {
     const food = observer.foodEnergy[slot];
     let score = food + observer.biteEnergy[slot];
     score += FITNESS_V1.OFFSPRING * observer.children[slot];
-    score += FITNESS_V1.SURVIVAL_RATE * Math.min(observer.ageTicks[slot], FITNESS_V1.SURVIVAL_CAP);
+    // Survival is paid only up to the energy eaten, so living long without eating does not score.
+    score += Math.min(FITNESS_V1.SURVIVAL_RATE * Math.min(observer.ageTicks[slot], FITNESS_V1.SURVIVAL_CAP), food);
     if (food >= FITNESS_V1.SPEC_THRESHOLD) {
         score += Math.min(specTerm(observer, counters, slot, config), food);
     }

@@ -22,6 +22,12 @@ const CH_WALL = 6;
  */
 export const MEAL_ENERGY = 140;
 
+/**
+ * Thrust while seeking food: the speed at which a scripted forager population grows on the default economy; full thrust
+ * burns more than it finds (sim-notes.md, 2026-10-16).
+ */
+export const SEEK_THRUST = 0.4;
+
 /** `wanderer`'s slow random turn: the per-tick step and the bound, as fractions of `maxTurn`. */
 const WANDER_STEP = 0.1;
 const WANDER_BOUND = 0.3;
@@ -87,7 +93,7 @@ function eachAlive(perAgent) {
  */
 function seekFood(world, slot) {
     const k = nearestClassRay(world, slot, CH_FOOD, CH_FOOD);
-    write(world, slot, 1, turnTowards(k, world.config.rayCount));
+    write(world, slot, SEEK_THRUST, turnTowards(k, world.config.rayCount));
 }
 
 /** @type {ControllerFactory} */

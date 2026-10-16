@@ -2,6 +2,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { LIVE_POLICY } from '../js/evo/policies/index.js';
 import { validateReport } from '../js/evo/report.js';
 import { main, parseArgs, pickSeeds, startCpuReport } from '../scripts/eval.mjs';
 import { cpuUse } from '../scripts/lib/cpu-use.mjs';
@@ -17,7 +18,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe('parseArgs', () => {
     it('defaults to 16 seeds, 200000 ticks and the live policy', () => {
-        expect(parseArgs([])).toMatchObject({ seeds: 16, ticks: 200000, policy: 'baseline-v5', seedOffset: 0 });
+        expect(parseArgs([])).toMatchObject({ seeds: 16, ticks: 200000, policy: LIVE_POLICY, seedOffset: 0 });
     });
 
     it('maps live to the live policy and reads every flag', () => {
@@ -40,7 +41,7 @@ describe('parseArgs', () => {
         expect(args).toMatchObject({
             seeds: 2,
             ticks: 50,
-            policy: 'baseline-v5',
+            policy: LIVE_POLICY,
             seedOffset: 3,
             workers: 4,
             out: 'x.json',
