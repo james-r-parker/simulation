@@ -1,9 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { validateReport } from '../js/evo/report.js';
-import { parseArgs, pickSeeds, runEval } from '../scripts/eval.mjs';
+import { main, parseArgs, pickSeeds, runEval, startCpuReport } from '../scripts/eval.mjs';
 import { cpuUse } from '../scripts/lib/cpu-use.mjs';
 
 const SMALL = { maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
@@ -138,3 +138,104 @@ describe('cpuUse', () => {
         expect(cpuUse([t(5, 5)], [t(5, 5)])).toEqual({ pct: 0, threads: 1 });
     });
 });
+
+describe('startCpuReport', () => {
+    it('prints on each interval and once more for the whole run on stop', () => {
+        vi.useFakeTimers();
+        try {
+            /** @type {string[]} */
+            const lines = [];
+            const report = startCpuReport((line) => lines.push(line));
+            vi.advanceTimersByTime(20_000);
+            report.stop();
+            expect(lines).toHaveLength(3);
+            expect(lines[0]).toMatch(/^cpu \d+% of \d+ threads$/);
+            expect(lines[2]).toMatch(/^cpu \d+% of \d+ threads \(whole run\)$/);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+describe('main', () => {
+    /**
+     * @param {string[]} argv arguments
+     * @param {string} name output stem
+     * @returns {Promise<{ code: number, out: string[], err: string[] }>} the exit code and the console output
+     */
+    async function runMain(argv, name) {
+        /** @type {string[]} */
+        const out = [];
+        /** @type {string[]} */
+        const err = [];
+        const logSpy = vi.spyOn(console, 'log').mockImplementation((line) => void out.push(String(line)));
+        const errSpy = vi.spyOn(console, 'error').mockImplementation((line) => void err.push(String(line)));
+        try {
+            const code = await main(argv, { logDir: join(dir, `logs-${name}`) });
+            return { code, out, err };
+        } finally {
+            logSpy.mockRestore();
+            errSpy.mockRestore();
+        }
+    }
+
+    it('exits 0 and writes the report for a tiny run', async () => {
+        const config = join(dir, 'small.json');
+        writeFileSync(config, JSON.stringify(SMALL));
+        const target = join(dir, 'main.json');
+        const { code, out } = await runMain(
+            ['--seeds', '1', '--ticks', '50', '--policy', 'baseline-v5', '--config', config, '--out', target],
+            'ok',
+        );
+        expect(code).toBe(0);
+        expect(out.some((line) => line.startsWith(`wrote ${target}`))).toBe(true);
+        expect(() => validateReport(JSON.parse(readFileSync(target, 'utf8')))).not.toThrow();
+    }, 60_000);
+
+    it('exits 1, logs SeedFailed and prints a reproduce line when a seed fails', async () => {
+        const config = join(dir, 'bad.json');
+        writeFileSync(config, JSON.stringify({ ...SMALL, eventCapacity: 5 }));
+        const { code, err } = await runMain(
+            [
+                '--seeds',
+                '1',
+                '--ticks',
+                '50',
+                '--policy',
+                'baseline-v5',
+                '--config',
+                config,
+                '--out',
+                join(dir, 'x.json'),
+            ],
+            'bad',
+        );
+        const seed = pickSeeds(1, 0)[0];
+        expect(code).toBe(1);
+        expect(err[0]).toContain(`seed ${seed} failed at tick 0`);
+        expect(err[1]).toBe(
+            `reproduce: npm run replay -- --policy baseline-v5 --config ${config} --seed ${seed} --ticks 1`,
+        );
+        const logs = readFileSync(
+            join(dir, 'logs-bad', 'eval-baseline-v5-' + shaOf(join(dir, 'logs-bad')) + '.jsonl'),
+            'utf8',
+        );
+        expect(logs).toContain('"event":"SeedFailed"');
+    }, 60_000);
+
+    it.each([[['--seeds', '0']], [['--seeds', '2', '--seed-offset', '31']], [['--policy', 'nope']]])(
+        'rejects bad arguments %j',
+        async (argv) => {
+            await expect(main(argv)).rejects.toThrow(/seeds|policy|Unknown/i);
+        },
+    );
+});
+
+/**
+ * @param {string} logDir a log directory holding one eval log
+ * @returns {string} the log's name between `eval-baseline-v5-` and `.jsonl`
+ */
+function shaOf(logDir) {
+    const name = readdirSync(logDir)[0];
+    return name.slice('eval-baseline-v5-'.length, -'.jsonl'.length);
+}

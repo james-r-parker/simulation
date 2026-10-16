@@ -11,6 +11,12 @@
       "branches": 100,
       "functions": 100,
       "statements": 99.93
+    },
+    "js/evo": {
+      "lines": 99.79,
+      "branches": 97.95,
+      "functions": 100,
+      "statements": 99.81
     }
   },
   "floors": {

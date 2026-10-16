@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { buildReport, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
+import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
@@ -17,20 +18,6 @@ const WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 const CPU_PRINT_MS = 10_000;
 const USAGE =
     'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--out <path>] [--workers <n>]';
-
-/**
- * @param {string} flag the flag name
- * @param {string | undefined} text the flag's value
- * @param {number} min the smallest allowed value
- * @returns {number} the value as an integer
- */
-function intValue(flag, text, min) {
-    const value = Number(text);
-    if (text === undefined || !Number.isInteger(value) || value < min) {
-        throw new Error(`${flag} must be an integer >= ${min}, got: ${text}\n${USAGE}`);
-    }
-    return value;
-}
 
 /**
  * @typedef {object} EvalArgs
@@ -45,10 +32,10 @@ function intValue(flag, text, min) {
 
 /** @type {Record<string, (value: string | undefined, flag: string) => [string, any]>} */
 const VALUE_FLAGS = {
-    '--seeds': (value, flag) => ['seeds', intValue(flag, value, 1)],
-    '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1)],
-    '--seed-offset': (value, flag) => ['seedOffset', intValue(flag, value, 0)],
-    '--workers': (value, flag) => ['workers', intValue(flag, value, 1)],
+    '--seeds': (value, flag) => ['seeds', intValue(flag, value, 1, USAGE)],
+    '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1, USAGE)],
+    '--seed-offset': (value, flag) => ['seedOffset', intValue(flag, value, 0, USAGE)],
+    '--workers': (value, flag) => ['workers', intValue(flag, value, 1, USAGE)],
     '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
     '--out': (value) => ['out', String(value)],
@@ -73,25 +60,21 @@ function parsePolicy(value) {
  * @returns {EvalArgs} parsed options
  */
 export function parseArgs(argv) {
-    /** @type {EvalArgs} */
-    const opts = {
-        seeds: 8,
-        ticks: 200000,
-        policy: LIVE_POLICY,
-        seedOffset: 0,
-        config: null,
-        out: null,
-        workers: null,
-    };
-    for (let i = 0; i < argv.length; i++) {
-        const flag = argv[i];
-        if (!Object.hasOwn(VALUE_FLAGS, flag)) {
-            throw new Error(`unknown argument: ${flag}\n${USAGE}`);
-        }
-        const [key, parsed] = VALUE_FLAGS[flag](argv[++i], flag);
-        Object.assign(opts, { [key]: parsed });
-    }
-    return opts;
+    return /** @type {EvalArgs} */ (
+        parseFlags(argv, {
+            valueFlags: VALUE_FLAGS,
+            usage: USAGE,
+            defaults: {
+                seeds: 8,
+                ticks: 200000,
+                policy: LIVE_POLICY,
+                seedOffset: 0,
+                config: null,
+                out: null,
+                workers: null,
+            },
+        })
+    );
 }
 
 /**
@@ -112,7 +95,7 @@ export function pickSeeds(seeds, offset) {
  * @param {(line: string) => void} print receives the CPU line
  * @returns {{ stop: () => void }} a reporter that prints `cpu <pct>% of <n> threads` every 10 s, and once on stop
  */
-function startCpuReport(print) {
+export function startCpuReport(print) {
     let last = cpus();
     const report = () => {
         const now = cpus();
