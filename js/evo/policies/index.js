@@ -1,6 +1,7 @@
 // Policy registry: a name to a factory; an unknown name throws listing the known ones.
 
 import { createBaselineV5 } from './baseline-v5.js';
+import { createMapElitesV1 } from './map-elites-v1.js';
 import { createNaturalV1 } from './natural-v1.js';
 
 /** The policy the browser and nightly evals run. */
@@ -9,6 +10,7 @@ export const LIVE_POLICY = 'baseline-v5';
 /** @type {Readonly<Record<string, {create: (options: Record<string, any>) => Record<string, any>}>>} */
 export const POLICIES = Object.freeze({
     'baseline-v5': Object.freeze({ create: createBaselineV5 }),
+    'map-elites-v1': Object.freeze({ create: createMapElitesV1 }),
     'natural-v1': Object.freeze({ create: createNaturalV1 }),
 });
 

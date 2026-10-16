@@ -2,13 +2,16 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createObserver, observe, observerPhases } from '../js/evo/observer.js';
 import { getPolicy, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../js/sim/events.js';
 import { createSimLog, drainEvents, LOG_LEVEL } from '../js/sim/log.js';
+import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
+import { dispatchEvents } from './eval-worker.mjs';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
@@ -215,18 +218,34 @@ function checkpoint(options, world, totals) {
 }
 
 /**
+ * Feeds the eval observer and the policy's event hooks the way `scripts/eval-worker.mjs` does, so a policy that
+ * learns from the run (`map-elites-v1`) replays an eval exactly. Neither touches the world.
+ * @param {{policy: any, observer: any}} run the policy object and its observer
+ * @param {Record<string, any>} world the world, just stepped (or just created)
+ * @returns {void}
+ */
+function feedPolicy({ policy, observer }, world) {
+    observe(observer, world, policy.fitness);
+    dispatchEvents(policy, world);
+    if (world.tick > 0) {
+        policy.afterStep?.(world);
+    }
+}
+
+/**
  * Runs the tick loop; returns false if an invariant violation stopped it.
- * @param {ReplayOptions & {log: any, runId: string, policy: any, world: Record<string, any>, follower: import('./lib/follow.mjs').Follower | null}} ctx run context
+ * @param {ReplayOptions & {log: any, runId: string, policy: any, run: {policy: any, observer: any}, world: Record<string, any>, follower: import('./lib/follow.mjs').Follower | null}} ctx run context
  * @param {string[]} hashes receives each checkpoint hash
  * @returns {boolean} whether the run completed
  */
 function runTicks(ctx, hashes) {
-    const { world, policy, log, ticks, budgetMs = DEFAULT_BUDGET_MS, stepFn = step, follower } = ctx;
+    const { world, policy, log, ticks, budgetMs = DEFAULT_BUDGET_MS, stepFn = step, follower, run } = ctx;
+    const phases = observerPhases(run.observer);
     const totals = { births: 0, deaths: 0 };
     for (let t = 0; t < ticks; t++) {
         const start = performance.now();
         try {
-            stepFn(world, policy);
+            stepFn(world, policy, phases);
         } catch (error) {
             if (logViolation(log, error, world.tick)) {
                 return false;
@@ -234,6 +253,7 @@ function runTicks(ctx, hashes) {
             throw error;
         }
         const stepMs = performance.now() - start;
+        feedPolicy(run, world);
         const { births, deaths } = countEvents(world);
         totals.births += births;
         totals.deaths += deaths;
@@ -266,11 +286,14 @@ function writeDump(ctx, world) {
  * @param {ReplayOptions} options the run options
  * @param {Record<string, any>} config the world config
  * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {{policyName: string, policy: any}} the policy name and its brain hooks
+ * @returns {{policyName: string, policy: any, run: {policy: any, observer: any}}} the policy name, its brain hooks, and
+ *   the policy object with the eval observer it was built with
  */
 function buildPolicy(options, config, log) {
     const policyName = options.policy ?? DEFAULT_POLICY;
-    return { policyName, policy: getPolicy(policyName).create({ config, log }).brain };
+    const observer = createObserver(config, fork(createRng(config.seed), 'eval'));
+    const full = getPolicy(policyName).create({ config, log, observer });
+    return { policyName, policy: full.brain, run: { policy: full, observer } };
 }
 
 /**
@@ -296,7 +319,7 @@ export async function runReplay(options) {
     rmSync(logPath, { force: true });
     const jsonl = createJsonlSink(logPath);
     const log = createSimLog(jsonl.sink, { level });
-    const { policyName, policy } = buildPolicy(options, config, log);
+    const { policyName, policy, run } = buildPolicy(options, config, log);
     log.log('info', 'RunStarted', {
         runId,
         seed,
@@ -313,9 +336,11 @@ export async function runReplay(options) {
         log,
         runId,
         policy,
+        run,
         follower: createFollowerFor(log, options.follow),
         world: createWorld(config, policy),
     };
+    feedPolicy(run, ctx.world);
     /** @type {string[]} */
     const hashes = [];
     const ok = runTicks(ctx, hashes);

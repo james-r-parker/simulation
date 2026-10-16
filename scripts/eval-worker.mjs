@@ -29,7 +29,7 @@ const CHECKPOINT_INTERVAL = 1000;
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
-function dispatchEvents(policy, world) {
+export function dispatchEvents(policy, world) {
     if (policy.onEvent === undefined) {
         return;
     }
