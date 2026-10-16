@@ -5,9 +5,8 @@ description: Use when an evolution or performance change needs measuring - after
 
 # run-evolution-loop
 
-> Note: the commands in this skill arrive with `evolution-evals.md` (eval runner, `eval:compare`,
-> `evals/experiments.json`) and `headless-sim-core.md` (`npm run bench`). Until those phases are built, report that
-> the loop cannot run yet rather than improvising a measurement.
+> Note: `npm run eval`, `eval:compare`, `evals/experiments.json` and `npm run bench` exist. The anti-exploit suite and
+> `npm run league` arrive with `evolution-evals.md` Phases 3 and 4.
 
 ## Overview
 
@@ -26,6 +25,9 @@ Before changing anything, add an entry to `evals/experiments.json` with:
 - `hypothesis`: what the change does and why it should help
 - `prediction`: which metrics move, in which direction, and roughly by how much
 - `targets`: the `**Targets:**` metric names from the design doc phase, if any
+- `beforePolicy` and `afterPolicy`: the policy names; readers treat a missing one as `live`
+
+Ids are `E<n>`, unique and increasing; `E0` is the calibration (below).
 
 Write the prediction first. A prediction written after the result is not a prediction.
 
@@ -48,13 +50,22 @@ Write the prediction first. A prediction written after the result is not a predi
 
 For every metric that moved:
 
-1. **Noise.** `npm run eval:compare <before>.json <after>.json` reports a bootstrap 95% interval and a verdict per
-   metric. `no-difference` means no difference - do not round it up to "slightly better".
+1. **Noise.** `npm run eval:compare -- <before>.json <after>.json --targets <m,...> --fail-on-worse` reports a BCa
+   bootstrap 95% interval and a verdict per metric, marks the targets and exits 1 if a target is `worse` (`--json`
+   for the verdicts to record). `no-difference` means no difference - do not round it up to "slightly better". With
+   about 25 metrics, one `better` or `worse` off the targets is expected by chance at 95% (see `E0`).
 2. **Exploits.** A fitness jump without a matching move in `eval.food_energy_per_1k` or `eval.median_lifespan` is a
-   suspected exploit. Replay the best agent (`npm run replay -- --seed <s> --ticks <t> --follow <genome-id>`) and
+   suspected exploit. Replay the best agent (`npm run replay -- --policy <name> --seed <s> --ticks <t> --follow <genome-id>`) and
    watch what it actually does; spinning, wall-hugging and contact farming all score without eating.
 3. **Unfair comparisons.** Different config hashes, seeds or tick counts between the arms make the comparison
-   invalid; `eval:compare` refuses them - never force it.
+   invalid; `eval:compare` refuses them (exit 2, `CompareRefused <field>`) - never force it. `--allow-config-diff
+<key>` is for a change that is the config key itself; `--allow-seed-diff` is only for calibration.
+
+## Calibration
+
+`E0` in the ledger compares `baseline-v5` on seeds 1-8 with seeds 9-16 (`npm run eval -- --seed-offset 8`, then
+`eval:compare --allow-seed-diff`); it must give no verdict on any Target metric. Rerun it when the metrics, the
+bootstrap or the default config change, as a new entry.
 
 ## 4. Record
 
