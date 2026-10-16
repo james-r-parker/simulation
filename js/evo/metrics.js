@@ -3,6 +3,7 @@
 
 import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { coverage, qdScore } from './archive.js';
+import { combatMetrics } from './metrics-combat.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
 import * as series from './metrics-series.js';
@@ -74,7 +75,7 @@ function bornShare(observer) {
 }
 
 /**
- * Computes every Phase 1 metric from the observer after the run. `bench.*` and `browser.*` are not here.
+ * Computes every metric from the observer after the run. `bench.*` and `browser.*` are not here.
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
  * @param {Record<string, any>} _world the world at the end (the observer already holds what the metrics need)
  * @param {{fitness?: (observer: any, slot: number, config: any) => number, fitnessName?: string, archive?: any}} [options]
@@ -102,6 +103,7 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.behaviour_coverage': grids.life,
         'eval.motion_coverage': grids.motion,
         'eval.predator_share_cv': series.predatorShareCv(observer),
+        ...combatMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),
