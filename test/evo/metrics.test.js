@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createArchive, offer } from '../../js/evo/archive.js';
+import { brainLayout } from '../../js/sim/brain-layout.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { checkpoint, createObserver, observe, observerPhases } from '../../js/evo/observer.js';
 import { fitnessV5 } from '../../js/evo/fitness-v5.js';
@@ -22,6 +24,17 @@ describe('computeMetrics on hand-built state', () => {
         expect(m['eval.coverage']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.champion_elo']).toEqual({ value: null, reason: 'no league games' });
         expect(m['eval.champion_win_rate']).toEqual({ value: null, reason: 'no league games' });
+    });
+
+    it('reads eval.qd_score and eval.coverage from the policy archive', () => {
+        const layout = brainLayout({ rayCount: 2, brainHidden: 4 });
+        const archive = createArchive(layout);
+        const item = { spec: 0, cell: 5, row: new Float32Array(layout.weightCount), sigma: 0.1, id: 1, fitness: 100 };
+        offer(archive, item);
+        offer(archive, { ...item, cell: 6, id: 2 });
+        const m = computeMetrics(bareObserver(), {}, { archive });
+        expect(m['eval.coverage']).toEqual({ value: 2 / 500 });
+        expect(m['eval.qd_score']).toEqual({ value: 200 / 500 });
     });
 
     it('has a fixed sorted key order', () => {

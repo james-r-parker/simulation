@@ -36,6 +36,14 @@ const score = (spec, obs, life) => {
     return fitnessV1(observer, counters, 0, config);
 };
 
+describe('fitnessV1 with an unknown specialisation', () => {
+    it('adds no spec term', () => {
+        const { observer, counters } = slotWith('forager', { foodEnergy: 700 });
+        observer.spec[0] = 99;
+        expect(fitnessV1(observer, counters, 0, config)).toBe(700);
+    });
+});
+
 describe('fitnessV1 terms', () => {
     it('names the doc weights', () => {
         expect(FITNESS_V1).toMatchObject({

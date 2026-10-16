@@ -110,6 +110,14 @@ describe('fitnessV5', () => {
         expect(fitnessV5(fake({ children: 5 }, 'predator'), 0, config)).toBe(0);
     });
 
+    it('adds no specialisation score for an unknown specialisation', () => {
+        const bare = fake({ ageTicks: 1200 });
+        const busy = fake({ ageTicks: 1200, children: 3, childrenFromSplit: 2, kills: 4 });
+        bare.spec[0] = 99;
+        busy.spec[0] = 99;
+        expect(fitnessV5(busy, 0, config)).toBe(fitnessV5(bare, 0, config));
+    });
+
     it('reads only the given slot', () => {
         const observer = fake({ children: 1 }, 'reproducer');
         observer.children = new Float64Array([1, 9]);

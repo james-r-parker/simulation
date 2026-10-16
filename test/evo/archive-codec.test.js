@@ -61,6 +61,12 @@ describe('archive codec', () => {
         expect(selectParent(again, 4, createRng(5))).toEqual(selectParent(archive, 4, createRng(5)));
     });
 
+    it('decodes a document without cursors to zeroed cursors', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        delete json.cursors;
+        expect(Array.from(decodeArchive(json, config).cursors).every((c) => c === 0)).toBe(true);
+    });
+
     it('stores only occupied cells', () => {
         const json = encodeArchive(createArchive(layout), config);
         expect(json).toMatchObject({ version: 1, cells: [] });
