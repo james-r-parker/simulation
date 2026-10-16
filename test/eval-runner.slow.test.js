@@ -5,7 +5,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { validateReport } from '../js/evo/report.js';
 import { pickSeeds, runEval } from '../scripts/eval.mjs';
 
-const SMALL = { maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
+const SMALL = {
+    maxAgents: 60,
+    initialAgents: 30,
+    minAgents: 10,
+    worldWidth: 2000,
+    worldHeight: 1000,
+    obstacleCount: 4,
+};
 /** @type {string} */
 let dir;
 

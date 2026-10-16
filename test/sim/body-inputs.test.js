@@ -7,12 +7,12 @@ import { addAgent, senseWorld } from './helpers/sense-world.js';
 /**
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} slot
- * @returns {number[]} the fifteen body inputs
+ * @returns {number[]} the nineteen body inputs
  */
 function body(w, slot) {
     writeBodyInputs(w, slot);
     const base = slot * w.layout.inputCount + w.config.rayCount * 8;
-    return Array.from(w.inputs.subarray(base, base + 15));
+    return Array.from(w.inputs.subarray(base, base + 19));
 }
 
 /** @returns {{w: ReturnType<typeof senseWorld>, slot: number}} a mature agent ready to mate */
@@ -125,5 +125,38 @@ describe('writeBodyInputs', () => {
         const rays = w.config.rayCount * 8;
         expect(Array.from(w.inputs.subarray(0, rays)).every((v) => v === 0)).toBe(true);
         expect(w.inputs[rays]).toBeGreaterThan(0);
+    });
+
+    it('writes the four temperature inputs at offsets 15 to 18', () => {
+        const { w, slot } = ready();
+        w.temperature[slot] = 35;
+        expect(body(w, slot).slice(15)).toEqual([0.35, 0.175 / 0.5, 0.5, 0].map(Math.fround));
+        w.temperature[slot] = 77.5;
+        expect(body(w, slot).slice(15)).toEqual([0.775, 0.25 / 0.5, 0, 0.5].map(Math.fround));
+        w.temperature[slot] = 100;
+        expect(body(w, slot).slice(15)).toEqual([1, 0.95, 0, 1].map(Math.fround));
+    });
+
+    it('ends the body block at the last input and leaves the next slot row alone', () => {
+        const { w, slot } = ready();
+        const next = addAgent(w, 700, 700, 25);
+        w.temperature[slot] = 50;
+        writeBodyInputs(w, slot);
+        const end = slot * w.layout.inputCount + w.config.rayCount * 8 + 19;
+        expect(end).toBe((slot + 1) * w.layout.inputCount);
+        expect(
+            w.inputs
+                .subarray(next * w.layout.inputCount, (next + 1) * w.layout.inputCount)
+                .every((/** @type {number} */ v) => v === 0),
+        ).toBe(true);
+    });
+
+    it('reads ready-to-mate at offset 6 as false once the temperature blocks mating', () => {
+        const { w, slot } = ready();
+        expect(body(w, slot)[6]).toBe(1);
+        w.temperature[slot] = 10;
+        expect(body(w, slot)[6]).toBe(0);
+        w.temperature[slot] = 90;
+        expect(body(w, slot)[6]).toBe(0);
     });
 });

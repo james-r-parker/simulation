@@ -4,11 +4,11 @@
 export const OUTPUT_COUNT = 5;
 
 const RAY_CHANNELS = 8;
-const EXTRA_INPUTS = 15;
+const EXTRA_INPUTS = 19;
 
 /**
  * @typedef {object} BrainLayout
- * @property {number} inputCount `rayCount x 8 + 15`
+ * @property {number} inputCount `rayCount x 8 + 19`
  * @property {number} hidden hidden units
  * @property {number} outputCount outputs (`OUTPUT_COUNT`)
  * @property {number} wIn offset of the input-to-hidden block (`inputCount x hidden`)

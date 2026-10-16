@@ -3,10 +3,10 @@ import { OUTPUT_COUNT, brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 
 describe('brainLayout', () => {
-    it('gives 143 inputs and 5797 weights at the defaults', () => {
+    it('gives 147 inputs and 5925 weights at the defaults', () => {
         const layout = brainLayout(createConfig());
-        expect(layout.inputCount).toBe(143);
-        expect(layout.weightCount).toBe(5797);
+        expect(layout.inputCount).toBe(147);
+        expect(layout.weightCount).toBe(5925);
         expect(layout.outputCount).toBe(OUTPUT_COUNT);
     });
 
