@@ -34,6 +34,7 @@ export function addAgent(w, x, y, size) {
     w.y[slot] = y;
     w.size[slot] = size;
     w.genomeId[slot] = slot + 100;
+    w.temperature[slot] = w.config.temperatureStart;
     return slot;
 }
 

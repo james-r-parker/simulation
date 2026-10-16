@@ -74,3 +74,27 @@ describe('canMatePair', () => {
         expect(canMatePair(w, 0, 1)).toBe(false);
     });
 });
+
+describe('isReadyToMate temperature', () => {
+    it.each([
+        [29.99, false],
+        [30, true],
+        [57, true],
+        [85, true],
+        [85.01, false],
+        [0, false],
+        [100, false],
+    ])('at temperature %f is ready: %s', (t, expected) => {
+        const w = pair();
+        w.temperature[0] = t;
+        expect(isReadyToMate(w, 0)).toBe(expected);
+        expect(readyToMate(w, 0)).toBe(expected);
+    });
+
+    it('stops canMatePair for either partner', () => {
+        const w = pair();
+        w.temperature[1] = 10;
+        expect(canMatePair(w, 0, 1)).toBe(false);
+        expect(canMatePair(w, 1, 0)).toBe(false);
+    });
+});

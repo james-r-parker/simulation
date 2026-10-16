@@ -6,7 +6,7 @@ import { runReplay } from '../scripts/replay.mjs';
 
 const CONFIG = { initialAgents: 20, minAgents: 20, maxAgents: 40 };
 // The economy the follow test needs so that agent 1 starves within the run.
-const HARSH = { movementCost: 0.03, foodEnergy: 70, foodTargetPerAgent: 1.5 };
+const HARSH = { movementCost: 0.04, foodEnergy: 70, foodTargetPerAgent: 1.5 };
 
 /**
  * @param {Record<string, any>} extra run options

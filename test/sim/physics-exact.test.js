@@ -39,6 +39,7 @@ function put(w, slot, fields) {
     w.population += 1;
     w.size[slot] = 25;
     w.energy[slot] = 100;
+    w.temperature[slot] = w.config.temperatureStart;
     for (const [k, v] of Object.entries(fields)) {
         w[k][slot] = v;
     }

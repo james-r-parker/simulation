@@ -1,6 +1,6 @@
 {
   "cases": [
-    { "name": "default", "overrides": {}, "ticks": 5000, "worldHash": "582a2adcc2b1703e" },
+    { "name": "default", "overrides": {}, "ticks": 5000, "worldHash": "892a6efc184c8a41" },
     {
       "name": "busy",
       "overrides": {
@@ -16,7 +16,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 5000,
-      "worldHash": "d61cccdd2b7f49ad"
+      "worldHash": "106a39e633377676"
     }
   ]
 }

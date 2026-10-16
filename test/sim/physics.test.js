@@ -41,6 +41,7 @@ function put(w, slot, fields) {
     w.population += 1;
     w.size[slot] = 25;
     w.energy[slot] = 100;
+    w.temperature[slot] = w.config.temperatureStart;
     for (const [k, v] of Object.entries(fields)) {
         w[k][slot] = v;
     }
@@ -412,5 +413,41 @@ describe('resolveContacts against brute force', () => {
             }
         }
         expect(checked).toBeGreaterThanOrEqual(5);
+    });
+});
+
+describe('actAll temperature', () => {
+    it.each([
+        [10, 0.3],
+        [35, 0.7],
+        [50, 1],
+        [75, 0.8],
+        [90, 0.4],
+    ])('scales thrust at temperature %f by %f, sprint included', (t, efficiency) => {
+        const w = setup();
+        put(w, 0, { angle: 0, temperature: t });
+        put(w, 1, { angle: 0, temperature: t });
+        setOut(w, 0, [1, 0, 0, 0, 0]);
+        setOut(w, 1, [1, 0, 1, 0, 0]);
+        actAll(w);
+        const { maxThrust, sprintMultiplier } = w.config;
+        expect(w.vx[0]).toBeCloseTo(maxThrust * efficiency, 6);
+        expect(w.vx[1]).toBeCloseTo(maxThrust * efficiency * (1 + sprintMultiplier), 6);
+    });
+
+    it('gives the earlier numbers when every efficiency is 1', () => {
+        const w = setup({
+            temperatureEfficiencyColdSevere: 1,
+            temperatureEfficiencyColdModerate: 1,
+            temperatureEfficiencyHeatModerate: 1,
+            temperatureEfficiencyHeatSevere: 1,
+        });
+        put(w, 0, { angle: 0, temperature: 5 });
+        put(w, 1, { angle: 0, temperature: 95 });
+        setOut(w, 0, [0.5, 0, 0, 0, 0]);
+        setOut(w, 1, [0.5, 0, 0, 0, 0]);
+        actAll(w);
+        expect(w.vx[0]).toBeCloseTo(0.5 * w.config.maxThrust, 6);
+        expect(w.vx[1]).toBeCloseTo(0.5 * w.config.maxThrust, 6);
     });
 });
