@@ -206,6 +206,18 @@ describe('compareReports refusals', () => {
         expect(refusedField(report(m), both, { allowConfigDiff: ['maxAgents'] })).toBe('config');
     });
 
+    it('allowConfigDiff tolerates a key present in one config and absent in the other', () => {
+        const old = report(m, { config: { maxAgents: 200, foodRate: 1, childEnergy: 600 } });
+        const next = report(m, { config: { maxAgents: 200, foodRate: 1, childEnergyShare: 0.4, mateRange: 100 } });
+        const allow = { allowConfigDiff: ['childEnergy', 'childEnergyShare', 'mateRange'] };
+        expect(refusedField(old, next, allow)).toBeUndefined();
+        expect(refusedField(next, old, allow)).toBeUndefined();
+        expect(() => compareReports(old, next, { allowConfigDiff: ['childEnergy'] })).toThrow(
+            /childEnergyShare, mateRange/,
+        );
+        expect(refusedField(old, next)).toBe('config');
+    });
+
     it('allowSeedDiff pairs by position but still needs equal counts, ticks and 8 seeds', () => {
         const other = report(m, { seeds: [9, 10, 11, 12, 13, 14, 15, 16] });
         expect(refusedField(report(m), other, { allowSeedDiff: true })).toBeUndefined();
