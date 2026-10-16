@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ELO_START, expectedScore, updateElo } from '../../js/evo/elo.js';
-import {
-    decide,
-    decodeWeights,
-    encodeWeights,
-    matchPolicy,
-    playMatch,
-    runLeague,
-    validateChampion,
-} from '../../js/evo/league.js';
+import { decide, matchPolicy, playMatch, runLeague, validateChampion } from '../../js/evo/league.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createWorld } from '../../js/sim/spawn.js';
@@ -17,21 +9,6 @@ import { makeChampionFile } from './helpers/champion-file.js';
 const config = createConfig();
 const champion = (/** @type {string} */ name, /** @type {number} */ seed, /** @type {number} */ specialisation = 0) =>
     validateChampion(makeChampionFile(name, seed, { specialisation }), config);
-
-describe('weights encoding', () => {
-    it.each([1, 2, 3, 4, 7])('round-trips %i floats exactly', (count) => {
-        const weights = Float32Array.from({ length: count }, (_, i) => Math.fround(i * 0.37 - 1.1));
-        const text = encodeWeights(weights);
-        expect(decodeWeights(text, count)).toEqual(weights);
-        expect(text).toBe(Buffer.from(weights.buffer).toString('base64'));
-    });
-
-    it('rejects the wrong length and non-base64 text', () => {
-        const text = encodeWeights(new Float32Array(3));
-        expect(() => decodeWeights(text, 4)).toThrow(/weights/);
-        expect(() => decodeWeights('!!!!', 1)).toThrow(/weights/);
-    });
-});
 
 describe('validateChampion', () => {
     it('decodes a valid file', () => {

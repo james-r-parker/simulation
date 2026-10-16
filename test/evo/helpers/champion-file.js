@@ -1,5 +1,6 @@
 // Builds champion files with random weights from a fixed seed, for the league tests.
-import { encodeWeights, CHAMPION_VERSION } from '../../../js/evo/league.js';
+import { encodeWeights } from '../../../js/evo/base64.js';
+import { CHAMPION_VERSION } from '../../../js/evo/league.js';
 import { brainLayout } from '../../../js/sim/brain-layout.js';
 import { createConfig, rulesHash } from '../../../js/sim/config.js';
 import { createRng, nextGaussian } from '../../../js/sim/rng.js';
