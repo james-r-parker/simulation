@@ -132,6 +132,28 @@ describe('assertInvariants', () => {
         expect(error.value).toBeCloseTo(0.5, 9);
     });
 
+    it.each([
+        ['NaN', Number.NaN],
+        ['Infinity', Infinity],
+        ['below 0', -0.5],
+        ['above temperatureMax', 100.5],
+    ])('rejects a temperature %s with the slot and value', (_label, value) => {
+        const world = validWorld();
+        world.temperature[2] = value;
+        const error = violationOf(world);
+        expect(error).toMatchObject({ invariant: INVARIANT.TEMPERATURE, slot: 2, tick: 0 });
+        expect(error.value).toBe(value);
+        expect(error.message).toContain('temperature');
+    });
+
+    it('accepts a temperature at 0 and at temperatureMax, and ignores a dead slot', () => {
+        const world = validWorld();
+        world.temperature[0] = 0;
+        world.temperature[1] = 100;
+        world.temperature[3] = Number.NaN;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
     it('reports the tick', () => {
         const world = validWorld();
         world.tick = 42;
@@ -154,12 +176,13 @@ describe('assertInvariants', () => {
         expect(violationOf(world).invariant).toBe(INVARIANT.LEDGER);
     });
 
-    it('names the four invariants', () => {
+    it('names the five invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
             POPULATION: 'population',
             LEDGER: 'ledger',
+            TEMPERATURE: 'temperature',
         });
     });
 

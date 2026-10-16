@@ -36,6 +36,7 @@ const COVERED = [
     'ateTimer',
     'bittenTimer',
     'lastLoss',
+    'temperature',
     'genomeId',
     'lineageId',
     'parentA',

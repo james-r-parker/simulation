@@ -182,6 +182,18 @@ describe('spawnFoodItem', () => {
 });
 
 describe('spawnAgent', () => {
+    it('starts every cause at temperatureStart, including in a reused slot', () => {
+        const w = build({ temperatureStart: 42, initialAgents: 1 });
+        expect(w.temperature[0]).toBe(42);
+        w.temperature[3] = 7;
+        const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        expect(slot).toBe(1);
+        w.alive[3] = 0;
+        w.temperature.fill(9, 2);
+        expect(spawnAgent(w, testPolicy, BORN_CAUSE.IMMIGRANT)).toBe(2);
+        expect(w.temperature[2]).toBe(42);
+    });
+
     it('numbers agents 1..n in order with lineage equal to genome', () => {
         const w = build();
         for (let s = 0; s < 6; s++) {
@@ -201,6 +213,7 @@ describe('spawnAgent', () => {
             expect(w.energy[s]).toBe(c.initialEnergy);
             expect(w.ateTimer[s]).toBe(TIMER_CAP);
             expect(w.bittenTimer[s]).toBe(TIMER_CAP);
+            expect(w.temperature[s]).toBe(c.temperatureStart);
             expect(w.vx[s]).toBe(0);
             expect(w.vy[s]).toBe(0);
             expect(Math.abs(w.angle[s])).toBeLessThanOrEqual(Math.PI);
