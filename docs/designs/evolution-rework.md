@@ -1,8 +1,8 @@
 # Evolution rework
 
-**Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `body-temperature.md` and `predator-prey.md`.
+**Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `predator-prey.md`.
 **Validated:** 36ee8c6 (2026-10-16)
-**Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for body-temperature.md and predator-prey.md
+**Priority:** 1 - better evolution is what makes a run worth watching, and it needs the evals to prove it; its Phase 3 waits for predator-prey.md
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 `js/evo/` decides which brains get born. The headless sim core runs bodies and brains; evolution supplies the
