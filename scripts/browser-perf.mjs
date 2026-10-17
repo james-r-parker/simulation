@@ -1,67 +1,122 @@
-// Records the legacy app's browser frame-time baseline through Playwright into bench/legacy-baseline.json.
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+// Records a browser frame-time baseline through Playwright or a Chrome over CDP: the v6 app into
+// bench/browser-baseline.json (keyed by viewport) or, with --app legacy, the legacy app into bench/legacy-baseline.json.
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { withBrowserSession } from './lib/browser-session.mjs';
+import { runLegacy, runV6 } from './lib/perf-run.mjs';
+import { parseViewport } from './lib/perf-v6.mjs';
 
 const DEFAULT_SECONDS = 60;
 const DEFAULT_OUT = 'bench/legacy-baseline.json';
-const PERF_READY_TIMEOUT_MS = 30_000;
 
-const LONG_TASK_SCRIPT = `
-window.__longTasks = 0;
-try {
-    new PerformanceObserver((list) => { window.__longTasks += list.getEntries().length; })
-        .observe({ type: 'longtask', buffered: true });
-} catch (error) {
-    window.__longTasks = -1;
-}`;
+const DEFAULT_AGENTS = 500;
+const DEFAULT_VIEWPORT = '3840x2160';
+const DEFAULT_OUTS = { v6: 'bench/browser-baseline.json', legacy: DEFAULT_OUT };
 
-/** @type {Record<string, 'headed' | 'allowFallback'>} */
-const BOOLEAN_FLAGS = { '--headed': 'headed', '--allow-fallback': 'allowFallback' };
+/** @type {Record<string, 'headed' | 'allowFallback' | 'allowLowRefresh'>} */
+const BOOLEAN_FLAGS = {
+    '--headed': 'headed',
+    '--allow-fallback': 'allowFallback',
+    '--allow-low-refresh': 'allowLowRefresh',
+};
+
+/**
+ * @param {string} arg a `--name=value` argument
+ * @param {string} name its flag name
+ * @param {string} value its value
+ * @returns {number} the value as a positive integer
+ * @throws {Error} when it is not one
+ */
+function positiveInt(arg, name, value) {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n <= 0) {
+        throw new Error(`${name} must be a positive integer, got "${arg}"`);
+    }
+    return n;
+}
+
+/**
+ * How each value flag turns its text into an option.
+ * @type {Record<string, (arg: string, value: string) => Record<string, unknown>>}
+ */
+const PARSERS = {
+    '--seconds': (arg, value) => {
+        const seconds = Number(value);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            throw new Error(`--seconds must be a positive number, got "${arg}"`);
+        }
+        return { seconds };
+    },
+    '--agents': (arg, value) => ({ agents: positiveInt(arg, '--agents', value) }),
+    '--app': (arg, value) => {
+        if (value !== 'v6' && value !== 'legacy') {
+            throw new Error(`--app must be v6 or legacy, got "${arg}"`);
+        }
+        return { app: value };
+    },
+    '--viewport': (_arg, value) => ({ viewport: parseViewport(value) }),
+    '--out': (_arg, value) => ({ out: value }),
+    '--cdp': (_arg, value) => ({ cdp: value }),
+};
 
 /**
  * Parses one `--name=value` argument into the options.
- * @param {Record<string, unknown>} options The options being built.
+ * @param {Record<string, any>} options The options being built.
  * @param {string} arg The argument.
  * @returns {boolean} Whether the argument was a recognised value flag.
  */
 function applyValueFlag(options, arg) {
     const [name, value] = [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)];
-    if (!arg.includes('=') || value === '' || !['--seconds', '--out', '--cdp'].includes(name)) {
+    if (!arg.includes('=') || value === '' || !Object.hasOwn(PARSERS, name)) {
         return false;
     }
-    if (name === '--seconds') {
-        const seconds = Number(value);
-        if (!Number.isFinite(seconds) || seconds <= 0) {
-            throw new Error(`--seconds must be a positive number, got "${arg}"`);
-        }
-        options.seconds = seconds;
-    } else {
-        options[name.slice(2)] = value;
-    }
+    Object.assign(options, PARSERS[name](arg, value));
     return true;
 }
 
 /**
+ * @typedef {object} Options
+ * @property {number} seconds run length
+ * @property {string} out the baseline file
+ * @property {boolean} headed use a visible browser
+ * @property {boolean} allowFallback accept a software adapter or renderer
+ * @property {boolean} allowLowRefresh record a display under 120 Hz
+ * @property {string} cdp a Chrome DevTools endpoint to measure instead of launching one
+ * @property {'v6' | 'legacy'} app which app to measure
+ * @property {number} agents v6: the starting agent count
+ * @property {{width: number, height: number}} viewport v6: the canvas size
+ */
+
+/**
  * Parses the command line.
  * @param {string[]} argv Arguments after the script name.
- * @returns {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} The run options.
+ * @returns {Options} The run options; `out` defaults to the app's baseline file.
  */
 export function parseArgs(argv) {
-    /** @type {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} */
-    const options = { seconds: DEFAULT_SECONDS, out: DEFAULT_OUT, headed: false, allowFallback: false, cdp: '' };
+    /** @type {Record<string, any>} */
+    const options = {
+        seconds: DEFAULT_SECONDS,
+        out: '',
+        headed: false,
+        allowFallback: false,
+        allowLowRefresh: false,
+        cdp: '',
+        app: 'v6',
+        agents: DEFAULT_AGENTS,
+        viewport: parseViewport(DEFAULT_VIEWPORT),
+    };
     for (const arg of argv) {
         if (arg in BOOLEAN_FLAGS) {
             options[BOOLEAN_FLAGS[arg]] = true;
         } else if (!applyValueFlag(options, arg)) {
             throw new Error(
-                `Unknown argument "${arg}"; expected --seconds=<n>, --out=<path>, --headed, --cdp=<url> or --allow-fallback`,
+                `Unknown argument "${arg}"; expected ${Object.keys(PARSERS)
+                    .map((f) => `${f}=<v>`)
+                    .join(', ')}, ${Object.keys(BOOLEAN_FLAGS).join(', ')}`,
             );
         }
     }
-    return options;
+    options.out ||= DEFAULT_OUTS[/** @type {'v6' | 'legacy'} */ (options.app)];
+    return /** @type {Options} */ (options);
 }
 
 /**
@@ -146,69 +201,12 @@ export function describeAdapter(adapter, allowFallback) {
 }
 
 /**
- * Loads the app and measures it for the run length.
- * @param {import('@playwright/test').Browser} browser The launched browser.
- * @param {string} url The app URL.
- * @param {number} seconds Run length.
- * @param {boolean} allowFallback Accept a software WebGPU adapter.
- * @returns {Promise<{ perf: any, longTasks: number, gpuAdapter: string, agentCount: number | null }>} Raw readings.
- */
-async function measure(browser, url, seconds, allowFallback) {
-    const page = await browser.newPage();
-    await page.addInitScript(LONG_TASK_SCRIPT);
-    await page.goto(url);
-    const adapter = await page.evaluate(async () => {
-        const found = await /** @type {any} */ (navigator).gpu?.requestAdapter({ powerPreference: 'high-performance' });
-        if (!found) {
-            return null;
-        }
-        const info = found.info ?? {};
-        const fallback = Boolean(found.isFallbackAdapter ?? info.isFallbackAdapter);
-        return { vendor: info.vendor, architecture: info.architecture, description: info.description, fallback };
-    });
-    const gpuAdapter = describeAdapter(adapter, allowFallback);
-    await page.waitForFunction(() => typeof (/** @type {any} */ (globalThis).__perf) === 'function', null, {
-        timeout: PERF_READY_TIMEOUT_MS,
-    });
-    await page.waitForTimeout(seconds * 1000);
-    const readings = await page.evaluate(() => {
-        const w = /** @type {any} */ (globalThis);
-        return {
-            perf: w.__perf(),
-            longTasks: w.__longTasks,
-            agentCount: w.currentSimulation?.agents?.length ?? null,
-        };
-    });
-    return { ...readings, gpuAdapter };
-}
-
-/**
  * Runs the whole measurement and writes the baseline file.
- * @param {{ seconds: number, out: string, headed: boolean, allowFallback: boolean, cdp: string }} options Parsed options.
+ * @param {Options} options Parsed options.
  * @returns {Promise<void>}
  */
 function run(options) {
-    return withBrowserSession({ ...options, args: ['--enable-unsafe-webgpu'] }, async ({ browser, url }) => {
-        const mode = options.cdp ? `over CDP at ${options.cdp}` : options.headed ? 'headed' : 'headless';
-        console.log(`Measuring ${url} for ${options.seconds} s (${mode})`);
-        const readings = await measure(browser, url, options.seconds, options.allowFallback);
-        const baseline = buildBaseline({
-            ...readings,
-            browserVersion: browser.version(),
-            seconds: options.seconds,
-            commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
-            recordedAt: new Date().toISOString(),
-        });
-        const outPath = resolve(options.out);
-        mkdirSync(dirname(outPath), { recursive: true });
-        writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
-        console.log(`GPU adapter: ${baseline.gpuAdapter}`);
-        console.log(`Run length: ${options.seconds} s, frames: ${baseline.frames}, agents: ${baseline.agentCount}`);
-        for (const [name, value] of Object.entries(/** @type {Record<string, number>} */ (baseline.metrics))) {
-            console.log(`${name}: ${value}`);
-        }
-        console.log(`Wrote ${outPath}`);
-    });
+    return options.app === 'legacy' ? runLegacy(options, { buildBaseline, describeAdapter }) : runV6(options);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

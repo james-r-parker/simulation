@@ -13,6 +13,7 @@
 #   Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
+# - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -108,6 +109,12 @@ while IFS= read -r file; do
     fail "$file: $((size / 1024 / 1024)) MB - tracked files stay under 5 MB (host large media elsewhere)"
   fi
 done < <(git ls-files --cached --others --exclude-standard)
+
+# -I skips binary files; node_modules is untracked, but the pathspec keeps a checked-in copy out too. Run from a hook,
+# git exports GIT_INDEX_FILE, which git grep follows, so this reads the index being committed.
+while IFS= read -r hit; do
+  fail "$hit - merge conflict marker"
+done < <(git grep -InE '^(<{7} |\|{7} |>{7} |={7}$)' -- . ':(exclude)node_modules' ':(exclude)**/node_modules/**' | cut -d: -f1,2)
 
 if [[ $violations -gt 0 ]]; then
   echo "$violations convention violation(s)"

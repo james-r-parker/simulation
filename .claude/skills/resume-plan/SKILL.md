@@ -37,7 +37,7 @@ before starting any task, and restamp it when it checks out.
 5. **Check library facts.** Compare versions and API claims in the doc against `package.json` (exact pins) and
    `docs/designs/sim-notes.md`. Flag any API the doc relies on that the notes say has changed.
 6. **Check the baselines.** If the next phase has Targets, confirm the baselines it compares against exist
-   (`bench/baseline.json`, `bench/legacy-baseline.json`, `evals/baselines/*.json`) and were recorded on this
+   (`bench/baseline.json`, `bench/legacy-baseline.json`, `bench/browser-baseline.json`, `evals/baselines/*.json`) and were recorded on this
    machine; a baseline from different hardware is not comparable for `bench.*` or `browser.*` metrics. The baselines
    are created by `dev-workflow-and-gate.md` Phase 2, `headless-sim-core.md` and `evolution-evals.md`; a phase whose
    baseline does not exist yet waits for the doc that creates it.

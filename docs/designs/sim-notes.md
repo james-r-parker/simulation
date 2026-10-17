@@ -278,7 +278,6 @@ worker empties the log after every stats message (`drainObserverLogs`) so a run 
 would send the policy to the wrong row. The observer therefore counts the rows it has removed (`deathsDrained`) and the
 policy subtracts that count. Any new policy that indexes the observer's `deaths` or `series` logs by a running count
 needs the same offset.
-||||||| parent of f9b50f7 (docs(sim-notes): record the combat metrics at the tuned defaults (T17))
 
 ### 2026-10-17 - Combat metrics at the tuned defaults
 
@@ -299,3 +298,42 @@ catches per 1000 hunter agent-ticks) and pack kills a few percent of kills, whic
 targets. The hunter on the micro-world also earns most of its `fitnessV1` from bite energy taken from peers (about 680
 per agent against 260 from food at the tuned defaults), which the anti-exploit bound, measured on food energy, does not
 allow for.
+
+### 2026-10-17 - `three` 0.186.1 is the current release
+
+Checked with `npm view three version` at the start of Phase 2 (T11): 0.186.1, the version already pinned, so there is no
+upgrade and no API change to record. The renderer uses `WebGLRenderer`, `InstancedMesh`, `ShaderMaterial`,
+`DataTexture` and `EffectComposer` with `UnrealBloomPass` and `OutputPass` from `three/examples/jsm/postprocessing`.
+`legacy.html` keeps running on the same version.
+
+### 2026-10-17 - Renderer facts found building Phase 2 (three 0.186.1)
+
+- `three` ships no type declarations and `@types/three` is not a dependency, so `js/app/three-shim.d.ts` declares `three` and
+  `three/examples/jsm/*` as untyped modules and the tsconfig includes it.
+- `three`'s objects (geometries, `InstancedMesh`, `ShaderMaterial`, `DataTexture`, `WebGLRenderTarget`) build in Node without a
+  GL context, so layers are unit-tested there; only `scene.js` and `bloom.js` need a browser.
+- Tone mapping applies only when drawing to the screen, never into a render target, so a shader that ends with
+  `#include <tonemapping_fragment>` and `<colorspace_fragment>` is right on both paths: direct to the canvas (quality 2) and
+  through the composer, where `OutputPass` does it. The renderer uses `NeutralToneMapping`, which keeps hue better than ACES.
+- `UnrealBloomPass` blends five mips with `bloomFactors` `[1, 0.8, 0.6, 0.4, 0.2]`; the widest mip is about 700 px at 1080p and
+  turns a dense scene into a fog. `BLOOM.factors` weights them `[1, 0.7, 0.38, 0.12, 0.03]` with radius 0 and strength 0.32 so the
+  black stays black.
+- `Float32BufferAttribute(array)` copies its array; use `BufferAttribute(array)` to keep writing into a preallocated one.
+- `half` is a reserved word in GLSL ES 3.00; a variable called `half` fails to compile.
+- Headless Chromium renders WebGL2 with `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`; a 4K frame of 420
+  agents, haze and bloom takes a few seconds in software.
+
+### 2026-10-17 - Measuring the v6 app in a browser
+
+- A Chromium trace with categories `v8` and `disabled-by-default-v8.gc` names each whole GC pause on the `CrRendererMain`
+  thread `MinorGC` (a scavenge) or `MajorGC` (a mark-compact). `V8.GCScavenger`, `V8.GCCompactor` and every `V8.GC_*` phase
+  event sit inside them, so `browser.gc_pause_ms` sums only `MinorGC` and `MajorGC` (`GC_PAUSE_EVENTS` in
+  `scripts/lib/perf-v6.mjs`). GC on worker threads is on other threads and is not counted. `browser.startTracing(page, ...)`
+  returns the trace as a Buffer of JSON with a `traceEvents` array.
+- Headless Chromium reports `EXT_disjoint_timer_query_webgl2` under SwiftShader, but its results can be discarded as
+  disjoint and the frame rate there (about 9 Hz at 1280x720 with 500 agents) says nothing about a GPU: the script refuses a
+  software renderer without `--allow-fallback` and a display under 120 Hz without `--allow-low-refresh`.
+- `PerformanceObserver` with `type: 'longtask'` gives each task's `startTime` on the page's `performance.now()` clock, so
+  tasks in the first 5 s are dropped by comparing it with `WARMUP_MS`.
+- The worker sends `stats` only while the sim runs, so a paused app has no new stats; the top bar reads the tick and
+  population from the newest snapshot, which each `step` posts.

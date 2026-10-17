@@ -87,6 +87,9 @@ function queueEffects(queue, u32, offset) {
  * @property {any} stats the newest stats of the current world
  * @property {EffectQueue | null} effects the queued effects, null before `ready`
  * @property {boolean} paused whether the last of `pause` and `resume` sent was `pause`
+ * @property {number} pausesPending `pause` commands the worker has not yet acknowledged with `paused`
+ * @property {boolean} pausedAck whether the worker has confirmed it is paused: `paused` was requested and every
+ *   `pause` sent has been acknowledged, so the newest snapshot is the tick the world stopped on
  * @property {number} droppedMessages snapshot, field and stats messages dropped for an old epoch
  */
 
@@ -203,11 +206,44 @@ function onStats(client, message) {
 }
 
 /**
+ * The worker has stopped: the snapshot it posted first has already arrived, so `latest` is the final tick.
+ * @param {Client} client the client
+ * @returns {void}
+ */
+function onPaused(client) {
+    client.pausesPending = Math.max(0, client.pausesPending - 1);
+    client.pausedAck = client.paused && client.pausesPending === 0;
+}
+
+/** The pause fields of a client that has sent nothing. */
+const NOT_PAUSED = Object.freeze({ paused: false, pausesPending: 0, pausedAck: false });
+
+/**
+ * @param {Client} client the client
+ * @returns {void}
+ */
+function notePauseSent(client) {
+    client.paused = true;
+    client.pausedAck = false;
+    client.pausesPending += 1;
+}
+
+/**
+ * @param {Client} client the client
+ * @returns {void}
+ */
+function noteResumeSent(client) {
+    client.paused = false;
+    client.pausedAck = false;
+}
+
+/**
  * Handlers by message type.
  * @type {Readonly<Record<string, (client: Client, message: any) => void>>}
  */
 const HANDLERS = Object.freeze({
     [MESSAGE_TYPES.READY]: onReady,
+    [MESSAGE_TYPES.PAUSED]: onPaused,
     [MESSAGE_TYPES.SNAPSHOT]: onSnapshot,
     [MESSAGE_TYPES.FIELD]: onField,
     [MESSAGE_TYPES.STATS]: onStats,
@@ -254,7 +290,7 @@ export function createWorkerClient({ post, listeners = {} }) {
         field: null,
         stats: null,
         effects: null,
-        paused: false,
+        ...NOT_PAUSED,
         droppedMessages: 0,
     };
     const send = (/** @type {string} */ type, /** @type {Record<string, any>} */ fields = {}) =>
@@ -273,11 +309,11 @@ export function createWorkerClient({ post, listeners = {} }) {
         },
         setSpeed: (/** @type {number} */ ticksPerSecond) => send(MESSAGE_TYPES.SET_SPEED, { ticksPerSecond }),
         pause() {
-            client.paused = true;
+            notePauseSent(client);
             send(MESSAGE_TYPES.PAUSE);
         },
         resume() {
-            client.paused = false;
+            noteResumeSent(client);
             send(MESSAGE_TYPES.RESUME);
         },
         /** @returns {boolean} whether the step was sent: it is accepted only while paused */

@@ -226,6 +226,8 @@ function control(host, message) {
             break;
         case MESSAGE_TYPES.PAUSE:
             host.paused = true;
+            emitSnapshot(host, true);
+            host.post({ type: MESSAGE_TYPES.PAUSED, epoch: host.epoch, tick: host.run.world.tick });
             break;
         case MESSAGE_TYPES.RESUME:
             host.paused = false;
