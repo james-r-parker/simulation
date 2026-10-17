@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
+import { writeBodyInputs } from '../../js/sim/body-inputs.js';
+import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { applyGenes } from '../../js/sim/traits.js';
 import { createRng, nextGaussian } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -80,6 +82,33 @@ describe('forwardAll with leaky hidden units', () => {
         forwardAll(world);
         for (let j = 0; j < layout.hidden; j++) {
             expect(Math.abs(world.hidden[layout.hidden + j] - old[j])).toBeLessThanOrEqual(0.1);
+        }
+    });
+
+    it('keeps 95% of its old value at a leak rate of 0.05', () => {
+        const off = randomWorld({}, 12);
+        const on = randomWorld({ leakEnabled: true }, 12);
+        const H = on.layout.hidden;
+        const old = Array.from(on.hidden.subarray(H, 2 * H));
+        on.leakRate.fill(0.05);
+        forwardAll(off);
+        forwardAll(on);
+        for (let j = 0; j < H; j++) {
+            expect(on.hidden[H + j]).toBeCloseTo(0.95 * old[j] + 0.05 * off.hidden[H + j], 6);
+        }
+    });
+
+    it('reads the memory outputs back as body inputs 33 and 34 on the next tick, only with the leak on', () => {
+        for (const leakEnabled of [true, false]) {
+            const world = randomWorld({ leakEnabled }, 14);
+            world.leakRate.fill(1);
+            forwardAll(world);
+            writeBodyInputs(world, 1);
+            const base = world.layout.inputCount + world.config.rayCount * RAY_CHANNELS;
+            const a = world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A];
+            const b = world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B];
+            expect(world.inputs[base + BODY_INPUT.MEMORY_A]).toBe(leakEnabled ? a : 0);
+            expect(world.inputs[base + BODY_INPUT.MEMORY_B]).toBe(leakEnabled ? b : 0);
         }
     });
 });

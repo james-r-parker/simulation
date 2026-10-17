@@ -50,7 +50,7 @@ describe('applyGenes', () => {
         const world = smallWorld();
         world.weights.fill(1, 0, world.layout.weightCount);
         applyGenes(world, 0);
-        expect(world.leakRate.every((v) => v === 0)).toBe(true);
+        expect(world.leakRate.every((/** @type {number} */ v) => v === 0)).toBe(true);
     });
 });
 
