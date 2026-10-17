@@ -120,7 +120,9 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
 
 1. `scripts/change-scope.sh origin/<base>` classes the change as `docs` (only Markdown under `docs/`, `.claude/` or
    the repo root) or `full`.
-2. `actions/setup-node` installs Node 24 with the npm cache, then `npm ci`.
+2. `actions/setup-node` installs the exact Node version in `.node-version` (`node-version-file`, so CI and a local
+   machine run the same V8; move it with `engines`, `@types/node` and the workflows together) with the npm cache, then
+   `npm ci`.
 3. `scripts/check.sh --ci`, or `scripts/check.sh --ci --docs` for a `docs` change.
 4. On failure, `.checklogs/` and `TestResults/` are uploaded as the `check-logs` artifact.
 
