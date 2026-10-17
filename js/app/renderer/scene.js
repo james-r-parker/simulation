@@ -2,7 +2,7 @@
 // restore, and the per-frame `draw`. A browser shell (the browser spec covers it): everything with logic in it lives
 // in modules that test without a GL context.
 
-import { OrthographicCamera, Scene, WebGLRenderer } from 'three';
+import { NeutralToneMapping, OrthographicCamera, Scene, WebGLRenderer } from 'three';
 import { viewBounds } from '../camera.js';
 import { appLog } from '../app-log.js';
 import { createBloom } from './bloom.js';
@@ -182,6 +182,7 @@ function createRenderer() {
     renderer.setPixelRatio(1);
     renderer.setClearColor(0x000000, 1);
     renderer.autoClear = false;
+    renderer.toneMapping = NeutralToneMapping;
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;background:#000';
     return renderer;
 }

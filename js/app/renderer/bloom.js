@@ -1,7 +1,7 @@
 // Bloom: the frame renders into a half-float target, `UnrealBloomPass` lifts what is above its threshold and
 // `OutputPass` encodes the result for the screen. A browser shell (the browser spec covers it): it needs a GL context.
 
-import { HalfFloatType, NoToneMapping, Vector2, WebGLRenderTarget } from 'three';
+import { HalfFloatType, Vector2, WebGLRenderTarget } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -10,11 +10,13 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 /** The bloom settings; the tuning lives here. Colours above 1 (energetic cores) are what glows. */
 export const BLOOM = Object.freeze({
     /** How much of the blurred light is added back. */
-    strength: 0.85,
-    /** How far the wide mips spread, 0 to 1. */
-    radius: 0.7,
+    strength: 0.4,
+    /** 0 keeps `factors` as written; towards 1 the wide mips gain weight. */
+    radius: 0,
+    /** The weight of each of the five blur levels, finest first. The widest are kept small so the glow stays near its source and the black stays black. */
+    factors: Object.freeze([1.0, 0.7, 0.38, 0.12, 0.03]),
     /** The luminance the bright pass starts at. */
-    threshold: 0.62,
+    threshold: 0.85,
 });
 
 /**
@@ -31,10 +33,10 @@ export const BLOOM = Object.freeze({
  * @returns {Bloom} the bloom pipeline
  */
 export function createBloom({ renderer, scene, camera, width, height }) {
-    renderer.toneMapping = NoToneMapping;
     const target = new WebGLRenderTarget(width, height, { type: HalfFloatType, depthBuffer: false });
     const composer = new EffectComposer(renderer, target);
     const pass = new UnrealBloomPass(new Vector2(width, height), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
+    pass.compositeMaterial.uniforms.bloomFactors.value = [...BLOOM.factors];
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(pass);
     composer.addPass(new OutputPass());
