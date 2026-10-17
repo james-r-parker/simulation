@@ -27,6 +27,8 @@ export function smokeShape(life, out = { radiusScale: 0, alpha: 0 }) {
 }
 
 const SHAPE = { radiusScale: 0, alpha: 0 };
+const PART = { start: 0, count: 0 };
+const TARGET = { smokeRadius: 0, out: /** @type {Float32Array} */ (new Float32Array(0)) };
 
 /**
  * Packs the live clouds as `x, y, radius, alpha`.
@@ -117,11 +119,11 @@ export function createSmokeLayer({ info }) {
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packClouds(
-                frame.snapshot.f32,
-                { start: s.cloudStart, count: s.cloudCount },
-                { smokeRadius: info.smokeRadius, out: packed },
-            );
+            PART.start = s.cloudStart;
+            PART.count = s.cloudCount;
+            TARGET.smokeRadius = info.smokeRadius;
+            TARGET.out = packed;
+            const count = packClouds(frame.snapshot.f32, PART, TARGET);
             uploadInstances(puffs, { iCloud: packed }, count);
             alphaMesh.count = count;
             alphaMesh.visible = count > 0;

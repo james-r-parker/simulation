@@ -145,6 +145,26 @@ function resizeRig(rig, width, height) {
     eachAll(rig, (l) => l.resize?.(rig.size.width, rig.size.height));
 }
 
+/** The rig and frame being drawn, read by the per-layer callbacks below so `drawRig` allocates no closures. */
+const DRAWING = { rig: /** @type {Rig | null} */ (null), frame: /** @type {Frame | null} */ (null) };
+
+/**
+ * @param {Layer} layer the layer
+ * @returns {void}
+ */
+function updateLayer(layer) {
+    layer.update?.(/** @type {Frame} */ (DRAWING.frame));
+}
+
+/**
+ * @param {Layer} layer the layer
+ * @returns {void}
+ */
+function prerenderLayer(layer) {
+    const rig = /** @type {Rig} */ (DRAWING.rig);
+    layer.prerender?.(rig.renderer, rig.camera);
+}
+
 /**
  * @param {Rig} rig the rig
  * @param {Frame} frame the frame to draw
@@ -156,8 +176,12 @@ function drawRig(rig, frame) {
     }
     Object.assign(rig.camera, viewBounds(frame.camera, BOUNDS));
     rig.camera.updateProjectionMatrix();
-    eachAll(rig, (l) => l.update?.(frame));
-    eachLayer(rig.built.set.layers, (l) => l.prerender?.(rig.renderer, rig.camera));
+    DRAWING.rig = rig;
+    DRAWING.frame = frame;
+    eachAll(rig, updateLayer);
+    eachLayer(rig.built.set.layers, prerenderLayer);
+    DRAWING.rig = null;
+    DRAWING.frame = null;
     const level = QUALITY_LEVELS[rig.quality.level];
     if (level.bloom && rig.built.bloom !== null) {
         rig.built.bloom.render();

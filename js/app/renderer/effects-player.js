@@ -17,6 +17,25 @@ export const JAW_REACH = 0.9;
 
 const CAUSE_MASK = 255;
 const CAUSE_SHIFT = 8;
+/** Scratch records handed to `spawnBurst` and `spawnRing`, which copy them out. */
+const BURST = {
+    kind: /** @type {'bite' | 'born' | 'died'} */ ('bite'),
+    x: 0,
+    y: 0,
+    tick: 0,
+    size: 0,
+    rgb: /** @type {ArrayLike<number>} */ (PALETTE.biteFlash),
+    eaten: false,
+};
+const RING = {
+    kind: /** @type {'alarm' | 'hunt' | 'birth'} */ ('birth'),
+    x: 0,
+    y: 0,
+    tick: 0,
+    radius: 0,
+    life: 0,
+    rgb: /** @type {ArrayLike<number>} */ (PALETTE.biteFlash),
+};
 
 /**
  * @typedef {object} Effect
@@ -76,6 +95,40 @@ function indexOfGenome(agents, genomeId) {
 }
 
 /**
+ * Fills the shared burst scratch with a birth-sized burst at the effect.
+ * @param {'born' | 'died'} kind which burst
+ * @param {Effect} e the effect
+ * @param {ArrayLike<number>} rgb the lineage colour
+ * @returns {void}
+ */
+function setBurst(kind, e, rgb) {
+    BURST.kind = kind;
+    BURST.x = e.x;
+    BURST.y = e.y;
+    BURST.tick = e.tick;
+    BURST.size = BIRTH_SIZE;
+    BURST.rgb = rgb;
+    BURST.eaten = false;
+}
+
+/**
+ * Fills the shared ring scratch at the effect, leaving the colour to the caller.
+ * @param {'birth' | 'alarm' | 'hunt'} kind which ring
+ * @param {Effect} e the effect
+ * @param {number} radius its radius
+ * @param {number} life its length in ticks
+ * @returns {void}
+ */
+function setRing(kind, e, radius, life) {
+    RING.kind = kind;
+    RING.x = e.x;
+    RING.y = e.y;
+    RING.tick = e.tick;
+    RING.radius = radius;
+    RING.life = life;
+}
+
+/**
  * @param {EffectsPlayer} player the player
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @returns {void}
@@ -91,7 +144,14 @@ function playBite(player, agents) {
         x = agents.x[biter] + Math.cos(agents.angle[biter]) * size * JAW_REACH;
         y = agents.y[biter] + Math.sin(agents.angle[biter]) * size * JAW_REACH;
     }
-    spawnBurst(player.sparks, { kind: 'bite', x, y, tick: e.tick, size, rgb: PALETTE.biteFlash });
+    BURST.kind = 'bite';
+    BURST.x = x;
+    BURST.y = y;
+    BURST.tick = e.tick;
+    BURST.size = size;
+    BURST.rgb = PALETTE.biteFlash;
+    BURST.eaten = false;
+    spawnBurst(player.sparks, BURST);
 }
 
 /**
@@ -101,16 +161,11 @@ function playBite(player, agents) {
 function playBirth(player) {
     const e = player.effect;
     const rgb = lineageColor(e.b, 0.8, player.rgb);
-    spawnRing(player.rings, {
-        kind: 'birth',
-        x: e.x,
-        y: e.y,
-        tick: e.tick,
-        radius: BIRTH_RING_RADIUS,
-        life: BIRTH_TICKS,
-        rgb,
-    });
-    spawnBurst(player.sparks, { kind: 'born', x: e.x, y: e.y, tick: e.tick, size: BIRTH_SIZE, rgb });
+    setRing('birth', e, BIRTH_RING_RADIUS, BIRTH_TICKS);
+    RING.rgb = rgb;
+    spawnRing(player.rings, RING);
+    setBurst('born', e, rgb);
+    spawnBurst(player.sparks, BURST);
 }
 
 /**
@@ -121,7 +176,9 @@ function playDeath(player) {
     const e = player.effect;
     const rgb = lineageColor(e.d, 0.6, player.rgb);
     const eaten = ((e.c >>> CAUSE_SHIFT) & CAUSE_MASK) === player.eatenCause;
-    spawnBurst(player.sparks, { kind: 'died', x: e.x, y: e.y, tick: e.tick, size: BIRTH_SIZE, rgb, eaten });
+    setBurst('died', e, rgb);
+    BURST.eaten = eaten;
+    spawnBurst(player.sparks, BURST);
 }
 
 /**
@@ -132,15 +189,9 @@ function playDeath(player) {
 function playCall(player, kind) {
     const e = player.effect;
     const { callRadius, callTicks } = player.info;
-    spawnRing(player.rings, {
-        kind,
-        x: e.x,
-        y: e.y,
-        tick: e.tick,
-        radius: callRadius,
-        life: callTicks,
-        rgb: RING_COLORS[kind],
-    });
+    setRing(kind, e, callRadius, callTicks);
+    RING.rgb = RING_COLORS[kind];
+    spawnRing(player.rings, RING);
 }
 
 /**
