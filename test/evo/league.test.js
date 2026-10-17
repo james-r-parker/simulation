@@ -20,8 +20,8 @@ describe('validateChampion', () => {
 
     it.each([
         ['version', { version: 2 }],
-        ['layout.inputCount', { layout: { inputCount: 1, brainHidden: 32, outputCount: 8 } }],
-        ['layout.brainHidden', { layout: { inputCount: 176, brainHidden: 16, outputCount: 8 } }],
+        ['layout.inputCount', { layout: { inputCount: 1, brainHidden: 32, outputCount: 11 } }],
+        ['layout.brainHidden', { layout: { inputCount: 179, brainHidden: 16, outputCount: 11 } }],
         ['rulesHash', { rulesHash: 'deadbeefdeadbeef' }],
         ['specialisation', { specialisation: 9 }],
         ['name', { name: '' }],

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    LEAK_GENE_START,
     mutateSigma,
     mutateWeights,
     randomWeights,
@@ -105,7 +106,13 @@ describe('randomWeights', () => {
 
     it('starts biases at 0', () => {
         expect(row.subarray(layout.bHidden, layout.wOut).every((w) => w === 0)).toBe(true);
-        expect(row.subarray(layout.bOut).every((w) => w === 0)).toBe(true);
+        expect(row.subarray(layout.bOut, layout.traitStart).every((w) => w === 0)).toBe(true);
+    });
+
+    it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
+        expect(row.subarray(layout.traitStart, layout.leakStart).every((w) => w === 0)).toBe(true);
+        expect(row.subarray(layout.leakStart).length).toBe(layout.hidden);
+        expect(row.subarray(layout.leakStart).every((w) => w === LEAK_GENE_START)).toBe(true);
     });
 
     it('is deterministic per stream', () => {

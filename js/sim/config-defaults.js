@@ -188,4 +188,5 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
+    leakEnabled: false, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
 });

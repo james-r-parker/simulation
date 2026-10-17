@@ -12,6 +12,8 @@ export const SIGMA_MAX = 0.5;
 export const SIGMA_START = 0.05;
 /** Weights are clamped to plus or minus this. */
 export const WEIGHT_CLAMP = 4;
+/** A random genome's leak genes start here, so a hidden unit keeps about 5% of its old value (`a` about 0.95). */
+export const LEAK_GENE_START = 3;
 
 /**
  * The child's step size. Draws one Gaussian.
@@ -43,7 +45,8 @@ export function mutateWeights(row, sigma, rng) {
 /**
  * Fills a row with a random brain in place. Draw order: wIn, wRec, then wOut, each index 0 up; biases draw nothing.
  * Weights into hidden units have standard deviation `1 / sqrt(inputCount + hidden)`, weights into outputs
- * `1 / sqrt(hidden)`, biases are 0.
+ * `1 / sqrt(hidden)`, biases, trait genes are 0 and leak
+ * genes are `LEAK_GENE_START`.
  * @param {Float32Array} row the weight row, `layout.weightCount` floats
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {import('../sim/rng.js').Rng} rng the brain-init stream
@@ -59,5 +62,6 @@ export function randomWeights(row, layout, rng) {
     for (let i = layout.wOut; i < layout.bOut; i++) {
         row[i] = outSd * nextGaussian(rng);
     }
-    row.fill(0, layout.bOut, layout.weightCount);
+    row.fill(0, layout.bOut, layout.leakStart);
+    row.fill(LEAK_GENE_START, layout.leakStart, layout.weightCount);
 }
