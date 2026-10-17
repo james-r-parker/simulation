@@ -149,6 +149,13 @@ describe('drainEvents', () => {
         ]);
     });
 
+    it('logs FoodPatchesCreated at info with the count and radius', () => {
+        const world = build({ foodPatchCount: 4, foodPatchRadius: 100 });
+        const { records, log } = collect('info');
+        drainEvents(world, log);
+        expect(records).toEqual([{ level: 'info', event: 'FoodPatchesCreated', tick: 0, count: 4, radius: 100 }]);
+    });
+
     it('skips debug records at info level without calling the sink', () => {
         const world = build();
         let calls = 0;

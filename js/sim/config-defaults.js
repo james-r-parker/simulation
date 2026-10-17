@@ -21,7 +21,7 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 100, // new
+    minAgents: 40, // new, lowered from 100 (world-balance)
     immigrationInterval: 600, // new
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
@@ -197,4 +197,11 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
+    floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
+    foodPatchCount: 0, // new: permanent food patches; 0 is off
+    foodPatchRadius: 400, // new
+    foodPatchCapacity: 1, // new: the largest stock of a patch
+    foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
+    foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
+    foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
 });

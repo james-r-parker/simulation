@@ -171,6 +171,13 @@ const RULES = {
     smokeThreshold: UNIT,
     packWindow: int(1),
     maxClouds: int(0, 256),
+    floorRescueAtZero: BOOL,
+    foodPatchCount: int(0, 256),
+    foodPatchRadius: positive(),
+    foodPatchCapacity: positive(),
+    foodPatchDepletion: num(0),
+    foodPatchRegrow: UNIT,
+    foodBackgroundShare: UNIT,
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
@@ -354,6 +361,10 @@ function checkCrossKey(config) {
         config.foodRadius,
         config.highFoodRadius,
     );
+    const room = Math.min(config.worldWidth, config.worldHeight);
+    if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
+        fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
+    }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);
     }

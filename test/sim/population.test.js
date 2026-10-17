@@ -94,6 +94,31 @@ describe('fillFloor', () => {
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });
 
+    it('with floorRescueAtZero, refills only a specialisation with 0 alive', () => {
+        const w = lifeWorld({ minAgents: 8, floorRescueAtZero: true });
+        // Specs 0, 1, 2 and 4 have an agent each; spec 3 has none.
+        [0, 1, 2, 4].forEach((spec) => addBlob(w, { spec }));
+        fillFloor(w, recordingPolicy([]));
+        expect(w.population).toBe(8);
+        // The first floor spawn must be spec 3; later ones all have a member somewhere, so any spec may follow.
+        expect(w.spec[4]).toBe(3);
+    });
+
+    it('with floorRescueAtZero, spawns every empty specialisation before repeating one', () => {
+        const w = lifeWorld({ minAgents: 5, floorRescueAtZero: true });
+        fillFloor(w, recordingPolicy([]));
+        expect(Array.from(w.spec.subarray(0, 5)).sort()).toEqual([0, 1, 2, 3, 4]);
+    });
+
+    it('without floorRescueAtZero, draws the specialisation uniformly as before', () => {
+        const w = lifeWorld({ minAgents: 5, floorRescueAtZero: false });
+        fillFloor(w, recordingPolicy([]));
+        const a = Array.from(w.spec.subarray(0, 5));
+        const b = lifeWorld({ minAgents: 5 });
+        fillFloor(b, recordingPolicy([]));
+        expect(Array.from(b.spec.subarray(0, 5))).toEqual(a);
+    });
+
     it('adds nothing at or above the floor', () => {
         const w = lifeWorld({ minAgents: 1 });
         addBlob(w);

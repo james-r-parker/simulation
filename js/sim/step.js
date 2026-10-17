@@ -5,6 +5,7 @@ import { clearEvents } from './events.js';
 import { decayFertileZones, moveObstacles, updateSeason } from './environment.js';
 import { feed } from './feeding.js';
 import { ageFood, spawnFood } from './food.js';
+import { regrowPatches } from './food-patches.js';
 import { assertInvariants } from './invariants.js';
 import { forwardAll } from './brain.js';
 import { actAll, integrate, resolveContacts } from './physics.js';
@@ -90,6 +91,7 @@ function lifecycle(world, policy) {
  * @returns {void}
  */
 function field(world) {
+    regrowPatches(world);
     spawnFood(world);
     ageFood(world);
     decayFertileZones(world);

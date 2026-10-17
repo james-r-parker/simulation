@@ -3,6 +3,7 @@
 import { detCos, detSin } from './det-math.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.js';
+import { depletePatchAt } from './food-patches.js';
 import { isKin } from './kin.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
@@ -33,6 +34,7 @@ function tryEat(world, slot, food) {
         const { temperatureGainEat, foodEnergy } = world.config;
         gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
         world.ateTimer[slot] = 0;
+        depletePatchAt(world, world.foodX[food], world.foodY[food]);
         removeFood(world, food);
     }
 }
