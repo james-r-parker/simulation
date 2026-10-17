@@ -166,6 +166,7 @@ const RULES = {
     smokeThreshold: UNIT,
     packWindow: int(1),
     maxClouds: int(0, 256),
+    floorRescueAtZero: BOOL,
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),

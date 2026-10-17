@@ -5,6 +5,7 @@ import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat } from '../../sim/rng.js';
+import { pickEmptySpec } from '../../sim/spec-rescue.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -82,8 +83,9 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
 
-    function initSpec(/** @type {any} */ world, /** @type {number} */ slot) {
-        return leastPopulatedSpec(world, slot, counts);
+    function initSpec(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
+        const rescue = world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
+        return rescue >= 0 ? rescue : leastPopulatedSpec(world, slot, counts);
     }
 
     /** Writes the slot's row and sigma; a clone also records what it cloned. */

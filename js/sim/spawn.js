@@ -5,10 +5,10 @@ import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
+import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
-const SPEC_COUNT = 5;
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
 const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
@@ -251,6 +251,23 @@ export function spawnFoodItem(world) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {Policy} policy the brain policy
+ * @param {number} slot the allocated slot
+ * @param {number} cause the spawn cause
+ * @returns {number} the policy's pick, else a floor spawn's pick among the empty specialisations when
+ *   `floorRescueAtZero` is on and one is empty, else uniform
+ */
+function chooseSpec(world, policy, slot, cause) {
+    const rng = world.rng.spawn;
+    if (policy.initSpec) {
+        return policy.initSpec(world, slot, rng);
+    }
+    const rescue = cause === BORN_CAUSE.FLOOR && world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
+    return rescue >= 0 ? rescue : nextInt(rng, SPEC_COUNT);
+}
+
+/**
  * Spawns a fresh-lineage agent from the `spawn` and `brain-init` streams and pushes `AgentBorn`.
  * @param {World} world the world
  * @param {Policy} policy the brain policy
@@ -268,9 +285,7 @@ export function spawnAgent(world, policy, cause) {
     const id = world.nextId++;
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
-    world.spec[slot] = policy.initSpec
-        ? policy.initSpec(world, slot, world.rng.spawn)
-        : nextInt(world.rng.spawn, SPEC_COUNT);
+    world.spec[slot] = chooseSpec(world, policy, slot, cause);
     policy.initBrain(world, slot, world.rng['brain-init']);
     placeClear(world, world.rng.spawn, Math.max(c.minSize, c.baseSize + c.initialEnergy / c.energyToSize));
     world.x[slot] = world.point[0];

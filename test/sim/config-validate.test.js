@@ -284,12 +284,14 @@ describe('validateConfig food patches and the floor', () => {
         ['foodPatchDepletion', -0.1],
         ['foodPatchRegrow', 1.1],
         ['foodBackgroundShare', -0.1],
+        ['floorRescueAtZero', 1],
     ])('rejects %s of %s', (key, value) => {
         expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
 
-    it('defaults to patches off', () => {
-        expect(createConfig().foodPatchCount).toBe(0);
+    it('defaults to patches off, a floor of 40 and no rescue', () => {
+        const c = createConfig();
+        expect([c.foodPatchCount, c.minAgents, c.floorRescueAtZero]).toEqual([0, 40, false]);
     });
 
     it('rejects patches wider than the world', () => {
