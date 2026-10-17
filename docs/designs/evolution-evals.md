@@ -180,6 +180,13 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
   every other metric. Below its minimum a metric gets no interval and no verdict, only the note `needs 32 seeds`
   (printed after the verdict column), and the rest of the report compares as before. Each `--json` row carries `minSeeds`.
   `evals/seeds.json` holds 64 seeds, so a 32-seed calibration compares seeds 1-32 against 33-64.
+- `npm run eval:power -- <report.json> [--splits <n>] [--power-splits <n>] [--sizes <n,...>] [--metrics <m,...>] [--json]`
+  (`scripts/eval-power.mjs`) resamples one 64-seed report into random disjoint 16-v-16 and 32-v-32 splits, with no new
+  runs, and runs `compareReports` on each. Per metric and size it prints the false-positive rate of the verdict on an
+  A/A split (`--splits`, default 1000) and the smallest planted change, as a fraction of the mean, that the verdict
+  detects in 80% of splits (`--power-splits` per grid step, default 200; grid 5%, 10%, 15%, 20%, 30%, 50%, 75%, 100%).
+  A rate above twice the nominal 5% is flagged `watch?`. `watch` and unknown metrics, a metric below its seed
+  minimum at that size and a metric with a 0 mean print `-`.
 - For each metric, a BCa bootstrap interval (10000 resamples, `fork(createRng(1), 'bootstrap')`) of the mean of the
   per-seed differences, paired by seed. Every call draws its resample indices from a fresh copy of that one stream,
   so a metric's interval depends only on its own differences, not on which other metrics are compared. The normal CDF and its inverse are computed with `detExp` and `detLog`.
