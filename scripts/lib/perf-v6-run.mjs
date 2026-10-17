@@ -63,6 +63,8 @@ export async function measureV6(browser, options) {
     const renderer = await webglRenderer(page);
     checkRenderer(renderer, options.allowFallback);
     await page.waitForTimeout(WARMUP_MS);
+    const warm = await page.evaluate(() => /** @type {any} */ (globalThis).__perf());
+    checkRefresh(warm.refreshHz, options.allowLowRefresh);
     await page.evaluate(() => /** @type {any} */ (globalThis).__perf.reset());
     await browser.startTracing(page, { categories: [...GC_TRACE_CATEGORIES] });
     await page.waitForTimeout(options.seconds * 1000);
@@ -76,7 +78,6 @@ export async function measureV6(browser, options) {
             'this browser has no longtask PerformanceObserver, so browser.main_long_tasks cannot be measured',
         );
     }
-    checkRefresh(perf.refreshHz, options.allowLowRefresh);
     const { width, height } = options.viewport;
     const entry = buildV6Entry({
         perf,
