@@ -90,9 +90,12 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
         }
     }
 
-    /** The death-log row of the record: the observer logs deaths in record order, the policy counts them the same. */
+    /**
+     * The death-log row of the record: the observer logs deaths in record order, the policy counts them the same.
+     * A host that empties the log (`drainObserverLogs`) adds the rows it removed to `observer.deathsDrained`.
+     */
     function scoredRow(/** @type {number} */ genomeId) {
-        const row = deathsSeen++;
+        const row = deathsSeen++ - (observer.deathsDrained ?? 0);
         const deaths = observer.deaths;
         if (deaths.genomeId[row] !== genomeId || Number.isNaN(deaths.fitness[row])) {
             throw new Error(`map-elites-v1: death log row ${row} is not genome ${genomeId} or unscored`);

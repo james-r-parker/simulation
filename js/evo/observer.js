@@ -74,6 +74,7 @@ export function createObserver(config, rng) {
         floorEpisodes: 0,
         lastFloorTick: -Infinity,
         deathCount: 0,
+        deathsDrained: 0,
         deaths: createLog([...DEATH_FIELDS, 'fitness']),
         checkpointCount: 0,
         series: createLog(SERIES_FIELDS),
