@@ -232,6 +232,11 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 | `sitter`            | No thrust, no turn                                                                                                                              |
 | `explorerAfterMeal` | Seeks food until it has eaten 140 (two average items), then thrusts straight and turns only at walls                                            |
 | `biteSeeker`        | A non-hunter that steers towards the nearest bigger agent ray hit                                                                               |
+| `sloppyForager`     | Runs `foodSeeker` on half its 10-tick decision windows and `wanderer`'s drift on the rest, the choice drawn from its `rng`                      |
+| `jawSitter`         | Holds still with `BITE` set: bites only what enters its jaws                                                                                    |
+| `huntCallSpammer`   | Runs `hunter` and sets the `HUNT` output every tick                                                                                             |
+| `grouper`           | Runs `fleer`, and with a threat on its rays steers towards the nearest lineage mate within `callRadius` instead of straight away                |
+| `cruiser`           | Holds `SEEK_THRUST` straight ahead and never turns: eats only what lies in its path                                                             |
 
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness, as a share of the `foodSeeker`'s, is at most the larger of 0.5 and its intake share (food energy plus
@@ -241,7 +246,7 @@ what the `foodSeeker` eats in the micro-world, so any honest food-paying fitness
 `test.fails`, each naming the [legacy-audit.md](legacy-audit.md) finding it demonstrates; [evolution-rework.md](evolution-rework.md) Phase 1 adds its
 fitness to the suite with no expected failures. As built, the `sitter`, `spinner`, `bumper` and `explorerAfterMeal`
 fail the bound under `fitnessV5`, all for FIT-8 (pay for age, distance and exploration without food); the `wanderer`
-and `biteSeeker` stay under half. The combat controllers (`hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`) are in the same suite. `hunter` and
+and `biteSeeker` stay under half. The five chance-or-waste controllers ([world-balance.md](world-balance.md) Phase 1) are in the suite too: under `fitnessV1` all five stay within the bound; under `fitnessV5` the `sloppyForager`, `jawSitter` and `huntCallSpammer` are expected failures, each a FIT-8 finding (pay for age, distance, exploration and actions without matching intake), while the `grouper` and `cruiser` pass. The combat controllers (`hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`) are in the same suite. `hunter` and
 `fleer` also run together on `evals/predator-world.json`, which is the micro-world plus `initialEnergy` 3000 (the
 micro-world's 800 lets foragers starve while sprinting before any outlasts the 300 ticks that count as an escape), so
 that `eval.catch_rate` and `eval.escape_rate` are above 0. The older controllers write thrust and turn only (sprint, mate and bite are 0).
