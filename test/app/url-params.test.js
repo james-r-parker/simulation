@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readParams } from '../../js/app/url-params.js';
+import { configOverrides, readParams } from '../../js/app/url-params.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
@@ -37,5 +37,27 @@ describe('readParams', () => {
         expect(readParams('?speed=0.25').speed).toBe(0.25);
         expect(readParams('?speed=16').speed).toBe(16);
         expect(readParams('?quality=0').quality).toBe(0);
+    });
+});
+
+describe('configOverrides', () => {
+    it('is empty without an agents parameter', () => {
+        expect(configOverrides(readParams(''))).toEqual({});
+    });
+
+    it('raises the agent cap above the default and keeps the floor', () => {
+        expect(configOverrides(readParams('?agents=800'))).toEqual({
+            initialAgents: 800,
+            maxAgents: 800,
+            minAgents: 100,
+        });
+    });
+
+    it('keeps the default cap and lowers the floor for a small start', () => {
+        expect(configOverrides(readParams('?agents=40'))).toEqual({
+            initialAgents: 40,
+            maxAgents: 500,
+            minAgents: 40,
+        });
     });
 });

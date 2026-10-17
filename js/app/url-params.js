@@ -67,3 +67,24 @@ export function readParams(search) {
         audio: flagOf(query.get('audio')),
     };
 }
+
+/** The most agents the default world holds; `?agents=` above it raises `maxAgents` to match. */
+const DEFAULT_MAX_AGENTS = 500;
+/** The population floor of the default world. */
+const DEFAULT_MIN_AGENTS = 100;
+
+/**
+ * @param {Params} params the validated parameters
+ * @returns {Record<string, number>} the config overrides they imply: `agents` sets `initialAgents`, raises `maxAgents`
+ *   when it exceeds the default and lowers `minAgents` when it is under the default; empty when `agents` is absent
+ */
+export function configOverrides({ agents }) {
+    if (agents === null) {
+        return {};
+    }
+    return {
+        initialAgents: agents,
+        maxAgents: Math.max(DEFAULT_MAX_AGENTS, agents),
+        minAgents: Math.min(DEFAULT_MIN_AGENTS, agents),
+    };
+}

@@ -75,7 +75,7 @@ describe('createHazeLayer', () => {
     it('keeps a fully saturated field a faint veil on the black background', () => {
         const scentColours = [PALETTE.dangerScent, PALETTE.attackScent, PALETTE.huntScent];
         const peak = Math.max(...scentColours.flat());
-        const srgb = (linear) => 1.055 * linear ** (1 / 2.4) - 0.055;
+        const srgb = (/** @type {number} */ linear) => 1.055 * linear ** (1 / 2.4) - 0.055;
         expect(srgb(HAZE_CAP * peak)).toBeLessThanOrEqual(0.15);
         expect(srgb(HAZE_CAP_LENS * peak)).toBeLessThanOrEqual(0.3);
         const one = { cols: 1, rows: 1, pheromoneMax: 10 };
