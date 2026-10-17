@@ -10,6 +10,7 @@ export const CH_SMALLER = 3;
 export const CH_FIRST_AGENT = 2;
 export const CH_LAST_AGENT = 5;
 export const CH_WALL = 6;
+export const CH_SMOKE = 8;
 
 /**
  * Thrust while seeking food: the speed at which a scripted forager population grows on the default economy; full thrust

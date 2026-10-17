@@ -3,7 +3,7 @@
 
 import { hunterTable } from './hunter-table.js';
 import { createHuntCalls } from './observer-intent-calls.js';
-import { SCAN_SIZE } from './observer-intent-rays.js';
+import { SCAN_SIZE } from './ray-summary.js';
 
 /** Ticks a sighting stays current. */
 export const INTENT_WINDOW = 30;
@@ -23,6 +23,15 @@ export const THREAT_PROXIMITY = 0.5;
 /** Ticks between grouping samples. */
 export const GROUP_SAMPLE_TICKS = 10;
 
+/** A tick counts as closing on a target when the agent's speed towards it exceeds this share of `maxVelocity`. */
+export const CLOSING_SPEED = 0.25;
+
+/** The response share, over the unthreatened share, that an episode needs to count as responded. */
+export const RESPONSE_LIFT = 0.25;
+
+/** Unthreatened ticks needed before the unthreatened response share is used; below it the share is 0. */
+export const CALM_MIN_TICKS = 30;
+
 /** An output above this counts as sprinting, calling, releasing smoke or biting for the response. */
 export const SIGNAL_LEVEL = 0.5;
 
@@ -36,8 +45,18 @@ const SLOT_FIELDS = {
     lastResponse: [Float64Array, NEVER],
     foodBits: [Uint16Array, 0],
     preyBits: [Uint16Array, 0],
-    foodProx: [Float32Array, 0],
-    preyProx: [Float32Array, 0],
+    foodTurn: [Float64Array, NEVER],
+    preyTurn: [Float64Array, NEVER],
+    foodOff: [Float64Array, NEVER],
+    preyOff: [Float64Array, NEVER],
+    foodStart: [Float64Array, NEVER],
+    preyStart: [Float64Array, NEVER],
+    threatSide: [Int8Array, 0],
+    threatArc: [Uint8Array, 0],
+    thrTicks: [Uint32Array, 0],
+    thrResp: [Uint32Array, 0],
+    calmTicks: [Uint32Array, 0],
+    calmResp: [Uint32Array, 0],
     threatProx: [Float32Array, 0],
     foodMark: [Float64Array, 0],
     biteMark: [Float64Array, 0],
@@ -48,7 +67,6 @@ const SLOT_FIELDS = {
     episodeOpen: [Uint8Array, 0],
     episodeClassified: [Uint8Array, 0],
     episodeFirst: [Float64Array, 0],
-    episodeBase: [Float64Array, 0],
     threatAtFirst: [Uint8Array, 0],
     responded: [Uint8Array, 0],
     deliberateFood: [Float64Array, 0],
@@ -116,6 +134,8 @@ export function createIntentState(config) {
         arc: arcRays(config),
         hunterSpec: hunterTable(config),
         scan: new Float64Array(SCAN_SIZE),
+        hunters: new Int32Array(config.maxAgents),
+        hunterCount: 0,
         calls: createHuntCalls(),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
         packWindow: config.packWindow,

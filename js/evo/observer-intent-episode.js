@@ -2,13 +2,13 @@
 // was seen before the first bite and whether the agent responded, and classifies the episode once at
 // `episodeFirst + RESPONSE_WINDOW` as unseen, undefended or neither.
 
-import { INTENT_WINDOW, RESPONSE_WINDOW } from './observer-intent-state.js';
+import { CALM_MIN_TICKS, INTENT_WINDOW, RESPONSE_LIFT, RESPONSE_WINDOW } from './observer-intent-state.js';
 
 /** After a step, `bittenTimer` is 1 exactly when `feed` reset it this tick. */
 export const BITTEN_THIS_TICK = 1;
 
 /**
- * Opens an episode on a fresh bite: the threat sighting that counts is the latest one within `INTENT_WINDOW` ticks.
+ * Opens an episode on a fresh bite; a threat sighting within `INTENT_WINDOW` ticks makes it a seen one.
  * @param {Record<string, any>} intent the intent state
  * @param {number} slot an alive slot
  * @param {number} tick the observed tick
@@ -20,8 +20,21 @@ function openEpisode(intent, slot, tick) {
     intent.episodeClassified[slot] = 0;
     intent.episodeFirst[slot] = tick;
     intent.threatAtFirst[slot] = seen ? 1 : 0;
-    intent.episodeBase[slot] = seen ? intent.lastThreat[slot] : tick;
     intent.responded[slot] = 0;
+}
+
+/**
+ * Whether the agent responded: its response share over the ticks since the threat sighting began beats its
+ * unthreatened response share (0 under `CALM_MIN_TICKS` unthreatened ticks) by `RESPONSE_LIFT`. A random brain flips
+ * its outputs as often with no threat in sight, so it earns no lift.
+ * @param {Record<string, any>} intent the intent state
+ * @param {number} slot an alive slot
+ * @returns {boolean}
+ */
+function liftsOverBase(intent, slot) {
+    const threatened = intent.thrTicks[slot] > 0 ? intent.thrResp[slot] / intent.thrTicks[slot] : 0;
+    const calm = intent.calmTicks[slot] >= CALM_MIN_TICKS ? intent.calmResp[slot] / intent.calmTicks[slot] : 0;
+    return threatened - calm >= RESPONSE_LIFT;
 }
 
 /**
@@ -33,6 +46,7 @@ function openEpisode(intent, slot, tick) {
 function classifyEpisode(intent, slot) {
     const { run } = intent;
     intent.episodeClassified[slot] = 1;
+    intent.responded[slot] = liftsOverBase(intent, slot) ? 1 : 0;
     run.episodesClassified += 1;
     if (intent.threatAtFirst[slot] === 0) {
         intent.unseenBite[slot] += 1;
@@ -61,11 +75,7 @@ export function trackIntentEpisode(intent, world, slot) {
     if (intent.episodeClassified[slot] === 1) {
         return;
     }
-    const due = intent.episodeFirst[slot] + RESPONSE_WINDOW;
-    if (tick <= due && intent.lastResponse[slot] >= intent.episodeBase[slot]) {
-        intent.responded[slot] = 1;
-    }
-    if (tick >= due) {
+    if (tick >= intent.episodeFirst[slot] + RESPONSE_WINDOW) {
         classifyEpisode(intent, slot);
     }
 }

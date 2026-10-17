@@ -6,10 +6,21 @@ import {
     arcRays,
     createIntentState,
     resetIntentSlot,
-    updateIntent,
 } from '../../js/evo/observer-intent.js';
+import { turnTowards } from '../../js/evo/scripted-parts.js';
 import { observe } from '../../js/evo/observer.js';
-import { CH, FORAGER, PREDATOR, approach, clearRays, intentArena, setRay, tickIntent } from './helpers/intent-world.js';
+import {
+    CH,
+    FORAGER,
+    PREDATOR,
+    approach,
+    clearRays,
+    intentArena,
+    runIntent,
+    seeThreat,
+    setRay,
+    tickIntent,
+} from './helpers/intent-world.js';
 import { addBorn, nextTick, pushBorn, pushDied } from './helpers/observer-world.js';
 
 /**
@@ -62,11 +73,13 @@ describe('meals', () => {
         const { world, intent } = arena;
         const slot = addBorn(world, { spec: FORAGER });
         tickIntent(world, intent, 40);
+        intent.foodStart[slot] = 1;
         intent.foodBits[slot] = 0x3f;
         intent.lastFood[slot] = 40 - INTENT_WINDOW - 1;
         world.foodEnergy[slot] = 4;
         tickIntent(world, intent, 41);
         expect(intent.chanceFood[slot]).toBe(4);
+        intent.foodStart[slot] = 1;
         intent.foodBits[slot] = 0x3f;
         intent.lastFood[slot] = 42 - INTENT_WINDOW;
         world.foodEnergy[slot] = 9;
@@ -107,6 +120,7 @@ describe('bites', () => {
                 count: 6,
                 before: (tick) => {
                     arena.world.biteEnergy[slot] = tick === 6 ? 7 : 0;
+                    arena.world.turnRate[slot] = 0.5 * arena.world.config.maxTurn * turnTowards(k, 16);
                 },
             });
             if (arena.intent.deliberateBite[slot] === 7) {
@@ -150,6 +164,7 @@ describe('bites', () => {
             tickIntent(world, intent, tick);
             world.bittenTimer[victim] = 30;
         };
+        intent.preyStart[a] = intent.preyStart[b] = 1;
         intent.preyBits[a] = 0x3f;
         bite(idA, 1);
         expect([intent.lastBiteDeliberate[victim], intent.prevBiteDeliberate[victim]]).toEqual([1, 0]);
@@ -166,6 +181,55 @@ describe('bites', () => {
     });
 });
 
+describe('deliberate meals need a turn towards the food', () => {
+    /**
+     * Closes on food 3 rays to the positive side for 8 ticks, turning towards it or cruising straight.
+     * @param {number} turn the turn rate as a share of maxTurn
+     * @returns {number} the deliberate food energy
+     */
+    function cruise(turn) {
+        const arena = intentArena();
+        const { world, intent } = arena;
+        const slot = addBorn(world, { spec: FORAGER });
+        approach(arena, {
+            slot,
+            k: 3,
+            channel: CH.FOOD,
+            count: 8,
+            before: (tick) => {
+                world.turnRate[slot] = turn * world.config.maxTurn;
+                world.foodEnergy[slot] = tick === 8 ? 10 : 0;
+            },
+        });
+        return intent.deliberateFood[slot];
+    }
+
+    it('counts a turner as deliberate and a straight cruiser through the food as chance', () => {
+        expect(cruise(0.5)).toBe(10);
+        expect(cruise(0)).toBe(0);
+    });
+
+    it('counts food dead ahead on every tick as deliberate without a turn', () => {
+        expect(mealAfter(CLOSING_MIN).intent.run.foodDeliberate).toBe(10);
+    });
+
+    it('does not count a closing speed below a quarter of maxVelocity', () => {
+        const arena = intentArena();
+        const slot = addBorn(arena.world, { spec: FORAGER });
+        approach(arena, {
+            slot,
+            k: 0,
+            channel: CH.FOOD,
+            count: 8,
+            speed: 0.2 * arena.world.config.maxVelocity,
+            before: (tick) => {
+                arena.world.foodEnergy[slot] = tick === 8 ? 10 : 0;
+            },
+        });
+        expect(arena.intent.chanceFood[slot]).toBe(10);
+    });
+});
+
 describe('responses', () => {
     /**
      * A forager with a threat on ray 2 (the positive side) and the given outputs and turn; returns its last response.
@@ -176,29 +240,29 @@ describe('responses', () => {
         const { world, intent } = intentArena();
         const slot = addBorn(world, { spec: FORAGER });
         nextTick(world, 1);
-        setRay(world, slot, f.threatRay ?? 2, 0.6, CH.BIGGER);
+        seeThreat(world, slot, f.threatRay ?? 2);
         world.turnRate[slot] = f.turn ?? 0;
         if (f.output !== undefined) {
             world.outputs[slot * OUTPUT_COUNT + f.output] = 1;
         }
-        updateIntent(intent, world);
+        runIntent(world, intent);
         return intent.lastResponse[slot];
     }
 
-    it('are set by turning away, sprinting, an alarm, smoke, and a bite with the threat on an arc ray', () => {
+    it('are set by turning away, sprinting, smoke, and a bite with the threat on an arc ray', () => {
         const turn = world0().config.maxTurn;
         expect(respond({ turn: -turn })).toBe(1);
         expect(respond({ output: OUTPUT_INDEX.SPRINT })).toBe(1);
-        expect(respond({ output: OUTPUT_INDEX.ALARM })).toBe(1);
         expect(respond({ output: OUTPUT_INDEX.SMOKE })).toBe(1);
         expect(respond({ output: OUTPUT_INDEX.BITE })).toBe(1);
     });
 
-    it('are not set by a turn towards the threat, a bite with the threat off the arc, or no response at all', () => {
+    it('are not set by a turn towards the threat, a bite with the threat off the arc, an alarm call, or no response at all', () => {
         const turn = world0().config.maxTurn;
         expect(respond({ turn })).toBe(-Infinity);
         expect(respond({ output: OUTPUT_INDEX.BITE, threatRay: 6 })).toBe(-Infinity);
         expect(respond({})).toBe(-Infinity);
+        expect(respond({ output: OUTPUT_INDEX.ALARM })).toBe(-Infinity);
     });
 
     it('are not set without a threat on the rays, but sitting inside smoke is one', () => {
@@ -206,11 +270,11 @@ describe('responses', () => {
         const slot = addBorn(world, { spec: FORAGER });
         nextTick(world, 1);
         world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 1;
-        updateIntent(intent, world);
+        runIntent(world, intent);
         expect(intent.lastResponse[slot]).toBe(-Infinity);
         setRay(world, slot, 5, 1, CH.SMOKE);
         nextTick(world, 2);
-        updateIntent(intent, world);
+        runIntent(world, intent);
         expect(intent.lastResponse[slot]).toBe(2);
     });
 });
@@ -222,8 +286,8 @@ describe('sightings and reset', () => {
         nextTick(world, 3);
         setRay(world, slot, 4, 0.5, CH.FOOD);
         setRay(world, slot, 1, 0.5, CH.SMALLER);
-        setRay(world, slot, 9, 0.8, CH.BIGGER);
-        updateIntent(intent, world);
+        seeThreat(world, slot, 9, 0.8);
+        runIntent(world, intent);
         expect([intent.lastFood[slot], intent.lastPrey[slot], intent.lastThreat[slot]]).toEqual([3, 3, 3]);
         expect(intent.threatProx[slot]).toBeCloseTo(0.8);
         clearRays(world, slot);
@@ -265,7 +329,7 @@ describe('sightings and reset', () => {
         const { world, intent } = intentArena();
         const slot = addBorn(world, { spec: FORAGER });
         setRay(world, slot, 0, 0.5, CH.FOOD);
-        updateIntent(intent, world);
+        runIntent(world, intent);
         expect(intent.lastFood[slot]).toBe(-Infinity);
         world.alive[slot] = 0;
         tickIntent(world, intent, 1);

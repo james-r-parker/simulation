@@ -3,18 +3,31 @@
 // state `step` leaves behind and draws no randomness. See docs/designs/world-balance.md (Intent state).
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { detCos, detSin } from '../sim/det-math.js';
 import { answerHuntCall } from './observer-intent-calls.js';
 import { BITTEN_THIS_TICK, trackIntentEpisode } from './observer-intent-episode.js';
 import { sampleGroups } from './observer-intent-group.js';
-import { SCAN, scanRays } from './observer-intent-rays.js';
-import { CLOSING_BITS, CLOSING_MIN, GROUP_SAMPLE_TICKS, INTENT_WINDOW, SIGNAL_LEVEL } from './observer-intent-state.js';
+import { collectHunters, resolveThreat } from './observer-intent-threat.js';
+import {
+    CLOSING_BITS,
+    CLOSING_MIN,
+    CLOSING_SPEED,
+    GROUP_SAMPLE_TICKS,
+    INTENT_WINDOW,
+    SIGNAL_LEVEL,
+} from './observer-intent-state.js';
+import { SCAN, SCAN_SIZE, summariseRays } from './ray-summary.js';
+import { turnTowards } from './scripted-parts.js';
 import { TURN_THRESHOLD } from './observer-tick.js';
 
 export {
+    CALM_MIN_TICKS,
     CLOSING_BITS,
     CLOSING_MIN,
+    CLOSING_SPEED,
     GROUP_SAMPLE_TICKS,
     INTENT_WINDOW,
+    RESPONSE_LIFT,
     RESPONSE_WINDOW,
     SIGNAL_LEVEL,
     THREAT_PROXIMITY,
@@ -23,6 +36,9 @@ export {
     resetIntentSlot,
 } from './observer-intent-state.js';
 export { noteEscape } from './observer-intent-episode.js';
+
+/** The scan row length, re-exported for tests that build their own row. */
+export { SCAN_SIZE };
 
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
@@ -38,110 +54,181 @@ function popcount16(v) {
 }
 
 /**
- * @param {number} seen the tick of the sighting
- * @param {number} bits the closing history
+ * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} kind a `FOOD` or `PREY` descriptor
+ * @param {number} slot the slot
  * @param {number} tick the observed tick
- * @returns {boolean} whether the sighting is current and enough of the history shows the target closing
+ * @returns {boolean} whether the sighting is current, enough of the history shows the agent closing on the target,
+ *   and the agent either turned towards it within the window or never saw it off the ray dead ahead
  */
-function closing(seen, bits, tick) {
-    return tick - seen <= INTENT_WINDOW && popcount16(bits & CLOSING_MASK) >= CLOSING_MIN;
+function isDeliberate(intent, kind, slot, tick) {
+    const bits = intent[kind.bits][slot] & CLOSING_MASK;
+    if (tick - intent[kind.seen][slot] > INTENT_WINDOW || popcount16(bits) < CLOSING_MIN) {
+        return false;
+    }
+    const turned = tick - intent[kind.turn][slot] <= INTENT_WINDOW;
+    return turned || intent[kind.off][slot] < intent[kind.start][slot];
 }
 
-/**
- * @param {number} k a ray index
- * @param {number} rayCount rays per agent
- * @returns {number} +1 for a ray on the positive-turn side, -1 on the negative side, 0 for dead ahead or behind
- */
-function sideOf(k, rayCount) {
-    if (k <= 0 || 2 * k === rayCount) {
-        return 0;
-    }
-    return 2 * k < rayCount ? 1 : -1;
-}
+/** What `trackTarget` needs to know about each kind of target: its state arrays and scan offsets. */
+const FOOD = Object.freeze({
+    bits: 'foodBits',
+    seen: 'lastFood',
+    turn: 'foodTurn',
+    off: 'foodOff',
+    start: 'foodStart',
+    prox: SCAN.FOOD,
+    ray: SCAN.FOOD_RAY,
+    clears: true,
+});
+const PREY = Object.freeze({
+    bits: 'preyBits',
+    seen: 'lastPrey',
+    turn: 'preyTurn',
+    off: 'preyOff',
+    start: 'preyStart',
+    prox: SCAN.PREY,
+    ray: SCAN.PREY_RAY,
+    clears: false,
+});
 
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive agent
- * @param {number} side a `sideOf` value
- * @returns {boolean} whether the agent turns, beyond `TURN_THRESHOLD x maxTurn`, away from that side
+ * @param {number} k a ray index
+ * @returns {number} the agent's velocity component along ray `k`'s direction
  */
-function turnsAway(world, slot, side) {
-    const limit = TURN_THRESHOLD * world.config.maxTurn;
-    const turn = world.turnRate[slot];
-    return (side === 1 && turn < -limit) || (side === -1 && turn > limit);
+function speedAlong(world, slot, k) {
+    const cosH = detCos(world.angle[slot]);
+    const sinH = detSin(world.angle[slot]);
+    const dx = cosH * world.rayCos[k] - sinH * world.raySin[k];
+    const dy = sinH * world.rayCos[k] + cosH * world.raySin[k];
+    return world.vx[slot] * dx + world.vy[slot] * dy;
 }
 
 /**
- * Shifts this tick's closing bit into a history and remembers the proximity.
- * @param {Uint16Array} bits the closing histories
- * @param {Float32Array} previous the nearest hit's proximity at the previous tick, 0 for none
- * @param {number} slot the slot
- * @param {number} proximity the nearest hit's proximity now, or -1 for none
+ * Updates one target kind for an agent: the sighting, the closing history (a tick closes when the agent's speed
+ * towards the nearest target ray is above `CLOSING_SPEED x maxVelocity`), turns towards the target and off-axis ticks.
+ * Turning away from food clears its closing history.
+ * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} world the world after the step
+ * @param {number} slot an alive slot
+ * @param {Record<string, any>} kind `FOOD` or `PREY`
  * @returns {void}
  */
-function shiftClosing(bits, previous, slot, proximity) {
-    const rose = proximity > previous[slot] ? 1 : 0;
-    bits[slot] = ((bits[slot] << 1) | rose) & 0xffff;
-    previous[slot] = Math.max(proximity, 0);
+function trackTarget(intent, world, slot, kind) {
+    const { tick } = world;
+    const bits = intent[kind.bits];
+    if (intent.scan[kind.prox] < 0) {
+        bits[slot] = (bits[slot] << 1) & 0xffff;
+        return;
+    }
+    const k = intent.scan[kind.ray];
+    if (tick - intent[kind.seen][slot] > INTENT_WINDOW) {
+        intent[kind.start][slot] = tick;
+    }
+    intent[kind.seen][slot] = tick;
+    intent[kind.off][slot] = k === 0 ? intent[kind.off][slot] : tick;
+    const towards = world.turnRate[slot] * turnTowards(k, world.config.rayCount);
+    const limit = TURN_THRESHOLD * world.config.maxTurn;
+    intent[kind.turn][slot] = towards > limit ? tick : intent[kind.turn][slot];
+    const closes = speedAlong(world, slot, k) > CLOSING_SPEED * world.config.maxVelocity;
+    bits[slot] = ((bits[slot] << 1) | (closes ? 1 : 0)) & 0xffff;
+    if (kind.clears && towards < -limit) {
+        bits[slot] = 0;
+    }
 }
 
 /**
- * Whether the agent responds to the threat on its rays this tick: turns away, sprints, calls an alarm, releases smoke
- * or bites with the threat on an arc ray. Sitting inside smoke counts without a threat.
+ * Whether the agent responds to the threat this tick: turns away from it, sprints, releases smoke or bites with it on
+ * an arc ray (an alarm call is not one; it is judged by `alarm_precision`). Sitting inside smoke counts without a
+ * threat. While the threat is out of sight, the side and arc flag of its last sighting stand in.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive agent
  * @returns {boolean}
  */
 function responds(intent, world, slot) {
-    const scan = intent.scan;
-    if (scan[SCAN.SMOKE] === 1) {
+    if (intent.scan[SCAN.SMOKE] === 1) {
         return true;
     }
-    if (scan[SCAN.THREAT] < 0) {
+    if (world.tick - intent.lastThreat[slot] > INTENT_WINDOW) {
         return false;
     }
     const row = slot * OUTPUT_COUNT;
     const out = world.outputs;
-    const side = sideOf(scan[SCAN.THREAT_RAY], world.config.rayCount);
+    const away = world.turnRate[slot] * intent.threatSide[slot] < -TURN_THRESHOLD * world.config.maxTurn;
     return (
-        turnsAway(world, slot, side) ||
+        away ||
         out[row + OUTPUT_INDEX.SPRINT] > SIGNAL_LEVEL ||
-        out[row + OUTPUT_INDEX.ALARM] > SIGNAL_LEVEL ||
         out[row + OUTPUT_INDEX.SMOKE] > SIGNAL_LEVEL ||
-        (out[row + OUTPUT_INDEX.BITE] > SIGNAL_LEVEL && scan[SCAN.THREAT_ARC] === 1)
+        (out[row + OUTPUT_INDEX.BITE] > SIGNAL_LEVEL && intent.threatArc[slot] === 1)
     );
 }
 
 /**
- * Pass 1 for one alive agent: its sightings, closing histories, last response and episode latch.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot an alive agent
+ * @returns {boolean} whether the agent turns, sprints, releases smoke or bites at all, threat or not
+ */
+function active(world, slot) {
+    const row = slot * OUTPUT_COUNT;
+    const out = world.outputs;
+    return (
+        Math.abs(world.turnRate[slot]) > TURN_THRESHOLD * world.config.maxTurn ||
+        out[row + OUTPUT_INDEX.SPRINT] > SIGNAL_LEVEL ||
+        out[row + OUTPUT_INDEX.SMOKE] > SIGNAL_LEVEL ||
+        out[row + OUTPUT_INDEX.BITE] > SIGNAL_LEVEL
+    );
+}
+
+/**
+ * Updates the threat sighting, the last response and the two response-rate counters of an agent: ticks and responses
+ * while a threat sighting is current (reset when a new sighting run starts), and ticks and any action while none is.
+ * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} world the world after the step
+ * @param {number} slot an alive slot
+ * @returns {void}
+ */
+function trackThreat(intent, world, slot) {
+    const { tick } = world;
+    const scan = intent.scan;
+    if (scan[SCAN.THREAT] >= 0) {
+        if (tick - intent.lastThreat[slot] > INTENT_WINDOW) {
+            intent.thrTicks[slot] = 0;
+            intent.thrResp[slot] = 0;
+        }
+        intent.lastThreat[slot] = tick;
+        intent.threatSide[slot] = turnTowards(scan[SCAN.THREAT_RAY], world.config.rayCount);
+        intent.threatArc[slot] = scan[SCAN.THREAT_ARC];
+    }
+    intent.threatProx[slot] = Math.max(scan[SCAN.THREAT], 0);
+    const response = responds(intent, world, slot);
+    if (response) {
+        intent.lastResponse[slot] = tick;
+    }
+    if (tick - intent.lastThreat[slot] <= INTENT_WINDOW) {
+        intent.thrTicks[slot] += 1;
+        intent.thrResp[slot] += response ? 1 : 0;
+    } else {
+        intent.calmTicks[slot] += 1;
+        intent.calmResp[slot] += response || active(world, slot) ? 1 : 0;
+    }
+}
+
+/**
+ * Pass 1 for one alive agent: its sightings, closing histories, threat, responses and episode latch.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world after the step
  * @param {number} slot an alive slot
  * @returns {void}
  */
 function senseSlot(intent, world, slot) {
-    const { tick } = world;
-    const scan = intent.scan;
-    scanRays(scan, world, slot, intent.arc);
-    shiftClosing(intent.foodBits, intent.foodProx, slot, scan[SCAN.FOOD]);
-    shiftClosing(intent.preyBits, intent.preyProx, slot, scan[SCAN.PREY]);
-    if (scan[SCAN.FOOD] >= 0) {
-        intent.lastFood[slot] = tick;
-        if (turnsAway(world, slot, sideOf(scan[SCAN.FOOD_RAY], world.config.rayCount))) {
-            intent.foodBits[slot] = 0;
-        }
-    }
-    if (scan[SCAN.PREY] >= 0) {
-        intent.lastPrey[slot] = tick;
-    }
-    intent.threatProx[slot] = Math.max(scan[SCAN.THREAT], 0);
-    if (scan[SCAN.THREAT] >= 0) {
-        intent.lastThreat[slot] = tick;
-    }
-    if (responds(intent, world, slot)) {
-        intent.lastResponse[slot] = tick;
-    }
+    summariseRays(world, slot, intent.scan, intent.arc);
+    resolveThreat(intent, world, slot);
+    trackTarget(intent, world, slot, FOOD);
+    trackTarget(intent, world, slot, PREY);
+    trackThreat(intent, world, slot);
     if (intent.hunterSpec[world.spec[slot]] === 0) {
         trackIntentEpisode(intent, world, slot);
     }
@@ -154,24 +241,18 @@ function senseSlot(intent, world, slot) {
  * @returns {boolean} whether a bite by the slot this tick is deliberate
  */
 export function biteDeliberate(intent, slot, tick) {
-    return closing(intent.lastPrey[slot], intent.preyBits[slot], tick);
+    return isDeliberate(intent, PREY, slot, tick);
 }
 
 /**
  * @param {Record<string, any>} world the world
+ * @param {Map<number, number>} slotOf the observer's genome id to slot map
  * @param {number} genomeId a genome id
- * @returns {number} the alive slot holding that genome, or -1 (also for id 0)
+ * @returns {number} the alive slot holding that genome, or -1 (an agent born this tick is not in the map yet)
  */
-export function findAlive(world, genomeId) {
-    if (genomeId === 0) {
-        return -1;
-    }
-    for (let slot = 0; slot < world.alive.length; slot++) {
-        if (world.alive[slot] === 1 && world.genomeId[slot] === genomeId) {
-            return slot;
-        }
-    }
-    return -1;
+export function findAlive(world, slotOf, genomeId) {
+    const slot = slotOf.get(genomeId);
+    return slot !== undefined && world.alive[slot] === 1 && world.genomeId[slot] === genomeId ? slot : -1;
 }
 
 /**
@@ -203,7 +284,7 @@ function creditMeal(intent, world, slot) {
     if (gained <= 0) {
         return;
     }
-    if (closing(intent.lastFood[slot], intent.foodBits[slot], world.tick)) {
+    if (isDeliberate(intent, FOOD, slot, world.tick)) {
         intent.deliberateFood[slot] += gained;
         intent.run.foodDeliberate += gained;
     } else {
@@ -241,14 +322,15 @@ function creditBiteEnergy(intent, world, slot) {
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world after the step
  * @param {number} slot an alive slot
+ * @param {Map<number, number>} slotOf the observer's genome id to slot map, to find the biter
  * @returns {void}
  */
-function creditSlot(intent, world, slot) {
+function creditSlot(intent, world, slot, slotOf) {
     creditMeal(intent, world, slot);
     creditBiteEnergy(intent, world, slot);
     if (world.bittenTimer[slot] === BITTEN_THIS_TICK) {
         const biterId = world.lastBiter[slot];
-        const biter = findAlive(world, biterId);
+        const biter = findAlive(world, slotOf, biterId);
         recordBite(intent, slot, biterId, biter >= 0 && biteDeliberate(intent, biter, world.tick));
     }
 }
@@ -258,13 +340,15 @@ function creditSlot(intent, world, slot) {
  * responses, then the meals and bites (a victim's record needs its biter's sightings). Skips tick 0.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world
+ * @param {Map<number, number>} slotOf the observer's genome id to slot map, to find a bite's biter
  * @returns {void}
  */
-export function updateIntent(intent, world) {
+export function updateIntent(intent, world, slotOf) {
     if (world.tick === 0) {
         return;
     }
     const { alive } = world;
+    collectHunters(intent, world);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             senseSlot(intent, world, slot);
@@ -272,7 +356,7 @@ export function updateIntent(intent, world) {
     }
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
-            creditSlot(intent, world, slot);
+            creditSlot(intent, world, slot, slotOf);
         }
     }
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {

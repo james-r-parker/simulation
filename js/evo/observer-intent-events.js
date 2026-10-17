@@ -37,7 +37,7 @@ export function noteIntentDeath(observer, world, o) {
     const slot = d[o + 2];
     const killerId = d[o + 5];
     if (world.lastBiteTick[slot] === world.tick) {
-        const killer = findAlive(world, killerId);
+        const killer = findAlive(world, observer.slotOf, killerId);
         recordBite(intent, slot, killerId, killer >= 0 && biteDeliberate(intent, killer, world.tick));
     }
     const kind = killKind(combat, killerId, d[o + 11]);

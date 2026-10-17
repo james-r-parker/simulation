@@ -103,7 +103,7 @@ export function createObserver(config, rng) {
  */
 export function observe(observer, world, fitness) {
     observeCombat(observer.combat, world, observer.intent);
-    updateIntent(observer.intent, world);
+    updateIntent(observer.intent, world, observer.slotOf);
     noteIntentEvents(observer, world);
     applyEvents(observer, world, fitness);
     if (world.tick === 0) {

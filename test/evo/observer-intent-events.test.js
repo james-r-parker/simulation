@@ -4,7 +4,7 @@ import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { ESCAPE_TICKS, observeCombat } from '../../js/evo/observer-combat.js';
 import { noteIntentEvents } from '../../js/evo/observer-intent-events.js';
 import { updateIntent } from '../../js/evo/observer-intent.js';
-import { CH, FORAGER, PREDATOR, clearRays, intentArena, setRay } from './helpers/intent-world.js';
+import { CH, FORAGER, PREDATOR, clearRays, intentArena, seeThreat, setRay } from './helpers/intent-world.js';
 import { addBorn, nextTick, pushCall, pushDied } from './helpers/observer-world.js';
 
 /**
@@ -19,7 +19,7 @@ function tick(arena, at, before) {
     nextTick(world, at);
     before?.();
     observeCombat(observer.combat, world, observer.intent);
-    updateIntent(observer.intent, world);
+    updateIntent(observer.intent, world, observer.slotOf);
     noteIntentEvents(observer, world);
 }
 
@@ -28,6 +28,11 @@ function tick(arena, at, before) {
  * @returns {void}
  */
 function start(arena) {
+    for (let slot = 0; slot < arena.world.alive.length; slot++) {
+        if (arena.world.alive[slot] === 1) {
+            arena.observer.slotOf.set(arena.world.genomeId[slot], slot);
+        }
+    }
     observeCombat(arena.observer.combat, arena.world, arena.intent);
 }
 
@@ -39,7 +44,7 @@ describe('call and smoke precision', () => {
         const b = addBorn(world, { spec: FORAGER });
         start(arena);
         tick(arena, 1, () => {
-            setRay(world, a, 3, 0.6, CH.BIGGER);
+            seeThreat(world, a, 3);
             pushCall(world, EVENT_TYPE.ALARM_CALLED, a);
             pushCall(world, EVENT_TYPE.ALARM_CALLED, b);
         });
@@ -54,7 +59,7 @@ describe('call and smoke precision', () => {
         const { world, intent } = arena;
         const a = addBorn(world, { spec: FORAGER });
         start(arena);
-        tick(arena, 1, () => setRay(world, a, 3, 0.6, CH.BIGGER));
+        tick(arena, 1, () => seeThreat(world, a, 3));
         tick(arena, 31, () => {
             clearRays(world, a);
             pushCall(world, EVENT_TYPE.ALARM_CALLED, a);
@@ -87,7 +92,7 @@ describe('call and smoke precision', () => {
         const idle = addBorn(world, { spec: FORAGER, bittenTimer: 30 });
         start(arena);
         tick(arena, 1, () => {
-            setRay(world, seen, 3, 0.6, CH.BIGGER);
+            seeThreat(world, seen, 3);
             for (const slot of [bitten, seen, idle]) {
                 pushCall(world, EVENT_TYPE.SMOKE_RELEASED, slot);
             }
@@ -143,6 +148,7 @@ describe('eaten deaths', () => {
         for (let t = 1; t <= 6; t++) {
             tick(arena, t, () => {
                 setRay(world, hunter, 0, t / 20, CH.SMALLER);
+                world.vx[hunter] = 0.5 * world.config.maxVelocity;
                 if (t === 6) {
                     world.lastBiteTick[victim] = 6;
                     pushDied(world, {
@@ -206,6 +212,7 @@ describe('hunt-call answers', () => {
                 world.heard[slots.stranger * HEARD_STRIDE + 3] = 0.5;
                 intent.lastPrey[slots[who]] = t - 1;
                 intent.preyBits[slots[who]] = 0xffff;
+                intent.preyStart[slots[who]] = 1;
                 world.biteEnergy[slots[who]] = t >= 5 ? 6 : 0;
             });
         }
@@ -239,9 +246,9 @@ describe('noteEscape through observeCombat', () => {
             tick(arena, t, () => {
                 clearRays(world, slot);
                 if (t === 1) {
-                    setRay(world, slot, 2, 0.6, CH.BIGGER);
-                    world.outputs[slot * 8 + 2] = flee ? 1 : 0;
+                    seeThreat(world, slot, 2);
                 }
+                world.outputs[slot * 8 + 2] = flee && t <= 40 ? 1 : 0;
                 world.bittenTimer[slot] = t === 1 ? 1 : 30;
             });
         }
