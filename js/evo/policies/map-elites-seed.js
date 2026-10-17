@@ -47,7 +47,7 @@ export function randomEliteSpec(archive, rng) {
         return nextInt(rng, GENOME_SPECS.length);
     }
     let left = nextInt(rng, cells);
-    for (let spec = 0; spec < GENOME_SPECS.length; spec++) {
+    for (let spec = 0; spec < GENOME_SPECS.length - 1; spec++) {
         const here = occupiedCount(/** @type {any} */ (archive), spec);
         if (left < here) {
             return spec;

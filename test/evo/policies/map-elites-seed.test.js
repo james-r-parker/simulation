@@ -55,15 +55,15 @@ describe('initSpec with specMutationRate above 0', () => {
     it('draws the specialisation of a random elite once the archive has 10 cells', () => {
         const { policy, world } = heritable();
         fill(policy, { spec: 0, count: 10 });
-        fill(policy, { spec: 3, count: 10 });
+        fill(policy, { spec: 4, count: 10 });
         const rng = createRng(4);
         const counts = [0, 0, 0, 0, 0];
         for (let i = 0; i < 2000; i++) {
             counts[policy.brain.initSpec(world, 7, rng)] += 1;
         }
-        expect([counts[1], counts[2], counts[4]]).toEqual([0, 0, 0]);
+        expect([counts[1], counts[2], counts[3]]).toEqual([0, 0, 0]);
         expect(counts[0]).toBeGreaterThan(900);
-        expect(counts[3]).toBeGreaterThan(900);
+        expect(counts[4]).toBeGreaterThan(900);
     });
 
     it('draws only from the stream it is given', () => {

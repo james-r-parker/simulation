@@ -123,6 +123,13 @@ describe('specTurnover', () => {
         expect(s.specTurnover(withMasks([31, 31, 15, 15], 20000)).value).toBe((1 * 100000) / 10000);
     });
 
+    it('has nothing to compare for a first checkpoint that is already after burn-in', () => {
+        const o = bareObserver();
+        addCheckpoint(o, { tick: 10000, specMask: 31 });
+        o.ticks = 20000;
+        expect(s.specTurnover(o).value).toBe(0);
+    });
+
     it('is 0 when the mix never changes', () => {
         expect(s.specTurnover(withMasks([31, 31, 31, 31], 20000)).value).toBe(0);
     });
