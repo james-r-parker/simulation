@@ -7,6 +7,7 @@ import { viewBounds } from '../camera.js';
 import { appLog } from '../app-log.js';
 import { createBloom } from './bloom.js';
 import { createQuality, QUALITY_LEVELS, supportsFloatTargets } from './quality.js';
+import { isSoftwareRenderer, rendererName, scaledSize, SOFTWARE_RENDER_SCALE } from './software.js';
 
 /**
  * What a layer is. `object` goes into the scene (back to front by position in the list); the hooks are optional.
@@ -61,7 +62,8 @@ import { createQuality, QUALITY_LEVELS, supportsFloatTargets } from './quality.j
  * @property {any} renderer the renderer
  * @property {any} camera the orthographic camera
  * @property {import('./quality.js').Quality} quality the quality state
- * @property {{width: number, height: number}} size the canvas in device pixels
+ * @property {{width: number, height: number}} size the size drawn at in device pixels: the canvas size times `renderScale`
+ * @property {number} renderScale 1, or `SOFTWARE_RENDER_SCALE` on a software renderer
  * @property {Record<string, any>} info `ready.info`
  * @property {(context: SceneContext) => LayerSet} buildLayers makes the layers
  * @property {Built} built the current layers and scenes
@@ -132,17 +134,25 @@ function setLevel(rig, level) {
 }
 
 /**
+ * Applies `rig.size` to the renderer, the bloom and the layers.
  * @param {Rig} rig the rig
- * @param {number} width device pixels
- * @param {number} height device pixels
  * @returns {void}
  */
-function resizeRig(rig, width, height) {
-    rig.size.width = Math.max(1, width);
-    rig.size.height = Math.max(1, height);
+function applySize(rig) {
     rig.renderer.setSize(rig.size.width, rig.size.height, false);
     rig.built.bloom?.setSize(rig.size.width, rig.size.height);
     eachAll(rig, (l) => l.resize?.(rig.size.width, rig.size.height));
+}
+
+/**
+ * @param {Rig} rig the rig
+ * @param {number} width the canvas width in device pixels
+ * @param {number} height the canvas height in device pixels
+ * @returns {void}
+ */
+function resizeRig(rig, width, height) {
+    Object.assign(rig.size, scaledSize({ width, height }, rig.renderScale));
+    applySize(rig);
 }
 
 /** The rig and frame being drawn, read by the per-layer callbacks below so `drawRig` allocates no closures. */
@@ -223,7 +233,7 @@ function createRenderer() {
 function rebuildRig(rig, disposeAll) {
     disposeAll();
     rig.built = build(rig);
-    resizeRig(rig, rig.size.width, rig.size.height);
+    applySize(rig);
     setLevel(rig, rig.quality.level);
     rig.lost = false;
 }
@@ -266,10 +276,17 @@ export function createScene({ container, info, buildLayers, quality = null, onRe
     const renderer = createRenderer();
     const canvas = renderer.domElement;
     container.appendChild(canvas);
+    const name = rendererName(renderer.getContext());
+    const software = isSoftwareRenderer(name);
+    const state = createQuality({ pinned: quality, floatTargets: supportsFloatTargets(renderer.extensions), software });
+    if (software) {
+        appLog('info', 'SoftwareRenderer', { renderer: name, renderScale: SOFTWARE_RENDER_SCALE, level: state.level });
+    }
     const base = {
         renderer,
         camera: new OrthographicCamera(-1, 1, 1, -1, -1, 1),
-        quality: createQuality({ pinned: quality, floatTargets: supportsFloatTargets(renderer.extensions) }),
+        quality: state,
+        renderScale: software ? SOFTWARE_RENDER_SCALE : 1,
         size: { width: 1, height: 1 },
         info,
         buildLayers,
