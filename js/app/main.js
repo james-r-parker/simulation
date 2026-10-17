@@ -16,7 +16,7 @@ import { createScene } from './renderer/scene.js';
 import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
 import { actionForKey } from './ui/keymap.js';
-import { mountTopBar, topBarView } from './ui/top-bar.js';
+import { mountTopBar, topBarInput, topBarView } from './ui/top-bar.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
 
@@ -262,7 +262,7 @@ function startReporting(app) {
     const barUpdate = mountTopBar(document, /** @type {HTMLElement} */ (document.getElementById('top-bar')));
     setInterval(() => {
         const client = app.supervisor.client();
-        barUpdate(topBarView(client?.stats ?? null, app.state, client?.paused ?? false));
+        barUpdate(topBarView(topBarInput(/** @type {any} */ (client)), app.state, client?.paused ?? false));
     }, TOP_BAR_MS);
     if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
         installPerf(/** @type {any} */ (window), {

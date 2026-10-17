@@ -21,7 +21,26 @@ function speedLabel(multiple) {
 }
 
 /**
- * @param {Record<string, any> | null} stats the newest `stats`, null before one arrives
+ * What the bar shows comes from the newest snapshot where there is one (stats stop while the sim is paused, but each step
+ * posts a snapshot), and from the newest stats for the rate.
+ * @param {{latest: {tick: number, u32: Uint32Array} | null, stats: {ticksPerSecond: number} | null} | null} client the
+ *   worker client, null before the first start
+ * @returns {{tick: number, population: number, ticksPerSecond: number} | null} what `topBarView` reads, null before any
+ *   snapshot has arrived
+ */
+export function topBarInput(client) {
+    if (client === null || client.latest === null) {
+        return null;
+    }
+    return {
+        tick: client.latest.tick,
+        population: client.latest.u32[1],
+        ticksPerSecond: client.stats?.ticksPerSecond ?? 0,
+    };
+}
+
+/**
+ * @param {{tick: number, population: number, ticksPerSecond: number} | null} stats what `topBarInput` read, null before one arrives
  * @param {{requestedTicksPerSecond: number, notice: string}} state the app state
  * @param {boolean} paused whether the sim is paused
  * @returns {{tick: string, speed: string, population: string, notice: string}} the strings to show; the speed shows the
