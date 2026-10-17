@@ -157,8 +157,8 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
 - `compareReports(before, after, { level, minEffect })` uses `level` 0.95 and `minEffect` `MIN_EFFECT` (0.05) unless
   given; `--min-effect <fraction>` (0..1) overrides it.
 - For each metric, a BCa bootstrap interval (10000 resamples, `fork(createRng(1), 'bootstrap')`) of the mean of the
-  per-seed differences, paired by seed. Each metric forks its own stream, so its interval does not depend on the
-  other metrics. The normal CDF and its inverse are computed with `detExp` and `detLog`.
+  per-seed differences, paired by seed. Every call draws its resample indices from a fresh copy of that one stream,
+  so a metric's interval depends only on its own differences, not on which other metrics are compared. The normal CDF and its inverse are computed with `detExp` and `detLog`.
 - The verdict is `better` or `worse` when the 95% interval excludes 0 strictly in the metric's direction and the
   absolute mean paired difference is at least `minEffect` times the reference magnitude (`|before mean|`, or
   `|after mean|` when that is 0), otherwise `no-difference`; two zero means are `no-difference`; `watch` metrics, `null` metrics and fitness metrics of different `fitnessName`s get `-`.
@@ -251,6 +251,23 @@ Headless runs are the only place the simulation is CPU-bound for hours, so they 
   `os.cpus()` time deltas), so an idle core shows up; `train.mjs` will print it per generation.
 - Measured on the dev machine ([sim-notes.md](sim-notes.md), 2026-10-16): 32 workers give 14.7 - 15.2 times one
   worker and beat 16 by over 20%, so the default stays `os.availableParallelism()`.
+
+## Planned additions
+
+Planned work that extends the evals lives in other docs; this doc describes only what is built.
+
+| Addition                                                                                                                                                          | Owner                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `scripts/eval-power.mjs`: resamples one 64-seed report through `compareReports` to measure false-positive rates and detectable effects per metric                 | [world-balance.md](world-balance.md)       |
+| Selection metrics `eval.fitness_lrs_corr`, `eval.opportunity_for_selection`, `eval.offspring_per_life`, `eval.generation_depth_p90`, `eval.archive_lineage_share` | [world-balance.md](world-balance.md)       |
+| `eval.heritability_food` (watch) and the cold-start metric `eval.food_energy_per_1k@20k`                                                                          | [evolution-rework.md](evolution-rework.md) |
+
+## Decisions
+
+| Decision                                                                    | Reason                                                                                          | By                |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------- |
+| The Compare text states that every metric reuses the one `bootstrap` stream | `bootstrapInterval` forks `createRng(1)` per call; the earlier text claimed a stream per metric | Specialist review |
+| Planned eval additions are listed by owner and are not described here       | The doc is `Implemented`; a plan belongs in the doc that builds it                              | Specialist review |
 
 ## Phases
 
