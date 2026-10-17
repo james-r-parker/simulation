@@ -1,30 +1,31 @@
 # World balance and biology
 
-**Status:** Proposed - stub: every known balance issue, deliberate-behaviour measures and fitness, the tuning-night method and the biology features; Phase 1 measures deliberate behaviour, Phase 2 rewards it and settles the balance issues, Phase 3 adds the biology features.
-**Validated:** bd35cef (2026-10-17)
-**Priority:** 3 - the world gate in evolution-rework.md Phase 3 needs these issues settled, and tuning is judged by watching the renderer (rank 2)
+**Status:** Proposed - Phase 1 measures deliberate behaviour: the D1 to D8 metrics from per-agent intent counters, the per-metric seed minimum, the chance-or-waste controllers and the skill ladder; Phase 2 settles the balance on a tuning night; Phase 3 adds the biology features.
+**Validated:** 830e60a (2026-10-17)
+**Priority:** 1 - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the
 trainer runs. This doc holds the open balance issues found on the tuning night of 2026-10-16 (experiments `E19` and
-`E20`, sweep files in `.claude/worktrees/tune-night-2026-10-16/`), the method each tuning night follows, and the
-biology features that change the balance again.
+`E20`, sweep files in `.claude/worktrees/tune-night-2026-10-16/`), the measures of deliberate behaviour, the method
+each tuning night follows, and the biology features that change the balance again. Phase 1 needs only predator-prey.md
+Phases 1 and 2; the renderer is needed from Phase 2, whose tuning is judged by watching it.
 
 ## Open balance issues
 
-| #   | Issue                                                                                                                                                                                                                                                                | Evidence                                                                                                                                               | Decision                                                                                                                        |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | Food may be too easy: with `maxFood` 1600 and `foodTargetPerAgent` 12, random brains no longer die out without the floor, so foragers may thrive by bumping into food rather than seeking it                                                                         | Skill ladder at the tuned defaults (10000 ticks, no floor, seeds 1-3): random 9-24 agents left, sloppy forager, `foodSeeker` and `fleer` all about 320 | Next tuning night searches for the least food that keeps `eval.born_share` above 0.7 (user, 2026-10-17)                         |
-| B2  | The top of the skill ladder is flat: sloppy, good and fleeing foragers all fill the world to about 320, so small improvements do not show once the world saturates                                                                                                   | Same ladder; defaults before tuning were smoother (random died out slowly, each rung a little above the last)                                          | Same night: random brains die out slowly and each ladder rung beats the one below without saturating (user)                     |
-| B3  | Lineage diversity fell: `eval.lineages_alive` -59% and `eval.lineage_turnover` -45% against `E17`                                                                                                                                                                    | `E20`                                                                                                                                                  | Accepted for now; the biology features in Phase 2 address it (user)                                                             |
-| B4  | The anti-exploit bound counts food only, while `fitnessV1` pays bite energy: the scripted `hunter` scores 0.746 of the `foodSeeker` against a bound of 0.5 after jaws and `huntSizeRatio` 1.01 (about 680 bite energy against 260 food per agent in the micro-world) | `test/evo/anti-exploit.slow.test.js` on branch `feat/predator-prey-phase-2` (draft PR 39)                                                              | The anti-exploit bound counts all intake, food plus bite energy (user); applied in predator-prey.md Phase 2                     |
-| B5  | 16 seeds no longer separate seed sets on off-target metrics under a self-sustaining population: the calibration gave verdicts on `eval.floor_episodes` (-23.6%) and `eval.lineages_alive` (-20.9%)                                                                   | `E19`                                                                                                                                                  | Verdicts on `eval.floor_episodes`, the lineage metrics and `eval.predator_share_cv` need 32 seeds; 16 stays for the rest (user) |
-| B6  | Predators are uneven across seeds: `eval.predator_share_cv` rose from 0.05 to 0.99                                                                                                                                                                                   | `E20`                                                                                                                                                  | -                                                                                                                               |
-| B7  | The cold band below `temperatureColdStress` is close to absorbing: a `foodSeeker` started at 20 degrees rarely recovers; raising `temperatureGainEat` to 3, 4 or 6 did not help and cut births                                                                       | Cold-forager checks (2026-10-16) and the sweep's `temperatureGainEat` screens                                                                          | -                                                                                                                               |
-| B8  | Alarm calls are mostly noise: callers are rarely near kin (0.2 to 0.4 living kin per agent), so calls cannot be kin-selected; `eval.alarm_response` is small (0.0045)                                                                                                | Seed 1, 100000 ticks, events from tick 50000; T17 figures in `sim-notes.md`                                                                            | -                                                                                                                               |
-| B9  | Mating is rare against splitting (28 against 313 births in the 2026-10-16 check), so crossover barely acts                                                                                                                                                           | Same check                                                                                                                                             | -                                                                                                                               |
-| B10 | `bench.step_ms@500` has no headroom left: `main` measured 4.50 ms on 2026-10-17 at 04:00 and 4.67 to 4.80 ms later the same day on the same machine, against the 4.63 ms limit (4.03 baseline + 15%), so the local `bench-check` gate fails on `main` itself         | Predator-prey Phase 1 PR 37; `node scripts/bench-compare.mjs` on the renderer Phase 2 branch (head -1.7% against `main`)                               | Profile and optimise `sense` and `brain` (no baseline change), or the user re-baselines after the world gate                    |
-| B11 | A 7680 x 4320 world (exactly 2x 4K) is the preferred size for the display; it ran only with `obstacleCount` 10 and was not confirmed at 16 seeds                                                                                                                     | Sweep screens `d11`                                                                                                                                    | Next tuning night tunes at 7680 x 4320 and adopts it when it passes the world gate (user)                                       |
+| #   | Issue                                                                                                                                                                                                                                                                | Evidence                                                                                                                                               | Decision                                                                                                                                                         |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | Food may be too easy: with `maxFood` 1600 and `foodTargetPerAgent` 12, random brains no longer die out without the floor, so foragers may thrive by bumping into food rather than seeking it                                                                         | Skill ladder at the tuned defaults (10000 ticks, no floor, seeds 1-3): random 9-24 agents left, sloppy forager, `foodSeeker` and `fleer` all about 320 | Next tuning night searches for the least food that keeps `eval.born_share` above 0.7 (user, 2026-10-17)                                                          |
+| B2  | The top of the skill ladder is flat: sloppy, good and fleeing foragers all fill the world to about 320, so small improvements do not show once the world saturates                                                                                                   | Same ladder; defaults before tuning were smoother (random died out slowly, each rung a little above the last)                                          | Same night: random brains die out slowly and each ladder rung beats the one below without saturating (user)                                                      |
+| B3  | Lineage diversity fell: `eval.lineages_alive` -59% and `eval.lineage_turnover` -45% against `E17`                                                                                                                                                                    | `E20`                                                                                                                                                  | Accepted for now; the biology features in Phase 2 address it (user)                                                                                              |
+| B4  | The anti-exploit bound counts food only, while `fitnessV1` pays bite energy: the scripted `hunter` scores 0.746 of the `foodSeeker` against a bound of 0.5 after jaws and `huntSizeRatio` 1.01 (about 680 bite energy against 260 food per agent in the micro-world) | `test/evo/anti-exploit.slow.test.js` on branch `feat/predator-prey-phase-2` (draft PR 39)                                                              | The anti-exploit bound counts all intake, food plus bite energy (user); applied in predator-prey.md Phase 2                                                      |
+| B5  | 16 seeds no longer separate seed sets on off-target metrics under a self-sustaining population: the calibration gave verdicts on `eval.floor_episodes` (-23.6%) and `eval.lineages_alive` (-20.9%)                                                                   | `E19`                                                                                                                                                  | Verdicts on `eval.floor_episodes`, the lineage metrics and `eval.predator_share_cv` need 32 seeds; 16 stays for the rest (user); Phase 1 adds `METRIC_MIN_SEEDS` |
+| B6  | Predators are uneven across seeds: `eval.predator_share_cv` rose from 0.05 to 0.99                                                                                                                                                                                   | `E20`                                                                                                                                                  | -                                                                                                                                                                |
+| B7  | The cold band below `temperatureColdStress` is close to absorbing: a `foodSeeker` started at 20 degrees rarely recovers; raising `temperatureGainEat` to 3, 4 or 6 did not help and cut births                                                                       | Cold-forager checks (2026-10-16) and the sweep's `temperatureGainEat` screens                                                                          | -                                                                                                                                                                |
+| B8  | Alarm calls are mostly noise: callers are rarely near kin (0.2 to 0.4 living kin per agent), so calls cannot be kin-selected; `eval.alarm_response` is small (0.0045)                                                                                                | Seed 1, 100000 ticks, events from tick 50000; T17 figures in `sim-notes.md`                                                                            | -                                                                                                                                                                |
+| B9  | Mating is rare against splitting (28 against 313 births in the 2026-10-16 check), so crossover barely acts                                                                                                                                                           | Same check                                                                                                                                             | -                                                                                                                                                                |
+| B10 | `bench.step_ms@500` has no headroom left: `main` measured 4.50 ms on 2026-10-17 at 04:00 and 4.67 to 4.80 ms later the same day on the same machine, against the 4.63 ms limit (4.03 baseline + 15%), so the local `bench-check` gate fails on `main` itself         | Predator-prey Phase 1 PR 37; `node scripts/bench-compare.mjs` on the renderer Phase 2 branch (head -1.7% against `main`)                               | Profile and optimise `sense` and `brain` (no baseline change), or the user re-baselines after the world gate                                                     |
+| B11 | A 7680 x 4320 world (exactly 2x 4K) is the preferred size for the display; it ran only with `obstacleCount` 10 and was not confirmed at 16 seeds                                                                                                                     | Sweep screens `d11`                                                                                                                                    | Next tuning night tunes at 7680 x 4320 and adopts it when it passes the world gate (user)                                                                        |
 
 ## Deliberate behaviour
 
@@ -45,17 +46,146 @@ recent actions show intent.
 | D7  | Smoke                | Smoke released within a short window of being bitten or with a hunter ahead, followed by an escape                                                                        | Smoke with no hunter near: earns nothing, and the release counts against the agent                                                            |
 | D8  | Defence              | Being bitten after the agent saw the hunter and still fled, turned away, released smoke, called or (for a defender) turned to face it; such bites are not held against it | Being bitten with the hunter on its rays and no response: counts against fitness. A bite from a hunter it never saw is luck and counts little |
 
-- Metrics: each row becomes an `eval.*` metric (for example `eval.deliberate_food_share`, `eval.pursuit_catch_share`,
-  `eval.pack_convergence`, `eval.evasion_skill`, `eval.group_cohesion_under_threat`, `eval.call_precision`,
-  `eval.smoke_precision`) so tuning nights and comparisons can target them.
 - Fitness: the fitness that replaces `fitnessV1` pays mostly for D1 to D8, discounts chance intake, and charges
-  wasted calls and smoke. The `fitnessV2` terms planned in [predator-prey.md](predator-prey.md) Phase 3 are
-  re-planned from this table before that phase is built.
-- Anti-exploit: scripted controllers for each "chance or waste" column (a drifter that eats only by contact, a
-  hunter that bites only what wanders into its jaws, call and smoke spammers) must score below the matching
-  deliberate controller.
-- The skill ladder gains rungs for each behaviour, so a tuning night can see that skill beats chance by a clear
-  margin at every step.
+  wasted calls and smoke. It is `fitnessV2` in [predator-prey.md](predator-prey.md) Phase 3, built on the per-agent
+  intent counters below.
+- The D8 response "turned to face it" is a bite back: no specialisation defends by other means.
+
+### Intent state
+
+`js/evo/observer-intent.js` keeps a per-slot intent state that `observe` in `js/evo/observer.js` updates every tick
+after `observeCombat`, from the state the step leaves behind: `world.inputs` (the rays the agent saw this tick),
+`world.outputs` (what it chose), `turnRate`, `bittenTimer`, `foodEnergy`, `biteEnergy`, `lineageId`, `x` and `y`.
+It draws no randomness, allocates nothing per tick and reads each agent's ray block once per tick. Ray `k` points
+`2 * PI * k / rayCount` from the heading; the **arc rays** are those within `biteArc` of the heading (rays 0, 1, 2,
+14 and 15 at the defaults), computed once at creation.
+
+| Constant             | Value | Meaning                                                                                       |
+| -------------------- | ----- | --------------------------------------------------------------------------------------------- |
+| `INTENT_WINDOW`      | 30    | Ticks a sighting stays current                                                                |
+| `CLOSING_BITS`       | 10    | Ticks of closing history read                                                                 |
+| `CLOSING_MIN`        | 6     | Of those ticks, how many must show the nearest target's proximity rising                      |
+| `RESPONSE_WINDOW`    | 30    | Ticks after the first bite of an episode in which a response still counts                     |
+| `THREAT_PROXIMITY`   | 0.5   | Proximity of a bigger-class hit that makes an agent threatened for the grouping sample        |
+| `GROUP_SAMPLE_TICKS` | 10    | Ticks between grouping samples                                                                |
+| `SIGNAL_LEVEL`       | 0.5   | An output above this counts as sprinting, calling, releasing smoke or biting for the response |
+
+Per slot, the state holds:
+
+- **Sightings:** the last tick with food on any ray, with a smaller-class hit on an arc ray (prey ahead), and with a
+  bigger-class hit on any ray (a threat), plus the side of the nearest threat.
+- **Closing histories:** two 16-bit shift registers, one for the nearest food hit and one for the nearest prey hit on
+  an arc ray; each tick shifts in 1 when that hit's proximity rose since the previous tick.
+- **Last response:** the last tick on which the agent, with a threat on its rays, turned away from the threat's side
+  (`turnRate` beyond `TURN_THRESHOLD x maxTurn`), sprinted, called an alarm, released smoke, or bit with the threat
+  on an arc ray.
+- **Energy marks:** `foodEnergy` and `biteEnergy` at the previous tick, so a rise is a meal or a bite this tick, and
+  whether the agent's last bite was deliberate.
+
+A meal is **deliberate** when food was on a ray within `INTENT_WINDOW` ticks and at least `CLOSING_MIN` of the last
+`CLOSING_BITS` food-closing bits are set. A bite is **deliberate** under the same rule on the prey sighting and prey
+closing history. A threat is **seen** before a bite when its sighting is within `INTENT_WINDOW` ticks of the bite; the
+victim **responded** when its last response falls between that sighting and `RESPONSE_WINDOW` ticks after the
+episode's first bite.
+
+### Intent counters
+
+`createIntentState(config)` also holds per-slot counters, cleared by `resetIntentSlot(intent, slot)` wherever
+`resetLifeSlot` clears the life counters. `fitnessV2` reads them.
+
+| Counter           | Counts                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| `deliberateFood`  | Food energy from deliberate meals                                                                    |
+| `chanceFood`      | Food energy from the other meals                                                                     |
+| `deliberateBite`  | Bite energy from deliberate bites                                                                    |
+| `chanceBite`      | Bite energy from the other bites                                                                     |
+| `respondedEscape` | Bite episodes on this agent that resolved `escaped` after a response                                 |
+| `preciseSignal`   | Alarm calls with a threat seen, hunt calls with prey ahead, smoke while bitten or with a threat seen |
+| `idleSignal`      | Calls and smoke releases that fail that rule                                                         |
+| `undefendedBite`  | Bites on this agent with the threat seen and no response                                             |
+| `unseenBite`      | Bites on this agent with no threat seen                                                              |
+
+`trackEpisode` in `js/evo/observer-combat.js` calls `noteEscape(intent, slot)` when an episode resolves `escaped`;
+`js/evo/observer-intent-events.js` classifies `AlarmCalled`, `PackCalled` and `SmokeReleased` events and the `eaten`
+deaths for D3.
+
+### Deliberate-behaviour metrics
+
+`intentMetrics(observer)` in `js/evo/metrics-intent.js` adds these to `computeMetrics`. Each is `null` with a reason
+when its denominator is 0.
+
+| #   | Metric                             | Better | Definition                                                                                                                                                                                                  |
+| --- | ---------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | `eval.deliberate_food_share`       | higher | Food energy from deliberate meals over all food energy eaten                                                                                                                                                |
+| D2  | `eval.pursuit_bite_share`          | higher | Bite energy from deliberate bites by `canHunt` agents over all bite energy gained by `canHunt` agents                                                                                                       |
+| D2  | `eval.pursuit_kill_share`          | higher | Of the deaths `eval.catch_rate` counts, the share whose killer's last bite was deliberate                                                                                                                   |
+| D3  | `eval.pack_convergence`            | higher | Of the deaths `eval.pack_kill_share` counts, the share where the killer's and the previous biter's last bites were both deliberate                                                                          |
+| D3  | `eval.hunt_call_answer`            | higher | Of `PackCalled` events, the share followed within `packWindow` ticks by a deliberate bite from a `canHunt` agent of the caller's lineage whose `heard` hunt loudness was above 0 on the tick after the call |
+| D4  | `eval.evasion_skill`               | higher | Of the episodes `eval.escape_rate` counts as escaped, the share whose victim responded                                                                                                                      |
+| D5  | `eval.group_cohesion_under_threat` | higher | Every `GROUP_SAMPLE_TICKS` ticks, the mean number of same-lineage agents without `canHunt` within `callRadius` of a threatened agent without `canHunt`, minus the same mean around unthreatened ones        |
+| D6  | `eval.alarm_precision`             | higher | Of `AlarmCalled` events, the share whose caller had a threat sighting within `INTENT_WINDOW` ticks                                                                                                          |
+| D6  | `eval.hunt_call_precision`         | higher | Of `PackCalled` events, the share whose caller had prey ahead within `INTENT_WINDOW` ticks                                                                                                                  |
+| D7  | `eval.smoke_precision`             | higher | Of `SmokeReleased` events, the share whose releaser was bitten within the 30 ticks before or had a threat sighting within `INTENT_WINDOW` ticks                                                             |
+| D6  | `eval.idle_signals_per_1k`         | lower  | Calls and smoke releases that fail their precision rule, per 1000 agent-ticks                                                                                                                               |
+| D8  | `eval.undefended_bite_share`       | lower  | Of bites on agents without `canHunt`, the share with the threat seen and no response                                                                                                                        |
+| D8  | `eval.unseen_bite_share`           | watch  | Of the same bites, the share with no threat seen                                                                                                                                                            |
+
+The rows join the Metrics table in [evolution-evals.md](evolution-evals.md) and `DIRECTIONS` in `js/evo/compare.js`.
+
+### Seed minimum per metric
+
+`METRIC_MIN_SEEDS` in `js/evo/compare.js` sets 32 seeds for `eval.floor_episodes`, `eval.lineages_alive`,
+`eval.lineage_turnover` and `eval.predator_share_cv`; every other metric keeps `MIN_SEEDS` (16). Below a metric's
+minimum, `compareMetric` gives no verdict and the note `needs 32 seeds`, and the rest of the report compares as
+before. `evals/seeds.json` holds 64 seeds, so a 32-seed calibration compares seeds 1-32 against 33-64. A metric
+that gives a verdict in its calibration (`E23` or `E24`) becomes `watch` in `DIRECTIONS`.
+
+### Chance-or-waste controllers
+
+`js/evo/scripted-intent.js` exports `INTENT_CONTROLLERS`, spread into `SCRIPTED_CONTROLLERS`, so the anti-exploit
+suite runs them too.
+
+| Controller        | Does                                                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `sloppyForager`   | Runs `foodSeeker` on half its 10-tick decision windows and `wanderer`'s drift on the rest, the choice drawn from its `rng` |
+| `jawSitter`       | Holds still with `BITE` set: bites only what enters its jaws                                                               |
+| `huntCallSpammer` | Runs `hunter` and sets the `HUNT` output every tick                                                                        |
+| `grouper`         | Runs `fleer`, and with a threat on its rays steers towards the nearest kin hit instead of straight away                    |
+
+`test/evo/deliberate-controllers.slow.test.js` runs each pair for 5000 ticks on seeds 1 and 2, in
+`evals/micro-world.json` for the forage pair and `evals/predator-world.json` (predators on even slots, foragers on
+odd) for the rest. The chance arm's metric is at most 0.5 x the skill arm's (for a `lower` metric, the skill arm's is
+at most 0.5 x the chance arm's); a `null` on the chance arm counts as 0, and a `null` on the skill arm fails the test.
+
+| #   | Metric                             | Chance arm                               | Skill arm                   |
+| --- | ---------------------------------- | ---------------------------------------- | --------------------------- |
+| D1  | `eval.deliberate_food_share`       | `wanderer`                               | `foodSeeker`                |
+| D2  | `eval.pursuit_bite_share`          | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
+| D3  | `eval.pack_convergence`            | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
+| D4  | `eval.evasion_skill`               | `hunter`, `foodSeeker` prey              | `hunter`, `fleer` prey      |
+| D5  | `eval.group_cohesion_under_threat` | `hunter`, `fleer` prey                   | `hunter`, `grouper` prey    |
+| D6  | `eval.alarm_precision`             | `hunter`, `alarmSpammer` prey            | `hunter`, `fleer` prey      |
+| D6  | `eval.hunt_call_precision`         | `huntCallSpammer`, `foodSeeker` prey     | `hunter`, `foodSeeker` prey |
+| D7  | `eval.smoke_precision`             | `hunter`, `smokeSpammer` prey            | `hunter`, `fleer` prey      |
+| D8  | `eval.undefended_bite_share`       | `hunter`, `foodSeeker` prey              | `hunter`, `fleer` prey      |
+
+### Skill ladder
+
+`npm run ladder` (`scripts/ladder.mjs`) runs every rung of `LADDER_RUNGS` in `js/evo/ladder.js` in the default world
+with `minAgents` 0, every agent driven by the rung's controllers, for 10000 ticks on seeds 1, 2 and 3, on the worker
+pool `npm run eval` uses. `runControllerSeed` in `js/evo/controller-run.js` runs one rung and seed and returns its
+metrics. Options: `--ticks`, `--seeds`, `--config <file.json>`, `--out <path>` (default
+`evals/ladder/<id>.json`), `--workers <n>`.
+
+| Ladder | Rungs, lowest first                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Forage | `random` (`natural-v1`'s random first genomes, in-world births only), `wanderer`, `sloppyForager`, `foodSeeker`, `fleer` |
+| Combat | predators `jawSitter` with `foodSeeker` prey, `hunter` with `foodSeeker` prey, `hunter` with `fleer` prey                |
+
+Each rung records the final population, `eval.food_energy_per_1k`, `eval.births_per_1k` and the D metrics, as the
+mean over its seeds. `ladderSummary(results, config)` gives, for each pair of neighbouring rungs, the ratio of their
+mean final populations, and flags a rung `saturated` when its mean final population reaches 0.9 x `maxAgents`. Phase
+1 records the ladder; Phase 2's tuning night gates on it.
 
 ## Tuning-night method
 
@@ -86,63 +216,92 @@ recent actions show intent.
 
 ### Phase 1 - Measure deliberate behaviour
 
-**Targets:** none - stub: instruments first; the D1 to D8 metrics are recorded for `baseline-v5` and the live policy
+**Targets:** none - instruments only: the D1 to D8 metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
-TBD - stub: planned in full with the `create-plan` skill: the D1 to D8 metrics, the per-metric seed minimum (B5), the
-chance-or-waste scripted controllers and the extended skill ladder.
+The intent state and counters, the thirteen metrics, the per-metric seed minimum with 64 seeds, the four
+controllers with the paired test, and `npm run ladder`. Done when the paired test passes, both calibrations
+(`E23`: live policy seeds 1-16 against 17-32; `E24`: seeds 1-32 against 33-64) are recorded with every metric that
+gave a verdict moved to `watch`, `E25` (`baseline-v5` against the live policy at seeds 1-32) records the D metrics of
+both, and the ladder at the defaults is recorded in [sim-notes.md](sim-notes.md).
 
-### Phase 2 - Reward deliberate behaviour and settle the balance
+### Phase 2 - Settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
 
-TBD - stub: the fitness built on D1 to D8 (re-planning `fitnessV2` in predator-prey.md Phase 3), then a tuning night
-at 7680 x 4320 aimed at B1 and B2 with the deliberate metrics on the scorecard.
+A tuning night at 7680 x 4320 aimed at B1 and B2 with the D metrics and the ladder on the scorecard, run after
+`fitnessV2` is live (predator-prey.md Phase 3). Planned in full with the `create-plan` skill (T15) before it is built.
 
 ### Phase 3 - Biology features
 
-**Targets:** none - stub: each feature is planned with its own metrics when this phase is written
+**Targets:** none - each feature's metrics are named when this phase is planned (T17)
 
-TBD - stub: written with the `create-plan` skill after Phase 2.
+The features listed under Biology features, planned in full with the `create-plan` skill after Phase 2.
 
 ## Delivery requirements
 
-| Concern                 | Requirement                                               |
-| ----------------------- | --------------------------------------------------------- |
-| Architecture            | TBD - stub: decided when the phases are planned           |
-| Unit tests              | TBD - stub: decided when the phases are planned           |
-| Headless e2e            | TBD - stub: decided when the phases are planned           |
-| Performance budget      | TBD - stub: `bench.step_ms@500` headroom is issue B10     |
-| Evolution metrics       | TBD - stub: the world gate in evolution-rework.md Phase 3 |
-| Determinism             | TBD - stub: decided when the phases are planned           |
-| Config and persistence  | TBD - stub: decided when the phases are planned           |
-| Logging and diagnostics | TBD - stub: decided when the phases are planned           |
-| Browser compatibility   | N/A - balance and biology live in `js/sim/` and `js/evo/` |
-| Docs                    | TBD - stub: decided when the phases are planned           |
-| Verification            | TBD - stub: decided when the phases are planned           |
+Phase 1 is planned below; Phases 2 and 3 add their rows when T15 and T17 plan them.
+
+| Concern                 | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture            | All in `js/evo/` and `scripts/`; nothing in `js/sim/` changes. New: `observer-intent.js` (`createIntentState`, `resetIntentSlot`, `updateIntent`, `noteEscape`, `arcRays`), `observer-intent-events.js` (`noteIntentEvents`, `noteIntentDeath`), `metrics-intent.js` (`intentMetrics`), `scripted-intent.js` (`INTENT_CONTROLLERS`), `controller-run.js` (`runControllerSeed`), `ladder.js` (`LADDER_RUNGS`, `ladderSummary`), `scripts/ladder.mjs`. Changed: `observer.js` (`createObserver` holds `observer.intent`; `observe` calls `updateIntent` and `noteIntentEvents`), `observer-combat.js` (`trackEpisode` calls `noteEscape`), `metrics.js`, `compare.js` (`METRIC_MIN_SEEDS`, `DIRECTIONS`), `scripted.js`, `evals/seeds.json`, `package.json` (`ladder` script). The live worker runs the same observer, so the counters exist in the browser for `fitnessV2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Unit tests              | `test/evo/observer-intent.test.js`: on hand-built worlds, a meal after 6 closing ticks is deliberate and after 5 is chance; a sighting 31 ticks old does not count; only the arc rays count for prey (rays 0, 1, 2, 14, 15 at 16 rays and `biteArc` `PI/4`); each response kind sets the last response and a turn towards the threat does not; `resetIntentSlot` clears a reused slot. `test/evo/observer-intent-events.test.js`: each call and smoke event precise and idle; `noteEscape` after a response and without one; pack convergence with one and both bites deliberate; a hunt call answered by a kin hearer, by a non-kin hearer and by a kin agent that did not hear. `test/evo/metrics-intent.test.js`: every metric on a hand-built observer, including each `null` reason. `test/evo/compare.test.js`: a 16-seed report gives `needs 32 seeds` for `eval.floor_episodes` and verdicts for the rest; 32 seeds give it a verdict. `test/evo/scripted-intent.test.js`: each controller writes valid outputs; `sloppyForager` replays from its seed. `test/evo/ladder.test.js`: `ladderSummary` ratios and the `saturated` flag on hand-built results; an unknown rung name throws naming it. `test/evo/deliberate-controllers.slow.test.js`: the pairs table. `test/evo/ladder.slow.test.js`: one rung, one seed, 500 ticks, writes a report. The new controllers join `test/evo/anti-exploit.slow.test.js` under its existing bounds |
+| Headless e2e            | The golden hashes in `test/sim/world-hash.test.js` are unchanged (the observer does not touch the world). `eval-smoke` runs with the new metrics present in its report                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Performance budget      | `bench.step_ms@500` is unchanged (the reference bench runs no observer). `npm run bench -- --policy map-elites-v1q --sizes=500` stays within 5% of its figure before T1, median of 5 runs on each side, both measured in the same session. `scripts/alloc-check.mjs` gains `--policy <name>`, which steps through `feedPolicy` with the observer, and reports no per-tick allocation for `map-elites-v1q`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Evolution metrics       | `E23` and `E24` calibrations on `map-elites-v1q` at 200000 ticks; a metric with a verdict moves to `watch`. `E25`: `baseline-v5` against `map-elites-v1q` at seeds 1-32 x 200000 ticks, recorded with every verdict and no done criterion. All three go in `evals/experiments.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Determinism             | The intent state draws no randomness, so reports replay from seed and config. `sloppyForager` draws from the `rng` its factory receives, so a ladder run replays from its seed. `evals/seeds.json` seeds 33 to 64 come from `createRng(64)` in `js/sim/rng.js`, 32 draws of `nextInt(rng, 1000000)`, generated once and committed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Config and persistence  | No `createConfig` keys. The constants in the Intent state table are named exports of `observer-intent.js`. Eval reports gain the thirteen metrics; the report format is otherwise unchanged and older reports compare with `-` for the new rows. `evals/ladder/<id>.json`: `{ id, config, seeds, ticks, rungs: [{ ladder, name, controllers, perSeed, mean }], summary }`. Archive and IndexedDB formats are unchanged                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Logging and diagnostics | `scripts/ladder.mjs` writes `.sim/logs/ladder-<id>.jsonl`: `LadderStarted` (info: id, rungs, seeds, ticks), `LadderRungDone` (info: ladder, rung, seed, population, foodEnergyPer1k, birthsPer1k), `LadderSaturated` (warn: ladder, rung, meanPopulation, maxAgents) and `LadderFailed` (error: rung, seed, message). `eval:compare` prints the `needs 32 seeds` note, and its `--json` rows carry `minSeeds`. A paired-test failure names the metric, both arms' values and the `null` reason. A rung is replayed with `npm run ladder -- --seeds 1 --ticks 10000` plus `--config`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Browser compatibility   | N/A - no browser API is added; the worker runs the extended observer like the eval workers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Docs                    | [evolution-evals.md](evolution-evals.md): the Metrics rows, the per-metric minimum in Compare, the controllers in the anti-exploit table. AGENTS.md: the `npm run ladder` command row. The `run-evolution-loop` skill: 32 seeds when a Target has a 32-seed minimum, and the ladder for every finalist. [predator-prey.md](predator-prey.md) Phase 3 names the intent counters. [sim-notes.md](sim-notes.md): the ladder at the defaults and the calibration findings. This doc becomes `In progress - Phase 1 built`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Verification            | The Verification section below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## Task breakdown
 
 ### Phase 1 - Measure deliberate behaviour
 
+| #   | Task                                                                                                                                                                      | Nature       | Depends on                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------ |
+| T1  | Add `scripts/alloc-check.mjs --policy`, and record the `npm run bench -- --policy map-elites-v1q --sizes=500` figure before any change                                    | [mechanical] | -                                                      |
+| T2  | Add `observer-intent.js` (sightings, closing histories, responses, energy marks, counters) and hook it into `observe` and `createObserver`, with tests                    | [judgement]  | -                                                      |
+| T3  | Add `observer-intent-events.js` (call and smoke precision, `noteEscape` from `trackEpisode`, pack convergence, hunt-call answers) and the grouping sample, with tests     | [judgement]  | T2                                                     |
+| T4  | Add `metrics-intent.js`, wire it into `computeMetrics`, add the `DIRECTIONS` rows and the Metrics table rows in evolution-evals.md, with tests                            | [judgement]  | T3                                                     |
+| T5  | Add `METRIC_MIN_SEEDS` and the `needs 32 seeds` note to `compare.js` and `eval:compare --json`, and the Compare text in evolution-evals.md, with tests                    | [mechanical] | -                                                      |
+| T6  | Extend `evals/seeds.json` to 64 seeds from `createRng(64)`, with the test that pins its length and first 32 values                                                        | [mechanical] | -                                                      |
+| T7  | Add `scripted-intent.js` (`sloppyForager`, `jawSitter`, `huntCallSpammer`, `grouper`), spread into `SCRIPTED_CONTROLLERS`, with tests; run the anti-exploit suite         | [judgement]  | -                                                      |
+| T8  | Add `test/evo/deliberate-controllers.slow.test.js` with the pairs table                                                                                                   | [judgement]  | T4, T7                                                 |
+| T9  | Add `controller-run.js`, `ladder.js`, `scripts/ladder.mjs` and `npm run ladder` with its log events, with tests                                                           | [judgement]  | T4, T7                                                 |
+| T10 | Measure `npm run bench -- --policy map-elites-v1q --sizes=500` against T1's figure and run `alloc-check --policy map-elites-v1q`; optimise `updateIntent` until both hold | [judgement]  | T1, T4                                                 |
+| T11 | Run `E23`, `E24` and `E25`, move any metric with a calibration verdict to `watch`, and record the three in `evals/experiments.json`                                       | [mechanical] | T4, T5, T6, T10                                        |
+| T12 | Run `npm run ladder` at the defaults and record it and the calibration findings in sim-notes.md                                                                           | [mechanical] | T9, T11                                                |
+| T13 | Update AGENTS.md, the `run-evolution-loop` skill, the evolution-evals.md anti-exploit table and predator-prey.md Phase 3                                                  | [mechanical] | T5, T8, T9                                             |
+| T14 | Conformance review of Phase 1                                                                                                                                             | [judgement]  | T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13 |
+
+### Phase 2 - Settle the balance
+
 | #   | Task                                              | Nature      | Depends on |
 | --- | ------------------------------------------------- | ----------- | ---------- |
-| T1  | Plan Phase 1 in full with the `create-plan` skill | [judgement] | -          |
-| T2  | Conformance review of Phase 1                     | [judgement] | T1         |
-
-### Phase 2 - Reward deliberate behaviour and settle the balance
-
-| #   | Task                                              | Nature      | Depends on |
-| --- | ------------------------------------------------- | ----------- | ---------- |
-| T3  | Plan Phase 2 in full with the `create-plan` skill | [judgement] | T2         |
-| T4  | Conformance review of Phase 2                     | [judgement] | T3         |
+| T15 | Plan Phase 2 in full with the `create-plan` skill | [judgement] | T14        |
+| T16 | Conformance review of Phase 2                     | [judgement] | T15        |
 
 ### Phase 3 - Biology features
 
 | #   | Task                                              | Nature      | Depends on |
 | --- | ------------------------------------------------- | ----------- | ---------- |
-| T5  | Plan Phase 3 in full with the `create-plan` skill | [judgement] | T4         |
-| T6  | Conformance review of Phase 3                     | [judgement] | T5         |
+| T17 | Plan Phase 3 in full with the `create-plan` skill | [judgement] | T16        |
+| T18 | Conformance review of Phase 3                     | [judgement] | T17        |
 
 ## Verification
 
-TBD - stub: written with the phases.
+1. `scripts/check.sh` is green, including `eval-smoke` and the golden test, and `scripts/check.sh --only=bench-check`
+   fails on nothing this phase adds (issue B10 is measured on `main` alongside it).
+2. `npx vitest run test/evo/deliberate-controllers.slow.test.js` passes: every chance arm is at most 0.5 x its skill
+   arm.
+3. `npx vitest run test/evo/anti-exploit.slow.test.js` passes with the four new controllers.
+4. `npm run bench -- --policy map-elites-v1q --sizes=500` is within 5% of T1's figure, and
+   `node --expose-gc scripts/alloc-check.mjs --policy map-elites-v1q` reports no per-tick allocation.
+5. `npm run eval:compare -- <seeds 1-16 report> <seeds 17-32 report>` prints `needs 32 seeds` for
+   `eval.floor_episodes` and no verdict on any D metric left `higher` or `lower`.
+6. `npm run ladder` writes `evals/ladder/<id>.json` with both ladders and the summary, and logs `LadderRungDone` for
+   every rung and seed.
+7. `E23`, `E24` and `E25` are in `evals/experiments.json` and pass `scripts/check-experiments.mjs`.
+8. Manual browser walk: none - nothing is drawn; the renderer's stats panel is unchanged.

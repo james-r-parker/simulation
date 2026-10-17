@@ -7,9 +7,9 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
-1. [Predator and prey](predator-prey.md) - finishes the world rules; tuning nights and the trainer build on them
-2. [Worker and renderer](worker-and-renderer.md) - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
-3. [World balance and biology](world-balance.md) - the world gate in evolution-rework.md Phase 3 needs these issues settled, and tuning is judged by watching the renderer (rank 2)
+1. [World balance and biology](world-balance.md) - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
+2. [Predator and prey](predator-prey.md) - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
+3. [Worker and renderer](worker-and-renderer.md) - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
 4. [Evolution rework](evolution-rework.md) - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and world-balance.md
 5. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
 6. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last stage of v6: nothing legacy is left and every doc describes the app as built
@@ -40,7 +40,7 @@ Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main` to `/next/` and every same-repo PR to a prev... _(validated b8567aa, 2026-10-16)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
-- [World balance and biology](world-balance.md) - stub: every known balance issue, deliberate-behaviour measures and fitness, the tuning-night method and the biology features; Phase 1 measures deliberate behavi... _(validated bd35cef, 2026-10-17)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
+- [World balance and biology](world-balance.md) - Phase 1 measures deliberate behaviour: the D1 to D8 metrics from per-agent intent counters, the per-metric seed minimum, the chance-or-waste controllers and the... _(validated 830e60a, 2026-10-17)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots _(validated 9f73367, 2026-10-15)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
 ## Reference (3)
