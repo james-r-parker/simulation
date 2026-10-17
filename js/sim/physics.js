@@ -77,6 +77,10 @@ function obstacleBounce(world, slot, k) {
     const reach = obsRadius[k] + size[slot];
     const dx = x[slot] - obsX[k];
     const dy = y[slot] - obsY[k];
+    // The distance is at least either axis gap, so a gap of `reach` or more is no contact: skip the square root.
+    if (Math.abs(dx) >= reach || Math.abs(dy) >= reach) {
+        return;
+    }
     const d = Math.sqrt(dx * dx + dy * dy);
     if (!(d < reach)) {
         return;
