@@ -9,6 +9,7 @@ import { createCameraController, resizeCamera } from './camera.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
+import { minPxTable } from './display-size.js';
 import { createGpuTimer } from './gpu-timer.js';
 import { createInterface } from './interface.js';
 import { installPerf } from './perf.js';
@@ -103,6 +104,7 @@ function observeSize(container, onSize) {
  * @property {import('./camera.js').CameraController} camera the view
  * @property {{width: number, height: number}} size the canvas in device pixels
  * @property {Record<string, any> | null} ready the newest `ready` message
+ * @property {number[]} minPx the least each specialisation is drawn across, from `ready`
  * @property {ReturnType<typeof createFrameStats>} stats the frame and draw rings `__perf` reports
  * @property {any} deps the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
  * @property {ReturnType<typeof createFrameLoop>} loop the frame loop
@@ -128,6 +130,7 @@ function attachGpuTimer(app) {
  */
 function onReady(app, message) {
     app.ready = message;
+    app.minPx = minPxTable(message.info);
     const world = { width: message.info.worldWidth, height: message.info.worldHeight };
     Object.assign(app.camera, createCameraController({ canvas: app.size, world }));
     if (app.deps.scene === null) {
@@ -164,6 +167,7 @@ function pointerOptions(app) {
     return {
         camera: app.camera,
         getAgents: app.loop.agents,
+        getMinPx: () => app.minPx,
         onPick(id) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
@@ -273,7 +277,7 @@ function createApp(container) {
     const camera = createCameraController({ canvas: { width: 1, height: 1 }, world: { width: 1, height: 1 } });
     const stats = createFrameStats(PERF_FRAMES);
     /** @type {App} */
-    const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null });
+    const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null, minPx: [] });
     app.size = { width: 1, height: 1 };
     app.deps = {
         getClient: () => app.supervisor.client(),

@@ -1,6 +1,7 @@
 // Packs the interpolated agents into the five meshes' instance arrays, one bucket per specialisation. Pure: no GL, and
 // nothing is allocated after `createAgentStore`.
 
+import { drawnRadius } from '../display-size.js';
 import { lineageColor } from './colors.js';
 
 /** Floats per vec4 attribute, and the attributes per instance: pose, colour, state and extra. */
@@ -24,6 +25,7 @@ export const JAW_RATE = 28;
  * @property {Bucket[]} buckets one per mesh
  * @property {Float32Array} jaw each slot's jaw openness, 0 to 1
  * @property {Int8Array} meshOfSpec the mesh index for each `spec`, -1 for an unknown one
+ * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
  */
 
@@ -31,9 +33,10 @@ export const JAW_RATE = 28;
  * @param {number} capacity the most agents (`maxAgents`)
  * @param {number} meshCount how many buckets
  * @param {ArrayLike<number>} meshOfSpec the mesh index for each specialisation index
+ * @param {ArrayLike<number>} minPx the least each mesh's agents are drawn across, in device px
  * @returns {AgentStore} an empty store
  */
-export function createAgentStore(capacity, meshCount, meshOfSpec) {
+export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
     const buckets = [];
     for (let i = 0; i < meshCount; i++) {
         buckets.push({
@@ -44,7 +47,13 @@ export function createAgentStore(capacity, meshCount, meshOfSpec) {
             count: 0,
         });
     }
-    return { buckets, jaw: new Float32Array(capacity), meshOfSpec: Int8Array.from(meshOfSpec), rgb: [0, 0, 0] };
+    return {
+        buckets,
+        jaw: new Float32Array(capacity),
+        meshOfSpec: Int8Array.from(meshOfSpec),
+        minPx: Float32Array.from(minPx),
+        rgb: [0, 0, 0],
+    };
 }
 
 /**
@@ -60,10 +69,11 @@ export function flashOf(timer) {
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {AgentStore} store the store
  * @param {Record<string, number>} bits `ready.layout.flags`
- * @param {number} dtMs the frame time
+ * @param {{dtMs: number, zoom: number}} view the frame time and the zoom in device px per world unit, which turns
+ *   each mesh's minimum width into the radius it is drawn at
  * @returns {void}
  */
-export function packAgents(agents, store, bits, dtMs) {
+export function packAgents(agents, store, bits, { dtMs, zoom }) {
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
@@ -84,7 +94,7 @@ export function packAgents(agents, store, bits, dtMs) {
         bucket.pose[o] = agents.x[i];
         bucket.pose[o + 1] = agents.y[i];
         bucket.pose[o + 2] = agents.angle[i];
-        bucket.pose[o + 3] = agents.size[i];
+        bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh], zoom);
         bucket.color[o] = rgb[0];
         bucket.color[o + 1] = rgb[1];
         bucket.color[o + 2] = rgb[2];
