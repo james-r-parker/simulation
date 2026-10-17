@@ -72,7 +72,7 @@ float sdPredator(vec2 p, float open) {
         if (all(c) || all(not(c))) sgn = -sgn;
     }
     float body = sgn * sqrt(d);
-    return max(body, -sdWedge(p, vec2(0.15, 0.0), uBiteArc * (0.22 + 0.78 * open)));
+    return max(body, -sdWedge(p, vec2(0.15, 0.0), uBiteArc * (0.3 + 0.7 * open)));
 }
 
 float sdHexagon(vec2 p, float r) {
@@ -118,18 +118,24 @@ void main() {
     float open = vState.w;
     float noseX;
     float d = body(vP, open, noseX);
-    float cover = 1.0 - smoothstep(-vPx, vPx, d);
     if (uShape > 0.5) {
-        float notch = 1.0 - smoothstep(-vPx, vPx, sdWedge(vP, vec2(noseX - 0.34, 0.0), 0.42));
-        cover *= 1.0 - 0.9 * notch * step(noseX - 0.34, vP.x);
+        // the heading notch is part of the body outline, so the rim follows it
+        d = max(d, -sdWedge(vP, vec2(noseX - 0.5, 0.0), 0.5));
     }
+    float cover = 1.0 - smoothstep(-vPx, vPx, d);
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
     float bright = 0.7 + 1.5 * vColor.a;
-    float halo = exp(-max(d, 0.0) * 3.8) * 0.45;
-    float membrane = exp(-abs(d) * 18.0) * 0.4;
-    float nucleus = exp(-dot(vP, vP) * 2.6) * 0.4;
-    vec3 rgb = base * bright * (cover * (0.8 + 0.2 * (1.0 - length(vP) * 0.5)) + halo * (1.0 - cover));
-    rgb += base * bright * membrane;
+    // The halo and the rim are sized in screen pixels (capped in radii for small agents), so zooming in never lets the
+    // glow swallow the silhouette: a luminous membrane around a darker body with a glowing core.
+    float haloWidth = min(0.263, 9.0 * vPx);
+    float rimWidth = min(2.2 * vPx, 0.12);
+    float halo = exp(-max(d, 0.0) / haloWidth) * 0.45;
+    float rim = exp(-abs(d) / rimWidth) * 1.0;
+    float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
+    float nucleus = exp(-dot(vP, vP) * 3.2) * 0.45;
+    float fill = 0.34 + 0.5 * edge;
+    vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
+    rgb += base * bright * rim * 0.85;
     rgb += mix(base, vec3(1.0), 0.4) * bright * nucleus * cover;
     if (uShape > 3.5) {
         rgb += base * bright * 0.9 * smoothstep(-0.2, -0.08, d) * (1.0 - smoothstep(-0.08, 0.0, d));
