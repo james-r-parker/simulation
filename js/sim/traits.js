@@ -2,6 +2,7 @@
 // `applyGenes` runs after every write of a weight row, so nothing derived is ever stale.
 
 import { detSigmoid } from './det-math.js';
+import { resetFastOut } from './hebbian.js';
 
 /** The smallest leak rate: a unit with a very negative leak gene still moves 5% toward its target each tick. */
 export const LEAK_MIN = 0.05;
@@ -23,6 +24,9 @@ export function leakRateOf(gene) {
  */
 export function applyGenes(world, slot) {
     const { config, layout, weights } = world;
+    if (config.hebbianRate > 0) {
+        resetFastOut(world, slot);
+    }
     if (config.leakEnabled) {
         const H = layout.hidden;
         const genes = slot * layout.weightCount + layout.leakStart;

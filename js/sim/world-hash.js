@@ -94,7 +94,7 @@ function bytesOf(world, name) {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -103,6 +103,7 @@ function buildViews(world) {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
         fields: FIELD_ARRAYS.map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
+        fastOut: bytesOf(world, 'fastOut'),
         rngSources: [],
         rngViews: [],
     };
@@ -163,6 +164,9 @@ export function hashWorld(world) {
     fnv64Bytes(digest, scalarBytes);
     for (const bytes of views.agents) {
         fnv64Bytes(digest, bytes);
+    }
+    if (world.config.hebbianRate > 0) {
+        fnv64Bytes(digest, views.fastOut);
     }
     fnv64Bytes(digest, views.hidden);
     for (const bytes of views.fields) {

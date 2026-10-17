@@ -1,6 +1,7 @@
 // Runs every alive agent's Elman RNN brain forward one step, in the contract's summation order.
 
 import { detTanh } from './det-math.js';
+import { hebbianStep } from './hebbian.js';
 
 /**
  * Adds each nonzero input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
@@ -117,12 +118,15 @@ function outputStep(world, slot) {
     const wBase = slot * layout.weightCount;
     const hBase = slot * H;
     const scratchBase = world.config.maxAgents * H;
-    const wOut = wBase + layout.wOut;
+    // With Hebbian learning on, the plastic copy of the block is read; the genome's block never changes in a life.
+    const plastic = world.config.hebbianRate > 0;
+    const block = plastic ? world.fastOut : weights;
+    const wOut = plastic ? slot * H * OUT : wBase + layout.wOut;
     const bOut = wBase + layout.bOut;
     for (let o = 0; o < OUT; o++) {
         let sum = weights[bOut + o];
         for (let j = 0; j < H; j++) {
-            sum += weights[wOut + j * OUT + o] * hidden[scratchBase + j];
+            sum += block[wOut + j * OUT + o] * hidden[scratchBase + j];
         }
         outputs[slot * OUT + o] = detTanh(sum);
     }
@@ -138,10 +142,14 @@ function outputStep(world, slot) {
  */
 export function forwardAll(world) {
     const { alive } = world;
+    const learn = world.config.hebbianRate > 0;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             hiddenStep(world, slot);
             outputStep(world, slot);
+            if (learn) {
+                hebbianStep(world, slot);
+            }
         }
     }
 }

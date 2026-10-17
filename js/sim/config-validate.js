@@ -172,6 +172,7 @@ const RULES = {
     packWindow: int(1),
     maxClouds: int(0, 256),
     leakEnabled: BOOL,
+    hebbianRate: num(0, 1),
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
