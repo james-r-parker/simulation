@@ -270,6 +270,17 @@ function refreshCache(log, world) {
 }
 
 /**
+ * Caches the alive agents' places without yielding effects, for a world just created: its initial population is not
+ * announced, but its first deaths and bites need their places and specialisations.
+ * @param {EffectLog} log the log
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+export function primeEffects(log, world) {
+    refreshCache(log, world);
+}
+
+/**
  * Turns the tick's events and the alive slots into effects: `BORN`, `DIED`, calls and smoke in record order, then a
  * `BITE` for each agent bitten this tick, then refreshes the position cache. Call it right after `step` and before the
  * observer sees the tick, so `slotOf` still holds the agents alive at the start of the tick.
