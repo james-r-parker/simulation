@@ -159,7 +159,7 @@ once per `callTicks`. Smoke does not block sound.
   `lastBiteTick`; it then sets `lastBiter` to the biter and `lastBiteTick` to the tick. `AgentDied` gains field 11,
   `prevBiter`, when the death is `eaten`, `prevBiter` is not 0 and the tick is at most `packWindow` ticks after
   `prevBiteTick`; otherwise 0. The three arrays are hashed with the agent arrays.
-- `huntSizeRatio` is 1.03 (tuned in E20 from 1.05, with `alarmCost` and `huntCallCost` 0.5, `maxFood` 1600 and
+- `huntSizeRatio` is 1.01 (tuned in E20 from 1.05 and then with the jaws from 1.03, with `alarmCost` and `huntCallCost` 0.5, `maxFood` 1600 and
   `foodTargetPerAgent` 12). A hunter bites a victim when `size[biter] > huntSizeRatio x size[victim]`, and the same
   ratio classes a ray hit as bigger, smaller or similar.
 - Jaws: a bite lands only when the victim's centre lies within `biteArc` (radians, half-angle) of the biter's heading:
@@ -212,26 +212,26 @@ default 4096). The check runs after the weight-float check and throws `eventCapa
 
 New keys in `createConfig`; the Source column names the legacy constant, as `config-defaults.js` does.
 
-| Key                                  | Type   | Default         | Source and rule                                                    |
-| ------------------------------------ | ------ | --------------- | ------------------------------------------------------------------ |
-| `antennaAngle`                       | number | 0.8             | new; 0 to `PI`                                                     |
-| `antennaReach`                       | number | 150             | new; above 0 (1.5 pheromone cells)                                 |
-| `callRadius`                         | number | 300             | from `SHOUT_BASE_RANGE` (200); above 0                             |
-| `callTicks`                          | int    | 60              | `SHOUT_DURATION_FRAMES`; 1 to 65535                                |
-| `alarmCost`                          | number | 0.5             | new; 0 or more; tuned (E20), was 4                                 |
-| `huntCallCost`                       | number | 0.5             | new; 0 or more; tuned (E20), was 4                                 |
-| `smokeCost`                          | number | 20              | new; 0 or more                                                     |
-| `smokeRadius`                        | number | 80              | new; above 0                                                       |
-| `smokeTicks`                         | int    | 180             | new; 1 to 65535                                                    |
-| `smokeCooldown`                      | int    | 600             | new; 0 to 65535                                                    |
-| `smokeThreshold`                     | number | 0.8             | new; 0 to 1                                                        |
-| `packWindow`                         | int    | 120             | new; 1 or more                                                     |
-| `maxClouds`                          | int    | 32              | new; 0 to 256                                                      |
-| `huntSizeRatio`                      | number | 1.03            | from `PREDATOR_SIZE_RATIO_THRESHOLD` (1.1); 1 or more; tuned (E20) |
-| `biteArc`                            | number | PI / 4 (0.7854) | new: half-angle of the forward bite arc; above 0, at most PI       |
-| `specialisations.<s>.biteMultiplier` | number | 1               | new; above 0; predator 4                                           |
-| `specialisations.<s>.turnMultiplier` | number | 1               | new; above 0; predator 0.7                                         |
-| `specialisations.<s>.sprintBoost`    | number | 1               | from `PREDATOR_ADRENALINE_SPEED_MULT` (1.3); above 0; predator 1.6 |
+| Key                                  | Type   | Default         | Source and rule                                                          |
+| ------------------------------------ | ------ | --------------- | ------------------------------------------------------------------------ |
+| `antennaAngle`                       | number | 0.8             | new; 0 to `PI`                                                           |
+| `antennaReach`                       | number | 150             | new; above 0 (1.5 pheromone cells)                                       |
+| `callRadius`                         | number | 300             | from `SHOUT_BASE_RANGE` (200); above 0                                   |
+| `callTicks`                          | int    | 60              | `SHOUT_DURATION_FRAMES`; 1 to 65535                                      |
+| `alarmCost`                          | number | 0.5             | new; 0 or more; tuned (E20), was 4                                       |
+| `huntCallCost`                       | number | 0.5             | new; 0 or more; tuned (E20), was 4                                       |
+| `smokeCost`                          | number | 20              | new; 0 or more                                                           |
+| `smokeRadius`                        | number | 80              | new; above 0                                                             |
+| `smokeTicks`                         | int    | 180             | new; 1 to 65535                                                          |
+| `smokeCooldown`                      | int    | 600             | new; 0 to 65535                                                          |
+| `smokeThreshold`                     | number | 0.8             | new; 0 to 1                                                              |
+| `packWindow`                         | int    | 120             | new; 1 or more                                                           |
+| `maxClouds`                          | int    | 32              | new; 0 to 256                                                            |
+| `huntSizeRatio`                      | number | 1.01            | from `PREDATOR_SIZE_RATIO_THRESHOLD` (1.1); 1 or more; tuned (E20, jaws) |
+| `biteArc`                            | number | PI / 4 (0.7854) | new: half-angle of the forward bite arc; above 0, at most PI             |
+| `specialisations.<s>.biteMultiplier` | number | 1               | new; above 0; predator 4                                                 |
+| `specialisations.<s>.turnMultiplier` | number | 1               | new; above 0; predator 0.7                                               |
+| `specialisations.<s>.sprintBoost`    | number | 1               | from `PREDATOR_ADRENALINE_SPEED_MULT` (1.3); above 0; predator 1.6       |
 
 The three specialisation fields join `SPECIALISATION_FIELDS` in `config-validate.js`, so each specialisation must
 carry them. All keys are in `rulesHash`. T8b sets the predator multipliers and
