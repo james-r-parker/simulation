@@ -458,18 +458,26 @@ hash, and changes `inputs` and expects the same one.
 
 ## `snapshot.js`
 
-`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride }`. The buffer is
-one `ArrayBuffer` read through a `Float32Array` and a `Uint32Array` view:
+`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride, rayStride }`.
+`bytes` covers every part at its maximum, rays included. The buffer is one `ArrayBuffer` read through a `Float32Array` and
+a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it and allocates nothing:
 
-| Words                                                    | Contents                                                                                                        |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Header, 5 (`Uint32`)                                     | `tick`, agent count, food count, obstacle count, cloud count                                                    |
-| Agents, `agentStride` 9 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`) |
-| Food, 3 each, alive only                                 | `x`, `y`, `radius` (`Float32`)                                                                                  |
-| Obstacles, 3 each                                        | `x`, `y`, `radius` (`Float32`)                                                                                  |
-| Clouds, `cloudStride` 3 each, live only                  | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                   |
+| Words                                                     | Contents                                                                                                                                                                                                  |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header, 6 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                         |
+| Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
+| Food, 3 each, alive only                                  | `x`, `y`, `radius` (`Float32`)                                                                                                                                                                            |
+| Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`)                                                                                                                                                                            |
+| Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                             |
+| Rays, `rayCount` per agent, only when `withRays`          | Ray `k`'s proximity (channel 0 of the agent's inputs row, `1 - distance / visionRange`, 0 for a miss), in agent order                                                                                     |
 
-Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleCount` and `maxClouds`.
+`speed` is `sqrt(vx x vx + vy x vy)` in world units per tick. `SNAPSHOT_FLAG` names the `flags` bits: the `ate` and
+`bitten` timers (`ateTimer`, `bittenTimer`, 0 to `TIMER_CAP`) in 5-bit fields at bits 0 and 5, then `JAW_OPEN` (bit 10: the
+specialisation has `canHunt` and the `BITE` output is above 0), `ALARMING` (11, `alarmTimer` above 0), `HUNT_CALLING` (12,
+`huntTimer` above 0) and `PREGNANT` (13, `pregnancy` above 0).
+
+Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleCount`, `maxClouds` and the
+ray part. A snapshot is not part of `worldHash`.
 
 ## Tooling and tasks
 
