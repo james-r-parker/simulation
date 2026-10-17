@@ -50,4 +50,24 @@ describe('dependency rules', () => {
     it('rejects an import cycle in js/sim', async () => {
         expect(await violations('cycle')).toContain('no-circular');
     });
+
+    it('accepts a js/app module importing only js/worker/protocol.js', async () => {
+        expect(await violations('app-ok')).toEqual([]);
+    });
+
+    it('rejects a js/app module importing js/sim', async () => {
+        expect(await violations('app-sim')).toContain('app-boundary');
+    });
+
+    it('rejects a js/app module importing a js/worker module other than the protocol', async () => {
+        expect(await violations('app-worker')).toContain('app-boundary');
+    });
+
+    it('rejects a js/worker module importing js/app', async () => {
+        expect(await violations('worker-app')).toContain('worker-no-dom');
+    });
+
+    it('rejects a js/worker module importing three', async () => {
+        expect(await violations('worker-three')).toContain('worker-no-dom');
+    });
 });

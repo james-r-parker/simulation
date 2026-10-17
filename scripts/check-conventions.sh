@@ -6,6 +6,8 @@
 # - The headless sim (js/sim/, js/evo/) never touches the DOM, three, navigator, Math.random, Date.now or
 #   performance.now: runs must replay from seed and config (docs/designs/STYLE.md, Tests and diagnostics).
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
+# - Every module under js/worker/ and js/app/ has a test at the mirrored path (test/worker/, test/app/), except the
+#   browser shells in BROWSER_SHELLS, which test/browser/app.spec.js covers (docs/designs/worker-and-renderer.md).
 # - Legacy code only shrinks: each js/*.js and js/constants/*.js file stays within its line count in
 #   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (docs/coding-standards.md).
 #   Lower a budget when a file shrinks; remove the entry when the file is deleted.
@@ -18,6 +20,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # preview.mp4 predates this gate; moving it to a release asset is a separate change.
 LARGE_FILE_ALLOWLIST=("preview.mp4")
 LARGE_FILE_BYTES=$((5 * 1024 * 1024))
+
+# Shells that need a real worker, window, WebGL context or AudioContext; the browser spec covers them.
+BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/renderer/scene.js" "js/app/renderer/bloom.js" "js/app/audio/engine.js")
 
 violations=0
 fail() { echo "$1"; violations=$((violations + 1)); }
@@ -43,6 +48,14 @@ for file in "${sim_files[@]}"; do
 done
 
 for file in "${sim_files[@]}"; do
+  test_file="test/${file#js/}"
+  test_file="${test_file%.js}.test.js"
+  [[ -f "$test_file" ]] || fail "$file: no test at $test_file - every module ships with its tests"
+done
+
+mapfile -t app_files < <(git ls-files --cached --others --exclude-standard -- 'js/worker/*.js' 'js/worker/**/*.js' 'js/app/*.js' 'js/app/**/*.js')
+for file in "${app_files[@]}"; do
+  [[ " ${BROWSER_SHELLS[*]} " == *" $file "* ]] && continue
   test_file="test/${file#js/}"
   test_file="${test_file%.js}.test.js"
   [[ -f "$test_file" ]] || fail "$file: no test at $test_file - every module ships with its tests"
@@ -100,4 +113,4 @@ if [[ $violations -gt 0 ]]; then
   echo "$violations convention violation(s)"
   exit 1
 fi
-echo "Conventions hold (${#sim_files[@]} sim files checked)."
+echo "Conventions hold (${#sim_files[@]} sim files, ${#app_files[@]} worker and app files checked)."

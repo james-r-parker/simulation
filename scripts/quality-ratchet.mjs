@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { compareMutation, listSurvivors, raiseMutation, scoreScopes } from './lib/mutation-score.mjs';
 
 /** Scopes the ratchet tracks, as repo-relative path prefixes. */
-const SCOPES = ['js/sim', 'js/evo', 'scripts'];
+const SCOPES = ['js/sim', 'js/evo', 'js/worker', 'js/app', 'scripts'];
 /** Coverage metrics tracked per scope. */
 const METRICS = ['lines', 'branches', 'functions', 'statements'];
 /** Percentage points a metric may fall below its baseline before the check fails. */

@@ -22,7 +22,14 @@ export default [
     js.configs.recommended,
     // Coding standards (docs/coding-standards.md and the AGENTS.md size limits): small single-purpose modules and functions.
     {
-        files: ['js/sim/**/*.js', 'js/evo/**/*.js', 'js/dev/**/*.js', 'scripts/**/*.{js,mjs}'],
+        files: [
+            'js/sim/**/*.js',
+            'js/evo/**/*.js',
+            'js/dev/**/*.js',
+            'js/worker/**/*.js',
+            'js/app/**/*.js',
+            'scripts/**/*.{js,mjs}',
+        ],
         plugins: { jsdoc },
         rules: {
             'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
@@ -38,6 +45,8 @@ export default [
             'js/sim/**/*.js',
             'js/evo/**/*.js',
             'js/dev/**/*.js',
+            'js/worker/**/*.js',
+            'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
             'test/**/*.js',
             '*.config.js',
@@ -110,6 +119,49 @@ export default [
                 { selector: "AssignmentExpression[operator='**=']", message: POW_MSG },
             ],
         },
+    },
+    // The worker (docs/designs/worker-and-renderer.md): worker globals, but no DOM, no wall clock and no timers or ports
+    // of its own - `postMessage`, `setTimeout` and the clock arrive as injected functions that `sim-worker.js` binds.
+    {
+        files: ['js/worker/**/*.js'],
+        languageOptions: { globals: { ...globals.worker } },
+        rules: {
+            'no-restricted-globals': [
+                'error',
+                ...['window', 'document', 'navigator', 'localStorage', 'requestAnimationFrame'].map((name) => ({
+                    name,
+                    message: 'The worker never touches the DOM.',
+                })),
+                ...[
+                    'postMessage',
+                    'setTimeout',
+                    'clearTimeout',
+                    'setInterval',
+                    'clearInterval',
+                    'MessageChannel',
+                    'self',
+                ].map((name) => ({
+                    name,
+                    message: 'Take it as an injected function; only sim-worker.js binds the real one.',
+                })),
+                { name: 'performance', message: 'Take `now` as an injected function.' },
+            ],
+            'no-restricted-properties': [
+                'error',
+                { object: 'Math', property: 'random', message: 'Use js/sim/rng.js so runs are replayable.' },
+                { object: 'Date', property: 'now', message: 'Take `now` as an injected function.' },
+                { object: 'performance', property: 'now', message: 'Take `now` as an injected function.' },
+            ],
+            'no-restricted-imports': ['error', { paths: ['three', 'uplot'], patterns: ['three/*', '../app/*'] }],
+        },
+    },
+    {
+        files: ['js/worker/sim-worker.js'],
+        rules: { 'no-restricted-globals': 'off', 'no-restricted-properties': 'off' },
+    },
+    {
+        files: ['js/app/**/*.js'],
+        languageOptions: { globals: { ...globals.browser } },
     },
     {
         files: ['scripts/**/*.{js,mjs}', 'test/**/*.js', '*.config.js'],
