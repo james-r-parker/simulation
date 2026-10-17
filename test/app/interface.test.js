@@ -13,7 +13,9 @@ const { ready, snapshot } = selectedWorld();
 class FakeUPlot {
     static made = /** @type {FakeUPlot[]} */ ([]);
     static paths = { bars: () => 'bars' };
-    constructor() {
+    /** @param {any} opts */
+    constructor(opts) {
+        this.opts = opts;
         this.destroyed = false;
         FakeUPlot.made.push(this);
     }
@@ -385,5 +387,21 @@ describe('createInterface', () => {
         setClock(1300);
         ui.tick(1300);
         expect(byClass(elements.hud, 'peek')[0].hidden).toBe(true);
+    });
+
+    it('colours the family river from the slots and rebuilds the charts for a new world while the drawer is open', async () => {
+        FakeUPlot.made.length = 0;
+        const { ui } = setup();
+        ui.listeners.onReady(ready);
+        ui.hooks.toggleDrawer('charts');
+        await Promise.resolve();
+        await Promise.resolve();
+        ui.listeners.onStats({ tick: 5, lineages: { top: [{ id: 4, share: 0.6 }] }, bySpec: [] });
+        ui.tick(5000);
+        const river = FakeUPlot.made[1];
+        expect(river.opts.series[2].fill()).toMatch(/^rgb\(/);
+        ui.listeners.onReady(ready);
+        expect(FakeUPlot.made.filter((u) => u.destroyed)).toHaveLength(5);
+        expect(FakeUPlot.made).toHaveLength(10);
     });
 });

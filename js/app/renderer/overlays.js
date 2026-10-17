@@ -1,16 +1,9 @@
 // The selected agent's overlays and the trails: its rays at their hit lengths, its two antennae, its call range, the trails
 // of the selected agent and the leading lineage, and the follow marker, all as line segments in one preallocated buffer.
 
-import {
-    AdditiveBlending,
-    BufferAttribute,
-    BufferGeometry,
-    DynamicDrawUsage,
-    LineBasicMaterial,
-    LineSegments,
-} from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
 import { PALETTE } from './colors.js';
+import { createLineMesh } from './line-mesh.js';
 import { clearLines, createLineBuffer, pushCircle, pushRay, pushVertex, setLineColor } from './line-buffer.js';
 import { createTrails, recordTrails, trackTrails, TRAIL_AGENTS, TRAIL_POINTS, trailIndex } from './trails.js';
 
@@ -188,21 +181,10 @@ export function createOverlays({ info }) {
     const lines = createLineBuffer(capacity);
     const trails = createTrails();
     const wanted = new Uint32Array(TRAIL_AGENTS);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new BufferAttribute(lines.position, 3).setUsage(DynamicDrawUsage));
-    geometry.setAttribute('color', new BufferAttribute(lines.color, 4).setUsage(DynamicDrawUsage));
-    const material = new LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-        blending: AdditiveBlending,
-    });
-    const object = new LineSegments(geometry, material);
-    object.frustumCulled = false;
+    const mesh = createLineMesh(lines);
     let lastTick = -1;
     return {
-        object,
+        object: mesh.object,
         update(frame) {
             if (frame.snapshot !== null && frame.snapshot.tick !== lastTick) {
                 lastTick = frame.snapshot.tick;
@@ -222,13 +204,8 @@ export function createOverlays({ info }) {
             pushSelected(frame, info, lines);
             pushMarker(frame, lines, setMarker(frame.selectedId, 0.4, 1.7));
             pushMarker(frame, lines, setMarker(frame.followId, 0.8, 2.2));
-            geometry.getAttribute('position').needsUpdate = true;
-            geometry.getAttribute('color').needsUpdate = true;
-            geometry.setDrawRange(0, lines.vertices);
+            mesh.upload();
         },
-        dispose() {
-            geometry.dispose();
-            material.dispose();
-        },
+        dispose: mesh.dispose,
     };
 }
