@@ -3,12 +3,13 @@
 import { brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { LOCAL_STRIDE } from './ray-gather.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
 
 /** Elements of the per-world ray-march scratch row. */
-export const RAY_SCRATCH = 19;
+export const RAY_SCRATCH = 12;
 
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
@@ -208,7 +209,9 @@ export function allocateWorld(config) {
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
         rayScratch: new Float64Array(RAY_SCRATCH),
-        nearObstacles: new Int32Array(config.obstacleCount),
+        rayLocal: new Float64Array(
+            LOCAL_STRIDE * (config.maxAgents + config.maxFood + config.obstacleCount + config.maxClouds),
+        ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(config.brainHidden),
     };
