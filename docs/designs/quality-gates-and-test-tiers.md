@@ -109,7 +109,9 @@ two-core runner with coverage they made the `test` gate take about 285 s. They l
   `test/replay.slow.test.js`, `test/league.slow.test.js`, `test/bench.slow.test.js`, `test/bench-policy.slow.test.js`,
   `test/otel.slow.test.js`, `test/evo/policies/map-elites-v1.slow.test.js` and `natural-v1.slow.test.js`).
 - A suite with no single mirrored module is slow as a whole: `test/sim/golden.slow.test.js`,
-  `test/sim/step-alloc.slow.test.js` and `test/evo/anti-exploit.slow.test.js`.
+  `test/sim/step-alloc.slow.test.js` and `test/evo/anti-exploit.slow.test.js`. The exception is
+  `test/sim/golden.test.js`: the `shortCases` of `test/sim/golden.json` (the same worlds cut to 300 ticks, with their own
+  pinned hashes) run in the fast tier, so every PR checks bit-exact determinism.
 - New slow tests go in a `.slow.test.js` file; a test that takes more than about half a second on the dev machine is
   a candidate. The fast tests still cover every module's behaviour at unit level.
 
