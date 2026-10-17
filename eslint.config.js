@@ -161,7 +161,7 @@ export default [
     },
     {
         files: ['js/app/**/*.js'],
-        languageOptions: { globals: { ...globals.browser } },
+        languageOptions: { globals: { ...globals.browser, __PRODUCTION__: 'readonly' } },
     },
     {
         files: ['scripts/**/*.{js,mjs}', 'test/**/*.js', '*.config.js'],

@@ -41,10 +41,10 @@ export function recordFrame(stats, intervalMs, drawMs, hidden = false) {
 }
 
 /**
- * @param {Float64Array} values unsorted samples
+ * @param {Float64Array} values unsorted samples; sorted in place
  * @returns {{p50: number, p95: number, p99: number}} their percentiles, rounded to 2 decimals
  */
-function spread(values) {
+export function spread(values) {
     const sorted = values.sort();
     const r = (/** @type {number} */ p) => Math.round(percentile(sorted, p) * 100) / 100;
     return { p50: r(50), p95: r(95), p99: r(99) };

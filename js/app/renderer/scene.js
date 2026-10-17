@@ -191,6 +191,20 @@ function createRenderer() {
 }
 
 /**
+ * Frees every layer and builds them again from `buildLayers`, at the current size and quality level.
+ * @param {Rig} rig the rig
+ * @param {() => void} disposeAll frees the old layers and the bloom
+ * @returns {void}
+ */
+function rebuildRig(rig, disposeAll) {
+    disposeAll();
+    rig.built = build(rig);
+    resizeRig(rig, rig.size.width, rig.size.height);
+    setLevel(rig, rig.quality.level);
+    rig.lost = false;
+}
+
+/**
  * Stops drawing while the context is lost and rebuilds every layer when it comes back.
  * @param {Rig} rig the rig
  * @param {HTMLCanvasElement} canvas the canvas the events fire on
@@ -204,11 +218,7 @@ function watchContext(rig, canvas, { disposeAll, onRestored }) {
         appLog('warn', 'ContextLost');
     };
     const onRestore = () => {
-        disposeAll();
-        rig.built = build(rig);
-        resizeRig(rig, rig.size.width, rig.size.height);
-        setLevel(rig, rig.quality.level);
-        rig.lost = false;
+        rebuildRig(rig, disposeAll);
         appLog('info', 'ContextRestored');
         onRestored?.();
     };
@@ -226,7 +236,7 @@ function watchContext(rig, canvas, { disposeAll, onRestored }) {
  *   the layers (and is called again after a context restore); `quality` pins a level
  * @returns {{canvas: HTMLCanvasElement, renderer: any, quality: import('./quality.js').Quality,
  *   resize: (width: number, height: number) => void, draw: (frame: Frame) => boolean,
- *   setQualityLevel: (level: number) => void, isLost: () => boolean, dispose: () => void}} the scene
+ *   setQualityLevel: (level: number) => void, rebuild: () => void, isLost: () => boolean, dispose: () => void}} the scene
  */
 export function createScene({ container, info, buildLayers, quality = null, onRestored }) {
     const renderer = createRenderer();
@@ -256,6 +266,7 @@ export function createScene({ container, info, buildLayers, quality = null, onRe
         resize: (w, h) => resizeRig(rig, w, h),
         draw: (frame) => drawRig(rig, frame),
         setQualityLevel: (level) => setLevel(rig, level),
+        rebuild: () => rebuildRig(rig, disposeAll),
         isLost: () => rig.lost,
         dispose() {
             unwatch();

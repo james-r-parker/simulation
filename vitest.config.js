@@ -18,6 +18,7 @@ export default defineConfig({
             exclude: [
                 // Browser shells: they need a real worker or window and are covered by test/browser/app.spec.js.
                 'js/worker/sim-worker.js',
+                'js/app/main.js',
                 'js/app/renderer/scene.js',
                 'js/app/renderer/bloom.js',
                 'scripts/alloc-check.mjs',
