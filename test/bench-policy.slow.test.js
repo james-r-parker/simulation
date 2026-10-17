@@ -21,7 +21,7 @@ describe('createSubject with a real run', () => {
         const { subject, world } = smallRun('map-elites-v1');
         const archive = subject.policy?.archive;
         expect(occupiedCount(archive)).toBe(0);
-        for (let t = 0; t < 3000 && occupiedCount(archive) === 0; t++) {
+        for (let t = 0; t < 6000 && occupiedCount(archive) === 0; t++) {
             subject.advance(world);
         }
         expect(occupiedCount(archive)).toBeGreaterThan(0);

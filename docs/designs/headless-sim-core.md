@@ -87,7 +87,7 @@ gives every key's type and range.
 | `worldWidth`, `worldHeight`                                    | `14400`, `8100`                   | `WORLD_WIDTH`, `WORLD_HEIGHT`                                                                                     |
 | `maxAgents`, `initialAgents`, `minAgents`                      | `500`, `100`, `100`               | new (`minAgents` raised from 20 on 2026-10-16, [sim-notes.md](sim-notes.md))                                      |
 | `immigrationInterval`                                          | `600`                             | new                                                                                                               |
-| `maxFood`, `initialFood`                                       | `800`, `300`                      | new; `FOOD_SPAWN_CAP`                                                                                             |
+| `maxFood`, `initialFood`                                       | `1600`, `300`                     | new; `FOOD_SPAWN_CAP` (800); tuned, E20                                                                           |
 | `foodSpawnRate`                                                | `0.02`                            | `FOOD_SPAWN_RATE`                                                                                                 |
 | `foodEnergy`, `foodEnergyVariance`                             | `100`, `20`                       | `FOOD_ENERGY_NORMAL_BASE` (raised), `FOOD_ENERGY_NORMAL_VARIANCE`                                                 |
 | `highFoodChance`, `highFoodEnergy`, `highFoodEnergyVariance`   | `0.1`, `140`, `50`                | `HIGH_VALUE_FOOD_CHANCE`, `FOOD_ENERGY_HIGH_BASE`, `FOOD_ENERGY_HIGH_VARIANCE`                                    |
@@ -322,7 +322,7 @@ movementCost x speed^2 x m + turnCost x |turnRate| x m) x energyDrain`, where `m
 ### Food, zones and pheromones
 
 - **Spawning.** Each tick the expected number of new food is `foodSpawnRate x maxAgents / 20 x foodScarcity x b`,
-  where the target is `min(maxFood, max(50, 8 x population))` and `b` is `1 + 4 x (1 - food / target)` below the
+  where the target is `min(maxFood, max(50, foodTargetPerAgent x population))` and `b` is `1 + 4 x (1 - food / target)` below the
   target and `0.2` at or above it. The whole part spawns, and one more with probability equal to the fraction (a
   `food` draw). Nothing spawns at `maxFood`.
 - **Position.** With probability `fertileZoneSpawnChance` and any zones alive, food spawns in a zone chosen by

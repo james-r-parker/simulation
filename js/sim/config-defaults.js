@@ -23,7 +23,7 @@ export const DEFAULTS = deepFreeze({
     initialAgents: 100, // new
     minAgents: 100, // new
     immigrationInterval: 600, // new
-    maxFood: 800, // FOOD_SPAWN_CAP
+    maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
     foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
@@ -58,7 +58,7 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
-    huntSizeRatio: 1.05, // PREDATOR_SIZE_RATIO_THRESHOLD
+    huntSizeRatio: 1.03, // tuned, E20 (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates
@@ -149,7 +149,7 @@ export const DEFAULTS = deepFreeze({
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
     mateChanceScale: 1.5, // new
-    foodTargetPerAgent: 8, // new
+    foodTargetPerAgent: 12, // tuned, E20
     foodTargetMin: 50, // new
     foodRefillBoost: 4, // new
     foodSurplusRate: 0.2, // new
@@ -178,8 +178,8 @@ export const DEFAULTS = deepFreeze({
     antennaReach: 150, // new: 1.5 pheromone cells
     callRadius: 300, // SHOUT_BASE_RANGE (200)
     callTicks: 60, // SHOUT_DURATION_FRAMES
-    alarmCost: 4, // new
-    huntCallCost: 4, // new
+    alarmCost: 0.5, // tuned, E20
+    huntCallCost: 0.5, // tuned, E20
     smokeCost: 20, // new
     smokeRadius: 80, // new
     smokeTicks: 180, // new

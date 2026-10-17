@@ -36,7 +36,7 @@ describe('a scripted hunter against a stationary prey', () => {
         expect(world.biteEnergy[HUNTER]).toBeGreaterThan(0);
     });
 
-    // The same needs a hunter just over the 5% size margin, which the huntSizeRatio of 1.05 allows.
+    // The same needs a hunter just over the size margin, which the huntSizeRatio of 1.03 allows.
     it('kills the prey within 120 ticks with a hunter just over the size margin', () => {
         const world = createArena({ gap: 200, hunterEnergy: 1200 });
         const { diedAt } = watch(world, { ticks: KILL_TICKS, prey: stillBrain });
@@ -45,9 +45,9 @@ describe('a scripted hunter against a stationary prey', () => {
 });
 
 describe('a sprinting prey turning away from the hunter', () => {
-    // The hunter only chases a prey in the smaller class, which needs the huntSizeRatio of 1.05 at this size margin.
+    // The hunter only chases a prey in the smaller class, which the huntSizeRatio of 1.03 allows at this size margin (1060 energy is a size ratio of 1.037).
     it('is not bitten while the hunter, which is just over the size margin, burns its burst', () => {
-        const world = createArena({ gap: 200, hunterEnergy: 1200, preyHeading: Math.PI / 2 });
+        const world = createArena({ gap: 200, hunterEnergy: 1060, preyHeading: Math.PI / 2 });
         const { bites, pursuit, diedAt } = watch(world, { ticks: ESCAPE_TICKS, prey: fleeBrain(false) });
         expect(bites).toBe(0);
         expect(diedAt).toBe(-1);

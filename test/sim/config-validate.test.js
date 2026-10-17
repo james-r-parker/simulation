@@ -181,7 +181,7 @@ describe('validateConfig cross-key rules', () => {
     });
 
     it('rejects initialFood above maxFood', () => {
-        expect(() => createConfig({ initialFood: 900 })).toThrow(/initialFood.*maxFood/);
+        expect(() => createConfig({ maxFood: 800, initialFood: 900 })).toThrow(/initialFood.*maxFood/);
     });
 
     it('rejects obstacleMinRadius above obstacleMaxRadius', () => {
