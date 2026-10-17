@@ -174,6 +174,7 @@ export const DEFAULTS = deepFreeze({
     temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
     temperatureEfficiencyHeatModerate: 0.9, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE (tuned, E17)
     temperatureEfficiencyHeatSevere: 0.6, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE (tuned, E17)
+    biteArc: Math.PI / 4, // new: half-angle of the forward bite arc, radians
     antennaAngle: 0.8, // new: radians either side of the heading
     antennaReach: 150, // new: 1.5 pheromone cells
     callRadius: 300, // SHOUT_BASE_RANGE (200)

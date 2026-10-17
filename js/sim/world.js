@@ -203,6 +203,7 @@ export function allocateWorld(config) {
         biteBySpec: specTable(config, 'biteMultiplier'),
         turnBySpec: specTable(config, 'turnMultiplier'),
         sprintBySpec: specTable(config, 'sprintBoost'),
+        biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,

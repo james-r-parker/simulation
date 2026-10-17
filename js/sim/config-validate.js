@@ -153,6 +153,7 @@ const RULES = {
     temperatureEfficiencyHeatModerate: EFFICIENCY,
     temperatureEfficiencyHeatSevere: EFFICIENCY,
     antennaAngle: num(0, PI),
+    biteArc: { type: 'num', gt: 0, max: PI },
     antennaReach: positive(),
     callRadius: positive(),
     callTicks: int(1, MAX_U16),

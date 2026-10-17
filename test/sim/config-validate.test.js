@@ -130,6 +130,8 @@ describe('validateConfig predator-prey keys', () => {
     it.each([
         ['antennaAngle', -0.1],
         ['antennaAngle', 3.2],
+        ['biteArc', 0],
+        ['biteArc', 3.2],
         ['antennaReach', 0],
         ['callRadius', 0],
         ['callTicks', 0],
@@ -153,7 +155,9 @@ describe('validateConfig predator-prey keys', () => {
 
     it('accepts each key at its bounds', () => {
         expect(() => createConfig({ antennaAngle: 0, alarmCost: 0, smokeCooldown: 0, maxClouds: 0 })).not.toThrow();
-        expect(() => createConfig({ antennaAngle: Math.PI, callTicks: 65535, maxClouds: 256 })).not.toThrow();
+        expect(() =>
+            createConfig({ antennaAngle: Math.PI, biteArc: Math.PI, callTicks: 65535, maxClouds: 256 }),
+        ).not.toThrow();
     });
 
     it.each(['biteMultiplier', 'turnMultiplier', 'sprintBoost'])('rejects a zero %s', (field) => {

@@ -52,6 +52,7 @@ describe('allocateWorld', () => {
         expect(Array.from(w.turnBySpec)).toEqual([1, 0.7, 1, 1, 1]);
         expect(Array.from(w.sprintBySpec)).toEqual([1, 1.6, 1, 1, 1]);
         expect(w.antennaCos).toEqual(new Float64Array([detCos(0.5)]));
+        expect(smallWorld({ biteArc: 0.5 }).biteCos).toEqual(new Float64Array([detCos(0.5)]));
         expect(w.antennaSin).toEqual(new Float64Array([detSin(0.5)]));
     });
 
