@@ -233,7 +233,7 @@ Unused fields are 0.
   ascending index with `nextFloat x total fertility`; the position; then
   `energy = base + (2 nextFloat - 1) x variance`. A zone position is `r = fertileZoneRadius x Math.sqrt(nextFloat)`,
   `theta = nextFloat x 2 PI` around the centre, clamped to `[radius, size - radius]`, and redrawn the same way while
-  it lies in an obstacle, up to `placementTries`. It takes the lowest free food slot, with age 0.
+  it lies in an obstacle, up to `placementTries`, after which it places uniformly with `placeClear`. It takes the lowest free food slot, with age 0.
 - `spawnAgent(world, config, policy, cause)` uses the `spawn` stream: allocates the slot; sets `genomeId = nextId++`,
   `lineageId = genomeId`, `parentA = parentB = 0`; spec from `policy.initSpec` or `nextInt(spawn, 5)`; then
   `policy.initBrain` with the `brain-init` stream; then the position by `placeClear` with the radius for
