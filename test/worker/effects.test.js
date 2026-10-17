@@ -8,6 +8,7 @@ import {
     EFFECT_WORDS,
     collectEffects,
     createEffectLog,
+    primeEffects,
     writeEffects,
 } from '../../js/worker/effects.js';
 import { smallWorld } from '../sim/helpers/small-world.js';
@@ -186,6 +187,22 @@ describe('collectEffects', () => {
         const log = createEffectLog(world.config.maxAgents);
         collectEffects(log, world, NO_SLOTS);
         expect(drain(log).count).toBe(0);
+    });
+});
+
+describe('primeEffects', () => {
+    it('caches the alive places without yielding effects, so a first-tick death has a place', () => {
+        const world = smallWorld();
+        place(world, 1, { x: 7, y: 8, genomeId: 21, lineageId: 6, spec: 1 });
+        event(world, EVENT_TYPE.AGENT_BORN, [1, 21, 6, 1, 0, 0, BORN_CAUSE.INITIAL]);
+        const log = createEffectLog(world.config.maxAgents);
+        primeEffects(log, world);
+        expect(drain(log).count).toBe(0);
+        clearEvents(world.events);
+        world.alive[1] = 0;
+        event(world, EVENT_TYPE.AGENT_DIED, [1, 21, DEATH_CAUSE.STARVED, 0, 1, 6]);
+        collectEffects(log, world, NO_SLOTS);
+        expect(drain(log).floats[0].slice(2, 4)).toEqual([7, 8]);
     });
 });
 
