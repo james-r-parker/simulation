@@ -713,7 +713,7 @@ Phases 1 to 3 are planned below; Phase 4 adds its rows when T15 plans it.
    `eval.floor_episodes` and no verdict on any D metric left `higher` or `lower`.
 6. `npm run ladder` writes `evals/ladder/<id>.json` with both ladders and the summary, and logs `LadderRungDone` for
    every rung and seed.
-7. `E25` is in `evals/experiments.json` and pass `scripts/check-experiments.mjs`.
+7. `E25` is in `evals/experiments.json` and passes `scripts/check-experiments.mjs`.
 8. `npm run eval:power -- <64-seed live report>` prints a false-positive rate and a detectable change for every metric.
 9. Phase 2: `npm run browser:hash` prints the re-pinned golden hashes from a Chromium worker, and `E26` and `E27` are
    in `evals/experiments.json`.
