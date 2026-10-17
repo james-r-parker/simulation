@@ -265,7 +265,8 @@ Added to `SCRIPTED_CONTROLLERS` from `scripted-combat.js`; they write all `OUTPU
 | `alarmSpammer` | Seeks food and sets the `ALARM` output every tick                                                                                                                                                                                                  |
 | `smokeSpammer` | Seeks food and sets the `SMOKE` output every tick                                                                                                                                                                                                  |
 
-`evals/predator-world.json` is `evals/micro-world.json` with a test policy whose `initSpec` gives the predator
+`evals/predator-world.json` is `evals/micro-world.json` plus `initialEnergy` 3000 (the micro-world's 800 lets foragers starve
+while sprinting before any survives the 300 ticks that count as an escape), with a test policy whose `initSpec` gives the predator
 specialisation to even slots and the forager to odd slots; `hunter` runs on the predators and `fleer` on the foragers.
 
 ## Fitness v2
