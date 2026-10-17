@@ -57,6 +57,239 @@ body {
     color: #ffd27a;
 }
 
+[hidden] {
+    display: none !important;
+}
+
+#hud.hud-hidden {
+    display: none;
+}
+
+#top-bar .top-bar-seasonBox {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+}
+
+.season-ring {
+    --p: 0%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: conic-gradient(var(--text) var(--p), rgba(255, 255, 255, 0.15) 0);
+}
+
+.top-bar-types {
+    display: inline-flex;
+    gap: 12px;
+}
+
+.top-bar-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.control {
+    pointer-events: auto;
+    font: inherit;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.control:hover,
+.control.on {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.control:focus-visible {
+    outline: 2px solid #6cc6ff;
+}
+
+.control-seed {
+    width: 9ch;
+    cursor: text;
+    font-variant-numeric: tabular-nums;
+}
+
+.control-seed.invalid {
+    border-color: #ff5d73;
+}
+
+#ticker {
+    position: fixed;
+    left: 14px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: none;
+    max-width: 60vw;
+}
+
+.ticker-line {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--text);
+    transition: opacity 0.2s linear;
+}
+
+.ticker-extinct,
+.ticker-pack-kill {
+    color: #ff9aa8;
+}
+
+.ticker-new-leader,
+.ticker-elite {
+    color: #9ef0c8;
+}
+
+.drawer {
+    position: fixed;
+    top: var(--bar-height);
+    right: 0;
+    bottom: 0;
+    width: min(30vw, 440px);
+    min-width: 280px;
+    box-sizing: border-box;
+    padding: 12px;
+    overflow-y: auto;
+    background: rgba(4, 6, 10, 0.88);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.18s ease-out;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.drawer.open {
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+}
+
+.drawer h3 {
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.help-keys {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    margin: 0;
+}
+
+.help-keys dt {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.help-keys dd {
+    margin: 0;
+    color: var(--text-dim);
+}
+
+.inspector-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.inspector-radar,
+.inspector-heatmap {
+    display: block;
+    width: 150px;
+    height: 150px;
+    margin: 8px 0;
+}
+
+.bar-group {
+    margin: 10px 0 4px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.bar-row {
+    display: grid;
+    grid-template-columns: 11ch 1fr;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.bar-row.firing {
+    color: #ffd27a;
+}
+
+.bar-track {
+    position: relative;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #ff9a3c;
+}
+
+.bar-fill.neg {
+    background: #4a86ff;
+}
+
+.inspector-counters {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 12px 0 0;
+    font-size: 12px;
+}
+
+.counter-label {
+    color: var(--text-dim);
+}
+
+.counter-value {
+    margin: 0;
+}
+
+.toasts {
+    position: fixed;
+    left: 14px;
+    top: calc(var(--bar-height) + 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.toast {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: rgba(20, 24, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.uplot,
+.uplot .u-legend {
+    font-size: 11px;
+}
+
 .app-message {
     position: fixed;
     inset: 0;

@@ -49,8 +49,8 @@ const COUNTER_AT = Object.freeze({
  * @property {{label: string, text: string}[]} counters the counters as text
  */
 
-/** @type {InspectorView} */
-const INVALID = Object.freeze({
+/** The view of nothing selected. @type {InspectorView} */
+export const NO_INSPECTION = Object.freeze({
     valid: false,
     header: { spec: '', specIndex: -1, lineageId: 0, familyName: '', genomeId: 0 },
     radar: { lengths: new Float32Array(0), channels: new Int8Array(0) },
@@ -182,7 +182,7 @@ export function inspectorView({ snapshot, ready }) {
     const { layout, info, labels } = ready;
     const at = layout.inspectOffset;
     if (snapshot.u32.length <= at + 2 || snapshot.u32[at + 2] !== 1) {
-        return INVALID;
+        return NO_INSPECTION;
     }
     const genomeId = snapshot.u32[at];
     const inputsAt = at + 3;
