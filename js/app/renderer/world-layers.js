@@ -21,6 +21,18 @@ const FOOD_MIN_PX = 1.4;
 export const OBSTACLE_RIM_PX = 2;
 
 const SECTIONS = createSections();
+const PART = { start: 0, count: 0 };
+
+/**
+ * @param {number} start the first float of the records
+ * @param {number} count how many records
+ * @returns {{start: number, count: number}} a shared scratch, valid until the next call
+ */
+function bodyPart(start, count) {
+    PART.start = start;
+    PART.count = count;
+    return PART;
+}
 
 /**
  * Packs `x, y, radius, phase` records from a snapshot's 3-word records. The phase offsets each dot's twinkle by its
@@ -82,7 +94,7 @@ export function createFoodLayer({ info }) {
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packBodies(frame.snapshot.f32, { start: s.foodStart, count: s.foodCount }, packed);
+            const count = packBodies(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packed);
             uploadInstances(mesh, { iBody: packed }, count);
         },
         dispose() {
@@ -118,7 +130,7 @@ export function createObstacleLayer({ info }) {
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packBodies(frame.snapshot.f32, { start: s.obstacleStart, count: s.obstacleCount }, packed);
+            const count = packBodies(frame.snapshot.f32, bodyPart(s.obstacleStart, s.obstacleCount), packed);
             uploadInstances(mesh, { iBody: packed }, count);
         },
         dispose() {

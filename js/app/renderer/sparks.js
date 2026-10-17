@@ -58,6 +58,9 @@ export function createSparkPool(seed = 1) {
     };
 }
 
+const WHERE = { kind: 0, x: 0, y: 0 };
+const SHAPE = { angle: 0, reach: 0, size: 0, tick: 0, life: 0 };
+
 /**
  * @param {SparkPool} pool the pool
  * @param {{kind: number, x: number, y: number}} where kind and origin
@@ -76,7 +79,9 @@ function add(pool, where, shape, rgb) {
     pool.size[i] = shape.size;
     pool.startTick[i] = shape.tick;
     pool.lifeTicks[i] = shape.life;
-    pool.rgb.set([rgb[0], rgb[1], rgb[2]], i * 3);
+    pool.rgb[i * 3] = rgb[0];
+    pool.rgb[i * 3 + 1] = rgb[1];
+    pool.rgb[i * 3 + 2] = rgb[2];
 }
 
 /**
@@ -100,34 +105,37 @@ function add(pool, where, shape, rgb) {
 export function spawnBurst(pool, burst) {
     const { x, y, tick, size } = burst;
     const turn = pool.prng.next() * Math.PI * 2;
+    WHERE.x = x;
+    WHERE.y = y;
+    SHAPE.tick = tick;
     if (burst.kind === 'bite') {
+        WHERE.kind = STREAK;
+        SHAPE.reach = size * 1.6;
+        SHAPE.size = size * 0.8;
+        SHAPE.life = BITE_TICKS;
         for (let k = 0; k < BITE_STREAKS; k++) {
-            const shape = {
-                angle: turn + (k * 2 * Math.PI) / BITE_STREAKS,
-                reach: size * 1.6,
-                size: size * 0.8,
-                tick,
-                life: BITE_TICKS,
-            };
-            add(pool, { kind: STREAK, x, y }, shape, PALETTE.biteFlash);
+            SHAPE.angle = turn + (k * 2 * Math.PI) / BITE_STREAKS;
+            add(pool, WHERE, SHAPE, PALETTE.biteFlash);
         }
         return BITE_STREAKS;
     }
     const born = burst.kind === 'born';
     const count = born ? BIRTH_MOTES : DEATH_MOTES;
+    WHERE.kind = MOTE;
+    SHAPE.size = size * 0.2;
+    SHAPE.life = born ? BIRTH_MOTE_TICKS : DEATH_TICKS;
     for (let k = 0; k < count; k++) {
-        const angle = turn + (k * 2 * Math.PI) / count + pool.prng.next() * 0.5;
-        const reach = size * (born ? 1.6 : 2.4) * (0.6 + 0.8 * pool.prng.next());
-        const shape = { angle, reach, size: size * 0.2, tick, life: born ? BIRTH_MOTE_TICKS : DEATH_TICKS };
-        add(pool, { kind: MOTE, x, y }, shape, burst.rgb);
+        SHAPE.angle = turn + (k * 2 * Math.PI) / count + pool.prng.next() * 0.5;
+        SHAPE.reach = size * (born ? 1.6 : 2.4) * (0.6 + 0.8 * pool.prng.next());
+        add(pool, WHERE, SHAPE, burst.rgb);
     }
     if (burst.eaten === true) {
-        add(
-            pool,
-            { kind: FLASH, x, y },
-            { angle: 0, reach: 0, size: size * 1.4, tick, life: EATEN_FLASH_TICKS },
-            PALETTE.eatenFlash,
-        );
+        WHERE.kind = FLASH;
+        SHAPE.angle = 0;
+        SHAPE.reach = 0;
+        SHAPE.size = size * 1.4;
+        SHAPE.life = EATEN_FLASH_TICKS;
+        add(pool, WHERE, SHAPE, PALETTE.eatenFlash);
         return count + 1;
     }
     return count;

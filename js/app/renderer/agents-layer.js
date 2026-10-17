@@ -156,7 +156,9 @@ export function createAgentsLayer({ info, flagBits }) {
         update(frame) {
             updateUniforms(shared, frame);
             packAgents(frame.agents, store, flagBits, frame.dtMs);
-            meshes.forEach((mesh, i) => upload(mesh, store.buckets[i]));
+            for (let i = 0; i < meshes.length; i++) {
+                upload(meshes[i], store.buckets[i]);
+            }
         },
         dispose() {
             for (const mesh of meshes) {

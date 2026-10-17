@@ -62,6 +62,11 @@ export function trackedIds(agents, pick, out) {
 }
 
 const RAY = { angle: 0, length: 0 };
+const ME = { x: 0, y: 0, angle: 0, vision: 0 };
+const RAYS = { f32: /** @type {Float32Array} */ (new Float32Array(0)), start: 0, count: 0 };
+const CIRCLE = { x: 0, y: 0, radius: 0, sides: 0 };
+const TRAIL_STYLE = { t: 0, rgb: MARKER_COLOR, alpha: 0 };
+const MARKER = { id: 0, alpha: 0, scale: 0 };
 
 /**
  * Adds the rays at their hit lengths: ray `k` points `2 PI k / rayCount` from the heading and reaches
@@ -112,16 +117,18 @@ function pushSelected(frame, info, lines) {
     if (i < 0) {
         return;
     }
-    const me = {
-        x: agents.x[i],
-        y: agents.y[i],
-        angle: agents.angle[i],
-        vision: info.specs[agents.spec[i]]?.visionRange ?? 0,
-    };
+    const me = ME;
+    me.x = agents.x[i];
+    me.y = agents.y[i];
+    me.angle = agents.angle[i];
+    me.vision = info.specs[agents.spec[i]]?.visionRange ?? 0;
     if (frame.snapshot !== null) {
         const s = readSections(frame.snapshot.u32, SECTIONS);
         if (s.rayCount > 0) {
-            pushRays(lines, me, { f32: frame.snapshot.f32, start: s.rayStart + i * s.rayCount, count: s.rayCount });
+            RAYS.f32 = frame.snapshot.f32;
+            RAYS.start = s.rayStart + i * s.rayCount;
+            RAYS.count = s.rayCount;
+            pushRays(lines, me, RAYS);
         }
     }
     setLineColor(lines, ANTENNA_COLOR, 0.55);
@@ -131,7 +138,24 @@ function pushSelected(frame, info, lines) {
     RAY.angle = me.angle + info.antennaAngle;
     pushRay(lines, me.x, me.y, RAY);
     setLineColor(lines, PALETTE.alarmRing, 0.14);
-    pushCircle(lines, { x: me.x, y: me.y, radius: info.callRadius, sides: CIRCLE_SIDES });
+    CIRCLE.x = me.x;
+    CIRCLE.y = me.y;
+    CIRCLE.radius = info.callRadius;
+    CIRCLE.sides = CIRCLE_SIDES;
+    pushCircle(lines, CIRCLE);
+}
+
+/**
+ * @param {number} id the agent to ring
+ * @param {number} alpha how strongly
+ * @param {number} scale how wide, in agent radii
+ * @returns {{id: number, alpha: number, scale: number}} a shared scratch, valid until the next call
+ */
+function setMarker(id, alpha, scale) {
+    MARKER.id = id;
+    MARKER.alpha = alpha;
+    MARKER.scale = scale;
+    return MARKER;
 }
 
 /**
@@ -146,7 +170,11 @@ function pushMarker(frame, lines, marker) {
     if (i >= 0) {
         setLineColor(lines, MARKER_COLOR, marker.alpha);
         const radius = agents.size[i] * marker.scale + 6 / frame.camera.zoom;
-        pushCircle(lines, { x: agents.x[i], y: agents.y[i], radius, sides: MARKER_SIDES });
+        CIRCLE.x = agents.x[i];
+        CIRCLE.y = agents.y[i];
+        CIRCLE.radius = radius;
+        CIRCLE.sides = MARKER_SIDES;
+        pushCircle(lines, CIRCLE);
     }
 }
 
@@ -185,12 +213,14 @@ export function createOverlays({ info }) {
             for (let t = 0; t < TRAIL_AGENTS; t++) {
                 const mine = trails.ids[t] === frame.selectedId;
                 if (trails.ids[t] !== 0) {
-                    pushTrail(lines, trails, { t, rgb: MARKER_COLOR, alpha: mine ? 0.5 : 0.1 });
+                    TRAIL_STYLE.t = t;
+                    TRAIL_STYLE.alpha = mine ? 0.5 : 0.1;
+                    pushTrail(lines, trails, TRAIL_STYLE);
                 }
             }
             pushSelected(frame, info, lines);
-            pushMarker(frame, lines, { id: frame.selectedId, alpha: 0.4, scale: 1.7 });
-            pushMarker(frame, lines, { id: frame.followId, alpha: 0.8, scale: 2.2 });
+            pushMarker(frame, lines, setMarker(frame.selectedId, 0.4, 1.7));
+            pushMarker(frame, lines, setMarker(frame.followId, 0.8, 2.2));
             geometry.getAttribute('position').needsUpdate = true;
             geometry.getAttribute('color').needsUpdate = true;
             geometry.setDrawRange(0, lines.vertices);
