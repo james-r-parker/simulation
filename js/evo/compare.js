@@ -18,6 +18,7 @@ const DIRECTIONS = {
     'eval.population_mean': 'watch',
     'eval.floor_episodes': 'lower',
     'eval.born_share': 'watch',
+    'eval.mating_share': 'watch',
     'eval.predation_per_1k': 'watch',
     'eval.diversity': 'higher',
     'eval.lineages_alive': 'higher',
