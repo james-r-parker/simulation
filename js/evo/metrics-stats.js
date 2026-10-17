@@ -68,3 +68,13 @@ export function quantile(values, p) {
 export function per1k(amount, agentTicks) {
     return agentTicks > 0 ? ok((amount / agentTicks) * 1000) : none('no agent-ticks');
 }
+
+/**
+ * @param {number} part the numerator
+ * @param {number} whole the denominator
+ * @param {string} reason the reason when `whole` is 0
+ * @returns {MetricResult} `part / whole`, or `null` with the reason
+ */
+export function share(part, whole, reason) {
+    return whole > 0 ? ok(part / whole) : none(reason);
+}
