@@ -30,6 +30,9 @@ import { createQuality, QUALITY_LEVELS, supportsFloatTargets } from './quality.j
  * @property {{tick: number, u32: Uint32Array, f32: Float32Array} | null} snapshot the newest snapshot
  * @property {import('../camera.js').CameraController} camera the view
  * @property {{temperature: boolean, scent: boolean, territory: boolean, vision: boolean, calls: boolean}} lenses
+ * @property {number} selectedId the selected agent's genome id, 0 for none
+ * @property {number} followId the followed agent's genome id, 0 for none
+ * @property {number} leadLineageId the leading lineage's id, 0 for none
  */
 
 /**
