@@ -7,7 +7,7 @@ import { RUNG_METRICS } from '../js/evo/controller-run.js';
 import { LADDER_RUNGS, ladderSummary } from '../js/evo/ladder.js';
 import { createConfig } from '../js/sim/config.js';
 import { gitSha } from './eval.mjs';
-import { intValue, parseFlags } from './lib/cli-args.mjs';
+import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
@@ -186,15 +186,11 @@ export async function runLadder(options) {
  * @returns {Promise<number>} the process exit code
  */
 export async function main(argv, { logDir } = {}) {
-    try {
+    return exitCodeOf(async () => {
         const args = parseArgs(argv);
         const configOverrides = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
         await runLadder({ ...args, configOverrides, logDir, print: (line) => console.log(line) });
-        return 0;
-    } catch (error) {
-        console.error(error instanceof Error ? error.message : String(error));
-        return 1;
-    }
+    });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
