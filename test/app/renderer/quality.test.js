@@ -117,6 +117,22 @@ describe('stepQuality', () => {
         expect(createQuality({ pinned: 0, floatTargets: false }).level).toBe(2);
     });
 
+    it('starts at level 2 on a software renderer, and a pin still wins', () => {
+        expect(createQuality({ software: true }).level).toBe(2);
+        expect(createQuality({ software: true }).floor).toBe(0);
+        expect(createQuality({ software: true, pinned: 0 }).level).toBe(0);
+        expect(createQuality({ software: true, pinned: 1 }).level).toBe(1);
+        expect(createQuality({ software: false }).level).toBe(0);
+    });
+
+    it('lets the rule step a software renderer up once it is fast', () => {
+        const q = createQuality({ software: true });
+        for (let t = 0; t <= UP_AFTER_MS + 1000; t += 500) {
+            stepQuality(q, fast, t);
+        }
+        expect(q.level).toBe(1);
+    });
+
     it('doubles the wait before stepping up from the second reversal within 10 minutes, to at most 10 minutes', () => {
         const q = createQuality();
         let t = hold(q, slow, 0, 10000);

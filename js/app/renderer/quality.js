@@ -41,13 +41,15 @@ const MIN_FRAMES = 60;
  */
 
 /**
- * @param {{pinned?: number | null, floatTargets?: boolean}} [options] `pinned` holds a level; `floatTargets` false
- *   (no float render targets for bloom) holds level 2
- * @returns {Quality} the quality state, at level 0 unless pinned or limited
+ * @param {{pinned?: number | null, floatTargets?: boolean, software?: boolean}} [options] `pinned` holds a level;
+ *   `floatTargets` false (no float render targets for bloom) holds level 2; `software` (a CPU rasteriser) starts at
+ *   level 2 but leaves the rule free to move it
+ * @returns {Quality} the quality state, at level 0 unless pinned, limited or software
  */
-export function createQuality({ pinned = null, floatTargets = true } = {}) {
+export function createQuality({ pinned = null, floatTargets = true, software = false } = {}) {
     const floor = floatTargets ? 0 : 2;
-    const level = pinned === null ? floor : Math.max(floor, Math.min(2, pinned));
+    const start = software ? 2 : floor;
+    const level = pinned === null ? start : Math.max(floor, Math.min(2, pinned));
     return {
         level,
         pinned,
