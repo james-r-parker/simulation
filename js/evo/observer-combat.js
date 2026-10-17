@@ -5,6 +5,7 @@
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
+import { BITTEN_THIS_TICK, noteEscape } from './observer-intent-episode.js';
 import { createSmokeFollow, noteSmokeRelease, resolveSmoke } from './observer-smoke.js';
 
 export { ALARM_RESPONSE_TICKS } from './observer-alarm.js';
@@ -15,8 +16,8 @@ export const ESCAPE_TICKS = 300;
 /** The `knownAgents` and `diedAt` maps are pruned when `world.tick` divides by this. */
 export const PRUNE_TICKS = 256;
 
-/** After a step, `bittenTimer` is 1 exactly when `feed` reset it this tick (`applyCosts` then adds 1). */
-const BITTEN_THIS_TICK = 1;
+/** What `killKind` returns: not a hunter's kill, a hunter's kill, a kill by two hunters of one lineage. */
+export const KILL = Object.freeze({ NONE: 0, HUNT: 1, PACK: 2 });
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -81,6 +82,27 @@ function isKnownHunter(combat, genomeId) {
 }
 
 /**
+ * @param {Record<string, any>} combat the combat counters
+ * @param {number} killer the killer's genome id
+ * @param {number} previous the previous biter's genome id, or 0
+ * @returns {number} a `KILL` value: a hunter's kill when the killer is a known `canHunt` agent, and a pack kill when
+ *   the previous biter is a hunter of the killer's lineage too
+ */
+export function killKind(combat, killer, previous) {
+    if (!isKnownHunter(combat, killer)) {
+        return KILL.NONE;
+    }
+    if (previous !== 0 && isKnownHunter(combat, previous)) {
+        const a = combat.knownAgents.get(killer);
+        const b = combat.knownAgents.get(previous);
+        if (Math.floor(a / SPEC_RADIX) === Math.floor(b / SPEC_RADIX)) {
+            return KILL.PACK;
+        }
+    }
+    return KILL.HUNT;
+}
+
+/**
  * Counts an eaten death: toward `eaten`, toward the hunters' catches, and toward the pack kills when the killer and
  * the previous biter are hunters of one lineage.
  * @param {Record<string, any>} combat the combat counters
@@ -90,19 +112,9 @@ function isKnownHunter(combat, genomeId) {
  */
 function countEaten(combat, d, o) {
     combat.eatenDeaths += 1;
-    const killer = d[o + 5];
-    const previous = d[o + 11];
-    if (!isKnownHunter(combat, killer)) {
-        return;
-    }
-    combat.huntKills += 1;
-    if (previous !== 0 && isKnownHunter(combat, previous)) {
-        const a = combat.knownAgents.get(killer);
-        const b = combat.knownAgents.get(previous);
-        if (Math.floor(a / SPEC_RADIX) === Math.floor(b / SPEC_RADIX)) {
-            combat.packKills += 1;
-        }
-    }
+    const kind = killKind(combat, d[o + 5], d[o + 11]);
+    combat.huntKills += kind >= KILL.HUNT ? 1 : 0;
+    combat.packKills += kind === KILL.PACK ? 1 : 0;
 }
 
 /**
@@ -158,9 +170,10 @@ function applyCombatEvents(combat, world) {
  * @param {Record<string, any>} combat the combat counters
  * @param {Record<string, any>} world the world after the step
  * @param {number} slot an alive slot
+ * @param {Record<string, any> | undefined} intent the intent state, told when an episode escapes
  * @returns {void}
  */
-function trackEpisode(combat, world, slot) {
+function trackEpisode(combat, world, slot, intent) {
     if (world.bittenTimer[slot] === BITTEN_THIS_TICK) {
         combat.episodeOpen[slot] = 1;
         combat.episodeGenome[slot] = world.genomeId[slot];
@@ -168,6 +181,9 @@ function trackEpisode(combat, world, slot) {
     } else if (combat.episodeOpen[slot] === 1 && world.tick - combat.episodeLast[slot] >= ESCAPE_TICKS) {
         combat.episodeOpen[slot] = 0;
         combat.escapedEpisodes += 1;
+        if (intent !== undefined) {
+            noteEscape(intent, slot);
+        }
     }
 }
 
@@ -190,9 +206,10 @@ function prune(combat, tick) {
  * Feeds the combat counters one tick; call it first in `observe`, once after `createWorld` and once after each `step`.
  * @param {Record<string, any>} combat the combat counters
  * @param {Record<string, any>} world the world
+ * @param {Record<string, any>} [intent] the intent state; an episode that resolves as escaped is reported to it
  * @returns {void}
  */
-export function observeCombat(combat, world) {
+export function observeCombat(combat, world, intent) {
     applyCombatEvents(combat, world);
     if (world.tick === 0) {
         return;
@@ -205,7 +222,7 @@ export function observeCombat(combat, world) {
         if (combat.hunterSpec[spec[slot]] === 1) {
             combat.hunterAgentTicks += 1;
         } else {
-            trackEpisode(combat, world, slot);
+            trackEpisode(combat, world, slot, intent);
         }
     }
     resolveAlarms(combat.alarm, world);

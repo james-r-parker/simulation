@@ -5,6 +5,7 @@ import { checkpoint } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
+import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
 import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
@@ -101,8 +102,9 @@ export function createObserver(config, rng) {
  * @returns {void}
  */
 export function observe(observer, world, fitness) {
-    observeCombat(observer.combat, world);
+    observeCombat(observer.combat, world, observer.intent);
     updateIntent(observer.intent, world);
+    noteIntentEvents(observer, world);
     applyEvents(observer, world, fitness);
     if (world.tick === 0) {
         return;

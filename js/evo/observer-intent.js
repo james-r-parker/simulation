@@ -3,9 +3,11 @@
 // state `step` leaves behind and draws no randomness. See docs/designs/world-balance.md (Intent state).
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { answerHuntCall } from './observer-intent-calls.js';
 import { BITTEN_THIS_TICK, trackIntentEpisode } from './observer-intent-episode.js';
+import { sampleGroups } from './observer-intent-group.js';
 import { SCAN, scanRays } from './observer-intent-rays.js';
-import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW, SIGNAL_LEVEL } from './observer-intent-state.js';
+import { CLOSING_BITS, CLOSING_MIN, GROUP_SAMPLE_TICKS, INTENT_WINDOW, SIGNAL_LEVEL } from './observer-intent-state.js';
 import { TURN_THRESHOLD } from './observer-tick.js';
 
 export {
@@ -211,7 +213,7 @@ function creditMeal(intent, world, slot) {
 }
 
 /**
- * Credits the bite energy gained this tick,.
+ * Credits the bite energy gained this tick, and lets a deliberate bite by a hunter answer the hunt call it heard.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world after the step
  * @param {number} slot an alive slot
@@ -228,6 +230,9 @@ function creditBiteEnergy(intent, world, slot) {
     intent[deliberate ? 'deliberateBite' : 'chanceBite'][slot] += gained;
     if (hunter) {
         intent.run[deliberate ? 'huntBiteDeliberate' : 'huntBiteChance'] += gained;
+    }
+    if (hunter && deliberate && intent.heardCall[slot] > 0) {
+        answerHuntCall(intent.calls, intent.heardCall[slot] - 1, world.tick, intent.packWindow);
     }
 }
 
@@ -269,5 +274,8 @@ export function updateIntent(intent, world) {
         if (alive[slot] === 1) {
             creditSlot(intent, world, slot);
         }
+    }
+    if (world.tick % GROUP_SAMPLE_TICKS === 0) {
+        sampleGroups(intent, world);
     }
 }

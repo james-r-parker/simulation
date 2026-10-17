@@ -2,6 +2,7 @@
 // tick; see docs/designs/world-balance.md (Intent state, Intent counters).
 
 import { hunterTable } from './hunter-table.js';
+import { createHuntCalls } from './observer-intent-calls.js';
 import { SCAN_SIZE } from './observer-intent-rays.js';
 
 /** Ticks a sighting stays current. */
@@ -115,7 +116,10 @@ export function createIntentState(config) {
         arc: arcRays(config),
         hunterSpec: hunterTable(config),
         scan: new Float64Array(SCAN_SIZE),
+        calls: createHuntCalls(),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
+        packWindow: config.packWindow,
+        callRadius: config.callRadius,
     };
     for (const [name, [Type, value]] of Object.entries(SLOT_FIELDS)) {
         intent[name] = new /** @type {any} */ (Type)(config.maxAgents).fill(value);
