@@ -3,13 +3,14 @@
 import { detCos, detSin } from './det-math.js';
 import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
+const SPEC_COUNT = 5;
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
-const SPEC_COUNT = 5;
 const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
 /** Energy source for each cause an agent can be spawned with by this module. */
 /** @type {Map<number, number>} */
@@ -164,6 +165,51 @@ function placeInZone(world, zone, radius) {
 }
 
 /**
+ * Draws a point inside a patch, redrawing while it lies in an obstacle, and writes it to `world.point`; after
+ * `placementTries` it places uniformly instead.
+ * @param {World} world the world
+ * @param {number} patch the patch index
+ * @param {number} radius the food radius
+ * @returns {void}
+ */
+function placeInPatch(world, patch, radius) {
+    const { worldWidth, worldHeight, placementTries, foodPatchRadius } = world.config;
+    const rng = world.rng.food;
+    for (let attempt = 0; attempt < placementTries; attempt++) {
+        const r = foodPatchRadius * Math.sqrt(nextFloat(rng));
+        const theta = nextFloat(rng) * TWO_PI;
+        const x = Math.min(worldWidth - radius, Math.max(radius, world.patchX[patch] + r * detCos(theta)));
+        const y = Math.min(worldHeight - radius, Math.max(radius, world.patchY[patch] + r * detSin(theta)));
+        if (clearOfObstacles(world, x, y, radius)) {
+            world.point[0] = x;
+            world.point[1] = y;
+            return;
+        }
+    }
+    placeClear(world, rng, radius);
+}
+
+/**
+ * Chooses where a food item goes and writes the point to `world.point`: a fertile zone as ever, else (when there are
+ * patches) a patch by stock with probability `1 - foodBackgroundShare`, else anywhere. No patch draws without patches.
+ * @param {World} world the world
+ * @param {number} radius the food radius
+ * @returns {void}
+ */
+function placeFood(world, radius) {
+    const c = world.config;
+    const rng = world.rng.food;
+    const total = totalFertility(world);
+    if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
+        placeInZone(world, pickZone(world, nextFloat(rng) * total), radius);
+    } else if (c.foodPatchCount > 0 && nextFloat(rng) >= c.foodBackgroundShare) {
+        placeInPatch(world, pickPatch(world, rng), radius);
+    } else {
+        placeClear(world, rng, radius);
+    }
+}
+
+/**
  * @param {World} world the world
  * @returns {number} the lowest free food slot
  */
@@ -191,12 +237,7 @@ export function spawnFoodItem(world) {
     const rng = world.rng.food;
     const high = nextFloat(rng) < c.highFoodChance;
     const radius = high ? c.highFoodRadius : c.foodRadius;
-    const total = totalFertility(world);
-    if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
-        placeInZone(world, pickZone(world, nextFloat(rng) * total), radius);
-    } else {
-        placeClear(world, rng, radius);
-    }
+    placeFood(world, radius);
     const base = high ? c.highFoodEnergy : c.foodEnergy;
     const variance = high ? c.highFoodEnergyVariance : c.foodEnergyVariance;
     world.foodAlive[slot] = 1;
@@ -261,6 +302,7 @@ export function createWorld(config, policy) {
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
     placeObstacles(world);
+    createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {
         spawnFoodItem(world);
     }

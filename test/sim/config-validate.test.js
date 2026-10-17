@@ -274,3 +274,28 @@ describe('validateConfig temperature keys', () => {
         expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier.*missing/);
     });
 });
+
+describe('validateConfig food patches and the floor', () => {
+    it.each([
+        ['foodPatchCount', -1],
+        ['foodPatchCount', 1.5],
+        ['foodPatchRadius', 0],
+        ['foodPatchCapacity', 0],
+        ['foodPatchDepletion', -0.1],
+        ['foodPatchRegrow', 1.1],
+        ['foodBackgroundShare', -0.1],
+    ])('rejects %s of %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
+    });
+
+    it('defaults to patches off', () => {
+        expect(createConfig().foodPatchCount).toBe(0);
+    });
+
+    it('rejects patches wider than the world', () => {
+        expect(() => createConfig({ foodPatchCount: 2, foodPatchRadius: 600, worldWidth: 1000 })).toThrow(
+            /foodPatchRadius/,
+        );
+        expect(() => createConfig({ foodPatchCount: 0, foodPatchRadius: 600, worldWidth: 1000 })).not.toThrow();
+    });
+});

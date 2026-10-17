@@ -139,6 +139,11 @@ export function worldInfo({ config, world }) {
         rows,
         cellSize: config.pheromoneCellSize,
         pheromoneMax: config.pheromoneMax,
+        patches: Array.from(world.patchX, (x, i) => ({
+            x,
+            y: world.patchY[i],
+            radius: config.foodPatchRadius,
+        })),
         specs: Object.entries(config.specialisations).map(([name, s]) => ({
             index: s.index,
             name,

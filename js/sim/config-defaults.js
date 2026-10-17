@@ -188,4 +188,10 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
+    foodPatchCount: 0, // new: permanent food patches; 0 is off
+    foodPatchRadius: 400, // new
+    foodPatchCapacity: 1, // new: the largest stock of a patch
+    foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
+    foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
+    foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
 });

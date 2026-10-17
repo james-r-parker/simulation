@@ -136,6 +136,16 @@ function allocZonesAndPheromones(world) {
 }
 
 /**
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+function allocPatches(world) {
+    const { foodPatchCount } = world.config;
+    allocRows(world, singles(Float32Array, ['patchX', 'patchY']), foodPatchCount);
+    allocRows(world, singles(Float64Array, ['patchStock']), foodPatchCount);
+}
+
+/**
  * @param {number} rayCount number of rays
  * @returns {{rayCos: Float64Array, raySin: Float64Array}} unit direction of each ray relative to the heading
  */
@@ -216,6 +226,7 @@ export function allocateWorld(config) {
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
     allocClouds(world);
+    allocPatches(world);
     world.events = createEventRing(config.eventCapacity);
     return world;
 }
