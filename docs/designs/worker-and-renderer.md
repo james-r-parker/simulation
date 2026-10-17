@@ -342,8 +342,10 @@ out)` matches agents by slot and `genomeId` through a preallocated slot map, ble
   `new Worker(new URL('../worker/sim-worker.js', import.meta.url), { type: 'module' })`, and `vite.config.js` sets
   `worker.format` to `es`.
 - In dev builds `window.__perf()` returns `{ app: 'v6', refreshHz, frameMs: { p50, p95, p99 }, drawMs: { p50, p95, p99 },
-ticksPerSecond, droppedTicks, heapMb, gpu: { geometries, textures, programs } }`, where a frame is the interval
-  between `requestAnimationFrame` callbacks, `drawMs` is the time spent in the callback and `gpu` is `renderer.info`.
+gpuMs: { p50, p95, p99 } | null, frames, agents, ticksPerSecond, droppedTicks, heapMb, gpu: { geometries, textures, programs } }`,
+  where a frame is the interval between `requestAnimationFrame` callbacks, `frames` is how many intervals the
+  percentiles cover, `drawMs` is the time spent in the callback, `gpuMs` is the GPU time from the timer query (`null`
+  without it), `agents` is the worker's population and `gpu` is `renderer.info`.
 
 ## Interface
 
