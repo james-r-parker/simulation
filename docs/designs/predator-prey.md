@@ -3,7 +3,7 @@
 **Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitnessV2 on the D1 to D8 intent counters, niches and map-elites-v2) is next after world-balance.md Phase 1.
 **Validated:** 830e60a (2026-10-17)
 **Priority:** 2 - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
-**Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md)
+**Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md) (Phase 1, for Phase 3)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core
 supplies senses, actions and costs, and evolution finds the use.
@@ -22,23 +22,23 @@ existing layout checks (`assertGenomeFits`, `validateChampion` and the archive c
 
 ## Modules
 
-| Module                                       | Exports                                                        | Does                                                                                                                      |
-| -------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `js/sim/brain-layout.js`                     | `OUTPUT_COUNT`, `OUTPUT_INDEX`, `RAY_CHANNELS`, `EXTRA_INPUTS` | Layout constants; every other module imports its layout constants from here (changed)                                     |
-| `js/sim/scent-inputs.js`                     | `writeScentInputs`                                             | Body inputs at offsets 19 to 31: antenna samples, hunt scent and heard calls                                              |
-| `js/sim/calls.js`                            | `signalAll`                                                    | The `signal` phase: timers, alarm and hunt calls, smoke releases, then hearing                                            |
-| `js/sim/smoke.js`                            | `releaseSmoke`, `ageSmoke`                                     | The preallocated cloud pool                                                                                               |
-| `js/sim/ray-march.js`                        | `castRays`                                                     | Imports `RAY_CHANNELS` from `brain-layout.js` and drops its own export; adds `testClouds` and the smoke channel (changed) |
-| `js/sim/feeding.js`                          | `feed`                                                         | `BITE_OUTPUT` becomes `OUTPUT_INDEX.BITE`; bite size by specialisation; `prevBiter` bookkeeping (changed)                 |
-| `js/sim/physics.js`                          | `actAll`, `integrate`                                          | `THRUST_OUT`, `TURN_OUT`, `SPRINT_OUT` become `OUTPUT_INDEX`; turn and sprint by specialisation (changed)                 |
-| `js/sim/energy.js`, `js/sim/reproduction.js` | `applyCosts`, `mate`                                           | `SPRINT_OUT` and `MATE_OUT` become `OUTPUT_INDEX` (changed)                                                               |
-| `js/sim/body-inputs.js`                      | `writeBodyInputs`                                              | `rayCount * 8` becomes `rayCount * RAY_CHANNELS`; the "nineteen body inputs" comment follows the new count (changed)      |
-| `js/evo/observer-combat.js`                  | `createCombatCounters`, `observeCombat`                        | Bite episodes, hunter agent-ticks, call and smoke follow-ups                                                              |
-| `js/evo/metrics-combat.js`                   | `combatMetrics`                                                | The five metrics below                                                                                                    |
-| `js/evo/scripted-combat.js`                  | `COMBAT_CONTROLLERS`                                           | `hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`, merged into `SCRIPTED_CONTROLLERS`                                     |
-| `js/evo/descriptors.js`                      | `descriptorV1`, `descriptorV2`                                 | Archive cell coordinates from the life and intent counters                                                                |
-| `js/evo/fitness.js`                          | `fitnessV2`, `FITNESS_V2`, `createFitnessV2`                   | Deliberate intake, capped credits and waste charges from the intent counters (changed)                                    |
-| `js/evo/policies/map-elites-v2.js`           | `createMapElitesV2`                                            | `map-elites-v1q` with `fitnessV2` and `descriptorV2`                                                                      |
+| Module                                       | Exports                                                        | Does                                                                                                                          |
+| -------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `js/sim/brain-layout.js`                     | `OUTPUT_COUNT`, `OUTPUT_INDEX`, `RAY_CHANNELS`, `EXTRA_INPUTS` | Layout constants; every other module imports its layout constants from here (changed)                                         |
+| `js/sim/scent-inputs.js`                     | `writeScentInputs`                                             | Body inputs at offsets 19 to 31: antenna samples, hunt scent and heard calls                                                  |
+| `js/sim/calls.js`                            | `signalAll`                                                    | The `signal` phase: timers, alarm and hunt calls, smoke releases, then hearing                                                |
+| `js/sim/smoke.js`                            | `releaseSmoke`, `ageSmoke`                                     | The preallocated cloud pool                                                                                                   |
+| `js/sim/ray-march.js`                        | `castRays`                                                     | Imports `RAY_CHANNELS` from `brain-layout.js` and drops its own export; adds `testClouds` and the smoke channel (changed)     |
+| `js/sim/feeding.js`                          | `feed`                                                         | `BITE_OUTPUT` becomes `OUTPUT_INDEX.BITE`; bite size by specialisation; `prevBiter` bookkeeping (changed)                     |
+| `js/sim/physics.js`                          | `actAll`, `integrate`                                          | `THRUST_OUT`, `TURN_OUT`, `SPRINT_OUT` become `OUTPUT_INDEX`; turn and sprint by specialisation (changed)                     |
+| `js/sim/energy.js`, `js/sim/reproduction.js` | `applyCosts`, `mate`                                           | `SPRINT_OUT` and `MATE_OUT` become `OUTPUT_INDEX` (changed)                                                                   |
+| `js/sim/body-inputs.js`                      | `writeBodyInputs`                                              | `rayCount * 8` becomes `rayCount * RAY_CHANNELS`; the "nineteen body inputs" comment follows the new count (changed)          |
+| `js/evo/observer-combat.js`                  | `createCombatCounters`, `observeCombat`                        | Bite episodes, hunter agent-ticks, call and smoke follow-ups                                                                  |
+| `js/evo/metrics-combat.js`                   | `combatMetrics`                                                | The five metrics below                                                                                                        |
+| `js/evo/scripted-combat.js`                  | `COMBAT_CONTROLLERS`                                           | `hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`, and in Phase 3 `baiter` and `sprinter`, merged into `SCRIPTED_CONTROLLERS` |
+| `js/evo/descriptors.js`                      | `descriptorV1`, `descriptorV2`                                 | Archive cell coordinates from the life and intent counters                                                                    |
+| `js/evo/fitness.js`                          | `fitnessV2`, `FITNESS_V2`, `createFitnessV2`                   | Deliberate intake, capped credits and waste charges from the intent counters (changed)                                        |
+| `js/evo/policies/map-elites-v2.js`           | `createMapElitesV2`                                            | `map-elites-v1q` with `fitnessV2` and `descriptorV2`                                                                          |
 
 ## Brain layout
 
@@ -241,7 +241,7 @@ carry them. All keys are in `rulesHash`. T8b sets the predator multipliers and
 Defined in the Metrics table of [evolution-evals.md](evolution-evals.md) (marked as defined by this doc):
 `eval.catch_rate`, `eval.escape_rate`, `eval.pack_kill_share`, `eval.alarm_response`, `eval.smoke_escapes`. All are
 "higher is better" and computed in `metrics-combat.js` from `observer-combat.js` state. `computeMetrics` merges
-them; `validateReport` accepts them accepts them when present, with the usual `null` and `reason` rules. Reports without them stay valid, and `eval:compare` compares only metrics present in both reports, so earlier baselines and experiments are unchanged.
+them; `validateReport` accepts them when present, with the usual `null` and `reason` rules. Reports without them stay valid, and `eval:compare` compares only metrics present in both reports, so earlier baselines and experiments are unchanged.
 
 | Counter            | Source                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -263,6 +263,8 @@ Added to `SCRIPTED_CONTROLLERS` from `scripted-combat.js`; they write all `OUTPU
 | `fleer`        | Turns away from the nearest bigger-class ray hit and from the higher of `attackLeft` and `attackRight`, sprints while a bigger agent is in sight, calls an alarm when it first sees one, and releases smoke when its bite-timer input shows a bite |
 | `alarmSpammer` | Seeks food and sets the `ALARM` output every tick                                                                                                                                                                                                  |
 | `smokeSpammer` | Seeks food and sets the `SMOKE` output every tick                                                                                                                                                                                                  |
+| `baiter`       | Phase 3: seeks a bigger agent until bitten, then runs `fleer` for 300 ticks, then seeks again                                                                                                                                                      |
+| `sprinter`     | Phase 3: seeks food with `SPRINT` set every tick                                                                                                                                                                                                   |
 
 `evals/predator-world.json` is `evals/micro-world.json` plus `initialEnergy` 3000 (the micro-world's 800 lets foragers starve
 while sprinting before any survives the 300 ticks that count as an escape), with a test policy whose `initSpec` gives the predator
@@ -275,18 +277,20 @@ counters of [world-balance.md](world-balance.md) Phase 1 (`observer.intent`), di
 waste. With `deliberate = deliberateFood + deliberateBite` and
 `intake = deliberate + CHANCE_WEIGHT x (chanceFood + chanceBite)`:
 
-`fitnessV2 = max(0, intake + OFFSPRING x children + gated - IDLE_SIGNAL x idleSignal - UNDEFENDED x undefendedBite)`
+`fitnessV2 = max(0, base + gated - min(waste, WASTE_CAP x base))`, with `base = intake + OFFSPRING x children` and
+`waste = IDLE_SIGNAL x idleSignal + UNDEFENDED x undefendedBite`
 
 `gated` is 0 until `deliberate` reaches `GATE`; from then it is `SURVIVAL_RATE x min(ageTicks, SURVIVAL_CAP)` plus the
-specialisation term of `fitnessV1` capped at `intake` (the predator's counts `deliberateKills`, not `kills`) plus the
-four credits below, each capped at `CREDIT_CAP x intake`.
+specialisation term of `fitnessV1` capped at `intake` (the forager's reads `deliberateFood` and the predator's
+`deliberateKills`; the reproducer and scout terms are unchanged) plus the four credits below, each with its own cap of
+`CREDIT_CAP x intake`. `OFFSPRING x children` is ungated, as in `fitnessV1`.
 
-| Term             | Value                                                                                                                                                                                                          | Behaviour |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Escape           | `ESCAPE x respondedEscape`: this agent's bite episodes that resolved `escaped` with a response                                                                                                                 | D4        |
-| Converged kill   | `CONVERGED_KILL x convergedKills`: `eaten` deaths counted by `eval.pack_convergence` in which this agent is the killer or the previous biter                                                                   | D3        |
-| Alarm credit     | `ALARM x alarmCredits`: this agent's precise `AlarmCalled` events after which an agent of its lineage within `callRadius` of the caller is bitten within `packWindow` ticks and the episode resolves `escaped` | D5, D6    |
-| Hunt-call credit | `HUNT_CALL x huntCredits`: this agent's precise `PackCalled` events counted as answered by `eval.hunt_call_answer`                                                                                             | D3, D6    |
+| Term             | Value                                                                                                                                                                                                                                        | Behaviour |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Escape           | `ESCAPE x respondedEscape`: this agent's bite episodes that resolved `escaped` with a response                                                                                                                                               | D4        |
+| Converged kill   | `CONVERGED_KILL x convergedKills`: `eaten` deaths counted by `eval.pack_convergence` in which this agent is the killer or the previous biter                                                                                                 | D3        |
+| Alarm credit     | `ALARM x alarmCredits`: this agent's precise `AlarmCalled` events after which another agent of its lineage within `callRadius` of the caller is bitten within `packWindow` ticks and that agent's episode resolves `escaped` with a response | D5, D6    |
+| Hunt-call credit | `HUNT_CALL x huntCredits`: this agent's precise `PackCalled` events counted as answered by `eval.hunt_call_answer`                                                                                                                           | D3, D6    |
 
 | Constant        | Value | Constant         | Value |
 | --------------- | ----- | ---------------- | ----- |
@@ -296,11 +300,13 @@ four credits below, each capped at `CREDIT_CAP x intake`.
 | `SURVIVAL_RATE` | 0.5   | `HUNT_CALL`      | 40    |
 | `SURVIVAL_CAP`  | 30000 | `IDLE_SIGNAL`    | 20    |
 | `CREDIT_CAP`    | 0.25  | `UNDEFENDED`     | 40    |
+| `WASTE_CAP`     | 0.5   |                  |       |
 
 `FITNESS_V2` holds them. `noteIntentDeath` and `noteIntentEvents` in `js/evo/observer-intent-events.js` add four
 per-slot counters to the intent counters: `deliberateKills` (`eaten` deaths of a victim with `lastBiteDeliberate` in
-which this agent is the killer), `convergedKills`, `alarmCredits` and `huntCredits`. A death whose victim's biter is
-gone credits nobody. Unseen bites (`unseenBite`) cost nothing. Grouping (D5) is paid only through the alarm credit.
+which this agent is the killer), `convergedKills`, `alarmCredits` and `huntCredits`. Credits attach to the caller or biter by `genomeId`: a credit that resolves after that agent died, or after its
+slot was reused, is dropped, and a death whose victim's biter is gone credits nobody. Unseen bites (`unseenBite`) cost nothing. Grouping (D5) is paid only through the alarm credit. Chance intake counts a quarter and every credit needs deliberate intake, so the anti-exploit suite's existing bound (`max(0.5, intake share + 0.1)` of the
+`foodSeeker`, intake as raw food plus bite energy) applies unchanged.
 
 ## Archive niches
 
@@ -309,7 +315,7 @@ gone credits nobody. Unseen bites (`unseenBite`) cost nothing. Grouping (D5) is 
 
 - `biteShare = biteEnergy / (foodEnergy + biteEnergy)`, 0 when both are 0.
 - `fleeShare`: of the grouping samples (every `GROUP_SAMPLE_TICKS` ticks in `observer-intent.js`) on which the agent
-  is threatened (a bigger-class hit at proximity above `THREAT_PROXIMITY`, or `alarmLoud` above 0.2), the share on
+  is threatened (a bigger-class hit at proximity above `THREAT_PROXIMITY`, or the `heard` alarm loudness, body input `alarmLoud`, above 0.2), the share on
   which its speed exceeds `0.5 x maxVelocity`; 0 with no threatened sample. The intent state counts `threatSamples`
   and `fleeSamples` per slot.
 
@@ -337,6 +343,10 @@ choices and reasons within the plans").
 | The predator's specialisation term counts `deliberateKills`                                  | A kill from a jaw-sitting ambush is the D2 chance column                                                   | Manager |
 | Done criteria move from the combat metrics to the D metrics, with food and fed lifespan held | The combat metrics count outcomes, which chance also produces; the D metrics count intent                  | Manager |
 | `life-counters-combat.js` is dropped; its counters join the intent counters                  | One per-slot store for D1 to D8 serves fitness, descriptors and metrics                                    | Manager |
+| Charges are capped at `WASTE_CAP` (0.5) x base before the floor at 0                         | Uncapped charges would put many founders at 0 together and flatten selection (fresh review)                | Manager |
+| `OFFSPRING x children` stays ungated                                                         | Matches `fitnessV1`; births are already the hardest outcome to reach by chance                             | Manager |
+| `baiter` and `sprinter` join the suite                                                       | They probe the escape credit and the sprint-as-response rule, the two cheapest routes to D4 credit         | Manager |
+| With fewer than two comparable intent Targets, the phase waits for the user                  | A calibration can move D metrics to `watch`, leaving no verdict to judge by                                | Manager |
 
 ## Phases
 
@@ -386,8 +396,12 @@ against `map-elites-v1q` at 16 seeds x 200000 ticks (`E21`) is `better` on at le
 `eval.deliberate_food_share`, `eval.pursuit_kill_share` and `eval.evasion_skill`, `worse` on none of them, `worse` on
 neither `eval.idle_signals_per_1k` nor `eval.undefended_bite_share`, and `worse` on neither
 `eval.food_energy_per_1k` nor `eval.fed_median_lifespan`; every other metric, including the five combat metrics, is
-recorded with its verdict, and the D metrics that `E23` or `E24` moved to `watch` are recorded only. `initSpec`'s least-populated rule keeps hunters present; a
-seed with no hunter agent-ticks makes the run invalid, and it is reported, not compared. `fitnessV2` passes the anti-exploit suite with no expected failures.
+recorded with its verdict, and the D metrics that `E23` or `E24` moved to `watch` are recorded only. When fewer than
+two of `eval.deliberate_food_share`, `eval.pursuit_kill_share` and `eval.evasion_skill` still get verdicts, the phase
+stays unbuilt and the user sets the criteria.
+
+`initSpec`'s least-populated rule keeps hunters present. A seed with no hunter agent-ticks makes the run invalid, and
+it is reported, not compared. `fitnessV2` passes the anti-exploit suite with no expected failures.
 
 ## Delivery requirements
 
@@ -439,16 +453,16 @@ seed with no hunter agent-ticks makes the run invalid, and it is reported, not c
 
 ### Phase 3 - Fitness terms, niches and the v2 policy
 
-| #   | Task                                                                                                                                                                                                                                                                                                                                                 | Nature       | Depends on                        |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------- |
-| T19 | Add `deliberateKills`, `convergedKills`, `alarmCredits`, `huntCredits`, `threatSamples` and `fleeSamples` to the intent counters in `observer-intent.js` and `observer-intent-events.js`, with tests                                                                                                                                                 | [judgement]  | T18                               |
-| T20 | Add `fitnessV2`, `FITNESS_V2` and `createFitnessV2` to `fitness.js`, with tests                                                                                                                                                                                                                                                                      | [judgement]  | T19                               |
-| T21 | Add `descriptors.js`, the `descriptor` option of `createArchive` and the `descriptor` field of the archive JSON, with tests                                                                                                                                                                                                                          | [judgement]  | T19                               |
-| T22 | Add `policies/map-elites-v2.js` and register it, with tests                                                                                                                                                                                                                                                                                          | [judgement]  | T20, T21                          |
-| T23 | Add `fitnessV2` to the anti-exploit suite with no expected failures, the bait case (a controller that seeks bites, then flees) under both fitness functions, and the pair bounds under `fitnessV2` in `evals/predator-world.json`: `jawSitter` and `huntCallSpammer` at most 0.5 x `hunter`, `alarmSpammer` and `smokeSpammer` at most 0.5 x `fleer` | [judgement]  | T16, T20                          |
-| T24 | Run `map-elites-v2` against `map-elites-v1q` at 16 seeds x 200000 ticks, record `E21`, run `npm run bench -- --policy map-elites-v2`, and set `LIVE_POLICY` when the verdicts hold                                                                                                                                                                   | [mechanical] | T22, T23                          |
-| T25 | Update the `run-evolution-loop` skill, the world-balance.md Decisions table and [sim-notes.md](sim-notes.md)                                                                                                                                                                                                                                         | [mechanical] | T24                               |
-| T26 | Conformance review of Phase 3                                                                                                                                                                                                                                                                                                                        | [judgement]  | T19, T20, T21, T22, T23, T24, T25 |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                    | Nature       | Depends on                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------- |
+| T19 | After world-balance.md T4 is merged, add `deliberateKills`, `convergedKills`, `alarmCredits`, `huntCredits`, `threatSamples` and `fleeSamples` to the intent counters in `observer-intent.js` and `observer-intent-events.js`, with tests                                                                                                                                                                                               | [judgement]  | T18                               |
+| T20 | Add `fitnessV2`, `FITNESS_V2` and `createFitnessV2` to `fitness.js`, with tests                                                                                                                                                                                                                                                                                                                                                         | [judgement]  | T19                               |
+| T21 | Add `descriptors.js`, the `descriptor` option of `createArchive` and the `descriptor` field of the archive JSON, with tests                                                                                                                                                                                                                                                                                                             | [judgement]  | T19                               |
+| T22 | Add `policies/map-elites-v2.js` and register it, with tests                                                                                                                                                                                                                                                                                                                                                                             | [judgement]  | T20, T21                          |
+| T23 | Add `fitnessV2` to the anti-exploit suite with no expected failures, `baiter` and `sprinter` in `scripted-combat.js` with tests, and the pair bounds under `fitnessV2` in `evals/predator-world.json`: `jawSitter` and `huntCallSpammer` at most 0.5 x `hunter`; `alarmSpammer`, `smokeSpammer`, `baiter` and `sprinter` at most 0.5 x `fleer`. A `jawSitter` failure is fixed in the world-balance.md closing rule, not in the weights | [judgement]  | T16, T20                          |
+| T24 | After world-balance.md T11 is merged, run `map-elites-v2` against `map-elites-v1q` at 16 seeds x 200000 ticks, record `E21`, run `npm run bench -- --policy map-elites-v2`, and set `LIVE_POLICY` when the verdicts hold                                                                                                                                                                                                                | [mechanical] | T22, T23                          |
+| T25 | Update the `run-evolution-loop` skill, the world-balance.md Decisions table and [sim-notes.md](sim-notes.md)                                                                                                                                                                                                                                                                                                                            | [mechanical] | T24                               |
+| T26 | Conformance review of Phase 3                                                                                                                                                                                                                                                                                                                                                                                                           | [judgement]  | T19, T20, T21, T22, T23, T24, T25 |
 
 ## Verification
 
