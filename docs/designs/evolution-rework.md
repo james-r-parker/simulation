@@ -232,6 +232,8 @@ is built so runs can be watched, and tuning nights continue until the live polic
 - Families: `eval.alarm_response` above 0 with an interval excluding 0.
 - A smooth climb: on the skill ladder (random brains, a sloppy forager, `foodSeeker`, a forager that flees, no floor),
   each rung outlives and out-breeds the rung below.
+- Skill beats chance: the deliberate-behaviour metrics (D1 to D7 in [world-balance.md](world-balance.md)) show deliberate
+  foraging, hunting, evasion and signalling clearly ahead of their chance-or-waste controllers.
 - The user has watched it in the renderer and signed it off.
 
 `trainer.js`, `npm run train`, `npm run train:export`, `public/champions/v1/` and `champions-v1`. Done when
