@@ -51,10 +51,8 @@ function circleHit(b, c) {
         return -1;
     }
     const t = -b - Math.sqrt(disc);
-    if (t < 0) {
-        return c <= 0 ? 0 : -1;
-    }
-    return t;
+    // t < 0 means the origin is inside: a ray from outside (c > 0, b <= 0) always has -b >= sqrt(disc).
+    return t < 0 ? 0 : t;
 }
 
 /**
