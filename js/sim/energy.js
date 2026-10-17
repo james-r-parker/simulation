@@ -128,7 +128,8 @@ export function transferEnergy(world, giver, receiver, amount) {
  */
 function tickCost(world, slot) {
     const c = world.config;
-    const m = specParams(c, world.spec[slot]).moveCostMultiplier;
+    const sp = specParams(c, world.spec[slot]);
+    const m = sp.moveCostMultiplier;
     const vx = world.vx[slot];
     const vy = world.vy[slot];
     const speed = Math.sqrt(vx * vx + vy * vy);
@@ -139,6 +140,9 @@ function tickCost(world, slot) {
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
     if (world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0) {
         cost += c.sprintCost;
+    }
+    if (c.specMutationRate > 0 && sp.canHunt) {
+        cost += c.huntUpkeep;
     }
     return cost;
 }

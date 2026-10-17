@@ -1,10 +1,10 @@
 // How `map-elites-v1` seeds new lineages (initial agents, floor spawns, immigrants): the least-populated
-// specialisation, then a genome from the archive, a clone of one, or a random one.
+// specialisation (a random elite's when `specMutationRate` is above 0), then a genome from the archive, a clone of one, or a random one.
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
-import { nextFloat } from '../../sim/rng.js';
+import { nextFloat, nextInt } from '../../sim/rng.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -32,6 +32,29 @@ export function leastPopulatedSpec(world, slot, counts) {
         best = counts[spec] < counts[best] ? spec : best;
     }
     return best;
+}
+
+/**
+ * The specialisation of a random archive elite (every occupied cell equally likely), or a random one while the archive
+ * is thin. Used instead of `leastPopulatedSpec` once `specMutationRate` is above 0, so a lost role is not refilled.
+ * @param {Record<string, any>} archive the archive
+ * @param {any} rng the `spawn` stream
+ * @returns {number} the specialisation index
+ */
+export function randomEliteSpec(archive, rng) {
+    const cells = occupiedCount(/** @type {any} */ (archive));
+    if (cells < MIN_ARCHIVE_CELLS) {
+        return nextInt(rng, GENOME_SPECS.length);
+    }
+    let left = nextInt(rng, cells);
+    for (let spec = 0; spec < GENOME_SPECS.length - 1; spec++) {
+        const here = occupiedCount(/** @type {any} */ (archive), spec);
+        if (left < here) {
+            return spec;
+        }
+        left -= here;
+    }
+    return GENOME_SPECS.length - 1;
 }
 
 /**
@@ -82,7 +105,10 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
 
-    function initSpec(/** @type {any} */ world, /** @type {number} */ slot) {
+    function initSpec(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
+        if (world.config.specMutationRate > 0) {
+            return randomEliteSpec(archive, rng);
+        }
         return leastPopulatedSpec(world, slot, counts);
     }
 

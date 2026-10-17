@@ -32,7 +32,15 @@ export function addDeath(observer, f) {
 export function addCheckpoint(observer, f) {
     const i = observer.checkpointCount++;
     ensureRoom(observer.series, i);
-    for (const name of ['tick', 'population', 'lineagesAlive', 'dominantLineage', 'predatorShare', 'diversity']) {
+    for (const name of [
+        'tick',
+        'population',
+        'lineagesAlive',
+        'dominantLineage',
+        'predatorShare',
+        'diversity',
+        'specMask',
+    ]) {
         observer.series[name][i] = f[name] ?? (name === 'diversity' ? NaN : 0);
     }
 }

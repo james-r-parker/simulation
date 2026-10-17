@@ -46,7 +46,15 @@ const DEATH_FIELDS = [
     'samples',
 ];
 
-const SERIES_FIELDS = ['tick', 'population', 'lineagesAlive', 'dominantLineage', 'predatorShare', 'diversity'];
+const SERIES_FIELDS = [
+    'tick',
+    'population',
+    'lineagesAlive',
+    'dominantLineage',
+    'predatorShare',
+    'diversity',
+    'specMask',
+];
 
 const BORN_CAUSES = 5;
 const DEATH_CAUSES = 4;
