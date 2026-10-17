@@ -31,6 +31,7 @@ function setup(loadUPlot) {
         loadUPlot,
         toast: (t) => toasts.push(t),
         getData: data.data,
+        colorOf: () => '#fff',
     });
     return { charts, toasts, open, body };
 }

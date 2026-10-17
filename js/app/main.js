@@ -7,6 +7,7 @@ import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
 import { buildDebugBundle } from './debug-bundle.js';
+import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { minPxTable } from './display-size.js';
@@ -104,6 +105,7 @@ function observeSize(container, onSize) {
  * @property {import('./camera.js').CameraController} camera the view
  * @property {{width: number, height: number}} size the canvas in device pixels
  * @property {Record<string, any> | null} ready the newest `ready` message
+ * @property {import('./family-slots.js').FamilySlots} slots the family colour slots and the palette
  * @property {number[]} minPx the least each specialisation is drawn across, from `ready`
  * @property {ReturnType<typeof createFrameStats>} stats the frame and draw rings `__perf` reports
  * @property {any} deps the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
@@ -139,7 +141,7 @@ function onReady(app, message) {
             info: message.info,
             quality: app.params.quality,
             scale: app.params.scale,
-            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready }),
+            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready, slots: app.slots }),
             onRestored: () => attachGpuTimer(app),
         });
         app.deps.scene.resize(app.size.width, app.size.height);
@@ -263,6 +265,8 @@ function makeInterface(app) {
         getFailedBundle: () => app.supervisor.lastBundle(),
         now: () => performance.now(),
         getWidth: () => app.container.clientWidth,
+        slots: app.slots,
+        speedPinned: app.params.speed !== null,
     });
 }
 
@@ -279,12 +283,14 @@ function createApp(container) {
     /** @type {App} */
     const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null, minPx: [] });
     app.size = { width: 1, height: 1 };
+    app.slots = createFamilySlots();
     app.deps = {
         getClient: () => app.supervisor.client(),
         scene: null,
         camera,
         state,
         refs: createLayerRefs(),
+        slots: app.slots,
         stats,
         gpuTimer: null,
         clock: () => performance.now(),

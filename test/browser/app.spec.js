@@ -10,9 +10,9 @@ const knownErrors = allowlist.patterns.map((/** @type {string} */ pattern) => ne
 
 /** A small, quick world: fixed seed, few agents, bloom off so software GL keeps up. */
 const WORLD = '?seed=3&agents=100&quality=2';
-const TICK = '#top-bar .top-bar-tick';
+const TICK = '.help-tick';
 const SPEED = '#top-bar .top-bar-speed';
-const POPULATION = '#top-bar .top-bar-population';
+const STATUS = '#top-bar .top-bar-status';
 
 /** @type {string[]} */
 let problems = [];
@@ -36,7 +36,13 @@ async function worldRunning(page) {
     await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeGreaterThan(5);
 }
 
-test.beforeEach(({ page }) => {
+test.beforeEach(async ({ page }) => {
+    // A returning visitor: no title card, and the speed is x1 as the flows below expect.
+    await page.addInitScript(() => {
+        if (!globalThis.localStorage.getItem('blobEvolution.prefs.v1')) {
+            globalThis.localStorage.setItem('blobEvolution.prefs.v1', JSON.stringify({ seen: true }));
+        }
+    });
     problems = [];
     consoleLines = [];
     page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
@@ -67,7 +73,7 @@ test('boots at the default settings: canvas, worker ready, snapshots arriving, p
     await page.goto(appUrl());
     await expect(page.locator('#canvas-container canvas')).toBeAttached();
     await worldRunning(page);
-    await expect(page.locator(POPULATION)).toHaveText(/^pop [1-9]/);
+    await expect(page.locator(STATUS)).toHaveText(/blobs and (growing|shrinking|steady)/);
     await expect(page.locator(SPEED)).toHaveText(/^x1/);
     const first = await tickOf(page);
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(first);
@@ -168,13 +174,41 @@ test('recovers from a lost WebGL context', async ({ page }) => {
     expect(shot.length, 'the world draws again after the restore').toBeGreaterThan(8000);
 });
 
-test('the top bar shows the season, the counts by type and the born share', async ({ page }) => {
+test('the top bar shows the status, the calendar with the generation, the counts by type and the born share', async ({
+    page,
+}) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
-    await expect(page.locator('#top-bar .top-bar-elapsed')).toHaveText(/^\d+:\d\d/);
+    await expect(page.locator(STATUS)).toHaveText(/^(Spring|Summer|Autumn|Winter), year \d+: \d+ blobs and /);
+    await expect(page.locator('#top-bar .top-bar-seasonBox')).toHaveText(/^Year \d+, \w+, Gen \d+$/);
     await expect(page.locator('#top-bar .top-bar-type')).toHaveCount(5);
     await expect(page.locator('#top-bar .top-bar-born')).toHaveText(/^born /);
-    await expect(page.locator('#top-bar .top-bar-seasonBox')).not.toHaveText('');
+    await expect(page.locator('.help-elapsed')).toHaveText(/^\d+:\d\d/);
+});
+
+test('a first visit shows the title card at x2 and any key dismisses it for good', async ({ page }) => {
+    await page.addInitScript(() => globalThis.localStorage.removeItem('blobEvolution.prefs.v1'));
+    await page.goto(appUrl() + '?seed=3&agents=100&quality=2');
+    await expect(page.locator('.title-card')).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.title-card .legend-item')).toHaveCount(5);
+    await expect(page.locator(SPEED)).toHaveText(/^x2/);
+    await page.keyboard.press('KeyZ');
+    await expect(page.locator('.title-card')).toBeHidden();
+    const seen = await page.evaluate(() => JSON.parse(localStorage.getItem('blobEvolution.prefs.v1') ?? '{}').seen);
+    expect(seen).toBe(true);
+});
+
+test('the help drawer shows the legend, the HUD size and the family colour buttons', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await page.keyboard.press('Shift+Slash');
+    await expect(page.locator('.drawer-help .legend-item')).toHaveCount(5);
+    await page.locator('.drawer-help .help-size', { hasText: 'cvd safe' }).click();
+    const palette = () =>
+        page.evaluate(() => JSON.parse(localStorage.getItem('blobEvolution.prefs.v1') ?? '{}').palette);
+    await expect.poll(palette).toBe('cvd-safe');
+    await page.locator('.drawer-help .help-size', { hasText: '2x' }).click();
+    await expect.poll(() => page.evaluate(() => globalThis.document.documentElement.style.fontSize)).toBe('32px');
 });
 
 test('C, I and ? open one drawer each, Escape closes it', async ({ page }) => {

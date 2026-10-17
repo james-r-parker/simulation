@@ -8,6 +8,7 @@ import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
 import { createRingPool } from '../../js/app/renderer/rings.js';
 import { createSparkPool } from '../../js/app/renderer/sparks.js';
 import { createQuality } from '../../js/app/renderer/quality.js';
+import { createFamilySlots } from '../../js/app/family-slots.js';
 import { smallReady } from './helpers/ready.js';
 
 /**
@@ -51,6 +52,7 @@ function setup(client) {
             world: { width: 14400, height: 8100 },
         }),
         state: createAppState(),
+        slots: createFamilySlots(),
         refs: { haze: null, player: null },
         stats: createFrameStats(1024),
         gpuTimer: null,
@@ -75,26 +77,17 @@ describe('createFrameLoop', () => {
         expect(drawn[0].snapshot).toBe(client.latest);
     });
 
-    it('hands the lens state and the top lineages to the layers, restamping the list only on new stats', () => {
+    it('hands the lens state and the family colour slots to the layers', () => {
         const client = fakeClient();
-        client.stats = { lineages: { top: [{ id: 4 }, { id: 9 }] } };
         const { deps, loop } = setup(client);
         const seen = /** @type {any[]} */ ([]);
         deps.scene.draw = (/** @type {any} */ f) => {
-            seen.push({
-                lenses: { ...f.lenses },
-                count: f.lineageTop.count,
-                first: f.lineageTop.ids[0],
-                stamp: f.lineageTop.stamp,
-            });
+            seen.push({ lenses: { ...f.lenses }, family: f.family });
             return true;
         };
         deps.state.lenses[2] = true;
         deps.state.lenses[3] = true;
         loop.frame(1000);
-        loop.frame(1016);
-        client.stats = { lineages: { top: [{ id: 7 }] } };
-        loop.frame(1032);
         expect(seen[0].lenses).toEqual({
             temperature: false,
             scent: false,
@@ -102,9 +95,7 @@ describe('createFrameLoop', () => {
             vision: true,
             calls: true,
         });
-        expect([seen[0].count, seen[0].first]).toEqual([2, 4]);
-        expect(seen[1].stamp).toBe(seen[0].stamp);
-        expect([seen[2].count, seen[2].first, seen[2].stamp]).toEqual([1, 7, seen[0].stamp + 1]);
+        expect(seen[0].family).toBe(deps.slots);
     });
 
     it('draws nothing before there is a scene or a client', () => {

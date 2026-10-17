@@ -1,7 +1,9 @@
-// The help drawer body: the settings buttons (HUD size), and every shortcut from `KEYMAP`, one row each, so the help
+// The help drawer body: the settings buttons (HUD size and family palette), and every shortcut from `KEYMAP`, one row each, so the help
 // can never disagree with the keys.
 
+import { PALETTE_NAMES } from '../prefs.js';
 import { KEYMAP, shortcutLabel } from './keymap.js';
+import { mountLegend } from './title-card.js';
 import { UI_SCALES } from './ui-scale.js';
 
 /**
@@ -19,36 +21,83 @@ function add(doc, parent, tag, className) {
 }
 
 /**
+ * Adds a heading and a row of buttons that mark the one in force.
  * @param {{createElement: (tag: string) => any}} doc the document
- * @param {any} root the help drawer body
- * @param {{current: string | number, onScale: (value: string | number) => void}} settings the current `uiScale` and
- *   what a click on a size button does
- * @returns {{rows: number, setScale: (value: string | number) => void}} the shortcut rows written, and `setScale`
- *   to mark the size that is in force
+ * @param {any} root the drawer body
+ * @param {{title: string, values: readonly (string | number)[], label: (value: string | number) => string,
+ *   current: string | number, onPick: (value: string | number) => void}} group the heading, the choices, how each is
+ *   named, the one in force and what a click does
+ * @returns {(value: string | number) => void} marks a choice as the one in force
  */
-export function mountHelp(doc, root, { current, onScale }) {
-    add(doc, root, 'h3', 'help-heading').textContent = 'HUD size';
-    const sizes = add(doc, root, 'div', 'help-sizes');
+function buttonRow(doc, root, { title, values, label, current, onPick }) {
+    add(doc, root, 'h3', 'help-heading').textContent = title;
+    const row = add(doc, root, 'div', 'help-sizes');
     /** @type {Map<string | number, any>} */
     const buttons = new Map();
-    for (const value of UI_SCALES) {
-        const button = add(doc, sizes, 'button', 'control help-size');
-        button.textContent = value === 'auto' ? 'Auto' : `${value}x`;
-        button.setAttribute('aria-label', `HUD size ${button.textContent}`);
-        button.addEventListener('click', () => onScale(value));
+    for (const value of values) {
+        const button = add(doc, row, 'button', 'control help-size');
+        button.textContent = label(value);
+        button.setAttribute('aria-label', `${title} ${button.textContent}`);
+        button.addEventListener('click', () => onPick(value));
         buttons.set(value, button);
     }
-    const setScale = (/** @type {string | number} */ value) => {
+    const mark = (/** @type {string | number} */ value) => {
         for (const [key, button] of buttons) {
             button.classList.toggle('on', key === value);
         }
     };
-    setScale(current);
+    mark(current);
+    return mark;
+}
+
+/**
+ * @param {{createElement: (tag: string) => any, createElementNS: (ns: string, tag: string) => any}} doc the document
+ * @param {any} root the help drawer body
+ * @param {{current: string | number, onScale: (value: string | number) => void, palette: string,
+ *   onPalette: (value: string) => void}} settings the current `uiScale` and palette and what a click on each does
+ * @returns {{rows: number, setScale: (value: string | number) => void, setPalette: (value: string) => void,
+ *   setLegend: (view: import('./title-card.js').TitleCardView) => void,
+ *   setDebug: (debug: {tick: string, elapsed: string}) => void}} the shortcut rows written, the functions that mark
+ *   the size and the palette in force, fill the legend at the top, and write the debug lines
+ */
+export function mountHelp(doc, root, { current, onScale, palette, onPalette }) {
+    const legend = add(doc, root, 'div', 'legend help-legend');
+    const setScale = buttonRow(doc, root, {
+        title: 'HUD size',
+        values: UI_SCALES,
+        label: (value) => (value === 'auto' ? 'Auto' : `${value}x`),
+        current,
+        onPick: onScale,
+    });
+    const setPalette = buttonRow(doc, root, {
+        title: 'Family colours',
+        values: PALETTE_NAMES,
+        label: (value) => String(value).replace('-', ' '),
+        current: palette,
+        onPick: (value) => onPalette(String(value)),
+    });
     add(doc, root, 'h3', 'help-heading').textContent = 'Keyboard';
     const list = add(doc, root, 'dl', 'help-keys');
     for (const binding of KEYMAP) {
         add(doc, list, 'dt', 'help-key').textContent = shortcutLabel(binding);
         add(doc, list, 'dd', 'help-what').textContent = binding.title;
     }
-    return { rows: KEYMAP.length, setScale };
+    add(doc, root, 'h3', 'help-heading').textContent = 'Debug';
+    const debug = add(doc, root, 'p', 'help-debug');
+    const tick = add(doc, debug, 'span', 'help-tick');
+    const elapsed = add(doc, debug, 'span', 'help-elapsed');
+    return {
+        rows: KEYMAP.length,
+        setScale,
+        setPalette,
+        setLegend: (view) => mountLegend(doc, legend, view),
+        setDebug(values) {
+            if (tick.textContent !== values.tick) {
+                tick.textContent = values.tick;
+            }
+            if (elapsed.textContent !== values.elapsed) {
+                elapsed.textContent = values.elapsed;
+            }
+        },
+    };
 }

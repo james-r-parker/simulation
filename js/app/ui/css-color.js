@@ -1,7 +1,8 @@
 // CSS colours for the DOM: a lineage's hue as an `hsl()` string, and fixed colours for the specialisations and the
 // causes the charts draw. The renderer's linear colours are for shaders; these match their hues for the page.
 
-import { lineageHue } from '../renderer/colors.js';
+import { slotOf } from '../family-slots.js';
+import { FAMILY_PALETTES, NEUTRAL_FAMILY } from '../renderer/colors.js';
 
 /** Specialisation colours for lines and icons. */
 export const SPEC_CSS = Object.freeze({
@@ -27,9 +28,23 @@ export function specCss(name) {
 }
 
 /**
- * @param {number} lineageId a lineage id
- * @returns {string} the lineage's colour: its hue at the renderer's saturation and a mid lightness
+ * @param {ArrayLike<number>} linear a linear RGB colour
+ * @returns {string} the colour as a CSS `rgb()` string (sRGB encoded)
  */
-export function lineageCss(lineageId) {
-    return `hsl(${Math.round(lineageHue(lineageId) * 360)} 70% 56%)`;
+export function rgbCss(linear) {
+    const encode = (/** @type {number} */ c) => {
+        const v = Math.min(Math.max(c, 0), 1);
+        return Math.round(255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055));
+    };
+    return `rgb(${encode(linear[0])}, ${encode(linear[1])}, ${encode(linear[2])})`;
+}
+
+/**
+ * @param {import('../family-slots.js').FamilySlots} slots the family colour slots and the palette
+ * @param {number} lineageId a lineage id
+ * @returns {string} the family's colour as CSS: its slot's colour, or the neutral colour for a family with no slot
+ */
+export function familyCss(slots, lineageId) {
+    const slot = slotOf(slots, lineageId);
+    return rgbCss(slot >= 0 ? FAMILY_PALETTES[slots.palette][slot] : NEUTRAL_FAMILY[slots.palette]);
 }

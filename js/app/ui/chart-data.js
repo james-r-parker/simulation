@@ -67,6 +67,7 @@ function seriesFor({ specs, births, deaths }) {
         ...deaths.map((c) => flow(`died.${c.name}`, (st) => st.deathsByCause?.[c.index] ?? 0)),
         flow('caught', (st) => st.combat?.caught ?? 0),
         flow('escaped', (st) => st.combat?.escaped ?? 0),
+        level('population', (st) => st.population ?? 0),
         level('coverage', (st) => st.archive?.coverage ?? 0),
         ...specs.map((s) => level(`occupied.${s.name}`, (st) => st.archive?.occupiedCount?.[s.index] ?? 0)),
     ];

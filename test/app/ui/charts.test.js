@@ -4,6 +4,9 @@ import { chartDefs, mountCharts, riverSeries, tickLabel } from '../../../js/app/
 import { createSampler } from '../../../js/app/ui/chart-data.js';
 import { fakeDocument } from '../helpers/fake-dom.js';
 
+/** @param {number} id @returns {string} a colour per family */
+const COLOR_OF = (id) => `hsl(${id * 40} 70% 56%)`;
+
 const WORLD = {
     specs: [
         { index: 0, name: 'predator' },
@@ -66,7 +69,7 @@ function filled() {
 describe('chartDefs', () => {
     it('lists the five charts in drawer order', () => {
         const { sampler } = filled();
-        expect(chartDefs(sampler.groups).map((d) => d.id)).toEqual([
+        expect(chartDefs(sampler.groups, COLOR_OF).map((d) => d.id)).toEqual([
             'population',
             'river',
             'flow',
@@ -78,7 +81,7 @@ describe('chartDefs', () => {
     it('gives each chart one data array per series, as long as the samples', () => {
         const { sampler, history } = filled();
         const cols = columns(history);
-        for (const def of chartDefs(sampler.groups)) {
+        for (const def of chartDefs(sampler.groups, COLOR_OF)) {
             const data = def.data(cols);
             expect(data, def.id).toHaveLength(def.series(FakeUPlot.paths).length);
             for (const y of data) {
@@ -89,7 +92,7 @@ describe('chartDefs', () => {
 
     it('stacks births upward and deaths downward', () => {
         const { sampler, history } = filled();
-        const flow = chartDefs(sampler.groups)[2].data(columns(history));
+        const flow = chartDefs(sampler.groups, COLOR_OF)[2].data(columns(history));
         expect(flow).toHaveLength(4);
         expect(flow[0][4]).toBe(4 + 1);
         expect(flow[2][4]).toBe(-(1 + 4));
@@ -98,7 +101,7 @@ describe('chartDefs', () => {
 
     it('colours the river bands by lineage after data is read', () => {
         const { sampler, history } = filled();
-        const river = chartDefs(sampler.groups)[1];
+        const river = chartDefs(sampler.groups, COLOR_OF)[1];
         const series = river.series(FakeUPlot.paths);
         river.data(columns(history));
         expect(series[0].fill()).not.toBe(series[1].fill());
@@ -127,7 +130,7 @@ describe('mountCharts', () => {
         const doc = fakeDocument();
         const root = doc.createElement('div');
         root.clientWidth = 300;
-        const charts = mountCharts({ doc, root, UPlot: FakeUPlot, history, groups: sampler.groups });
+        const charts = mountCharts({ doc, root, UPlot: FakeUPlot, history, groups: sampler.groups, colorOf: COLOR_OF });
         expect(FakeUPlot.made).toHaveLength(5);
         expect(root.children).toHaveLength(5);
         for (const u of FakeUPlot.made) {
@@ -146,7 +149,14 @@ describe('mountCharts', () => {
         const sampler = createSampler(WORLD);
         const history = createHistory({ names: sampler.names, kinds: sampler.kinds });
         const doc = fakeDocument();
-        mountCharts({ doc, root: doc.createElement('div'), UPlot: FakeUPlot, history, groups: sampler.groups });
+        mountCharts({
+            doc,
+            root: doc.createElement('div'),
+            UPlot: FakeUPlot,
+            history,
+            groups: sampler.groups,
+            colorOf: COLOR_OF,
+        });
         expect(FakeUPlot.made[0].opts.width).toBe(340);
         expect(FakeUPlot.made[0].data[0]).toHaveLength(0);
     });

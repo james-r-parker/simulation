@@ -12,7 +12,7 @@ import {
     ShaderMaterial,
     UnsignedByteType,
 } from 'three';
-import { accumulateTerritory, assignLineages, createTerritory, territoryPixels } from '../territory.js';
+import { accumulateTerritory, createTerritory, syncSlots, territoryPixels } from '../territory.js';
 import { TERRITORY_FRAGMENT, TERRITORY_VERTEX } from './territory-layer-shader.js';
 
 /** How often the texture is rewritten, in ms. */
@@ -65,7 +65,7 @@ export function createTerritoryLayer({ info }) {
     const texture = createTexture(data, t);
     const { mesh, geometry, material } = createQuad(texture, info);
     let lastTick = -1;
-    let lastStamp = -1;
+    let lastVersion = -1;
     let lastWriteMs = -Infinity;
     return {
         object: mesh,
@@ -74,9 +74,9 @@ export function createTerritoryLayer({ info }) {
             if (!mesh.visible) {
                 return;
             }
-            if (frame.lineageTop.stamp !== lastStamp) {
-                lastStamp = frame.lineageTop.stamp;
-                assignLineages(t, frame.lineageTop);
+            if (frame.family.version !== lastVersion) {
+                lastVersion = frame.family.version;
+                syncSlots(t, frame.family);
             }
             if (frame.snapshot !== null && frame.snapshot.tick !== lastTick) {
                 lastTick = frame.snapshot.tick;
@@ -84,7 +84,7 @@ export function createTerritoryLayer({ info }) {
             }
             if (frame.nowMs - lastWriteMs >= TERRITORY_REFRESH_MS) {
                 lastWriteMs = frame.nowMs;
-                territoryPixels(t, data);
+                territoryPixels(t, { out: data, palette: frame.family.palette });
                 texture.needsUpdate = true;
             }
         },

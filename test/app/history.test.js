@@ -5,6 +5,7 @@ import {
     createHistory,
     HISTORY_SIZE,
     INITIAL_SAMPLE_MS,
+    lookback,
     pushSample,
 } from '../../js/app/history.js';
 
@@ -85,5 +86,18 @@ describe('columns and clearHistory', () => {
         expect(h.sampleMs).toBe(INITIAL_SAMPLE_MS);
         expect(pushSample(h, { nowMs: 0, tick: 0, values: [1, 1] })).toBe(true);
         expect(Array.from(columns(h).births)).toEqual([1]);
+    });
+});
+
+describe('lookback', () => {
+    it('reads a series about the given time before the newest sample', () => {
+        const h = createHistory({ names: ['pop'], kinds: ['level'], capacity: 8, sampleMs: 5000 });
+        for (let i = 0; i < 6; i++) {
+            pushSample(h, { nowMs: i * 5000, tick: i, values: [100 + i] });
+        }
+        expect(lookback(h, { series: 'pop', agoMs: 60000 })).toBeNull();
+        expect(lookback(h, { series: 'pop', agoMs: 10000 })).toBe(103);
+        expect(lookback(h, { series: 'pop', agoMs: 0 })).toBe(105);
+        expect(lookback(h, { series: 'missing', agoMs: 0 })).toBeNull();
     });
 });

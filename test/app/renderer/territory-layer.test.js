@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { createTerritoryLayer, TERRITORY_REFRESH_MS } from '../../../js/app/renderer/territory-layer.js';
+import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
 import { smallReady } from '../helpers/ready.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
+
+/** @param {number[]} ids the families that hold slots @returns {ReturnType<typeof createFamilySlots>} slots */
+function family(ids) {
+    const slots = createFamilySlots();
+    assignSlots(
+        slots,
+        ids.map((id) => ({ id })),
+    );
+    return slots;
+}
 
 /**
  * @param {Record<string, any>} over fields to change
@@ -12,7 +23,7 @@ function frame(over = {}) {
         nowMs: 0,
         snapshot: makeSnapshot(1, [{ slot: 0, genomeId: 1, lineageId: 5, x: 1, y: 1 }]),
         lenses: { territory: true },
-        lineageTop: { ids: Uint32Array.of(5), count: 1, stamp: 1 },
+        family: family([5]),
         ...over,
     };
 }

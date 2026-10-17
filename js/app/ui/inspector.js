@@ -3,7 +3,7 @@
 // canvases are drawn by `drawRadar` and `drawHeatmap`, which take a 2D context so tests can record them.
 
 import { HEATMAP_COLUMNS } from './inspector-data.js';
-import { lineageCss, specCss } from './css-color.js';
+import { specCss } from './css-color.js';
 import { createIcon } from './silhouette-icons.js';
 
 /** The canvas side, in CSS px. */
@@ -212,7 +212,7 @@ function buildRows(doc, nodes, view) {
  */
 function showHeader(doc, header, who) {
     header.replaceChildren();
-    header.appendChild(createIcon(doc, { name: who.spec, color: lineageCss(who.lineageId), size: 22 }));
+    header.appendChild(createIcon(doc, { name: who.spec, color: who.color, size: 22 }));
     const text = add(doc, header, 'span', 'inspector-title');
     text.textContent = `${who.spec} - ${who.familyName} - #${who.genomeId}`;
     text.style.color = specCss(who.spec);
