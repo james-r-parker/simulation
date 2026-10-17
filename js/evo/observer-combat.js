@@ -3,6 +3,7 @@
 // victim is still found by its genome id. It reads the world and draws nothing.
 
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
 import { createSmokeFollow, noteSmokeRelease, resolveSmoke } from './observer-smoke.js';
 
@@ -17,19 +18,13 @@ export const PRUNE_TICKS = 256;
 /** After a step, `bittenTimer` is 1 exactly when `feed` reset it this tick (`applyCosts` then adds 1). */
 const BITTEN_THIS_TICK = 1;
 
-/** `knownAgents` packs `lineageId * SPEC_RADIX + spec`. */
-const SPEC_RADIX = 8;
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} fresh combat counters, all zero
  */
 export function createCombatCounters(config) {
     const n = config.maxAgents;
-    const hunterSpec = new Uint8Array(SPEC_RADIX);
-    for (const spec of Object.values(config.specialisations)) {
-        hunterSpec[/** @type {any} */ (spec).index] = /** @type {any} */ (spec).canHunt ? 1 : 0;
-    }
+    const hunterSpec = hunterTable(config);
     return {
         hunterSpec,
         packWindow: config.packWindow,

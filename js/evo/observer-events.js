@@ -3,6 +3,7 @@
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { ensureRoom } from './growable-log.js';
+import { resetIntentSlot } from './observer-intent.js';
 
 /** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
 export const BURN_IN_TICKS = 10000;
@@ -18,6 +19,7 @@ export function resetSlot(observer, slot) {
         observer[name][slot] = 0;
     }
     clearCells(observer, slot);
+    resetIntentSlot(observer.intent, slot);
 }
 
 /**
