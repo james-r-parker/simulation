@@ -218,3 +218,19 @@ export function screenToWorld(c, pointPx, out) {
     out.y = c.y - (pointPx.y - c.canvas.height / 2) / c.zoom;
     return out;
 }
+
+/**
+ * The world rectangle in view, for the orthographic camera.
+ * @param {CameraController} c the controller
+ * @param {{left: number, right: number, top: number, bottom: number}} out receives the bounds
+ * @returns {{left: number, right: number, top: number, bottom: number}} `out`
+ */
+export function viewBounds(c, out) {
+    const halfW = c.canvas.width / (2 * c.zoom);
+    const halfH = c.canvas.height / (2 * c.zoom);
+    out.left = c.x - halfW;
+    out.right = c.x + halfW;
+    out.top = c.y + halfH;
+    out.bottom = c.y - halfH;
+    return out;
+}
