@@ -115,13 +115,24 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
 
 ## CI
 
-`.github/workflows/check.yml` runs one job named `check` on every pull request and on pushes to `main`:
+`.github/workflows/check.yml` runs a job named `check` on every pull request and on pushes to `main`:
 
 1. `scripts/change-scope.sh origin/<base>` classes the change as `docs` (only Markdown under `docs/`, `.claude/` or
    the repo root) or `full`.
 2. `actions/setup-node` installs Node 24 with the npm cache, then `npm ci`.
 3. `scripts/check.sh --ci`, or `scripts/check.sh --ci --docs` for a `docs` change.
 4. On failure, `.checklogs/` and `TestResults/` are uploaded as the `check-logs` artifact.
+
+A second job, `browser-smoke`, runs `scripts/check.sh --ci --only=browser-smoke` in the Playwright image
+([quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)). Both jobs always report, including on a docs-only
+change.
+
+**Merge protection.** A ruleset on `main` is active (built 2026-10-17): changes only through pull requests, required
+checks `check` and `browser-smoke`, branches strictly up to date, force-push and deletion blocked, no bypass actors.
+Auto-merge is enabled, and a PR is merged with `gh pr merge --auto --rebase`, so it merges only after both checks have
+reported and passed. An empty check list is not a pass. [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
+Phase 3 adds `perf` as a required check, and [deployment-and-community.md](deployment-and-community.md) gives a
+`season/next` branch the same ruleset.
 
 `.github/dependabot.yml` groups weekly updates: one PR for GitHub Actions and one for npm.
 
