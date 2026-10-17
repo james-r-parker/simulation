@@ -25,20 +25,20 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (2)
+## In progress (3)
 
 Partly built - the note says which phases are real.
 
 - [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Ph... _(validated 36ee8c6, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 - [Predator and prey](predator-prey.md) - Phase 1 built: agents have scent direction, alarm and hunt calls and defensive smoke in the sim core, and catching is retuned (E19, E20, `huntSizeRatio` 1.01, `... _(validated 6a442d3, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md))_
+- [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol, with a snapshot that carries everything the renderer dr... _(validated dc7d882, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 
-## Proposed (4)
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main` to `/next/` and every same-repo PR to a prev... _(validated b8567aa, 2026-10-16)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated bd49bce, 2026-10-11)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
-- [Worker and renderer](worker-and-renderer.md) - Phase 1 runs the sim core and the live policy in a Web Worker behind a validated message protocol, with a snapshot that carries everything the renderer draws _(validated d884fb3, 2026-10-16)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots _(validated 9f73367, 2026-10-15)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
 ## Reference (3)
