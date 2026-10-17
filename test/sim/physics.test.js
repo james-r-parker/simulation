@@ -109,6 +109,24 @@ describe('actAll', () => {
         expect(w.vy[0]).toBeCloseTo(w.config.maxThrust, 6);
     });
 
+    it('slows an agent handling a meal by handlingThrust (T50)', () => {
+        const w = setup({ handlingTicks: 10, handlingThrust: 0.25 });
+        put(w, 0, { angle: PI / 2 });
+        w.ateTimer[0] = 3;
+        setOut(w, 0, [1, 0, 0, 0, 0]);
+        actAll(w);
+        expect(w.vy[0]).toBeCloseTo(w.config.maxThrust * 0.25, 6);
+    });
+
+    it('applies full thrust once the handling ticks have passed', () => {
+        const w = setup({ handlingTicks: 10, handlingThrust: 0.25 });
+        put(w, 0, { angle: PI / 2 });
+        w.ateTimer[0] = 10;
+        setOut(w, 0, [1, 0, 0, 0, 0]);
+        actAll(w);
+        expect(w.vy[0]).toBeCloseTo(w.config.maxThrust, 6);
+    });
+
     it('multiplies thrust while sprinting', () => {
         const w = setup();
         put(w, 0, { angle: 0 });
