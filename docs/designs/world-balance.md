@@ -519,6 +519,11 @@ to the user before the phase is marked built.
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
 
+> **Note:** build order before this phase (user, 2026-10-17): (1) finish and merge the work already in play - draft
+> PRs 54 (Phase 1), 55 (Phase 2), 57 (B10), 58 and 59 (Phase 3 layout, food and floor), and 56 (renderer Phase 3,
+> paused); (2) then nature's limits, T45 to T48; (3) then the rest of Phase 3 (T32, T33, T36 to T44) and
+> predator-prey.md Phase 3 (`fitnessV2`); (4) only then this tuning night, in a session of its own.
+
 A tuning night at 7680 x 4320 on the finished rules, aimed at B1, B2 and B13 with the D metrics, the selection
 metrics and the ladder on the scorecard, run after `fitnessV2` is live (predator-prey.md Phase 3) in a session of its
 own. Its search space includes the Phase 3 feature values (including the disease and birth-budget values),
