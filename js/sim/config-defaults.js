@@ -98,6 +98,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         predator: {
@@ -109,6 +110,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 4,
             turnMultiplier: 0.7,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1.6,
         },
         reproducer: {
@@ -120,6 +122,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 0.5,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         scout: {
@@ -131,6 +134,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         defender: {
@@ -142,6 +146,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
     },

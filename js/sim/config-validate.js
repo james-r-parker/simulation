@@ -19,6 +19,7 @@ const SPECIALISATION_FIELDS = [
     'cooldownMultiplier',
     'biteMultiplier',
     'turnMultiplier',
+    'plantFoodValue',
     'sprintBoost',
 ];
 
@@ -300,7 +301,9 @@ function checkSpecialisations(specialisations) {
             fail(`${path}.index`, entry.index, `${order} (fixed by key order)`);
         }
         checkScalar(`${path}.canHunt`, entry.canHunt, BOOL);
-        for (const field of SPECIALISATION_FIELDS.filter((f) => f !== 'index' && f !== 'canHunt')) {
+        checkScalar(`${path}.plantFoodValue`, entry.plantFoodValue, num(0, 1));
+        const scaled = (/** @type {string} */ f) => f !== 'index' && f !== 'canHunt' && f !== 'plantFoodValue';
+        for (const field of SPECIALISATION_FIELDS.filter(scaled)) {
             checkScalar(`${path}.${field}`, entry[field], positive());
         }
     });
