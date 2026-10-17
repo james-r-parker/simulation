@@ -1,6 +1,6 @@
 # World balance and biology
 
-**Status:** Proposed - stub: every known balance issue, the tuning-night method and the biology features that follow; Phase 1 settles the open balance issues before the trainer.
+**Status:** Proposed - stub: every known balance issue, deliberate-behaviour measures and fitness, the tuning-night method and the biology features; Phase 1 measures deliberate behaviour, Phase 2 rewards it and settles the balance issues, Phase 3 adds the biology features.
 **Validated:** bd35cef (2026-10-17)
 **Priority:** 3 - the world gate in evolution-rework.md Phase 3 needs these issues settled, and tuning is judged by watching the renderer (rank 2)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
@@ -26,6 +26,36 @@ biology features that change the balance again.
 | B10 | `bench.step_ms@500` has no headroom left: `main` measured 4.50 ms on 2026-10-17 at 04:00 and 4.67 to 4.80 ms later the same day on the same machine, against the 4.63 ms limit (4.03 baseline + 15%), so the local `bench-check` gate fails on `main` itself         | Predator-prey Phase 1 PR 37; `node scripts/bench-compare.mjs` on the renderer Phase 2 branch (head -1.7% against `main`)                               | Profile and optimise `sense` and `brain` (no baseline change), or the user re-baselines after the world gate                    |
 | B11 | A 7680 x 4320 world (exactly 2x 4K) is the preferred size for the display; it ran only with `obstacleCount` 10 and was not confirmed at 16 seeds                                                                                                                     | Sweep screens `d11`                                                                                                                                    | Next tuning night tunes at 7680 x 4320 and adopts it when it passes the world gate (user)                                       |
 
+## Deliberate behaviour
+
+Fitness and the tuning scorecard reward what an agent meant to do, not what happened to it (user, 2026-10-17).
+Random contact - drifting into food, a bite on a prey that blundered into the jaws, a call or smoke with no threat
+near - earns little or nothing, and wasted signals cost. Every measure below is computed from the sim's own state
+and events (rays, headings, timers, `heard`, positions), draws no randomness, and is credited only when the agent's
+recent actions show intent.
+
+| #   | Behaviour            | Counts as deliberate                                                                                                                       | Counts as chance or waste                                                                                           |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| D1  | Foraging             | Food eaten after the agent saw it on a ray and closed on it (turned towards it and the distance fell over the preceding ticks)             | Food eaten with no food on any ray in the preceding ticks, or while turning away from it                            |
+| D2  | Hunting              | A bite or kill after the hunter held the prey ahead (inside `biteArc` on its rays) and closed the gap over a pursuit window                | A bite on prey that entered the jaws without a pursuit                                                              |
+| D3  | Pack hunting         | Kills where two or more same-lineage hunters converged on the prey within `packWindow`, or a hunt call was heard and answered by approach  | Two hunters biting the same prey by coincidence with no convergence                                                 |
+| D4  | Evasion              | An escape after the prey saw the hunter, turned away or sprinted, or entered smoke                                                         | Surviving because the hunter never pursued                                                                          |
+| D5  | Grouping             | Prey of one lineage staying within call range of each other while a hunter is near, and alarm hearers moving away from the threat          | Clumping around one food patch with no threat                                                                       |
+| D6  | Alarm and hunt calls | A call made while a threat (for alarms) or a prey (for hunt calls) is on the caller's rays, followed by a measurable response from hearers | A call with no threat or prey in sight: earns nothing and its energy cost stands; repeated idle calls are penalised |
+| D7  | Smoke                | Smoke released within a short window of being bitten or with a hunter ahead, followed by an escape                                         | Smoke with no hunter near: earns nothing, and the release counts against the agent                                  |
+
+- Metrics: each row becomes an `eval.*` metric (for example `eval.deliberate_food_share`, `eval.pursuit_catch_share`,
+  `eval.pack_convergence`, `eval.evasion_skill`, `eval.group_cohesion_under_threat`, `eval.call_precision`,
+  `eval.smoke_precision`) so tuning nights and comparisons can target them.
+- Fitness: the fitness that replaces `fitnessV1` pays mostly for D1 to D7, discounts chance intake, and charges
+  wasted calls and smoke. The `fitnessV2` terms planned in [predator-prey.md](predator-prey.md) Phase 3 are
+  re-planned from this table before that phase is built.
+- Anti-exploit: scripted controllers for each "chance or waste" column (a drifter that eats only by contact, a
+  hunter that bites only what wanders into its jaws, call and smoke spammers) must score below the matching
+  deliberate controller.
+- The skill ladder gains rungs for each behaviour, so a tuning night can see that skill beats chance by a clear
+  margin at every step.
+
 ## Tuning-night method
 
 1. Prediction first, written to the night's `predictions.md`.
@@ -33,7 +63,9 @@ biology features that change the balance again.
 3. The best 3 to 5 go to 16 seeds against the reference report, then to fresh seeds 17-32 with `--allow-seed-diff`.
 4. The skill ladder (random brains, a sloppy forager, `foodSeeker`, `fleer`; no floor; 10000 ticks; seeds 1-3) runs for
    every finalist.
-5. A setting is kept only with a mechanism and a confirmed 16-seed result; the adopted override is recorded as an
+5. Ranking uses the deliberate-behaviour metrics (D1 to D7) alongside food, births and fed lifespan; a world where
+   chance does nearly as well as skill is rejected.
+6. A setting is kept only with a mechanism and a confirmed 16-seed result; the adopted override is recorded as an
    experiment in `evals/experiments.json` and learnings go to `sim-notes.md`.
 
 ## Biology features
@@ -46,17 +78,25 @@ biology features that change the balance again.
 
 ## Phases
 
-### Phase 1 - Settle the open balance issues
+### Phase 1 - Measure deliberate behaviour
+
+**Targets:** none - stub: instruments first; the D1 to D7 metrics are recorded for `baseline-v5` and the live policy
+
+TBD - stub: planned in full with the `create-plan` skill: the D1 to D7 metrics, the per-metric seed minimum (B5), the
+chance-or-waste scripted controllers and the extended skill ladder.
+
+### Phase 2 - Reward deliberate behaviour and settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
 
-TBD - stub: the user decided B1 to B5 and B11 (Decision column); Phase 1 is planned in full from them with the `create-plan` skill: a per-metric seed minimum in `eval:compare` (B5), then a tuning night at 7680 x 4320 aimed at B1 and B2.
+TBD - stub: the fitness built on D1 to D7 (re-planning `fitnessV2` in predator-prey.md Phase 3), then a tuning night
+at 7680 x 4320 aimed at B1 and B2 with the deliberate metrics on the scorecard.
 
-### Phase 2 - Biology features
+### Phase 3 - Biology features
 
 **Targets:** none - stub: each feature is planned with its own metrics when this phase is written
 
-TBD - stub: written with the `create-plan` skill after Phase 1.
+TBD - stub: written with the `create-plan` skill after Phase 2.
 
 ## Delivery requirements
 
@@ -76,19 +116,26 @@ TBD - stub: written with the `create-plan` skill after Phase 1.
 
 ## Task breakdown
 
-### Phase 1 - Settle the open balance issues
+### Phase 1 - Measure deliberate behaviour
 
-| #   | Task                                                                      | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------- | ----------- | ---------- |
-| T1  | Plan Phase 1 in full with the `create-plan` skill from the user's answers | [judgement] | -          |
-| T2  | Conformance review of Phase 1                                             | [judgement] | T1         |
+| #   | Task                                              | Nature      | Depends on |
+| --- | ------------------------------------------------- | ----------- | ---------- |
+| T1  | Plan Phase 1 in full with the `create-plan` skill | [judgement] | -          |
+| T2  | Conformance review of Phase 1                     | [judgement] | T1         |
 
-### Phase 2 - Biology features
+### Phase 2 - Reward deliberate behaviour and settle the balance
 
 | #   | Task                                              | Nature      | Depends on |
 | --- | ------------------------------------------------- | ----------- | ---------- |
 | T3  | Plan Phase 2 in full with the `create-plan` skill | [judgement] | T2         |
 | T4  | Conformance review of Phase 2                     | [judgement] | T3         |
+
+### Phase 3 - Biology features
+
+| #   | Task                                              | Nature      | Depends on |
+| --- | ------------------------------------------------- | ----------- | ---------- |
+| T5  | Plan Phase 3 in full with the `create-plan` skill | [judgement] | T4         |
+| T6  | Conformance review of Phase 3                     | [judgement] | T5         |
 
 ## Verification
 

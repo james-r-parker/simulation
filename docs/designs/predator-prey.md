@@ -346,6 +346,8 @@ bound under `fitnessV1`.
 
 **Targets:** eval.catch_rate, eval.escape_rate, eval.pack_kill_share, eval.alarm_response, eval.smoke_escapes, eval.food_energy_per_1k, eval.fed_median_lifespan
 
+> **Note:** the `fitnessV2` terms are re-planned from the deliberate-behaviour table (D1 to D7) in [world-balance.md](world-balance.md) before this phase is built: fitness pays for intent, not chance, and charges wasted calls and smoke.
+
 `life-counters-combat.js`, `fitnessV2`, `descriptors.js`, the archive descriptor option and `map-elites-v2`. Done when
 `map-elites-v2` against `map-elites-v1q` at 16 seeds x 200000 ticks is `better` on at least one of `eval.catch_rate` and
 `eval.escape_rate` and `worse` on neither, and `worse` on neither `eval.food_energy_per_1k` nor `eval.fed_median_lifespan`;
