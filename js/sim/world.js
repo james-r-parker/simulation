@@ -1,6 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
-import { brainLayout } from './brain-layout.js';
+import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
@@ -213,7 +213,7 @@ export function allocateWorld(config) {
             LOCAL_STRIDE * (config.maxAgents + config.maxFood + config.obstacleCount + config.maxClouds),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
-        brainScratch: new Float64Array(config.brainHidden),
+        brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
     };
     allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);
