@@ -2,15 +2,10 @@
 // silhouette. Instance data comes from `packAgents`; this module only owns the GPU objects.
 
 import {
-    BufferAttribute,
     ClampToEdgeWrapping,
     CustomBlending,
     DataTexture,
-    DynamicDrawUsage,
     FloatType,
-    InstancedBufferAttribute,
-    InstancedBufferGeometry,
-    InstancedMesh,
     LinearFilter,
     OneFactor,
     RGBAFormat,
@@ -20,7 +15,8 @@ import {
 } from 'three';
 import { viewBounds } from '../camera.js';
 import { AGENT_FRAGMENT, AGENT_VERTEX } from './agents-shader.js';
-import { createAgentStore, ITEM, packAgents } from './agents-pack.js';
+import { createQuadGeometry, createQuadMesh, uploadInstances } from './instanced.js';
+import { createAgentStore, packAgents } from './agents-pack.js';
 import { temperatureBands, temperatureRamp } from './colors.js';
 
 /** The silhouette (shader `uShape`) of each specialisation name; an unknown name draws as a disc. */
@@ -30,16 +26,6 @@ const RAMP_TEXELS = 64;
 /** Dimming of agents under the scent lens. */
 export const SCENT_DIM = 0.55;
 const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra'];
-
-/**
- * @returns {any} a unit quad (corners at +-1) as an instanced geometry
- */
-function quadGeometry() {
-    const geometry = new InstancedBufferGeometry();
-    geometry.setAttribute('corner', new BufferAttribute(new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]), 2));
-    geometry.setIndex([0, 1, 2, 0, 2, 3]);
-    return geometry;
-}
 
 /**
  * @param {Record<string, any>} info `ready.info`
@@ -83,35 +69,17 @@ function agentMaterial(shape, shared) {
  * @returns {any} one mesh with its instance attributes
  */
 function agentMesh(capacity, shape, shared) {
-    const geometry = quadGeometry();
-    for (const name of INSTANCED) {
-        const attribute = new InstancedBufferAttribute(new Float32Array(capacity * ITEM), ITEM);
-        attribute.setUsage(DynamicDrawUsage);
-        geometry.setAttribute(name, attribute);
-    }
-    const mesh = new InstancedMesh(geometry, agentMaterial(shape, shared), capacity);
-    mesh.frustumCulled = false;
-    mesh.count = 0;
-    return mesh;
+    return createQuadMesh(createQuadGeometry(capacity, INSTANCED), agentMaterial(shape, shared), capacity);
 }
 
 /**
- * Copies a bucket into a mesh's attributes, uploading only the used part.
  * @param {any} mesh the instanced mesh
  * @param {import('./agents-pack.js').Bucket} bucket the packed agents
  * @returns {void}
  */
 function upload(mesh, bucket) {
-    const sources = [bucket.pose, bucket.color, bucket.state, bucket.extra];
-    INSTANCED.forEach((name, k) => {
-        const attribute = mesh.geometry.getAttribute(name);
-        attribute.array.set(sources[k].subarray(0, bucket.count * ITEM));
-        attribute.clearUpdateRanges();
-        attribute.addUpdateRange(0, bucket.count * ITEM);
-        attribute.needsUpdate = true;
-    });
-    mesh.count = bucket.count;
-    mesh.visible = bucket.count > 0;
+    const { pose, color, state, extra } = bucket;
+    uploadInstances(mesh, { iPose: pose, iColor: color, iState: state, iExtra: extra }, bucket.count);
 }
 
 /**
