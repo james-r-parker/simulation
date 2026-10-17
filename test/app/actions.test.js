@@ -27,7 +27,8 @@ function fakeClient() {
 
 /**
  * @param {{now?: number}} [options] the clock
- * @returns {{act: (action: string) => void, calls: any[], state: any, camera: any, clock: {now: number}}} actions over fakes
+ * @returns {{act: (action: string) => void, calls: any[], state: any, camera: any, clock: {now: number},
+ *   toasts: string[]}} actions over fakes
  */
 function setup({ now = 0 } = {}) {
     const { calls, client } = fakeClient();
@@ -37,6 +38,7 @@ function setup({ now = 0 } = {}) {
         world: { width: 14400, height: 8100 },
     });
     const clock = { now };
+    const toasts = /** @type {string[]} */ ([]);
     const act = createActions({
         getClient: () => client,
         camera,
@@ -44,8 +46,9 @@ function setup({ now = 0 } = {}) {
         now: () => clock.now,
         chooseSeed: () => 99,
         config: { initialAgents: 7 },
+        ui: /** @type {any} */ ({ toast: (/** @type {string} */ text) => toasts.push(text) }),
     });
-    return { act, calls, state, camera, clock };
+    return { act, calls, state, camera, clock, toasts };
 }
 
 describe('createActions', () => {
@@ -82,17 +85,17 @@ describe('createActions', () => {
     });
 
     it('starts a new world only on a second press within the window', () => {
-        const { act, calls, state, clock } = setup();
+        const { act, calls, clock, toasts } = setup();
         act('newWorld');
         expect(calls).toEqual([]);
-        expect(state.notice).toMatch(/again/);
+        expect(toasts).toHaveLength(1);
+        expect(toasts[0]).toMatch(/again/);
         clock.now = NEW_WORLD_CONFIRM_MS + 1;
         act('newWorld');
         expect(calls).toEqual([]);
         clock.now += 1000;
         act('newWorld');
         expect(calls).toEqual([['reset', 99, { initialAgents: 7 }]]);
-        expect(state.notice).toBe('');
         clock.now += 10;
         act('newWorld');
         expect(calls).toHaveLength(1);
@@ -179,6 +182,7 @@ describe('page actions', () => {
             exportArchive: () => calls.push('archive'),
             exportBundle: () => calls.push('bundle'),
             lensesChanged: () => calls.push('lenses'),
+            toast: (/** @type {string} */ t) => calls.push(`toast ${t}`),
         };
         const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
         const act = createActions({
@@ -235,8 +239,18 @@ describe('page actions', () => {
     });
 
     it('does nothing for page actions when the page gave no hooks', () => {
-        const { act } = setup();
-        expect(() => act('toggleCharts')).not.toThrow();
-        expect(() => act('escape')).not.toThrow();
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => null,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+        });
+        for (const action of ['toggleCharts', 'escape', 'lens2', 'newWorld']) {
+            expect(() => act(action), action).not.toThrow();
+        }
     });
 });

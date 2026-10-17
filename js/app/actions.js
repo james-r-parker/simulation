@@ -50,6 +50,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {() => void} fullscreen enters or leaves fullscreen
  * @property {() => void} exportArchive asks the worker for the archive and downloads it
  * @property {() => void} exportBundle downloads the debug bundle
+ * @property {(text: string) => void} toast shows a short message
  * @property {() => void} lensesChanged a lens was toggled: sync the worker's ray part and save the preference
  */
 
@@ -63,6 +64,7 @@ const NO_UI = Object.freeze({
     exportArchive() {},
     exportBundle() {},
     lensesChanged() {},
+    toast() {},
 });
 
 /**
@@ -99,13 +101,12 @@ function newWorld(deps) {
     const t = deps.now();
     if (t - state.newWorldArmedAt <= NEW_WORLD_CONFIRM_MS) {
         state.newWorldArmedAt = -Infinity;
-        state.notice = '';
         state.selectedId = 0;
         state.followId = 0;
         deps.getClient()?.reset(deps.chooseSeed(), deps.config);
     } else {
         state.newWorldArmedAt = t;
-        state.notice = 'Press N again to start a new world';
+        (deps.ui ?? NO_UI).toast('Press N again within 3 s to start a new world');
     }
 }
 

@@ -129,11 +129,10 @@ test('N asks for confirmation and a second press starts a new world', async ({ p
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
     await page.keyboard.press('KeyN');
-    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText(/again/);
+    await expect(page.locator('.toast')).toHaveText(/again/);
     const before = await tickOf(page);
     expect(before).toBeGreaterThan(5);
     await page.keyboard.press('KeyN');
-    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('');
     await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeLessThan(before);
     await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeGreaterThan(5);
 });
@@ -167,4 +166,95 @@ test('recovers from a lost WebGL context', async ({ page }) => {
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
     const shot = await page.locator('#canvas-container canvas').screenshot();
     expect(shot.length, 'the world draws again after the restore').toBeGreaterThan(8000);
+});
+
+test('the top bar shows the season, the counts by type and the born share', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await expect(page.locator('#top-bar .top-bar-elapsed')).toHaveText(/^\d+:\d\d/);
+    await expect(page.locator('#top-bar .top-bar-type')).toHaveCount(5);
+    await expect(page.locator('#top-bar .top-bar-born')).toHaveText(/^born /);
+    await expect(page.locator('#top-bar .top-bar-seasonBox')).not.toHaveText('');
+});
+
+test('C, I and ? open one drawer each, Escape closes it', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    const open = page.locator('.drawer.open');
+    await page.keyboard.press('KeyC');
+    await expect(open).toHaveCount(1);
+    await expect(page.locator('.drawer-charts.open')).toBeAttached();
+    await expect(page.locator('.drawer-charts .uplot')).toHaveCount(5, { timeout: 20_000 });
+    await page.keyboard.press('KeyI');
+    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
+    await expect(open).toHaveCount(1);
+    await expect(page.locator('.drawer-charts .uplot')).toHaveCount(0);
+    await page.keyboard.press('Shift+Slash');
+    await expect(page.locator('.drawer-help.open')).toBeAttached();
+    await expect(page.locator('.help-keys dt').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(open).toHaveCount(0);
+    await page.keyboard.press('F1');
+    await expect(page.locator('.drawer-help.open')).toBeAttached();
+    await page.keyboard.press('Escape');
+    await expect(open).toHaveCount(0);
+});
+
+test('keys 1 to 4 toggle the lenses and the choice is remembered', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    for (const key of ['Digit1', 'Digit2', 'Digit3', 'Digit4']) {
+        await page.keyboard.press(key);
+    }
+    const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('blobEvolution.prefs.v1') ?? '{}').lenses);
+    await expect.poll(stored).toEqual([true, true, true, true]);
+    await page.keyboard.press('Digit2');
+    await expect.poll(stored).toEqual([true, false, true, true]);
+    const before = await tickOf(page);
+    await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
+    await page.reload();
+    await worldRunning(page);
+    expect(await stored()).toEqual([true, false, true, true]);
+});
+
+test('H hides and shows the HUD, Shift+N focuses the seed field', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await page.keyboard.press('KeyH');
+    await expect(page.locator('#hud')).toBeHidden();
+    await page.keyboard.press('KeyH');
+    await expect(page.locator('#hud')).toBeVisible();
+    await page.keyboard.press('Shift+KeyN');
+    await expect(page.locator('.control-seed')).toBeFocused();
+    await expect(page.locator('.control-seed')).toHaveValue('3');
+    await page.locator('.control-seed').fill('11');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.locator('.control-seed').inputValue(), { timeout: 30_000 }).toBe('11');
+});
+
+test('E and B download the archive and the debug bundle, Shift+F does not break the loop', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    const bundle = page.waitForEvent('download');
+    await page.keyboard.press('KeyB');
+    expect((await bundle).suggestedFilename()).toMatch(/^blob-debug-3-\d+\.json$/);
+    const archive = page.waitForEvent('download');
+    await page.keyboard.press('KeyE');
+    expect((await archive).suggestedFilename()).toBe('blob-archive-3.json');
+    await page.keyboard.press('Shift+KeyF');
+    const before = await tickOf(page);
+    await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
+});
+
+test('every control button has a title with its key and an aria-label', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    const buttons = page.locator('#top-bar button');
+    expect(await buttons.count()).toBeGreaterThan(5);
+    for (const button of await buttons.all()) {
+        await expect(button).toHaveAttribute('aria-label', /.+/);
+        await expect(button).toHaveAttribute('title', /\(.+\)$/);
+    }
+    await page.locator('.control-toggleHelp').click();
+    await expect(page.locator('.drawer-help.open')).toBeAttached();
 });
