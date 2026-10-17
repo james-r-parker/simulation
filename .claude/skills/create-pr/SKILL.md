@@ -29,7 +29,7 @@ scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or th
    test file, no size limit is dodged with `eslint-disable`, errors are loud, hot paths allocate nothing.
 4. **Measurements attached:** if the phase has `**Targets:**`, run the comparison for each target and keep the
    output for the PR body: `npm run bench` against `bench/baseline.json` for `bench.*`, `node
-scripts/browser-perf.mjs` against `bench/legacy-baseline.json` for `browser.*`, and `npm run eval:compare` for
+scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`, on the dev machine's Chrome with `--cdp`) against the budgets in `bench/browser-baseline.json` for `browser.*` (`bench/legacy-baseline.json` is the legacy app's), and `npm run eval:compare` for
    `eval.*` (the `run-evolution-loop` skill, at least 16 seeds). A target that moved the wrong way blocks the PR.
    These commands arrive with `headless-sim-core.md`, `evolution-evals.md` and `dev-workflow-and-gate.md` Phase 2;
    before then, a phase with Targets cannot be marked built.

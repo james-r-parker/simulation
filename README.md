@@ -233,6 +233,9 @@ scripts/check.sh
 3. **Open in browser** - That's it! Evolution begins immediately.
 
 ### 🎮 How to Play
+- **Keys**: `Space` pauses, `.` steps one tick (`Shift+.` ten), `[` and `]` change speed, `N` twice starts a new world with a new seed, arrow keys or drag pan, wheel or `+` and `-` zoom, `Home` resets the camera, `F` follows the selected agent and `Esc` clears it. Click an agent to select it.
+- **URL**: `?seed=<n>`, `?agents=<n>`, `?speed=<0.25..16>` and `?quality=<0|1|2>` shape the start.
+- **The old app** still runs at `/legacy.html` under `npm run dev`; it is not part of the production build and is deleted in Phase 5 of [the worker and renderer design](docs/designs/worker-and-renderer.md).
 - **Watch**: Sit back and observe as random behaviors evolve into complex strategies
 - **Experiment**: Adjust speed, population size, mutation rates, and food availability
 - **Save Progress**: Your evolved species automatically persist in your browser
