@@ -6,11 +6,14 @@
 import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
+import { createIdleTracker } from './idle.js';
 import { loadPrefs, savePrefs } from './prefs.js';
 import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
 import { mountDrawers } from './ui/drawer.js';
+import { createHudFade, persistentNodes } from './ui/hud-fade.js';
 import { mountHelp } from './ui/help.js';
+import { applyPixelShift } from './ui/pixel-shift.js';
 import { mountInspector } from './ui/inspector.js';
 import { inspectorView, NO_INSPECTION } from './ui/inspector-data.js';
 import { wantsRays } from './ui/lenses.js';
@@ -19,7 +22,7 @@ import { createToaster } from './ui/toast.js';
 import { mountTopBar, topBarInput, topBarView } from './ui/top-bar.js';
 
 /** How often each part refreshes, in ms. */
-export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, charts: 1000 });
+export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, charts: 1000, idle: 100, shift: 1000 });
 
 /**
  * @typedef {object} InterfaceDeps
@@ -41,30 +44,13 @@ export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, 
  */
 
 /**
- * @param {InterfaceDeps} deps the injected parts
- * @returns {Record<string, any>} the parts every function below shares
+ * Mounts the controls, the drawers and what goes in them, and applies the HUD state and size.
+ * @param {Record<string, any>} ctx the shared parts, whose mount fields this fills
+ * @returns {void}
  */
-function build(deps) {
-    const { doc, elements, state } = deps;
-    const prefs = loadPrefs(deps.storage);
-    prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
-    const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
-    const ctx = {
-        deps,
-        prefs,
-        hidden: !prefs.hud,
-        toast: (/** @type {string} */ text) => toaster.show(text),
-        queue: createTickerQueue(),
-        chartData: createChartData(),
-        barUpdate: mountTopBar(doc, elements.bar),
-        tickerUpdate: mountTicker(doc, elements.ticker),
-        last: { bar: -Infinity, ticker: -Infinity, inspector: -Infinity, charts: -Infinity },
-        controls: /** @type {any} */ (null),
-        drawers: /** @type {any} */ (null),
-        inspector: /** @type {any} */ (null),
-        charts: /** @type {any} */ (null),
-        help: /** @type {any} */ (null),
-    };
+function mountParts(ctx) {
+    const { deps, prefs } = ctx;
+    const { doc, elements } = deps;
     ctx.controls = mountControls(doc, elements.bar, { perform: deps.perform, onSeed: (seed) => startWorld(ctx, seed) });
     ctx.charts = createChartsLifecycle({
         doc,
@@ -88,6 +74,49 @@ function build(deps) {
     });
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
+}
+
+/**
+ * @param {InterfaceDeps} deps the injected parts
+ * @returns {Record<string, any>} the parts every function below shares
+ */
+function build(deps) {
+    const { doc, elements, state } = deps;
+    const prefs = loadPrefs(deps.storage);
+    prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
+    const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
+    const ctx = {
+        deps,
+        prefs,
+        hidden: !prefs.hud,
+        toast: (/** @type {string} */ text) => toaster.show(text),
+        queue: createTickerQueue(),
+        chartData: createChartData(),
+        barUpdate: mountTopBar(doc, elements.bar),
+        tickerUpdate: mountTicker(doc, elements.ticker),
+        last: {
+            bar: -Infinity,
+            ticker: -Infinity,
+            inspector: -Infinity,
+            charts: -Infinity,
+            idle: -Infinity,
+            shift: -Infinity,
+        },
+        idle: createIdleTracker(deps.now),
+        shifted: { x: 0, y: 0 },
+        fade: createHudFade({
+            apply(/** @type {boolean} */ idle) {
+                elements.hud.classList.toggle('hud-idle', idle);
+                doc.documentElement.classList.toggle('cursor-hidden', idle);
+            },
+        }),
+        controls: /** @type {any} */ (null),
+        drawers: /** @type {any} */ (null),
+        inspector: /** @type {any} */ (null),
+        charts: /** @type {any} */ (null),
+        help: /** @type {any} */ (null),
+    };
+    mountParts(ctx);
     return ctx;
 }
 
@@ -202,6 +231,18 @@ function createListeners(ctx) {
 /** What `tick` refreshes: a part, when it needs it, and how. */
 const REFRESHERS = Object.freeze([
     {
+        key: 'idle',
+        wanted: () => true,
+        run: (/** @type {Record<string, any>} */ ctx) => ctx.fade.tick(ctx.idle.idleMs()),
+    },
+    {
+        key: 'shift',
+        wanted: () => true,
+        run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
+            applyPixelShift(persistentNodes(ctx.deps.elements), now / 1000, ctx.shifted);
+        },
+    },
+    {
         key: 'bar',
         wanted: () => true,
         run(/** @type {Record<string, any>} */ ctx) {
@@ -237,9 +278,10 @@ const REFRESHERS = Object.freeze([
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
- *   resize: () => void}} the interface:
+ *   resize: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface:
  *   `hooks` for the actions, `listeners` (`onReady`, `onStats`, `onTicker`, `onArchive`) for the worker client,
- *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes
+ *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes, `noteInput` for each key, press, wheel
+ *   and pointer move
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -249,6 +291,7 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        noteInput: (event) => ctx.idle.input(event),
         resize: () => applyScale(ctx),
         tick(nowMs) {
             for (const part of REFRESHERS) {

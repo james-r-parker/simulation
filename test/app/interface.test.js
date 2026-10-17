@@ -28,7 +28,11 @@ class FakeUPlot {
 function setup({ stored = {}, failed = null } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
-    doc.documentElement = { requestFullscreen: () => Promise.reject(new Error('no')), style: {} };
+    doc.documentElement = {
+        requestFullscreen: () => Promise.reject(new Error('no')),
+        style: {},
+        classList: doc.createElement('html').classList,
+    };
     const elements = {
         hud: doc.createElement('div'),
         bar: doc.createElement('div'),
@@ -227,5 +231,25 @@ describe('createInterface', () => {
         await Promise.resolve();
         await Promise.resolve();
         expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toContain('Fullscreen was refused');
+    });
+
+    it('fades the HUD and hides the cursor after 30 s idle, and brings them back on input', () => {
+        const { ui, elements, doc, setClock } = setup();
+        ui.tick(100);
+        setClock(31000);
+        ui.tick(31000);
+        expect(elements.hud.classList.contains('hud-idle')).toBe(true);
+        expect(doc.documentElement.classList.contains('cursor-hidden')).toBe(true);
+        expect(ui.noteInput({ type: 'keydown' })).toBe(true);
+        ui.tick(31200);
+        expect(elements.hud.classList.contains('hud-idle')).toBe(false);
+        expect(doc.documentElement.classList.contains('cursor-hidden')).toBe(false);
+    });
+
+    it('shifts the persistent nodes once a second, to whole pixels', () => {
+        const { ui, elements } = setup();
+        ui.tick(100_000);
+        expect(elements.bar.style.transform).toMatch(/^translate\(-?\d+px, -?\d+px\)$/);
+        expect(elements.ticker.style.transform).toBe(elements.bar.style.transform);
     });
 });

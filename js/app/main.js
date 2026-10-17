@@ -38,11 +38,12 @@ function showMessage(container, text) {
 
 /**
  * Wires the keys and the pointer.
- * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>}} wiring
- *   the canvas, the action runner and the pointer handlers
+ * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
+ *   iface: ReturnType<typeof createInterface>}} wiring the canvas, the action runner, the pointer handlers and the
+ *   interface that hears every input
  * @returns {void}
  */
-function listen({ canvas, perform, input }) {
+function listen({ canvas, perform, input, iface }) {
     const toDevice = (/** @type {MouseEvent} */ e) => {
         const r = canvas.getBoundingClientRect();
         return {
@@ -51,19 +52,27 @@ function listen({ canvas, perform, input }) {
         };
     };
     window.addEventListener('keydown', (e) => {
+        iface.noteInput({ type: 'keydown' });
         const action = actionForKey(e);
         if (action !== null) {
             e.preventDefault();
             perform(action);
         }
     });
-    canvas.addEventListener('pointerdown', (e) => input.down(toDevice(e).x, toDevice(e).y));
-    window.addEventListener('pointermove', (e) => input.move(toDevice(e).x, toDevice(e).y));
+    canvas.addEventListener('pointerdown', (e) => {
+        iface.noteInput({ type: 'pointerdown' });
+        input.down(toDevice(e).x, toDevice(e).y);
+    });
+    window.addEventListener('pointermove', (e) => {
+        iface.noteInput({ type: 'pointermove', x: e.clientX, y: e.clientY });
+        input.move(toDevice(e).x, toDevice(e).y);
+    });
     window.addEventListener('pointerup', (e) => input.up(toDevice(e).x, toDevice(e).y));
     canvas.addEventListener(
         'wheel',
         (e) => {
             e.preventDefault();
+            iface.noteInput({ type: 'wheel' });
             input.wheel(e.deltaY, toDevice(e).x, toDevice(e).y);
         },
         { passive: false },
@@ -131,7 +140,12 @@ function onReady(app, message) {
             onRestored: () => attachGpuTimer(app),
         });
         app.deps.scene.resize(app.size.width, app.size.height);
-        listen({ canvas: app.deps.scene.canvas, perform: app.perform, input: createPointerInput(pointerOptions(app)) });
+        listen({
+            canvas: app.deps.scene.canvas,
+            perform: app.perform,
+            input: createPointerInput(pointerOptions(app)),
+            iface: app.iface,
+        });
     } else {
         app.deps.scene.rebuild();
     }
