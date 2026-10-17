@@ -10,6 +10,7 @@ import {
     packField,
     SATURATION_RATE,
 } from '../../../js/app/renderer/haze-layer.js';
+import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { smallReady } from '../helpers/ready.js';
 
 const grid = { cols: 3, rows: 2, pheromoneMax: 10 };
@@ -69,5 +70,25 @@ describe('createHazeLayer', () => {
         const packed = u.uNext.value.image.data;
         expect(packed[3]).toBe(DataUtils.toHalfFloat(1));
         layer.dispose();
+    });
+
+    it('keeps a fully saturated field a faint veil on the black background', () => {
+        const scentColours = [PALETTE.dangerScent, PALETTE.attackScent, PALETTE.huntScent];
+        const peak = Math.max(...scentColours.flat());
+        const srgb = (linear) => 1.055 * linear ** (1 / 2.4) - 0.055;
+        expect(srgb(HAZE_CAP * peak)).toBeLessThanOrEqual(0.15);
+        expect(srgb(HAZE_CAP_LENS * peak)).toBeLessThanOrEqual(0.3);
+        const one = { cols: 1, rows: 1, pheromoneMax: 10 };
+        const out = packField(new Float32Array([1e9, 1e9, 1e9]), one, new Uint16Array(4), (v) => v);
+        expect(Array.from(out.slice(0, 3))).toEqual([1, 1, 1]);
+    });
+
+    it('keeps danger a cold red, not magenta, and hunt a warm gold', () => {
+        const [dr, dg, db] = PALETTE.dangerScent;
+        expect(dr).toBeGreaterThan(4 * Math.max(dg, db));
+        const [hr, hg, hb] = PALETTE.huntScent;
+        expect(hg / hr).toBeGreaterThan(0.6);
+        expect(hg / hr).toBeLessThan(0.8);
+        expect(hb).toBeLessThan(0.3);
     });
 });
