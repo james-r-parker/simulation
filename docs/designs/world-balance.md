@@ -212,8 +212,9 @@ random first genomes, so every chance column is also checked against untrained b
 `evals/micro-world.json` for the forage pair and `evals/predator-world.json` (predators on even slots, foragers on
 odd) for the rest. The chance arm's metric is at most 0.5 x the skill arm's (for a `lower` metric, the skill arm's is
 at most 0.5 x the chance arm's); a `null` on the chance arm counts as 0, and a `null` on the skill arm fails the test. `eval.group_cohesion_under_threat`
-is a difference, so a negative chance value counts as 0 and the skill arm must be above 0. The D3 pairs run 20000
-ticks on seeds 1, 2 and 3, since pack kills need kin hunters born by splitting. `test/evo/helpers/predator-world.js`
+is a difference, so a negative chance value counts as 0 and the skill arm must be above 0. Only the D3 pairs run longer, 20000
+ticks on seeds 1, 2 and 3, since pack kills need kin hunters born by splitting. The D4 pairs and the D8 pair with
+`random` prey are not in the test yet: they failed at 20000 ticks on seeds 1 to 3 (see the Phase 1 note). `test/evo/helpers/predator-world.js`
 takes the predator and prey controllers by name.
 
 | #   | Metric                             | Chance arm                               | Skill arm                   |
@@ -436,7 +437,7 @@ choices and reasons within the plans").
 > against skill 0.70-0.73) - precision must become lift over the caller's own threatened (or prey-ahead) share of
 > ticks, as responses are; D5 - `grouper` gives the same value as `fleer`, a controller defect; D4 - seed 1 has no
 > escaped episode, so the D4 pairs need more seeds or ticks; D8 with `random` prey - seed 1 gives 0.429 skill
-> against 0.375 allowed. These fixes come before T10 and T11. Update: D6 is fixed (precision is lift; alarm skill 0.005-0.021, chance clamped to 0) and its rows are back; `grouper` now steers to the nearest lineage mate, but D5 stays out because the duel's prey are all eaten by tick 1000, so no run has a threatened prey with a lineage mate near (skill is 0 or below on every seed).
+> against 0.375 allowed. These fixes come before T10 and T11. Update: D4 and D8 with `random` prey were rerun for 20000 ticks on seeds 1, 2 and 3 (as the D3 pairs are) and still fail: D4 seed 1 still has no escaped episode (skill `null`; seeds 2 and 3 hold), and D8 with `random` prey gives 0.429 skill against 0.375 allowed on seed 1 and 0.400 against 0.357 on seed 3 (chance 0.75 and 0.714). They stay out, with no bound or null rule changed. Update: D6 is fixed (precision is lift; alarm skill 0.005-0.021, chance clamped to 0) and its rows are back; `grouper` now steers to the nearest lineage mate, but D5 stays out because the duel's prey are all eaten by tick 1000, so no run has a threatened prey with a lineage mate near (skill is 0 or below on every seed).
 
 The intent state and counters, the thirteen D metrics, the six selection metrics, the per-metric seed minimum with
 64 seeds and `npm run eval:power`, the five controllers and the `random` arm with the paired test, and `npm run
