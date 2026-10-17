@@ -221,9 +221,9 @@ test('H hides and shows the HUD, Shift+N focuses the seed field', async ({ page 
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
     await page.keyboard.press('KeyH');
-    await expect(page.locator('#hud')).toBeHidden();
+    await expect(page.locator('#top-bar')).toBeHidden();
     await page.keyboard.press('KeyH');
-    await expect(page.locator('#hud')).toBeVisible();
+    await expect(page.locator('#top-bar')).toBeVisible();
     await page.keyboard.press('Shift+KeyN');
     await expect(page.locator('.control-seed')).toBeFocused();
     await expect(page.locator('.control-seed')).toHaveValue('3');
