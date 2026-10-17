@@ -184,3 +184,20 @@ export function checkRenderer(renderer, allowSoftware) {
         );
     }
 }
+
+/**
+ * @param {{viewport: string, entry: Record<string, any>}} result the measured entry
+ * @returns {string[]} the report lines: the run, each metric, each metric over its budget and the verdict
+ */
+export function formatReport({ viewport, entry }) {
+    const lines = [
+        `Viewport ${viewport}: ${entry.frames} frames, ${entry.agents} agents, ${entry.refreshHz} Hz, ${entry.gpuAdapter}`,
+        ...Object.entries(entry.metrics).map(([name, value]) => `${name}: ${value}`),
+    ];
+    const over = overBudget(entry.metrics);
+    for (const { metric, value, max, criterion } of over) {
+        lines.push(`${criterion ? 'OVER BUDGET' : 'over (reported only)'}: ${metric} ${value} > ${max}`);
+    }
+    lines.push(over.some((o) => o.criterion) ? 'Budgets: not met' : 'Budgets: met');
+    return lines;
+}
