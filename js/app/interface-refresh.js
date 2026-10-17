@@ -81,7 +81,11 @@ const REFRESHERS = Object.freeze([
         run(/** @type {Record<string, any>} */ ctx) {
             const client = ctx.deps.getClient();
             const paused = client?.paused ?? false;
-            const view = topBarView(topBarInput(client, populationTrend(ctx, client)), ctx.deps.state, paused);
+            const view = topBarView(
+                topBarInput(client, populationTrend(ctx, client)),
+                ctx.deps.state,
+                client?.pausedAck ?? false,
+            );
             ctx.barUpdate(view);
             ctx.help.setDebug(view.debug);
             ctx.controls.update({ paused, seed: ctx.deps.getReady()?.seed ?? null, drawer: ctx.drawers.state() });

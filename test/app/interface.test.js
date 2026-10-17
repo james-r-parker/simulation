@@ -49,6 +49,7 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
     const sent = /** @type {any[]} */ ([]);
     const client = {
         paused: false,
+        pausedAck: false,
         latest: snapshot,
         setLenses: (/** @type {boolean} */ r) => sent.push(['setLenses', r]),
         reset: (/** @type {number} */ s, /** @type {any} */ c) => sent.push(['reset', s, c]),
@@ -188,7 +189,7 @@ describe('createInterface', () => {
         const [speed] = byClass(elements.bar, 'top-bar-speed');
         expect(speed.textContent).toMatch(/^x1/);
         expect(byClass(elements.ticker, 'ticker-line')[0].textContent).toBe('lineage 3 takes the lead');
-        client.paused = true;
+        client.pausedAck = true;
         ui.tick(1000 + REFRESH_MS.bar - 1);
         expect(speed.textContent).toMatch(/^x1/);
         ui.tick(1000 + REFRESH_MS.bar);
