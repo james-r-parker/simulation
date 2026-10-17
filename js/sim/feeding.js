@@ -20,13 +20,15 @@ const PI = 3.141592653589793;
  * @returns {void}
  */
 function tryEat(world, slot, food) {
-    if (world.foodAlive[food] !== 1) {
+    const share = world.plantFoodBySpec[world.spec[slot]];
+    if (world.foodAlive[food] !== 1 || share === 0) {
         return;
     }
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        const stored = addEnergy(world, slot, world.foodValue[food], ENERGY_SOURCE.FOOD);
+        const value = share === 1 ? world.foodValue[food] : world.foodValue[food] * share;
+        const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
         world.foodEnergy[slot] += stored;
         const { temperatureGainEat, foodEnergy } = world.config;
         gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
