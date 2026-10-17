@@ -18,6 +18,7 @@ js/**
 css/
 public/
 index.html
+legacy.html
 *.README.md
 README.md
 COLLISION_LOGIC.md
