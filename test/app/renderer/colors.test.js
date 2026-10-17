@@ -19,9 +19,9 @@ describe('PALETTE', () => {
         }
         expect(PALETTE.background).toEqual([0, 0, 0]);
         expect(PALETTE.food).toEqual([0.35, 0.9, 0.7]);
-        expect(PALETTE.huntScent).toEqual([1.0, 0.62, 0.12]);
-        expect(PALETTE.dangerScent).toEqual([0.9, 0.12, 0.25]);
-        expect(PALETTE.attackScent).toEqual([0.55, 0.32, 1.0]);
+        expect(PALETTE.huntScent).toEqual([1.0, 0.74, 0.2]);
+        expect(PALETTE.dangerScent).toEqual([0.75, 0.03, 0.04]);
+        expect(PALETTE.attackScent).toEqual([0.5, 0.18, 1.0]);
         expect(PALETTE.smoke).toEqual([0.03, 0.04, 0.06]);
         expect(PALETTE.obstacleBody).toEqual([0.012, 0.016, 0.024]);
         expect(PALETTE.obstacleRim).toEqual([0.09, 0.12, 0.18]);

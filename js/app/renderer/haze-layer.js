@@ -15,9 +15,12 @@ import {
 import { PALETTE } from './colors.js';
 import { HAZE_FRAGMENT, HAZE_VERTEX } from './haze-layer-shader.js';
 
-/** The alpha ceiling of the haze, and under the scent lens. */
-export const HAZE_CAP = 0.35;
-export const HAZE_CAP_LENS = 0.8;
+/**
+ * The brightness ceiling of the haze, and under the scent lens: a fully saturated field adds at most this linear share
+ * of its colour to the black background (about 15% once sRGB-encoded), so the abyss stays black and the haze is a veil.
+ */
+export const HAZE_CAP = 0.018;
+export const HAZE_CAP_LENS = 0.07;
 /** How long a new field takes to fade in, ms. */
 export const FADE_MS = 250;
 /** The saturation rate of `1 - exp(-RATE x value / pheromoneMax)`. */
