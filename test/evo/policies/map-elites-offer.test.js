@@ -97,4 +97,18 @@ describe('offers', () => {
         killAndReuse({ policy, world, observer }, { slot: 1, genomeId: 700, fitness: 5, samples: 0 });
         expect(policy.archive.ids[placeOf(0, 0, ELITE)]).toBe(700);
     });
+
+    it('finds its death-log rows again after the host drains the log', () => {
+        const { world } = setup();
+        const observer = createObserver(world.config, createRng(1));
+        const policy = createMapElitesV1({ config: world.config, observer });
+        const ctx = { policy, world, observer };
+        killAndReuse(ctx, { slot: 1, genomeId: 800, fitness: 40 });
+        observer.deathsDrained += observer.deathCount;
+        observer.deathCount = 0;
+        // Without the drain offset the row would be 1 and the check against the log would throw.
+        expect(() => killAndReuse(ctx, { slot: 2, genomeId: 801, fitness: 41 })).not.toThrow();
+        expect(observer.deathsDrained).toBe(1);
+        expect(policy.archive.ids[placeOf(0, 6, ELITE)]).toBe(800);
+    });
 });
