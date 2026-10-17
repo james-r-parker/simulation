@@ -501,6 +501,7 @@ choices and reasons within the plans").
 | Ten-minute seasons with winter, droughts and invasion pulses                                                                                                                                                        | One-minute seasons on a full buffet never feel like history (user)                                                                                                                                                                                                                                         | User              |
 | Carcasses as meat for a few seconds                                                                                                                                                                                 | Contested kills, scavengers and a shot the director can hold (user)                                                                                                                                                                                                                                        | User              |
 | The calibrations `E23` and `E24` are deferred to T41's `E29`; Phase 1 records only `E25`                                                                                                                            | Phase 2 re-pins the world and Phase 3 switches every feature on, so a calibration run now would be stale twice before `fitnessV2` reads it; `E29` runs once on the finished rules (64 seeds), and `eval:power` on its report decides the `watch` moves                                                     | User              |
+| Phase 1 merges with the observer over its bench budget; optimisation continues before T41                                                                                                                           | The observer feed was not yet shown to be within the 5% budget after the bit-identical optimisations in the T10 note (user, 2026-10-17)                                                                                                                                                                    | User              |
 
 ## Phases
 
@@ -513,6 +514,18 @@ choices and reasons within the plans").
 > (median 5.45 against 6.56); `main`'s spread is too wide for a verdict, and nothing shows the branch more than 5%
 > slower. `alloc-check --policy map-elites-v1q`: 57576 bytes of heap growth over 1000 ticks (limit 1048576). Rerun
 > with `node scripts/bench-compare.mjs` before the phase is marked built.
+>
+> **T10 optimisation (2026-10-17), known miss against the 5% budget.** Merge-base `3e383fd` measured 4.87 ms
+> (median of 5) against 5.34 ms on this branch (+9.5%), about 0.46 ms per tick of observer cost. A timing harness
+> around `observe` (2000 ticks, 500 agents) put `updateIntent` at 0.415 ms, of which `nearestHunter` was about 0.11,
+> `summariseRays` 0.08, the rest of `senseSlot` 0.06, `kinNear` in `sampleGroups` 0.055 and `trackTarget` 0.035.
+> Four bit-identical commits (eval reports for 2 seeds x 3000 ticks equal apart from wall clock and sha after each)
+> took `updateIntent` to 0.217 ms: a hunter grid for the threat scan, `sampleGroups` by lineage, `summariseRays` into
+> locals, and `nearestHunterDistances` on squared distances (the pre-existing combat follow-up, 0.26 to 0.195 ms).
+> A fifth try, direct kind arrays in `trackTarget`, gave no gain and was dropped. The interleaved 5-run
+> `bench` after the changes did not finish (the shared CPU lock was contended), so there is no new median; by the
+> harness the overhead fell from about 0.46 to about 0.22 ms per tick, which should be near +5% but is unmeasured.
+> `alloc-check` was not rerun after the changes. Remaining: rerun both, and cut `summariseRays` and `senseSlot` further.
 
 > **Note:** the paired test (T8, 2026-10-17) holds for D1 (`wanderer`, `cruiser`, `random`), D2, D3 (at 20000
 > ticks, `pack_convergence` 0.56-0.58 skill against 0 chance), D7 and D8 with `foodSeeker` prey. Four pairs failed and
