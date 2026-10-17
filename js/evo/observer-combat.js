@@ -137,8 +137,8 @@ function onDeath(combat, d, o, tick) {
  */
 function applyCombatEvents(combat, world) {
     const d = world.events.data;
-    for (let i = 0; i < world.events.count; i++) {
-        const o = i * EVENT_STRIDE;
+    const end = world.events.count * EVENT_STRIDE;
+    for (let o = 0; o < end; o += EVENT_STRIDE) {
         switch (d[o]) {
             case EVENT_TYPE.AGENT_BORN:
                 combat.knownAgents.set(d[o + 3], d[o + 4] * SPEC_RADIX + d[o + 5]);
