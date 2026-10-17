@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
+import { createSimLog } from '../../../js/sim/log.js';
 import { createRng } from '../../../js/sim/rng.js';
+import { smallWorld } from '../../sim/helpers/small-world.js';
 import { setup, fill } from '../helpers/map-elites-world.js';
 
 describe('initSpec', () => {
@@ -24,6 +27,50 @@ describe('initSpec', () => {
     it('returns 0 on an empty world', () => {
         const { policy, world } = setup();
         expect(policy.brain.initSpec(world, 0, createRng(1))).toBe(0);
+    });
+});
+
+describe('initSpec with specMutationRate above 0', () => {
+    /**
+     * @returns {{policy: any, world: any}} a policy on a world with heritable specialisation
+     */
+    function heritable() {
+        const world = smallWorld({ brainHidden: 4, maxAgents: 8, specMutationRate: 0.002 });
+        const log = createSimLog(() => {}, { level: 'debug' });
+        return { policy: createMapElitesV1({ config: world.config, log }), world };
+    }
+
+    it('draws a random specialisation while the archive is short, ignoring who is alive', () => {
+        const { policy, world } = heritable();
+        world.alive[0] = 1;
+        world.spec[0] = 1;
+        const rng = createRng(3);
+        const seen = new Set();
+        for (let i = 0; i < 100; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect(seen.size).toBe(5);
+    });
+
+    it('draws the specialisation of a random elite once the archive has 10 cells', () => {
+        const { policy, world } = heritable();
+        fill(policy, { spec: 0, count: 10 });
+        fill(policy, { spec: 3, count: 10 });
+        const rng = createRng(4);
+        const counts = [0, 0, 0, 0, 0];
+        for (let i = 0; i < 2000; i++) {
+            counts[policy.brain.initSpec(world, 7, rng)] += 1;
+        }
+        expect([counts[1], counts[2], counts[4]]).toEqual([0, 0, 0]);
+        expect(counts[0]).toBeGreaterThan(900);
+        expect(counts[3]).toBeGreaterThan(900);
+    });
+
+    it('draws only from the stream it is given', () => {
+        const { policy, world } = heritable();
+        const before = Array.from(world.rng.spawn.s);
+        policy.brain.initSpec(world, 7, createRng(5));
+        expect(Array.from(world.rng.spawn.s)).toEqual(before);
     });
 });
 

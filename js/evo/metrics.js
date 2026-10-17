@@ -100,6 +100,7 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.diversity': series.diversity(observer),
         'eval.lineages_alive': series.lineagesAlive(observer),
         'eval.lineage_turnover': series.lineageTurnover(observer),
+        'eval.spec_turnover': series.specTurnover(observer),
         'eval.behaviour_coverage': grids.life,
         'eval.motion_coverage': grids.motion,
         'eval.predator_share_cv': series.predatorShareCv(observer),

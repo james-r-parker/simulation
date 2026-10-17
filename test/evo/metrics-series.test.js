@@ -5,7 +5,14 @@ import { addCheckpoint, bareObserver } from './helpers/metrics-observer.js';
 describe('series metrics', () => {
     it('are null with a reason when there is no checkpoint', () => {
         const o = bareObserver();
-        for (const fn of [s.populationMean, s.diversity, s.lineagesAlive, s.predatorShareCv, s.lineageTurnover]) {
+        for (const fn of [
+            s.populationMean,
+            s.diversity,
+            s.lineagesAlive,
+            s.predatorShareCv,
+            s.lineageTurnover,
+            s.specTurnover,
+        ]) {
             const r = fn(o);
             expect(r.value).toBeNull();
             expect(r.reason).toBeTypeOf('string');
@@ -87,6 +94,48 @@ describe('lineageTurnover', () => {
 
     it('is null when the run has no ticks after burn-in', () => {
         const r = s.lineageTurnover(withDominants([1, 1, 1], 10000));
+        expect(r.value).toBeNull();
+        expect(r.reason).toBe('no ticks after burn-in');
+    });
+});
+
+/**
+ * @param {number[]} masks the alive-specialisation bit set at each checkpoint, from tick 8000 in steps of 1000
+ * @param {number} ticks the run length
+ * @returns {any} an observer
+ */
+function withMasks(masks, ticks) {
+    const o = bareObserver();
+    masks.forEach((specMask, i) => addCheckpoint(o, { tick: 8000 + i * 1000, specMask }));
+    o.ticks = ticks;
+    return o;
+}
+
+describe('specTurnover', () => {
+    it('counts extinctions and returns after burn-in per 100000 ticks after burn-in', () => {
+        // 8000, 9000 | 10000 .. 13000: 31, 31, 15 (spec 4 gone), 15, 31 (spec 4 back), 29 (spec 1 gone)
+        const o = withMasks([31, 31, 31, 15, 15, 31, 29], 20000);
+        expect(s.specTurnover(o).value).toBe((3 * 100000) / 10000);
+    });
+
+    it('ignores a change that happened before burn-in but counts one into the first checkpoint after it', () => {
+        expect(s.specTurnover(withMasks([31, 15, 15, 15], 20000)).value).toBe(0);
+        expect(s.specTurnover(withMasks([31, 31, 15, 15], 20000)).value).toBe((1 * 100000) / 10000);
+    });
+
+    it('is 0 when the mix never changes', () => {
+        expect(s.specTurnover(withMasks([31, 31, 31, 31], 20000)).value).toBe(0);
+    });
+
+    it('is null before the first checkpoint after burn-in', () => {
+        expect(s.specTurnover(withMasks([31, 15], 9000))).toEqual({
+            value: null,
+            reason: 'no checkpoint after burn-in',
+        });
+    });
+
+    it('is null when the run has no ticks after burn-in', () => {
+        const r = s.specTurnover(withMasks([31, 31, 15], 10000));
         expect(r.value).toBeNull();
         expect(r.reason).toBe('no ticks after burn-in');
     });

@@ -95,10 +95,12 @@ export function checkpoint(observer, world) {
     const counts = new Map();
     const predator = world.config.specialisations.predator.index;
     let predators = 0;
+    let specMask = 0;
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
             counts.set(world.lineageId[slot], (counts.get(world.lineageId[slot]) ?? 0) + 1);
             predators += world.spec[slot] === predator ? 1 : 0;
+            specMask |= 1 << world.spec[slot];
         }
     }
     const log = observer.series;
@@ -110,5 +112,6 @@ export function checkpoint(observer, world) {
     log.dominantLineage[row] = dominantLineage(observer, counts);
     log.predatorShare[row] = world.population > 0 ? predators / world.population : 0;
     log.diversity[row] = diversity(observer, world);
+    log.specMask[row] = specMask;
     observer.checkpointCount = row + 1;
 }
