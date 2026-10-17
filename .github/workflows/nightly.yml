@@ -38,8 +38,16 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The golden hashes in Chromium (a module worker; no GPU needed). The browser is the version of the @playwright/test pin.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Tier 3 gate
         run: scripts/check.sh --ci --full --tier 3
+
+      - name: Golden hashes in Chromium
+        if: ${{ !cancelled() }}
+        run: npm run browser:hash
 
       - name: Upload reports
         if: always()
