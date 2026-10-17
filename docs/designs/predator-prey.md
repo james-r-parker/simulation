@@ -1,7 +1,7 @@
 # Predator and prey
 
-**Status:** In progress - Phase 1 built: agents have scent direction, alarm and hunt calls and defensive smoke in the sim core, and catching is retuned (E19, E20, `huntSizeRatio` 1.01, `biteArc` PI / 4); Phase 2 (combat metrics and scripted controllers) next.
-**Validated:** 6a442d3 (2026-10-16)
+**Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitness terms, niches and map-elites-v2) next, re-planned from world-balance.md.
+**Validated:** eaeb604 (2026-10-17)
 **Priority:** 1 - finishes the world rules; tuning nights and the trainer build on them
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md)
 
@@ -332,11 +332,9 @@ calls at `alarmCost` 4 were spammed. A sweep of 74 four-seed screens chose `alar
 1-16 and 17-32. T8c's jaws (`biteArc` PI / 4) then halved catches, and `huntSizeRatio` 1.01 restored them. The final
 defaults are in the Config table; [sim-notes.md](sim-notes.md) has the findings.
 
-### Phase 2 - Combat metrics and scripted controllers
+### Phase 2 - Combat metrics and scripted controllers (built)
 
 **Targets:** none - instruments only; the new metrics are first recorded for `baseline-v5` and `map-elites-v1q` and Phase 3 moves them
-
-> **Note:** Phase 2 is built on branch `feat/predator-prey-phase-2` (draft PR 39) and is blocked: under `fitnessV1` the scripted `hunter` scores 0.746 of the `foodSeeker` against the anti-exploit bound of 0.5, because the bound counts food only and `fitnessV1` pays bite energy. The user chooses the fix (issue B4 in [world-balance.md](world-balance.md)).
 
 `observer-combat.js`, `metrics-combat.js`, `scripted-combat.js`, `evals/predator-world.json` and the new anti-exploit
 cases. Done when both policies' reports carry the five metrics, `hunter` against `fleer` gives `eval.catch_rate`
@@ -392,7 +390,7 @@ seed with no hunter agent-ticks makes the run invalid, and it is reported, not c
 | T11 | Update [headless-sim-core-contracts.md](headless-sim-core-contracts.md), [headless-sim-core.md](headless-sim-core.md) and [sim-notes.md](sim-notes.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | [mechanical] | T8b                                                     |
 | T12 | Conformance review of Phase 1                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | [judgement]  | T1, T2, T3, T4, T5, T6, T7, T8a, T8b, T8c, T9, T10, T11 |
 
-### Phase 2 - Combat metrics and scripted controllers
+### Phase 2 - Combat metrics and scripted controllers (built)
 
 | #   | Task                                                                                                                    | Nature       | Depends on              |
 | --- | ----------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
