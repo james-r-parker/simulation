@@ -86,7 +86,7 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 `npm run eval -- --seeds <n> --ticks <t> --policy <name> [--seed-offset <k>] [--config <file.json>] [--out <path>]`
 (`scripts/eval.mjs`):
 
-- Seeds are `n` consecutive entries of `evals/seeds.json` (32 fixed seeds) from `--seed-offset` (default 0). Defaults: `--seeds 16`, `--ticks 200000`,
+- Seeds are `n` consecutive entries of `evals/seeds.json` (64 fixed seeds: 1-32 from the original draw, 33-64 from `createRng(64)`) from `--seed-offset` (default 0). Defaults: `--seeds 16`, `--ticks 200000`,
   `--policy baseline-v5`, the default config. `--policy live` runs `LIVE_POLICY`.
 - Seeds run on `scripts/lib/worker-pool.mjs`: a pull queue of tasks over `worker_threads` workers, each running
   `scripts/eval-worker.mjs`. A free worker takes the next task, so no core waits for a slow seed. Results are
