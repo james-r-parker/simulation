@@ -83,4 +83,15 @@ describe('createGpuTimer', () => {
         timer.end();
         expect(log).toEqual([]);
     });
+
+    it('forgets its samples on reset', () => {
+        const { gl, finish } = fakeGl();
+        const timer = /** @type {NonNullable<ReturnType<typeof createGpuTimer>>} */ (createGpuTimer(gl));
+        timer.begin();
+        timer.end();
+        finish(1_000_000);
+        timer.poll();
+        timer.reset();
+        expect(timer.samples()).toHaveLength(0);
+    });
 });

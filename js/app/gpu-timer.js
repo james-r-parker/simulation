@@ -17,16 +17,16 @@ export function hasGpuTimer(gl) {
 /**
  * @param {any} gl a WebGL2 context
  * @param {number} [capacity] results the ring keeps
- * @returns {{begin: () => void, end: () => void, poll: () => void, samples: () => Float64Array} | null} the timer, null
+ * @returns {{begin: () => void, end: () => void, poll: () => void, samples: () => Float64Array, reset: () => void} | null} the timer, null
  *   when the extension is missing. `begin` and `end` bracket a frame's draw, `poll` collects finished queries (call it
- *   once a frame) and `samples` is the finished frame times in ms.
+ *   once a frame) and `samples` is the finished frame times in ms and `reset` forgets them.
  */
 export function createGpuTimer(gl, capacity) {
     const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
     if (ext === null) {
         return null;
     }
-    const ring = createFrameRing(capacity);
+    let ring = createFrameRing(capacity);
     /** @type {any[]} */
     const pending = [];
     /** @type {any} */
@@ -56,5 +56,8 @@ export function createGpuTimer(gl, capacity) {
             }
         },
         samples: () => ring.values(),
+        reset() {
+            ring = createFrameRing(capacity);
+        },
     };
 }

@@ -7,7 +7,7 @@ import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
 import { createFrameLoop } from './frame-loop.js';
-import { createFrameStats } from './frame-stats.js';
+import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { createGpuTimer } from './gpu-timer.js';
 import { installPerf } from './perf.js';
 import { createPointerInput } from './pointer-input.js';
@@ -22,7 +22,7 @@ import { configOverrides, readParams } from './url-params.js';
 
 const TOP_BAR_MS = 250;
 const NOTICE_MS = 8000;
-const PERF_FRAMES = 4096;
+const PERF_FRAMES = 32768;
 
 /**
  * @param {HTMLElement} container where the message goes
@@ -265,7 +265,13 @@ function startReporting(app) {
         barUpdate(topBarView(client?.stats ?? null, app.state, client?.paused ?? false));
     }, TOP_BAR_MS);
     if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
-        installPerf(/** @type {any} */ (window), () => readPerf(app));
+        installPerf(/** @type {any} */ (window), {
+            read: () => readPerf(app),
+            reset() {
+                clearFrameStats(app.stats, PERF_FRAMES);
+                app.deps.gpuTimer?.reset();
+            },
+        });
     }
 }
 

@@ -26,7 +26,7 @@ describe('buildPerf', () => {
         }
         const perf = buildPerf({
             stats,
-            worker: { tick: 5, ticksPerSecond: 58, droppedTicks: 2 },
+            worker: { tick: 5, ticksPerSecond: 58, droppedTicks: 2, population: 120 },
             gpu: GPU,
             gpuSamples: Float64Array.from([2, 3]),
             heapBytes: 50 * 1048576,
@@ -40,6 +40,7 @@ describe('buildPerf', () => {
             frames: 20,
             ticksPerSecond: 58,
             droppedTicks: 2,
+            agents: 120,
             heapMb: 50,
             gpu: GPU,
         });
@@ -61,15 +62,29 @@ describe('installPerf', () => {
     it('puts a __perf function on the target that reads live values each call', () => {
         const target = /** @type {{__perf?: () => any}} */ ({});
         let drops = 0;
-        installPerf(target, () => ({
-            stats: createFrameStats(8),
-            worker: { tick: 1, ticksPerSecond: 60, droppedTicks: drops },
-            gpu: GPU,
-            gpuSamples: null,
-            heapBytes: null,
-        }));
+        installPerf(target, {
+            read: () => ({
+                stats: createFrameStats(8),
+                worker: { tick: 1, ticksPerSecond: 60, droppedTicks: drops, population: 1 },
+                gpu: GPU,
+                gpuSamples: null,
+                heapBytes: null,
+            }),
+            reset: () => {},
+        });
         expect(target.__perf?.().droppedTicks).toBe(0);
         drops = 3;
         expect(target.__perf?.().droppedTicks).toBe(3);
+    });
+
+    it('gives __perf a reset that runs the reset hook', () => {
+        const target = /** @type {{__perf?: (() => any) & {reset?: () => void}}} */ ({});
+        let resets = 0;
+        installPerf(target, {
+            read: () => ({ stats: createFrameStats(8), worker: null, gpu: GPU, gpuSamples: null, heapBytes: null }),
+            reset: () => (resets += 1),
+        });
+        target.__perf?.reset?.();
+        expect(resets).toBe(1);
     });
 });

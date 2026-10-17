@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createFrameStats, frameReport, MAX_INTERVAL_MS, recordFrame } from '../../js/app/frame-stats.js';
+import {
+    clearFrameStats,
+    createFrameStats,
+    frameReport,
+    MAX_INTERVAL_MS,
+    recordFrame,
+} from '../../js/app/frame-stats.js';
 
 describe('frame stats', () => {
     it('reports percentiles of intervals and draw times', () => {
@@ -48,5 +54,14 @@ describe('frame stats', () => {
         }
         expect(frameReport(stats).frames).toBe(10);
         expect(frameReport(stats).frameMs.p50).toBe(20);
+    });
+
+    it('forgets every frame when cleared', () => {
+        const stats = createFrameStats(16);
+        recordFrame(stats, 5, 1);
+        clearFrameStats(stats, 16);
+        expect(frameReport(stats).frames).toBe(0);
+        recordFrame(stats, 6, 1);
+        expect(frameReport(stats).frames).toBe(1);
     });
 });
