@@ -3,9 +3,10 @@
 import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
+import { DEFAULT_MIN_SEEDS, minSeedsFor } from './compare-seeds.js';
 
 export const RESAMPLES = 10000;
-export const MIN_SEEDS = 16;
+export const MIN_SEEDS = DEFAULT_MIN_SEEDS;
 export const MIN_EFFECT = 0.05;
 const BOOTSTRAP_SEED = 1;
 
@@ -319,6 +320,7 @@ function verdictFor(direction, { low, high, diff, ref, minEffect }) {
  * @property {number | null} low interval low
  * @property {number | null} high interval high
  * @property {'better' | 'worse' | 'no-difference' | '-'} verdict the verdict
+ * @property {number} minSeeds the seeds a verdict on this metric needs (`minSeedsFor`)
  * @property {string} [note] why the verdict is `-`, when it is not simply a watch metric
  */
 
@@ -341,7 +343,11 @@ function compareMetric(metric, before, after, { level, minEffect }) {
         low: null,
         high: null,
         verdict: /** @type {CompareRow['verdict']} */ ('-'),
+        minSeeds: minSeedsFor(metric),
     };
+    if (before.seeds.length < row.minSeeds) {
+        return { ...row, note: `needs ${row.minSeeds} seeds` };
+    }
     const direction = metricDirection(metric);
     const fitness = FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix));
     if (b.values.includes(null) || a.values.includes(null)) {

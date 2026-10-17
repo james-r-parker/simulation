@@ -175,6 +175,11 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
   check and pairs the arms by position; it exists for calibration.
 - `compareReports(before, after, { level, minEffect })` uses `level` 0.95 and `minEffect` `MIN_EFFECT` (0.05) unless
   given; `--min-effect <fraction>` (0..1) overrides it.
+- Each metric has a seed minimum: `minSeedsFor(metric)` in `js/evo/compare-seeds.js` gives 32 for `eval.floor_episodes`,
+  `eval.lineages_alive`, `eval.lineage_turnover` and `eval.predator_share_cv` (`METRIC_MIN_SEEDS`) and `MIN_SEEDS` (16) for
+  every other metric. Below its minimum a metric gets no interval and no verdict, only the note `needs 32 seeds`
+  (printed after the verdict column), and the rest of the report compares as before. Each `--json` row carries `minSeeds`.
+  `evals/seeds.json` holds 64 seeds, so a 32-seed calibration compares seeds 1-32 against 33-64.
 - For each metric, a BCa bootstrap interval (10000 resamples, `fork(createRng(1), 'bootstrap')`) of the mean of the
   per-seed differences, paired by seed. Every call draws its resample indices from a fresh copy of that one stream,
   so a metric's interval depends only on its own differences, not on which other metrics are compared. The normal CDF and its inverse are computed with `detExp` and `detLog`.
