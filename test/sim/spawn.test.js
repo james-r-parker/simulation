@@ -163,7 +163,7 @@ describe('spawnFoodItem', () => {
         expect(() => spawnFoodItem(w)).not.toThrow();
     });
 
-    it('throws when the zone is covered by an obstacle', () => {
+    it('falls back to a uniform clear point when an obstacle covers the whole zone', () => {
         const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 10, obstacleCount: 1 });
         w.obsX[0] = 500;
         w.obsY[0] = 500;
@@ -172,7 +172,8 @@ describe('spawnFoodItem', () => {
         w.zoneFertility[0] = 1;
         w.zoneX[0] = 500;
         w.zoneY[0] = 500;
-        expect(() => spawnFoodItem(w)).toThrow(/tick 0.*radius/);
+        const slot = spawnFoodItem(w);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeGreaterThanOrEqual(400 + w.foodRadius[slot]);
     });
 
     it('throws when maxFood is reached', () => {

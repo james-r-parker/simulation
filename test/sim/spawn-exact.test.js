@@ -218,21 +218,27 @@ describe('spawnFoodItem draws', () => {
         expect(w.foodValue[s]).toBeCloseTo(70 + (2 * v - 1) * 20, 9);
     });
 
-    it('stops zone placement after exactly placementTries attempts', () => {
+    it('places uniformly after exactly placementTries zone attempts when an obstacle covers the zone', () => {
         const w = empty({ fertileZoneSpawnChance: 1, placementTries: 5, obstacleCount: 1 });
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 400;
         setZone(w, 0, 500, 500, 1);
-        expect(() => spawnFoodItem(w)).toThrow(Error);
-        w.rng.food = fork(createRng(SEED), 'food');
-        expect(() => spawnFoodItem(w)).toThrow(
-            'placement failed at tick 0: no point clear of obstacles for radius 20 in 5 tries',
-        );
+        const s = spawnFoodItem(w);
+        // 3 draws (kind, chance, zone) and 5 zone attempts of 2 draws, then uniform samples until one is clear
         const after = fork(createRng(SEED), 'food');
         for (let i = 0; i < 13; i++) {
             nextFloat(after);
         }
+        let x;
+        let y;
+        do {
+            x = 20 + nextFloat(after) * 960;
+            y = 20 + nextFloat(after) * 960;
+        } while (Math.hypot(x - 500, y - 500) < 420);
+        expect(w.foodX[s]).toBeCloseTo(x, 3);
+        expect(w.foodY[s]).toBeCloseTo(y, 3);
+        nextFloat(after);
         expect(Array.from(w.rng.food.s)).toEqual(Array.from(after.s));
     });
 

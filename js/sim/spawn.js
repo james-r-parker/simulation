@@ -140,6 +140,7 @@ function pickZone(world, target) {
 
 /**
  * Draws a point around a zone centre, redrawing while it lies in an obstacle, and writes it to `world.point`.
+ * A zone an obstacle has drifted over leaves no clear point, so after `placementTries` it places uniformly instead.
  * @param {World} world the world
  * @param {number} zone the zone index
  * @param {number} radius the food radius
@@ -159,7 +160,7 @@ function placeInZone(world, zone, radius) {
             return;
         }
     }
-    throw placementError(world, radius);
+    placeClear(world, rng, radius);
 }
 
 /**
