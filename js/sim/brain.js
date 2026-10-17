@@ -1,6 +1,6 @@
 // Runs every alive agent's Elman RNN brain forward one step, in the contract's summation order.
 
-import { detTanh } from './det-math.js';
+import { detTanhInto } from './det-math.js';
 
 /**
  * Adds each nonzero input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
@@ -91,9 +91,7 @@ function hiddenStep(world, slot) {
     }
     addInputs(world, slot);
     addRecurrent(world, slot);
-    for (let j = 0; j < H; j++) {
-        hidden[scratchBase + j] = Math.fround(detTanh(acc[j]));
-    }
+    detTanhInto(acc, hidden, scratchBase, H);
 }
 
 /**
@@ -111,13 +109,15 @@ function outputStep(world, slot) {
     const scratchBase = world.config.maxAgents * H;
     const wOut = wBase + layout.wOut;
     const bOut = wBase + layout.bOut;
+    const sums = world.brainScratch;
     for (let o = 0; o < OUT; o++) {
         let sum = weights[bOut + o];
         for (let j = 0; j < H; j++) {
             sum += weights[wOut + j * OUT + o] * hidden[scratchBase + j];
         }
-        outputs[slot * OUT + o] = detTanh(sum);
+        sums[o] = sum;
     }
+    detTanhInto(sums, outputs, slot * OUT, OUT);
     for (let j = 0; j < H; j++) {
         hidden[hBase + j] = hidden[scratchBase + j];
     }

@@ -8,6 +8,11 @@ describe('benchSize', () => {
         expect(Object.keys(metrics)).toContain('bench.phase_ms.brain@8');
     }, 60000);
 
+    it('suffixes every key of a tracked variant', () => {
+        const metrics = benchSize(8, undefined, { suffix: 'defaults', overrides: {} });
+        expect(Object.keys(metrics).every((key) => key.endsWith('@8defaults'))).toBe(true);
+    }, 60000);
+
     it('benches a named policy with its hooks', () => {
         const metrics = benchSize(8, 'natural-v1');
         expect(metrics['bench.step_ms@8']).toBeGreaterThan(0);

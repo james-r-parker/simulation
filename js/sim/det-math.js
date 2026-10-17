@@ -214,3 +214,94 @@ export function detTanh(x) {
     const t = detExp(-2 * a);
     return (Math.sign(x) * (1 - t)) / (1 + t);
 }
+
+/**
+ * @param {number} x Finite value, 0 < abs(x) <= 20.
+ * @returns {number} The integer k nearest to -2 * abs(x) / ln 2, the power of two in exp(-2 * abs(x)).
+ */
+function tanhExponent(x) {
+    return Math.floor(-2 * Math.abs(x) * INV_LN2 + 0.5);
+}
+
+/**
+ * @param {number} x Finite value, 0 < abs(x) <= 20.
+ * @param {number} k The exponent from tanhExponent.
+ * @returns {number} The reduced argument of exp(-2 * abs(x)), computed as detExp does.
+ */
+function tanhReduced(x, k) {
+    return -2 * Math.abs(x) - k * LN2_HI - k * LN2_LO;
+}
+
+/**
+ * @param {number} x Finite value, 0 < abs(x) <= 20.
+ * @param {number} p The Horner polynomial of exp(r).
+ * @param {number} k The exponent from tanhExponent.
+ * @returns {number} tanh(x), as detTanh computes it from the same p and k.
+ */
+function tanhFinish(x, p, k) {
+    const t = p * pow2(k);
+    return (Math.sign(x) * (1 - t)) / (1 + t);
+}
+
+/**
+ * Writes `detTanh(src[i])` to `dst[at + i]` for i below n, bit-identical to calling detTanh one value at a time. Four
+ * values share one pass over the exp polynomial: their Horner chains are independent, so the processor overlaps them
+ * instead of waiting on each in turn. Any group holding a zero, a saturated value or a non-finite one takes the scalar
+ * path, so its edge cases and errors are detTanh's.
+ * @param {ArrayLike<number>} src Values to transform.
+ * @param {{[index: number]: number}} dst Destination.
+ * @param {number} at Offset of the first result in dst.
+ * @param {number} n How many values.
+ * @returns {void}
+ */
+export function detTanhInto(src, dst, at, n) {
+    let i = 0;
+    for (; i + 4 <= n; i += 4) {
+        const x0 = src[i];
+        const x1 = src[i + 1];
+        const x2 = src[i + 2];
+        const x3 = src[i + 3];
+        const ok = isFastTanh(x0) && isFastTanh(x1) && isFastTanh(x2) && isFastTanh(x3);
+        if (!ok) {
+            dst[at + i] = detTanh(x0);
+            dst[at + i + 1] = detTanh(x1);
+            dst[at + i + 2] = detTanh(x2);
+            dst[at + i + 3] = detTanh(x3);
+            continue;
+        }
+        const k0 = tanhExponent(x0);
+        const k1 = tanhExponent(x1);
+        const k2 = tanhExponent(x2);
+        const k3 = tanhExponent(x3);
+        const r0 = tanhReduced(x0, k0);
+        const r1 = tanhReduced(x1, k1);
+        const r2 = tanhReduced(x2, k2);
+        const r3 = tanhReduced(x3, k3);
+        let p0 = 1;
+        let p1 = 1;
+        let p2 = 1;
+        let p3 = 1;
+        for (let d = EXP_DEGREE; d >= 1; d -= 1) {
+            p0 = 1 + (r0 / d) * p0;
+            p1 = 1 + (r1 / d) * p1;
+            p2 = 1 + (r2 / d) * p2;
+            p3 = 1 + (r3 / d) * p3;
+        }
+        dst[at + i] = tanhFinish(x0, p0, k0);
+        dst[at + i + 1] = tanhFinish(x1, p1, k1);
+        dst[at + i + 2] = tanhFinish(x2, p2, k2);
+        dst[at + i + 3] = tanhFinish(x3, p3, k3);
+    }
+    for (; i < n; i++) {
+        dst[at + i] = detTanh(src[i]);
+    }
+}
+
+/**
+ * @param {number} x Any number.
+ * @returns {boolean} True when detTanh takes its exp path for x: finite, nonzero and within the saturation limit.
+ */
+function isFastTanh(x) {
+    const a = Math.abs(x);
+    return a > 0 && a <= TANH_SATURATION;
+}
