@@ -38,6 +38,29 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
 }
 
 /**
+ * What the interface does for the actions that touch the page, supplied by the page and faked in tests.
+ * @typedef {object} UiHooks
+ * @property {(drawer: string) => void} toggleDrawer opens a drawer, or closes it when it is the open one
+ * @property {() => boolean} closeDrawer closes the open drawer; false when none was open
+ * @property {() => void} toggleHud hides or shows the HUD
+ * @property {() => void} focusSeed moves the keyboard to the seed field
+ * @property {() => void} fullscreen enters or leaves fullscreen
+ * @property {() => void} exportArchive asks the worker for the archive and downloads it
+ * @property {() => void} exportBundle downloads the debug bundle
+ */
+
+/** @type {Readonly<UiHooks>} */
+const NO_UI = Object.freeze({
+    toggleDrawer() {},
+    closeDrawer: () => false,
+    toggleHud() {},
+    focusSeed() {},
+    fullscreen() {},
+    exportArchive() {},
+    exportBundle() {},
+});
+
+/**
  * @typedef {object} ActionDeps
  * @property {() => Record<string, any> | null} getClient the current worker client (it changes on a restart)
  * @property {import('./camera.js').CameraController} camera the view
@@ -45,6 +68,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {() => number} now the clock, in ms
  * @property {() => number} chooseSeed a fresh seed for a new world
  * @property {Record<string, any>} config the config overrides sent with a new world
+ * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
 /**
@@ -110,6 +134,26 @@ function clearSelection({ getClient, state }) {
     getClient()?.select(0);
 }
 
+/**
+ * Escape closes the open drawer; with none open it clears the selection.
+ * @param {ActionDeps} deps the dependencies
+ * @returns {void}
+ */
+function escape(deps) {
+    if (!(deps.ui ?? NO_UI).closeDrawer()) {
+        clearSelection(deps);
+    }
+}
+
+/**
+ * @param {keyof UiHooks} hook the hook to call
+ * @param {...string} args its arguments
+ * @returns {(deps: ActionDeps) => void} an action that calls the page's hook, and does nothing without one
+ */
+function viaUi(hook, ...args) {
+    return (deps) => /** @type {(...a: string[]) => unknown} */ ((deps.ui ?? NO_UI)[hook])(...args);
+}
+
 /** @type {Readonly<Record<string, (deps: ActionDeps) => void>>} */
 const ACTIONS = Object.freeze({
     togglePause: ({ getClient }) => {
@@ -132,6 +176,15 @@ const ACTIONS = Object.freeze({
     },
     home: ({ camera }) => moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 }),
     clearSelection,
+    escape,
+    toggleCharts: viaUi('toggleDrawer', 'charts'),
+    toggleInspector: viaUi('toggleDrawer', 'inspector'),
+    toggleHelp: viaUi('toggleDrawer', 'help'),
+    toggleHud: viaUi('toggleHud'),
+    focusSeed: viaUi('focusSeed'),
+    fullscreen: viaUi('fullscreen'),
+    exportArchive: viaUi('exportArchive'),
+    exportBundle: viaUi('exportBundle'),
     panLeft: (deps) => pan(deps, -1, 0),
     panRight: (deps) => pan(deps, 1, 0),
     panUp: (deps) => pan(deps, 0, -1),
