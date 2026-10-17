@@ -20,6 +20,7 @@ const SPECIALISATION_FIELDS = [
     'biteMultiplier',
     'turnMultiplier',
     'plantFoodValue',
+    'meatFoodValue',
     'sprintBoost',
 ];
 
@@ -144,6 +145,9 @@ const RULES = {
     digestTicks: int(0, 30),
     handlingTicks: int(0, 30),
     handlingThrust: num(0, 1),
+    carcassesEnabled: BOOL,
+    carcassTicks: int(1),
+    carcassShare: num(0, 1),
     temperatureLossPassive: num(0),
     temperatureSeasonSlope: num(0),
     temperaturePassiveLossFactor: num(1),
@@ -306,7 +310,9 @@ function checkSpecialisations(specialisations) {
         }
         checkScalar(`${path}.canHunt`, entry.canHunt, BOOL);
         checkScalar(`${path}.plantFoodValue`, entry.plantFoodValue, num(0, 1));
-        const scaled = (/** @type {string} */ f) => f !== 'index' && f !== 'canHunt' && f !== 'plantFoodValue';
+        checkScalar(`${path}.meatFoodValue`, entry.meatFoodValue, num(0, 1));
+        const shares = ['index', 'canHunt', 'plantFoodValue', 'meatFoodValue'];
+        const scaled = (/** @type {string} */ f) => !shares.includes(f);
         for (const field of SPECIALISATION_FIELDS.filter(scaled)) {
             checkScalar(`${path}.${field}`, entry[field], positive());
         }

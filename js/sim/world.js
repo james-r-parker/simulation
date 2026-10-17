@@ -109,7 +109,7 @@ function allocFoodAndObstacles(world) {
     world.foodRows = allocRows(
         world,
         [
-            ...singles(Uint8Array, ['foodAlive']),
+            ...singles(Uint8Array, ['foodAlive', 'foodKind']),
             ...singles(Float32Array, ['foodX', 'foodY', 'foodRadius']),
             ...singles(Float64Array, ['foodValue']),
             ...singles(Uint32Array, ['foodAge']),
@@ -203,6 +203,7 @@ export function allocateWorld(config) {
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),
         plantFoodBySpec: specTable(config, 'plantFoodValue'),
+        meatFoodBySpec: specTable(config, 'meatFoodValue'),
         turnBySpec: specTable(config, 'turnMultiplier'),
         sprintBySpec: specTable(config, 'sprintBoost'),
         biteCos: new Float64Array([detCos(config.biteArc)]),

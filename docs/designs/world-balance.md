@@ -433,11 +433,19 @@ drought (probability `droughtChance` 0.25 per year, from the `food` stream) sets
 season. `invasionInterval` (180000 ticks) brings a pulse of `invasionSize` (12) immigrants of one random archive
 lineage at a world edge. Events `SeasonChanged`, `DroughtStarted`, `InvasionArrived`.
 
-**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.5) of its
-energy at death, as a food item of kind `meat`. `meatFoodValue` per specialisation (predator 1, others 0.3) sets
+**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.5) x
+the energy it took in over its life, as a food item of kind `meat`. `meatFoodValue` per specialisation (predator 1, others 0.3) sets
 what each gains from meat, alongside `plantFoodValue`, so predators fight over kills and other agents can scavenge.
 Carcasses are hashed only when `carcassesEnabled`; the snapshot marks them so the renderer can draw them and the
 director can hold a shot on a contested carcass.
+
+As built (T54, off by default): `leaveCarcass` in `js/sim/carcass.js` runs in `reap` and fills the lowest free food
+slot (no RNG draw), so a carcass counts toward `maxFood`. A `foodKind` array (0 plant, 1 meat) is hashed only when
+`carcassesEnabled`. `tryEat` reads `meatFoodValue` for meat and `plantFoodValue` for plants, and `ageFood` expires
+meat after `carcassTicks`. The carcass holds `carcassShare` x (`foodEnergy` + `biteEnergy`), the lifetime intake the world already
+keeps per agent and zeroes when the slot is freed, whatever the cause of death; an agent that took in nothing leaves
+none. Like spawned plant food it enters the ledger only when eaten, so a death books out just the agent's remaining
+energy.
 
 ## Decisions
 
@@ -489,6 +497,10 @@ choices and reasons within the plans").
 | Fixed basins, a wall with gaps, refuges and a cold margin                                                                | Lasting places make chases, refuges and territories readable; wandering obstacles are not habitat (user)                                                                     | User              |
 | Ten-minute seasons with winter, droughts and invasion pulses                                                             | One-minute seasons on a full buffet never feel like history (user)                                                                                                           | User              |
 | Carcasses as meat for a few seconds                                                                                      | Contested kills, scavengers and a shot the director can hold (user)                                                                                                          | User              |
+| A carcass takes a food slot, so it counts toward `maxFood`; with none free there is no carcass                           | One pool of food slots keeps the arrays and the cap unchanged; carcasses are rare against the cap and a full world has food to spare                                         | Manager           |
+| A carcass is one item and one bite takes it, as with plant food                                                          | Partial eating would need a second value per item and a rule for the remainder; a predator still gains its full share and a forager 0.3 of it                                | Manager           |
+| A carcass holds `carcassShare` x the energy the agent took in over its life (food plus bite energy); none when that is 0 | A body is worth what it built itself from, and it keeps carcasses tied to real intake (user, 2026-10-17)                                                                     | User              |
+| The snapshot marks meat with a negative food radius                                                                      | The layout and `foodStride` stay as they are, so nothing changes with carcasses off; a renderer takes `abs(radius)` and reads the sign as the kind                           | Manager           |
 
 ## Phases
 
@@ -657,7 +669,7 @@ Phases 1 to 3 are planned below; Phase 4 adds its rows when T15 plans it.
 | T51 | Heritable specialisation with `specMutationRate`, `huntUpkeep`, the floor and seeder no longer filling the rarest role, `eval.spec_turnover`, with tests                                                                                                                                  | [judgement]  | T26                                                                                                               |
 | T52 | Static terrain (`terrainLayout` `basins`: wall with gaps, refuges, cold margin), patches inside basins, `worldInfo` terrain, with tests                                                                                                                                                   | [judgement]  | T34                                                                                                               |
 | T53 | Eras: long seasons, winter and drought on patch regrowth, invasion pulses, their events, with tests                                                                                                                                                                                       | [judgement]  | T34, T46                                                                                                          |
-| T54 | Carcasses as `meat` food items with `carcassTicks`, `carcassShare`, `meatFoodValue`, snapshot marks, with tests                                                                                                                                                                           | [judgement]  | T45                                                                                                               |
+| T54 | Carcasses as `meat` food items with `carcassTicks`, `carcassShare`, `meatFoodValue`, snapshot marks, with tests (built, off)                                                                                                                                                              | [judgement]  | T45                                                                                                               |
 | T41 | Switch every feature on at its default, re-pin the golden hashes in Node and Chromium, re-record `baseline-v5` and `baseline-v5-o16`, run `E29` and `eval:power`                                                                                                                          | [mechanical] | T38, T39, T40, T45, T46, T47, T49, T50, T51, T52, T53, T54                                                        |
 | T42 | Run `E28` against `E27`, the ladder, the anti-exploit suite and the paired test, and record them                                                                                                                                                                                          | [mechanical] | T41                                                                                                               |
 | T43 | Update headless-sim-core-contracts.md, reachable-births.md, predator-prey.md, worker-and-renderer.md (snapshot) and sim-notes.md                                                                                                                                                          | [mechanical] | T42                                                                                                               |

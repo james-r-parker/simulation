@@ -6,6 +6,7 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.j
 import { isKin } from './kin.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
+import { FOOD_KIND } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
@@ -20,7 +21,8 @@ const PI = 3.141592653589793;
  * @returns {void}
  */
 function tryEat(world, slot, food) {
-    const share = world.plantFoodBySpec[world.spec[slot]];
+    const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
+    const share = table[world.spec[slot]];
     if (world.foodAlive[food] !== 1 || share === 0 || !canEatNow(world, slot)) {
         return;
     }
