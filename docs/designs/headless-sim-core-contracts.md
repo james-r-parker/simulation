@@ -135,9 +135,9 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it 
   `Math.floor(phase x 4)`.
 - `specialisations` is an object with exactly the keys `forager`, `predator`, `reproducer`, `scout`, `defender`. Each
   value has exactly `index` (fixed: 0, 1, 2, 3, 4 in that order), `visionRange` (`> 0`), `canHunt` (boolean),
-  `moveCostMultiplier`, `biteTakenMultiplier` and `cooldownMultiplier` (each `> 0`). The defaults are the design
+  `moveCostMultiplier`, `biteTakenMultiplier`, `cooldownMultiplier`, `biteMultiplier`, `turnMultiplier` and `sprintBoost` (each `> 0`). The defaults are the design
   doc's table: scout `moveCostMultiplier` 0.7, defender `biteTakenMultiplier` 0.5, reproducer `cooldownMultiplier`
-  0.5, every other multiplier 1.
+  0.5, predator `biteMultiplier` 4, `turnMultiplier` 0.7 and `sprintBoost` 1.6, every other multiplier 1.
 - `config.js` keeps the merge, freezing and hashes; the per-key rules live in `js/sim/config-validate.js`
   (`validateConfig`), so neither file passes 300 lines.
 - Overrides deep-merge objects key by key; an override array replaces the default array whole.
@@ -149,14 +149,18 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it 
 
 The design doc's World state table (the `temperature` array is `Float32`), plus:
 
-| Group         | Arrays (type)                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Food          | `foodAlive` (`Uint8`), `foodX`, `foodY`, `foodRadius` (`Float32`), `foodValue` (`Float64`), `foodAge` (`Uint32`)          |
-| Obstacles     | `obsX`, `obsY`, `obsVx`, `obsVy`, `obsRadius` (`Float32`), `obstacleCount` entries each                                   |
-| Fertile zones | `zoneAlive` (`Uint8`), `zoneX`, `zoneY` (`Float32`), `zoneFertility`, `zoneInitial` (`Float64`)                           |
-| Pheromones    | `danger`, `attack`, `pheromoneScratch` (`Float32`), `cols x rows` with `cols = Math.ceil(worldWidth / pheromoneCellSize)` |
-| Ledger        | `ledger` (`Float64Array(2)`): `[in, out]`                                                                                 |
-| Scalars       | `tick`, `nextId` (starts at 1; 0 means "none"), `population`, `foodCount`                                                 |
+| Group         | Arrays (type)                                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Food          | `foodAlive` (`Uint8`), `foodX`, `foodY`, `foodRadius` (`Float32`), `foodValue` (`Float64`), `foodAge` (`Uint32`)                  |
+| Obstacles     | `obsX`, `obsY`, `obsVx`, `obsVy`, `obsRadius` (`Float32`), `obstacleCount` entries each                                           |
+| Fertile zones | `zoneAlive` (`Uint8`), `zoneX`, `zoneY` (`Float32`), `zoneFertility`, `zoneInitial` (`Float64`)                                   |
+| Pheromones    | `danger`, `attack`, `hunt`, `pheromoneScratch` (`Float32`), `cols x rows` with `cols = Math.ceil(worldWidth / pheromoneCellSize)` |
+| Calls         | `alarmTimer`, `huntTimer`, `smokeTimer` (`Uint16`, per agent); `heard` (`Float32`, 6 per agent)                                   |
+| Bites         | `lastBiteTick`, `prevBiter`, `prevBiteTick` (`Uint32`, per agent)                                                                 |
+| Smoke         | `cloudX`, `cloudY` (`Float32`), `cloudTtl` (`Uint16`), `maxClouds` entries each                                                   |
+| Tables        | `antennaCos`, `antennaSin`, `biteBySpec`, `turnBySpec`, `sprintBySpec` (not hashed)                                               |
+| Ledger        | `ledger` (`Float64Array(2)`): `[in, out]`                                                                                         |
+| Scalars       | `tick`, `nextId` (starts at 1; 0 means "none"), `population`, `foodCount`, `cloudCount`                                           |
 
 - Every agent row array is `maxAgents` rows; `hidden` has `maxAgents + 1` rows, the last being the scratch row.
 - The slot free-list is derived from `alive` and is not hashed: `allocAgent` scans for the lowest slot with
@@ -167,13 +171,13 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Ids and codes
 
-| Code set      | Values                                                              |
-| ------------- | ------------------------------------------------------------------- |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4          |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                  |
-| Blocked cause | `capacity` 0, `energy` 1                                            |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                           |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4 |
+| Code set      | Values                                                                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4                                                                                |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                        |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                  |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                 |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8 |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -188,14 +192,20 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 - `step` sets `count = 0` before its first phase. Events from `createWorld` stay until the first `step`.
 - `readEvents(ring)` returns `count`; callers read `ring.data` directly. Nothing is allocated.
 
-| Type              | Fields 2 .. 11                                                                                 |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| `AgentBorn`       | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`                         |
-| `AgentDied`       | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy` |
-| `BirthBlocked`    | `slot` (the mother or splitter), `cause`                                                       |
-| `PopulationFloor` | `added`                                                                                        |
+| Type              | Fields 2 .. 11                                                                                                         |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `AgentBorn`       | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`                                                 |
+| `AgentDied`       | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy`, `prevBiter` (field 11) |
+| `BirthBlocked`    | `slot` (the mother or splitter), `cause`                                                                               |
+| `PopulationFloor` | `added`                                                                                                                |
+| `AlarmCalled`     | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
+| `SmokeReleased`   | `slot`, `genomeId`, `spec`, `x`, `y`, `cloud`                                                                          |
+| `PackCalled`      | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
+| `SmokeRefused`    | `slot`, `genomeId`                                                                                                     |
 
-Unused fields are 0.
+Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
+ticks before the death, else 0. The four call events are debug level. `createConfig` requires `eventCapacity >= 6 x maxAgents`
+(a slot adds at most 3 call, release or refuse events, 1 death and 1 birth per tick).
 
 ## Energy - `energy.js`
 
@@ -265,7 +275,7 @@ Unused fields are 0.
 
 ### Motion and body inputs
 
-- `actAll`: `turnRate = out2 x maxTurn`; `angle += turnRate`, then `angle -= 2 PI` when `angle >= PI` or
+- `actAll`: `turnRate = out2 x maxTurn x turnBySpec[spec]`; `angle += turnRate`, then `angle -= 2 PI` when `angle >= PI` or
   `angle += 2 PI` when `angle < -PI` (one conditional); thrust `out1 x maxThrust x thrustEfficiency(config, temperature)`, times `1 + sprintMultiplier` when
   sprinting, is added to `vx`, `vy` along the new heading.
 - `integrate`: `vx *= damping`, `vy *= damping`; when `speed = Math.sqrt(vx x vx + vy x vy)` exceeds the cap,
@@ -274,7 +284,7 @@ Unused fields are 0.
   `resolveContacts`; `loss = max(0, 1 - seasons[world.season[0]].temperatureModifier x temperatureSeasonSlope)`;
   `next = temperature + min(speed / maxVelocity, 1) x temperatureGainMove - temperatureLossPassive x loss`, clamped to
   `0 .. temperatureMax`. `actAll` runs before `applyCosts`, so it reads the temperature of the end of the previous tick.
-- Body inputs 16 to 19 (0-based offsets 15 to 18 from `rayCount x 8`) come from `temperatureInputs(config, t, out,
+- Body inputs 16 to 19 (0-based offsets 15 to 18 from `rayCount x RAY_CHANNELS`) come from `temperatureInputs(config, t, out,
 offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)` with `middle` the mean of
   `temperatureOptimalMin` and `temperatureOptimalMax`; cold stress, 1 below `temperatureColdStress`, else
   `(temperatureColdModerate - t) / (temperatureColdModerate - temperatureColdStress)` below `temperatureColdModerate`,
@@ -282,6 +292,10 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   `(t - temperatureHeatModerate) / (temperatureHeatStress - temperatureHeatModerate)` above `temperatureHeatModerate`,
   else 0.
 - Body inputs 2 and 3: forward `(vx x cH + vy x sH) / maxVelocity`, lateral `(-vx x sH + vy x cH) / maxVelocity`.
+- Body inputs 20 to 32 (offsets 19 to 31 from `rayCount x RAY_CHANNELS`) are the scent and call inputs of `scent-inputs.js`
+  (`writeScentInputs`, called from `senseAll`): danger, attack and hunt sampled at the two antennae, and the loudest heard
+  alarm and hunt call with their ahead and side components. The antennae sit `antennaReach` from the agent at the heading
+  plus and minus `antennaAngle`. [predator-prey.md](predator-prey.md) lists every offset.
 - The season: `seasonAt(config, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick.
 
@@ -294,7 +308,8 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   returned), and a bite raises the biter's by `temperatureGainEat x transferGained / foodEnergy`; both through
   `gainTemperature`. The victim's is unchanged.
 - Eating runs over all agents first; then bites run over the contact list in list order.
-- A bite moves `biteEnergy x biteTakenMultiplier` with `transferEnergy`; the victim's `lastLoss` becomes `bite` and
+- A bite lands only when `size[biter] > huntSizeRatio x size[victim]` and the victim's centre lies within `biteArc` of the
+  biter's heading (`cos(bearing - angle) >= cos(biteArc)`). It moves `biteEnergy x biteBySpec[biter] x biteTakenMultiplier` with `transferEnergy`; the victim's `lastLoss` becomes `bite` and
   its `lastBiter` the biter's `genomeId`.
 
 ### Kin
@@ -357,6 +372,9 @@ In `integrate`, after moving:
   hit so far lies within that cell's stretch of the ray, or at `visionRange`.
 - Equal distances are broken by kind (food, agent, obstacle, wall), then by lower index.
 - A wall hit's distance is to the nearest boundary line the ray crosses within `visionRange`.
+- There are `RAY_CHANNELS` (9) values per ray; channel 8 is smoke. `testClouds` tests the live smoke clouds and offers the
+  nearest as kind `SMOKE`, ranked after `WALL` on a tie; a smoke hit hides everything behind it. It returns at once when
+  `cloudCount` is 0.
 
 ### Brain
 
@@ -384,7 +402,10 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 - A death adds a zone with `zoneInitial = zoneFertility = size x fertileZoneFertility`. When all `fertileZoneMax`
   slots are alive it replaces the zone with the lowest `zoneFertility / zoneInitial`, lowest index on a tie.
 - `decayFertileZones`: `zoneFertility -= fertileZoneDecay x zoneInitial`; a zone at or below 0 is freed.
-- Pheromone deposit: `min(pheromoneMax, cell + pheromoneDeposit)` at the depositor's cell.
+- Pheromone deposit: `min(pheromoneMax, cell + pheromoneDeposit)` at the depositor's cell. `hunt` is a third grid with the
+  same decay and diffusion; a hunt call deposits on it, an alarm on `danger`.
+- `signalAll` (calls, hearing) and `ageSmoke` (clouds) are described in [predator-prey.md](predator-prey.md); smoke does
+  not affect contacts, bites, scent or hearing.
 - `updatePheromones`, per grid: every cell `v = v x (1 - pheromoneDecay)`; copy into the scratch grid; then each cell
   becomes `s[c] - (D / 4) n(c) s[c] + (D / 4) sum of s over its neighbours`, where `D` is `pheromoneDiffusion`, `n(c)`
   is its count of in-grid four-neighbours, and `s` is the scratch grid. The total is conserved apart from decay.
@@ -426,10 +447,10 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 
 FNV-1a over raw little-endian bytes, in this order:
 
-1. `tick`, `nextId`, `population`, `foodCount`, as one `Uint32Array(4)`.
-2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order (`temperature` follows `lastLoss`). `hidden` is
+1. `tick`, `nextId`, `population`, `foodCount`, `cloudCount`, as one `Uint32Array(5)`.
+2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order (`temperature` follows `lastLoss`; then `lastBiteTick`, `prevBiter`, `prevBiteTick`, `alarmTimer`, `huntTimer`, `smokeTimer`, `heard`). `hidden` is
    hashed without its scratch row. `inputs` and `outputs` are left out: they are recomputed every tick.
-3. Food, obstacles, zones, in the order of this file's Arrays table; then `danger`, `attack` and `ledger`.
+3. Food, obstacles, zones, in the order of this file's Arrays table; then `danger`, `attack`, `hunt`, `cloudX`, `cloudY`, `cloudTtl` and `ledger`.
 4. The six RNG streams' `s` arrays, in the Determinism table order.
 
 The result is `fnv64Hex`. The `world-hash` test changes one element of each covered array and expects a different
@@ -437,17 +458,18 @@ hash, and changes `inputs` and expects the same one.
 
 ## `snapshot.js`
 
-`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride }`. The buffer is
+`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride }`. The buffer is
 one `ArrayBuffer` read through a `Float32Array` and a `Uint32Array` view:
 
 | Words                                                    | Contents                                                                                                        |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Header, 4 (`Uint32`)                                     | `tick`, agent count, food count, obstacle count                                                                 |
+| Header, 5 (`Uint32`)                                     | `tick`, agent count, food count, obstacle count, cloud count                                                    |
 | Agents, `agentStride` 9 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`) |
 | Food, 3 each, alive only                                 | `x`, `y`, `radius` (`Float32`)                                                                                  |
 | Obstacles, 3 each                                        | `x`, `y`, `radius` (`Float32`)                                                                                  |
+| Clouds, `cloudStride` 3 each, live only                  | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                   |
 
-Sections follow each other with no padding and are sized for `maxAgents`, `maxFood` and `obstacleCount`.
+Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleCount` and `maxClouds`.
 
 ## Tooling and tasks
 

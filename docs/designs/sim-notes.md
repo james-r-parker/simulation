@@ -219,3 +219,34 @@ With the forward bite arc (`biteArc` PI / 4) and the d7 economy, a 4-seed screen
 `huntSizeRatio` 1.0 0.00057, 1.01 0.00129 (96% of the reference), predator `sprintBoost` 1.8 0.00085. `huntSizeRatio` 1.01 is the
 default (one key). Cost on the same screen: `eval.floor_episodes` 1044 against 891, `eval.population_mean` 217 against 231; fed lifespan (4741 against
 4645), food energy and births stayed within 5%. These are 4-seed numbers, not verdicts.
+
+### 2026-10-17 - `maxFood` capped the food target, so the economy lever did nothing
+
+The food target is `min(maxFood, max(foodTargetMin, foodTargetPerAgent x population))`. With `maxFood` 800 and a
+self-sustaining population of 100 or more agents, `foodTargetPerAgent` 8 already met the cap near 100 agents, so raising
+`foodTargetPerAgent` changed nothing and the economy could not grow with the population. Sweeping the economy needed
+`maxFood` 1600 first (and `foodTargetPerAgent` 12). Check the cap before reading a flat result from a per-agent knob.
+Recorded in E20: fed lifespan +19.4%, food +120%, births +74% against E17, population 101 to 270.
+
+### 2026-10-17 - Alarm-call spam, and why call costs are 0.5
+
+The first E20 run at the original Phase 1 defaults (`alarmCost` and `huntCallCost` 4) was worse than E17: fed lifespan
+-17.4%, births -14.5%, `eval.floor_episodes` +44%. The cause was alarm-call spam: at a cost of 4 per call, agents that
+fired the alarm output at every opportunity paid for it in energy. A 74-screen sweep of four seeds each chose `alarmCost` and `huntCallCost` 0.5 (calls stay
+a real cost, not a tax on being alive), with `maxFood` 1600, `foodTargetPerAgent` 12 and `huntSizeRatio` 1.03. The choice
+(d7) held at seeds 1-16 and at fresh seeds 17-32.
+
+### 2026-10-17 - Jaws halve predation until `huntSizeRatio` 1.01
+
+T8c's forward bite arc (`biteArc` PI / 4) cut `eval.predation_per_1k` to about half of the same economy without jaws
+(0.00068 against 0.00135), because a hunter now has to face its prey. Lowering `huntSizeRatio` to 1.01 gave 0.00129 (96% of the reference) on the
+same four seeds; 1.0 did not (0.00057). `huntSizeRatio` 1.01 is the default. The detail is in the Jaws entry above.
+
+### 2026-10-17 - Calibration noise at 16 seeds under a self-sustaining population
+
+E19 (baseline-v5, seeds 1-16 against 17-32, final Phase 1 defaults) gave no verdict on any Target metric, but did give
+verdicts off the Targets: `floor_episodes` -23.6% (better), `lineages_alive` -20.9% (worse), scout fitness better,
+p90 predator fitness worse. Before Phase 1 the same calibration (E18) gave none. With a population that sustains itself
+(born share 0.49 and 0.64 in the two E19 samples) per-seed variance in lineage and floor counts exceeds the 5% minimum effect at 16 seeds, so those
+off-Target verdicts in E20 (`lineages_alive` -59.3%, `lineage_turnover` -44.7%) are read with that noise in mind. More
+seeds, not a lower `--min-effect`, is the fix.
