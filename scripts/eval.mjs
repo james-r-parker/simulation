@@ -118,7 +118,7 @@ export function startCpuReport(print) {
 /**
  * @returns {string} the short commit sha, or `unknown`
  */
-function gitSha() {
+export function gitSha() {
     const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
     try {
         return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { env, stdio: ['ignore', 'pipe', 'ignore'] })
