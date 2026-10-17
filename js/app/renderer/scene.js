@@ -7,7 +7,7 @@ import { viewBounds } from '../camera.js';
 import { appLog } from '../app-log.js';
 import { createBloom } from './bloom.js';
 import { createQuality, QUALITY_LEVELS, supportsFloatTargets } from './quality.js';
-import { isSoftwareRenderer, rendererName, scaledSize, SOFTWARE_RENDER_SCALE } from './software.js';
+import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from './software.js';
 
 /**
  * What a layer is. `object` goes into the scene (back to front by position in the list); the hooks are optional.
@@ -268,27 +268,28 @@ function watchContext(rig, canvas, { disposeAll, onRestored }) {
 
 /**
  * @param {{container: HTMLElement, info: Record<string, any>, buildLayers: (context: SceneContext) => LayerSet,
- *   quality?: number | null, onRestored?: () => void}} options `container` receives the canvas; `buildLayers` makes
- *   the layers (and is called again after a context restore); `quality` pins a level
+ *   quality?: number | null, scale?: number | null, onRestored?: () => void}} options `container` receives the canvas; `buildLayers` makes
+ *   the layers (and is called again after a context restore); `quality` pins a level and `scale` the render scale
  * @returns {{canvas: HTMLCanvasElement, renderer: any, quality: import('./quality.js').Quality,
  *   resize: (width: number, height: number) => void, draw: (frame: Frame) => boolean,
  *   setQualityLevel: (level: number) => void, rebuild: () => void, isLost: () => boolean, dispose: () => void}} the scene
  */
-export function createScene({ container, info, buildLayers, quality = null, onRestored }) {
+export function createScene({ container, info, buildLayers, quality = null, scale = null, onRestored }) {
     const renderer = createRenderer();
     const canvas = renderer.domElement;
     container.appendChild(canvas);
     const name = rendererName(renderer.getContext());
     const software = isSoftwareRenderer(name);
+    const renderScale = chooseRenderScale({ software, override: scale });
     const state = createQuality({ pinned: quality, floatTargets: supportsFloatTargets(renderer.extensions), software });
     if (software) {
-        appLog('info', 'SoftwareRenderer', { renderer: name, renderScale: SOFTWARE_RENDER_SCALE, level: state.level });
+        appLog('info', 'SoftwareRenderer', { renderer: name, renderScale, level: state.level });
     }
     const base = {
         renderer,
         camera: new OrthographicCamera(-1, 1, 1, -1, -1, 1),
         quality: state,
-        renderScale: software ? SOFTWARE_RENDER_SCALE : 1,
+        renderScale,
         size: { width: 1, height: 1 },
         info,
         buildLayers,

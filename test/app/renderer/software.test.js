@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    chooseRenderScale,
     isSoftwareRenderer,
     rendererName,
     scaledSize,
@@ -77,5 +78,14 @@ describe('scaledSize', () => {
 
     it('draws software at half size', () => {
         expect(SOFTWARE_RENDER_SCALE).toBe(0.5);
+    });
+});
+
+describe('chooseRenderScale', () => {
+    it('uses the override over everything, else half on software and full otherwise', () => {
+        expect(chooseRenderScale({ software: true, override: 1 })).toBe(1);
+        expect(chooseRenderScale({ software: false, override: 0.5 })).toBe(0.5);
+        expect(chooseRenderScale({ software: true, override: null })).toBe(SOFTWARE_RENDER_SCALE);
+        expect(chooseRenderScale({ software: false, override: null })).toBe(1);
     });
 });
