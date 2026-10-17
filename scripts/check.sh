@@ -275,6 +275,7 @@ gate_bench_check() {
 # gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh). It needs the Playwright image: skipped
 # without Docker (a failure under --ci). In CI the `check` job leaves it to the browser-smoke job, which passes --only.
 gate_browser_smoke() {
+  wanted browser-smoke || return 0
   if [[ $CI -eq 1 && -z "$ONLY" ]]; then
     skip_gate browser-smoke "runs in the browser-smoke job"
   elif [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
