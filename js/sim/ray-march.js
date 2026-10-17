@@ -1,7 +1,9 @@
-// Casts each agent's rays through the spatial hash, writing proximity and class one-hot to its inputs row.
+// Casts each agent's rays through the spatial hash, writing proximity and the hit's class to its inputs row.
+// An agent class channel holds the hit's proximity; the food, wall, obstacle and smoke channels hold 1.
 
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
+import { canBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -40,9 +42,9 @@ const NEAR_SLACK = 1.000001;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;
-const CH_BIGGER = 2;
-const CH_SMALLER = 3;
-const CH_SIMILAR = 4;
+const CH_THREAT = 2;
+const CH_PREY = 3;
+const CH_OTHER = 4;
 const CH_KIN = 5;
 const CH_WALL = 6;
 const CH_OBSTACLE = 7;
@@ -266,23 +268,23 @@ function walkCells(world, hash, slot) {
 }
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
-const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_BIGGER, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
+const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
 
 /**
  * @param {World} world the world
  * @param {number} slot the casting agent
- * @returns {number} the channel offset of the agent hit by the current ray's best hit
+ * @returns {number} the channel offset of the agent hit by the current ray's best hit: kin, else a threat when it can
+ *   bite the caster, else prey when the caster can bite it, else other
  */
 function agentChannel(world, slot) {
     const other = world.rayScratch[BEST_INDEX];
     if (isKin(world, slot, other)) {
         return CH_KIN;
     }
-    const ratio = world.config.huntSizeRatio;
-    if (world.size[other] > ratio * world.size[slot]) {
-        return CH_BIGGER;
+    if (canBite(world, other, slot)) {
+        return CH_THREAT;
     }
-    return world.size[other] < world.size[slot] / ratio ? CH_SMALLER : CH_SIMILAR;
+    return canBite(world, slot, other) ? CH_PREY : CH_OTHER;
 }
 
 /**
@@ -311,8 +313,10 @@ function writeRay(world, slot, base) {
     if (s[BEST_T] === Infinity) {
         return;
     }
-    inputs[base] = 1 - s[BEST_T] / s[RANGE];
-    inputs[base + hitChannel(world, slot)] = 1;
+    const proximity = 1 - s[BEST_T] / s[RANGE];
+    inputs[base] = proximity;
+    const channel = hitChannel(world, slot);
+    inputs[base + channel] = channel >= CH_THREAT && channel <= CH_KIN ? proximity : 1;
 }
 
 /**

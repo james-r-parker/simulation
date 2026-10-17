@@ -3,10 +3,10 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
 
-// Class flag channels within a ray (see js/sim/ray-march.js).
+// Class channels within a ray (see js/sim/ray-march.js): THREAT can bite the caster, PREY can be bitten by it.
 export const CH_FOOD = 1;
-export const CH_BIGGER = 2;
-export const CH_SMALLER = 3;
+export const CH_THREAT = 2;
+export const CH_PREY = 3;
 export const CH_FIRST_AGENT = 2;
 export const CH_LAST_AGENT = 5;
 export const CH_WALL = 6;
