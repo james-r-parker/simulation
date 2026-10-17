@@ -129,6 +129,52 @@ describe('feed: eating', () => {
     });
 });
 
+describe('feed: plantFoodValue', () => {
+    it('a specialisation with plantFoodValue 0 gains nothing and leaves the food', () => {
+        const w = smallWorld({ specialisations: { predator: { plantFoodValue: 0 } } });
+        const a = agent(w, { x: 100, y: 100, energy: 20, spec: PREDATOR });
+        const f = food(w, 100, 100, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+        expect(w.energy[a]).toBe(20);
+        expect(w.foodEnergy[a]).toBe(0);
+        expect(w.ateTimer[a]).toBe(30);
+    });
+
+    it('scales the energy gained by plantFoodValue', () => {
+        const w = smallWorld({ specialisations: { forager: { plantFoodValue: 0.5 } } });
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        food(w, 100, 100, 8);
+        run(w);
+        expect(w.foodCount).toBe(0);
+        expect(w.energy[a]).toBe(24);
+        expect(w.foodEnergy[a]).toBe(4);
+    });
+});
+
+describe('feed: satiation (T49)', () => {
+    it('a full agent at or above satiationShare x maxEnergy leaves the food', () => {
+        const w = smallWorld({ satiationShare: 0.5 });
+        agent(w, { x: 100, y: 100, energy: 0.5 * w.config.maxEnergy });
+        const f = food(w, 100, 100, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+    });
+
+    it('an agent still digesting (ateTimer below digestTicks) leaves the food, then eats', () => {
+        const w = smallWorld({ digestTicks: 10 });
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        const f = food(w, 100, 100, 7);
+        w.ateTimer[a] = 9;
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+        w.ateTimer[a] = 10;
+        run(w);
+        expect(w.foodAlive[f]).toBe(0);
+        expect(w.energy[a]).toBe(27);
+    });
+});
+
 describe('feed: biting', () => {
     const pair = [0, 1];
 

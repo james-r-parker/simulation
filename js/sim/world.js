@@ -211,6 +211,7 @@ export function allocateWorld(config) {
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),
+        plantFoodBySpec: specTable(config, 'plantFoodValue'),
         turnBySpec: specTable(config, 'turnMultiplier'),
         sprintBySpec: specTable(config, 'sprintBoost'),
         biteCos: new Float64Array([detCos(config.biteArc)]),
