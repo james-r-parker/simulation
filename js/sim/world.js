@@ -9,7 +9,7 @@ import { LOCAL_STRIDE } from './ray-gather.js';
 export const TIMER_CAP = 30;
 
 /** Elements of the per-world ray-march scratch row. */
-export const RAY_SCRATCH = 12;
+export const RAY_SCRATCH = 10;
 
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
@@ -210,6 +210,7 @@ export function allocateWorld(config) {
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
         rayScratch: new Float64Array(RAY_SCRATCH),
+        rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
             LOCAL_STRIDE * (config.maxAgents + config.maxFood + config.obstacleCount + config.maxClouds),
         ),

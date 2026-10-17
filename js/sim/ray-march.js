@@ -9,13 +9,13 @@ import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } fro
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
 // Indices into `world.rayScratch` beyond the ones `ray-gather.js` owns.
-const DX = 6;
-const DY = 7;
-const BEST_T = 8;
-const BEST_KEY = 9;
+const DX = 4;
+const DY = 5;
+const BEST_T = 6;
+const BEST_KEY = 7;
 /** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
-export const COS_H = 10;
-export const SIN_H = 11;
+export const COS_H = 8;
+export const SIN_H = 9;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;

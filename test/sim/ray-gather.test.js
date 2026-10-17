@@ -44,6 +44,26 @@ describe('gatherNear', () => {
         expect(gather(w, me)).toEqual([KIND_STRIDE + big]);
     });
 
+    it('keeps listing each circle once after the stamp counter wraps', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const other = addAgent(w, 600, 500, 20);
+        const STAMP = 3;
+        w.rayScratch[STAMP] = 2147483000 - 1;
+        w.rayStamp.fill(7);
+        expect(gather(w, me)).toEqual([KIND_STRIDE + other]);
+        expect(w.rayScratch[STAMP]).toBe(1);
+        expect(gather(w, me)).toEqual([KIND_STRIDE + other]);
+    });
+
+    it('lists the same circles on repeated gathers', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const other = addAgent(w, 600, 500, 20);
+        expect(gather(w, me)).toEqual(gather(w, me));
+        expect(gather(w, other)).toEqual([KIND_STRIDE + me]);
+    });
+
     it.each(Array.from({ length: 10 }, (_, i) => i + 1))('covers every circle within range on seed %i', (seed) => {
         const rng = createRng(seed);
         const w = senseWorld({ maxAgents: 12, maxFood: 40 });
