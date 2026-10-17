@@ -34,6 +34,8 @@ import { isSoftwareRenderer, rendererName, scaledSize, SOFTWARE_RENDER_SCALE } f
  * @property {number} selectedId the selected agent's genome id, 0 for none
  * @property {number} followId the followed agent's genome id, 0 for none
  * @property {number} leadLineageId the leading lineage's id, 0 for none
+ * @property {{ids: Uint32Array, count: number, stamp: number}} lineageTop the top lineages' ids, and a stamp that
+ *   changes whenever they may have
  */
 
 /**

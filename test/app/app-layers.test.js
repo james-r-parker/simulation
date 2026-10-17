@@ -8,8 +8,8 @@ describe('createLayerBuilder', () => {
         const refs = createLayerRefs();
         const build = createLayerBuilder({ refs, getReady: () => ({ info, layout, seed: 3 }) });
         const set = build();
-        expect(set.layers).toHaveLength(9);
-        expect(set.layers[0]).toBe(refs.haze);
+        expect(set.layers).toHaveLength(11);
+        expect(set.layers[1]).toBe(refs.haze);
         expect(set.afterBloom).toHaveLength(1);
         for (const layer of [...set.layers, ...set.afterBloom]) {
             expect(layer.object).toBeDefined();

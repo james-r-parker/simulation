@@ -9,6 +9,8 @@ import { createOverlays } from './renderer/overlays.js';
 import { createParticles } from './renderer/particles.js';
 import { createRingLayer, createRingPool } from './renderer/rings.js';
 import { createSmokeLayer } from './renderer/smoke-layer.js';
+import { createTerritoryLayer } from './renderer/territory-layer.js';
+import { createVisionLayer } from './renderer/vision-layer.js';
 import { createSparkLayer, createSparkPool } from './renderer/sparks.js';
 import { createBorderLayer, createFoodLayer, createObstacleLayer } from './renderer/world-layers.js';
 
@@ -50,10 +52,12 @@ function buildFor(refs, { info, layout, seed }) {
     refs.player = createEffectsPlayer({ rings, sparks, layout, info });
     return {
         layers: [
+            createTerritoryLayer({ info }),
             haze,
             createFoodLayer({ info }),
             createObstacleLayer({ info }),
             agents,
+            createVisionLayer({ info }),
             smoke,
             createRingLayer({ pool: rings }),
             createSparkLayer({ pool: sparks }),

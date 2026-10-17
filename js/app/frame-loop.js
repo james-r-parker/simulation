@@ -9,6 +9,8 @@ import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPla
 import { playEffects } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
 import { stepQuality } from './renderer/quality.js';
+import { TERRITORY_LINEAGES } from './territory.js';
+import { lensUniforms } from './ui/lenses.js';
 
 /** The quality rule's window of recent frames, and how often it is consulted, in ms. */
 export const QUALITY_WINDOW_FRAMES = 600;
@@ -38,6 +40,7 @@ export const MAX_DT_MS = 100;
  * @property {import('./frame-stats.js').FrameStats} window the recent frames the quality rule reads
  * @property {number} lastNowMs the previous frame's time, 0 before one
  * @property {number} lastCheckMs when the quality rule last ran
+ * @property {unknown} lastStats the stats message the lineage list was last read from
  */
 
 /**
@@ -51,6 +54,7 @@ function freshState(maxAgents) {
         window: createFrameStats(QUALITY_WINDOW_FRAMES),
         lastNowMs: 0,
         lastCheckMs: 0,
+        lastStats: null,
     };
 }
 
@@ -137,6 +141,7 @@ function newFrame(deps, loop) {
         selectedId: 0,
         followId: 0,
         leadLineageId: 0,
+        lineageTop: { ids: new Uint32Array(TERRITORY_LINEAGES), count: 0, stamp: 0 },
         lenses: { temperature: false, scent: false, territory: false, vision: false, calls: false },
     };
 }
@@ -157,6 +162,25 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
     frame.selectedId = deps.state.selectedId;
     frame.followId = deps.state.followId;
     frame.leadLineageId = client.stats?.lineages?.top?.[0]?.id ?? 0;
+    lensUniforms(deps.state.lenses, frame.lenses);
+    if (client.stats !== loop.lastStats) {
+        loop.lastStats = client.stats;
+        readTop(frame.lineageTop, client.stats?.lineages?.top);
+    }
+}
+
+/**
+ * Copies the ids of the top lineages out of a stats message and changes the stamp.
+ * @param {import('./renderer/scene.js').Frame['lineageTop']} out the list to rewrite
+ * @param {{id: number}[] | undefined} top the stats message's `lineages.top`
+ * @returns {void}
+ */
+function readTop(out, top) {
+    out.count = Math.min(top?.length ?? 0, out.ids.length);
+    for (let i = 0; i < out.count; i++) {
+        out.ids[i] = /** @type {{id: number}[]} */ (top)[i].id;
+    }
+    out.stamp += 1;
 }
 
 /**

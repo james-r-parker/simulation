@@ -3,6 +3,7 @@
 
 import { moveCameraTo, panByPixels, zoomAt } from './camera.js';
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
+import { LENSES, toggleLens } from './ui/lenses.js';
 
 /** A second press of `N` within this many ms starts the new world. */
 export const NEW_WORLD_CONFIRM_MS = 3000;
@@ -21,6 +22,7 @@ export const DEFAULT_TICKS_PER_SECOND = 60;
  * @property {number} requestedTicksPerSecond the speed last asked of the worker
  * @property {number} newWorldArmedAt when `N` was last pressed, -Infinity when not armed
  * @property {string} notice a short message for the top bar, empty for none
+ * @property {boolean[]} lenses which of the four lenses are on
  */
 
 /**
@@ -34,6 +36,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
         requestedTicksPerSecond: ticksPerSecond,
         newWorldArmedAt: -Infinity,
         notice: '',
+        lenses: new Array(LENSES.length).fill(false),
     };
 }
 
@@ -47,6 +50,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {() => void} fullscreen enters or leaves fullscreen
  * @property {() => void} exportArchive asks the worker for the archive and downloads it
  * @property {() => void} exportBundle downloads the debug bundle
+ * @property {() => void} lensesChanged a lens was toggled: sync the worker's ray part and save the preference
  */
 
 /** @type {Readonly<UiHooks>} */
@@ -58,6 +62,7 @@ const NO_UI = Object.freeze({
     fullscreen() {},
     exportArchive() {},
     exportBundle() {},
+    lensesChanged() {},
 });
 
 /**
@@ -135,6 +140,17 @@ function clearSelection({ getClient, state }) {
 }
 
 /**
+ * @param {number} index the lens, 0 to 3
+ * @returns {(deps: ActionDeps) => void} an action that toggles it and tells the page
+ */
+function lensAction(index) {
+    return ({ state, ui = NO_UI }) => {
+        toggleLens(state.lenses, index);
+        ui.lensesChanged();
+    };
+}
+
+/**
  * Escape closes the open drawer; with none open it clears the selection.
  * @param {ActionDeps} deps the dependencies
  * @returns {void}
@@ -177,6 +193,10 @@ const ACTIONS = Object.freeze({
     home: ({ camera }) => moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 }),
     clearSelection,
     escape,
+    lens1: lensAction(0),
+    lens2: lensAction(1),
+    lens3: lensAction(2),
+    lens4: lensAction(3),
     toggleCharts: viaUi('toggleDrawer', 'charts'),
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleHelp: viaUi('toggleDrawer', 'help'),

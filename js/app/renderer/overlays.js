@@ -73,13 +73,14 @@ const MARKER = { id: 0, alpha: 0, scale: 0 };
  * `visionRange x (1 - proximity)`.
  * @param {import('./line-buffer.js').LineBuffer} lines the buffer
  * @param {{x: number, y: number, angle: number, vision: number}} agent the agent
- * @param {{f32: Float32Array, start: number, count: number}} rays the proximities and where they start
+ * @param {{f32: Float32Array, start: number, count: number, alpha?: number}} rays the proximities and where they
+ *   start, and a fixed alpha for every ray (else each ray's alpha rises with its proximity)
  * @returns {void}
  */
 export function pushRays(lines, agent, rays) {
     for (let k = 0; k < rays.count; k++) {
         const proximity = rays.f32[rays.start + k];
-        setLineColor(lines, RAY_COLOR, 0.12 + 0.5 * proximity);
+        setLineColor(lines, RAY_COLOR, rays.alpha ?? 0.12 + 0.5 * proximity);
         RAY.angle = agent.angle + (2 * Math.PI * k) / rays.count;
         RAY.length = agent.vision * (1 - proximity);
         pushRay(lines, agent.x, agent.y, RAY);
