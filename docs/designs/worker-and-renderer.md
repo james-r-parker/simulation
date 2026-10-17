@@ -517,6 +517,8 @@ tooling widened to `js/worker/` and `js/app/`. Done when `test/worker/sim-host.t
 
 **Targets:** browser.frame_p50_ms, browser.frame_p95_ms, browser.frame_p99_ms, browser.draw_cpu_p95_ms, browser.gpu_frame_p95_ms, browser.main_long_tasks, browser.gc_pause_ms
 
+> **Note:** Phase 2's code is on branch `feat/renderer-phase-2` (PR 43), not merged: CI's `browser-smoke` fails because the v6 app draws fewer than 30 frames in 5 s under CI's software GL (about 8.6 fps measured under SwiftShader locally at 1280x720). The app must stay usable without a GPU - start at the lowest quality level and a reduced pixel ratio when the renderer is a software one - before the PR can merge. The 240 Hz budgets and the manual walk on the user's 4K OLED are also still open; the rest of the open items are listed on that branch's copy of this section.
+
 - `three` upgraded and pinned; the pure `js/app/` core modules; the renderer: agents, food, obstacles, border, haze,
   smoke, rings, sparks, ambient motes, bloom, quality levels, interpolation, camera, picking, trails, selected-agent
   overlays and context-loss recovery. `index.html` loads `js/app/main.js` with a minimal top bar (tick, speed,

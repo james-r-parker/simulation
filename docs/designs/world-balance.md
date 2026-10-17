@@ -34,20 +34,21 @@ near - earns little or nothing, and wasted signals cost. Every measure below is 
 and events (rays, headings, timers, `heard`, positions), draws no randomness, and is credited only when the agent's
 recent actions show intent.
 
-| #   | Behaviour            | Counts as deliberate                                                                                                                       | Counts as chance or waste                                                                                           |
-| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| D1  | Foraging             | Food eaten after the agent saw it on a ray and closed on it (turned towards it and the distance fell over the preceding ticks)             | Food eaten with no food on any ray in the preceding ticks, or while turning away from it                            |
-| D2  | Hunting              | A bite or kill after the hunter held the prey ahead (inside `biteArc` on its rays) and closed the gap over a pursuit window                | A bite on prey that entered the jaws without a pursuit                                                              |
-| D3  | Pack hunting         | Kills where two or more same-lineage hunters converged on the prey within `packWindow`, or a hunt call was heard and answered by approach  | Two hunters biting the same prey by coincidence with no convergence                                                 |
-| D4  | Evasion              | An escape after the prey saw the hunter, turned away or sprinted, or entered smoke                                                         | Surviving because the hunter never pursued                                                                          |
-| D5  | Grouping             | Prey of one lineage staying within call range of each other while a hunter is near, and alarm hearers moving away from the threat          | Clumping around one food patch with no threat                                                                       |
-| D6  | Alarm and hunt calls | A call made while a threat (for alarms) or a prey (for hunt calls) is on the caller's rays, followed by a measurable response from hearers | A call with no threat or prey in sight: earns nothing and its energy cost stands; repeated idle calls are penalised |
-| D7  | Smoke                | Smoke released within a short window of being bitten or with a hunter ahead, followed by an escape                                         | Smoke with no hunter near: earns nothing, and the release counts against the agent                                  |
+| #   | Behaviour            | Counts as deliberate                                                                                                                                                      | Counts as chance or waste                                                                                                                     |
+| --- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Foraging             | Food eaten after the agent saw it on a ray and closed on it (turned towards it and the distance fell over the preceding ticks)                                            | Food eaten with no food on any ray in the preceding ticks, or while turning away from it                                                      |
+| D2  | Hunting              | A bite or kill after the hunter held the prey ahead (inside `biteArc` on its rays) and closed the gap over a pursuit window                                               | A bite on prey that entered the jaws without a pursuit                                                                                        |
+| D3  | Pack hunting         | Kills where two or more same-lineage hunters converged on the prey within `packWindow`, or a hunt call was heard and answered by approach                                 | Two hunters biting the same prey by coincidence with no convergence                                                                           |
+| D4  | Evasion              | An escape after the prey saw the hunter, turned away or sprinted, or entered smoke                                                                                        | Surviving because the hunter never pursued                                                                                                    |
+| D5  | Grouping             | Prey of one lineage staying within call range of each other while a hunter is near, and alarm hearers moving away from the threat                                         | Clumping around one food patch with no threat                                                                                                 |
+| D6  | Alarm and hunt calls | A call made while a threat (for alarms) or a prey (for hunt calls) is on the caller's rays, followed by a measurable response from hearers                                | A call with no threat or prey in sight: earns nothing and its energy cost stands; repeated idle calls are penalised                           |
+| D7  | Smoke                | Smoke released within a short window of being bitten or with a hunter ahead, followed by an escape                                                                        | Smoke with no hunter near: earns nothing, and the release counts against the agent                                                            |
+| D8  | Defence              | Being bitten after the agent saw the hunter and still fled, turned away, released smoke, called or (for a defender) turned to face it; such bites are not held against it | Being bitten with the hunter on its rays and no response: counts against fitness. A bite from a hunter it never saw is luck and counts little |
 
 - Metrics: each row becomes an `eval.*` metric (for example `eval.deliberate_food_share`, `eval.pursuit_catch_share`,
   `eval.pack_convergence`, `eval.evasion_skill`, `eval.group_cohesion_under_threat`, `eval.call_precision`,
   `eval.smoke_precision`) so tuning nights and comparisons can target them.
-- Fitness: the fitness that replaces `fitnessV1` pays mostly for D1 to D7, discounts chance intake, and charges
+- Fitness: the fitness that replaces `fitnessV1` pays mostly for D1 to D8, discounts chance intake, and charges
   wasted calls and smoke. The `fitnessV2` terms planned in [predator-prey.md](predator-prey.md) Phase 3 are
   re-planned from this table before that phase is built.
 - Anti-exploit: scripted controllers for each "chance or waste" column (a drifter that eats only by contact, a
@@ -63,7 +64,7 @@ recent actions show intent.
 3. The best 3 to 5 go to 16 seeds against the reference report, then to fresh seeds 17-32 with `--allow-seed-diff`.
 4. The skill ladder (random brains, a sloppy forager, `foodSeeker`, `fleer`; no floor; 10000 ticks; seeds 1-3) runs for
    every finalist.
-5. Ranking uses the deliberate-behaviour metrics (D1 to D7) alongside food, births and fed lifespan; a world where
+5. Ranking uses the deliberate-behaviour metrics (D1 to D8) alongside food, births and fed lifespan; a world where
    chance does nearly as well as skill is rejected.
 6. A setting is kept only with a mechanism and a confirmed 16-seed result; the adopted override is recorded as an
    experiment in `evals/experiments.json` and learnings go to `sim-notes.md`.
@@ -71,6 +72,11 @@ recent actions show intent.
 ## Biology features
 
 - Mate choice by genetic similarity, so crossover joins compatible brains.
+- Two sexes with female choice: only females carry a pregnancy, and a willing female mates with the strongest male in
+  range by an honest quality signal (energy, size or skill), so males compete and sexual selection adds a second
+  route up the fitness landscape. The existing `pregnancyTicks` (480) and `reproductionCooldown` (300) stop a female
+  remating at once; males are limited by `mateCost` and their cooldown. Built only once the world is dense enough
+  that pairings are common (mating is 28 against 313 splits today, issue B9).
 - Evolvable body traits with costs (size, sensing range, the share of energy given to a child).
 - Patchy food and terrain, so several strategies can hold their own regions.
 - Learning within a lifetime (a small Hebbian term) to smooth the climb from random to skilled.
@@ -80,16 +86,16 @@ recent actions show intent.
 
 ### Phase 1 - Measure deliberate behaviour
 
-**Targets:** none - stub: instruments first; the D1 to D7 metrics are recorded for `baseline-v5` and the live policy
+**Targets:** none - stub: instruments first; the D1 to D8 metrics are recorded for `baseline-v5` and the live policy
 
-TBD - stub: planned in full with the `create-plan` skill: the D1 to D7 metrics, the per-metric seed minimum (B5), the
+TBD - stub: planned in full with the `create-plan` skill: the D1 to D8 metrics, the per-metric seed minimum (B5), the
 chance-or-waste scripted controllers and the extended skill ladder.
 
 ### Phase 2 - Reward deliberate behaviour and settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
 
-TBD - stub: the fitness built on D1 to D7 (re-planning `fitnessV2` in predator-prey.md Phase 3), then a tuning night
+TBD - stub: the fitness built on D1 to D8 (re-planning `fitnessV2` in predator-prey.md Phase 3), then a tuning night
 at 7680 x 4320 aimed at B1 and B2 with the deliberate metrics on the scorecard.
 
 ### Phase 3 - Biology features
