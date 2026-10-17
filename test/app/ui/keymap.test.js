@@ -21,6 +21,15 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'KeyN', shiftKey: true })).toBe('focusSeed');
     });
 
+    it('maps the digits 1 to 4 to the four lenses', () => {
+        expect(['Digit1', 'Digit2', 'Digit3', 'Digit4'].map((code) => actionForKey({ code }))).toEqual([
+            'lens1',
+            'lens2',
+            'lens3',
+            'lens4',
+        ]);
+    });
+
     it('maps each phase 3 shortcut to its action', () => {
         expect(actionForKey({ code: 'KeyC' })).toBe('toggleCharts');
         expect(actionForKey({ code: 'KeyI' })).toBe('toggleInspector');

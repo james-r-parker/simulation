@@ -178,6 +178,7 @@ describe('page actions', () => {
             fullscreen: () => calls.push('fullscreen'),
             exportArchive: () => calls.push('archive'),
             exportBundle: () => calls.push('bundle'),
+            lensesChanged: () => calls.push('lenses'),
         };
         const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
         const act = createActions({
@@ -209,6 +210,16 @@ describe('page actions', () => {
             'archive',
             'bundle',
         ]);
+    });
+
+    it('toggles each lens and tells the page', () => {
+        const { act, calls, state } = withUi(false);
+        act('lens1');
+        act('lens4');
+        expect(state.lenses).toEqual([true, false, false, true]);
+        act('lens1');
+        expect(state.lenses).toEqual([false, false, false, true]);
+        expect(calls).toEqual(['lenses', 'lenses', 'lenses']);
     });
 
     it('closes a drawer on Escape and keeps the selection', () => {
