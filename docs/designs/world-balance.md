@@ -496,7 +496,7 @@ choices and reasons within the plans").
 
 **Targets:** none - instruments only: the D1 to D8 and selection metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
-> **Note:** in progress on draft PR 54 (`feat/world-balance-phase-1`, 2026-10-17): T2, T3, T4, T4a, T5, T6, T7 and T11a are built and the fast suite passes (2047 tests); T8 is started (`controller-brain.js` and the `random` arm). Next: cherry-pick T1 (commit `954db16` on `feat/wb-p1-side`), finish T8, then T9, T10 on a quiet machine, T11 (`E23` to `E25`), T12, T13 (including the extra modules `hunter-table.js`, `observer-intent-*.js`, `ray-summary.js`, `metrics-selection.js` and `controller-brain.js` in the Architecture row) and T14.
+> **Note:** state at 2026-10-17 16:30 - draft PR 54 (`feat/world-balance-phase-1`) has every Phase 1 task done: the survivable-prey world for the paired test (D4, D5 and D8 with `random` prey stay open, user decision), `E25` recorded, `E23` and `E24` deferred to T41's `E29`, the ladder at the defaults in sim-notes.md and the T14 review applied. One blocker: the observer adds 9.5% to `npm run bench -- --policy map-elites-v1q` against a 5% budget; optimisation commits are on `wip/wb-p1-perf` (bit-identical, not yet merged into PR 54). User decision: if 5% is not reached, merge with the measured figure as a known miss and keep optimising before T41. Next: merge `wip/wb-p1-perf` into PR 54, full gate, mark Phase 1 built, merge.
 
 The intent state and counters, the thirteen D metrics, the six selection metrics, the per-metric seed minimum with
 64 seeds and `npm run eval:power`, the five controllers and the `random` arm with the paired test, and `npm run
@@ -509,7 +509,7 @@ ladder at the defaults is recorded in [sim-notes.md](sim-notes.md).
 
 **Targets:** eval.alarm_precision, eval.escape_rate, eval.idle_signals_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.births_per_1k
 
-> **Note:** in progress on draft PR 55 (`feat/world-balance-phase-2`): T20 (`mateSizeRatio`) and T22 (`eval.mating_share`) are built; T19 (honest classes through a shared `canBite` in `js/sim/bite-rule.js`) is a WIP commit that skipped the hook and trips B20. Next: decide B20 with the user, re-pin the golden hashes including `shortCases`, then T21 and T23 to T26 after Phase 1 merges.
+> **Note:** state at 2026-10-17 16:30 - draft PR 55 (`feat/world-balance-phase-2`) has T19 to T22 built on top of Phase 1 and main, B20 settled (the scripted `hunter` is an expected FIT-5 failure under `fitnessV5` only, user), and the golden hashes re-pinned in Node including `shortCases` (Chromium `browser:hash` agrees). Open: the survivable-prey world no longer meets its pinned criterion under honest classes on seeds 2 and 3, so it is being re-chosen by the same criterion; then re-record `baseline-v5` and `baseline-v5-o16`, T23 to T26. Merges after PR 54.
 
 The ray classes tell an agent what can bite it and what it can bite, class channels carry proximity, and mating gets
 its own size band (B12, B14). Built before predator-prey.md Phase 3 (user, 2026-10-17).
@@ -533,7 +533,7 @@ the new senses against `E25`'s live arm, 16 seeds x 200000 ticks) is `worse` on 
 
 **Targets:** eval.mating_share, eval.lineages_alive, eval.births_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan
 
-> **Note:** in progress on draft PRs 58 (`feat/wb-p3-layout`: T30 built with Node goldens re-pinned before T31; T31 leak WIP; a `hebbian.js` draft not wired) and 59 (`feat/wb-p3-food-floor`: T34 and T35 as WIP commits; the `default` and `shortCases.default` goldens need re-pinning for `minAgents` 40, and the eval baselines record `minAgents` 100). Both skipped the hook. Not started: T32, T33, T36 to T44. `mutateWeights` applies `TRAIT_SIGMA` only once a biology feature is on, so the goldens hold until T41. Merge order: Phase 1, Phase 2, then PR 58, then PR 59, re-pinning the goldens once per merge.
+> **Note:** state at 2026-10-17 16:30 - PR 58 (`feat/wb-p3-layout`): T30 to T33 built, every feature off, goldens unchanged from the T30 re-pin; T41 must raise `hashCellSize` to at least 140 when traits go on. PR 59 (`feat/wb-p3-food-floor`): T34 and T35 reviewed and gated; at merge, re-pin the `default` golden and `shortCases.default` (`minAgents` 40) and re-record both eval baselines. PR 66 (`feat/wb-p3-carcasses`): T54 built off; a carcass holds `carcassShare` x the agent's lifetime food and bite intake (user); the renderer must read meat's negative radius before T41. PR 67 (`feat/wb-p3-roles`): T51 built off. T45, T49 and T50 are on `main`. Not started: T36 to T44, T46, T47, T52, T53. Merge order: PR 54, 55, 58, 59, then 66 and 67, re-pinning the goldens once per merge. `main`'s `scripts` coverage ratchet fails locally after the PR 56 and 57 merges (CI does not run `ratchet`); a fix is on `test/scripts-coverage`.
 
 The six features under Biology features, all on by the end of the phase (user, 2026-10-17: the world's rules are
 finished before the tuning night). Done when the golden hashes are re-pinned in Node and Chromium, `baseline-v5` and
