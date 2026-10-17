@@ -633,6 +633,8 @@ tooling widened to `js/worker/` and `js/app/`. Done when `test/worker/sim-host.t
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms, browser.main_long_tasks
 
+> **Note:** built on draft PR 56 (`feat/renderer-phase-3`, 2026-10-17) and paused by the user to leave capacity for world work: T20 to T24, T26, T40 to T46 and the T25 wiring are committed with tests (`uplot` 1.6.32 added); the last commit is WIP (the dupes fix and a coverage test not re-run). Next: run the gate and `SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke`, merge, then the user measures `browser.frame_p95_ms` at most 8.4, `browser.draw_cpu_p95_ms` at most 3.0 and no long tasks after 5 s on the 4K 240 Hz OLED with all four lenses and the charts drawer open, recorded in `bench/browser-baseline.json`; T27 follows.
+
 The full top bar, ticker, drawers, `uPlot` charts, inspector, the four lenses, controls, shortcuts, help and
 preferences. The first-minute and legibility work belongs here too: the title card with its legend, the status line and
 the `Year, Season, Gen` top bar (`generationMax` and `generationMedian` in stats), the hover peek and the inspector's Now
