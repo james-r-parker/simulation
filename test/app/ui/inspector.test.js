@@ -135,6 +135,16 @@ describe('mountInspector', () => {
         expect(byClass(root, 'inspector-radar')[0].width).toBe(CANVAS_SIZE);
     });
 
+    it('restarts the heatmap from the new agent when the selection changes', () => {
+        const doc = fakeDocument();
+        const root = doc.createElement('div');
+        const inspector = mountInspector(doc, root);
+        const hot = new Float32Array(view.hidden.length).fill(1);
+        inspector.update({ ...view, hidden: hot });
+        inspector.update({ ...view, header: { ...view.header, genomeId: view.header.genomeId + 1 }, hidden: hot });
+        expect(byClass(root, 'inspector-title')[0].textContent).toContain(`#${view.header.genomeId + 1}`);
+    });
+
     it('shows what the agent is doing above the radar, rewriting it as it changes', () => {
         const doc = fakeDocument();
         const root = doc.createElement('div');

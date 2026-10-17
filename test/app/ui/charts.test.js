@@ -106,6 +106,26 @@ describe('chartDefs', () => {
         river.data(columns(history));
         expect(series[0].fill()).not.toBe(series[1].fill());
         expect(series[1].fill()).toMatch(/^hsl\(/);
+        expect(series[1].stroke()).toBe(series[1].fill());
+    });
+
+    it('labels every axis tick with a short number, or a percentage on the share axes', () => {
+        FakeUPlot.made.length = 0;
+        const { sampler, history } = filled();
+        const doc = fakeDocument();
+        mountCharts({
+            doc,
+            root: doc.createElement('div'),
+            UPlot: FakeUPlot,
+            history,
+            groups: sampler.groups,
+            colorOf: COLOR_OF,
+        });
+        const labels = FakeUPlot.made.flatMap((u) =>
+            u.opts.axes.map((/** @type {any} */ a) => a.values(null, [0.5, 12000])),
+        );
+        expect(labels.filter((l) => l[0] === '50%').length).toBeGreaterThan(0);
+        expect(labels.filter((l) => l[1] === '12k').length).toBeGreaterThan(0);
     });
 });
 

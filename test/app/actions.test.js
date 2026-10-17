@@ -235,6 +235,23 @@ describe('page actions', () => {
         return { act, calls, state };
     }
 
+    it('does nothing for the page actions when the page gives no hooks', () => {
+        const { client } = fakeClient();
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => client,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+        });
+        for (const a of ['toggleHud', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
+            expect(() => act(a), a).not.toThrow();
+        }
+    });
+
     it('routes each page action to its hook', () => {
         const { act, calls } = withUi(false);
         for (const a of ['toggleCharts', 'toggleInspector', 'toggleHelp', 'toggleHud', 'focusSeed', 'fullscreen']) {

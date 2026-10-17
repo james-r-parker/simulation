@@ -26,6 +26,18 @@ describe('createDownloader', () => {
         expect(doc.body.children).toHaveLength(0);
     });
 
+    it('makes a real Blob of the given type when no maker is injected', () => {
+        const doc = fakeDocument();
+        doc.body = doc.createElement('body');
+        const blobs = /** @type {any[]} */ ([]);
+        const url = { createObjectURL: (/** @type {any} */ b) => (blobs.push(b), 'blob:3'), revokeObjectURL() {} };
+        const el = { setAttribute() {}, click() {}, remove() {} };
+        const save = createDownloader({ doc: { createElement: () => el, body: { appendChild() {} } }, url });
+        save({ name: 'a.json', text: '{"a":1}' });
+        expect(blobs[0]).toBeInstanceOf(Blob);
+        expect([blobs[0].type, blobs[0].size]).toEqual(['application/json', 7]);
+    });
+
     it('uses the type it is given', () => {
         const doc = fakeDocument();
         doc.body = doc.createElement('body');

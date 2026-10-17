@@ -87,6 +87,13 @@ describe('inspectorView without a selection', () => {
         expect(inspectorView({ snapshot, ready, slots: createFamilySlots() }).valid).toBe(false);
     });
 
+    it('still describes the agent when it is not among the snapshot rows', () => {
+        const { ready, snapshot } = selectedWorld();
+        snapshot.u32[1] = 0;
+        const view = inspectorView({ snapshot, ready, slots: createFamilySlots() });
+        expect(view.valid).toBe(true);
+    });
+
     it('is not valid when the snapshot is too short to hold the part', () => {
         const { ready } = selectedWorld();
         const short = { tick: 1, u32: new Uint32Array(8), f32: new Float32Array(8) };
