@@ -94,6 +94,44 @@ describe('the commands', () => {
     });
 });
 
+describe('pause acknowledgement', () => {
+    const PAUSED = { type: 'paused', epoch: 1, tick: 12 };
+
+    it('is not settled until the worker acknowledges, so a snapshot in flight cannot move a shown paused tick', () => {
+        const { client } = setup();
+        client.init(1, {});
+        client.handle(READY);
+        client.handle(snapshot(10));
+        client.pause();
+        expect(client.paused).toBe(true);
+        expect(client.pausedAck).toBe(false);
+        client.handle(snapshot(11));
+        client.handle(snapshot(12));
+        expect(client.pausedAck).toBe(false);
+        client.handle(PAUSED);
+        expect(client.pausedAck).toBe(true);
+        expect(client.latest?.tick).toBe(12);
+    });
+
+    it('ignores an acknowledgement after resume, and waits for the last of several pauses', () => {
+        const { client } = setup();
+        client.init(1, {});
+        client.handle(READY);
+        client.pause();
+        client.resume();
+        client.handle(PAUSED);
+        expect(client.pausedAck).toBe(false);
+        client.pause();
+        client.pause();
+        client.handle(PAUSED);
+        expect(client.pausedAck).toBe(false);
+        client.handle(PAUSED);
+        expect(client.pausedAck).toBe(true);
+        client.resume();
+        expect(client.pausedAck).toBe(false);
+    });
+});
+
 describe('ready and the epoch', () => {
     it('takes the epoch and layout from ready and calls onReady', () => {
         const { client, events } = setup();

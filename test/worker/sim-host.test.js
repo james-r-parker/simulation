@@ -198,6 +198,19 @@ describe('pause, resume and step', () => {
         expect(h.run().world.tick - tick).toBeLessThanOrEqual(2);
     });
 
+    it('acknowledges a pause with the final tick, after a snapshot of that tick, and then runs no more', () => {
+        const h = started();
+        runTo(h, 5);
+        h.send({ type: 'pause' });
+        const tick = h.run().world.tick;
+        const ack = h.of('paused');
+        expect(ack).toEqual([{ type: 'paused', epoch: 1, tick }]);
+        expect(h.of('snapshot').at(-1).tick).toBe(tick);
+        expect(h.sent.at(-1).type).toBe('paused');
+        h.advance(200);
+        expect(h.run().world.tick).toBe(tick);
+    });
+
     it('steps the asked ticks while paused and posts a snapshot', () => {
         const h = started();
         runTo(h, 3);

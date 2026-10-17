@@ -29,6 +29,7 @@ const GOOD = {
     stats: { type: 'stats', epoch: 1, stats: { tick: 5, ticksPerSecond: 60 } },
     field: { type: 'field', epoch: 1, tick: 5, buffer: new ArrayBuffer(8) },
     ticker: { type: 'ticker', items: [{ tick: 1, kind: 'elite', text: 'x' }] },
+    paused: { type: 'paused', epoch: 1, tick: 5 },
     selection: { type: 'selection', genomeId: 4, state: 'gone' },
     archive: { type: 'archive', json: '{}' },
     log: { type: 'log', record: { level: 'info', event: 'x' } },

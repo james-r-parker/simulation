@@ -262,7 +262,7 @@ function startReporting(app) {
     const barUpdate = mountTopBar(document, /** @type {HTMLElement} */ (document.getElementById('top-bar')));
     setInterval(() => {
         const client = app.supervisor.client();
-        barUpdate(topBarView(topBarInput(/** @type {any} */ (client)), app.state, client?.paused ?? false));
+        barUpdate(topBarView(topBarInput(/** @type {any} */ (client)), app.state, client?.pausedAck ?? false));
     }, TOP_BAR_MS);
     if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
         installPerf(/** @type {any} */ (window), {
