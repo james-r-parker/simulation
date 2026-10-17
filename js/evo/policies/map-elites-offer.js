@@ -95,7 +95,7 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
      * A host that empties the log (`drainObserverLogs`) adds the rows it removed to `observer.deathsDrained`.
      */
     function scoredRow(/** @type {number} */ genomeId) {
-        const row = deathsSeen++ - (observer.deathsDrained ?? 0);
+        const row = deathsSeen++ - observer.deathsDrained;
         const deaths = observer.deaths;
         if (deaths.genomeId[row] !== genomeId || Number.isNaN(deaths.fitness[row])) {
             throw new Error(`map-elites-v1: death log row ${row} is not genome ${genomeId} or unscored`);
