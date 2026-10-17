@@ -43,4 +43,10 @@ describe('workflows', () => {
             }
         }
     });
+
+    it('check the golden hashes in Chromium in the nightly run', () => {
+        const nightly = workflows.find(({ name }) => name === 'nightly.yml');
+        expect(nightly?.text).toContain('npx playwright install --with-deps chromium');
+        expect(nightly?.text).toContain('npm run browser:hash');
+    });
 });

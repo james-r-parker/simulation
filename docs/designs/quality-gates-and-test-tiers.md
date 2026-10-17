@@ -217,7 +217,8 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
 - **Nightly.** `.github/workflows/nightly.yml` runs at 03:00 UTC and on `workflow_dispatch` with a `ref` input. Its
   job, `nightly`, runs on `ubuntu-latest` with `timeout-minutes: 60`, checks out with `fetch-depth: 0`, installs
   the Node version in `.node-version` through `actions/setup-node`, runs `scripts/check.sh --ci --full --tier 3` (every test and the ratchet), and uploads `.checklogs/`, `reports/`
-  and `TestResults/` as the `nightly-reports` artifact (`include-hidden-files: true`, or `.checklogs/` is dropped).
+  and `TestResults/` as the `nightly-reports` artifact (`include-hidden-files: true`, or `.checklogs/` is dropped). Before the gate it installs Playwright's Chromium, and after it runs `npm run browser:hash` (the golden hashes in a Chromium
+  worker, which needs no GPU) even when the gate failed.
 
 ### Phase 3 - CI perf job, CPU lock and run hygiene
 
