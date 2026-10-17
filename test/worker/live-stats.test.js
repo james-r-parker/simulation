@@ -198,14 +198,14 @@ describe('collectStats', () => {
     it('leaves combat null until the observer has combat counters, then reports the change', () => {
         const { world, observer, live, policy } = setup();
         expect(collectStats(live, { world, observer, policy }, RUN).combat).toBeNull();
-        observer.combat = { caught: 5, escaped: 2, huntKills: 4, packKills: 1 };
+        observer.combat = { caughtEpisodes: 5, escapedEpisodes: 2, huntKills: 4, packKills: 1 };
         expect(collectStats(live, { world, observer, policy }, RUN).combat).toEqual({
             caught: 5,
             escaped: 2,
             huntKills: 4,
             packKills: 1,
         });
-        observer.combat = { caught: 6, escaped: 2, huntKills: 4, packKills: 3 };
+        observer.combat = { caughtEpisodes: 6, escapedEpisodes: 2, huntKills: 4, packKills: 3 };
         expect(collectStats(live, { world, observer, policy }, RUN).combat).toEqual({
             caught: 1,
             escaped: 0,
