@@ -376,6 +376,21 @@ In `integrate`, after moving:
   nearest as kind `SMOKE`, ranked after `WALL` on a tie; a smoke hit hides everything behind it. It returns at once when
   `cloudCount` is 0.
 
+### `world.inputs` as a read API
+
+`world.inputs` is the brain's input matrix: `maxAgents` rows of `layout.inputCount` floats. The observers, the scripted
+controllers, the snapshot rays and the inspector read it; only the sense phase writes it.
+
+| Part                 | Contract                                                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Layout               | Row `slot` starts at `slot x layout.inputCount`. Ray `k` owns `RAY_CHANNELS` values from `k x RAY_CHANNELS`; the body inputs follow at `rayCount x RAY_CHANNELS` (see Motion and body inputs)          |
+| Ray channels         | Channel 0 is the proximity, `1 - distance / visionRange`, 0 for a miss. Channels 1 to 8 are food, bigger, smaller, similar, kin, wall, obstacle and smoke; at most one is nonzero on a ray             |
+| Class test           | A reader asks whether a class channel is nonzero (`> 0`), never whether it equals 1, and takes the distance from channel 0                                                                             |
+| Valid from, until    | Written by the `sense` phase and read by `brain`; after `step` returns, the row holds what the agent perceived at the start of that tick, before motion. It stays until the next `sense` overwrites it |
+| Dead or newborn slot | `freeAgent` zeroes the row, so a slot freed this tick reads all zeros. An agent born this tick has a zero row until the next tick's `sense`                                                            |
+| Hash                 | `inputs` is left out of `hashWorld`; a reader never stores it in any hashed array                                                                                                                      |
+| Writers              | Only `castRays`, `writeBodyInputs` and `writeScentInputs` write it; a policy or observer that needs a changed copy copies the row                                                                      |
+
 ### Brain
 
 Row layout, all row-major:
@@ -478,6 +493,12 @@ specialisation has `canHunt` and the `BITE` output is above 0), `ALARMING` (11, 
 
 Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleCount`, `maxClouds` and the
 ray part. A snapshot is not part of `worldHash`.
+
+## Decisions
+
+| Decision                                                                          | Reason                                                                                                                                                      | By                |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `world.inputs` has a written read contract, and readers test class channels `> 0` | Four reader groups depend on the rule and nothing recorded it; the honest-ray change makes class channels carry proximity, so an `=== 1` test stops working | Specialist review |
 
 ## Tooling and tasks
 
