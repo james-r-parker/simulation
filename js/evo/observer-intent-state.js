@@ -146,6 +146,8 @@ export function createIntentState(config) {
         hunters: new Int32Array(config.maxAgents),
         hunterCount: 0,
         hunterGrid: createHunterGrid(config),
+        groupKeys: new Float64Array(config.maxAgents + 1).fill(Infinity),
+        groupKin: new Int32Array(config.maxAgents),
         calls: createHuntCalls(),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
         packWindow: config.packWindow,
