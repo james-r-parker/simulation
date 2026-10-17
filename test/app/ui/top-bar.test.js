@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountTopBar, topBarView } from '../../../js/app/ui/top-bar.js';
+import { mountTopBar, topBarInput, topBarView } from '../../../js/app/ui/top-bar.js';
 
 const STATE = { requestedTicksPerSecond: 60, notice: '' };
 
@@ -27,6 +27,28 @@ describe('topBarView', () => {
     it('says paused while paused and carries the notice', () => {
         const state = { requestedTicksPerSecond: 60, notice: 'hello' };
         expect(topBarView(null, state, true)).toMatchObject({ speed: 'paused', notice: 'hello' });
+    });
+});
+
+describe('topBarInput', () => {
+    it('is null before a client or a snapshot exists', () => {
+        expect(topBarInput(null)).toBeNull();
+        expect(topBarInput({ latest: null, stats: null })).toBeNull();
+    });
+
+    it('reads the tick and population from the newest snapshot and the rate from the stats', () => {
+        const u32 = new Uint32Array([0, 37]);
+        expect(topBarInput({ latest: { tick: 912, u32 }, stats: { ticksPerSecond: 58 } })).toEqual({
+            tick: 912,
+            population: 37,
+            ticksPerSecond: 58,
+        });
+    });
+
+    it('reports a zero rate before the first stats, and keeps counting steps while paused', () => {
+        const u32 = new Uint32Array([0, 5]);
+        expect(topBarInput({ latest: { tick: 3, u32 }, stats: null })?.ticksPerSecond).toBe(0);
+        expect(topBarInput({ latest: { tick: 4, u32 }, stats: null })?.tick).toBe(4);
     });
 });
 
