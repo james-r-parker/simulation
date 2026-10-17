@@ -41,7 +41,7 @@ describe('castRays classes', () => {
     it.each([
         ['a bigger agent', 40, CH.bigger],
         ['a smaller agent', 10, CH.smaller],
-        ['a similar agent', 20.4, CH.similar],
+        ['a similar agent', 20.1, CH.similar],
     ])('classifies %s', (_name, otherSize, channel) => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
