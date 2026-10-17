@@ -163,6 +163,44 @@ describe('createActions', () => {
     });
 });
 
+describe('follow', () => {
+    /** @param {() => number} [leaderAgent] @returns {{act: (a: string) => void, state: any}} */
+    function withLeader(leaderAgent) {
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => null,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+            leaderAgent,
+        });
+        return { act, state };
+    }
+
+    it('follows the selected agent, else the leading family largest, and a second press stops', () => {
+        const { act, state } = withLeader(() => 77);
+        state.selectedId = 5;
+        act('follow');
+        expect(state.followId).toBe(5);
+        act('follow');
+        expect(state.followId).toBe(0);
+        state.selectedId = 0;
+        act('follow');
+        expect(state.followId).toBe(77);
+        act('follow');
+        expect(state.followId).toBe(0);
+    });
+
+    it('follows nothing when there is no selection and no leader', () => {
+        const { act, state } = withLeader();
+        act('follow');
+        expect(state.followId).toBe(0);
+    });
+});
+
 describe('page actions', () => {
     /**
      * @param {boolean} drawerOpen what `closeDrawer` reports

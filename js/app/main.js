@@ -12,6 +12,7 @@ import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { minPxTable } from './display-size.js';
 import { agentAt } from './hover-pick.js';
+import { largestOfLineage } from './picking.js';
 import { createGpuTimer } from './gpu-timer.js';
 import { createInterface } from './interface.js';
 import { installPerf } from './perf.js';
@@ -324,6 +325,8 @@ function createApp(container) {
         now: () => performance.now(),
         chooseSeed: () => chooseSeed(null),
         config: overrides,
+        leaderAgent: () =>
+            largestOfLineage(app.loop.agents(), app.supervisor.client()?.stats?.lineages?.top?.[0]?.id ?? -1),
         ui: app.iface.hooks,
     });
     return app;

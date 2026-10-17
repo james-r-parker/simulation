@@ -32,3 +32,21 @@ export function pickAgent(agents, worldX, worldY, { zoom, minPx }) {
     }
     return best;
 }
+
+/**
+ * @param {{count: number, size: Float32Array, lineageId: Uint32Array, genomeId: Uint32Array}} agents the interpolated
+ *   agents
+ * @param {number} lineageId the family
+ * @returns {number} the `genomeId` of the family's largest agent (the lowest slot wins a tie), 0 when it has none alive
+ */
+export function largestOfLineage(agents, lineageId) {
+    let best = 0;
+    let bestSize = -Infinity;
+    for (let i = 0; i < agents.count; i++) {
+        if (agents.lineageId[i] === lineageId && agents.size[i] > bestSize) {
+            bestSize = agents.size[i];
+            best = agents.genomeId[i];
+        }
+    }
+    return best;
+}

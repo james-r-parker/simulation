@@ -75,6 +75,7 @@ const NO_UI = Object.freeze({
  * @property {() => number} now the clock, in ms
  * @property {() => number} chooseSeed a fresh seed for a new world
  * @property {Record<string, any>} config the config overrides sent with a new world
+ * @property {() => number} [leaderAgent] the genome id of the leading family's largest agent, 0 for none
  * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
@@ -188,8 +189,8 @@ const ACTIONS = Object.freeze({
     speedUp: (deps) => changeSpeed(deps, 1),
     speedDown: (deps) => changeSpeed(deps, -1),
     newWorld,
-    follow: ({ state }) => {
-        state.followId = state.followId === 0 ? state.selectedId : 0;
+    follow: ({ state, leaderAgent }) => {
+        state.followId = state.followId === 0 ? state.selectedId || (leaderAgent?.() ?? 0) : 0;
     },
     home: ({ camera }) => moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 }),
     clearSelection,

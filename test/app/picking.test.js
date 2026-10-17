@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickAgent, PICK_TOLERANCE_PX } from '../../js/app/picking.js';
+import { largestOfLineage, pickAgent, PICK_TOLERANCE_PX } from '../../js/app/picking.js';
 
 const agents = {
     count: 3,
@@ -48,5 +48,24 @@ describe('pickAgent', () => {
         expect(pickAgent(apart, 100 + 16 + PICK_TOLERANCE_PX / 0.5 + 1, 100, view)).toBe(0);
         expect(pickAgent(apart, 500 + 12 + PICK_TOLERANCE_PX / 0.5 - 1, 100, view)).toBe(22);
         expect(pickAgent(apart, 500 + 12 + PICK_TOLERANCE_PX / 0.5 + 1, 100, view)).toBe(0);
+    });
+});
+
+describe('largestOfLineage', () => {
+    const family = {
+        count: 4,
+        size: Float32Array.from([5, 9, 9, 20]),
+        lineageId: Uint32Array.from([1, 1, 1, 2]),
+        genomeId: Uint32Array.from([10, 20, 30, 40]),
+    };
+
+    it('finds the largest agent of a family, the first of equals', () => {
+        expect(largestOfLineage(family, 1)).toBe(20);
+        expect(largestOfLineage(family, 2)).toBe(40);
+    });
+
+    it('returns 0 for a family with no agent alive', () => {
+        expect(largestOfLineage(family, 7)).toBe(0);
+        expect(largestOfLineage({ ...family, count: 0 }, 1)).toBe(0);
     });
 });
