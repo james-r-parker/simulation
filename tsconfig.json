@@ -17,6 +17,7 @@
     "js/dev/**/*.js",
     "js/worker/**/*.js",
     "js/app/**/*.js",
+    "js/app/**/*.d.ts",
     "scripts/**/*.mjs",
     "scripts/browser/**/*.js",
     "test/**/*.js"

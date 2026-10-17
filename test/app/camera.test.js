@@ -10,6 +10,7 @@ import {
     snapZoom,
     springStep,
     updateCamera,
+    viewBounds,
     wheelFactor,
     zoomAt,
 } from '../../js/app/camera.js';
@@ -170,5 +171,23 @@ describe('camera controller', () => {
         expect(wheelFactor(-100)).toBeGreaterThan(1);
         expect(wheelFactor(100)).toBeLessThan(1);
         expect(wheelFactor(100) * wheelFactor(-100)).toBeCloseTo(1, 12);
+    });
+});
+
+describe('viewBounds', () => {
+    it('spans the canvas at the zoom, centred on the view', () => {
+        const c = createCameraController({
+            canvas: { width: 3840, height: 2160 },
+            world: { width: 7680, height: 4320 },
+        });
+        expect(viewBounds(c, { left: 0, right: 0, top: 0, bottom: 0 })).toEqual({
+            left: 0,
+            right: 7680,
+            top: 4320,
+            bottom: 0,
+        });
+        moveCameraTo(c, { x: 1000, y: 1000, zoom: 1 }, true);
+        const b = viewBounds(c, { left: 0, right: 0, top: 0, bottom: 0 });
+        expect([b.right - b.left, b.top - b.bottom]).toEqual([3840, 2160]);
     });
 });
