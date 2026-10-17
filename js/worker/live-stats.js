@@ -190,7 +190,7 @@ function deltas(totals, last) {
 
 /**
  * The seam for the combat counters. `observer.combat` arrives with the predator-prey combat observer (predator-prey.md
- * Phase 2): cumulative `caught`, `escaped`, `huntKills` and `packKills`. Until then it is absent and so is `combat`.
+ * Phase 2): cumulative `caughtEpisodes`, `escapedEpisodes`, `huntKills` and `packKills`. Until then it is absent and so is `combat`.
  * @param {LiveStats} live the state
  * @param {Record<string, any>} observer the observer
  * @returns {{caught: number, escaped: number, huntKills: number, packKills: number} | null} the change since the last
@@ -203,12 +203,17 @@ function combatDelta(live, observer) {
     }
     const last = live.lastCombat ?? { caught: 0, escaped: 0, huntKills: 0, packKills: 0 };
     const out = {
-        caught: c.caught - last.caught,
-        escaped: c.escaped - last.escaped,
+        caught: c.caughtEpisodes - last.caught,
+        escaped: c.escapedEpisodes - last.escaped,
         huntKills: c.huntKills - last.huntKills,
         packKills: c.packKills - last.packKills,
     };
-    live.lastCombat = { caught: c.caught, escaped: c.escaped, huntKills: c.huntKills, packKills: c.packKills };
+    live.lastCombat = {
+        caught: c.caughtEpisodes,
+        escaped: c.escapedEpisodes,
+        huntKills: c.huntKills,
+        packKills: c.packKills,
+    };
     return out;
 }
 
