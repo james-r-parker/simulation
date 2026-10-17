@@ -118,7 +118,7 @@ export function spawnBurst(pool, burst) {
     for (let k = 0; k < count; k++) {
         const angle = turn + (k * 2 * Math.PI) / count + pool.prng.next() * 0.5;
         const reach = size * (born ? 1.6 : 2.4) * (0.6 + 0.8 * pool.prng.next());
-        const shape = { angle, reach, size: size * 0.14, tick, life: born ? BIRTH_MOTE_TICKS : DEATH_TICKS };
+        const shape = { angle, reach, size: size * 0.2, tick, life: born ? BIRTH_MOTE_TICKS : DEATH_TICKS };
         add(pool, { kind: MOTE, x, y }, shape, burst.rgb);
     }
     if (burst.eaten === true) {

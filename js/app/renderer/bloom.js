@@ -10,7 +10,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 /** The bloom settings; the tuning lives here. Colours above 1 (energetic cores) are what glows. */
 export const BLOOM = Object.freeze({
     /** How much of the blurred light is added back. */
-    strength: 0.4,
+    strength: 0.32,
     /** 0 keeps `factors` as written; towards 1 the wide mips gain weight. */
     radius: 0,
     /** The weight of each of the five blur levels, finest first. The widest are kept small so the glow stays near its source and the black stays black. */

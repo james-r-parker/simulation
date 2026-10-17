@@ -125,7 +125,7 @@ void main() {
     }
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
     float bright = 0.7 + 1.5 * vColor.a;
-    float halo = exp(-max(d, 0.0) * 3.4) * 0.5;
+    float halo = exp(-max(d, 0.0) * 3.8) * 0.45;
     float membrane = exp(-abs(d) * 18.0) * 0.4;
     float nucleus = exp(-dot(vP, vP) * 2.6) * 0.4;
     vec3 rgb = base * bright * (cover * (0.8 + 0.2 * (1.0 - length(vP) * 0.5)) + halo * (1.0 - cover));

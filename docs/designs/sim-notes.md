@@ -278,7 +278,6 @@ worker empties the log after every stats message (`drainObserverLogs`) so a run 
 would send the policy to the wrong row. The observer therefore counts the rows it has removed (`deathsDrained`) and the
 policy subtracts that count. Any new policy that indexes the observer's `deaths` or `series` logs by a running count
 needs the same offset.
-||||||| parent of f9b50f7 (docs(sim-notes): record the combat metrics at the tuned defaults (T17))
 
 ### 2026-10-17 - Combat metrics at the tuned defaults
 
@@ -306,4 +305,20 @@ Checked with `npm view three version` at the start of Phase 2 (T11): 0.186.1, th
 upgrade and no API change to record. The renderer uses `WebGLRenderer`, `InstancedMesh`, `ShaderMaterial`,
 `DataTexture` and `EffectComposer` with `UnrealBloomPass` and `OutputPass` from `three/examples/jsm/postprocessing`.
 `legacy.html` keeps running on the same version.
->>>>>>> febb558 (docs(sim-notes): record that three 0.186.1 is current (T11))
+
+### 2026-10-17 - Renderer facts found building Phase 2 (three 0.186.1)
+
+- `three` ships no type declarations and `@types/three` is not a dependency, so `js/app/three-shim.d.ts` declares `three` and
+  `three/examples/jsm/*` as untyped modules and the tsconfig includes it.
+- `three`'s objects (geometries, `InstancedMesh`, `ShaderMaterial`, `DataTexture`, `WebGLRenderTarget`) build in Node without a
+  GL context, so layers are unit-tested there; only `scene.js` and `bloom.js` need a browser.
+- Tone mapping applies only when drawing to the screen, never into a render target, so a shader that ends with
+  `#include <tonemapping_fragment>` and `<colorspace_fragment>` is right on both paths: direct to the canvas (quality 2) and
+  through the composer, where `OutputPass` does it. The renderer uses `NeutralToneMapping`, which keeps hue better than ACES.
+- `UnrealBloomPass` blends five mips with `bloomFactors` `[1, 0.8, 0.6, 0.4, 0.2]`; the widest mip is about 700 px at 1080p and
+  turns a dense scene into a fog. `BLOOM.factors` weights them `[1, 0.7, 0.38, 0.12, 0.03]` with radius 0 and strength 0.32 so the
+  black stays black.
+- `Float32BufferAttribute(array)` copies its array; use `BufferAttribute(array)` to keep writing into a preallocated one.
+- `half` is a reserved word in GLSL ES 3.00; a variable called `half` fails to compile.
+- Headless Chromium renders WebGL2 with `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`; a 4K frame of 420
+  agents, haze and bloom takes a few seconds in software.
