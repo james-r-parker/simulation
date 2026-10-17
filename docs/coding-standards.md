@@ -43,6 +43,12 @@ own.
   `map`/`filter` chains or string building inside the tick.
 - Every hot-path change ships with a benchmark, and claims of speed carry `bench` numbers against the baseline.
 - Optimise only what a benchmark or profile shows is slow; keep everything else simple.
+- **Hot kernels keep state in locals.** Inside an inner loop (a ray walk, a matrix pass) the running state lives in
+  local variables. Scratch typed arrays carry state only across function boundaries, and a helper returns a number
+  rather than writing its result into a shared scratch array.
+- **A shared row is a contract.** An array that other modules read after a step (`world.inputs`) has its layout,
+  validity window and zeroing rule written in
+  [headless-sim-core-contracts.md](designs/headless-sim-core-contracts.md) before a second reader depends on it.
 
 ## Tests
 
@@ -65,3 +71,10 @@ architecture')`).
 - **Boy-scout rule, within reason.** Leave touched code a little better, but put unrelated cleanups in their own PR.
 - **Review checklist.** Before `create-pr`: the gate is green; each new module has a one-line purpose and a test
   file; no limit was dodged; errors are loud; hot paths allocate nothing; docs and Status lines moved with the code.
+
+## Decisions
+
+| Decision                                                         | Reason                                                                                                            | By                |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Hot-kernel state lives in locals; helpers return numbers         | A shared scratch array as a register file stops the engine keeping state in registers; sense costs 270 ns per ray | Specialist review |
+| Shared rows that other modules read have a written read contract | `world.inputs` is read by four groups with no document saying what it holds                                       | Specialist review |
