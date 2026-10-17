@@ -2,6 +2,7 @@
 // agent's ray proximities) into one ArrayBuffer.
 
 import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
+import { FOOD_KIND } from './carcass.js';
 import { specParams } from './spec-params.js';
 
 const HEADER_WORDS = 6;
@@ -128,6 +129,8 @@ function writeAgents(world, { f32, u32 }) {
 }
 
 /**
+ * Writes the alive food as `x`, `y`, radius. A carcass has its radius written negative, so the layout is the same
+ * with carcasses off.
  * @param {import('./world.js').World} world the world
  * @param {Float32Array} f32 the float view
  * @param {number} start the first word of the section
@@ -140,7 +143,7 @@ function writeFood(world, f32, start) {
         if (foodAlive[slot] === 1) {
             f32[w] = foodX[slot];
             f32[w + 1] = foodY[slot];
-            f32[w + 2] = foodRadius[slot];
+            f32[w + 2] = world.foodKind[slot] === FOOD_KIND.MEAT ? -foodRadius[slot] : foodRadius[slot];
             w += FOOD_STRIDE;
         }
     }

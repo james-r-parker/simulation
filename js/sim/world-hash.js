@@ -67,6 +67,9 @@ const FIELD_ARRAYS = [
     'ledger',
 ];
 
+/** Hashed after `foodAge` only when `carcassesEnabled`, so a world with carcasses off hashes as it always did. */
+const FOOD_KIND_FIELD = 'foodKind';
+
 /** RNG streams hashed by their `s` state, in the design doc's Determinism table order. */
 const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
 
@@ -92,6 +95,18 @@ function bytesOf(world, name) {
 }
 
 /**
+ * @param {Record<string, any>} world the world
+ * @returns {string[]} the field arrays to hash, with `foodKind` after `foodAge` when carcasses are on
+ */
+function fieldNames(world) {
+    if (!world.config.carcassesEnabled) {
+        return FIELD_ARRAYS;
+    }
+    const at = FIELD_ARRAYS.indexOf('foodAge') + 1;
+    return [...FIELD_ARRAYS.slice(0, at), FOOD_KIND_FIELD, ...FIELD_ARRAYS.slice(at)];
+}
+
+/**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
  * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
@@ -101,7 +116,7 @@ function buildViews(world) {
     const hiddenRows = world.hidden.subarray(0, maxAgents * world.layout.hidden);
     return {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
-        fields: FIELD_ARRAYS.map((name) => bytesOf(world, name)),
+        fields: fieldNames(world).map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
         rngSources: [],
         rngViews: [],
