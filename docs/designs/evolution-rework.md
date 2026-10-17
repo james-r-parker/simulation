@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Phase 3, the trainer, is built after `predator-prey.md`, the renderer and the world gate in Phase 3.
 **Validated:** 36ee8c6 (2026-10-16)
-**Priority:** 3 - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and the tuning nights
+**Priority:** 4 - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and world-balance.md
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md)
 
 `js/evo/` decides which brains get born. The headless sim core runs bodies and brains; evolution supplies the

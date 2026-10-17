@@ -335,6 +335,8 @@ defaults are in the Config table; [sim-notes.md](sim-notes.md) has the findings.
 
 **Targets:** none - instruments only; the new metrics are first recorded for `baseline-v5` and `map-elites-v1q` and Phase 3 moves them
 
+> **Note:** Phase 2 is built on branch `feat/predator-prey-phase-2` (draft PR 39) and is blocked: under `fitnessV1` the scripted `hunter` scores 0.746 of the `foodSeeker` against the anti-exploit bound of 0.5, because the bound counts food only and `fitnessV1` pays bite energy. The user chooses the fix (issue B4 in [world-balance.md](world-balance.md)).
+
 `observer-combat.js`, `metrics-combat.js`, `scripted-combat.js`, `evals/predator-world.json` and the new anti-exploit
 cases. Done when both policies' reports carry the five metrics, `hunter` against `fleer` gives `eval.catch_rate`
 above 0 and `eval.escape_rate` above 0 on `evals/predator-world.json`, and the spammers stay within the anti-exploit
