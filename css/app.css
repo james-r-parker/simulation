@@ -309,3 +309,21 @@ body {
     font-size: 1rem;
     line-height: 1.5;
 }
+
+#top-bar,
+#ticker,
+.toasts {
+    transition: opacity 0.2s linear;
+}
+
+#hud.hud-idle #top-bar,
+#hud.hud-idle #ticker,
+#hud.hud-idle .toasts {
+    opacity: 0;
+    transition: opacity 1.5s linear;
+}
+
+html.cursor-hidden,
+html.cursor-hidden * {
+    cursor: none !important;
+}
