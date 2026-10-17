@@ -650,6 +650,13 @@ canvases) green.
 
 **Targets:** browser.heap_growth_mb, browser.frame_p95_ms, browser.main_long_tasks, browser.worker_tps@500, director.chase_precision, director.max_kind_share, director.shots_per_hour
 
+> **Note:** visible evolution (user, 2026-10-17) belongs to this phase: era cards at each world-balance era
+> (`SeasonChanged`, `DroughtStarted`, `InvasionArrived`), the family river, live drift charts of the mean size and
+> vision traits and of the specialisation mix, and "firsts" captions (first pack kill, first extinction of a role, a
+> role reinvented, first invasion). The top bar replaces tick and x1 with year, season and generation. Static
+> terrain, refuges and carcasses are drawn from `worldInfo` and the snapshot. Planned in full with the
+> `create-plan` skill before this phase is built.
+
 The director and its moments, captions, speed pacing and era card, cursor hiding, sharing (screenshot, clip and moment link with `seek`), generative audio and the wake lock. The moments read the deliberate-behaviour signals that [world-balance.md](world-balance.md) Phase 1 adds to the observer (`lastBiteDeliberate`, the escape episode's `responded`, the closing and threat latches), which is ranked 1 in the Build queue and is built before this phase. The worker emits a snapshot between ticks inside a slice (a snapshot spans about 2 ticks) with a pool of four buffers, so a lagging worker no longer turns the interpolation into 8-tick straight lines. `scripts/director-dry.mjs` measures the director in Node: `director.chase_precision` at least 0.3 and `director.max_kind_share` at most 0.4 at seeds 1 to 4 over 72000 ticks, `director.shots_per_hour` reported. `browser.worker_tps@500` (ticks per second one worker sustains at 500 agents, from `__perf().ticksPerSecond` over 60 s at x16) is recorded and not limited. `scripts/browser-perf.mjs`
 gains `--soak <minutes>`: it runs the page with the director on and `--cdp` attached to both the page and its worker,
 forces a garbage collection at minute 10 and at the end with `HeapProfiler.collectGarbage` in each of the page's and the worker's CDP sessions, and reports `browser.heap_growth_mb` as the larger growth of
