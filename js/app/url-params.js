@@ -1,0 +1,69 @@
+// The query-string parameters the page reads: seed, agents, speed, quality, tv and audio. A value that is missing or
+// invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
+
+import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
+
+/** The most agents `?agents=` accepts. */
+export const MAX_AGENTS_PARAM = 4096;
+
+/**
+ * @typedef {object} Params
+ * @property {number | null} seed an unsigned 32-bit integer
+ * @property {number | null} agents the starting agent count, 1 to `MAX_AGENTS_PARAM`
+ * @property {number | null} speed a multiple of 60 ticks a second: 0.25, 0.5, 1, 2, 4, 8 or 16
+ * @property {0 | 1 | 2 | null} quality a pinned quality level
+ * @property {boolean} tv TV mode: HUD hidden, director running, wake lock on
+ * @property {boolean} audio start with audio on
+ */
+
+/**
+ * @param {string | null} text a parameter value
+ * @returns {number | null} the unsigned integer it spells, else null
+ */
+function uintOf(text) {
+    return text !== null && /^\d{1,10}$/.test(text) ? Number(text) : null;
+}
+
+/**
+ * @param {string | null} text a flag value
+ * @returns {boolean} whether it is `1` or `true`
+ */
+function flagOf(text) {
+    return text === '1' || text === 'true';
+}
+
+/**
+ * @param {number | null} n a parsed value
+ * @param {number} min the lowest valid value
+ * @param {number} max the highest valid value
+ * @returns {number | null} `n` when it is in range, else null
+ */
+function inRange(n, min, max) {
+    return n !== null && n >= min && n <= max ? n : null;
+}
+
+/**
+ * @param {string | null} text the `speed` value
+ * @returns {number | null} the multiple it spells when it is one of the speeds the worker accepts
+ */
+function speedOf(text) {
+    const speed = text !== null && /^\d*\.?\d+$/.test(text) ? Number(text) : null;
+    return speed !== null && TICKS_PER_SECOND_CHOICES.includes(speed * 60) ? speed : null;
+}
+
+/**
+ * @param {string} search the query string, e.g. `location.search`
+ * @returns {Params} the validated parameters
+ */
+export function readParams(search) {
+    const query = new URLSearchParams(search);
+    const quality = inRange(uintOf(query.get('quality')), 0, 2);
+    return {
+        seed: inRange(uintOf(query.get('seed')), 0, 0xffffffff),
+        agents: inRange(uintOf(query.get('agents')), 1, MAX_AGENTS_PARAM),
+        speed: speedOf(query.get('speed')),
+        quality: /** @type {0 | 1 | 2 | null} */ (quality),
+        tv: flagOf(query.get('tv')),
+        audio: flagOf(query.get('audio')),
+    };
+}
