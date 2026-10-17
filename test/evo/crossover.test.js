@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { crossNeurons } from '../../js/evo/crossover.js';
-import { brainLayout } from '../../js/sim/brain-layout.js';
-import { createRng } from '../../js/sim/rng.js';
+import { TRAIT_GENES, brainLayout } from '../../js/sim/brain-layout.js';
+import { createRng, nextFloat } from '../../js/sim/rng.js';
 
 const layout = brainLayout({ rayCount: 2, brainHidden: 12 });
 const H = layout.hidden;
@@ -25,7 +25,7 @@ function cross(seed) {
  * @returns {number[]} every value in neuron h's block
  */
 function block(child, h) {
-    const values = [child[layout.bHidden + h]];
+    const values = [child[layout.bHidden + h], child[layout.leakStart + h]];
     for (let i = 0; i < layout.inputCount; i++) {
         values.push(child[layout.wIn + i * H + h]);
     }
@@ -56,9 +56,33 @@ describe('crossNeurons', () => {
         for (let seed = 1; seed <= 5; seed++) {
             expect(
                 cross(seed)
-                    .subarray(layout.bOut)
+                    .subarray(layout.bOut, layout.traitStart)
                     .every((w) => w === 1),
             ).toBe(true);
+        }
+    });
+
+    it('takes each trait gene whole from one parent with one draw per gene, after the neurons', () => {
+        const seen = new Set();
+        for (let seed = 1; seed <= 8; seed++) {
+            const child = cross(seed);
+            const rng = createRng(seed);
+            for (let h = 0; h < H; h++) {
+                nextFloat(rng);
+            }
+            for (let t = 0; t < TRAIT_GENES; t++) {
+                const expected = nextFloat(rng) < 0.5 ? 1 : -1;
+                expect(child[layout.traitStart + t]).toBe(expected);
+                seen.add(expected);
+            }
+        }
+        expect([...seen].sort()).toEqual([-1, 1]);
+    });
+
+    it('moves leak gene h with neuron h (the block test above includes it)', () => {
+        const child = cross(2);
+        for (let h = 0; h < H; h++) {
+            expect(child[layout.leakStart + h]).toBe(child[layout.bHidden + h]);
         }
     });
 

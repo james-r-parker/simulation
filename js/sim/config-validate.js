@@ -1,6 +1,7 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
 import { brainLayout } from './brain-layout.js';
+import { TRAIT_MAX } from './traits.js';
 
 const MAX_SEED = 4294967295; // 2^32 - 1
 const PI = 3.141592653589793;
@@ -171,6 +172,10 @@ const RULES = {
     smokeThreshold: UNIT,
     packWindow: int(1),
     maxClouds: int(0, 256),
+    leakEnabled: BOOL,
+    hebbianRate: num(0, 1),
+    traitsEnabled: BOOL,
+    visionCost: num(0),
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
@@ -349,8 +354,9 @@ function checkCrossKey(config) {
             `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents (${events})`,
         );
     }
+    const baseSizeMax = config.traitsEnabled ? config.baseSize * TRAIT_MAX : config.baseSize;
     const largest = Math.max(
-        config.baseSize + config.maxEnergy / config.energyToSize,
+        baseSizeMax + config.maxEnergy / config.energyToSize,
         config.foodRadius,
         config.highFoodRadius,
     );

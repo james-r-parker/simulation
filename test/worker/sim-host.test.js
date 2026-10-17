@@ -35,7 +35,7 @@ describe('init', () => {
         expect(ready.info).toMatchObject({ worldWidth: 1600, worldHeight: 1000, maxAgents: 40, ticksPerSecond: 60 });
         expect(ready.info.specs).toHaveLength(5);
         expect(ready.layout).toMatchObject({ agentStride: 12, effectKinds: { BORN: 1 }, flags: { JAW_OPEN: 1024 } });
-        expect(ready.labels.outputs).toHaveLength(8);
+        expect(ready.labels.outputs).toHaveLength(11);
         expect(h.of('log').map((m) => m.record.event)).toContain('WorkerStarted');
     });
 

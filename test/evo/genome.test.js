@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertGenomeFits, decodeGenome, encodeGenome } from '../../js/evo/genome.js';
+import { GENOME_VERSION, assertGenomeFits, decodeGenome, encodeGenome } from '../../js/evo/genome.js';
 import { randomWeights } from '../../js/evo/mutation.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createRng } from '../../js/sim/rng.js';
@@ -11,7 +11,7 @@ function makeGenome() {
     const weights = new Float32Array(layout.weightCount);
     randomWeights(weights, layout, createRng(7));
     return {
-        version: 1,
+        version: 2,
         id: 12,
         lineageId: 3,
         parents: [4, 5],
@@ -28,7 +28,7 @@ describe('assertGenomeFits', () => {
     });
 
     it.each([
-        ['version', (/** @type {any} */ g) => (g.version = 2), /genome\.version: expected 1, got 2/],
+        ['version', (/** @type {any} */ g) => (g.version = 1), /genome\.version: expected 2, got 1/],
         ['specialisation', (/** @type {any} */ g) => (g.specialisation = 'x'), /genome\.specialisation.*got x/],
         ['layout.inputCount', (/** @type {any} */ g) => (g.layout.inputCount += 1), /genome\.layout\.inputCount/],
         [
@@ -61,6 +61,18 @@ describe('encodeGenome and decodeGenome', () => {
         const encoded = encodeGenome(makeGenome());
         expect(typeof encoded.weights).toBe('string');
         expect(() => assertGenomeFits(decodeGenome(encoded), layout)).not.toThrow();
+    });
+
+    it('round trips a version 2 genome bit-exactly, trait and leak genes included', () => {
+        const genome = makeGenome();
+        genome.weights.set([0.25, -0.5, 1, 2], layout.traitStart);
+        genome.weights.fill(3, layout.leakStart);
+        const back = decodeGenome(JSON.parse(JSON.stringify(encodeGenome(genome))));
+        expect(back.version).toBe(GENOME_VERSION);
+        expect(back.weights).toHaveLength(layout.weightCount);
+        expect(Array.from(back.weights.subarray(layout.traitStart))).toEqual(
+            Array.from(genome.weights.subarray(layout.traitStart)),
+        );
     });
 
     it('rejects weights of the wrong size', () => {

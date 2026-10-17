@@ -3,6 +3,7 @@
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { isKin } from './kin.js';
+import { visionOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
@@ -348,7 +349,7 @@ export function castRays(world, hash, slot) {
     const s = world.rayScratch;
     s[OX] = world.x[slot];
     s[OY] = world.y[slot];
-    s[RANGE] = world.visionBySpec[world.spec[slot]];
+    s[RANGE] = visionOf(world, slot);
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
     listNearObstacles(world);
