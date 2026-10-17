@@ -1,6 +1,6 @@
 # Predator and prey
 
-**Status:** Proposed - Phase 1 gives agents scent direction, alarm and hunt calls and defensive smoke in the sim core and retunes catching.
+**Status:** In progress - Phase 1 built: agents have scent direction, alarm and hunt calls and defensive smoke in the sim core, and catching is retuned (E19, E20, `huntSizeRatio` 1.01, `biteArc` PI / 4); Phase 2 (combat metrics and scripted controllers) next.
 **Validated:** 6a442d3 (2026-10-16)
 **Priority:** 1 - finishes the world rules; tuning nights and the trainer build on them
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md)
@@ -304,7 +304,7 @@ capped at `0.25 x foodEnergy`:
 
 ## Phases
 
-### Phase 1 - Senses, actions and catching in the sim core
+### Phase 1 - Senses, actions and catching in the sim core (built)
 
 **Targets:** bench.step_ms@500, bench.phase_ms.signal@500, eval.predation_per_1k
 
@@ -316,6 +316,20 @@ Layout, rules, events, snapshot, hashing, invariants and config as above. The wo
 the phase stays unbuilt and the user is asked), and
 `test/sim/predator-prey.test.js` shows a scripted hunter killing a stationary prey and a sprinting prey escaping a
 hunter in the same arena.
+
+**Outcome.** `bench.phase_ms.signal@100`, `@250` and `@500` (0.0315, 0.0898 and 0.2238 ms) are in `bench/baseline.json` and
+`bench-check` passes without raising the step entry. `eval.predation_per_1k` is 0.00118 for `baseline-v5` on seeds 1-16
+(0.00069 on seeds 17-32) and 0.00086 for `map-elites-v1q` (E17: 0.00023, 3.8x). The calibration `E19` gives no verdict on
+any Target. The live policy `E20` is `better` than `E17` on all three: fed lifespan +19.4%, food +120%, births +74%
+(population 101 to 270, `born_share` 0.31 to 0.86); off the Targets `floor_episodes` is -74% (better), `lineages_alive`
+-59.3%, `lineage_turnover` -44.7% and `coverage` -8.8% (worse). Reading those off-Target verdicts needs care: E19
+shows that with a self-sustaining population seed-set variance exceeds the 5% minimum effect for such metrics at 16 seeds.
+
+The first E20 run at the original defaults was `worse` (fed lifespan -17.4%, births -14.5%, `floor_episodes` +44%): alarm
+calls at `alarmCost` 4 were spammed. A sweep of 74 four-seed screens chose `alarmCost` and `huntCallCost` 0.5, `maxFood` 1600
+(800 had capped `foodTargetPerAgent` x population), `foodTargetPerAgent` 12 and `huntSizeRatio` 1.03, confirmed at seeds
+1-16 and 17-32. T8c's jaws (`biteArc` PI / 4) then halved catches, and `huntSizeRatio` 1.01 restored them. The final
+defaults are in the Config table; [sim-notes.md](sim-notes.md) has the findings.
 
 ### Phase 2 - Combat metrics and scripted controllers
 
@@ -354,7 +368,7 @@ seed with no hunter agent-ticks makes the run invalid, and it is reported, not c
 
 ## Task breakdown
 
-### Phase 1 - Senses, actions and catching in the sim core
+### Phase 1 - Senses, actions and catching in the sim core (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Nature       | Depends on                                              |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------------------------------------------- |
