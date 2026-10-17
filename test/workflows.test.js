@@ -30,4 +30,17 @@ describe('workflows', () => {
             }
         }
     });
+
+    it('install the Node version in .node-version, which satisfies engines', () => {
+        const version = readFileSync('.node-version', 'utf8').trim();
+        const engines = JSON.parse(readFileSync('package.json', 'utf8')).engines.node;
+        expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(Number(version.split('.')[0])).toBeGreaterThanOrEqual(Number(/\d+/.exec(engines)?.[0]));
+        for (const { name, text } of workflows) {
+            for (const step of text.split(/\n\s*- (?=name:|uses:)/).filter((s) => s.includes('actions/setup-node'))) {
+                expect(step, `${name} setup-node`).toContain('node-version-file: .node-version');
+                expect(step, `${name} setup-node`).not.toMatch(/^\s*node-version:/m);
+            }
+        }
+    });
 });
