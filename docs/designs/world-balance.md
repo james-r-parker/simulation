@@ -173,13 +173,14 @@ The observer keeps a per-slot generation depth (0 for `initial`, `floor` and `im
 more than its deeper parent's, found through `observer.slotOf`), whether the agent's lineage began at an archive draw,
 and the fitness at death.
 
-| Metric                           | Better | Definition                                                                                                                              |
-| -------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `eval.offspring_per_life`        | watch  | Mean children per completed life after burn-in                                                                                          |
-| `eval.generation_depth_p90`      | watch  | 90th percentile of generation depth at death after burn-in                                                                              |
-| `eval.opportunity_for_selection` | watch  | Variance of children per completed life over the squared mean, after burn-in; `null` when the mean is 0                                 |
-| `eval.fitness_lrs_corr`          | watch  | Spearman correlation between fitness at death and children, over mature deaths after burn-in; `null` below 30 deaths                    |
-| `eval.archive_lineage_share`     | watch  | Share of agent-ticks at checkpoints after burn-in by agents whose lineage began at an archive draw; `null` for a policy with no archive |
+| Metric                           | Better | Definition                                                                                                                               |
+| -------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `eval.offspring_per_life`        | watch  | Mean children per completed life after burn-in                                                                                           |
+| `eval.generation_depth_p90`      | watch  | 90th percentile of generation depth at death after burn-in                                                                               |
+| `eval.opportunity_for_selection` | watch  | Variance of children per completed life over the squared mean, after burn-in; `null` when the mean is 0                                  |
+| `eval.fitness_lrs_corr`          | watch  | Spearman correlation between fitness at death and children, over mature deaths after burn-in; `null` below 30 deaths                     |
+| `eval.archive_lineage_share`     | watch  | Share of agent-ticks at checkpoints after burn-in by agents whose lineage began at an archive draw; `null` for a policy with no archive  |
+| `eval.kin_within_call_radius`    | watch  | Mean number of living agents of the caller's lineage within `callRadius` of the caller at each `AlarmCalled` event; `null` with no alarm |
 
 ### Seed minimum per metric
 
@@ -313,7 +314,7 @@ choices and reasons within the plans").
 
 **Targets:** none - instruments only: the D1 to D8 and selection metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
-The intent state and counters, the thirteen D metrics, the five selection metrics, the per-metric seed minimum with
+The intent state and counters, the thirteen D metrics, the six selection metrics, the per-metric seed minimum with
 64 seeds and `npm run eval:power`, the five controllers and the `random` arm with the paired test, and `npm run
 ladder`. Done when the paired test passes; `E23` (live policy seeds 1-16 against 17-32) and `E24` (seeds 1-32
 against 33-64) are recorded, with every metric whose `eval:power` false-positive rate exceeds 10% moved to `watch`;
@@ -386,7 +387,7 @@ Phase 1 is planned below; Phases 2 and 3 add their rows when T15 and T17 plan th
 | T2   | Add `observer-intent.js` (sightings, closing histories, responses, energy marks, counters) and hook it into `observe` and `createObserver`, with tests                                                                     | [judgement]  | -                                                                 |
 | T3   | Add `observer-intent-events.js` (call and smoke precision, `noteEscape` from `trackEpisode`, pack convergence, hunt-call answers) and the grouping sample, with tests                                                      | [judgement]  | T2                                                                |
 | T4   | Add `metrics-intent.js`, wire it into `computeMetrics`, add the `DIRECTIONS` rows and the Metrics table rows in evolution-evals.md, with tests                                                                             | [judgement]  | T3                                                                |
-| T4a  | Add the per-slot generation depth, archive-lineage flag and fitness at death to the observer, and `metrics-selection.js` with the five selection metrics and their `DIRECTIONS` and Metrics table rows, with tests         | [judgement]  | T2                                                                |
+| T4a  | Add the per-slot generation depth, archive-lineage flag and fitness at death to the observer, and `metrics-selection.js` with the six selection metrics and their `DIRECTIONS` and Metrics table rows, with tests          | [judgement]  | T2                                                                |
 | T5   | Add `compare-seeds.js`, read it in `compareMetric`, add the `needs 32 seeds` note to `eval:compare` and its `--json` rows, and the Compare text in evolution-evals.md, with tests                                          | [mechanical] | -                                                                 |
 | T6   | Extend `evals/seeds.json` to 64 seeds from `createRng(64)`, with tests that pin its length and first 32 values and that `pickSeeds` still gives seeds 1 to `--seeds` by default                                            | [mechanical] | -                                                                 |
 | T7   | Add `scripted-intent.js` (`sloppyForager`, `jawSitter`, `huntCallSpammer`, `grouper`, `cruiser`), spread into `SCRIPTED_CONTROLLERS`, with tests; run the anti-exploit suite                                               | [judgement]  | -                                                                 |
