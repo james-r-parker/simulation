@@ -250,3 +250,31 @@ p90 predator fitness worse. Before Phase 1 the same calibration (E18) gave none.
 (born share 0.49 and 0.64 in the two E19 samples) per-seed variance in lineage and floor counts exceeds the 5% minimum effect at 16 seeds, so those
 off-Target verdicts in E20 (`lineages_alive` -59.3%, `lineage_turnover` -44.7%) are read with that noise in mind. More
 seeds, not a lower `--min-effect`, is the fix.
+
+### 2026-10-17 - The worker host adds under 3% to a tick
+
+`createSimHost` against `bench.step_ms@500` (500 agents, 500 warm-up ticks, 2000 measured, the noise policy so the
+only differences are the host's; three alternating rounds on the dev machine, plain `step` mean 4.567 ms, median 4.50):
+the host costs 4.696 ms per tick (+2.8%) when it posts a snapshot every tick (speed 1, the worst case) and 4.640 ms
+(+1.6%) when it posts one per 8 ticks (speed 8), counting everything it does: the observer's phase and feed, generation
+depth, effects, the snapshot, the inspect part, the ticker state and the 250 ms stats and field messages. Per stage, per
+tick (means over the same 2000 ticks): `collectEffects` 0.0044 ms (0.1%), `writeSnapshot` with `writeEffects` 0.037 ms
+(0.8%), the observer feed 0.053 ms (1.2%), `noteBirths` and `noteTick` under 0.001 ms each. The doc's budget (`collectEffects`
+and `writeSnapshot` together under 3%) holds at 0.9%, so `collectEffects` is not optimised. Runs on this machine drift about 2%
+between rounds, so the figures are good to about that.
+
+### 2026-10-17 - Node batches a port's messages, which starves a worker that yields through `MessageChannel`
+
+A `MessageChannel` slice loop (the shell `sim-worker.js` posts the next slice to itself while ticks are owed) never lets
+`parentPort` messages through when run in a Node `worker_threads` worker: Node handles up to 1000 messages of one port in a
+single loop turn, including ones posted while it handles them, so at a speed the sim cannot sustain no `returnBuffer`,
+`pause` or `reset` is read for as long as the backlog lasts. Browsers deliver each message as its own task, so the page is
+not affected; a Node harness around the shell must replace `MessageChannel` with `setImmediate`.
+
+### 2026-10-17 - A policy that counts the observer's death rows must follow a drain
+
+`map-elites-v1` numbers death-log rows from the start of the run (`deathsSeen`) and reads each row back by that index. The
+worker empties the log after every stats message (`drainObserverLogs`) so a run that never ends does not grow it, which
+would send the policy to the wrong row. The observer therefore counts the rows it has removed (`deathsDrained`) and the
+policy subtracts that count. Any new policy that indexes the observer's `deaths` or `series` logs by a running count
+needs the same offset.
