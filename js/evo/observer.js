@@ -32,6 +32,8 @@ const SLOT_TYPES = {
     speedSum: Float64Array,
     turnSum: Float64Array,
     samples: Uint32Array,
+    generation: Uint32Array,
+    archiveLineage: Uint8Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -46,9 +48,20 @@ const DEATH_FIELDS = [
     'speedSum',
     'turnSum',
     'samples',
+    'birthTick',
+    'generation',
+    'archiveLineage',
 ];
 
-const SERIES_FIELDS = ['tick', 'population', 'lineagesAlive', 'dominantLineage', 'predatorShare', 'diversity'];
+const SERIES_FIELDS = [
+    'tick',
+    'population',
+    'lineagesAlive',
+    'dominantLineage',
+    'predatorShare',
+    'diversity',
+    'archiveAgents',
+];
 
 const BORN_CAUSES = 5;
 const DEATH_CAUSES = 4;

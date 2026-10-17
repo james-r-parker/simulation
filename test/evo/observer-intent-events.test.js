@@ -102,6 +102,21 @@ describe('call and smoke precision', () => {
     });
 });
 
+describe('kin around an alarm caller', () => {
+    it('counts living agents of the caller lineage within callRadius, not the caller', () => {
+        const arena = intentArena({ callRadius: 100 });
+        const { world, intent } = arena;
+        const caller = addBorn(world, { spec: FORAGER, lineageId: 5, x: 100, y: 100 });
+        addBorn(world, { spec: FORAGER, lineageId: 5, x: 150, y: 100 });
+        addBorn(world, { spec: PREDATOR, lineageId: 5, x: 100, y: 190 });
+        addBorn(world, { spec: FORAGER, lineageId: 5, x: 100, y: 300 });
+        addBorn(world, { spec: FORAGER, lineageId: 6, x: 110, y: 100 });
+        start(arena);
+        tick(arena, 1, () => pushCall(world, EVENT_TYPE.ALARM_CALLED, caller));
+        expect(intent.run.kinNearSum).toBe(2);
+    });
+});
+
 describe('eaten deaths', () => {
     /**
      * Two hunters of one lineage and a victim; the victim's bite records are set, then it is eaten at tick 2.

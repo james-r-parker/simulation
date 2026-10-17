@@ -98,6 +98,7 @@ const RUN_TOTALS = [
     'groupCalmN',
     'alarms',
     'alarmsPrecise',
+    'kinNearSum',
     'huntCalls',
     'huntCallsPrecise',
     'smokes',

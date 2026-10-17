@@ -25,6 +25,26 @@ function noteSignal(intent, slot, precise) {
 }
 
 /**
+ * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} world the world
+ * @param {number} caller the caller's slot
+ * @returns {number} the living agents of the caller's lineage within `callRadius` of it, not counting the caller
+ */
+function kinAround(intent, world, caller) {
+    const { alive, lineageId, x, y } = world;
+    const r2 = intent.callRadius * intent.callRadius;
+    let count = 0;
+    for (let s = 0; s < alive.length; s++) {
+        const dx = x[s] - x[caller];
+        const dy = y[s] - y[caller];
+        if (s !== caller && alive[s] === 1 && lineageId[s] === lineageId[caller] && dx * dx + dy * dy <= r2) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+/**
  * Reads the fatal bite of an eaten death and counts the kill toward pursuit and pack convergence.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
@@ -65,6 +85,7 @@ function noteCall(intent, world, type, slot) {
     if (type === EVENT_TYPE.ALARM_CALLED) {
         run.alarms += 1;
         run.alarmsPrecise += precise ? 1 : 0;
+        run.kinNearSum += kinAround(intent, world, slot);
     } else if (type === EVENT_TYPE.PACK_CALLED) {
         precise = tick - intent.lastPrey[slot] <= INTENT_WINDOW;
         run.huntCalls += 1;

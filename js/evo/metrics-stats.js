@@ -78,3 +78,44 @@ export function per1k(amount, agentTicks) {
 export function share(part, whole, reason) {
     return whole > 0 ? ok(part / whole) : none(reason);
 }
+
+/**
+ * @param {ArrayLike<number>} values values to rank
+ * @returns {Float64Array} the ranks from 1, tied values sharing the mean of their positions
+ */
+export function ranks(values) {
+    const order = Array.from({ length: values.length }, (_, i) => i).sort((a, b) => values[a] - values[b] || a - b);
+    const out = new Float64Array(values.length);
+    for (let i = 0; i < order.length;) {
+        let j = i;
+        while (j + 1 < order.length && values[order[j + 1]] === values[order[i]]) {
+            j += 1;
+        }
+        for (let k = i; k <= j; k++) {
+            out[order[k]] = (i + j) / 2 + 1;
+        }
+        i = j + 1;
+    }
+    return out;
+}
+
+/**
+ * @param {ArrayLike<number>} x the first sample
+ * @param {ArrayLike<number>} y the second sample, as long as the first
+ * @returns {number} Spearman's rank correlation (Pearson on the ranks), NaN when either sample is constant
+ */
+export function spearman(x, y) {
+    const rx = ranks(x);
+    const ry = ranks(y);
+    const mx = mean(rx);
+    const my = mean(ry);
+    let cov = 0;
+    let vx = 0;
+    let vy = 0;
+    for (let i = 0; i < rx.length; i++) {
+        cov += (rx[i] - mx) * (ry[i] - my);
+        vx += (rx[i] - mx) * (rx[i] - mx);
+        vy += (ry[i] - my) * (ry[i] - my);
+    }
+    return cov / Math.sqrt(vx * vy);
+}

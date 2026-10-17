@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { mean, none, ok, per1k, quantile, share, stddev } from '../../js/evo/metrics-stats.js';
+import { mean, none, ok, per1k, quantile, ranks, share, spearman, stddev } from '../../js/evo/metrics-stats.js';
 
 describe('metrics-stats', () => {
+    it('ranks with ties sharing the mean position, and correlates ranks', () => {
+        expect(Array.from(ranks([30, 10, 20, 20]))).toEqual([4, 1, 2.5, 2.5]);
+        expect(spearman([1, 2, 3, 4], [10, 20, 30, 40])).toBeCloseTo(1, 12);
+        expect(spearman([1, 2, 3, 4], [4, 3, 2, 1])).toBeCloseTo(-1, 12);
+        expect(spearman([1, 2, 3], [5, 5, 5])).toBeNaN();
+    });
+
     it('builds a share, or a null with the reason when the whole is 0', () => {
         expect(share(1, 4, 'none')).toEqual({ value: 0.25 });
         expect(share(0, 0, 'none')).toEqual({ value: null, reason: 'none' });

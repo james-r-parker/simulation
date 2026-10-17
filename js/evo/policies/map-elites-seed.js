@@ -94,6 +94,9 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
         clones.isClone[slot] = 0;
         clones.archiveRef[slot] = -1;
         clones.refId[slot] = 0;
+        if (clones.fromArchive !== undefined) {
+            clones.fromArchive[slot] = ref === null ? 0 : 1;
+        }
         if (ref === null) {
             randomWeights(row, layout, rng);
             birth.sigma[slot] = SIGMA_START;

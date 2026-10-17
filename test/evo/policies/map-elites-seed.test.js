@@ -81,6 +81,7 @@ describe('initBrain sources', () => {
             policy.brain.initBrain(world, 0, rng);
             const last = records[records.length - 1];
             expect(policy.isClone[0]).toBe(last.source === 'clone' ? 1 : 0);
+            expect(policy.fromArchive[0]).toBe(last.source === 'random' ? 0 : 1);
             if (last.source === 'clone') {
                 expect(policy.refId[0]).toBe(last.archiveRef + 1);
                 expect(policy.archiveRef[0]).toBe(last.archiveRef);
