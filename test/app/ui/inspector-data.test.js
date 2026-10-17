@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_CHANNELS, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
+import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
 
 describe('inspectorView on a real selected agent', () => {
     const { ready, snapshot, genomeId } = selectedWorld();
-    const view = inspectorView({ snapshot, ready });
+    const view = inspectorView({ snapshot, ready, slots: createFamilySlots() });
 
     it('is valid and names the agent', () => {
         expect(view.valid).toBe(true);
         expect(view.header.genomeId).toBe(genomeId);
         expect(ready.info.specs.map((/** @type {any} */ s) => s.name)).toContain(view.header.spec);
-        expect(view.header.familyName).toMatch(/ \d+$/);
+        expect(view.header.familyName).toMatch(/^[A-Z][a-z]{5}$/);
+        expect(view.header.color).toMatch(/^rgb\(\d+, \d+, \d+\)$/);
     });
 
     it('groups the 32 body inputs under the five labels, each bar clamped to -1..1', () => {
@@ -79,13 +81,13 @@ describe('inspectorView without a selection', () => {
     it('is not valid when the inspect part says the agent is gone', () => {
         const { ready, snapshot } = selectedWorld();
         snapshot.u32[ready.layout.inspectOffset + 2] = 0;
-        expect(inspectorView({ snapshot, ready }).valid).toBe(false);
+        expect(inspectorView({ snapshot, ready, slots: createFamilySlots() }).valid).toBe(false);
     });
 
     it('is not valid when the snapshot is too short to hold the part', () => {
         const { ready } = selectedWorld();
         const short = { tick: 1, u32: new Uint32Array(8), f32: new Float32Array(8) };
-        expect(inspectorView({ snapshot: short, ready }).valid).toBe(false);
+        expect(inspectorView({ snapshot: short, ready, slots: createFamilySlots() }).valid).toBe(false);
     });
 });
 

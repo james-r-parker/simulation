@@ -34,8 +34,7 @@ import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from 
  * @property {number} selectedId the selected agent's genome id, 0 for none
  * @property {number} followId the followed agent's genome id, 0 for none
  * @property {number} leadLineageId the leading lineage's id, 0 for none
- * @property {{ids: Uint32Array, count: number, stamp: number}} lineageTop the top lineages' ids, and a stamp that
- *   changes whenever they may have
+ * @property {import('../family-slots.js').FamilySlots} family the family colour slots and the palette
  */
 
 /**

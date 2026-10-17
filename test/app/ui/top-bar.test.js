@@ -5,6 +5,7 @@ import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 const STATE = { requestedTicksPerSecond: 60, notice: '' };
 const INFO = {
     seasonNames: ['spring', 'summer'],
+    seasonLength: 1000,
     specs: [
         { index: 0, name: 'predator' },
         { index: 1, name: 'forager' },
@@ -17,7 +18,8 @@ function input(over = {}) {
         tick: 1,
         ticksPerSecond: 60,
         population: 1,
-        season: 'spring',
+        status: 'Spring, year 1: 1 blobs and steady',
+        calendar: { year: 1, season: 'Spring', generation: 0 },
         seasonProgress: 0.5,
         types: [],
         bornShare: null,
@@ -35,33 +37,37 @@ describe('elapsedLabel', () => {
 });
 
 describe('topBarView', () => {
-    it('shows zeros before the first stats', () => {
+    it('says a world is starting before the first stats', () => {
         expect(topBarView(null, STATE, false)).toEqual({
-            tick: 'tick 0',
-            elapsed: '0:00',
-            speed: 'x1',
-            season: '',
+            status: 'Starting a new world',
+            calendar: '',
             seasonProgress: 0,
+            speed: 'x1',
             types: [],
             born: 'born -',
-            population: 'pop 0',
             notice: '',
+            debug: { tick: 'tick 0', elapsed: '0:00' },
         });
     });
 
-    it('groups the tick and shows the population, the season and the counts by type', () => {
+    it('shows the status, the calendar with the generation, the counts by type and the born share', () => {
         const view = topBarView(
-            input({ tick: 1234567, population: 250, types: [{ name: 'predator', count: 1500 }], bornShare: 0.424 }),
+            input({
+                tick: 1234567,
+                calendar: { year: 3, season: 'Summer', generation: 41 },
+                types: [{ name: 'predator', count: 1500 }],
+                bornShare: 0.424,
+            }),
             STATE,
             false,
         );
         expect(view).toMatchObject({
-            tick: 'tick 1,234,567',
-            population: 'pop 250',
+            status: 'Spring, year 1: 1 blobs and steady',
+            calendar: 'Year 3, Summer, Gen 41',
             speed: 'x1',
-            season: 'spring',
             types: [{ name: 'predator', count: '1,500' }],
             born: 'born 42%',
+            debug: { tick: 'tick 1,234,567', elapsed: elapsedLabel(1234567) },
         });
     });
 
@@ -85,25 +91,42 @@ describe('topBarInput', () => {
 
     it('reads the tick and population from the newest snapshot and the rest from the stats', () => {
         const u32 = new Uint32Array([0, 37]);
-        const stats = { ticksPerSecond: 58, season: 1, seasonProgress: 0.25, bySpec: [3, 34], bornShare: 0.5 };
-        expect(topBarInput({ latest: { tick: 912, u32 }, stats, ready: { info: INFO } })).toEqual({
+        const stats = {
+            tick: 3500,
+            ticksPerSecond: 58,
+            season: 1,
+            seasonProgress: 0.25,
+            bySpec: [3, 34],
+            bornShare: 0.5,
+            population: 37,
+            generationMax: 12,
+            lineages: { top: [{ id: 4, share: 0.5 }] },
+        };
+        const got = topBarInput({ latest: { tick: 912, u32 }, stats, ready: { seed: 3, info: INFO } }, 'growing');
+        expect(got).toMatchObject({
             tick: 912,
             population: 37,
             ticksPerSecond: 58,
-            season: 'summer',
             seasonProgress: 0.25,
+            calendar: { year: 1, season: 'Summer', generation: 12 },
             types: [
                 { name: 'predator', count: 3 },
                 { name: 'forager', count: 34 },
             ],
             bornShare: 0.5,
         });
+        expect(got?.status).toMatch(/^Summer, year 1: 37 blobs and growing, [A-Z][a-z]+ leads with 50%$/);
     });
 
-    it('reports zeros before the first stats, and keeps counting steps while paused', () => {
+    it('reports a starting world and zeros before the first stats, and keeps counting steps while paused', () => {
         const u32 = new Uint32Array([0, 5]);
-        const before = topBarInput({ latest: { tick: 3, u32 }, stats: null, ready: { info: INFO } });
-        expect(before).toMatchObject({ ticksPerSecond: 0, season: '', bornShare: null });
+        const before = topBarInput({ latest: { tick: 3, u32 }, stats: null, ready: { seed: 3, info: INFO } });
+        expect(before).toMatchObject({
+            ticksPerSecond: 0,
+            status: 'Starting a new world',
+            calendar: null,
+            bornShare: null,
+        });
         expect(before?.types.map((t) => t.count)).toEqual([0, 0]);
         expect(topBarInput({ latest: { tick: 4, u32 }, stats: null })?.tick).toBe(4);
     });
@@ -114,9 +137,9 @@ describe('mountTopBar', () => {
         const doc = fakeDocument();
         const root = doc.createElement('div');
         const update = mountTopBar(doc, root);
-        update(topBarView(input({ tick: 5, types: [{ name: 'predator', count: 2 }] }), STATE, false));
-        expect(byClass(root, 'top-bar-tick')[0].textContent).toBe('tick 5');
-        expect(byClass(root, 'top-bar-season')).toHaveLength(0);
+        update(topBarView(input({ types: [{ name: 'predator', count: 2 }] }), STATE, false));
+        expect(byClass(root, 'top-bar-status')[0].textContent).toBe('Spring, year 1: 1 blobs and steady');
+        expect(byClass(root, 'top-bar-seasonBox')[0].children[1].textContent).toBe('Year 1, Spring, Gen 0');
         expect(byClass(root, 'season-ring')[0].style['--p']).toBe('50%');
         const [type] = byClass(root, 'top-bar-type');
         expect(type.getAttribute('title')).toBe('predator');
@@ -154,12 +177,12 @@ describe('mountTopBar', () => {
                 },
             });
         }
-        const view = topBarView(input({ tick: 5, population: 9 }), STATE, false);
+        const view = topBarView(input(), STATE, false);
         update(view);
         const first = writes;
         update(view);
         expect(writes).toBe(first);
-        update({ ...view, tick: 'tick 6' });
+        update({ ...view, speed: 'x2' });
         expect(writes).toBe(first + 1);
     });
 });

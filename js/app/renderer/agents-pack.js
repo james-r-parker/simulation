@@ -2,7 +2,8 @@
 // nothing is allocated after `createAgentStore`.
 
 import { drawnRadius } from '../display-size.js';
-import { lineageColor } from './colors.js';
+import { slotOf } from '../family-slots.js';
+import { familyColor } from './colors.js';
 
 /** Floats per vec4 attribute, and the attributes per instance: pose, colour, state and extra. */
 export const ITEM = 4;
@@ -16,7 +17,7 @@ export const JAW_RATE = 28;
  * @property {Float32Array} pose x, y, angle, radius
  * @property {Float32Array} color linear r, g, b and energy01
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
- * @property {Float32Array} extra pregnant, then 3 reserved
+ * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), then 2 reserved
  * @property {number} count agents packed this frame
  */
 
@@ -69,11 +70,12 @@ export function flashOf(timer) {
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {AgentStore} store the store
  * @param {Record<string, number>} bits `ready.layout.flags`
- * @param {{dtMs: number, zoom: number}} view the frame time and the zoom in device px per world unit, which turns
- *   each mesh's minimum width into the radius it is drawn at
+ * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots}} view the frame time, the zoom
+ *   in device px per world unit (which turns each mesh's minimum width into the radius it is drawn at) and the family
+ *   colour slots
  * @returns {void}
  */
-export function packAgents(agents, store, bits, { dtMs, zoom }) {
+export function packAgents(agents, store, bits, { dtMs, zoom, slots }) {
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
@@ -90,7 +92,7 @@ export function packAgents(agents, store, bits, { dtMs, zoom }) {
         store.jaw[slot] += (target - store.jaw[slot]) * ease;
         const o = bucket.count * ITEM;
         bucket.count += 1;
-        const rgb = lineageColor(agents.lineageId[i], agents.energy[i], store.rgb);
+        const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
         bucket.pose[o] = agents.x[i];
         bucket.pose[o + 1] = agents.y[i];
         bucket.pose[o + 2] = agents.angle[i];
@@ -104,5 +106,6 @@ export function packAgents(agents, store, bits, { dtMs, zoom }) {
         bucket.state[o + 2] = flashOf((flags >> bits.BITTEN_SHIFT) & bits.TIMER_MASK);
         bucket.state[o + 3] = store.jaw[slot];
         bucket.extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
+        bucket.extra[o + 1] = slotOf(slots, agents.lineageId[i]) < 0 ? 1 : 0;
     }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { lineageHue } from '../../../js/app/renderer/colors.js';
-import { CAUSE_CSS, lineageCss, NEUTRAL_CSS, SPEC_CSS, specCss } from '../../../js/app/ui/css-color.js';
+import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
+import { FAMILY_PALETTES, NEUTRAL_FAMILY } from '../../../js/app/renderer/colors.js';
+import { CAUSE_CSS, familyCss, NEUTRAL_CSS, rgbCss, SPEC_CSS, specCss } from '../../../js/app/ui/css-color.js';
 import { ICON_PATHS } from '../../../js/app/ui/silhouette-icons.js';
 
 describe('css colours', () => {
@@ -11,10 +12,20 @@ describe('css colours', () => {
         expect(specCss('mystery')).toBe(NEUTRAL_CSS);
     });
 
-    it('gives a lineage the hue the renderer gives it', () => {
-        const hue = Math.round(lineageHue(7) * 360);
-        expect(lineageCss(7)).toBe(`hsl(${hue} 70% 56%)`);
-        expect(lineageCss(7)).not.toBe(lineageCss(8));
+    it('encodes linear RGB as sRGB', () => {
+        expect(rgbCss([0, 0, 0])).toBe('rgb(0, 0, 0)');
+        expect(rgbCss([1, 1, 1])).toBe('rgb(255, 255, 255)');
+        expect(rgbCss([0.22, 0.22, 0.22])).toBe('rgb(129, 129, 129)');
+        expect(rgbCss([2, -1, 0.5])).toBe('rgb(255, 0, 188)');
+    });
+
+    it('gives a family its slot colour in the palette in force, else the neutral colour', () => {
+        const slots = createFamilySlots();
+        assignSlots(slots, [{ id: 7 }]);
+        expect(familyCss(slots, 7)).toBe(rgbCss(FAMILY_PALETTES.default[0]));
+        expect(familyCss(slots, 8)).toBe(rgbCss(NEUTRAL_FAMILY.default));
+        slots.palette = 'high-contrast';
+        expect(familyCss(slots, 7)).toBe(rgbCss(FAMILY_PALETTES['high-contrast'][0]));
     });
 
     it('lists distinct cause colours', () => {

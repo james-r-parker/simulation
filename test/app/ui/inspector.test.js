@@ -9,6 +9,7 @@ import {
     mountInspector,
     smoothHidden,
 } from '../../../js/app/ui/inspector.js';
+import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
 
@@ -69,7 +70,7 @@ describe('drawHeatmap', () => {
 
 describe('mountInspector', () => {
     const { ready, snapshot } = selectedWorld();
-    const view = inspectorView({ snapshot, ready });
+    const view = inspectorView({ snapshot, ready, slots: createFamilySlots() });
 
     it('shows the empty message for an invalid view and the body for a valid one', () => {
         const doc = fakeDocument();

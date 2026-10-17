@@ -125,3 +125,15 @@ export function clearHistory(h) {
     h.latest.fill(0);
     h.pending.fill(0);
 }
+
+/**
+ * @param {History} h the history
+ * @param {{series: string, agoMs: number}} look which series and how far back, in ms of wall time
+ * @returns {number | null} the value of the series about `agoMs` before the newest sample (to the nearest sample at the
+ *   current interval), null when the history does not reach back that far or the series does not exist
+ */
+export function lookback(h, { series, agoMs }) {
+    const at = h.names.indexOf(series);
+    const index = h.count - 1 - Math.round(agoMs / h.sampleMs);
+    return at < 0 || index < 0 ? null : h.data[at][index];
+}

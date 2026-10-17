@@ -6,12 +6,13 @@ import { mountCharts } from './ui/charts.js';
 /**
  * @param {{doc: any, drawers: {state: () => string | null, body: (name: string) => any},
  *   loadUPlot: () => Promise<any>, toast: (text: string) => void,
- *   getData: () => {history: import('./history.js').History, sampler: {groups: any}} | null}} deps the document, the
- *   drawers, the uPlot loader, the toast and the history of the current world
+ *   getData: () => {history: import('./history.js').History, sampler: {groups: any}} | null,
+ *   colorOf: (lineageId: number) => string}} deps the document, the drawers, the uPlot loader, the toast, the history
+ *   of the current world and the family colours
  * @returns {{open: () => void, close: () => void, update: () => void}} `open` builds the charts (after loading uPlot
  *   if needed, and only if the drawer is still open then); `close` destroys them; `update` pushes the history in
  */
-export function createChartsLifecycle({ doc, drawers, loadUPlot, toast, getData }) {
+export function createChartsLifecycle({ doc, drawers, loadUPlot, toast, getData, colorOf }) {
     /** @type {ReturnType<typeof mountCharts> | null} */
     let mounted = null;
     /** @type {any} */
@@ -25,6 +26,7 @@ export function createChartsLifecycle({ doc, drawers, loadUPlot, toast, getData 
                 UPlot,
                 history: data.history,
                 groups: data.sampler.groups,
+                colorOf,
             });
         }
     };

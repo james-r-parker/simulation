@@ -3,7 +3,7 @@
 // it closes. uPlot is passed in, so nothing here loads it and the tests use a fake.
 
 import { columns } from '../history.js';
-import { CAUSE_CSS, lineageCss, NEUTRAL_CSS, specCss } from './css-color.js';
+import { CAUSE_CSS, NEUTRAL_CSS, specCss } from './css-color.js';
 import { RIVER_BANDS, riverSeries, stackLayers } from './chart-data.js';
 
 export { riverSeries };
@@ -81,9 +81,10 @@ function stacked(names, sign) {
 /**
  * The family river's bands take their colours from whichever lineages the data holds, so its fills read a colour table
  * that `data` rewrites.
+ * @param {(lineageId: number) => string} colorOf a family's CSS colour: its slot colour, else the neutral one
  * @returns {ChartDef} the chart
  */
-function riverDef() {
+function riverDef(colorOf) {
     const colors = new Array(RIVER_BANDS + 1).fill(NEUTRAL_CSS);
     return {
         id: 'river',
@@ -102,7 +103,7 @@ function riverDef() {
             const empty = new Float64Array(cols.t.length);
             return colors.map((_, k) => {
                 const layer = layers[k];
-                colors[k] = layer === undefined || layer.id === null ? NEUTRAL_CSS : lineageCss(layer.id);
+                colors[k] = layer === undefined || layer.id === null ? NEUTRAL_CSS : colorOf(layer.id);
                 return layer?.top ?? empty;
             });
         },
@@ -187,10 +188,11 @@ function archiveDef(specs) {
 
 /**
  * @param {{births: string[], deaths: string[], specs: string[]}} groups the history names in each chart group
+ * @param {(lineageId: number) => string} colorOf a family's CSS colour
  * @returns {ChartDef[]} the five charts, in drawer order
  */
-export function chartDefs(groups) {
-    return [populationDef(groups.specs), riverDef(), flowDef(groups), combatDef(), archiveDef(groups.specs)];
+export function chartDefs(groups, colorOf) {
+    return [populationDef(groups.specs), riverDef(colorOf), flowDef(groups), combatDef(), archiveDef(groups.specs)];
 }
 
 /**
@@ -217,14 +219,14 @@ function optionsFor(def, { UPlot, width }) {
 
 /**
  * @param {{doc: {createElement: (tag: string) => any}, root: any, UPlot: any, history: import('../history.js').History,
- *   groups: Parameters<typeof chartDefs>[0]}} options the document, the drawer body, the uPlot class, the history and
- *   the series groups
+ *   groups: Parameters<typeof chartDefs>[0], colorOf: (lineageId: number) => string}} options the document, the drawer
+ *   body, the uPlot class, the history, the series groups and the family colours
  * @returns {{update: () => void, destroy: () => void}} `update` pushes the history into every chart; `destroy` calls
  *   `destroy` on each instance and empties the body
  */
-export function mountCharts({ doc, root, UPlot, history, groups }) {
+export function mountCharts({ doc, root, UPlot, history, groups, colorOf }) {
     const width = Math.max(root.clientWidth ?? 0, 0) || DEFAULT_WIDTH;
-    const defs = chartDefs(groups);
+    const defs = chartDefs(groups, colorOf);
     const instances = defs.map((def) => {
         const box = doc.createElement('section');
         box.className = `chart chart-${def.id}`;

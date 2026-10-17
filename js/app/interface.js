@@ -6,23 +6,37 @@
 import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
+import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
+import { dismissCard, firstVisit } from './interface-visit.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
 import { mountDrawers } from './ui/drawer.js';
 import { createHudFade, persistentNodes } from './ui/hud-fade.js';
+import { lookback } from './history.js';
 import { mountHelp } from './ui/help.js';
 import { applyPixelShift } from './ui/pixel-shift.js';
 import { mountInspector } from './ui/inspector.js';
 import { inspectorView, NO_INSPECTION } from './ui/inspector-data.js';
 import { wantsRays } from './ui/lenses.js';
 import { createTickerQueue, mountTicker } from './ui/ticker.js';
+import { mountTitleCard } from './ui/title-card.js';
 import { createToaster } from './ui/toast.js';
+import { trendWord } from './ui/status-line.js';
 import { mountTopBar, topBarInput, topBarView } from './ui/top-bar.js';
 
 /** How often each part refreshes, in ms. */
-export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, charts: 1000, idle: 100, shift: 1000 });
+export const REFRESH_MS = Object.freeze({
+    bar: 250,
+    ticker: 100,
+    inspector: 33,
+    charts: 1000,
+    idle: 100,
+    shift: 1000,
+    card: 250,
+});
 
 /**
  * @typedef {object} InterfaceDeps
@@ -40,6 +54,8 @@ export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, 
  * @property {(ms: number, run: () => void) => unknown} setTimer a timer, for the toasts
  * @property {() => Record<string, any> | null} getFailedBundle the debug bundle the supervisor kept after a failure
  * @property {() => number} now wall time in ms
+ * @property {import('./family-slots.js').FamilySlots} slots the family colour slots; the palette preference sets its palette
+ * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
 
@@ -58,6 +74,7 @@ function mountParts(ctx) {
         loadUPlot: deps.loadUPlot,
         toast: ctx.toast,
         getData: ctx.chartData.data,
+        colorOf: (/** @type {number} */ id) => familyCss(deps.slots, id),
     });
     ctx.drawers = mountDrawers(doc, elements.drawers, {
         onOpen: (name) => name === 'charts' && ctx.charts.open(),
@@ -66,12 +83,21 @@ function mountParts(ctx) {
     ctx.inspector = mountInspector(doc, ctx.drawers.body('inspector'));
     ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
         current: prefs.uiScale,
+        palette: prefs.palette,
+        onPalette(/** @type {string} */ name) {
+            prefs.palette = name;
+            deps.slots.palette = name;
+            deps.slots.version += 1;
+            ctx.help.setPalette(name);
+            persist(ctx);
+        },
         onScale(/** @type {string | number} */ value) {
             prefs.uiScale = value;
             applyScale(ctx);
             persist(ctx);
         },
     });
+    ctx.card = mountTitleCard(doc, elements.hud);
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
 }
@@ -84,6 +110,7 @@ function build(deps) {
     const { doc, elements, state } = deps;
     const prefs = loadPrefs(deps.storage);
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
+    deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
     const ctx = {
         deps,
@@ -101,6 +128,7 @@ function build(deps) {
             charts: -Infinity,
             idle: -Infinity,
             shift: -Infinity,
+            card: -Infinity,
         },
         idle: createIdleTracker(deps.now),
         shifted: { x: 0, y: 0 },
@@ -115,6 +143,9 @@ function build(deps) {
         inspector: /** @type {any} */ (null),
         charts: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
+        card: /** @type {any} */ (null),
+        shownCard: false,
+        persist: () => persist(ctx),
     };
     mountParts(ctx);
     return ctx;
@@ -219,13 +250,31 @@ function createListeners(ctx) {
             if (ctx.drawers.state() === 'charts') {
                 ctx.charts.open();
             }
+            firstVisit(ctx, ready);
             syncRays(ctx);
         },
-        onStats: (/** @type {Record<string, any>} */ stats) => ctx.chartData.stats(stats, deps.now()),
+        onStats(/** @type {Record<string, any>} */ stats) {
+            assignSlots(deps.slots, stats.lineages?.top ?? []);
+            ctx.chartData.stats(stats, deps.now());
+        },
         onTicker: (/** @type {{text: string, kind: string}[]} */ items) => ctx.queue.push(items, deps.now()),
         onArchive: (/** @type {string} */ json) =>
             deps.download({ name: `blob-archive-${deps.getReady()?.seed ?? 0}.json`, text: json }),
     };
+}
+
+/**
+ * @param {Record<string, any>} ctx the shared parts
+ * @param {Record<string, any> | null} client the worker client
+ * @returns {'growing' | 'shrinking' | 'steady'} the population trend over the last minute, from the history
+ */
+function populationTrend(ctx, client) {
+    const data = ctx.chartData.data();
+    const now = client?.latest?.u32?.[1];
+    if (data === null || now === undefined) {
+        return 'steady';
+    }
+    return trendWord(now, lookback(data.history, { series: 'population', agoMs: 60000 }));
 }
 
 /** What `tick` refreshes: a part, when it needs it, and how. */
@@ -239,7 +288,11 @@ const REFRESHERS = Object.freeze([
         key: 'shift',
         wanted: () => true,
         run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
-            applyPixelShift(persistentNodes(ctx.deps.elements), now / 1000, ctx.shifted);
+            applyPixelShift(
+                persistentNodes({ ...ctx.deps.elements, title: ctx.card.element }),
+                now / 1000,
+                ctx.shifted,
+            );
         },
     },
     {
@@ -248,8 +301,19 @@ const REFRESHERS = Object.freeze([
         run(/** @type {Record<string, any>} */ ctx) {
             const client = ctx.deps.getClient();
             const paused = client?.paused ?? false;
-            ctx.barUpdate(topBarView(topBarInput(client), ctx.deps.state, paused));
+            const view = topBarView(topBarInput(client, populationTrend(ctx, client)), ctx.deps.state, paused);
+            ctx.barUpdate(view);
+            ctx.help.setDebug(view.debug);
             ctx.controls.update({ paused, seed: ctx.deps.getReady()?.seed ?? null, drawer: ctx.drawers.state() });
+        },
+    },
+    {
+        key: 'card',
+        wanted: (/** @type {Record<string, any>} */ ctx) => ctx.card.visible(),
+        run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
+            if (ctx.card.expired(now)) {
+                dismissCard(ctx);
+            }
         },
     },
     {
@@ -264,7 +328,9 @@ const REFRESHERS = Object.freeze([
         run(/** @type {Record<string, any>} */ ctx) {
             const snapshot = ctx.deps.getClient()?.latest;
             const ready = ctx.deps.getReady();
-            ctx.inspector.update(snapshot && ready ? inspectorView({ snapshot, ready }) : NO_INSPECTION);
+            ctx.inspector.update(
+                snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots }) : NO_INSPECTION,
+            );
         },
     },
     {
@@ -291,7 +357,13 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
-        noteInput: (event) => ctx.idle.input(event),
+        noteInput(event) {
+            const counted = ctx.idle.input(event);
+            if (counted) {
+                dismissCard(ctx);
+            }
+            return counted;
+        },
         resize: () => applyScale(ctx),
         tick(nowMs) {
             for (const part of REFRESHERS) {

@@ -4,6 +4,7 @@
 
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
+import { familyCss } from './css-color.js';
 
 /** Values per ray in the inputs row: proximity, then the eight class channels. */
 export const RAY_CHANNELS = 9;
@@ -39,7 +40,8 @@ const COUNTER_AT = Object.freeze({
 /**
  * @typedef {object} InspectorView
  * @property {boolean} valid whether the selected agent was alive when the snapshot was written
- * @property {{spec: string, specIndex: number, lineageId: number, familyName: string, genomeId: number}} header who it is
+ * @property {{spec: string, specIndex: number, lineageId: number, familyName: string, color: string, genomeId: number}} header
+ *   who it is; `color` is the family's CSS colour
  * @property {{lengths: Float32Array, channels: Int8Array}} radar each spoke's length (0 to 1) and strongest class
  *   channel (an index into `CLASS_CHANNELS`, -1 when the ray saw nothing)
  * @property {{name: string, bars: {label: string, value: number}[]}[]} groups the body inputs by group, each value
@@ -52,7 +54,7 @@ const COUNTER_AT = Object.freeze({
 /** The view of nothing selected. @type {InspectorView} */
 export const NO_INSPECTION = Object.freeze({
     valid: false,
-    header: { spec: '', specIndex: -1, lineageId: 0, familyName: '', genomeId: 0 },
+    header: { spec: '', specIndex: -1, lineageId: 0, familyName: '', color: '', genomeId: 0 },
     radar: { lengths: new Float32Array(0), channels: new Int8Array(0) },
     groups: [],
     hidden: new Float32Array(0),
@@ -148,15 +150,15 @@ function groupsOf(row, { rayCount, labels }) {
 
 /**
  * @param {Float32Array} c the counters
- * @param {{specName: string, lineageId: number, info: Record<string, number>}} who the agent's type and lineage and
+ * @param {{specName: string, family: string, info: Record<string, number>}} who the agent's type, its family's name and
  *   the world's constants
  * @returns {InspectorView['counters']} the counters as labelled text
  */
-function countersOf(c, { specName, lineageId, info }) {
+function countersOf(c, { specName, family, info }) {
     const seasons = c[COUNTER_AT.ageTicks] / info.seasonLength;
     return [
         { label: 'type', text: specName },
-        { label: 'family', text: familyName(lineageId) },
+        { label: 'family', text: family },
         { label: 'generation', text: grouped(c[COUNTER_AT.generation]) },
         { label: 'age', text: `${grouped(c[COUNTER_AT.ageTicks])} ticks (${seasons.toFixed(1)} seasons)` },
         { label: 'energy', text: `${Math.round(c[COUNTER_AT.energy] * 100)}%` },
@@ -173,12 +175,13 @@ function countersOf(c, { specName, lineageId, info }) {
 }
 
 /**
- * @param {{snapshot: {u32: Uint32Array, f32: Float32Array}, ready: Record<string, any>}} source the newest snapshot and
- *   the `ready` message (layout, info and labels)
+ * @param {{snapshot: {u32: Uint32Array, f32: Float32Array}, ready: Record<string, any>,
+ *   slots: import('../family-slots.js').FamilySlots}} source the newest snapshot, the `ready` message (layout, info,
+ *   labels and seed) and the family colour slots
  * @returns {InspectorView} the inspector's content; `valid` is false when nothing is selected, the agent has died or
  *   the snapshot has no inspect part
  */
-export function inspectorView({ snapshot, ready }) {
+export function inspectorView({ snapshot, ready, slots }) {
     const { layout, info, labels } = ready;
     const at = layout.inspectOffset;
     if (snapshot.u32.length <= at + 2 || snapshot.u32[at + 2] !== 1) {
@@ -193,13 +196,15 @@ export function inspectorView({ snapshot, ready }) {
     const found = findInSnapshot(snapshot, genomeId);
     const spec = found.specIndex < 0 ? '' : String(info.specs[found.specIndex]?.name ?? '');
     const counters = snapshot.f32.subarray(countersAt, countersAt + layout.counterCount);
+    const family = familyName(ready.seed, found.lineageId);
     return {
         valid: true,
         header: {
             spec,
             specIndex: found.specIndex,
             lineageId: found.lineageId,
-            familyName: familyName(found.lineageId),
+            familyName: family,
+            color: familyCss(slots, found.lineageId),
             genomeId,
         },
         radar: radarOf(inputs, info.rayCount),
@@ -213,6 +218,6 @@ export function inspectorView({ snapshot, ready }) {
                 firing: label === 'smoke' ? value > info.smokeThreshold : value > 0,
             };
         }),
-        counters: countersOf(counters, { specName: spec, lineageId: found.lineageId, info }),
+        counters: countersOf(counters, { specName: spec, family, info }),
     };
 }

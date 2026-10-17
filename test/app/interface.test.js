@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createFamilySlots } from '../../js/app/family-slots.js';
 import { createAppState } from '../../js/app/actions.js';
 import { createInterface, REFRESH_MS } from '../../js/app/interface.js';
 import { PREFS_KEY } from '../../js/app/prefs.js';
@@ -22,10 +23,11 @@ class FakeUPlot {
 }
 
 /**
- * @param {{stored?: Record<string, string>, failed?: any}} [options] stored preferences and the failed bundle
+ * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean}} [options] stored
+ *   preferences, the failed bundle, whether the title card was seen and whether `?speed=` pinned the speed
  * @returns {any} an interface over fakes, with everything it was asked to do
  */
-function setup({ stored = {}, failed = null } = {}) {
+function setup({ stored = {}, failed = null, seen = true, speedPinned = false } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
     doc.documentElement = {
@@ -40,6 +42,9 @@ function setup({ stored = {}, failed = null } = {}) {
         drawers: doc.createElement('div'),
     };
     const store = new Map(Object.entries(stored));
+    if (!store.has(PREFS_KEY) && seen) {
+        store.set(PREFS_KEY, JSON.stringify({ seen: true }));
+    }
     const sent = /** @type {any[]} */ ([]);
     const client = {
         paused: false,
@@ -47,10 +52,12 @@ function setup({ stored = {}, failed = null } = {}) {
         setLenses: (/** @type {boolean} */ r) => sent.push(['setLenses', r]),
         reset: (/** @type {number} */ s, /** @type {any} */ c) => sent.push(['reset', s, c]),
         exportArchive: () => sent.push(['exportArchive']),
+        setSpeed: (/** @type {number} */ n) => sent.push(['setSpeed', n]),
     };
     const files = /** @type {any[]} */ ([]);
     const timers = /** @type {any[]} */ ([]);
     const state = createAppState();
+    const slots = createFamilySlots();
     let clock = 0;
     const width = { value: 3840 };
     const ui = createInterface({
@@ -68,9 +75,13 @@ function setup({ stored = {}, failed = null } = {}) {
         getFailedBundle: () => failed,
         now: () => clock,
         getWidth: () => width.value,
+        slots,
+        speedPinned,
     });
     return {
         ui,
+        client,
+        slots,
         width,
         elements,
         state,
@@ -85,14 +96,13 @@ function setup({ stored = {}, failed = null } = {}) {
 
 describe('createInterface', () => {
     it('sets the root font size from the canvas width and the stored scale, and again on resize', () => {
-        const { ui, width, doc, store } = setup();
+        const { ui, width, doc } = setup();
         expect(doc.documentElement.style.fontSize).toBe('32px');
         width.value = 1920;
         ui.resize();
         expect(doc.documentElement.style.fontSize).toBe('16px');
         const stored = setup({ stored: { [PREFS_KEY]: JSON.stringify({ uiScale: 1.5 }) } });
         expect(stored.doc.documentElement.style.fontSize).toBe('24px');
-        expect(store.size).toBe(0);
     });
 
     it('changes the HUD size from the help buttons and remembers it', () => {
@@ -166,19 +176,18 @@ describe('createInterface', () => {
     });
 
     it('refreshes each part at its own rate: the bar every 250 ms, the ticker lines as they arrive', () => {
-        const { ui, elements, setClock } = setup();
+        const { ui, elements, client, setClock } = setup();
         setClock(1000);
         ui.listeners.onTicker([{ text: 'lineage 3 takes the lead', kind: 'new-leader' }]);
         ui.tick(1000);
-        expect(byClass(elements.bar, 'top-bar-tick')[0].textContent).toBe(`tick ${snapshot.tick}`);
+        const [speed] = byClass(elements.bar, 'top-bar-speed');
+        expect(speed.textContent).toMatch(/^x1/);
         expect(byClass(elements.ticker, 'ticker-line')[0].textContent).toBe('lineage 3 takes the lead');
+        client.paused = true;
         ui.tick(1000 + REFRESH_MS.bar - 1);
-        const bar = byClass(elements.bar, 'top-bar-tick')[0];
-        bar.textContent = 'stale';
-        ui.tick(1000 + REFRESH_MS.bar - 1);
-        expect(bar.textContent).toBe('stale');
+        expect(speed.textContent).toMatch(/^x1/);
         ui.tick(1000 + REFRESH_MS.bar);
-        expect(bar.textContent).toBe(`tick ${snapshot.tick}`);
+        expect(speed.textContent).toBe('paused');
     });
 
     it('fills the inspector while its drawer is open', () => {
@@ -251,5 +260,87 @@ describe('createInterface', () => {
         ui.tick(100_000);
         expect(elements.bar.style.transform).toMatch(/^translate\(-?\d+px, -?\d+px\)$/);
         expect(elements.ticker.style.transform).toBe(elements.bar.style.transform);
+    });
+
+    it('gives the top families their colour slots on every stats message', () => {
+        const { ui, slots } = setup();
+        ui.listeners.onReady(ready);
+        ui.listeners.onStats({
+            tick: 5,
+            lineages: {
+                top: [
+                    { id: 4, share: 0.6 },
+                    { id: 9, share: 0.3 },
+                ],
+            },
+        });
+        expect(Array.from(slots.ids.slice(0, 3))).toEqual([4, 9, -1]);
+    });
+
+    it('switches the palette from the help buttons, bumping the slot version and remembering it', () => {
+        const { elements, slots, store } = setup();
+        const before = slots.version;
+        byClass(elements.drawers, 'help-size')[6].dispatch('click');
+        expect(slots.palette).toBe('cvd-safe');
+        expect(slots.version).toBe(before + 1);
+        expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').palette).toBe('cvd-safe');
+    });
+
+    it('starts with the stored palette', () => {
+        const { slots } = setup({ stored: { [PREFS_KEY]: JSON.stringify({ palette: 'high-contrast' }) } });
+        expect(slots.palette).toBe('high-contrast');
+    });
+
+    it('shows the title card on a first visit, starts at x2, and dismisses it on input, remembering it', () => {
+        const { ui, elements, state, sent, store } = setup({ seen: false });
+        ui.listeners.onReady(ready);
+        const [card] = byClass(elements.hud, 'title-card');
+        expect(card.hidden).toBe(false);
+        expect(state.requestedTicksPerSecond).toBe(120);
+        expect(sent).toContainEqual(['setSpeed', 120]);
+        expect(byClass(card, 'legend-item')).toHaveLength(5);
+        expect(ui.noteInput({ type: 'pointermove', x: 1, y: 1 })).toBe(false);
+        expect(card.hidden).toBe(false);
+        ui.noteInput({ type: 'keydown' });
+        expect(card.hidden).toBe(true);
+        expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').seen).toBe(true);
+    });
+
+    it('dismisses the card after 12 s without input, and keeps the speed a link pinned', () => {
+        const { ui, elements, setClock, state, sent } = setup({ seen: false, speedPinned: true });
+        setClock(1000);
+        ui.listeners.onReady(ready);
+        expect(state.requestedTicksPerSecond).toBe(60);
+        expect(sent.some((/** @type {any[]} */ m) => m[0] === 'setSpeed')).toBe(false);
+        setClock(1000 + 11_000);
+        ui.tick(1000 + 11_000);
+        const [card] = byClass(elements.hud, 'title-card');
+        expect(card.hidden).toBe(false);
+        setClock(1000 + 12_000);
+        ui.tick(1000 + 12_000);
+        expect(card.hidden).toBe(true);
+    });
+
+    it('shows no card on a later visit, but still fills the legend at the top of the help drawer', () => {
+        const { ui, elements } = setup();
+        ui.listeners.onReady(ready);
+        expect(byClass(elements.hud, 'title-card')[0].hidden).toBe(true);
+        expect(byClass(byClass(elements.drawers, 'help-legend')[0], 'legend-item')).toHaveLength(5);
+    });
+
+    it('writes the tick and the run time into the help drawer and the status into the bar', () => {
+        const { ui, elements } = setup();
+        ui.listeners.onReady(ready);
+        ui.listeners.onStats({
+            tick: 5,
+            population: 12,
+            season: 0,
+            seasonProgress: 0,
+            bySpec: [],
+            lineages: { top: [] },
+        });
+        ui.tick(0);
+        expect(byClass(elements.drawers, 'help-tick')[0].textContent).toBe(`tick ${snapshot.tick}`);
+        expect(byClass(elements.bar, 'top-bar-status')[0].textContent).toMatch(/^Starting a new world$|blobs and/);
     });
 });

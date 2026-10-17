@@ -1,7 +1,9 @@
-// The top bar: tick and run time, speed, the season with a progress ring, the population by type, the born-in-world
-// share and a notice. `topBarInput` reads what it needs from the worker client, `topBarView` turns that into strings,
-// and `mountTopBar` owns the nodes and rewrites one only when its text changed.
+// The top bar: the status sentence, the calendar (year, season with a progress ring, generation), speed, the population
+// by type, the born-in-world share and a notice. `topBarInput` reads what it needs from the worker client, `topBarView`
+// turns that into strings, and `mountTopBar` owns the nodes and rewrites one only when its text changed. The tick and
+// the run time are in the help drawer's debug lines.
 
+import { calendarOf, statusLine } from './status-line.js';
 import { createIcon } from './silhouette-icons.js';
 
 /** Ticks a second at speed x1. */
@@ -39,26 +41,35 @@ export function elapsedLabel(ticks) {
  * @typedef {object} TopBarInput
  * @property {number} tick the newest snapshot's tick
  * @property {number} population agents alive
+ * @property {string} status the plain-language status sentence
+ * @property {{year: number, season: string, generation: number} | null} calendar null before any stats
  * @property {number} ticksPerSecond the rate actually sustained, 0 before any stats
- * @property {string} season the season's name, empty before any stats
  * @property {number} seasonProgress position within the season, 0 to 1
  * @property {{name: string, count: number}[]} types each specialisation with its count
  * @property {number | null} bornShare the share of births made in the world, null before any
  */
 
 /**
- * @param {Record<string, any>} stats the newest stats message, empty before one
- * @param {Record<string, any>} info `ready.info`, empty before one
- * @returns {Omit<TopBarInput, 'tick' | 'population'>} the fields that come from the stats
+ * @param {Record<string, any> | null} stats the newest stats message, null before one
+ * @param {Record<string, any>} ready the `ready` message, empty before one
+ * @param {'growing' | 'shrinking' | 'steady'} trend the population trend
+ * @returns {Pick<TopBarInput, 'ticksPerSecond' | 'status' | 'calendar' | 'seasonProgress' | 'types' | 'bornShare'>} the
+ *   fields that come from the stats
  */
-function statsFields(stats, info) {
-    const specs = /** @type {{index: number, name: string}[]} */ (info.specs ?? []);
+function statsFields(stats, ready, trend) {
+    const info = ready.info ?? {};
+    const world = ready.info === undefined ? null : { ...info, seed: ready.seed };
+    const shown = stats ?? {};
     return {
-        ticksPerSecond: stats.ticksPerSecond ?? 0,
-        season: String(info.seasonNames?.[stats.season] ?? ''),
-        seasonProgress: stats.seasonProgress ?? 0,
-        types: specs.map((spec) => ({ name: spec.name, count: stats.bySpec?.[spec.index] ?? 0 })),
-        bornShare: stats.bornShare ?? null,
+        ticksPerSecond: shown.ticksPerSecond ?? 0,
+        status: statusLine({ stats, trend, world }),
+        calendar: stats === null || world === null ? null : calendarOf(stats, world),
+        seasonProgress: shown.seasonProgress ?? 0,
+        types: (info.specs ?? []).map((/** @type {{index: number, name: string}} */ spec) => ({
+            name: spec.name,
+            count: shown.bySpec?.[spec.index] ?? 0,
+        })),
+        bornShare: shown.bornShare ?? null,
     };
 }
 
@@ -67,14 +78,15 @@ function statsFields(stats, info) {
  * step posts a snapshot), and from the newest stats for the rest.
  * @param {{latest: {tick: number, u32: Uint32Array} | null, stats: Record<string, any> | null,
  *   ready?: Record<string, any> | null} | null} client the worker client, null before the first start
+ * @param {'growing' | 'shrinking' | 'steady'} [trend] the population trend, from the history
  * @returns {TopBarInput | null} what `topBarView` reads, null before any snapshot has arrived
  */
-export function topBarInput(client) {
+export function topBarInput(client, trend = 'steady') {
     if (client === null || client.latest === null) {
         return null;
     }
     return {
-        ...statsFields(client.stats ?? {}, client.ready?.info ?? {}),
+        ...statsFields(client.stats, client.ready ?? {}, trend),
         tick: client.latest.tick,
         population: client.latest.u32[1],
     };
@@ -110,7 +122,8 @@ const EMPTY_INPUT = Object.freeze({
     tick: 0,
     population: 0,
     ticksPerSecond: 0,
-    season: '',
+    status: 'Starting a new world',
+    calendar: null,
     seasonProgress: 0,
     types: [],
     bornShare: null,
@@ -118,40 +131,38 @@ const EMPTY_INPUT = Object.freeze({
 
 /**
  * @typedef {object} TopBarView
- * @property {string} tick `tick 1,234`
- * @property {string} elapsed the run time, `1:05`
- * @property {string} speed `x4`, with the sustained rate beside it when it differs, or `paused`
- * @property {string} season the season name
+ * @property {string} status the status sentence
+ * @property {string} calendar `Year 3, Summer, Gen 41`, empty before any stats
  * @property {number} seasonProgress 0 to 1, drawn as the ring
+ * @property {string} speed `x4`, with the sustained rate beside it when it differs, or `paused`
  * @property {{name: string, count: string}[]} types the counts by specialisation
  * @property {string} born `born 42%`, `born -` before any birth
- * @property {string} population `pop 250`
  * @property {string} notice a short message, empty for none
+ * @property {{tick: string, elapsed: string}} debug the tick and the run time, for the help drawer
  */
 
 /**
  * @param {TopBarInput | null} stats what `topBarInput` read, null before one arrives
  * @param {{requestedTicksPerSecond: number, notice: string}} state the app state
  * @param {boolean} paused whether the sim is paused
- * @returns {TopBarView} the strings to show; the speed shows the requested multiple, with the rate actually sustained
- *   beside it when it differs
+ * @returns {TopBarView} the strings to show
  */
 export function topBarView(stats, state, paused) {
     const s = stats ?? EMPTY_INPUT;
+    const c = s.calendar;
     return {
-        tick: `tick ${grouped(s.tick)}`,
-        elapsed: elapsedLabel(s.tick),
-        speed: speedText(stats, state, paused),
-        season: s.season,
+        status: s.status,
+        calendar: c === null ? '' : `Year ${c.year}, ${c.season}, Gen ${c.generation}`,
         seasonProgress: s.seasonProgress,
+        speed: speedText(stats, state, paused),
         types: s.types.map((t) => ({ name: t.name, count: grouped(t.count) })),
         born: bornText(s.bornShare),
-        population: `pop ${grouped(s.population)}`,
         notice: state.notice,
+        debug: { tick: `tick ${grouped(s.tick)}`, elapsed: elapsedLabel(s.tick) },
     };
 }
 
-const TEXT_FIELDS = ['tick', 'elapsed', 'speed', 'season', 'born', 'population', 'notice'];
+const TEXT_FIELDS = ['status', 'calendar', 'speed', 'born', 'notice'];
 
 /**
  * @param {any} node an element
@@ -177,17 +188,16 @@ export function mountTopBar(doc, root) {
         nodes[key].className = `top-bar-${key}`;
         root.appendChild(nodes[key]);
     };
-    for (const key of ['tick', 'elapsed', 'speed']) {
-        make(key);
-    }
+    make('status');
     make('seasonBox');
     const ring = doc.createElement('span');
     ring.className = 'season-ring';
     nodes.seasonBox.appendChild(ring);
-    nodes.season = doc.createElement('span');
-    nodes.seasonBox.appendChild(nodes.season);
+    nodes.calendar = doc.createElement('span');
+    nodes.seasonBox.appendChild(nodes.calendar);
+    make('speed');
     make('types');
-    for (const key of ['born', 'population', 'notice']) {
+    for (const key of ['born', 'notice']) {
         make(key);
     }
     /** @type {{box: any, count: any, name: string}[]} */

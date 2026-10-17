@@ -2,7 +2,7 @@
 // `new-leader` and `extinct` ticker conditions.
 
 /** Lineages listed in the stats. */
-export const TOP_LINEAGES = 8;
+export const TOP_LINEAGES = 12;
 
 /** A new leader must lead the runner-up by at least this many agents. */
 export const LEAD_MARGIN = 2;

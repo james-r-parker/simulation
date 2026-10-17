@@ -110,6 +110,7 @@ function sharedUniforms(info, ramp, blank) {
         uBiteArc: { value: info.biteArc },
         uTempLens: { value: 0 },
         uDim: { value: 1 },
+        uPalette: { value: 0 },
         uRamp: { value: ramp },
         uSmoke: { value: blank },
         uView: { value: new Vector4(0, 0, 1, 1) },
@@ -130,6 +131,7 @@ function updateUniforms(shared, frame) {
     shared.uTime.value = frame.nowMs / 1000;
     shared.uTempLens.value = lenses.temperature ? 1 : 0;
     shared.uDim.value = lenses.scent ? SCENT_DIM : 1;
+    shared.uPalette.value = frame.family.palette === 'high-contrast' ? 2 : 0;
     shared.uView.value.set(v.left, v.bottom, v.right - v.left, v.top - v.bottom);
 }
 
@@ -159,7 +161,11 @@ export function createAgentsLayer({ info, flagBits }) {
         },
         update(frame) {
             updateUniforms(shared, frame);
-            packAgents(frame.agents, store, flagBits, { dtMs: frame.dtMs, zoom: frame.camera.zoom });
+            packAgents(frame.agents, store, flagBits, {
+                dtMs: frame.dtMs,
+                zoom: frame.camera.zoom,
+                slots: frame.family,
+            });
             for (let i = 0; i < meshes.length; i++) {
                 upload(meshes[i], store.buckets[i]);
             }
