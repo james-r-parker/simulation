@@ -29,19 +29,19 @@ describe('summariseRays', () => {
             setRay(world, slot, 3, 0.4, CH.FOOD);
             setRay(world, slot, 5, 0.7, CH.FOOD);
             setRay(world, slot, 6, 0.7, CH.FOOD);
-            setRay(world, slot, 0, 0.2, CH.SMALLER);
-            setRay(world, slot, 2, 0.9, CH.SMALLER);
+            setRay(world, slot, 0, 0.2, CH.PREY);
+            setRay(world, slot, 2, 0.9, CH.PREY);
         });
         expect([row[SCAN.FOOD], row[SCAN.FOOD_RAY]]).toEqual([expect.closeTo(0.7), 5]);
         expect([row[SCAN.PREY], row[SCAN.PREY_RAY]]).toEqual([expect.closeTo(0.9), 2]);
     });
 
     it('counts prey only on arc rays and counts bigger hits on any ray', () => {
-        expect(scan((world, slot) => setRay(world, slot, 4, 0.5, CH.SMALLER))[SCAN.PREY]).toBe(-1);
-        expect(scan((world, slot) => setRay(world, slot, 14, 0.5, CH.SMALLER))[SCAN.PREY]).toBeCloseTo(0.5);
+        expect(scan((world, slot) => setRay(world, slot, 4, 0.5, CH.PREY))[SCAN.PREY]).toBe(-1);
+        expect(scan((world, slot) => setRay(world, slot, 14, 0.5, CH.PREY))[SCAN.PREY]).toBeCloseTo(0.5);
         const row = scan((world, slot) => {
-            setRay(world, slot, 8, 0.5, CH.BIGGER);
-            setRay(world, slot, 9, 0.5, CH.BIGGER);
+            setRay(world, slot, 8, 0.5, CH.THREAT);
+            setRay(world, slot, 9, 0.5, CH.THREAT);
         });
         expect(row[SCAN.BIGGER]).toBe(2);
     });

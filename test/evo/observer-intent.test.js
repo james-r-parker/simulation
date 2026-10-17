@@ -116,7 +116,7 @@ describe('bites', () => {
             approach(arena, {
                 slot,
                 k,
-                channel: CH.SMALLER,
+                channel: CH.PREY,
                 count: 6,
                 before: (tick) => {
                     arena.world.biteEnergy[slot] = tick === 6 ? 7 : 0;
@@ -138,7 +138,7 @@ describe('bites', () => {
         approach(arena, {
             slot: hunter,
             k: 0,
-            channel: CH.SMALLER,
+            channel: CH.PREY,
             count: 6,
             before: (tick) => {
                 world.biteEnergy[hunter] = tick === 6 ? 7 : 0;
@@ -285,7 +285,7 @@ describe('sightings and reset', () => {
         const slot = addBorn(world, { spec: FORAGER });
         nextTick(world, 3);
         setRay(world, slot, 4, 0.5, CH.FOOD);
-        setRay(world, slot, 1, 0.5, CH.SMALLER);
+        setRay(world, slot, 1, 0.5, CH.PREY);
         seeThreat(world, slot, 9, 0.8);
         runIntent(world, intent);
         expect([intent.lastFood[slot], intent.lastPrey[slot], intent.lastThreat[slot]]).toEqual([3, 3, 3]);

@@ -53,7 +53,7 @@ describe('resolveThreat', () => {
     it('is no threat for a bigger hit with no hunter, a same-lineage hunter, or one out of range', () => {
         const arena = intentArena();
         const slot = addBlob(arena.world, { spec: FORAGER });
-        setRay(arena.world, slot, 2, 0.6, CH.BIGGER);
+        setRay(arena.world, slot, 2, 0.6, CH.THREAT);
         expect(resolve(arena, slot).seen).toBe(false);
         const hunter = seeThreat(arena.world, slot, 2);
         arena.world.lineageId[hunter] = arena.world.lineageId[slot];
@@ -69,7 +69,7 @@ describe('resolveThreat', () => {
         const slot = addBlob(arena.world, { spec: FORAGER });
         seeThreat(arena.world, slot, 2);
         setRay(arena.world, slot, 2, 0.6, CH.FOOD);
-        setRay(arena.world, slot, 9, 0.6, CH.BIGGER);
+        setRay(arena.world, slot, 9, 0.6, CH.THREAT);
         expect(resolve(arena, slot).seen).toBe(false);
     });
 });

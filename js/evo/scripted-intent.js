@@ -7,7 +7,7 @@ import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 import {
-    CH_BIGGER,
+    CH_THREAT,
     createWander,
     eachAlive,
     SEEK_THRUST,
@@ -115,7 +115,7 @@ function nearestMateRay(w, slot) {
 function grouper(context) {
     const flee = COMBAT_CONTROLLERS.fleer(context);
     const gather = eachAlive((w, slot) => {
-        if (nearestClassRay(w, slot, CH_BIGGER, CH_BIGGER) >= 0) {
+        if (nearestClassRay(w, slot, CH_THREAT, CH_THREAT) >= 0) {
             const mate = nearestMateRay(w, slot);
             if (mate >= 0) {
                 setOutput(w, slot, OUTPUT_INDEX.TURN, turnTowards(mate, w.config.rayCount));

@@ -340,11 +340,13 @@ function brute(w, me, k) {
  * @returns {number} the channel
  */
 function bruteAgentClass(w, me, other) {
+    /** @type {(a: number, b: number) => boolean} */
     const kin = (a, b) =>
         w.parentA[a] === w.genomeId[b] ||
         w.parentB[a] === w.genomeId[b] ||
         w.parentA[b] === w.genomeId[a] ||
         w.parentB[b] === w.genomeId[a];
+    /** @type {(a: number, b: number) => boolean} */
     const bites = (a, b) => {
         const dx = w.x[b] - w.x[a];
         const dy = w.y[b] - w.y[a];

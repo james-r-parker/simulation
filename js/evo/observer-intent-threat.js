@@ -5,7 +5,7 @@
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { SCAN } from './ray-summary.js';
-import { CH_BIGGER } from './scripted-parts.js';
+import { CH_THREAT } from './scripted-parts.js';
 
 /**
  * Lists the alive `canHunt` slots into `intent.hunters`; call it once per tick, before `resolveThreat`.
@@ -93,7 +93,7 @@ export function resolveThreat(intent, world, slot) {
     }
     const k = rayTowards(world, slot, h);
     const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
-    if (world.inputs[base + CH_BIGGER] !== 1) {
+    if (!(world.inputs[base + CH_THREAT] > 0)) {
         return false;
     }
     scan[SCAN.THREAT] = world.inputs[base];

@@ -78,8 +78,8 @@ describe('call and smoke precision', () => {
         const b = addBorn(world, { spec: PREDATOR });
         start(arena);
         tick(arena, 1, () => {
-            setRay(world, a, 1, 0.6, CH.SMALLER);
-            setRay(world, b, 8, 0.6, CH.SMALLER);
+            setRay(world, a, 1, 0.6, CH.PREY);
+            setRay(world, b, 8, 0.6, CH.PREY);
             pushCall(world, EVENT_TYPE.PACK_CALLED, a);
             pushCall(world, EVENT_TYPE.PACK_CALLED, b);
         });
@@ -149,7 +149,7 @@ describe('call precision as lift over the caller base rate', () => {
     });
 
     it('scores a hunt-call spammer about 0 the same way, with prey ahead as the cue', () => {
-        const { arena } = run('PACK_CALLED', (world, slot) => setRay(world, slot, 1, 0.6, CH.SMALLER));
+        const { arena } = run('PACK_CALLED', (world, slot) => setRay(world, slot, 1, 0.6, CH.PREY));
         const { intent } = arena;
         expect(intent.run.huntCalls).toBe(70);
         const lift = intentMetrics(arena.observer)['eval.hunt_call_precision'].value ?? NaN;
@@ -225,7 +225,7 @@ describe('eaten deaths', () => {
         start(arena);
         for (let t = 1; t <= 6; t++) {
             tick(arena, t, () => {
-                setRay(world, hunter, 0, t / 20, CH.SMALLER);
+                setRay(world, hunter, 0, t / 20, CH.PREY);
                 world.vx[hunter] = 0.5 * world.config.maxVelocity;
                 if (t === 6) {
                     world.lastBiteTick[victim] = 6;

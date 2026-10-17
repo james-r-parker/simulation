@@ -4,7 +4,7 @@ import { addBlob } from '../../sim/helpers/life-world.js';
 import { nextTick, observed } from './observer-world.js';
 
 /** Ray channels, as written by the ray march. */
-export const CH = Object.freeze({ FOOD: 1, BIGGER: 2, SMALLER: 3, SMOKE: 8 });
+export const CH = Object.freeze({ FOOD: 1, THREAT: 2, PREY: 3, SMOKE: 8 });
 
 /** Specialisation indices of the default config: a forager and a predator that can hunt. */
 export const FORAGER = 0;
@@ -39,11 +39,11 @@ export function setRay(world, slot, k, proximity, channel) {
     const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
     world.inputs.fill(0, base, base + RAY_CHANNELS);
     world.inputs[base] = proximity;
-    world.inputs[base + channel] = 1;
+    world.inputs[base + channel] = channel >= CH.THREAT && channel <= 5 ? proximity : 1;
 }
 
 /**
- * Shows an agent a threat on ray `k`: a bigger-class hit on the ray, and a hunter of another lineage standing in the
+ * Shows an agent a threat on ray `k`: a threat-class hit on the ray, and a hunter of another lineage standing in the
  * ray's direction (one hunter per agent, moved as needed; the agent faces along +x).
  * @param {any} world the world
  * @param {number} slot the agent
@@ -52,7 +52,7 @@ export function setRay(world, slot, k, proximity, channel) {
  * @returns {number} the hunter's slot
  */
 export function seeThreat(world, slot, k, proximity = 0.6) {
-    setRay(world, slot, k, proximity, CH.BIGGER);
+    setRay(world, slot, k, proximity, CH.THREAT);
     const mine = hunters.get(world) ?? new Map();
     hunters.set(world, mine);
     const hunter = mine.get(slot) ?? addBlob(world, { spec: PREDATOR });

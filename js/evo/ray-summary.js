@@ -2,7 +2,7 @@
 // how many rays hit something bigger, and whether the agent sits inside smoke. Reads the world, writes a scratch row.
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
-import { CH_BIGGER, CH_FOOD, CH_SMALLER, CH_SMOKE } from './scripted-parts.js';
+import { CH_THREAT, CH_FOOD, CH_PREY, CH_SMOKE } from './scripted-parts.js';
 
 /** Offsets in the scan row. Proximities and rays are -1 when there is no such hit; `THREAT*` come from `resolveThreat`. */
 export const SCAN = Object.freeze({
@@ -54,9 +54,9 @@ export function summariseRays(world, slot, out, arc) {
         const base = origin + k * RAY_CHANNELS;
         if (inputs[base + CH_FOOD] === 1) {
             nearer(out, SCAN.FOOD, inputs[base], k);
-        } else if (inputs[base + CH_BIGGER] === 1) {
+        } else if (inputs[base + CH_THREAT] > 0) {
             out[SCAN.BIGGER] += 1;
-        } else if (inputs[base + CH_SMALLER] === 1 && arc[k] === 1) {
+        } else if (inputs[base + CH_PREY] > 0 && arc[k] === 1) {
             nearer(out, SCAN.PREY, inputs[base], k);
         } else if (inputs[base + CH_SMOKE] === 1 && inputs[base] === 1) {
             out[SCAN.SMOKE] = 1;
