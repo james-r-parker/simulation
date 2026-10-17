@@ -20,4 +20,14 @@ describe('workflows', () => {
             expect(tag, `${name} image tag`).toBe(pin);
         }
     });
+
+    it('upload hidden .checklogs/ files only with include-hidden-files', () => {
+        for (const { name, text } of workflows) {
+            for (const step of text.split(/\n\s*- (?=name:|uses:)/)) {
+                if (step.includes('upload-artifact') && step.includes('.checklogs')) {
+                    expect(step, `${name} upload step`).toMatch(/include-hidden-files:\s*true/);
+                }
+            }
+        }
+    });
 });

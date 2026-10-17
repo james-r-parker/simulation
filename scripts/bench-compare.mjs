@@ -10,6 +10,8 @@ import { median } from './bench.mjs';
 /** Fraction above the base median a head median may be. */
 export const TOLERANCE = 0.1;
 export const SKIP_EXIT = 3;
+// The base worktree's install: errors only, so a peer-range warning flood cannot bury the bench table in the digest.
+export const BASE_INSTALL_ARGS = ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'];
 const DEFAULT_RUNS = 5;
 const DEFAULT_SIZES = '500';
 const STALE_HOURS = 25;
@@ -208,7 +210,7 @@ function withWorktree(baseSha, work, cwd) {
     process.on('SIGTERM', onSignal);
     try {
         git(['worktree', 'add', '--detach', dir, baseSha], cwd);
-        execFileSync('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], {
+        execFileSync('npm', BASE_INSTALL_ARGS, {
             cwd: dir,
             env: ENV,
             stdio: ['ignore', 'ignore', 'inherit'],

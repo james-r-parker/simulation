@@ -3,7 +3,15 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SKIP_EXIT, compare, formatRows, main, parseArgs, skipReason } from '../scripts/bench-compare.mjs';
+import {
+    BASE_INSTALL_ARGS,
+    SKIP_EXIT,
+    compare,
+    formatRows,
+    main,
+    parseArgs,
+    skipReason,
+} from '../scripts/bench-compare.mjs';
 
 /**
  * @param {number} step step time in ms
@@ -217,5 +225,12 @@ describe('main (end to end on a throwaway repository)', () => {
     it('throws when the base ref does not exist', () => {
         const dir = makeRepo({ base: { ms: 100, bench: true }, head: { ms: 100, bench: true } });
         expect(() => main(['--base', 'nope'], dir)).toThrow();
+    });
+});
+
+describe('base worktree install', () => {
+    it('logs errors only, so npm warnings do not fill the digest', () => {
+        expect(BASE_INSTALL_ARGS).toContain('--loglevel=error');
+        expect(BASE_INSTALL_ARGS.slice(0, 2)).toEqual(['ci', '--ignore-scripts']);
     });
 });
