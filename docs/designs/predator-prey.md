@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitness terms, niches and map-elites-v2) next, re-planned from world-balance.md.
 **Validated:** eaeb604 (2026-10-17)
-**Priority:** 1 - finishes the world rules; tuning nights and the trainer build on them
+**Priority:** 2 - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core
