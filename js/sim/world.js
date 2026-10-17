@@ -81,6 +81,7 @@ function agentSpecs(layout) {
         [Float32Array, 'heard', HEARD_STRIDE],
         [Float32Array, 'inputs', layout.inputCount],
         [Float32Array, 'outputs', layout.outputCount],
+        [Float32Array, 'leakRate', layout.hidden],
         [Float32Array, 'weights', layout.weightCount],
         [Float32Array, 'fatherWeights', layout.weightCount],
     ];

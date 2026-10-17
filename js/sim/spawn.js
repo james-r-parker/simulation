@@ -5,6 +5,7 @@ import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { createSpatialHash } from './spatial-hash.js';
+import { applyGenes } from './traits.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
@@ -231,6 +232,7 @@ export function spawnAgent(world, policy, cause) {
         ? policy.initSpec(world, slot, world.rng.spawn)
         : nextInt(world.rng.spawn, SPEC_COUNT);
     policy.initBrain(world, slot, world.rng['brain-init']);
+    applyGenes(world, slot);
     placeClear(world, world.rng.spawn, Math.max(c.minSize, c.baseSize + c.initialEnergy / c.energyToSize));
     world.x[slot] = world.point[0];
     world.y[slot] = world.point[1];

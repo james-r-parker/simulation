@@ -7,6 +7,7 @@ import { readyToMate } from './mate-eligibility.js';
 import { findMate } from './mate-search.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
+import { applyGenes } from './traits.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -149,6 +150,7 @@ function giveBirth(world, policy, mother, cause) {
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);
+    applyGenes(world, child);
     transferEnergy(world, mother, child, gift);
     placeChild(world, child, mother);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);

@@ -91,6 +91,14 @@ function hiddenStep(world, slot) {
     }
     addInputs(world, slot);
     addRecurrent(world, slot);
+    if (world.config.leakEnabled) {
+        const hBase = slot * H;
+        for (let j = 0; j < H; j++) {
+            const a = world.leakRate[hBase + j];
+            hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * detTanh(acc[j]));
+        }
+        return;
+    }
     for (let j = 0; j < H; j++) {
         hidden[scratchBase + j] = Math.fround(detTanh(acc[j]));
     }
