@@ -1,6 +1,7 @@
 // The intent state's constants, per-slot arrays, run totals and slot reset. `observer-intent.js` updates it each
 // tick; see docs/designs/world-balance.md (Intent state, Intent counters).
 
+import { createHunterGrid } from './hunter-grid.js';
 import { hunterTable } from './hunter-table.js';
 import { createHuntCalls } from './observer-intent-calls.js';
 import { SCAN_SIZE } from './ray-summary.js';
@@ -144,6 +145,7 @@ export function createIntentState(config) {
         scan: new Float64Array(SCAN_SIZE),
         hunters: new Int32Array(config.maxAgents),
         hunterCount: 0,
+        hunterGrid: createHunterGrid(config),
         calls: createHuntCalls(),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
         packWindow: config.packWindow,

@@ -4,6 +4,7 @@
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { detCos, detSin } from '../sim/det-math.js';
+import { buildHunterGrid, nearestHunterIn } from './hunter-grid.js';
 import { SCAN } from './ray-summary.js';
 import { CH_BIGGER } from './scripted-parts.js';
 
@@ -23,30 +24,7 @@ export function collectHunters(intent, world) {
         }
     }
     intent.hunterCount = count;
-}
-
-/**
- * @param {Record<string, any>} intent the intent state
- * @param {Record<string, any>} world the world
- * @param {number} slot the agent
- * @returns {number} the nearest listed hunter of another lineage within vision range, or -1
- */
-function nearestHunter(intent, world, slot) {
-    const { x, y, lineageId } = world;
-    const vision = world.visionBySpec[world.spec[slot]];
-    let best = -1;
-    let bestDistance = vision * vision;
-    for (let i = 0; i < intent.hunterCount; i++) {
-        const h = intent.hunters[i];
-        const dx = x[h] - x[slot];
-        const dy = y[h] - y[slot];
-        const d2 = dx * dx + dy * dy;
-        if (h !== slot && lineageId[h] !== lineageId[slot] && d2 <= bestDistance) {
-            best = h;
-            bestDistance = d2;
-        }
-    }
-    return best;
+    buildHunterGrid(intent.hunterGrid, world, intent.hunters, count);
 }
 
 /**
@@ -87,7 +65,7 @@ export function resolveThreat(intent, world, slot) {
     if (scan[SCAN.BIGGER] === 0) {
         return false;
     }
-    const h = nearestHunter(intent, world, slot);
+    const h = nearestHunterIn(intent.hunterGrid, world, slot, world.visionBySpec[world.spec[slot]]);
     if (h < 0) {
         return false;
     }
