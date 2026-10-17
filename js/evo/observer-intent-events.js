@@ -85,11 +85,13 @@ function noteCall(intent, world, type, slot) {
     if (type === EVENT_TYPE.ALARM_CALLED) {
         run.alarms += 1;
         run.alarmsPrecise += precise ? 1 : 0;
+        intent.alarmCalls[slot] += 1;
         run.kinNearSum += kinAround(intent, world, slot);
     } else if (type === EVENT_TYPE.PACK_CALLED) {
         precise = tick - intent.lastPrey[slot] <= INTENT_WINDOW;
         run.huntCalls += 1;
         run.huntCallsPrecise += precise ? 1 : 0;
+        intent.huntCallCount[slot] += 1;
         pushHuntCall(intent.calls, tick, world.lineageId[slot]);
     } else {
         precise = threat || world.bittenTimer[slot] < TIMER_CAP;

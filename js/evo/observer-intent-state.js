@@ -60,6 +60,11 @@ const SLOT_FIELDS = {
     threatProx: [Float32Array, 0],
     foodMark: [Float64Array, 0],
     biteMark: [Float64Array, 0],
+    aliveTicks: [Uint32Array, 0],
+    threatCueTicks: [Uint32Array, 0],
+    preyCueTicks: [Uint32Array, 0],
+    alarmCalls: [Uint32Array, 0],
+    huntCallCount: [Uint32Array, 0],
     biterId: [Uint32Array, 0],
     lastBiteDeliberate: [Uint8Array, 0],
     prevBiteDeliberate: [Uint8Array, 0],
@@ -98,9 +103,11 @@ const RUN_TOTALS = [
     'groupCalmN',
     'alarms',
     'alarmsPrecise',
+    'alarmsBase',
     'kinNearSum',
     'huntCalls',
     'huntCallsPrecise',
+    'huntCallsBase',
     'smokes',
     'smokesPrecise',
     'idleSignals',
@@ -149,12 +156,54 @@ export function createIntentState(config) {
 }
 
 /**
+ * Adds one slot's calls, each weighted by the caller's own base rate (its share of alive ticks with the cue current),
+ * to `bases`: the alarm calls times the threat share, then the hunt calls times the prey share.
+ * @param {Record<string, any>} intent the intent state
+ * @param {number} slot the slot
+ * @param {number[]} bases `[alarm, hunt]` sums
+ * @returns {void}
+ */
+function addCallBases(intent, slot, bases) {
+    const alive = intent.aliveTicks[slot];
+    if (alive > 0) {
+        bases[0] += (intent.alarmCalls[slot] * intent.threatCueTicks[slot]) / alive;
+        bases[1] += (intent.huntCallCount[slot] * intent.preyCueTicks[slot]) / alive;
+    }
+}
+
+/**
+ * Moves a slot's call base sums into the run totals before the slot is cleared.
+ * @param {Record<string, any>} intent the intent state
+ * @param {number} slot the slot
+ * @returns {void}
+ */
+function flushCallBases(intent, slot) {
+    const bases = [0, 0];
+    addCallBases(intent, slot, bases);
+    intent.run.alarmsBase += bases[0];
+    intent.run.huntCallsBase += bases[1];
+}
+
+/**
+ * @param {Record<string, any>} intent the intent state
+ * @returns {{alarm: number, hunt: number}} the call base sums over the run: finished slots and every slot now
+ */
+export function callBases(intent) {
+    const bases = [intent.run.alarmsBase, intent.run.huntCallsBase];
+    for (let slot = 0; slot < intent.aliveTicks.length; slot++) {
+        addCallBases(intent, slot, bases);
+    }
+    return { alarm: bases[0], hunt: bases[1] };
+}
+
+/**
  * Clears a slot's intent state and counters, for a newborn or a reused slot.
  * @param {Record<string, any>} intent the intent state
  * @param {number} slot the slot
  * @returns {void}
  */
 export function resetIntentSlot(intent, slot) {
+    flushCallBases(intent, slot);
     for (let i = 0; i < SLOT_NAMES.length; i++) {
         intent[SLOT_NAMES[i]][slot] = SLOT_RESETS[i];
     }

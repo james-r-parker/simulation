@@ -91,6 +91,20 @@ describe('intentMetrics', () => {
         });
     });
 
+    it('gives call precision as the precise share minus the callers base rate, from finished and live slots', () => {
+        const o = bareObserver();
+        const { intent } = o;
+        Object.assign(intent.run, { alarms: 10, alarmsPrecise: 8, alarmsBase: 2, huntCalls: 4, huntCallsPrecise: 4 });
+        intent.aliveTicks[0] = 100;
+        intent.threatCueTicks[0] = 50;
+        intent.alarmCalls[0] = 4;
+        intent.preyCueTicks[0] = 25;
+        intent.huntCallCount[0] = 4;
+        const m = intentMetrics(o);
+        expect(m['eval.alarm_precision'].value).toBeCloseTo((8 - (2 + 4 * 0.5)) / 10, 10);
+        expect(m['eval.hunt_call_precision'].value).toBeCloseTo((4 - 4 * 0.25) / 4, 10);
+    });
+
     it('is null for the group metric when there is a threatened agent but no unthreatened one', () => {
         const o = bareObserver();
         Object.assign(o.intent.run, { groupThreatSum: 2, groupThreatN: 1 });

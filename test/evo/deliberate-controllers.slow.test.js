@@ -69,6 +69,22 @@ const PAIRS = /** @type {const} */ ([
     { id: 'D2', metric: 'eval.pursuit_bite_share', chanceName: 'jawSitter', chance: SITTER, skill: HUNT, run: SHORT },
     { id: 'D3', metric: 'eval.pack_convergence', chanceName: 'jawSitter', chance: SITTER, skill: HUNT, run: LONG },
     {
+        id: 'D6',
+        metric: 'eval.alarm_precision',
+        chanceName: 'alarmSpammer',
+        chance: duel('hunter', 'alarmSpammer'),
+        skill: FLEE,
+        run: SHORT,
+    },
+    {
+        id: 'D6',
+        metric: 'eval.hunt_call_precision',
+        chanceName: 'huntCallSpammer',
+        chance: duel('huntCallSpammer', 'foodSeeker'),
+        skill: HUNT,
+        run: SHORT,
+    },
+    {
         id: 'D7',
         metric: 'eval.smoke_precision',
         chanceName: 'smokeSpammer',
@@ -87,7 +103,8 @@ const PAIRS = /** @type {const} */ ([
 ]);
 
 const LOWER = new Set(['eval.undefended_bite_share']);
-const DIFFERENCE = 'eval.group_cohesion_under_threat';
+/** Difference metrics: the chance value is clamped at 0 and the skill value must be above 0. */
+const DIFFERENCE = new Set(['eval.group_cohesion_under_threat', 'eval.alarm_precision', 'eval.hunt_call_precision']);
 
 /**
  * Applies the pairs-table rule to one seed's values.
@@ -101,7 +118,7 @@ function holds(metric, chance, skill) {
         return false;
     }
     let c = chance ?? 0;
-    if (metric === DIFFERENCE) {
+    if (DIFFERENCE.has(metric)) {
         c = Math.max(0, c);
         if (skill <= 0) {
             return false;
@@ -117,8 +134,8 @@ describe('chance-or-waste controllers score below skill on the intent metrics', 
         expect(holds('eval.x', 0.1, null)).toBe(false);
         expect(holds('eval.undefended_bite_share', 0.8, 0.4)).toBe(true);
         expect(holds('eval.undefended_bite_share', 0.5, 0.4)).toBe(false);
-        expect(holds(DIFFERENCE, -0.2, 0.1)).toBe(true);
-        expect(holds(DIFFERENCE, -0.2, 0)).toBe(false);
+        expect(holds('eval.alarm_precision', -0.2, 0.1)).toBe(true);
+        expect(holds('eval.hunt_call_precision', -0.2, 0)).toBe(false);
     });
 
     describe.each(PAIRS.map((pair) => ({ ...pair, name: `${pair.id} ${pair.metric}` })))(

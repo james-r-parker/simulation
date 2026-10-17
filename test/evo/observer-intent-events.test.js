@@ -3,6 +3,8 @@ import { DEATH_CAUSE, EVENT_TYPE } from '../../js/sim/events.js';
 import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { ESCAPE_TICKS, observeCombat } from '../../js/evo/observer-combat.js';
 import { noteIntentEvents } from '../../js/evo/observer-intent-events.js';
+import { intentMetrics } from '../../js/evo/metrics-intent.js';
+import { resetIntentSlot } from '../../js/evo/observer-intent-state.js';
 import { updateIntent } from '../../js/evo/observer-intent.js';
 import { CH, FORAGER, PREDATOR, clearRays, intentArena, seeThreat, setRay } from './helpers/intent-world.js';
 import { addBorn, nextTick, pushCall, pushDied } from './helpers/observer-world.js';
@@ -99,6 +101,67 @@ describe('call and smoke precision', () => {
         });
         expect([intent.run.smokes, intent.run.smokesPrecise, intent.run.idleSignals]).toEqual([3, 2, 1]);
         expect([intent.idleSignal[idle], intent.preciseSignal[bitten], intent.preciseSignal[seen]]).toEqual([1, 1, 1]);
+    });
+});
+
+describe('call precision as lift over the caller base rate', () => {
+    /**
+     * Two foragers see a threat on tick 1 only, so it stays current for ticks 1 to 31 of a 39-tick run (base rate
+     * 31 / 39). `spam` calls on every tick; `only` calls on the ticks the threat is current.
+     * @param {string} type an `EVENT_TYPE` name of a call
+     * @param {(world: any, slot: number) => void} cue shows the agent the cue on tick 1
+     * @returns {{arena: any, spam: number, only: number}} the arena after the run
+     */
+    function run(type, cue) {
+        const arena = intentArena();
+        const { world } = arena;
+        const spam = addBorn(world, { spec: type === 'ALARM_CALLED' ? FORAGER : PREDATOR });
+        const only = addBorn(world, { spec: type === 'ALARM_CALLED' ? FORAGER : PREDATOR });
+        start(arena);
+        for (let t = 1; t <= 39; t++) {
+            tick(arena, t, () => {
+                if (t === 1) {
+                    cue(world, spam);
+                    cue(world, only);
+                } else {
+                    clearRays(world, spam);
+                    clearRays(world, only);
+                }
+                pushCall(world, EVENT_TYPE[/** @type {'ALARM_CALLED'} */ (type)], spam);
+                if (t <= 31) {
+                    pushCall(world, EVENT_TYPE[/** @type {'ALARM_CALLED'} */ (type)], only);
+                }
+            });
+        }
+        return { arena, spam, only };
+    }
+
+    const base = 31 / 39;
+
+    it('scores an alarm spammer about 0 and a cue-only caller 1 minus its base rate', () => {
+        const { arena, spam, only } = run('ALARM_CALLED', (world, slot) => seeThreat(world, slot, 3));
+        const { intent } = arena;
+        expect([intent.alarmCalls[spam], intent.alarmCalls[only], intent.run.alarmsPrecise]).toEqual([39, 31, 62]);
+        expect(intent.threatCueTicks[spam] / intent.aliveTicks[spam]).toBeCloseTo(base, 10);
+        const lift = intentMetrics(arena.observer)['eval.alarm_precision'].value ?? NaN;
+        // spammer: 31 precise - 39 * base = 0; cue-only: 31 - 31 * base = 31 * (1 - base)
+        expect(lift).toBeCloseTo((31 * (1 - base)) / 70, 10);
+    });
+
+    it('scores a hunt-call spammer about 0 the same way, with prey ahead as the cue', () => {
+        const { arena } = run('PACK_CALLED', (world, slot) => setRay(world, slot, 1, 0.6, CH.SMALLER));
+        const { intent } = arena;
+        expect(intent.run.huntCalls).toBe(70);
+        const lift = intentMetrics(arena.observer)['eval.hunt_call_precision'].value ?? NaN;
+        expect(lift).toBeCloseTo((62 - 70 * base) / 70, 10);
+    });
+
+    it('keeps the calls of a reused slot in the run, so a slot reset does not change the lift', () => {
+        const { arena, spam } = run('ALARM_CALLED', (world, slot) => seeThreat(world, slot, 3));
+        const before = intentMetrics(arena.observer)['eval.alarm_precision'].value;
+        resetIntentSlot(arena.intent, spam);
+        expect(arena.intent.run.alarmsBase).toBeCloseTo(39 * base, 10);
+        expect(intentMetrics(arena.observer)['eval.alarm_precision'].value).toBeCloseTo(before ?? NaN, 10);
     });
 });
 

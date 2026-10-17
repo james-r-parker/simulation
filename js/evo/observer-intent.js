@@ -217,6 +217,20 @@ function trackThreat(intent, world, slot) {
 }
 
 /**
+ * Counts an alive tick for the slot, and whether a threat sighting and prey ahead are current: the base rates
+ * that `alarm_precision` and `hunt_call_precision` are lifts over.
+ * @param {Record<string, any>} intent the intent state
+ * @param {number} tick the observed tick
+ * @param {number} slot an alive slot whose sightings are updated
+ * @returns {void}
+ */
+function countCueTicks(intent, tick, slot) {
+    intent.aliveTicks[slot] += 1;
+    intent.threatCueTicks[slot] += tick - intent.lastThreat[slot] <= INTENT_WINDOW ? 1 : 0;
+    intent.preyCueTicks[slot] += tick - intent.lastPrey[slot] <= INTENT_WINDOW ? 1 : 0;
+}
+
+/**
  * Pass 1 for one alive agent: its sightings, closing histories, threat, responses and episode latch.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world after the step
@@ -229,6 +243,7 @@ function senseSlot(intent, world, slot) {
     trackTarget(intent, world, slot, FOOD);
     trackTarget(intent, world, slot, PREY);
     trackThreat(intent, world, slot);
+    countCueTicks(intent, world.tick, slot);
     if (intent.hunterSpec[world.spec[slot]] === 0) {
         trackIntentEpisode(intent, world, slot);
     }
