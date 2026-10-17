@@ -87,6 +87,7 @@ the nightly - set out in [quality-gates-and-test-tiers.md](quality-gates-and-tes
 | Every module in `js/sim` and `js/evo` has a test at the mirrored path (`js/sim/x.js` -> `test/sim/x.test.js`)                                                | The module and the missing test    |
 | Each legacy file (`js/*.js`, `js/constants/*.js`) stays within its line count in `legacyLines` of `scripts/quality-baseline.json`; no new file appears there | The file, its lines and its budget |
 | A worker in `public/` has no same-named copy under `js/`                                                                                                     | The duplicate                      |
+| No merge conflict marker (`<<<<<<<`, `                                                                                                                       |                                    |     |     |     |     |     | `, `>>>>>>>`or`=======` at the start of a line) in a tracked text file | File and line |
 | No tracked file over 5 MB unless allowlisted (`preview.mp4`)                                                                                                 | File and size                      |
 
 Lint and typecheck cover new code only: `js/sim/`, `js/evo/`, `scripts/` and `test/`. Prettier covers everything
@@ -119,7 +120,9 @@ is the CLI over `scripts/design-docs/` (`markdown.mjs`, `header.mjs`, `lint-text
 
 1. `scripts/change-scope.sh origin/<base>` classes the change as `docs` (only Markdown under `docs/`, `.claude/` or
    the repo root) or `full`.
-2. `actions/setup-node` installs Node 24 with the npm cache, then `npm ci`.
+2. `actions/setup-node` installs the exact Node version in `.node-version` (`node-version-file`, so CI and a local
+   machine run the same V8; move it with `engines`, `@types/node` and the workflows together) with the npm cache, then
+   `npm ci`.
 3. `scripts/check.sh --ci`, or `scripts/check.sh --ci --docs` for a `docs` change.
 4. On failure, `.checklogs/` and `TestResults/` are uploaded as the `check-logs` artifact.
 

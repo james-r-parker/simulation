@@ -109,7 +109,9 @@ two-core runner with coverage they made the `test` gate take about 285 s. They l
   `test/replay.slow.test.js`, `test/league.slow.test.js`, `test/bench.slow.test.js`, `test/bench-policy.slow.test.js`,
   `test/otel.slow.test.js`, `test/evo/policies/map-elites-v1.slow.test.js` and `natural-v1.slow.test.js`).
 - A suite with no single mirrored module is slow as a whole: `test/sim/golden.slow.test.js`,
-  `test/sim/step-alloc.slow.test.js` and `test/evo/anti-exploit.slow.test.js`.
+  `test/sim/step-alloc.slow.test.js` and `test/evo/anti-exploit.slow.test.js`. The exception is
+  `test/sim/golden.test.js`: the `shortCases` of `test/sim/golden.json` (the same worlds cut to 300 ticks, with their own
+  pinned hashes) run in the fast tier, so every PR checks bit-exact determinism.
 - New slow tests go in a `.slow.test.js` file; a test that takes more than about half a second on the dev machine is
   a candidate. The fast tests still cover every module's behaviour at unit level.
 
@@ -214,8 +216,9 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
 
 - **Nightly.** `.github/workflows/nightly.yml` runs at 03:00 UTC and on `workflow_dispatch` with a `ref` input. Its
   job, `nightly`, runs on `ubuntu-latest` with `timeout-minutes: 60`, checks out with `fetch-depth: 0`, installs
-  Node 24 through `actions/setup-node`, runs `scripts/check.sh --ci --full --tier 3` (every test and the ratchet), and uploads `.checklogs/`, `reports/`
-  and `TestResults/` as the `nightly-reports` artifact.
+  the Node version in `.node-version` through `actions/setup-node`, runs `scripts/check.sh --ci --full --tier 3` (every test and the ratchet), and uploads `.checklogs/`, `reports/`
+  and `TestResults/` as the `nightly-reports` artifact (`include-hidden-files: true`, or `.checklogs/` is dropped). Before the gate it installs Playwright's Chromium, and after it runs `npm run browser:hash` (the golden hashes in a Chromium
+  worker, which needs no GPU) even when the gate failed.
 
 ### Phase 3 - CI perf job, CPU lock and run hygiene
 

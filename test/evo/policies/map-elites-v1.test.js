@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { BORN_CAUSE } from '../../../js/sim/events.js';
+import { createRng } from '../../../js/sim/rng.js';
 import { occupiedCount } from '../../../js/evo/archive.js';
 import { POLICIES } from '../../../js/evo/policies/index.js';
 import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
@@ -16,5 +18,16 @@ describe('map-elites-v1 shape', () => {
         expect(policy.archiveRef.every((/** @type {number} */ v) => v === -1)).toBe(true);
         expect(policy.isClone).toHaveLength(8);
         expect(policy.refId).toHaveLength(8);
+    });
+
+    it('tells the observer which entrants came from the archive, and clears the mark for a child', () => {
+        const observer = /** @type {Record<string, any>} */ ({});
+        const { policy, world } = setup({ observer });
+        policy.fromArchive[3] = 1;
+        expect(observer.archiveDraw(3)).toBe(true);
+        expect(observer.archiveDraw(4)).toBe(false);
+        world.alive[0] = 1;
+        policy.brain.childBrain(world, 3, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(1) });
+        expect(observer.archiveDraw(3)).toBe(false);
     });
 });

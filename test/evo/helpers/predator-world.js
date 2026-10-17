@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { OUTPUT_COUNT } from '../../../js/sim/brain-layout.js';
 import { createConfig } from '../../../js/sim/config.js';
+import { RANDOM_ARM, createControllerBrain } from '../../../js/evo/controller-brain.js';
 import { computeMetrics } from '../../../js/evo/metrics.js';
 import { createObserver, observe, observerPhases } from '../../../js/evo/observer.js';
 import { createBaselineV5 } from '../../../js/evo/policies/baseline-v5.js';
-import { SCRIPTED_CONTROLLERS } from '../../../js/evo/scripted.js';
+import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
@@ -13,16 +13,18 @@ export const predatorWorld = JSON.parse(
     readFileSync(new URL('../../../evals/predator-world.json', import.meta.url), 'utf8'),
 );
 
+export const microWorld = JSON.parse(readFileSync(new URL('../../../evals/micro-world.json', import.meta.url), 'utf8'));
+
 const PREDATOR = 1;
 const FORAGER = 0;
 
 /**
- * The test policy of `evals/predator-world.json`: baseline-v5's brain hooks, with predators in the even slots and
- * foragers in the odd ones.
+ * The test policy of `evals/predator-world.json`: the brain hooks given (default baseline-v5's), with predators in the
+ * even slots and foragers in the odd ones.
+ * @param {any} [brain] the brain hooks
  * @returns {any} the policy
  */
-export function predatorPolicy() {
-    const { brain } = createBaselineV5();
+export function predatorPolicy(brain = createBaselineV5().brain) {
     return {
         ...brain,
         initSpec: (/** @type {any} */ _w, /** @type {number} */ slot) => (slot % 2 === 0 ? PREDATOR : FORAGER),
@@ -30,43 +32,26 @@ export function predatorPolicy() {
 }
 
 /**
- * A brain phase that runs `hunter` on every `canHunt` slot and `fleer` on the rest.
- * @param {Record<string, any>} world the world
- * @param {import('../../../js/sim/rng.js').Rng} rng the `scripted` stream
- * @returns {(world: any) => void} the phase body
- */
-function huntersAndFleers(world, rng) {
-    const hunter = SCRIPTED_CONTROLLERS.hunter({ world, rng });
-    const fleer = SCRIPTED_CONTROLLERS.fleer({ world, rng });
-    const hunterRows = new Float32Array(world.outputs.length);
-    return (w) => {
-        hunter(w);
-        hunterRows.set(w.outputs);
-        fleer(w);
-        for (let slot = 0; slot < w.alive.length; slot++) {
-            if (w.alive[slot] === 1 && w.config.specialisations.predator.index === w.spec[slot]) {
-                const o = slot * OUTPUT_COUNT;
-                w.outputs.set(hunterRows.subarray(o, o + OUTPUT_COUNT), o);
-            }
-        }
-    };
-}
-
-/**
- * Plays hunters against fleers on `evals/predator-world.json` for one seed.
+ * Plays two controllers against each other on `evals/predator-world.json` for one seed.
  * @param {number} seed the world seed
  * @param {number} ticks ticks to run
- * @param {{onTick?: (world: any, observer: any) => void, config?: Record<string, any>}} [options] a per-tick hook and
- *   config overrides on top of the file
+ * @param {{onTick?: (world: any, observer: any) => void, config?: Record<string, any>, predator?: string,
+ *   prey?: string}} [options] a per-tick hook, config overrides on top of the file, and the arm of the predators
+ *   (default `hunter`) and of the prey (default `fleer`): a key of `SCRIPTED_CONTROLLERS` or `random`
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
-export function playPredatorWorld(seed, ticks, { onTick = () => {}, config: extra = {} } = {}) {
+export function playPredatorWorld(
+    seed,
+    ticks,
+    { onTick = () => {}, config: extra = {}, predator = 'hunter', prey = 'fleer' } = {},
+) {
     const config = createConfig({ ...predatorWorld, ...extra, seed });
-    const policy = predatorPolicy();
+    const random = predator === RANDOM_ARM || prey === RANDOM_ARM;
+    const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined);
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     observe(observer, world);
-    const brain = huntersAndFleers(world, fork(createRng(seed), 'scripted'));
+    const brain = createControllerBrain(world, fork(createRng(seed), 'scripted'), { canHunt: predator, rest: prey });
     const overrides = { ...observerPhases(observer), brain };
     for (let t = 0; t < ticks; t++) {
         step(world, policy, overrides);
@@ -77,13 +62,36 @@ export function playPredatorWorld(seed, ticks, { onTick = () => {}, config: extr
 }
 
 /**
- * Runs hunters against fleers for one seed and computes the metrics.
+ * Plays one controller on every agent of `evals/micro-world.json` for one seed.
+ * @param {number} seed the world seed
+ * @param {number} ticks ticks to run
+ * @param {string} arm a key of `SCRIPTED_CONTROLLERS` or `random`
+ * @returns {{world: any, observer: any}} the world and observer at the end
+ */
+export function playMicroWorld(seed, ticks, arm) {
+    const config = createConfig({ ...microWorld, seed });
+    const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
+    const world = createWorld(config, policy);
+    const observer = createObserver(config, fork(createRng(seed), 'eval'));
+    observe(observer, world);
+    const brain = createControllerBrain(world, fork(createRng(seed), 'scripted'), arm);
+    const overrides = { ...observerPhases(observer), brain };
+    for (let t = 0; t < ticks; t++) {
+        step(world, policy, overrides);
+        observe(observer, world);
+    }
+    return { world, observer };
+}
+
+/**
+ * Plays two controllers against each other for one seed and computes the metrics.
  * @param {number} seed the world seed
  * @param {number} ticks ticks to run
  * @param {Record<string, any>} [config] config overrides on top of the file
+ * @param {{predator?: string, prey?: string}} [arms] the arms, as `playPredatorWorld` takes them
  * @returns {Record<string, import('../../../js/evo/metrics-stats.js').MetricResult>} the run's metrics
  */
-export function runPredatorWorld(seed, ticks, config = {}) {
-    const { world, observer } = playPredatorWorld(seed, ticks, { config });
+export function runPredatorWorld(seed, ticks, config = {}, arms = {}) {
+    const { world, observer } = playPredatorWorld(seed, ticks, { config, ...arms });
     return computeMetrics(observer, world);
 }

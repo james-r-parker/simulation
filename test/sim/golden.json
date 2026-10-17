@@ -23,5 +23,30 @@
       "ticks": 5000,
       "worldHash": "8277603e1c4f63d0"
     }
+  ],
+  "shortCases": [
+    {
+      "name": "default",
+      "overrides": {},
+      "ticks": 300,
+      "worldHash": "ef56fc29cc7b086f"
+    },
+    {
+      "name": "busy",
+      "overrides": {
+        "worldWidth": 2400,
+        "worldHeight": 1600,
+        "obstacleCount": 4,
+        "maxAgents": 150,
+        "minAgents": 30,
+        "maturityTicks": 200,
+        "reproductionCooldown": 150,
+        "pregnancyTicks": 200,
+        "mateMinEnergy": 100,
+        "splitMinEnergy": 900
+      },
+      "ticks": 300,
+      "worldHash": "7437475404902f54"
+    }
   ]
 }

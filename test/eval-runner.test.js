@@ -70,10 +70,11 @@ describe('parseArgs', () => {
 });
 
 describe('pickSeeds', () => {
-    it('takes a window of the fixed seeds and refuses to run past 32', () => {
+    it('takes a window of the fixed seeds and refuses to run past 64', () => {
         expect(pickSeeds(2, 1)).toEqual(pickSeeds(3, 0).slice(1));
         expect(pickSeeds(32, 0)).toHaveLength(32);
-        expect(() => pickSeeds(2, 31)).toThrow('<= 32');
+        expect(pickSeeds(64, 0)).toHaveLength(64);
+        expect(() => pickSeeds(2, 63)).toThrow('<= 64');
     });
 });
 
@@ -175,7 +176,7 @@ describe('main', () => {
         expect(logs).toContain('"event":"SeedFailed"');
     }, 60_000);
 
-    it.each([[['--seeds', '0']], [['--seeds', '2', '--seed-offset', '31']], [['--policy', 'nope']]])(
+    it.each([[['--seeds', '0']], [['--seeds', '2', '--seed-offset', '63']], [['--policy', 'nope']]])(
         'rejects bad arguments %j',
         async (argv) => {
             await expect(main(argv)).rejects.toThrow(/seeds|policy|Unknown/i);
