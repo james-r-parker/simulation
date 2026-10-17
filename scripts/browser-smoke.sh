@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Browser smoke: builds the app into a temp dir, serves it with `vite preview` and runs test/browser/smoke.spec.js.
+# Browser smoke: builds the app into a temp dir, serves it with `vite preview` and runs every test/browser/*.spec.js.
 # Runs in the official Playwright image (directly when already inside it, else through Docker).
 #
 # Exit codes: 0 passed, 1 failed, 3 skipped (no Docker, and SMOKE_LOCAL unset) - scripts/check.sh maps 3 to
