@@ -13,8 +13,8 @@ export const PREY = 1;
 
 const PREDATOR_SPEC = 1;
 const FORAGER_SPEC = 0;
-const CH_SMALLER = 3;
-const CH_BIGGER = 2;
+const CH_PREY = 3;
+const CH_THREAT = 2;
 const TURN_GAIN = 4;
 
 /** An empty 8000 x 4000 world: no obstacles, no food, no floor and no immigrants. */
@@ -50,7 +50,7 @@ function nearestRayAngle(world, slot, channel) {
     let bestProximity = 0;
     for (let k = 0; k < rayCount; k++) {
         const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
-        if (world.inputs[base + channel] === 1 && world.inputs[base] > bestProximity) {
+        if (world.inputs[base + channel] > 0 && world.inputs[base] > bestProximity) {
             bestProximity = world.inputs[base];
             best = k;
         }
@@ -92,7 +92,7 @@ function drive(world, slot, values) {
  * @returns {void}
  */
 export function hunterBrain(world) {
-    const angle = nearestRayAngle(world, HUNTER, CH_SMALLER);
+    const angle = nearestRayAngle(world, HUNTER, CH_PREY);
     drive(world, HUNTER, {
         THRUST: 1,
         TURN: Number.isNaN(angle) ? 0 : steer(angle),
@@ -109,7 +109,7 @@ export function hunterBrain(world) {
  */
 export function fleeBrain(smoke) {
     return (world) => {
-        const angle = nearestRayAngle(world, PREY, CH_BIGGER);
+        const angle = nearestRayAngle(world, PREY, CH_THREAT);
         const away = Number.isNaN(angle) ? 0 : angle - Math.sign(angle || 1) * Math.PI;
         drive(world, PREY, { THRUST: 1, TURN: steer(away), SPRINT: 1, SMOKE: smoke ? 1 : 0 });
     };

@@ -35,7 +35,7 @@ export function nearestClassRay(world, slot, first, last) {
     for (let k = 0; k < world.config.rayCount; k++) {
         const base = slot * stride + k * RAY_CHANNELS;
         for (let c = first; c <= last && world.inputs[base] > bestProximity; c++) {
-            if (world.inputs[base + c] === 1) {
+            if (world.inputs[base + c] > 0) {
                 bestProximity = world.inputs[base];
                 best = k;
             }
