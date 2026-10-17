@@ -7,6 +7,7 @@ import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { loadPrefs, savePrefs } from './prefs.js';
+import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
 import { mountDrawers } from './ui/drawer.js';
 import { mountHelp } from './ui/help.js';
@@ -36,6 +37,7 @@ export const REFRESH_MS = Object.freeze({ bar: 250, ticker: 100, inspector: 33, 
  * @property {(ms: number, run: () => void) => unknown} setTimer a timer, for the toasts
  * @property {() => Record<string, any> | null} getFailedBundle the debug bundle the supervisor kept after a failure
  * @property {() => number} now wall time in ms
+ * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
 
 /**
@@ -61,6 +63,7 @@ function build(deps) {
         drawers: /** @type {any} */ (null),
         inspector: /** @type {any} */ (null),
         charts: /** @type {any} */ (null),
+        help: /** @type {any} */ (null),
     };
     ctx.controls = mountControls(doc, elements.bar, { perform: deps.perform, onSeed: (seed) => startWorld(ctx, seed) });
     ctx.charts = createChartsLifecycle({
@@ -75,9 +78,27 @@ function build(deps) {
         onClose: (name) => name === 'charts' && ctx.charts.close(),
     });
     ctx.inspector = mountInspector(doc, ctx.drawers.body('inspector'));
-    mountHelp(doc, ctx.drawers.body('help'));
+    ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
+        current: prefs.uiScale,
+        onScale(/** @type {string | number} */ value) {
+            prefs.uiScale = value;
+            applyScale(ctx);
+            persist(ctx);
+        },
+    });
+    applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
     return ctx;
+}
+
+/**
+ * Sets the root font size from the `uiScale` preference and the canvas width, and marks the size in force.
+ * @param {Record<string, any>} ctx the shared parts
+ * @returns {void}
+ */
+function applyScale({ deps, prefs, help }) {
+    deps.doc.documentElement.style.fontSize = `${uiScaleFor(deps.getWidth(), prefs.uiScale)}px`;
+    help?.setScale(prefs.uiScale);
 }
 
 /**
@@ -215,9 +236,10 @@ const REFRESHERS = Object.freeze([
 /**
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
- *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void}} the interface:
+ *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
+ *   resize: () => void}} the interface:
  *   `hooks` for the actions, `listeners` (`onReady`, `onStats`, `onTicker`, `onArchive`) for the worker client,
- *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field
+ *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -227,6 +249,7 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        resize: () => applyScale(ctx),
         tick(nowMs) {
             for (const part of REFRESHERS) {
                 if (

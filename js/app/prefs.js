@@ -16,7 +16,15 @@ export const LENS_COUNT = 4;
  * @property {boolean} audio whether sound is on
  * @property {number} volume 0 to 1
  * @property {boolean} wakeLock whether the screen wake lock is requested
+ * @property {string | number} uiScale `auto`, 1, 1.25, 1.5 or 2
+ * @property {string} palette the family palette: `default`, `cvd-safe` or `high-contrast`
+ * @property {boolean} seen whether the title card has been shown
  */
+
+/** The `uiScale` values. */
+const UI_SCALES = ['auto', 1, 1.25, 1.5, 2];
+/** The `palette` values. */
+export const PALETTE_NAMES = Object.freeze(['default', 'cvd-safe', 'high-contrast']);
 
 /** @returns {Prefs} the defaults: no lens, HUD shown, director, audio and wake lock off */
 export function defaultPrefs() {
@@ -27,6 +35,9 @@ export function defaultPrefs() {
         audio: false,
         volume: 0.5,
         wakeLock: false,
+        uiScale: 'auto',
+        palette: 'default',
+        seen: false,
     };
 }
 
@@ -58,6 +69,9 @@ export function sanitizePrefs(stored) {
         audio: boolOf(s.audio, base.audio),
         volume,
         wakeLock: boolOf(s.wakeLock, base.wakeLock),
+        uiScale: UI_SCALES.includes(/** @type {any} */ (s.uiScale)) ? /** @type {any} */ (s.uiScale) : base.uiScale,
+        palette: PALETTE_NAMES.includes(/** @type {any} */ (s.palette)) ? /** @type {any} */ (s.palette) : base.palette,
+        seen: boolOf(s.seen, base.seen),
     };
 }
 

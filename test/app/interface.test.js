@@ -28,7 +28,7 @@ class FakeUPlot {
 function setup({ stored = {}, failed = null } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
-    doc.documentElement = { requestFullscreen: () => Promise.reject(new Error('no')) };
+    doc.documentElement = { requestFullscreen: () => Promise.reject(new Error('no')), style: {} };
     const elements = {
         hud: doc.createElement('div'),
         bar: doc.createElement('div'),
@@ -48,6 +48,7 @@ function setup({ stored = {}, failed = null } = {}) {
     const timers = /** @type {any[]} */ ([]);
     const state = createAppState();
     let clock = 0;
+    const width = { value: 3840 };
     const ui = createInterface({
         doc,
         elements,
@@ -62,11 +63,41 @@ function setup({ stored = {}, failed = null } = {}) {
         setTimer: (ms, run) => timers.push({ ms, run }),
         getFailedBundle: () => failed,
         now: () => clock,
+        getWidth: () => width.value,
     });
-    return { ui, elements, state, store, sent, files, timers, doc, setClock: (/** @type {number} */ t) => (clock = t) };
+    return {
+        ui,
+        width,
+        elements,
+        state,
+        store,
+        sent,
+        files,
+        timers,
+        doc,
+        setClock: (/** @type {number} */ t) => (clock = t),
+    };
 }
 
 describe('createInterface', () => {
+    it('sets the root font size from the canvas width and the stored scale, and again on resize', () => {
+        const { ui, width, doc, store } = setup();
+        expect(doc.documentElement.style.fontSize).toBe('32px');
+        width.value = 1920;
+        ui.resize();
+        expect(doc.documentElement.style.fontSize).toBe('16px');
+        const stored = setup({ stored: { [PREFS_KEY]: JSON.stringify({ uiScale: 1.5 }) } });
+        expect(stored.doc.documentElement.style.fontSize).toBe('24px');
+        expect(store.size).toBe(0);
+    });
+
+    it('changes the HUD size from the help buttons and remembers it', () => {
+        const { elements, doc, store } = setup();
+        byClass(elements.drawers, 'help-size')[2].dispatch('click');
+        expect(doc.documentElement.style.fontSize).toBe('20px');
+        expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').uiScale).toBe(1.25);
+    });
+
     it('restores the lenses and the HUD from the stored preferences', () => {
         const stored = { [PREFS_KEY]: JSON.stringify({ lenses: [true, false, false, true], hud: false }) };
         const { state, elements } = setup({ stored });
