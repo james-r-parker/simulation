@@ -87,3 +87,15 @@ describe('createAgentsLayer', () => {
         expect(meshTable({ specs: [{ index: 2 }, { index: 0 }] })).toEqual([1, -1, 0]);
     });
 });
+
+describe('setSmokeTexture', () => {
+    it('points every mesh at the smoke target', () => {
+        const { info, layout } = smallReady();
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const texture = { id: 'smoke' };
+        layer.setSmokeTexture(texture);
+        expect(
+            layer.object.children.every((/** @type {any} */ m) => m.material.uniforms.uSmoke.value === texture),
+        ).toBe(true);
+    });
+});

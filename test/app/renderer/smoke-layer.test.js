@@ -85,3 +85,12 @@ describe('createSmokeLayer', () => {
         expect(calls).toEqual([]);
     });
 });
+
+describe('smoke layer before a snapshot', () => {
+    it('draws nothing', () => {
+        const { info } = smallReady();
+        const layer = createSmokeLayer({ info });
+        layer.update?.(/** @type {any} */ ({ nowMs: 1, snapshot: null }));
+        expect(layer.object.count).toBe(0);
+    });
+});

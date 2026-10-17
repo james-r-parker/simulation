@@ -72,8 +72,12 @@ describe('food and obstacle layers', () => {
     it('draw nothing before a snapshot', () => {
         const { info } = smallReady();
         const food = createFoodLayer({ info });
-        food.update?.({ ...frameOf(info, null) });
+        const frame = frameOf(info, null);
+        food.update?.(frame);
+        const obstacles = createObstacleLayer({ info });
+        obstacles.update?.(frame);
         expect(food.object.count).toBe(0);
+        expect(obstacles.object.count).toBe(0);
     });
 });
 
