@@ -433,8 +433,8 @@ drought (probability `droughtChance` 0.25 per year, from the `food` stream) sets
 season. `invasionInterval` (180000 ticks) brings a pulse of `invasionSize` (12) immigrants of one random archive
 lineage at a world edge. Events `SeasonChanged`, `DroughtStarted`, `InvasionArrived`.
 
-**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.5) of its
-energy at death, as a food item of kind `meat`. `meatFoodValue` per specialisation (predator 1, others 0.3) sets
+**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.5) x
+`maxEnergy`, as a food item of kind `meat`. `meatFoodValue` per specialisation (predator 1, others 0.3) sets
 what each gains from meat, alongside `plantFoodValue`, so predators fight over kills and other agents can scavenge.
 Carcasses are hashed only when `carcassesEnabled`; the snapshot marks them so the renderer can draw them and the
 director can hold a shot on a contested carcass.
@@ -442,9 +442,8 @@ director can hold a shot on a contested carcass.
 As built (T54, off by default): `leaveCarcass` in `js/sim/carcass.js` runs in `reap` and fills the lowest free food
 slot (no RNG draw), so a carcass counts toward `maxFood`. A `foodKind` array (0 plant, 1 meat) is hashed only when
 `carcassesEnabled`. `tryEat` reads `meatFoodValue` for meat and `plantFoodValue` for plants, and `ageFood` expires
-meat after `carcassTicks`. The carcass holds `carcassShare` x the energy at death, and an agent only dies at 0
-energy unless it dies of old age, so starved, collided and eaten agents leave nothing; T41 should base it on a
-non-zero quantity (for example `carcassShare x maxEnergy x size share`) before relying on contested kills.
+meat after `carcassTicks`. The carcass holds `carcassShare` x `maxEnergy` (a body is worth its mass), whatever the cause of death
+and the energy at death; like spawned plant food it enters the ledger only when eaten.
 
 ## Decisions
 
@@ -498,7 +497,7 @@ choices and reasons within the plans").
 | Carcasses as meat for a few seconds                                                                                      | Contested kills, scavengers and a shot the director can hold (user)                                                                                                          | User              |
 | A carcass takes a food slot, so it counts toward `maxFood`; with none free there is no carcass                           | One pool of food slots keeps the arrays and the cap unchanged; carcasses are rare against the cap and a full world has food to spare                                         | Manager           |
 | A carcass is one item and one bite takes it, as with plant food                                                          | Partial eating would need a second value per item and a rule for the remainder; a predator still gains its full share and a forager 0.3 of it                                | Manager           |
-| An agent that is eaten leaves a carcass of the energy it still holds (cause is not consulted)                            | Starved and eaten agents die at 0 energy, so only old age leaves meat until the basis changes; see the as-built note under T54                                               | Manager           |
+| Every death leaves a carcass of `carcassShare` x `maxEnergy` when a food slot is free (cause is not checked)             | Deaths happen at 0 energy, so a carcass of the energy at death would be empty; a body is worth its mass                                                                      | Manager           |
 | The snapshot marks meat with a negative food radius                                                                      | The layout and `foodStride` stay as they are, so nothing changes with carcasses off; a renderer takes `abs(radius)` and reads the sign as the kind                           | Manager           |
 
 ## Phases

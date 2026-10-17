@@ -6,17 +6,17 @@ export const FOOD_KIND = Object.freeze({ PLANT: 0, MEAT: 1 });
 /** @typedef {import('./world.js').World} World */
 
 /**
- * Leaves a carcass at a dying agent's place when `carcassesEnabled`: a meat item of `carcassShare` x its energy,
- * as large as the agent. It takes the lowest free food slot, so it counts toward `maxFood`; with none free, or
- * with no energy left to hold, no carcass appears. Draws nothing from any RNG stream.
+ * Leaves a carcass at a dying agent's place when `carcassesEnabled`: a meat item of `carcassShare` x `maxEnergy`
+ * (a body is worth its mass; almost every death is at 0 energy), as large as the agent. Like spawned plant food it
+ * enters the ledger only when eaten, so the death still books out just the agent's remaining energy. It takes the lowest free food slot, so it counts toward `maxFood`; with none free, or
+ * no carcass appears. Draws nothing from any RNG stream.
  * @param {World} world the world
  * @param {number} slot the agent that is about to be freed
  * @returns {void}
  */
 export function leaveCarcass(world, slot) {
-    const { carcassesEnabled, carcassShare } = world.config;
-    const value = carcassShare * world.energy[slot];
-    if (!carcassesEnabled || !(value > 0)) {
+    const { carcassesEnabled, carcassShare, maxEnergy } = world.config;
+    if (!carcassesEnabled) {
         return;
     }
     const { foodAlive } = world;
@@ -27,7 +27,7 @@ export function leaveCarcass(world, slot) {
             world.foodX[food] = world.x[slot];
             world.foodY[food] = world.y[slot];
             world.foodRadius[food] = world.size[slot];
-            world.foodValue[food] = value;
+            world.foodValue[food] = carcassShare * maxEnergy;
             world.foodAge[food] = 0;
             world.foodCount += 1;
             return;
