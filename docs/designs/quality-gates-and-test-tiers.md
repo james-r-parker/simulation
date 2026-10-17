@@ -2,7 +2,7 @@
 
 **Status:** In progress - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 adds the CI `perf` job, the built-in CPU lock, a load-aware `bench-check`, a diagnosable nightly and a liveness-only browser smoke.
 **Validated:** 23eaea3 (2026-10-17)
-**Priority:** 8 - gate hardening from the DevOps review; the perf job and the CPU lock are wanted before the renderer and rules phases make `js/sim` churn (the manager re-ranks)
+**Priority:** 2 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the
