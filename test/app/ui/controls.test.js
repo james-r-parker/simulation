@@ -77,6 +77,15 @@ describe('mountControls', () => {
         expect(field.classList.contains('invalid')).toBe(true);
     });
 
+    it('gives the keyboard back on Escape and ignores other keys', () => {
+        const { field, calls } = setup();
+        field.focus();
+        field.blur = () => calls.push('blur');
+        field.dispatch('keydown', { key: 'a' });
+        field.dispatch('keydown', { key: 'Escape' });
+        expect(calls).toEqual(['blur']);
+    });
+
     it('moves the keyboard to the field', () => {
         const { field, controls } = setup();
         controls.focusSeed();

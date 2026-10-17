@@ -224,6 +224,16 @@ describe('createInterface', () => {
         expect(state.selectedId).toBe(0);
     });
 
+    it('starts a world from the seed typed into the control bar', () => {
+        const { elements, state, sent } = setup();
+        state.selectedId = 4;
+        const [field] = byClass(elements.bar, 'control-seed');
+        field.value = '321';
+        field.dispatch('keydown', { key: 'Enter' });
+        expect(sent.at(-1)).toEqual(['reset', 321, { maxAgents: 40 }]);
+        expect(state.selectedId).toBe(0);
+    });
+
     it('downloads the exported archive under the world seed', () => {
         const { ui, files, sent } = setup();
         ui.hooks.exportArchive();
