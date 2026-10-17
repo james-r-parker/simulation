@@ -6,6 +6,8 @@ import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
+import { intentMetrics } from './metrics-intent.js';
+import { selectionMetrics } from './metrics-selection.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
 
@@ -104,6 +106,8 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.motion_coverage': grids.motion,
         'eval.predator_share_cv': series.predatorShareCv(observer),
         ...combatMetrics(observer),
+        ...intentMetrics(observer),
+        ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

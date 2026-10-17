@@ -33,6 +33,10 @@ Write the prediction first. A prediction written after the result is not a predi
 
 ## 2. Run
 
+- A Target with a 32-seed minimum (`eval.floor_episodes`, the lineage metrics, `eval.predator_share_cv`) runs **32 seeds**
+  per arm; `npm run eval:power -- <report>` decides which metrics are watch-only, so run it on the report and do not
+  claim a verdict on a metric it lists as watch-only.
+- Every finalist also runs `npm run ladder`, so the skill ladder shows the change did not break deliberate behaviour.
 - Never fewer than **16 seeds** per arm (the `eval` default; `eval:compare` refuses fewer); the same seed list on both arms (`--seeds` takes a count from the fixed
   benchmark seed list, so two runs with the same count share seeds).
 - Run both arms on the same machine, from builds that do not change during the run:
