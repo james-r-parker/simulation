@@ -159,3 +159,73 @@ describe('createActions', () => {
         expect(() => act('explode')).toThrow(/unknown action "explode"/);
     });
 });
+
+describe('page actions', () => {
+    /**
+     * @param {boolean} drawerOpen what `closeDrawer` reports
+     * @returns {{act: (action: string) => void, calls: string[], state: any}} actions over fake page hooks
+     */
+    function withUi(drawerOpen) {
+        const calls = /** @type {string[]} */ ([]);
+        const { client } = fakeClient();
+        const state = createAppState();
+        state.selectedId = 5;
+        const ui = {
+            toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
+            closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
+            toggleHud: () => calls.push('hud'),
+            focusSeed: () => calls.push('seed'),
+            fullscreen: () => calls.push('fullscreen'),
+            exportArchive: () => calls.push('archive'),
+            exportBundle: () => calls.push('bundle'),
+        };
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => client,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+            ui,
+        });
+        return { act, calls, state };
+    }
+
+    it('routes each page action to its hook', () => {
+        const { act, calls } = withUi(false);
+        for (const a of ['toggleCharts', 'toggleInspector', 'toggleHelp', 'toggleHud', 'focusSeed', 'fullscreen']) {
+            act(a);
+        }
+        act('exportArchive');
+        act('exportBundle');
+        expect(calls).toEqual([
+            'drawer charts',
+            'drawer inspector',
+            'drawer help',
+            'hud',
+            'seed',
+            'fullscreen',
+            'archive',
+            'bundle',
+        ]);
+    });
+
+    it('closes a drawer on Escape and keeps the selection', () => {
+        const { act, state } = withUi(true);
+        act('escape');
+        expect(state.selectedId).toBe(5);
+    });
+
+    it('clears the selection on Escape when no drawer is open', () => {
+        const { act, state } = withUi(false);
+        act('escape');
+        expect(state.selectedId).toBe(0);
+    });
+
+    it('does nothing for page actions when the page gave no hooks', () => {
+        const { act } = setup();
+        expect(() => act('toggleCharts')).not.toThrow();
+        expect(() => act('escape')).not.toThrow();
+    });
+});
