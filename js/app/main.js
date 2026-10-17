@@ -126,6 +126,7 @@ function onReady(app, message) {
             container: app.container,
             info: message.info,
             quality: app.params.quality,
+            scale: app.params.scale,
             buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready }),
             onRestored: () => attachGpuTimer(app),
         });
