@@ -1,7 +1,7 @@
 # v6 tidy-up and docs
 
 **Status:** Proposed - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots.
-**Validated:** 9f73367 (2026-10-15)
+**Validated:** 23eaea3 (2026-10-17)
 **Priority:** 7 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
@@ -39,7 +39,7 @@ under `js/` sits directly in `js/` rather than in `js/sim/`, `js/evo/`, `js/work
   [README.md](README.md) is empty. The `audit-docs` skill runs over every doc, and every fix it proposes is applied
   or recorded as a `Reference` note.
 - `README.md` at the repo root is rewritten for someone meeting the project for the first time:
-    - what Blob Evolution is and what to watch for, with a hero screenshot;
+    - what Blob Evolution is and what to watch for, with a looping hero clip of a real director moment;
     - screenshots of the main view, the stats panel with population and lineage charts, the inspector on a selected
       agent, and the event ticker;
     - how to run it (`npm ci`, `npm run dev`), train champions (`npm run train`), run evals and replays;
@@ -52,15 +52,38 @@ under `js/` sits directly in `js/` rather than in `js/sim/`, `js/evo/`, `js/work
 
 ### Screenshots
 
-`scripts/screenshots.mjs` (`npm run screenshots`) makes the README's images reproducible:
+`scripts/screenshots.mjs` (`npm run screenshots`) makes the README's images reproducible, at the look the app has on a
+GPU: full quality and full scale.
 
 - It builds the app, serves it with `vite preview`, and opens it in Chromium through Playwright, or a running Chrome
-  with `--cdp=<url>` like `scripts/browser-perf.mjs`.
-- It loads `?seed=<n>` (default 7) at a fixed viewport of 1600 x 900, runs the world at top speed until a fixed tick,
-  pauses, and captures each view: `docs/images/overview.png`, `stats.png`, `inspector.png` (it selects the
-  oldest living agent) and `ticker.png`.
-- Images are PNG, each under 400 KB; the script fails naming any file over that size.
-- The same seed and tick give the same world, so a rerun changes the images only when the app's look changes.
+  with `--cdp=<url>` like `scripts/browser-perf.mjs`. A GPU Chrome through `--cdp` gives the real look; Playwright's
+  Chromium runs on a software renderer.
+- It loads a moment link, `?seed=<n>&tick=<t>&quality=0&scale=1` (seed default 7, tick default 20000; the app's `seek`
+  replays to the tick and pauses), at a fixed viewport of 1920 x 1080 and a device scale factor of 1. `quality=0` pins
+  the bloom on and `scale=1` overrides the software renderer's half-size drawing, so the images carry the bloom and the
+  full resolution even under SwiftShader.
+- It captures each view: `docs/images/overview.webp`, `stats.webp`, `inspector.webp` (it selects the oldest living
+  agent) and `ticker.webp`. Playwright captures a PNG and the script re-encodes it in the page with
+  `canvas.toBlob('image/webp', 0.9)`. Each image is under 400 KB; the script fails naming any file over that size.
+- The hero is `docs/images/hero.webp`, a 6 s looping clip of the director on a real moment. The script runs
+  `npm run director:dry -- --seed <n> --ticks 30000 --json`, takes the highest-scoring `pack-kill`, `kill` or
+  `smoke-escape` shot, loads a moment link 6 s of simulated time before it with `?tv=1`, records 6 s through the app's
+  clip recorder (`Shift+P`, `canvas.captureStream`) as `docs/images/hero.webm`, and converts it with `ffmpeg` to a
+  looping animated WebP 960 px wide, under 3 MB. The hero step needs a GPU renderer (`isSoftwareRenderer` from
+  `js/app/renderer/software.js` reports false) and `ffmpeg` on the `PATH`; it exits 1 naming what is missing, and
+  `--no-hero` skips it.
+- The same seed, tick and viewport give the same world, so a rerun of the four stills changes them only when the app's
+  look changes. The hero is not byte-stable (the recorder's timing varies), so only the stills are checked for a clean
+  `git status`.
+
+## Decisions
+
+| Decision                                                                 | Reason                                                                                                                                                 | By                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| The screenshots pin `quality=0` and `scale=1`                            | Under SwiftShader the app starts at quality 2 (no bloom) at half resolution, so screenshots from the default Playwright path would show the wrong look | Specialist review |
+| Capture at 1920x1080 and store WebP                                      | The real look is 4K with bloom; 1600x900 PNGs under 400 KB lose it, and WebP keeps the glow inside the size limit                                      | Specialist review |
+| The hero is a looping clip of a director moment chosen by `director:dry` | A still of a black field with specks does not sell the project; the director's moment finder already picks real kills and escapes                      | Specialist review |
+| The screenshot views load through a moment link and `seek`               | A moment link reproduces a world to a tick in Chromium without running the app at top speed                                                            | Specialist review |
 
 ## Phases
 
@@ -75,24 +98,24 @@ under `js/` sits directly in `js/` rather than in `js/sim/`, `js/evo/`, `js/work
 
 **Targets:** none - documentation
 
-- `scripts/screenshots.mjs` and the four images in `docs/images/`.
+- `scripts/screenshots.mjs`, the four stills and the hero clip in `docs/images/`.
 - The rewritten `README.md`, and every doc and skill brought up to date; the Build queue empty.
 
 ## Delivery requirements
 
-| Concern                 | Requirement                                                                                                                                                                                                                                                                                                           |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture            | No new runtime code. Phase 1 deletes the files in the Legacy sweep table and adds a rule to `scripts/check-conventions.sh`. Phase 2 adds `scripts/screenshots.mjs` and `docs/images/*.png`                                                                                                                            |
-| Unit tests              | Phase 1: `test/check-conventions.test.js` - a recreated legacy path, a file directly under `js/`, and "legacy" in `AGENTS.md` outside the allowed links each fail `conventions` in a temporary copy of the repo; the allowed links pass. Phase 2: `test/screenshots.test.js` pins argument parsing and the size check |
-| Headless e2e            | N/A - no simulation change; the golden test from [headless-sim-core.md](headless-sim-core.md) must still pass unchanged, proving the sweep touched no sim behaviour                                                                                                                                                   |
-| Performance budget      | N/A - no runtime change; `bench-check` and the browser numbers from [worker-and-renderer.md](worker-and-renderer.md) must stay within their budgets                                                                                                                                                                   |
-| Evolution metrics       | N/A - no change to agents, fitness or selection; `eval-smoke` must still pass                                                                                                                                                                                                                                         |
-| Determinism             | Screenshots use a fixed seed, tick and viewport so reruns are stable; no simulation RNG change                                                                                                                                                                                                                        |
-| Config and persistence  | No `createConfig` keys or IndexedDB change. `package.json` loses dependencies only the legacy app used and gains the `screenshots` script; `scripts/quality-baseline.json` loses `legacyLines`                                                                                                                        |
-| Logging and diagnostics | `scripts/screenshots.mjs` prints each image path, its size and the tick it was taken at, and exits 1 naming a missing view or an oversized image                                                                                                                                                                      |
-| Browser compatibility   | Screenshots are taken in Chromium; WebGL is enough, so Playwright's Chromium works without a GPU                                                                                                                                                                                                                      |
-| Docs                    | `README.md` rewritten with screenshots; `AGENTS.md`, `CLAUDE.md`, `DEPLOY.md`, `docs/designs/sim-notes.md`, every skill and every design doc's status brought up to date; this doc becomes `Implemented` when Phase 2 lands                                                                                           |
-| Verification            | `scripts/check.sh` green at tiers 2 and 3; the steps in Verification below                                                                                                                                                                                                                                            |
+| Concern                 | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture            | No new runtime code. Phase 1 deletes the files in the Legacy sweep table and adds a rule to `scripts/check-conventions.sh`. Phase 2 adds `scripts/screenshots.mjs` and `docs/images/*.png` Phase 2's `scripts/screenshots.mjs` also calls `scripts/director-dry.mjs` (built in [worker-and-renderer.md](worker-and-renderer.md) Phase 4) and writes `docs/images/*.webp` and `hero.webm`                                                                                                                                                                                                                      |
+| Unit tests              | Phase 1: `test/check-conventions.test.js` - a recreated legacy path, a file directly under `js/`, and "legacy" in `AGENTS.md` outside the allowed links each fail `conventions` in a temporary copy of the repo; the allowed links pass. Phase 2: `test/screenshots.test.js` pins argument parsing and the size check `test/screenshots.test.js` also pins the viewport 1920x1080, the pinned query (`quality=0&scale=1`), the 400 KB limit on WebP, the hero step's choice of the highest-scoring moment from a hand-built shot list, and the exit-1 messages for a software renderer and a missing `ffmpeg` |
+| Headless e2e            | N/A - no simulation change; the golden test from [headless-sim-core.md](headless-sim-core.md) must still pass unchanged, proving the sweep touched no sim behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Performance budget      | N/A - no runtime change; `bench-check` and the browser numbers from [worker-and-renderer.md](worker-and-renderer.md) must stay within their budgets                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Evolution metrics       | N/A - no change to agents, fitness or selection; `eval-smoke` must still pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Determinism             | Screenshots use a fixed seed, tick and viewport so reruns are stable; no simulation RNG change The hero's moment comes from `director:dry` at the screenshot seed, so it is the same moment on every run                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Config and persistence  | No `createConfig` keys or IndexedDB change. `package.json` loses dependencies only the legacy app used and gains the `screenshots` script; `scripts/quality-baseline.json` loses `legacyLines`                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Logging and diagnostics | `scripts/screenshots.mjs` prints each image path, its size and the tick it was taken at, and exits 1 naming a missing view or an oversized image                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Browser compatibility   | Screenshots are taken in Chromium; WebGL is enough, so Playwright's Chromium works without a GPU The stills work under Playwright's Chromium (the pinned `scale=1` and `quality=0` keep the bloom and full size); the hero needs a GPU Chrome through `--cdp` and `ffmpeg`                                                                                                                                                                                                                                                                                                                                    |
+| Docs                    | `README.md` rewritten with screenshots; `AGENTS.md`, `CLAUDE.md`, `DEPLOY.md`, `docs/designs/sim-notes.md`, every skill and every design doc's status brought up to date; this doc becomes `Implemented` when Phase 2 lands `README.md` embeds `docs/images/hero.webp` as its hero                                                                                                                                                                                                                                                                                                                            |
+| Verification            | `scripts/check.sh` green at tiers 2 and 3; the steps in Verification below                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## Task breakdown
 
@@ -109,18 +132,18 @@ under `js/` sits directly in `js/` rather than in `js/sim/`, `js/evo/`, `js/work
 
 ### Phase 2 - Docs and screenshots
 
-| #   | Task                                                                                                                                                         | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T7  | Add `scripts/screenshots.mjs`, `npm run screenshots` and `test/screenshots.test.js`; commit the four images                                                  | [judgement] | T6         |
-| T8  | Rewrite `README.md` with the screenshots, the architecture diagram and the before-and-after numbers                                                          | [judgement] | T7         |
-| T9  | Run the `audit-docs` skill over every doc and apply its fixes; update `DEPLOY.md` and `docs/designs/sim-notes.md`; move every design doc to its final status | [judgement] | T8         |
-| T10 | Conformance review of Phase 2                                                                                                                                | [judgement] | T7, T8, T9 |
+| #   | Task                                                                                                                                                                                                                                             | Nature      | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
+| T7  | Add `scripts/screenshots.mjs`, `npm run screenshots` and `test/screenshots.test.js`: the 1920x1080 stills at `quality=0&scale=1` through a moment link, WebP re-encoding, and the director-moment hero clip; commit the four stills and the hero | [judgement] | T6         |
+| T8  | Rewrite `README.md` with the screenshots, the architecture diagram and the before-and-after numbers                                                                                                                                              | [judgement] | T7         |
+| T9  | Run the `audit-docs` skill over every doc and apply its fixes; update `DEPLOY.md` and `docs/designs/sim-notes.md`; move every design doc to its final status                                                                                     | [judgement] | T8         |
+| T10 | Conformance review of Phase 2                                                                                                                                                                                                                    | [judgement] | T7, T8, T9 |
 
 ## Verification
 
 1. `rg -il legacy -g '!docs/designs/legacy-audit.md' -g '!bench/legacy-baseline.json'` finds nothing outside the
    allowed links, and `scripts/check.sh --only=conventions` fails when `js/game.js` is recreated.
 2. `scripts/check.sh --tier 3` is green and the golden `worldHash` is unchanged.
-3. `npm run screenshots` twice in a row leaves `git status` clean.
-4. `README.md` shows the four screenshots on GitHub, and every link in it resolves.
+3. `npm run screenshots -- --no-hero` twice in a row leaves `git status` clean; `npm run screenshots -- --cdp=http://127.0.0.1:9222` on the GPU Chrome writes `docs/images/hero.webp`, which loops and shows a captioned director shot of a kill, an escape or a smoke escape.
+4. `README.md` shows the hero and the four screenshots on GitHub with the bloom visible, and every link in it resolves.
 5. [docs/designs/README.md](README.md) has an empty Build queue.
