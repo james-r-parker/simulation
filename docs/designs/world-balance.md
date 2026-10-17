@@ -200,13 +200,13 @@ alongside.
 suite runs them too. The arm `random` is not a scripted controller: it runs the brain phase on `natural-v1`'s
 random first genomes, so every chance column is also checked against untrained brains.
 
-| Controller        | Does                                                                                                                       |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `sloppyForager`   | Runs `foodSeeker` on half its 10-tick decision windows and `wanderer`'s drift on the rest, the choice drawn from its `rng` |
-| `jawSitter`       | Holds still with `BITE` set: bites only what enters its jaws                                                               |
-| `huntCallSpammer` | Runs `hunter` and sets the `HUNT` output every tick                                                                        |
-| `grouper`         | Runs `fleer`, and with a threat on its rays steers towards the nearest kin hit instead of straight away                    |
-| `cruiser`         | Holds `SEEK_THRUST` straight ahead and never turns: eats only what lies in its path                                        |
+| Controller        | Does                                                                                                                                                                         |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sloppyForager`   | Runs `foodSeeker` on half its 10-tick decision windows and `wanderer`'s drift on the rest, the choice drawn from its `rng`                                                   |
+| `jawSitter`       | Holds still with `BITE` set: bites only what enters its jaws                                                                                                                 |
+| `huntCallSpammer` | Runs `hunter` and sets the `HUNT` output every tick                                                                                                                          |
+| `grouper`         | Runs `fleer`, and with a threat on its rays steers towards the nearest lineage mate within `callRadius` (read from the world, as kin rays are rare) instead of straight away |
+| `cruiser`         | Holds `SEEK_THRUST` straight ahead and never turns: eats only what lies in its path                                                                                          |
 
 `test/evo/deliberate-controllers.slow.test.js` runs each pair for 5000 ticks on seeds 1 and 2, in
 `evals/micro-world.json` for the forage pair and `evals/predator-world.json` (predators on even slots, foragers on

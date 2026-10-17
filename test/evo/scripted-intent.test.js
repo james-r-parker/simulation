@@ -92,17 +92,30 @@ describe('intent controllers', () => {
         expect(out(world, 2)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 1]);
     });
 
-    it('grouper flees as fleer does without kin, and turns towards the nearest kin when threatened', () => {
+    it('grouper flees as fleer does with no lineage mate near, and turns towards the nearest one when threatened', () => {
         const { world, run } = setup('grouper');
-        hit(world, 0, 3, CH.bigger);
-        hit(world, 1, 3, CH.bigger);
-        hit(world, 1, 2, CH.kin);
+        const { rayCount, callRadius } = world.config;
+        world.lineageId.set([10, 10, 20]);
+        world.x.set([100, 100 + callRadius / 2, 5000]);
+        world.y.fill(100);
+        world.angle.fill(0);
+        for (const slot of [0, 1, 2]) {
+            hit(world, slot, 3, CH.bigger);
+        }
+        world.x[1] = 100 + callRadius * 3;
         run(world);
         expect(out(world, 0)[O.TURN]).toBe(-1);
+        world.x[1] = 100;
+        world.y[1] = 100 + callRadius / 2;
+        run(world);
+        expect(rayCount).toBeGreaterThan(4);
+        expect(out(world, 0)[O.TURN]).toBe(1);
         expect(out(world, 0)[O.SPRINT]).toBe(1);
-        expect(out(world, 1)[O.TURN]).toBe(1);
-        expect(out(world, 1)[O.SPRINT]).toBe(1);
-        expect(out(world, 1)[O.ALARM]).toBe(1);
+        expect(out(world, 1)[O.TURN]).toBe(-1);
+        world.y[1] = 100 - callRadius / 2;
+        run(world);
+        expect(out(world, 0)[O.TURN]).toBe(-1);
+        expect(out(world, 2)[O.TURN]).toBe(-1);
     });
 
     it('cruiser holds SEEK_THRUST straight ahead whatever its rays see', () => {

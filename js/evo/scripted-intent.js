@@ -2,12 +2,12 @@
 // (world-balance.md) can be checked against a controller that should score low. They join the anti-exploit suite.
 
 import { OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { detCos, detSin } from '../sim/det-math.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 import {
     CH_BIGGER,
-    CH_KIN,
     createWander,
     eachAlive,
     SEEK_THRUST,
@@ -71,15 +71,55 @@ function huntCallSpammer(context) {
 }
 
 /**
- * Runs `fleer`, but with a threat on its rays turns towards the nearest kin hit instead of straight away.
+ * The ray index that points at the nearest living agent of the same lineage within `callRadius`. Kin rays (parent,
+ * child, sibling) are almost never on a prey's rays while a threat is, so the grouper reads lineage from the world.
+ * @param {Record<string, any>} w the world
+ * @param {number} slot an alive agent
+ * @returns {number} the ray index, or -1 when no lineage mate is that near
+ */
+function nearestMateRay(w, slot) {
+    let best = -1;
+    let bestSquare = w.config.callRadius * w.config.callRadius;
+    for (let s = 0; s < w.alive.length; s++) {
+        const dx = w.x[s] - w.x[slot];
+        const dy = w.y[s] - w.y[slot];
+        const square = dx * dx + dy * dy;
+        if (s !== slot && w.alive[s] === 1 && w.lineageId[s] === w.lineageId[slot] && square <= bestSquare) {
+            bestSquare = square;
+            best = s;
+        }
+    }
+    if (best < 0) {
+        return -1;
+    }
+    const cos = detCos(w.angle[slot]);
+    const sin = detSin(w.angle[slot]);
+    const dx = w.x[best] - w.x[slot];
+    const dy = w.y[best] - w.y[slot];
+    let ray = 0;
+    let bestDot = -Infinity;
+    for (let k = 0; k < w.config.rayCount; k++) {
+        const dot = dx * (cos * w.rayCos[k] - sin * w.raySin[k]) + dy * (sin * w.rayCos[k] + cos * w.raySin[k]);
+        if (dot > bestDot) {
+            bestDot = dot;
+            ray = k;
+        }
+    }
+    return ray;
+}
+
+/**
+ * Runs `fleer`, but with a threat on its rays turns towards the nearest lineage mate instead of straight away.
  * @type {ControllerFactory}
  */
 function grouper(context) {
     const flee = COMBAT_CONTROLLERS.fleer(context);
     const gather = eachAlive((w, slot) => {
-        const kin = nearestClassRay(w, slot, CH_KIN, CH_KIN);
-        if (kin >= 0 && nearestClassRay(w, slot, CH_BIGGER, CH_BIGGER) >= 0) {
-            setOutput(w, slot, OUTPUT_INDEX.TURN, turnTowards(kin, w.config.rayCount));
+        if (nearestClassRay(w, slot, CH_BIGGER, CH_BIGGER) >= 0) {
+            const mate = nearestMateRay(w, slot);
+            if (mate >= 0) {
+                setOutput(w, slot, OUTPUT_INDEX.TURN, turnTowards(mate, w.config.rayCount));
+            }
         }
     });
     return (world) => {
