@@ -138,8 +138,11 @@ function writeRay(world, slot, base) {
     inputs[base] = proximity;
     const key = s[BEST_KEY];
     const kind = Math.floor(key / KIND_STRIDE);
-    const channel = kind === AGENT ? agentChannel(world, slot, key - kind * KIND_STRIDE) : CHANNEL_OF_KIND[kind];
-    inputs[base + channel] = channel >= CH_THREAT && channel <= CH_KIN ? proximity : 1;
+    if (kind === AGENT) {
+        inputs[base + agentChannel(world, slot, key - kind * KIND_STRIDE)] = proximity;
+    } else {
+        inputs[base + CHANNEL_OF_KIND[kind]] = 1;
+    }
 }
 
 /**
