@@ -47,7 +47,7 @@ export function smoothHidden(shown, target) {
 }
 
 /**
- * Draws the spokes, nose up: ray `k` points `2 PI k / n` clockwise from the nose and is as long as its proximity.
+ * Draws the spokes, nose up: ray `k` points `2 PI k / n` counter-clockwise from the nose (the world's y axis points up) and is as long as its proximity.
  * @param {any} ctx a 2D context
  * @param {{lengths: Float32Array, channels: Int8Array}} radar the spokes
  * @param {number} size the canvas side
@@ -63,7 +63,7 @@ export function drawRadar(ctx, radar, size) {
     ctx.stroke();
     const n = radar.lengths.length;
     for (let k = 0; k < n; k++) {
-        const angle = -Math.PI / 2 + (2 * Math.PI * k) / n;
+        const angle = -Math.PI / 2 - (2 * Math.PI * k) / n;
         const length = reach * radar.lengths[k];
         ctx.strokeStyle = radar.channels[k] < 0 ? NO_HIT_CSS : CHANNEL_CSS[radar.channels[k]];
         ctx.lineWidth = 2;
@@ -152,7 +152,12 @@ function buildFrame(doc, root) {
     empty.textContent = 'Click an agent to inspect it.';
     const body = add(doc, root, 'div', 'inspector-body');
     body.hidden = true;
-    const nodes = { empty, body, header: add(doc, body, 'div', 'inspector-header') };
+    const nodes = {
+        empty,
+        body,
+        header: add(doc, body, 'div', 'inspector-header'),
+        now: add(doc, body, 'p', 'inspector-now'),
+    };
     const radar = add(doc, body, 'canvas', 'inspector-radar');
     const groups = add(doc, body, 'div', 'inspector-groups');
     const heat = add(doc, body, 'canvas', 'inspector-heatmap');
@@ -261,6 +266,9 @@ export function mountInspector(doc, root) {
                 showHeader(doc, nodes.header, view.header);
             }
             const fresh = rows === null;
+            if (nodes.now.textContent !== view.header.now) {
+                nodes.now.textContent = view.header.now;
+            }
             rows ??= buildRows(doc, nodes, view);
             if (!fresh && selectionChanged) {
                 rows.shown.set(view.hidden);

@@ -5,6 +5,7 @@
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
 import { familyCss } from './css-color.js';
+import { nowLine } from './hover-peek.js';
 
 /** Values per ray in the inputs row: proximity, then the eight class channels. */
 export const RAY_CHANNELS = 9;
@@ -40,8 +41,8 @@ const COUNTER_AT = Object.freeze({
 /**
  * @typedef {object} InspectorView
  * @property {boolean} valid whether the selected agent was alive when the snapshot was written
- * @property {{spec: string, specIndex: number, lineageId: number, familyName: string, color: string, genomeId: number}} header
- *   who it is; `color` is the family's CSS colour
+ * @property {{spec: string, specIndex: number, lineageId: number, familyName: string, color: string, now: string, genomeId: number}} header
+ *   who it is; `color` is the family's CSS colour and `now` what it is doing
  * @property {{lengths: Float32Array, channels: Int8Array}} radar each spoke's length (0 to 1) and strongest class
  *   channel (an index into `CLASS_CHANNELS`, -1 when the ray saw nothing)
  * @property {{name: string, bars: {label: string, value: number}[]}[]} groups the body inputs by group, each value
@@ -54,7 +55,7 @@ const COUNTER_AT = Object.freeze({
 /** The view of nothing selected. @type {InspectorView} */
 export const NO_INSPECTION = Object.freeze({
     valid: false,
-    header: { spec: '', specIndex: -1, lineageId: 0, familyName: '', color: '', genomeId: 0 },
+    header: { spec: '', specIndex: -1, lineageId: 0, familyName: '', color: '', now: '', genomeId: 0 },
     radar: { lengths: new Float32Array(0), channels: new Int8Array(0) },
     groups: [],
     hidden: new Float32Array(0),
@@ -95,19 +96,24 @@ export function temperatureBand(temperature, info) {
 }
 
 /**
- * @param {{u32: Uint32Array}} snapshot the snapshot
+ * @param {{u32: Uint32Array, f32: Float32Array}} snapshot the snapshot
  * @param {number} genomeId the agent to find
- * @returns {{specIndex: number, lineageId: number}} its specialisation and lineage, -1 and 0 when it is not in the
- *   snapshot
+ * @returns {{specIndex: number, lineageId: number, flags: number, speed: number}} its specialisation, lineage, flags
+ *   and speed; -1 and zeros when it is not in the snapshot
  */
-function findInSnapshot({ u32 }, genomeId) {
+function findInSnapshot({ u32, f32 }, genomeId) {
     for (let i = 0; i < u32[1]; i++) {
         const at = HEADER_WORDS + i * AGENT_STRIDE;
         if (u32[at + AGENT_FIELD.GENOME] === genomeId) {
-            return { specIndex: u32[at + AGENT_FIELD.SPEC], lineageId: u32[at + AGENT_FIELD.LINEAGE] };
+            return {
+                specIndex: u32[at + AGENT_FIELD.SPEC],
+                lineageId: u32[at + AGENT_FIELD.LINEAGE],
+                flags: u32[at + AGENT_FIELD.FLAGS],
+                speed: f32[at + AGENT_FIELD.SPEED],
+            };
         }
     }
-    return { specIndex: -1, lineageId: 0 };
+    return { specIndex: -1, lineageId: 0, flags: 0, speed: 0 };
 }
 
 /**
@@ -205,6 +211,7 @@ export function inspectorView({ snapshot, ready, slots }) {
             lineageId: found.lineageId,
             familyName: family,
             color: familyCss(slots, found.lineageId),
+            now: nowLine(found.flags, found.speed, { maxVelocity: info.maxVelocity, bits: layout.flags }),
             genomeId,
         },
         radar: radarOf(inputs, info.rayCount),

@@ -13,6 +13,9 @@ describe('inspectorView on a real selected agent', () => {
         expect(ready.info.specs.map((/** @type {any} */ s) => s.name)).toContain(view.header.spec);
         expect(view.header.familyName).toMatch(/^[A-Z][a-z]{5}$/);
         expect(view.header.color).toMatch(/^rgb\(\d+, \d+, \d+\)$/);
+        expect(view.header.now).toMatch(
+            /^(being bitten|biting|calling the pack|sounding an alarm|eating|pregnant|sprinting|resting|wandering)$/,
+        );
     });
 
     it('groups the 32 body inputs under the five labels, each bar clamped to -1..1', () => {

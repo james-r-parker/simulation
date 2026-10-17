@@ -11,6 +11,7 @@ import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { minPxTable } from './display-size.js';
+import { agentAt } from './hover-pick.js';
 import { createGpuTimer } from './gpu-timer.js';
 import { createInterface } from './interface.js';
 import { installPerf } from './perf.js';
@@ -67,6 +68,7 @@ function listen({ canvas, perform, input, iface }) {
     });
     window.addEventListener('pointermove', (e) => {
         iface.noteInput({ type: 'pointermove', x: e.clientX, y: e.clientY });
+        iface.pointer(e.clientX, e.clientY);
         input.move(toDevice(e).x, toDevice(e).y);
     });
     window.addEventListener('pointerup', (e) => input.up(toDevice(e).x, toDevice(e).y));
@@ -221,6 +223,20 @@ function makeSupervisor(app) {
 }
 
 /**
+ * @param {App} app the page
+ * @param {{x: number, y: number}} client a point in client pixels
+ * @returns {{x: number, y: number}} the same point in device pixels on the canvas
+ */
+function clientToDevice(app, client) {
+    const canvas = app.deps.scene?.canvas;
+    const r = canvas?.getBoundingClientRect();
+    if (canvas === undefined || r === undefined) {
+        return { x: -1, y: -1 };
+    }
+    return { x: ((client.x - r.left) * canvas.width) / r.width, y: ((client.y - r.top) * canvas.height) / r.height };
+}
+
+/**
  * @returns {Promise<any>} the uPlot class, with its stylesheet; loaded when the charts drawer first opens
  */
 async function loadUPlot() {
@@ -266,6 +282,8 @@ function makeInterface(app) {
         now: () => performance.now(),
         getWidth: () => app.container.clientWidth,
         slots: app.slots,
+        pickAt: (device) => agentAt({ agents: app.loop.agents(), camera: app.camera, minPx: app.minPx }, device),
+        toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
     });
 }

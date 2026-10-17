@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createInterpolated, interpolateInto } from '../../js/app/interpolate.js';
 import { createFamilySlots } from '../../js/app/family-slots.js';
 import { createAppState } from '../../js/app/actions.js';
 import { createInterface, REFRESH_MS } from '../../js/app/interface.js';
@@ -58,6 +59,7 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
     const timers = /** @type {any[]} */ ([]);
     const state = createAppState();
     const slots = createFamilySlots();
+    const pick = { hit: /** @type {any} */ (null) };
     let clock = 0;
     const width = { value: 3840 };
     const ui = createInterface({
@@ -76,10 +78,13 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
         now: () => clock,
         getWidth: () => width.value,
         slots,
+        pickAt: (/** @type {any} */ device) => (pick.hit === null ? null : { ...pick.hit, at: device }),
+        toDevice: (/** @type {any} */ point) => point,
         speedPinned,
     });
     return {
         ui,
+        pick,
         client,
         slots,
         width,
@@ -342,5 +347,42 @@ describe('createInterface', () => {
         ui.tick(0);
         expect(byClass(elements.drawers, 'help-tick')[0].textContent).toBe(`tick ${snapshot.tick}`);
         expect(byClass(elements.bar, 'top-bar-status')[0].textContent).toMatch(/^Starting a new world$|blobs and/);
+    });
+
+    it('shows the hover tag once the pointer rests over an agent, and hides it on a move or an open drawer', () => {
+        const { ui, elements, pick, setClock } = setup();
+        ui.listeners.onReady(ready);
+        const agents = createInterpolated(4);
+        interpolateInto(null, snapshot, 1, agents);
+        pick.hit = { agents, index: 0 };
+        setClock(1000);
+        ui.pointer(50, 60);
+        ui.tick(1000);
+        const [tag] = byClass(elements.hud, 'peek');
+        expect(tag.hidden).toBe(true);
+        setClock(1200);
+        ui.tick(1200);
+        expect(tag.hidden).toBe(false);
+        expect(byClass(tag, 'peek-text')[0].textContent).toMatch(/^\w+, [A-Z][a-z]+: [a-z ]+$/);
+        expect([tag.style.left, tag.style.top]).toEqual(['64px', '74px']);
+        ui.pointer(51, 60);
+        expect(tag.hidden).toBe(true);
+        setClock(1500);
+        ui.tick(1500);
+        expect(tag.hidden).toBe(false);
+        ui.hooks.toggleDrawer('help');
+        ui.tick(1600);
+        expect(tag.hidden).toBe(true);
+    });
+
+    it('hides the tag when nothing is under the pointer', () => {
+        const { ui, elements, pick, setClock } = setup();
+        ui.listeners.onReady(ready);
+        pick.hit = null;
+        setClock(1000);
+        ui.pointer(5, 5);
+        setClock(1300);
+        ui.tick(1300);
+        expect(byClass(elements.hud, 'peek')[0].hidden).toBe(true);
     });
 });
