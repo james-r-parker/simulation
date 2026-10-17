@@ -3,9 +3,10 @@
 
 /**
  * @param {string} tagName the tag
+ * @param {any} [context] what a canvas's `getContext` returns
  * @returns {any} an element
  */
-function createElement(tagName) {
+function createElement(tagName, context = null) {
     /** @type {Record<string, Function[]>} */
     const listeners = {};
     /** @type {Set<string>} */
@@ -69,17 +70,18 @@ function createElement(tagName) {
             element.focused = true;
         },
         select() {},
-        getContext: () => null,
+        getContext: () => context,
     };
     return element;
 }
 
 /**
+ * @param {any} [context] what a canvas's `getContext` returns, null by default
  * @returns {any} a fake document
  */
-export function fakeDocument() {
+export function fakeDocument(context = null) {
     return {
-        createElement,
+        createElement: (/** @type {string} */ tag) => createElement(tag, context),
         createElementNS: (/** @type {string} */ _ns, /** @type {string} */ tag) => createElement(tag),
     };
 }
