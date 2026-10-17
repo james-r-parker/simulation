@@ -1,16 +1,9 @@
 // The vision lens: every agent's ray fan at a faint alpha, from the ray part the worker adds to its snapshots while the
 // lens is on. One preallocated line buffer sized for every agent's rays.
 
-import {
-    AdditiveBlending,
-    BufferAttribute,
-    BufferGeometry,
-    DynamicDrawUsage,
-    LineBasicMaterial,
-    LineSegments,
-} from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
 import { clearLines, createLineBuffer } from './line-buffer.js';
+import { createLineMesh } from './line-mesh.js';
 import { pushRays } from './overlays.js';
 
 /** The alpha of every ray in every fan. */
@@ -48,18 +41,8 @@ export function pushFans(lines, { agents, snapshot }, info) {
  */
 export function createVisionLayer({ info }) {
     const lines = createLineBuffer(info.maxAgents * info.rayCount);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new BufferAttribute(lines.position, 3).setUsage(DynamicDrawUsage));
-    geometry.setAttribute('color', new BufferAttribute(lines.color, 4).setUsage(DynamicDrawUsage));
-    const material = new LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-        blending: AdditiveBlending,
-    });
-    const object = new LineSegments(geometry, material);
-    object.frustumCulled = false;
+    const mesh = createLineMesh(lines);
+    const { object } = mesh;
     object.visible = false;
     return {
         object,
@@ -70,13 +53,8 @@ export function createVisionLayer({ info }) {
             }
             clearLines(lines);
             pushFans(lines, { agents: frame.agents, snapshot: frame.snapshot }, info);
-            geometry.getAttribute('position').needsUpdate = true;
-            geometry.getAttribute('color').needsUpdate = true;
-            geometry.setDrawRange(0, lines.vertices);
+            mesh.upload();
         },
-        dispose() {
-            geometry.dispose();
-            material.dispose();
-        },
+        dispose: mesh.dispose,
     };
 }
