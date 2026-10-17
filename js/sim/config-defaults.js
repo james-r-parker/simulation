@@ -98,6 +98,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         predator: {
@@ -109,6 +110,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 4,
             turnMultiplier: 0.7,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1.6,
         },
         reproducer: {
@@ -120,6 +122,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 0.5,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         scout: {
@@ -131,6 +134,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
         defender: {
@@ -142,6 +146,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
+            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             sprintBoost: 1,
         },
     },
@@ -161,6 +166,10 @@ export const DEFAULTS = deepFreeze({
     temperatureStart: 50, // TEMPERATURE_START
     temperatureGainMove: 0.01, // TEMPERATURE_GAIN_MOVE (tuned, E17)
     temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
+    satiationShare: 0, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49)
+    digestTicks: 0, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
+    handlingTicks: 0, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
+    handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)

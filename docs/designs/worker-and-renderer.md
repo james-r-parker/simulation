@@ -633,6 +633,8 @@ tooling widened to `js/worker/` and `js/app/`. Done when `test/worker/sim-host.t
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms, browser.main_long_tasks
 
+> **Note:** built on draft PR 56 (`feat/renderer-phase-3`, 2026-10-17) and paused by the user to leave capacity for world work: T20 to T24, T26, T40 to T46 and the T25 wiring are committed with tests (`uplot` 1.6.32 added); the last commit is WIP (the dupes fix and a coverage test not re-run). Next: run the gate and `SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke`, merge, then the user measures `browser.frame_p95_ms` at most 8.4, `browser.draw_cpu_p95_ms` at most 3.0 and no long tasks after 5 s on the 4K 240 Hz OLED with all four lenses and the charts drawer open, recorded in `bench/browser-baseline.json`; T27 follows.
+
 The full top bar, ticker, drawers, `uPlot` charts, inspector, the four lenses, controls, shortcuts, help and
 preferences. The first-minute and legibility work belongs here too: the title card with its legend, the status line and
 the `Year, Season, Gen` top bar (`generationMax` and `generationMedian` in stats), the hover peek and the inspector's Now
@@ -647,6 +649,13 @@ canvases) green.
 ### Phase 4 - TV mode and audio
 
 **Targets:** browser.heap_growth_mb, browser.frame_p95_ms, browser.main_long_tasks, browser.worker_tps@500, director.chase_precision, director.max_kind_share, director.shots_per_hour
+
+> **Note:** visible evolution (user, 2026-10-17) belongs to this phase: era cards at each world-balance era
+> (`SeasonChanged`, `DroughtStarted`, `InvasionArrived`), the family river, live drift charts of the mean size and
+> vision traits and of the specialisation mix, and "firsts" captions (first pack kill, first extinction of a role, a
+> role reinvented, first invasion). The top bar replaces tick and x1 with year, season and generation. Static
+> terrain, refuges and carcasses are drawn from `worldInfo` and the snapshot. Planned in full with the
+> `create-plan` skill before this phase is built.
 
 The director and its moments, captions, speed pacing and era card, cursor hiding, sharing (screenshot, clip and moment link with `seek`), generative audio and the wake lock. The moments read the deliberate-behaviour signals that [world-balance.md](world-balance.md) Phase 1 adds to the observer (`lastBiteDeliberate`, the escape episode's `responded`, the closing and threat latches), which is ranked 1 in the Build queue and is built before this phase. The worker emits a snapshot between ticks inside a slice (a snapshot spans about 2 ticks) with a pool of four buffers, so a lagging worker no longer turns the interpolation into 8-tick straight lines. `scripts/director-dry.mjs` measures the director in Node: `director.chase_precision` at least 0.3 and `director.max_kind_share` at most 0.4 at seeds 1 to 4 over 72000 ticks, `director.shots_per_hour` reported. `browser.worker_tps@500` (ticks per second one worker sustains at 500 agents, from `__perf().ticksPerSecond` over 60 s at x16) is recorded and not limited. `scripts/browser-perf.mjs`
 gains `--soak <minutes>`: it runs the page with the director on and `--cdp` attached to both the page and its worker,
