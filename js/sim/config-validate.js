@@ -143,6 +143,8 @@ const RULES = {
     satiationShare: num(0, 1),
     digestTicks: int(0, 30),
     handlingTicks: int(0, 30),
+    specMutationRate: num(0, 1),
+    huntUpkeep: num(0),
     handlingThrust: num(0, 1),
     temperatureLossPassive: num(0),
     temperatureSeasonSlope: num(0),
