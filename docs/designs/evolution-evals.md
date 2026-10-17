@@ -199,8 +199,8 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 | `biteSeeker`        | A non-hunter that steers towards the nearest bigger agent ray hit                                                                               |
 
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
-mean fitness, as a share of the `foodSeeker`'s, is at most the larger of 0.5 and its food-energy share of the
-`foodSeeker`'s plus 0.1: fitness that comes with eating is not an exploit, fitness without food is. (The bound was a
+mean fitness, as a share of the `foodSeeker`'s, is at most the larger of 0.5 and its intake share (food energy plus
+bite energy) of the `foodSeeker`'s plus 0.1: fitness that comes with feeding is not an exploit, fitness without intake is. (The bound was a
 flat half until [evolution-rework.md](evolution-rework.md) Phase 1: `explorerAfterMeal` eats about two thirds of
 what the `foodSeeker` eats in the micro-world, so any honest food-paying fitness scored it above half.) Against `fitnessV5` the exploiters that exceed that bound are marked
 `test.fails`, each naming the [legacy-audit.md](legacy-audit.md) finding it demonstrates; [evolution-rework.md](evolution-rework.md) Phase 1 adds its
