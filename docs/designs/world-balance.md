@@ -423,6 +423,12 @@ choices and reasons within the plans").
 
 **Targets:** none - instruments only: the D1 to D8 and selection metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
+> **Note:** T10 (2026-10-17, load average about 1): `npm run bench -- --policy map-elites-v1q --sizes=500`, three
+> runs interleaved with `main`, gave 5.37, 5.45 and 5.59 ms on this branch against 6.56, 4.95 and 6.85 ms on `main`
+> (median 5.45 against 6.56); `main`'s spread is too wide for a verdict, and nothing shows the branch more than 5%
+> slower. `alloc-check --policy map-elites-v1q`: 57576 bytes of heap growth over 1000 ticks (limit 1048576). Rerun
+> with `node scripts/bench-compare.mjs` before the phase is marked built.
+
 > **Note:** the paired test (T8, 2026-10-17) holds for D1 (`wanderer`, `cruiser`, `random`), D2, D3 (at 20000
 > ticks, `pack_convergence` 0.56-0.58 skill against 0 chance), D7 and D8 with `foodSeeker` prey. Four pairs failed and
 > were left out of `test/evo/deliberate-controllers.slow.test.js` until fixed, with no bound loosened: D6
