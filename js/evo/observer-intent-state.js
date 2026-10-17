@@ -142,8 +142,6 @@ export function createIntentState(config) {
         arc: arcRays(config),
         hunterSpec: hunterTable(config),
         scan: new Float64Array(SCAN_SIZE),
-        hunters: new Int32Array(config.maxAgents),
-        hunterCount: 0,
         calls: createHuntCalls(),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
         packWindow: config.packWindow,

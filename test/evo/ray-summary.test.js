@@ -18,10 +18,10 @@ function scan(setup) {
 }
 
 describe('summariseRays', () => {
-    it('reports -1 for every hit and 0 bigger hits on an empty ray block', () => {
+    it('reports -1 for every hit on an empty ray block', () => {
         const row = scan(() => {});
         expect([row[SCAN.FOOD], row[SCAN.PREY], row[SCAN.THREAT]]).toEqual([-1, -1, -1]);
-        expect([row[SCAN.BIGGER], row[SCAN.SMOKE], row[SCAN.THREAT_ARC]]).toEqual([0, 0, 0]);
+        expect([row[SCAN.SMOKE], row[SCAN.THREAT_ARC]]).toEqual([0, 0]);
     });
 
     it('keeps the nearest hit of each kind, the first ray on a tie', () => {
@@ -36,14 +36,30 @@ describe('summariseRays', () => {
         expect([row[SCAN.PREY], row[SCAN.PREY_RAY]]).toEqual([expect.closeTo(0.9), 2]);
     });
 
-    it('counts prey only on arc rays and counts bigger hits on any ray', () => {
+    it('counts prey only on arc rays', () => {
         expect(scan((world, slot) => setRay(world, slot, 4, 0.5, CH.PREY))[SCAN.PREY]).toBe(-1);
         expect(scan((world, slot) => setRay(world, slot, 14, 0.5, CH.PREY))[SCAN.PREY]).toBeCloseTo(0.5);
+    });
+
+    it('takes the nearest channel-2 hit as the threat, with its ray and whether the ray is an arc ray', () => {
         const row = scan((world, slot) => {
-            setRay(world, slot, 8, 0.5, CH.THREAT);
-            setRay(world, slot, 9, 0.5, CH.THREAT);
+            setRay(world, slot, 8, 0.3, CH.THREAT);
+            setRay(world, slot, 14, 0.7, CH.THREAT);
+            setRay(world, slot, 5, 0.9, CH.OTHER);
         });
-        expect(row[SCAN.BIGGER]).toBe(2);
+        expect([row[SCAN.THREAT], row[SCAN.THREAT_RAY], row[SCAN.THREAT_ARC]]).toEqual([expect.closeTo(0.7), 14, 1]);
+        const off = scan((world, slot) => setRay(world, slot, 8, 0.3, CH.THREAT));
+        expect([off[SCAN.THREAT_RAY], off[SCAN.THREAT_ARC]]).toEqual([8, 0]);
+    });
+
+    it('is no threat for prey, other or kin hits, or for a ray that hits food', () => {
+        const row = scan((world, slot) => {
+            setRay(world, slot, 0, 0.9, CH.PREY);
+            setRay(world, slot, 1, 0.9, CH.OTHER);
+            setRay(world, slot, 2, 0.9, CH.KIN);
+            setRay(world, slot, 3, 0.9, CH.FOOD);
+        });
+        expect([row[SCAN.THREAT], row[SCAN.THREAT_RAY], row[SCAN.THREAT_ARC]]).toEqual([-1, -1, 0]);
     });
 
     it('flags smoke only at proximity 1', () => {
