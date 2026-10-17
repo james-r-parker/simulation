@@ -41,4 +41,17 @@ describe('prefs', () => {
         expect(sanitizePrefs({ lenses: [1, true, 0, true] }).lenses).toEqual([false, true, false, true]);
         expect(sanitizePrefs(42)).toEqual(defaultPrefs());
     });
+
+    it('keeps a valid uiScale, palette and seen, and defaults the invalid ones', () => {
+        expect(sanitizePrefs({ uiScale: 1.5, palette: 'cvd-safe', seen: true })).toMatchObject({
+            uiScale: 1.5,
+            palette: 'cvd-safe',
+            seen: true,
+        });
+        expect(sanitizePrefs({ uiScale: 3, palette: 'neon', seen: 'yes' })).toMatchObject({
+            uiScale: 'auto',
+            palette: 'default',
+            seen: false,
+        });
+    });
 });

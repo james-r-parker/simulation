@@ -244,6 +244,7 @@ function makeInterface(app) {
         setTimer: (ms, run) => setTimeout(run, ms),
         getFailedBundle: () => app.supervisor.lastBundle(),
         now: () => performance.now(),
+        getWidth: () => app.container.clientWidth,
     });
 }
 
@@ -347,6 +348,7 @@ function start() {
     observeSize(container, (next) => {
         Object.assign(app.size, next);
         app.deps.scene?.resize(next.width, next.height);
+        app.iface.resize();
         resizeCamera(app.camera, next);
     });
     startReporting(app);
