@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +7,9 @@ import { describe, expect, it } from 'vitest';
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks; a child git that inherits them acts on this repo, not
 // the temporary one, so every spawn gets an environment without them.
 const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+
+// Every test here spawns check.sh; a loaded CI runner needs more than Vitest's 5 s default.
+const SPAWN_TIMEOUT_MS = 30_000;
 
 /**
  * Runs scripts/check.sh with the given arguments.
@@ -18,7 +21,7 @@ function check(...args) {
     return { status: result.status, lines: result.stdout.split('\n').filter(Boolean) };
 }
 
-describe('check.sh --list', () => {
+describe('check.sh --list', { timeout: SPAWN_TIMEOUT_MS }, () => {
     it('lists the tier 1 gates', () => {
         expect(check('--list', '--tier', '1').lines).toEqual(['conventions', 'format', 'lint', 'test-related']);
     });
@@ -57,7 +60,7 @@ describe('check.sh --list', () => {
     });
 });
 
-describe('check.sh --tier', () => {
+describe('check.sh --tier', { timeout: SPAWN_TIMEOUT_MS }, () => {
     it('rejects --tier with --only', () => {
         expect(check('--tier', '1', '--only=lint').status).toBe(2);
     });
@@ -71,7 +74,7 @@ describe('check.sh --tier', () => {
     });
 });
 
-describe('check.sh --list --tier 1 staged-file selection', () => {
+describe('check.sh --list --tier 1 staged-file selection', { timeout: SPAWN_TIMEOUT_MS }, () => {
     it('names only the staged, non-deleted files each gate reads', () => {
         const repo = mkdtempSync(join(tmpdir(), 'check-tier1-'));
         /** @param {...string} args git arguments */
@@ -107,7 +110,7 @@ describe('check.sh --list --tier 1 staged-file selection', () => {
     });
 });
 
-describe('check.sh test gate seed', () => {
+describe('check.sh test gate seed', { timeout: SPAWN_TIMEOUT_MS }, () => {
     it('prints TEST_SEED on the test gate line and hands it to the runner', () => {
         const dir = mkdtempSync(join(tmpdir(), 'fake-vitest-'));
         const argsFile = join(dir, 'args.txt');
@@ -122,7 +125,7 @@ describe('check.sh test gate seed', () => {
     });
 });
 
-describe('check.sh test scope', () => {
+describe('check.sh test scope', { timeout: SPAWN_TIMEOUT_MS }, () => {
     /**
      * Runs the test gate with a fake vitest that records its arguments and TEST_SCOPE.
      * @param {...string} args check.sh arguments
@@ -158,5 +161,23 @@ describe('check.sh test scope', () => {
         expect(run.stdout).toContain('test (seed 7)');
         expect(run.scope).toBe('scope=');
         expect(run.argv).toContain('--coverage');
+    });
+});
+
+describe('check.sh browser-smoke gate', { timeout: SPAWN_TIMEOUT_MS }, () => {
+    it('does not probe Docker when the gate is not wanted', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'fake-docker-'));
+        const marker = join(dir, 'docker-called');
+        writeFileSync(join(dir, 'docker'), `#!/usr/bin/env bash\ntouch "${marker}"\nexit 1\n`, { mode: 0o755 });
+        const fake = join(dir, 'vitest');
+        writeFileSync(fake, '#!/usr/bin/env bash\nexit 0\n', { mode: 0o755 });
+        const env = { ...ENV, PATH: `${dir}:${ENV.PATH}`, VITEST_BIN: fake, CHECK_LOG_DIR: join(dir, 'logs') };
+        spawnSync('scripts/check.sh', ['--only=test'], { encoding: 'utf8', env });
+        const probed = existsSync(marker);
+        spawnSync('scripts/check.sh', ['--only=browser-smoke'], { encoding: 'utf8', env });
+        const probedWhenWanted = existsSync(marker);
+        rmSync(dir, { recursive: true, force: true });
+        expect(probed).toBe(false);
+        expect(probedWhenWanted).toBe(true);
     });
 });
