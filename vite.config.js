@@ -13,6 +13,10 @@ export default defineConfig(({ command, mode }) => {
       open: true, // Automatically open browser
       cors: true
     },
+    // The sim worker (js/worker/sim-worker.js) is an ES module worker.
+    worker: {
+      format: 'es'
+    },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
