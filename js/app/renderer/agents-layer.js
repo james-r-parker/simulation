@@ -14,6 +14,7 @@ import {
     Vector4,
 } from 'three';
 import { viewBounds } from '../camera.js';
+import { minPxTable } from '../display-size.js';
 import { AGENT_FRAGMENT, AGENT_VERTEX } from './agents-shader.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances } from './instanced.js';
 import { createAgentStore, packAgents } from './agents-pack.js';
@@ -42,15 +43,16 @@ function rampTexture(info) {
 }
 
 /**
- * @param {number} shape the silhouette id
+ * @param {{shape: number, hunter: boolean}} kind the silhouette id and whether the specialisation can hunt (it then
+ *   has the nose notch and, when small, the hot tip)
  * @param {Record<string, any>} shared the uniforms every mesh shares
  * @returns {any} the material for one silhouette
  */
-function agentMaterial(shape, shared) {
+function agentMaterial({ shape, hunter }, shared) {
     return new ShaderMaterial({
         vertexShader: AGENT_VERTEX,
         fragmentShader: AGENT_FRAGMENT,
-        uniforms: { ...shared, uShape: { value: shape } },
+        uniforms: { ...shared, uShape: { value: shape }, uHunter: { value: hunter ? 1 : 0 } },
         transparent: true,
         depthTest: false,
         depthWrite: false,
@@ -64,12 +66,12 @@ function agentMaterial(shape, shared) {
 
 /**
  * @param {number} capacity the most agents
- * @param {number} shape the silhouette id
+ * @param {{shape: number, hunter: boolean}} kind the silhouette id and whether the specialisation can hunt
  * @param {Record<string, any>} shared the shared uniforms
  * @returns {any} one mesh with its instance attributes
  */
-function agentMesh(capacity, shape, shared) {
-    return createQuadMesh(createQuadGeometry(capacity, INSTANCED), agentMaterial(shape, shared), capacity);
+function agentMesh(capacity, kind, shared) {
+    return createQuadMesh(createQuadGeometry(capacity, INSTANCED), agentMaterial(kind, shared), capacity);
 }
 
 /**
@@ -142,10 +144,12 @@ export function createAgentsLayer({ info, flagBits }) {
     const blank = new DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
     blank.needsUpdate = true;
     const shared = sharedUniforms(info, ramp, blank);
-    const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info));
+    const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info), minPxTable(info));
     const group = new Group();
-    const specs = /** @type {{name: keyof typeof SILHOUETTES}[]} */ (info.specs);
-    const meshes = specs.map((spec) => agentMesh(info.maxAgents, SILHOUETTES[spec.name] ?? FALLBACK_SHAPE, shared));
+    const specs = /** @type {{name: keyof typeof SILHOUETTES, canHunt: boolean}[]} */ (info.specs);
+    const meshes = specs.map((spec) =>
+        agentMesh(info.maxAgents, { shape: SILHOUETTES[spec.name] ?? FALLBACK_SHAPE, hunter: spec.canHunt }, shared),
+    );
     meshes.forEach((mesh) => group.add(mesh));
     return {
         object: group,
@@ -155,7 +159,7 @@ export function createAgentsLayer({ info, flagBits }) {
         },
         update(frame) {
             updateUniforms(shared, frame);
-            packAgents(frame.agents, store, flagBits, frame.dtMs);
+            packAgents(frame.agents, store, flagBits, { dtMs: frame.dtMs, zoom: frame.camera.zoom });
             for (let i = 0; i < meshes.length; i++) {
                 upload(meshes[i], store.buckets[i]);
             }
