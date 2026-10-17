@@ -24,6 +24,7 @@ export default defineConfig({
                 'scripts/alloc-check.mjs',
                 'scripts/browser/**',
                 'scripts/lib/browser-session.mjs',
+                'scripts/lib/perf-v6-run.mjs',
                 'scripts/lib/vite-server.mjs',
             ],
             reportsDirectory: 'coverage',

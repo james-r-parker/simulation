@@ -15,7 +15,7 @@ export function spreadOf(samples) {
 /**
  * @typedef {object} PerfInputs
  * @property {import('./frame-stats.js').FrameStats} stats the frame and draw rings
- * @property {{tick: number, ticksPerSecond: number, droppedTicks: number} | null} worker the newest stats message
+ * @property {{tick: number, ticksPerSecond: number, droppedTicks: number, population: number} | null} worker the newest stats message
  * @property {{geometries: number, textures: number, programs: number}} gpu `renderer.info` counts
  * @property {Float64Array | null} gpuSamples finished GPU frame times in ms, null without the timer query
  * @property {number | null} heapBytes `performance.memory.usedJSHeapSize`, null when the browser has none
@@ -25,7 +25,7 @@ export function spreadOf(samples) {
  * @param {PerfInputs} inputs the live values
  * @returns {{app: 'v6', refreshHz: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number,
  *   p95: number, p99: number}, gpuMs: {p50: number, p95: number, p99: number} | null, frames: number,
- *   ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
+ *   agents: number, ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
  *   programs: number}}} the payload
  */
 export function buildPerf({ stats, worker, gpu, gpuSamples, heapBytes }) {
@@ -37,6 +37,7 @@ export function buildPerf({ stats, worker, gpu, gpuSamples, heapBytes }) {
         drawMs: report.drawMs,
         gpuMs: gpuSamples === null ? null : spreadOf(gpuSamples),
         frames: report.frames,
+        agents: worker?.population ?? 0,
         ticksPerSecond: worker?.ticksPerSecond ?? 0,
         droppedTicks: worker?.droppedTicks ?? 0,
         heapMb: heapBytes === null ? null : Math.round((heapBytes / 1048576) * 10) / 10,
@@ -45,11 +46,14 @@ export function buildPerf({ stats, worker, gpu, gpuSamples, heapBytes }) {
 }
 
 /**
- * Exposes `__perf` on a target, in development builds only (the caller decides).
- * @param {{__perf?: () => object}} target the window
- * @param {() => PerfInputs} read reads the live values
+ * Exposes `__perf` on a target, in development builds only (the caller decides). `__perf.reset()` forgets the frames
+ * recorded so far, so a script can measure after the warm-up.
+ * @param {{__perf?: (() => object) & {reset?: () => void}}} target the window
+ * @param {{read: () => PerfInputs, reset: () => void}} hooks reads the live values; forgets the recorded frames
  * @returns {void}
  */
-export function installPerf(target, read) {
-    target.__perf = () => buildPerf(read());
+export function installPerf(target, { read, reset }) {
+    const perf = () => buildPerf(read());
+    perf.reset = reset;
+    target.__perf = perf;
 }

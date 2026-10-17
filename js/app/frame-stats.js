@@ -24,6 +24,17 @@ export function createFrameStats(capacity) {
 }
 
 /**
+ * Empties both rings, so a measurement can start after the warm-up.
+ * @param {FrameStats} stats the rings
+ * @param {number} [capacity] samples each new ring keeps
+ * @returns {void}
+ */
+export function clearFrameStats(stats, capacity) {
+    stats.intervals = createFrameRing(capacity);
+    stats.draws = createFrameRing(capacity);
+}
+
+/**
  * Records one frame. An interval recorded while the tab is hidden, or over `MAX_INTERVAL_MS`, is ignored.
  * @param {FrameStats} stats the rings
  * @param {number} intervalMs ms since the previous `requestAnimationFrame` callback
