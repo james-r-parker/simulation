@@ -8,13 +8,13 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
 1. [World balance and biology](world-balance.md) - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
-2. [Predator and prey](predator-prey.md) - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
-3. [Worker and renderer](worker-and-renderer.md) - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
-4. [Evolution rework](evolution-rework.md) - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and world-balance.md
-5. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
-6. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last stage of v6: nothing legacy is left and every doc describes the app as built
-7. [Deployment and community](deployment-and-community.md) - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
-8. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - gate hardening from the DevOps review; the perf job and the CPU lock are wanted before the renderer and rules phases make `js/sim` churn (the manager re-ranks)
+2. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
+3. [Predator and prey](predator-prey.md) - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
+4. [Worker and renderer](worker-and-renderer.md) - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
+5. [Evolution rework](evolution-rework.md) - its Phase 3, the trainer, bakes the world into champions, so it waits for the world gate below: predator-prey.md, the renderer and world-balance.md
+6. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the evolution rework and the renderer give it something worth tuning
+7. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last stage of v6: nothing legacy is left and every doc describes the app as built
+8. [Deployment and community](deployment-and-community.md) - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
 
 ## Implemented (5)
 
