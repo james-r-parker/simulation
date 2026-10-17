@@ -15,6 +15,7 @@ export const MESSAGE_TYPES = Object.freeze({
     EXPORT_ARCHIVE: 'exportArchive',
     FLUSH: 'flush',
     READY: 'ready',
+    PAUSED: 'paused',
     SNAPSHOT: 'snapshot',
     STATS: 'stats',
     FIELD: 'field',
@@ -116,6 +117,7 @@ const SHAPES = Object.freeze({
             SEED,
         ],
     },
+    paused: { direction: DIRECTION.TO_MAIN, fields: [EPOCH, TICK] },
     snapshot: { direction: DIRECTION.TO_MAIN, fields: [EPOCH, BUFFER, TICK] },
     stats: {
         direction: DIRECTION.TO_MAIN,
