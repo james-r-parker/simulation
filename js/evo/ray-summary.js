@@ -21,22 +21,8 @@ export const SCAN = Object.freeze({
 export const SCAN_SIZE = 9;
 
 /**
- * Keeps ray `k` as the nearest hit of a kind when its proximity is strictly higher than the best so far.
- * @param {Float64Array} out the scan row
- * @param {number} at the proximity offset of the kind; the ray goes at `at + 1`
- * @param {number} proximity the ray's proximity
- * @param {number} k the ray index
- * @returns {void}
- */
-function nearer(out, at, proximity, k) {
-    if (proximity > out[at]) {
-        out[at] = proximity;
-        out[at + 1] = k;
-    }
-}
-
-/**
- * Fills the first six fields of `out` (and clears the threat fields) from the agent's rays.
+ * Fills `out` from the agent's rays (the threat fields are cleared for `resolveThreat`). The nearest food and prey
+ * hits are kept in locals and written once, so the pass touches `out` nine times and never calls `fill`.
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive agent
  * @param {Float64Array} out the scan row
@@ -44,22 +30,40 @@ function nearer(out, at, proximity, k) {
  * @returns {void}
  */
 export function summariseRays(world, slot, out, arc) {
-    out.fill(-1);
-    out[SCAN.BIGGER] = 0;
-    out[SCAN.SMOKE] = 0;
-    out[SCAN.THREAT_ARC] = 0;
     const { inputs } = world;
+    const rayCount = world.config.rayCount;
     const origin = slot * world.layout.inputCount;
-    for (let k = 0; k < world.config.rayCount; k++) {
+    let foodP = -1;
+    let foodK = -1;
+    let preyP = -1;
+    let preyK = -1;
+    let bigger = 0;
+    let smoke = 0;
+    for (let k = 0; k < rayCount; k++) {
         const base = origin + k * RAY_CHANNELS;
         if (inputs[base + CH_FOOD] === 1) {
-            nearer(out, SCAN.FOOD, inputs[base], k);
+            if (inputs[base] > foodP) {
+                foodP = inputs[base];
+                foodK = k;
+            }
         } else if (inputs[base + CH_BIGGER] === 1) {
-            out[SCAN.BIGGER] += 1;
+            bigger += 1;
         } else if (inputs[base + CH_SMALLER] === 1 && arc[k] === 1) {
-            nearer(out, SCAN.PREY, inputs[base], k);
+            if (inputs[base] > preyP) {
+                preyP = inputs[base];
+                preyK = k;
+            }
         } else if (inputs[base + CH_SMOKE] === 1 && inputs[base] === 1) {
-            out[SCAN.SMOKE] = 1;
+            smoke = 1;
         }
     }
+    out[SCAN.FOOD] = foodP;
+    out[SCAN.FOOD_RAY] = foodK;
+    out[SCAN.PREY] = preyP;
+    out[SCAN.PREY_RAY] = preyK;
+    out[SCAN.BIGGER] = bigger;
+    out[SCAN.SMOKE] = smoke;
+    out[SCAN.THREAT] = -1;
+    out[SCAN.THREAT_RAY] = -1;
+    out[SCAN.THREAT_ARC] = 0;
 }
