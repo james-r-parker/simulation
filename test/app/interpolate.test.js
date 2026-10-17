@@ -174,3 +174,26 @@ describe('playhead', () => {
         expect(simTickAt(head)).toBeLessThanOrEqual(108);
     });
 });
+
+describe('playhead with identical arrival times or repeated ticks', () => {
+    it('does not divide by zero and stays on a valid alpha', () => {
+        const head = createPlayhead();
+        const a = makeSnapshot(100, []);
+        const b = makeSnapshot(108, []);
+        const c = makeSnapshot(116, []);
+        stepPlayhead(head, { prev: null, latest: a }, 50);
+        stepPlayhead(head, { prev: a, latest: b }, 50);
+        const alpha = stepPlayhead(head, { prev: b, latest: c }, 50);
+        expect(Number.isFinite(alpha)).toBe(true);
+        expect(alpha).toBeGreaterThanOrEqual(0);
+        expect(alpha).toBeLessThanOrEqual(1);
+    });
+
+    it('gives alpha 1 when the held snapshots show the same tick', () => {
+        const head = createPlayhead();
+        const a = makeSnapshot(100, []);
+        stepPlayhead(head, { prev: null, latest: a }, 0);
+        stepPlayhead(head, { prev: makeSnapshot(99, []), latest: a }, 10);
+        expect(stepPlayhead(head, { prev: a, latest: a }, 20)).toBe(1);
+    });
+});
