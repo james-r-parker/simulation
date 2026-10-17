@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { playMicroWorld, runPredatorWorld } from './helpers/predator-world.js';
+import {
+    SURVIVABLE_PREDATOR_EVERY,
+    playMicroWorld,
+    runPredatorWorld,
+    survivableWorld,
+} from './helpers/predator-world.js';
 
 const SHORT = { ticks: 5000, seeds: [1, 2] };
 const LONG = { ticks: 20000, seeds: [1, 2, 3] };
@@ -22,6 +27,13 @@ function metricsOf(setup, ticks, seed) {
         if (setup.world === 'micro') {
             const { world, observer } = playMicroWorld(seed, ticks, /** @type {string} */ (setup.arms));
             cache.set(key, computeMetrics(observer, world));
+        } else if (setup.world === 'survivable') {
+            const arms = {
+                .../** @type {Record<string, string>} */ (setup.arms),
+                world: survivableWorld,
+                predatorEvery: SURVIVABLE_PREDATOR_EVERY,
+            };
+            cache.set(key, runPredatorWorld(seed, ticks, {}, /** @type {any} */ (arms)));
         } else {
             cache.set(key, runPredatorWorld(seed, ticks, {}, /** @type {any} */ (setup.arms)));
         }
@@ -35,10 +47,17 @@ const duel = (/** @type {string} */ predator, /** @type {string} */ prey) => ({
     arms: { predator, prey },
 });
 
+/** The survivable-prey duel (`evals/survivable-prey-world.json`, one predator in four) for the pairs the duel starves. */
+const survivable = (/** @type {string} */ predator, /** @type {string} */ prey) => ({
+    world: 'survivable',
+    arms: { predator, prey },
+});
+
 const FORAGE = micro('foodSeeker');
 const SITTER = duel('jawSitter', 'foodSeeker');
 const HUNT = duel('hunter', 'foodSeeker');
 const FLEE = duel('hunter', 'fleer');
+const SURVIVE_FLEE = survivable('hunter', 'fleer');
 
 /** The pairs table of `docs/designs/world-balance.md`: metric, chance arm, skill arm, run length, direction. */
 const PAIRS = /** @type {const} */ ([
@@ -68,6 +87,14 @@ const PAIRS = /** @type {const} */ ([
     },
     { id: 'D2', metric: 'eval.pursuit_bite_share', chanceName: 'jawSitter', chance: SITTER, skill: HUNT, run: SHORT },
     { id: 'D3', metric: 'eval.pack_convergence', chanceName: 'jawSitter', chance: SITTER, skill: HUNT, run: LONG },
+    {
+        id: 'D4',
+        metric: 'eval.evasion_skill',
+        chanceName: 'foodSeeker prey',
+        chance: survivable('hunter', 'foodSeeker'),
+        skill: SURVIVE_FLEE,
+        run: SHORT,
+    },
     {
         id: 'D6',
         metric: 'eval.alarm_precision',

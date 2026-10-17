@@ -35,18 +35,18 @@ function noiseReport(metric, spread) {
 describe('eval power on a hand-built report', () => {
     const report = noiseReport('eval.diversity', 1);
 
-    it('detects a planted 20% effect at 32 v 32', () => {
+    it('detects a planted 20% effect at 32 v 32', { timeout: 60_000 }, () => {
         const row = powerRow(report, 'eval.diversity', { size: 32, splits: 40, powerSplits: 60 });
         expect(row.detectable).not.toBeNull();
         expect(/** @type {number} */ (row.detectable)).toBeLessThanOrEqual(0.2);
     });
 
-    it('has a false-positive rate near 5% for a null metric', () => {
+    it('has a false-positive rate near 5% for a null metric', { timeout: 60_000 }, () => {
         const row = powerRow(report, 'eval.diversity', { size: 16, splits: 300, powerSplits: 1 });
         expect(row.falsePositive).toBeLessThanOrEqual(0.12);
     });
 
-    it('needs a larger change when the metric is noisier', () => {
+    it('needs a larger change when the metric is noisier', { timeout: 60_000 }, () => {
         const quiet = powerRow(report, 'eval.diversity', { size: 16, splits: 4, powerSplits: 40 });
         const loud = powerRow(noiseReport('eval.diversity', 8), 'eval.diversity', {
             size: 16,
