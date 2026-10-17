@@ -233,7 +233,8 @@ scripts/check.sh
 3. **Open in browser** - That's it! Evolution begins immediately.
 
 ### 🎮 How to Play
-- **Keys**: `Space` pauses, `.` steps one tick (`Shift+.` ten), `[` and `]` change speed, `N` twice starts a new world with a new seed, arrow keys or drag pan, wheel or `+` and `-` zoom, `Home` resets the camera, `F` follows the selected agent and `Esc` clears it. Click an agent to select it.
+- **Keys**: `Space` pauses, `.` steps one tick (`Shift+.` ten), `[` and `]` change speed, `N` twice starts a new world with a new seed (`Shift+N` focuses the seed field: type a number and press Enter), arrow keys or drag pan, wheel or `+` and `-` zoom, `Home` resets the camera, `F` follows the selected agent, `Shift+F` is fullscreen and `Esc` closes a drawer, else clears the selection. Click an agent to select it.
+- **Interface**: a thin top bar (tick and run time, speed, season, the population by type, born share, buttons) and an event ticker. `C` opens the charts drawer, `I` the inspector (the selected agent's senses, hidden layer and actions), `?` or `F1` the help with every key, and `H` hides the HUD. `1` to `4` toggle the lenses: temperature, scent trails, family territories, and vision and calls. `E` exports the archive and `B` the debug bundle that replays the run. Lenses and the HUD state are remembered.
 - **URL**: `?seed=<n>`, `?agents=<n>`, `?speed=<0.25..16>` and `?quality=<0|1|2>` shape the start.
 - **The old app** still runs at `/legacy.html` under `npm run dev`; it is not part of the production build and is deleted in Phase 5 of [the worker and renderer design](docs/designs/worker-and-renderer.md).
 - **Watch**: Sit back and observe as random behaviors evolve into complex strategies
