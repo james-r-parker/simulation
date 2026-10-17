@@ -1,25 +1,12 @@
 // Records a browser frame-time baseline through Playwright or a Chrome over CDP: the v6 app into
 // bench/browser-baseline.json (keyed by viewport) or, with --app legacy, the legacy app into bench/legacy-baseline.json.
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { withBrowserSession } from './lib/browser-session.mjs';
-import { measureV6 } from './lib/perf-v6-run.mjs';
-import { mergeBaseline, overBudget, parseViewport } from './lib/perf-v6.mjs';
+import { runLegacy, runV6 } from './lib/perf-run.mjs';
+import { parseViewport } from './lib/perf-v6.mjs';
 
 const DEFAULT_SECONDS = 60;
 const DEFAULT_OUT = 'bench/legacy-baseline.json';
-const PERF_READY_TIMEOUT_MS = 30_000;
-
-const LONG_TASK_SCRIPT = `
-window.__longTasks = 0;
-try {
-    new PerformanceObserver((list) => { window.__longTasks += list.getEntries().length; })
-        .observe({ type: 'longtask', buffered: true });
-} catch (error) {
-    window.__longTasks = -1;
-}`;
 
 const DEFAULT_AGENTS = 500;
 const DEFAULT_VIEWPORT = '3840x2160';
@@ -214,123 +201,12 @@ export function describeAdapter(adapter, allowFallback) {
 }
 
 /**
- * Loads the app and measures it for the run length.
- * @param {import('@playwright/test').Browser} browser The launched browser.
- * @param {string} url The app URL.
- * @param {number} seconds Run length.
- * @param {boolean} allowFallback Accept a software WebGPU adapter.
- * @returns {Promise<{ perf: any, longTasks: number, gpuAdapter: string, agentCount: number | null }>} Raw readings.
- */
-async function measure(browser, url, seconds, allowFallback) {
-    const page = await browser.newPage();
-    await page.addInitScript(LONG_TASK_SCRIPT);
-    await page.goto(url);
-    const adapter = await page.evaluate(async () => {
-        const found = await /** @type {any} */ (navigator).gpu?.requestAdapter({ powerPreference: 'high-performance' });
-        if (!found) {
-            return null;
-        }
-        const info = found.info ?? {};
-        const fallback = Boolean(found.isFallbackAdapter ?? info.isFallbackAdapter);
-        return { vendor: info.vendor, architecture: info.architecture, description: info.description, fallback };
-    });
-    const gpuAdapter = describeAdapter(adapter, allowFallback);
-    await page.waitForFunction(() => typeof (/** @type {any} */ (globalThis).__perf) === 'function', null, {
-        timeout: PERF_READY_TIMEOUT_MS,
-    });
-    await page.waitForTimeout(seconds * 1000);
-    const readings = await page.evaluate(() => {
-        const w = /** @type {any} */ (globalThis);
-        return {
-            perf: w.__perf(),
-            longTasks: w.__longTasks,
-            agentCount: w.currentSimulation?.agents?.length ?? null,
-        };
-    });
-    return { ...readings, gpuAdapter };
-}
-
-/**
- * Measures the legacy app and writes its baseline file.
- * @param {Options} options Parsed options.
- * @returns {Promise<void>}
- */
-function runLegacy(options) {
-    return withBrowserSession({ ...options, args: ['--enable-unsafe-webgpu'] }, async ({ browser, url }) => {
-        const mode = options.cdp ? `over CDP at ${options.cdp}` : options.headed ? 'headed' : 'headless';
-        console.log(`Measuring ${url} for ${options.seconds} s (${mode})`);
-        const readings = await measure(browser, url, options.seconds, options.allowFallback);
-        const baseline = buildBaseline({
-            ...readings,
-            browserVersion: browser.version(),
-            seconds: options.seconds,
-            commit: gitCommit(),
-            recordedAt: new Date().toISOString(),
-        });
-        const outPath = resolve(options.out);
-        mkdirSync(dirname(outPath), { recursive: true });
-        writeFileSync(outPath, `${JSON.stringify(baseline, null, 2)}\n`);
-        console.log(`GPU adapter: ${baseline.gpuAdapter}`);
-        console.log(`Run length: ${options.seconds} s, frames: ${baseline.frames}, agents: ${baseline.agentCount}`);
-        for (const [name, value] of Object.entries(/** @type {Record<string, number>} */ (baseline.metrics))) {
-            console.log(`${name}: ${value}`);
-        }
-        console.log(`Wrote ${outPath}`);
-    });
-}
-
-/**
- * @returns {string} the sha of the measured tree
- */
-function gitCommit() {
-    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-}
-
-/**
- * Prints a v6 entry's metrics against the budgets.
- * @param {{viewport: string, entry: Record<string, any>}} result the measured entry
- * @returns {void}
- */
-function reportV6({ viewport, entry }) {
-    console.log(
-        `Viewport ${viewport}: ${entry.frames} frames, ${entry.agents} agents, ${entry.refreshHz} Hz, ${entry.gpuAdapter}`,
-    );
-    for (const [name, value] of Object.entries(entry.metrics)) {
-        console.log(`${name}: ${value}`);
-    }
-    const over = overBudget(entry.metrics);
-    for (const { metric, value, max, criterion } of over) {
-        console.log(`${criterion ? 'OVER BUDGET' : 'over (reported only)'}: ${metric} ${value} > ${max}`);
-    }
-    console.log(over.some((o) => o.criterion) ? 'Budgets: not met' : 'Budgets: met');
-}
-
-/**
- * Measures the v6 app and merges its entry into the baseline file under its viewport.
- * @param {Options} options Parsed options.
- * @returns {Promise<void>}
- */
-function runV6(options) {
-    return withBrowserSession({ ...options, args: ['--ignore-gpu-blocklist'] }, async ({ browser, url }) => {
-        const { width, height } = options.viewport;
-        console.log(`Measuring ${url} at ${width}x${height}, ${options.agents} agents, for ${options.seconds} s`);
-        const result = await measureV6(browser, { ...options, url, commit: gitCommit() });
-        reportV6(result);
-        const outPath = resolve(options.out);
-        const existing = existsSync(outPath) ? JSON.parse(readFileSync(outPath, 'utf8')) : null;
-        mkdirSync(dirname(outPath), { recursive: true });
-        writeFileSync(outPath, `${JSON.stringify(mergeBaseline(existing, result.viewport, result.entry), null, 2)}\n`);
-        console.log(`Wrote ${outPath}`);
-    });
-}
-
-/**
  * Runs the whole measurement and writes the baseline file.
  * @param {Options} options Parsed options.
  * @returns {Promise<void>}
  */
 function run(options) {
-    return options.app === 'legacy' ? runLegacy(options) : runV6(options);
+    return options.app === 'legacy' ? runLegacy(options, { buildBaseline, describeAdapter }) : runV6(options);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
