@@ -8,35 +8,24 @@ import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
+import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
+
+export { REFRESH_MS };
 import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
 import { mountDrawers } from './ui/drawer.js';
-import { createHudFade, persistentNodes } from './ui/hud-fade.js';
-import { lookback } from './history.js';
+import { createPeekTracker, mountPeek } from './ui/hover-peek.js';
+import { createHudFade } from './ui/hud-fade.js';
 import { mountHelp } from './ui/help.js';
-import { applyPixelShift } from './ui/pixel-shift.js';
 import { mountInspector } from './ui/inspector.js';
-import { inspectorView, NO_INSPECTION } from './ui/inspector-data.js';
 import { wantsRays } from './ui/lenses.js';
 import { createTickerQueue, mountTicker } from './ui/ticker.js';
 import { mountTitleCard } from './ui/title-card.js';
 import { createToaster } from './ui/toast.js';
-import { trendWord } from './ui/status-line.js';
-import { mountTopBar, topBarInput, topBarView } from './ui/top-bar.js';
-
-/** How often each part refreshes, in ms. */
-export const REFRESH_MS = Object.freeze({
-    bar: 250,
-    ticker: 100,
-    inspector: 33,
-    charts: 1000,
-    idle: 100,
-    shift: 1000,
-    card: 250,
-});
+import { mountTopBar } from './ui/top-bar.js';
 
 /**
  * @typedef {object} InterfaceDeps
@@ -55,6 +44,10 @@ export const REFRESH_MS = Object.freeze({
  * @property {() => Record<string, any> | null} getFailedBundle the debug bundle the supervisor kept after a failure
  * @property {() => number} now wall time in ms
  * @property {import('./family-slots.js').FamilySlots} slots the family colour slots; the palette preference sets its palette
+ * @property {(device: {x: number, y: number}) => {agents: any, index: number} | null} pickAt the agent under a point in
+ *   device pixels (see `hover-pick.js`)
+ * @property {(client: {x: number, y: number}) => {x: number, y: number}} toDevice a point in client pixels as device
+ *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
@@ -98,6 +91,7 @@ function mountParts(ctx) {
         },
     });
     ctx.card = mountTitleCard(doc, elements.hud);
+    ctx.peek = mountPeek(doc, elements.hud);
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
 }
@@ -129,6 +123,7 @@ function build(deps) {
             idle: -Infinity,
             shift: -Infinity,
             card: -Infinity,
+            peek: -Infinity,
         },
         idle: createIdleTracker(deps.now),
         shifted: { x: 0, y: 0 },
@@ -144,6 +139,8 @@ function build(deps) {
         charts: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
+        peek: /** @type {any} */ (null),
+        peekTracker: createPeekTracker(),
         shownCard: false,
         persist: () => persist(ctx),
     };
@@ -264,90 +261,13 @@ function createListeners(ctx) {
 }
 
 /**
- * @param {Record<string, any>} ctx the shared parts
- * @param {Record<string, any> | null} client the worker client
- * @returns {'growing' | 'shrinking' | 'steady'} the population trend over the last minute, from the history
- */
-function populationTrend(ctx, client) {
-    const data = ctx.chartData.data();
-    const now = client?.latest?.u32?.[1];
-    if (data === null || now === undefined) {
-        return 'steady';
-    }
-    return trendWord(now, lookback(data.history, { series: 'population', agoMs: 60000 }));
-}
-
-/** What `tick` refreshes: a part, when it needs it, and how. */
-const REFRESHERS = Object.freeze([
-    {
-        key: 'idle',
-        wanted: () => true,
-        run: (/** @type {Record<string, any>} */ ctx) => ctx.fade.tick(ctx.idle.idleMs()),
-    },
-    {
-        key: 'shift',
-        wanted: () => true,
-        run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
-            applyPixelShift(
-                persistentNodes({ ...ctx.deps.elements, title: ctx.card.element }),
-                now / 1000,
-                ctx.shifted,
-            );
-        },
-    },
-    {
-        key: 'bar',
-        wanted: () => true,
-        run(/** @type {Record<string, any>} */ ctx) {
-            const client = ctx.deps.getClient();
-            const paused = client?.paused ?? false;
-            const view = topBarView(topBarInput(client, populationTrend(ctx, client)), ctx.deps.state, paused);
-            ctx.barUpdate(view);
-            ctx.help.setDebug(view.debug);
-            ctx.controls.update({ paused, seed: ctx.deps.getReady()?.seed ?? null, drawer: ctx.drawers.state() });
-        },
-    },
-    {
-        key: 'card',
-        wanted: (/** @type {Record<string, any>} */ ctx) => ctx.card.visible(),
-        run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
-            if (ctx.card.expired(now)) {
-                dismissCard(ctx);
-            }
-        },
-    },
-    {
-        key: 'ticker',
-        wanted: () => true,
-        run: (/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) =>
-            ctx.tickerUpdate(ctx.queue.current(now), now),
-    },
-    {
-        key: 'inspector',
-        wanted: (/** @type {Record<string, any>} */ ctx) => ctx.drawers.state() === 'inspector',
-        run(/** @type {Record<string, any>} */ ctx) {
-            const snapshot = ctx.deps.getClient()?.latest;
-            const ready = ctx.deps.getReady();
-            ctx.inspector.update(
-                snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots }) : NO_INSPECTION,
-            );
-        },
-    },
-    {
-        key: 'charts',
-        wanted: (/** @type {Record<string, any>} */ ctx) => ctx.drawers.state() === 'charts',
-        run: (/** @type {Record<string, any>} */ ctx) => ctx.charts.update(),
-    },
-]);
-
-/**
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
- *   resize: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface:
+ *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface:
  *   `hooks` for the actions, `listeners` (`onReady`, `onStats`, `onTicker`, `onArchive`) for the worker client,
- *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes, `noteInput` for each key, press, wheel
- *   and pointer move
+ *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes, `pointer` for each pointer move in client pixels, `noteInput` for each
+ *   key, press, wheel and counted pointer move
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -357,6 +277,10 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        pointer(x, y) {
+            ctx.peekTracker.move(x, y, deps.now());
+            ctx.peek.hide();
+        },
         noteInput(event) {
             const counted = ctx.idle.input(event);
             if (counted) {
@@ -366,15 +290,7 @@ export function createInterface(deps) {
         },
         resize: () => applyScale(ctx),
         tick(nowMs) {
-            for (const part of REFRESHERS) {
-                if (
-                    part.wanted(ctx) &&
-                    nowMs - ctx.last[part.key] >= REFRESH_MS[/** @type {keyof typeof REFRESH_MS} */ (part.key)]
-                ) {
-                    ctx.last[part.key] = nowMs;
-                    part.run(ctx, nowMs);
-                }
-            }
+            refreshParts(ctx, nowMs);
         },
     };
 }

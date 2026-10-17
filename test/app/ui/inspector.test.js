@@ -134,4 +134,14 @@ describe('mountInspector', () => {
         expect(first?.[2]).toBe(heatColor(HEAT_SMOOTHING));
         expect(byClass(root, 'inspector-radar')[0].width).toBe(CANVAS_SIZE);
     });
+
+    it('shows what the agent is doing above the radar, rewriting it as it changes', () => {
+        const doc = fakeDocument();
+        const root = doc.createElement('div');
+        const inspector = mountInspector(doc, root);
+        inspector.update({ ...view, header: { ...view.header, now: 'eating' } });
+        expect(byClass(root, 'inspector-now')[0].textContent).toBe('eating');
+        inspector.update({ ...view, header: { ...view.header, now: 'resting' } });
+        expect(byClass(root, 'inspector-now')[0].textContent).toBe('resting');
+    });
 });
