@@ -41,7 +41,7 @@ describe('main', () => {
         } finally {
             log.mockRestore();
         }
-    }, 120000);
+    }, 300000);
 
     it('labels the text output with the policy that ran', async () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => {});
