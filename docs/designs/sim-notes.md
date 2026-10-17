@@ -299,3 +299,11 @@ catches per 1000 hunter agent-ticks) and pack kills a few percent of kills, whic
 targets. The hunter on the micro-world also earns most of its `fitnessV1` from bite energy taken from peers (about 680
 per agent against 260 from food at the tuned defaults), which the anti-exploit bound, measured on food energy, does not
 allow for.
+
+### 2026-10-17 - `three` 0.186.1 is the current release
+
+Checked with `npm view three version` at the start of Phase 2 (T11): 0.186.1, the version already pinned, so there is no
+upgrade and no API change to record. The renderer uses `WebGLRenderer`, `InstancedMesh`, `ShaderMaterial`,
+`DataTexture` and `EffectComposer` with `UnrealBloomPass` and `OutputPass` from `three/examples/jsm/postprocessing`.
+`legacy.html` keeps running on the same version.
+>>>>>>> febb558 (docs(sim-notes): record that three 0.186.1 is current (T11))
