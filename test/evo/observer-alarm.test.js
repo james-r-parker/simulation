@@ -96,4 +96,20 @@ describe('alarm follow-up', () => {
         observeCombat(combat, world);
         expect(combat.alarm.queue[0]).toBe(record);
     });
+
+    it('measures each alive agent to its nearest alive hunter, and leaves dead slots and a lone hunter at Infinity', () => {
+        const { world, combat, ids } = scene();
+        const far = addBorn(world, { spec: PREDATOR, x: 900, y: 300 });
+        const gone = addBorn(world, { x: 640, y: 480 });
+        world.alive[gone] = 0;
+        observeCombat(combat, world);
+        const dist = combat.alarm.hunterDist;
+        const to = (/** @type {number} */ a, /** @type {number} */ b) =>
+            Math.sqrt((world.x[a] - world.x[b]) ** 2 + (world.y[a] - world.y[b]) ** 2);
+        expect(dist[ids.caller]).toBe(Math.min(to(ids.caller, ids.hunter), to(ids.caller, far)));
+        expect(dist[ids.control]).toBe(Math.min(to(ids.control, ids.hunter), to(ids.control, far)));
+        expect(dist[ids.hunter]).toBe(to(ids.hunter, far));
+        expect(dist[far]).toBe(to(far, ids.hunter));
+        expect(dist[gone]).toBe(Infinity);
+    });
 });
