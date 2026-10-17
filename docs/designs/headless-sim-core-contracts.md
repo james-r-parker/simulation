@@ -81,7 +81,7 @@ The core needs these beyond the design doc's Config table. All are "new" in Sour
 | `restitution`             | `0.5`   | Elasticity of agent-agent impulses                                              |
 | `splitCooldownMultiplier` | `1.5`   | The split cooldown factor                                                       |
 | `mateChanceScale`         | `1.5`   | Mating chance is `min(1, reproductionBonus / mateChanceScale)`                  |
-| `foodTargetPerAgent`      | `8`     | Food target `min(maxFood, max(foodTargetMin, foodTargetPerAgent x population))` |
+| `foodTargetPerAgent`      | `12`    | Food target `min(maxFood, max(foodTargetMin, foodTargetPerAgent x population))` |
 | `foodTargetMin`           | `50`    | As above                                                                        |
 | `foodRefillBoost`         | `4`     | `b = 1 + foodRefillBoost x (1 - food / target)` below target                    |
 | `foodSurplusRate`         | `0.2`   | `b` at or above target                                                          |

@@ -65,15 +65,15 @@ pregnancy and a cooldown, the father has a cooldown, and readiness is re-checked
 
 All keys are in `rulesHash`.
 
-| Key                  | Type             | Default | Used by                                                                                                                                |
-| -------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `mateRange`          | number >= 0 (px) | `100`   | `findMate`: largest edge-to-edge gap between two mates                                                                                 |
-| `childEnergyShare`   | number in (0, 1) | `0.5`   | `giveBirth` and `canMatePair`                                                                                                          |
-| `childEnergyMin`     | number > 0       | `200`   | `giveBirth` and `canMatePair`                                                                                                          |
-| `splitMinEnergy`     | number >= 0      | `900`   | `splitAll`                                                                                                                             |
-| `foodTargetPerAgent` | number >= 0      | `8`     | `spawnFood`: the food target is `max(foodTargetMin, foodTargetPerAgent x population)`; part of the economy this phase sets (was `1.5`) |
-| `movementCost`       | number >= 0      | `0.015` | `applyCosts`: energy per tick for speed; part of the economy this phase sets (was `0.03`)                                              |
-| `foodEnergy`         | number > 0       | `100`   | `spawnFood`: base energy of a normal food item; part of the economy this phase sets (was `70`)                                         |
+| Key                  | Type             | Default | Used by                                                                                                                                                                                |
+| -------------------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mateRange`          | number >= 0 (px) | `100`   | `findMate`: largest edge-to-edge gap between two mates                                                                                                                                 |
+| `childEnergyShare`   | number in (0, 1) | `0.5`   | `giveBirth` and `canMatePair`                                                                                                                                                          |
+| `childEnergyMin`     | number > 0       | `200`   | `giveBirth` and `canMatePair`                                                                                                                                                          |
+| `splitMinEnergy`     | number >= 0      | `900`   | `splitAll`                                                                                                                                                                             |
+| `foodTargetPerAgent` | number >= 0      | `12`    | `spawnFood`: the food target is `max(foodTargetMin, foodTargetPerAgent x population)`; part of the economy this phase sets (was `1.5`; 8 here, 12 after the predator-prey tuning, E20) |
+| `movementCost`       | number >= 0      | `0.015` | `applyCosts`: energy per tick for speed; part of the economy this phase sets (was `0.03`)                                                                                              |
+| `foodEnergy`         | number > 0       | `100`   | `spawnFood`: base energy of a normal food item; part of the economy this phase sets (was `70`)                                                                                         |
 
 The Config defaults are set in T6. `childEnergy` is not a key. `foodTargetPerAgent`, `movementCost` and `foodEnergy`
 already exist; the phase changes only their defaults.
