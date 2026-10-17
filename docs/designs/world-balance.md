@@ -423,6 +423,15 @@ choices and reasons within the plans").
 
 **Targets:** none - instruments only: the D1 to D8 and selection metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
+> **Note:** the paired test (T8, 2026-10-17) holds for D1 (`wanderer`, `cruiser`, `random`), D2, D3 (at 20000
+> ticks, `pack_convergence` 0.56-0.58 skill against 0 chance), D7 and D8 with `foodSeeker` prey. Four pairs fail and
+> are left out of `test/evo/deliberate-controllers.slow.test.js` until fixed, with no bound loosened: D6
+> `alarm_precision` (spammer 0.37-0.51 against skill 0.36-0.38) and `hunt_call_precision` (spammer 0.44-0.50
+> against skill 0.70-0.73) - precision must become lift over the caller's own threatened (or prey-ahead) share of
+> ticks, as responses are; D5 - `grouper` gives the same value as `fleer`, a controller defect; D4 - seed 1 has no
+> escaped episode, so the D4 pairs need more seeds or ticks; D8 with `random` prey - seed 1 gives 0.429 skill
+> against 0.375 allowed. These fixes come before T10 and T11.
+
 The intent state and counters, the thirteen D metrics, the six selection metrics, the per-metric seed minimum with
 64 seeds and `npm run eval:power`, the five controllers and the `random` arm with the paired test, and `npm run
 ladder`. Done when the paired test passes; `E23` (live policy seeds 1-16 against 17-32) and `E24` (seeds 1-32
