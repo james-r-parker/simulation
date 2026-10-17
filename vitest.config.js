@@ -12,10 +12,12 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text-summary', 'json-summary'],
-            include: ['js/sim/**', 'js/evo/**', 'scripts/**/*.{js,mjs}'],
+            include: ['js/sim/**', 'js/evo/**', 'js/worker/**', 'js/app/**', 'scripts/**/*.{js,mjs}'],
             // Shells measured end to end rather than by unit tests: alloc-check runs in a child process under
             // --expose-gc; the browser helpers only run inside Vite and Chromium (browser-perf, browser-hash).
             exclude: [
+                // Browser shells: they need a real worker or window and are covered by test/browser/app.spec.js.
+                'js/worker/sim-worker.js',
                 'scripts/alloc-check.mjs',
                 'scripts/browser/**',
                 'scripts/lib/browser-session.mjs',
