@@ -12,6 +12,8 @@ export const SIGMA_MAX = 0.5;
 export const SIGMA_START = 0.05;
 /** Weights are clamped to plus or minus this. */
 export const WEIGHT_CLAMP = 4;
+/** The step size of the trait and leak genes once a biology feature is on, in place of the weight step size. */
+export const TRAIT_SIGMA = 0.1;
 /** A random genome's leak genes start here, so a hidden unit keeps about 5% of its old value (`a` about 0.95). */
 export const LEAK_GENE_START = 3;
 
@@ -29,16 +31,21 @@ export function mutateSigma(parentSigma, weightCount, rng) {
 }
 
 /**
- * Adds `sigma x N(0, 1)` to every weight in place, then clamps to plus or minus `WEIGHT_CLAMP`.
+ * Adds `sigma x N(0, 1)` to every weight in place, then clamps to plus or minus `WEIGHT_CLAMP`. From `traitStart` to
+ * the end of the row (the trait and leak genes) the step is `TRAIT_SIGMA` instead of `sigma`; the number of Gaussian
+ * draws is the same either way.
  * Draw order: one Gaussian per weight, index 0 up.
  * @param {Float32Array} row the weight row (a `subarray` view is fine)
  * @param {number} sigma the step size
  * @param {import('../sim/rng.js').Rng} rng the mutation stream
+ * @param {number} [traitStart] the first index mutated with `TRAIT_SIGMA`; the default, the row length, uses `sigma`
+ *   throughout (callers pass the layout's `traitStart` only once a biology feature is on)
  * @returns {void}
  */
-export function mutateWeights(row, sigma, rng) {
+export function mutateWeights(row, sigma, rng, traitStart = row.length) {
     for (let i = 0; i < row.length; i++) {
-        row[i] = Math.min(WEIGHT_CLAMP, Math.max(-WEIGHT_CLAMP, row[i] + sigma * nextGaussian(rng)));
+        const step = i < traitStart ? sigma : TRAIT_SIGMA;
+        row[i] = Math.min(WEIGHT_CLAMP, Math.max(-WEIGHT_CLAMP, row[i] + step * nextGaussian(rng)));
     }
 }
 

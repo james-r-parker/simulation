@@ -7,7 +7,7 @@ import { readyToMate } from './mate-eligibility.js';
 import { findMate } from './mate-search.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
-import { applyGenes } from './traits.js';
+import { applyGenes, childShareOf } from './traits.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -130,13 +130,13 @@ function placeChild(world, child, mother) {
  * @returns {number} the child slot, or -1 when the birth was blocked
  */
 function giveBirth(world, policy, mother, cause) {
-    const { maxAgents, childEnergyShare, childEnergyMin } = world.config;
+    const { maxAgents, childEnergyMin } = world.config;
     const isMate = cause === BORN_CAUSE.MATE;
     if (world.population >= maxAgents) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
-    const gift = world.energy[mother] * (isMate ? childEnergyShare : 0.5);
+    const gift = world.energy[mother] * (isMate ? childShareOf(world, mother) : 0.5);
     if (isMate && gift < childEnergyMin) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;

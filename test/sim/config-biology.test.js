@@ -19,3 +19,16 @@ describe('biology feature keys', () => {
         expect(() => createConfig({ hebbianRate: 'x' })).toThrow(/hebbianRate/);
     });
 });
+
+describe('trait keys', () => {
+    it('defaults traitsEnabled to false and visionCost to 0.5', () => {
+        expect(DEFAULTS.traitsEnabled).toBe(false);
+        expect(DEFAULTS.visionCost).toBe(0.5);
+    });
+
+    it('validates their types and ranges', () => {
+        expect(() => createConfig({ traitsEnabled: 'yes' })).toThrow(/traitsEnabled/);
+        expect(() => createConfig({ visionCost: -1 })).toThrow(/visionCost/);
+        expect(createConfig({ visionCost: 0 }).visionCost).toBe(0);
+    });
+});
