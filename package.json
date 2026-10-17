@@ -64,5 +64,8 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "dependencies": {
+    "uplot": "1.6.32"
   }
 }

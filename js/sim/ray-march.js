@@ -1,44 +1,23 @@
-// Casts each agent's rays through the spatial hash, writing proximity and the hit's class to its inputs row.
+// Casts each agent's rays against the circles near it, writing proximity and the hit's class to its inputs row.
 // An agent class channel holds the hit's proximity; the food, wall, obstacle and smoke channels hold 1.
 
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { canBite } from './bite-rule.js';
 import { isKin } from './kin.js';
+import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
-const FOOD = 0;
-const AGENT = 1;
-const OBSTACLE = 2;
-const WALL = 3;
-const SMOKE = 4;
-
-// Indices into `world.rayScratch`.
-const OX = 0;
-const OY = 1;
-const DX = 2;
-const DY = 3;
-const RANGE = 4;
-const BEST_T = 5;
-const BEST_KIND = 6;
-const BEST_INDEX = 7;
-const CELL_X = 8;
-const CELL_Y = 9;
-const T_MAX_X = 10;
-const T_MAX_Y = 11;
-const T_STEP_X = 12;
-const T_STEP_Y = 13;
-const STEP_X = 14;
-const STEP_Y = 15;
+// Indices into `world.rayScratch` beyond the ones `ray-gather.js` owns.
+const DX = 4;
+const DY = 5;
+const BEST_T = 6;
+const BEST_KEY = 7;
 /** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
-export const COS_H = 16;
-export const SIN_H = 17;
-const NEAR_COUNT = 18;
-
-/** Squared-distance slack in `listNearObstacles`, far above rounding error. */
-const NEAR_SLACK = 1.000001;
+export const COS_H = 8;
+export const SIN_H = 9;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;
@@ -49,101 +28,6 @@ const CH_KIN = 5;
 const CH_WALL = 6;
 const CH_OBSTACLE = 7;
 const CH_SMOKE = 8;
-
-/**
- * Keeps a hit when it is nearer than the best so far, or equal and ranked earlier by kind then index.
- * @param {Float64Array} s the ray scratch
- * @param {number} t distance along the ray, or a negative number for no hit
- * @param {number} kind FOOD, AGENT, OBSTACLE, WALL or SMOKE
- * @param {number} index the circle's index within its kind
- * @returns {void}
- */
-function consider(s, t, kind, index) {
-    if (t < 0 || t > s[RANGE]) {
-        return;
-    }
-    const best = s[BEST_T];
-    const ties = t === best && (kind < s[BEST_KIND] || (kind === s[BEST_KIND] && index < s[BEST_INDEX]));
-    if (t < best || ties) {
-        s[BEST_T] = t;
-        s[BEST_KIND] = kind;
-        s[BEST_INDEX] = index;
-    }
-}
-
-/**
- * @param {Float64Array} s the ray scratch, holding the origin and direction
- * @param {number} cx circle centre x
- * @param {number} cy circle centre y
- * @param {number} r circle radius
- * @returns {number} distance to the hit surface (0 from inside), or -1 for none
- */
-function rayCircle(s, cx, cy, r) {
-    const ox = s[OX] - cx;
-    const oy = s[OY] - cy;
-    const b = s[DX] * ox + s[DY] * oy;
-    const c = ox * ox + oy * oy - r * r;
-    const disc = b * b - c;
-    if (disc < 0) {
-        return -1;
-    }
-    const t = -b - Math.sqrt(disc);
-    if (t < 0) {
-        return c <= 0 ? 0 : -1;
-    }
-    return t;
-}
-
-/**
- * Lists, in ascending index, the obstacles a ray from the agent could hit within its range: those whose surface lies
- * within `RANGE` of the origin. An obstacle further out is rejected by `consider` for every ray anyway, so testing only
- * the listed ones gives the same hits. The slack makes rounding keep an obstacle rather than drop one.
- * @param {World} world the world
- * @returns {void}
- */
-function listNearObstacles(world) {
-    const { obsX, obsY, obsRadius, nearObstacles, rayScratch: s } = world;
-    let count = 0;
-    for (let i = 0; i < obsX.length; i++) {
-        const dx = obsX[i] - s[OX];
-        const dy = obsY[i] - s[OY];
-        const reach = s[RANGE] + obsRadius[i];
-        if (dx * dx + dy * dy <= reach * reach * NEAR_SLACK) {
-            nearObstacles[count++] = i;
-        }
-    }
-    s[NEAR_COUNT] = count;
-}
-
-/**
- * @param {World} world the world
- * @returns {void}
- */
-function testObstacles(world) {
-    const { obsX, obsY, obsRadius, nearObstacles, rayScratch: s } = world;
-    const count = s[NEAR_COUNT];
-    for (let n = 0; n < count; n++) {
-        const i = nearObstacles[n];
-        consider(s, rayCircle(s, obsX[i], obsY[i], obsRadius[i]), OBSTACLE, i);
-    }
-}
-
-/**
- * Offers each live smoke cloud to the current ray; returns at once when there are none.
- * @param {World} world the world
- * @returns {void}
- */
-function testClouds(world) {
-    const count = world.cloudCount;
-    if (count === 0) {
-        return;
-    }
-    const { cloudX, cloudY, rayScratch: s } = world;
-    const radius = world.config.smokeRadius;
-    for (let i = 0; i < count; i++) {
-        consider(s, rayCircle(s, cloudX[i], cloudY[i], radius), SMOKE, i);
-    }
-}
 
 /**
  * @param {number} origin ray origin on one axis
@@ -159,112 +43,60 @@ function wallDistance(origin, dir, extent) {
 }
 
 /**
+ * @param {number} b the ray direction dotted with the origin relative to the centre
+ * @param {number} c the origin's squared distance to the centre less the squared radius
+ * @returns {number} the distance to the circle's surface (0 from inside), or -1 for none
+ */
+function circleHit(b, c) {
+    const disc = b * b - c;
+    if (disc < 0 || (b > 0 && c > 0)) {
+        return -1;
+    }
+    const t = -b - Math.sqrt(disc);
+    // t < 0 means the origin is inside: a ray from outside (c > 0, b <= 0) always has -b >= sqrt(disc).
+    return t < 0 ? 0 : t;
+}
+
+/**
+ * Seeds the current ray's best hit with the wall it heads for, when that lies within range.
  * @param {World} world the world
  * @returns {void}
  */
-function testWalls(world) {
+function seedWithWall(world) {
     const s = world.rayScratch;
-    const tx = wallDistance(s[OX], s[DX], world.config.worldWidth);
-    const ty = wallDistance(s[OY], s[DY], world.config.worldHeight);
-    consider(s, Math.min(tx, ty), WALL, 0);
+    const tWall = Math.min(
+        wallDistance(s[OX], s[DX], world.config.worldWidth),
+        wallDistance(s[OY], s[DY], world.config.worldHeight),
+    );
+    const near = tWall >= 0 && tWall <= s[RANGE];
+    s[BEST_T] = near ? tWall : Infinity;
+    s[BEST_KEY] = WALL * KIND_STRIDE;
 }
 
 /**
- * Sets up the DDA on one axis.
- * @param {Float64Array} s the ray scratch
- * @param {number} axis 0 for x, 1 for y
- * @param {number} cellSize cell edge length
- * @returns {void}
- */
-function setupAxis(s, axis, cellSize) {
-    const origin = s[OX + axis];
-    const dir = s[DX + axis];
-    const cell = s[CELL_X + axis];
-    if (dir === 0) {
-        s[T_MAX_X + axis] = Infinity;
-        s[T_STEP_X + axis] = Infinity;
-        s[STEP_X + axis] = 0;
-        return;
-    }
-    s[STEP_X + axis] = dir > 0 ? 1 : -1;
-    s[T_MAX_X + axis] = ((dir > 0 ? (cell + 1) * cellSize : cell * cellSize) - origin) / dir;
-    s[T_STEP_X + axis] = cellSize / Math.abs(dir);
-}
-
-/**
- * @param {number} v a coordinate
- * @param {SpatialHash} hash the hash
- * @param {number} cells cells on the axis
- * @returns {number} its clamped cell
- */
-function clampCell(v, hash, cells) {
-    return Math.min(cells - 1, Math.max(0, Math.floor(v / hash.cellSize)));
-}
-
-/**
- * Tests every circle in one hash cell, skipping the casting agent.
+ * Finds the nearest hit of the current ray among the gathered circles and the walls: the least distance, ties going
+ * to the lower kind and then the lower index. Leaves `BEST_T` (Infinity for none) and `BEST_KEY` in the scratch.
  * @param {World} world the world
- * @param {SpatialHash} hash the hash
- * @param {number} slot the casting agent
+ * @param {number} count the gathered rows in `world.rayLocal`
  * @returns {void}
  */
-function testCell(world, hash, slot) {
-    const s = world.rayScratch;
-    const cell = s[CELL_Y] * hash.cols + s[CELL_X];
-    const end = hash.cellStart[cell + 1];
-    for (let e = hash.cellStart[cell]; e < end; e++) {
-        const id = hash.entries[e];
-        if (id === slot) {
-            continue;
-        }
-        if (id < hash.maxAgents) {
-            consider(s, rayCircle(s, world.x[id], world.y[id], world.size[id]), AGENT, id);
-        } else {
-            const f = id - hash.maxAgents;
-            consider(s, rayCircle(s, world.foodX[f], world.foodY[f], world.foodRadius[f]), FOOD, f);
-        }
-    }
-}
-
-/**
- * Moves the DDA to the next cell.
- * @param {Float64Array} s the ray scratch
- * @returns {void}
- */
-function advance(s) {
-    if (s[T_MAX_X] <= s[T_MAX_Y]) {
-        s[CELL_X] += s[STEP_X];
-        s[T_MAX_X] += s[T_STEP_X];
-    } else {
-        s[CELL_Y] += s[STEP_Y];
-        s[T_MAX_Y] += s[T_STEP_Y];
-    }
-}
-
-/**
- * Walks the cells the ray crosses until the nearest hit lies inside the cell just tested.
- * @param {World} world the world
- * @param {SpatialHash} hash the hash
- * @param {number} slot the casting agent
- * @returns {void}
- */
-function walkCells(world, hash, slot) {
-    const s = world.rayScratch;
-    s[CELL_X] = clampCell(s[OX], hash, hash.cols);
-    s[CELL_Y] = clampCell(s[OY], hash, hash.rows);
-    setupAxis(s, 0, hash.cellSize);
-    setupAxis(s, 1, hash.cellSize);
-    for (;;) {
-        testCell(world, hash, slot);
-        const exit = Math.min(s[T_MAX_X], s[T_MAX_Y]);
-        if (s[BEST_T] <= exit || exit > s[RANGE]) {
-            return;
-        }
-        advance(s);
-        if (s[CELL_X] < 0 || s[CELL_X] >= hash.cols || s[CELL_Y] < 0 || s[CELL_Y] >= hash.rows) {
-            return;
+function nearestHit(world, count) {
+    const { rayLocal: local, rayScratch: s } = world;
+    seedWithWall(world);
+    const range = s[RANGE];
+    const dx = s[DX];
+    const dy = s[DY];
+    let bestT = s[BEST_T];
+    let bestKey = s[BEST_KEY];
+    for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
+        const t = circleHit(dx * local[at] + dy * local[at + 1], local[at + 2]);
+        if (t >= 0 && t <= range && (t < bestT || (t === bestT && local[at + 3] < bestKey))) {
+            bestT = t;
+            bestKey = local[at + 3];
         }
     }
+    s[BEST_T] = bestT;
+    s[BEST_KEY] = bestKey;
 }
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
@@ -273,11 +105,11 @@ const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL,
 /**
  * @param {World} world the world
  * @param {number} slot the casting agent
- * @returns {number} the channel offset of the agent hit by the current ray's best hit: kin, else a threat when it can
- *   bite the caster, else prey when the caster can bite it, else other
+ * @param {number} other the slot of the agent hit
+ * @returns {number} the channel offset for that agent: kin, else a threat when it can bite the caster, else prey when
+ *   the caster can bite it, else other
  */
-function agentChannel(world, slot) {
-    const other = world.rayScratch[BEST_INDEX];
+function agentChannel(world, slot, other) {
     if (isKin(world, slot, other)) {
         return CH_KIN;
     }
@@ -285,19 +117,6 @@ function agentChannel(world, slot) {
         return CH_THREAT;
     }
     return canBite(world, slot, other) ? CH_PREY : CH_OTHER;
-}
-
-/**
- * @param {World} world the world
- * @param {number} slot the casting agent
- * @returns {number} the channel offset of the current ray's best hit
- */
-function hitChannel(world, slot) {
-    const kind = world.rayScratch[BEST_KIND];
-    if (kind === AGENT) {
-        return agentChannel(world, slot);
-    }
-    return CHANNEL_OF_KIND[kind];
 }
 
 /**
@@ -309,36 +128,18 @@ function hitChannel(world, slot) {
  */
 function writeRay(world, slot, base) {
     const { inputs, rayScratch: s } = world;
-    inputs.fill(0, base, base + RAY_CHANNELS);
+    for (let ch = 0; ch < RAY_CHANNELS; ch++) {
+        inputs[base + ch] = 0;
+    }
     if (s[BEST_T] === Infinity) {
         return;
     }
     const proximity = 1 - s[BEST_T] / s[RANGE];
     inputs[base] = proximity;
-    const channel = hitChannel(world, slot);
+    const key = s[BEST_KEY];
+    const kind = Math.floor(key / KIND_STRIDE);
+    const channel = kind === AGENT ? agentChannel(world, slot, key - kind * KIND_STRIDE) : CHANNEL_OF_KIND[kind];
     inputs[base + channel] = channel >= CH_THREAT && channel <= CH_KIN ? proximity : 1;
-}
-
-/**
- * Casts ray `k` of an agent and writes its `RAY_CHANNELS` values.
- * @param {World} world the world
- * @param {SpatialHash} hash the hash
- * @param {number} slot the casting agent
- * @param {number} k the ray index
- * @returns {void}
- */
-function castRay(world, hash, slot, k) {
-    const s = world.rayScratch;
-    s[DX] = s[COS_H] * world.rayCos[k] - s[SIN_H] * world.raySin[k];
-    s[DY] = s[SIN_H] * world.rayCos[k] + s[COS_H] * world.raySin[k];
-    s[BEST_T] = Infinity;
-    s[BEST_KIND] = WALL;
-    s[BEST_INDEX] = 0;
-    testObstacles(world);
-    testWalls(world);
-    testClouds(world);
-    walkCells(world, hash, slot);
-    writeRay(world, slot, slot * world.layout.inputCount + k * RAY_CHANNELS);
 }
 
 /**
@@ -355,8 +156,13 @@ export function castRays(world, hash, slot) {
     s[RANGE] = world.visionBySpec[world.spec[slot]];
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
-    listNearObstacles(world);
+    const count = gatherNear(world, hash, slot);
+    const { rayCos, raySin } = world;
+    const rowBase = slot * world.layout.inputCount;
     for (let k = 0; k < world.config.rayCount; k++) {
-        castRay(world, hash, slot, k);
+        s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
+        s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
+        nearestHit(world, count);
+        writeRay(world, slot, rowBase + k * RAY_CHANNELS);
     }
 }

@@ -3,6 +3,7 @@
 
 import { moveCameraTo, panByPixels, zoomAt } from './camera.js';
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
+import { LENSES, toggleLens } from './ui/lenses.js';
 
 /** A second press of `N` within this many ms starts the new world. */
 export const NEW_WORLD_CONFIRM_MS = 3000;
@@ -21,6 +22,7 @@ export const DEFAULT_TICKS_PER_SECOND = 60;
  * @property {number} requestedTicksPerSecond the speed last asked of the worker
  * @property {number} newWorldArmedAt when `N` was last pressed, -Infinity when not armed
  * @property {string} notice a short message for the top bar, empty for none
+ * @property {boolean[]} lenses which of the four lenses are on
  */
 
 /**
@@ -34,8 +36,36 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
         requestedTicksPerSecond: ticksPerSecond,
         newWorldArmedAt: -Infinity,
         notice: '',
+        lenses: new Array(LENSES.length).fill(false),
     };
 }
+
+/**
+ * What the interface does for the actions that touch the page, supplied by the page and faked in tests.
+ * @typedef {object} UiHooks
+ * @property {(drawer: string) => void} toggleDrawer opens a drawer, or closes it when it is the open one
+ * @property {() => boolean} closeDrawer closes the open drawer; false when none was open
+ * @property {() => void} toggleHud hides or shows the HUD
+ * @property {() => void} focusSeed moves the keyboard to the seed field
+ * @property {() => void} fullscreen enters or leaves fullscreen
+ * @property {() => void} exportArchive asks the worker for the archive and downloads it
+ * @property {() => void} exportBundle downloads the debug bundle
+ * @property {(text: string) => void} toast shows a short message
+ * @property {() => void} lensesChanged a lens was toggled: sync the worker's ray part and save the preference
+ */
+
+/** @type {Readonly<UiHooks>} */
+const NO_UI = Object.freeze({
+    toggleDrawer() {},
+    closeDrawer: () => false,
+    toggleHud() {},
+    focusSeed() {},
+    fullscreen() {},
+    exportArchive() {},
+    exportBundle() {},
+    lensesChanged() {},
+    toast() {},
+});
 
 /**
  * @typedef {object} ActionDeps
@@ -45,6 +75,8 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {() => number} now the clock, in ms
  * @property {() => number} chooseSeed a fresh seed for a new world
  * @property {Record<string, any>} config the config overrides sent with a new world
+ * @property {() => number} [leaderAgent] the genome id of the leading family's largest agent, 0 for none
+ * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
 /**
@@ -70,13 +102,12 @@ function newWorld(deps) {
     const t = deps.now();
     if (t - state.newWorldArmedAt <= NEW_WORLD_CONFIRM_MS) {
         state.newWorldArmedAt = -Infinity;
-        state.notice = '';
         state.selectedId = 0;
         state.followId = 0;
         deps.getClient()?.reset(deps.chooseSeed(), deps.config);
     } else {
         state.newWorldArmedAt = t;
-        state.notice = 'Press N again to start a new world';
+        (deps.ui ?? NO_UI).toast('Press N again within 3 s to start a new world');
     }
 }
 
@@ -110,6 +141,37 @@ function clearSelection({ getClient, state }) {
     getClient()?.select(0);
 }
 
+/**
+ * @param {number} index the lens, 0 to 3
+ * @returns {(deps: ActionDeps) => void} an action that toggles it and tells the page
+ */
+function lensAction(index) {
+    return ({ state, ui = NO_UI }) => {
+        toggleLens(state.lenses, index);
+        ui.lensesChanged();
+    };
+}
+
+/**
+ * Escape closes the open drawer; with none open it clears the selection.
+ * @param {ActionDeps} deps the dependencies
+ * @returns {void}
+ */
+function escape(deps) {
+    if (!(deps.ui ?? NO_UI).closeDrawer()) {
+        clearSelection(deps);
+    }
+}
+
+/**
+ * @param {keyof UiHooks} hook the hook to call
+ * @param {...string} args its arguments
+ * @returns {(deps: ActionDeps) => void} an action that calls the page's hook, and does nothing without one
+ */
+function viaUi(hook, ...args) {
+    return (deps) => /** @type {(...a: string[]) => unknown} */ ((deps.ui ?? NO_UI)[hook])(...args);
+}
+
 /** @type {Readonly<Record<string, (deps: ActionDeps) => void>>} */
 const ACTIONS = Object.freeze({
     togglePause: ({ getClient }) => {
@@ -127,11 +189,24 @@ const ACTIONS = Object.freeze({
     speedUp: (deps) => changeSpeed(deps, 1),
     speedDown: (deps) => changeSpeed(deps, -1),
     newWorld,
-    follow: ({ state }) => {
-        state.followId = state.followId === 0 ? state.selectedId : 0;
+    follow: ({ state, leaderAgent }) => {
+        state.followId = state.followId === 0 ? state.selectedId || (leaderAgent?.() ?? 0) : 0;
     },
     home: ({ camera }) => moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 }),
     clearSelection,
+    escape,
+    lens1: lensAction(0),
+    lens2: lensAction(1),
+    lens3: lensAction(2),
+    lens4: lensAction(3),
+    toggleCharts: viaUi('toggleDrawer', 'charts'),
+    toggleInspector: viaUi('toggleDrawer', 'inspector'),
+    toggleHelp: viaUi('toggleDrawer', 'help'),
+    toggleHud: viaUi('toggleHud'),
+    focusSeed: viaUi('focusSeed'),
+    fullscreen: viaUi('fullscreen'),
+    exportArchive: viaUi('exportArchive'),
+    exportBundle: viaUi('exportBundle'),
     panLeft: (deps) => pan(deps, -1, 0),
     panRight: (deps) => pan(deps, 1, 0),
     panUp: (deps) => pan(deps, 0, -1),

@@ -9,6 +9,7 @@ import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPla
 import { playEffects } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
 import { stepQuality } from './renderer/quality.js';
+import { lensUniforms } from './ui/lenses.js';
 
 /** The quality rule's window of recent frames, and how often it is consulted, in ms. */
 export const QUALITY_WINDOW_FRAMES = 600;
@@ -23,6 +24,7 @@ export const MAX_DT_MS = 100;
  *   the scene, null until the first `ready`
  * @property {import('./renderer/scene.js').Frame['camera']} camera the view
  * @property {import('./actions.js').AppState} state the selection and follow
+ * @property {import('./family-slots.js').FamilySlots} slots the family colour slots and the palette
  * @property {import('./app-layers.js').LayerRefs} refs the haze and the effects player of the current layers
  * @property {import('./frame-stats.js').FrameStats} stats the frame and draw rings `__perf` reports
  * @property {{begin: () => void, end: () => void, poll: () => void} | null} gpuTimer the GPU timer, null without the
@@ -137,6 +139,7 @@ function newFrame(deps, loop) {
         selectedId: 0,
         followId: 0,
         leadLineageId: 0,
+        family: deps.slots,
         lenses: { temperature: false, scent: false, territory: false, vision: false, calls: false },
     };
 }
@@ -157,6 +160,7 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
     frame.selectedId = deps.state.selectedId;
     frame.followId = deps.state.followId;
     frame.leadLineageId = client.stats?.lineages?.top?.[0]?.id ?? 0;
+    lensUniforms(deps.state.lenses, frame.lenses);
 }
 
 /**

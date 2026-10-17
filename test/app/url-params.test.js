@@ -3,11 +3,12 @@ import { configOverrides, readParams } from '../../js/app/url-params.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
-        expect(readParams('?seed=42&agents=300&speed=4&quality=1&tv=1&audio=true')).toEqual({
+        expect(readParams('?seed=42&agents=300&speed=4&quality=1&scale=0.75&tv=1&audio=true')).toEqual({
             seed: 42,
             agents: 300,
             speed: 4,
             quality: 1,
+            scale: 0.75,
             tv: true,
             audio: true,
         });
@@ -19,6 +20,7 @@ describe('readParams', () => {
             agents: null,
             speed: null,
             quality: null,
+            scale: null,
             tv: false,
             audio: false,
         });
@@ -26,7 +28,15 @@ describe('readParams', () => {
 
     it('ignores invalid values rather than throwing', () => {
         const p = readParams('?seed=-1&agents=0&speed=3&quality=5&tv=yes&audio=0');
-        expect(p).toEqual({ seed: null, agents: null, speed: null, quality: null, tv: false, audio: false });
+        expect(p).toEqual({
+            seed: null,
+            agents: null,
+            speed: null,
+            quality: null,
+            scale: null,
+            tv: false,
+            audio: false,
+        });
         expect(readParams('?seed=4294967296').seed).toBeNull();
         expect(readParams('?seed=4294967295').seed).toBe(4294967295);
         expect(readParams('?agents=4097').agents).toBeNull();
@@ -59,5 +69,19 @@ describe('configOverrides', () => {
             maxAgents: 500,
             minAgents: 40,
         });
+    });
+});
+
+describe('scale', () => {
+    it('reads a render scale from 0.25 to 1', () => {
+        expect(readParams('?scale=1').scale).toBe(1);
+        expect(readParams('?scale=0.5').scale).toBe(0.5);
+        expect(readParams('?scale=.25').scale).toBe(0.25);
+    });
+
+    it('ignores a missing or out-of-range scale', () => {
+        for (const bad of ['', '?scale=0.2', '?scale=1.5', '?scale=abc', '?scale=-1']) {
+            expect(readParams(bad).scale, bad).toBeNull();
+        }
     });
 });

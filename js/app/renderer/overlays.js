@@ -1,16 +1,9 @@
 // The selected agent's overlays and the trails: its rays at their hit lengths, its two antennae, its call range, the trails
 // of the selected agent and the leading lineage, and the follow marker, all as line segments in one preallocated buffer.
 
-import {
-    AdditiveBlending,
-    BufferAttribute,
-    BufferGeometry,
-    DynamicDrawUsage,
-    LineBasicMaterial,
-    LineSegments,
-} from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
 import { PALETTE } from './colors.js';
+import { createLineMesh } from './line-mesh.js';
 import { clearLines, createLineBuffer, pushCircle, pushRay, pushVertex, setLineColor } from './line-buffer.js';
 import { createTrails, recordTrails, trackTrails, TRAIL_AGENTS, TRAIL_POINTS, trailIndex } from './trails.js';
 
@@ -73,13 +66,14 @@ const MARKER = { id: 0, alpha: 0, scale: 0 };
  * `visionRange x (1 - proximity)`.
  * @param {import('./line-buffer.js').LineBuffer} lines the buffer
  * @param {{x: number, y: number, angle: number, vision: number}} agent the agent
- * @param {{f32: Float32Array, start: number, count: number}} rays the proximities and where they start
+ * @param {{f32: Float32Array, start: number, count: number, alpha?: number}} rays the proximities and where they
+ *   start, and a fixed alpha for every ray (else each ray's alpha rises with its proximity)
  * @returns {void}
  */
 export function pushRays(lines, agent, rays) {
     for (let k = 0; k < rays.count; k++) {
         const proximity = rays.f32[rays.start + k];
-        setLineColor(lines, RAY_COLOR, 0.12 + 0.5 * proximity);
+        setLineColor(lines, RAY_COLOR, rays.alpha ?? 0.12 + 0.5 * proximity);
         RAY.angle = agent.angle + (2 * Math.PI * k) / rays.count;
         RAY.length = agent.vision * (1 - proximity);
         pushRay(lines, agent.x, agent.y, RAY);
@@ -187,21 +181,10 @@ export function createOverlays({ info }) {
     const lines = createLineBuffer(capacity);
     const trails = createTrails();
     const wanted = new Uint32Array(TRAIL_AGENTS);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new BufferAttribute(lines.position, 3).setUsage(DynamicDrawUsage));
-    geometry.setAttribute('color', new BufferAttribute(lines.color, 4).setUsage(DynamicDrawUsage));
-    const material = new LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-        blending: AdditiveBlending,
-    });
-    const object = new LineSegments(geometry, material);
-    object.frustumCulled = false;
+    const mesh = createLineMesh(lines);
     let lastTick = -1;
     return {
-        object,
+        object: mesh.object,
         update(frame) {
             if (frame.snapshot !== null && frame.snapshot.tick !== lastTick) {
                 lastTick = frame.snapshot.tick;
@@ -221,13 +204,8 @@ export function createOverlays({ info }) {
             pushSelected(frame, info, lines);
             pushMarker(frame, lines, setMarker(frame.selectedId, 0.4, 1.7));
             pushMarker(frame, lines, setMarker(frame.followId, 0.8, 2.2));
-            geometry.getAttribute('position').needsUpdate = true;
-            geometry.getAttribute('color').needsUpdate = true;
-            geometry.setDrawRange(0, lines.vertices);
+            mesh.upload();
         },
-        dispose() {
-            geometry.dispose();
-            material.dispose();
-        },
+        dispose: mesh.dispose,
     };
 }

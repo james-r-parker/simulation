@@ -1,8 +1,8 @@
 {
   "worldWidth": 2400,
   "worldHeight": 1600,
-  "initialAgents": 40,
-  "maxAgents": 80,
+  "initialAgents": 60,
+  "maxAgents": 120,
   "minAgents": 0,
   "immigrationInterval": 0,
   "maxFood": 60,

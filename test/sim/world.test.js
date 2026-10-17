@@ -43,7 +43,7 @@ describe('allocateWorld', () => {
             expect(w.visionBySpec[s.index]).toBe(s.visionRange);
         }
         expect(w.rayScratch.length).toBeGreaterThan(0);
-        expect(w.brainScratch.length).toBe(w.config.brainHidden);
+        expect(w.brainScratch.length).toBe(Math.max(w.config.brainHidden, w.layout.outputCount));
     });
 
     it('tabulates the bite, turn and sprint multipliers and the antenna by specialisation', () => {

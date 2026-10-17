@@ -13,12 +13,14 @@ function setup() {
         x: new Float32Array([100]),
         y: new Float32Array([50]),
         size: new Float32Array([10]),
+        spec: new Uint32Array([0]),
         genomeId: new Uint32Array([77]),
     };
     const picks = /** @type {number[]} */ ([]);
     const input = createPointerInput({
         camera,
         getAgents: () => /** @type {any} */ (agents),
+        getMinPx: () => [12],
         onPick: (id) => picks.push(id),
     });
     return { input, camera, picks };

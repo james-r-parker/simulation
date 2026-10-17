@@ -27,7 +27,8 @@ function fakeClient() {
 
 /**
  * @param {{now?: number}} [options] the clock
- * @returns {{act: (action: string) => void, calls: any[], state: any, camera: any, clock: {now: number}}} actions over fakes
+ * @returns {{act: (action: string) => void, calls: any[], state: any, camera: any, clock: {now: number},
+ *   toasts: string[]}} actions over fakes
  */
 function setup({ now = 0 } = {}) {
     const { calls, client } = fakeClient();
@@ -37,6 +38,7 @@ function setup({ now = 0 } = {}) {
         world: { width: 14400, height: 8100 },
     });
     const clock = { now };
+    const toasts = /** @type {string[]} */ ([]);
     const act = createActions({
         getClient: () => client,
         camera,
@@ -44,8 +46,9 @@ function setup({ now = 0 } = {}) {
         now: () => clock.now,
         chooseSeed: () => 99,
         config: { initialAgents: 7 },
+        ui: /** @type {any} */ ({ toast: (/** @type {string} */ text) => toasts.push(text) }),
     });
-    return { act, calls, state, camera, clock };
+    return { act, calls, state, camera, clock, toasts };
 }
 
 describe('createActions', () => {
@@ -82,17 +85,17 @@ describe('createActions', () => {
     });
 
     it('starts a new world only on a second press within the window', () => {
-        const { act, calls, state, clock } = setup();
+        const { act, calls, clock, toasts } = setup();
         act('newWorld');
         expect(calls).toEqual([]);
-        expect(state.notice).toMatch(/again/);
+        expect(toasts).toHaveLength(1);
+        expect(toasts[0]).toMatch(/again/);
         clock.now = NEW_WORLD_CONFIRM_MS + 1;
         act('newWorld');
         expect(calls).toEqual([]);
         clock.now += 1000;
         act('newWorld');
         expect(calls).toEqual([['reset', 99, { initialAgents: 7 }]]);
-        expect(state.notice).toBe('');
         clock.now += 10;
         act('newWorld');
         expect(calls).toHaveLength(1);
@@ -157,5 +160,152 @@ describe('createActions', () => {
         expect(() => act('togglePause')).not.toThrow();
         expect(() => act('speedUp')).not.toThrow();
         expect(() => act('explode')).toThrow(/unknown action "explode"/);
+    });
+});
+
+describe('follow', () => {
+    /** @param {() => number} [leaderAgent] @returns {{act: (a: string) => void, state: any}} */
+    function withLeader(leaderAgent) {
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => null,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+            leaderAgent,
+        });
+        return { act, state };
+    }
+
+    it('follows the selected agent, else the leading family largest, and a second press stops', () => {
+        const { act, state } = withLeader(() => 77);
+        state.selectedId = 5;
+        act('follow');
+        expect(state.followId).toBe(5);
+        act('follow');
+        expect(state.followId).toBe(0);
+        state.selectedId = 0;
+        act('follow');
+        expect(state.followId).toBe(77);
+        act('follow');
+        expect(state.followId).toBe(0);
+    });
+
+    it('follows nothing when there is no selection and no leader', () => {
+        const { act, state } = withLeader();
+        act('follow');
+        expect(state.followId).toBe(0);
+    });
+});
+
+describe('page actions', () => {
+    /**
+     * @param {boolean} drawerOpen what `closeDrawer` reports
+     * @returns {{act: (action: string) => void, calls: string[], state: any}} actions over fake page hooks
+     */
+    function withUi(drawerOpen) {
+        const calls = /** @type {string[]} */ ([]);
+        const { client } = fakeClient();
+        const state = createAppState();
+        state.selectedId = 5;
+        const ui = {
+            toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
+            closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
+            toggleHud: () => calls.push('hud'),
+            focusSeed: () => calls.push('seed'),
+            fullscreen: () => calls.push('fullscreen'),
+            exportArchive: () => calls.push('archive'),
+            exportBundle: () => calls.push('bundle'),
+            lensesChanged: () => calls.push('lenses'),
+            toast: (/** @type {string} */ t) => calls.push(`toast ${t}`),
+        };
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => client,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+            ui,
+        });
+        return { act, calls, state };
+    }
+
+    it('does nothing for the page actions when the page gives no hooks', () => {
+        const { client } = fakeClient();
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => client,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+        });
+        for (const a of ['toggleHud', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
+            expect(() => act(a), a).not.toThrow();
+        }
+    });
+
+    it('routes each page action to its hook', () => {
+        const { act, calls } = withUi(false);
+        for (const a of ['toggleCharts', 'toggleInspector', 'toggleHelp', 'toggleHud', 'focusSeed', 'fullscreen']) {
+            act(a);
+        }
+        act('exportArchive');
+        act('exportBundle');
+        expect(calls).toEqual([
+            'drawer charts',
+            'drawer inspector',
+            'drawer help',
+            'hud',
+            'seed',
+            'fullscreen',
+            'archive',
+            'bundle',
+        ]);
+    });
+
+    it('toggles each lens and tells the page', () => {
+        const { act, calls, state } = withUi(false);
+        act('lens1');
+        act('lens4');
+        expect(state.lenses).toEqual([true, false, false, true]);
+        act('lens1');
+        expect(state.lenses).toEqual([false, false, false, true]);
+        expect(calls).toEqual(['lenses', 'lenses', 'lenses']);
+    });
+
+    it('closes a drawer on Escape and keeps the selection', () => {
+        const { act, state } = withUi(true);
+        act('escape');
+        expect(state.selectedId).toBe(5);
+    });
+
+    it('clears the selection on Escape when no drawer is open', () => {
+        const { act, state } = withUi(false);
+        act('escape');
+        expect(state.selectedId).toBe(0);
+    });
+
+    it('does nothing for page actions when the page gave no hooks', () => {
+        const state = createAppState();
+        const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
+        const act = createActions({
+            getClient: () => null,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+        });
+        for (const action of ['toggleCharts', 'escape', 'lens2', 'newWorld']) {
+            expect(() => act(action), action).not.toThrow();
+        }
     });
 });

@@ -2,6 +2,7 @@
 // the ticker items from each tick's events, the lineage counts and the policy's log records. Reads; never steps.
 
 import { coverage, occupiedCount } from '../evo/archive.js';
+import { generationStats } from './generation.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { specParams } from '../sim/spec-params.js';
 import { createLineageBoard, rebuildCounts, topLineages, updateBoard } from './lineage-board.js';
@@ -268,12 +269,13 @@ function bornShare(observer) {
  * Builds the Stats table for a stats message and resets the "since the last message" counters. Also rebuilds the
  * lineage counts and queues the `new-leader`, `extinct` and `elder` items.
  * @param {LiveStats} live the state
- * @param {{world: Record<string, any>, observer: Record<string, any>, policy: Record<string, any>}} source the run
+ * @param {{world: Record<string, any>, observer: Record<string, any>, policy: Record<string, any>,
+ *   generations: import('./generation.js').Generations}} source the run
  * @param {{ticksPerSecond: number, requestedTicksPerSecond: number, droppedTicks: number, workerMsPerTick: number,
  *   seed: number, configHash: string}} run the pace and identity the host measured
  * @returns {Record<string, any>} the stats object of the `stats` message
  */
-export function collectStats(live, { world, observer, policy }, run) {
+export function collectStats(live, { world, observer, policy, generations }, run) {
     const tick = world.tick;
     rebuildCounts(live.board, world);
     const top = topLineages(live.board, Math.max(world.population, 1));
@@ -288,6 +290,7 @@ export function collectStats(live, { world, observer, policy }, run) {
     const births = deltas(observer.births, live.lastBirths);
     const deaths = deltas(observer.deathsByCause, live.lastDeaths);
     const phase = world.season[1] * SEASONS;
+    const generation = generationStats(generations, world);
     return {
         tick,
         ticksPerSecond: run.ticksPerSecond,
@@ -305,6 +308,8 @@ export function collectStats(live, { world, observer, policy }, run) {
         combat: combatDelta(live, observer),
         lineages: { count: live.board.counts.size, top },
         archive: archiveStats(policy, live),
+        generationMax: generation.max,
+        generationMedian: generation.median,
         seed: run.seed,
         configHash: run.configHash,
         policy: policy.name,

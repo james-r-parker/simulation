@@ -19,4 +19,9 @@ describe('world layer shaders', () => {
             expect(shaders.FOOD_VERTEX).toContain(u);
         }
     });
+
+    it('draws food as a four-point sparkle 1.6 radii across, not a disc', () => {
+        expect(shaders.FOOD_FRAGMENT).toContain('sqrt(p.x) + sqrt(p.y)');
+        expect(shaders.FOOD_FRAGMENT).toContain('/ 0.8');
+    });
 });

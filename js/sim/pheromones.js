@@ -71,6 +71,17 @@ function neighbourCount(c, { cols, rows }) {
 }
 
 /**
+ * @param {Float32Array} s the decayed copy
+ * @param {number} c a cell index
+ * @param {{cols: number, rows: number}} size the grid size
+ * @param {number} k a quarter of the diffusion rate
+ * @returns {number} the cell's value after diffusion, for a cell with any number of in-grid neighbours
+ */
+function diffuseCell(s, c, size, k) {
+    return s[c] - k * neighbourCount(c, size) * s[c] + k * neighbourSum(s, c, size);
+}
+
+/**
  * @param {World} world the world
  * @param {Float32Array} grid the grid to decay and diffuse
  * @returns {void}
@@ -84,8 +95,23 @@ function updateGrid(world, grid) {
         grid[c] = grid[c] * (1 - pheromoneDecay);
         s[c] = grid[c];
     }
-    for (let c = 0; c < grid.length; c++) {
-        grid[c] = s[c] - k * neighbourCount(c, size) * s[c] + k * neighbourSum(s, c, size);
+    const { cols, rows } = size;
+    const k4 = k * 4;
+    for (let row = 0; row < rows; row++) {
+        const start = row * cols;
+        const end = start + cols;
+        if (row === 0 || row === rows - 1 || cols < 3) {
+            for (let c = start; c < end; c++) {
+                grid[c] = diffuseCell(s, c, size, k);
+            }
+            continue;
+        }
+        grid[start] = diffuseCell(s, start, size, k);
+        // Four in-grid neighbours: the same terms, in the same order, as `diffuseCell`.
+        for (let c = start + 1; c < end - 1; c++) {
+            grid[c] = s[c] - k4 * s[c] + k * (s[c - 1] + s[c + 1] + s[c - cols] + s[c + cols]);
+        }
+        grid[end - 1] = diffuseCell(s, end - 1, size, k);
     }
 }
 

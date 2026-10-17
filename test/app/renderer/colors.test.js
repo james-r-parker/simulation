@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
 import {
+    familyColor,
     familyName,
-    lineageColor,
-    lineageHue,
+    FAMILY_PALETTES,
+    NEUTRAL_FAMILY,
     PALETTE,
     temperatureBands,
     temperatureColor,
     temperatureRamp,
 } from '../../../js/app/renderer/colors.js';
+import { ciede2000, colorDistance, MACHADO, toLab } from './helpers/color-metrics.js';
 
 const bands = { cold: 0.3, optimalMin: 0.4, optimalMax: 0.65, heat: 0.85 };
 
@@ -28,33 +31,114 @@ describe('PALETTE', () => {
     });
 });
 
-describe('lineageColor', () => {
-    it('spreads hue by the golden ratio', () => {
-        expect(lineageHue(0)).toBe(0);
-        expect(lineageHue(1)).toBeCloseTo(0.618034, 6);
-        expect(lineageHue(2)).toBeCloseTo(0.236068, 6);
-    });
+/** The colours the families must stay apart from: food, the three scents, the alarm and the eaten reds. */
+const SEMANTIC = {
+    food: PALETTE.food,
+    huntScent: PALETTE.huntScent,
+    dangerScent: PALETTE.dangerScent,
+    attackScent: PALETTE.attackScent,
+    alarm: PALETTE.alarmRing,
+    eaten: PALETTE.eatenFlash,
+};
+const CVD = Object.entries(MACHADO);
 
-    it('is saturated (spread between channels) and within 0..1 for many lineages', () => {
-        for (let id = 0; id < 200; id++) {
-            const rgb = lineageColor(id, 0.5);
-            expect(Math.min(...rgb)).toBeGreaterThanOrEqual(0);
-            expect(Math.max(...rgb)).toBeLessThanOrEqual(1);
-            expect(Math.max(...rgb) - Math.min(...rgb)).toBeGreaterThan(0.05);
+describe('ciede2000', () => {
+    it('matches the published reference pairs (Sharma, Wu and Dalal, 2005)', () => {
+        const pairs = [
+            [[50, 2.6772, -79.7751], [50, 0, -82.7485], 2.0425],
+            [[50, 3.1571, -77.2803], [50, 0, -82.7485], 2.8615],
+            [[50, 2.5, 0], [50, 0, -2.5], 4.3065],
+            [[50, 2.5, 0], [73, 25, -18], 27.1492],
+            [[60.2574, -34.0099, 36.2677], [60.4626, -34.1751, 39.4387], 1.2644],
+        ];
+        for (const [a, b, expected] of pairs) {
+            expect(ciede2000(/** @type {any} */ (a), /** @type {any} */ (b))).toBeCloseTo(
+                /** @type {number} */ (expected),
+                3,
+            );
         }
     });
 
-    it('brightens with energy and clamps outside 0..1', () => {
-        const lum = (/** @type {ArrayLike<number>} */ c) => c[0] + c[1] + c[2];
-        expect(lum(lineageColor(3, 1))).toBeGreaterThan(lum(lineageColor(3, 0)));
-        expect(lineageColor(3, 5)).toEqual(lineageColor(3, 1));
-        expect(lineageColor(3, -2)).toEqual(lineageColor(3, 0));
+    it('puts white at L 100 and black at 0, and a colour at zero distance from itself', () => {
+        expect(toLab([1, 1, 1])[0]).toBeCloseTo(100, 1);
+        expect(toLab([0, 0, 0])[0]).toBe(0);
+        expect(colorDistance([0.3, 0.5, 0.7], [0.3, 0.5, 0.7])).toBe(0);
+    });
+});
+
+describe('FAMILY_PALETTES', () => {
+    it('has three palettes of eight linear colours, and a neutral colour for each', () => {
+        expect(Object.keys(FAMILY_PALETTES).sort()).toEqual(['cvd-safe', 'default', 'high-contrast']);
+        for (const [name, colors] of Object.entries(FAMILY_PALETTES)) {
+            expect(colors, name).toHaveLength(8);
+            for (const rgb of colors) {
+                expect(rgb.every((v) => v >= 0 && v <= 1)).toBe(true);
+            }
+            expect(NEUTRAL_FAMILY[name]).toHaveLength(3);
+        }
     });
 
-    it('is a pure function of the id and writes into the given array', () => {
+    for (const [name, colors] of Object.entries(FAMILY_PALETTES)) {
+        const normal = 15;
+        const deficient = name === 'cvd-safe' ? 20 : 10;
+
+        it(`${name}: every pair of slots is at least ${normal} apart, and ${deficient} under each colour-vision simulation`, () => {
+            for (let i = 0; i < colors.length; i++) {
+                for (let j = i + 1; j < colors.length; j++) {
+                    expect(colorDistance(colors[i], colors[j]), `${i}-${j}`).toBeGreaterThanOrEqual(normal);
+                    for (const [kind, matrix] of CVD) {
+                        expect(colorDistance(colors[i], colors[j], matrix), `${i}-${j} ${kind}`).toBeGreaterThanOrEqual(
+                            deficient,
+                        );
+                    }
+                }
+            }
+        });
+
+        it(`${name}: every slot clears the semantic colours by 15, and by 10 under each simulation`, () => {
+            colors.forEach((slot, i) => {
+                for (const [what, semantic] of Object.entries(SEMANTIC)) {
+                    expect(colorDistance(slot, semantic), `slot ${i} vs ${what}`).toBeGreaterThanOrEqual(15);
+                    for (const [kind, matrix] of CVD) {
+                        expect(
+                            colorDistance(slot, semantic, matrix),
+                            `slot ${i} vs ${what} ${kind}`,
+                        ).toBeGreaterThanOrEqual(10);
+                    }
+                }
+            });
+        });
+    }
+});
+
+describe('familyColor', () => {
+    /** @returns {ReturnType<typeof createFamilySlots>} slots where family 7 holds slot 0 and family 8 slot 1 */
+    function slots() {
+        const s = createFamilySlots();
+        assignSlots(s, [{ id: 7 }, { id: 8 }]);
+        return s;
+    }
+
+    it('gives a family its slot colour at full energy and the neutral colour when it has no slot', () => {
+        expect(Array.from(familyColor(slots(), 8, 1))).toEqual(Array.from(FAMILY_PALETTES.default[1]));
+        expect(Array.from(familyColor(slots(), 99, 1))).toEqual(Array.from(NEUTRAL_FAMILY.default));
+    });
+
+    it('follows the palette the slots name', () => {
+        const s = slots();
+        s.palette = 'cvd-safe';
+        expect(Array.from(familyColor(s, 7, 1))).toEqual(Array.from(FAMILY_PALETTES['cvd-safe'][0]));
+    });
+
+    it('dims a little at low energy, clamps energy and fills the array it is given', () => {
+        const s = slots();
+        const lum = (/** @type {ArrayLike<number>} */ c) => c[0] + c[1] + c[2];
+        expect(lum(familyColor(s, 7, 1))).toBeGreaterThan(lum(familyColor(s, 7, 0)));
+        expect(lum(familyColor(s, 7, 0))).toBeGreaterThan(0.8 * lum(familyColor(s, 7, 1)));
+        expect(familyColor(s, 7, 5)).toEqual(familyColor(s, 7, 1));
+        expect(familyColor(s, 7, -2)).toEqual(familyColor(s, 7, 0));
         const out = new Float32Array(3);
-        expect(lineageColor(9, 0.4, out)).toBe(out);
-        expect(Array.from(out)).toEqual(Array.from(Float32Array.from(lineageColor(9, 0.4))));
+        expect(familyColor(s, 8, 0.4, out)).toBe(out);
     });
 });
 
@@ -95,11 +179,14 @@ describe('temperatureColor', () => {
 });
 
 describe('familyName', () => {
-    it('is stable, carries the id and names the hue', () => {
-        expect(familyName(12)).toBe(familyName(12));
-        expect(familyName(0)).toBe('Red 0');
-        expect(familyName(12)).toMatch(/^[A-Z][a-z]+ 12$/);
-        const names = new Set(Array.from({ length: 100 }, (_, i) => familyName(i).split(' ')[0]));
-        expect(names.size).toBeGreaterThanOrEqual(10);
+    it('is a pronounceable name that is the same for a seed and a lineage every time', () => {
+        expect(familyName(3, 12)).toBe(familyName(3, 12));
+        expect(familyName(3, 12)).toMatch(/^[A-Z][a-z]{5}$/);
+    });
+
+    it('differs between seeds and between lineages', () => {
+        expect(familyName(3, 12)).not.toBe(familyName(4, 12));
+        const names = new Set(Array.from({ length: 300 }, (_, i) => familyName(3, i)));
+        expect(names.size).toBeGreaterThanOrEqual(295);
     });
 });
