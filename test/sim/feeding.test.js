@@ -14,13 +14,14 @@ const NEUTRAL = { specialisations: { predator: { biteMultiplier: 1, turnMultipli
 
 /**
  * @param {ReturnType<typeof smallWorld>} w
- * @param {{x: number, y: number, energy: number, spec?: number, bite?: boolean, genomeId?: number}} a
+ * @param {{x: number, y: number, energy: number, spec?: number, bite?: boolean, genomeId?: number, angle?: number}} a
  * @returns {number} the slot
  */
 function agent(w, a) {
     const slot = allocAgent(w);
     w.x[slot] = a.x;
     w.y[slot] = a.y;
+    w.angle[slot] = a.angle ?? 0;
     w.spec[slot] = a.spec ?? FORAGER;
     w.genomeId[slot] = a.genomeId ?? slot + 1;
     addEnergy(w, slot, a.energy, ENERGY_SOURCE.INITIAL);
@@ -224,7 +225,7 @@ describe('feed: biting', () => {
     it('resolves the second direction of a pair too', () => {
         const w = smallWorld();
         agent(w, { x: 100, y: 100, energy: 50 });
-        agent(w, { x: 110, y: 100, energy: 2000, spec: PREDATOR, bite: true });
+        agent(w, { x: 110, y: 100, energy: 2000, spec: PREDATOR, bite: true, angle: Math.PI });
         run(w, pair);
         expect(w.lastBiter[0]).toBe(w.genomeId[1]);
         expect(w.lastBiter[1]).toBe(0);
@@ -233,7 +234,15 @@ describe('feed: biting', () => {
     it('keeps the previous biter and its tick only when a new biter bites', () => {
         const w = smallWorld();
         const victim = agent(w, { x: 100, y: 100, energy: 500, genomeId: 9 });
-        const first = agent(w, { x: 110, y: 100, energy: 2000, spec: PREDATOR, bite: true, genomeId: 11 });
+        const first = agent(w, {
+            x: 110,
+            y: 100,
+            energy: 2000,
+            spec: PREDATOR,
+            bite: true,
+            genomeId: 11,
+            angle: Math.PI,
+        });
         const second = agent(w, { x: 90, y: 100, energy: 2000, spec: PREDATOR, bite: true, genomeId: 12 });
         w.tick = 5;
         run(w, [victim, first]);

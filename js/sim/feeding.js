@@ -1,5 +1,6 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
+import { detCos, detSin } from './det-math.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.js';
 import { isKin } from './kin.js';
@@ -8,6 +9,8 @@ import { removeFood } from './world.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
+
+const PI = 3.141592653589793;
 
 /**
  * Eats one food if the agent's circle overlaps it.
@@ -70,7 +73,24 @@ function eatAround(world, hash, slot) {
 }
 
 /**
- * Whether `biter` bites `victim`: it can hunt, wants to bite, is not kin and is big enough.
+ * Whether the victim's centre lies within `biteArc` of the biter's heading. A `biteArc` of PI is any direction.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the biting slot
+ * @param {number} victim the bitten slot
+ * @returns {boolean}
+ */
+function inJaws(world, biter, victim) {
+    if (world.config.biteArc >= PI) {
+        return true;
+    }
+    const dx = world.x[victim] - world.x[biter];
+    const dy = world.y[victim] - world.y[biter];
+    const heading = world.angle[biter];
+    return dx * detCos(heading) + dy * detSin(heading) >= world.biteCos[0] * Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Whether `biter` bites `victim`: it can hunt, wants to bite, is not kin, is big enough and faces the victim.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
@@ -82,7 +102,8 @@ function bites(world, biter, victim) {
         specParams(config, spec[biter]).canHunt &&
         outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
         !isKin(world, biter, victim) &&
-        size[biter] > config.huntSizeRatio * size[victim]
+        size[biter] > config.huntSizeRatio * size[victim] &&
+        inJaws(world, biter, victim)
     );
 }
 
