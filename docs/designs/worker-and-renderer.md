@@ -1,6 +1,6 @@
 # Worker and renderer
 
-**Status:** In progress - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol, with a snapshot that carries everything the renderer draws; Phase 2 (renderer core) next.
+**Status:** In progress - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phase 2 (renderer core) code merged, awaiting its dev-machine budget measurement and manual walk.
 **Validated:** dc7d882 (2026-10-17)
 **Priority:** 3 - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -526,7 +526,7 @@ tooling widened to `js/worker/` and `js/app/`. Done when `test/worker/sim-host.t
 
 **Targets:** browser.frame_p50_ms, browser.frame_p95_ms, browser.frame_p99_ms, browser.draw_cpu_p95_ms, browser.gpu_frame_p95_ms, browser.main_long_tasks, browser.gc_pause_ms
 
-> **Note:** Phase 2's code is on branch `feat/renderer-phase-2` (PR 43), not merged: CI's `browser-smoke` fails because the v6 app draws fewer than 30 frames in 5 s under CI's software GL (about 8.6 fps measured under SwiftShader locally at 1280x720). The app must stay usable without a GPU - start at the lowest quality level and a reduced pixel ratio when the renderer is a software one - before the PR can merge. The 240 Hz budgets and the manual walk on the user's 4K OLED are also still open; the rest of the open items are listed on that branch's copy of this section.
+> **Note:** Phase 2's code is merged; the phase is not yet built. Open items: the budgets are unmeasured on the dev machine (run `npm run perf:browser -- --cdp=http://127.0.0.1:9222 --viewport 3840x2160` and `--viewport 2560x1440` on the 4K 240 Hz display, then record `bench/browser-baseline.json`); the manual Verification walk on the 4K OLED, at 1440p and in Firefox; the ring density at fit zoom may need tuning by eye; long-task counting starts at navigation rather than after the measuring window opens; `runV6` exits 0 when a budget is missed; `app.spec.js` does not yet assert follow, `Esc`, picking or that a speed change raises the actual tick rate; a `step` sent while running stops the worker (Phase 1); `bench.step_ms@500` has no headroom (issue B10 in [world-balance.md](world-balance.md)).
 
 - `three` upgraded and pinned; the pure `js/app/` core modules; the renderer: agents, food, obstacles, border, haze,
   smoke, rings, sparks, ambient motes, bloom, quality levels, interpolation, camera, picking, trails, selected-agent
