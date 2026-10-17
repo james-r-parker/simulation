@@ -152,6 +152,29 @@ describe('feed: plantFoodValue', () => {
     });
 });
 
+describe('feed: satiation (T49)', () => {
+    it('a full agent at or above satiationShare x maxEnergy leaves the food', () => {
+        const w = smallWorld({ satiationShare: 0.5 });
+        agent(w, { x: 100, y: 100, energy: 0.5 * w.config.maxEnergy });
+        const f = food(w, 100, 100, 7);
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+    });
+
+    it('an agent still digesting (ateTimer below digestTicks) leaves the food, then eats', () => {
+        const w = smallWorld({ digestTicks: 10 });
+        const a = agent(w, { x: 100, y: 100, energy: 20 });
+        const f = food(w, 100, 100, 7);
+        w.ateTimer[a] = 9;
+        run(w);
+        expect(w.foodAlive[f]).toBe(1);
+        w.ateTimer[a] = 10;
+        run(w);
+        expect(w.foodAlive[f]).toBe(0);
+        expect(w.energy[a]).toBe(27);
+    });
+});
+
 describe('feed: biting', () => {
     const pair = [0, 1];
 
