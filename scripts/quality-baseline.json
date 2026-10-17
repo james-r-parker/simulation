@@ -7,16 +7,28 @@
       "statements": 91
     },
     "js/sim": {
-      "lines": 99.93,
+      "lines": 99.94,
       "branches": 100,
       "functions": 100,
-      "statements": 99.93
+      "statements": 99.94
     },
     "js/evo": {
       "lines": 100,
       "branches": 100,
       "functions": 100,
       "statements": 100
+    },
+    "js/app": {
+      "lines": 100,
+      "branches": 95.83,
+      "functions": 100,
+      "statements": 100
+    },
+    "js/worker": {
+      "lines": 99.82,
+      "branches": 98.4,
+      "functions": 100,
+      "statements": 99.83
     }
   },
   "floors": {
