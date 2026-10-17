@@ -426,7 +426,11 @@ phase.
 - `npm run bench` (`scripts/bench.mjs`) runs worlds of 100, 250 and 500 agents (`initialAgents = minAgents =
 maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<n>` (median) and
   `bench.phase_ms.<phase>@<n>`; `--json` prints the same as JSON. `bench/baseline.json` holds the dev machine's
-  numbers.
+  numbers. The bench world is the frozen `BENCH_CONFIG` in `scripts/bench.mjs` (the retuned defaults pinned back to
+  their values when the baseline was recorded: `maxFood`, `foodTargetPerAgent`, `huntSizeRatio`, `alarmCost`,
+  `huntCallCost`), so retuning `createConfig` defaults never moves `bench.step_ms@<n>` or `bench-check`. At 500 agents
+  it also prints tracked rows that `bench-check` does not gate: `@500defaults` (today's defaults) and `@500w7680` (a
+  7680x4320 world).
 - The `bench-check` gate fails when a `bench.step_ms@*` median is more than 15% above `bench/baseline.json`. It runs
   locally and reports `skipped` under `--ci`, because the baseline is machine-specific.
 - `scripts/browser-hash.mjs` starts `vite`, runs the golden world in a Chromium module worker
