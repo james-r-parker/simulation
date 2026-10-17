@@ -358,7 +358,7 @@ then the rung means:
   while `wanderer` and `sloppyForager` die out, and `sloppyForager` eats nine tenths of the `foodSeeker`'s food per
   1000 agent-ticks yet dies. Half-time seeking is not enough to cover the cost of living at these defaults; B2 is
   now a cliff between `sloppyForager` and `foodSeeker`, not a flat top.
-- `deliberate_food_share` ranks the forage rungs in skill order (0.05, 0.23, 0.46, 0.86, 0.82), so D1 separates the
+- `deliberate_food_share` rises with skill up to `foodSeeker` (0.05, 0.23, 0.46, 0.86; `fleer` 0.82), so D1 separates the
   rungs even where the population does not.
 - `hunter` against `fleer` prey nearly empties the world (2, 0, 0), while `hunter` against `foodSeeker` prey keeps
   215-253. The `fleer` spends its ticks fleeing and its `deliberate_food_share` falls to 0.53; that cost, not the
