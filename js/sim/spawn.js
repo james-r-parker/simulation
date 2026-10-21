@@ -3,14 +3,15 @@
 import { detCos, detSin } from './det-math.js';
 import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
+import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
-const SPEC_COUNT = 5;
 const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
 /** Energy source for each cause an agent can be spawned with by this module. */
 /** @type {Map<number, number>} */
@@ -136,22 +137,39 @@ function pickZone(world, target) {
     return picked;
 }
 
+/** The disc `placeInDisc` places in, reused by every call so food placement allocates nothing. */
+const DISC = { cx: 0, cy: 0, discRadius: 0 };
+
 /**
- * Draws a point around a zone centre, redrawing while it lies in an obstacle, and writes it to `world.point`.
- * A zone an obstacle has drifted over leaves no clear point, so after `placementTries` it places uniformly instead.
+ * @param {number} cx the disc's centre x
+ * @param {number} cy the disc's centre y
+ * @param {number} discRadius the disc's radius
+ * @returns {{cx: number, cy: number, discRadius: number}} the shared disc, set
+ */
+function setDisc(cx, cy, discRadius) {
+    DISC.cx = cx;
+    DISC.cy = cy;
+    DISC.discRadius = discRadius;
+    return DISC;
+}
+
+/**
+ * Draws a point in the disc of radius `discRadius` around (`cx`, `cy`), redrawing while it lies in an obstacle, and
+ * writes it to `world.point`. A disc an obstacle has drifted over leaves no clear point, so after `placementTries` it
+ * places uniformly instead. Fertile zones and food patches both place through it.
  * @param {World} world the world
- * @param {number} zone the zone index
+ * @param {{cx: number, cy: number, discRadius: number}} disc the disc's centre and radius
  * @param {number} radius the food radius
  * @returns {void}
  */
-function placeInZone(world, zone, radius) {
-    const { worldWidth, worldHeight, placementTries, fertileZoneRadius } = world.config;
+function placeInDisc(world, { cx, cy, discRadius }, radius) {
+    const { worldWidth, worldHeight, placementTries } = world.config;
     const rng = world.rng.food;
     for (let attempt = 0; attempt < placementTries; attempt++) {
-        const r = fertileZoneRadius * Math.sqrt(nextFloat(rng));
+        const r = discRadius * Math.sqrt(nextFloat(rng));
         const theta = nextFloat(rng) * TWO_PI;
-        const x = Math.min(worldWidth - radius, Math.max(radius, world.zoneX[zone] + r * detCos(theta)));
-        const y = Math.min(worldHeight - radius, Math.max(radius, world.zoneY[zone] + r * detSin(theta)));
+        const x = Math.min(worldWidth - radius, Math.max(radius, cx + r * detCos(theta)));
+        const y = Math.min(worldHeight - radius, Math.max(radius, cy + r * detSin(theta)));
         if (clearOfObstacles(world, x, y, radius)) {
             world.point[0] = x;
             world.point[1] = y;
@@ -159,6 +177,28 @@ function placeInZone(world, zone, radius) {
         }
     }
     placeClear(world, rng, radius);
+}
+
+/**
+ * Chooses where a food item goes and writes the point to `world.point`: a fertile zone as ever, else (when there are
+ * patches) a patch by stock with probability `1 - foodBackgroundShare`, else anywhere. No patch draws without patches.
+ * @param {World} world the world
+ * @param {number} radius the food radius
+ * @returns {void}
+ */
+function placeFood(world, radius) {
+    const c = world.config;
+    const rng = world.rng.food;
+    const total = totalFertility(world);
+    if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
+        const zone = pickZone(world, nextFloat(rng) * total);
+        placeInDisc(world, setDisc(world.zoneX[zone], world.zoneY[zone], c.fertileZoneRadius), radius);
+    } else if (c.foodPatchCount > 0 && nextFloat(rng) >= c.foodBackgroundShare) {
+        const patch = pickPatch(world, rng);
+        placeInDisc(world, setDisc(world.patchX[patch], world.patchY[patch], c.foodPatchRadius), radius);
+    } else {
+        placeClear(world, rng, radius);
+    }
 }
 
 /**
@@ -189,12 +229,7 @@ export function spawnFoodItem(world) {
     const rng = world.rng.food;
     const high = nextFloat(rng) < c.highFoodChance;
     const radius = high ? c.highFoodRadius : c.foodRadius;
-    const total = totalFertility(world);
-    if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
-        placeInZone(world, pickZone(world, nextFloat(rng) * total), radius);
-    } else {
-        placeClear(world, rng, radius);
-    }
+    placeFood(world, radius);
     const base = high ? c.highFoodEnergy : c.foodEnergy;
     const variance = high ? c.highFoodEnergyVariance : c.foodEnergyVariance;
     world.foodAlive[slot] = 1;
@@ -205,6 +240,23 @@ export function spawnFoodItem(world) {
     world.foodAge[slot] = 0;
     world.foodCount += 1;
     return slot;
+}
+
+/**
+ * @param {World} world the world
+ * @param {Policy} policy the brain policy
+ * @param {number} slot the allocated slot
+ * @param {number} cause the spawn cause
+ * @returns {number} the policy's pick, else a floor spawn's pick among the empty specialisations when
+ *   `floorRescueAtZero` is on and one is empty, else uniform
+ */
+function chooseSpec(world, policy, slot, cause) {
+    const rng = world.rng.spawn;
+    if (policy.initSpec) {
+        return policy.initSpec(world, slot, rng);
+    }
+    const rescue = cause === BORN_CAUSE.FLOOR && world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
+    return rescue >= 0 ? rescue : nextInt(rng, SPEC_COUNT);
 }
 
 /**
@@ -225,9 +277,7 @@ export function spawnAgent(world, policy, cause) {
     const id = world.nextId++;
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
-    world.spec[slot] = policy.initSpec
-        ? policy.initSpec(world, slot, world.rng.spawn)
-        : nextInt(world.rng.spawn, SPEC_COUNT);
+    world.spec[slot] = chooseSpec(world, policy, slot, cause);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
     placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + c.initialEnergy / c.energyToSize));
@@ -260,6 +310,7 @@ export function createWorld(config, policy) {
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
     placeObstacles(world);
+    createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {
         spawnFoodItem(world);
     }

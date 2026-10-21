@@ -3,6 +3,7 @@
 import { canBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.js';
+import { depletePatchAt } from './food-patches.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
@@ -30,6 +31,7 @@ function tryEat(world, slot, food) {
         const { temperatureGainEat, foodEnergy } = world.config;
         gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
         world.ateTimer[slot] = 0;
+        depletePatchAt(world, world.foodX[food], world.foodY[food]);
         removeFood(world, food);
     }
 }

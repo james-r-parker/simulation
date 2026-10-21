@@ -1,6 +1,9 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
 import { brainLayout } from './brain-layout.js';
+import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
+
+/** @typedef {import('./config-rules.js').Rule} Rule */
 import { TRAIT_MAX } from './traits.js';
 
 const MAX_SEED = 4294967295; // 2^32 - 1
@@ -24,33 +27,6 @@ const SPECIALISATION_FIELDS = [
     'sprintBoost',
 ];
 
-/**
- * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'seasons' | 'specialisations'} type the value type
- * @property {number} [min] inclusive lower bound
- * @property {number} [gt] exclusive lower bound
- * @property {number} [max] inclusive upper bound
- * @property {number} [lt] exclusive upper bound
- */
-
-/**
- * @param {number} min inclusive lower bound
- * @param {number} [max] inclusive upper bound
- * @returns {Rule}
- */
-const int = (min, max = Infinity) => ({ type: 'int', min, max });
-/**
- * @param {number} min inclusive lower bound
- * @param {number} [max] inclusive upper bound
- * @returns {Rule}
- */
-const num = (min, max = Infinity) => ({ type: 'num', min, max });
-/** @returns {Rule} a finite number above zero */
-const positive = () => ({ type: 'num', gt: 0 });
-/** @type {Rule} */
-const BOOL = { type: 'bool' };
-/** @type {Rule} */
-const UNIT = num(0, 1);
 /** @type {Rule} a finite number of either sign */
 const SIGNED = { type: 'num', min: -Infinity };
 /** @type {Rule} a thrust efficiency: above 0, at most 1 */
@@ -142,10 +118,6 @@ const RULES = {
     temperatureStart: num(0),
     temperatureGainMove: num(0),
     temperatureGainEat: num(0),
-    satiationShare: num(0, 1),
-    digestTicks: int(0, 30),
-    handlingTicks: int(0, 30),
-    handlingThrust: num(0, 1),
     temperatureLossPassive: num(0),
     temperatureSeasonSlope: num(0),
     temperaturePassiveLossFactor: num(1),
@@ -173,10 +145,7 @@ const RULES = {
     smokeThreshold: UNIT,
     packWindow: int(1),
     maxClouds: int(0, 256),
-    leakEnabled: BOOL,
-    hebbianRate: num(0, 1),
-    traitsEnabled: BOOL,
-    visionCost: num(0),
+    ...FEATURE_RULES,
 };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
@@ -361,6 +330,10 @@ function checkCrossKey(config) {
         config.foodRadius,
         config.highFoodRadius,
     );
+    const room = Math.min(config.worldWidth, config.worldHeight);
+    if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
+        fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
+    }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);
     }

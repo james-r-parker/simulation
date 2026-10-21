@@ -29,6 +29,51 @@ describe('initSpec', () => {
     });
 });
 
+describe('initSpec with floorRescueAtZero', () => {
+    /**
+     * @param {boolean} rescue whether the flag is on
+     * @returns {ReturnType<typeof setup>} a world with agents in specs 0, 1 and 2 only
+     */
+    function crowded(rescue) {
+        const s = setup();
+        s.world.config = { ...s.world.config, floorRescueAtZero: rescue };
+        [0, 0, 1, 2].forEach((spec, slot) => {
+            s.world.alive[slot] = 1;
+            s.world.spec[slot] = spec;
+        });
+        return s;
+    }
+
+    it('chooses only among the specialisations with 0 alive, using the stream', () => {
+        const { policy, world } = crowded(true);
+        const rng = createRng(5);
+        const seen = new Set();
+        for (let i = 0; i < 60; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect([...seen].sort()).toEqual([3, 4]);
+    });
+
+    it('falls back to the least populated when none is at 0', () => {
+        const { policy, world } = crowded(true);
+        world.alive[4] = 1;
+        world.spec[4] = 3;
+        world.alive[5] = 1;
+        world.spec[5] = 4;
+        world.alive[6] = 1;
+        world.spec[6] = 4;
+        expect(policy.brain.initSpec(world, 7, createRng(1))).toBe(1);
+    });
+
+    it('is the least-populated rule and draws nothing when off', () => {
+        const { policy, world } = crowded(false);
+        const rng = createRng(5);
+        const before = Array.from(rng.s);
+        expect(policy.brain.initSpec(world, 7, rng)).toBe(3);
+        expect(Array.from(rng.s)).toEqual(before);
+    });
+});
+
 describe('initBrain genome check', () => {
     it('logs GenomeRejected at error and rethrows when an archive row does not fit the world layout', () => {
         const { policy, world, records } = setup();

@@ -64,8 +64,14 @@ const FIELD_ARRAYS = [
     'cloudX',
     'cloudY',
     'cloudTtl',
+    'patchX',
+    'patchY',
+    'patchStock',
     'ledger',
 ];
+
+/** Patch arrays, hashed only when `foodPatchCount` is above 0. */
+const PATCH_ARRAYS = ['patchX', 'patchY', 'patchStock'];
 
 /** RNG streams hashed by their `s` state, in the design doc's Determinism table order. */
 const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
@@ -101,7 +107,9 @@ function buildViews(world) {
     const hiddenRows = world.hidden.subarray(0, maxAgents * world.layout.hidden);
     return {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
-        fields: FIELD_ARRAYS.map((name) => bytesOf(world, name)),
+        fields: FIELD_ARRAYS.filter((name) => world.config.foodPatchCount > 0 || !PATCH_ARRAYS.includes(name)).map(
+            (name) => bytesOf(world, name),
+        ),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
         fastOut: bytesOf(world, 'fastOut'),
         vision: bytesOf(world, 'vision'),
