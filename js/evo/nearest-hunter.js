@@ -14,13 +14,15 @@ export function createHunterIndex(slots) {
         x: new Float64Array(slots),
         y: new Float64Array(slots),
         slot: new Uint32Array(slots),
+        listed: new Uint8Array(slots),
         last: new Int32Array(slots).fill(-1),
     };
 }
 
 /**
- * Packs the alive hunters (`hunterSpec` flags their specialisations) into the index, sorted by x. Insertion sort: the
- * hunters arrive in slot order, which is not x order, but the arrays are at most `maxAgents` long.
+ * Packs the alive hunters (`hunterSpec` flags their specialisations) into the index, sorted by x. The hunters of the
+ * last build come first in their old order, then the new ones, then an insertion sort: hunters move a few px a tick,
+ * so the order is almost right and the sort does little. The order among hunters does not change any result.
  * @param {Record<string, any>} index the hunter index
  * @param {Record<string, any>} world the world
  * @param {Uint8Array} hunterSpec 1 at each specialisation index that has `canHunt`
@@ -28,23 +30,51 @@ export function createHunterIndex(slots) {
  */
 export function buildHunterIndex(index, world, hunterSpec) {
     const { alive, spec, x, y } = world;
-    const { x: hx, y: hy, slot: hs } = index;
+    const { x: hx, y: hy, slot: hs, listed } = index;
     let count = 0;
-    for (let s = 0; s < alive.length; s++) {
-        if (alive[s] !== 1 || hunterSpec[spec[s]] !== 1) {
-            continue;
+    for (let i = 0; i < index.count; i++) {
+        const s = hs[i];
+        if (alive[s] === 1 && hunterSpec[spec[s]] === 1) {
+            hs[count++] = s;
+            listed[s] = 1;
         }
-        let at = count++;
-        for (; at > 0 && hx[at - 1] > x[s]; at--) {
+    }
+    for (let s = 0; s < alive.length; s++) {
+        if (alive[s] === 1 && hunterSpec[spec[s]] === 1 && listed[s] === 0) {
+            hs[count++] = s;
+        }
+    }
+    for (let i = 0; i < count; i++) {
+        listed[hs[i]] = 0;
+        hx[i] = x[hs[i]];
+        hy[i] = y[hs[i]];
+    }
+    sortByX(index, count);
+    index.count = count;
+}
+
+/**
+ * Insertion sort of the first `count` entries by x, moving y and slot with them.
+ * @param {Record<string, any>} index the hunter index
+ * @param {number} count the number of entries
+ * @returns {void}
+ */
+function sortByX(index, count) {
+    const { x: hx, y: hy, slot: hs } = index;
+    for (let i = 1; i < count; i++) {
+        const px = hx[i];
+        const py = hy[i];
+        const ps = hs[i];
+        let at = i;
+        for (; at > 0 && hx[at - 1] > px; at--) {
             hx[at] = hx[at - 1];
             hy[at] = hy[at - 1];
             hs[at] = hs[at - 1];
         }
-        hx[at] = x[s];
-        hy[at] = y[s];
-        hs[at] = s;
+        hx[at] = px;
+        hy[at] = py;
+        hs[at] = ps;
     }
-    index.count = count;
 }
 
 /**
