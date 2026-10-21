@@ -184,3 +184,53 @@ describe('fastOut across births and slot reuse', () => {
         ).toBe(true);
     });
 });
+
+/**
+ * The rule as first written, with Math.min and Math.max for the clamp: the reference the optimised loop must equal.
+ * @param {ReturnType<typeof smallWorld>} world a world with slot 1 alive
+ * @returns {number[]} slot 1's plastic block after one step
+ */
+function naiveStep(world) {
+    const { layout, weights, hidden, outputs, fastOut } = world;
+    const H = layout.hidden;
+    const OUT = layout.outputCount;
+    const learn = weights[layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN];
+    const eta = world.config.hebbianRate * detSigmoid(learn);
+    const result = [];
+    for (let j = 0; j < H; j++) {
+        for (let o = 0; o < OUT; o++) {
+            const i = j * OUT + o;
+            const f = fastOut[H * OUT + i];
+            const g = weights[layout.weightCount + layout.wOut + i];
+            const next = f + eta * (hidden[H + j] * outputs[OUT + o] - HEBB_DECAY * (f - g));
+            result.push(Math.fround(Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, next))));
+        }
+    }
+    return result;
+}
+
+describe('hebbianStep against the naive rule', () => {
+    it('matches bit for bit over random states, with saturated, zero and signed-zero weights', () => {
+        for (let seed = 1; seed <= 40; seed++) {
+            const world = randomWorld({ hebbianRate: seed % 2 === 0 ? 0.9 : 0.05 }, seed);
+            const { layout } = world;
+            const size = layout.hidden * layout.outputCount;
+            const rng = createRng(seed + 1000);
+            for (let i = 0; i < size; i++) {
+                const draw = nextGaussian(rng);
+                world.fastOut[size + i] = i % 7 === 0 ? 4 * Math.sign(draw) : i % 11 === 0 ? -0 : draw * 3;
+            }
+            for (let j = 0; j < layout.hidden; j++) {
+                world.hidden[layout.hidden + j] = nextGaussian(rng);
+            }
+            for (let o = 0; o < layout.outputCount; o++) {
+                world.outputs[layout.outputCount + o] = nextGaussian(rng) * 4;
+            }
+            const expected = naiveStep(world);
+            hebbianStep(world, 1);
+            const got = Array.from(world.fastOut.subarray(size, 2 * size));
+            expect(got.map((v) => Object.is(v, -0))).toEqual(expected.map((v) => Object.is(v, -0)));
+            expect(got).toEqual(expected);
+        }
+    });
+});

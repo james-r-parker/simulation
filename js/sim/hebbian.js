@@ -27,6 +27,14 @@ export function resetFastOut(world, slot) {
 }
 
 /**
+ * @param {number} x a plastic weight before clamping
+ * @returns {number} `Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, x))` for a finite x (NaN stays NaN), without the calls
+ */
+function clamp(x) {
+    return x > HEBB_CLAMP ? HEBB_CLAMP : x < -HEBB_CLAMP ? -HEBB_CLAMP : x;
+}
+
+/**
  * Updates a slot's plastic block after its outputs: `fastOut[j, o] += eta x (h_j x out_o - HEBB_DECAY x (fastOut[j, o]
  * - w[j, o]))` with `eta = hebbianRate x sigmoid(learnGene)`, then clamps to plus or minus `HEBB_CLAMP`.
  * @param {Record<string, any>} world the world
@@ -42,13 +50,24 @@ export function hebbianStep(world, slot) {
         detSigmoid(weights[slot * layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN]);
     const genome = slot * layout.weightCount + layout.wOut;
     const plastic = slot * H * OUT;
+    const outBase = slot * OUT;
+    const hBase = slot * H;
     for (let j = 0; j < H; j++) {
-        const h = hidden[slot * H + j];
-        for (let o = 0; o < OUT; o++) {
-            const i = j * OUT + o;
-            const f = fastOut[plastic + i];
-            const next = f + eta * (h * outputs[slot * OUT + o] - HEBB_DECAY * (f - weights[genome + i]));
-            fastOut[plastic + i] = Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, next));
+        const h = hidden[hBase + j];
+        const row = plastic + j * OUT;
+        const gRow = genome + j * OUT;
+        let o = 0;
+        for (; o + 2 <= OUT; o += 2) {
+            const f0 = fastOut[row + o];
+            const f1 = fastOut[row + o + 1];
+            const n0 = f0 + eta * (h * outputs[outBase + o] - HEBB_DECAY * (f0 - weights[gRow + o]));
+            const n1 = f1 + eta * (h * outputs[outBase + o + 1] - HEBB_DECAY * (f1 - weights[gRow + o + 1]));
+            fastOut[row + o] = clamp(n0);
+            fastOut[row + o + 1] = clamp(n1);
+        }
+        for (; o < OUT; o++) {
+            const f = fastOut[row + o];
+            fastOut[row + o] = clamp(f + eta * (h * outputs[outBase + o] - HEBB_DECAY * (f - weights[gRow + o])));
         }
     }
 }
