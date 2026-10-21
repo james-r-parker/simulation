@@ -5,6 +5,8 @@ import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat } from '../../sim/rng.js';
+import { countSpecs, pickEmptySpec } from '../../sim/spec-rescue.js';
+import { biologyOn } from '../../sim/traits.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -21,12 +23,7 @@ export const CLONE_SHARE_END = 0.8;
  * @returns {number} the specialisation with the fewest alive agents, ties to the lowest index
  */
 export function leastPopulatedSpec(world, slot, counts) {
-    counts.fill(0);
-    for (let i = 0; i < world.alive.length; i++) {
-        if (world.alive[i] === 1 && i !== slot) {
-            counts[world.spec[i]] += 1;
-        }
-    }
+    countSpecs(world, slot, counts);
     let best = 0;
     for (let spec = 1; spec < counts.length; spec++) {
         best = counts[spec] < counts[best] ? spec : best;
@@ -82,8 +79,9 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
 
-    function initSpec(/** @type {any} */ world, /** @type {number} */ slot) {
-        return leastPopulatedSpec(world, slot, counts);
+    function initSpec(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
+        const rescue = world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
+        return rescue >= 0 ? rescue : leastPopulatedSpec(world, slot, counts);
     }
 
     /** Writes the slot's row and sigma; a clone also records what it cloned. */
@@ -94,6 +92,9 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
         clones.isClone[slot] = 0;
         clones.archiveRef[slot] = -1;
         clones.refId[slot] = 0;
+        if (clones.fromArchive !== undefined) {
+            clones.fromArchive[slot] = ref === null ? 0 : 1;
+        }
         if (ref === null) {
             randomWeights(row, layout, rng);
             birth.sigma[slot] = SIGMA_START;
@@ -101,7 +102,12 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
             checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
-            mutateWeights(row, birth.sigma[slot], rng);
+            mutateWeights(
+                row,
+                birth.sigma[slot],
+                rng,
+                biologyOn(world.config) ? layout.traitStart : layout.weightCount,
+            );
         } else {
             checkRow(ref.row, layout, log);
             row.set(ref.row);

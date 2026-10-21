@@ -24,4 +24,11 @@ describe('world layer shaders', () => {
         expect(shaders.FOOD_FRAGMENT).toContain('sqrt(p.x) + sqrt(p.y)');
         expect(shaders.FOOD_FRAGMENT).toContain('/ 0.8');
     });
+
+    it('sizes by the absolute radius and reads a negative radius as meat', () => {
+        expect(shaders.FOOD_VERTEX).toContain('abs(iBody.z)');
+        expect(shaders.FOOD_VERTEX).toContain('iBody.z < 0.0');
+        expect(shaders.FOOD_FRAGMENT).toContain('uMeatColor');
+        expect(shaders.FOOD_FRAGMENT).toContain('mix(uColor, uMeatColor, vMeat)');
+    });
 });

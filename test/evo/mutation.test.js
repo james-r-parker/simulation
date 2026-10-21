@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+    LEAK_GENE_START,
     mutateSigma,
     mutateWeights,
     randomWeights,
     SIGMA_MAX,
     SIGMA_MIN,
     SIGMA_START,
+    TRAIT_SIGMA,
     WEIGHT_CLAMP,
 } from '../../js/evo/mutation.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
@@ -73,6 +75,29 @@ describe('mutateWeights', () => {
         expect(row.every((w) => Math.abs(w) <= WEIGHT_CLAMP)).toBe(true);
     });
 
+    it('steps the genes from traitStart by TRAIT_SIGMA and draws the same number of Gaussians', () => {
+        const rowA = new Float32Array(20000);
+        const rowB = new Float32Array(20000);
+        const rngA = createRng(7);
+        const rngB = createRng(7);
+        mutateWeights(rowA, 0.01, rngA);
+        mutateWeights(rowB, 0.01, rngB, 10000);
+        expect(rngB.s).toEqual(rngA.s);
+        expect(rowB.subarray(0, 10000)).toEqual(rowA.subarray(0, 10000));
+        expect(stats(rowB.subarray(0, 10000)).sd).toBeLessThan(0.0105);
+        const sd = stats(rowB.subarray(10000)).sd;
+        expect(sd).toBeGreaterThan(0.97 * TRAIT_SIGMA);
+        expect(sd).toBeLessThan(1.03 * TRAIT_SIGMA);
+    });
+
+    it('is the weight sigma throughout without a traitStart', () => {
+        const a = new Float32Array(100);
+        const b = new Float32Array(100);
+        mutateWeights(a, 0.2, createRng(8));
+        mutateWeights(b, 0.2, createRng(8), 100);
+        expect(b).toEqual(a);
+    });
+
     it('writes through a subarray view', () => {
         const big = new Float32Array(10);
         mutateWeights(big.subarray(5), 0.1, createRng(6));
@@ -105,7 +130,13 @@ describe('randomWeights', () => {
 
     it('starts biases at 0', () => {
         expect(row.subarray(layout.bHidden, layout.wOut).every((w) => w === 0)).toBe(true);
-        expect(row.subarray(layout.bOut).every((w) => w === 0)).toBe(true);
+        expect(row.subarray(layout.bOut, layout.traitStart).every((w) => w === 0)).toBe(true);
+    });
+
+    it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
+        expect(row.subarray(layout.traitStart, layout.leakStart).every((w) => w === 0)).toBe(true);
+        expect(row.subarray(layout.leakStart).length).toBe(layout.hidden);
+        expect(row.subarray(layout.leakStart).every((w) => w === LEAK_GENE_START)).toBe(true);
     });
 
     it('is deterministic per stream', () => {

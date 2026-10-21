@@ -46,3 +46,19 @@ export function parseFlags(argv, { valueFlags, booleanFlags = {}, defaults, usag
     }
     return opts;
 }
+
+/**
+ * Runs a command's body and turns its outcome into a process exit code: 0 when it resolves, 1 after printing the
+ * error's message when it throws.
+ * @param {() => Promise<unknown>} run the command body
+ * @returns {Promise<number>} the exit code
+ */
+export async function exitCodeOf(run) {
+    try {
+        await run();
+        return 0;
+    } catch (error) {
+        console.error(error instanceof Error ? error.message : String(error));
+        return 1;
+    }
+}

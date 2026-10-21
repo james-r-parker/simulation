@@ -27,9 +27,9 @@ export const INSPECT_COUNTERS = Object.freeze([
 const RAY_CHANNEL_NAMES = Object.freeze([
     'proximity',
     'food',
-    'bigger',
-    'smaller',
-    'similar',
+    'can bite me',
+    'I can bite it',
+    'other',
     'kin',
     'wall',
     'obstacle',
@@ -70,12 +70,15 @@ const BODY_INPUTS = Object.freeze([
     ['hunt loudness', 'Heard calls'],
     ['hunt ahead', 'Heard calls'],
     ['hunt side', 'Heard calls'],
+    ['sex', 'Body'],
+    ['memory A', 'Memory'],
+    ['memory B', 'Memory'],
 ]);
 
 /**
  * The names the inspector labels its bars with.
  * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the nine ray
- *   channel names, the 32 body inputs with their group, and the eight output names in `OUTPUT_INDEX` order
+ *   channel names, the 35 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
  */
 export function inspectLabels() {
     const outputs = Object.entries(OUTPUT_INDEX)

@@ -36,7 +36,8 @@ function bodyPart(start, count) {
 
 /**
  * Packs `x, y, radius, phase` records from a snapshot's 3-word records. The phase offsets each dot's twinkle by its
- * position.
+ * position. The radius keeps its sign: a negative food radius marks meat, and the vertex shader takes `abs` for the size
+ * and reads the sign as the kind.
  * @param {Float32Array} f32 the snapshot's floats
  * @param {{start: number, count: number}} part where the records are and how many
  * @param {Float32Array} out `capacity x 4` floats
@@ -74,6 +75,7 @@ export function createFoodLayer({ info }) {
         uMinPx: { value: FOOD_MIN_PX },
         uTime: { value: 0 },
         uColor: { value: PALETTE.food },
+        uMeatColor: { value: PALETTE.meat },
         uIntensity: { value: FOOD_INTENSITY },
     };
     const geometry = createQuadGeometry(info.maxFood, ['iBody']);

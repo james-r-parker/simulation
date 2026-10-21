@@ -129,13 +129,14 @@ describe('check.sh test scope', { timeout: SPAWN_TIMEOUT_MS }, () => {
     /**
      * Runs the test gate with a fake vitest that records its arguments and TEST_SCOPE.
      * @param {...string} args check.sh arguments
-     * @returns {{stdout: string, argv: string, scope: string}} the output, the runner's arguments and its scope
+     * @returns {{stdout: string, argv: string, scope: string, passes: string[][]}} the output, the first runner call's
+     *   arguments and scope, and every call as [arguments, scope]
      */
     function gate(...args) {
         const dir = mkdtempSync(join(tmpdir(), 'fake-vitest-'));
         const out = join(dir, 'out.txt');
         const fake = join(dir, 'vitest');
-        writeFileSync(fake, `#!/usr/bin/env bash\necho "$@" > "${out}"\necho "scope=\${TEST_SCOPE:-}" >> "${out}"\n`, {
+        writeFileSync(fake, `#!/usr/bin/env bash\necho "$@" >> "${out}"\necho "scope=\${TEST_SCOPE:-}" >> "${out}"\n`, {
             mode: 0o755,
         });
         const env = Object.fromEntries(Object.entries(ENV).filter(([key]) => key !== 'TEST_SCOPE'));
@@ -143,9 +144,13 @@ describe('check.sh test scope', { timeout: SPAWN_TIMEOUT_MS }, () => {
             encoding: 'utf8',
             env: { ...env, TEST_SEED: '7', VITEST_BIN: fake, CHECK_LOG_DIR: join(dir, 'logs') },
         });
-        const [argv, scope] = readFileSync(out, 'utf8').trim().split('\n');
+        const lines = readFileSync(out, 'utf8').trim().split('\n');
         rmSync(dir, { recursive: true, force: true });
-        return { stdout: result.stdout, argv, scope };
+        const passes = [];
+        for (let i = 0; i < lines.length; i += 2) {
+            passes.push([lines[i], lines[i + 1]]);
+        }
+        return { stdout: result.stdout, argv: lines[0], scope: lines[1], passes };
     }
 
     it('runs the fast tests without coverage under --ci, and skips the ratchet', () => {
@@ -156,11 +161,14 @@ describe('check.sh test scope', { timeout: SPAWN_TIMEOUT_MS }, () => {
         expect(run.stdout).toMatch(/ratchet\s+skipped \(coverage is measured on the full suite/);
     });
 
-    it('runs every test with coverage under --ci --full', () => {
+    it('runs every test under --ci --full: coverage first, then the statistical tests without it', () => {
         const run = gate('--ci', '--full');
         expect(run.stdout).toContain('test (seed 7)');
-        expect(run.scope).toBe('scope=');
-        expect(run.argv).toContain('--coverage');
+        expect(run.passes).toHaveLength(2);
+        expect(run.passes[0][1]).toBe('scope=coverage');
+        expect(run.passes[0][0]).toContain('--coverage');
+        expect(run.passes[1][1]).toBe('scope=statistical');
+        expect(run.passes[1][0]).not.toContain('--coverage');
     });
 });
 

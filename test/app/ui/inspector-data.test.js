@@ -18,16 +18,17 @@ describe('inspectorView on a real selected agent', () => {
         );
     });
 
-    it('groups the 32 body inputs under the five labels, each bar clamped to -1..1', () => {
+    it('groups the body inputs under the six labels, each bar clamped to -1..1', () => {
         expect(view.groups.map((g) => g.name)).toEqual([
             'Body',
             'Senses',
             'Temperature',
             'Scent antennae',
             'Heard calls',
+            'Memory',
         ]);
         const bars = view.groups.flatMap((g) => g.bars);
-        expect(bars).toHaveLength(32);
+        expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 9);
         expect(bars.every((b) => b.value >= -1 && b.value <= 1 && b.label !== '')).toBe(true);
     });
 
@@ -39,7 +40,7 @@ describe('inspectorView on a real selected agent', () => {
         }
     });
 
-    it('lists the hidden layer and the eight labelled outputs', () => {
+    it('lists the hidden layer and the eleven labelled outputs', () => {
         expect(view.hidden).toHaveLength(ready.layout.hidden);
         expect(view.outputs.map((o) => o.label)).toEqual([
             'thrust',
@@ -50,6 +51,9 @@ describe('inspectorView on a real selected agent', () => {
             'alarm',
             'smoke',
             'hunt call',
+            'split',
+            'memory A',
+            'memory B',
         ]);
     });
 

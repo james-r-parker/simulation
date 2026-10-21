@@ -64,7 +64,8 @@ export function createAlarmFollow(config, hunterSpec) {
 }
 
 /**
- * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity when none).
+ * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity when none). The
+ * nearest is found on squared distances and rooted once: the root is monotone, so the result is the same as rooting each.
  * @param {Record<string, any>} follow the follow-up
  * @param {Record<string, any>} world the world
  * @returns {void}
@@ -78,10 +79,16 @@ function nearestHunterDistances(follow, world) {
             continue;
         }
         for (let s = 0; s < alive.length; s++) {
-            if (alive[s] === 1 && s !== h) {
-                dist[s] = Math.min(dist[s], length(x[s] - x[h], y[s] - y[h]));
+            const dx = x[s] - x[h];
+            const dy = y[s] - y[h];
+            const d2 = dx * dx + dy * dy;
+            if (alive[s] === 1 && s !== h && d2 < dist[s]) {
+                dist[s] = d2;
             }
         }
+    }
+    for (let s = 0; s < alive.length; s++) {
+        dist[s] = alive[s] === 1 ? Math.sqrt(dist[s]) : dist[s];
     }
 }
 

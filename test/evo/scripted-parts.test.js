@@ -13,7 +13,7 @@ describe('scripted parts', () => {
         write(world, 1, 0.5, -1);
         setOutput(world, 1, OUTPUT_INDEX.BITE, 1);
         expect(Array.from(world.outputs.subarray(0, OUTPUT_COUNT)).every((v) => Math.fround(0.9) === v)).toBe(true);
-        expect(Array.from(world.outputs.subarray(OUTPUT_COUNT))).toEqual([0.5, -1, 0, 0, 1, 0, 0, 0]);
+        expect(Array.from(world.outputs.subarray(OUTPUT_COUNT))).toEqual([0.5, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
     });
 
     it('eachAlive runs the writer for alive slots only', () => {

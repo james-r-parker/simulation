@@ -1,9 +1,12 @@
-// Casts each agent's rays against the circles near it, writing proximity and class one-hot to its inputs row.
+// Casts each agent's rays against the circles near it, writing proximity and the hit's class to its inputs row.
+// An agent class channel holds the hit's proximity; the food, wall, obstacle and smoke channels hold 1.
 
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
+import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { visionOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
@@ -19,9 +22,9 @@ export const SIN_H = 9;
 
 // Offsets of each class flag within a ray's channels.
 const CH_FOOD = 1;
-const CH_BIGGER = 2;
-const CH_SMALLER = 3;
-const CH_SIMILAR = 4;
+const CH_THREAT = 2;
+const CH_PREY = 3;
+const CH_OTHER = 4;
 const CH_KIN = 5;
 const CH_WALL = 6;
 const CH_OBSTACLE = 7;
@@ -98,23 +101,23 @@ function nearestHit(world, count) {
 }
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
-const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_BIGGER, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
+const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
 
 /**
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} other the slot of the agent hit
- * @returns {number} the channel offset for that agent
+ * @returns {number} the channel offset for that agent: kin, else a threat when it can bite the caster, else prey when
+ *   the caster can bite it, else other
  */
 function agentChannel(world, slot, other) {
     if (isKin(world, slot, other)) {
         return CH_KIN;
     }
-    const ratio = world.config.huntSizeRatio;
-    if (world.size[other] > ratio * world.size[slot]) {
-        return CH_BIGGER;
+    if (couldBite(world, other, slot)) {
+        return CH_THREAT;
     }
-    return world.size[other] < world.size[slot] / ratio ? CH_SMALLER : CH_SIMILAR;
+    return couldBite(world, slot, other) ? CH_PREY : CH_OTHER;
 }
 
 /**
@@ -132,10 +135,15 @@ function writeRay(world, slot, base) {
     if (s[BEST_T] === Infinity) {
         return;
     }
-    inputs[base] = 1 - s[BEST_T] / s[RANGE];
+    const proximity = 1 - s[BEST_T] / s[RANGE];
+    inputs[base] = proximity;
     const key = s[BEST_KEY];
     const kind = Math.floor(key / KIND_STRIDE);
-    inputs[base + (kind === AGENT ? agentChannel(world, slot, key - kind * KIND_STRIDE) : CHANNEL_OF_KIND[kind])] = 1;
+    if (kind === AGENT) {
+        inputs[base + agentChannel(world, slot, key - kind * KIND_STRIDE)] = proximity;
+    } else {
+        inputs[base + CHANNEL_OF_KIND[kind]] = 1;
+    }
 }
 
 /**
@@ -149,7 +157,7 @@ export function castRays(world, hash, slot) {
     const s = world.rayScratch;
     s[OX] = world.x[slot];
     s[OY] = world.y[slot];
-    s[RANGE] = world.visionBySpec[world.spec[slot]];
+    s[RANGE] = visionOf(world, slot);
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
     const count = gatherNear(world, hash, slot);

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createSeeder } from '../../../js/evo/policies/map-elites-seed.js';
+import { SIGMA_MIN } from '../../../js/evo/mutation.js';
 import { createRng } from '../../../js/sim/rng.js';
 import { setup, fill } from '../helpers/map-elites-world.js';
 
@@ -24,6 +26,51 @@ describe('initSpec', () => {
     it('returns 0 on an empty world', () => {
         const { policy, world } = setup();
         expect(policy.brain.initSpec(world, 0, createRng(1))).toBe(0);
+    });
+});
+
+describe('initSpec with floorRescueAtZero', () => {
+    /**
+     * @param {boolean} rescue whether the flag is on
+     * @returns {ReturnType<typeof setup>} a world with agents in specs 0, 1 and 2 only
+     */
+    function crowded(rescue) {
+        const s = setup();
+        s.world.config = { ...s.world.config, floorRescueAtZero: rescue };
+        [0, 0, 1, 2].forEach((spec, slot) => {
+            s.world.alive[slot] = 1;
+            s.world.spec[slot] = spec;
+        });
+        return s;
+    }
+
+    it('chooses only among the specialisations with 0 alive, using the stream', () => {
+        const { policy, world } = crowded(true);
+        const rng = createRng(5);
+        const seen = new Set();
+        for (let i = 0; i < 60; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect([...seen].sort()).toEqual([3, 4]);
+    });
+
+    it('falls back to the least populated when none is at 0', () => {
+        const { policy, world } = crowded(true);
+        world.alive[4] = 1;
+        world.spec[4] = 3;
+        world.alive[5] = 1;
+        world.spec[5] = 4;
+        world.alive[6] = 1;
+        world.spec[6] = 4;
+        expect(policy.brain.initSpec(world, 7, createRng(1))).toBe(1);
+    });
+
+    it('is the least-populated rule and draws nothing when off', () => {
+        const { policy, world } = crowded(false);
+        const rng = createRng(5);
+        const before = Array.from(rng.s);
+        expect(policy.brain.initSpec(world, 7, rng)).toBe(3);
+        expect(Array.from(rng.s)).toEqual(before);
     });
 });
 
@@ -81,6 +128,7 @@ describe('initBrain sources', () => {
             policy.brain.initBrain(world, 0, rng);
             const last = records[records.length - 1];
             expect(policy.isClone[0]).toBe(last.source === 'clone' ? 1 : 0);
+            expect(policy.fromArchive[0]).toBe(last.source === 'random' ? 0 : 1);
             if (last.source === 'clone') {
                 expect(policy.refId[0]).toBe(last.archiveRef + 1);
                 expect(policy.archiveRef[0]).toBe(last.archiveRef);
@@ -127,5 +175,58 @@ describe('initBrain sources', () => {
             }
         }
         expect(sawClone && sawChild).toBe(true);
+    });
+});
+
+/**
+ * Seeds slot 0 until an archive child appears (its parent has the smallest sigma, so brain weights barely move).
+ * @param {{traitsEnabled: boolean}} biology the biology flag under test
+ * @returns {{brainMove: number, traitMove: number}} the largest change of a brain weight / of a trait or leak gene
+ */
+function mutatedParts({ traitsEnabled }) {
+    const { policy, world, records } = setup({}, { traitsEnabled, hashCellSize: 256 });
+    fill(policy, { spec: 0, count: 12, sigma: SIGMA_MIN });
+    const row = world.weights.subarray(0, world.layout.weightCount);
+    const rng = createRng(3);
+    for (let i = 0; i < 200 && records.at(-1)?.source !== 'archive'; i++) {
+        world.spec[0] = 0;
+        policy.brain.initBrain(world, 0, rng);
+    }
+    expect(records.at(-1)?.source).toBe('archive');
+    const { traitStart } = world.layout;
+    const move = (/** @type {Float32Array} */ part) => Math.max(...Array.from(part, (v) => Math.abs(v - 0.25)));
+    return { brainMove: move(row.subarray(0, traitStart)), traitMove: move(row.subarray(traitStart)) };
+}
+
+describe('initBrain mutation of an archive child', () => {
+    it('steps the trait and leak genes by TRAIT_SIGMA and the brain by the row sigma when biology is on', () => {
+        const { brainMove, traitMove } = mutatedParts({ traitsEnabled: true });
+        expect(brainMove).toBeLessThan(0.03);
+        expect(traitMove).toBeGreaterThan(0.03);
+    });
+
+    it('steps every gene by the row sigma when biology is off', () => {
+        const { brainMove, traitMove } = mutatedParts({ traitsEnabled: false });
+        expect(brainMove).toBeLessThan(0.03);
+        expect(traitMove).toBeLessThan(0.03);
+    });
+});
+
+describe('createSeeder without a fromArchive record', () => {
+    it('seeds a random brain and leaves no archive marker when the clone state has none', () => {
+        const { policy, world } = setup();
+        const clones = {
+            isClone: new Uint8Array(8),
+            archiveRef: new Int32Array(8),
+            refId: new Uint32Array(8),
+        };
+        const { initBrain } = createSeeder({
+            archive: policy.archive,
+            birth: { sigma: new Float32Array(8) },
+            clones,
+        });
+        initBrain(world, 0, createRng(1));
+        expect(clones.isClone[0]).toBe(0);
+        expect(clones.archiveRef[0]).toBe(-1);
     });
 });

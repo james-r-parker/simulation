@@ -64,11 +64,17 @@ const FIELD_ARRAYS = [
     'cloudX',
     'cloudY',
     'cloudTtl',
+    'patchX',
+    'patchY',
+    'patchStock',
     'ledger',
 ];
 
 /** Hashed after `foodAge` only when `carcassesEnabled`, so a world with carcasses off hashes as it always did. */
 const FOOD_KIND_FIELD = 'foodKind';
+
+/** Patch arrays, hashed only when `foodPatchCount` is above 0. */
+const PATCH_ARRAYS = ['patchX', 'patchY', 'patchStock'];
 
 /** RNG streams hashed by their `s` state, in the design doc's Determinism table order. */
 const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
@@ -99,17 +105,19 @@ function bytesOf(world, name) {
  * @returns {string[]} the field arrays to hash, with `foodKind` after `foodAge` when carcasses are on
  */
 function fieldNames(world) {
-    if (!world.config.carcassesEnabled) {
-        return FIELD_ARRAYS;
+    const { foodPatchCount, carcassesEnabled } = world.config;
+    const names = FIELD_ARRAYS.filter((name) => foodPatchCount > 0 || !PATCH_ARRAYS.includes(name));
+    if (!carcassesEnabled) {
+        return names;
     }
-    const at = FIELD_ARRAYS.indexOf('foodAge') + 1;
-    return [...FIELD_ARRAYS.slice(0, at), FOOD_KIND_FIELD, ...FIELD_ARRAYS.slice(at)];
+    const at = names.indexOf('foodAge') + 1;
+    return [...names.slice(0, at), FOOD_KIND_FIELD, ...names.slice(at)];
 }
 
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -118,6 +126,9 @@ function buildViews(world) {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
         fields: fieldNames(world).map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
+        fastOut: bytesOf(world, 'fastOut'),
+        vision: bytesOf(world, 'vision'),
+        baseSize: bytesOf(world, 'baseSize'),
         rngSources: [],
         rngViews: [],
     };
@@ -178,6 +189,13 @@ export function hashWorld(world) {
     fnv64Bytes(digest, scalarBytes);
     for (const bytes of views.agents) {
         fnv64Bytes(digest, bytes);
+    }
+    if (world.config.hebbianRate > 0) {
+        fnv64Bytes(digest, views.fastOut);
+    }
+    if (world.config.traitsEnabled) {
+        fnv64Bytes(digest, views.vision);
+        fnv64Bytes(digest, views.baseSize);
     }
     fnv64Bytes(digest, views.hidden);
     for (const bytes of views.fields) {

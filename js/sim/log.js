@@ -182,6 +182,17 @@ function emitRefused(log, d, o) {
     log.log('debug', 'SmokeRefused', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3] });
 }
 
+/**
+ * Emits one `FoodPatchesCreated` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitPatches(log, d, o) {
+    log.log('info', 'FoodPatchesCreated', { tick: d[o + 1], count: d[o + 2], radius: d[o + 3] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -193,6 +204,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.SMOKE_RELEASED]: { level: LOG_LEVEL.debug, emit: emitSmoke },
     [EVENT_TYPE.PACK_CALLED]: { level: LOG_LEVEL.debug, emit: emitPack },
     [EVENT_TYPE.SMOKE_REFUSED]: { level: LOG_LEVEL.debug, emit: emitRefused },
+    [EVENT_TYPE.FOOD_PATCHES_CREATED]: { level: LOG_LEVEL.info, emit: emitPatches },
 });
 
 /**

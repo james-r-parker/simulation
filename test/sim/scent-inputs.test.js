@@ -167,7 +167,7 @@ describe('writeScentInputs heard calls', () => {
         const start = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
         const touched = Array.from(w.inputs).flatMap((v, i) => (v !== 9 ? [i] : []));
         expect(touched.every((i) => i >= start && i < start + 13)).toBe(true);
-        expect(start + 13).toBe((me + 1) * w.layout.inputCount);
+        expect(start + 16).toBe((me + 1) * w.layout.inputCount);
         expect(
             w.inputs
                 .subarray(other * w.layout.inputCount, (other + 1) * w.layout.inputCount)
