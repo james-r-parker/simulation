@@ -3,7 +3,7 @@ import { castRays } from '../../js/sim/ray-march.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
-const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
+const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
 const VISION = 300;
 
 /**
@@ -114,17 +114,21 @@ describe('castRays tie-breaking', () => {
         addAgent(w, 1050, 500, 50);
         cast(w, me);
         const r = rayValues(w, me, 0);
-        expect(r[CH.similar] + r[CH.bigger]).toBe(1);
+        expect(r[CH.other] + r[CH.threat]).toBeGreaterThan(0);
         expect(r[CH.wall]).toBe(0);
     });
 
     it('breaks equal agent distances by the lower slot, whichever is smaller', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
-        addAgent(w, 600, 500, 40);
+        const first = addAgent(w, 600, 500, 40);
+        w.spec[first] = 1;
+        w.angle[first] = Math.PI;
         addAgent(w, 570, 500, 10);
         cast(w, me);
-        expect(rayValues(w, me, 0).slice(1)).toEqual([0, 1, 0, 0, 0, 0, 0, 0]);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.threat]).toBeCloseTo(r[CH.prox], 12);
+        expect(r.slice(1).filter((v) => v !== 0)).toHaveLength(1);
     });
 });
 
@@ -171,16 +175,19 @@ describe('castRays geometry edges', () => {
 
 describe('castRays size classes at the ratio', () => {
     it.each([
-        ['exactly ratio times larger is similar', 40, CH.similar],
-        ['just over ratio times larger is bigger', 41, CH.bigger],
-        ['exactly 1 / ratio smaller is similar', 10, CH.similar],
-        ['just under 1 / ratio smaller is smaller', 9, CH.smaller],
-    ])('classes an agent %s', (_name, otherSize, channel) => {
+        ['exactly ratio times larger cannot bite me', 40, 1, 0, CH.other],
+        ['just over ratio times larger can bite me', 41, 1, 0, CH.threat],
+        ['exactly 1 / ratio smaller is not prey', 10, 0, 1, CH.other],
+        ['just under 1 / ratio smaller is prey', 9, 0, 1, CH.prey],
+    ])('classes an agent %s', (_name, otherSize, otherSpec, mySpec, channel) => {
         const w = senseWorld({ huntSizeRatio: 2 });
         const me = addAgent(w, 500, 500, 20);
-        addAgent(w, 650, 500, otherSize);
+        const other = addAgent(w, 650, 500, otherSize);
+        w.spec[me] = mySpec;
+        w.spec[other] = otherSpec;
+        w.angle[other] = Math.PI;
         cast(w, me);
         const r = rayValues(w, me, 0);
-        expect(r.indexOf(1, 1)).toBe(channel);
+        expect(r.findIndex((v, i) => i > 0 && v !== 0)).toBe(channel);
     });
 });

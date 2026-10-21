@@ -5,6 +5,8 @@ import { checkpoint } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
+import { noteIntentEvents } from './observer-intent-events.js';
+import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
 import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -30,6 +32,8 @@ const SLOT_TYPES = {
     speedSum: Float64Array,
     turnSum: Float64Array,
     samples: Uint32Array,
+    generation: Uint32Array,
+    archiveLineage: Uint8Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -44,9 +48,20 @@ const DEATH_FIELDS = [
     'speedSum',
     'turnSum',
     'samples',
+    'birthTick',
+    'generation',
+    'archiveLineage',
 ];
 
-const SERIES_FIELDS = ['tick', 'population', 'lineagesAlive', 'dominantLineage', 'predatorShare', 'diversity'];
+const SERIES_FIELDS = [
+    'tick',
+    'population',
+    'lineagesAlive',
+    'dominantLineage',
+    'predatorShare',
+    'diversity',
+    'archiveAgents',
+];
 
 const BORN_CAUSES = 5;
 const DEATH_CAUSES = 4;
@@ -81,6 +96,7 @@ export function createObserver(config, rng) {
         series: createLog(SERIES_FIELDS),
         dominantLineage: 0,
         combat: createCombatCounters(config),
+        intent: createIntentState(config),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
@@ -90,7 +106,8 @@ export function createObserver(config, rng) {
 
 /**
  * Feeds the observer one tick: call once right after `createWorld` (the initial births) and once after every `step`.
- * Order: the tick's deaths, then its births, then floor records, then per-slot counters, then run totals.
+ * Order: combat and intent first (a dead agent's slot still holds its state), then the tick's deaths, then its
+ * births, then floor records, then per-slot counters, then run totals.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
  * @param {((observer: any, slot: number, config: any) => number) | undefined} [fitness] the policy's fitness; the
@@ -98,7 +115,9 @@ export function createObserver(config, rng) {
  * @returns {void}
  */
 export function observe(observer, world, fitness) {
-    observeCombat(observer.combat, world);
+    observeCombat(observer.combat, world, observer.intent);
+    updateIntent(observer.intent, world, observer.slotOf);
+    noteIntentEvents(observer, world);
     applyEvents(observer, world, fitness);
     if (world.tick === 0) {
         return;

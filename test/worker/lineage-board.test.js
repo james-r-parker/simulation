@@ -33,13 +33,14 @@ describe('rebuildCounts and topLineages', () => {
         ]);
     });
 
-    it('lists the largest 8, largest first, ties by the lower id, with shares', () => {
+    it('lists the largest 12, largest first, ties by the lower id, with shares', () => {
         const board = createLineageBoard();
-        const counts = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [i + 1, i === 3 ? 20 : 5]));
+        const counts = Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1, i === 3 ? 20 : 5]));
         const top = setCounts(board, counts);
+        expect(TOP_LINEAGES).toBe(12);
         expect(top).toHaveLength(TOP_LINEAGES);
         expect(top[0]).toEqual({ id: 4, count: 20, share: 0.2 });
-        expect(top.slice(1).map((t) => t.id)).toEqual([1, 2, 3, 5, 6, 7, 8]);
+        expect(top.slice(1).map((t) => t.id)).toEqual([1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12]);
     });
 });
 

@@ -18,7 +18,7 @@ export const OUTPUT_INDEX = Object.freeze({
     MEMORY_B: 10,
 });
 
-/** Values per ray: proximity, food, bigger, smaller, similar, kin, wall, obstacle, smoke. */
+/** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke. */
 export const RAY_CHANNELS = 9;
 
 /**

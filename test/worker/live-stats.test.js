@@ -14,6 +14,7 @@ import {
     noteTick,
     tickerEvents,
 } from '../../js/worker/live-stats.js';
+import { createGenerations } from '../../js/worker/generation.js';
 import { smallWorld } from '../sim/helpers/small-world.js';
 
 const RUN = {
@@ -155,7 +156,11 @@ describe('collectStats', () => {
             world.lineageId[slot] = 5;
         }
         world.population = 3;
-        const stats = collectStats(live, { world, observer, policy }, RUN);
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
         expect(stats).toMatchObject({
             tick: 150,
             ticksPerSecond: 58,
@@ -170,6 +175,7 @@ describe('collectStats', () => {
             workerMsPerTick: 1.5,
         });
         expect(stats.seasonProgress).toBeCloseTo(0.5, 9);
+        expect([stats.generationMax, stats.generationMedian]).toEqual([0, 0]);
     });
 
     it('reports births and deaths since the last stats message', () => {
@@ -177,39 +183,59 @@ describe('collectStats', () => {
         observer.births[BORN_CAUSE.MATE] = 4;
         observer.births[BORN_CAUSE.FLOOR] = 1;
         observer.deathsByCause[DEATH_CAUSE.EATEN] = 2;
-        const first = collectStats(live, { world, observer, policy }, RUN);
+        const first = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
         expect(first).toMatchObject({ births: 5, deaths: 2 });
         expect(first.birthsByCause).toEqual([0, 4, 0, 1, 0]);
         expect(first.deathsByCause).toEqual([0, 2, 0, 0]);
         observer.births[BORN_CAUSE.SPLIT] = 3;
-        const second = collectStats(live, { world, observer, policy }, RUN);
+        const second = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
         expect(second).toMatchObject({ births: 3, deaths: 0, birthsByCause: [0, 0, 3, 0, 0] });
     });
 
     it('reports bornShare as null before any birth after burn-in and as mate plus split over all after', () => {
         const { world, observer, live, policy } = setup();
-        expect(collectStats(live, { world, observer, policy }, RUN).bornShare).toBeNull();
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN)
+                .bornShare,
+        ).toBeNull();
         observer.birthsAfterBurnIn[BORN_CAUSE.MATE] = 2;
         observer.birthsAfterBurnIn[BORN_CAUSE.SPLIT] = 1;
         observer.birthsAfterBurnIn[BORN_CAUSE.FLOOR] = 1;
-        expect(collectStats(live, { world, observer, policy }, RUN).bornShare).toBe(0.75);
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN)
+                .bornShare,
+        ).toBe(0.75);
     });
 
     it('leaves combat null when the observer has no combat counters, then reports the change', () => {
         const { world, observer, live, policy } = setup();
         const counters = observer.combat;
         delete observer.combat;
-        expect(collectStats(live, { world, observer, policy }, RUN).combat).toBeNull();
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN).combat,
+        ).toBeNull();
         expect(counters).toBeDefined();
         observer.combat = { caughtEpisodes: 5, escapedEpisodes: 2, huntKills: 4, packKills: 1 };
-        expect(collectStats(live, { world, observer, policy }, RUN).combat).toEqual({
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN).combat,
+        ).toEqual({
             caught: 5,
             escaped: 2,
             huntKills: 4,
             packKills: 1,
         });
         observer.combat = { caughtEpisodes: 6, escapedEpisodes: 2, huntKills: 4, packKills: 3 };
-        expect(collectStats(live, { world, observer, policy }, RUN).combat).toEqual({
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN).combat,
+        ).toEqual({
             caught: 1,
             escaped: 0,
             huntKills: 0,
@@ -228,7 +254,11 @@ describe('collectStats', () => {
             world.lineageId[slot] = lineage;
         });
         world.population = 3;
-        const { lineages } = collectStats(live, { world, observer, policy }, RUN);
+        const { lineages } = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
         expect(lineages.count).toBe(2);
         expect(lineages.top).toEqual([
             { id: 4, count: 2, share: 2 / 3 },
@@ -243,12 +273,12 @@ describe('collectStats', () => {
             world.alive[slot] = 1;
             world.lineageId[slot] = 7;
         }
-        collectStats(live, { world, observer, policy }, RUN);
+        collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
         expect(tickerEvents(live)).toMatchObject([{ kind: 'new-leader', lineageId: 7 }]);
         world.alive.fill(0);
         world.alive[0] = 1;
         world.lineageId[0] = 8;
-        collectStats(live, { world, observer, policy }, RUN);
+        collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
         expect(tickerEvents(live).map((i) => i.kind)).toContain('extinct');
     });
 
@@ -258,25 +288,31 @@ describe('collectStats', () => {
         world.genomeId[0] = 33;
         world.tick = 100;
         world.ageTicks[0] = 899;
-        collectStats(live, { world, observer, policy }, RUN);
+        collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
         expect(tickerEvents(live)).toEqual([]);
         world.tick = 110;
         world.ageTicks[0] = 909;
-        collectStats(live, { world, observer, policy }, RUN);
+        collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
         expect(tickerEvents(live)).toMatchObject([{ kind: 'elder', genomeId: 33 }]);
         world.tick = 120;
         world.ageTicks[0] = 919;
-        collectStats(live, { world, observer, policy }, RUN);
+        collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
         expect(tickerEvents(live)).toEqual([]);
     });
 
     it('reports the archive of a policy that has one and null for one that has none', () => {
         const { world, observer, live, policy } = setup();
-        expect(collectStats(live, { world, observer, policy }, RUN).archive).toBeNull();
+        expect(
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN).archive,
+        ).toBeNull();
         const archive = createArchive(brainLayout(world.config));
         archive.occupied[2 * 100 * 2] = 1;
         live.newestReplacement = { spec: 2, cell: 0, tick: 5 };
-        const { archive: reported } = collectStats(live, { world, observer, policy: { ...policy, archive } }, RUN);
+        const { archive: reported } = collectStats(
+            live,
+            { world, observer, policy: { ...policy, archive }, generations: createGenerations(world.config) },
+            RUN,
+        );
         expect(reported).toEqual({
             coverage: 1 / 500,
             occupiedCount: [0, 0, 1, 0, 0],

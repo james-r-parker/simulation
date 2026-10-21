@@ -2,16 +2,17 @@
 // for every alive agent from its ray inputs, so a fitness function can be scored against a known behaviour.
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
-import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
+import { INTENT_CONTROLLERS } from './scripted-intent.js';
 import {
-    CH_BIGGER,
+    CH_THREAT,
     CH_FIRST_AGENT,
     CH_FOOD,
     CH_LAST_AGENT,
     CH_WALL,
     SEEK_THRUST,
+    createWander,
     eachAlive,
     seekFood,
     turnTowards,
@@ -28,10 +29,6 @@ export { SEEK_THRUST };
  * micro-world eats about 500 in its whole life, so a larger meal would never be finished.
  */
 export const MEAL_ENERGY = 140;
-
-/** `wanderer`'s slow random turn: the per-tick step and the bound, as fractions of `maxTurn`. */
-const WANDER_STEP = 0.1;
-const WANDER_BOUND = 0.3;
 
 /** A wall hit nearer than this proximity (1 is touching) makes `explorerAfterMeal` turn. */
 const WALL_NEAR = 0.6;
@@ -78,15 +75,7 @@ function sitter() {
 
 /** @type {ControllerFactory} */
 function wanderer({ world, rng }) {
-    const drift = new Float64Array(world.alive.length);
-    return eachAlive((w, slot) => {
-        drift[slot] = Math.max(
-            -WANDER_BOUND,
-            Math.min(WANDER_BOUND, drift[slot] + (nextFloat(rng) - 0.5) * 2 * WANDER_STEP),
-        );
-        const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
-        write(w, slot, 1, k < 0 ? drift[slot] : -turnTowards(k, w.config.rayCount));
-    });
+    return eachAlive(createWander(world, rng));
 }
 
 /** @type {ControllerFactory} */
@@ -100,7 +89,7 @@ function bumper() {
 /** @type {ControllerFactory} */
 function biteSeeker() {
     return eachAlive((world, slot) => {
-        const k = nearestClassRay(world, slot, CH_BIGGER, CH_BIGGER);
+        const k = nearestClassRay(world, slot, CH_THREAT, CH_THREAT);
         write(world, slot, 1, turnTowards(k, world.config.rayCount));
     });
 }
@@ -155,4 +144,5 @@ export const SCRIPTED_CONTROLLERS = Object.freeze({
     thrust60: constantThrust(CONSTANT_THRUSTS.thrust60),
     thrust100: constantThrust(CONSTANT_THRUSTS.thrust100),
     ...COMBAT_CONTROLLERS,
+    ...INTENT_CONTROLLERS,
 });

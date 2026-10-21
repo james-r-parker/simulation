@@ -80,6 +80,14 @@ describe('validateConfig types and ranges', () => {
         expect(() => createConfig({ huntSizeRatio: 0.9 })).toThrow(/huntSizeRatio/);
     });
 
+    it.each([1, 0.9, Infinity])('rejects a mateSizeRatio of %s', (value) => {
+        expect(() => createConfig({ mateSizeRatio: value })).toThrow(/mateSizeRatio/);
+    });
+
+    it('accepts a mateSizeRatio just above 1', () => {
+        expect(() => createConfig({ mateSizeRatio: 1.001 })).not.toThrow();
+    });
+
     it('rejects a negative mateRange and accepts 0', () => {
         expect(() => createConfig({ mateRange: -1 })).toThrow(/mateRange/);
         expect(() => createConfig({ mateRange: 0 })).not.toThrow();

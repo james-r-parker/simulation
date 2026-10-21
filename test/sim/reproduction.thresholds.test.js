@@ -54,7 +54,7 @@ describe('mate thresholds', () => {
         ['just over the size ratio limit', 21, 10, false],
         ['just under the inverse size ratio limit', 10, 21, false],
     ])('pairs agents at %s', (_name, sizeA, sizeB, mates) => {
-        const w = pair({ huntSizeRatio: 2 });
+        const w = pair({ mateSizeRatio: 2 });
         w.size[0] = sizeA;
         w.size[1] = sizeB;
         mate(w, recordingPolicy([]));

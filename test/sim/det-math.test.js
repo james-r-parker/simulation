@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detCos, detExp, detLog, detSin, detTanh } from '../../js/sim/det-math.js';
+import { detCos, detExp, detLog, detSin, detTanh, detTanhInto } from '../../js/sim/det-math.js';
 
 const POINTS = 100000;
 const TOLERANCE = 1e-12;
@@ -117,5 +117,40 @@ describe('det-math series tails', () => {
     it('detTanh is exactly 1 and not yet saturated just past the knee', () => {
         expect(detTanh(20.5)).toBe(1);
         expect(Math.abs(detTanh(19.999) - Math.tanh(19.999))).toBeLessThan(1e-15);
+    });
+});
+
+describe('detTanhInto', () => {
+    /**
+     * @param {number[]} values the inputs
+     * @returns {Float64Array} detTanhInto's results
+     */
+    function batch(values) {
+        const out = new Float64Array(values.length + 2);
+        detTanhInto(values, out, 2, values.length);
+        return out.subarray(2);
+    }
+
+    it('is bit-identical to detTanh over a sweep, for every group alignment', () => {
+        const values = Array.from({ length: 1003 }, (_, i) => (i - 500) * 0.0431);
+        const got = batch(values);
+        values.forEach((x, i) => expect(Object.is(got[i], detTanh(x))).toBe(true));
+    });
+
+    it('takes the scalar path for zero, -0, saturated and tiny values in a group', () => {
+        const values = [0, -0, 25, -25, 1e-300, -3, 20, -20, 19.99, 0.5, 7, -7, 1, 2];
+        const got = batch(values);
+        values.forEach((x, i) => expect(Object.is(got[i], detTanh(x))).toBe(true));
+    });
+
+    it('throws on a non-finite value inside a group like detTanh', () => {
+        expect(() => batch([1, 2, Number.NaN, 4])).toThrow('detTanh');
+        expect(() => batch([1, 2, 3, Infinity])).toThrow('detTanh');
+    });
+
+    it('rounds into a Float32Array like Math.fround(detTanh(x))', () => {
+        const out = new Float32Array(5);
+        detTanhInto([0.3, -1.7, 2.2, 0.9, -0.01], out, 0, 5);
+        [0.3, -1.7, 2.2, 0.9, -0.01].forEach((x, i) => expect(out[i]).toBe(Math.fround(detTanh(x))));
     });
 });

@@ -8,7 +8,7 @@ import { COMBAT_CONTROLLERS } from '../../js/evo/scripted-combat.js';
 import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
 const RAYS = 16;
-const CH = { food: 1, bigger: 2, smaller: 3 };
+const CH = { food: 1, threat: 2, prey: 3 };
 const O = OUTPUT_INDEX;
 const BODY = { bitten: 12, attackLeft: 21, attackRight: 22 };
 
@@ -32,7 +32,7 @@ function setup(name) {
 function hit(world, slot, k, channel) {
     const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
-    world.inputs[base + channel] = 1;
+    world.inputs[base + channel] = channel >= CH.threat ? 0.5 : 1;
 }
 
 /**
@@ -63,10 +63,10 @@ describe('combat controllers', () => {
         expect(Object.isFrozen(COMBAT_CONTROLLERS)).toBe(true);
     });
 
-    it('hunter turns to a smaller agent, thrusts, sprints and bites, and calls a hunt once on first sight', () => {
+    it('hunter turns to prey, thrusts, sprints and bites, and calls a hunt once on first sight', () => {
         const { world, run } = setup('hunter');
-        hit(world, 0, 3, CH.smaller);
-        hit(world, 1, RAYS - 2, CH.smaller);
+        hit(world, 0, 3, CH.prey);
+        hit(world, 1, RAYS - 2, CH.prey);
         run(world);
         expect(out(world, 0)).toEqual([1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0]);
         expect(out(world, 1)).toEqual([1, -1, 1, 0, 1, 0, 0, 1, 0, 0, 0]);
@@ -78,11 +78,11 @@ describe('combat controllers', () => {
 
     it('hunter calls again after it loses sight and sees prey again', () => {
         const { world, run } = setup('hunter');
-        hit(world, 0, 3, CH.smaller);
+        hit(world, 0, 3, CH.prey);
         run(world);
         world.inputs.fill(0);
         run(world);
-        hit(world, 0, 3, CH.smaller);
+        hit(world, 0, 3, CH.prey);
         run(world);
         expect(out(world, 0)[O.HUNT]).toBe(1);
     });
@@ -98,11 +98,11 @@ describe('combat controllers', () => {
         expect(out(world, 1)).toEqual([1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
-    it('fleer turns away from a bigger agent and sprints, and raises one alarm on first sight', () => {
+    it('fleer turns away from a threat and sprints, and raises one alarm on first sight', () => {
         const { world, run } = setup('fleer');
-        hit(world, 0, 3, CH.bigger);
-        hit(world, 1, RAYS - 3, CH.bigger);
-        hit(world, 2, 0, CH.bigger);
+        hit(world, 0, 3, CH.threat);
+        hit(world, 1, RAYS - 3, CH.threat);
+        hit(world, 2, 0, CH.threat);
         run(world);
         expect(out(world, 0)).toEqual([1, -1, 1, 0, 0, 1, 0, 0, 0, 0, 0]);
         expect(out(world, 1)).toEqual([1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0]);

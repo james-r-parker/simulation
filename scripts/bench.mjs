@@ -19,6 +19,27 @@ const DEFAULT_SIZES = [100, 250, 500];
 const WARMUP_TICKS = 500;
 const MEASURED_TICKS = 2000;
 
+/**
+ * The tunables `bench/baseline.json` was recorded with (commit 282ffeb), frozen so `bench.step_ms@<n>` and `bench-check`
+ * compare like with like when `createConfig` defaults are retuned. It lists only the keys whose defaults have changed
+ * since; every other key follows the defaults. `biteArc` did not exist then and cannot be frozen out.
+ */
+export const BENCH_CONFIG = Object.freeze({
+    maxFood: 800,
+    foodTargetPerAgent: 8,
+    huntSizeRatio: 1.05,
+    alarmCost: 4,
+    huntCallCost: 4,
+});
+
+/** Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults. */
+export const TRACKED_VARIANTS = Object.freeze([
+    { suffix: 'defaults', overrides: Object.freeze({}) },
+    { suffix: 'w7680', overrides: Object.freeze({ worldWidth: 7680, worldHeight: 4320 }) },
+]);
+
+const TRACKED_SIZE = 500;
+
 const USAGE = 'usage: bench [--json] [--sizes=100,250,500] [--policy <name>]';
 
 /**
@@ -103,13 +124,14 @@ export function round4(ms) {
  * @param {number} size population size
  * @param {number} stepMs median step time
  * @param {Record<string, number>} phaseMs median time per phase name
+ * @param {string} [suffix] appended to the size in each key, for a tracked variant
  * @returns {Record<string, number>} the flat metric object
  */
-export function formatMetrics(size, stepMs, phaseMs) {
+export function formatMetrics(size, stepMs, phaseMs, suffix = '') {
     /** @type {Record<string, number>} */
-    const metrics = { [`bench.step_ms@${size}`]: round4(stepMs) };
+    const metrics = { [`bench.step_ms@${size}${suffix}`]: round4(stepMs) };
     for (const [name, ms] of Object.entries(phaseMs)) {
-        metrics[`bench.phase_ms.${name}@${size}`] = round4(ms);
+        metrics[`bench.phase_ms.${name}@${size}${suffix}`] = round4(ms);
     }
     return metrics;
 }
@@ -157,10 +179,13 @@ export function createSubject(config, name) {
 /**
  * @param {number} size population size, held fixed by min = max = initial
  * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
+ * @param {{suffix?: string, overrides?: Record<string, number>}} [variant] a tracked variant: the key suffix and the
+ *   overrides on today's defaults; the frozen `BENCH_CONFIG` world when omitted
  * @returns {Record<string, number>} the metrics for that size
  */
-export function benchSize(size, policyName) {
-    const config = createConfig({ initialAgents: size, minAgents: size, maxAgents: size });
+export function benchSize(size, policyName, variant) {
+    const base = variant === undefined ? BENCH_CONFIG : (variant.overrides ?? {});
+    const config = createConfig({ ...base, initialAgents: size, minAgents: size, maxAgents: size });
     const { brain, advance, observe } = createSubject(config, policyName);
     const world = createWorld(config, brain);
     observe(world);
@@ -188,7 +213,7 @@ export function benchSize(size, policyName) {
     STEP_PHASES.forEach(({ name }, p) => {
         phaseMs[name] = median(phaseTimes[p]);
     });
-    return formatMetrics(size, median(stepTimes), phaseMs);
+    return formatMetrics(size, median(stepTimes), phaseMs, variant?.suffix);
 }
 
 /**
@@ -211,14 +236,20 @@ export function recordMetrics(metrics, all) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
+ * @param {{trackedSize?: number}} [options] the size whose row also runs the tracked variants (tests pass a small one)
  * @returns {Promise<void>}
  */
-export async function main(argv) {
+export async function main(argv, { trackedSize = TRACKED_SIZE } = {}) {
     const { sizes, json, policy } = parseArgs(argv);
     /** @type {Record<string, number>} */
     const all = {};
     for (const size of sizes) {
         Object.assign(all, benchSize(size, policy));
+        if (size === trackedSize) {
+            for (const variant of TRACKED_VARIANTS) {
+                Object.assign(all, benchSize(size, policy, variant));
+            }
+        }
     }
     if (json) {
         console.log(JSON.stringify(policy === undefined ? all : { policy, ...all }, null, 2));
