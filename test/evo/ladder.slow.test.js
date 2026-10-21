@@ -1,8 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { parseArgs, runLadder } from '../../scripts/ladder.mjs';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { main, parseArgs, runLadder } from '../../scripts/ladder.mjs';
 
 const SMALL = { initialAgents: 10, maxAgents: 20, maxFood: 100, initialFood: 100 };
 /** @type {string} */
@@ -70,4 +70,41 @@ describe('runLadder', () => {
         const lines = readFileSync(join(logDir, 'ladder-fail-1x5.jsonl'), 'utf8').trim().split('\n');
         expect(JSON.parse(lines.at(-1) ?? '{}')).toMatchObject({ level: 'error', event: 'LadderFailed' });
     }, 60_000);
+});
+
+describe('main', () => {
+    it('reads --config, runs every rung and returns 0', async () => {
+        const config = join(dir, 'small.json');
+        writeFileSync(config, JSON.stringify(SMALL));
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            const args = [
+                '--ticks',
+                '5',
+                '--seeds',
+                '1',
+                '--workers',
+                '1',
+                '--config',
+                config,
+                '--out',
+                join(dir, 'm.json'),
+            ];
+            expect(await main(args, { logDir: join(dir, 'main-logs') })).toBe(0);
+            expect(JSON.parse(readFileSync(join(dir, 'm.json'), 'utf8')).rungs.length).toBeGreaterThan(0);
+            expect(log).toHaveBeenCalled();
+        } finally {
+            log.mockRestore();
+        }
+    }, 120_000);
+
+    it('returns 1 and prints the error for an unknown flag', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            expect(await main(['--bogus'])).toBe(1);
+            expect(error).toHaveBeenCalled();
+        } finally {
+            error.mockRestore();
+        }
+    });
 });
