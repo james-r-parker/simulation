@@ -152,7 +152,8 @@ export function createIntentState(config) {
     for (const [name, [Type, value]] of Object.entries(SLOT_FIELDS)) {
         intent[name] = new /** @type {any} */ (Type)(config.maxAgents).fill(value);
     }
-    return intent;
+    // The keyed stores above leave the object in dictionary mode; the spread is a fast copy (world-balance T63).
+    return { ...intent };
 }
 
 /**
