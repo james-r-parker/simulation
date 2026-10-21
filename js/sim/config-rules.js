@@ -47,6 +47,8 @@ export const FEATURE_RULES = {
     foodPatchDepletion: num(0),
     foodPatchRegrow: UNIT,
     foodBackgroundShare: UNIT,
+    foodAreaCapacity: BOOL,
+    foodRegrowPerArea: num(0),
     leakEnabled: BOOL,
     hebbianRate: num(0, 1),
     traitsEnabled: BOOL,
