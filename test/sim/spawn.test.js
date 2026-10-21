@@ -287,3 +287,28 @@ describe('placeClear', () => {
         expect(w.point[1]).toBeLessThanOrEqual(975);
     });
 });
+
+describe('spawnAgent sex', () => {
+    it('draws every spawn a sex and reports it in AGENT_BORN field 9 when sexes are on', () => {
+        const w = build({ sexesEnabled: true, initialAgents: 0, maxAgents: 64 });
+        const slots = [];
+        for (let i = 0; i < 40; i++) {
+            slots.push(spawnAgent(w, testPolicy, i % 2 === 0 ? BORN_CAUSE.FLOOR : BORN_CAUSE.IMMIGRANT));
+        }
+        const sexes = slots.map((s) => w.sex[s]);
+        expect(sexes).toContain(0);
+        expect(sexes).toContain(1);
+        for (let i = 0; i < slots.length; i++) {
+            expect(w.events.data[i * EVENT_STRIDE + 9]).toBe(sexes[i]);
+        }
+    });
+
+    it('makes everyone female without a draw when sexes are off', () => {
+        const w = build({ initialAgents: 0 });
+        const before = Array.from(w.rng.lifecycle.s);
+        const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        expect(w.sex[slot]).toBe(0);
+        expect(w.events.data[9]).toBe(0);
+        expect(Array.from(w.rng.lifecycle.s)).toEqual(before);
+    });
+});

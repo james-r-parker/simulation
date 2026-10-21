@@ -66,5 +66,7 @@ export const FEATURE_RULES = {
     hebbianRate: num(0, 1),
     traitsEnabled: BOOL,
     visionCost: num(0),
+    sexesEnabled: BOOL,
+    splitCost: num(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
 };

@@ -67,6 +67,8 @@ export const DEFAULTS = deepFreeze({
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
     childEnergyMin: 200, // new: the smallest gift a mating birth may make
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
+    sexesEnabled: false, // new: two sexes, female choice of the strongest male, SPLIT-gated splitting (world-balance T37)
+    splitCost: 50, // new: energy a female pays to split when sexes are on
     maxAgeTicks: 36000, // new
     reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES

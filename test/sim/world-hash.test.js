@@ -194,3 +194,19 @@ describe('hashWorld', () => {
         expect(() => hashWorld(world)).toThrow(`hashWorld: world.${name} is missing or is not a typed array`);
     });
 });
+
+describe('hashWorld sex', () => {
+    it('ignores sex when sexes are off and covers it when on', () => {
+        const off = makeWorld();
+        const before = hashWorld(off);
+        off.sex[off.sex.length - 1] = 1;
+        expect(hashWorld(off)).toBe(before);
+
+        const on = allocateWorld(createConfig({ ...SMALL, sexesEnabled: true }));
+        const root = createRng(1);
+        on.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
+        const base = hashWorld(on);
+        on.sex[on.sex.length - 1] = 1;
+        expect(hashWorld(on)).not.toBe(base);
+    });
+});
