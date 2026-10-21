@@ -101,6 +101,25 @@ function obstacleBounce(world, slot, k) {
 }
 
 /**
+ * Bounces one agent off every obstacle in index order. The bounding-box rejection `obstacleBounce` starts with runs
+ * here on locals, so a miss (nearly every pair) costs two loads and compares, not a call with a destructure; the
+ * agent's position is read afresh for each obstacle because a bounce moves it.
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
+ * @returns {void}
+ */
+function bounceObstacles(world, slot) {
+    const { x, y, size, obsX, obsY, obsRadius } = world;
+    const own = size[slot];
+    for (let k = 0; k < obsX.length; k++) {
+        const reach = obsRadius[k] + own;
+        if (Math.abs(x[slot] - obsX[k]) < reach && Math.abs(y[slot] - obsY[k]) < reach) {
+            obstacleBounce(world, slot, k);
+        }
+    }
+}
+
+/**
  * Applies damping, the speed cap and movement to one agent.
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
@@ -139,9 +158,7 @@ export function integrate(world) {
             if (hitX || hitY) {
                 removeEnergy(world, i, config.wallDamage, LOSS_CAUSE.COLLISION);
             }
-            for (let k = 0; k < world.obsX.length; k++) {
-                obstacleBounce(world, i, k);
-            }
+            bounceObstacles(world, i);
         }
     }
 }
