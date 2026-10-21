@@ -3,7 +3,7 @@
 
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
-import { canBite } from './bite-rule.js';
+import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
 
@@ -113,10 +113,10 @@ function agentChannel(world, slot, other) {
     if (isKin(world, slot, other)) {
         return CH_KIN;
     }
-    if (canBite(world, other, slot)) {
+    if (couldBite(world, other, slot)) {
         return CH_THREAT;
     }
-    return canBite(world, slot, other) ? CH_PREY : CH_OTHER;
+    return couldBite(world, slot, other) ? CH_PREY : CH_OTHER;
 }
 
 /**

@@ -372,9 +372,10 @@ In `integrate`, after moving:
   hit so far lies within that cell's stretch of the ray, or at `visionRange`.
 - Equal distances are broken by kind (food, agent, obstacle, wall), then by lower index.
 - A wall hit's distance is to the nearest boundary line the ray crosses within `visionRange`.
-- The agent class is the same `canBite` rule that `feed` uses (`js/sim/bite-rule.js`): the biter's specialisation can
-  hunt, the two are not kin, the biter is bigger than `huntSizeRatio` times the victim and the victim is in its jaws.
-  So a rival that is bigger but cannot hunt, or that the caster is not facing, is "other", not a threat. `writeRay`
+- The agent class is `couldBite` (`js/sim/bite-rule.js`), the bite rule `feed` uses without the jaws: the biter's
+  specialisation can hunt, the two are not kin and the biter is bigger than `huntSizeRatio` times the victim. A hunter
+  reads as a threat from any angle; a rival that is bigger but cannot hunt is "other". `feed` uses `canBite`, which
+  adds that the victim is in the biter's jaws. `writeRay`
   sets the hit's class channel to the proximity (the hit's `1 - distance / visionRange`) for an agent and to 1 for
   food, wall, obstacle and smoke.
 - There are `RAY_CHANNELS` (9) values per ray; channel 8 is smoke. `testClouds` tests the live smoke clouds and offers the

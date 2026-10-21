@@ -160,9 +160,9 @@ once per `callTicks`. Smoke does not block sound.
   `prevBiteTick`; otherwise 0. The three arrays are hashed with the agent arrays.
 - `huntSizeRatio` is 1.01 (tuned in E20 from 1.05 and then with the jaws from 1.03, with `alarmCost` and `huntCallCost` 0.5, `maxFood` 1600 and
   `foodTargetPerAgent` 12). A hunter bites a victim when `size[biter] > huntSizeRatio x size[victim]`, and the same
-  ratio is part of `canBite`, which also classes a ray hit (see below). Mating has its own size band, `mateSizeRatio`.
-- Honest ray classes (world-balance Phase 2): an agent hit on a ray is "can bite me" (channel 2) when `canBite`
-  says it could bite the caster, "I can bite it" (channel 3) when the caster could bite it, kin (5) before either,
+  ratio is part of `couldBite`, which classes a ray hit, and of `canBite`, which adds the jaws (see below). Mating has its own size band, `mateSizeRatio`.
+- Honest ray classes (world-balance Phase 2): an agent hit on a ray is "can bite me" (channel 2) when `couldBite`
+  says it could bite the caster if it faced it, "I can bite it" (channel 3) when the caster could bite it, kin (5) before either,
   and otherwise other (4). Prey therefore see exactly the agents that can catch them, and a hunter sees exactly
   what it can bite; a bigger rival that cannot hunt is not a threat. Class channels carry proximity.
 - The anti-exploit suite (`test/evo/anti-exploit.slow.test.js`) marks the scripted `hunter` an expected failure

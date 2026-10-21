@@ -1,5 +1,6 @@
-// The bite rule: whether one agent is able to bite another. Shared by the feed phase and the ray classes so that what
-// an agent senses as "can bite me" and "I can bite it" can never drift from what `feed` does.
+// The bite rule: whether one agent is able to bite another. The ray classes use `couldBite` (role, kin and size, from
+// any angle) and the feed phase `canBite` (`couldBite` plus the jaws), so what an agent senses as "can bite me" and
+// "I can bite it" can never drift from what `feed` does once the biter faces its victim.
 
 import { detCos, detSin } from './det-math.js';
 import { isKin } from './kin.js';
@@ -25,19 +26,30 @@ function inJaws(world, biter, victim) {
 }
 
 /**
- * Whether `biter` is able to bite `victim`: its specialisation can hunt, they are not kin, it is bigger than
- * `huntSizeRatio` times the victim and the victim is in its jaws. The brain's wish to bite is not part of it; `feed`
- * adds that.
+ * Whether `biter` could bite `victim` if it faced it: its specialisation can hunt, they are not kin and it is bigger
+ * than `huntSizeRatio` times the victim. The ray classes read this, so prey know a predator from any angle (user,
+ * 2026-10-21).
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the biting slot
+ * @param {number} victim the bitten slot
+ * @returns {boolean}
+ */
+export function couldBite(world, biter, victim) {
+    return (
+        specParams(world.config, world.spec[biter]).canHunt &&
+        !isKin(world, biter, victim) &&
+        world.size[biter] > world.config.huntSizeRatio * world.size[victim]
+    );
+}
+
+/**
+ * Whether `biter` is able to bite `victim` now: `couldBite` and the victim is in its jaws. The brain's wish to bite
+ * is not part of it; `feed` adds that.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
  * @returns {boolean}
  */
 export function canBite(world, biter, victim) {
-    return (
-        specParams(world.config, world.spec[biter]).canHunt &&
-        !isKin(world, biter, victim) &&
-        world.size[biter] > world.config.huntSizeRatio * world.size[victim] &&
-        inJaws(world, biter, victim)
-    );
+    return couldBite(world, biter, victim) && inJaws(world, biter, victim);
 }

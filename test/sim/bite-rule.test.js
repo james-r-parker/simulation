@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canBite } from '../../js/sim/bite-rule.js';
+import { canBite, couldBite } from '../../js/sim/bite-rule.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
@@ -54,6 +54,23 @@ describe('canBite', () => {
     it('takes any direction when the bite arc is the full circle', () => {
         const { w, biter, victim } = pair({ biteArc: Math.PI }, { facing: Math.PI });
         expect(canBite(w, biter, victim)).toBe(true);
+    });
+});
+
+describe('couldBite', () => {
+    it('ignores the jaws: a hunter facing away could still bite', () => {
+        const { w, biter, victim } = pair({}, { facing: Math.PI });
+        expect(couldBite(w, biter, victim)).toBe(true);
+        expect(canBite(w, biter, victim)).toBe(false);
+    });
+
+    it.each([
+        ['a specialisation that cannot hunt', { spec: 0 }],
+        ['kin', { kin: true }],
+        ['a biter no bigger than the ratio allows', { size: 20 }],
+    ])('refuses %s', (_name, biterOver) => {
+        const { w, biter, victim } = pair({}, biterOver);
+        expect(couldBite(w, biter, victim)).toBe(false);
     });
 });
 

@@ -60,14 +60,14 @@ describe('castRays classes', () => {
         expect(r.slice(1).filter((v) => v !== 0)).toHaveLength(1);
     });
 
-    it('does not call an agent a threat when its jaws face away', () => {
+    it('calls a hunter a threat from any angle, its jaws facing away or not', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const them = addAgent(w, 600, 500, 40);
         w.spec[them] = 1;
         w.angle[them] = 0;
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.other]).toBeGreaterThan(0);
+        expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
         w.angle[them] = Math.PI;
         cast(w, me);
         expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
@@ -348,11 +348,8 @@ function bruteAgentClass(w, me, other) {
         w.parentB[b] === w.genomeId[a];
     /** @type {(a: number, b: number) => boolean} */
     const bites = (a, b) => {
-        const dx = w.x[b] - w.x[a];
-        const dy = w.y[b] - w.y[a];
-        const along = (dx * Math.cos(w.angle[a]) + dy * Math.sin(w.angle[a])) / Math.hypot(dx, dy);
         const hunts = Object.values(w.config.specialisations).find((e) => e.index === w.spec[a]).canHunt;
-        return hunts && w.size[a] > w.config.huntSizeRatio * w.size[b] && along >= Math.cos(w.config.biteArc);
+        return hunts && w.size[a] > w.config.huntSizeRatio * w.size[b];
     };
     if (kin(me, other)) {
         return CH.kin;
