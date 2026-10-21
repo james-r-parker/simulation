@@ -4,6 +4,7 @@ import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
+import { terrainProblem } from './terrain.js';
 import { TRAIT_MAX } from './traits.js';
 
 const MAX_SEED = 4294967295; // 2^32 - 1
@@ -213,6 +214,12 @@ function inBounds(n, rule) {
  * @returns {void}
  */
 function checkScalar(path, value, rule) {
+    if (rule.type === 'enum') {
+        if (!rule.values?.includes(/** @type {string} */ (value))) {
+            fail(path, value, `one of ${rule.values?.join(', ')}`);
+        }
+        return;
+    }
     if (rule.type === 'bool') {
         if (typeof value !== 'boolean') {
             fail(path, value, 'a boolean');
@@ -336,6 +343,10 @@ function checkCrossKey(config) {
     const room = Math.min(config.worldWidth, config.worldHeight);
     if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
         fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
+    }
+    const terrain = terrainProblem(config);
+    if (terrain !== null) {
+        fail('terrainLayout', config.terrainLayout, terrain);
     }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);

@@ -1,16 +1,16 @@
 {
   "coverage": {
     "scripts": {
-      "lines": 92.93,
-      "branches": 85.02,
-      "functions": 96.76,
-      "statements": 93.12
+      "lines": 93.51,
+      "branches": 85.86,
+      "functions": 97.33,
+      "statements": 93.78
     },
     "js/sim": {
-      "lines": 99.94,
+      "lines": 99.95,
       "branches": 100,
       "functions": 100,
-      "statements": 99.94
+      "statements": 99.95
     },
     "js/evo": {
       "lines": 100,
@@ -20,13 +20,13 @@
     },
     "js/app": {
       "lines": 100,
-      "branches": 96.96,
+      "branches": 97.67,
       "functions": 100,
       "statements": 100
     },
     "js/worker": {
       "lines": 99.82,
-      "branches": 98.42,
+      "branches": 98.44,
       "functions": 100,
       "statements": 99.83
     }

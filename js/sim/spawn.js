@@ -5,6 +5,7 @@ import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
+import { placeTerrain } from './terrain.js';
 import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
@@ -310,6 +311,7 @@ export function createWorld(config, policy) {
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
     placeObstacles(world);
+    placeTerrain(world);
     createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {
         spawnFoodItem(world);
