@@ -90,7 +90,7 @@ describe('mountInspector', () => {
         const inspector = mountInspector(doc, root);
         inspector.update(view);
         const rowsBefore = byClass(root, 'bar-row').length;
-        expect(rowsBefore).toBe(32 + 8);
+        expect(rowsBefore).toBe(view.groups.flatMap((g) => g.bars).length + view.outputs.length);
         expect(byClass(root, 'bar-group').map((n) => n.textContent)).toEqual(view.groups.map((g) => g.name));
         expect(byClass(root, 'counter-value')).toHaveLength(view.counters.length);
         inspector.update(view);
