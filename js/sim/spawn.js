@@ -137,47 +137,39 @@ function pickZone(world, target) {
     return picked;
 }
 
+/** The disc `placeInDisc` places in, reused by every call so food placement allocates nothing. */
+const DISC = { cx: 0, cy: 0, discRadius: 0 };
+
 /**
- * Draws a point around a zone centre, redrawing while it lies in an obstacle, and writes it to `world.point`.
- * A zone an obstacle has drifted over leaves no clear point, so after `placementTries` it places uniformly instead.
- * @param {World} world the world
- * @param {number} zone the zone index
- * @param {number} radius the food radius
- * @returns {void}
+ * @param {number} cx the disc's centre x
+ * @param {number} cy the disc's centre y
+ * @param {number} discRadius the disc's radius
+ * @returns {{cx: number, cy: number, discRadius: number}} the shared disc, set
  */
-function placeInZone(world, zone, radius) {
-    const { worldWidth, worldHeight, placementTries, fertileZoneRadius } = world.config;
-    const rng = world.rng.food;
-    for (let attempt = 0; attempt < placementTries; attempt++) {
-        const r = fertileZoneRadius * Math.sqrt(nextFloat(rng));
-        const theta = nextFloat(rng) * TWO_PI;
-        const x = Math.min(worldWidth - radius, Math.max(radius, world.zoneX[zone] + r * detCos(theta)));
-        const y = Math.min(worldHeight - radius, Math.max(radius, world.zoneY[zone] + r * detSin(theta)));
-        if (clearOfObstacles(world, x, y, radius)) {
-            world.point[0] = x;
-            world.point[1] = y;
-            return;
-        }
-    }
-    placeClear(world, rng, radius);
+function setDisc(cx, cy, discRadius) {
+    DISC.cx = cx;
+    DISC.cy = cy;
+    DISC.discRadius = discRadius;
+    return DISC;
 }
 
 /**
- * Draws a point inside a patch, redrawing while it lies in an obstacle, and writes it to `world.point`; after
- * `placementTries` it places uniformly instead.
+ * Draws a point in the disc of radius `discRadius` around (`cx`, `cy`), redrawing while it lies in an obstacle, and
+ * writes it to `world.point`. A disc an obstacle has drifted over leaves no clear point, so after `placementTries` it
+ * places uniformly instead. Fertile zones and food patches both place through it.
  * @param {World} world the world
- * @param {number} patch the patch index
+ * @param {{cx: number, cy: number, discRadius: number}} disc the disc's centre and radius
  * @param {number} radius the food radius
  * @returns {void}
  */
-function placeInPatch(world, patch, radius) {
-    const { worldWidth, worldHeight, placementTries, foodPatchRadius } = world.config;
+function placeInDisc(world, { cx, cy, discRadius }, radius) {
+    const { worldWidth, worldHeight, placementTries } = world.config;
     const rng = world.rng.food;
     for (let attempt = 0; attempt < placementTries; attempt++) {
-        const r = foodPatchRadius * Math.sqrt(nextFloat(rng));
+        const r = discRadius * Math.sqrt(nextFloat(rng));
         const theta = nextFloat(rng) * TWO_PI;
-        const x = Math.min(worldWidth - radius, Math.max(radius, world.patchX[patch] + r * detCos(theta)));
-        const y = Math.min(worldHeight - radius, Math.max(radius, world.patchY[patch] + r * detSin(theta)));
+        const x = Math.min(worldWidth - radius, Math.max(radius, cx + r * detCos(theta)));
+        const y = Math.min(worldHeight - radius, Math.max(radius, cy + r * detSin(theta)));
         if (clearOfObstacles(world, x, y, radius)) {
             world.point[0] = x;
             world.point[1] = y;
@@ -199,9 +191,11 @@ function placeFood(world, radius) {
     const rng = world.rng.food;
     const total = totalFertility(world);
     if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
-        placeInZone(world, pickZone(world, nextFloat(rng) * total), radius);
+        const zone = pickZone(world, nextFloat(rng) * total);
+        placeInDisc(world, setDisc(world.zoneX[zone], world.zoneY[zone], c.fertileZoneRadius), radius);
     } else if (c.foodPatchCount > 0 && nextFloat(rng) >= c.foodBackgroundShare) {
-        placeInPatch(world, pickPatch(world, rng), radius);
+        const patch = pickPatch(world, rng);
+        placeInDisc(world, setDisc(world.patchX[patch], world.patchY[patch], c.foodPatchRadius), radius);
     } else {
         placeClear(world, rng, radius);
     }

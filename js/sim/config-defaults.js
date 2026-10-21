@@ -21,7 +21,7 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 40, // new, lowered from 100 (world-balance)
+    minAgents: 100, // the floor; world-balance lowers it to 40 at the Phase 4 switch-on (T41)
     immigrationInterval: 600, // new
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new

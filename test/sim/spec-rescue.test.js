@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '../../js/sim/rng.js';
-import { SPEC_COUNT, pickEmptySpec } from '../../js/sim/spec-rescue.js';
+import { SPEC_COUNT, countSpecs, pickEmptySpec } from '../../js/sim/spec-rescue.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 describe('pickEmptySpec', () => {
@@ -35,5 +35,14 @@ describe('pickEmptySpec', () => {
         const before = Array.from(rng.s);
         expect(pickEmptySpec(w, 7, rng)).toBe(-1);
         expect(Array.from(rng.s)).toEqual(before);
+    });
+});
+
+describe('countSpecs', () => {
+    it('counts alive agents by specialisation, leaving out the given slot', () => {
+        const world = { alive: Uint8Array.from([1, 1, 0, 1]), spec: Uint8Array.from([0, 2, 2, 2]) };
+        const counts = new Int32Array(5).fill(9);
+        countSpecs(world, 3, counts);
+        expect(Array.from(counts)).toEqual([1, 0, 1, 0, 0]);
     });
 });

@@ -5,7 +5,7 @@ import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat } from '../../sim/rng.js';
-import { pickEmptySpec } from '../../sim/spec-rescue.js';
+import { countSpecs, pickEmptySpec } from '../../sim/spec-rescue.js';
 import { biologyOn } from '../../sim/traits.js';
 import { rowOf } from './natural-birth.js';
 
@@ -23,12 +23,7 @@ export const CLONE_SHARE_END = 0.8;
  * @returns {number} the specialisation with the fewest alive agents, ties to the lowest index
  */
 export function leastPopulatedSpec(world, slot, counts) {
-    counts.fill(0);
-    for (let i = 0; i < world.alive.length; i++) {
-        if (world.alive[i] === 1 && i !== slot) {
-            counts[world.spec[i]] += 1;
-        }
-    }
+    countSpecs(world, slot, counts);
     let best = 0;
     for (let spec = 1; spec < counts.length; spec++) {
         best = counts[spec] < counts[best] ? spec : best;

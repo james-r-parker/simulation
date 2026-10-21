@@ -297,9 +297,9 @@ describe('validateConfig food patches and the floor', () => {
         expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
 
-    it('defaults to patches off, a floor of 40 and no rescue', () => {
+    it('defaults to patches off, a floor of 100 and no rescue', () => {
         const c = createConfig();
-        expect([c.foodPatchCount, c.minAgents, c.floorRescueAtZero]).toEqual([0, 40, false]);
+        expect([c.foodPatchCount, c.minAgents, c.floorRescueAtZero]).toEqual([0, 100, false]);
     });
 
     it('rejects patches wider than the world', () => {
