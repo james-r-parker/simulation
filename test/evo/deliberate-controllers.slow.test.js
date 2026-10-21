@@ -19,13 +19,15 @@ const cache = new Map();
  * @param {{world: string, arms: Record<string, string> | string}} setup the world and arms
  * @param {number} ticks ticks to run
  * @param {number} seed the world seed
+ * @param {boolean} sexesEnabled whether the world has two sexes
  * @returns {Record<string, {value: number | null}>} the run's metrics
  */
-function metricsOf(setup, ticks, seed) {
-    const key = `${setup.world}|${JSON.stringify(setup.arms)}|${ticks}|${seed}`;
+function metricsOf(setup, ticks, seed, sexesEnabled) {
+    const key = `${setup.world}|${JSON.stringify(setup.arms)}|${ticks}|${seed}|${sexesEnabled}`;
+    const config = { sexesEnabled };
     if (!cache.has(key)) {
         if (setup.world === 'micro') {
-            const { world, observer } = playMicroWorld(seed, ticks, /** @type {string} */ (setup.arms));
+            const { world, observer } = playMicroWorld(seed, ticks, /** @type {string} */ (setup.arms), config);
             cache.set(key, computeMetrics(observer, world));
         } else if (setup.world === 'survivable') {
             const arms = {
@@ -33,9 +35,9 @@ function metricsOf(setup, ticks, seed) {
                 world: survivableWorld,
                 predatorEvery: SURVIVABLE_PREDATOR_EVERY,
             };
-            cache.set(key, runPredatorWorld(seed, ticks, {}, /** @type {any} */ (arms)));
+            cache.set(key, runPredatorWorld(seed, ticks, config, /** @type {any} */ (arms)));
         } else {
-            cache.set(key, runPredatorWorld(seed, ticks, {}, /** @type {any} */ (setup.arms)));
+            cache.set(key, runPredatorWorld(seed, ticks, config, /** @type {any} */ (setup.arms)));
         }
     }
     return cache.get(key);
@@ -165,18 +167,20 @@ describe('chance-or-waste controllers score below skill on the intent metrics', 
         expect(holds('eval.hunt_call_precision', -0.2, 0)).toBe(false);
     });
 
-    describe.each(PAIRS.map((pair) => ({ ...pair, name: `${pair.id} ${pair.metric}` })))(
-        '$name',
-        ({ metric, chanceName, chance: chanceSetup, skill: skillSetup, run: { ticks, seeds } }) => {
-            it.each(seeds)(
-                `${chanceName} vs skill on seed %i`,
-                (seed) => {
-                    const chance = metricsOf(chanceSetup, ticks, seed)[metric].value;
-                    const skill = metricsOf(skillSetup, ticks, seed)[metric].value;
-                    expect({ chance, skill, holds: holds(metric, chance, skill) }).toMatchObject({ holds: true });
-                },
-                120_000,
-            );
-        },
-    );
+    describe.each([false, true])('with sexes %s', (sexesEnabled) => {
+        describe.each(PAIRS.map((pair) => ({ ...pair, name: `${pair.id} ${pair.metric}` })))(
+            '$name',
+            ({ metric, chanceName, chance: chanceSetup, skill: skillSetup, run: { ticks, seeds } }) => {
+                it.each(seeds)(
+                    `${chanceName} vs skill on seed %i`,
+                    (seed) => {
+                        const chance = metricsOf(chanceSetup, ticks, seed, sexesEnabled)[metric].value;
+                        const skill = metricsOf(skillSetup, ticks, seed, sexesEnabled)[metric].value;
+                        expect({ chance, skill, holds: holds(metric, chance, skill) }).toMatchObject({ holds: true });
+                    },
+                    120_000,
+                );
+            },
+        );
+    });
 });

@@ -20,7 +20,7 @@ function preyAlive(world) {
  * metric was looked at: `hunter` against `fleer`, on each seed, at least half the starting prey alive at the
  * midpoint, some prey alive at the end, and at least 5 resolved bite episodes of which at least 3 escaped.
  */
-describe('the survivable-prey duel keeps prey alive', () => {
+describe.each([false, true])('the survivable-prey duel keeps prey alive, sexes %s', (sexesEnabled) => {
     it.each([1, 2, 3])(
         'seed %i',
         (seed) => {
@@ -28,6 +28,7 @@ describe('the survivable-prey duel keeps prey alive', () => {
             let middle = 0;
             const { world, observer } = playPredatorWorld(seed, TICKS, {
                 world: survivableWorld,
+                config: { sexesEnabled },
                 predatorEvery: SURVIVABLE_PREDATOR_EVERY,
                 onTick: (w) => {
                     start = w.tick === 1 ? preyAlive(w) : start;

@@ -1031,6 +1031,21 @@
       },
       "effect": "no-difference",
       "note": "Seeds 1-32 x 200000 ticks, paired with E25 live arm, --allow-config-diff mateSizeRatio. The three done-criterion targets are no-difference (food +2.1%, fed lifespan -6.7%, births +8.7%). Other Phase 2 Targets: alarm_precision -41% worse, escape_rate no-difference, idle_signals_per_1k no-difference. Also worse: hunt_call_precision -41%, pack_kill_share -47%, median_lifespan -8.2%. eval.mating_share 0.151 (new metric, not in E25). Run after the crowding fix in life-counters (sampleCrowding reads class channels by proximity)."
+    },
+    {
+      "id": "E28",
+      "date": "2026-10-21",
+      "branch": "feat/wb-t39-controllers",
+      "hypothesis": "The hunter's fitnessV5 share of the foodSeeker's (FIT-5: a flat score per kill) stays above its allowed share max(0.5, hunter food / foodSeeker food + 0.1) in the anti-exploit micro-world with sexes on as with sexes off.",
+      "prediction": "over the allowed share in both modes; sexes on may be narrower because half the agents are male and only females split.",
+      "targets": ["fitnessV5 hunter / foodSeeker fitness ratio versus the allowed share"],
+      "beforePolicy": "sexesEnabled false",
+      "afterPolicy": "sexesEnabled true",
+      "before": "anti-exploit micro-world (evals/micro-world.json), scripted hunter vs foodSeeker, fitnessV5, 5000 ticks, seeds 1-8, sexesEnabled false",
+      "after": "the same with sexesEnabled true (SPLIT held at 1 by every scripted controller)",
+      "verdicts": {},
+      "effect": "exploit",
+      "note": "Per seed ratio/allowed. Sexes off: 1 0.822/0.816, 2 0.973/0.964, 3 0.908/0.724, 4 1.088/1.038, 5 0.924/0.886, 6 0.781/0.826, 7 0.888/0.849, 8 0.769/0.707; mean 0.894/0.851 (excess +0.043, 6 of 8 seeds over, about 2 standard errors). Sexes on: 1 0.717/0.633, 2 0.786/0.878, 3 0.740/0.553, 4 1.055/1.063, 5 0.784/0.748, 6 0.620/0.604, 7 0.721/0.716, 8 0.746/0.724; mean 0.771/0.740 (excess +0.031, 5 of 8 over, about 1 standard error). Verdict: inconclusive at 8 seeds; leans present in both modes. The 2-seed anti-exploit test saw 0.753/0.755 with sexes on, which is noise, so the sexes-on it.fails case is not generated and is tracked here. fitnessV2 (predator-prey Phase 3) is where FIT-5 is meant to close."
     }
   ]
 }
