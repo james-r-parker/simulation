@@ -32,8 +32,10 @@ varying float vPhase;
 void main() {
     float d = length(vLocal);
     float twinkle = 1.0 + 0.15 * sin(uTime * 2.0943951 + vPhase);   // a 3 s cycle, offset by position
-    float core = 1.0 - smoothstep(0.55, 1.0, d);
-    float glow = exp(-d * d * 1.6) * 0.45;
+    vec2 p = abs(vLocal) / 0.8;                       // the sparkle is 1.6 radii across
+    float star = sqrt(p.x) + sqrt(p.y);               // below 1 inside the four-point star
+    float core = 1.0 - smoothstep(0.8, 1.0, star);
+    float glow = exp(-dot(p, p) * 2.5) * 0.35;
     vec3 rgb = uColor * uIntensity * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>

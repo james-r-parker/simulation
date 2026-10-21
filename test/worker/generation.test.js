@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
-import { createGenerations, generationOf, noteBirths } from '../../js/worker/generation.js';
+import { createGenerations, generationOf, generationStats, noteBirths } from '../../js/worker/generation.js';
 import { smallWorld } from '../sim/helpers/small-world.js';
 
 /**
@@ -86,5 +86,28 @@ describe('noteBirths', () => {
         gens.depth[5] = 3;
         noteBirths(gens, world, new Map());
         expect(generationOf(gens, 5)).toBe(3);
+    });
+});
+
+describe('generationStats', () => {
+    it('gives the deepest and the median generation among the alive agents', () => {
+        const world = smallWorld();
+        const gens = createGenerations(world.config);
+        for (const [slot, depth] of [
+            [0, 2],
+            [1, 9],
+            [2, 4],
+            [3, 7],
+            [4, 100],
+        ]) {
+            world.alive[slot] = slot === 4 ? 0 : 1;
+            gens.depth[slot] = depth;
+        }
+        expect(generationStats(gens, world)).toEqual({ max: 9, median: 4 });
+    });
+
+    it('is 0 and 0 with nobody alive', () => {
+        const world = smallWorld();
+        expect(generationStats(createGenerations(world.config), world)).toEqual({ max: 0, median: 0 });
     });
 });

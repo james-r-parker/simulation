@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actionForKey, KEYMAP } from '../../../js/app/ui/keymap.js';
+import { actionForKey, KEYMAP, shortcutFor, shortcutLabel } from '../../../js/app/ui/keymap.js';
 
 describe('actionForKey', () => {
     it('maps each phase 2 shortcut to its action', () => {
@@ -14,9 +14,31 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'Minus' })).toBe('zoomOut');
     });
 
-    it('leaves Shift+F for fullscreen, which a later phase binds', () => {
+    it('splits the shifted keys: Shift+F is fullscreen, Shift+N the seed field', () => {
         expect(actionForKey({ code: 'KeyF' })).toBe('follow');
-        expect(actionForKey({ code: 'KeyF', shiftKey: true })).toBeNull();
+        expect(actionForKey({ code: 'KeyF', shiftKey: true })).toBe('fullscreen');
+        expect(actionForKey({ code: 'KeyN' })).toBe('newWorld');
+        expect(actionForKey({ code: 'KeyN', shiftKey: true })).toBe('focusSeed');
+    });
+
+    it('maps the digits 1 to 4 to the four lenses', () => {
+        expect(['Digit1', 'Digit2', 'Digit3', 'Digit4'].map((code) => actionForKey({ code }))).toEqual([
+            'lens1',
+            'lens2',
+            'lens3',
+            'lens4',
+        ]);
+    });
+
+    it('maps each phase 3 shortcut to its action', () => {
+        expect(actionForKey({ code: 'KeyC' })).toBe('toggleCharts');
+        expect(actionForKey({ code: 'KeyI' })).toBe('toggleInspector');
+        expect(actionForKey({ code: 'Slash', shiftKey: true })).toBe('toggleHelp');
+        expect(actionForKey({ code: 'F1' })).toBe('toggleHelp');
+        expect(actionForKey({ code: 'KeyH' })).toBe('toggleHud');
+        expect(actionForKey({ code: 'KeyE' })).toBe('exportArchive');
+        expect(actionForKey({ code: 'KeyB' })).toBe('exportBundle');
+        expect(actionForKey({ code: 'Escape' })).toBe('escape');
     });
 
     it('ignores unbound keys and modified keys', () => {
@@ -42,5 +64,17 @@ describe('actionForKey', () => {
                 seen.add(key);
             }
         }
+    });
+});
+
+describe('shortcutLabel', () => {
+    it('reads keys as a person does', () => {
+        expect(shortcutFor('togglePause')).toBe('Space');
+        expect(shortcutFor('focusSeed')).toBe('Shift+N');
+        expect(shortcutFor('toggleHelp')).toBe('? or F1');
+        expect(shortcutFor('speedUp')).toBe(']');
+        expect(shortcutFor('zoomIn')).toBe('+');
+        expect(shortcutFor('nothing')).toBe('');
+        expect(shortcutLabel({ action: 'x', codes: ['Digit1'], title: '' })).toBe('1');
     });
 });

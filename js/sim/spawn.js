@@ -125,17 +125,14 @@ function totalFertility(world) {
  */
 function pickZone(world, target) {
     let remaining = target;
-    let last = -1;
-    for (let i = 0; i < world.zoneAlive.length; i++) {
+    let picked = -1;
+    for (let i = 0; i < world.zoneAlive.length && remaining >= 0; i++) {
         if (world.zoneAlive[i] === 1) {
-            last = i;
+            picked = i;
             remaining -= world.zoneFertility[i];
-            if (remaining < 0) {
-                return i;
-            }
         }
     }
-    return last;
+    return picked;
 }
 
 /**

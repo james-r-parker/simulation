@@ -1,6 +1,9 @@
 // Every colour the renderer draws with, in linear RGB, written once. The bloom pass makes values above 1 glow, so a
 // triple here is a hue and a ratio, not a ceiling.
 
+import { slotOf } from '../family-slots.js';
+import { createPrng } from '../prng.js';
+
 /** @typedef {readonly [number, number, number]} Rgb */
 
 /**
@@ -29,57 +32,77 @@ export const PALETTE = Object.freeze({
     heat: [1.0, 0.35, 0.04],
 });
 
-/** Saturation and the lightness range of a lineage colour (HSL, before the sRGB decode). */
-const SATURATION = 0.7;
-const LIGHTNESS_LOW = 0.5;
-const LIGHTNESS_HIGH = 0.62;
-/** The golden-ratio step that spreads consecutive lineage ids around the hue wheel. */
-const GOLDEN = 0.618034;
-
 /**
- * @param {number} c an sRGB channel, 0 to 1
- * @returns {number} the linear value
+ * The three palettes for the top families, eight slots each, as linear RGB. `default` is Okabe-Ito derived and lightened
+ * for glow on black; `cvd-safe` keeps every pair at least 20 apart under each colour-vision-deficiency simulation;
+ * `high-contrast` is the same kind of hue set at lightness 0.72 (it is drawn with a rim twice as wide). Every slot
+ * clears every semantic colour (food, the three scents, the alarm and eaten reds): `colors.test.js` measures it.
+ * @type {Readonly<Record<string, readonly Rgb[]>>}
  */
-function srgbToLinear(c) {
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-}
+export const FAMILY_PALETTES = Object.freeze({
+    default: [
+        [0.5486, 0.1458, 0.2526],
+        [0.4632, 0.572, 0.2724],
+        [0.4389, 0.2938, 0.1938],
+        [0.2631, 0.5481, 0.6924],
+        [0.2318, 0.3172, 0.4641],
+        [0.0646, 0.1327, 0.7405],
+        [0.0223, 0.0208, 0.9097],
+        [0.2248, 0.173, 0.4088],
+    ],
+    'cvd-safe': [
+        [0.349, 0, 0.0003],
+        [0.4745, 0.4765, 0.0011],
+        [0.7839, 0.9084, 0.5092],
+        [0.0613, 0.108, 0.8263],
+        [0.0903, 0.4407, 0.6134],
+        [0.0212, 0.0046, 0.2563],
+        [0.1168, 0.041, 0.0594],
+        [0.3659, 0.1682, 0.1943],
+    ],
+    'high-contrast': [
+        [0.494, 0.3216, 0.2556],
+        [0.4917, 0.6228, 0.3338],
+        [0.1789, 0.3497, 0.3672],
+        [0.1687, 0.5184, 0.8283],
+        [0.4319, 0.141, 0.187],
+        [0.0169, 0.0155, 0.9308],
+        [0.0441, 0.1347, 0.725],
+        [1, 0.2886, 0.0113],
+    ],
+});
 
 /**
- * @param {number} h hue, 0 to 1
- * @param {number} s saturation, 0 to 1
- * @param {number} l lightness, 0 to 1
- * @param {number} n which channel: 0 red, 8 green, 4 blue
- * @returns {number} that sRGB channel
+ * The colour of every family without a slot, by palette: dim blue-grey at saturation 0.25, dim grey, and (high
+ * contrast) grey that is drawn at 35% alpha with no halo.
+ * @type {Readonly<Record<string, Rgb>>}
  */
-function hslChannel(h, s, l, n) {
-    const a = s * Math.min(l, 1 - l);
-    const k = (n + h * 12) % 12;
-    return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-}
+export const NEUTRAL_FAMILY = Object.freeze({
+    default: [0.1, 0.12, 0.16],
+    'cvd-safe': [0.14, 0.14, 0.14],
+    'high-contrast': [0.45, 0.45, 0.45],
+});
+
+/** The share of a family's colour an agent at zero energy is drawn with; full energy is drawn at the colour itself. */
+const ENERGY_FLOOR = 0.82;
 
 /**
- * @param {number} lineageId a lineage id
- * @returns {number} its hue, 0 to 1: `fract(lineageId x 0.618034)`
- */
-export function lineageHue(lineageId) {
-    const h = lineageId * GOLDEN;
-    return h - Math.floor(h);
-}
-
-/**
- * The colour of a lineage: hue from the id, saturation 0.7 and lightness 0.5 to 0.62 by energy.
+ * The colour of a family: its slot's colour in the current palette, else the neutral colour, dimmed a little at low
+ * energy.
+ * @param {import('../family-slots.js').FamilySlots} slots the slots and the palette name
  * @param {number} lineageId a lineage id
  * @param {number} energy01 energy as a share of the maximum, clamped to 0..1
  * @param {number[] | Float32Array} [out] receives the linear RGB triple
  * @returns {number[] | Float32Array} `out`
  */
-export function lineageColor(lineageId, energy01, out = [0, 0, 0]) {
+export function familyColor(slots, lineageId, energy01, out = [0, 0, 0]) {
+    const slot = slotOf(slots, lineageId);
+    const base = slot >= 0 ? FAMILY_PALETTES[slots.palette][slot] : NEUTRAL_FAMILY[slots.palette];
     const e = Math.min(Math.max(energy01, 0), 1);
-    const l = LIGHTNESS_LOW + (LIGHTNESS_HIGH - LIGHTNESS_LOW) * e;
-    const h = lineageHue(lineageId);
-    out[0] = srgbToLinear(hslChannel(h, SATURATION, l, 0));
-    out[1] = srgbToLinear(hslChannel(h, SATURATION, l, 8));
-    out[2] = srgbToLinear(hslChannel(h, SATURATION, l, 4));
+    const k = ENERGY_FLOOR + (1 - ENERGY_FLOOR) * e;
+    out[0] = base[0] * k;
+    out[1] = base[1] * k;
+    out[2] = base[2] * k;
     return out;
 }
 
@@ -160,27 +183,22 @@ export function temperatureRamp(bands, out) {
     return out;
 }
 
-/** Hue names every 30 degrees from red. */
-const HUE_NAMES = Object.freeze([
-    'Red',
-    'Amber',
-    'Gold',
-    'Lime',
-    'Green',
-    'Jade',
-    'Teal',
-    'Azure',
-    'Blue',
-    'Violet',
-    'Magenta',
-    'Rose',
-]);
+const ONSETS = Object.freeze(['v', 'l', 'k', 'm', 'r', 's', 'n', 't', 'd', 'z', 'h', 'b', 'f', 'g']);
+const VOWELS = Object.freeze(['a', 'e', 'i', 'o', 'u']);
 
 /**
+ * A pronounceable name for a family, such as "Velari": three consonant-vowel syllables drawn from a generator seeded by
+ * the world seed and the lineage id, so the same family has the same name in every run of a seed.
+ * @param {number} seed the world seed
  * @param {number} lineageId a lineage id
- * @returns {string} a stable name such as "Amber 12": the nearest hue name and the id
+ * @returns {string} the name
  */
-export function familyName(lineageId) {
-    const bucket = Math.floor(((lineageHue(lineageId) * 360 + 15) % 360) / 30);
-    return `${HUE_NAMES[bucket]} ${lineageId}`;
+export function familyName(seed, lineageId) {
+    const prng = createPrng(Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(lineageId + 1, 0xc2b2ae35));
+    prng.next();
+    let name = '';
+    for (let i = 0; i < 3; i++) {
+        name += ONSETS[prng.int(ONSETS.length)] + VOWELS[prng.int(VOWELS.length)];
+    }
+    return name[0].toUpperCase() + name.slice(1);
 }
