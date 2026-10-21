@@ -215,6 +215,8 @@ export const DEFAULTS = deepFreeze({
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
+    foodAreaCapacity: false, // new: food regrows per world area through the patches, not toward a per-agent target
+    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 when foodAreaCapacity is on
     traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)
