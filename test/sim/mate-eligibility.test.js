@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { canMatePair, isReadyToMate, readyToMate } from '../../js/sim/mate-eligibility.js';
+import { geneticDistance } from '../../js/sim/genetics.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 const MATE = { mateOut: 1, energy: 700, spec: 2 };
@@ -122,5 +123,29 @@ describe('isReadyToMate temperature', () => {
         w.temperature[1] = 10;
         expect(canMatePair(w, 0, 1)).toBe(false);
         expect(canMatePair(w, 1, 0)).toBe(false);
+    });
+});
+
+describe('canMatePair genetic distance', () => {
+    it('is off by default: unrelated brains may mate', () => {
+        const w = pair();
+        expect(w.config.mateDistanceMax).toBe(Infinity);
+        w.weights.fill(5, w.layout.weightCount, 2 * w.layout.weightCount);
+        expect(canMatePair(w, 0, 1)).toBe(true);
+    });
+
+    it('lets clones mate and refuses a pair beyond mateDistanceMax', () => {
+        const w = pair({ mateDistanceMax: 0.5 });
+        expect(canMatePair(w, 0, 1)).toBe(true);
+        w.weights.fill(5, w.layout.weightCount, 2 * w.layout.weightCount);
+        expect(geneticDistance(w, 0, 1)).toBeGreaterThan(0.5);
+        expect(canMatePair(w, 0, 1)).toBe(false);
+    });
+
+    it('refuses a distance equal to mateDistanceMax', () => {
+        const w = pair();
+        w.weights.fill(5, w.layout.weightCount, 2 * w.layout.weightCount);
+        w.config = { ...w.config, mateDistanceMax: geneticDistance(w, 0, 1) };
+        expect(canMatePair(w, 0, 1)).toBe(false);
     });
 });

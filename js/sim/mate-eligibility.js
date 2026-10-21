@@ -2,6 +2,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { blocksMating } from './temperature.js';
+import { geneticDistance } from './genetics.js';
 import { childShareOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -36,8 +37,8 @@ export function readyToMate(world, slot) {
  * @param {World} world the world
  * @param {number} a an agent slot
  * @param {number} b another agent slot
- * @returns {boolean} true when both are ready, share a specialisation, their sizes are within `mateSizeRatio` and the
- *   lower slot, the mother, holds more than `childEnergyMin / childEnergyShare`
+ * @returns {boolean} true when both are ready, share a specialisation, their sizes are within `mateSizeRatio`, their
+ *   genetic distance is below `mateDistanceMax` (any when `Infinity`) and the lower slot, the mother, holds more than `childEnergyMin / childEnergyShare`
  */
 export function canMatePair(world, a, b) {
     if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
@@ -49,5 +50,9 @@ export function canMatePair(world, a, b) {
     }
     const ratio = world.size[a] / world.size[b];
     const limit = world.config.mateSizeRatio;
-    return ratio <= limit && ratio >= 1 / limit;
+    if (ratio > limit || ratio < 1 / limit) {
+        return false;
+    }
+    const { mateDistanceMax } = world.config;
+    return mateDistanceMax === Infinity || geneticDistance(world, a, b) < mateDistanceMax;
 }

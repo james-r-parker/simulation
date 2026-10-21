@@ -4,6 +4,7 @@ import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
+import { terrainProblem } from './terrain.js';
 import { TRAIT_MAX } from './traits.js';
 
 const MAX_SEED = 4294967295; // 2^32 - 1
@@ -187,7 +188,7 @@ function fail(path, value, rule) {
  * @returns {string}
  */
 function describe(rule) {
-    const kind = rule.type === 'int' ? 'an integer' : 'a finite number';
+    const kind = rule.type === 'int' ? 'an integer' : rule.infinite ? 'a number' : 'a finite number';
     const lower = rule.gt !== undefined ? `> ${rule.gt}` : `>= ${rule.min}`;
     if (rule.lt !== undefined) {
         return `${kind} ${lower} and < ${rule.lt}`;
@@ -202,7 +203,32 @@ function describe(rule) {
  */
 function inBounds(n, rule) {
     const lowOk = rule.gt !== undefined ? n > rule.gt : n >= /** @type {number} */ (rule.min);
-    return lowOk && n <= (rule.max ?? Infinity) && n < (rule.lt ?? Infinity);
+    return lowOk && n <= (rule.max ?? Infinity) && (rule.lt === undefined || n < rule.lt);
+}
+
+/**
+ * @param {unknown} value the value
+ * @param {Rule} rule an `int` or `num` rule
+ * @returns {boolean} true when `value` has the rule's numeric type (`Infinity` only for an `infinite` rule)
+ */
+function isTyped(value, rule) {
+    const finite = Number.isFinite(value) || (rule.infinite === true && value === Infinity);
+    return rule.type === 'int' ? Number.isInteger(value) : finite;
+}
+
+/**
+ * @param {unknown} value the value
+ * @param {Rule} rule the rule
+ * @returns {string | null} what the value should have been when it breaks the rule, else null
+ */
+function violation(value, rule) {
+    if (rule.type === 'enum') {
+        return rule.values?.includes(/** @type {string} */ (value)) ? null : `one of ${rule.values?.join(', ')}`;
+    }
+    if (rule.type === 'bool') {
+        return typeof value === 'boolean' ? null : 'a boolean';
+    }
+    return isTyped(value, rule) && inBounds(/** @type {number} */ (value), rule) ? null : describe(rule);
 }
 
 /**
@@ -213,16 +239,9 @@ function inBounds(n, rule) {
  * @returns {void}
  */
 function checkScalar(path, value, rule) {
-    if (rule.type === 'bool') {
-        if (typeof value !== 'boolean') {
-            fail(path, value, 'a boolean');
-        }
-        return;
-    }
-    const typeOk = rule.type === 'int' ? Number.isInteger(value) : Number.isFinite(value);
-    const n = /** @type {number} */ (value);
-    if (!typeOk || !inBounds(n, rule)) {
-        fail(path, value, describe(rule));
+    const expected = violation(value, rule);
+    if (expected !== null) {
+        fail(path, value, expected);
     }
 }
 
@@ -336,6 +355,10 @@ function checkCrossKey(config) {
     const room = Math.min(config.worldWidth, config.worldHeight);
     if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
         fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
+    }
+    const terrain = terrainProblem(config);
+    if (terrain !== null) {
+        fail('terrainLayout', config.terrainLayout, terrain);
     }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);
