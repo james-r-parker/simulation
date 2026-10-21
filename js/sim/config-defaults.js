@@ -198,4 +198,8 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
+    traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
+    visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
+    hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)
+    leakEnabled: false, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
 });

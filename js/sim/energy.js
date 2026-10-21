@@ -2,6 +2,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
+import { baseSizeOf } from './traits.js';
 import { passiveMultiplier, stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
@@ -47,7 +48,7 @@ function checkAmount(fn, slot, amount) {
  */
 export function updateSize(world, slot) {
     const { config, energy, size } = world;
-    size[slot] = Math.max(config.minSize, config.baseSize + energy[slot] / config.energyToSize);
+    size[slot] = Math.max(config.minSize, baseSizeOf(world, slot) + energy[slot] / config.energyToSize);
 }
 
 /**
@@ -124,6 +125,18 @@ export function transferEnergy(world, giver, receiver, amount) {
 /**
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
+ * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1
+ */
+function visionLoss(world, slot) {
+    if (!world.config.traitsEnabled || !(world.vision[slot] > 1)) {
+        return 0;
+    }
+    return world.config.passiveLoss * world.config.visionCost * (world.vision[slot] - 1);
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
  * @returns {number} the energy the agent loses this tick
  */
 function tickCost(world, slot) {
@@ -134,7 +147,8 @@ function tickCost(world, slot) {
     const speed = Math.sqrt(vx * vx + vy * vy);
     const drain = c.seasons[world.season[0]].energyDrain;
     const standing =
-        (c.passiveLoss + c.sizeEnergyLoss * world.size[slot]) * passiveMultiplier(c, world.temperature[slot]);
+        (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
+        passiveMultiplier(c, world.temperature[slot]);
     let cost =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
     if (world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0) {

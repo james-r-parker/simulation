@@ -2,6 +2,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { blocksMating } from './temperature.js';
+import { childShareOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -42,8 +43,8 @@ export function canMatePair(world, a, b) {
     if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
         return false;
     }
-    const { childEnergyMin, childEnergyShare } = world.config;
-    if (!(world.energy[Math.min(a, b)] > childEnergyMin / childEnergyShare)) {
+    const mother = Math.min(a, b);
+    if (!(world.energy[mother] > world.config.childEnergyMin / childShareOf(world, mother))) {
         return false;
     }
     const ratio = world.size[a] / world.size[b];

@@ -1,4 +1,4 @@
-// Engine-independent sin, cos, exp, log and tanh built from + - * / and Math.floor only.
+// Engine-independent sin, cos, exp, log, tanh and sigmoid built from + - * / and Math.floor only.
 
 const LN2_HI = 0.6931471803691238;
 const LN2_LO = 1.9082149292705877e-10;
@@ -193,6 +193,15 @@ export function detLog(x) {
         p = 1 / n + s2 * p;
     }
     return 2 * s * p + e * LN2_HI + e * LN2_LO;
+}
+
+/**
+ * Deterministic logistic function, `1 / (1 + e^-x)`, as `0.5 + 0.5 tanh(x / 2)`.
+ * @param {number} x Finite value.
+ * @returns {number} sigmoid(x), in [0, 1].
+ */
+export function detSigmoid(x) {
+    return 0.5 + 0.5 * detTanh(0.5 * x);
 }
 
 /**

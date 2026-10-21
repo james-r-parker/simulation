@@ -6,6 +6,7 @@ import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { visionOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
@@ -156,7 +157,7 @@ export function castRays(world, hash, slot) {
     const s = world.rayScratch;
     s[OX] = world.x[slot];
     s[OY] = world.y[slot];
-    s[RANGE] = world.visionBySpec[world.spec[slot]];
+    s[RANGE] = visionOf(world, slot);
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
     const count = gatherNear(world, hash, slot);

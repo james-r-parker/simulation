@@ -24,7 +24,11 @@ export const CLASS_CHANNELS = Object.freeze([
 ]);
 
 /** Output names as shown, where the worker's name is short. */
-const OUTPUT_TITLES = Object.freeze({ hunt: 'hunt call' });
+const OUTPUT_TITLES = Object.freeze({
+    hunt: 'hunt call',
+    memory_a: 'memory A',
+    memory_b: 'memory B',
+});
 
 const COUNTER_AT = Object.freeze({
     ageTicks: 0,

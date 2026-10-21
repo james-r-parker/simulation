@@ -68,12 +68,12 @@ describe('combat controllers', () => {
         hit(world, 0, 3, CH.prey);
         hit(world, 1, RAYS - 2, CH.prey);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 1, 0, 1, 0, 0, 1]);
-        expect(out(world, 1)).toEqual([1, -1, 1, 0, 1, 0, 0, 1]);
+        expect(out(world, 0)).toEqual([1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([1, -1, 1, 0, 1, 0, 0, 1, 0, 0, 0]);
         run(world);
         expect(out(world, 0)[O.HUNT]).toBe(0);
         expect(out(world, 0)[O.BITE]).toBe(1);
-        expect(out(world, 2)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 2)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('hunter calls again after it loses sight and sees prey again', () => {
@@ -94,8 +94,8 @@ describe('combat controllers', () => {
         body(world, 1, BODY.attackLeft, 0.1);
         body(world, 1, BODY.attackRight, 0.5);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0]);
-        expect(out(world, 1)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('fleer turns away from a threat and sprints, and raises one alarm on first sight', () => {
@@ -104,9 +104,9 @@ describe('combat controllers', () => {
         hit(world, 1, RAYS - 3, CH.threat);
         hit(world, 2, 0, CH.threat);
         run(world);
-        expect(out(world, 0)).toEqual([1, -1, 1, 0, 0, 1, 0, 0]);
-        expect(out(world, 1)).toEqual([1, 1, 1, 0, 0, 1, 0, 0]);
-        expect(out(world, 2)).toEqual([1, 1, 1, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)).toEqual([1, -1, 1, 0, 0, 1, 0, 0, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0]);
+        expect(out(world, 2)).toEqual([1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0]);
         run(world);
         expect(out(world, 0)[O.ALARM]).toBe(0);
         expect(out(world, 0)[O.SPRINT]).toBe(1);
@@ -117,8 +117,8 @@ describe('combat controllers', () => {
         body(world, 0, BODY.attackLeft, 0.6);
         hit(world, 1, 1, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
-        expect(out(world, 1)).toEqual([Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 1)).toEqual([Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('fleer releases smoke while its bite-timer input shows a bite, and not otherwise', () => {
@@ -138,7 +138,7 @@ describe('combat controllers', () => {
             hit(world, 0, 1, CH.food);
             world.outputs.fill(0.7);
             run(world);
-            const expected = [Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0];
+            const expected = [Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0];
             expected[/** @type {number} */ (output)] = 1;
             expect(out(world, 0), String(name)).toEqual(expected);
         }

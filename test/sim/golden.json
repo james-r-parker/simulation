@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "42cbe86e5b351334"
+      "worldHash": "16e83ae2cf097fc6"
     },
     {
       "name": "busy",
@@ -21,7 +21,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 5000,
-      "worldHash": "e37210196d2b6038"
+      "worldHash": "6d153ce20dab8a97"
     }
   ],
   "shortCases": [
@@ -29,7 +29,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 300,
-      "worldHash": "2045f59b5d7855e3"
+      "worldHash": "f93315144c233d1a"
     },
     {
       "name": "busy",
@@ -46,7 +46,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 300,
-      "worldHash": "eced7994716bc5d2"
+      "worldHash": "7e644b7a5fbbf99d"
     }
   ]
 }

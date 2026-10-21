@@ -35,6 +35,14 @@ function hit(world, slot, k, channel) {
 }
 
 /**
+ * @param {Record<number, number>} set the outputs that are not 0, by index
+ * @returns {number[]} a full output row, so the SPLIT and memory outputs are pinned at 0
+ */
+function fullRow(set) {
+    return Array.from({ length: OUTPUT_COUNT }, (_, i) => set[i] ?? 0);
+}
+
+/**
  * @param {any} world the world
  * @param {number} [slot] the agent
  * @returns {number[]} the slot's output row
@@ -78,7 +86,7 @@ describe('intent controllers', () => {
         hit(world, 1, 1, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual([0, 0, 0, 0, 1, 0, 0, 0]);
+            expect(out(world, slot)).toEqual(fullRow({ [O.BITE]: 1 }));
         }
     });
 
@@ -86,10 +94,10 @@ describe('intent controllers', () => {
         const { world, run } = setup('huntCallSpammer');
         hit(world, 0, 3, 3);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 1, 0, 1, 0, 0, 1]);
+        expect(out(world, 0)).toEqual(fullRow({ 0: 1, 1: 1, 2: 1, [O.BITE]: 1, [O.HUNT]: 1 }));
         run(world);
         expect(out(world, 0)[O.HUNT]).toBe(1);
-        expect(out(world, 2)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 1]);
+        expect(out(world, 2)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST), [O.HUNT]: 1 }));
     });
 
     it('grouper flees as fleer does with no lineage mate near, and turns towards the nearest one when threatened', () => {
@@ -124,7 +132,7 @@ describe('intent controllers', () => {
         hit(world, 1, 2, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
+            expect(out(world, slot)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST) }));
         }
     });
 
@@ -132,7 +140,7 @@ describe('intent controllers', () => {
         const { world, run } = setup('grouper');
         hit(world, 0, 3, CH.kin);
         run(world);
-        expect(out(world, 0)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST) }));
     });
 
     it('sloppyForager keeps one choice for a decision window and draws from its rng', () => {
