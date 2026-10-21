@@ -15,7 +15,7 @@ export const OUTPUT_INDEX = Object.freeze({
     HUNT: 7,
 });
 
-/** Values per ray: proximity, food, bigger, smaller, similar, kin, wall, obstacle, smoke. */
+/** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke. */
 export const RAY_CHANNELS = 9;
 
 /** Body inputs after the ray block: the 19 of body temperature plus 13 scent and call inputs. */

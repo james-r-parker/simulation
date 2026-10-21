@@ -17,7 +17,7 @@ export const CLOSING_MIN = 6;
 /** Ticks after the first bite of an episode in which a response still counts. */
 export const RESPONSE_WINDOW = 30;
 
-/** Proximity of a bigger-class hit that makes an agent threatened for the grouping sample. */
+/** Proximity of a channel-2 ("can bite me") hit that makes an agent threatened for the grouping sample. */
 export const THREAT_PROXIMITY = 0.5;
 
 /** Ticks between grouping samples. */

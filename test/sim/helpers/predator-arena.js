@@ -86,7 +86,7 @@ function drive(world, slot, values) {
 }
 
 /**
- * The hunter's brain: turns towards the nearest smaller-class ray hit, thrusts, sprints and bites; with no hit it
+ * The hunter's brain: turns towards the nearest "I can bite it" ray hit, thrusts, sprints and bites; with no hit it
  * thrusts straight on.
  * @param {Record<string, any>} world the world
  * @returns {void}
@@ -102,7 +102,7 @@ export function hunterBrain(world) {
 }
 
 /**
- * The prey's flee brain: turns away from the nearest bigger-class ray hit, thrusts and sprints, and releases smoke
+ * The prey's flee brain: turns away from the nearest "can bite me" ray hit, thrusts and sprints, and releases smoke
  * when `smoke` is set; with no hit it thrusts straight on.
  * @param {boolean} smoke whether the prey releases smoke
  * @returns {(world: Record<string, any>) => void} a brain for the prey slot

@@ -79,7 +79,7 @@ function hunter({ world }) {
 }
 
 /**
- * The turn that steers away from the nearest bigger agent: the side opposite to its ray, and to the left when it is
+ * The turn that steers away from the nearest "can bite me" agent: the side opposite to its ray, and to the left when it is
  * dead ahead; dead behind it needs no turn.
  * @param {number} k the ray index of the threat
  * @param {number} rayCount rays per agent
@@ -93,11 +93,11 @@ function turnAway(k, rayCount) {
 }
 
 /**
- * Steers a fleer: away from the nearest bigger agent at a sprint, else away from the stronger attack antenna, else
+ * Steers a fleer: away from the nearest "can bite me" agent at a sprint, else away from the stronger attack antenna, else
  * towards food.
  * @param {Record<string, any>} w the world
  * @param {number} slot the agent
- * @param {number} k the ray index of the nearest bigger agent, or -1
+ * @param {number} k the ray index of the nearest "can bite me" agent, or -1
  * @returns {void}
  */
 function steerFleer(w, slot, k) {

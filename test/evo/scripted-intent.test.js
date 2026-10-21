@@ -7,7 +7,7 @@ import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
 import { DECISION_WINDOW, INTENT_CONTROLLERS } from '../../js/evo/scripted-intent.js';
 import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
-const CH = { food: 1, bigger: 2, kin: 5 };
+const CH = { food: 1, threat: 2, kin: 5 };
 const O = OUTPUT_INDEX;
 
 /**
@@ -75,7 +75,7 @@ describe('intent controllers', () => {
     it('jawSitter holds still with only BITE set, whatever its rays see', () => {
         const { world, run } = setup('jawSitter');
         hit(world, 0, 2, CH.food);
-        hit(world, 1, 1, CH.bigger);
+        hit(world, 1, 1, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
             expect(out(world, slot)).toEqual([0, 0, 0, 0, 1, 0, 0, 0]);
@@ -100,7 +100,7 @@ describe('intent controllers', () => {
         world.y.fill(100);
         world.angle.fill(0);
         for (const slot of [0, 1, 2]) {
-            hit(world, slot, 3, CH.bigger);
+            hit(world, slot, 3, CH.threat);
         }
         world.x[1] = 100 + callRadius * 3;
         run(world);
@@ -121,7 +121,7 @@ describe('intent controllers', () => {
     it('cruiser holds SEEK_THRUST straight ahead whatever its rays see', () => {
         const { world, run } = setup('cruiser');
         hit(world, 0, 3, CH.food);
-        hit(world, 1, 2, CH.bigger);
+        hit(world, 1, 2, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
             expect(out(world, slot)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
