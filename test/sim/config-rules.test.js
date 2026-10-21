@@ -31,3 +31,17 @@ describe('mateDistanceMax rule', () => {
         expect(() => createConfig({ mateDistanceMax: value })).toThrow(/mateDistanceMax/);
     });
 });
+
+describe('sexes keys', () => {
+    it('default to off with a splitCost of 50', () => {
+        const c = createConfig({});
+        expect([c.sexesEnabled, c.splitCost]).toEqual([false, 50]);
+    });
+
+    it.each([
+        ['sexesEnabled', 1],
+        ['splitCost', -1],
+    ])('rejects a bad %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+    });
+});

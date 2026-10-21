@@ -3,6 +3,7 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { blocksMating } from './temperature.js';
 import { geneticDistance } from './genetics.js';
+import { SEX } from './sex.js';
 import { childShareOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -37,14 +38,31 @@ export function readyToMate(world, slot) {
  * @param {World} world the world
  * @param {number} a an agent slot
  * @param {number} b another agent slot
- * @returns {boolean} true when both are ready, share a specialisation, their sizes are within `mateSizeRatio`, their
- *   genetic distance is below `mateDistanceMax` (any when `Infinity`) and the lower slot, the mother, holds more than `childEnergyMin / childEnergyShare`
+ * @returns {number} the mother of the pair: the lower slot, or with `sexesEnabled` the female
+ */
+export function motherOf(world, a, b) {
+    if (!world.config.sexesEnabled) {
+        return Math.min(a, b);
+    }
+    return world.sex[a] === SEX.FEMALE ? a : b;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} a an agent slot
+ * @param {number} b another agent slot
+ * @returns {boolean} true when both are ready, share a specialisation (and, with `sexesEnabled`, are a female and a
+ *   male), their sizes are within `mateSizeRatio`, their genetic distance is below `mateDistanceMax` (any when
+ *   `Infinity`) and the mother holds more than `childEnergyMin / childEnergyShare`
  */
 export function canMatePair(world, a, b) {
     if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
         return false;
     }
-    const mother = Math.min(a, b);
+    if (world.config.sexesEnabled && world.sex[a] === world.sex[b]) {
+        return false;
+    }
+    const mother = motherOf(world, a, b);
     if (!(world.energy[mother] > world.config.childEnergyMin / childShareOf(world, mother))) {
         return false;
     }
