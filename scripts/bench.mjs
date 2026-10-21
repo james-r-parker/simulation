@@ -13,6 +13,7 @@ import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { STEP_PHASES, step } from '../js/sim/step.js';
 import { feedPolicy } from './lib/feed-policy.mjs';
+import { FEATURES_OFF, FEATURES_ON } from './lib/features-on.mjs';
 import { createMetrics } from './lib/otel.mjs';
 
 const DEFAULT_SIZES = [100, 250, 500];
@@ -22,9 +23,11 @@ const MEASURED_TICKS = 2000;
 /**
  * The tunables `bench/baseline.json` was recorded with (commit 282ffeb), frozen so `bench.step_ms@<n>` and `bench-check`
  * compare like with like when `createConfig` defaults are retuned. It lists only the keys whose defaults have changed
- * since; every other key follows the defaults. `biteArc` did not exist then and cannot be frozen out.
+ * since; every other key follows the defaults. `biteArc` did not exist then and cannot be frozen out. Every Phase 3
+ * feature key is pinned off (`FEATURES_OFF`), so the switch-on in world-balance T41 leaves this world as it was.
  */
 export const BENCH_CONFIG = Object.freeze({
+    ...FEATURES_OFF,
     maxFood: 800,
     foodTargetPerAgent: 8,
     huntSizeRatio: 1.05,
@@ -32,9 +35,12 @@ export const BENCH_CONFIG = Object.freeze({
     huntCallCost: 4,
 });
 
-/** Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults. */
+/**
+ * Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults. The `defaults`
+ * row runs every Phase 3 feature on (`FEATURES_ON`), so it records what the features cost.
+ */
 export const TRACKED_VARIANTS = Object.freeze([
-    { suffix: 'defaults', overrides: Object.freeze({}) },
+    { suffix: 'defaults', overrides: FEATURES_ON },
     { suffix: 'w7680', overrides: Object.freeze({ worldWidth: 7680, worldHeight: 4320 }) },
 ]);
 
