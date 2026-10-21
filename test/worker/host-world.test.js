@@ -112,6 +112,20 @@ describe('worldInfo patches', () => {
     });
 });
 
+describe('worldInfo calendar and switches', () => {
+    it('sends the config season length, and the era season length when eras are on', () => {
+        const base = worldInfo(small());
+        expect(base).toMatchObject({ seasonLength: 3600, sexesEnabled: false, traitsEnabled: false });
+        const run = buildRun({
+            seed: 3,
+            overrides: { ...SMALL_CONFIG, erasEnabled: true, eraSeasonTicks: 500, sexesEnabled: true },
+            createPolicy: noisePolicy,
+            log: LOG,
+        });
+        expect(worldInfo(run)).toMatchObject({ seasonLength: 500, sexesEnabled: true });
+    });
+});
+
 describe('worldInfo and readyLayout', () => {
     it('lists the constants the app draws with, and every specialisation', () => {
         const info = worldInfo(small());
@@ -142,6 +156,7 @@ describe('worldInfo and readyLayout', () => {
         expect(layout).toMatchObject({ effectCapacity: 512, effectWords: 8, bytes: run.layout.bytes });
         expect(layout.effectKinds.SMOKE).toBe(6);
         expect(layout.flags.PREGNANT).toBe(1 << 13);
+        expect(layout.flags.MALE).toBe(1 << 14);
         expect(layout.deathCauses.EATEN).toBe(1);
         expect(layout.bornCauses.MATE).toBe(1);
         expect(layout.fieldBytes).toBe(fieldBytes(run));

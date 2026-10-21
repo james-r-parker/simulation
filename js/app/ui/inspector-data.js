@@ -40,6 +40,9 @@ const COUNTER_AT = Object.freeze({
     kills: 6,
     children: 7,
     fitnessSoFar: 8,
+    vision: 12,
+    baseSize: 13,
+    childShare: 14,
 });
 
 /**
@@ -160,13 +163,13 @@ function groupsOf(row, { rayCount, labels }) {
 
 /**
  * @param {Float32Array} c the counters
- * @param {{specName: string, family: string, info: Record<string, number>}} who the agent's type, its family's name and
- *   the world's constants
+ * @param {{specName: string, family: string, info: Record<string, any>, male: boolean}} who the agent's type, its
+ *   family's name, the world's constants and whether its snapshot flags have the male bit
  * @returns {InspectorView['counters']} the counters as labelled text
  */
-function countersOf(c, { specName, family, info }) {
+function countersOf(c, { specName, family, info, male }) {
     const seasons = c[COUNTER_AT.ageTicks] / info.seasonLength;
-    return [
+    const rows = [
         { label: 'type', text: specName },
         { label: 'family', text: family },
         { label: 'generation', text: grouped(c[COUNTER_AT.generation]) },
@@ -181,6 +184,32 @@ function countersOf(c, { specName, family, info }) {
         { label: 'kills', text: grouped(c[COUNTER_AT.kills]) },
         { label: 'children', text: grouped(c[COUNTER_AT.children]) },
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
+    ];
+    return [...rows, ...sexRows(male, info), ...traitRows(c, info)];
+}
+
+/**
+ * @param {boolean} male whether the agent is male
+ * @param {Record<string, any>} info `ready.info`
+ * @returns {InspectorView['counters']} the sex row, or nothing with sexes off
+ */
+function sexRows(male, info) {
+    return info.sexesEnabled ? [{ label: 'sex', text: male ? 'male' : 'female' }] : [];
+}
+
+/**
+ * @param {Float32Array} c the counters
+ * @param {Record<string, any>} info `ready.info`
+ * @returns {InspectorView['counters']} the vision, size and child share traits, or nothing with traits off
+ */
+function traitRows(c, info) {
+    if (!info.traitsEnabled) {
+        return [];
+    }
+    return [
+        { label: 'vision', text: `x${c[COUNTER_AT.vision].toFixed(2)}` },
+        { label: 'size', text: c[COUNTER_AT.baseSize].toFixed(1) },
+        { label: 'child share', text: `${Math.round(c[COUNTER_AT.childShare] * 100)}%` },
     ];
 }
 
@@ -229,6 +258,6 @@ export function inspectorView({ snapshot, ready, slots }) {
                 firing: label === 'smoke' ? value > info.smokeThreshold : value > 0,
             };
         }),
-        counters: countersOf(counters, { specName: spec, family, info }),
+        counters: countersOf(counters, { specName: spec, family, info, male: (found.flags & layout.flags.MALE) !== 0 }),
     };
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_CHANNELS, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
+import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
 
@@ -119,5 +120,27 @@ describe('temperatureBand', () => {
         expect(temperatureBand(25, info)).toBe('optimal');
         expect(temperatureBand(35, info)).toBe('warm');
         expect(temperatureBand(45, info)).toBe('heat stress');
+    });
+});
+
+describe('inspectorView sex and trait rows', () => {
+    it('adds a sex row and the trait rows only when the world has them', () => {
+        const { ready, snapshot } = selectedWorld();
+        const slots = createFamilySlots();
+        const labels = (/** @type {any} */ info, /** @type {number} */ flagBits = 0) => {
+            for (let i = 0; i < snapshot.u32[1]; i++) {
+                snapshot.u32[HEADER_WORDS + i * AGENT_STRIDE + AGENT_FIELD.FLAGS] |= flagBits;
+            }
+            return inspectorView({ snapshot, ready: { ...ready, info }, slots }).counters;
+        };
+        expect(labels(ready.info).map((c) => c.label)).not.toContain('sex');
+        const on = { ...ready.info, sexesEnabled: true, traitsEnabled: true };
+        expect(labels(on).find((c) => c.label === 'sex')?.text).toBe('female');
+        expect(labels(on, ready.layout.flags.MALE).find((c) => c.label === 'sex')?.text).toBe('male');
+        expect(
+            labels(on)
+                .slice(-3)
+                .map((c) => c.label),
+        ).toEqual(['vision', 'size', 'child share']);
     });
 });

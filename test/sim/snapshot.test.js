@@ -160,6 +160,15 @@ describe('writeSnapshot agent extras', () => {
         expect(flags & SNAPSHOT_FLAG.JAW_OPEN).toBe(0);
     });
 
+    it('sets the male bit for a male and leaves it clear for a female', () => {
+        const { world, views } = oneAgent();
+        writeSnapshot(world, views);
+        expect(views.u32[FLAGS] & SNAPSHOT_FLAG.MALE).toBe(0);
+        world.sex[0] = 1;
+        writeSnapshot(world, views);
+        expect(views.u32[FLAGS] & SNAPSHOT_FLAG.MALE).toBe(1 << 14);
+    });
+
     it('opens the jaw only for a specialisation that can hunt while the bite output is above 0', () => {
         const { world, views } = oneAgent();
         const biteAt = OUTPUT_INDEX.BITE;
