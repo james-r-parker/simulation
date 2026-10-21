@@ -156,6 +156,23 @@ describe('drainEvents', () => {
         expect(records).toEqual([{ level: 'info', event: 'FoodPatchesCreated', tick: 0, count: 4, radius: 100 }]);
     });
 
+    it('logs the era events at info', () => {
+        const world = build();
+        const season = pushEvent(world.events, EVENT_TYPE.SEASON_CHANGED, 100);
+        world.events.data.set([2, 0], season + 2);
+        const drought = pushEvent(world.events, EVENT_TYPE.DROUGHT_STARTED, 100);
+        world.events.data.set([1, 0], drought + 2);
+        const invasion = pushEvent(world.events, EVENT_TYPE.INVASION_ARRIVED, 200);
+        world.events.data.set([12, 7, 3, 2], invasion + 2);
+        const { records, log } = collect('info');
+        drainEvents(world, log);
+        expect(records.slice(-3)).toEqual([
+            { level: 'info', event: 'SeasonChanged', tick: 100, season: 2, year: 0 },
+            { level: 'info', event: 'DroughtStarted', tick: 100, basin: 1, year: 0 },
+            { level: 'info', event: 'InvasionArrived', tick: 200, count: 12, lineageId: 7, spec: 3, edge: 2 },
+        ]);
+    });
+
     it('skips debug records at info level without calling the sink', () => {
         const world = build();
         let calls = 0;

@@ -211,6 +211,7 @@ export function allocateWorld(config) {
         contacts: new Int32Array(2 * config.maxContacts),
         contactCount: 0,
         season: new Float64Array(2),
+        era: new Int32Array([-1]),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),

@@ -5,6 +5,8 @@ import { clearEvents } from './events.js';
 import { decayFertileZones, moveObstacles, updateSeason } from './environment.js';
 import { feed } from './feeding.js';
 import { ageFood, spawnFood } from './food.js';
+import { advanceEra } from './eras.js';
+import { invade } from './invasion.js';
 import { regrowPatches } from './food-patches.js';
 import { assertInvariants } from './invariants.js';
 import { forwardAll } from './brain.js';
@@ -25,6 +27,7 @@ import { buildHash } from './spatial-hash.js';
  */
 function environment(world) {
     updateSeason(world);
+    advanceEra(world);
     moveObstacles(world);
 }
 
@@ -84,6 +87,7 @@ function lifecycle(world, policy) {
     splitAll(world, policy);
     reap(world, policy);
     fillFloor(world, policy);
+    invade(world, policy);
 }
 
 /**

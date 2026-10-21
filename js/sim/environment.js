@@ -2,6 +2,8 @@
 
 /** @typedef {import('./world.js').World} World */
 
+import { yearTicks } from './eras.js';
+
 const SEASONS_PER_YEAR = 4;
 
 /**
@@ -11,7 +13,7 @@ const SEASONS_PER_YEAR = 4;
  * @returns {void}
  */
 export function seasonAt(world, tick) {
-    const { seasonLength } = world.config;
+    const seasonLength = yearTicks(world.config);
     const phase = (tick % seasonLength) / seasonLength;
     world.season[0] = Math.floor(phase * SEASONS_PER_YEAR);
     world.season[1] = phase;

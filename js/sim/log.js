@@ -193,6 +193,45 @@ function emitPatches(log, d, o) {
     log.log('info', 'FoodPatchesCreated', { tick: d[o + 1], count: d[o + 2], radius: d[o + 3] });
 }
 
+/**
+ * Emits one `SeasonChanged` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitSeason(log, d, o) {
+    log.log('info', 'SeasonChanged', { tick: d[o + 1], season: d[o + 2], year: d[o + 3] });
+}
+
+/**
+ * Emits one `DroughtStarted` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitDrought(log, d, o) {
+    log.log('info', 'DroughtStarted', { tick: d[o + 1], basin: d[o + 2], year: d[o + 3] });
+}
+
+/**
+ * Emits one `InvasionArrived` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitInvasion(log, d, o) {
+    log.log('info', 'InvasionArrived', {
+        tick: d[o + 1],
+        count: d[o + 2],
+        lineageId: d[o + 3],
+        spec: d[o + 4],
+        edge: d[o + 5],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -205,6 +244,9 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.PACK_CALLED]: { level: LOG_LEVEL.debug, emit: emitPack },
     [EVENT_TYPE.SMOKE_REFUSED]: { level: LOG_LEVEL.debug, emit: emitRefused },
     [EVENT_TYPE.FOOD_PATCHES_CREATED]: { level: LOG_LEVEL.info, emit: emitPatches },
+    [EVENT_TYPE.SEASON_CHANGED]: { level: LOG_LEVEL.info, emit: emitSeason },
+    [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
+    [EVENT_TYPE.INVASION_ARRIVED]: { level: LOG_LEVEL.info, emit: emitInvasion },
 });
 
 /**
