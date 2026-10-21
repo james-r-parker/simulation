@@ -100,6 +100,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         predator: {
@@ -112,6 +113,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 4,
             turnMultiplier: 0.7,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
         },
         reproducer: {
@@ -124,6 +126,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         scout: {
@@ -136,6 +139,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         defender: {
@@ -148,6 +152,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
     },
@@ -173,6 +178,9 @@ export const DEFAULTS = deepFreeze({
     specMutationRate: 0, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
+    carcassesEnabled: false, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
+    carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
+    carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)

@@ -4,7 +4,7 @@ import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { validateConfig } from '../../js/sim/config-validate.js';
 
 const SPEC_FIELDS =
-    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, sprintBoost';
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.

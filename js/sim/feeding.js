@@ -6,6 +6,7 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.j
 import { depletePatchAt } from './food-patches.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
+import { FOOD_KIND } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
@@ -18,7 +19,9 @@ import { gainTemperature } from './temperature.js';
  * @returns {void}
  */
 function tryEat(world, slot, food) {
-    const share = world.plantFoodBySpec[world.spec[slot]];
+    const isMeat = world.foodKind[food] === FOOD_KIND.MEAT;
+    const table = isMeat ? world.meatFoodBySpec : world.plantFoodBySpec;
+    const share = table[world.spec[slot]];
     if (world.foodAlive[food] !== 1 || share === 0 || !canEatNow(world, slot)) {
         return;
     }
@@ -31,7 +34,9 @@ function tryEat(world, slot, food) {
         const { temperatureGainEat, foodEnergy } = world.config;
         gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
         world.ateTimer[slot] = 0;
-        depletePatchAt(world, world.foodX[food], world.foodY[food]);
+        if (!isMeat) {
+            depletePatchAt(world, world.foodX[food], world.foodY[food]);
+        }
         removeFood(world, food);
     }
 }

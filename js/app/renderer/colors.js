@@ -14,6 +14,7 @@ export const PALETTE = Object.freeze({
     background: [0, 0, 0],
     border: [0.06, 0.06, 0.06],
     food: [0.35, 0.9, 0.7],
+    meat: [0.9, 0.1, 0.15],
     obstacleBody: [0.012, 0.016, 0.024],
     obstacleRim: [0.09, 0.12, 0.18],
     eye: [0.85, 0.95, 1.0],

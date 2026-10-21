@@ -10,8 +10,10 @@ uniform float uMinPx;   // smallest radius in device pixels
 varying vec2 vLocal;    // in radii
 varying float vPx;      // one device pixel in radii
 varying float vPhase;
+varying float vMeat;    // 1 for a carcass: the snapshot marks meat with a negative radius
 void main() {
-    float radius = max(iBody.z, uMinPx / uZoom);
+    float radius = max(abs(iBody.z), uMinPx / uZoom);
+    vMeat = iBody.z < 0.0 ? 1.0 : 0.0;
     float halfSize = radius + uPad / uZoom;
     vLocal = corner * halfSize / radius;
     vPx = 1.0 / (uZoom * radius);
@@ -24,11 +26,13 @@ export const FOOD_VERTEX = VERTEX;
 
 export const FOOD_FRAGMENT = /* glsl */ `
 uniform vec3 uColor;
+uniform vec3 uMeatColor;
 uniform float uIntensity;
 uniform float uTime;
 varying vec2 vLocal;
 varying float vPx;
 varying float vPhase;
+varying float vMeat;
 void main() {
     float d = length(vLocal);
     float twinkle = 1.0 + 0.15 * sin(uTime * 2.0943951 + vPhase);   // a 3 s cycle, offset by position
@@ -36,7 +40,7 @@ void main() {
     float star = sqrt(p.x) + sqrt(p.y);               // below 1 inside the four-point star
     float core = 1.0 - smoothstep(0.8, 1.0, star);
     float glow = exp(-dot(p, p) * 2.5) * 0.35;
-    vec3 rgb = uColor * uIntensity * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
+    vec3 rgb = mix(uColor, uMeatColor, vMeat) * uIntensity * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

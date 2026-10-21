@@ -3,6 +3,7 @@
 import { addFertileZone } from './environment.js';
 import { LOSS_CAUSE } from './energy.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { leaveCarcass } from './carcass.js';
 import { spawnAgent } from './spawn.js';
 import { freeAgent } from './world.js';
 
@@ -63,7 +64,7 @@ function pushDied(world, slot, cause) {
 }
 
 /**
- * Kills every agent that is too old or out of energy: event, hook, remaining energy to the ledger, fertile zone, free.
+ * Kills every agent that is too old or out of energy: event, hook, remaining energy to the ledger, carcass, fertile zone, free.
  * @param {World} world the world
  * @param {Policy} policy the policy
  * @returns {void}
@@ -80,6 +81,7 @@ export function reap(world, policy) {
             policy.onDeath(world, slot, cause);
         }
         world.ledger[1] += world.energy[slot];
+        leaveCarcass(world, slot);
         addFertileZone(world, world.x[slot], world.y[slot], world.size[slot]);
         freeAgent(world, slot);
     }
