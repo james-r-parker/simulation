@@ -28,6 +28,7 @@ export default defineConfig({
         include: SCOPE === 'statistical' ? STATISTICAL_TESTS : ['test/**/*.test.js'],
         exclude: excluded(),
         environment: 'node',
+        benchmark: { include: ['bench/micro/**/*.bench.js'] },
         coverage: {
             provider: 'v8',
             reporter: ['text-summary', 'json-summary'],
