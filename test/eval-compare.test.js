@@ -129,6 +129,21 @@ describe('main exit codes', () => {
         expect(result.minEffect).toBe(0.05);
     });
 
+    it('prints the `needs 32 seeds` note in the table and `minSeeds` in --json rows', () => {
+        const floor = (/** @type {number[]} */ values) => {
+            const r = report(values);
+            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.diversity'] };
+            return r;
+        };
+        const a = write('floor-a.json', floor(BASE));
+        const b = write('floor-b.json', floor(BASE.map((v) => v + 3)));
+        expect(run([a, b]).out[0]).toMatch(/eval\.floor_episodes.*-\s+needs 32 seeds/);
+        const rows = JSON.parse(run([a, b, '--json']).out[0]).rows;
+        const byName = Object.fromEntries(rows.map((/** @type {any} */ r) => [r.metric, r]));
+        expect(byName['eval.floor_episodes']).toMatchObject({ minSeeds: 32, verdict: '-', note: 'needs 32 seeds' });
+        expect(byName['eval.diversity'].minSeeds).toBe(16);
+    });
+
     it('shows the relative effect and honours --min-effect', () => {
         expect(run([same, better]).out[0]).toMatch(/eval\.diversity.*\+27\.\d%.*better/);
         const tiny = write('tiny.json', report(BASE.map((v, i) => v + 0.3 + (i % 2) * 0.1)));

@@ -3,9 +3,10 @@
 import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
+import { DEFAULT_MIN_SEEDS, minSeedsFor } from './compare-seeds.js';
 
 export const RESAMPLES = 10000;
-export const MIN_SEEDS = 16;
+export const MIN_SEEDS = DEFAULT_MIN_SEEDS;
 export const MIN_EFFECT = 0.05;
 const BOOTSTRAP_SEED = 1;
 
@@ -34,6 +35,25 @@ const DIRECTIONS = {
     'eval.pack_kill_share': 'higher',
     'eval.alarm_response': 'higher',
     'eval.smoke_escapes': 'higher',
+    'eval.deliberate_food_share': 'higher',
+    'eval.pursuit_bite_share': 'higher',
+    'eval.pursuit_kill_share': 'higher',
+    'eval.pack_convergence': 'higher',
+    'eval.hunt_call_answer': 'higher',
+    'eval.evasion_skill': 'higher',
+    'eval.group_cohesion_under_threat': 'higher',
+    'eval.alarm_precision': 'higher',
+    'eval.hunt_call_precision': 'higher',
+    'eval.smoke_precision': 'higher',
+    'eval.idle_signals_per_1k': 'lower',
+    'eval.undefended_bite_share': 'lower',
+    'eval.unseen_bite_share': 'watch',
+    'eval.offspring_per_life': 'watch',
+    'eval.generation_depth_p90': 'watch',
+    'eval.opportunity_for_selection': 'watch',
+    'eval.fitness_lrs_corr': 'watch',
+    'eval.archive_lineage_share': 'watch',
+    'eval.kin_within_call_radius': 'watch',
     'browser.frame_p95_ms': 'lower',
     'browser.main_long_tasks': 'lower',
     'browser.gc_pause_ms': 'lower',
@@ -300,6 +320,7 @@ function verdictFor(direction, { low, high, diff, ref, minEffect }) {
  * @property {number | null} low interval low
  * @property {number | null} high interval high
  * @property {'better' | 'worse' | 'no-difference' | '-'} verdict the verdict
+ * @property {number} minSeeds the seeds a verdict on this metric needs (`minSeedsFor`)
  * @property {string} [note] why the verdict is `-`, when it is not simply a watch metric
  */
 
@@ -322,7 +343,11 @@ function compareMetric(metric, before, after, { level, minEffect }) {
         low: null,
         high: null,
         verdict: /** @type {CompareRow['verdict']} */ ('-'),
+        minSeeds: minSeedsFor(metric),
     };
+    if (before.seeds.length < row.minSeeds) {
+        return { ...row, note: `needs ${row.minSeeds} seeds` };
+    }
     const direction = metricDirection(metric);
     const fitness = FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix));
     if (b.values.includes(null) || a.values.includes(null)) {
