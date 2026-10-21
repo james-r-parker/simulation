@@ -55,12 +55,13 @@ describe('alarm follow-up', () => {
     });
 
     it('scores two calls of one tick, sharing a snapshot, as the sum of each call scored alone', () => {
-        /** @param {number[]} callers the slots that call this tick @returns {{sum: number, matched: number, records: number}} */
+        /** @param {string[]} callers the roles that call this tick @returns {{sum: number, matched: number, records: number}} */
         const run = (callers) => {
             const { world, combat, ids } = scene();
+            /** @type {Record<string, number>} */
             const all = { ...ids, extra: addBorn(world, { x: 520, y: 740 }), far: addBorn(world, { x: 900, y: 520 }) };
             world.events.count = 0;
-            for (const name of callers.map((c) => Object.keys(all)[c])) {
+            for (const name of callers) {
                 pushCall(world, EVENT_TYPE.ALARM_CALLED, all[name]);
             }
             observeCombat(combat, world);
@@ -72,9 +73,9 @@ describe('alarm follow-up', () => {
             const { sum, matchedCalls } = combat.alarm;
             return { sum, matched: matchedCalls, records: combat.alarm.free.length };
         };
-        const both = run([1, 3]);
-        const first = run([1]);
-        const second = run([3]);
+        const both = run(['caller', 'control']);
+        const first = run(['caller']);
+        const second = run(['control']);
         expect(both.sum).toBe(first.sum + second.sum);
         expect(both.matched).toBe(first.matched + second.matched);
         expect(both.matched).toBeGreaterThan(0);
