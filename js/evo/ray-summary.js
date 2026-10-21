@@ -20,23 +20,38 @@ export const SCAN = Object.freeze({
 /** Length of the scan row. */
 export const SCAN_SIZE = 8;
 
+/** Ray kinds `rayKind` returns; each of the first three keeps its nearest hit in `best`. */
+const FOOD = 0;
+const THREAT = 1;
+const PREY = 2;
+const SMOKE = 3;
+const NONE = -1;
+
+/** Nearest proximity and ray per kind (`2 x kind` and `2 x kind + 1`), reused by every call. */
+const best = new Float64Array(6);
+
 /**
- * Keeps ray `k` as the nearest hit of a kind when its proximity is strictly higher than the best so far.
- * @param {Float64Array} out the scan row
- * @param {number} at the proximity offset of the kind; the ray goes at `at + 1`
- * @param {number} proximity the ray's proximity
- * @param {number} k the ray index
- * @returns {void}
+ * @param {Float64Array} inputs the world's inputs
+ * @param {number} base the ray's first channel
+ * @param {number} onArc 1 when the ray is an arc ray
+ * @returns {number} the kind of the ray's hit, or `NONE`
  */
-function nearer(out, at, proximity, k) {
-    if (proximity > out[at]) {
-        out[at] = proximity;
-        out[at + 1] = k;
+function rayKind(inputs, base, onArc) {
+    if (inputs[base + CH_FOOD] === 1) {
+        return FOOD;
     }
+    if (inputs[base + CH_THREAT] > 0) {
+        return THREAT;
+    }
+    if (inputs[base + CH_PREY] > 0 && onArc === 1) {
+        return PREY;
+    }
+    return inputs[base + CH_SMOKE] === 1 && inputs[base] === 1 ? SMOKE : NONE;
 }
 
 /**
- * Fills `out` from the agent's rays.
+ * Fills `out` from the agent's rays. The nearest food, threat and prey hits are kept in `best` and written once, so
+ * the pass touches `out` eight times and never calls `fill`.
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive agent
  * @param {Float64Array} out the scan row
@@ -44,24 +59,27 @@ function nearer(out, at, proximity, k) {
  * @returns {void}
  */
 export function summariseRays(world, slot, out, arc) {
-    out.fill(-1);
-    out[SCAN.SMOKE] = 0;
-    out[SCAN.THREAT_ARC] = 0;
     const { inputs } = world;
+    const rayCount = world.config.rayCount;
     const origin = slot * world.layout.inputCount;
-    for (let k = 0; k < world.config.rayCount; k++) {
+    best.fill(-1);
+    let smoke = 0;
+    for (let k = 0; k < rayCount; k++) {
         const base = origin + k * RAY_CHANNELS;
-        if (inputs[base + CH_FOOD] === 1) {
-            nearer(out, SCAN.FOOD, inputs[base], k);
-        } else if (inputs[base + CH_THREAT] > 0) {
-            nearer(out, SCAN.THREAT, inputs[base], k);
-        } else if (inputs[base + CH_PREY] > 0 && arc[k] === 1) {
-            nearer(out, SCAN.PREY, inputs[base], k);
-        } else if (inputs[base + CH_SMOKE] === 1 && inputs[base] === 1) {
-            out[SCAN.SMOKE] = 1;
+        const kind = rayKind(inputs, base, arc[k]);
+        if (kind === SMOKE) {
+            smoke = 1;
+        } else if (kind !== NONE && inputs[base] > best[2 * kind]) {
+            best[2 * kind] = inputs[base];
+            best[2 * kind + 1] = k;
         }
     }
-    if (out[SCAN.THREAT_RAY] >= 0) {
-        out[SCAN.THREAT_ARC] = arc[out[SCAN.THREAT_RAY]];
-    }
+    out[SCAN.FOOD] = best[0];
+    out[SCAN.FOOD_RAY] = best[1];
+    out[SCAN.THREAT] = best[2];
+    out[SCAN.THREAT_RAY] = best[3];
+    out[SCAN.PREY] = best[4];
+    out[SCAN.PREY_RAY] = best[5];
+    out[SCAN.THREAT_ARC] = best[3] >= 0 ? arc[best[3]] : 0;
+    out[SCAN.SMOKE] = smoke;
 }

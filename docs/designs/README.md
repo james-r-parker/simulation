@@ -26,7 +26,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Headless sim core](headless-sim-core.md) - the deterministic sim core in `js/sim/` (Phases 1 and 2) and its diagnostics: the sim log, `npm run replay` and opt-in OpenTelemetry (Phase 3)
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (4)
+## In progress (5)
 
 Partly built - the note says which phases are real.
 
@@ -34,14 +34,14 @@ Partly built - the note says which phases are real.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer... _(validated 830e60a, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phase 2 (renderer core) code merged, awaiting its dev-m... _(validated 23eaea3, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
+- [World balance and biology](world-balance.md) - Phase 1 built; Phases 2 and 3 are being built on draft PRs 55, 58, 59, 66 and 67 (see each phase note); Phase 4 integrates and verifies every feature switched o... _(validated aa25337, 2026-10-17)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
 
-## Proposed (4)
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [World balance and biology](world-balance.md) - Phases 1 to 3 are being built on draft PRs 54, 55, 58 and 59 (see each phase note); Phase 1 measures deliberate behaviour, Phase 2 makes the senses honest, Phas... _(validated aa25337, 2026-10-17)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
 ## Reference (3)
