@@ -30,18 +30,18 @@ describe('main', () => {
         }
     }, 60000);
 
-    it('prints the tracked variants beside the 500-agent row as text', async () => {
+    it('prints the tracked variants beside the tracked row as text', async () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => {});
         try {
-            await benchMain(['--sizes=500']);
+            await benchMain(['--sizes=8'], { trackedSize: 8 });
             const text = String(log.mock.calls[0][0]);
-            expect(text).toContain('bench.step_ms@500 ');
-            expect(text).toContain('bench.step_ms@500defaults ');
-            expect(text).toContain('bench.step_ms@500w7680 ');
+            expect(text).toContain('bench.step_ms@8 ');
+            expect(text).toContain('bench.step_ms@8defaults ');
+            expect(text).toContain('bench.step_ms@8w7680 ');
         } finally {
             log.mockRestore();
         }
-    }, 300000);
+    }, 60000);
 
     it('labels the text output with the policy that ran', async () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => {});
