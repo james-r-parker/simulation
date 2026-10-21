@@ -28,7 +28,16 @@ export function createMapElitesV1(options) {
     const counters = createLifeCounters(config);
     const archive = createArchive(brainLayout(config));
     const n = config.maxAgents;
-    const clones = { isClone: new Uint8Array(n), archiveRef: new Int32Array(n).fill(-1), refId: new Float64Array(n) };
+    const clones = {
+        isClone: new Uint8Array(n),
+        archiveRef: new Int32Array(n).fill(-1),
+        refId: new Float64Array(n),
+        fromArchive: new Uint8Array(n),
+    };
+    if (observer !== undefined) {
+        // An entrant is in the archive lineage when its genome came from the archive or a clone of one.
+        observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;
+    }
     const { initSpec, initBrain } = createSeeder({ archive, birth, clones, log, cellDraws: options.cellDraws });
     const { onDeath, onEvent } = createOffers({
         config,
@@ -46,6 +55,7 @@ export function createMapElitesV1(options) {
         clones.isClone[child] = 0;
         clones.archiveRef[child] = -1;
         clones.refId[child] = 0;
+        clones.fromArchive[child] = 0;
     }
 
     return {

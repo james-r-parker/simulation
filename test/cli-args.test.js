@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { intValue, parseFlags } from '../scripts/lib/cli-args.mjs';
+import { describe, expect, it, vi } from 'vitest';
+import { exitCodeOf, intValue, parseFlags } from '../scripts/lib/cli-args.mjs';
 
 const USAGE = 'usage: tool';
 /** @type {import('../scripts/lib/cli-args.mjs').FlagSpec} */
@@ -48,5 +48,22 @@ describe('parseFlags', () => {
 
     it('propagates a value parser error', () => {
         expect(() => parseFlags(['--n'], spec)).toThrow(/--n must be an integer/);
+    });
+});
+
+describe('exitCodeOf', () => {
+    it('gives 0 when the body resolves', async () => {
+        expect(await exitCodeOf(async () => {})).toBe(0);
+    });
+
+    it('gives 1 and prints the message when the body throws', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(
+            await exitCodeOf(async () => {
+                throw new Error('boom');
+            }),
+        ).toBe(1);
+        expect(spy).toHaveBeenCalledWith('boom');
+        spy.mockRestore();
     });
 });

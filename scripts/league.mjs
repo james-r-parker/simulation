@@ -5,7 +5,7 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MATCH_TICKS, runLeague, validateChampion } from '../js/evo/league.js';
 import { createConfig } from '../js/sim/config.js';
-import { intValue, parseFlags } from './lib/cli-args.mjs';
+import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
@@ -185,13 +185,7 @@ function report(print, name, standing) {
  * @returns {Promise<number>} the process exit code
  */
 export async function main(argv, options = {}) {
-    try {
-        await playLeague(parseArgs(argv), { print: (line) => console.log(line), ...options });
-        return 0;
-    } catch (error) {
-        console.error(error instanceof Error ? error.message : String(error));
-        return 1;
-    }
+    return exitCodeOf(() => playLeague(parseArgs(argv), { print: (line) => console.log(line), ...options }));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

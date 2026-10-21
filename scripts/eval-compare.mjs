@@ -79,6 +79,13 @@ const fmt = (n) => (n === null ? '-' : String(Number(n.toPrecision(4))));
 const pct = (effect) => (effect === null ? '-' : `${effect >= 0 ? '+' : ''}${(effect * 100).toFixed(1)}%`);
 
 /**
+ * @param {{ metric: string, note?: string }} row a comparison row
+ * @param {readonly string[]} targets the target metric names
+ * @returns {string} `*` for a target, then the row's note (`needs 32 seeds`, `null in a seed`), or empty
+ */
+const marker = ({ metric, note }, targets) => [targets.includes(metric) ? '*' : '', note ?? ''].join(' ').trim();
+
+/**
  * @param {{ rows: any[], level: number, paired: boolean }} result the comparison
  * @param {readonly string[]} targets the target metric names
  * @returns {string[]} the table lines
@@ -93,7 +100,7 @@ export function formatTable({ rows, level, paired }, targets) {
         pct(r.effect),
         r.low === null ? '-' : `[${fmt(r.low)}, ${fmt(r.high)}]`,
         r.verdict,
-        targets.includes(r.metric) ? '*' : '',
+        marker(r, targets),
     ]);
     const widths = head.map((_, c) => Math.max(...[head, ...body].map((line) => line[c].length)));
     const lines = [head, ...body].map((line) =>
