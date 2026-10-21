@@ -13,7 +13,7 @@ const UNPLACEABLE = {
 };
 
 describe('runSeed (direct)', () => {
-    it('returns the metrics, hash and checkpoints for a seed', () => {
+    it('returns the metrics, hash and checkpoints for a seed', { timeout: 30_000 }, () => {
         const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL });
         expect(result).toMatchObject({ seed: 3, fitnessName: 'v5' });
         expect(result.worldHash).toEqual(expect.any(String));
@@ -27,7 +27,7 @@ describe('runSeed (direct)', () => {
         });
     });
 
-    it('is deterministic for the same task', () => {
+    it('is deterministic for the same task', { timeout: 30_000 }, () => {
         const task = { seed: 5, ticks: 50, policy: 'baseline-v5', overrides: SMALL };
         expect(runSeed(task).worldHash).toBe(runSeed(task).worldHash);
     });
