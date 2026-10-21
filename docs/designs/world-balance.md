@@ -1,6 +1,6 @@
 # World balance and biology
 
-**Status:** Proposed - Phases 1 to 3 are being built on draft PRs 54, 55, 58 and 59 (see each phase note); Phase 1 measures deliberate behaviour, Phase 2 makes the senses honest, Phase 3 adds the biology features with memory and Hebbian learning, Phase 4 settles the balance on a tuning night in a session of its own.
+**Status:** In progress - Phase 1 built; Phases 2 and 3 are being built on draft PRs 55, 58, 59, 66 and 67 (see each phase note); Phase 4 integrates and verifies every feature switched on, Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
 **Validated:** aa25337 (2026-10-17)
 **Priority:** 1 - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
@@ -506,7 +506,7 @@ choices and reasons within the plans").
 
 ## Phases
 
-### Phase 1 - Measure deliberate behaviour
+### Phase 1 - Measure deliberate behaviour (built)
 
 **Targets:** none - instruments only: the D1 to D8 and selection metrics are recorded for `baseline-v5` and the live policy, and predator-prey.md Phase 3 moves them
 
