@@ -40,6 +40,16 @@ const SEMANTIC = {
     alarm: PALETTE.alarmRing,
     eaten: PALETTE.eatenFlash,
 };
+
+describe('meat', () => {
+    it('is told from plant food by at least 30, and by 15 under each colour-vision simulation', () => {
+        expect(colorDistance(PALETTE.meat, PALETTE.food)).toBeGreaterThanOrEqual(30);
+        for (const [kind, matrix] of Object.entries(MACHADO)) {
+            expect(colorDistance(PALETTE.meat, PALETTE.food, matrix), kind).toBeGreaterThanOrEqual(15);
+        }
+    });
+});
+
 const CVD = Object.entries(MACHADO);
 
 describe('ciede2000', () => {

@@ -41,7 +41,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), {}));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(14 + 10 + 4 + 5 + 13 + 6);
+        expect(keys).toHaveLength(16 + 10 + 4 + 5 + 13 + 6);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
@@ -82,6 +82,23 @@ describe('computeMetrics on hand-built state', () => {
         expect(computeMetrics(o, {})['eval.born_share']).toEqual({ value: 0.5 });
     });
 
+    it('reads eval.mating_share as mating births over mating and split births, over the whole run', () => {
+        const o = bareObserver();
+        o.births[BORN_CAUSE.MATE] = 3;
+        o.births[BORN_CAUSE.SPLIT] = 9;
+        o.births[BORN_CAUSE.FLOOR] = 50;
+        expect(computeMetrics(o, {})['eval.mating_share']).toEqual({ value: 0.25 });
+    });
+
+    it('is null with a reason for eval.mating_share when nothing was born by mating or split', () => {
+        const o = bareObserver();
+        o.births[BORN_CAUSE.INITIAL] = 100;
+        expect(computeMetrics(o, {})['eval.mating_share']).toEqual({
+            value: null,
+            reason: 'no mating or split birth',
+        });
+    });
+
     it('takes the median lifespan over mature deaths only, averaging the middle pair', () => {
         const o = bareObserver();
         for (const ageTicks of [5, 20, 40, 100, 1000]) {
@@ -109,6 +126,7 @@ describe('computeMetrics on hand-built state', () => {
         addAlive(o, 1, { spec: 0, children: 4 });
         const m = computeMetrics(o, {}, { fitness });
         expect(m['eval.population_mean'].value).toBe(4);
+        expect(m['eval.spec_turnover'].reason).toBe('no checkpoint after burn-in');
         expect(m['eval.predator_share_cv'].value).toBe(0);
         expect(m['eval.behaviour_coverage'].value).toBe(0.01);
         expect(m['eval.mean_fitness.forager'].value).toBe(3);

@@ -2,12 +2,31 @@ import { configDefaults, defineConfig } from 'vitest/config';
 
 // TEST_SCOPE=fast leaves out the *.slow.test.js files (real worlds over many ticks, worker pools, the golden runs). They
 // sit beside the fast test of the same module; CI runs the fast scope, every local run and the nightly run everything.
-const FAST = process.env.TEST_SCOPE === 'fast';
+const SCOPE = process.env.TEST_SCOPE;
+const FAST = SCOPE === 'fast';
+
+// Long statistical slow tests whose real worlds cast billions of rays: V8's 32-bit block counters wrap on them and
+// read hot branches as uncovered (sim-notes.md, 2026-10-21). check.sh runs them in a second pass without coverage
+// (TEST_SCOPE=statistical) and the coverage pass leaves them out (TEST_SCOPE=coverage); what they reach is covered by
+// the unit tests.
+export const STATISTICAL_TESTS = [
+    'test/evo/deliberate-controllers.slow.test.js',
+    'test/evo/survivable-world.slow.test.js',
+    'test/evo/anti-exploit.slow.test.js',
+];
+
+/** @returns {string[]} the test files left out for this scope */
+function excluded() {
+    if (FAST) {
+        return [...configDefaults.exclude, '**/*.slow.test.js'];
+    }
+    return SCOPE === 'coverage' ? [...configDefaults.exclude, ...STATISTICAL_TESTS] : configDefaults.exclude;
+}
 
 export default defineConfig({
     test: {
-        include: ['test/**/*.test.js'],
-        exclude: FAST ? [...configDefaults.exclude, '**/*.slow.test.js'] : configDefaults.exclude,
+        include: SCOPE === 'statistical' ? STATISTICAL_TESTS : ['test/**/*.test.js'],
+        exclude: excluded(),
         environment: 'node',
         coverage: {
             provider: 'v8',

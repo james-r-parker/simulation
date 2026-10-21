@@ -96,6 +96,7 @@ describe('metricDirection', () => {
         expect(metricDirection('eval.floor_episodes')).toBe('lower');
         expect(metricDirection('eval.population_mean')).toBe('watch');
         expect(metricDirection('eval.born_share')).toBe('watch');
+        expect(metricDirection('eval.mating_share')).toBe('watch');
         expect(metricDirection('eval.p90_fitness.forager')).toBe('higher');
         expect(metricDirection('eval.mean_fitness.all')).toBe('higher');
         expect(metricDirection('bench.step_ms@500')).toBe('lower');

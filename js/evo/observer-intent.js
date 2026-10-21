@@ -7,7 +7,6 @@ import { detCos, detSin } from '../sim/det-math.js';
 import { answerHuntCall } from './observer-intent-calls.js';
 import { BITTEN_THIS_TICK, trackIntentEpisode } from './observer-intent-episode.js';
 import { sampleGroups } from './observer-intent-group.js';
-import { collectHunters, resolveThreat } from './observer-intent-threat.js';
 import {
     CLOSING_BITS,
     CLOSING_MIN,
@@ -239,7 +238,6 @@ function countCueTicks(intent, tick, slot) {
  */
 function senseSlot(intent, world, slot) {
     summariseRays(world, slot, intent.scan, intent.arc);
-    resolveThreat(intent, world, slot);
     trackTarget(intent, world, slot, FOOD);
     trackTarget(intent, world, slot, PREY);
     trackThreat(intent, world, slot);
@@ -363,7 +361,6 @@ export function updateIntent(intent, world, slotOf) {
         return;
     }
     const { alive } = world;
-    collectHunters(intent, world);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             senseSlot(intent, world, slot);

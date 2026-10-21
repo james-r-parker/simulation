@@ -1,7 +1,6 @@
 // The intent state's constants, per-slot arrays, run totals and slot reset. `observer-intent.js` updates it each
 // tick; see docs/designs/world-balance.md (Intent state, Intent counters).
 
-import { createHunterGrid } from './hunter-grid.js';
 import { hunterTable } from './hunter-table.js';
 import { createHuntCalls } from './observer-intent-calls.js';
 import { SCAN_SIZE } from './ray-summary.js';
@@ -18,7 +17,7 @@ export const CLOSING_MIN = 6;
 /** Ticks after the first bite of an episode in which a response still counts. */
 export const RESPONSE_WINDOW = 30;
 
-/** Proximity of a bigger-class hit that makes an agent threatened for the grouping sample. */
+/** Proximity of a channel-2 ("can bite me") hit that makes an agent threatened for the grouping sample. */
 export const THREAT_PROXIMITY = 0.5;
 
 /** Ticks between grouping samples. */
@@ -143,9 +142,6 @@ export function createIntentState(config) {
         arc: arcRays(config),
         hunterSpec: hunterTable(config),
         scan: new Float64Array(SCAN_SIZE),
-        hunters: new Int32Array(config.maxAgents),
-        hunterCount: 0,
-        hunterGrid: createHunterGrid(config),
         groupKeys: new Float64Array(config.maxAgents + 1).fill(Infinity),
         groupKin: new Int32Array(config.maxAgents),
         calls: createHuntCalls(),

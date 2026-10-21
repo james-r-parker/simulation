@@ -18,7 +18,7 @@ export const survivableWorld = JSON.parse(
     readFileSync(new URL('../../../evals/survivable-prey-world.json', import.meta.url), 'utf8'),
 );
 
-export const SURVIVABLE_PREDATOR_EVERY = 4;
+export const SURVIVABLE_PREDATOR_EVERY = 8;
 
 export const microWorld = JSON.parse(readFileSync(new URL('../../../evals/micro-world.json', import.meta.url), 'utf8'));
 

@@ -3,6 +3,7 @@
 import { nextFloat } from './rng.js';
 import { spawnFoodItem } from './spawn.js';
 import { removeFood } from './world.js';
+import { FOOD_KIND } from './carcass.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -29,17 +30,17 @@ export function spawnFood(world) {
 }
 
 /**
- * Ages every alive food item by one tick and removes those older than `foodMaxAge`.
+ * Ages every alive food item by one tick and removes those older than `foodMaxAge` (a carcass: `carcassTicks`).
  * @param {World} world the world
  * @returns {void}
  */
 export function ageFood(world) {
-    const { foodAlive, foodAge } = world;
-    const maxAge = world.config.foodMaxAge;
+    const { foodAlive, foodAge, foodKind } = world;
+    const { foodMaxAge, carcassTicks } = world.config;
     for (let i = 0; i < foodAlive.length; i++) {
         if (foodAlive[i] === 1) {
             foodAge[i] += 1;
-            if (foodAge[i] > maxAge) {
+            if (foodAge[i] > (foodKind[i] === FOOD_KIND.MEAT ? carcassTicks : foodMaxAge)) {
                 removeFood(world, i);
             }
         }

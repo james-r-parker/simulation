@@ -47,7 +47,7 @@ const duel = (/** @type {string} */ predator, /** @type {string} */ prey) => ({
     arms: { predator, prey },
 });
 
-/** The survivable-prey duel (`evals/survivable-prey-world.json`, one predator in four) for the pairs the duel starves. */
+/** The survivable-prey duel (`evals/survivable-prey-world.json`, one predator in eight) for the pairs the duel starves. */
 const survivable = (/** @type {string} */ predator, /** @type {string} */ prey) => ({
     world: 'survivable',
     arms: { predator, prey },

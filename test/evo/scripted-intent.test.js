@@ -7,7 +7,7 @@ import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
 import { DECISION_WINDOW, INTENT_CONTROLLERS } from '../../js/evo/scripted-intent.js';
 import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
-const CH = { food: 1, bigger: 2, kin: 5 };
+const CH = { food: 1, threat: 2, kin: 5 };
 const O = OUTPUT_INDEX;
 
 /**
@@ -32,6 +32,14 @@ function hit(world, slot, k, channel) {
     const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
     world.inputs[base + channel] = 1;
+}
+
+/**
+ * @param {Record<number, number>} set the outputs that are not 0, by index
+ * @returns {number[]} a full output row, so the SPLIT and memory outputs are pinned at 0
+ */
+function fullRow(set) {
+    return Array.from({ length: OUTPUT_COUNT }, (_, i) => set[i] ?? 0);
 }
 
 /**
@@ -75,10 +83,10 @@ describe('intent controllers', () => {
     it('jawSitter holds still with only BITE set, whatever its rays see', () => {
         const { world, run } = setup('jawSitter');
         hit(world, 0, 2, CH.food);
-        hit(world, 1, 1, CH.bigger);
+        hit(world, 1, 1, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual([0, 0, 0, 0, 1, 0, 0, 0]);
+            expect(out(world, slot)).toEqual(fullRow({ [O.BITE]: 1 }));
         }
     });
 
@@ -86,10 +94,10 @@ describe('intent controllers', () => {
         const { world, run } = setup('huntCallSpammer');
         hit(world, 0, 3, 3);
         run(world);
-        expect(out(world, 0)).toEqual([1, 1, 1, 0, 1, 0, 0, 1]);
+        expect(out(world, 0)).toEqual(fullRow({ 0: 1, 1: 1, 2: 1, [O.BITE]: 1, [O.HUNT]: 1 }));
         run(world);
         expect(out(world, 0)[O.HUNT]).toBe(1);
-        expect(out(world, 2)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 1]);
+        expect(out(world, 2)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST), [O.HUNT]: 1 }));
     });
 
     it('grouper flees as fleer does with no lineage mate near, and turns towards the nearest one when threatened', () => {
@@ -100,7 +108,7 @@ describe('intent controllers', () => {
         world.y.fill(100);
         world.angle.fill(0);
         for (const slot of [0, 1, 2]) {
-            hit(world, slot, 3, CH.bigger);
+            hit(world, slot, 3, CH.threat);
         }
         world.x[1] = 100 + callRadius * 3;
         run(world);
@@ -121,10 +129,10 @@ describe('intent controllers', () => {
     it('cruiser holds SEEK_THRUST straight ahead whatever its rays see', () => {
         const { world, run } = setup('cruiser');
         hit(world, 0, 3, CH.food);
-        hit(world, 1, 2, CH.bigger);
+        hit(world, 1, 2, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
+            expect(out(world, slot)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST) }));
         }
     });
 
@@ -132,7 +140,7 @@ describe('intent controllers', () => {
         const { world, run } = setup('grouper');
         hit(world, 0, 3, CH.kin);
         run(world);
-        expect(out(world, 0)).toEqual([Math.fround(SEEK_THRUST), 0, 0, 0, 0, 0, 0, 0]);
+        expect(out(world, 0)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST) }));
     });
 
     it('sloppyForager keeps one choice for a decision window and draws from its rng', () => {

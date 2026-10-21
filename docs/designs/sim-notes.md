@@ -369,6 +369,14 @@ upgrade and no API change to record. The renderer uses `WebGLRenderer`, `Instanc
 - The worker sends `stats` only while the sim runs, so a paused app has no new stats; the top bar reads the tick and
   population from the newest snapshot, which each `step` posts.
 
+### 2026-10-17 - Body traits and the hash cell size
+
+- With `traitsEnabled` the largest body is `baseSize x TRAIT_MAX + maxEnergy / energyToSize`, 132.5 at the defaults, which
+  is above `hashCellSize` 128, so `validateConfig` rejects `traitsEnabled` at the default cell size. T41 raises
+  `hashCellSize` (140 passes) when it switches traits on.
+- The sensing hash is walked cell by cell along each ray until the ray exceeds its own range, so a longer vision trait needs
+  no separate query radius; `castRays` takes the range from `visionOf` in `js/sim/traits.js`.
+
 ### 2026-10-17 - The skill ladder at the defaults (world-balance T12)
 
 `npm run ladder` at the defaults (`minAgents` 0, 10000 ticks, seeds 1-3, commit 88f3940). Final population per seed,
@@ -395,3 +403,50 @@ then the rung means:
   215-253. The `fleer` spends its ticks fleeing and its `deliberate_food_share` falls to 0.53; that cost, not the
   catch, is the likely cause, since `undefended_bite_share` falls from 0.97 to 0.17. The Phase 4 night should check
   that fleeing is not a dominated strategy before it tunes predation.
+
+### 2026-10-21 - Honest ray classes
+
+World-balance Phase 2 made the agent ray classes honest. `agentChannel` in `js/sim/ray-march.js` now asks `couldBite`
+(the rule `feed` uses, without the jaws) instead of comparing sizes: a hit is kin, else "can bite me" (channel 2), else "I can bite
+it" (channel 3), else other (channel 4). Class channels carry the hit's proximity; food, wall, obstacle and smoke
+still carry 1. At `huntSizeRatio` 1.01 about half of all agents had read as bigger, so before this a prey saw a
+threat on most rays and a hunter saw prey on most rays, whether or not either could bite. Now a prey sees only
+agents that can bite it (they can hunt and are bigger by the ratio, from any angle; the first build also required the jaws to face the caster, and the user chose on 2026-10-21 that prey should know a predator from any angle), and a hunter sees only
+what it can bite. The intent state's threat is the nearest channel-2 hit, so the `canHunt` scan and its grid are
+gone. Mating has its own size band, `mateSizeRatio` (1.3).
+
+- **The survivable-prey world had to be re-chosen by its criterion.** Honest classes change which agents a hunter
+  treats as prey, so the Phase 1 settings no longer left prey alive on seeds 2 and 3. `evals/survivable-prey-world.json`
+  now has 60 starting agents, `maxAgents` 120, 100 food and one predator in eight; the criterion in
+  `test/evo/survivable-world.slow.test.js` is unchanged. One in four held until the classes moved to `couldBite`:
+  once hunters see prey from any angle they multiply after the midpoint and empty the prey.
+- **B20: `hunter` fails the anti-exploit suite under `fitnessV5`.** With honest classes the scripted `hunter` finds
+  prey reliably, and `fitnessV5` pays a flat 720 points per kill whatever the kill brings in (legacy-audit FIT-5), so
+  the intake bound is exceeded. The cause is the fitness, not the senses, so the suite marks `hunter` an expected
+  FIT-5 failure under `fitnessV5` only (user); no bound was loosened.
+
+### 2026-10-21 - The skill ladder on honest senses (world-balance T24)
+
+`npm run ladder` at the defaults on the Phase 2 senses (10000 ticks, seeds 1-3), mean final population per rung, with
+the Phase 1 ladder in brackets: forage `random` 12.7 (17.3), `wanderer` 0 (0), `sloppyForager` 0 (0), `foodSeeker`
+324 (324), `fleer` 321 (285); combat `jawSitter` v `foodSeeker` 318 (318), `hunter` v `foodSeeker` 228 (228),
+`hunter` v `fleer` 3.3 (0.7).
+
+- `fleer` now matches `foodSeeker` when there are no predators: it no longer flees every bigger agent, only those that
+  could bite it.
+- `hunter` against `fleer` still nearly empties the world. Prey that see hunters from any angle still lose; the
+  Phase 5 night should check that fleeing is not dominated before it tunes predation.
+- The forage ladder is still a cliff between `sloppyForager` (dies out) and `foodSeeker` (B2).
+
+### 2026-10-21 - V8 block counters wrap at 2^32 and break branch coverage
+
+`vitest --coverage` (v8) merges block counts as unsigned 32-bit numbers. `circleHit` in `js/sim/ray-march.js` runs about
+4.5 billion times in the whole suite (the slow evo tests alone are 3.6 billion), so its call count wrapped past 2^32
+and the implicit "else" of its early-return `if` (call count minus the hot branch) came out negative, which
+`json-summary` counts as uncovered: `js/sim` branches read 99.87% against a baseline of 100% although every branch ran.
+A branch-free `circleHit` (a 0/1 `valid` multiplier) avoided the wrap but took a square root on every miss:
+`node scripts/bench-compare.mjs` put `bench.phase_ms.sense@500` at +8.8% and the 7680 x 4320 row at +17.6%, so it was
+reverted. Instead (user, 2026-10-21) `scripts/check.sh` runs the test gate in two passes: everything with coverage
+except `STATISTICAL_TESTS` in `vitest.config.js` (`deliberate-controllers`, `survivable-world` and `anti-exploit`
+slow tests), then those three without coverage. If a branch in a hot function reads as uncovered with negative
+counts in `coverage-final.json`, suspect the same wrap before adding tests.

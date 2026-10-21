@@ -3,7 +3,7 @@ import { writeBodyInputs } from '../../js/sim/body-inputs.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { depositPheromone } from '../../js/sim/pheromones.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
-import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
 /**
  * @param {ReturnType<typeof senseWorld>} w
@@ -138,13 +138,32 @@ describe('writeBodyInputs', () => {
         expect(body(w, slot).slice(15)).toEqual([1, 0.95, 0, 1].map(Math.fround));
     });
 
+    it('writes sex 0 and the memory read-backs as 0 while leakEnabled is false', () => {
+        const { w, slot } = ready();
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
+        writeBodyInputs(w, slot);
+        const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
+        expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 35))).toEqual([0, 0, 0]);
+    });
+
+    it('feeds last tick MEMORY_A and MEMORY_B back as inputs 33 and 34 when leakEnabled', () => {
+        const { w, slot } = ready();
+        w.config = { ...w.config, leakEnabled: true };
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
+        writeBodyInputs(w, slot);
+        const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
+        expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 35))).toEqual([0, 0.5, -0.25]);
+    });
+
     it('ends at offset 18 and leaves the scent inputs and the next slot row alone', () => {
         const { w, slot } = ready();
         const next = addAgent(w, 700, 700, 25);
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
         const end = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
-        expect(end + 13).toBe((slot + 1) * w.layout.inputCount);
+        expect(end + 16).toBe((slot + 1) * w.layout.inputCount);
         expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(
             w.inputs

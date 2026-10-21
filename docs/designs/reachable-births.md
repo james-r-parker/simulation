@@ -35,7 +35,7 @@ Every module has `test/sim/<module>.test.js`.
 starts a mating with `startMating(world, policy, a, b)`; the lower slot is the mother.
 
 `canMatePair(world, a, b)` holds when both are `readyToMate`, share a specialisation, have a size ratio within
-`1 / huntSizeRatio .. huntSizeRatio`, and the lower slot has energy above `childEnergyMin / childEnergyShare`.
+`1 / mateSizeRatio .. mateSizeRatio` (`mateSizeRatio` is a config key, default 1.3, above 1; it is separate from `huntSizeRatio` so that a size band tuned for biting does not narrow who can mate), and the lower slot has energy above `childEnergyMin / childEnergyShare`.
 
 `findMate` calls `cellRange(world.hash, x, y, size[a] + mateRange)` once, then scans the cells it covers in row-major
 order, entries in entry order. For each entry `b`:

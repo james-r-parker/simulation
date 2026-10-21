@@ -1,10 +1,12 @@
 // How `map-elites-v1` seeds new lineages (initial agents, floor spawns, immigrants): the least-populated
-// specialisation, then a genome from the archive, a clone of one, or a random one.
+// specialisation (a random elite's when `specMutationRate` is above 0), then a genome from the archive, a clone of one, or a random one.
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
-import { nextFloat } from '../../sim/rng.js';
+import { nextFloat, nextInt } from '../../sim/rng.js';
+import { countSpecs, pickEmptySpec } from '../../sim/spec-rescue.js';
+import { biologyOn } from '../../sim/traits.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -21,17 +23,35 @@ export const CLONE_SHARE_END = 0.8;
  * @returns {number} the specialisation with the fewest alive agents, ties to the lowest index
  */
 export function leastPopulatedSpec(world, slot, counts) {
-    counts.fill(0);
-    for (let i = 0; i < world.alive.length; i++) {
-        if (world.alive[i] === 1 && i !== slot) {
-            counts[world.spec[i]] += 1;
-        }
-    }
+    countSpecs(world, slot, counts);
     let best = 0;
     for (let spec = 1; spec < counts.length; spec++) {
         best = counts[spec] < counts[best] ? spec : best;
     }
     return best;
+}
+
+/**
+ * The specialisation of a random archive elite (every occupied cell equally likely), or a random one while the archive
+ * is thin. Used instead of `leastPopulatedSpec` once `specMutationRate` is above 0, so a lost role is not refilled.
+ * @param {Record<string, any>} archive the archive
+ * @param {any} rng the `spawn` stream
+ * @returns {number} the specialisation index
+ */
+export function randomEliteSpec(archive, rng) {
+    const cells = occupiedCount(/** @type {any} */ (archive));
+    if (cells < MIN_ARCHIVE_CELLS) {
+        return nextInt(rng, GENOME_SPECS.length);
+    }
+    let left = nextInt(rng, cells);
+    for (let spec = 0; spec < GENOME_SPECS.length - 1; spec++) {
+        const here = occupiedCount(/** @type {any} */ (archive), spec);
+        if (left < here) {
+            return spec;
+        }
+        left -= here;
+    }
+    return GENOME_SPECS.length - 1;
 }
 
 /**
@@ -73,6 +93,24 @@ function checkRow(row, layout, log) {
 }
 
 /**
+ * The specialisation for a new lineage, in order: a rescue of one with 0 alive (`floorRescueAtZero`), a random elite's
+ * (`specMutationRate` above 0), the least populated.
+ * @param {{world: Record<string, any>, slot: number, rng: any, archive: Record<string, any>, counts: Int32Array}} what
+ *   the world, the slot being seeded, the `spawn` stream, the archive and scratch counts
+ * @returns {number} the specialisation index
+ */
+function chooseSpec({ world, slot, rng, archive, counts }) {
+    const rescue = world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
+    if (rescue >= 0) {
+        return rescue;
+    }
+    if (world.config.specMutationRate > 0) {
+        return randomEliteSpec(archive, rng);
+    }
+    return leastPopulatedSpec(world, slot, counts);
+}
+
+/**
  * @param {Record<string, any>} options `{ config, archive, birth, clones, log, cellDraws }`: the shared per-slot state in
  *   `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`
  * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
@@ -82,8 +120,8 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
 
-    function initSpec(/** @type {any} */ world, /** @type {number} */ slot) {
-        return leastPopulatedSpec(world, slot, counts);
+    function initSpec(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
+        return chooseSpec({ world, slot, rng, archive, counts });
     }
 
     /** Writes the slot's row and sigma; a clone also records what it cloned. */
@@ -104,7 +142,12 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
             checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
-            mutateWeights(row, birth.sigma[slot], rng);
+            mutateWeights(
+                row,
+                birth.sigma[slot],
+                rng,
+                biologyOn(world.config) ? layout.traitStart : layout.weightCount,
+            );
         } else {
             checkRow(ref.row, layout, log);
             row.set(ref.row);

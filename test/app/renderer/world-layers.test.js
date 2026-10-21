@@ -40,6 +40,20 @@ describe('packBodies', () => {
     });
 });
 
+describe('meat in the food records', () => {
+    it('keeps the negative radius that marks meat, so the shader sizes by abs and colours by sign', () => {
+        const f32 = Float32Array.from([10, 20, 3, 30, 40, -4]);
+        const out = new Float32Array(2 * 4);
+        packBodies(f32, { start: 0, count: 2 }, out);
+        expect(out[2]).toBe(3);
+        expect(out[6]).toBe(-4);
+    });
+
+    it('is a colour distinct from plant food', () => {
+        expect(PALETTE.meat).not.toEqual(PALETTE.food);
+    });
+});
+
 describe('food and obstacle layers', () => {
     it('draw exactly the food and obstacles in the snapshot', () => {
         const { info, snapshot } = smallReady(10);
@@ -66,6 +80,7 @@ describe('food and obstacle layers', () => {
         expect(food.object.material.uniforms.uZoom.value).toBe(frame.camera.zoom);
         expect(food.object.material.uniforms.uTime.value).toBe(3);
         expect(food.object.material.uniforms.uColor.value).toEqual(PALETTE.food);
+        expect(food.object.material.uniforms.uMeatColor.value).toEqual(PALETTE.meat);
         expect(obstacles.object.material.uniforms.uRim.value).toEqual(PALETTE.obstacleRim);
     });
 

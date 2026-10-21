@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -79,6 +79,27 @@ describe('main', () => {
         expect(code).toBe(0);
         expect(print).toHaveBeenCalledWith(expect.stringMatching(/^tick 1000 worldHash /));
         expect(readdirSync(join(dir, 'logs'))).toHaveLength(1);
+        print.mockRestore();
+    }, 60000);
+
+    it('logs the events createWorld pushes before the first tick, such as FoodPatchesCreated', async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'replay-created-'));
+        const configPath = join(dir, 'c.json');
+        writeFileSync(configPath, JSON.stringify({ ...CONFIG, foodPatchCount: 3 }));
+        const print = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        const code = await main(['--seed', '1', '--ticks', '1', '--config', configPath], {
+            logDir: join(dir, 'logs'),
+            dumpDir: join(dir, 'dumps'),
+        });
+
+        expect(code).toBe(0);
+        const [file] = readdirSync(join(dir, 'logs'));
+        const lines = readFileSync(join(dir, 'logs', file), 'utf8')
+            .trim()
+            .split('\n')
+            .map((l) => JSON.parse(l));
+        expect(lines.find((l) => l.event === 'FoodPatchesCreated')).toMatchObject({ count: 3 });
         print.mockRestore();
     }, 60000);
 });

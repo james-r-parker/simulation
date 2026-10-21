@@ -21,7 +21,7 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 100, // new
+    minAgents: 100, // the floor; world-balance lowers it to 40 at the Phase 4 switch-on (T41)
     immigrationInterval: 600, // new
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
@@ -59,6 +59,7 @@ export const DEFAULTS = deepFreeze({
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
     huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
+    mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates
@@ -99,6 +100,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         predator: {
@@ -111,6 +113,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 4,
             turnMultiplier: 0.7,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
         },
         reproducer: {
@@ -123,6 +126,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         scout: {
@@ -135,6 +139,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
         defender: {
@@ -147,6 +152,7 @@ export const DEFAULTS = deepFreeze({
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
         },
     },
@@ -169,7 +175,12 @@ export const DEFAULTS = deepFreeze({
     satiationShare: 0, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49)
     digestTicks: 0, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
     handlingTicks: 0, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
+    specMutationRate: 0, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
+    huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
+    carcassesEnabled: false, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
+    carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
+    carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)
@@ -197,4 +208,15 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
+    floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
+    foodPatchCount: 0, // new: permanent food patches; 0 is off
+    foodPatchRadius: 400, // new
+    foodPatchCapacity: 1, // new: the largest stock of a patch
+    foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
+    foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
+    foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
+    traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
+    visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
+    hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)
+    leakEnabled: false, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
 });

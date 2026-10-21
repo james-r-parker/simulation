@@ -218,8 +218,8 @@ Both sides run `validateMessage` on every message they receive. The client drops
 the pheromone grid (`cols`, `rows`, `cellSize`, `pheromoneMax`) and `specs`: for each specialisation its `index`,
 `name`, `canHunt` and `visionRange`.
 
-`ready.labels` holds `rayChannels` (the nine channel names), `bodyInputs` (the 32 body input names with their group)
-and `outputs` (the eight names of `OUTPUT_INDEX`), built by `inspectLabels`.
+`ready.labels` holds `rayChannels` (the nine channel names), `bodyInputs` (the 35 body input names with their group)
+and `outputs` (the eleven names of `OUTPUT_INDEX`), built by `inspectLabels`.
 
 ## Snapshot
 
@@ -431,14 +431,14 @@ resolution in constant memory.
 
 - A header: the silhouette in the lineage colour, the type, the family name (`familyName`) and the `genomeId`.
 - A radar: `rayCount` spokes around the silhouette, nose up, each as long as its proximity and coloured by its
-  strongest class channel (food, bigger, smaller, similar, kin, wall, obstacle, smoke).
+  strongest class channel (food, can bite me, I can bite it, other, kin, wall, obstacle, smoke).
 - Input bars, grouped and labelled from `ready.labels`: Body (energy, forward and lateral speed, turn rate, size,
   pregnant, ready to mate, age), Senses (danger and attack here, season sine and cosine, ate and bitten recently, type),
   Temperature (4), Scent antennae (danger left and right, attack left and right, hunt here, left and right) and Heard
   calls (alarm loudness, ahead, side; hunt loudness, ahead, side).
 - The hidden layer as a grid of cells (`brainHidden`, 8 wide), diverging blue to orange by activation, each cell's
   brightness following the activation smoothed at 25% per frame.
-- The 8 outputs as labelled bars (thrust, turn, sprint, mate, bite, alarm, smoke, hunt call); a bar lights while its
+- The 11 outputs as labelled bars (thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split, memory A and B); a bar lights while its
   action fires (output above 0; smoke above `smokeThreshold`).
 - Counters: type, family, generation, age (ticks and seasons), energy (percent), temperature with its band name,
   food energy eaten, bite energy taken, kills, children and fitness so far.
@@ -793,7 +793,7 @@ budget; lint, typecheck and Prettier cover all of `js/`.
 5. Press `2`: amber, red and violet haze appear and drift. Press `4`: ray fans and call rings appear. Watch for a
    predator with its jaw wedge open, a bite flash at the jaw, an alarm ring, a hunt ring and a smoke puff that dims the
    agents inside it. Press `1`: agents tint blue to orange. Press `3`: family territories fade in and out.
-6. Click an agent: the inspector opens with the labelled input bars, the pulsing hidden grid, the eight output bars and
+6. Click an agent: the inspector opens with the labelled input bars, the pulsing hidden grid, the eleven output bars and
    the counters; its rays and antennae draw in the world; `F` follows it; when it dies the selection clears.
 7. Press `C`: five charts update; close the drawer and the page stays smooth. Press `H`: the HUD hides.
 8. Leave the page untouched for 10 s: the cursor hides and the director glides to a moment with a caption (a
