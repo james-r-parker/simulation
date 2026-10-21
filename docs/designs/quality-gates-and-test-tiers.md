@@ -153,6 +153,7 @@ order.
 | The `check-tiers` flake, the conflict-marker `conventions` rule, the nightly hidden-file upload, `.node-version`, the Playwright image-tag test and a fast golden test land on `chore/ci-hardening` | Another agent owns them; this doc does not repeat them                                                                                                           | Manager           |
 | `main` is protected by a ruleset and `check.yml` cancels in-progress runs for pull requests only                                                                                                    | Every `main` commit needs a verdict; see [deployment-and-community.md](deployment-and-community.md) T33                                                          | User              |
 | The coverage ratchet runs on every PR in CI                                                                                                                                                         | On 2026-10-17 PRs 56 and 57 merged green while main's `scripts` coverage fell below its baseline, because CI skipped `ratchet`                                   | User              |
+| Function microbenchmarks with Vitest `bench`, as a tool beside the `bench-compare` gate                                                                                                             | Judging the `circleHit` rewrite took two 6-minute whole-step runs and still sat near the noise; a per-function compare shows a 1% change in seconds              | User              |
 
 ## Phases
 
@@ -237,6 +238,15 @@ This phase is built after [headless-sim-core.md](headless-sim-core.md) Phase 2, 
     - The job is `continue-on-error: true` for two weeks after it merges. T18 then records the largest `--self` spread
       seen in [sim-notes.md](sim-notes.md), sets `--threshold` to `max(0.05, 3 x spread)`, removes
       `continue-on-error` and adds `perf` to the `main` ruleset's required checks.
+- **Function microbenchmarks (user, 2026-10-21).** `bench/micro/<module>.bench.js` files run with Vitest's built-in
+  `bench` mode (tinybench, already part of the pinned Vitest; no new dependency), one per hot module: `circleHit` and
+  `castRays` (`js/sim/ray-march.js`), `detTanhInto` (`js/sim/det-math.js`), `forwardAll` (`js/sim/brain.js`),
+  `summariseRays` (`js/evo/ray-summary.js`) and the spatial-hash query (`js/sim/spatial-hash.js`). Each runs on fixed,
+  seeded inputs built once (`createRng` streams or a recorded world), never on `Math.random`. `npm run bench:micro`
+  runs them; `-- --compare <ref>` (new `scripts/bench-micro.mjs`) runs the same files on a detached worktree of
+  `<ref>` and on `HEAD`, alternating, and prints ops/s and the change per function with its relative margin of error.
+  It is a tool, not a gate: micro numbers depend on the machine. The `create-pr` skill asks for its table on any
+  `perf(...)` commit or change to a listed function, and whole-step `bench-compare` stays the gate.
 - **CPU lock.** `scripts/lib/cpu-lock.sh` (new, sourced by `check.sh`) defines `with_cpu_lock <command...>`, which runs
   the command under `flock -w 3600 "${CHECK_CPU_LOCK:-${XDG_RUNTIME_DIR:-/tmp}/blob-evolution-cpu.lock}"`. `check.sh`
   wraps the `test`, `bench-check`, `eval-smoke`, `bench-compare` and `browser-smoke` gates in it. `with_cpu_lock` exports
@@ -308,18 +318,19 @@ parts of `scripts/check.sh`.
 
 ### Phase 3 - CI perf job, CPU lock and run hygiene
 
-| #   | Task                                                                                                                                                                                              | Nature       | Depends on                                  |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------- |
-| T17 | Add `scripts/perf-scope.sh`, `--threshold` and `--self` in `scripts/bench-compare.mjs`, the advisory `perf` job in `check.yml` and their tests                                                    | [judgement]  | T16                                         |
-| T18 | After two weeks of runs: record the `--self` noise in `sim-notes.md`, set `--threshold` to `max(0.05, 3 x noise)`, drop `continue-on-error`, and ask the user to add `perf` to the `main` ruleset | [judgement]  | T17                                         |
-| T19 | Add `scripts/lib/cpu-lock.sh`, wrap the five heavy gates in `with_cpu_lock`, and add `test/cpu-lock.test.js`                                                                                      | [judgement]  | T16                                         |
-| T20 | Make `gate_bench_check` skip on a busy machine, with the fixture-based test                                                                                                                       | [mechanical] | T16                                         |
-| T21 | Quiet the base worktree install, add the `bench-compare` digest case, the `nightly-failure` job and the `resume-plan` line, with tests                                                            | [mechanical] | T16                                         |
-| T22 | Add `scripts/lib/test-timeout.mjs`, read it in `vitest.config.js`, and add `test/test-timeout.test.js`                                                                                            | [mechanical] | T16                                         |
-| T23 | Change the browser smoke to liveness (5 frames, tick advancing), add `globalThis.__blob.tick` and the trace and screenshot settings                                                               | [judgement]  | T16                                         |
-| T26 | Run the coverage `ratchet` on every PR in CI (the fast-tier coverage, or the full suite when the PR touches `js/` or `scripts/`), with a test that `--ci` includes it                             | [judgement]  | -                                           |
-| T24 | Update `AGENTS.md`, [dev-workflow-and-gate.md](dev-workflow-and-gate.md) and [sim-notes.md](sim-notes.md) for Phase 3                                                                             | [mechanical] | T17, T19, T20, T21, T22, T23                |
-| T25 | Conformance review of Phase 3                                                                                                                                                                     | [judgement]  | T17, T18, T19, T20, T21, T22, T23, T24, T26 |
+| #   | Task                                                                                                                                                                                              | Nature       | Depends on                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------ |
+| T17 | Add `scripts/perf-scope.sh`, `--threshold` and `--self` in `scripts/bench-compare.mjs`, the advisory `perf` job in `check.yml` and their tests                                                    | [judgement]  | T16                                              |
+| T18 | After two weeks of runs: record the `--self` noise in `sim-notes.md`, set `--threshold` to `max(0.05, 3 x noise)`, drop `continue-on-error`, and ask the user to add `perf` to the `main` ruleset | [judgement]  | T17                                              |
+| T19 | Add `scripts/lib/cpu-lock.sh`, wrap the five heavy gates in `with_cpu_lock`, and add `test/cpu-lock.test.js`                                                                                      | [judgement]  | T16                                              |
+| T20 | Make `gate_bench_check` skip on a busy machine, with the fixture-based test                                                                                                                       | [mechanical] | T16                                              |
+| T21 | Quiet the base worktree install, add the `bench-compare` digest case, the `nightly-failure` job and the `resume-plan` line, with tests                                                            | [mechanical] | T16                                              |
+| T22 | Add `scripts/lib/test-timeout.mjs`, read it in `vitest.config.js`, and add `test/test-timeout.test.js`                                                                                            | [mechanical] | T16                                              |
+| T23 | Change the browser smoke to liveness (5 frames, tick advancing), add `globalThis.__blob.tick` and the trace and screenshot settings                                                               | [judgement]  | T16                                              |
+| T26 | Run the coverage `ratchet` on every PR in CI (the fast-tier coverage, or the full suite when the PR touches `js/` or `scripts/`), with a test that `--ci` includes it                             | [judgement]  | -                                                |
+| T27 | Add `bench/micro/*.bench.js` for the six hot functions on seeded inputs, `npm run bench:micro`, `scripts/bench-micro.mjs --compare <ref>` with its tests, and the `create-pr` skill line          | [judgement]  | -                                                |
+| T24 | Update `AGENTS.md`, [dev-workflow-and-gate.md](dev-workflow-and-gate.md) and [sim-notes.md](sim-notes.md) for Phase 3                                                                             | [mechanical] | T17, T19, T20, T21, T22, T23                     |
+| T25 | Conformance review of Phase 3                                                                                                                                                                     | [judgement]  | T17, T18, T19, T20, T21, T22, T23, T24, T26, T27 |
 
 ## Verification
 
