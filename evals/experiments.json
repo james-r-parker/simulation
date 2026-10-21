@@ -1033,7 +1033,7 @@
       "note": "Seeds 1-32 x 200000 ticks, paired with E25 live arm, --allow-config-diff mateSizeRatio. The three done-criterion targets are no-difference (food +2.1%, fed lifespan -6.7%, births +8.7%). Other Phase 2 Targets: alarm_precision -41% worse, escape_rate no-difference, idle_signals_per_1k no-difference. Also worse: hunt_call_precision -41%, pack_kill_share -47%, median_lifespan -8.2%. eval.mating_share 0.151 (new metric, not in E25). Run after the crowding fix in life-counters (sampleCrowding reads class channels by proximity)."
     },
     {
-      "id": "E28",
+      "id": "E30",
       "date": "2026-10-21",
       "branch": "feat/wb-t39-controllers",
       "hypothesis": "The hunter's fitnessV5 share of the foodSeeker's (FIT-5: a flat score per kill) stays above its allowed share max(0.5, hunter food / foodSeeker food + 0.1) in the anti-exploit micro-world with sexes on as with sexes off.",
