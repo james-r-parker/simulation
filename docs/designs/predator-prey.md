@@ -52,7 +52,7 @@ existing layout checks (`assertGenomeFits`, `validateChampion` and the archive c
 
 At the defaults (`rayCount` 16, `brainHidden` 32) `inputCount` goes from 147 to 176 and `weightCount` from 5925 to 6952.
 
-**Ray channels.** Channel 0 is proximity, 1 food, 2 bigger, 3 smaller, 4 similar, 5 kin, 6 wall, 7 obstacle, and the
+**Ray channels.** Channel 0 is proximity, 1 food, 2 "can bite me", 3 "I can bite it", 4 other non-kin, 5 kin, 6 wall, 7 obstacle, and the
 new 8 smoke.
 
 **Body inputs** (offset `rayCount x RAY_CHANNELS`). Offsets 0 to 18 are unchanged (offsets 15 to 18 are the temperature inputs of [body-temperature.md](body-temperature.md)); offsets 19 to 31 are new.
@@ -160,7 +160,15 @@ once per `callTicks`. Smoke does not block sound.
   `prevBiteTick`; otherwise 0. The three arrays are hashed with the agent arrays.
 - `huntSizeRatio` is 1.01 (tuned in E20 from 1.05 and then with the jaws from 1.03, with `alarmCost` and `huntCallCost` 0.5, `maxFood` 1600 and
   `foodTargetPerAgent` 12). A hunter bites a victim when `size[biter] > huntSizeRatio x size[victim]`, and the same
-  ratio classes a ray hit as bigger, smaller or similar, and bounds the size band of a mating pair in `canMatePair`.
+  ratio is part of `canBite`, which also classes a ray hit (see below). Mating has its own size band, `mateSizeRatio`.
+- Honest ray classes (world-balance Phase 2): an agent hit on a ray is "can bite me" (channel 2) when `canBite`
+  says it could bite the caster, "I can bite it" (channel 3) when the caster could bite it, kin (5) before either,
+  and otherwise other (4). Prey therefore see exactly the agents that can catch them, and a hunter sees exactly
+  what it can bite; a bigger rival that cannot hunt is not a threat. Class channels carry proximity.
+- The anti-exploit suite (`test/evo/anti-exploit.slow.test.js`) marks the scripted `hunter` an expected failure
+  (FIT-5) under `fitnessV5` only (user, B20): with honest classes the `hunter` finds its prey reliably, and
+  `fitnessV5` pays a flat 720 points per kill whatever the kill brings in. `fitnessV1` and `fitnessV2` keep no
+  expected failures for `hunter`.
 - Jaws: a bite lands only when the victim's centre lies within `biteArc` (radians, half-angle) of the biter's heading:
   `cos(bearing - angle[biter]) >= cos(biteArc)`, with `cos(biteArc)` computed once per tick and the bearing taken from
   the positions already in the contact list. `biteArc` is PI / 4, so a hunter must face its prey and a prey that turns
@@ -257,15 +265,15 @@ them; `validateReport` accepts them when present, with the usual `null` and `rea
 
 Added to `SCRIPTED_CONTROLLERS` from `scripted-combat.js`; they write all `OUTPUT_COUNT` outputs, zeroing the row first.
 
-| Controller     | Behaviour                                                                                                                                                                                                                                          |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hunter`       | Turns towards the nearest smaller-class ray hit, thrusts, sprints and bites; with no hit it turns towards the higher of `attackLeft` and `attackRight`; calls a hunt when it first sees prey                                                       |
-| `fleer`        | Turns away from the nearest bigger-class ray hit and from the higher of `attackLeft` and `attackRight`, sprints while a bigger agent is in sight, calls an alarm when it first sees one, and releases smoke when its bite-timer input shows a bite |
-| `alarmSpammer` | Seeks food and sets the `ALARM` output every tick                                                                                                                                                                                                  |
-| `smokeSpammer` | Seeks food and sets the `SMOKE` output every tick                                                                                                                                                                                                  |
-| `baiter`       | Phase 3: seeks a bigger agent until bitten, then runs `fleer` for 300 ticks, then seeks again                                                                                                                                                      |
-| `sprinter`     | Phase 3: seeks food with `SPRINT` set every tick                                                                                                                                                                                                   |
-| `gateThenIdle` | Phase 3: runs `foodSeeker` until its deliberate intake reaches 500, then holds still                                                                                                                                                               |
+| Controller     | Behaviour                                                                                                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hunter`       | Turns towards the nearest "I can bite it" ray hit, thrusts, sprints and bites; with no hit it turns towards the higher of `attackLeft` and `attackRight`; calls a hunt when it first sees prey                                                             |
+| `fleer`        | Turns away from the nearest "can bite me" ray hit and from the higher of `attackLeft` and `attackRight`, sprints while a "can bite me" agent is in sight, calls an alarm when it first sees one, and releases smoke when its bite-timer input shows a bite |
+| `alarmSpammer` | Seeks food and sets the `ALARM` output every tick                                                                                                                                                                                                          |
+| `smokeSpammer` | Seeks food and sets the `SMOKE` output every tick                                                                                                                                                                                                          |
+| `baiter`       | Phase 3: seeks a bigger agent until bitten, then runs `fleer` for 300 ticks, then seeks again                                                                                                                                                              |
+| `sprinter`     | Phase 3: seeks food with `SPRINT` set every tick                                                                                                                                                                                                           |
+| `gateThenIdle` | Phase 3: runs `foodSeeker` until its deliberate intake reaches 500, then holds still                                                                                                                                                                       |
 
 `evals/predator-world.json` is `evals/micro-world.json` plus `initialEnergy` 3000 (the micro-world's 800 lets foragers starve
 while sprinting before any survives the 300 ticks that count as an escape), with a test policy whose `initSpec` gives the predator
@@ -319,7 +327,7 @@ speedShare]` and hunters `[pursuitShare, speedShare]`:
 - `pursuitShare = deliberateBite / (deliberateBite + chanceBite)`, 0 when both are 0.
 - `speedShare = speedMean / maxVelocity`, clamped to 1 (`speedMean` in `js/evo/life-counters.js`).
 - `fleeShare`: of the grouping samples (every `GROUP_SAMPLE_TICKS` ticks in `observer-intent.js`) on which the agent
-  is threatened (a bigger-class hit at proximity above `THREAT_PROXIMITY`, or the `heard` alarm loudness, body input `alarmLoud`, above 0.2), the share on
+  is threatened (a "can bite me" hit at proximity above `THREAT_PROXIMITY`, or the `heard` alarm loudness, body input `alarmLoud`, above 0.2), the share on
   which its speed exceeds `0.5 x maxVelocity`; 0 with no threatened sample. The intent state counts `threatSamples`
   and `fleeSamples` per slot.
 
