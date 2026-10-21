@@ -45,3 +45,19 @@ describe('sexes keys', () => {
         expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
     });
 });
+
+describe('birth budget keys', () => {
+    it('default to a 3000 tick window and the budget off', () => {
+        const c = createConfig({});
+        expect([c.birthWindowTicks, c.maxBirthsPerWindow]).toEqual([3000, 0]);
+    });
+
+    it.each([
+        ['birthWindowTicks', 0],
+        ['maxBirthsPerWindow', -1],
+        ['maxBirthsPerWindow', 1.5],
+        ['maxBirthsPerWindow', 17],
+    ])('rejects a bad %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+    });
+});

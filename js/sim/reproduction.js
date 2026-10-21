@@ -4,6 +4,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { readyToMate } from './mate-eligibility.js';
 import { childSpec } from './heritable-spec.js';
 import { findMale, findMate } from './mate-search.js';
@@ -167,6 +168,7 @@ function giveBirth(world, policy, mother, cause) {
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
     world.spec[child] = childSpec(world, mother);
     drawSex(world, child);
+    recordBirth(world, mother);
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);
@@ -217,8 +219,11 @@ function readyToSplit(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > splitMinEnergy;
-    if (!sexesEnabled || !basic) {
-        return basic;
+    if (!basic || birthBudgetSpent(world, slot)) {
+        return false;
+    }
+    if (!sexesEnabled) {
+        return true;
     }
     return (
         world.sex[slot] === SEX.FEMALE &&

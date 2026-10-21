@@ -68,5 +68,7 @@ export const FEATURE_RULES = {
     visionCost: num(0),
     sexesEnabled: BOOL,
     splitCost: num(0),
+    birthWindowTicks: int(1),
+    maxBirthsPerWindow: int(0, 16),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
 };
