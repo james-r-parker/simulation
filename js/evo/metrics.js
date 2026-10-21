@@ -6,6 +6,8 @@ import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
+import { intentMetrics } from './metrics-intent.js';
+import { selectionMetrics } from './metrics-selection.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
 
@@ -75,6 +77,17 @@ function bornShare(observer) {
 }
 
 /**
+ * @param {Record<string, any>} observer the observer
+ * @returns {import('./metrics-stats.js').MetricResult} births with cause `mate` over births with cause `mate` or
+ *   `split`, over the whole run; `null` when there was no such birth
+ */
+function matingShare(observer) {
+    const mate = observer.births[BORN_CAUSE.MATE];
+    const total = mate + observer.births[BORN_CAUSE.SPLIT];
+    return total === 0 ? none('no mating or split birth') : ok(mate / total);
+}
+
+/**
  * Computes every metric from the observer after the run. `bench.*` and `browser.*` are not here.
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
  * @param {Record<string, any>} _world the world at the end (the observer already holds what the metrics need)
@@ -96,6 +109,7 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.population_mean': series.populationMean(observer),
         'eval.floor_episodes': ok(observer.floorEpisodes),
         'eval.born_share': bornShare(observer),
+        'eval.mating_share': matingShare(observer),
         'eval.predation_per_1k': per1k(deathsByCause[DEATH_CAUSE.EATEN], agentTicks),
         'eval.diversity': series.diversity(observer),
         'eval.lineages_alive': series.lineagesAlive(observer),
@@ -105,6 +119,8 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.motion_coverage': grids.motion,
         'eval.predator_share_cv': series.predatorShareCv(observer),
         ...combatMetrics(observer),
+        ...intentMetrics(observer),
+        ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

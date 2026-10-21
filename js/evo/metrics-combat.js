@@ -1,17 +1,7 @@
 // The five combat metrics, computed from the observer's combat counters (see observer-combat.js). Each is
 // "higher is better"; each is `null` with a reason when its denominator is empty.
 
-import { none, ok, per1k } from './metrics-stats.js';
-
-/**
- * @param {number} part the numerator
- * @param {number} whole the denominator
- * @param {string} reason the reason when `whole` is 0
- * @returns {import('./metrics-stats.js').MetricResult} `part / whole`, or `null` with the reason
- */
-function share(part, whole, reason) {
-    return whole > 0 ? ok(part / whole) : none(reason);
-}
+import { none, per1k, share } from './metrics-stats.js';
 
 /**
  * @param {Record<string, any>} combat the combat counters

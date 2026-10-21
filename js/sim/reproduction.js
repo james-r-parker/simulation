@@ -8,6 +8,7 @@ import { childSpec } from './heritable-spec.js';
 import { findMate } from './mate-search.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
+import { applyGenes, childShareOf } from './traits.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -130,13 +131,13 @@ function placeChild(world, child, mother) {
  * @returns {number} the child slot, or -1 when the birth was blocked
  */
 function giveBirth(world, policy, mother, cause) {
-    const { maxAgents, childEnergyShare, childEnergyMin } = world.config;
+    const { maxAgents, childEnergyMin } = world.config;
     const isMate = cause === BORN_CAUSE.MATE;
     if (world.population >= maxAgents) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
-    const gift = world.energy[mother] * (isMate ? childEnergyShare : 0.5);
+    const gift = world.energy[mother] * (isMate ? childShareOf(world, mother) : 0.5);
     if (isMate && gift < childEnergyMin) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;
@@ -150,6 +151,7 @@ function giveBirth(world, policy, mother, cause) {
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);
+    applyGenes(world, child);
     transferEnergy(world, mother, child, gift);
     placeChild(world, child, mother);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);

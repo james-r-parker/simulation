@@ -3,7 +3,7 @@
 
 import { OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
-import { CH_BIGGER, CH_SMALLER, eachAlive, seekFood, setOutput, turnTowards, write } from './scripted-parts.js';
+import { CH_THREAT, CH_PREY, eachAlive, seekFood, setOutput, turnTowards, write } from './scripted-parts.js';
 
 /** Offsets within the body inputs (see predator-prey.md, Brain layout). */
 const BODY_BITTEN = 12;
@@ -60,7 +60,7 @@ function sightings(world) {
 function hunter({ world }) {
     const firstSight = sightings(world);
     return eachAlive((w, slot) => {
-        const k = nearestClassRay(w, slot, CH_SMALLER, CH_SMALLER);
+        const k = nearestClassRay(w, slot, CH_PREY, CH_PREY);
         const scent = attackTurn(w, slot);
         if (k < 0 && scent === 0) {
             seekFood(w, slot);
@@ -79,7 +79,7 @@ function hunter({ world }) {
 }
 
 /**
- * The turn that steers away from the nearest bigger agent: the side opposite to its ray, and to the left when it is
+ * The turn that steers away from the nearest "can bite me" agent: the side opposite to its ray, and to the left when it is
  * dead ahead; dead behind it needs no turn.
  * @param {number} k the ray index of the threat
  * @param {number} rayCount rays per agent
@@ -93,11 +93,11 @@ function turnAway(k, rayCount) {
 }
 
 /**
- * Steers a fleer: away from the nearest bigger agent at a sprint, else away from the stronger attack antenna, else
+ * Steers a fleer: away from the nearest "can bite me" agent at a sprint, else away from the stronger attack antenna, else
  * towards food.
  * @param {Record<string, any>} w the world
  * @param {number} slot the agent
- * @param {number} k the ray index of the nearest bigger agent, or -1
+ * @param {number} k the ray index of the nearest "can bite me" agent, or -1
  * @returns {void}
  */
 function steerFleer(w, slot, k) {
@@ -117,7 +117,7 @@ function steerFleer(w, slot, k) {
 function fleer({ world }) {
     const firstSight = sightings(world);
     return eachAlive((w, slot) => {
-        const k = nearestClassRay(w, slot, CH_BIGGER, CH_BIGGER);
+        const k = nearestClassRay(w, slot, CH_THREAT, CH_THREAT);
         steerFleer(w, slot, k);
         if (firstSight(w, slot, k >= 0)) {
             setOutput(w, slot, OUTPUT_INDEX.ALARM, 1);

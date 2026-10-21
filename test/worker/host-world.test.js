@@ -97,6 +97,21 @@ describe('tickOnce', () => {
     });
 });
 
+describe('worldInfo patches', () => {
+    it('is empty with no patches and lists each patch centre and radius when on', () => {
+        expect(worldInfo(small()).patches).toEqual([]);
+        const run = buildRun({
+            seed: 3,
+            overrides: { ...SMALL_CONFIG, foodPatchCount: 2, foodPatchRadius: 100 },
+            createPolicy: noisePolicy,
+            log: LOG,
+        });
+        const { patches } = worldInfo(run);
+        expect(patches).toHaveLength(2);
+        expect(patches[0]).toEqual({ x: run.world.patchX[0], y: run.world.patchY[0], radius: 100 });
+    });
+});
+
 describe('worldInfo and readyLayout', () => {
     it('lists the constants the app draws with, and every specialisation', () => {
         const info = worldInfo(small());

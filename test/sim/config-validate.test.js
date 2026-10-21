@@ -80,6 +80,14 @@ describe('validateConfig types and ranges', () => {
         expect(() => createConfig({ huntSizeRatio: 0.9 })).toThrow(/huntSizeRatio/);
     });
 
+    it.each([1, 0.9, Infinity])('rejects a mateSizeRatio of %s', (value) => {
+        expect(() => createConfig({ mateSizeRatio: value })).toThrow(/mateSizeRatio/);
+    });
+
+    it('accepts a mateSizeRatio just above 1', () => {
+        expect(() => createConfig({ mateSizeRatio: 1.001 })).not.toThrow();
+    });
+
     it('rejects a negative mateRange and accepts 0', () => {
         expect(() => createConfig({ mateRange: -1 })).toThrow(/mateRange/);
         expect(() => createConfig({ mateRange: 0 })).not.toThrow();
@@ -272,5 +280,32 @@ describe('validateConfig temperature keys', () => {
         expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier/);
         delete seasons[3].temperatureModifier;
         expect(() => createConfig({ seasons })).toThrow(/seasons\[3\]\.temperatureModifier.*missing/);
+    });
+});
+
+describe('validateConfig food patches and the floor', () => {
+    it.each([
+        ['foodPatchCount', -1],
+        ['foodPatchCount', 1.5],
+        ['foodPatchRadius', 0],
+        ['foodPatchCapacity', 0],
+        ['foodPatchDepletion', -0.1],
+        ['foodPatchRegrow', 1.1],
+        ['foodBackgroundShare', -0.1],
+        ['floorRescueAtZero', 1],
+    ])('rejects %s of %s', (key, value) => {
+        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
+    });
+
+    it('defaults to patches off, a floor of 100 and no rescue', () => {
+        const c = createConfig();
+        expect([c.foodPatchCount, c.minAgents, c.floorRescueAtZero]).toEqual([0, 100, false]);
+    });
+
+    it('rejects patches wider than the world', () => {
+        expect(() => createConfig({ foodPatchCount: 2, foodPatchRadius: 600, worldWidth: 1000 })).toThrow(
+            /foodPatchRadius/,
+        );
+        expect(() => createConfig({ foodPatchCount: 0, foodPatchRadius: 600, worldWidth: 1000 })).not.toThrow();
     });
 });

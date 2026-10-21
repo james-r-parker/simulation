@@ -18,20 +18,33 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
 
 describe('inspectLabels', () => {
-    it('names the 9 ray channels, the 32 body inputs and the 8 outputs', () => {
+    it('names the 9 ray channels, the 35 body inputs and the 11 outputs', () => {
         const labels = inspectLabels();
         expect(labels.rayChannels).toHaveLength(RAY_CHANNELS);
         expect(labels.bodyInputs).toHaveLength(EXTRA_INPUTS);
-        expect(labels.outputs).toEqual(['thrust', 'turn', 'sprint', 'mate', 'bite', 'alarm', 'smoke', 'hunt']);
+        expect(labels.outputs).toEqual([
+            'thrust',
+            'turn',
+            'sprint',
+            'mate',
+            'bite',
+            'alarm',
+            'smoke',
+            'hunt',
+            'split',
+            'memory_a',
+            'memory_b',
+        ]);
     });
 
     it('groups the body inputs as the inspector shows them', () => {
         const groups = inspectLabels().bodyInputs.map((input) => input.group);
-        expect(groups.filter((g) => g === 'Body')).toHaveLength(8);
+        expect(groups.filter((g) => g === 'Body')).toHaveLength(9);
         expect(groups.filter((g) => g === 'Senses')).toHaveLength(7);
         expect(groups.filter((g) => g === 'Temperature')).toHaveLength(4);
         expect(groups.filter((g) => g === 'Scent antennae')).toHaveLength(7);
         expect(groups.filter((g) => g === 'Heard calls')).toHaveLength(6);
+        expect(groups.filter((g) => g === 'Memory')).toHaveLength(2);
     });
 
     it('gives every body input a distinct name', () => {
@@ -55,7 +68,7 @@ describe('workerLayout', () => {
 
     it('keeps the sim layout fields for the reader', () => {
         const layout = workerLayout(smallWorld().config);
-        expect(layout).toMatchObject({ headerWords: 6, agentStride: 12, rayStride: 4, inputCount: 4 * 9 + 32 });
+        expect(layout).toMatchObject({ headerWords: 6, agentStride: 12, rayStride: 4, inputCount: 4 * 9 + 35 });
     });
 });
 

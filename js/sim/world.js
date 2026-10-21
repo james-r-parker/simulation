@@ -82,6 +82,9 @@ function agentSpecs(layout) {
         [Float32Array, 'heard', HEARD_STRIDE],
         [Float32Array, 'inputs', layout.inputCount],
         [Float32Array, 'outputs', layout.outputCount],
+        ...singles(Float32Array, ['vision', 'baseSize', 'childShare']),
+        [Float32Array, 'leakRate', layout.hidden],
+        [Float32Array, 'fastOut', layout.hidden * layout.outputCount],
         [Float32Array, 'weights', layout.weightCount],
         [Float32Array, 'fatherWeights', layout.weightCount],
     ];
@@ -134,6 +137,16 @@ function allocZonesAndPheromones(world) {
     });
     const cells = world.pheromoneGrid.cols * world.pheromoneGrid.rows;
     allocRows(world, singles(Float32Array, ['danger', 'attack', 'hunt', 'pheromoneScratch']), cells);
+}
+
+/**
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+function allocPatches(world) {
+    const { foodPatchCount } = world.config;
+    allocRows(world, singles(Float32Array, ['patchX', 'patchY']), foodPatchCount);
+    allocRows(world, singles(Float64Array, ['patchStock']), foodPatchCount);
 }
 
 /**
@@ -221,6 +234,7 @@ export function allocateWorld(config) {
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
     allocClouds(world);
+    allocPatches(world);
     world.events = createEventRing(config.eventCapacity);
     return world;
 }

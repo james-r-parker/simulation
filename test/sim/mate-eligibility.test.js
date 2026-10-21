@@ -75,6 +75,32 @@ describe('canMatePair', () => {
     });
 });
 
+describe('canMatePair size band', () => {
+    it('defaults to 1.3', () => {
+        expect(pair().config.mateSizeRatio).toBe(1.3);
+    });
+
+    it.each([
+        ['bigger by under the ratio', 25 * 1.29, true],
+        ['bigger by over the ratio', 25 * 1.31, false],
+        ['smaller by under the ratio', 25 / 1.29, true],
+        ['smaller by over the ratio', 25 / 1.31, false],
+    ])('takes a partner %s', (_name, size, expected) => {
+        const w = pair();
+        w.size[1] = size;
+        expect(canMatePair(w, 0, 1)).toBe(expected);
+    });
+
+    it('does not read huntSizeRatio', () => {
+        const w = pair({ huntSizeRatio: 3 });
+        w.size[1] = 40;
+        expect(canMatePair(w, 0, 1)).toBe(false);
+        const narrow = pair({ huntSizeRatio: 1.01 });
+        narrow.size[1] = 30;
+        expect(canMatePair(narrow, 0, 1)).toBe(true);
+    });
+});
+
 describe('isReadyToMate temperature', () => {
     it.each([
         [29.99, false],

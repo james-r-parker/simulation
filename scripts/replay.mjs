@@ -326,6 +326,7 @@ export async function runReplay(options) {
         world: createWorld(config, policy),
     };
     feedPolicy(run, ctx.world);
+    drainEvents(ctx.world, log);
     /** @type {string[]} */
     const hashes = [];
     const ok = runTicks(ctx, hashes);
