@@ -190,6 +190,46 @@ describe('eating meat', () => {
     });
 });
 
+describe('meat and food patches', () => {
+    const PATCHED = { ...ON, foodPatchCount: 1, foodPatchRadius: 200, foodPatchCapacity: 2, foodPatchDepletion: 0.5 };
+
+    /**
+     * @param {number} kind FOOD_KIND of the item the eater stands on, inside the only patch
+     * @returns {any} the world after one feed phase
+     */
+    function eatInPatch(kind) {
+        const w = lifeWorld(PATCHED);
+        w.patchX[0] = 300;
+        w.patchY[0] = 400;
+        w.patchStock[0] = 2;
+        w.foodAlive[0] = 1;
+        w.foodX[0] = 300;
+        w.foodY[0] = 400;
+        w.foodRadius[0] = 5;
+        w.foodValue[0] = 50;
+        w.foodKind[0] = kind;
+        w.foodCount = 1;
+        const eater = addBlob(w, { energy: 100, spec: PREDATOR, x: 300, y: 400 });
+        w.ateTimer[eater] = 30;
+        const hash = createSpatialHash(w.config);
+        buildHash(hash, w);
+        feed(w, hash);
+        return w;
+    }
+
+    it('lets meat eaten inside a patch leave the patch stock alone', () => {
+        const w = eatInPatch(FOOD_KIND.MEAT);
+        expect(w.foodCount).toBe(0);
+        expect(w.patchStock[0]).toBe(2);
+    });
+
+    it('still depletes the patch when plant food is eaten there', () => {
+        const w = eatInPatch(FOOD_KIND.PLANT);
+        expect(w.foodCount).toBe(0);
+        expect(w.patchStock[0]).toBe(1.5);
+    });
+});
+
 describe('carcass snapshot and hash', () => {
     it('marks meat with a negative radius and leaves plant food positive', () => {
         const w = lifeWorld(ON);
