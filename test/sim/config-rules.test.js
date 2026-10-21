@@ -19,3 +19,15 @@ describe('config rules', () => {
         expect(() => createConfig({ hebbianRate: 2 })).toThrow(/hebbianRate/);
     });
 });
+
+describe('mateDistanceMax rule', () => {
+    it('defaults to Infinity and accepts it, and any finite number above 0', () => {
+        expect(createConfig({}).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ mateDistanceMax: Infinity }).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ mateDistanceMax: 0.8 }).mateDistanceMax).toBe(0.8);
+    });
+
+    it.each([0, -1, NaN, -Infinity, '0.8'])('rejects %s', (value) => {
+        expect(() => createConfig({ mateDistanceMax: value })).toThrow(/mateDistanceMax/);
+    });
+});

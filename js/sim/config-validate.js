@@ -187,7 +187,7 @@ function fail(path, value, rule) {
  * @returns {string}
  */
 function describe(rule) {
-    const kind = rule.type === 'int' ? 'an integer' : 'a finite number';
+    const kind = rule.type === 'int' ? 'an integer' : rule.infinite ? 'a number' : 'a finite number';
     const lower = rule.gt !== undefined ? `> ${rule.gt}` : `>= ${rule.min}`;
     if (rule.lt !== undefined) {
         return `${kind} ${lower} and < ${rule.lt}`;
@@ -202,7 +202,7 @@ function describe(rule) {
  */
 function inBounds(n, rule) {
     const lowOk = rule.gt !== undefined ? n > rule.gt : n >= /** @type {number} */ (rule.min);
-    return lowOk && n <= (rule.max ?? Infinity) && n < (rule.lt ?? Infinity);
+    return lowOk && n <= (rule.max ?? Infinity) && (rule.lt === undefined || n < rule.lt);
 }
 
 /**
@@ -219,7 +219,10 @@ function checkScalar(path, value, rule) {
         }
         return;
     }
-    const typeOk = rule.type === 'int' ? Number.isInteger(value) : Number.isFinite(value);
+    const typeOk =
+        rule.type === 'int'
+            ? Number.isInteger(value)
+            : Number.isFinite(value) || (rule.infinite === true && value === Infinity);
     const n = /** @type {number} */ (value);
     if (!typeOk || !inBounds(n, rule)) {
         fail(path, value, describe(rule));
