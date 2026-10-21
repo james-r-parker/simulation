@@ -44,6 +44,15 @@ export function turnTowards(k, rayCount) {
 }
 
 /**
+ * Every controller wants to split when it can: the sexes-off world splits any agent with the energy, and `SPLIT` is the
+ * output that gate reads with sexes on, so holding it at 1 keeps a controller's reproduction the same either way.
+ * The controllers are memoryless by design, so `MEMORY_A` and `MEMORY_B` stay at 0 (`write` clears the row first).
+ */
+export const SCRIPTED_SPLIT = 1;
+
+/**
+ * Writes a whole output row: thrust and turn as given, `SPLIT` at `SCRIPTED_SPLIT`, everything else 0 (the memory
+ * outputs included).
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @param {number} thrust thrust output
@@ -55,6 +64,7 @@ export function write(world, slot, thrust, turn) {
     world.outputs.fill(0, o, o + OUTPUT_COUNT);
     world.outputs[o + OUTPUT_INDEX.THRUST] = thrust;
     world.outputs[o + OUTPUT_INDEX.TURN] = turn;
+    world.outputs[o + OUTPUT_INDEX.SPLIT] = SCRIPTED_SPLIT;
 }
 
 /**

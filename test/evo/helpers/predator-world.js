@@ -83,10 +83,11 @@ export function playPredatorWorld(
  * @param {number} seed the world seed
  * @param {number} ticks ticks to run
  * @param {string} arm a key of `SCRIPTED_CONTROLLERS` or `random`
+ * @param {Record<string, any>} [extra] config overrides on top of the world file
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
-export function playMicroWorld(seed, ticks, arm) {
-    const config = createConfig({ ...microWorld, seed });
+export function playMicroWorld(seed, ticks, arm, extra = {}) {
+    const config = createConfig({ ...microWorld, ...extra, seed });
     const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
