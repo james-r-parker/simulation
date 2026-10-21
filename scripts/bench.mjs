@@ -185,7 +185,7 @@ export function createSubject(config, name) {
 /**
  * @param {number} size population size, held fixed by min = max = initial
  * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
- * @param {{suffix?: string, overrides?: Record<string, number>}} [variant] a tracked variant: the key suffix and the
+ * @param {{suffix?: string, overrides?: Record<string, any>}} [variant] a tracked variant: the key suffix and the
  *   overrides on today's defaults; the frozen `BENCH_CONFIG` world when omitted
  * @returns {Record<string, number>} the metrics for that size
  */

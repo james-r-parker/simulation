@@ -34,7 +34,7 @@ describe('feature switch lists', () => {
 
     it('freeze the bench world with every feature key off', () => {
         for (const [key, value] of Object.entries(FEATURES_OFF)) {
-            expect(BENCH_CONFIG[key]).toEqual(value);
+            expect(Object.entries(BENCH_CONFIG).find(([k]) => k === key)?.[1]).toEqual(value);
         }
     });
 

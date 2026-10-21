@@ -2,52 +2,58 @@
 // `defaults` bench row and `alloc-check` run with (world-balance T40; T41 makes the on values the defaults).
 import { FEATURE_RULES } from '../../js/sim/config-rules.js';
 
-/** The off value of every `FEATURE_RULES` key, plus `obstacleCount` and `hashCellSize`, which the switch-on retunes. */
+/**
+ * The off value of every `FEATURE_RULES` key, plus `obstacleCount` and `hashCellSize`, which the switch-on retunes.
+ * @type {Readonly<Record<string, any>>}
+ */
 export const FEATURES_OFF = Object.freeze({
-    satiationShare: 0,
-    digestTicks: 0,
-    handlingTicks: 0,
-    handlingThrust: 0.2,
-    carcassesEnabled: false,
-    carcassTicks: 300,
+    birthWindowTicks: 3000,
     carcassShare: 0.5,
-    terrainLayout: 'open',
-    wallGaps: 3,
-    wallGapWidth: 300,
-    refugeCount: 4,
-    refugeSizeMax: 30,
+    carcassTicks: 300,
+    carcassesEnabled: false,
     coldMarginWidth: 600,
-    specMutationRate: 0,
-    huntUpkeep: 0.002,
-    floorRescueAtZero: false,
-    foodPatchCount: 0,
-    foodPatchRadius: 400,
-    foodPatchCapacity: 1,
-    foodPatchDepletion: 0.02,
-    foodPatchRegrow: 0.0005,
-    foodBackgroundShare: 0.2,
-    foodAreaCapacity: false,
-    foodRegrowPerArea: 0.06,
-    erasEnabled: false,
-    eraSeasonTicks: 36000,
-    winterRegrow: 0.2,
+    digestTicks: 0,
     droughtChance: 0.25,
+    eraSeasonTicks: 36000,
+    erasEnabled: false,
+    floorRescueAtZero: false,
+    foodAreaCapacity: false,
+    foodBackgroundShare: 0.2,
+    foodPatchCapacity: 1,
+    foodPatchCount: 0,
+    foodPatchDepletion: 0.02,
+    foodPatchRadius: 400,
+    foodPatchRegrow: 0.0005,
+    foodRegrowPerArea: 0.06,
+    handlingThrust: 0.2,
+    handlingTicks: 0,
+    hashCellSize: 128,
+    hebbianRate: 0,
+    huntUpkeep: 0.002,
     invasionInterval: 180000,
     invasionSize: 12,
     leakEnabled: false,
-    hebbianRate: 0,
+    mateDistanceMax: Infinity,
+    maxBirthsPerWindow: 0,
+    obstacleCount: 25,
+    refugeCount: 4,
+    refugeSizeMax: 30,
+    satiationShare: 0,
+    sexesEnabled: false,
+    specMutationRate: 0,
+    splitCost: 50,
+    terrainLayout: 'open',
     traitsEnabled: false,
     visionCost: 0.5,
-    sexesEnabled: false,
-    splitCost: 50,
-    birthWindowTicks: 3000,
-    maxBirthsPerWindow: 0,
-    mateDistanceMax: Infinity,
-    obstacleCount: 25,
-    hashCellSize: 128,
+    wallGapWidth: 300,
+    wallGaps: 3,
+    winterRegrow: 0.2,
 });
 
-/** FEATURES_OFF with every feature at its switch-on value from the world-balance design doc. */
+/**
+ * FEATURES_OFF with every feature at its switch-on value from the world-balance design doc.
+ * @type {Readonly<Record<string, any>>}
+ */
 export const FEATURES_ON = Object.freeze({
     ...FEATURES_OFF,
     satiationShare: 0.95,
