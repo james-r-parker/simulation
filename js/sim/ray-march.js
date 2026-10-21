@@ -48,7 +48,7 @@ function wallDistance(origin, dir, extent) {
  * @param {number} c the origin's squared distance to the centre less the squared radius
  * @returns {number} the distance to the circle's surface (0 from inside), or -1 for none
  */
-function circleHit(b, c) {
+export function circleHit(b, c) {
     const disc = b * b - c;
     if (disc < 0 || (b > 0 && c > 0)) {
         return -1;
