@@ -100,7 +100,7 @@ function sampleCrowding(counters, world, slot) {
     for (let k = 0; k < world.config.rayCount; k++) {
         const base = slot * stride + k * RAY_CHANNELS;
         for (let c = FIRST_AGENT_CHANNEL; c <= LAST_AGENT_CHANNEL; c++) {
-            if (world.inputs[base + c] === 1 && world.inputs[base] > best) {
+            if (world.inputs[base + c] > 0 && world.inputs[base] > best) {
                 best = world.inputs[base];
             }
         }
