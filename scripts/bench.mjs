@@ -236,15 +236,16 @@ export function recordMetrics(metrics, all) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
+ * @param {{trackedSize?: number}} [options] the size whose row also runs the tracked variants (tests pass a small one)
  * @returns {Promise<void>}
  */
-export async function main(argv) {
+export async function main(argv, { trackedSize = TRACKED_SIZE } = {}) {
     const { sizes, json, policy } = parseArgs(argv);
     /** @type {Record<string, number>} */
     const all = {};
     for (const size of sizes) {
         Object.assign(all, benchSize(size, policy));
-        if (size === TRACKED_SIZE) {
+        if (size === trackedSize) {
             for (const variant of TRACKED_VARIANTS) {
                 Object.assign(all, benchSize(size, policy, variant));
             }
