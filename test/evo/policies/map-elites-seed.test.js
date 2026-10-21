@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
+import { createSimLog } from '../../../js/sim/log.js';
 import { createSeeder } from '../../../js/evo/policies/map-elites-seed.js';
 import { SIGMA_MIN } from '../../../js/evo/mutation.js';
 import { createRng } from '../../../js/sim/rng.js';
+import { smallWorld } from '../../sim/helpers/small-world.js';
 import { setup, fill } from '../helpers/map-elites-world.js';
 
 describe('initSpec', () => {
@@ -26,6 +29,50 @@ describe('initSpec', () => {
     it('returns 0 on an empty world', () => {
         const { policy, world } = setup();
         expect(policy.brain.initSpec(world, 0, createRng(1))).toBe(0);
+    });
+});
+
+describe('initSpec with specMutationRate above 0', () => {
+    /**
+     * @returns {{policy: any, world: any}} a policy on a world with heritable specialisation
+     */
+    function heritable() {
+        const world = smallWorld({ brainHidden: 4, maxAgents: 8, specMutationRate: 0.002 });
+        const log = createSimLog(() => {}, { level: 'debug' });
+        return { policy: createMapElitesV1({ config: world.config, log }), world };
+    }
+
+    it('draws a random specialisation while the archive is short, ignoring who is alive', () => {
+        const { policy, world } = heritable();
+        world.alive[0] = 1;
+        world.spec[0] = 1;
+        const rng = createRng(3);
+        const seen = new Set();
+        for (let i = 0; i < 100; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect(seen.size).toBe(5);
+    });
+
+    it('draws the specialisation of a random elite once the archive has 10 cells', () => {
+        const { policy, world } = heritable();
+        fill(policy, { spec: 0, count: 10 });
+        fill(policy, { spec: 4, count: 10 });
+        const rng = createRng(4);
+        const counts = [0, 0, 0, 0, 0];
+        for (let i = 0; i < 2000; i++) {
+            counts[policy.brain.initSpec(world, 7, rng)] += 1;
+        }
+        expect([counts[1], counts[2], counts[3]]).toEqual([0, 0, 0]);
+        expect(counts[0]).toBeGreaterThan(900);
+        expect(counts[4]).toBeGreaterThan(900);
+    });
+
+    it('draws only from the stream it is given', () => {
+        const { policy, world } = heritable();
+        const before = Array.from(world.rng.spawn.s);
+        policy.brain.initSpec(world, 7, createRng(5));
+        expect(Array.from(world.rng.spawn.s)).toEqual(before);
     });
 });
 
@@ -228,5 +275,56 @@ describe('createSeeder without a fromArchive record', () => {
         initBrain(world, 0, createRng(1));
         expect(clones.isClone[0]).toBe(0);
         expect(clones.archiveRef[0]).toBe(-1);
+    });
+});
+
+describe('initSpec order with several rules on', () => {
+    /**
+     * @param {Record<string, any>} options config overrides
+     * @returns {ReturnType<typeof setup>} a heritable world with specialisations 0 and 4 only alive, and 10 elites each in 0 and 4
+     */
+    function both(options) {
+        const s = setup({}, { specMutationRate: 0.002, ...options });
+        [0, 4].forEach((spec, slot) => {
+            s.world.alive[slot] = 1;
+            s.world.spec[slot] = spec;
+        });
+        fill(s.policy, { spec: 0, count: 10 });
+        fill(s.policy, { spec: 4, count: 10 });
+        return s;
+    }
+
+    it('rescues a specialisation with 0 alive before drawing a random elite', () => {
+        const { policy, world } = both({ floorRescueAtZero: true });
+        const rng = createRng(6);
+        const seen = new Set();
+        for (let i = 0; i < 60; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect([...seen].sort()).toEqual([1, 2, 3]);
+    });
+
+    it('draws a random elite when the rescue is off, never the least populated', () => {
+        const { policy, world } = both({ floorRescueAtZero: false });
+        const rng = createRng(6);
+        const seen = new Set();
+        for (let i = 0; i < 60; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect([...seen].sort()).toEqual([0, 4]);
+    });
+
+    it('draws a random elite when the rescue is on but every specialisation is alive', () => {
+        const { policy, world } = both({ floorRescueAtZero: true });
+        [1, 2, 3].forEach((spec, i) => {
+            world.alive[i + 2] = 1;
+            world.spec[i + 2] = spec;
+        });
+        const rng = createRng(6);
+        const seen = new Set();
+        for (let i = 0; i < 60; i++) {
+            seen.add(policy.brain.initSpec(world, 7, rng));
+        }
+        expect([...seen].sort()).toEqual([0, 4]);
     });
 });

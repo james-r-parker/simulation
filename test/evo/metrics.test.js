@@ -41,7 +41,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), {}));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(15 + 10 + 4 + 5 + 13 + 6);
+        expect(keys).toHaveLength(16 + 10 + 4 + 5 + 13 + 6);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
@@ -126,6 +126,7 @@ describe('computeMetrics on hand-built state', () => {
         addAlive(o, 1, { spec: 0, children: 4 });
         const m = computeMetrics(o, {}, { fitness });
         expect(m['eval.population_mean'].value).toBe(4);
+        expect(m['eval.spec_turnover'].reason).toBe('no checkpoint after burn-in');
         expect(m['eval.predator_share_cv'].value).toBe(0);
         expect(m['eval.behaviour_coverage'].value).toBe(0.01);
         expect(m['eval.mean_fitness.forager'].value).toBe(3);

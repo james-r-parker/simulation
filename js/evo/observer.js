@@ -60,6 +60,7 @@ const SERIES_FIELDS = [
     'dominantLineage',
     'predatorShare',
     'diversity',
+    'specMask',
     'archiveAgents',
 ];
 

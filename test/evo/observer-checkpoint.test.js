@@ -38,6 +38,16 @@ describe('checkpoint', () => {
         expect(s.predatorShare[0]).toBeCloseTo(1 / 3, 12);
     });
 
+    it('records which specialisations are alive as a bit set', () => {
+        const { world, observer } = observed();
+        addLineages(world, [5, 5, 6]);
+        world.spec[0] = 0;
+        world.spec[1] = 3;
+        world.spec[2] = 3;
+        checkpoint(observer, world);
+        expect(observer.series.specMask[0]).toBe(0b01001);
+    });
+
     it('makes a lineage dominant only when it leads by at least 2', () => {
         const { world, observer } = observed();
         addLineages(world, [5, 5, 6]);

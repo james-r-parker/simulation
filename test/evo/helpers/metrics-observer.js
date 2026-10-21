@@ -39,6 +39,7 @@ export function addCheckpoint(observer, f) {
         'dominantLineage',
         'predatorShare',
         'diversity',
+        'specMask',
         'archiveAgents',
     ]) {
         observer.series[name][i] = f[name] ?? (name === 'diversity' ? NaN : 0);

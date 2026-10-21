@@ -37,6 +37,8 @@ export const FEATURE_RULES = {
     carcassesEnabled: BOOL,
     carcassTicks: int(1),
     carcassShare: num(0, 1),
+    specMutationRate: num(0, 1),
+    huntUpkeep: num(0),
     floorRescueAtZero: BOOL,
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
