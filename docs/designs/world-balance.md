@@ -1,6 +1,6 @@
 # World balance and biology
 
-**Status:** In progress - Phase 1 built; Phases 2 and 3 are being built on draft PRs 55, 58, 59, 66 and 67 (see each phase note); Phase 4 integrates and verifies every feature switched on, Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
+**Status:** In progress - Phases 1 and 2 built; Phase 3 is being built on draft PRs 58, 59, 66 and 67 (see its note); Phase 4 integrates and verifies every feature switched on, Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
 **Validated:** aa25337 (2026-10-17)
 **Priority:** 1 - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
@@ -554,11 +554,11 @@ The intent state and counters, the thirteen D metrics, the six selection metrics
 ladder`. Done when the paired test passes; `E25` (`baseline-v5` against the live policy at seeds 1-32) records the D and selection metrics of both; and the
 ladder at the defaults is recorded in [sim-notes.md](sim-notes.md).
 
-### Phase 2 - Honest senses
+### Phase 2 - Honest senses (built)
 
 **Targets:** eval.alarm_precision, eval.escape_rate, eval.idle_signals_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.births_per_1k
 
-> **Note:** state at 2026-10-21 - T19 to T22 and T25 are built, and the golden hashes are re-pinned for `couldBite` (including `shortCases`). `sampleCrowding` in `js/evo/life-counters.js` now reads the agent class channels by `> 0`, since they carry proximity. Next: the `baseline-v5` and `baseline-v5-o16` re-records and `E27` are running, then T24 and T26.
+> **Note:** built 2026-10-21. Golden hashes re-pinned for `couldBite` in Node and Chromium (`npm run browser:hash`: default `42cbe86e5b351334`, busy `e37210196d2b6038`, plus `shortCases` and the busy effect stream). `baseline-v5` and `baseline-v5-o16` re-recorded; their A/A compare gives verdicts on `eval.evasion_skill` and `eval.pursuit_bite_share`, noise for `E29`'s `eval:power` to settle. `E26` deferred to `E29` (user). `E27` (seeds 1-32, paired with `E25`): `eval.food_energy_per_1k` +2.1%, `eval.fed_median_lifespan` -6.7% and `eval.births_per_1k` +8.7%, all no-difference, so none is worse; `eval.alarm_precision` -41% worse, `eval.escape_rate` and `eval.idle_signals_per_1k` no-difference, `eval.mating_share` 0.151. The anti-exploit suite and the paired test pass (22 of 22, survivable world re-chosen); the ladder is in sim-notes.md. `node scripts/bench-compare.mjs`: `bench.step_ms@500` +2.8%, `bench.phase_ms.sense@500` +5.3% (every row within its limit). The T26 review found the crowding bug (`sampleCrowding` read class channels by `=== 1`), fixed before `E27` ran.
 
 The ray classes tell an agent what can bite it and what it can bite, class channels carry proximity, and mating gets
 its own size band (B12, B14). Built before predator-prey.md Phase 3 (user, 2026-10-17).
