@@ -181,6 +181,12 @@ export const DEFAULTS = deepFreeze({
     carcassesEnabled: false, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
+    terrainLayout: 'open', // new: 'open' or 'basins' (a wall with gaps, refuges and a cold margin); open is off (T52)
+    wallGaps: 3, // new: gaps in the wall, basins only (T52)
+    wallGapWidth: 300, // new: width of each wall gap in px (T52)
+    refugeCount: 4, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52)
+    refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
+    coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)

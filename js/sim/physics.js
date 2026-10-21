@@ -139,7 +139,7 @@ export function integrate(world) {
             if (hitX || hitY) {
                 removeEnergy(world, i, config.wallDamage, LOSS_CAUSE.COLLISION);
             }
-            for (let k = 0; k < config.obstacleCount; k++) {
+            for (let k = 0; k < world.obsX.length; k++) {
                 obstacleBounce(world, i, k);
             }
         }

@@ -3,7 +3,8 @@
 
 /**
  * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'seasons' | 'specialisations'} type the value type
+ * @property {'int' | 'num' | 'bool' | 'enum' | 'seasons' | 'specialisations'} type the value type
+ * @property {readonly string[]} [values] the allowed strings of an `enum`
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound
  * @property {number} [max] inclusive upper bound
@@ -37,6 +38,12 @@ export const FEATURE_RULES = {
     carcassesEnabled: BOOL,
     carcassTicks: int(1),
     carcassShare: num(0, 1),
+    terrainLayout: { type: 'enum', values: ['open', 'basins'] },
+    wallGaps: int(0, 8),
+    wallGapWidth: positive(),
+    refugeCount: int(0, 8),
+    refugeSizeMax: positive(),
+    coldMarginWidth: num(0),
     specMutationRate: num(0, 1),
     huntUpkeep: num(0),
     floorRescueAtZero: BOOL,

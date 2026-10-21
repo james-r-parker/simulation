@@ -4,6 +4,7 @@ import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
+import { obstacleSlots } from './terrain.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
@@ -108,7 +109,8 @@ function allocAgentArrays(world, layout) {
  * @returns {void}
  */
 function allocFoodAndObstacles(world) {
-    const { maxFood, obstacleCount } = world.config;
+    const { maxFood } = world.config;
+    const obstacleCount = obstacleSlots(world.config);
     world.foodRows = allocRows(
         world,
         [
@@ -226,7 +228,7 @@ export function allocateWorld(config) {
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
-            LOCAL_STRIDE * (config.maxAgents + config.maxFood + config.obstacleCount + config.maxClouds),
+            LOCAL_STRIDE * (config.maxAgents + config.maxFood + obstacleSlots(config) + config.maxClouds),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
