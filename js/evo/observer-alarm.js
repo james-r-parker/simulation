@@ -6,6 +6,7 @@
 // nothing; a pool grows when it runs dry.
 
 import { HEARD_STRIDE } from '../sim/world.js';
+import { buildHunterIndex, createHunterIndex, nearestHunterSquared } from './nearest-hunter.js';
 
 /** Ticks between a call and the second speed reading. */
 export const ALARM_RESPONSE_TICKS = 10;
@@ -66,8 +67,7 @@ export function createAlarmFollow(config, hunterSpec) {
         queue: [],
         head: 0,
         hunterDist: new Float64Array(n),
-        hunterX: new Float64Array(n),
-        hunterY: new Float64Array(n),
+        hunterIndex: createHunterIndex(n),
         distTick: -1,
         bandHear: new Float64Array(BANDS),
         bandHearN: new Float64Array(BANDS),
@@ -80,42 +80,18 @@ export function createAlarmFollow(config, hunterSpec) {
 }
 
 /**
- * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity
- * when none); a hunter's entry is its distance to the nearest other hunter. The alive hunters' positions are packed
- * once, so each agent scans a dense array. The nearest is found on squared distances and rooted once: the root
- * is monotone, so the result is the same as rooting each.
+ * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity when none); a
+ * hunter's entry is its distance to the nearest other hunter. The nearest is found on squared distances and rooted
+ * once: the root is monotone, so the result is the same as rooting each.
  * @param {Record<string, any>} follow the follow-up
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function nearestHunterDistances(follow, world) {
-    const { alive, spec, x, y } = world;
-    const { hunterSpec, hunterDist: dist, hunterX: hx, hunterY: hy } = follow;
-    let hunters = 0;
-    for (let h = 0; h < alive.length; h++) {
-        if (alive[h] === 1 && hunterSpec[spec[h]] === 1) {
-            hx[hunters] = x[h];
-            hy[hunters] = y[h];
-            hunters += 1;
-        }
-    }
-    let next = 0;
-    for (let s = 0; s < alive.length; s++) {
-        if (alive[s] !== 1) {
-            dist[s] = Infinity;
-            continue;
-        }
-        const own = hunterSpec[spec[s]] === 1 ? next++ : -1;
-        const sx = x[s];
-        const sy = y[s];
-        let best = Infinity;
-        for (let h = 0; h < hunters; h++) {
-            const dx = sx - hx[h];
-            const dy = sy - hy[h];
-            const d2 = dx * dx + dy * dy;
-            best = d2 < best && h !== own ? d2 : best;
-        }
-        dist[s] = Math.sqrt(best);
+    const { hunterDist: dist, hunterIndex: index, hunterSpec } = follow;
+    buildHunterIndex(index, world, hunterSpec);
+    for (let s = 0; s < world.alive.length; s++) {
+        dist[s] = world.alive[s] === 1 ? Math.sqrt(nearestHunterSquared(index, world, s, hunterSpec)) : Infinity;
     }
 }
 
