@@ -60,6 +60,7 @@ export const DEFAULTS = deepFreeze({
     biteEnergy: 5, // BITE_SIZE
     huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
+    mateDistanceMax: Infinity, // new: mates must be genetically closer than this; Infinity is off (T36)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates

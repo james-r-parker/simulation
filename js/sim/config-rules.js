@@ -9,6 +9,7 @@
  * @property {number} [gt] exclusive lower bound
  * @property {number} [max] inclusive upper bound
  * @property {number} [lt] exclusive upper bound
+ * @property {boolean} [infinite] true when `Infinity` is also a valid value
  */
 
 /**
@@ -59,4 +60,5 @@ export const FEATURE_RULES = {
     hebbianRate: num(0, 1),
     traitsEnabled: BOOL,
     visionCost: num(0),
+    mateDistanceMax: { type: 'num', gt: 0, infinite: true },
 };
