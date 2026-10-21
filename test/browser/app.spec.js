@@ -136,11 +136,14 @@ test('N asks for confirmation and a second press starts a new world', async ({ p
     await worldRunning(page);
     await page.keyboard.press('KeyN');
     await expect(page.locator('.toast')).toHaveText(/again/);
-    const before = await tickOf(page);
-    expect(before).toBeGreaterThan(5);
+    // The seed field shows the seed of the worker's last `ready`, so it changes only when the worker has started the
+    // new world. A falling tick is no signal: the new world can pass the old tick between two HUD refreshes.
+    const seedField = page.locator('.control-seed');
+    await expect(seedField).toHaveValue('3');
     await page.keyboard.press('KeyN');
-    await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeLessThan(before);
-    await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeGreaterThan(5);
+    await expect(seedField).not.toHaveValue('3', { timeout: 30_000 });
+    await expect(seedField).toHaveValue(/^\d+$/);
+    await worldRunning(page);
 });
 
 test('camera keys and a click do not break the loop', async ({ page }) => {

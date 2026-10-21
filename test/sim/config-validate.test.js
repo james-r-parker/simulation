@@ -293,6 +293,8 @@ describe('validateConfig food patches and the floor', () => {
         ['foodPatchRegrow', 1.1],
         ['foodBackgroundShare', -0.1],
         ['floorRescueAtZero', 1],
+        ['foodAreaCapacity', 1],
+        ['foodRegrowPerArea', -1],
     ])('rejects %s of %s', (key, value) => {
         expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
