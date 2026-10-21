@@ -38,7 +38,7 @@ const SPAWN_SOURCE = new Map([
  * @param {number} radius circle radius
  * @returns {boolean} whether the circle overlaps no obstacle
  */
-function clearOfObstacles(world, x, y, radius) {
+export function clearOfObstacles(world, x, y, radius) {
     const { obsX, obsY, obsRadius } = world;
     for (let i = 0; i < obsX.length; i++) {
         const reach = obsRadius[i] + radius;

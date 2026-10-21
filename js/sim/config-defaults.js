@@ -224,6 +224,12 @@ export const DEFAULTS = deepFreeze({
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
     foodAreaCapacity: false, // new: food regrows per world area through the patches, not toward a per-agent target
     foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 when foodAreaCapacity is on
+    erasEnabled: false, // new: long seasons, winter and drought on patch regrowth, invasion pulses (world-balance T53)
+    eraSeasonTicks: 36000, // new: ticks per season when eras are on (a year is 4 x this)
+    winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
+    droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
+    invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none
+    invasionSize: 12, // new: immigrants in a pulse
     traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)

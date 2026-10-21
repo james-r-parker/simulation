@@ -2,6 +2,7 @@
 // by the food eaten inside them and regrown logistically. The arrays are empty when `foodPatchCount` is 0.
 
 import { EVENT_TYPE, pushEvent } from './events.js';
+import { patchRegrowFactor } from './eras.js';
 import { basinPatchX, hasTerrain } from './terrain.js';
 import { nextFloat } from './rng.js';
 
@@ -96,7 +97,7 @@ export function regrowPatches(world) {
     const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
     for (let i = 0; i < patchStock.length; i++) {
         const stock = Math.min(foodPatchCapacity, Math.max(floor, patchStock[i]));
-        const grown = stock + foodPatchRegrow * stock * (1 - stock / foodPatchCapacity);
+        const grown = stock + foodPatchRegrow * patchRegrowFactor(world, i) * stock * (1 - stock / foodPatchCapacity);
         patchStock[i] = Math.min(foodPatchCapacity, grown);
     }
 }
