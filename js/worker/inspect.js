@@ -22,6 +22,9 @@ export const INSPECT_COUNTERS = Object.freeze([
     'lastLoss',
     'bittenTimer',
     'ateTimer',
+    'vision',
+    'baseSize',
+    'childShare',
 ]);
 
 const RAY_CHANNEL_NAMES = Object.freeze([
@@ -156,6 +159,9 @@ function writeCounters(f32, start, { source, slot }) {
     f32[start + 9] = world.lastLoss[slot];
     f32[start + 10] = world.bittenTimer[slot];
     f32[start + 11] = world.ateTimer[slot];
+    f32[start + 12] = world.vision[slot];
+    f32[start + 13] = world.baseSize[slot];
+    f32[start + 14] = world.childShare[slot];
 }
 
 /**
