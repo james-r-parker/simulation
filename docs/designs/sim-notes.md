@@ -488,3 +488,30 @@ slot, share what does not depend on the event across the tick's events first. A 
 nearest hunter of the last call is exact (`dx * dx <= dx * dx + dy * dy` holds in floating point) and cheaper than the
 all-pairs scan (the combat part 0.091 to 0.069 ms per tick); a uniform grid of the hunters was no faster than all-pairs in a 14400 x 8100 world
 (hunters cluster, so rings of empty cells are searched), and was dropped.
+
+### 2026-10-22 - Static rocks are obstacle slots, and `obstacleCount` counts only the wandering ones
+
+With `terrainLayout` `basins` the wall and the refuge rings are obstacles that never move, stored after the wandering
+ones (`obstacleSlots(config)` = `obstacleCount` + `terrainRockCount(config)`, 101 slots at the defaults and
+`obstacleCount` 0). Code that counts every obstacle must loop to `obsX.length` or `obstacleSlots` (collisions, ray
+gathering, placement, the snapshot and `worldInfo.obstacleCount`); code that moves them loops to `config.obstacleCount`
+(`moveObstacles`), which is what keeps the rocks still. `validateConfig` rejects `basins` with `obstacleCount` above 0, so
+the two never mix in one world. A new loop over `config.obstacleCount` that should see the rocks is a bug that only shows
+with terrain on.
+
+### 2026-10-22 - Carcasses are food items: they fill `maxFood` and the food target
+
+`leaveCarcass` writes the meat into the lowest free food slot, so a carcass raises `foodCount` like any item. Under the
+population rule a death-heavy stretch therefore lowers the plant spawn (`target - food` shrinks and `maxFood - food` caps
+the count), and when the pool is full `leaveCarcass` leaves no carcass and draws nothing. The area rule
+(`foodAreaCapacity`) has no population term, but `spawnFood` still stops at `maxFood - foodCount`. Read `foodKind` when
+counting plant food; `foodCount` and the snapshot's food count include meat.
+
+### 2026-10-22 - Eras stretch every season rule, and leave `seasonLength` unused
+
+`seasonAt` takes the year from `yearTicks(config)`, which is `4 x eraSeasonTicks` with `erasEnabled` and `seasonLength`
+otherwise. The whole season table moves with it: `foodScarcity`, `energyDrain`, `reproductionBonus` and
+`temperatureModifier` each hold for 36000 ticks, and the body inputs for the season's sine and cosine turn 10 times
+slower. A winter is `energyDrain` 1.8 and `foodScarcity` 0.4 for ten minutes at x1, not only a slower patch regrowth, so
+tuning that assumed the 3600-tick season (`seasonLength`) does not carry over. The UI calendar reads
+`worldInfo.seasonLength`, which already holds `eraSeasonTicks` when eras are on.
