@@ -1,17 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { EXTRA_INPUTS, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS, brainLayout } from '../../js/sim/brain-layout.js';
+import {
+    EXTRA_INPUTS,
+    OUTPUT_COUNT,
+    OUTPUT_INDEX,
+    RAY_CHANNELS,
+    TRAIT_GENES,
+    brainLayout,
+} from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 
 describe('brainLayout', () => {
-    it('gives 176 inputs and 6952 weights at the defaults', () => {
+    it('gives 179 inputs and 7183 weights at the defaults', () => {
         const layout = brainLayout(createConfig());
-        expect(layout.inputCount).toBe(176);
-        expect(layout.weightCount).toBe(6952);
+        expect(layout.inputCount).toBe(179);
+        expect(layout.weightCount).toBe(7183);
         expect(layout.outputCount).toBe(OUTPUT_COUNT);
     });
 
-    it('counts 9 ray channels, 32 extra inputs and 8 outputs', () => {
-        expect([RAY_CHANNELS, EXTRA_INPUTS, OUTPUT_COUNT]).toEqual([9, 32, 8]);
+    it('counts 9 ray channels, 35 extra inputs and 11 outputs', () => {
+        expect([RAY_CHANNELS, EXTRA_INPUTS, OUTPUT_COUNT]).toEqual([9, 35, 11]);
     });
 
     it('names the outputs by index', () => {
@@ -24,6 +31,9 @@ describe('brainLayout', () => {
             ALARM: 5,
             SMOKE: 6,
             HUNT: 7,
+            SPLIT: 8,
+            MEMORY_A: 9,
+            MEMORY_B: 10,
         });
         expect(Object.isFrozen(OUTPUT_INDEX)).toBe(true);
     });
@@ -36,7 +46,9 @@ describe('brainLayout', () => {
         expect(l.bHidden).toBe(l.wRec + 9);
         expect(l.wOut).toBe(l.bHidden + 3);
         expect(l.bOut).toBe(l.wOut + 3 * OUTPUT_COUNT);
-        expect(l.weightCount).toBe(l.bOut + OUTPUT_COUNT);
+        expect(l.traitStart).toBe(l.bOut + OUTPUT_COUNT);
+        expect(l.leakStart).toBe(l.traitStart + TRAIT_GENES);
+        expect(l.weightCount).toBe(l.leakStart + 3);
     });
 
     it('is frozen', () => {

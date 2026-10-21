@@ -7,6 +7,7 @@ import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
+import { applyGenes, baseSizeOf } from './traits.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
@@ -126,17 +127,14 @@ function totalFertility(world) {
  */
 function pickZone(world, target) {
     let remaining = target;
-    let last = -1;
-    for (let i = 0; i < world.zoneAlive.length; i++) {
+    let picked = -1;
+    for (let i = 0; i < world.zoneAlive.length && remaining >= 0; i++) {
         if (world.zoneAlive[i] === 1) {
-            last = i;
+            picked = i;
             remaining -= world.zoneFertility[i];
-            if (remaining < 0) {
-                return i;
-            }
         }
     }
-    return last;
+    return picked;
 }
 
 /**
@@ -287,7 +285,8 @@ export function spawnAgent(world, policy, cause) {
     world.lineageId[slot] = id;
     world.spec[slot] = chooseSpec(world, policy, slot, cause);
     policy.initBrain(world, slot, world.rng['brain-init']);
-    placeClear(world, world.rng.spawn, Math.max(c.minSize, c.baseSize + c.initialEnergy / c.energyToSize));
+    applyGenes(world, slot);
+    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + c.initialEnergy / c.energyToSize));
     world.x[slot] = world.point[0];
     world.y[slot] = world.point[1];
     world.angle[slot] = nextFloat(world.rng.spawn) * TWO_PI - PI;

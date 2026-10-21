@@ -1,6 +1,6 @@
-// Writes an agent's first nineteen body inputs after its ray block; scent-inputs.js writes the rest.
+// Writes an agent's body inputs 0 to 18 and 32 to 34 after its ray block; scent-inputs.js writes 19 to 31.
 
-import { RAY_CHANNELS } from './brain-layout.js';
+import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { isReadyToMate } from './mate-eligibility.js';
 import { samplePheromone } from './pheromones.js';
@@ -31,7 +31,23 @@ function seasonTrig(phase) {
 }
 
 /**
- * Writes body inputs 0 to 18 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
+ * Writes body inputs 32 to 34: `sex` (0 until sexes exist) and, when `leakEnabled`, last tick's `MEMORY_A` and
+ * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing); otherwise 0.
+ * @param {World} world the world
+ * @param {number} slot the alive agent
+ * @param {number} o the offset of the agent's body block in `world.inputs`
+ * @returns {void}
+ */
+function writeMemoryInputs(world, slot, o) {
+    const out = world.inputs;
+    out[o + BODY_INPUT.SEX] = 0;
+    const remember = world.config.leakEnabled;
+    out[o + BODY_INPUT.MEMORY_A] = remember ? world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] : 0;
+    out[o + BODY_INPUT.MEMORY_B] = remember ? world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] : 0;
+}
+
+/**
+ * Writes body inputs 0 to 18 and 32 to 34 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} [cH] the cosine of the agent's heading, when the caller has it
@@ -64,4 +80,5 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     out[o + 13] = world.spec[slot] / SPEC_DIVISOR;
     out[o + 14] = world.ageTicks[slot] / maxAgeTicks;
     temperatureInputs(world.config, world.temperature[slot], out, o + 15);
+    writeMemoryInputs(world, slot, o);
 }

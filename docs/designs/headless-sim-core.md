@@ -225,14 +225,14 @@ The bench times each phase by calling its `run` directly.
 
 ### Sensing
 
-`brainLayout(config).inputCount` is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 9 + 32` (176 at 16 rays). Rays are evenly spaced over 360 degrees
+`brainLayout(config).inputCount` is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 9 + 35` (179 at 16 rays). Rays are evenly spaced over 360 degrees
 from the heading. A ray walks the cells it crosses (DDA), tests every circle in a cell, and stops at the first cell
 whose nearest hit lies inside that cell's stretch of the ray; the obstacles and the walls are tested directly.
 
-| Per ray | Value                                                                                                                                                                                |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1       | Proximity: `1 - distance / visionRange`, 0 for no hit                                                                                                                                |
-| 2-9     | One-hot class: food, bigger agent (size ratio above `huntSizeRatio`), smaller agent (below `1 / huntSizeRatio`), similar agent, kin (see Kin, overrides size), wall, obstacle, smoke |
+| Per ray | Value                                                                                                                                                                                                                             |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | Proximity: `1 - distance / visionRange`, 0 for no hit                                                                                                                                                                             |
+| 2-9     | One-hot class: food, "can bite me" agent (`couldBite` the caster), "I can bite it" agent (the caster `couldBite` it), other non-kin agent, kin (see Kin, checked first), wall, obstacle, smoke; agent classes carry the proximity |
 
 | Body input | Value                                                                                                                                                      |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -258,13 +258,15 @@ whose nearest hit lies inside that cell's stretch of the ray; the obstacles and 
 
 `brainLayout(config)` returns `inputCount` and the offsets into one agent's weight row: `wIn`
 (`inputCount x brainHidden`), `wRec` (`brainHidden x brainHidden`), `bHidden`, `wOut` (`brainHidden x OUTPUT_COUNT`),
-`bOut`, and `weightCount` (6952 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
+`bOut`, `traitStart` (`TRAIT_GENES` 4 trait genes), `leakStart` (one leak gene per hidden unit) and
+`weightCount` (7183 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
 copies it over the slot's `hidden` row:
 
 - `h' = detTanh(wIn x + wRec h + bHidden)`;
 - `y = detTanh(wOut h' + bOut)`.
 
-Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 8 (`OUTPUT_INDEX` names them):
+Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 11 (`OUTPUT_INDEX` names them; `SPLIT` and the two memory outputs do nothing yet except that
+`MEMORY_A` and `MEMORY_B` are read back as body inputs 33 and 34 when `leakEnabled`):
 
 | Output | Drives                                                                  |
 | ------ | ----------------------------------------------------------------------- |
@@ -276,6 +278,8 @@ Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 8 (`OUTP
 | 6      | Alarm call above 0 (specialisations without `canHunt`)                  |
 | 7      | Smoke release above `smokeThreshold`                                    |
 | 8      | Hunt call above 0 (`canHunt` specialisations)                           |
+| 9      | Split (not read yet)                                                    |
+| 10, 11 | Memory A and B (read back as body inputs 33 and 34 when `leakEnabled`)  |
 
 ### Physics
 
@@ -302,7 +306,7 @@ Sums accumulate in float64 and are stored as float32. `OUTPUT_COUNT` is 8 (`OUTP
 - **Mating.** Agents are walked in slot order; for each agent that wants to mate and is ready (mature, not pregnant,
   cooldown 0, above `mateMinEnergy`, `temperature` from `temperatureColdStress` to `temperatureHeatStress` inclusive), `findMate` looks for a partner within `mateRange` (edge to edge, no contact
   needed) that is also ready and wanting, of the same specialisation, with size ratio within
-  `1 / huntSizeRatio .. huntSizeRatio`, where the lower slot (the mother) holds more than
+  `1 / mateSizeRatio .. mateSizeRatio` (default 1.3), where the lower slot (the mother) holds more than
   `childEnergyMin / childEnergyShare`. Mating happens with probability `min(1, reproductionBonus / 1.5)` (a
   `lifecycle` draw per such pair). Each pays `mateCost` and starts
   its cooldown; the lower slot becomes pregnant for `pregnancyTicks` and copies the other's `weights` into its
@@ -426,7 +430,11 @@ phase.
 - `npm run bench` (`scripts/bench.mjs`) runs worlds of 100, 250 and 500 agents (`initialAgents = minAgents =
 maxAgents`) for 500 warm-up and 2000 measured ticks, and prints `bench.step_ms@<n>` (median) and
   `bench.phase_ms.<phase>@<n>`; `--json` prints the same as JSON. `bench/baseline.json` holds the dev machine's
-  numbers.
+  numbers. The bench world is the frozen `BENCH_CONFIG` in `scripts/bench.mjs` (the retuned defaults pinned back to
+  their values when the baseline was recorded: `maxFood`, `foodTargetPerAgent`, `huntSizeRatio`, `alarmCost`,
+  `huntCallCost`), so retuning `createConfig` defaults never moves `bench.step_ms@<n>` or `bench-check`. At 500 agents
+  it also prints tracked rows that `bench-check` does not gate: `@500defaults` (today's defaults) and `@500w7680` (a
+  7680x4320 world).
 - The `bench-check` gate fails when a `bench.step_ms@*` median is more than 15% above `bench/baseline.json`. It runs
   locally and reports `skipped` under `--ci`, because the baseline is machine-specific.
 - `scripts/browser-hash.mjs` starts `vite`, runs the golden world in a Chromium module worker

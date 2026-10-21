@@ -59,6 +59,7 @@ export const DEFAULTS = deepFreeze({
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
     huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
+    mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 100, // new: the largest edge-to-edge gap between two mates
@@ -204,4 +205,8 @@ export const DEFAULTS = deepFreeze({
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
+    traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
+    visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
+    hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)
+    leakEnabled: false, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
 });

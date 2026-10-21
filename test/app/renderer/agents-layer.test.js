@@ -1,3 +1,4 @@
+import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
@@ -24,6 +25,7 @@ function frameOf(info, snapshot, lenses = {}) {
             canvas: { width: 1600, height: 1000 },
             world: { width: info.worldWidth, height: info.worldHeight },
         }),
+        family: createFamilySlots(),
         lenses: { temperature: false, scent: false, territory: false, vision: false, calls: false, ...lenses },
     };
 }
@@ -97,5 +99,18 @@ describe('setSmokeTexture', () => {
         expect(
             layer.object.children.every((/** @type {any} */ m) => m.material.uniforms.uSmoke.value === texture),
         ).toBe(true);
+    });
+
+    it('tells the shader the palette in force and adds the hunter flag only for specialisations that can hunt', () => {
+        const { info, layout, snapshot } = smallReady(30);
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const frame = frameOf(info, snapshot);
+        frame.family.palette = 'high-contrast';
+        layer.update?.(frame);
+        const meshes = layer.object.children;
+        expect(meshes[0].material.uniforms.uPalette.value).toBe(2);
+        const hunters = meshes.map((/** @type {any} */ m) => m.material.uniforms.uHunter.value);
+        expect(hunters).toEqual(info.specs.map((/** @type {any} */ s) => (s.canHunt ? 1 : 0)));
+        layer.dispose();
     });
 });

@@ -2,7 +2,8 @@
 // spark pools and an optional sink (audio). Effects further behind the playhead than `STALE_TICKS` (a hidden tab) are
 // dropped unplayed.
 
-import { lineageColor, PALETTE } from './colors.js';
+import { createFamilySlots } from '../family-slots.js';
+import { familyColor, PALETTE } from './colors.js';
 import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
 import { spawnBurst } from './sparks.js';
 
@@ -56,6 +57,7 @@ const RING = {
  * @property {Record<string, number>} kinds `ready.layout.effectKinds`
  * @property {number} eatenCause `ready.layout.deathCauses.EATEN`
  * @property {{callRadius: number, callTicks: number}} info the call ranges
+ * @property {import('../family-slots.js').FamilySlots} slots the family colour slots
  * @property {((effect: Effect) => void) | null} sink told of every effect that plays (the audio cues)
  * @property {Effect} effect the record being played, reused
  * @property {number[]} rgb scratch colour
@@ -63,17 +65,19 @@ const RING = {
 
 /**
  * @param {{rings: import('./rings.js').RingPool, sparks: import('./sparks.js').SparkPool, layout: Record<string, any>,
- *   info: Record<string, any>, sink?: ((effect: Effect) => void) | null}} options the pools to play into, `ready.layout`
- *   and `ready.info`
+ *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
+ *   sink?: ((effect: Effect) => void) | null}} options the pools to play into, `ready.layout` and `ready.info`, and
+ *   the family colour slots (all neutral when absent)
  * @returns {EffectsPlayer} a player
  */
-export function createEffectsPlayer({ rings, sparks, layout, info, sink = null }) {
+export function createEffectsPlayer({ rings, sparks, layout, info, slots = createFamilySlots(), sink = null }) {
     return {
         rings,
         sparks,
         kinds: layout.effectKinds,
         eatenCause: layout.deathCauses.EATEN,
         info: { callRadius: info.callRadius, callTicks: info.callTicks },
+        slots,
         sink,
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },
         rgb: [0, 0, 0],
@@ -160,7 +164,7 @@ function playBite(player, agents) {
  */
 function playBirth(player) {
     const e = player.effect;
-    const rgb = lineageColor(e.b, 0.8, player.rgb);
+    const rgb = familyColor(player.slots, e.b, 0.8, player.rgb);
     setRing('birth', e, BIRTH_RING_RADIUS, BIRTH_TICKS);
     RING.rgb = rgb;
     spawnRing(player.rings, RING);
@@ -174,7 +178,7 @@ function playBirth(player) {
  */
 function playDeath(player) {
     const e = player.effect;
-    const rgb = lineageColor(e.d, 0.6, player.rgb);
+    const rgb = familyColor(player.slots, e.d, 0.6, player.rgb);
     const eaten = ((e.c >>> CAUSE_SHIFT) & CAUSE_MASK) === player.eatenCause;
     setBurst('died', e, rgb);
     BURST.eaten = eaten;

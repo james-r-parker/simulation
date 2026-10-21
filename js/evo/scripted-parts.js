@@ -1,15 +1,18 @@
 // Shared pieces of the scripted controllers: channel constants, the output writer and the food-seeking behaviour.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 
-// Class flag channels within a ray (see js/sim/ray-march.js).
+// Class channels within a ray (see js/sim/ray-march.js): THREAT can bite the caster, PREY can be bitten by it.
 export const CH_FOOD = 1;
-export const CH_BIGGER = 2;
-export const CH_SMALLER = 3;
+export const CH_THREAT = 2;
+export const CH_PREY = 3;
 export const CH_FIRST_AGENT = 2;
 export const CH_LAST_AGENT = 5;
+export const CH_KIN = 5;
 export const CH_WALL = 6;
+export const CH_SMOKE = 8;
 
 /**
  * Thrust while seeking food: the speed at which a scripted forager population grows on the default economy; full thrust
@@ -88,4 +91,27 @@ export function seekFood(world, slot) {
  */
 export function setOutput(world, slot, output, value) {
     world.outputs[slot * OUTPUT_COUNT + output] = value;
+}
+
+/** `wanderer`'s slow random turn: the per-tick step and the bound, as fractions of `maxTurn`. */
+const WANDER_STEP = 0.1;
+const WANDER_BOUND = 0.3;
+
+/**
+ * The wanderer's per-agent behaviour: full thrust, towards food when a ray sees it (away from it, as the wanderer
+ * always has), else a slow random drift of the turn that draws one number from `rng` per call.
+ * @param {Record<string, any>} world the world the controller runs on
+ * @param {import('../sim/rng.js').Rng} rng the `scripted` stream
+ * @returns {(w: Record<string, any>, slot: number) => void} writes one agent's outputs
+ */
+export function createWander(world, rng) {
+    const drift = new Float64Array(world.alive.length);
+    return (w, slot) => {
+        drift[slot] = Math.max(
+            -WANDER_BOUND,
+            Math.min(WANDER_BOUND, drift[slot] + (nextFloat(rng) - 0.5) * 2 * WANDER_STEP),
+        );
+        const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
+        write(w, slot, 1, k < 0 ? drift[slot] : -turnTowards(k, w.config.rayCount));
+    };
 }

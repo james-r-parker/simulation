@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseSeed } from '../../js/app/seed.js';
+import { chooseSeed, parseSeed } from '../../js/app/seed.js';
 
 describe('chooseSeed', () => {
     it('uses the URL seed, even 0', () => {
@@ -17,5 +17,19 @@ describe('chooseSeed', () => {
         expect(Number.isInteger(seed)).toBe(true);
         expect(seed).toBeGreaterThanOrEqual(0);
         expect(seed).toBeLessThanOrEqual(0xffffffff);
+    });
+});
+
+describe('parseSeed', () => {
+    it('reads an unsigned 32-bit integer, trimming space', () => {
+        expect(parseSeed('0')).toBe(0);
+        expect(parseSeed(' 4294967295 ')).toBe(4294967295);
+        expect(parseSeed('1234')).toBe(1234);
+    });
+
+    it('rejects anything else', () => {
+        for (const bad of ['', 'abc', '-1', '1.5', '4294967296', '12345678901', '0x10']) {
+            expect(parseSeed(bad), bad).toBeNull();
+        }
     });
 });

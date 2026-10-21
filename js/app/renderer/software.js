@@ -39,3 +39,15 @@ export function rendererName(gl) {
 export function scaledSize(size, scale) {
     return { width: Math.max(1, Math.round(size.width * scale)), height: Math.max(1, Math.round(size.height * scale)) };
 }
+
+/**
+ * @param {{software: boolean, override: number | null}} options whether the renderer is software and the `?scale=` value
+ * @returns {number} the render scale: the override when there is one, else `SOFTWARE_RENDER_SCALE` for a software
+ *   renderer and 1 otherwise
+ */
+export function chooseRenderScale({ software, override }) {
+    if (override !== null) {
+        return override;
+    }
+    return software ? SOFTWARE_RENDER_SCALE : 1;
+}

@@ -6,22 +6,26 @@ import { createActions, createAppState, DEFAULT_TICKS_PER_SECOND } from './actio
 import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
+import { buildDebugBundle } from './debug-bundle.js';
+import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
+import { minPxTable } from './display-size.js';
+import { agentAt } from './hover-pick.js';
+import { largestOfLineage } from './picking.js';
 import { createGpuTimer } from './gpu-timer.js';
+import { createInterface } from './interface.js';
 import { installPerf } from './perf.js';
 import { createPointerInput } from './pointer-input.js';
 import { canvasPixelSize } from './renderer/canvas-size.js';
 import { createScene } from './renderer/scene.js';
 import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
+import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
-import { mountTopBar, topBarInput, topBarView } from './ui/top-bar.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
 
-const TOP_BAR_MS = 250;
-const NOTICE_MS = 8000;
 const PERF_FRAMES = 32768;
 
 /**
@@ -38,11 +42,12 @@ function showMessage(container, text) {
 
 /**
  * Wires the keys and the pointer.
- * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>}} wiring
- *   the canvas, the action runner and the pointer handlers
+ * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
+ *   iface: ReturnType<typeof createInterface>}} wiring the canvas, the action runner, the pointer handlers and the
+ *   interface that hears every input
  * @returns {void}
  */
-function listen({ canvas, perform, input }) {
+function listen({ canvas, perform, input, iface }) {
     const toDevice = (/** @type {MouseEvent} */ e) => {
         const r = canvas.getBoundingClientRect();
         return {
@@ -51,19 +56,28 @@ function listen({ canvas, perform, input }) {
         };
     };
     window.addEventListener('keydown', (e) => {
+        iface.noteInput({ type: 'keydown' });
         const action = actionForKey(e);
         if (action !== null) {
             e.preventDefault();
             perform(action);
         }
     });
-    canvas.addEventListener('pointerdown', (e) => input.down(toDevice(e).x, toDevice(e).y));
-    window.addEventListener('pointermove', (e) => input.move(toDevice(e).x, toDevice(e).y));
+    canvas.addEventListener('pointerdown', (e) => {
+        iface.noteInput({ type: 'pointerdown' });
+        input.down(toDevice(e).x, toDevice(e).y);
+    });
+    window.addEventListener('pointermove', (e) => {
+        iface.noteInput({ type: 'pointermove', x: e.clientX, y: e.clientY });
+        iface.pointer(e.clientX, e.clientY);
+        input.move(toDevice(e).x, toDevice(e).y);
+    });
     window.addEventListener('pointerup', (e) => input.up(toDevice(e).x, toDevice(e).y));
     canvas.addEventListener(
         'wheel',
         (e) => {
             e.preventDefault();
+            iface.noteInput({ type: 'wheel' });
             input.wheel(e.deltaY, toDevice(e).x, toDevice(e).y);
         },
         { passive: false },
@@ -94,11 +108,14 @@ function observeSize(container, onSize) {
  * @property {import('./camera.js').CameraController} camera the view
  * @property {{width: number, height: number}} size the canvas in device pixels
  * @property {Record<string, any> | null} ready the newest `ready` message
+ * @property {import('./family-slots.js').FamilySlots} slots the family colour slots and the palette
+ * @property {number[]} minPx the least each specialisation is drawn across, from `ready`
  * @property {ReturnType<typeof createFrameStats>} stats the frame and draw rings `__perf` reports
  * @property {any} deps the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
  * @property {ReturnType<typeof createFrameLoop>} loop the frame loop
  * @property {ReturnType<typeof createSupervisor>} supervisor the supervised worker
  * @property {(action: string) => void} perform runs a shortcut action
+ * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
  */
 
 /**
@@ -118,6 +135,7 @@ function attachGpuTimer(app) {
  */
 function onReady(app, message) {
     app.ready = message;
+    app.minPx = minPxTable(message.info);
     const world = { width: message.info.worldWidth, height: message.info.worldHeight };
     Object.assign(app.camera, createCameraController({ canvas: app.size, world }));
     if (app.deps.scene === null) {
@@ -125,11 +143,17 @@ function onReady(app, message) {
             container: app.container,
             info: message.info,
             quality: app.params.quality,
-            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready }),
+            scale: app.params.scale,
+            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready, slots: app.slots }),
             onRestored: () => attachGpuTimer(app),
         });
         app.deps.scene.resize(app.size.width, app.size.height);
-        listen({ canvas: app.deps.scene.canvas, perform: app.perform, input: createPointerInput(pointerOptions(app)) });
+        listen({
+            canvas: app.deps.scene.canvas,
+            perform: app.perform,
+            input: createPointerInput(pointerOptions(app)),
+            iface: app.iface,
+        });
     } else {
         app.deps.scene.rebuild();
     }
@@ -148,10 +172,11 @@ function pointerOptions(app) {
     return {
         camera: app.camera,
         getAgents: app.loop.agents,
+        getMinPx: () => app.minPx,
         onPick(id) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
-            app.supervisor.client()?.setLenses(id !== 0);
+            app.iface.syncRays();
         },
     };
 }
@@ -171,7 +196,11 @@ function makeSupervisor(app) {
         clearTimer: (handle) => clearTimeout(/** @type {any} */ (handle)),
         config: app.overrides,
         listeners: {
-            onReady: (message) => onReady(app, message),
+            ...app.iface.listeners,
+            onReady(message) {
+                onReady(app, message);
+                app.iface.listeners.onReady(message);
+            },
             onSelection(message) {
                 if (message.state === 'gone') {
                     state.selectedId = 0;
@@ -181,11 +210,82 @@ function makeSupervisor(app) {
             onLog: (record) => appLog(record.level ?? 'info', record.event ?? 'WorkerLog', record),
             onError: (message) => appLog('error', 'WorkerError', { message: message.message }),
         },
-        onRestart({ seed }) {
-            state.notice = `Worker restarted with seed ${seed}`;
-            setTimeout(() => (state.notice = ''), NOTICE_MS);
-        },
+        onRestart: ({ seed }) =>
+            app.iface.toast(`Worker restarted with seed ${seed}. Press B for the failed run's debug bundle.`),
+        buildBundle: (info) =>
+            app.ready === null
+                ? info
+                : {
+                      ...buildDebugBundle({ ready: app.ready, overrides: app.overrides, tick: info.tick }),
+                      reason: info.reason,
+                  },
         log: (level, event, fields) => appLog(level, event, fields),
+    });
+}
+
+/**
+ * @param {App} app the page
+ * @param {{x: number, y: number}} client a point in client pixels
+ * @returns {{x: number, y: number}} the same point in device pixels on the canvas
+ */
+function clientToDevice(app, client) {
+    const canvas = app.deps.scene?.canvas;
+    const r = canvas?.getBoundingClientRect();
+    if (canvas === undefined || r === undefined) {
+        return { x: -1, y: -1 };
+    }
+    return { x: ((client.x - r.left) * canvas.width) / r.width, y: ((client.y - r.top) * canvas.height) / r.height };
+}
+
+/**
+ * @returns {Promise<any>} the uPlot class, with its stylesheet; loaded when the charts drawer first opens
+ */
+async function loadUPlot() {
+    const [module] = await Promise.all([import('uplot'), import('uplot/dist/uPlot.min.css')]);
+    return module.default;
+}
+
+/**
+ * @returns {Storage | null} `localStorage`, or null where reading it throws (blocked site data)
+ */
+function safeStorage() {
+    try {
+        return localStorage;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * @param {App} app the page, whose supervisor does not exist yet
+ * @returns {ReturnType<typeof createInterface>} the interface over the page's elements
+ */
+function makeInterface(app) {
+    const element = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    return createInterface({
+        doc: document,
+        elements: {
+            hud: element('hud'),
+            bar: element('top-bar'),
+            ticker: element('ticker'),
+            drawers: element('drawers'),
+        },
+        storage: safeStorage(),
+        getClient: () => app.supervisor.client(),
+        getReady: () => app.ready,
+        state: app.state,
+        overrides: app.overrides,
+        perform: (action) => app.perform(action),
+        loadUPlot,
+        download: createDownloader({ doc: document, url: URL }),
+        setTimer: (ms, run) => setTimeout(run, ms),
+        getFailedBundle: () => app.supervisor.lastBundle(),
+        now: () => performance.now(),
+        getWidth: () => app.container.clientWidth,
+        slots: app.slots,
+        pickAt: (device) => agentAt({ agents: app.loop.agents(), camera: app.camera, minPx: app.minPx }, device),
+        toDevice: (client) => clientToDevice(app, client),
+        speedPinned: app.params.speed !== null,
     });
 }
 
@@ -200,20 +300,23 @@ function createApp(container) {
     const camera = createCameraController({ canvas: { width: 1, height: 1 }, world: { width: 1, height: 1 } });
     const stats = createFrameStats(PERF_FRAMES);
     /** @type {App} */
-    const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null });
+    const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null, minPx: [] });
     app.size = { width: 1, height: 1 };
+    app.slots = createFamilySlots();
     app.deps = {
         getClient: () => app.supervisor.client(),
         scene: null,
         camera,
         state,
         refs: createLayerRefs(),
+        slots: app.slots,
         stats,
         gpuTimer: null,
         clock: () => performance.now(),
         hidden: () => document.hidden,
     };
     app.loop = createFrameLoop(app.deps);
+    app.iface = makeInterface(app);
     app.supervisor = makeSupervisor(app);
     app.perform = createActions({
         getClient: () => app.supervisor.client(),
@@ -222,6 +325,9 @@ function createApp(container) {
         now: () => performance.now(),
         chooseSeed: () => chooseSeed(null),
         config: overrides,
+        leaderAgent: () =>
+            largestOfLineage(app.loop.agents(), app.supervisor.client()?.stats?.lineages?.top?.[0]?.id ?? -1),
+        ui: app.iface.hooks,
     });
     return app;
 }
@@ -254,16 +360,11 @@ function readPerf(app) {
 }
 
 /**
- * Exposes `window.__perf` and updates the top bar a few times a second.
+ * Exposes `window.__perf` in dev builds.
  * @param {App} app the page
  * @returns {void}
  */
 function startReporting(app) {
-    const barUpdate = mountTopBar(document, /** @type {HTMLElement} */ (document.getElementById('top-bar')));
-    setInterval(() => {
-        const client = app.supervisor.client();
-        barUpdate(topBarView(topBarInput(/** @type {any} */ (client)), app.state, client?.pausedAck ?? false));
-    }, TOP_BAR_MS);
     if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
         installPerf(/** @type {any} */ (window), {
             read: () => readPerf(app),
@@ -292,11 +393,13 @@ function start() {
     observeSize(container, (next) => {
         Object.assign(app.size, next);
         app.deps.scene?.resize(next.width, next.height);
+        app.iface.resize();
         resizeCamera(app.camera, next);
     });
     startReporting(app);
     const tick = (/** @type {number} */ now) => {
         app.loop.frame(now);
+        app.iface.tick(now);
         requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);

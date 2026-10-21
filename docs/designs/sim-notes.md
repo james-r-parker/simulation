@@ -323,6 +323,37 @@ upgrade and no API change to record. The renderer uses `WebGLRenderer`, `Instanc
 - Headless Chromium renders WebGL2 with `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`; a 4K frame of 420
   agents, haze and bloom takes a few seconds in software.
 
+### 2026-10-17 - Interface facts found building Phase 3 (uplot 1.6.32)
+
+- `uplot` touches `document` and `window` when imported, so nothing in `js/app/` imports it at the top: the page loads it with
+  `import('uplot')` and `import('uplot/dist/uPlot.min.css')` when the charts drawer first opens, and `mountCharts` takes the
+  class as an argument so the tests use a fake. `declare module '*.css'` in `js/app/globals.d.ts` types the stylesheet import.
+- uPlot has no stacking: the stacked charts (family river, births and deaths, catch against escape) plot cumulative tops,
+  highest first, so each lower band paints over the one above it. Series count is fixed per chart, so the river always has
+  nine series (eight lineages and "others") and a function `fill` reads a colour table that `data` rewrites.
+- Typed arrays work as uPlot data, so `columns(history)` hands out `subarray` views with no copy.
+- A key event whose target is a button is ignored by `actionForKey`, so after a click on a control button `Space` activates
+  that button instead of pausing; focus the canvas (click it) to use the keys again.
+
+### 2026-10-17 - How far eight family colours can be pushed apart (CIEDE2000, Machado 2009)
+
+- Eight slots that stay at least 15 apart in normal vision and 10 apart under each of the Machado-2009 deuteranopia,
+  protanopia and tritanopia matrices, and clear food teal, the three scents and the alarm and eaten reds by the same
+  amounts, are barely feasible. A random-restart hill climb over hue, saturation and lightness found a set only at
+  HSL lightness 0.55 to 0.7 with most slots at saturation 0.25 to 0.5 (a pastel set), by a margin of 0.15.
+- At exactly HSL lightness 0.72 no eight-colour set cleared the thresholds (the best was 4 short, stuck on one slot's
+  distance to food teal and to the hunt amber); allowing 0.55 to 0.72 found one. The colour-blind-safe set needs 20 apart
+  under each simulation and only reached it with lightness 0.3 to 0.85.
+- `test/app/renderer/helpers/color-metrics.js` reproduces the published CIEDE2000 test pairs to four decimals, so the
+  thresholds mean what they say; the three matrices are applied in linear RGB.
+
+### 2026-10-17 - The hover peek and the world's y axis
+
+- The world's y axis points up on screen (`screenToWorld` negates the device y), so a ray at `2 PI k / n` from the heading
+  turns counter-clockwise; the inspector radar draws it that way.
+- `window.localStorage` can throw on read (blocked site data); `main.js` asks for it through `safeStorage` and the
+  interface runs without preferences when it is null.
+
 ### 2026-10-17 - Measuring the v6 app in a browser
 
 - A Chromium trace with categories `v8` and `disabled-by-default-v8.gc` names each whole GC pause on the `CrRendererMain`
@@ -337,3 +368,85 @@ upgrade and no API change to record. The renderer uses `WebGLRenderer`, `Instanc
   tasks in the first 5 s are dropped by comparing it with `WARMUP_MS`.
 - The worker sends `stats` only while the sim runs, so a paused app has no new stats; the top bar reads the tick and
   population from the newest snapshot, which each `step` posts.
+
+### 2026-10-17 - Body traits and the hash cell size
+
+- With `traitsEnabled` the largest body is `baseSize x TRAIT_MAX + maxEnergy / energyToSize`, 132.5 at the defaults, which
+  is above `hashCellSize` 128, so `validateConfig` rejects `traitsEnabled` at the default cell size. T41 raises
+  `hashCellSize` (140 passes) when it switches traits on.
+- The sensing hash is walked cell by cell along each ray until the ray exceeds its own range, so a longer vision trait needs
+  no separate query radius; `castRays` takes the range from `visionOf` in `js/sim/traits.js`.
+
+### 2026-10-17 - The skill ladder at the defaults (world-balance T12)
+
+`npm run ladder` at the defaults (`minAgents` 0, 10000 ticks, seeds 1-3, commit 88f3940). Final population per seed,
+then the rung means:
+
+| Ladder | Rung                       | Final population | `food_energy_per_1k` | `births_per_1k` | `deliberate_food_share` | `pursuit_bite_share` | `undefended_bite_share` |
+| ------ | -------------------------- | ---------------- | -------------------- | --------------- | ----------------------- | -------------------- | ----------------------- |
+| Forage | `random`                   | 13 / 5 / 34      | 104                  | 0.065           | 0.23                    | 0                    | 0.67                    |
+| Forage | `wanderer`                 | 0 / 0 / 0        | 215                  | 0.004           | 0.05                    | -                    | -                       |
+| Forage | `sloppyForager`            | 0 / 0 / 0        | 633                  | 0.226           | 0.46                    | -                    | -                       |
+| Forage | `foodSeeker`               | 322 / 316 / 334  | 700                  | 0.448           | 0.86                    | -                    | -                       |
+| Forage | `fleer`                    | 288 / 283 / 284  | 777                  | 0.521           | 0.82                    | -                    | -                       |
+| Combat | `jawSitter` v `foodSeeker` | 320 / 304 / 331  | 672                  | 0.434           | 0.85                    | 0                    | 1.00                    |
+| Combat | `hunter` v `foodSeeker`    | 253 / 215 / 216  | 818                  | 0.649           | 0.80                    | 0.84                 | 0.97                    |
+| Combat | `hunter` v `fleer`         | 2 / 0 / 0        | 720                  | 0.536           | 0.53                    | 0.83                 | 0.17                    |
+
+- No rung saturates (0.9 x `maxAgents` is 450), but the forage ladder is not a ladder: `random` keeps 5-34 agents
+  while `wanderer` and `sloppyForager` die out, and `sloppyForager` eats nine tenths of the `foodSeeker`'s food per
+  1000 agent-ticks yet dies. Half-time seeking is not enough to cover the cost of living at these defaults; B2 is
+  now a cliff between `sloppyForager` and `foodSeeker`, not a flat top.
+- `deliberate_food_share` rises with skill up to `foodSeeker` (0.05, 0.23, 0.46, 0.86; `fleer` 0.82), so D1 separates the
+  rungs even where the population does not.
+- `hunter` against `fleer` prey nearly empties the world (2, 0, 0), while `hunter` against `foodSeeker` prey keeps
+  215-253. The `fleer` spends its ticks fleeing and its `deliberate_food_share` falls to 0.53; that cost, not the
+  catch, is the likely cause, since `undefended_bite_share` falls from 0.97 to 0.17. The Phase 4 night should check
+  that fleeing is not a dominated strategy before it tunes predation.
+
+### 2026-10-21 - Honest ray classes
+
+World-balance Phase 2 made the agent ray classes honest. `agentChannel` in `js/sim/ray-march.js` now asks `couldBite`
+(the rule `feed` uses, without the jaws) instead of comparing sizes: a hit is kin, else "can bite me" (channel 2), else "I can bite
+it" (channel 3), else other (channel 4). Class channels carry the hit's proximity; food, wall, obstacle and smoke
+still carry 1. At `huntSizeRatio` 1.01 about half of all agents had read as bigger, so before this a prey saw a
+threat on most rays and a hunter saw prey on most rays, whether or not either could bite. Now a prey sees only
+agents that can bite it (they can hunt and are bigger by the ratio, from any angle; the first build also required the jaws to face the caster, and the user chose on 2026-10-21 that prey should know a predator from any angle), and a hunter sees only
+what it can bite. The intent state's threat is the nearest channel-2 hit, so the `canHunt` scan and its grid are
+gone. Mating has its own size band, `mateSizeRatio` (1.3).
+
+- **The survivable-prey world had to be re-chosen by its criterion.** Honest classes change which agents a hunter
+  treats as prey, so the Phase 1 settings no longer left prey alive on seeds 2 and 3. `evals/survivable-prey-world.json`
+  now has 60 starting agents, `maxAgents` 120, 100 food and one predator in eight; the criterion in
+  `test/evo/survivable-world.slow.test.js` is unchanged. One in four held until the classes moved to `couldBite`:
+  once hunters see prey from any angle they multiply after the midpoint and empty the prey.
+- **B20: `hunter` fails the anti-exploit suite under `fitnessV5`.** With honest classes the scripted `hunter` finds
+  prey reliably, and `fitnessV5` pays a flat 720 points per kill whatever the kill brings in (legacy-audit FIT-5), so
+  the intake bound is exceeded. The cause is the fitness, not the senses, so the suite marks `hunter` an expected
+  FIT-5 failure under `fitnessV5` only (user); no bound was loosened.
+
+### 2026-10-21 - The skill ladder on honest senses (world-balance T24)
+
+`npm run ladder` at the defaults on the Phase 2 senses (10000 ticks, seeds 1-3), mean final population per rung, with
+the Phase 1 ladder in brackets: forage `random` 12.7 (17.3), `wanderer` 0 (0), `sloppyForager` 0 (0), `foodSeeker`
+324 (324), `fleer` 321 (285); combat `jawSitter` v `foodSeeker` 318 (318), `hunter` v `foodSeeker` 228 (228),
+`hunter` v `fleer` 3.3 (0.7).
+
+- `fleer` now matches `foodSeeker` when there are no predators: it no longer flees every bigger agent, only those that
+  could bite it.
+- `hunter` against `fleer` still nearly empties the world. Prey that see hunters from any angle still lose; the
+  Phase 5 night should check that fleeing is not dominated before it tunes predation.
+- The forage ladder is still a cliff between `sloppyForager` (dies out) and `foodSeeker` (B2).
+
+### 2026-10-21 - V8 block counters wrap at 2^32 and break branch coverage
+
+`vitest --coverage` (v8) merges block counts as unsigned 32-bit numbers. `circleHit` in `js/sim/ray-march.js` runs about
+4.5 billion times in the whole suite (the slow evo tests alone are 3.6 billion), so its call count wrapped past 2^32
+and the implicit "else" of its early-return `if` (call count minus the hot branch) came out negative, which
+`json-summary` counts as uncovered: `js/sim` branches read 99.87% against a baseline of 100% although every branch ran.
+A branch-free `circleHit` (a 0/1 `valid` multiplier) avoided the wrap but took a square root on every miss:
+`node scripts/bench-compare.mjs` put `bench.phase_ms.sense@500` at +8.8% and the 7680 x 4320 row at +17.6%, so it was
+reverted. Instead (user, 2026-10-21) `scripts/check.sh` runs the test gate in two passes: everything with coverage
+except `STATISTICAL_TESTS` in `vitest.config.js` (`deliberate-controllers`, `survivable-world` and `anti-exploit`
+slow tests), then those three without coverage. If a branch in a hot function reads as uncovered with negative
+counts in `coverage-final.json`, suspect the same wrap before adding tests.

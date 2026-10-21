@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { depositPheromone, samplePheromone, updatePheromones } from '../../js/sim/pheromones.js';
+import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const CELL = 100;
@@ -111,5 +112,56 @@ describe('samplePheromone', () => {
         expect(samplePheromone(w, w.danger, 10, 10)).toBeCloseTo(0.4, 6);
         expect(samplePheromone(w, w.danger, 150, 10)).toBe(1);
         expect(samplePheromone(w, w.danger, 250, 10)).toBe(0);
+    });
+});
+
+describe('updatePheromones against a naive reference', () => {
+    /**
+     * @param {Float32Array} before the grid before the update
+     * @param {{cols: number, rows: number}} size the grid size
+     * @param {{pheromoneDecay: number, pheromoneDiffusion: number}} rates the config rates
+     * @returns {Float32Array} the grid after decay then diffusion, cell by cell
+     */
+    function reference(before, { cols, rows }, { pheromoneDecay, pheromoneDiffusion }) {
+        const s = Float32Array.from(before, (v) => v * (1 - pheromoneDecay));
+        const k = pheromoneDiffusion / 4;
+        const out = new Float32Array(s.length);
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const c = row * cols + col;
+                let sum = 0;
+                let count = 0;
+                for (const [dc, dr] of [
+                    [-1, 0],
+                    [1, 0],
+                    [0, -1],
+                    [0, 1],
+                ]) {
+                    if (col + dc >= 0 && col + dc < cols && row + dr >= 0 && row + dr < rows) {
+                        sum += s[c + dr * cols + dc];
+                        count += 1;
+                    }
+                }
+                out[c] = s[c] - k * count * s[c] + k * sum;
+            }
+        }
+        return out;
+    }
+
+    it.each([100, 250, 334, 500, 1000])('matches bit for bit with %i-unit cells on a 1000 x 1000 world', (cellSize) => {
+        const w = smallWorld({
+            pheromoneCellSize: cellSize,
+            pheromoneDecay: 0.00167,
+            pheromoneDiffusion: 0.05,
+        });
+        const rng = createRng(5);
+        for (const grid of [w.danger, w.attack, w.hunt]) {
+            for (let i = 0; i < grid.length; i++) {
+                grid[i] = nextFloat(rng) * 5;
+            }
+        }
+        const expected = [w.danger, w.attack, w.hunt].map((g) => reference(g, w.pheromoneGrid, w.config));
+        updatePheromones(w);
+        [w.danger, w.attack, w.hunt].forEach((g, n) => expect(Array.from(g)).toEqual(Array.from(expected[n])));
     });
 });

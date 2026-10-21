@@ -67,3 +67,23 @@ export function noteBirths(generations, world, slotOf) {
 export function generationOf(generations, slot) {
     return generations.depth[slot];
 }
+
+/**
+ * @param {Generations} generations the depths
+ * @param {Record<string, any>} world the world
+ * @returns {{max: number, median: number}} the deepest and the median generation among the alive agents, both 0 when
+ *   none is alive (the median of an even count is the lower of the two middle values)
+ */
+export function generationStats(generations, world) {
+    const depths = [];
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1) {
+            depths.push(generations.depth[slot]);
+        }
+    }
+    if (depths.length === 0) {
+        return { max: 0, median: 0 };
+    }
+    depths.sort((a, b) => a - b);
+    return { max: depths[depths.length - 1], median: depths[Math.floor((depths.length - 1) / 2)] };
+}

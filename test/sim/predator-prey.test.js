@@ -4,7 +4,7 @@ import { HUNTER, PREY, createArena, fleeBrain, rayValues, runArena, stillBrain }
 
 const KILL_TICKS = 120;
 const ESCAPE_TICKS = 200;
-const CH_SMALLER = 3;
+const CH_PREY = 3;
 const CH_SMOKE = 8;
 
 /**
@@ -20,7 +20,7 @@ function watch(world, { ticks, prey }) {
         prey,
         after(w) {
             result.bites += w.alive[PREY] === 1 && w.bittenTimer[PREY] === 1 ? 1 : 0;
-            result.pursuit += rayValues(w, HUNTER).some((v, i) => i % RAY_CHANNELS === CH_SMALLER && v === 1) ? 1 : 0;
+            result.pursuit += rayValues(w, HUNTER).some((v, i) => i % RAY_CHANNELS === CH_PREY && v > 0) ? 1 : 0;
             result.diedAt = w.alive[PREY] === 0 ? w.tick : -1;
             return w.alive[PREY] === 0;
         },
@@ -45,7 +45,7 @@ describe('a scripted hunter against a stationary prey', () => {
 });
 
 describe('a sprinting prey turning away from the hunter', () => {
-    // The hunter only chases a prey in the smaller class, which the huntSizeRatio of 1.01 allows at this size margin (900 energy is a size ratio of 1.014).
+    // The hunter only chases a prey in the prey class, which the huntSizeRatio of 1.01 allows at this size margin (900 energy is a size ratio of 1.014).
     it('is not bitten while the hunter, which is just over the size margin, burns its burst', () => {
         const world = createArena({ gap: 200, hunterEnergy: 900, preyHeading: Math.PI / 2 });
         const { bites, pursuit, diedAt } = watch(world, { ticks: ESCAPE_TICKS, prey: fleeBrain(false) });
@@ -72,14 +72,14 @@ describe('smoke released behind a fleeing prey', () => {
 
     it('shows the hunter the prey on the ray that points at it when there is no smoke', () => {
         const rays = hunterRays(false);
-        expect(rays[0][CH_SMALLER]).toBe(1);
+        expect(rays[0][CH_PREY]).toBeGreaterThan(0);
         expect(rays.every((ray) => ray[CH_SMOKE] === 0)).toBe(true);
     });
 
     it('cuts that ray: it stops at the cloud, with the smoke flag and without the prey', () => {
         const rays = hunterRays(true);
         expect(rays[0][CH_SMOKE]).toBe(1);
-        expect(rays.every((ray) => ray[CH_SMALLER] === 0)).toBe(true);
+        expect(rays.every((ray) => ray[CH_PREY] === 0)).toBe(true);
         expect(rays[0][0]).toBeGreaterThan(0.7);
     });
 });

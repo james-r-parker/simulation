@@ -6,6 +6,7 @@ import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat } from '../../sim/rng.js';
 import { pickEmptySpec } from '../../sim/spec-rescue.js';
+import { biologyOn } from '../../sim/traits.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -96,6 +97,9 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
         clones.isClone[slot] = 0;
         clones.archiveRef[slot] = -1;
         clones.refId[slot] = 0;
+        if (clones.fromArchive !== undefined) {
+            clones.fromArchive[slot] = ref === null ? 0 : 1;
+        }
         if (ref === null) {
             randomWeights(row, layout, rng);
             birth.sigma[slot] = SIGMA_START;
@@ -103,7 +107,12 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
             checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
-            mutateWeights(row, birth.sigma[slot], rng);
+            mutateWeights(
+                row,
+                birth.sigma[slot],
+                rng,
+                biologyOn(world.config) ? layout.traitStart : layout.weightCount,
+            );
         } else {
             checkRow(ref.row, layout, log);
             row.set(ref.row);

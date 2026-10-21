@@ -366,7 +366,10 @@ seeded_tests() {
     echo "test scope: fast (the *.slow.test.js files are left out; no coverage)"
     TEST_SCOPE=fast run_tests junit.xml --sequence.shuffle --sequence.seed="$1"
   else
-    run_tests junit.xml --coverage --sequence.shuffle --sequence.seed="$1"
+    # Two passes: everything with coverage except the long statistical tests, then those without coverage (their
+    # billions of ray casts wrap V8's block counters; vitest.config.js STATISTICAL_TESTS).
+    TEST_SCOPE=coverage run_tests junit.xml --coverage --sequence.shuffle --sequence.seed="$1" &&
+      TEST_SCOPE=statistical run_tests junit-statistical.xml --sequence.shuffle --sequence.seed="$1"
   fi
 }
 run_test_gate() {

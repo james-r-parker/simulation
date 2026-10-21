@@ -1,0 +1,14 @@
+{
+  "worldWidth": 2400,
+  "worldHeight": 1600,
+  "initialAgents": 60,
+  "maxAgents": 120,
+  "minAgents": 0,
+  "immigrationInterval": 0,
+  "maxFood": 100,
+  "initialFood": 100,
+  "obstacleCount": 4,
+  "initialEnergy": 3000,
+  "wallDamage": 0,
+  "obstacleDamage": 0
+}

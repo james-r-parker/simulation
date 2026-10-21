@@ -3,6 +3,7 @@
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { ensureRoom } from './growable-log.js';
+import { resetIntentSlot } from './observer-intent.js';
 
 /** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
 export const BURN_IN_TICKS = 10000;
@@ -18,6 +19,7 @@ export function resetSlot(observer, slot) {
         observer[name][slot] = 0;
     }
     clearCells(observer, slot);
+    resetIntentSlot(observer.intent, slot);
 }
 
 /**
@@ -101,6 +103,33 @@ function finishDeath(observer, d, o, fitness) {
 }
 
 /**
+ * Sets a newborn's generation depth and archive-lineage flag. A child of a mating or split is one generation deeper
+ * than its deeper parent and inherits the flag of either; any other entrant is generation 0, and in the archive
+ * lineage when the policy's `observer.archiveDraw(slot)` says its genome came from the archive. A parent that died
+ * this tick is already untracked, so it counts as generation 0.
+ * @param {Record<string, any>} observer the observer
+ * @param {Float64Array} d the event data
+ * @param {number} o the record offset of the `AgentBorn`
+ * @returns {void}
+ */
+function setLineage(observer, d, o) {
+    const slot = d[o + 2];
+    if (d[o + 8] !== BORN_CAUSE.MATE && d[o + 8] !== BORN_CAUSE.SPLIT) {
+        observer.archiveLineage[slot] = observer.archiveDraw?.(slot) ? 1 : 0;
+        return;
+    }
+    const a = observer.slotOf.get(d[o + 6]);
+    const b = observer.slotOf.get(d[o + 7]);
+    const depthA = a === undefined ? 0 : observer.generation[a];
+    const depthB = b === undefined ? 0 : observer.generation[b];
+    observer.generation[slot] = 1 + Math.max(depthA, depthB);
+    observer.archiveLineage[slot] = Math.max(
+        a === undefined ? 0 : observer.archiveLineage[a],
+        b === undefined ? 0 : observer.archiveLineage[b],
+    );
+}
+
+/**
  * Starts tracking a newborn in its slot with zeroed counters.
  * @param {Record<string, any>} observer the observer
  * @param {Float64Array} d the event data
@@ -121,6 +150,7 @@ function startBirth(observer, d, o) {
     observer.lineageId[slot] = d[o + 4];
     observer.spec[slot] = d[o + 5];
     observer.birthTick[slot] = d[o + 1];
+    setLineage(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);
 }
 

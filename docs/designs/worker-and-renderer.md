@@ -218,8 +218,8 @@ Both sides run `validateMessage` on every message they receive. The client drops
 the pheromone grid (`cols`, `rows`, `cellSize`, `pheromoneMax`) and `specs`: for each specialisation its `index`,
 `name`, `canHunt` and `visionRange`.
 
-`ready.labels` holds `rayChannels` (the nine channel names), `bodyInputs` (the 32 body input names with their group)
-and `outputs` (the eight names of `OUTPUT_INDEX`), built by `inspectLabels`.
+`ready.labels` holds `rayChannels` (the nine channel names), `bodyInputs` (the 35 body input names with their group)
+and `outputs` (the eleven names of `OUTPUT_INDEX`), built by `inspectLabels`.
 
 ## Snapshot
 
@@ -403,11 +403,11 @@ gpuMs: { p50, p95, p99 } | null, frames, agents, ticksPerSecond, droppedTicks, h
 
 **Family colour.** `createFamilySlots` gives each of the top families a slot index 0 to 7. `assignSlots(slots, top)` runs on every `stats`: a family keeps its slot until it is no longer in `top` (the top 12), then each top-8 family without a slot takes the lowest free one in rank order; a family that finds none is neutral until a slot frees. Family river bands, territory colours, captions and the inspector chip use the slot colour; `familyColor` returns `NEUTRAL_FAMILY` for any family without one. `FAMILY_PALETTES` holds three sets of 8 colours, chosen by the `palette` preference:
 
-| Palette         | Slots                                                                                                                                                                                                                    | Neutral                          |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| `default`       | Okabe-Ito derived (sky blue, orange, reddish purple, yellow, blue, vermillion, bluish green and a pale lilac), lightened to HSL lightness 0.55 to 0.7 for glow on black, each moved until it clears the semantic colours | Dim blue-grey at saturation 0.25 |
-| `cvd-safe`      | The same hues, ordered and tuned so every pair stays at least 20 apart under each Machado-2009 simulation                                                                                                                | Dim grey                         |
-| `high-contrast` | The `default` hues at lightness 0.72 with a rim twice as wide                                                                                                                                                            | Grey at 35% alpha with no halo   |
+| Palette         | Slots                                                                                                                                                                                                                                                               | Neutral                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `default`       | Okabe-Ito derived (sky blue, orange, reddish purple, yellow, blue, vermillion, bluish green and a pale lilac), lightened to HSL lightness 0.55 to 0.7 for glow on black, each moved until it clears the semantic colours (saturation as low as 0.25 for most slots) | Dim blue-grey at saturation 0.25 |
+| `cvd-safe`      | Hues and saturations tuned (lightness 0.3 to 0.85) so every pair stays at least 20 apart under each Machado-2009 simulation                                                                                                                                         | Dim grey                         |
+| `high-contrast` | Slots tuned at lightness 0.55 to 0.72 (no eight-colour set at exactly 0.72 clears the semantic colours) with a rim twice as wide                                                                                                                                    | Grey at 35% alpha with no halo   |
 
 `test/app/renderer/colors.test.js` computes CIEDE2000 (a hand-written helper in `test/app/renderer/helpers/color-metrics.js`) and requires, for every palette, every pair of slots and every slot against each semantic colour (food teal, the three scents, the alarm and eaten reds) to be at least 15 apart in normal vision and at least 10 apart under the Machado-2009 deuteranopia, protanopia and tritanopia matrices. A palette that fails fails the test.
 
@@ -431,14 +431,14 @@ resolution in constant memory.
 
 - A header: the silhouette in the lineage colour, the type, the family name (`familyName`) and the `genomeId`.
 - A radar: `rayCount` spokes around the silhouette, nose up, each as long as its proximity and coloured by its
-  strongest class channel (food, bigger, smaller, similar, kin, wall, obstacle, smoke).
+  strongest class channel (food, can bite me, I can bite it, other, kin, wall, obstacle, smoke).
 - Input bars, grouped and labelled from `ready.labels`: Body (energy, forward and lateral speed, turn rate, size,
   pregnant, ready to mate, age), Senses (danger and attack here, season sine and cosine, ate and bitten recently, type),
   Temperature (4), Scent antennae (danger left and right, attack left and right, hunt here, left and right) and Heard
   calls (alarm loudness, ahead, side; hunt loudness, ahead, side).
 - The hidden layer as a grid of cells (`brainHidden`, 8 wide), diverging blue to orange by activation, each cell's
   brightness following the activation smoothed at 25% per frame.
-- The 8 outputs as labelled bars (thrust, turn, sprint, mate, bite, alarm, smoke, hunt call); a bar lights while its
+- The 11 outputs as labelled bars (thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split, memory A and B); a bar lights while its
   action fires (output above 0; smoke above `smokeThreshold`).
 - Counters: type, family, generation, age (ticks and seasons), energy (percent), temperature with its band name,
   food energy eaten, bite energy taken, kills, children and fitness so far.
@@ -634,6 +634,7 @@ tooling widened to `js/worker/` and `js/app/`. Done when `test/worker/sim-host.t
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms, browser.main_long_tasks
 
 > **Note:** built on draft PR 56 (`feat/renderer-phase-3`, 2026-10-17) and paused by the user to leave capacity for world work: T20 to T24, T26, T40 to T46 and the T25 wiring are committed with tests (`uplot` 1.6.32 added); the last commit is WIP (the dupes fix and a coverage test not re-run). Next: run the gate and `SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke`, merge, then the user measures `browser.frame_p95_ms` at most 8.4, `browser.draw_cpu_p95_ms` at most 3.0 and no long tasks after 5 s on the 4K 240 Hz OLED with all four lenses and the charts drawer open, recorded in `bench/browser-baseline.json`; T27 follows.
+> Update (2026-10-17): PR 56 is merged with its gate green; the phase stays unbuilt until the user measures the budgets on the 4K OLED.
 
 The full top bar, ticker, drawers, `uPlot` charts, inspector, the four lenses, controls, shortcuts, help and
 preferences. The first-minute and legibility work belongs here too: the title card with its legend, the status line and
@@ -792,7 +793,7 @@ budget; lint, typecheck and Prettier cover all of `js/`.
 5. Press `2`: amber, red and violet haze appear and drift. Press `4`: ray fans and call rings appear. Watch for a
    predator with its jaw wedge open, a bite flash at the jaw, an alarm ring, a hunt ring and a smoke puff that dims the
    agents inside it. Press `1`: agents tint blue to orange. Press `3`: family territories fade in and out.
-6. Click an agent: the inspector opens with the labelled input bars, the pulsing hidden grid, the eight output bars and
+6. Click an agent: the inspector opens with the labelled input bars, the pulsing hidden grid, the eleven output bars and
    the counters; its rays and antennae draw in the world; `F` follows it; when it dies the selection clears.
 7. Press `C`: five charts update; close the drawer and the page stays smooth. Press `H`: the HUD hides.
 8. Leave the page untouched for 10 s: the cursor hides and the director glides to a moment with a caption (a

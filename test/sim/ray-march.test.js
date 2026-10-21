@@ -5,7 +5,7 @@ import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
-const CH = { prox: 0, food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
+const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
 const VISION = 300;
 
 /**
@@ -39,27 +39,50 @@ describe('castRays classes', () => {
     });
 
     it.each([
-        ['a bigger agent', 40, CH.bigger],
-        ['a smaller agent', 10, CH.smaller],
-        ['a similar agent', 20.1, CH.similar],
-    ])('classifies %s', (_name, otherSize, channel) => {
+        ['an agent that can bite me', { me: 0, other: 1, otherSize: 40 }, CH.threat],
+        ['an agent I can bite', { me: 1, other: 0, otherSize: 10 }, CH.prey],
+        ['a bigger agent that cannot hunt', { me: 0, other: 0, otherSize: 40 }, CH.other],
+        ['a smaller agent when I cannot hunt', { me: 0, other: 0, otherSize: 10 }, CH.other],
+        ['a similar-size hunter', { me: 1, other: 1, otherSize: 20.1 }, CH.other],
+        ['a hunter of equal size', { me: 1, other: 1, otherSize: 20 }, CH.other],
+    ])('classifies %s', (_name, { me: meSpec, other, otherSize }, channel) => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
-        addAgent(w, 600, 500, otherSize);
+        const them = addAgent(w, 600, 500, otherSize);
+        w.spec[me] = meSpec;
+        w.spec[them] = other;
+        w.angle[them] = Math.PI;
         cast(w, me);
         const r = rayValues(w, me, 0);
-        expect(r[CH.prox]).toBeCloseTo(1 - (100 - otherSize) / VISION, 6);
-        expect(r.slice(1).map((v, i) => (i + 1 === channel ? 1 : 0))).toEqual(r.slice(1));
+        const proximity = 1 - (100 - otherSize) / w.visionBySpec[meSpec];
+        expect(r[CH.prox]).toBeCloseTo(proximity, 6);
+        expect(r[channel]).toBeCloseTo(proximity, 6);
+        expect(r.slice(1).filter((v) => v !== 0)).toHaveLength(1);
+    });
+
+    it('calls a hunter a threat from any angle, its jaws facing away or not', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const them = addAgent(w, 600, 500, 40);
+        w.spec[them] = 1;
+        w.angle[them] = 0;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
+        w.angle[them] = Math.PI;
+        cast(w, me);
+        expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
     });
 
     it('lets kin override size', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const child = addAgent(w, 600, 500, 40);
+        w.spec[child] = 1;
+        w.angle[child] = Math.PI;
         w.parentA[child] = w.genomeId[me];
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.kin]).toBe(1);
-        expect(rayValues(w, me, 0)[CH.bigger]).toBe(0);
+        expect(rayValues(w, me, 0)[CH.kin]).toBeGreaterThan(0);
+        expect(rayValues(w, me, 0)[CH.threat]).toBe(0);
     });
 
     it('sees a cousin as non-kin', () => {
@@ -69,7 +92,7 @@ describe('castRays classes', () => {
         w.parentA[me] = 7;
         w.parentA[cousin] = 8;
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.other]).toBeGreaterThan(0);
         expect(rayValues(w, me, 0)[CH.kin]).toBe(0);
     });
 
@@ -123,9 +146,11 @@ describe('castRays classes', () => {
     it('hits a big agent centred in a neighbouring cell', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
-        addAgent(w, 500 + 128 * 2, 500, 120);
+        const big = addAgent(w, 500 + 128 * 2, 500, 120);
+        w.spec[big] = 1;
+        w.angle[big] = Math.PI;
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.bigger]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
     });
 
     it('takes the food over an agent at the same distance, and the agent over an obstacle', () => {
@@ -140,18 +165,20 @@ describe('castRays classes', () => {
         expect(rayValues(w, me, 0)[CH.food]).toBe(1);
         w.foodAlive[0] = 0;
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.other]).toBeGreaterThan(0);
     });
 
     it('breaks equal agent distances by the lower slot', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
+        const first = addAgent(w, 600, 500, 40);
         addAgent(w, 600, 500, 40);
-        addAgent(w, 600, 500, 40);
+        w.spec[first] = 1;
+        w.angle[first] = Math.PI;
         w.size[2] = 10;
         w.x[2] = 590;
         cast(w, me);
-        expect(rayValues(w, me, 0)[CH.bigger]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
     });
 
     it('turns the rays with the heading', () => {
@@ -193,7 +220,7 @@ describe('castRays smoke', () => {
         addAgent(w, 280, 500, 20);
         cast(w, me);
         expect(rayValues(w, me, 0)[CH.smoke]).toBe(0);
-        expect(rayValues(w, me, 0)[CH.similar]).toBe(1);
+        expect(rayValues(w, me, 0)[CH.other]).toBeGreaterThan(0);
     });
 
     it('hits a cloud at distance 0 when the ray starts inside it', () => {
@@ -305,6 +332,34 @@ function brute(w, me, k) {
     return best;
 }
 
+/**
+ * Reference class of an agent hit: written from the bite rule in the plan, not shared with the code under test.
+ * @param {ReturnType<typeof senseWorld>} w
+ * @param {number} me
+ * @param {number} other
+ * @returns {number} the channel
+ */
+function bruteAgentClass(w, me, other) {
+    /** @type {(a: number, b: number) => boolean} */
+    const kin = (a, b) =>
+        w.parentA[a] === w.genomeId[b] ||
+        w.parentB[a] === w.genomeId[b] ||
+        w.parentA[b] === w.genomeId[a] ||
+        w.parentB[b] === w.genomeId[a];
+    /** @type {(a: number, b: number) => boolean} */
+    const bites = (a, b) => {
+        const hunts = Object.values(w.config.specialisations).find((e) => e.index === w.spec[a]).canHunt;
+        return hunts && w.size[a] > w.config.huntSizeRatio * w.size[b];
+    };
+    if (kin(me, other)) {
+        return CH.kin;
+    }
+    if (bites(other, me)) {
+        return CH.threat;
+    }
+    return bites(me, other) ? CH.prey : CH.other;
+}
+
 describe('castRays against a brute-force caster', () => {
     it.each(Array.from({ length: 30 }, (_, i) => i + 1))('matches on seeded world %i', (seed) => {
         const rng = createRng(seed);
@@ -315,6 +370,8 @@ describe('castRays against a brute-force caster', () => {
             w.angle[a] = (nextFloat(rng) - 0.5) * 6;
             w.spec[a] = Math.floor(nextFloat(rng) * 4);
         }
+        w.parentA[3] = w.genomeId[2];
+        w.parentA[7] = w.genomeId[1];
         for (let i = 0; i < 40; i++) {
             addFood(w, place(), place(), 5 + nextFloat(rng) * 25);
         }
@@ -336,9 +393,13 @@ describe('castRays against a brute-force caster', () => {
                 const expected = ref.t === Infinity ? 0 : 1 - ref.t / range;
                 expect(got[0]).toBeCloseTo(expected, 5);
                 const kinds = [[1], [2, 3, 4, 5], [7], [6], [8]][ref.kind];
-                const hot = got.slice(1).flatMap((v, n) => (v === 1 ? [n + 1] : []));
+                const hot = got.slice(1).flatMap((v, n) => (v !== 0 ? [n + 1] : []));
                 expect(hot.length).toBe(ref.t === Infinity ? 0 : 1);
                 expect(hot.every((c) => kinds.includes(c))).toBe(true);
+                if (ref.kind === 1) {
+                    expect(hot[0]).toBe(bruteAgentClass(w, me, ref.idx));
+                    expect(got[hot[0]]).toBeCloseTo(got[0], 12);
+                }
             }
         }
     });
