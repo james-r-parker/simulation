@@ -1,6 +1,6 @@
 // Runs every alive agent's Elman RNN brain forward one step, in the contract's summation order.
 
-import { detTanh, detTanhInto } from './det-math.js';
+import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
 
 /**
@@ -94,9 +94,11 @@ function hiddenStep(world, slot) {
     addRecurrent(world, slot);
     if (world.config.leakEnabled) {
         const hBase = slot * H;
+        const { leakRate } = world;
+        detTanhInto(acc, acc, 0, H); // in place: each group of four is read whole before it is written
         for (let j = 0; j < H; j++) {
-            const a = world.leakRate[hBase + j];
-            hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * detTanh(acc[j]));
+            const a = leakRate[hBase + j];
+            hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * acc[j]);
         }
         return;
     }

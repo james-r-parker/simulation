@@ -459,3 +459,7 @@ test context (`test('x', async ({ bench }) => { await bench('name', fn).run() })
 bench options writes `{ latency, throughput, period, totalTime }` (each with `mean` and `rme`) to a path inside the
 project root, which `scripts/bench-micro.mjs` reads back. The import of a bench file's modules is most of its run time
 (about 30 s for the eight files; the benches themselves take about 20 s).
+
+### 2026-10-21 - A microbench win can be a loss in the full step
+
+`hebbianStep` with a ternary clamp and an unrolled loop was 37.5% faster in `bench:micro` and 7% to 14.5% slower on the brain phase of the full step with every feature on (old and new trees benched at the same time on separate cores, 5 runs). The micro state repeats one call on one world, so branches and caches behave differently from a living world. Confirm a microbench gain with `bench.phase_ms.*@500defaults` before keeping it. Benching old and new at the same time on separate cores cancels host noise that swung sequential runs by 30%.

@@ -112,3 +112,36 @@ describe('forwardAll with leaky hidden units', () => {
         }
     });
 });
+
+describe('the leaky update against the per-unit rule', () => {
+    it('takes the plain tanh whole at rate 1 and blends below it, with saturated and zero pre-activations', () => {
+        for (let seed = 1; seed <= 20; seed++) {
+            const off = randomWorld({}, seed);
+            const on = randomWorld({ leakEnabled: true }, seed);
+            const { layout } = on;
+            const H = layout.hidden;
+            for (const world of [off, on]) {
+                const row = layout.weightCount;
+                for (let i = 0; i < layout.weightCount; i++) {
+                    world.weights[row + i] = on.weights[row + i] * (seed % 2 === 0 ? 40 : 1);
+                }
+                world.weights.fill(0, row + layout.bHidden, row + layout.bHidden + 3);
+            }
+            for (let j = 0; j < H; j++) {
+                on.leakRate[H + j] = j % 2 === 0 ? 1 : 0.05 + (0.9 * j) / H;
+            }
+            const old = Array.from(on.hidden.subarray(H, 2 * H));
+            forwardAll(off);
+            forwardAll(on);
+            for (let j = 0; j < H; j++) {
+                const a = on.leakRate[H + j];
+                const blend = (1 - a) * old[j] + a * off.hidden[H + j];
+                if (a === 1) {
+                    expect(on.hidden[H + j]).toBe(off.hidden[H + j]); // the plain tanh, bit for bit
+                } else {
+                    expect(on.hidden[H + j]).toBeCloseTo(blend, 6);
+                }
+            }
+        }
+    });
+});
