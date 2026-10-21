@@ -97,3 +97,43 @@ export function lineageTurnover(observer) {
     }
     return span > 0 ? ok((turnovers * TURNOVER_PER_TICKS) / span) : none('no ticks after burn-in');
 }
+
+const SPEC_BITS = 5;
+
+/**
+ * @param {number} bits a bit set
+ * @returns {number} how many of the lowest `SPEC_BITS` bits are set
+ */
+function countSpecBits(bits) {
+    let n = 0;
+    for (let b = 0; b < SPEC_BITS; b++) {
+        n += (bits >> b) & 1;
+    }
+    return n;
+}
+
+/**
+ * Specialisation extinctions (alive at the previous checkpoint, none now) plus returns (none, then alive again),
+ * between each checkpoint at or after burn-in and the one before it, per `TURNOVER_PER_TICKS` ticks after burn-in.
+ * @param {Record<string, any>} observer the observer
+ * @returns {import('./metrics-stats.js').MetricResult} the turnover rate
+ */
+export function specTurnover(observer) {
+    const { series, checkpointCount } = observer;
+    const span = observer.ticks - BURN_IN_TICKS;
+    let after = 0;
+    let changes = 0;
+    for (let i = 0; i < checkpointCount; i++) {
+        if (series.tick[i] < BURN_IN_TICKS) {
+            continue;
+        }
+        after++;
+        if (i > 0) {
+            changes += countSpecBits(series.specMask[i] ^ series.specMask[i - 1]);
+        }
+    }
+    if (after === 0) {
+        return none('no checkpoint after burn-in');
+    }
+    return span > 0 ? ok((changes * TURNOVER_PER_TICKS) / span) : none('no ticks after burn-in');
+}

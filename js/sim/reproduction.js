@@ -4,6 +4,7 @@ import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { readyToMate } from './mate-eligibility.js';
+import { childSpec } from './heritable-spec.js';
 import { findMate } from './mate-search.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
@@ -146,7 +147,7 @@ function giveBirth(world, policy, mother, cause) {
     world.lineageId[child] = world.lineageId[mother];
     world.parentA[child] = world.genomeId[mother];
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
-    world.spec[child] = world.spec[mother];
+    world.spec[child] = childSpec(world, mother);
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);

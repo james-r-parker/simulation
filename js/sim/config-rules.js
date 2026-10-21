@@ -34,6 +34,8 @@ export const FEATURE_RULES = {
     digestTicks: int(0, 30),
     handlingTicks: int(0, 30),
     handlingThrust: num(0, 1),
+    specMutationRate: num(0, 1),
+    huntUpkeep: num(0),
     floorRescueAtZero: BOOL,
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),

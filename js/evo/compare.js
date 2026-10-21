@@ -24,6 +24,7 @@ const DIRECTIONS = {
     'eval.diversity': 'higher',
     'eval.lineages_alive': 'higher',
     'eval.lineage_turnover': 'higher',
+    'eval.spec_turnover': 'watch',
     'eval.behaviour_coverage': 'higher',
     'eval.motion_coverage': 'watch',
     'eval.predator_share_cv': 'watch',
