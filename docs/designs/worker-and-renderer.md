@@ -431,7 +431,7 @@ resolution in constant memory.
 
 - A header: the silhouette in the lineage colour, the type, the family name (`familyName`) and the `genomeId`.
 - A radar: `rayCount` spokes around the silhouette, nose up, each as long as its proximity and coloured by its
-  strongest class channel (food, bigger, smaller, similar, kin, wall, obstacle, smoke).
+  strongest class channel (food, can bite me, I can bite it, other, kin, wall, obstacle, smoke).
 - Input bars, grouped and labelled from `ready.labels`: Body (energy, forward and lateral speed, turn rate, size,
   pregnant, ready to mate, age), Senses (danger and attack here, season sine and cosine, ate and bitten recently, type),
   Temperature (4), Scent antennae (danger left and right, attack left and right, hunt here, left and right) and Heard

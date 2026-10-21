@@ -27,9 +27,9 @@ export const INSPECT_COUNTERS = Object.freeze([
 const RAY_CHANNEL_NAMES = Object.freeze([
     'proximity',
     'food',
-    'bigger',
-    'smaller',
-    'similar',
+    'can bite me',
+    'I can bite it',
+    'other',
     'kin',
     'wall',
     'obstacle',

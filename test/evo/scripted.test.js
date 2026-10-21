@@ -10,7 +10,7 @@ import { OUTPUT_COUNT, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 const SEEK = Math.fround(SEEK_THRUST);
 
 const RAYS = 16;
-const CH = { food: 1, bigger: 2, smaller: 3, similar: 4, kin: 5, wall: 6, obstacle: 7 };
+const CH = { food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7 };
 
 /**
  * A tiny world with every agent's rays empty; returns it with a controller of the given name.
@@ -25,7 +25,7 @@ function setup(name, seed = 1) {
 }
 
 /**
- * Puts a hit on ray `k` of `slot`: proximity and one class flag.
+ * Puts a hit on ray `k` of `slot`: proximity and one class channel (an agent class holds the proximity, as `castRays` writes it).
  * @param {Record<string, any>} world
  * @param {number} slot
  * @param {number} k
@@ -35,7 +35,7 @@ function setup(name, seed = 1) {
 function hit(world, slot, k, channel, proximity = 0.5) {
     const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
     world.inputs[base] = proximity;
-    world.inputs[base + channel] = 1;
+    world.inputs[base + channel] = channel >= CH.threat && channel <= CH.kin ? proximity : 1;
 }
 
 /**
@@ -104,7 +104,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         const { world, run } = setup('foodSeeker');
         hit(world, 0, 3, CH.food, 0.2);
         hit(world, 0, 13, CH.food, 0.9);
-        hit(world, 0, 5, CH.bigger, 0.99);
+        hit(world, 0, 5, CH.threat, 0.99);
         run(world);
         expect(out(world)[1]).toBe(-1);
     });
@@ -126,8 +126,8 @@ describe('SCRIPTED_CONTROLLERS', () => {
 
     it('bumper turns towards the nearest agent of any class and ignores food', () => {
         const { world, run } = setup('bumper');
-        hit(world, 0, 2, CH.similar, 0.3);
-        hit(world, 0, 14, CH.smaller, 0.8);
+        hit(world, 0, 2, CH.other, 0.3);
+        hit(world, 0, 14, CH.prey, 0.8);
         hit(world, 0, 4, CH.food, 0.99);
         hit(world, 1, 12, CH.kin, 0.4);
         run(world);
@@ -136,10 +136,10 @@ describe('SCRIPTED_CONTROLLERS', () => {
         expect(out(world, 2)[1]).toBe(0);
     });
 
-    it('biteSeeker steers to the nearest bigger agent, not a smaller one, and never bites', () => {
+    it('biteSeeker steers to the nearest threat, not prey, and never bites', () => {
         const { world, run } = setup('biteSeeker');
-        hit(world, 0, 2, CH.smaller, 0.9);
-        hit(world, 0, 14, CH.bigger, 0.3);
+        hit(world, 0, 2, CH.prey, 0.9);
+        hit(world, 0, 14, CH.threat, 0.3);
         run(world);
         expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0]);
     });

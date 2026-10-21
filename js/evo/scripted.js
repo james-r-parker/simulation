@@ -6,7 +6,7 @@ import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 import { INTENT_CONTROLLERS } from './scripted-intent.js';
 import {
-    CH_BIGGER,
+    CH_THREAT,
     CH_FIRST_AGENT,
     CH_FOOD,
     CH_LAST_AGENT,
@@ -89,7 +89,7 @@ function bumper() {
 /** @type {ControllerFactory} */
 function biteSeeker() {
     return eachAlive((world, slot) => {
-        const k = nearestClassRay(world, slot, CH_BIGGER, CH_BIGGER);
+        const k = nearestClassRay(world, slot, CH_THREAT, CH_THREAT);
         write(world, slot, 1, turnTowards(k, world.config.rayCount));
     });
 }

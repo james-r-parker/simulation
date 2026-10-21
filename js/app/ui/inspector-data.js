@@ -14,9 +14,9 @@ export const HEATMAP_COLUMNS = 8;
 /** The class channels a spoke is coloured by, after the proximity channel. */
 export const CLASS_CHANNELS = Object.freeze([
     'food',
-    'bigger',
-    'smaller',
-    'similar',
+    'can bite me',
+    'I can bite it',
+    'other',
     'kin',
     'wall',
     'obstacle',

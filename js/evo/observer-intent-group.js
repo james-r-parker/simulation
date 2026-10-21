@@ -56,7 +56,7 @@ function countKin(intent, world, from, to) {
 
 /**
  * Takes one grouping sample over every alive agent without `canHunt`; an agent is threatened when its nearest
- * bigger-class hit is at proximity `THREAT_PROXIMITY` or more this tick. Each lineage is counted on its own, so the
+ * channel-2 ("can bite me") hit is at proximity `THREAT_PROXIMITY` or more this tick. Each lineage is counted on its own, so the
  * cost follows the sum of squared lineage sizes, not the square of the population.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world

@@ -38,10 +38,10 @@ describe('playPredatorWorld layout options', () => {
         const { world } = playPredatorWorld(1, 1, {
             world: survivableWorld,
             predatorEvery: 4,
-            config: { maxFood: 70 },
+            config: { maxFood: 170 },
         });
         expect(world.config.worldWidth).toBe(survivableWorld.worldWidth);
-        expect(world.config.maxFood).toBe(70);
+        expect(world.config.maxFood).toBe(170);
         expect(census(world).predators).toBe(survivableWorld.initialAgents / 4);
     });
 });
