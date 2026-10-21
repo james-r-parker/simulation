@@ -123,7 +123,7 @@ function fieldNames(world) {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -136,6 +136,7 @@ function buildViews(world) {
         vision: bytesOf(world, 'vision'),
         baseSize: bytesOf(world, 'baseSize'),
         sex: bytesOf(world, 'sex'),
+        birthRing: bytesOf(world, 'birthRing'),
         rngSources: [],
         rngViews: [],
     };
@@ -203,6 +204,9 @@ export function hashWorld(world) {
     if (world.config.traitsEnabled) {
         fnv64Bytes(digest, views.vision);
         fnv64Bytes(digest, views.baseSize);
+    }
+    if (world.config.maxBirthsPerWindow > 0) {
+        fnv64Bytes(digest, views.birthRing);
     }
     if (world.config.sexesEnabled) {
         fnv64Bytes(digest, views.sex);

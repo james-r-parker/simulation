@@ -1,5 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
+import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
@@ -98,7 +99,7 @@ function agentSpecs(layout) {
  */
 function allocAgentArrays(world, layout) {
     const n = world.config.maxAgents;
-    world.agentRows = allocRows(world, agentSpecs(layout), n);
+    world.agentRows = allocRows(world, [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow)], n);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
     // The last hidden row is the scratch row, which is not an agent row.
     world.agentRows.push({ array: world.hidden.subarray(0, n * layout.hidden), stride: layout.hidden });

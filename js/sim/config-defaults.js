@@ -69,6 +69,8 @@ export const DEFAULTS = deepFreeze({
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
     sexesEnabled: false, // new: two sexes, female choice of the strongest male, SPLIT-gated splitting (world-balance T37)
     splitCost: 50, // new: energy a female pays to split when sexes are on
+    birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
+    maxBirthsPerWindow: 0, // new: births (mating or splitting) a mother may have per span; 0 is off, 3 is the switch-on value
     maxAgeTicks: 36000, // new
     reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
