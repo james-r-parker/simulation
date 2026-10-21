@@ -437,3 +437,12 @@ the Phase 1 ladder in brackets: forage `random` 12.7 (17.3), `wanderer` 0 (0), `
 - `hunter` against `fleer` still nearly empties the world. Prey that see hunters from any angle still lose; the
   Phase 5 night should check that fleeing is not dominated before it tunes predation.
 - The forage ladder is still a cliff between `sloppyForager` (dies out) and `foodSeeker` (B2).
+
+### 2026-10-21 - V8 block counters wrap at 2^32 and break branch coverage
+
+`vitest --coverage` (v8) merges block counts as unsigned 32-bit numbers. `circleHit` in `js/sim/ray-march.js` runs about
+4.5 billion times in the whole suite (the slow evo tests alone are 3.6 billion), so its call count wrapped past 2^32
+and the implicit "else" of its early-return `if` (call count minus the hot branch) came out negative, which
+`json-summary` counts as uncovered: `js/sim` branches read 99.87% against a baseline of 100% although every branch ran.
+`circleHit` is now branch-free (a 0/1 `valid` multiplier), so it has no block ranges to wrap. If a branch in a hot
+function reads as uncovered with negative counts in `coverage-final.json`, suspect the same wrap before adding tests.

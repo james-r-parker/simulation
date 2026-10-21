@@ -50,12 +50,13 @@ function wallDistance(origin, dir, extent) {
  */
 function circleHit(b, c) {
     const disc = b * b - c;
-    if (disc < 0 || (b > 0 && c > 0)) {
-        return -1;
-    }
-    const t = -b - Math.sqrt(disc);
+    // Branch-free: this runs once per ray and candidate, billions of times in the suite, which wraps V8's 32-bit
+    // block counter and made branch coverage read negative (sim-notes.md). `valid` is 1 when the ray reaches the
+    // circle (not behind it, and the discriminant is not negative), else 0 and the result is -1.
+    const valid = Number(disc >= 0) & (Number(b <= 0) | Number(c <= 0));
     // t < 0 means the origin is inside: a ray from outside (c > 0, b <= 0) always has -b >= sqrt(disc).
-    return t < 0 ? 0 : t;
+    const t = Math.max(0, -b - Math.sqrt(Math.max(disc, 0)));
+    return t * valid - (1 - valid);
 }
 
 /**
