@@ -5,6 +5,25 @@ import { createIntentState, resetIntentSlot } from '../../js/evo/observer-intent
 const config = createConfig({ maxAgents: 6, initialAgents: 0, minAgents: 0 });
 
 describe('createIntentState', () => {
+    it('gives the food and prey target views the very arrays the state holds under their names', () => {
+        const intent = createIntentState(config);
+        expect(intent.food.bits).toBe(intent.foodBits);
+        expect(intent.food.seen).toBe(intent.lastFood);
+        expect([intent.food.turn, intent.food.off, intent.food.start]).toEqual([
+            intent.foodTurn,
+            intent.foodOff,
+            intent.foodStart,
+        ]);
+        expect(intent.prey.bits).toBe(intent.preyBits);
+        expect(intent.prey.seen).toBe(intent.lastPrey);
+        expect([intent.prey.turn, intent.prey.off, intent.prey.start]).toEqual([
+            intent.preyTurn,
+            intent.preyOff,
+            intent.preyStart,
+        ]);
+        expect([intent.food.clears, intent.prey.clears]).toEqual([true, false]);
+    });
+
     it('sizes every per-slot array from maxAgents, with no sighting and no counts', () => {
         const intent = createIntentState(config);
         for (const name of ['lastFood', 'foodBits', 'deliberateFood', 'respondedEscape', 'episodeOpen']) {

@@ -3,7 +3,7 @@
 
 import { hunterTable } from './hunter-table.js';
 import { createHuntCalls } from './observer-intent-calls.js';
-import { SCAN_SIZE } from './ray-summary.js';
+import { SCAN, SCAN_SIZE } from './ray-summary.js';
 
 /** Ticks a sighting stays current. */
 export const INTENT_WINDOW = 30;
@@ -133,6 +133,27 @@ export function arcRays(config) {
 }
 
 /**
+ * What `trackTarget` and `isDeliberate` need about one kind of target, as direct references: its state arrays (the
+ * same arrays the intent state holds under their names) and its scan offsets. Named loads on one shape stay
+ * monomorphic where a keyed load by a name string did not.
+ * @param {Record<string, any>} intent the intent state with its slot arrays
+ * @param {boolean} food true for food, false for prey
+ * @returns {Record<string, any>} the target view
+ */
+function targetView(intent, food) {
+    return {
+        bits: food ? intent.foodBits : intent.preyBits,
+        seen: food ? intent.lastFood : intent.lastPrey,
+        turn: food ? intent.foodTurn : intent.preyTurn,
+        off: food ? intent.foodOff : intent.preyOff,
+        start: food ? intent.foodStart : intent.preyStart,
+        prox: food ? SCAN.FOOD : SCAN.PREY,
+        ray: food ? SCAN.FOOD_RAY : SCAN.PREY_RAY,
+        clears: food,
+    };
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} a fresh intent state: every slot reset, every run total 0
  */
@@ -152,7 +173,10 @@ export function createIntentState(config) {
     for (const [name, [Type, value]] of Object.entries(SLOT_FIELDS)) {
         intent[name] = new /** @type {any} */ (Type)(config.maxAgents).fill(value);
     }
-    return intent;
+    intent.food = targetView(intent, true);
+    intent.prey = targetView(intent, false);
+    // The keyed stores above leave the object in dictionary mode; the spread is a fast copy (world-balance T63).
+    return { ...intent };
 }
 
 /**

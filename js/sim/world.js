@@ -241,7 +241,7 @@ export function allocateWorld(config) {
     allocClouds(world);
     allocPatches(world);
     world.events = createEventRing(config.eventCapacity);
-    return world;
+    return { ...world };
 }
 
 /**
