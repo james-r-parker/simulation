@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_TYPE } from '../../js/sim/events.js';
 import { HEARD_STRIDE } from '../../js/sim/world.js';
+import { nearestHunterDistances } from '../../js/evo/observer-alarm.js';
 import { ALARM_RESPONSE_TICKS, observeCombat } from '../../js/evo/observer-combat.js';
 import { addBorn, nextTick, observed, pushCall } from './helpers/observer-world.js';
 
@@ -51,6 +52,33 @@ describe('alarm follow-up', () => {
         expect(combat.alarm.calls).toBe(1);
         expect(combat.alarm.matchedCalls).toBe(1);
         expect(combat.alarm.sum).toBeCloseTo(2 / world.config.maxVelocity, 5);
+    });
+
+    it('scores two calls of one tick, sharing a snapshot, as the sum of each call scored alone', () => {
+        /** @param {number[]} callers the slots that call this tick @returns {{sum: number, matched: number, records: number}} */
+        const run = (callers) => {
+            const { world, combat, ids } = scene();
+            const all = { ...ids, extra: addBorn(world, { x: 520, y: 740 }), far: addBorn(world, { x: 900, y: 520 }) };
+            world.events.count = 0;
+            for (const name of callers.map((c) => Object.keys(all)[c])) {
+                pushCall(world, EVENT_TYPE.ALARM_CALLED, all[name]);
+            }
+            observeCombat(combat, world);
+            nextTick(world, world.tick + ALARM_RESPONSE_TICKS);
+            setSpeed(world, all.hearer, 3);
+            setSpeed(world, all.control, 1);
+            setSpeed(world, all.far, 2);
+            observeCombat(combat, world);
+            const { sum, matchedCalls } = combat.alarm;
+            return { sum, matched: matchedCalls, records: combat.alarm.free.length };
+        };
+        const both = run([1, 3]);
+        const first = run([1]);
+        const second = run([3]);
+        expect(both.sum).toBe(first.sum + second.sum);
+        expect(both.matched).toBe(first.matched + second.matched);
+        expect(both.matched).toBeGreaterThan(0);
+        expect(both.records).toBe(2);
     });
 
     it('ignores agents that are dead or replaced at the second reading', () => {
@@ -111,5 +139,39 @@ describe('alarm follow-up', () => {
         expect(dist[ids.hunter]).toBe(to(ids.hunter, far));
         expect(dist[far]).toBe(to(far, ids.hunter));
         expect(dist[gone]).toBe(Infinity);
+    });
+
+    it('matches the naive all-pairs scan on random worlds, with coincident agents and dead slots', () => {
+        const { world, combat } = scene();
+        let seed = 12345;
+        const rand = () => {
+            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+            return seed / 4294967296;
+        };
+        for (let trial = 0; trial < 300; trial++) {
+            for (let slot = 0; slot < world.alive.length; slot++) {
+                world.spec[slot] = rand() < 0.3 ? PREDATOR : 0;
+                world.x[slot] = Math.floor(rand() * 3) * 90;
+                world.y[slot] = Math.floor(rand() * 3) * 70;
+                world.alive[slot] = rand() < 0.85 ? 1 : 0;
+            }
+            const naive = new Float64Array(world.alive.length).fill(Infinity);
+            const { alive, spec, x, y } = world;
+            for (let h = 0; h < alive.length; h++) {
+                if (alive[h] !== 1 || combat.alarm.hunterSpec[spec[h]] !== 1) {
+                    continue;
+                }
+                for (let s = 0; s < alive.length; s++) {
+                    const d2 = (x[s] - x[h]) ** 2 + (y[s] - y[h]) ** 2;
+                    if (alive[s] === 1 && s !== h && d2 < naive[s]) {
+                        naive[s] = d2;
+                    }
+                }
+            }
+            nearestHunterDistances(combat.alarm, world);
+            for (let s = 0; s < alive.length; s++) {
+                expect(combat.alarm.hunterDist[s]).toBe(alive[s] === 1 ? Math.sqrt(naive[s]) : naive[s]);
+            }
+        }
     });
 });

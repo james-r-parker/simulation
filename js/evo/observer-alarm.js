@@ -1,7 +1,9 @@
 // The observer's alarm follow-up. On an `AlarmCalled` event it records the speed of every alive agent without
 // `canHunt` as a hearer (alarm loudness above 0 in `heard`) or a control (outside `callRadius` of the caller), with
 // its distance band to the nearest `canHunt` agent. `ALARM_RESPONSE_TICKS` later the speed changes of the agents
-// still alive are read. Call records are pooled, so a steady run allocates nothing; the pool grows when it runs dry.
+// still alive are read. Every call of one tick shares a snapshot (genome, band and speed per slot; none of them depend
+// on the caller), so a call adds only its role row. Records and snapshots are pooled, so a steady run allocates
+// nothing; a pool grows when it runs dry.
 
 import { HEARD_STRIDE } from '../sim/world.js';
 
@@ -29,9 +31,18 @@ function length(dx, dy) {
  * @returns {Record<string, any>} an empty call record
  */
 function createRecord(slots) {
+    return { tick: 0, role: new Uint8Array(slots), snap: null };
+}
+
+/**
+ * @param {number} slots slots per snapshot
+ * @returns {Record<string, any>} an empty snapshot: `eligible` marks the slots a call may record
+ */
+function createSnap(slots) {
     return {
-        tick: 0,
-        role: new Uint8Array(slots),
+        tick: -1,
+        refs: 0,
+        eligible: new Uint8Array(slots),
         band: new Uint8Array(slots),
         genome: new Uint32Array(slots),
         speed: new Float32Array(slots),
@@ -49,9 +60,14 @@ export function createAlarmFollow(config, hunterSpec) {
         hunterSpec,
         slots: n,
         free: [],
+        freeSnaps: [],
+        snap: null,
+        nowSpeed: new Float64Array(n),
         queue: [],
         head: 0,
         hunterDist: new Float64Array(n),
+        hunterX: new Float64Array(n),
+        hunterY: new Float64Array(n),
         distTick: -1,
         bandHear: new Float64Array(BANDS),
         bandHearN: new Float64Array(BANDS),
@@ -64,31 +80,42 @@ export function createAlarmFollow(config, hunterSpec) {
 }
 
 /**
- * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity when none). The
- * nearest is found on squared distances and rooted once: the root is monotone, so the result is the same as rooting each.
+ * Fills `hunterDist` with every alive agent's distance to the nearest alive `canHunt` agent (Infinity
+ * when none); a hunter's entry is its distance to the nearest other hunter. The alive hunters' positions are packed
+ * once, so each agent scans a dense array. The nearest is found on squared distances and rooted once: the root
+ * is monotone, so the result is the same as rooting each.
  * @param {Record<string, any>} follow the follow-up
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
-function nearestHunterDistances(follow, world) {
+export function nearestHunterDistances(follow, world) {
     const { alive, spec, x, y } = world;
-    const dist = follow.hunterDist;
-    dist.fill(Infinity);
+    const { hunterSpec, hunterDist: dist, hunterX: hx, hunterY: hy } = follow;
+    let hunters = 0;
     for (let h = 0; h < alive.length; h++) {
-        if (alive[h] !== 1 || follow.hunterSpec[spec[h]] !== 1) {
-            continue;
-        }
-        for (let s = 0; s < alive.length; s++) {
-            const dx = x[s] - x[h];
-            const dy = y[s] - y[h];
-            const d2 = dx * dx + dy * dy;
-            if (alive[s] === 1 && s !== h && d2 < dist[s]) {
-                dist[s] = d2;
-            }
+        if (alive[h] === 1 && hunterSpec[spec[h]] === 1) {
+            hx[hunters] = x[h];
+            hy[hunters] = y[h];
+            hunters += 1;
         }
     }
+    let next = 0;
     for (let s = 0; s < alive.length; s++) {
-        dist[s] = alive[s] === 1 ? Math.sqrt(dist[s]) : dist[s];
+        if (alive[s] !== 1) {
+            dist[s] = Infinity;
+            continue;
+        }
+        const own = hunterSpec[spec[s]] === 1 ? next++ : -1;
+        const sx = x[s];
+        const sy = y[s];
+        let best = Infinity;
+        for (let h = 0; h < hunters; h++) {
+            const dx = sx - hx[h];
+            const dy = sy - hy[h];
+            const d2 = dx * dx + dy * dy;
+            best = d2 < best && h !== own ? d2 : best;
+        }
+        dist[s] = Math.sqrt(best);
     }
 }
 
@@ -98,6 +125,77 @@ function nearestHunterDistances(follow, world) {
  */
 function acquire(follow) {
     return follow.free.pop() ?? createRecord(follow.slots);
+}
+
+/**
+ * The snapshot of this tick's non-hunters: the first call of a tick fills it, later calls of the tick share it.
+ * @param {Record<string, any>} follow the follow-up
+ * @param {Record<string, any>} world the world after the step
+ * @returns {Record<string, any>} the snapshot, with one reference taken for the caller's record
+ */
+function snapshotOf(follow, world) {
+    let snap = follow.snap;
+    if (snap === null || snap.tick !== world.tick) {
+        if (snap !== null && snap.refs === 0) {
+            follow.freeSnaps.push(snap);
+        }
+        snap = follow.freeSnaps.pop() ?? createSnap(follow.slots);
+        snap.tick = world.tick;
+        snap.refs = 0;
+        follow.snap = snap;
+        nearestHunterDistances(follow, world);
+        fillSnapshot(follow, world, snap);
+    }
+    snap.refs += 1;
+    return snap;
+}
+
+/**
+ * @param {Record<string, any>} follow the follow-up, whose `hunterDist` is current
+ * @param {Record<string, any>} world the world after the step
+ * @param {Record<string, any>} snap the snapshot to fill
+ * @returns {void}
+ */
+function fillSnapshot(follow, world, snap) {
+    const { alive, spec, vx, vy } = world;
+    for (let s = 0; s < alive.length; s++) {
+        const dist = follow.hunterDist[s];
+        const eligible = alive[s] === 1 && dist !== Infinity && follow.hunterSpec[spec[s]] !== 1;
+        snap.eligible[s] = eligible ? 1 : 0;
+        if (eligible) {
+            snap.band[s] = Math.min(BANDS - 1, Math.floor(dist / BAND_PX));
+            snap.genome[s] = world.genomeId[s];
+            snap.speed[s] = length(vx[s], vy[s]);
+        }
+    }
+}
+
+/**
+ * Records an `AlarmCalled` event: each alive non-hunter's role at this tick (its band, genome id and speed are in the
+ * tick's snapshot).
+ * @param {Record<string, any>} follow the follow-up
+ * @param {Record<string, any>} world the world after the step
+ * @param {number} caller the caller's slot
+ * @returns {void}
+ */
+export function noteAlarm(follow, world, caller) {
+    follow.calls += 1;
+    const snap = snapshotOf(follow, world);
+    const record = acquire(follow);
+    record.tick = world.tick;
+    record.snap = snap;
+    const { role } = record;
+    role.fill(0);
+    const { x, y, heard } = world;
+    const { callRadius } = world.config;
+    for (let s = 0; s < role.length; s++) {
+        if (snap.eligible[s] === 0 || s === caller) {
+            continue;
+        }
+        const outside = length(x[s] - x[caller], y[s] - y[caller]) > callRadius;
+        role[s] = roleOf(heard[s * HEARD_STRIDE] > 0, outside);
+    }
+    follow.queue.push(record);
 }
 
 /**
@@ -113,39 +211,8 @@ function roleOf(heard, outside) {
 }
 
 /**
- * Records an `AlarmCalled` event: each alive non-hunter's role, band, genome id and speed at this tick.
- * @param {Record<string, any>} follow the follow-up
- * @param {Record<string, any>} world the world after the step
- * @param {number} caller the caller's slot
- * @returns {void}
- */
-export function noteAlarm(follow, world, caller) {
-    follow.calls += 1;
-    if (follow.distTick !== world.tick) {
-        nearestHunterDistances(follow, world);
-        follow.distTick = world.tick;
-    }
-    const record = acquire(follow);
-    record.tick = world.tick;
-    record.role.fill(0);
-    const { alive, spec, x, y, vx, vy } = world;
-    for (let s = 0; s < alive.length; s++) {
-        const dist = follow.hunterDist[s];
-        if (alive[s] !== 1 || s === caller || dist === Infinity || follow.hunterSpec[spec[s]] === 1) {
-            continue;
-        }
-        const outside = length(x[s] - x[caller], y[s] - y[caller]) > world.config.callRadius;
-        record.role[s] = roleOf(world.heard[s * HEARD_STRIDE] > 0, outside);
-        record.band[s] = Math.min(BANDS - 1, Math.floor(dist / BAND_PX));
-        record.genome[s] = world.genomeId[s];
-        record.speed[s] = length(vx[s], vy[s]);
-    }
-    follow.queue.push(record);
-}
-
-/**
  * Adds the speed changes of the agents of `record` that are alive now into the per-band sums.
- * @param {Record<string, any>} follow the follow-up
+ * @param {Record<string, any>} follow the follow-up, whose `nowSpeed` holds this tick's speeds
  * @param {Record<string, any>} world the world
  * @param {Record<string, any>} record the call record
  * @returns {void}
@@ -155,14 +222,14 @@ function accumulate(follow, world, record) {
     follow.bandHearN.fill(0);
     follow.bandCtl.fill(0);
     follow.bandCtlN.fill(0);
-    for (let s = 0; s < record.role.length; s++) {
-        const role = record.role[s];
-        if (role === 0 || world.alive[s] !== 1 || world.genomeId[s] !== record.genome[s]) {
+    const { snap, role } = record;
+    for (let s = 0; s < role.length; s++) {
+        if (role[s] === 0 || world.alive[s] !== 1 || world.genomeId[s] !== snap.genome[s]) {
             continue;
         }
-        const change = length(world.vx[s], world.vy[s]) - record.speed[s];
-        const band = record.band[s];
-        if (role === HEARER) {
+        const change = follow.nowSpeed[s] - snap.speed[s];
+        const band = snap.band[s];
+        if (role[s] === HEARER) {
             follow.bandHear[band] += change;
             follow.bandHearN[band] += 1;
         } else {
@@ -205,14 +272,47 @@ function scoreCall(follow, world, record) {
  */
 export function resolveAlarms(follow, world) {
     const { queue } = follow;
+    if (follow.head < queue.length && queue[follow.head].tick + ALARM_RESPONSE_TICKS <= world.tick) {
+        fillNowSpeed(follow, world);
+    }
     while (follow.head < queue.length && queue[follow.head].tick + ALARM_RESPONSE_TICKS <= world.tick) {
         const record = queue[follow.head];
         scoreCall(follow, world, record);
-        follow.free.push(record);
+        release(follow, record);
         follow.head += 1;
     }
     if (follow.head === queue.length) {
         queue.length = 0;
         follow.head = 0;
+    }
+}
+
+/**
+ * @param {Record<string, any>} follow the follow-up
+ * @param {Record<string, any>} record a scored record: back to the pool, and its snapshot too once no record uses it
+ * @returns {void}
+ */
+function release(follow, record) {
+    follow.free.push(record);
+    const { snap } = record;
+    snap.refs -= 1;
+    if (snap.refs === 0 && snap !== follow.snap) {
+        follow.freeSnaps.push(snap);
+    }
+    record.snap = null;
+}
+
+/**
+ * Computes every alive agent's speed once for the calls scored this tick.
+ * @param {Record<string, any>} follow the follow-up
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function fillNowSpeed(follow, world) {
+    const { alive, vx, vy } = world;
+    for (let s = 0; s < alive.length; s++) {
+        if (alive[s] === 1) {
+            follow.nowSpeed[s] = length(vx[s], vy[s]);
+        }
     }
 }
