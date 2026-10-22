@@ -1,7 +1,7 @@
 # World balance and biology
 
-**Status:** In progress - Phases 1, 2 and 3 built; Phase 4 integrates and verifies every feature switched on, Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
-**Validated:** aa25337 (2026-10-17)
+**Status:** In progress - Phases 1, 2, 3 and 4 built (Phase 4 closed with three failures that remain, user 2026-10-22); Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
+**Validated:** 46097eb (2026-10-22)
 **Priority:** 1 - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
 
@@ -823,11 +823,11 @@ Manager row in the Decisions table contradicts a user row. Findings:
 Doc fixes made here: the spatial-hash sentence now matches the Decisions row, the `terrainLayout` and
 `plantFoodValue` defaults say what the code defaults are, and T40's "budget is not met" says T63 met it.
 
-### Phase 4 - Integrate and verify
+### Phase 4 - Integrate and verify (built)
 
 **Targets:** eval.mating_share, eval.lineages_alive, eval.births_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan
 
-> **Note:** state at T61 (2026-10-22), before the review in T62. The 4-seed screens (T59, `E31` and `E32`, built as the
+> **Note:** built 2026-10-22; state at T62 (the review, below). The 4-seed screens (T59, `E31` and `E32`, built as the
 > `npm run screen` tool in T67) found collapses on `hebbianRate` 0.01 (born_share 0.18), on `sexesEnabled` (0.15, population
 > at the floor on every seed) and on `minAgents` 40, 60 and 80 (population pinned at the floor). Adjusted: `hebbianRate` 0.01
 > to 0.0001 in `FEATURES_ON` (born_share 0.86 in the screen); sexes reworked (T69: splitting asexual for both sexes, the `SPLIT`
@@ -845,8 +845,9 @@ Doc fixes made here: the spatial-hash sentence now matches the Decisions row, th
 > criteria on the traces (`seedChecks`): population above `minAgents` on 32 of 32 seeds, `eval.catch_rate` above 0 on 17 of 32,
 > at least 5 lineages on 32 of 32, largest specialisation at most 70% on 9 of 32, population below `maxAgents` on 32 of 32. The
 > failures that remain, as reported to the user: predators die out (`eval.catch_rate` 0 on 15 of 32 seeds), specialisation
-> dominates (largest specialisation over 70% on 23 of 32 seeds), and mean `eval.mating_share` is 0.056 against 0.2. Phase 4 stays
-> unbuilt until T62 reviews it.
+> dominates (largest specialisation over 70% on 23 of 32 seeds), and mean `eval.mating_share` is 0.056 against 0.2. T62 reviewed Phase 4 and found no blocker (Review (T62), below); the user decided
+> to close the phase with those failures (Decisions, 2026-10-22), so it is built. Next: T15 (Phase 5 plan), then predator-prey Phase 3
+> (fitnessV2); T70 and T71 (Review (T62)) come before the Phase 5 night.
 
 Every open Phase 1 to 3 PR is merged first and no new feature starts until they are (user, 2026-10-17). Then a 4-seed
 screen (seed offset 28, 200000 ticks, the live policy) runs the defaults and each feature switched on alone, so a
@@ -1181,6 +1182,65 @@ The collapse (B18 and catch) criteria fail on seeds that the population itself d
 
 Ladder (`npm run ladder`, defaults, 10000 ticks, seeds 1-3, report `evals/ladder/b5eef4b-3x10000.json`): the 8 rungs run, with `wanderer` and `hunter-vs-fleer` at final population 0, `random` at 65, and the rest saturated near 450 of 500. `npx vitest run test/evo/anti-exploit.slow.test.js`: 51 passed, 14 expected failures (65 tests). `test/evo/deliberate-controllers.slow.test.js`: 43 passed. `test/evo/survivable-world.slow.test.js`: 6 passed.
 
+**Review (T62, 2026-10-22).** Read against `origin/main` at `46097eb`, from the code and the committed evidence, not the
+notes. Checked: `npm ci`; `npx vitest run test/sim/golden` and `test/worker/sim-host.slow.test.js` (pass: default
+`2a03aeaa71df1be6`, busy `abe82332e76125d8`, short default `68b19afca2d2739e`, short busy `d3f0c6c10d19fd18`, busy effect
+stream `ffc76622f21cfa4a`, 6537 records); `npm run browser:hash` on a quiet machine (Chromium 156: default and busy equal
+`test/sim/golden.json`); `DEFAULTS` against `FEATURES_ON` (every key equal; `createConfig(FEATURES_ON)` equals
+`createConfig({})`, `minAgents` 40, predator `plantFoodValue` 0) and against `FEATURES_OFF` (the old world: predator
+`plantFoodValue` 1, `minAgents` 40 only because `scripts/bench.mjs` sets it to the size, `obstacleCount` 25, `hashCellSize`
+128; `BENCH_CONFIG` spreads it); the T41 test diff (`adb839d^` to `2a88b6a`, 55 files): every removed assertion has an
+equivalent that spreads `FEATURES_OFF`, or asserts the off state, or asserts the new default (`test/features-on.test.js`
+checks every `FEATURES_ON` key against the defaults), and none is weakened; the T59 table against
+`evals/screens/results/table.md` and all 29 `.report.json` files (every mean equal; the population mean is the report's
+checkpoint mean, 2 to 3% above the all-samples mean of the detail files, as it excludes burn-in); the T68, T69 and margin
+sweep tables against `evals/screens/results/{t68,t69,capmargin}/table.md`; the T60 table (the arithmetic: +36%, +0.86 ms,
+13x); the `E28` per-seed table and every `E28` and `E27` mean, recomputed with `seedChecks` on the committed report (32
+of 32 rows equal; 32, 17, 32, 9, 32 passes; the Target changes +52.9%, +43.8%, -30.6%, -47.6%, -63.1% equal); the configs
+of `E28`, `E29` and both baselines equal `createConfig({})` apart from `seed`, and the sim and policy code did not change
+between the baselines' `sha` (`2f69218`) and `E28`'s (`b5eef4b`); `npm run eval:power` on the 64-seed report; the tests
+T68 and T69 name. `bench-check` and the full gate are left to the PR. No Manager row in the Decisions table contradicts
+a user row.
+
+**Can Phase 4 be marked built?** Yes, on the user's decision and not on the done criterion as written. The criterion
+(`E29` with no verdict outside `watch`, `E28` with no collapse and B18 gone) is not met: `E29` gave
+`eval.idle_signals_per_1k` better (-5.0%, inside its 6.7% false-positive rate, so a known false positive, not a
+Target), and `E28` fails `eval.mating_share` (0.056 against 0.2), `eval.catch_rate` above 0 (17 of 32 seeds) and the
+70% specialisation cap (9 of 32); it passes population above the floor (32 of 32), `eval.born_share` (0.948),
+5 lineages (32 of 32) and population below `maxAgents` (32 of 32), so no seed collapsed. The phase text says a failure
+that remains is reported to the user before the phase is marked built; the user was told and the Decisions row
+(2026-10-22) closes Phase 4 with these three failures and moves them to Phase 5 and predator-prey Phase 3.
+
+Findings (no blocker):
+
+- **Fix before Phase 5 - `eval.hunt_call_answer` is a seventh metric over the `watch` rule (T70).** `npm run eval:power`
+  on `E29-baseline-v5-seeds1-64.json` still prints `watch?` for `eval.hunt_call_answer`: false-positive rate 15.6% at 16
+  seeds and 13.3% at 32 (its minimum is 16), against the 10% line, and `DIRECTIONS` in `js/evo/compare.js` still says
+  `higher`. T41 and T42 listed six metrics (11.4% to 10.3%) and missed it. The `E28` verdict "worse on
+  `hunt_call_answer` (-86.6%)" therefore sits on a metric that the rule makes `watch`. Move it to `watch` in
+  `DIRECTIONS` and in `evolution-evals.md`, with the test; the `E28` conclusions do not change (predators dying out is
+  seen on `eval.catch_rate` and the predator fitness means).
+- **Fix before Phase 5 - the full candidate was not screened with predator `plantFoodValue` 0 (T71).** T41's task says
+  to screen the full candidate before the switch-on and the T41 note says the T69 `sexes-min40` screen stands for it.
+  That arm's report (`evals/screens/results/t69/sexes-min40.report.json`) has `specialisations.predator.plantFoodValue`
+  1; the only arm with predator 0 is `predplant` (T59), which ran with `minAgents` 100 and nothing else on. The switched-on
+  world (`E28`) has `eval.catch_rate` above 0 on 17 of 32 seeds against 3 of 4 in `sexes-min40` and 4 of 4 in `cap-on`, and
+  `eval.mean_fitness.predator` -93.8% against `E27`. Predators that eat no plants may be why they die out, or the cause may
+  be something else; nothing here separates the two. Run a 4-seed or larger screen (`npm run screen`) of the T41 defaults
+  against the same with predator `plantFoodValue` 1, and record whether the 15 catch-free seeds come back. This is also
+  the first lever for the predator failure that predator-prey Phase 3 inherits.
+- **Note - the T59 table's B18 column is weaker than the Phase 4 text.** It uses the checkpoint mean `eval.lineages_alive`
+  (the T59 note says so); the done criterion is the count alive at 200000 ticks, which `seedChecks` and the T68, T69
+  and `E28` tables use. The two sets of columns are not comparable on lineages.
+- **Note - T68's "the cooldown keeps counting down" is not asserted.** `test/sim/reproduction.cap.test.js` builds the
+  waiting mother with `cooldown: 5` and checks pregnancy, energy, events and population, but never the cooldown.
+  Add the assertion when T68's file is next touched.
+- **Note - `E32`'s prediction says `hebbianRate` 0.0001 escapes the floor on 4 of 4 seeds**; its note and the T59
+  text say 3 of 4 pass the 80% rule (born_share 0.86). The prediction is wrong in the record, not the result.
+- **Note - `E29`'s note says "flags at 16 seeds as watch?"** with a stray question mark; harmless, left as recorded.
+- **Note - `E28` ran 32 seeds, the phase text says 16.** Recorded in T42 and in `E28`'s note; the text stays as the
+  plan.
+
 ### Phase 5 - Settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
@@ -1314,7 +1374,9 @@ Phases 1 to 3 are planned below; Phase 5 adds its rows when T15 plans it.
 | T60 | Measure performance with everything on, on a quiet machine: `bench.step_ms@500defaults`, `alloc-check`, and the observer budget (0.25 ms per tick)                                                                                                                                                                                                                                | [judgement]  | T41                          |
 | T42 | Run `E28` against `E27`, the ladder, the anti-exploit suite and the paired test, and record them                                                                                                                                                                                                                                                                                  | [mechanical] | T41, T60                     |
 | T61 | Update sim-notes.md and the Phase 4 note with the screens, the switch-on and `E28`                                                                                                                                                                                                                                                                                                | [mechanical] | T42                          |
-| T62 | Conformance review of Phase 4                                                                                                                                                                                                                                                                                                                                                     | [judgement]  | T58, T59, T41, T60, T42, T61 |
+| T62 | Conformance review of Phase 4 (built)                                                                                                                                                                                                                                                                                                                                             | [judgement]  | T58, T59, T41, T60, T42, T61 |
+| T70 | Move `eval.hunt_call_answer` to `watch` in `DIRECTIONS` (`js/evo/compare.js`) and the direction column of `evolution-evals.md` (its `eval:power` false-positive rate is 15.6% at 16 seeds), with the test                                                                                                                                                                         | [mechanical] | T62                          |
+| T71 | Screen the T41 defaults against the same with the predator's `plantFoodValue` 1 (`npm run screen`, at least 4 seeds, 200000 ticks) and record whether the catch-free seeds return                                                                                                                                                                                                 | [judgement]  | T62                          |
 
 ### Phase 5 - Settle the balance
 
