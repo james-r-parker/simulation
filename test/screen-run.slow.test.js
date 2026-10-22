@@ -1,9 +1,9 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { reportPath, runScreen } from '../scripts/lib/screen-run.mjs';
-import { parseArgs, screen } from '../scripts/screen.mjs';
+import { main, parseArgs, screen } from '../scripts/screen.mjs';
 
 const SMALL = { maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
 const grid = {
@@ -74,5 +74,45 @@ describe('screen', () => {
         expect(verdicts.arms[1].deltas).not.toBeNull();
         expect(readFileSync(join(out, 'table.md'), 'utf8')).toBe(result.table);
         expect(result.table.split('\n').filter((l) => l.startsWith('| `'))).toHaveLength(2);
+    });
+});
+
+describe('main', () => {
+    /**
+     * @param {string[]} extra flags after the grid, output and size flags
+     * @returns {Promise<{ code: number, out: string }>} the exit code and the output directory
+     */
+    async function run(extra) {
+        const gridFile = join(dir, 'tiny.grid.json');
+        writeFileSync(gridFile, JSON.stringify(grid));
+        const out = join(dir, 'out');
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            const code = await main(['--grid', gridFile, '--out', out, '--workers', '2', '--ticks', '1100', ...extra]);
+            return { code, out };
+        } finally {
+            log.mockRestore();
+        }
+    }
+
+    it('runs the sweep itself with --no-lock', async () => {
+        const { code, out } = await run(['--no-lock']);
+        expect(code).toBe(0);
+        expect(readFileSync(join(out, 'table.md'), 'utf8')).toContain('Reference arm: `ref`');
+    });
+
+    it('re-runs itself under flock once for the whole sweep', async () => {
+        const { code, out } = await run(['--lock', join(dir, 'cpu.lock')]);
+        expect(code).toBe(0);
+        expect(readFileSync(join(out, 'verdicts.json'), 'utf8')).toContain('"reference": "ref"');
+    });
+
+    it('exits 1 on a bad grid', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            expect(await main(['--grid', join(dir, 'missing.json'), '--no-lock'])).toBe(1);
+        } finally {
+            error.mockRestore();
+        }
     });
 });
