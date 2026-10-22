@@ -515,3 +515,38 @@ otherwise. The whole season table moves with it: `foodScarcity`, `energyDrain`, 
 slower. A winter is `energyDrain` 1.8 and `foodScarcity` 0.4 for ten minutes at x1, not only a slower patch regrowth, so
 tuning that assumed the 3600-tick season (`seasonLength`) does not carry over. The UI calendar reads
 `worldInfo.seasonLength`, which already holds `eraSeasonTicks` when eras are on.
+
+### 2026-10-22 - The `SPLIT` output only matters with sexes on, so no brain was ever selected on it
+
+`readyToSplit` returns true for any mature, rested agent above `splitMinEnergy` when `sexesEnabled` is false and never reads
+`SPLIT`; with sexes on it needs a female with `SPLIT` above 0.5. Archive elites and floor immigrants were scored with the
+legacy rule, so only 1% to 8% of agents above 900 energy output `SPLIT` above 0.5 when sexes are switched on, and splitting (84%
+of the defaults' mating and split births) all but stops. The output is learnt slowly (6 of 100 agents at 200000 ticks, 17 of 100 at
+1000000), not fast enough for a 200000-tick eval. Any new gate on an output that the archive has never seen is a selection
+cliff: measure the share of agents that pass it before switching it on.
+
+### 2026-10-22 - The population-scaled food rule makes a thin population starve faster (an Allee effect)
+
+`populationExpected` targets `max(foodTargetMin, foodTargetPerAgent x population)` items, so the food per area is
+proportional to the population. At `minAgents` 40 the per-agent starvation rate is 0.21 per 1000 agent-ticks against 0.12 at 100,
+and births/1k fall from 0.15 to 0.05, so the floor never lets go. `foodTargetMin` 1200 (the stock at 100 agents) lets a 40-agent
+world take off in 25000 ticks on one seed. The area rule (`foodAreaCapacity`) has no population term and does not show it:
+all features on with `minAgents` 40 reaches `maxAgents` within 20000 to 50000 ticks. Read a floor-bound result against the food
+rule before blaming the feature.
+
+### 2026-10-22 - At `maxAgents` a freed slot goes to a splitter, and 97% of pregnancies are lost
+
+`giveBirth` is tried every tick by every agent above `splitMinEnergy`, so with 320 to 420 of 500 agents rich the event ring
+takes about 350 capacity `BIRTH_BLOCKED` events per tick (3 to 4 million per 10000 ticks). A slot freed by `reap` is taken by
+`splitAll` on the next tick unless a pregnancy happens to fall due that tick (`advancePregnancies` runs first); a pregnancy that
+falls due at the cap is dropped, with the `mateCost` and 480 ticks spent. `eval.mating_share` at the cap is therefore about
+0.01 whatever the mating rules are; a mating target needs a rule for the cap (a waiting pregnancy, or slots held back from
+splits), tested at 0.14 and 0.20 on one seed. Any per-agent per-tick event at the cap multiplies by the population.
+
+### 2026-10-22 - Emulate a rule change by wrapping the `lifecycle` phase, not by editing the sim
+
+`step(world, policy, overrides)` takes replacement `run` functions by phase name. A harness can replace `lifecycle` with the
+same calls (`feed`, `mate`, `applyCosts`, `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `invade`) plus a tweak between
+them, and `world.config` can be swapped for a spread copy around one call (`sexesEnabled: false` around `splitAll` gives
+asexual splitting with sexual mating). With no tweak the run reproduces the unwrapped world's counts exactly, which is the check
+to make first. Run independent arms as separate processes: they are single-threaded and 1000000 ticks at 100 agents takes about 15 minutes.
