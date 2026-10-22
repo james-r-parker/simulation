@@ -1398,6 +1398,8 @@ is recorded in `evals/experiments.json` and the learnings in `sim-notes.md`.
 | `maxAgents-350`             | FAIL    | 4/4       | 2/4       | 0.05 FAIL          | 0.94 ok          | 4/4           | 1/4         | 4/4       | 273      | +10%          | -4%             | +13%             | -5%            | -9%             |
 | `maxAgents-750`             | FAIL    | 4/4       | 1/4       | 0.05 FAIL          | 0.97 ok          | 4/4           | 1/4         | 4/4       | 611      | +9%           | +3%             | -1%              | +4%            | -1%             |
 
+**Round B choice (T73, 2026-10-22, manager).** From round A's table and reports, ranked by mating births per 1000 agent-ticks (`eval.mating_share` x `eval.births_per_1k`; base 0.0045): `mateDistanceMax` 1.0 (0.0103, +130%), `mateRange` 300 (0.0088, +96%), `mateRange` 200 (0.0071), `reproductionCooldown` 150 (0.0069), `maxBirthsPerWindow` 5 (0.0065), `childEnergyMin` 100 (0.0064). Mechanism, per the collapse diagnosis: mating is limited by eligible partners in range, so a wider range, a looser genetic-distance bar, a shorter cooldown, a cheaper minimum child and a looser birth budget each add eligible pairs. Splitting harder (`splitMinEnergy`, `splitCooldownMultiplier`) does not raise mating, against the E33 prediction. `evals/screens/phase5-b.grid.json` holds 15 arms: pairs of the six, triples and fours built on `mateRange` 300 with `mateDistanceMax` 1.0, and all five together with `mateRange` 300 and with 200. Watch: `mateDistanceMax` 1.0 and `mateRange` 300 lower the population mean (290 and 325 against 401) and fed lifespan (-31%, -21%).
+
 Reference arm: `base`.
 
 ### Phase 6 - Disease
