@@ -324,7 +324,7 @@ same number of Gaussian draws as before.
 - After each tick's outputs, `hebbianStep` updates `fastOut[j, o] += eta x (h_j x out_o - HEBB_DECAY x
 (fastOut[j, o] - w[j, o]))`, with `eta = hebbianRate x sigmoid(learnGene)` and `HEBB_DECAY` 0.01, clamped to
   +-`HEBB_CLAMP` 4.
-- `hebbianRate` (switch-on value 0.01; the code default stays 0, off, until T41) is the config key; 0 skips `hebbianStep`.
+- `hebbianRate` (switch-on value 0.0001, set by the T59 screen; the code default stays 0, off, until T41) is the config key; 0 skips `hebbianStep`.
 - The archive, offers and the observer read the genome row in `world.weights`, never `fastOut`.
 
 ### Evolvable body traits with costs
@@ -414,7 +414,7 @@ off and 0.771 against 0.740 with sexes on (about 2 and 1 standard errors over), 
 As built (T40): `BENCH_CONFIG` spreads `FEATURES_OFF` (every `FEATURE_RULES` key off, plus `obstacleCount` 25 and `hashCellSize` 128
 that T41 retunes), so `bench-check` keeps measuring the frozen world; the tracked `defaults` row and `alloc-check` run `FEATURES_ON`
 (`satiationShare` 0.95, `digestTicks` 10, `handlingTicks` 20, carcasses, `basins` with `obstacleCount` 0, `specMutationRate` 0.002,
-`foodPatchCount` 16, `foodAreaCapacity`, eras, leak, traits, `hebbianRate` 0.01, sexes, `maxBirthsPerWindow` 3,
+`foodPatchCount` 16, `foodAreaCapacity`, eras, leak, traits, `hebbianRate` 0.0001, sexes, `maxBirthsPerWindow` 3,
 `mateDistanceMax` 0.8, `hashCellSize` 140). Measured on a quiet machine, old and new trees run at the same time on separate
 cores (5 runs, median): the frozen `bench.step_ms@500` is unchanged at about 3.9 ms (baseline 4.03); the `defaults` row costs
 about 7.0 ms against 4.0 ms, the brain phase 2.1 ms against 1.2 ms, the physics phase 1.9 ms against 0.6 ms. `alloc-check`:
@@ -673,6 +673,10 @@ choices and reasons within the plans").
 | `bench/baseline.json` (`bench.step_ms@500` 4.03) is not re-recorded by T63; a separate PR re-records it right after T63 merges (user, 2026-10-22)                                                                                                                                                 | `bench-check` now has about 80% headroom (limit 4.63 against 2.45 measured), the re-record happens on a quiet machine in that PR                                                                                                                                                                                                                                                                                                                                                                                                            | Manager                                                 |
 | Hot state objects built by keyed stores (`allocateWorld`, `createIntentState`) return a spread copy to stay in V8 fast mode                                                                                                                                                                       | A dictionary-mode world cost 37% to 50% of the step; the guard is a test, not a comment                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Manager                                                 |
 | The nearest-hunter scan keeps the existing contract (a hunter's entry is its distance to the nearest other hunter) although `noteAlarm` never reads it                                                                                                                                            | Changing it would change a tested contract for about 0.006 ms                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Manager                                                 |
+| T59 sets `hebbianRate` 0.0001 in `FEATURES_ON` (was 0.01)                                                                                                                                                                                                                                         | The 4-seed screen (seeds 29 to 32, 200000 ticks): 0.01 holds every seed at the floor (born_share 0.18, food/1k 165); 0.003 (0.31) and 0.001 (0.42) too; 0.0003 frees 1 of 4 (0.63); 0.0001 frees all 4 (0.86, like the defaults 0.88); 0.00003 is slower (0.76). Evidence in `E32`; the value stays Phase 5's to tune                                                                                                                                                                                                                       | Manager                                                 |
+| T59 proposes that T41 keeps `minAgents` 100, not 40, and leaves `sexesEnabled` off until the user decides (both open; no config changed)                                                                                                                                                          | `minAgents` 40, 60 and 80 pin the population at the floor on 4, 4 and 3 of 4 seeds (born_share 0.20, 0.24, 0.54; 100 gives 0.88) and all on with 40 collapses (born_share 0.07, `eval.catch_rate` 0 on 3 seeds); `sexesEnabled` alone pins it at the floor (born_share 0.15) with `splitCost` 50, 25 and 10. No value left in the feature fixes it, and the fix would be sim code, which T59 does not touch. `minAgents` 40 is a user decision (2026-10-21), so it waits for the user. Evidence in `E32`                                    | Manager                                                 |
+| Terrain rock damage stays as built (the T59 basins check)                                                                                                                                                                                                                                         | `basins` loses about 400 agents per seed to collisions that `obstacleDamage` 0 spares (21% to 24% of deaths against 16% to 25% for the defaults' wandering obstacles) and sits at a population mean of 209 against 300 without damage and 279 for the defaults; it is no collapse (born_share 0.82), so the per-rock damage of 0 stays a later choice for the user                                                                                                                                                                          | Manager                                                 |
+| `satiationShare` 0.95 alone changes nothing in the 4-seed screen (world hashes equal the defaults')                                                                                                                                                                                               | No agent in these worlds reaches 95% of `maxEnergy` next to food; kept at 0.95, no collapse. It may bite only once digest or handling is on                                                                                                                                                                                                                                                                                                                                                                                                 | Manager                                                 |
 
 ## Phases
 
@@ -743,7 +747,7 @@ the new senses against `E25`'s live arm, seeds 1-32 x 200000 ticks, paired with 
 
 **Targets:** none - features land switched off; Phase 4 measures them
 
-> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. Next: Phase 4, starting with T59 (the screens), then T41 (switch-on with `minAgents` 40 and `hashCellSize` at least 140), T60 and T42. Perf only on a quiet machine.
+> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. T59 is done (As built (T59), Phase 4: `hebbianRate` is now 0.0001 in `FEATURES_ON`; `sexesEnabled` and `minAgents` 40 each pin the population at the floor and are open for the user). Next: T41 (switch-on with `hashCellSize` at least 140; `minAgents` and `sexesEnabled` wait on the user's call on the T59 findings), then T60 and T42. Perf only on a quiet machine.
 
 The features under Biology features, Nature's limits and World features, each built and merged switched off, so the
 golden hashes hold (user, 2026-10-17: the world's rules are finished before the tuning night). Done when every task
@@ -825,6 +829,92 @@ own arm's `minAgents` on at least 80% of checkpoints after burn-in and `eval.cat
 `maxAgents`), with every Target's verdict recorded. Values are left to the Phase 5 night. When a criterion fails, the
 feature's default is adjusted with a 4-seed screen as evidence and `E28` reruns; a failure that remains is reported to
 the user before the phase is marked built.
+
+**As built (T59, 2026-10-22).** Seeds 29 to 32 of `evals/seeds.json` (offset 28), 200000 ticks, the live policy `map-elites-v1q`
+(the default of `npm run eval`, `LIVE_POLICY`), one config per arm in `evals/screens/<arm>.json`, reports and per-seed
+detail in `evals/screens/results/<arm>.report.json` and `.detail.json` (recorded as `E31` and `E32`). The reports
+carry no checkpoint series, so a second pass over the same seeds (the same world hashes, checked) recorded the population
+every 1000 ticks, the specialisation counts and the deaths by cause; the criteria below are read from both. Arms ran
+8 or 9 at a time with 4 workers each under `flock /tmp/claude-1000/cpu.lock`: a 10000-tick, 4-seed run took 7.7 s
+(about 2.6 min per arm alone at 200000 ticks), the real run took 59 min for 17 arms and their detail passes, 24 min for the second round and about
+20 for the third, so about 1 h 45 min in all. Each feature is on alone at its `FEATURES_ON` value (`terrainLayout` basins
+with `obstacleCount` 0; `foodPatchCount` 16 with `foodAreaCapacity`; `traitsEnabled` with `hashCellSize` 140; `sexesEnabled`
+with `splitCost` 50 as `FEATURES_ON` has it; `plantFoodValue` predator 0 as `predplant`; `minagents40`), all other keys default
+(`minAgents` 100). Criteria per seed, as the Phase 4 text: population above the arm's `minAgents` on at least 80% of
+checkpoints after the 10000-tick burn-in; `eval.catch_rate` above 0; B18 (`eval.lineages_alive` at least 5 (this metric is the checkpoint
+mean, not the count at 200000 ticks), the largest specialisation at most 70% of the alive agents, and the population below `maxAgents` 500 at the end);
+`eval.mating_share` at least 0.2 and `eval.born_share` at least 0.5 in the mean of the 4 seeds. Cells are seeds passing out of 4.
+The per-seed lines are in `evals/screens/results/summary.txt`.
+
+| Arm                           | pop above min (80% rule) | catch > 0 | mating mean | born mean | lineages >= 5 | spec <= 70% | pop < max | pop mean | births/1k | food/1k | fed life |
+| ----------------------------- | ------------------------ | --------- | ----------- | --------- | ------------- | ----------- | --------- | -------- | --------- | ------- | -------- |
+| `defaults`                    | 3/4                      | 4/4       | 0.16        | 0.88      | 4/4           | 0/4         | 1/4       | 279      | 0.15      | 333     | 4330     |
+| `minagents40`                 | 0/4                      | 4/4       | 0.09        | 0.20      | 4/4           | 4/4         | 4/4       | 40       | 0.05      | 99      | 4172     |
+| `minagents60`                 | 0/4                      | 4/4       | 0.10        | 0.24      | 4/4           | 4/4         | 4/4       | 60       | 0.06      | 118     | 4112     |
+| `minagents80`                 | 1/4                      | 4/4       | 0.11        | 0.54      | 4/4           | 3/4         | 3/4       | 133      | 0.11      | 217     | 4129     |
+| `satiation`                   | 3/4                      | 4/4       | 0.16        | 0.88      | 4/4           | 0/4         | 1/4       | 279      | 0.15      | 333     | 4330     |
+| `digest`                      | 2/4                      | 4/4       | 0.15        | 0.83      | 4/4           | 1/4         | 1/4       | 252      | 0.15      | 301     | 4219     |
+| `handling`                    | 1/4                      | 4/4       | 0.14        | 0.85      | 4/4           | 0/4         | 1/4       | 250      | 0.14      | 311     | 4373     |
+| `carcasses`                   | 4/4                      | 4/4       | 0.11        | 0.89      | 4/4           | 0/4         | 0/4       | 290      | 0.15      | 374     | 4293     |
+| `basins`                      | 1/4                      | 4/4       | 0.18        | 0.82      | 4/4           | 0/4         | 1/4       | 209      | 0.16      | 302     | 4161     |
+| `basins-nodamage`             | 4/4                      | 4/4       | 0.17        | 0.90      | 4/4           | 1/4         | 0/4       | 300      | 0.14      | 308     | 4744     |
+| `specmut`                     | 4/4                      | 4/4       | 0.16        | 0.95      | 4/4           | 0/4         | 0/4       | 359      | 0.14      | 333     | 4741     |
+| `patches`                     | 4/4                      | 4/4       | 0.04        | 1.00      | 4/4           | 0/4         | 0/4       | 491      | 0.07      | 828     | 8510     |
+| `eras`                        | 4/4                      | 4/4       | 0.12        | 0.97      | 4/4           | 1/4         | 0/4       | 362      | 0.14      | 359     | 4721     |
+| `leak`                        | 3/4                      | 4/4       | 0.15        | 0.88      | 4/4           | 0/4         | 2/4       | 280      | 0.15      | 326     | 4361     |
+| `hebbian`                     | 0/4                      | 4/4       | 0.02        | 0.18      | 4/4           | 4/4         | 4/4       | 100      | 0.09      | 165     | 1969     |
+| `hebbian-0.003`               | 0/4                      | 4/4       | 0.06        | 0.31      | 4/4           | 4/4         | 4/4       | 101      | 0.11      | 199     | 2578     |
+| `hebbian-0.001`               | 0/4                      | 4/4       | 0.07        | 0.42      | 4/4           | 4/4         | 4/4       | 101      | 0.12      | 216     | 3221     |
+| `hebbian-0.0003`              | 1/4                      | 4/4       | 0.09        | 0.63      | 4/4           | 3/4         | 4/4       | 129      | 0.16      | 272     | 3674     |
+| `hebbian-0.0001`              | 3/4                      | 4/4       | 0.10        | 0.86      | 4/4           | 1/4         | 1/4       | 280      | 0.15      | 315     | 4730     |
+| `hebbian-0.00003`             | 1/4                      | 4/4       | 0.14        | 0.76      | 4/4           | 0/4         | 3/4       | 165      | 0.17      | 310     | 3721     |
+| `traits`                      | 2/4                      | 4/4       | 0.17        | 0.87      | 4/4           | 0/4         | 1/4       | 248      | 0.17      | 333     | 3967     |
+| `sexes`                       | 0/4                      | 4/4       | 0.21        | 0.15      | 4/4           | 4/4         | 4/4       | 100      | 0.02      | 199     | 5512     |
+| `sexes-split25`               | 0/4                      | 4/4       | 0.19        | 0.18      | 4/4           | 4/4         | 4/4       | 100      | 0.03      | 203     | 5353     |
+| `sexes-split10`               | 0/4                      | 4/4       | 0.16        | 0.18      | 4/4           | 4/4         | 4/4       | 100      | 0.03      | 209     | 5181     |
+| `birthbudget`                 | 3/4                      | 4/4       | 0.18        | 0.88      | 4/4           | 1/4         | 0/4       | 275      | 0.15      | 308     | 4451     |
+| `matedistance`                | 2/4                      | 4/4       | 0.04        | 0.84      | 4/4           | 0/4         | 1/4       | 253      | 0.14      | 310     | 4609     |
+| `predplant`                   | 2/4                      | 4/4       | 0.15        | 0.86      | 4/4           | 0/4         | 1/4       | 288      | 0.14      | 310     | 4654     |
+| `allon`                       | 0/4                      | 1/4       | 0.00        | 0.07      | 4/4           | 4/4         | 4/4       | 40       | 0.03      | 126     | 2702     |
+| `allon-min100-nohebb-nosexes` | 4/4                      | 4/4       | 0.01        | 0.99      | 4/4           | 1/4         | 0/4       | 473      | 0.08      | 614     | 8038     |
+
+Reading the table. The defaults already fail B18 on all 4 seeds (a monoculture pinned at `maxAgents` on 3 of 4), `eval.mating_share`
+(0.16) and, on one seed, the 80% rule (0.79), so an arm only counts as worse when it does something else. The
+"spec <= 70%" and "pop < max" cells are trivially met by an arm pinned at its floor, so read them with the population mean.
+
+- **Inert: `satiation`.** The 4 world hashes equal the defaults' (satiationShare 0.95 never triggers on its own).
+- **Like the defaults: `digest`, `handling`, `carcasses`, `specmut`, `eras`, `leak`, `traits`, `birthbudget`, `predplant`.** Each
+  keeps a self-sustaining population (born_share 0.83 to 0.97, population mean 248 to 362). `carcasses`, `specmut` and `eras` pass the 80% rule on 4 of 4
+  seeds (the defaults 3 of 4). `digest`, `handling`, `traits`, `predplant` pass it on 1 to 2 of 4 (population mean 248 to 288 against 279;
+  one defaults seed also misses). Not collapses.
+- **`basins`: no collapse, rock damage costs some population.** Collision deaths (lastLoss `collision`) are 1613 to 1885 per seed, 21% to 24% of
+  deaths, against 1171 to 2083 (16% to 25%) in the defaults, where the 25 wandering obstacles hit. With `obstacleDamage` 0 on the same
+  basins (`basins-nodamage`) they fall to 1157 to 1416 (the rest is the last loss type before a starvation, not damage) and all 4 seeds
+  pass the 80% rule (population mean 300, against 209 with damage; the 80% rule passes on 1 of 4 seeds with damage). So the rocks
+  (refuges and wall included, the arm has no other obstacle) take about 400 more agents per seed, around 5% of deaths, and the arm sits 70 agents
+  under the defaults' population mean; not a collapse and not a kill zone of the "deadly" size the Decisions row feared. Whether to set the
+  terrain rocks' damage to 0 (a sim change) is left to the user; no code changed.
+- **`patches` (16 patches with `foodAreaCapacity`): food-rich, mating gone.** Population pinned near 500 all run, food/1k 828 against 333,
+  `eval.mating_share` 0.04, lineages 6.3 to 7.0 (above 5, close). Not a floor collapse; the `allon-min100-nohebb-nosexes` arm shows the same.
+- **`matedistance` (0.8): mating nearly stops.** `eval.mating_share` 0.04 against 0.16; the population is unchanged. Below the
+  0.2 line the defaults miss too, so it is not adjusted; E28 would fail `eval.mating_share` at 0.8 unless `sexes`'s way of mating makes up for it.
+- **Collapses (population pinned at the floor, born_share under 0.5): `hebbian` at 0.01, `sexes`, `minagents40`.**
+    - `hebbianRate` 0.01 (born_share 0.18, food/1k 165, fed lifespan 1969) is a value problem: re-screened at 0.003 (0.31), 0.001 (0.42), 0.0003
+      (0.63, 1 of 4 seeds out of the floor), 0.0001 (0.86, 3 of 4 pass the 80% rule, the miss seed at 0.64 like a defaults miss) and 0.00003 (0.76, 1 of 4).
+      `FEATURES_ON` now uses 0.0001.
+    - `sexesEnabled` (born_share 0.15, births/1k 0.02 against 0.15, population mean 100 = the floor, every seed) does not recover with `splitCost` 25
+      or 10 (born_share 0.18 and 0.18). No config value left in the feature fixes it, so it is reported, not changed.
+    - `minAgents` 40 (the T41 plan) pins the population at 40 on every seed (born_share 0.20); 60 pins it at 60 (0.24); 80 at 80 on 3 of 4
+      seeds (0.54); the default 100 does not (0.88). The floor's immigrants are what keeps the world alive early; below about 100 they
+      cannot feed an evolving population. This is a user decision (2026-10-21), so it is reported, not changed.
+- **All on** (`allon`: `FEATURES_ON` with `hebbianRate` 0.01, `plantFoodValue` predator 0, `minAgents` 40) collapses on all 4 seeds (born_share
+  0.07, `eval.catch_rate` 0 on 3). With `minAgents` 100, no `hebbianRate` and no sexes (`allon-min100-nohebb-nosexes`) every seed passes
+  the 80% rule and has `eval.catch_rate` above 0, `eval.born_share` 0.99, but `eval.mating_share` 0.01 and the population sits at `maxAgents`
+  with 5.9 to 11.7 lineages, so B18 is not gone and the mating target is missed.
+
+What T41 and E28 face: `hebbianRate` 0.0001 is settled; `sexesEnabled` has no value that does not collapse the world in the screen and `minAgents` 40
+collapses it too, so the switch-on cannot run E28 as written until the user decides (keep `minAgents` 100; hold sexes off until it is
+reworked, or accept a floor-bound world). `E32` records the re-screens.
 
 ### Phase 5 - Settle the balance
 

@@ -67,7 +67,7 @@ export const FEATURES_ON = Object.freeze({
     foodAreaCapacity: true,
     erasEnabled: true,
     leakEnabled: true,
-    hebbianRate: 0.01,
+    hebbianRate: 0.0001, // the 0.01 in the design doc pinned the 4-seed screen (world-balance T59) at the floor; 0.0001 escapes it
     traitsEnabled: true,
     sexesEnabled: true,
     maxBirthsPerWindow: 3,

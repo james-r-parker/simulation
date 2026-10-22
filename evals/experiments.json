@@ -1046,6 +1046,42 @@
       "verdicts": {},
       "effect": "exploit",
       "note": "Per seed ratio/allowed. Sexes off: 1 0.822/0.816, 2 0.973/0.964, 3 0.908/0.724, 4 1.088/1.038, 5 0.924/0.886, 6 0.781/0.826, 7 0.888/0.849, 8 0.769/0.707; mean 0.894/0.851 (excess +0.043, 6 of 8 seeds over, about 2 standard errors). Sexes on: 1 0.717/0.633, 2 0.786/0.878, 3 0.740/0.553, 4 1.055/1.063, 5 0.784/0.748, 6 0.620/0.604, 7 0.721/0.716, 8 0.746/0.724; mean 0.771/0.740 (excess +0.031, 5 of 8 over, about 1 standard error). Verdict: inconclusive at 8 seeds; leans present in both modes. The 2-seed anti-exploit test saw 0.753/0.755 with sexes on, which is noise, so the sexes-on it.fails case is not generated and is tracked here. fitnessV2 (predator-prey Phase 3) is where FIT-5 is meant to close."
+    },
+    {
+      "id": "E31",
+      "date": "2026-10-22",
+      "branch": "eval/wb-t59-screens",
+      "hypothesis": "Each Phase 3 feature switched on alone at its FEATURES_ON value keeps the live policy self-sustaining (no collapse) in a 4-seed, 200000-tick screen, so the single T41 switch-on can pin a failure on one feature.",
+      "prediction": "No arm worse than the defaults on the Phase 4 collapse criteria; patches and carcasses raise food_energy_per_1k, sexes lowers births_per_1k, mateDistanceMax lowers mating_share.",
+      "targets": [
+        "eval.mating_share",
+        "eval.lineages_alive",
+        "eval.births_per_1k",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan"
+      ],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v1q",
+      "before": "evals/screens/results/defaults.report.json",
+      "after": "evals/screens/results/<arm>.report.json (one per arm; table in evals/screens/results/table.md)",
+      "verdicts": {},
+      "effect": "worse",
+      "note": "Seeds 29-32 (offset 28), 200000 ticks, 4 seeds per arm, so no compare verdicts (eval:compare needs 16); read against the Phase 4 criteria. Defaults: pop above min 3/4, B18 fails (spec 0/4, pop<max 1/4), mating_share 0.16, born_share 0.88. Like the defaults: satiation (identical hashes), digest, handling, carcasses, basins (rock damage costs about 400 agents per seed, no collapse), specmut, eras, leak, traits, birthbudget, predplant. Food-rich: patches (pop ~491, food/1k 828, mating 0.04, lineages 6-7). mateDistanceMax 0.8: mating_share 0.04. Collapsed to the floor: hebbianRate 0.01 (born_share 0.18), sexesEnabled (0.15), minAgents 40 (0.20). All on with minAgents 40 collapses (born_share 0.07, catch_rate 0 on 3 seeds)."
+    },
+    {
+      "id": "E32",
+      "date": "2026-10-22",
+      "branch": "eval/wb-t59-screens",
+      "hypothesis": "A lower hebbianRate, a lower splitCost with sexes, or a minAgents above 40 frees the arms that E31 found pinned at the floor, and the all-on world then survives.",
+      "prediction": "hebbianRate 0.0001 or lower escapes the floor (born_share above 0.5) on 4 of 4 seeds; sexes with splitCost 25 or 10 does not change the floor-bound result; minAgents 80 or less stays floor-bound.",
+      "targets": ["eval.born_share", "eval.mating_share", "eval.births_per_1k"],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v1q",
+      "before": "evals/screens/results/hebbian.report.json",
+      "after": "evals/screens/results/hebbian-0.0001.report.json",
+      "verdicts": {},
+      "effect": "better",
+      "note": "Same seeds as E31, 4 seeds per arm. hebbianRate born_share: 0.01 0.18, 0.003 0.31, 0.001 0.42, 0.0003 0.63 (1 of 4 seeds free), 0.0001 0.86 (4 of 4, defaults 0.88), 0.00003 0.76; FEATURES_ON takes 0.0001. sexes with splitCost 50/25/10: born_share 0.15/0.18/0.18, population at the floor 100 on every seed, not fixed by value. minAgents 40/60/80: born_share 0.20/0.24/0.54 (population at the floor on 4/4/3 of 4 seeds), 100 gives 0.88. basins-nodamage (obstacleDamage 0): pop mean 300 against 209 with damage, collision-cause deaths 1157-1416 against 1613-1885. allon (FEATURES_ON with hebbianRate 0.01, minAgents 40): born_share 0.07; allon-min100-nohebb-nosexes (hebbianRate 0, sexes off, minAgents 100): 4 of 4 seeds pass the 80% rule and catch_rate above 0, born_share 0.99, mating_share 0.01, pop at maxAgents, lineages 5.9-11.7. sexes and minAgents 40 remain open for the user."
     }
   ]
 }
