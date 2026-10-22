@@ -1,0 +1,69 @@
+{
+  "specialisations": {
+    "forager": {
+      "index": 0,
+      "visionRange": 300,
+      "canHunt": false,
+      "moveCostMultiplier": 1,
+      "biteTakenMultiplier": 1,
+      "cooldownMultiplier": 1,
+      "biteMultiplier": 1,
+      "turnMultiplier": 1,
+      "plantFoodValue": 1,
+      "meatFoodValue": 0.3,
+      "sprintBoost": 1
+    },
+    "predator": {
+      "index": 1,
+      "visionRange": 350,
+      "canHunt": true,
+      "moveCostMultiplier": 1,
+      "biteTakenMultiplier": 1,
+      "cooldownMultiplier": 1,
+      "biteMultiplier": 4,
+      "turnMultiplier": 0.7,
+      "plantFoodValue": 0,
+      "meatFoodValue": 1,
+      "sprintBoost": 1.6
+    },
+    "reproducer": {
+      "index": 2,
+      "visionRange": 250,
+      "canHunt": false,
+      "moveCostMultiplier": 1,
+      "biteTakenMultiplier": 1,
+      "cooldownMultiplier": 0.5,
+      "biteMultiplier": 1,
+      "turnMultiplier": 1,
+      "plantFoodValue": 1,
+      "meatFoodValue": 0.3,
+      "sprintBoost": 1
+    },
+    "scout": {
+      "index": 3,
+      "visionRange": 400,
+      "canHunt": false,
+      "moveCostMultiplier": 0.7,
+      "biteTakenMultiplier": 1,
+      "cooldownMultiplier": 1,
+      "biteMultiplier": 1,
+      "turnMultiplier": 1,
+      "plantFoodValue": 1,
+      "meatFoodValue": 0.3,
+      "sprintBoost": 1
+    },
+    "defender": {
+      "index": 4,
+      "visionRange": 350,
+      "canHunt": false,
+      "moveCostMultiplier": 1,
+      "biteTakenMultiplier": 0.5,
+      "cooldownMultiplier": 1,
+      "biteMultiplier": 1,
+      "turnMultiplier": 1,
+      "plantFoodValue": 1,
+      "meatFoodValue": 0.3,
+      "sprintBoost": 1
+    }
+  }
+}
