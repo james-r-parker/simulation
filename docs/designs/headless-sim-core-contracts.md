@@ -107,7 +107,7 @@ and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-o
 | `leakEnabled`                                                      | `false`                        | Boolean                                                  | `false`                                              |
 | `hebbianRate`                                                      | `0`                            | `0 .. 1`                                                 | `0`                                                  |
 | `traitsEnabled`, `visionCost`                                      | `false`, `0.5`                 | Boolean; `>= 0`                                          | `traitsEnabled` `false`                              |
-| `sexesEnabled`, `splitCost`                                        | `false`, `50`                  | Boolean; `>= 0`                                          | `sexesEnabled` `false`                               |
+| `sexesEnabled`                                                     | `false`                        | Boolean                                                  | `sexesEnabled` `false`                               |
 | `mateDistanceMax`                                                  | `Infinity`                     | `> 0` or `Infinity`                                      | `Infinity`                                           |
 | `birthWindowTicks`, `maxBirthsPerWindow`                           | `3000`, `0`                    | Integer `>= 1`; integer `0 .. 16`                        | `maxBirthsPerWindow` `0`                             |
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust` | `0`, `0`, `0`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` | `satiationShare`, `digestTicks`, `handlingTicks` `0` |
@@ -589,9 +589,8 @@ detTanh(g)` with `TRAIT_SPAN` 0.3. With `hebbianRate` above 0 it copies the geno
   of at least `childEnergyMin` (else `energy`). The child takes the gift by transfer, `parentA` is the mother's `genomeId`, `parentB`
   `fatherId`, `lineageId` the mother's.
 - A split needs `readyToSplit`: mature, not pregnant, off cooldown, energy above `splitMinEnergy`, the budget not spent,
-  and with `sexesEnabled` also a female whose `SPLIT` output is above 0.5 with energy above `splitMinEnergy + splitCost`.
-  With `sexesEnabled` and a free slot, `splitAll` first removes `splitCost` with cause `cost`. A free slot is required
-  (else `BirthBlocked` `capacity`, and the cost is not charged when the world is full); the child takes `energy / 2` by transfer, both parents
+  whatever the sex and `sexesEnabled` (world-balance T69). A free slot is required
+  (else `BirthBlocked` `capacity`); the child takes `energy / 2` by transfer, both parents
   are the splitter, and the cooldown is `reproductionCooldown x cooldownMultiplier x splitCooldownMultiplier`
   rounded down.
 - A birth runs these steps in order: `childSpec` (the mother's `spec`; with `specMutationRate` above 0, one `mutation`

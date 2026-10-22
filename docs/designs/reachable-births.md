@@ -83,9 +83,8 @@ says why each exists.
   as `findMate` for any alive male that passes `canMatePair` and picks the one with the most energy (the lower slot on a
   tie), then makes one `lifecycle` draw against `chance`; no candidate means no draw. The female is the mother whatever
   her slot, so the mother, her energy check and the `fatherWeights` copy follow sex. A male pays `mateCost` and waits out a cooldown.
-- **Splitting as a choice** (`sexesEnabled`). A split needs a female whose `SPLIT` output is above 0.5 and energy above
-  `splitMinEnergy + splitCost`; `splitCost` (default 50) is removed first with loss cause `cost`, except when the world is
-  full. With sexes off a split needs only `splitMinEnergy`.
+- **Splitting with sexes** (`sexesEnabled`). Splitting is asexual for every agent and needs only `splitMinEnergy`; the
+  `SPLIT` gate, the female-only rule and `splitCost` were removed in world-balance T69.
 - **Trait child share** (`traitsEnabled`). The gift and the `canMatePair` threshold use the mother's `childShare` trait
   in place of `childEnergyShare`.
 - **Events.** `AgentBorn` field 9 carries the child's sex.
