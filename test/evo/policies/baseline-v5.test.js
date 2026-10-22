@@ -13,6 +13,7 @@ const N = 20000;
  */
 function makeWorld(count, motherValue = 0, fatherValue = 0) {
     return {
+        config: {},
         layout: { weightCount: count },
         weights: new Float32Array(count * 2).fill(0, count).fill(motherValue, 0, count),
         fatherWeights: new Float32Array(count * 2).fill(fatherValue),
@@ -113,5 +114,47 @@ describe('baseline-v5', () => {
         const low = makeWorld(2000, -3);
         brain.childBrain(low, 1, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(7) });
         expect(Math.min(...low.weights.subarray(2000))).toBe(-3);
+    });
+
+    describe('with a biology feature on', () => {
+        const layout = { weightCount: 10, traitStart: 5, leakStart: 8 };
+        /**
+         * @param {Record<string, any>} config
+         * @returns {Record<string, any>}
+         */
+        const on = (config) => ({ ...makeWorld(10, 0.5), layout, config });
+
+        it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
+            const world = on({ leakEnabled: true });
+            brain.initBrain(world, 1, createRng(1));
+            expect(Array.from(world.weights.subarray(15, 18))).toEqual([0, 0, 0]);
+            expect(Array.from(world.weights.subarray(18, 20))).toEqual([3, 3]);
+            expect(world.weights[10]).not.toBe(0);
+        });
+
+        it('mutates the genes with TRAIT_SIGMA, clamped to 4, drawing as before', () => {
+            const world = on({ traitsEnabled: true });
+            world.weights.fill(4, 5, 10);
+            const draws = [];
+            const rng = createRng(9);
+            brain.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng });
+            const ref = createRng(9);
+            for (let i = 0; i < 5; i++) {
+                nextGaussian(ref);
+                nextFloat(ref);
+            }
+            for (let i = 5; i < 10; i++) {
+                draws.push(Math.min(4, 4 + nextGaussian(ref) * 0.1));
+            }
+            expect(Array.from(world.weights.subarray(15))).toEqual(draws.map((d) => Math.fround(d)));
+        });
+
+        it('is the legacy row when every feature is off', () => {
+            const world = on({ hebbianRate: 0 });
+            brain.initBrain(world, 1, createRng(1));
+            const plain = makeWorld(10, 0.5);
+            brain.initBrain(plain, 1, createRng(1));
+            expect(world.weights).toEqual(plain.weights);
+        });
     });
 });
