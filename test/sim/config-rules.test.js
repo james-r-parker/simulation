@@ -33,16 +33,12 @@ describe('mateDistanceMax rule', () => {
 });
 
 describe('sexes keys', () => {
-    it('default to off with a splitCost of 50', () => {
-        const c = createConfig({});
-        expect([c.sexesEnabled, c.splitCost]).toEqual([false, 50]);
+    it('default to off', () => {
+        expect(createConfig({}).sexesEnabled).toBe(false);
     });
 
-    it.each([
-        ['sexesEnabled', 1],
-        ['splitCost', -1],
-    ])('rejects a bad %s', (key, value) => {
-        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+    it('rejects a bad sexesEnabled', () => {
+        expect(() => createConfig({ sexesEnabled: 1 })).toThrow(/sexesEnabled/);
     });
 });
 

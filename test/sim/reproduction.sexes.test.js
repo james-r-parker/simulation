@@ -129,78 +129,71 @@ describe('mating with sexes', () => {
 });
 
 describe('splitting with sexes', () => {
-    const SPLITTER = { energy: 1200, sex: FEMALE };
+    const SPLITTER = { energy: 1200 };
 
-    it('needs the SPLIT output above 0.5', () => {
-        const w = sexWorld();
-        addBlob(w, SPLITTER);
-        setSplit(w, 0, 0.5);
-        splitAll(w, recordingPolicy([]));
-        expect(w.population).toBe(1);
-        setSplit(w, 0, 0.51);
-        splitAll(w, recordingPolicy([]));
-        expect(w.population).toBe(2);
+    it('splits a female and a male alike, whatever the SPLIT output says', () => {
+        for (const sex of [FEMALE, MALE]) {
+            for (const split of [-1, 0, 1]) {
+                const w = sexWorld();
+                addBlob(w, { ...SPLITTER, sex });
+                setSplit(w, 0, split);
+                splitAll(w, recordingPolicy([]));
+                expect(w.population).toBe(2);
+            }
+        }
     });
 
-    it('never splits a male', () => {
+    it('needs only energy above splitMinEnergy, with no cost', () => {
         const w = sexWorld();
-        addBlob(w, { ...SPLITTER, sex: MALE });
-        setSplit(w, 0, 1);
-        splitAll(w, recordingPolicy([]));
-        expect(w.population).toBe(1);
-    });
-
-    it('needs energy above splitMinEnergy plus splitCost', () => {
-        const w = sexWorld();
-        addBlob(w, { ...SPLITTER, energy: 950 });
-        setSplit(w, 0, 1);
+        addBlob(w, { ...SPLITTER, energy: 900 });
         splitAll(w, recordingPolicy([]));
         expect(w.population).toBe(1);
         w.ledger[0] += 1;
-        w.energy[0] = 950.5;
+        w.energy[0] = 901;
         splitAll(w, recordingPolicy([]));
         expect(w.population).toBe(2);
+        expect(w.ledger[1]).toBe(0);
+        expect(w.lastLoss[0]).not.toBe(LOSS_CAUSE.COST);
     });
 
-    it('does not split below splitMinEnergy before checking the output', () => {
-        const w = sexWorld();
-        addBlob(w, { ...SPLITTER, energy: 800 });
-        setSplit(w, 0, 1);
-        splitAll(w, recordingPolicy([]));
-        expect(w.population).toBe(1);
+    it('splits exactly as with sexes off: same energy, ledger and cooldown', () => {
+        const on = sexWorld();
+        const off = lifeWorld();
+        for (const w of [on, off]) {
+            addBlob(w, { ...SPLITTER, sex: MALE });
+            splitAll(w, recordingPolicy([]));
+        }
+        expect([on.energy[0], on.energy[1], on.cooldown[0]]).toEqual([off.energy[0], off.energy[1], off.cooldown[0]]);
+        expect(on.energy[0]).toBe(600);
+        expect(imbalance(on)).toBeCloseTo(0, 9);
     });
 
-    it('removes splitCost first as a COST loss, then gives half of the rest', () => {
-        const w = sexWorld();
-        addBlob(w, SPLITTER);
-        setSplit(w, 0, 1);
-        splitAll(w, recordingPolicy([]));
-        expect(w.energy[0]).toBe(575);
-        expect(w.energy[1]).toBe(575);
-        expect(w.lastLoss[0]).toBe(LOSS_CAUSE.COST);
-        expect(w.ledger[1]).toBe(50);
-        expect(imbalance(w)).toBeCloseTo(0, 9);
-        expect(w.cooldown[0]).toBeGreaterThan(0);
-    });
-
-    it('keeps its cost out of a split blocked by a full world, and reports the block', () => {
+    it('reports a split blocked by a full world', () => {
         const w = sexWorld({ maxAgents: 1 });
         addBlob(w, SPLITTER);
-        setSplit(w, 0, 1);
         splitAll(w, recordingPolicy([]));
         expect(w.energy[0]).toBe(1200);
         expect(w.events.data[0]).toBe(EVENT_TYPE.BIRTH_BLOCKED);
         expect(w.events.data[3]).toBe(BLOCKED_CAUSE.CAPACITY);
     });
 
-    it('splits automatically with no cost when sexes are off', () => {
-        const w = lifeWorld();
-        addBlob(w, { energy: 1200 });
-        setSplit(w, 0, -1);
+    it('stops splitting any sex within splitCapMargin of maxAgents when births are capped', () => {
+        const w = sexWorld({ maxAgents: 60, capBirthsEnabled: true, splitCapMargin: 50 });
+        for (let i = 0; i < 12; i++) {
+            addBlob(w, { ...SPLITTER, sex: i % 2 });
+        }
+        splitAll(w, recordingPolicy([]));
+        expect(w.population).toBe(12);
+    });
+
+    it('spends the birth budget on splits by either sex', () => {
+        const w = sexWorld({ maxBirthsPerWindow: 1, birthWindowTicks: 3000 });
+        addBlob(w, { ...SPLITTER, sex: MALE });
         splitAll(w, recordingPolicy([]));
         expect(w.population).toBe(2);
-        expect(w.energy[0]).toBe(600);
-        expect(w.ledger[1]).toBe(0);
+        w.cooldown[0] = 0;
+        splitAll(w, recordingPolicy([]));
+        expect(w.population).toBe(2);
     });
 });
 
@@ -218,7 +211,6 @@ describe('the sex of a child and AGENT_BORN field 9', () => {
         const w = sexWorld({ maxAgents: 64 });
         for (let i = 0; i < 24; i++) {
             addBlob(w, { energy: 1500, sex: FEMALE });
-            setSplit(w, i, 1);
         }
         splitAll(w, recordingPolicy([]));
         const children = [];

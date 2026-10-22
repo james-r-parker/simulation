@@ -1,6 +1,5 @@
 // Mating, pregnancies, splits and child placement.
 
-import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
@@ -22,9 +21,6 @@ import { TIMER_CAP, allocAgent } from './world.js';
  * @property {(world: World, child: number, mother: number, options: {cause: number, rng: import('./rng.js').Rng}) => void} childBrain
  *   writes the child's weights row
  */
-
-/** The `SPLIT` output must exceed this for a female to split when sexes are on. */
-const SPLIT_THRESHOLD = 0.5;
 
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
@@ -217,53 +213,37 @@ export function advancePregnancies(world, policy) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, rested, not pregnant and above `splitMinEnergy`; with `sexesEnabled` it must
- *   also be a female whose `SPLIT` output is above 0.5 and hold `splitCost` more
+ * @returns {boolean} true when mature, rested, not pregnant, above `splitMinEnergy` and inside its birth budget;
+ *   sex does not matter, so splitting is the same with `sexesEnabled` on or off
  */
 function readyToSplit(world, slot) {
-    const { maturityTicks, splitMinEnergy, sexesEnabled, splitCost } = world.config;
-    const basic =
+    const { maturityTicks, splitMinEnergy } = world.config;
+    return (
         world.ageTicks[slot] >= maturityTicks &&
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
-        world.energy[slot] > splitMinEnergy;
-    if (!basic || birthBudgetSpent(world, slot)) {
-        return false;
-    }
-    if (!sexesEnabled) {
-        return true;
-    }
-    return (
-        world.sex[slot] === SEX.FEMALE &&
-        world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPLIT] > SPLIT_THRESHOLD &&
-        world.energy[slot] > splitMinEnergy + splitCost
+        world.energy[slot] > splitMinEnergy &&
+        !birthBudgetSpent(world, slot)
     );
 }
 
 /**
- * Splits every agent that `readyToSplit` in two. With `sexesEnabled` the splitter first pays `splitCost` (not when the
- * world is full, where the birth is blocked), then gives half of what is left. With `capBirthsEnabled` splitting stops
- * for the tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
+ * Splits every agent that `readyToSplit` in two, whatever its sex. With `capBirthsEnabled` splitting stops for the
+ * tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function splitAll(world, policy) {
     const { alive } = world;
-    const { splitCooldownMultiplier, sexesEnabled, splitCost, maxAgents } = world.config;
-    const { capBirthsEnabled, splitCapMargin } = world.config;
+    const { splitCooldownMultiplier, maxAgents, capBirthsEnabled, splitCapMargin } = world.config;
     const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
     for (let slot = 0; slot < alive.length; slot++) {
         if (world.population >= splitCeiling) {
             break;
         }
-        if (alive[slot] === 1 && readyToSplit(world, slot)) {
-            if (sexesEnabled && world.population < maxAgents) {
-                removeEnergy(world, slot, splitCost, LOSS_CAUSE.COST);
-            }
-            if (giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
-                world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
-            }
+        if (alive[slot] === 1 && readyToSplit(world, slot) && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
+            world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
         }
     }
 }

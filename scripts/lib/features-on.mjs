@@ -43,7 +43,6 @@ export const FEATURES_OFF = Object.freeze({
     sexesEnabled: false,
     specMutationRate: 0,
     splitCapMargin: 50,
-    splitCost: 50,
     terrainLayout: 'open',
     traitsEnabled: false,
     visionCost: 0.5,

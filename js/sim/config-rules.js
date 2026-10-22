@@ -67,7 +67,6 @@ export const FEATURE_RULES = {
     traitsEnabled: BOOL,
     visionCost: num(0),
     sexesEnabled: BOOL,
-    splitCost: num(0),
     birthWindowTicks: int(1),
     maxBirthsPerWindow: int(0, 16),
     capBirthsEnabled: BOOL,
