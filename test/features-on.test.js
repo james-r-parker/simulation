@@ -23,6 +23,7 @@ const SWITCHED_ON = [
     'traitsEnabled',
     'sexesEnabled',
     'maxBirthsPerWindow',
+    'capBirthsEnabled',
     'mateDistanceMax',
     'hashCellSize',
 ];

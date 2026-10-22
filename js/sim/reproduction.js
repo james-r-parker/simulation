@@ -189,17 +189,25 @@ function giveBirth(world, policy, mother, cause) {
 }
 
 /**
- * Counts every pregnancy down and attempts the birth of each that reaches 0.
+ * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` a pregnancy that
+ * falls due in a full world is not attempted: it stays at 1 and tries again next tick (no event, no energy change; the
+ * cooldown keeps counting down). It waits until a slot frees, the mother dies, or the energy gate fails the birth.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function advancePregnancies(world, policy) {
     const { alive, pregnancy } = world;
+    const { capBirthsEnabled, maxAgents } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && pregnancy[slot] > 0) {
             pregnancy[slot] -= 1;
-            if (pregnancy[slot] === 0) {
+            if (pregnancy[slot] > 0) {
+                continue;
+            }
+            if (capBirthsEnabled && world.population >= maxAgents) {
+                pregnancy[slot] = 1;
+            } else {
                 giveBirth(world, policy, slot, BORN_CAUSE.MATE);
             }
         }
@@ -234,7 +242,8 @@ function readyToSplit(world, slot) {
 
 /**
  * Splits every agent that `readyToSplit` in two. With `sexesEnabled` the splitter first pays `splitCost` (not when the
- * world is full, where the birth is blocked), then gives half of what is left.
+ * world is full, where the birth is blocked), then gives half of what is left. With `capBirthsEnabled` splitting stops
+ * for the tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
@@ -242,7 +251,12 @@ function readyToSplit(world, slot) {
 export function splitAll(world, policy) {
     const { alive } = world;
     const { splitCooldownMultiplier, sexesEnabled, splitCost, maxAgents } = world.config;
+    const { capBirthsEnabled, splitCapMargin } = world.config;
+    const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
     for (let slot = 0; slot < alive.length; slot++) {
+        if (world.population >= splitCeiling) {
+            break;
+        }
         if (alive[slot] === 1 && readyToSplit(world, slot)) {
             if (sexesEnabled && world.population < maxAgents) {
                 removeEnergy(world, slot, splitCost, LOSS_CAUSE.COST);
