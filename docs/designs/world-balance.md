@@ -929,6 +929,107 @@ ticks and policy; `--force` reruns). `table.md` has one row per arm (seeds passi
 the Targets against the reference as a percentage); `verdicts.json` has the per-seed values. B18 lineages here is the count alive at the
 last tick, not the checkpoint mean `eval.lineages_alive` that the T59 table used.
 
+#### Collapse diagnosis (2026-10-22)
+
+No sim code changed. Replays of the T59 seeds 200460 and 597883 (`map-elites-v1q`) with a throwaway harness that steps the world and counts
+births by cause, deaths, blocked births and a census every 250 ticks (ready pairs, `SPLIT` outputs, energy). Rule changes were emulated by
+wrapping the `lifecycle` phase, so they test a change and are not one. One seed (200460) unless a cell says two; the results agree with the
+4-seed screen but are not a screen. The scripts are throwaway and not committed.
+
+**The common cause is a birth rate below the death rate, with a few mechanisms setting the gap.** The defaults are also floor-bound for
+their first 70000 to 150000 ticks (seed 200460 takes off at 70000 to 90000, seed 597883 at 100000 to 150000; the floor refills about 100
+deaths per 10000 ticks), so the screen's arms differ in how long takeoff takes, and some never do.
+
+| Question                         | Mechanism                                                                                                                                                                                               | Evidence |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 1. `sexesEnabled` pins the floor | Splitting, the births that carry the world, becomes female-only and gated on a `SPLIT` output nothing has selected; mating is too sparse to make up for it                                              | Q1 below |
+| 2. `minAgents` 40/60/80 pins it  | An Allee effect: under the population-scaled food rule (`foodTargetPerAgent` 12, `foodTargetMin` 50) food density is proportional to the population, so a thin population starves faster than it breeds | Q2 below |
+| 3. Mating near 0 at `maxAgents`  | A freed slot goes to whoever tries first; a due pregnancy wins only if it falls due on the tick after a death, so 97% of pregnancies at the cap are lost                                                | Q3 below |
+
+**1. Sexes: where the births go** (seed 200460, 100 agents at the floor; deaths about 100 per 10000 ticks in both)
+
+| Per 50000 ticks                   | Mating births | Split births | Floor + immigrant entries | births/1k agent-ticks |
+| --------------------------------- | ------------- | ------------ | ------------------------- | --------------------- |
+| defaults (0 to 50000)             | 60            | 464          | 602                       | 0.10                  |
+| `sexesEnabled` (0 to 50000)       | 25            | 71           | 741                       | 0.02                  |
+| `sexesEnabled` (100000 to 150000) | 33            | 138          | 565                       | 0.03                  |
+
+- Floor and immigrants are 89% of entries with sexes on (53% off): the immigrant flow does not cause the pin, it hides it.
+- `readyToSplit` ignores the `SPLIT` output with sexes off (every agent above `splitMinEnergy` splits at once). With sexes on it needs a female with `SPLIT`
+  above 0.5 and `splitMinEnergy + splitCost`. Evolved brains do not output `SPLIT` freely: from 5000 to 60000 ticks 0.2 to 2 of 100 agents have it above 0.5, and
+  of the 15 to 35 agents above 900 energy only 1% to 8% do; 5 to 11 mature females sit above 950 energy, idle, at any instant (sexes off: none, they have split).
+  The share rises with time (6 of 100 at 200000 ticks, 17 of 100 at 1000000) because `fitnessV1` pays 300 per child, so it is learnt, slowly.
+- Mating is rare because the world is sparse, not because `findMale` filters. Per census about 26 agents are ready (`readyToMate`); 0.3 to 0.6 ready pairs of any sex lie
+  within `mateRange` (about 0.17 expected at random) and 0.00 to 0.03 are an eligible female and male. Failures are sex (0.05 to 0.75) and specialisation (0.1 to 0.25);
+  size, genetic distance and energy rejected none.
+- The sex ratio is 42% to 59% female. Males never split and hoard energy (mean energy 430 off, 570 to 1170 on), so half the population is dead weight for splitting.
+- Emulated changes: `SPLIT` forced to 1 for all: splits 37 to 75 per 10000 ticks against 14 to 51, but still pinned at 100 for 200000 ticks on two seeds (births/1k 0.03 to 0.06).
+  `SPLIT` above 0 counted as ready: 24 to 46, pinned for 100000. Splitting asexual (no sex or `SPLIT` gate, no `splitCost`) with mating sexual: pinned to 150000 ticks, then 150 agents
+  in 150000 to 200000 (births/1k 0.20), the defaults' timetable.
+
+**Does mating improve with time, or do the rules make it hard?** The rules and the density. In the sexes arm mating births stay flat for 1000000 ticks while splitting grows. The
+floor immigrants are archive elites (half a mutated `selectParent` draw, 30% clones, 20% random once the archive holds 10 cells), so they arrive able to forage; but the archive is scored by
+`fitnessV1` (food, 300 per child, survival), which has no pull towards finding a mate, and a mate has to be within about 140 px in a 14400 x 8100 world.
+
+| 100000-tick window, sexes arm | Mating births (200460 / 597883) | Split births | mating_share | births/1k     | Collision deaths (share of deaths) |
+| ----------------------------- | ------------------------------- | ------------ | ------------ | ------------- | ---------------------------------- |
+| 0 to 100000                   | 65 / 48                         | 150 / 150    | 0.30 / 0.24  | 0.021 / 0.020 | 431 (27%) / 434 (26%)              |
+| 200000 to 300000              | 48 / 55                         | 368 / 333    | 0.12 / 0.14  | 0.041 / 0.039 | 368 (25%) / 420 (25%)              |
+| 500000 to 600000              | 44 / 62                         | 390 / 408    | 0.10 / 0.13  | 0.043 / 0.047 | 305 (22%) / 401 (24%)              |
+| 900000 to 1000000             | 41 / 56                         | 499 / 507    | 0.08 / 0.10  | 0.053 / 0.056 | 317 (21%) / 364 (23%)              |
+
+Both seeds are still at the floor after 1000000 ticks (101 agents; 950 to 1480 floor and immigrant entries per 100000 ticks, 70% to 83% of entries). Mating is about 0.005 births per agent per
+1000 ticks throughout and in-range ready pairs stay at 0.3 to 0.7 per census. In the defaults mating rises only with density: 0.012 per agent per 1000 ticks at 103 agents, 0.051 at 321
+(seed 597883). Collision deaths are a steady 21% to 28% of deaths; they do not pin the world. Mating share falls only because splitting grows.
+
+**2. Low floor: is the world self-sustaining?** Not below about 100 agents at the default rules, and barely at 100. Per agent in the four-seed screen, births/1k agent-ticks against deaths at
+`minAgents` 40 / 60 / 80 / 100 (defaults) are 0.05 / 0.06 / 0.11 / 0.15 against 0.27 / 0.25 / 0.19 / 0.15, so the floor fills the gap (80% of entries at 40). Deaths by cause are the same in every arm:
+starvation 77% to 79%, collision 20% to 21%, eaten 0.3% to 0.5%, old age 0% to 2.5%. Starvation per agent falls with density (0.21 at 40, 0.12 at 100 per 1000 agent-ticks): mean energy is about 420
+at every floor, but the food stock is 12 per agent (480 at 40, 1200 at 100), so food per area, and the chance of meeting some, is proportional to the population.
+
+| Seed 200460, 100000 ticks, `minAgents` 40 plus | Population at 20000 / 40000 / 100000 | Floor spawns after 40000 ticks | Takes off                                            |
+| ---------------------------------------------- | ------------------------------------ | ------------------------------ | ---------------------------------------------------- |
+| nothing (the screen arm)                       | 40 / 40 / 41                         | 50 to 60 per 10000             | no                                                   |
+| `foodTargetMin` 1200 (food as at 100 agents)   | 54 / 301 / 500                       | 0                              | yes, at about 25000                                  |
+| `foodTargetPerAgent` 30                        | 42 / 41 / 242                        | 0 from 55000                   | yes, at about 55000                                  |
+| `splitMinEnergy` 600                           | 41 / 42 / 42                         | 70 to 90 per 10000             | no (births up, starvation up: children start at 300) |
+| `foodTargetMin` 1200 and `splitMinEnergy` 600  | 43 / 49 / 45                         | 18 to 40 per 10000             | no                                                   |
+
+Seed 597883: `minAgents` 40 stays pinned (births/1k 0.04 to 0.07); with `foodTargetMin` 1200 births/1k rise from 0.09 to 0.19 and the population from 43 to 54 in the last 20000 ticks, a takeoff that
+has started, so the lever is real and its timing varies by seed. **The collapse is specific to the population-scaled food rule.** The T41 candidate (all features on with `foodAreaCapacity`,
+`hebbianRate` 0.0001, sexes off, `minAgents` 40) has a mean population of 265 over its first 20000 ticks (seed 200460) and 437 over its first 50000 (seed 597883), and 500 from 20000 to 40000 and from 50000 to 100000 respectively, with 0 to 3 floor spawns per 20000 ticks after the first 20000; the area rule has no
+population term. `minAgents` 40 with the same features but no hebbian, no sexes and the T59 arm's other keys behaves alike (mean 331 in 20000 to 40000 ticks, 500 in 40000 to 60000).
+
+**3. Mating near 0 at `maxAgents`** (all on, `minAgents` 100, no hebbian, no sexes; seed 200460, 100000 ticks)
+
+- Before the cap (0 to 20000 ticks) the mating share is already low (0.04 to 0.15): agents above 900 energy split within a few hundred ticks, and a mating needs a ready pair (0.5 to 1.6 in range per
+  census) and 480 ticks of pregnancy during which the mother cannot split.
+- At the cap (500 agents from about 40000 ticks, mean energy 2000 to 7600, 320 to 420 agents above `splitMinEnergy`) every rich agent calls `giveBirth` every tick: 3 to 4 million capacity
+  `BIRTH_BLOCKED` events per 10000 ticks (about 350 per tick). A death frees a slot (about 0.03 per tick) and `splitAll` fills it on the next tick; only a pregnancy that falls due on that same tick comes
+  first, because `advancePregnancies` runs before `splitAll`. Pregnancies due per 10000 ticks are 32 to 127 and mating births 0 to 7, so **97% of pregnancies at the cap are lost** (the 15 energy `mateCost`
+  and 480 ticks, nothing retried). The mating share is 0.009 in 50000 to 100000 ticks and 0.006 in 100000 to 150000, against 0.15 before the cap. Splitting is not cheaper per birth; it is ready every tick.
+
+**Options.** "Sim code" marks the ones that need a rule change; the evidence is from the harness.
+
+| #   | Option                                                                                                         | Evidence                                                                                               | Cost                                                                             | Touches                               | Sim code     |
+| --- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------- | ------------ |
+| 1a  | Keep `sexesEnabled` off at T41; rework sexes in a later phase                                                  | Every other arm is healthy; sexes is the only feature still at the floor after 1000000 ticks           | No female/male dynamics at the switch-on                                         | `FEATURES_ON`, T41, E28               | no           |
+| 1b  | Asexual splitting, sexual mating: with sexes on, the sex and `SPLIT` gate and `splitCost` apply to mating only | Emulated: pinned to 150000 ticks, then takes off (150 agents, births/1k 0.20), the defaults' timetable | `splitCost` goes; mating share falls with half the partners                      | `sexesEnabled`, `splitCost` Decisions | yes          |
+| 1c  | Females split above the energy bar with no `SPLIT` gate; males never split                                     | Emulated: splits 2.5x up but pinned 200000 ticks on two seeds (births/1k 0.03 to 0.06)                 | Not enough alone: males are dead weight                                          | `sexesEnabled` Decision               | yes          |
+| 1d  | Seed the `SPLIT` output (positive initial bias) or credit splits in `fitnessV1`                                | Not run; follows from the `SPLIT` share (1% to 8% of rich agents) rising with time                     | Touches archive and goldens; risks a lineage that splits at every chance         | `fitnessV1`, archive                  | yes (policy) |
+| 2a  | Keep `minAgents` 100 (T59's proposal)                                                                          | Defaults at 100 pass the 80% rule on 3 of 4 seeds                                                      | The planned 40 stays unmet                                                       | T41, `minAgents` Decision             | no           |
+| 2b  | `minAgents` 40 as planned, with `foodAreaCapacity` on and sexes off                                            | T41 candidate: mean population 500 from 20000 / 50000 ticks on two seeds, almost no floor spawns       | Needs sexes off; one candidate config, two seeds; confirm with the 4-seed screen | T41, `FEATURES_ON`                    | no           |
+| 2c  | `foodTargetMin` 1200 (or `foodTargetPerAgent` 30) for the population-scaled rule                               | Seed 200460: takeoff at 25000 (55000 for 30); seed 597883 started late                                 | Moves the golden hashes below 100 agents; irrelevant while the area rule is on   | goldens, E27 baseline                 | no           |
+| 2d  | Lower `splitMinEnergy` 600                                                                                     | Pinned and worse: births 5x, starvation up, children start at 300 energy                               | Rejected                                                                         | none                                  | no           |
+| 3a  | A pregnancy blocked by capacity waits (stays at 1) and retries each tick                                       | Emulated: mating_share 0.142 over 100000 ticks (0.024 without); 0.14 in each 50000 after the cap       | A mother can wait for ever when the world stays full; she cannot split meanwhile | mating Targets, `giveBirth`           | yes          |
+| 3b  | Splits stop within 50 of `maxAgents`, leaving the last slots to pregnancies                                    | Emulated: 0.187 over 100000 ticks, 0.39 in the last 20000                                              | The population settles at 450 to 475, not 500                                    | `maxAgents` Decisions, B18            | yes          |
+| 3c  | 3a and 3b together                                                                                             | Emulated: 0.200 over 100000 ticks (0.268 in 50000 to 100000), mean population 384                      | Both costs                                                                       | as above                              | yes          |
+| 3d  | `splitMinEnergy` 3000, or `splitCooldownMultiplier` 6                                                          | Both fail: 3000 drops the world to the floor (102 agents), multiplier 6 leaves 0.008                   | Rejected                                                                         | none                                  | no           |
+
+Recommendation. For T41, keep sexes off (1a) and take `minAgents` 40 under the area food rule (2b) after the user confirms, with `hebbianRate` 0.0001. Rework sexes as 1b (plus 1d if the `SPLIT`
+output stays) in a new task before sexes are switched on. For the mating target use 3c: 0.2 on one seed, so confirm on four before relying on it. Leave 2c for the Phase 5 night; it matters only if the
+population-scaled rule returns.
+
 ### Phase 5 - Settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
