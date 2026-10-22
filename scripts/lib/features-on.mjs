@@ -8,6 +8,7 @@ import { FEATURE_RULES } from '../../js/sim/config-rules.js';
  */
 export const FEATURES_OFF = Object.freeze({
     birthWindowTicks: 3000,
+    capBirthsEnabled: false,
     carcassShare: 0.5,
     carcassTicks: 300,
     carcassesEnabled: false,
@@ -41,6 +42,7 @@ export const FEATURES_OFF = Object.freeze({
     satiationShare: 0,
     sexesEnabled: false,
     specMutationRate: 0,
+    splitCapMargin: 50,
     splitCost: 50,
     terrainLayout: 'open',
     traitsEnabled: false,
@@ -71,6 +73,7 @@ export const FEATURES_ON = Object.freeze({
     traitsEnabled: true,
     sexesEnabled: true,
     maxBirthsPerWindow: 3,
+    capBirthsEnabled: true,
     mateDistanceMax: 0.8,
     hashCellSize: 140,
 });

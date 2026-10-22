@@ -71,6 +71,8 @@ export const DEFAULTS = deepFreeze({
     splitCost: 50, // new: energy a female pays to split when sexes are on
     birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
     maxBirthsPerWindow: 0, // new: births (mating or splitting) a mother may have per span; 0 is off, 3 is the switch-on value
+    capBirthsEnabled: false, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
+    splitCapMargin: 50, // new: slots below maxAgents kept for pregnancies when capBirthsEnabled is on
     maxAgeTicks: 36000, // new
     reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES

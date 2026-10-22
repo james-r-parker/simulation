@@ -70,5 +70,7 @@ export const FEATURE_RULES = {
     splitCost: num(0),
     birthWindowTicks: int(1),
     maxBirthsPerWindow: int(0, 16),
+    capBirthsEnabled: BOOL,
+    splitCapMargin: int(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
 };
