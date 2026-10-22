@@ -1,10 +1,10 @@
 {
   "coverage": {
     "scripts": {
-      "lines": 93.8,
-      "branches": 86.23,
-      "functions": 97.55,
-      "statements": 94.06
+      "lines": 94.4,
+      "branches": 87.05,
+      "functions": 97.72,
+      "statements": 94.63
     },
     "js/sim": {
       "lines": 99.95,
