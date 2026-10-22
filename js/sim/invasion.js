@@ -2,7 +2,7 @@
 // at a world edge. The first is an ordinary immigrant (the policy draws its genome, from the archive when it has
 // one); the rest are copies of it, so the pulse is one lineage.
 
-import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, pushEvent } from './events.js';
 import { nextFloat, nextInt } from './rng.js';
 import { clearOfObstacles, spawnAgent } from './spawn.js';
 import { applyGenes } from './traits.js';
@@ -43,7 +43,8 @@ function placeAtEdge(world, slot, { edge, along }) {
 }
 
 /**
- * Makes `slot` a copy of `leader`: the same lineage, specialisation and weights.
+ * Makes `slot` a copy of `leader`: the same lineage, specialisation and weights, and corrects the follower's
+ * `AgentBorn` record (the newest event, pushed by `spawnAgent`) to match.
  * @param {World} world the world
  * @param {number} slot the follower
  * @param {number} leader the first immigrant
@@ -55,6 +56,12 @@ function copyGenome(world, slot, leader) {
     world.lineageId[slot] = world.lineageId[leader];
     world.spec[slot] = world.spec[leader];
     applyGenes(world, slot);
+    // spawnAgent pushed this slot's AgentBorn before the copy, with the follower's own lineage and the policy's spec;
+    // it is the newest record, and the observer reads lineage and spec from it.
+    const o = (world.events.count - 1) * EVENT_STRIDE;
+    const d = world.events.data;
+    d[o + 4] = world.lineageId[slot];
+    d[o + 5] = world.spec[slot];
 }
 
 /**
