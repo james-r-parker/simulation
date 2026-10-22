@@ -3,6 +3,7 @@
 
 import { feedPolicy } from '../evo/feed-policy.js';
 import { createObserver, observerPhases } from '../evo/observer.js';
+import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
 import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
 import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
@@ -135,7 +136,7 @@ export function worldInfo({ config, world }) {
         maxVelocity: config.maxVelocity,
         maxEnergy: config.maxEnergy,
         maxAgeTicks: config.maxAgeTicks,
-        seasonLength: config.erasEnabled ? config.eraSeasonTicks : config.seasonLength,
+        seasonLength: yearTicks(config) / SEASONS_PER_YEAR,
         sexesEnabled: config.sexesEnabled,
         traitsEnabled: config.traitsEnabled,
         seasonNames: [...SEASON_NAMES],
