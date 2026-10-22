@@ -758,7 +758,7 @@ the new senses against `E25`'s live arm, seeds 1-32 x 200000 ticks, paired with 
 
 **Targets:** none - features land switched off; Phase 4 measures them
 
-> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. T59 is done (As built (T59), Phase 4: `hebbianRate` is now 0.0001 in `FEATURES_ON`; `sexesEnabled` and `minAgents` 40 each pin the population at the floor and are open for the user). T68 is done (As built (T68), Phase 4: `capBirthsEnabled` is in `FEATURES_ON`; off by default, golden hashes unchanged). T69 is done (PR 105; sexes no longer pin the floor). A split-cap margin sweep found no value reaching mating share 0.2. T41 is done (As built (T41)). Next: T60 (perf on a quiet machine), then T42.
+> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. T59 is done (As built (T59), Phase 4: `hebbianRate` is now 0.0001 in `FEATURES_ON`; `sexesEnabled` and `minAgents` 40 each pin the population at the floor and are open for the user). T68 is done (As built (T68), Phase 4: `capBirthsEnabled` is in `FEATURES_ON`; off by default, golden hashes unchanged). T69 is done (PR 105; sexes no longer pin the floor). A split-cap margin sweep found no value reaching mating share 0.2. T41 is done (As built (T41)). T60 is done (As built (T60): all on 3.27 ms step, observer 0.16 ms, alloc-check 79240 bytes, all inside budget). Next: T42.
 
 The features under Biology features, Nature's limits and World features, each built and merged switched off, so the
 golden hashes hold (user, 2026-10-17: the world's rules are finished before the tuning night). Done when every task
@@ -1082,6 +1082,25 @@ specialisation dominance (1/4 seeds under 70%); sexes cost 27% (min 100) and 50%
 Baselines re-recorded: `evals/baselines/baseline-v5.json` (seeds 1-16) and `evals/baselines/baseline-v5-o16.json` (seeds 17-32), 16 seeds x 200000 ticks.
 
 E29 (`evals/experiments.json`, A/A split of `baseline-v5`): seeds 1-32 against 33-64 (`eval:compare --allow-seed-diff`) give no Target verdict. One non-Target verdict: `eval.idle_signals_per_1k` better (-5.0%), with a 6.7% false-positive rate at 32 seeds, so it is inside the expected rate. `npm run eval:power` on the 64-seed report flags six metrics whose false-positive rate exceeds 10% at 16 seeds: `alarm_precision` 11.4%, `deliberate_food_share` 10.4%, `diversity` 10.4%, `evasion_skill` 10.3%, `pursuit_bite_share` 11.7%, `smoke_precision` 10.5%. By the rule above they become `watch` in `DIRECTIONS`; that change is not made in T41 and is left for the user.
+
+**As built (T60, 2026-10-22).** Performance with every feature on at the code defaults, measured on a quiet machine
+(load under 1 before each run, one process at a time through `flock /tmp/claude-1000/cpu.lock`, 5 runs, median, 500
+agents). No code changed; no budget failed, so nothing was optimised.
+
+| Measure                                                                      | Frozen world (`@500`)            | All on (`@500defaults`)           | Budget or reference                |
+| ---------------------------------------------------------------------------- | -------------------------------- | --------------------------------- | ---------------------------------- |
+| `bench.step_ms`                                                              | 2.41 (2.39 to 2.43)              | 3.27 (3.27 to 3.30)               | T63: 2.45 and 3.38; baseline 2.372 |
+| sense / brain phase ms                                                       | 0.80 / 1.12                      | 1.08 / 1.55                       | T63 sense 0.80 and 1.21            |
+| physics / hash / signal / lifecycle / field phase ms                         | 0.16 / 0.06 / 0.11 / 0.08 / 0.09 | 0.25 / 0.10 / 0.10 / 0.07 / 0.09  | T63 physics 0.16 and 0.25          |
+| observer cost, `--policy map-elites-v1q` minus plain, ms                     | 0.158 (2.41 to 2.57)             | 0.162 (3.27 to 3.43)              | at most 0.25 ms per tick: met      |
+| `alloc-check` heap growth over 1000 ticks, bytes (best of runs, median of 5) | 38352 (defaults)                 | 79240 (`--policy map-elites-v1q`) | limit 1048576: met                 |
+| `bench-check` against `bench/baseline.json`                                  | +1.1% (limit +15%)               | not gated                         | passes                             |
+
+The all-on step costs 0.86 ms (36%) over the frozen world, the same share as at T63 (3.38 against 2.45); the extra is
+sense (+0.28 ms, rays against the rocks), brain (+0.43 ms, leaky update and Hebbian) and hash (+0.04 ms), with physics at
+0.25 ms. The observer's cost is the same frozen and all on (0.16 ms), as at T63 (0.16 and 0.24; all on is now lower). Heap
+growth is below the limit by 13x, but the policy figure is above T40's 20024 bytes (and plain above its 9760); the
+window is 1000 ticks of a world that is still filling its tables, and no leak shows (the figure is flat across the 5 runs).
 
 ### Phase 5 - Settle the balance
 
