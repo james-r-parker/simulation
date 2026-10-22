@@ -6,6 +6,7 @@ import { createWorld, placeClear, spawnAgent, spawnFoodItem } from '../../js/sim
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { fixedSpecPolicy, testPolicy } from './helpers/test-policy.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
     worldWidth: 1000,
@@ -28,7 +29,7 @@ const SMALL = {
  * @returns {ReturnType<typeof createWorld>}
  */
 function build(over = {}) {
-    return createWorld(createConfig({ ...SMALL, ...over }), testPolicy);
+    return createWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }), testPolicy);
 }
 
 /**
@@ -243,7 +244,7 @@ describe('spawnAgent', () => {
     });
 
     it('honours policy.initSpec', () => {
-        const w = createWorld(createConfig(SMALL), fixedSpecPolicy(3));
+        const w = createWorld(createConfig({ ...FEATURES_OFF, ...SMALL }), fixedSpecPolicy(3));
         for (let s = 0; s < 6; s++) {
             expect(w.spec[s]).toBe(3);
         }

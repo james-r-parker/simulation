@@ -3,6 +3,7 @@ import { ELO_START, expectedScore, updateElo } from '../../js/evo/elo.js';
 import { decide, matchPolicy, playMatch, runLeague, validateChampion } from '../../js/evo/league.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 import { createWorld } from '../../js/sim/spawn.js';
 import { makeChampionFile } from './helpers/champion-file.js';
 
@@ -114,7 +115,14 @@ describe('playMatch', () => {
     });
 
     it('stops once both sides have died out and decides on who lasted longer', () => {
-        const starving = { worldWidth: 2000, worldHeight: 1200, maxFood: 1, initialFood: 0, initialEnergy: 30 };
+        const starving = {
+            ...FEATURES_OFF,
+            worldWidth: 2000,
+            worldHeight: 1200,
+            maxFood: 1,
+            initialFood: 0,
+            initialEnergy: 30,
+        };
         const result = playMatch(champion('a', 1), champion('b', 2), 7, { ticks: 50000, config: starving });
         expect([result.aliveA, result.aliveB]).toEqual([0, 0]);
         expect(Math.max(result.lastAliveA, result.lastAliveB)).toBeLessThan(50000);

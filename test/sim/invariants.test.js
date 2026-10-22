@@ -3,6 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { INVARIANT, assertInvariants } from '../../js/sim/invariants.js';
 import { allocAgent, allocateWorld } from '../../js/sim/world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
     maxAgents: 4,
@@ -21,7 +22,7 @@ const SMALL = {
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function validWorld() {
-    const world = allocateWorld(createConfig(SMALL));
+    const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
     for (let i = 0; i < 3; i++) {
         const slot = allocAgent(world);
         world.x[slot] = 10 + i;
@@ -267,7 +268,7 @@ describe('assertInvariants', () => {
     });
 
     it('uses an absolute ledger tolerance of 1e-6 when the alive energy is below 1', () => {
-        const world = allocateWorld(createConfig(SMALL));
+        const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
         const slot = allocAgent(world);
         addEnergy(world, slot, 0.5, ENERGY_SOURCE.INITIAL);
         world.ledger[0] += 5e-7;

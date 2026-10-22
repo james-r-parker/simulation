@@ -3,7 +3,8 @@
 import { FEATURE_RULES } from '../../js/sim/config-rules.js';
 
 /**
- * The off value of every `FEATURE_RULES` key, plus `obstacleCount` and `hashCellSize`, which the switch-on retunes.
+ * The off value of every `FEATURE_RULES` key, plus `obstacleCount` and `hashCellSize`, which the switch-on retunes, and
+ * the predator's `plantFoodValue` (1 before T41), so the frozen bench world keeps predators eating plants.
  * @type {Readonly<Record<string, any>>}
  */
 export const FEATURES_OFF = Object.freeze({
@@ -41,6 +42,7 @@ export const FEATURES_OFF = Object.freeze({
     refugeSizeMax: 30,
     satiationShare: 0,
     sexesEnabled: false,
+    specialisations: { predator: { plantFoodValue: 1 } },
     specMutationRate: 0,
     splitCapMargin: 50,
     terrainLayout: 'open',
@@ -64,6 +66,7 @@ export const FEATURES_ON = Object.freeze({
     terrainLayout: 'basins',
     obstacleCount: 0,
     specMutationRate: 0.002,
+    specialisations: { predator: { plantFoodValue: 0 } },
     foodPatchCount: 16,
     foodAreaCapacity: true,
     erasEnabled: true,

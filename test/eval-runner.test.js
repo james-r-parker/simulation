@@ -6,10 +6,15 @@ import { LIVE_POLICY } from '../js/evo/policies/index.js';
 import { validateReport } from '../js/evo/report.js';
 import { main, parseArgs, pickSeeds, startCpuReport } from '../scripts/eval.mjs';
 import { cpuUse } from '../scripts/lib/cpu-use.mjs';
+import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
 
-const SMALL = { maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
+/** JSON has no Infinity; a genetic distance is never this large, so it is the same as off. */
+const JSON_MATE_OFF = 1e9;
+
+const SMALL = { ...FEATURES_OFF, maxAgents: 60, initialAgents: 30, minAgents: 10, worldWidth: 2000, worldHeight: 1000 };
 /** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
 const UNPLACEABLE = {
+    ...FEATURES_OFF,
     worldWidth: 1000,
     worldHeight: 1000,
     obstacleCount: 100,
@@ -134,7 +139,7 @@ describe('main', () => {
 
     it('exits 0 and writes the report for a tiny run', async () => {
         const config = join(dir, 'small.json');
-        writeFileSync(config, JSON.stringify(SMALL));
+        writeFileSync(config, JSON.stringify({ ...SMALL, mateDistanceMax: JSON_MATE_OFF }));
         const target = join(dir, 'main.json');
         const { code, out } = await runMain(
             ['--seeds', '1', '--ticks', '50', '--policy', 'baseline-v5', '--config', config, '--out', target],
@@ -147,7 +152,7 @@ describe('main', () => {
 
     it('exits 1, logs SeedFailed and prints a reproduce line when a seed fails', async () => {
         const config = join(dir, 'bad.json');
-        writeFileSync(config, JSON.stringify({ ...SMALL, ...UNPLACEABLE }));
+        writeFileSync(config, JSON.stringify({ ...SMALL, ...UNPLACEABLE, mateDistanceMax: JSON_MATE_OFF }));
         const { code, err } = await runMain(
             [
                 '--seeds',

@@ -6,6 +6,7 @@ import { EVENT_TYPE, readEvents } from '../../js/sim/events.js';
 import { regrowPatches } from '../../js/sim/food-patches.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const ERAS = {
     erasEnabled: true,
@@ -53,7 +54,7 @@ function events(w) {
 
 describe('eras config', () => {
     it('is off by default with the doc values', () => {
-        const c = createConfig({});
+        const c = createConfig({ ...FEATURES_OFF });
         expect([c.erasEnabled, c.eraSeasonTicks, c.winterRegrow, c.droughtChance]).toEqual([false, 36000, 0.2, 0.25]);
         expect([c.invasionInterval, c.invasionSize]).toEqual([180000, 12]);
     });
@@ -66,12 +67,12 @@ describe('eras config', () => {
         ['invasionInterval', -1],
         ['invasionSize', 1.5],
     ])('rejects %s of %s', (key, value) => {
-        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(`config\\.${key}`));
+        expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
 
     it('makes a year of four eraSeasonTicks seasons only when on', () => {
-        expect(yearTicks(createConfig({}))).toBe(3600);
-        expect(yearTicks(createConfig({ erasEnabled: true }))).toBe(144000);
+        expect(yearTicks(createConfig({ ...FEATURES_OFF }))).toBe(3600);
+        expect(yearTicks(createConfig({ ...FEATURES_OFF, erasEnabled: true }))).toBe(144000);
     });
 });
 

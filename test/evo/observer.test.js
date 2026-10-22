@@ -7,6 +7,7 @@ import { step } from '../../js/sim/step.js';
 import { checkpoint, createObserver, observe, observerPhases } from '../../js/evo/observer.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBorn, nextTick, observed } from './helpers/observer-world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 /** A policy that gives random-looking but fixed weights and copies the mother's row into a child. */
 const policy = {
@@ -36,7 +37,7 @@ describe('createObserver', () => {
     });
 
     it('sizes the cell bitset for 200 px cells: 72 x 41 on the default world', () => {
-        const observer = createObserver(createConfig(), fork(createRng(1), 'eval'));
+        const observer = createObserver(createConfig({ ...FEATURES_OFF }), fork(createRng(1), 'eval'));
         expect([observer.cellCols, observer.cellRows, observer.cellBytes]).toEqual([72, 41, 369]);
     });
 });
@@ -68,6 +69,7 @@ describe('observe', () => {
 /** @returns {Readonly<Record<string, any>>} a small busy world's config */
 function smallConfig() {
     return createConfig({
+        ...FEATURES_OFF,
         worldWidth: 2000,
         worldHeight: 1400,
         maxAgents: 40,

@@ -13,8 +13,10 @@ import { step } from '../../../js/sim/step.js';
 import { hashWorld } from '../../../js/sim/world-hash.js';
 import { runReplay } from '../../../scripts/replay.mjs';
 import { dispatchEvents, runSeed } from '../../../scripts/eval-worker.mjs';
+import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
 
 const OVERRIDES = {
+    ...FEATURES_OFF,
     maxAgents: 60,
     initialAgents: 30,
     minAgents: 10,
@@ -33,7 +35,7 @@ const OVERRIDES = {
  * @returns {{policy: any, hash: string, records: any[]}} the policy after an eval-style run
  */
 function evalRun(seed, ticks) {
-    const config = createConfig({ ...OVERRIDES, seed });
+    const config = createConfig({ ...FEATURES_OFF, ...OVERRIDES, seed });
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     /** @type {any[]} */
     const records = [];

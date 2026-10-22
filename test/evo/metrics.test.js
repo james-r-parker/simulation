@@ -10,6 +10,7 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { addAlive, addCheckpoint, addDeath, bareObserver } from './helpers/metrics-observer.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const fitness = (/** @type {any} */ o, /** @type {number} */ slot) => o.children[slot];
 
@@ -150,6 +151,7 @@ describe('computeMetrics on hand-built state', () => {
 describe('computeMetrics on a real world', () => {
     it('gives every metric a finite number or null with a reason', () => {
         const config = createConfig({
+            ...FEATURES_OFF,
             worldWidth: 2000,
             worldHeight: 1400,
             maxAgents: 40,

@@ -4,6 +4,7 @@ import { BLOCKED_CAUSE, BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from '.
 import { LOG_LEVEL, createSimLog, drainEvents } from '../../js/sim/log.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 /**
  * @param {Record<string, any>} [over]
@@ -12,6 +13,7 @@ import { testPolicy } from './helpers/test-policy.js';
 function build(over = {}) {
     return createWorld(
         createConfig({
+            ...FEATURES_OFF,
             worldWidth: 1000,
             worldHeight: 1000,
             maxAgents: 12,
