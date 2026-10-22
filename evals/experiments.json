@@ -1233,6 +1233,25 @@
       "verdicts": {},
       "effect": "better",
       "note": "Same seeds as E31, 4 seeds per arm. hebbianRate born_share: 0.01 0.18, 0.003 0.31, 0.001 0.42, 0.0003 0.63 (1 of 4 seeds free), 0.0001 0.86 (4 of 4, defaults 0.88), 0.00003 0.76; FEATURES_ON takes 0.0001. sexes with splitCost 50/25/10: born_share 0.15/0.18/0.18, population at the floor 100 on every seed, not fixed by value. minAgents 40/60/80: born_share 0.20/0.24/0.54 (population at the floor on 4/4/3 of 4 seeds), 100 gives 0.88. basins-nodamage (obstacleDamage 0): pop mean 300 against 209 with damage, collision-cause deaths 1157-1416 against 1613-1885. allon (FEATURES_ON with hebbianRate 0.01, minAgents 40): born_share 0.07; allon-min100-nohebb-nosexes (hebbianRate 0, sexes off, minAgents 100): 4 of 4 seeds pass the 80% rule and catch_rate above 0, born_share 0.99, mating_share 0.01, pop at maxAgents, lineages 5.9-11.7. sexes and minAgents 40 remain open for the user."
+    },
+    {
+      "id": "E33",
+      "date": "2026-10-22",
+      "branch": "eval/wb-t72-round-a",
+      "hypothesis": "Round A of Phase 5 (one key at a time, 4 seeds x 200000 ticks, offset 28): a world-rule key raises eval.mating_share at least 50% above the T41 defaults (base) without cutting births, lineages or food.",
+      "prediction": "mateRange 200 and 300 and mateChanceScale 0.7 raise eval.mating_share most, because range and willingness are the narrow steps of the mating funnel (Collapse diagnosis Q3: a pregnancy at the cap is lost unless a mate is ready). foodRegrowPerArea 0.09 and maxAgents 750 raise it through density (mating rises with density) at a higher tick cost. splitMinEnergy 1500 and splitCooldownMultiplier 3 or 4 raise the ratio only by cutting splits, so they raise eval.mating_share while failing the births guard (eval.births_per_1k down more than 15%). mateCost, childEnergyShare, childEnergyMin and pregnancyTicks move it by less than 20%. No single key reaches 0.2, so round B is needed.",
+      "targets": [
+        "eval.mating_share",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan"
+      ],
+      "before": "evals/screens/phase5-a.grid.json",
+      "after": "evals/screens/results/phase5-a/table.md",
+      "verdicts": {},
+      "effect": "better",
+      "note": "Round A screen (T72, evals/screens/results/phase5-a/table.md): 34 arms plus base, 4 seeds x 200000 ticks, offset 28, live policy. No arm reaches the 0.2 mating mean; the highest is 0.08 (base 0.05). Advancing arms (mating at least 50% above base, guards held): mateRange-300 (0.08, +61%), mateRange-200 (0.08, +54%), mateDistanceMax-1 (0.08, +55%). No arm trips the births (more than 15% down) or lineage guard, and every arm keeps population above minAgents and below maxAgents on 4 of 4 seeds. Prediction check: mateRange 200/300 confirmed; mateChanceScale 0.7 (+8%) and foodRegrowPerArea 0.09 (-22%) did not rise as predicted; splitCooldownMultiplier 3 and 4 lowered the share (-27%, -55%) rather than raising it; splitMinEnergy 1500 raised births (+19%) without raising the share (+1%); childEnergyMin 100 (+35%) and childEnergyShare 0.35 (-28%) moved more than the 20% predicted. Round B is needed; the stop rule (no arm at 0.12) does not trigger."
     }
   ]
 }
