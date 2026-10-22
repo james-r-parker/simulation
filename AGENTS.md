@@ -92,6 +92,26 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
    failing test, fix.
 7. **Docs drift** - the `audit-docs` skill proposes fixes; nothing is applied without approval.
 
+## Delegating to subagents
+
+When one agent hands tasks to others (user, 2026-10-22):
+
+- **One task at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
+  and the plan doc, and the rework costs more than the parallelism saves.
+- **Pick the model by the task's tag.** `[mechanical]` tasks (run a command, re-pin, re-record, fill a table) go to
+  Haiku; `[judgement]` tasks (deciding a verdict, diagnosis, review, optimisation) go to Sonnet. The delegating agent
+  reviews every result before it merges.
+- **Wait without polling.** Start long runs (evals, screens, the full gate) in the background and wait for the
+  completion notice; never loop on sleep or check progress every few minutes. Leave no waiting loops behind.
+- **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
+  short table instead of reading whole reports.
+- **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,
+  `perf:browser`, `alloc-check`) and the full gate (`scripts/check.sh`, whose `bench-check` and slow-test timeouts
+  fail under load) run through `flock /tmp/claude-1000/cpu.lock <cmd>` and only while no eval or screen is running.
+  Evals, screens, the ladder and replays are deterministic whatever the load, so they run side by side and may fill
+  the CPU.
+- **Report once, briefly**: PR link, what changed, measurements, decisions, anything unsure.
+
 ## Hard rules
 
 - Never commit to `main`. Branch `<type>/<short-desc>` (`docs/<doc-name>` for design docs); conventional commit
