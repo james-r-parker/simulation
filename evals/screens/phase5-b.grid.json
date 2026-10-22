@@ -1,0 +1,80 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "base": {},
+  "arms": {
+    "range300+dist1": {
+      "mateRange": 300,
+      "mateDistanceMax": 1
+    },
+    "range200+dist1": {
+      "mateRange": 200,
+      "mateDistanceMax": 1
+    },
+    "range300+cool150": {
+      "mateRange": 300,
+      "reproductionCooldown": 150
+    },
+    "range300+childmin100": {
+      "mateRange": 300,
+      "childEnergyMin": 100
+    },
+    "range300+births5": {
+      "mateRange": 300,
+      "maxBirthsPerWindow": 5
+    },
+    "dist1+cool150": {
+      "mateDistanceMax": 1,
+      "reproductionCooldown": 150
+    },
+    "dist1+childmin100": {
+      "mateDistanceMax": 1,
+      "childEnergyMin": 100
+    },
+    "dist1+births5": {
+      "mateDistanceMax": 1,
+      "maxBirthsPerWindow": 5
+    },
+    "cool150+childmin100": {
+      "reproductionCooldown": 150,
+      "childEnergyMin": 100
+    },
+    "range300+dist1+cool150": {
+      "mateRange": 300,
+      "mateDistanceMax": 1,
+      "reproductionCooldown": 150
+    },
+    "range300+dist1+childmin100": {
+      "mateRange": 300,
+      "mateDistanceMax": 1,
+      "childEnergyMin": 100
+    },
+    "range300+dist1+births5": {
+      "mateRange": 300,
+      "mateDistanceMax": 1,
+      "maxBirthsPerWindow": 5
+    },
+    "range300+dist1+cool150+childmin100": {
+      "mateRange": 300,
+      "mateDistanceMax": 1,
+      "reproductionCooldown": 150,
+      "childEnergyMin": 100
+    },
+    "all5-range300": {
+      "mateRange": 300,
+      "mateDistanceMax": 1,
+      "reproductionCooldown": 150,
+      "childEnergyMin": 100,
+      "maxBirthsPerWindow": 5
+    },
+    "all5-range200": {
+      "mateRange": 200,
+      "mateDistanceMax": 1,
+      "reproductionCooldown": 150,
+      "childEnergyMin": 100,
+      "maxBirthsPerWindow": 5
+    }
+  }
+}
