@@ -6,6 +6,7 @@ import { ENERGY_SOURCE, addEnergy } from '../../../js/sim/energy.js';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { spawnAgent, createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
+import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
 
 /** The hunter is slot 0 and the specialisation `predator`; the prey is slot 1 and a `forager`. */
 export const HUNTER = 0;
@@ -121,7 +122,7 @@ export function fleeBrain(smoke) {
  * @returns {Record<string, any>} the world
  */
 export function createArena({ gap, hunterEnergy, preyHeading = 0, over = {} }) {
-    const world = createWorld(createConfig({ ...ARENA, ...over }), POLICY);
+    const world = createWorld(createConfig({ ...FEATURES_OFF, ...ARENA, ...over }), POLICY);
     spawnAgent(world, POLICY, BORN_CAUSE.INITIAL);
     spawnAgent(world, POLICY, BORN_CAUSE.INITIAL);
     addEnergy(world, HUNTER, hunterEnergy - world.energy[HUNTER], ENERGY_SOURCE.INITIAL);

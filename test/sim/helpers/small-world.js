@@ -1,6 +1,7 @@
 import { createConfig } from '../../../js/sim/config.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { testPolicy } from './test-policy.js';
+import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
 
 /**
  * Builds a small empty world for environment-style tests.
@@ -9,6 +10,7 @@ import { testPolicy } from './test-policy.js';
  */
 export function smallWorld(over = {}) {
     const config = createConfig({
+        ...FEATURES_OFF,
         worldWidth: 1000,
         worldHeight: 1000,
         maxAgents: 8,

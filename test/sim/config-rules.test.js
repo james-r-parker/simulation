@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FEATURE_RULES, UNIT, int, num, positive } from '../../js/sim/config-rules.js';
 import { createConfig } from '../../js/sim/config.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 describe('config rules', () => {
     it('builds int, num, positive and unit rules', () => {
@@ -11,40 +12,40 @@ describe('config rules', () => {
     });
 
     it('covers every feature key with a rule the defaults pass', () => {
-        const config = createConfig({});
+        const config = createConfig({ ...FEATURES_OFF });
         for (const key of Object.keys(FEATURE_RULES)) {
             expect(config).toHaveProperty(key);
         }
-        expect(() => createConfig({ foodPatchCount: 257 })).toThrow(/foodPatchCount/);
-        expect(() => createConfig({ hebbianRate: 2 })).toThrow(/hebbianRate/);
+        expect(() => createConfig({ ...FEATURES_OFF, foodPatchCount: 257 })).toThrow(/foodPatchCount/);
+        expect(() => createConfig({ ...FEATURES_OFF, hebbianRate: 2 })).toThrow(/hebbianRate/);
     });
 });
 
 describe('mateDistanceMax rule', () => {
     it('defaults to Infinity and accepts it, and any finite number above 0', () => {
-        expect(createConfig({}).mateDistanceMax).toBe(Infinity);
-        expect(createConfig({ mateDistanceMax: Infinity }).mateDistanceMax).toBe(Infinity);
-        expect(createConfig({ mateDistanceMax: 0.8 }).mateDistanceMax).toBe(0.8);
+        expect(createConfig({ ...FEATURES_OFF }).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ ...FEATURES_OFF, mateDistanceMax: Infinity }).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ ...FEATURES_OFF, mateDistanceMax: 0.8 }).mateDistanceMax).toBe(0.8);
     });
 
     it.each([0, -1, NaN, -Infinity, '0.8'])('rejects %s', (value) => {
-        expect(() => createConfig({ mateDistanceMax: value })).toThrow(/mateDistanceMax/);
+        expect(() => createConfig({ ...FEATURES_OFF, mateDistanceMax: value })).toThrow(/mateDistanceMax/);
     });
 });
 
 describe('sexes keys', () => {
     it('default to off', () => {
-        expect(createConfig({}).sexesEnabled).toBe(false);
+        expect(createConfig({ ...FEATURES_OFF }).sexesEnabled).toBe(false);
     });
 
     it('rejects a bad sexesEnabled', () => {
-        expect(() => createConfig({ sexesEnabled: 1 })).toThrow(/sexesEnabled/);
+        expect(() => createConfig({ ...FEATURES_OFF, sexesEnabled: 1 })).toThrow(/sexesEnabled/);
     });
 });
 
 describe('birth budget keys', () => {
     it('default to a 3000 tick window and the budget off', () => {
-        const c = createConfig({});
+        const c = createConfig({ ...FEATURES_OFF });
         expect([c.birthWindowTicks, c.maxBirthsPerWindow]).toEqual([3000, 0]);
     });
 
@@ -54,6 +55,6 @@ describe('birth budget keys', () => {
         ['maxBirthsPerWindow', 1.5],
         ['maxBirthsPerWindow', 17],
     ])('rejects a bad %s', (key, value) => {
-        expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+        expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(new RegExp(key));
     });
 });

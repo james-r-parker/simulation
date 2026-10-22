@@ -4,8 +4,18 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { reportPath, runScreen } from '../scripts/lib/screen-run.mjs';
 import { main, parseArgs, screen } from '../scripts/screen.mjs';
+import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
 
-const SMALL = { maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+// The grid file is JSON, which has no Infinity: 1e9 is mate distance off (no genetic distance reaches it).
+const SMALL = {
+    ...FEATURES_OFF,
+    mateDistanceMax: 1e9,
+    maxAgents: 40,
+    initialAgents: 12,
+    minAgents: 4,
+    worldWidth: 1500,
+    worldHeight: 1000,
+};
 const grid = {
     seeds: 2,
     ticks: 1200,

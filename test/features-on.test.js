@@ -15,6 +15,7 @@ const SWITCHED_ON = [
     'terrainLayout',
     'obstacleCount',
     'specMutationRate',
+    'specialisations',
     'foodPatchCount',
     'foodAreaCapacity',
     'erasEnabled',
@@ -45,11 +46,25 @@ describe('feature switch lists', () => {
         expect(TRACKED_VARIANTS.find((v) => v.suffix === 'defaults')?.overrides).toBe(FEATURES_ON);
     });
 
-    it('match the createConfig defaults when off, and build a world that steps when on', () => {
-        const defaults = createConfig({});
+    it('read back FEATURES_OFF from createConfig, and make the code defaults the switch-on values', () => {
+        const off = createConfig({ ...FEATURES_OFF });
         for (const [key, value] of Object.entries(FEATURES_OFF)) {
-            expect(defaults[key]).toEqual(value);
+            if (key !== 'specialisations') {
+                expect(off[key]).toEqual(value);
+            }
         }
+        expect(off.specialisations.predator.plantFoodValue).toBe(1);
+        const defaults = createConfig({});
+        for (const [key, value] of Object.entries(FEATURES_ON)) {
+            if (key !== 'specialisations') {
+                expect(defaults[key]).toEqual(value);
+            }
+        }
+        expect(defaults.specialisations.predator.plantFoodValue).toBe(0);
+        expect(defaults.minAgents).toBe(40);
+    });
+
+    it('build a world that steps when on', () => {
         const config = createConfig({ ...FEATURES_ON, initialAgents: 40, minAgents: 40, maxAgents: 60 });
         const brain = cloneWithNoisePolicy();
         const world = createWorld(config, brain);

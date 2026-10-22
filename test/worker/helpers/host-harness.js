@@ -1,8 +1,10 @@
 import { cloneWithNoisePolicy } from '../../../js/sim/birth-policy.js';
 import { createSimHost } from '../../../js/worker/sim-host.js';
+import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
 
-/** A small, quick world for host tests. */
+/** A small, quick world for host tests, with the Phase 3 features off (the old world). */
 export const SMALL_CONFIG = Object.freeze({
+    ...FEATURES_OFF,
     worldWidth: 1600,
     worldHeight: 1000,
     maxAgents: 40,

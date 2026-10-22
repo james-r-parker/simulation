@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "16e83ae2cf097fc6"
+      "worldHash": "2a03aeaa71df1be6"
     },
     {
       "name": "busy",
@@ -12,6 +12,7 @@
         "worldWidth": 2400,
         "worldHeight": 1600,
         "obstacleCount": 4,
+        "terrainLayout": "open",
         "maxAgents": 150,
         "minAgents": 30,
         "maturityTicks": 200,
@@ -21,7 +22,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 5000,
-      "worldHash": "6d153ce20dab8a97"
+      "worldHash": "abe82332e76125d8"
     }
   ],
   "shortCases": [
@@ -29,7 +30,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 300,
-      "worldHash": "f93315144c233d1a"
+      "worldHash": "68b19afca2d2739e"
     },
     {
       "name": "busy",
@@ -37,6 +38,7 @@
         "worldWidth": 2400,
         "worldHeight": 1600,
         "obstacleCount": 4,
+        "terrainLayout": "open",
         "maxAgents": 150,
         "minAgents": 30,
         "maturityTicks": 200,
@@ -46,7 +48,7 @@
         "splitMinEnergy": 900
       },
       "ticks": 300,
-      "worldHash": "7e644b7a5fbbf99d"
+      "worldHash": "d3f0c6c10d19fd18"
     }
   ]
 }

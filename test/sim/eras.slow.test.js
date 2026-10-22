@@ -4,6 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../../js/sim/events.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SEASON = 300;
 const TICKS = 1900;
@@ -17,6 +18,7 @@ function run() {
     const policy = cloneWithNoisePolicy();
     const world = createWorld(
         createConfig({
+            ...FEATURES_OFF,
             worldWidth: 3000,
             worldHeight: 2000,
             maxAgents: 120,
