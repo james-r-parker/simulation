@@ -341,7 +341,7 @@ from 0.7 to 1.3 of its default; genes start at 0. `traitsEnabled` false holds ev
 
 `mutateWeights` mutates the trait and leak genes with their own sigma, `TRAIT_SIGMA` 0.1, rather than the weight sigma.
 The hunt and mate size ratios compare trait-scaled sizes, so a small body is cheaper to run and easier to bite. The
-spatial-hash query radius covers 1.3 x the largest `visionRange`.
+spatial-hash needs no wider query radius: each ray's walk stops at its own range (see the Decisions table).
 
 ### Patchy food that regrows
 
@@ -423,7 +423,7 @@ the leaky update is bit-identical and faster (`bench:micro --compare origin/main
 ops/s, +38.7%; in the full step the brain phase fell about 3%). `hebbianStep` could not be sped up: `bench:micro` showed +37.5% for a
 ternary clamp with an unrolled loop, but in the full step it cost +14.5% (ternary alone) and +7% (unrolled with `Math.min`), so the
 original stays; the microbench state (one call repeated, `hebbianRate` 0.00001) does not match a living world. The observer budget
-is not met: `bench -- --policy map-elites-v1q --sizes=500` against the reference bench on the same tree is +13% on the frozen
+was not met at T40 (met by T63, below): `bench -- --policy map-elites-v1q --sizes=500` against the reference bench on the same tree is +13% on the frozen
 world (4.34 against 3.83 ms) and +9% with everything on, against 5% in the budget; Phase 1 measured +4.4%, and the growth came
 with the Phase 2 observer work, not from this task. A 3-seed, 4000-tick run with every feature on has the same `hashWorld`
 before and after; the golden hashes are unchanged.
@@ -462,7 +462,7 @@ What is left in the observer is spread thin (nearest hunter about 0.03 ms, `summ
 Five rules make numbers limit themselves the way they do in nature (user, 2026-10-17). Each lands switched off like
 the other Phase 3 features and is switched on in T41.
 
-**Predators eat only prey.** `plantFoodValue` (per specialisation, default 1, predator 0) multiplies the energy of a
+**Predators eat only prey.** `plantFoodValue` (per specialisation; the code default is 1 for all, T41 sets the predator's to 0) multiplies the energy of a
 food item in `tryEat` in `js/sim/feeding.js`; a predator touching food gains nothing and the item stays. Predators
 breed only from bite energy, so their numbers follow their prey's.
 
@@ -504,7 +504,7 @@ the specialisation of a random archive elite, or a random one when the archive i
 vanish and return only by mutation or immigration. `eval.spec_turnover` (watch) counts specialisation extinctions and
 returns per 100000 ticks.
 
-**Geography that stays put (T52).** `terrainLayout` (`open` or `basins`, default `basins`) builds fixed terrain at
+**Geography that stays put (T52).** `terrainLayout` (`open` or `basins`; the code default is `open`, T41 sets `basins`) builds fixed terrain at
 world creation from the `obstacles` stream: two basins split by a static wall with `wallGaps` (3) gaps of
 `wallGapWidth` (300 px), `refugeCount` (4) refuges of dense static rocks where only agents below
 `refugeSizeMax` (the forager's size) fit, and a cold margin `coldMarginWidth` (600 px) along the north and south
@@ -740,11 +740,60 @@ the new senses against `E25`'s live arm, seeds 1-32 x 200000 ticks, paired with 
 
 **Targets:** none - features land switched off; Phase 4 measures them
 
-> **Note:** State at 2026-10-21 (later) - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). Next, one task at a time (user): T44; then Phase 4 (T59 screens, T41 switch-on with `minAgents` 40 and `hashCellSize` at least 140, T60, T42). Perf only on a quiet machine.
+> **Note:** State at 2026-10-21 (later) - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, so Phase 3 is not yet marked built. Next, one task at a time (user): T64, T65, T66; then mark Phase 3 built, and Phase 4 (T59 screens, T41 switch-on with `minAgents` 40 and `hashCellSize` at least 140, T60, T42). Perf only on a quiet machine.
 
 The features under Biology features, Nature's limits and World features, each built and merged switched off, so the
 golden hashes hold (user, 2026-10-17: the world's rules are finished before the tuning night). Done when every task
 below is merged with its feature off and the gate is green; switching them on is Phase 4.
+
+**Review (T44, 2026-10-22).** Read against `origin/main` at `bf5e4f7`, feature by feature, with the code and tests, not
+the notes. Checked: `node_modules` fresh (`npm ci`), `npx vitest run` (286 files, 2845 passed, 15 expected failures),
+`scripts/check.sh --only=conventions,designs-index,format,lint,typecheck,deps,dupes,ratchet,build,eval-smoke` (all
+passed; `bench-check` and `browser-smoke` not run, as the machine was shared), `npm run browser:hash` (Chromium 156:
+default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`, equal to `test/sim/golden.json`), and a 20000-tick replay of seed 3
+with every feature on (`FEATURES_ON`, `minAgents` 40) and `--check-invariants`, which finished with no violation.
+Every feature exists as specified, lands off with its documented off state, keeps the default golden hashes, has its
+`FEATURE_RULES` or `validateConfig` rule and a mirrored test; the hash adds each feature's arrays only when it is on
+(`fastOut`, `vision` and `baseSize`, `sex`, `birthRing`, the patch arrays, `foodKind`, `era`); and each off path draws
+nothing, apart from the trait-gene crossover draws and inert-gene mutation that come with the T30 layout (below). No
+Manager row in the Decisions table contradicts a user row. Findings:
+
+- **Blocker for T41 - invasion followers are mis-reported (T64).** `invade` in `js/sim/invasion.js` calls `spawnAgent`
+  for each follower, which pushes `AgentBorn` with the follower's own lineage id and the policy's specialisation, and
+  only then `copyGenome` overwrites the world's `lineageId` and `spec` with the leader's. The observer takes lineage
+  and specialisation from the `AgentBorn` record (`startBirth` in `js/evo/observer-events.js`), so with eras on it
+  holds the wrong lineage and role for `invasionSize - 1` agents per pulse (a probe on `smallWorld` found 4 of 5
+  `AgentBorn` records disagreeing with the world). `eval.lineages_alive` and the per-specialisation metrics that E28
+  and E29 read would be off. The fix writes the copy's lineage and specialisation into the follower's `AgentBorn`
+  record (or spawns with them), with a test that the observer's `lineageId` and `spec` equal the world's after a pulse.
+- **Fix before Phase 4 - `baseline-v5` ignores the new genes (T65).** `initBrain` and `childBrain` in
+  `js/evo/policies/baseline-v5.js` fill and mutate the whole row with the legacy sigmas and the +-3 clamp, so its leak
+  genes start near 0 (rate about 0.5, not `LEAK_GENE_START` 3) and its trait genes start at random values, and it
+  never uses `TRAIT_SIGMA`. With leak or traits on, the control arm of E28, E29 and the T41 re-record would run a
+  different body than the live policy. Either teach it the layout (zero trait genes, `LEAK_GENE_START`,
+  `TRAIT_SIGMA` when `biologyOn`) or record in the doc that it keeps the legacy gene noise by design.
+- **Note - the UI calendar is four times too slow with eras off (T66).** `worldInfo` in `js/worker/host-world.js`
+  sends `seasonLength` as `config.seasonLength` (3600, which is the whole year: `yearTicks`) when eras are off, but
+  `calendarOf` in `js/app/ui/status-line.js` and the inspector read it as one season. With eras on it is correct
+  (`eraSeasonTicks`), so T41 hides the fault; decision "Snapshot flag bit 14" says "a season". Send
+  `config.seasonLength / 4` and fix the test that pins 3600.
+- **Note - area food only redistributes by patch stock.** `areaExpected` in `js/sim/food.js` depends on the area and
+  the season, not on the patches, and `pickPatch` normalises by total stock, so an eaten-down patch moves where food
+  lands but does not lower the world's supply; the cap is the area rate, which is what the Decisions row says. The
+  Nature's limits sentence "less food appears there" is true per patch only.
+- **Note - off is not literally draw-free for the layout.** Crossover takes each trait gene from one parent by one draw
+  and `mutateWeights` mutates the trait and leak genes at the weight sigma while `biologyOn` is false; both come with
+  the T30 layout (re-pinned) and the genes are inert when off. Every switch-gated rule (sexes, patches, eras, carcasses,
+  budget, specialisation mutation, Hebbian, leak) draws nothing when off.
+- **Note - `plantFoodValue` predator 0 is not in the code defaults or `FEATURES_ON`.** Known (decision, T43): T41 sets
+  it and adds it to `FEATURES_ON`; T60 measures after it. T45's row asks for predator 0, so a predator still eats food
+  until T41.
+- **Note - invasion followers also run the policy's `initSpec` and `initBrain` before their genome is overwritten**,
+  which spends `spawn` and `brain-init` draws that the copy does not need. Harmless to correctness (the stream is
+  deterministic) and left for T64 to tidy.
+
+Doc fixes made here: the spatial-hash sentence now matches the Decisions row, the `terrainLayout` and
+`plantFoodValue` defaults say what the code defaults are, and T40's "budget is not met" says T63 met it.
 
 ### Phase 4 - Integrate and verify
 
@@ -880,15 +929,18 @@ Phases 1 to 3 are planned below; Phase 5 adds its rows when T15 plans it.
 | T54 | Carcasses as `meat` food items with `carcassTicks`, `carcassShare`, `meatFoodValue`, snapshot marks, with tests (built, off)                                                                                                                                                                                                                                                                                              | [judgement]  | T45                                                                                                          |
 | T63 | Bring the observer's overhead (`bench -- --policy map-elites-v1q --sizes=500` against the plain bench) back under 0.25 ms per tick (budget restated in ms, user 2026-10-22) on the frozen and the all-on world, and find and cut why the physics phase goes from 0.6 to 1.9 ms with every feature on; each change bit-identical, measured with `bench:micro` and the concurrent old-against-new whole-step method (built) | [judgement]  | T40                                                                                                          |
 | T43 | Update headless-sim-core-contracts.md, reachable-births.md, predator-prey.md, worker-and-renderer.md (snapshot) and sim-notes.md for the features as built (built)                                                                                                                                                                                                                                                        | [mechanical] | T38, T39, T40, T45, T46, T47, T49, T50, T51, T52, T53, T54, T63                                              |
-| T44 | Conformance review of Phase 3                                                                                                                                                                                                                                                                                                                                                                                             | [judgement]  | T30, T31, T32, T33, T34, T35, T36, T37, T38, T39, T40, T43, T45, T46, T47, T49, T50, T51, T52, T53, T54, T63 |
+| T44 | Conformance review of Phase 3 (built)                                                                                                                                                                                                                                                                                                                                                                                     | [judgement]  | T30, T31, T32, T33, T34, T35, T36, T37, T38, T39, T40, T43, T45, T46, T47, T49, T50, T51, T52, T53, T54, T63 |
+| T64 | Fix the invasion followers: write the copied lineage and specialisation into each follower's `AgentBorn` record (or spawn with them) and skip the policy hooks the copy does not need, with a test that the observer's `lineageId` and `spec` equal the world's after a pulse                                                                                                                                             | [mechanical] | T44                                                                                                          |
+| T65 | Make `baseline-v5` handle the trait and leak genes (zero trait genes, `LEAK_GENE_START`, `TRAIT_SIGMA` when `biologyOn`) or record in this doc that it keeps the legacy gene noise by design, with a test either way                                                                                                                                                                                                      | [judgement]  | T44                                                                                                          |
+| T66 | Send `worldInfo.seasonLength` as `config.seasonLength / 4` (one season) with eras off, so the UI calendar and the inspector are right before T41, and fix the test that pins 3600                                                                                                                                                                                                                                         | [mechanical] | T44                                                                                                          |
 
 ### Phase 4 - Integrate and verify
 
 | #   | Task                                                                                                                                                                                                                                                             | Nature       | Depends on                   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------- |
 | T58 | Merge every open Phase 1 to 3 PR, in order, re-pinning the golden hashes once per merge that moves them; no new feature starts before                                                                                                                            | [mechanical] | T44                          |
-| T59 | Run the 4-seed screens: the defaults and each feature switched on alone; adjust a failing feature's default with its screen as evidence                                                                                                                          | [judgement]  | T58                          |
-| T41 | Switch every feature on at its default (set `plantFoodValue` predator 0 (T45) and add it to `FEATURES_ON`) and lower `minAgents` to 40, re-pin the golden hashes in Node and Chromium, re-record `baseline-v5` and `baseline-v5-o16`, run `E29` and `eval:power` | [mechanical] | T58, T59                     |
+| T59 | Run the 4-seed screens: the defaults and each feature switched on alone; adjust a failing feature's default with its screen as evidence                                                                                                                          | [judgement]  | T58, T64, T65                |
+| T41 | Switch every feature on at its default (set `plantFoodValue` predator 0 (T45) and add it to `FEATURES_ON`) and lower `minAgents` to 40, re-pin the golden hashes in Node and Chromium, re-record `baseline-v5` and `baseline-v5-o16`, run `E29` and `eval:power` | [mechanical] | T58, T59, T66                |
 | T60 | Measure performance with everything on, on a quiet machine: `bench.step_ms@500defaults`, `alloc-check`, and the observer budget (0.25 ms per tick)                                                                                                               | [judgement]  | T41                          |
 | T42 | Run `E28` against `E27`, the ladder, the anti-exploit suite and the paired test, and record them                                                                                                                                                                 | [mechanical] | T41, T60                     |
 | T61 | Update sim-notes.md and the Phase 4 note with the screens, the switch-on and `E28`                                                                                                                                                                               | [mechanical] | T42                          |
