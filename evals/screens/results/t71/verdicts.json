@@ -1,0 +1,180 @@
+{
+  "reference": "base",
+  "arms": [
+    {
+      "arm": "base",
+      "seeds": 4,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [1, 1, 1, 0.9842931937172775],
+          "pass": [true, true, true, true]
+        },
+        "catchRate": {
+          "value": [0.0038965998269909676, 0, 0.012389194144866847, 0],
+          "pass": [true, false, true, false]
+        },
+        "lineages": {
+          "value": [16, 18, 17, 15],
+          "pass": [true, true, true, true]
+        },
+        "specShare": {
+          "value": [0.9688888888888889, 0.9733333333333334, 0.9755555555555555, 0.7822222222222223],
+          "pass": [false, false, false, false]
+        },
+        "popBelowMax": {
+          "value": [450, 450, 450, 450],
+          "pass": [true, true, true, true]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.04927147743120355,
+          "pass": false
+        },
+        "bornShare": {
+          "value": 0.9527523147916569,
+          "pass": true
+        }
+      },
+      "popMean": 400.9925,
+      "pass": false,
+      "deltas": null
+    },
+    {
+      "arm": "predator-plant-1",
+      "seeds": 4,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [1, 0.9895287958115183, 1, 1],
+          "pass": [true, true, true, true]
+        },
+        "catchRate": {
+          "value": [0.010736434364869905, 0, 0.013873249369345204, 0.025940176485539843],
+          "pass": [true, false, true, true]
+        },
+        "lineages": {
+          "value": [18, 17, 22, 21],
+          "pass": [true, true, true, true]
+        },
+        "specShare": {
+          "value": [0.9711111111111111, 0.9666666666666667, 0.6733333333333333, 0.7244444444444444],
+          "pass": [false, false, true, false]
+        },
+        "popBelowMax": {
+          "value": [450, 450, 450, 450],
+          "pass": [true, true, true, true]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.03733548963569823,
+          "pass": false
+        },
+        "bornShare": {
+          "value": 0.9605882944855231,
+          "pass": true
+        }
+      },
+      "popMean": 425.3025,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.03733548963569823,
+          "delta": -0.011935987795505323,
+          "rel": -0.24224943959050596
+        },
+        "eval.lineages_alive": {
+          "mean": 20.680628272251308,
+          "delta": 2.5078534031413575,
+          "rel": 0.13800057620282316
+        },
+        "eval.births_per_1k": {
+          "mean": 0.10076279551030298,
+          "delta": 0.01021524029789192,
+          "rel": 0.11281630159896078
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 541.6149571729134,
+          "delta": 79.67704338310125,
+          "rel": 0.17248431229516994
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 5833.875,
+          "delta": -1195.75,
+          "rel": -0.17010153457688
+        }
+      }
+    },
+    {
+      "arm": "predator-plant-0.3",
+      "seeds": 4,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [0.9790575916230366, 1, 1, 1],
+          "pass": [true, true, true, true]
+        },
+        "catchRate": {
+          "value": [0.0027773843149998196, 0, 0.010395874916833001, 0],
+          "pass": [true, false, true, false]
+        },
+        "lineages": {
+          "value": [19, 14, 21, 20],
+          "pass": [true, true, true, true]
+        },
+        "specShare": {
+          "value": [0.9666666666666667, 0.7555555555555555, 0.9777777777777777, 0.9777777777777777],
+          "pass": [false, false, false, false]
+        },
+        "popBelowMax": {
+          "value": [450, 450, 450, 450],
+          "pass": [true, true, true, true]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.055161136041486,
+          "pass": false
+        },
+        "bornShare": {
+          "value": 0.9574171617403848,
+          "pass": true
+        }
+      },
+      "popMean": 397.1775,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.055161136041486,
+          "delta": 0.005889658610282449,
+          "rel": 0.11953484890941259
+        },
+        "eval.lineages_alive": {
+          "mean": 18.469895287958117,
+          "delta": 0.2971204188481664,
+          "rel": 0.016349755113799994
+        },
+        "eval.births_per_1k": {
+          "mean": 0.10088422562239904,
+          "delta": 0.01033667040998798,
+          "rel": 0.11415736610159924
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 508.08802541676795,
+          "delta": 46.150111626955834,
+          "rel": 0.09990544237500008
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 6051.25,
+          "delta": -978.375,
+          "rel": -0.13917883244127532
+        }
+      }
+    }
+  ]
+}

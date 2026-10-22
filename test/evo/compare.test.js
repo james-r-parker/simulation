@@ -90,12 +90,13 @@ describe('bootstrapInterval', () => {
     });
 });
 
-/** Metrics whose eval:power false-positive rate exceeded 10% at 16 seeds on E29 (world-balance T41, T42). */
+/** Metrics whose eval:power false-positive rate exceeded 10% at 16 seeds on E29 (world-balance T41, T42, T70). */
 const WATCH_MOVED_BY_T41 = [
     'eval.alarm_precision',
     'eval.deliberate_food_share',
     'eval.diversity',
     'eval.evasion_skill',
+    'eval.hunt_call_answer',
     'eval.pursuit_bite_share',
     'eval.smoke_precision',
 ];

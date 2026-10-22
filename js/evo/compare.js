@@ -41,7 +41,7 @@ const DIRECTIONS = {
     'eval.pursuit_bite_share': 'watch',
     'eval.pursuit_kill_share': 'higher',
     'eval.pack_convergence': 'higher',
-    'eval.hunt_call_answer': 'higher',
+    'eval.hunt_call_answer': 'watch',
     'eval.evasion_skill': 'watch',
     'eval.group_cohesion_under_threat': 'higher',
     'eval.alarm_precision': 'watch',

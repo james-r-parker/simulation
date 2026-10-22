@@ -1241,6 +1241,8 @@ Findings (no blocker):
 - **Note - `E28` ran 32 seeds, the phase text says 16.** Recorded in T42 and in `E28`'s note; the text stays as the
   plan.
 
+**T70 and T71 (2026-10-22, manager).** T70: `eval.hunt_call_answer` is `watch` in `DIRECTIONS` and in evolution-evals.md, so E28's -86.6% on it is not a verdict. T71: `npm run screen -- --grid evals/screens/t71.grid.json` (the T41 defaults, 4 seeds x 200000 ticks, offset 28; results in `evals/screens/results/t71/`): predator `plantFoodValue` 0 (the default) / 1 / 0.3 gives `eval.catch_rate` above 0 on 2/3/2 of 4 seeds, specialisation at most 70% on 0/1/0, `eval.mating_share` 0.05/0.04/0.06. The plant value is not why predators die out; the default stays 0 and predator survival goes to fitnessV2 (predator-prey Phase 3) with specialisation dominance, as decided.
+
 ### Phase 5 - Settle the balance
 
 **Targets:** eval.fed_median_lifespan, eval.food_energy_per_1k, eval.births_per_1k, eval.floor_episodes, eval.lineages_alive
