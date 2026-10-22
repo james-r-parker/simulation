@@ -105,8 +105,11 @@ When one agent hands tasks to others (user, 2026-10-22):
   completion notice; never loop on sleep or check progress every few minutes. Leave no waiting loops behind.
 - **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
   short table instead of reading whole reports.
-- **Heavy commands one at a time**, through `flock /tmp/claude-1000/cpu.lock <cmd>`; performance is measured only with
-  no other agent running.
+- **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,
+  `perf:browser`, `alloc-check`) and the full gate (`scripts/check.sh`, whose `bench-check` and slow-test timeouts
+  fail under load) run through `flock /tmp/claude-1000/cpu.lock <cmd>` and only while no eval or screen is running.
+  Evals, screens, the ladder and replays are deterministic whatever the load, so they run side by side and may fill
+  the CPU.
 - **Report once, briefly**: PR link, what changed, measurements, decisions, anything unsure.
 
 ## Hard rules
