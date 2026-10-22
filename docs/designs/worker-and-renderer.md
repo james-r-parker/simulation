@@ -212,7 +212,7 @@ spec table, labels and flag bits the app needs arrive in `ready`.
 Both sides run `validateMessage` on every message they receive. The client drops a `snapshot`, `field` or `stats` whose `epoch` is not the current one (returning its buffer), so no snapshot of an old world is drawn after a `reset`.
 
 `ready.info` holds the world and rule constants the app draws with: `worldWidth`, `worldHeight`, `maxAgents`,
-`maxFood`, `maxVelocity`, `maxEnergy`, `maxAgeTicks`, `seasonLength` (`eraSeasonTicks` when `erasEnabled`, so `4 x seasonLength` is the year), `seasonNames`, `ticksPerSecond` (60), `rayCount`,
+`maxFood`, `maxVelocity`, `maxEnergy`, `maxAgeTicks`, `seasonLength` (one season in ticks, `yearTicks(config) / 4` in both modes: `eraSeasonTicks` when `erasEnabled`, else a quarter of `config.seasonLength`, which is the whole year; `4 x seasonLength` is the year), `seasonNames`, `ticksPerSecond` (60), `rayCount`,
 `callRadius`, `callTicks`, `smokeRadius`, `smokeTicks`, `smokeThreshold`, `antennaReach`, `antennaAngle`, `biteArc` (the half-angle in radians of the forward arc in which a `canHunt` agent's bite lands, default PI/4, defined in [predator-prey.md](predator-prey.md) Phase 1), the temperature bands
 (`temperatureMax`, `temperatureColdStress`, `temperatureOptimalMin`, `temperatureOptimalMax`, `temperatureHeatStress`),
 the pheromone grid (`cols`, `rows`, `cellSize`, `pheromoneMax`) and `specs`: for each specialisation its `index`,

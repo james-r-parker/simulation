@@ -14,9 +14,15 @@ import {
     tickOnce,
     worldInfo,
 } from '../../js/worker/host-world.js';
+import { seasonAt } from '../../js/sim/environment.js';
+import { yearTicks } from '../../js/sim/eras.js';
+import { calendarOf } from '../../js/app/ui/status-line.js';
 import { noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 
 const LOG = createSimLog(() => {}, { level: 'error' });
+
+/** @param {string} w a word @returns {string} capitalised */
+const capitalised = (w) => w[0].toUpperCase() + w.slice(1);
 
 /** @returns {import('../../js/worker/host-world.js').Run} a run of the small world at tick 0 */
 function small() {
@@ -113,9 +119,9 @@ describe('worldInfo patches', () => {
 });
 
 describe('worldInfo calendar and switches', () => {
-    it('sends the config season length, and the era season length when eras are on', () => {
+    it('sends one season in ticks, with eras off (a quarter of the config year) and on', () => {
         const base = worldInfo(small());
-        expect(base).toMatchObject({ seasonLength: 3600, sexesEnabled: false, traitsEnabled: false });
+        expect(base).toMatchObject({ seasonLength: 900, sexesEnabled: false, traitsEnabled: false });
         const run = buildRun({
             seed: 3,
             overrides: { ...SMALL_CONFIG, erasEnabled: true, eraSeasonTicks: 500, sexesEnabled: true },
@@ -123,6 +129,30 @@ describe('worldInfo calendar and switches', () => {
             log: LOG,
         });
         expect(worldInfo(run)).toMatchObject({ seasonLength: 500, sexesEnabled: true });
+    });
+
+    it.each([
+        ['off', {}],
+        ['on', { erasEnabled: true, eraSeasonTicks: 500 }],
+    ])('gives a calendar that matches the sim season and year with eras %s', (_name, extra) => {
+        const run = buildRun({
+            seed: 3,
+            overrides: { ...SMALL_CONFIG, ...extra },
+            createPolicy: noisePolicy,
+            log: LOG,
+        });
+        const info = worldInfo(run);
+        const year = yearTicks(run.config);
+        for (const tick of [0, 1, 899, 900, 1799, 2000, 3599, 3600, 7300, 10000]) {
+            seasonAt(run.world, tick);
+            const cal = calendarOf(
+                { tick, season: run.world.season[0] },
+                { seasonNames: info.seasonNames, seasonLength: info.seasonLength, seed: 3 },
+            );
+            expect(cal.year).toBe(Math.floor(tick / year) + 1);
+            expect(info.seasonNames.map(capitalised)[Math.floor(((tick % year) / year) * 4)]).toBe(cal.season);
+            expect(Math.floor(tick / info.seasonLength) % 4).toBe(run.world.season[0]);
+        }
     });
 });
 

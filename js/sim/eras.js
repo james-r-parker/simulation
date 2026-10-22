@@ -6,7 +6,7 @@ import { nextFloat } from './rng.js';
 
 /** @typedef {import('./world.js').World} World */
 
-const SEASONS_PER_YEAR = 4;
+export const SEASONS_PER_YEAR = 4;
 const SUMMER = 1;
 const WINTER = 3;
 /** The patch regrowth multiplier in summer. */
