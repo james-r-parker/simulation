@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../../js/sim/events.js';
 import { invade } from '../../js/sim/invasion.js';
+import { applyEvents } from '../../js/evo/observer-events.js';
+import { createObserver } from '../../js/evo/observer.js';
+import { fork, createRng } from '../../js/sim/rng.js';
 import { testPolicy } from './helpers/test-policy.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -81,5 +84,34 @@ describe('invade', () => {
         w.tick = 200;
         invade(w, testPolicy);
         expect(w.population).toBe(3);
+    });
+
+    it('writes the final lineage, specialisation and sex into every AgentBorn record', () => {
+        let next = 0;
+        const policy = { initSpec: () => next++ % 3, initBrain() {} };
+        const w = smallWorld({ ...INVASION, sexesEnabled: true });
+        const observer = createObserver(w.config, fork(createRng(w.config.seed), 'eval'));
+        w.tick = 100;
+        invade(w, policy);
+        const d = w.events.data;
+        let born = 0;
+        for (let i = 0; i < w.events.count; i++) {
+            const o = i * EVENT_STRIDE;
+            if (d[o] === EVENT_TYPE.AGENT_BORN) {
+                const slot = d[o + 2];
+                born++;
+                expect([d[o + 3], d[o + 4], d[o + 5], d[o + 9]]).toEqual([
+                    w.genomeId[slot],
+                    w.lineageId[slot],
+                    w.spec[slot],
+                    w.sex[slot],
+                ]);
+            }
+        }
+        expect(born).toBe(5);
+        applyEvents(observer, w, undefined);
+        for (const s of aliveSlots(w)) {
+            expect([observer.lineageId[s], observer.spec[s]]).toEqual([w.lineageId[s], w.spec[s]]);
+        }
     });
 });
