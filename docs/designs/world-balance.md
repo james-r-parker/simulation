@@ -689,6 +689,8 @@ choices and reasons within the plans").
 | `satiationShare` 0.95 alone changes nothing in the 4-seed screen (world hashes equal the defaults')                                                                                                                                                                                                                                 | No agent in these worlds reaches 95% of `maxEnergy` next to food; kept at 0.95, no collapse. It may bite only once digest or handling is on                                                                                                                                                                                                                                                                                                                                                                                                 | Manager                                                 |
 | A screen tool (T67) is built before T41 so sweeps are a script run plus one table                                                                                                                                                                                                                                                   | T59 ran every arm twice (once for the reports, once for the per-tick series) and judged the criteria by hand with throwaway scripts; `npm run screen` collects the series in the eval, runs all arms through one worker pool under one CPU lock, and prints the criteria and the Target deltas as one table                                                                                                                                                                                                                                 | User (2026-10-22)                                       |
 | Phase 4 closes with three failures that remain (predators die out on 15 of 32 seeds, specialisation dominance on 23, mating share 0.056); balancing starts now on the world rules (mating, splitting, food, the cap) under a short Phase 5 plan, and predator and specialisation tuning waits for fitnessV2 (predator-prey Phase 3) | Everything is on and nothing collapses, the screen tool makes sweeps cheap; mating is a world-rule failure fitnessV2 cannot change, while predator survival and dominance depend on selection                                                                                                                                                                                                                                                                                                                                               | User (2026-10-22)                                       |
+| Phase 5 round 1 is planned (T15) as screens on the world-rule keys only, then 16-seed finalists; the plan needs the user's approval before T72 runs                                                                                                                                                                                 | The 2026-10-22 decision starts balancing on the world rules now; the predator, specialisation, disease and floor keys stay in the later round after `fitnessV2`                                                                                                                                                                                                                                                                                                                                                                             | Proposed by the T15 plan, pending the user              |
+| The user approved the Phase 5 round 1 plan as written: stop bar 0.12 screen mating share after round B, T78 re-pins the golden hashes and re-records the baselines once without asking again, and the `maxAgents` arms stay in round A read with their caveat                                                                       | Approval of T15 before T72 runs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | User (2026-10-22)                                       |
 
 ## Phases
 
@@ -1250,13 +1252,111 @@ Findings (no blocker):
 > **Note:** build order before this phase (user, 2026-10-17): (1) finish and merge the work already in play - draft
 > PRs 54 (Phase 1), 55 (Phase 2), 57 (B10), 58 and 59 (Phase 3 layout, food and floor), and 56 (renderer Phase 3,
 > paused); (2) then nature's limits and the world features, T45 to T47 and T49 to T54; (3) then the rest of Phase 3 (T32, T33, T36 to T44) and
-> predator-prey.md Phase 3 (`fitnessV2`); (4) only then this tuning night, in a session of its own.
+> predator-prey.md Phase 3 (`fitnessV2`); (4) only then this tuning night, in a session of its own. Steps 1 and 2 and
+> the Phase 3 part of step 3 are done. The user decided on 2026-10-22 (Decisions) that balancing starts now on the world
+> rules, so round 1 below runs before `fitnessV2` and supersedes step 4 for those keys only.
 
-A tuning night at 7680 x 4320 on the finished rules, aimed at B1, B2 and B13 with the D metrics, the selection
-metrics and the ladder on the scorecard, run after `fitnessV2` is live (predator-prey.md Phase 3) in a session of its
-own. Its search space includes the Phase 3 feature values (including the disease and birth-budget values),
-`floorRescueAtZero` and the immigrant rate (user, 2026-10-17), scored with `eval.predation_death_share` (target at least 0.10) and
-`eval.pred_prey_lag_corr`. Planned in full with the `create-plan` skill (T15) before it runs.
+The phase is a series of tuning rounds, each planned in this section before it runs. Round 1 (T15, below) is scoped to the
+world rules: mating, splitting, food and the cap. A later round at 7680 x 4320 on the finished rules, aimed at B1, B2 and
+B13 with the D metrics, the selection metrics and the ladder on the scorecard, runs after `fitnessV2` is live
+(predator-prey.md Phase 3) in a session of its own. It adds the predator and specialisation keys (`huntUpkeep`,
+`plantFoodValue`, `specMutationRate` and the like), the disease and birth-budget values, `floorRescueAtZero` and the
+immigrant rate (user, 2026-10-17), scored with `eval.predation_death_share` (target at least 0.10) and
+`eval.pred_prey_lag_corr`, and is planned with the `create-plan` skill when it is due. The 2026-10-17 requirements stand
+for that later round; round 1 supersedes only their timing and scope.
+
+#### Round 1 - the world rules (T15, 2026-10-22)
+
+**Goal.** Lift `eval.mating_share` from 0.056 (`E28`) to at least 0.2 in the mean, the one Phase 4 failure that is a
+world-rule failure `fitnessV2` cannot change. The evidence says why it is low: a mating needs a ready, eligible
+female-male pair within `mateRange` (0.00 to 0.03 per census at 100 agents), 480 ticks of pregnancy and a free slot,
+while splitting needs only energy. Mating per agent rises with density (0.012 per 1000 agent-ticks at 103 agents, 0.051
+at 321), and `splitCapMargin` 50 to 250 did not lift it (Split-cap margin sweep). Predator survival (`eval.catch_rate` 0
+on 15 of 32 seeds) and specialisation dominance are not round 1 targets; they are guards (below).
+
+**Scorecard.** An arm of `npm run screen` (4 seeds, 200000 ticks, offset 28, the live policy) is judged in this order:
+
+1. It must not collapse: population above `minAgents` and below `maxAgents` on 4 of 4 seeds, `eval.born_share` mean at
+   least 0.5.
+2. `eval.mating_share` against the `base` arm (the T41 defaults, which the grid adds as the reference), from `table.md`.
+3. The Target deltas the table prints (`eval.lineages_alive`, `eval.births_per_1k`, `eval.food_energy_per_1k`,
+   `eval.fed_median_lifespan`; the screen does not print `eval.floor_episodes`, which is read from the reports for
+   finalists). An arm is cut when `eval.births_per_1k` or `eval.lineages_alive` falls more than 15%, or when fewer of its
+   seeds have at least 5 lineages or a largest specialisation at most 70% than `base`'s.
+4. `eval.mating_share` is a ratio, so cutting splits raises it without any mating: the mating births per 1000 agent-ticks
+   (the share times `eval.births_per_1k`) must rise too. The manager computes it from `table.md` for the arms that advance.
+
+An arm advances when its mating share is at least 50% above `base`'s and it passes 1 to 4. The D metrics, the selection
+metrics and the skill ladder (Tuning-night method, steps 4 and 5) apply to finalists only.
+
+**A win** is a setting with a stated mechanism and a confirmed result. At 16 seeds against the matching baseline
+(`baseline-v5` for seeds 1-16, `baseline-v5-o16` for 17-32, both the T41 defaults), `eval:compare` gives no Target verdict
+`worse`; the mean `eval.mating_share` is at least 0.2 on both seed sets (it is `watch`, so it has no verdict and the mean
+is read from the report); mating births per 1000 agent-ticks rise; `seedChecks` hold (population above `minAgents` on every
+seed, `eval.born_share` at least 0.5, population below `maxAgents`); and the ladder keeps its order (random below the
+foragers). A result short of 0.2 that improves the mean with no regression is reported to the user as partial and is not
+adopted silently.
+
+**Search space.** Real keys in `js/sim/config-defaults.js`, each varied alone in round A
+(`evals/screens/phase5-a.grid.json`):
+
+| Key                       | Default | Round A values    | Why                                                                                                       |
+| ------------------------- | ------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `mateRange`               | 100     | 150, 200, 300     | Pairs in range are the funnel's narrowest step; 300 raised mating from 3.9% to 44% in the 2026-10-17 hunt |
+| `mateChanceScale`         | 1.5     | 0.7, 1.0          | Mating chance is `reproductionBonus` over this; 0.7 makes spring to autumn certain                        |
+| `mateDistanceMax`         | 0.8     | 0.6, 1.0          | 0.8 nearly stopped mating (T59 `matedistance`); the looser side is untested                               |
+| `mateSizeRatio`           | 1.3     | 1.6               | Size rejects mates in the funnel (B14)                                                                    |
+| `mateCost`                | 15      | 5, 40             | The price of a mating, and what a lost pregnancy wastes                                                   |
+| `pregnancyTicks`          | 480     | 240, 960          | A mother cannot split while pregnant, and a shorter wait loses fewer pregnancies at the cap               |
+| `reproductionCooldown`    | 300     | 150, 600          | Rests both routes; with `splitCooldownMultiplier` it sets how often splitting fires                       |
+| `childEnergyShare`        | 0.5     | 0.35, 0.65        | What a mating birth costs a mother                                                                        |
+| `childEnergyMin`          | 200     | 100, 300          | The floor on that gift                                                                                    |
+| `splitMinEnergy`          | 900     | 750, 1200, 1500   | Splitting competes for the same slots; 3000 pins the world and 600 starves it (both rejected)             |
+| `splitCooldownMultiplier` | 1.5     | 1, 3, 4           | 6 left mating at 0.008 in the diagnosis; 3 and 4 are the untested middle                                  |
+| `maxBirthsPerWindow`      | 3       | 0 (off), 2, 5     | The T47 budget binds splits and matings alike                                                             |
+| `birthWindowTicks`        | 3000    | 1500, 6000        | The span that budget counts over                                                                          |
+| `foodRegrowPerArea`       | 0.06    | 0.03, 0.045, 0.09 | Food sets density, and mating rises with density                                                          |
+| `maxAgents`               | 500     | 350, 750          | The 750 arm also sets `eventCapacity` 6144 (the config needs 6 x `maxAgents`) and costs more per tick     |
+
+Held at their defaults: `capBirthsEnabled` (true) and `splitCapMargin` (50), because the margin sweep covered 50 to 250
+and a smaller margin brings back B18; `sexesEnabled`, `minAgents` and `hebbianRate`, settled in Phase 4;
+`foodTargetPerAgent` and `foodTargetMin`, which are inert under `foodAreaCapacity`; and every predator and specialisation
+key (`huntUpkeep`, `plantFoodValue`, `specMutationRate`, `huntSizeRatio`, the `specialisations` table), which waits for
+`fitnessV2`. The `maxAgents` arms differ in population, so their deltas are not a like-for-like comparison.
+
+**Rounds.**
+
+| Round | What                                                                                                                                                                          | Arms      | Runs | Wall time (32 cores) |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---- | -------------------- |
+| A     | One key at a time, `phase5-a.grid.json`: 34 arms and `base`, 4 seeds x 200000 ticks                                                                                           | 35        | 140  | about 1.5 h          |
+| B     | Pairs, and one or two triples, of the best 4 or 5 round A arms, chosen from `table.md` and run as `phase5-b.grid.json`                                                        | up to 16  | 64   | about 0.6 h          |
+| C     | At most 4 finalists: 16 seeds against `baseline-v5`, then seeds 17-32 against `baseline-v5-o16` with `--allow-seed-diff` and `--allow-config-diff <changed keys>`; the ladder | at most 4 | 128  | about 2.2 h + 2.2 h  |
+
+T59's 29 arms x 4 seeds (116 runs) took about an hour, so round A's 140 runs are about 1.2 h and the `maxAgents` 750
+arm adds the rest. Round C needs no new reference runs because the baselines are recorded. The whole of round 1 is about
+7 hours of unattended waiting, run in the background and never polled (AGENTS.md, Delegating to subagents).
+
+**Stop rule.** Stop after round B when no arm reaches a screen mating share of 0.12 (60% of the target): these keys then
+cannot reach 0.2, and the user chooses between a rule change (for example making a pregnancy cheaper to hold, or a
+mating-aware `fitnessV1` term) and a lower bar. Stop after round C whatever the result; a finalist that fails at 16
+seeds does not trigger a round D without the user. Two screen rounds at most.
+
+**Prediction first.** Before each run, the prediction goes into the new `evals/experiments.json` entry's `prediction`
+field (the schema requires it) and is committed with the grid, so it predates the result; this is where the Tuning-night
+method's `predictions.md` lives for round 1. Round A predicts: `mateRange` 200 and 300 and `mateChanceScale` 0.7 lift the
+mating share most, because range and willingness are the funnel's narrow steps; `foodRegrowPerArea` 0.09 and `maxAgents`
+750 lift it through density at a higher tick cost; `splitMinEnergy` and `splitCooldownMultiplier` raise the share only by
+cutting splits and fail the births guard; `mateCost`, `childEnergy*` and `pregnancyTicks` move it by less than 20%; no
+single key reaches 0.2, so round B is needed.
+
+**Cost rules.** Sweeps are run by the manager or a Haiku agent with `npm run screen` (T72, T74, T76); the screen takes the
+CPU lock itself and resumes per arm. Choosing the next combinations and the finalists is `[judgement]` work for the manager
+or a Sonnet agent that reads `table.md` and `verdicts.json` only, not the reports or logs (AGENTS.md, Delegating to
+subagents); a script, not a person, extracts the per-arm mating births and the Target deltas.
+
+**Adoption.** A winning value changes the code default in `js/sim/config-defaults.js`, which moves the golden hashes: T78
+re-pins them in Node and Chromium and re-records `baseline-v5` and `baseline-v5-o16` once, in one PR. The adopted override
+is recorded in `evals/experiments.json` and the learnings in `sim-notes.md`.
 
 ### Phase 6 - Disease
 
@@ -1382,10 +1482,17 @@ Phases 1 to 3 are planned below; Phase 5 adds its rows when T15 plans it.
 
 ### Phase 5 - Settle the balance
 
-| #   | Task                                              | Nature      | Depends on |
-| --- | ------------------------------------------------- | ----------- | ---------- |
-| T15 | Plan Phase 5 in full with the `create-plan` skill | [judgement] | T62        |
-| T16 | Conformance review of Phase 5                     | [judgement] | T15        |
+| #   | Task                                                                                                                                                                                                                                                                                                                  | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T15 | Plan Phase 5 round 1 (the world rules) with the `create-plan` skill (built)                                                                                                                                                                                                                                           | [judgement]  | T62        |
+| T72 | Round A: record the prediction in a new `evals/experiments.json` entry, run `npm run screen -- --grid evals/screens/phase5-a.grid.json` in the background, and write the mating births per 1000 agent-ticks per arm from `table.md`                                                                                   | [mechanical] | T15        |
+| T73 | Read round A's `table.md` and `verdicts.json` only, apply the Scorecard, choose the best 4 or 5 arms and write `phase5-b.grid.json` (pairs and one or two triples) with its prediction; apply the Stop rule                                                                                                           | [judgement]  | T72        |
+| T74 | Round B: run `phase5-b.grid.json` and write the same per-arm table                                                                                                                                                                                                                                                    | [mechanical] | T73        |
+| T75 | Read round B's table, apply the Stop rule, and name at most 4 finalists, each with its mechanism                                                                                                                                                                                                                      | [judgement]  | T74        |
+| T76 | Round C: run each finalist at 16 seeds x 200000 ticks (seeds 1-16, then 17-32 with `--allow-seed-diff` and `--allow-config-diff`), `eval:compare` against `baseline-v5` and `baseline-v5-o16`, and the skill ladder; print the Target verdicts, `eval.mating_share` means, `seedChecks` and ladder order as one table | [mechanical] | T75        |
+| T77 | Decide the win against the win rule, record the experiment, a `sim-notes.md` entry and a Phase 5 note, and report a partial or failed result to the user                                                                                                                                                              | [judgement]  | T76        |
+| T78 | If a setting won: change its default in `js/sim/config-defaults.js`, re-pin the golden hashes in Node and Chromium, re-record `baseline-v5` and `baseline-v5-o16`, with tests                                                                                                                                         | [mechanical] | T77        |
+| T16 | Conformance review of Phase 5 round 1                                                                                                                                                                                                                                                                                 | [judgement]  | T15, T78   |
 
 ### Phase 6 - Disease
 
