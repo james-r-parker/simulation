@@ -49,11 +49,9 @@ describe('parseArgs', () => {
     });
 
     it('takes the worker budget and the grid overrides', () => {
-        expect(parseArgs(['--grid', 'g', '--workers', '30', '--seeds', '2', '--ticks', '20000'])).toMatchObject({
-            workers: 30,
-            seeds: 2,
-            ticks: 20000,
-            seedOffset: null,
-        });
+        expect(
+            parseArgs(['--grid', 'g', '--workers', '30', '--seeds', '2', '--ticks', '20000', '--seed-offset', '28']),
+        ).toMatchObject({ workers: 30, seeds: 2, ticks: 20000, seedOffset: 28, traceInterval: null });
+        expect(parseArgs(['--grid', 'g', '--trace-interval', '500', '--out', 'o']).traceInterval).toBe(500);
     });
 });

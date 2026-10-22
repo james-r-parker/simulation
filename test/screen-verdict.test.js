@@ -90,6 +90,12 @@ describe('seedChecks', () => {
         expect(seedChecks(r).popBelowMax.pass).toEqual([false, true]);
     });
 
+    it('fails a report that lacks the catch rate metric', () => {
+        const r = report();
+        delete r.metrics['eval.catch_rate'];
+        expect(seedChecks(r).catchRate.pass).toEqual([false, false]);
+    });
+
     it('fails a null catch rate, and throws without traces', () => {
         const r = report();
         r.metrics['eval.catch_rate'] = { mean: null, values: [null, null] };
