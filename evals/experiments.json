@@ -1250,8 +1250,8 @@
       "before": "evals/screens/phase5-a.grid.json",
       "after": "evals/screens/results/phase5-a/table.md",
       "verdicts": {},
-      "effect": "no-difference",
-      "note": "Pending: round A screen (T72) not yet run. The grid is 34 arms plus base, 4 seeds x 200000 ticks, offset 28, live policy. Results and the top arms by mating share are filled in after the run."
+      "effect": "better",
+      "note": "Round A screen (T72, evals/screens/results/phase5-a/table.md): 34 arms plus base, 4 seeds x 200000 ticks, offset 28, live policy. No arm reaches the 0.2 mating mean; the highest is 0.08 (base 0.05). Advancing arms (mating at least 50% above base, guards held): mateRange-300 (0.08, +61%), mateRange-200 (0.08, +54%), mateDistanceMax-1 (0.08, +55%). No arm trips the births (more than 15% down) or lineage guard, and every arm keeps population above minAgents and below maxAgents on 4 of 4 seeds. Prediction check: mateRange 200/300 confirmed; mateChanceScale 0.7 (+8%) and foodRegrowPerArea 0.09 (-22%) did not rise as predicted; splitCooldownMultiplier 3 and 4 lowered the share (-27%, -55%) rather than raising it; splitMinEnergy 1500 raised births (+19%) without raising the share (+1%); childEnergyMin 100 (+35%) and childEnergyShare 0.35 (-28%) moved more than the 20% predicted. Round B is needed; the stop rule (no arm at 0.12) does not trigger."
     }
   ]
 }
