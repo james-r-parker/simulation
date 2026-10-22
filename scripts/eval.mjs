@@ -17,7 +17,7 @@ const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
 const WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 const CPU_PRINT_MS = 10_000;
 const USAGE =
-    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--out <path>] [--workers <n>]';
+    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--out <path>] [--workers <n>] [--trace-interval <ticks>]';
 
 /**
  * @typedef {object} EvalArgs
@@ -28,6 +28,7 @@ const USAGE =
  * @property {string | null} config
  * @property {string | null} out
  * @property {number | null} workers
+ * @property {number | null} traceInterval
  */
 
 /** @type {Record<string, (value: string | undefined, flag: string) => [string, any]>} */
@@ -36,6 +37,7 @@ const VALUE_FLAGS = {
     '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1, USAGE)],
     '--seed-offset': (value, flag) => ['seedOffset', intValue(flag, value, 0, USAGE)],
     '--workers': (value, flag) => ['workers', intValue(flag, value, 1, USAGE)],
+    '--trace-interval': (value, flag) => ['traceInterval', intValue(flag, value, 1, USAGE)],
     '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
     '--out': (value) => ['out', String(value)],
@@ -72,6 +74,7 @@ export function parseArgs(argv) {
                 config: null,
                 out: null,
                 workers: null,
+                traceInterval: null,
             },
         })
     );
@@ -173,6 +176,7 @@ function failureRecord(error) {
  * @property {Record<string, any>} [configOverrides] default `{}`
  * @property {string | null} [out] default `evals/results/<policy>-<sha>-<n>x<t>.json`
  * @property {number | null} [workers] default `os.availableParallelism()`, capped at the seed count
+ * @property {number | null} [traceInterval] ticks between the trace's population samples, default 1000
  * @property {string} [logDir] default `.sim/logs`
  * @property {string} [sha] default `git rev-parse --short HEAD`
  * @property {import('./lib/otel.mjs').Metrics} [metrics]
@@ -241,6 +245,7 @@ function buildAndWrite({ policyName, results, config, ticks, seeds, sha, out }) 
         seeds,
         sha,
         perSeed: results.map((r) => r.metrics),
+        traces: results.map((r) => r.trace),
     });
     validateReport(report);
     mkdirSync(dirname(out), { recursive: true });
@@ -277,7 +282,8 @@ export async function runEval(options) {
     const cpu = startCpuReport(print);
     const started = performance.now();
     try {
-        const tasks = seeds.map((seed) => ({ seed, ticks, policy: policyName, overrides }));
+        const traceInterval = options.traceInterval ?? undefined;
+        const tasks = seeds.map((seed) => ({ seed, ticks, policy: policyName, overrides, traceInterval }));
         const onResult = seedLogger({ jsonl, metrics, policyName, print });
         const results = await runPool(tasks, { workerUrl: WORKER_URL, workers, onResult });
         const report = buildAndWrite({ policyName, results, config, ticks, seeds, sha, out });

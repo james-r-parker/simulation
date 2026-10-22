@@ -27,6 +27,14 @@ describe('runSeed (direct)', () => {
         });
     });
 
+    it('returns a trace with a population sample per interval', { timeout: 30_000 }, () => {
+        const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL, traceInterval: 700 });
+        expect(result.trace.pop).toHaveLength(3);
+        expect(result.trace).toMatchObject({ interval: 700, deaths: expect.any(Array), lineages: expect.any(Number) });
+        expect(result.trace.mate).toHaveLength(4);
+        expect(result.trace.deaths).toHaveLength(4);
+    });
+
     it('is deterministic for the same task', { timeout: 30_000 }, () => {
         const task = { seed: 5, ticks: 50, policy: 'baseline-v5', overrides: SMALL };
         expect(runSeed(task).worldHash).toBe(runSeed(task).worldHash);
