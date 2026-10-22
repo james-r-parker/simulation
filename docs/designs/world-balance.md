@@ -758,7 +758,7 @@ the new senses against `E25`'s live arm, seeds 1-32 x 200000 ticks, paired with 
 
 **Targets:** none - features land switched off; Phase 4 measures them
 
-> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. T59 is done (As built (T59), Phase 4: `hebbianRate` is now 0.0001 in `FEATURES_ON`; `sexesEnabled` and `minAgents` 40 each pin the population at the floor and are open for the user). T68 is done (As built (T68), Phase 4: `capBirthsEnabled` is in `FEATURES_ON`; off by default, golden hashes unchanged). T69 is done (PR 105; sexes no longer pin the floor). A split-cap margin sweep found no value reaching mating share 0.2. T41 is done (As built (T41)). T60 is done (As built (T60): all on 3.27 ms step, observer 0.16 ms, alloc-check 79240 bytes, all inside budget). Next: T42.
+> **Note:** built 2026-10-22; state - T36 (PR 79), T37 (83), T46 (78), T47 (84), T52 (80) and T53 (81) are merged, each off with the golden hashes unchanged (default `16e83ae2cf097fc6`, busy `6d153ce20dab8a97`); earlier, PRs 54, 55, 58, 59, 66 and 67 (Phases 1 and 2, T30 to T35, T51, T54), with T45, T49 and T50 already on `main`, so Phase 4 T58 is done. T38 (PR 86) and T39 (PR 87) are done. T27 (PR 88) and T40 (PR 89, observer budget missed: +13% frozen, +9% all on, against 5%; all-on step about 7.0 ms against 3.9 off, physics 0.6 to 1.9 ms) are done. T63 is done (PR 91; observer 0.16 ms frozen and 0.24 ms all on, inside the 0.25 ms budget, and the step fell 37% to 50% with the all-on physics phase 1.9 to 0.25 ms: the world object was in V8 dictionary mode). T43 is done (the five contract docs describe the Phase 3 features as built). T44 is done (Review (T44), below): it found one blocker for T41 and two smaller items, now T64 to T66, and T64 to T66 are fixed, so Phase 3 is built. T59 is done (As built (T59), Phase 4: `hebbianRate` is now 0.0001 in `FEATURES_ON`; `sexesEnabled` and `minAgents` 40 each pin the population at the floor and are open for the user). T68 is done (As built (T68), Phase 4: `capBirthsEnabled` is in `FEATURES_ON`; off by default, golden hashes unchanged). T69 is done (PR 105; sexes no longer pin the floor). A split-cap margin sweep found no value reaching mating share 0.2. T41 is done (As built (T41)). T60 is done (As built (T60): all on 3.27 ms step, observer 0.16 ms, alloc-check 79240 bytes, all inside budget). T42 is done (As built (T42): the six watch moves, `E28` with a remaining collapse-criteria failure reported, ladder and suites run). Next: T61 (notes), then T62 (review).
 
 The features under Biology features, Nature's limits and World features, each built and merged switched off, so the
 golden hashes hold (user, 2026-10-17: the world's rules are finished before the tuning night). Done when every task
@@ -1101,6 +1101,63 @@ sense (+0.28 ms, rays against the rocks), brain (+0.43 ms, leaky update and Hebb
 0.25 ms. The observer's cost is the same frozen and all on (0.16 ms), as at T63 (0.16 and 0.24; all on is now lower). Heap
 growth is below the limit by 13x, but the policy figure is above T40's 20024 bytes (and plain above its 9760); the
 window is 1000 ticks of a world that is still filling its tables, and no leak shows (the figure is flat across the 5 runs).
+
+**As built (T42, 2026-10-22).** Watch moves first: the six metrics whose `eval:power` false-positive rate exceeded 10% at 16 seeds on E29 (`alarm_precision`, `deliberate_food_share`, `diversity`, `evasion_skill`, `pursuit_bite_share`, `smoke_precision`) are `watch` in `DIRECTIONS` (`js/evo/compare.js`) and in the direction column of `evolution-evals.md`. Their tests now use `eval.births_per_1k` as the higher-is-better fixture (`eval.lineages_alive` needs 32 seeds).
+
+`E28` (`evals/experiments/E28-map-elites-v1q.json`, recorded in `evals/experiments.json`): the live policy, every feature on at the code defaults (`minAgents` 40), seeds 1-32 (the same 32 as `E27`, which ran 32; the plan text says 16) x 200000 ticks, 30 workers, with traces. `eval:compare` against `E27` (no traces there), `--allow-config-diff` over the 43 top-level keys that differ (every Phase 3 switch, `minAgents`, `hashCellSize`, `seed`, `specialisations`), 32 paired seeds:
+
+| Target                     | E27 mean | E28 mean | Change | Verdict   |
+| -------------------------- | -------- | -------- | ------ | --------- |
+| `eval.food_energy_per_1k`  | 316.6    | 484.1    | +52.9% | better    |
+| `eval.fed_median_lifespan` | 4352     | 6257     | +43.8% | better    |
+| `eval.births_per_1k`       | 0.1461   | 0.1014   | -30.6% | worse     |
+| `eval.lineages_alive`      | 33.91    | 17.77    | -47.6% | worse     |
+| `eval.mating_share`        | 0.151    | 0.056    | -63.1% | - (watch) |
+
+Other verdicts: worse on `alarm_response` (-62.6%), `behaviour_coverage` (-7.7%), `catch_rate` (-57.3%), `hunt_call_answer` (-86.6%), `mean_fitness.predator` (-93.8%) and `p90_fitness.predator` (-99.8%); better on `floor_episodes` (-96.9%), `idle_signals_per_1k` (-15.3%), `median_lifespan` (+42.1%), `qd_score` (+19.8%) and the defender, forager, reproducer and scout fitness means. No difference on `coverage`, `group_cohesion_under_threat` and `lineage_turnover`. The rest are `-` (watch metrics, or null in a seed).
+
+The Phase 4 mean criteria fail: `eval.mating_share` 0.056 (needs at least 0.2), `eval.born_share` 0.948 (at least 0.5, passes).
+
+Per-seed criteria (`seedChecks` in `scripts/lib/screen-verdict.mjs`, on the E28 traces; population above `minAgents` 40 on at least 80% of post-burn-in checkpoints, `catch_rate` above 0, B18 as `lineages` at least 5 at the end, largest specialisation at most 70% of the alive agents, population below `maxAgents` 500 at the end): pass counts are population above min 32/32, catch above 0 17/32, lineages at least 5 32/32, specialisation at most 70% 9/32, population below max 32/32.
+
+| Seed   | pop above min | catch > 0 | lineages >= 5 | spec <= 70% | pop < max |
+| ------ | ------------- | --------- | ------------- | ----------- | --------- |
+| 313056 | pass          | pass      | pass          | FAIL        | pass      |
+| 337535 | pass          | pass      | pass          | FAIL        | pass      |
+| 612370 | pass          | pass      | pass          | FAIL        | pass      |
+| 446985 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 639124 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 888035 | pass          | pass      | pass          | pass        | pass      |
+| 654502 | pass          | pass      | pass          | FAIL        | pass      |
+| 275725 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 851784 | pass          | FAIL      | pass          | pass        | pass      |
+| 318983 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 224570 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 833553 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 513404 | pass          | pass      | pass          | pass        | pass      |
+| 371179 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 785870 | pass          | pass      | pass          | FAIL        | pass      |
+| 95573  | pass          | pass      | pass          | FAIL        | pass      |
+| 190896 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 587535 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 50850  | pass          | FAIL      | pass          | pass        | pass      |
+| 285273 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 45220  | pass          | FAIL      | pass          | FAIL        | pass      |
+| 521459 | pass          | pass      | pass          | pass        | pass      |
+| 912822 | pass          | pass      | pass          | pass        | pass      |
+| 481629 | pass          | pass      | pass          | pass        | pass      |
+| 573144 | pass          | pass      | pass          | pass        | pass      |
+| 941591 | pass          | pass      | pass          | pass        | pass      |
+| 32714  | pass          | pass      | pass          | FAIL        | pass      |
+| 192673 | pass          | pass      | pass          | FAIL        | pass      |
+| 200460 | pass          | pass      | pass          | FAIL        | pass      |
+| 597883 | pass          | FAIL      | pass          | FAIL        | pass      |
+| 174238 | pass          | pass      | pass          | FAIL        | pass      |
+| 553445 | pass          | FAIL      | pass          | FAIL        | pass      |
+
+The collapse (B18 and catch) criteria fail on seeds that the population itself does not: no seed drops below the floor, but 15 seeds have no catches after burn-in and 23 have one specialisation above 70%. Mating share fails in the mean, as it did in every T59 arm including sexes off. So `E28` shows a remaining failure, not a clean pass: the Phase 4 done criterion is not met, and per the phase text the failure is reported to the user before the phase is marked built. No default was adjusted in T42.
+
+Ladder (`npm run ladder`, defaults, 10000 ticks, seeds 1-3, report `evals/ladder/b5eef4b-3x10000.json`): the 8 rungs run, with `wanderer` and `hunter-vs-fleer` at final population 0, `random` at 65, and the rest saturated near 450 of 500. `npx vitest run test/evo/anti-exploit.slow.test.js`: 51 passed, 14 expected failures (65 tests). `test/evo/deliberate-controllers.slow.test.js`: 43 passed. `test/evo/survivable-world.slow.test.js`: 6 passed.
 
 ### Phase 5 - Settle the balance
 
