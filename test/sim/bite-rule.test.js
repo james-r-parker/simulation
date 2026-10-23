@@ -16,7 +16,8 @@ const HUNTER_SPEC = 1;
  * @returns {{w: ReturnType<typeof senseWorld>, biter: number, victim: number}}
  */
 function pair(over, { spec = HUNTER_SPEC, size = 30, facing = 0, kin = false } = {}) {
-    const w = senseWorld(over);
+    // the fixtures state the ratio they assume (1.01, the pre-T15d default), so the default's change does not move them
+    const w = senseWorld({ huntSizeRatio: 1.01, ...over });
     const biter = addAgent(w, 500, 500, size);
     const victim = addAgent(w, 550, 500, 20);
     w.spec[biter] = spec;
@@ -51,6 +52,11 @@ describe('canBite', () => {
         expect(canBite(w, biter, victim)).toBe(true);
     });
 
+    it('lets an equal-size hunter bite at the T15d ratio of 0.8', () => {
+        const { w, biter, victim } = pair({ huntSizeRatio: 0.8 }, { size: 20 });
+        expect(canBite(w, biter, victim)).toBe(true);
+    });
+
     it('takes any direction when the bite arc is the full circle', () => {
         const { w, biter, victim } = pair({ biteArc: Math.PI }, { facing: Math.PI });
         expect(canBite(w, biter, victim)).toBe(true);
@@ -79,7 +85,7 @@ describe('canBite and feed', () => {
         const rng = createRng(3);
         let bitesSeen = 0;
         for (let trial = 0; trial < 200; trial++) {
-            const w = senseWorld();
+            const w = senseWorld({ huntSizeRatio: 1.01 });
             const a = addAgent(w, 500, 500, 10 + nextFloat(rng) * 40);
             const b = addAgent(
                 w,

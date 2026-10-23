@@ -58,7 +58,7 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
-    huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
+    huntSizeRatio: 0.8, // tuned, fitness-and-selection T15d (was 1.01, tuned E20 and jaws; legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
     mateDistanceMax: 1.0, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41, 1.0 from T78)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
@@ -118,13 +118,13 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
-            biteMultiplier: 4,
+            biteMultiplier: 12, // tuned, fitness-and-selection T15d (was 4)
             turnMultiplier: 0.7,
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
-            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            passiveLossMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales the standing (passive, size and vision) energy loss, T15f)
+            splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
         },
         reproducer: {
             index: 2,
@@ -216,13 +216,13 @@ export const DEFAULTS = deepFreeze({
     temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
     temperatureEfficiencyHeatModerate: 0.9, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE (tuned, E17)
     temperatureEfficiencyHeatSevere: 0.6, // TEMPERATURE_EFFICIENCY_HEAT_SEVERE (tuned, E17)
-    biteArc: Math.PI / 4, // new: half-angle of the forward bite arc, radians
+    biteArc: 1.571, // tuned, fitness-and-selection T15d (was Math.PI / 4; half-angle of the forward bite arc, radians)
     antennaAngle: 0.8, // new: radians either side of the heading
     antennaReach: 150, // new: 1.5 pheromone cells
     callRadius: 300, // SHOUT_BASE_RANGE (200)
     callTicks: 60, // SHOUT_DURATION_FRAMES
     alarmCost: 0.5, // tuned, E20
-    huntCallCost: 0.5, // tuned, E20
+    huntCallCost: 10, // tuned, fitness-and-selection T15d (was 0.5, tuned E20)
     smokeCost: 20, // new
     smokeRadius: 80, // new
     smokeTicks: 180, // new
@@ -231,11 +231,11 @@ export const DEFAULTS = deepFreeze({
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
     floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
-    predatorRescueMin: 0, // new: every predatorRescueInterval ticks with fewer predators than this alive, one immigrant spawns as a predator; 0 is off (fitness-and-selection T15b)
-    predatorRescueInterval: 600, // new: ticks between predator rescue checks
-    predatorKillEnergy: 0, // new: energy the biter gains on a fatal bite; 0 is off (fitness-and-selection T15f)
-    alarmThreshold: 0, // new: the alarm output must exceed it; 0 is today's rule (fitness-and-selection T15m)
-    huntCallThreshold: 0, // new: the hunt output must exceed it; 0 is today's rule (fitness-and-selection T15m)
+    predatorRescueMin: 3, // tuned, fitness-and-selection T15d (0 is off; every predatorRescueInterval ticks, one immigrant spawns as a predator while fewer are alive, T15b)
+    predatorRescueInterval: 450, // tuned, fitness-and-selection T15d (ticks between predator rescue checks)
+    predatorKillEnergy: 150, // tuned, fitness-and-selection T15d (energy the biter gains on a fatal bite, T15f)
+    alarmThreshold: 0.65, // tuned, fitness-and-selection T15d (the alarm output must exceed it, T15m)
+    huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch

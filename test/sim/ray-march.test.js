@@ -46,7 +46,8 @@ describe('castRays classes', () => {
         ['a similar-size hunter', { me: 1, other: 1, otherSize: 20.1 }, CH.other],
         ['a hunter of equal size', { me: 1, other: 1, otherSize: 20 }, CH.other],
     ])('classifies %s', (_name, { me: meSpec, other, otherSize }, channel) => {
-        const w = senseWorld();
+        // the classes above state the pre-T15d ratio (1.01) they assume; the default is now 0.8
+        const w = senseWorld({ huntSizeRatio: 1.01 });
         const me = addAgent(w, 500, 500, 20);
         const them = addAgent(w, 600, 500, otherSize);
         w.spec[me] = meSpec;
@@ -58,6 +59,19 @@ describe('castRays classes', () => {
         expect(r[CH.prox]).toBeCloseTo(proximity, 6);
         expect(r[channel]).toBeCloseTo(proximity, 6);
         expect(r.slice(1).filter((v) => v !== 0)).toHaveLength(1);
+    });
+
+    it('classes an equal-size hunter as a threat at the T15d ratio of 0.8, since each can bite the other', () => {
+        const w = senseWorld({ huntSizeRatio: 0.8 });
+        const me = addAgent(w, 500, 500, 20);
+        const them = addAgent(w, 600, 500, 20);
+        w.spec[me] = 1;
+        w.spec[them] = 1;
+        w.angle[them] = Math.PI;
+        cast(w, me);
+        const r = rayValues(w, me, 0);
+        expect(r[CH.threat]).toBeCloseTo(1 - 80 / w.visionBySpec[1], 6);
+        expect(r[CH.prey]).toBe(0);
     });
 
     it('calls a hunter a threat from any angle, its jaws facing away or not', () => {

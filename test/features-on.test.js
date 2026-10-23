@@ -31,12 +31,16 @@ const SWITCHED_ON = [
     'mateRange',
     'reproductionCooldown',
     'childEnergyMin',
-    // the predator rescue (T15b) is off in FEATURES_OFF and on here; the defaults stay off until T15d
+    // the predator package (fitness-and-selection T15d): FEATURES_OFF pins the old or neutral values, FEATURES_ON the tuned ones
     'predatorRescueMin',
     'predatorRescueInterval',
+    'predatorKillEnergy',
+    'huntSizeRatio',
+    'biteArc',
+    'huntCallCost',
+    'alarmThreshold',
+    'huntCallThreshold',
 ];
-
-const RESCUE_KEYS = ['predatorRescueMin', 'predatorRescueInterval'];
 
 describe('feature switch lists', () => {
     it('pin every FEATURE_RULES key, so a new feature key cannot slip into the frozen bench world', () => {
@@ -45,7 +49,12 @@ describe('feature switch lists', () => {
 
     it('freeze the bench world with every feature key off', () => {
         for (const [key, value] of Object.entries(FEATURES_OFF)) {
-            expect(Object.entries(BENCH_CONFIG).find(([k]) => k === key)?.[1]).toEqual(value);
+            if (key === 'specialisations') {
+                // the bench restates the predator's pre-T15d biteMultiplier as well, so it is a superset
+                expect(BENCH_CONFIG.specialisations).toMatchObject(value);
+            } else {
+                expect(Object.entries(BENCH_CONFIG).find(([k]) => k === key)?.[1]).toEqual(value);
+            }
         }
     });
 
@@ -65,7 +74,7 @@ describe('feature switch lists', () => {
         expect(off.specialisations.predator.plantFoodValue).toBe(1);
         const defaults = createConfig({});
         for (const [key, value] of Object.entries(FEATURES_ON)) {
-            if (key !== 'specialisations' && !RESCUE_KEYS.includes(key)) {
+            if (key !== 'specialisations') {
                 expect(defaults[key]).toEqual(value);
             }
         }
@@ -81,18 +90,39 @@ describe('feature switch lists', () => {
         expect(config.predatorRescueInterval).toBe(450);
     });
 
-    it('set the predator economy keys at their neutral values until T15g tunes them', () => {
-        expect(FEATURES_ON.predatorKillEnergy).toBe(0);
-        const predator = createConfig({ ...FEATURES_ON }).specialisations.predator;
-        expect([predator.passiveLossMultiplier, predator.splitMinEnergyMultiplier]).toEqual([1, 1]);
+    it('set the tuned predator economy keys (T15d)', () => {
+        expect(FEATURES_ON.predatorKillEnergy).toBe(150);
+        const predator = createConfig({}).specialisations.predator;
+        expect([predator.passiveLossMultiplier, predator.splitMinEnergyMultiplier, predator.biteMultiplier]).toEqual([
+            0.6, 0.6, 12,
+        ]);
     });
 
-    it('pin the call thresholds at 0 in both lists until T15n and T15d pick them', () => {
-        for (const list of [FEATURES_OFF, FEATURES_ON]) {
-            expect([list.alarmThreshold, list.huntCallThreshold]).toEqual([0, 0]);
+    it('keeps the bench world at the pre-T15d values of the keys the defaults change (T15d)', () => {
+        const bench = createConfig({ ...BENCH_CONFIG });
+        expect([bench.biteArc, bench.huntSizeRatio, bench.huntCallCost, bench.alarmCost]).toEqual([
+            Math.PI / 4,
+            1.05,
+            4,
+            4,
+        ]);
+        expect(bench.specialisations.predator.biteMultiplier).toBe(4);
+        for (const key of ['predatorKillEnergy', 'predatorRescueMin', 'alarmThreshold', 'huntCallThreshold']) {
+            expect(bench[key]).toBe(FEATURES_OFF[key]);
         }
-        expect(createConfig({}).alarmThreshold).toBe(0);
-        expect(createConfig({}).huntCallThreshold).toBe(0);
+    });
+
+    it('set the tuned hunt, bite and call values (T15d), and keep FEATURES_OFF pinned at the old ones', () => {
+        expect([FEATURES_ON.huntSizeRatio, FEATURES_ON.biteArc, FEATURES_ON.huntCallCost]).toEqual([0.8, 1.571, 10]);
+        expect([FEATURES_OFF.alarmThreshold, FEATURES_OFF.huntCallThreshold]).toEqual([0, 0]);
+        expect(BENCH_CONFIG.huntSizeRatio).toBe(1.05);
+        expect(BENCH_CONFIG.huntCallCost).toBe(4);
+    });
+
+    it('set the call thresholds to 0.65 (T15d) and read them back from createConfig', () => {
+        expect([FEATURES_ON.alarmThreshold, FEATURES_ON.huntCallThreshold]).toEqual([0.65, 0.65]);
+        const config = createConfig({});
+        expect([config.alarmThreshold, config.huntCallThreshold]).toEqual([0.65, 0.65]);
     });
 
     it('build a world that steps when on', () => {

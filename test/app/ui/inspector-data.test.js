@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLASS_CHANNELS, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
+import { CLASS_CHANNELS, firingThreshold, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
@@ -60,10 +60,32 @@ describe('inspectorView on a real selected agent', () => {
 
     it('lights an output while its action fires', () => {
         for (const o of view.outputs) {
-            if (o.label !== 'smoke') {
+            if (!['smoke', 'alarm', 'hunt call'].includes(o.label)) {
                 expect(o.firing).toBe(o.value > 0);
             }
         }
+    });
+
+    it('lights the alarm and hunt call only above their call thresholds (T15d), and smoke above smokeThreshold', () => {
+        const high = { ...ready.info, alarmThreshold: 1.5, huntCallThreshold: 1.5, smokeThreshold: 1.5 };
+        const low = { ...ready.info, alarmThreshold: -1, huntCallThreshold: -1, smokeThreshold: -1 };
+        /** @param {Record<string, number>} info @param {string} label */
+        const at = (info, label) => {
+            const found = inspectorView({ snapshot, ready: { ...ready, info }, slots: createFamilySlots() });
+            return found.outputs.find((o) => o.label === label)?.firing;
+        };
+        for (const label of ['alarm', 'hunt call', 'smoke']) {
+            expect(at(high, label)).toBe(false);
+            expect(at(low, label)).toBe(true);
+        }
+    });
+
+    it('reads each firing threshold from its own info key, and 0 for the other outputs', () => {
+        const info = { alarmThreshold: 0.65, huntCallThreshold: 0.4, smokeThreshold: 0.8 };
+        expect([firingThreshold('alarm', info), firingThreshold('hunt', info), firingThreshold('smoke', info)]).toEqual(
+            [0.65, 0.4, 0.8],
+        );
+        expect(firingThreshold('thrust', info)).toBe(0);
     });
 
     it('lists the counters as text', () => {
