@@ -3,8 +3,9 @@
 
 import { createBodyPools } from './metrics-body.js';
 import { createEnvironmentPools } from './metrics-environment.js';
+import { createLineagePools } from './metrics-lineage.js';
 import { checkpoint, createDominancePools } from './observer-checkpoint.js';
-import { applyEvents } from './observer-events.js';
+import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
 import { noteIntentEvents } from './observer-intent-events.js';
@@ -37,6 +38,7 @@ const SLOT_TYPES = {
     samples: Uint32Array,
     generation: Uint32Array,
     archiveLineage: Uint8Array,
+    eligibleChild: Uint8Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -105,6 +107,11 @@ export function createObserver(config, rng, options = {}) {
         dominance: createDominancePools(),
         body: createBodyPools(),
         environment: createEnvironmentPools(),
+        lineage: createLineagePools({
+            burnIn: BURN_IN_TICKS,
+            runTicks: options.runTicks ?? 0,
+            maturityTicks: config.maturityTicks,
+        }),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
         windows: createWindows(options.runTicks ?? 0),
