@@ -1,0 +1,1001 @@
+{
+  "reference": "range300_dist1",
+  "arms": [
+    {
+      "arm": "range300_dist1",
+      "seeds": 32,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.9790575916230366, 0.9842931937172775, 1, 0.9895287958115183, 1, 1, 0.9738219895287958, 1, 1, 1,
+            0.9109947643979057, 0.9947643979057592, 0.9633507853403142, 1, 1, 1, 0.9685863874345549, 1, 1, 1, 1,
+            0.9947643979057592, 1, 0.9581151832460733, 0.9319371727748691, 1, 0.9162303664921466, 0.9842931937172775, 1,
+            1, 1, 0.9790575916230366
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0.007658844433551867, 0, 0, 0, 0.01163345315790086, 0, 0, 0, 0, 0.004351212465353471, 0.003707768516595972,
+            0, 0.024205221550392852, 0, 0.005839075090505664, 0.010039807838077978, 0, 0, 0, 0, 0, 0.003332433576267741,
+            0, 0, 0.003728463462922295, 0, 0, 0.005465287228170276, 0.004751496721467262, 0, 0.006137416761285175,
+            0.006483696744535865
+          ],
+          "pass": [
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            true
+          ]
+        },
+        "lineages": {
+          "value": [
+            25, 17, 21, 21, 23, 17, 20, 20, 15, 19, 23, 18, 19, 16, 17, 21, 18, 15, 18, 17, 20, 17, 21, 15, 27, 26, 14,
+            12, 19, 21, 15, 20
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.5377777777777778, 0.5377777777777778, 0.7844444444444445, 0.6377777777777778, 0.9177777777777778,
+            0.8288888888888889, 0.9222222222222223, 0.6177777777777778, 0.5466666666666666, 0.5222222222222223,
+            0.8044444444444444, 0.9088888888888889, 0.9622222222222222, 0.5454545454545454, 0.5711111111111111, 0.82,
+            0.6911111111111111, 0.5911111111111111, 0.9733924611973392, 0.9645232815964523, 0.9755555555555555,
+            0.9777777777777777, 0.9733333333333334, 0.7666666666666667, 0.8422222222222222, 0.9066666666666666,
+            0.6290322580645161, 0.9889135254988913, 0.9733333333333334, 0.6777777777777778, 0.5955555555555555,
+            0.9711111111111111
+          ],
+          "pass": [
+            true,
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            false
+          ]
+        },
+        "popBelowMax": {
+          "value": [
+            450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 451, 450, 450, 450, 450, 451, 451, 450,
+            450, 450, 450, 450, 450, 62, 451, 450, 450, 450, 450
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.17992850400994467,
+          "pass": false
+        },
+        "bornShare": {
+          "value": 0.947561196592511,
+          "pass": true
+        }
+      },
+      "popMean": 363.03203124999993,
+      "pass": false,
+      "deltas": null
+    },
+    {
+      "arm": "range300_dist1_childmin100",
+      "seeds": 32,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.9685863874345549, 1, 0.9842931937172775, 1, 1, 1, 1, 0.9057591623036649, 1, 1, 1, 0.9267015706806283, 1,
+            1, 1, 1, 0.9581151832460733, 1, 1, 1, 1, 1, 0.9790575916230366, 0.9947643979057592, 0.9895287958115183, 1,
+            0.9633507853403142, 0.9790575916230366, 1, 1, 1, 1
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0, 0.02528713542272504, 0.004560483411241592, 0, 0.01861920011916288, 0, 0, 0, 0, 0.008669906321662195, 0,
+            0, 0.005585749635529836, 0.003751078435050077, 0.0037275045102804576, 0.010058641882173069, 0,
+            0.008209034863771067, 0, 0.006334807231815936, 0.010776500762437429, 0.012869723011386487,
+            0.005388482657168569, 0.025433751435947217, 0.03140050162301343, 0, 0.005277351191889767,
+            0.013040416597842245, 0.00812836311023686, 0, 0, 0.006318236959158916
+          ],
+          "pass": [
+            false,
+            true,
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            true
+          ]
+        },
+        "lineages": {
+          "value": [
+            17, 17, 18, 22, 25, 21, 24, 8, 17, 23, 18, 28, 17, 17, 18, 21, 20, 17, 22, 14, 16, 21, 14, 18, 24, 22, 22,
+            20, 18, 17, 16, 17
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.9777777777777777, 0.8155555555555556, 0.9822222222222222, 0.8866666666666667, 0.5577777777777778,
+            0.5955555555555555, 0.7377777777777778, 0.5466666666666666, 0.5355555555555556, 0.8070953436807096,
+            0.9777777777777777, 0.844789356984479, 0.5177777777777778, 0.9511111111111111, 0.8444444444444444, 0.74,
+            0.9711111111111111, 0.5022222222222222, 0.5577777777777778, 0.9155555555555556, 0.9778270509977827,
+            0.9711111111111111, 0.8577777777777778, 0.4177777777777778, 0.5977777777777777, 0.9733924611973392,
+            0.9090909090909091, 0.7222222222222222, 0.9688888888888889, 0.9688888888888889, 0.49889135254988914,
+            0.5133333333333333
+          ],
+          "pass": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            true
+          ]
+        },
+        "popBelowMax": {
+          "value": [
+            450, 450, 450, 450, 450, 450, 450, 450, 450, 451, 450, 451, 450, 450, 450, 450, 450, 450, 450, 450, 451,
+            450, 450, 450, 450, 451, 451, 450, 450, 450, 451, 450
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.2383465302198021,
+          "pass": true
+        },
+        "bornShare": {
+          "value": 0.9533474463164682,
+          "pass": true
+        }
+      },
+      "popMean": 373.75812499999995,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.2383465302198021,
+          "delta": 0.05841802620985742,
+          "rel": 0.3246735503710332
+        },
+        "eval.lineages_alive": {
+          "mean": 18.608965968586382,
+          "delta": -0.4780759162303738,
+          "rel": -0.025047145551174734
+        },
+        "eval.births_per_1k": {
+          "mean": 0.11152644289830015,
+          "delta": 0.003863748373390069,
+          "rel": 0.0358875317995697
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 456.64743397004446,
+          "delta": -11.442417379501023,
+          "rel": -0.02444491660417652
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 5934.765625,
+          "delta": -56.453125,
+          "rel": -0.009422644599648445
+        }
+      }
+    },
+    {
+      "arm": "range300_dist1_cool150_childmin100",
+      "seeds": 32,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.9895287958115183, 1, 0.9528795811518325, 1, 1, 1, 0.9790575916230366, 1, 1, 1, 1, 0.9738219895287958,
+            0.9319371727748691, 1, 1, 1, 0.9947643979057592, 0.9947643979057592, 1, 1, 0.9790575916230366, 1, 1, 1,
+            0.9581151832460733, 1, 0.9685863874345549, 1, 1, 1, 1, 1
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0, 0, 0.004784780569963062, 0.006737636437137852, 0.0053865959945272185, 0, 0, 0, 0, 0,
+            0.0046922362259405595, 0, 0, 0.009829507197656644, 0.01226276656188814, 0.005360406962096563,
+            0.01705495105229048, 0.0106150351357663, 0.005310900091347481, 0, 0, 0, 0, 0, 0.00608098657926262, 0, 0,
+            0.012099579539611, 0.004160183713712798, 0, 0.020707935280799603, 0
+          ],
+          "pass": [
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            false
+          ]
+        },
+        "lineages": {
+          "value": [
+            19, 18, 20, 19, 22, 18, 19, 21, 11, 17, 17, 16, 23, 17, 18, 19, 23, 20, 15, 14, 18, 19, 15, 19, 21, 21, 13,
+            17, 24, 15, 19, 17
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.7095343680709535, 0.8755555555555555, 0.8488888888888889, 0.8622222222222222, 0.975609756097561,
+            0.9688888888888889, 0.9711111111111111, 0.9445676274944568, 0.9911111111111112, 0.9266666666666666,
+            0.8488888888888889, 0.7738359201773836, 0.5986696230598669, 0.8536585365853658, 0.9667405764966741,
+            0.6097560975609756, 0.9577777777777777, 0.6283185840707964, 0.9866666666666667, 0.9733333333333334,
+            0.49889135254988914, 0.96, 0.9667405764966741, 0.9600886917960089, 0.9333333333333333, 0.9622222222222222,
+            0.9844444444444445, 0.9777777777777777, 0.9712389380530974, 0.9777777777777777, 0.9733333333333334,
+            0.9578713968957872
+          ],
+          "pass": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "popBelowMax": {
+          "value": [
+            451, 450, 450, 450, 451, 450, 450, 451, 450, 450, 450, 451, 451, 451, 451, 451, 450, 452, 450, 450, 451,
+            450, 451, 451, 450, 450, 450, 450, 452, 450, 450, 451
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.2663180946946246,
+          "pass": true
+        },
+        "bornShare": {
+          "value": 0.954079404116703,
+          "pass": true
+        }
+      },
+      "popMean": 386.2617187500001,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.2663180946946246,
+          "delta": 0.08638959068467991,
+          "rel": 0.4801328792235451
+        },
+        "eval.lineages_alive": {
+          "mean": 18.157395287958117,
+          "delta": -0.9296465968586389,
+          "rel": -0.048705640322304136
+        },
+        "eval.births_per_1k": {
+          "mean": 0.10238313444277172,
+          "delta": -0.005279560082138354,
+          "rel": -0.049037970909383236
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 468.4057637659587,
+          "delta": 0.3159124164131981,
+          "rel": 0.000674896957287995
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 6135.890625,
+          "delta": 144.671875,
+          "rel": 0.024147319775296137
+        }
+      }
+    },
+    {
+      "arm": "all5-range200",
+      "seeds": 32,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.9162303664921466, 1, 0.9738219895287958, 1, 1, 1, 1, 0.9842931937172775, 1, 1, 1, 0.9581151832460733,
+            0.9895287958115183, 1, 1, 1, 0.9947643979057592, 0.9947643979057592, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0.008557174763180188, 0, 0, 0.016432863536023575, 0.005069554284787282, 0.005264571016430726, 0,
+            0.005211862198363475, 0.01679298724852502, 0.009962176934903815, 0, 0.009149214539931748, 0,
+            0.003854648899305007, 0.009559132795472795, 0.004889569082276779, 0, 0.013842842212363043, 0,
+            0.005671023903365753, 0.004304741242003943, 0, 0, 0, 0.005623474632505933, 0, 0.0064071760371616215,
+            0.032869096475493735, 0.004240252719062056, 0, 0.0057318086722265215, 0.005135130971515429
+          ],
+          "pass": [
+            true,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            true
+          ]
+        },
+        "lineages": {
+          "value": [
+            31, 21, 20, 18, 19, 22, 21, 22, 16, 15, 21, 19, 24, 17, 23, 16, 16, 18, 15, 19, 15, 26, 19, 11, 25, 18, 20,
+            23, 18, 17, 20, 20
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.4266666666666667, 0.6688888888888889, 0.9533333333333334, 0.9488888888888889, 0.5177777777777778,
+            0.9577777777777777, 0.5755555555555556, 0.5488888888888889, 0.6088888888888889, 0.9556541019955654,
+            0.6807095343680709, 0.9755555555555555, 0.9511111111111111, 0.9733924611973392, 0.7066666666666667, 0.98,
+            0.9755555555555555, 0.5711111111111111, 0.9844444444444445, 0.7266666666666667, 0.9755555555555555,
+            0.9688888888888889, 0.9533333333333334, 0.9066666666666666, 0.6496674057649667, 0.9777777777777777,
+            0.8802660753880266, 0.7844444444444445, 0.977728285077951, 0.56, 0.9577777777777777, 0.5288888888888889
+          ],
+          "pass": [
+            true,
+            true,
+            false,
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true
+          ]
+        },
+        "popBelowMax": {
+          "value": [
+            450, 450, 450, 450, 450, 450, 450, 450, 450, 451, 451, 450, 450, 451, 450, 450, 450, 450, 450, 450, 450,
+            450, 450, 450, 451, 450, 451, 450, 449, 450, 450, 450
+          ],
+          "pass": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.20981642556341384,
+          "pass": true
+        },
+        "bornShare": {
+          "value": 0.9559679290072571,
+          "pass": true
+        }
+      },
+      "popMean": 400.39046875,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.20981642556341384,
+          "delta": 0.02988792155346917,
+          "rel": 0.1661099875082453
+        },
+        "eval.lineages_alive": {
+          "mean": 18.666884816753925,
+          "delta": -0.4201570680628315,
+          "rel": -0.02201268643922532
+        },
+        "eval.births_per_1k": {
+          "mean": 0.10382049752695681,
+          "delta": -0.0038421969979532677,
+          "rel": -0.03568735684080703
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 482.6963094813476,
+          "delta": 14.606458131802128,
+          "rel": 0.031204389690762117
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 5991.09375,
+          "delta": -0.125,
+          "rel": -0.000020863868474173138
+        }
+      }
+    }
+  ]
+}

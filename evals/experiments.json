@@ -1252,6 +1252,30 @@
       "verdicts": {},
       "effect": "better",
       "note": "Round A screen (T72, evals/screens/results/phase5-a/table.md): 34 arms plus base, 4 seeds x 200000 ticks, offset 28, live policy. No arm reaches the 0.2 mating mean; the highest is 0.08 (base 0.05). Advancing arms (mating at least 50% above base, guards held): mateRange-300 (0.08, +61%), mateRange-200 (0.08, +54%), mateDistanceMax-1 (0.08, +55%). No arm trips the births (more than 15% down) or lineage guard, and every arm keeps population above minAgents and below maxAgents on 4 of 4 seeds. Prediction check: mateRange 200/300 confirmed; mateChanceScale 0.7 (+8%) and foodRegrowPerArea 0.09 (-22%) did not rise as predicted; splitCooldownMultiplier 3 and 4 lowered the share (-27%, -55%) rather than raising it; splitMinEnergy 1500 raised births (+19%) without raising the share (+1%); childEnergyMin 100 (+35%) and childEnergyShare 0.35 (-28%) moved more than the 20% predicted. Round B is needed; the stop rule (no arm at 0.12) does not trigger."
+    },
+    {
+      "id": "E34",
+      "date": "2026-10-22",
+      "branch": "eval/wb-t73-t74-round-b",
+      "hypothesis": "Phase 5 round C: a combination of the round B world-rule keys lifts the live policy mean eval.mating_share to at least 0.2 on seeds 1-16 and 17-32 against E28 (the same policy at the T41 defaults, seeds 1-32), with no Target verdict worse and the ladder order kept.",
+      "prediction": "mateRange 300 with mateDistanceMax 1.0 alone falls just short of 0.2 at 32 seeds; adding childEnergyMin 100 and reproductionCooldown 150 passes it; all5-range200 passes with the best predator and dominance guards.",
+      "targets": [
+        "eval.mating_share",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan"
+      ],
+      "before": "evals/experiments/E28-map-elites-v1q.json",
+      "after": "evals/screens/results/phase5-c/all5-range200.report.json",
+      "verdicts": {
+        "eval.births_per_1k": "no-difference",
+        "eval.fed_median_lifespan": "no-difference",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.lineages_alive": "better"
+      },
+      "effect": "better",
+      "note": "Round C (T76, evals/screens/results/phase5-c/): 4 finalists x 32 seeds x 200000 ticks vs E28 with --allow-config-diff on the changed keys. range300_dist1 0.18 (fails 0.2); range300_dist1_childmin100 0.24 but food_energy_per_1k worse -5.7%; range300_dist1_cool150_childmin100 0.27 (0.272/0.260 per half), no Target worse, but specialisation at most 70% on 4/32 against E28 9/32 and catch_rate above 0 on 14/32 against 17/32; all5-range200 (mateRange 200, mateDistanceMax 1.0, reproductionCooldown 150, childEnergyMin 100, maxBirthsPerWindow 5) 0.21 (0.203 seeds 1-16, 0.217 seeds 17-32), lineages_alive better +5.0%, no Target worse, catch_rate above 0 on 20/32 and specialisation at most 70% on 11/32 (both better than E28). Ladder (10000 ticks, seeds 1-3) keeps its order: wanderer 0, random 30.7 (defaults 65.0), the rest saturated at about 450 as with the defaults. Winner: all5-range200 (T77); T78 makes it the default."
     }
   ]
 }
