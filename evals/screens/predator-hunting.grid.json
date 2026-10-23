@@ -1,0 +1,66 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": {
+    "predatorRescueMin": 3,
+    "predatorRescueInterval": 450,
+    "predatorKillEnergy": 150,
+    "specialisations": { "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6 } }
+  },
+  "arms": {
+    "defaults": {
+      "predatorRescueMin": 0,
+      "predatorKillEnergy": 0,
+      "specialisations": { "predator": { "passiveLossMultiplier": 1, "splitMinEnergyMultiplier": 1 } }
+    },
+    "base": {},
+    "arc-1.047": { "biteArc": 1.047 },
+    "arc-1.571": { "biteArc": 1.571 },
+    "bite-8": {
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 8 }
+      }
+    },
+    "bite-12": {
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 12 }
+      }
+    },
+    "sprint-2.0": {
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "sprintBoost": 2.0 }
+      }
+    },
+    "size-0.9": { "huntSizeRatio": 0.9 },
+    "size-0.8": { "huntSizeRatio": 0.8 },
+    "arc1.571-bite12-size0.8": {
+      "biteArc": 1.571,
+      "huntSizeRatio": 0.8,
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 12 }
+      }
+    },
+    "arc1.047-bite8-size0.9": {
+      "biteArc": 1.047,
+      "huntSizeRatio": 0.9,
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 8 }
+      }
+    },
+    "arc1.571-bite8-size0.9-sprint2.0": {
+      "biteArc": 1.571,
+      "huntSizeRatio": 0.9,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 0.6,
+          "splitMinEnergyMultiplier": 0.6,
+          "biteMultiplier": 8,
+          "sprintBoost": 2.0
+        }
+      }
+    }
+  }
+}
