@@ -1,3 +1,5 @@
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { snapshotLayout } from '../../js/sim/snapshot.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -75,15 +77,31 @@ describe('interpolateInto', () => {
     });
 
     it('allocates nothing per call', () => {
+        // Heap growth over a window of calls is noisy for reasons outside the function: garbage left by earlier
+        // tests, and V8 tiering the loop up (OSR, concurrent TurboFan) inside the window, which can add about 1 MB
+        // when the machine is loaded. So collect before each window, keep the smallest growth of several windows
+        // (an allocation per call shows in every one), and do not collect after, so short-lived garbage counts.
+        // The alphas are literals: a computed double passed to a call is boxed by the caller, 16 bytes a call.
+        v8.setFlagsFromString('--expose-gc');
+        const gc = vm.runInNewContext('gc');
         const out = createInterpolated(8);
-        for (let i = 0; i < 3000; i++) {
-            interpolateInto(prev, next, 0.5, out);
+        const calls = 5000;
+        const run = () => {
+            for (let i = 0; i < calls; i += 2) {
+                interpolateInto(prev, next, 0.25, out);
+                interpolateInto(prev, next, 0.75, out);
+            }
+        };
+        run();
+        let best = Infinity;
+        for (let window = 0; window < 10; window++) {
+            gc();
+            const before = process.memoryUsage().heapUsed;
+            run();
+            best = Math.min(best, process.memoryUsage().heapUsed - before);
         }
-        const before = process.memoryUsage().heapUsed;
-        for (let i = 0; i < 5000; i++) {
-            interpolateInto(prev, next, (i % 10) / 10, out);
-        }
-        expect(process.memoryUsage().heapUsed - before).toBeLessThan(300_000);
+        // Under 4 bytes a call: no call allocates even one object (the smallest is larger).
+        expect(best).toBeLessThan(calls * 4);
     });
 });
 
