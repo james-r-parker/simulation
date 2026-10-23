@@ -1390,6 +1390,19 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "T15l screen, 12 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict (4 seeds). Id E44 is the next free after E43 (the plan reserves E36-E42). Singles leave catch_rate at 0.004-0.010 (one seed in four at most clears 0.01); arc1.571-bite12-size0.8 reaches 0.069 on 4 of 4 seeds (base 0.003), pop 360 (= base), mating 0.17, pursuit_kill_share 0.09 (0 on base), 47.5 predator births. Predictions wrong: size gate singles weak, effect multiplicative. No plague; predator share about 1% (rescue floor). Proposed T15d package: T15g values plus biteArc 1.571, predator biteMultiplier 12, huntSizeRatio 0.8. Round B not run. See sim-notes 2026-10-23 \"Predator hunting screen\"."
+    },
+    {
+      "id": "E45",
+      "date": "2026-10-23",
+      "branch": "eval/fs-t15h-call-cost",
+      "hypothesis": "On the T15l predator package, raising alarmCost, huntCallCost and smokeCost makes blobs that call at nothing die out, so eval.idle_signals_per_1k falls with eval.alarm_precision and eval.hunt_call_precision not lower.",
+      "prediction": "Idle signals roughly halve at cost 5 and fall 80% or more at 20; likelier outcome at 10 and above is silence with null precisions; smokeCost moves little; the predator package is not hurt.",
+      "targets": ["eval.idle_signals_per_1k", "eval.alarm_precision", "eval.hunt_call_precision"],
+      "before": "evals/screens/results/call-cost/defaults.report.json",
+      "after": "evals/screens/results/call-cost/<arm>.report.json (one per arm; table in evals/screens/results/call-cost/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T15h screen, 15 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict. Idle signals 8.0-12.9 on every arm (base 11.7), lower only with a population collapse (alarm-20 pop 134, mating 0.09); alarm_precision under 0.002 everywhere; no silence. High alarmCost cuts pop and mating. hunt-10 is the only arm not worse than base on the judged rows (idle 10.4, hunt precision 0.011, catch 0.079, pop 388, mating 0.21). Predictions wrong. Proposed: T15l package plus huntCallCost 10. See sim-notes 2026-10-23 \"Call cost screen\"."
     }
   ]
 }

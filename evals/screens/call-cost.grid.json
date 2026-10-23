@@ -1,0 +1,81 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": {
+    "predatorRescueMin": 3,
+    "predatorRescueInterval": 450,
+    "predatorKillEnergy": 150,
+    "biteArc": 1.571,
+    "huntSizeRatio": 0.8,
+    "specialisations": {
+      "predator": {
+        "passiveLossMultiplier": 0.6,
+        "splitMinEnergyMultiplier": 0.6,
+        "biteMultiplier": 12
+      }
+    }
+  },
+  "arms": {
+    "defaults": {
+      "predatorRescueMin": 0,
+      "predatorKillEnergy": 0,
+      "biteArc": 0.7853981633974483,
+      "huntSizeRatio": 1.01,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 1,
+          "splitMinEnergyMultiplier": 1,
+          "biteMultiplier": 4
+        }
+      }
+    },
+    "base": {},
+    "alarm-2": {
+      "alarmCost": 2
+    },
+    "alarm-5": {
+      "alarmCost": 5
+    },
+    "alarm-10": {
+      "alarmCost": 10
+    },
+    "alarm-20": {
+      "alarmCost": 20
+    },
+    "hunt-2": {
+      "huntCallCost": 2
+    },
+    "hunt-5": {
+      "huntCallCost": 5
+    },
+    "hunt-10": {
+      "huntCallCost": 10
+    },
+    "hunt-20": {
+      "huntCallCost": 20
+    },
+    "smoke-10": {
+      "smokeCost": 10
+    },
+    "smoke-40": {
+      "smokeCost": 40
+    },
+    "alarm5-hunt5": {
+      "alarmCost": 5,
+      "huntCallCost": 5
+    },
+    "alarm10-hunt10-smoke40": {
+      "alarmCost": 10,
+      "huntCallCost": 10,
+      "smokeCost": 40
+    },
+    "alarm20-hunt20-smoke40": {
+      "alarmCost": 20,
+      "huntCallCost": 20,
+      "smokeCost": 40
+    }
+  }
+}
