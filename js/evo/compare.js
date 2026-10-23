@@ -73,7 +73,7 @@ const DIRECTIONS = {
     'eval.heat_stress_share': 'watch',
     'eval.terrain_death_share': 'lower',
     'eval.winter_pop_ratio': 'watch',
-    'eval.migration_index': 'watch',
+    'eval.migration_index': 'higher',
     'eval.predator_presence': 'higher',
     'eval.pred_prey_lag_corr': 'watch',
     'browser.frame_p95_ms': 'lower',
