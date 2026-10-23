@@ -8,7 +8,7 @@ describe('DEFAULTS', () => {
     });
 
     it('sets the birth keys', () => {
-        expect([DEFAULTS.mateRange, DEFAULTS.childEnergyShare, DEFAULTS.childEnergyMin]).toEqual([100, 0.5, 200]);
+        expect([DEFAULTS.mateRange, DEFAULTS.childEnergyShare, DEFAULTS.childEnergyMin]).toEqual([200, 0.5, 100]);
     });
 
     it('is frozen at every level', () => {
