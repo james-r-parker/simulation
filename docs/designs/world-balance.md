@@ -176,14 +176,14 @@ The observer keeps a per-slot generation depth (0 for `initial`, `floor` and `im
 more than its deeper parent's, found through `observer.slotOf`), whether the agent's lineage began at an archive draw,
 and the fitness at death.
 
-| Metric                           | Better | Definition                                                                                                                               |
-| -------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `eval.offspring_per_life`        | watch  | Mean children per completed life after burn-in                                                                                           |
-| `eval.generation_depth_p90`      | watch  | 90th percentile of generation depth at death after burn-in                                                                               |
-| `eval.opportunity_for_selection` | watch  | Variance of children per completed life over the squared mean, after burn-in; `null` when the mean is 0                                  |
-| `eval.fitness_lrs_corr`          | watch  | Spearman correlation between fitness at death and children, over mature deaths after burn-in; `null` below 30 deaths                     |
-| `eval.archive_lineage_share`     | watch  | Share of agent-ticks at checkpoints after burn-in by agents whose lineage began at an archive draw; `null` for a policy with no archive  |
-| `eval.kin_within_call_radius`    | watch  | Mean number of living agents of the caller's lineage within `callRadius` of the caller at each `AlarmCalled` event; `null` with no alarm |
+| Metric                           | Better | Definition                                                                                                                                                           |
+| -------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eval.offspring_per_life`        | watch  | Mean children per completed life that ended at or after tick 10000                                                                                                   |
+| `eval.generation_depth_p90`      | watch  | 90th percentile (linear interpolation) of generation depth at death after burn-in                                                                                    |
+| `eval.opportunity_for_selection` | watch  | Population variance (divisor n) of children per completed life over the squared mean, after burn-in; `null` when the mean is 0                                       |
+| `eval.fitness_lrs_corr`          | watch  | Spearman correlation between fitness at death and children, over mature deaths after burn-in with a fitness; `null` below 30 deaths or when either is constant       |
+| `eval.archive_lineage_share`     | watch  | Share of agent-ticks at checkpoints after burn-in by agents whose lineage began at an archive draw, pooled over the checkpoints; `null` for a policy with no archive |
+| `eval.kin_within_call_radius`    | watch  | Mean number of living agents of the caller's lineage within `callRadius` of the caller at each `AlarmCalled` event; `null` with no alarm                             |
 
 ### Seed minimum per metric
 
