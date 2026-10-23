@@ -27,22 +27,22 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Headless sim core](headless-sim-core.md) - the deterministic sim core in `js/sim/` (Phases 1 and 2) and its diagnostics: the sim log, `npm run replay` and opt-in OpenTelemetry (Phase 3)
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (5)
+## In progress (6)
 
 Partly built - the note says which phases are real.
 
 - [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Ph... _(validated 23eaea3, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
+- [Fitness and selection](fitness-and-selection.md) - Phase 1 built: the metric audit, the new metrics, their directions and the E35 baseline are in; Phases 2-4 (merit, `fitnessV6`, tuning) are still to build _(validated ed6dd9c, 2026-10-23)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer... _(validated 830e60a, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md), [fitness-and-selection.md](fitness-and-selection.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phase 2 (renderer core) code merged, awaiting its dev-m... _(validated 23eaea3, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1, 2, 3 and 4 built (Phase 4 closed with three failures that remain, user 2026-10-22); Phase 5 settles the balance on a tuning night in a session of its... _(validated 46097eb, 2026-10-22)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
 
-## Proposed (4)
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
-- [Fitness and selection](fitness-and-selection.md) - a complete overhaul of how blobs are scored and selected: a metric audit and the missing metrics (Phase 1), an in-world merit score that steers mate choice, bir... _(validated ed6dd9c, 2026-10-23)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 

@@ -1,6 +1,6 @@
 # Fitness and selection
 
-**Status:** Proposed - a complete overhaul of how blobs are scored and selected: a metric audit and the missing metrics (Phase 1), an in-world merit score that steers mate choice, birth energy and splitting (Phase 2), `fitnessV6` with a larger archive role (Phase 3) and the experiments that tune and judge it (Phase 4). Phase 1 first.
+**Status:** In progress - Phase 1 built: the metric audit, the new metrics, their directions and the E35 baseline are in; Phases 2-4 (merit, `fitnessV6`, tuning) are still to build.
 **Validated:** ed6dd9c (2026-10-23)
 **Priority:** 1 - the worlds sit in a scout monoculture where behaviour stops improving, and every later tuning night, the trainer and the champions measure a fitness this doc replaces
 **Depends on:** [world-balance.md](world-balance.md) (Phase 1, built), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md)
@@ -377,7 +377,7 @@ adopted silently. With fewer than two of the skill metrics (`eval.deliberate_foo
 
 ## Phases
 
-### Phase 1 - Metric audit and new metrics
+### Phase 1 - Metric audit and new metrics (built)
 
 **Targets:** none - instruments and calibration only; the new metrics are first recorded for `map-elites-v1q` in `E35` and Phases 3 and 4 move them
 
@@ -454,7 +454,7 @@ re-recorded) and the long confirmation run. The phase is not `(built)` until `E4
 
 ## Task breakdown
 
-### Phase 1 - Metric audit and new metrics
+### Phase 1 - Metric audit and new metrics (built)
 
 | #    | Task                                                                                                                                                                                                                                                                                                                                                | Nature       | Depends on                                                        |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
