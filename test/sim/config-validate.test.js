@@ -81,8 +81,12 @@ describe('validateConfig types and ranges', () => {
         expect(() => createConfig({ ...FEATURES_OFF, energyToSize: 0 })).toThrow(/energyToSize.*> 0/);
     });
 
-    it('rejects a huntSizeRatio below 1', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, huntSizeRatio: 0.9 })).toThrow(/huntSizeRatio/);
+    it.each([0.5, 0.8, 0.9])('accepts a huntSizeRatio of %s', (value) => {
+        expect(() => createConfig({ ...FEATURES_OFF, huntSizeRatio: value })).not.toThrow();
+    });
+
+    it('rejects a huntSizeRatio below 0.5', () => {
+        expect(() => createConfig({ ...FEATURES_OFF, huntSizeRatio: 0.49 })).toThrow(/huntSizeRatio/);
     });
 
     it.each([1, 0.9, Infinity])('rejects a mateSizeRatio of %s', (value) => {
