@@ -148,7 +148,9 @@ function fillSnapshot(follow, world, snap) {
 
 /**
  * Records an `AlarmCalled` event: each alive non-hunter's role at this tick (its band, genome id and speed are in the
- * tick's snapshot).
+ * tick's snapshot). A hearer is inside the caller's `callRadius` with alarm loudness above 0; loudness from another
+ * call of the tick does not make an agent outside this call's radius a hearer. A control is at or beyond the radius,
+ * as the sim lets only `d < callRadius` hear.
  * @param {Record<string, any>} follow the follow-up
  * @param {Record<string, any>} world the world after the step
  * @param {number} caller the caller's slot
@@ -168,8 +170,8 @@ export function noteAlarm(follow, world, caller) {
         if (snap.eligible[s] === 0 || s === caller) {
             continue;
         }
-        const outside = length(x[s] - x[caller], y[s] - y[caller]) > callRadius;
-        role[s] = roleOf(heard[s * HEARD_STRIDE] > 0, outside);
+        const outside = length(x[s] - x[caller], y[s] - y[caller]) >= callRadius;
+        role[s] = roleOf(!outside && heard[s * HEARD_STRIDE] > 0, outside);
     }
     follow.queue.push(record);
 }
