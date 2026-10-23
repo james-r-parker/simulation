@@ -8,7 +8,7 @@ import { nextFloat } from './rng.js';
 
 export const SEASONS_PER_YEAR = 4;
 const SUMMER = 1;
-const WINTER = 3;
+export const WINTER = 3;
 /** The patch regrowth multiplier in summer. */
 export const SUMMER_REGROW = 1.5;
 

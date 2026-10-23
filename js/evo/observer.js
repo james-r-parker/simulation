@@ -2,6 +2,7 @@
 // a checkpoint series. It runs outside `step` and allocates only when a log doubles or a birth is tracked.
 
 import { createBodyPools } from './metrics-body.js';
+import { createEnvironmentPools } from './metrics-environment.js';
 import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
@@ -103,6 +104,7 @@ export function createObserver(config, rng, options = {}) {
         dominantLineage: 0,
         dominance: createDominancePools(),
         body: createBodyPools(),
+        environment: createEnvironmentPools(),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
         windows: createWindows(options.runTicks ?? 0),

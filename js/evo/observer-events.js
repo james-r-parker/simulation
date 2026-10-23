@@ -2,6 +2,7 @@
 
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
+import { noteDeath } from './metrics-environment.js';
 import { ensureRoom } from './growable-log.js';
 import { resetIntentSlot } from './observer-intent.js';
 
@@ -96,6 +97,9 @@ function finishDeath(observer, d, o, fitness) {
     observer.biteEnergy[slot] = d[o + 10];
     logDeath(observer, slot, fitness ? fitness(observer, slot, observer.config) : NaN);
     observer.deathsByCause[d[o + 4]] += 1;
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        noteDeath(observer.environment, d[o + 4]);
+    }
     observer.foodEnergyDead += d[o + 9];
     if (observer.slotOf.get(genomeId) === slot) {
         observer.slotOf.delete(genomeId);

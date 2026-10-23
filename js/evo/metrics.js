@@ -6,6 +6,7 @@ import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
 import { bodyMetrics } from './metrics-body.js';
 import { dominanceMetrics } from './metrics-dominance.js';
+import { environmentMetrics } from './metrics-environment.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
 import { intentMetrics } from './metrics-intent.js';
@@ -126,6 +127,7 @@ export function computeMetrics(observer, _world, options = {}) {
         ...trendMetrics(observer),
         ...dominanceMetrics(observer),
         ...bodyMetrics(observer),
+        ...environmentMetrics(observer),
         ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
