@@ -47,7 +47,7 @@ export function runControllerSeed({ rung, seed, ticks, overrides = {} }) {
     const random = typeof arms === 'string' ? arms === RANDOM_ARM : [arms.canHunt, arms.rest].includes(RANDOM_ARM);
     const policy = random ? createNaturalV1({ config }).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
-    const observer = createObserver(config, fork(createRng(seed), 'eval'));
+    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: ticks });
     observe(observer, world);
     const phases = {
         ...observerPhases(observer),

@@ -12,10 +12,11 @@ export const PREDATOR = 1;
 /**
  * A small empty world with 16 rays and a `PI / 4` bite arc, and an observer for it.
  * @param {Record<string, any>} [over] config overrides
+ * @param {{runTicks?: number}} [options] the observer's options
  * @returns {{world: any, observer: any, intent: any}}
  */
-export function intentArena(over = {}) {
-    const { world, observer } = observed({ rayCount: 16, biteArc: Math.PI / 4, maxAgents: 8, ...over });
+export function intentArena(over = {}, options = {}) {
+    const { world, observer } = observed({ rayCount: 16, biteArc: Math.PI / 4, maxAgents: 8, ...over }, options);
     return { world, observer, intent: observer.intent };
 }
 
