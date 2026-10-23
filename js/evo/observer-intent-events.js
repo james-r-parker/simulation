@@ -5,7 +5,8 @@ import { TIMER_CAP } from '../sim/world.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { KILL, killKind } from './observer-combat.js';
 import { biteDeliberate, findAlive, recordBite } from './observer-intent.js';
-import { pushHuntCall, resolveHuntCalls, sampleHearers } from './observer-intent-calls.js';
+import { pruneAlarms, pushAlarm } from './observer-intent-alarms.js';
+import { popResolvedHuntCall, pushHuntCall, sampleHearers } from './observer-intent-calls.js';
 import { INTENT_WINDOW } from './observer-intent-state.js';
 
 /**
@@ -45,7 +46,24 @@ function kinAround(intent, world, caller) {
 }
 
 /**
- * Reads the fatal bite of an eaten death and counts the kill toward pursuit and pack convergence.
+ * Adds one to a counter of the alive agent that holds `genomeId`; a gone agent earns nothing.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @param {Uint32Array} counter a per-slot intent counter
+ * @param {number} genomeId the agent's genome id; 0 for none
+ * @returns {void}
+ */
+function creditAgent(observer, world, counter, genomeId) {
+    const slot = genomeId === 0 ? -1 : findAlive(world, observer.slotOf, genomeId);
+    if (slot >= 0) {
+        counter[slot] += 1;
+    }
+}
+
+/**
+ * Reads the fatal bite of an eaten death and counts the kill toward pursuit and pack convergence: the run totals, and
+ * the killer's `deliberateKills`, and for a convergent pack kill the `convergedKills` of the killer and the previous
+ * biter.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
  * @param {number} o the record offset of the `AgentDied`
@@ -56,16 +74,26 @@ export function noteIntentDeath(observer, world, o) {
     const d = world.events.data;
     const slot = d[o + 2];
     const killerId = d[o + 5];
+    const previousId = d[o + 11];
     if (world.lastBiteTick[slot] === world.tick) {
         const killer = findAlive(world, observer.slotOf, killerId);
         recordBite(intent, slot, killerId, killer >= 0 && biteDeliberate(intent, killer, world.tick));
     }
-    const kind = killKind(combat, killerId, d[o + 11]);
+    const deliberate = intent.lastBiteDeliberate[slot];
+    if (deliberate === 1) {
+        creditAgent(observer, world, intent.deliberateKills, killerId);
+    }
+    const kind = killKind(combat, killerId, previousId);
     if (kind >= KILL.HUNT) {
-        intent.run.huntKillsDeliberate += intent.lastBiteDeliberate[slot];
+        intent.run.huntKillsDeliberate += deliberate;
     }
     if (kind === KILL.PACK) {
-        intent.run.packKillsConvergent += intent.lastBiteDeliberate[slot] & intent.prevBiteDeliberate[slot];
+        const convergent = deliberate & intent.prevBiteDeliberate[slot];
+        intent.run.packKillsConvergent += convergent;
+        if (convergent === 1) {
+            creditAgent(observer, world, intent.convergedKills, killerId);
+            creditAgent(observer, world, intent.convergedKills, previousId);
+        }
     }
 }
 
@@ -86,13 +114,16 @@ function noteCall(intent, world, type, slot) {
         run.alarms += 1;
         run.alarmsPrecise += precise ? 1 : 0;
         intent.alarmCalls[slot] += 1;
+        if (precise) {
+            pushAlarm(intent.alarmQueue, world, slot);
+        }
         run.kinNearSum += kinAround(intent, world, slot);
     } else if (type === EVENT_TYPE.PACK_CALLED) {
         precise = tick - intent.lastPrey[slot] <= INTENT_WINDOW;
         run.huntCalls += 1;
         run.huntCallsPrecise += precise ? 1 : 0;
         intent.huntCallCount[slot] += 1;
-        pushHuntCall(intent.calls, tick, world.lineageId[slot]);
+        pushHuntCall(intent.calls, tick, world.lineageId[slot], precise ? world.genomeId[slot] : 0);
     } else {
         precise = threat || world.bittenTimer[slot] < TIMER_CAP;
         run.smokes += 1;
@@ -125,5 +156,10 @@ export function noteIntentEvents(observer, world) {
             noteCall(intent, world, type, d[o + 2]);
         }
     }
-    resolveHuntCalls(intent.calls, world.tick, intent.packWindow);
+    let answered = popResolvedHuntCall(intent.calls, world.tick, intent.packWindow);
+    while (answered >= 0) {
+        creditAgent(observer, world, intent.huntCredits, answered);
+        answered = popResolvedHuntCall(intent.calls, world.tick, intent.packWindow);
+    }
+    pruneAlarms(intent.alarmQueue, world.tick, intent.packWindow);
 }

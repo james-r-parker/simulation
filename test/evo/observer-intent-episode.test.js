@@ -104,17 +104,17 @@ describe('episode latch', () => {
 
 describe('noteEscape', () => {
     it('credits respondedEscape after a response and closes the episode', () => {
-        const { intent, slot } = scene({ seenFrom: FROM, sprint: (t) => t >= FROM, until: DUE });
-        noteEscape(intent, slot);
+        const { world, intent, slot } = scene({ seenFrom: FROM, sprint: (t) => t >= FROM, until: DUE });
+        noteEscape(intent, slot, world);
         expect([intent.respondedEscape[slot], intent.run.escapedResponded, intent.episodeOpen[slot]]).toEqual([
             1, 1, 0,
         ]);
     });
 
     it('credits nothing without a response, or when no episode is open', () => {
-        const { intent, slot } = scene({ seenFrom: FROM, until: DUE });
-        noteEscape(intent, slot);
-        noteEscape(intent, slot);
+        const { world, intent, slot } = scene({ seenFrom: FROM, until: DUE });
+        noteEscape(intent, slot, world);
+        noteEscape(intent, slot, world);
         expect([intent.respondedEscape[slot], intent.run.escapedResponded, intent.episodeOpen[slot]]).toEqual([
             0, 0, 0,
         ]);
