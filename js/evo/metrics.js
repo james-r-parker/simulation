@@ -4,6 +4,7 @@
 import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
+import { bodyMetrics } from './metrics-body.js';
 import { dominanceMetrics } from './metrics-dominance.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
@@ -124,6 +125,7 @@ export function computeMetrics(observer, _world, options = {}) {
         ...intentMetrics(observer),
         ...trendMetrics(observer),
         ...dominanceMetrics(observer),
+        ...bodyMetrics(observer),
         ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
