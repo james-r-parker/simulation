@@ -56,6 +56,21 @@ describe('renderTable', () => {
         expect(table).toContain('Reference arm: `ref`.');
         expect(new Set(lines.slice(0, 4).map((l) => l.length)).size).toBe(1);
     });
+
+    it('prints each new metric mean as a column, `n/a` where the arm has none', () => {
+        const table = renderTable({
+            reference: 'ref',
+            arms: [verdict('ref', { watch: { 'eval.skill_trend': 0.4375, 'eval.lineage_lifespan_p50': 12345.6 } })],
+        });
+        const [head, , row] = table.split('\n');
+        for (const h of ['skill trend', 'spec dom', 'lineage eff', 'trait spread', 'child surv', 'life p50']) {
+            expect(head).toContain(h);
+        }
+        expect(head.indexOf('skill trend')).toBeLessThan(head.indexOf('migration'));
+        expect(row).toContain('0.44');
+        expect(row).toContain('12346');
+        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(6);
+    });
 });
 
 describe('lockCommand', () => {

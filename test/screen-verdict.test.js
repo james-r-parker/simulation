@@ -6,6 +6,8 @@ import {
     seedChecks,
     shareAbove,
     targetDeltas,
+    WATCH_METRICS,
+    watchMeans,
 } from '../scripts/lib/screen-verdict.mjs';
 
 /**
@@ -154,6 +156,25 @@ describe('targetDeltas', () => {
         const d = targetDeltas(arm, ref);
         expect(d['eval.lineages_alive']).toEqual({ mean: null, delta: null, rel: null });
         expect(d['eval.mating_share'].rel).toBeNull();
+    });
+});
+
+describe('watchMeans', () => {
+    it('gives each watch metric its mean, and null where the report lacks it', () => {
+        const r = report();
+        r.metrics['eval.skill_trend'] = metric(0.25);
+        r.metrics['eval.migration_index'] = { mean: null, values: [null, null] };
+        const w = watchMeans(r);
+        expect(Object.keys(w)).toEqual(WATCH_METRICS);
+        expect(w['eval.skill_trend']).toBe(0.25);
+        expect(w['eval.migration_index']).toBeNull();
+        expect(w['eval.predator_presence']).toBeNull();
+    });
+
+    it('is carried on each arm verdict, reference included', () => {
+        const ref = report();
+        ref.metrics['eval.child_survival'] = metric(0.5);
+        expect(armVerdict('ref', ref, ref).watch['eval.child_survival']).toBe(0.5);
     });
 });
 

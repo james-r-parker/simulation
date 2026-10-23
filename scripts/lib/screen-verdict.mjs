@@ -18,6 +18,21 @@ export const TARGETS = [
     'eval.fed_median_lifespan',
 ];
 
+/**
+ * The new evolution metrics the screen table shows as each arm's mean over its seeds. They carry no verdict; the table
+ * prints them in this order.
+ */
+export const WATCH_METRICS = [
+    'eval.skill_trend',
+    'eval.spec_dominance',
+    'eval.lineage_effective',
+    'eval.trait_spread',
+    'eval.child_survival',
+    'eval.lineage_lifespan_p50',
+    'eval.predator_presence',
+    'eval.migration_index',
+];
+
 /** Per-seed criteria in table order: key and what it checks. */
 export const SEED_CRITERIA = ['popAboveMin', 'catchRate', 'lineages', 'specShare', 'popBelowMax'];
 
@@ -137,11 +152,25 @@ export function targetDeltas(report, reference) {
 }
 
 /**
+ * @param {Record<string, any>} report an eval report
+ * @returns {Record<string, number | null>} per `WATCH_METRICS` name: the metric's mean, `null` when the report lacks it
+ */
+export function watchMeans(report) {
+    /** @type {Record<string, number | null>} */
+    const out = {};
+    for (const metric of WATCH_METRICS) {
+        out[metric] = report.metrics[metric]?.mean ?? null;
+    }
+    return out;
+}
+
+/**
  * @param {string} name the arm name
  * @param {Record<string, any>} report the arm's report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
- *   `pass` (every seed passes every criterion and both means pass) and the Target deltas against the reference
+ *   `pass` (every seed passes every criterion and both means pass), the Target deltas against the reference and the
+ *   `WATCH_METRICS` means
  */
 export function armVerdict(name, report, reference) {
     const criteria = seedChecks(report);
@@ -161,6 +190,7 @@ export function armVerdict(name, report, reference) {
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
         deltas: report === reference ? null : targetDeltas(report, reference),
+        watch: watchMeans(report),
     };
 }
 

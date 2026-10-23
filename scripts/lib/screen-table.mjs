@@ -1,8 +1,29 @@
 // Screen table: renders the verdicts as one Markdown table, one row per arm. Pure.
 
-import { TARGETS } from './screen-verdict.mjs';
+import { TARGETS, WATCH_METRICS } from './screen-verdict.mjs';
 
 const TARGET_HEADS = ['mating', 'lineages', 'births/1k', 'food/1k', 'fed life'];
+const WATCH_HEADS = [
+    'skill trend',
+    'spec dom',
+    'lineage eff',
+    'trait spread',
+    'child surv',
+    'life p50',
+    'predators',
+    'migration',
+];
+
+/**
+ * @param {number | null | undefined} value a watch metric's mean
+ * @returns {string} the mean to 2 places (to 0 places from 100 up, as lifespans are in ticks), or `n/a`
+ */
+function watchCell(value) {
+    if (value === null || value === undefined) {
+        return 'n/a';
+    }
+    return Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(2);
+}
 
 /**
  * @param {{ pass: boolean[] }} check one per-seed criterion
@@ -53,13 +74,14 @@ function row(verdict) {
         seedsCell(c.popBelowMax),
         verdict.popMean === null ? 'n/a' : String(Math.round(verdict.popMean)),
         ...TARGETS.map((metric) => deltaCell(verdict.deltas?.[metric])),
+        ...WATCH_METRICS.map((metric) => watchCell(verdict.watch?.[metric])),
     ];
 }
 
 /**
  * @param {{ reference: string, arms: Record<string, any>[] }} verdicts the screen's verdicts
  * @returns {string} the Markdown table; per-seed cells are seeds passing out of the seeds run, delta cells are the
- *   arm's mean against the reference arm's (`=` on the reference row)
+ *   arm's mean against the reference arm's (`=` on the reference row), watch cells are the arm's mean over its seeds
  */
 export function renderTable({ reference, arms }) {
     const head = [
@@ -74,6 +96,7 @@ export function renderTable({ reference, arms }) {
         'pop < max',
         'pop mean',
         ...TARGET_HEADS.map((h) => `${h} vs ref`),
+        ...WATCH_HEADS,
     ];
     const rows = [head, ...arms.map(row)];
     const widths = head.map((_, i) => Math.max(...rows.map((r) => r[i].length)));
