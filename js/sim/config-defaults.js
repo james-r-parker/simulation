@@ -60,20 +60,20 @@ export const DEFAULTS = deepFreeze({
     biteEnergy: 5, // BITE_SIZE
     huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
-    mateDistanceMax: 0.8, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41)
+    mateDistanceMax: 1.0, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41, 1.0 from T78)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
-    mateRange: 100, // new: the largest edge-to-edge gap between two mates
+    mateRange: 200, // new: the largest edge-to-edge gap between two mates (100 before T78)
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
-    childEnergyMin: 200, // new: the smallest gift a mating birth may make
+    childEnergyMin: 100, // new: the smallest gift a mating birth may make (200 before T78)
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
     sexesEnabled: true, // new: two sexes, female choice of the strongest male, asexual splitting for every sex (world-balance T37, T69)
     birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
-    maxBirthsPerWindow: 3, // new: births (mating or splitting) a mother may have per span; 0 is off, 3 is the switch-on value (T41)
+    maxBirthsPerWindow: 5, // new: births (mating or splitting) a mother may have per span; 0 is off, 5 from T78 (3 from T41)
     capBirthsEnabled: true, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
     splitCapMargin: 50, // new: slots below maxAgents kept for pregnancies when capBirthsEnabled is on
     maxAgeTicks: 36000, // new
-    reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
+    reproductionCooldown: 150, // REPRODUCTION_COOLDOWN_FRAMES (300 before T78)
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
     seasonLength: 3600, // SEASON_LENGTH

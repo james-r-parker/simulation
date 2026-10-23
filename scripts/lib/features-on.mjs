@@ -37,6 +37,9 @@ export const FEATURES_OFF = Object.freeze({
     leakEnabled: false,
     mateDistanceMax: Infinity,
     maxBirthsPerWindow: 0,
+    mateRange: 100,
+    reproductionCooldown: 300,
+    childEnergyMin: 200,
     obstacleCount: 25,
     refugeCount: 4,
     refugeSizeMax: 30,
@@ -74,9 +77,12 @@ export const FEATURES_ON = Object.freeze({
     hebbianRate: 0.0001, // the 0.01 in the design doc pinned the 4-seed screen (world-balance T59) at the floor; 0.0001 escapes it
     traitsEnabled: true,
     sexesEnabled: true,
-    maxBirthsPerWindow: 3,
+    maxBirthsPerWindow: 5,
     capBirthsEnabled: true,
-    mateDistanceMax: 0.8,
+    mateDistanceMax: 1.0,
+    mateRange: 200,
+    reproductionCooldown: 150,
+    childEnergyMin: 100,
     hashCellSize: 140,
 });
 

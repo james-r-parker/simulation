@@ -27,6 +27,10 @@ const SWITCHED_ON = [
     'capBirthsEnabled',
     'mateDistanceMax',
     'hashCellSize',
+    // the T78 tunings (the E34 winner): FEATURES_OFF pins their old values, so FEATURES_ON restates them
+    'mateRange',
+    'reproductionCooldown',
+    'childEnergyMin',
 ];
 
 describe('feature switch lists', () => {
