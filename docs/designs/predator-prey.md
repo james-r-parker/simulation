@@ -350,6 +350,8 @@ alarms of its lineage called 1 to `packWindow` ticks earlier from within `callRa
 `noteEscape` credits their callers when the episode resolves with a response. `sampleGroups` takes the flee sample on the
 same pass as the grouping sample. Nothing in `js/sim/` changed, so the golden hashes are unchanged.
 
+> **Note:** state at 2026-10-23 (end of session) - T19 is merged (PR 117); world-balance Phase 5 round 1 is done (E34, T78: `mateRange` 200, `mateDistanceMax` 1.0, `reproductionCooldown` 150, `childEnergyMin` 100, `maxBirthsPerWindow` 5 are the defaults; golden hashes default `75c8dc9a60512678`, busy `b690703c6e579c89`). Next, one task at a time (user): T20, T21, T22, T23, then T24 (`E21`), T25, T26. Open for the user before T24 runs: (1) the done criterion needs verdicts on at least two of `eval.deliberate_food_share`, `eval.pursuit_kill_share` and `eval.evasion_skill`, but world-balance T41 moved the first and third to `watch`, so the rule says the user sets the criteria; (2) predators die out on about 12 of 32 seeds at the current defaults (E34 `all5-range200`: `eval.catch_rate` above 0 on 20 of 32), and a seed with no hunter agent-ticks is invalid, so many `E21` seeds may not count. Also before T24: measure the observer budget (0.25 ms per tick at 500 agents, world-balance As built (T63) method) with the T19 counters and the v2 policy, on a quiet machine.
+
 ## Archive niches
 
 `descriptorV1(counters, slot)` returns `[speedMean, crowdingMean]`, the descriptor of
