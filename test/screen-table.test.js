@@ -69,7 +69,7 @@ describe('renderTable', () => {
         expect(head.indexOf('skill trend')).toBeLessThan(head.indexOf('migration'));
         expect(row).toContain('0.44');
         expect(row).toContain('12346');
-        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(6);
+        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(7);
     });
 });
 

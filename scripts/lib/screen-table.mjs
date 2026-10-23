@@ -11,6 +11,7 @@ const WATCH_HEADS = [
     'child surv',
     'life p50',
     'predators',
+    'pred births',
     'migration',
 ];
 

@@ -81,6 +81,12 @@ describe('feature switch lists', () => {
         expect(config.predatorRescueInterval).toBe(450);
     });
 
+    it('set the predator economy keys at their neutral values until T15g tunes them', () => {
+        expect(FEATURES_ON.predatorKillEnergy).toBe(0);
+        const predator = createConfig({ ...FEATURES_ON }).specialisations.predator;
+        expect([predator.passiveLossMultiplier, predator.splitMinEnergyMultiplier]).toEqual([1, 1]);
+    });
+
     it('build a world that steps when on', () => {
         const config = createConfig({ ...FEATURES_ON, initialAgents: 40, minAgents: 40, maxAgents: 60 });
         const brain = cloneWithNoisePolicy();

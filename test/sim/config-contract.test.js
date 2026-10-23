@@ -5,7 +5,7 @@ import { validateConfig } from '../../js/sim/config-validate.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SPEC_FIELDS =
-    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost';
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.

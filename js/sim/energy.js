@@ -20,6 +20,7 @@ export const ENERGY_SOURCE = Object.freeze({
     INITIAL: 1,
     FLOOR: 2,
     IMMIGRANT: 3,
+    KILL: 4,
 });
 
 /** @type {number[]} */
@@ -149,6 +150,7 @@ function tickCost(world, slot) {
     const drain = c.seasons[world.season[0]].energyDrain;
     const standing =
         (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
+        sp.passiveLossMultiplier *
         passiveMultiplier(c, world.temperature[slot]);
     let cost =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
