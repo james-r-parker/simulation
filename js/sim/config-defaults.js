@@ -234,6 +234,8 @@ export const DEFAULTS = deepFreeze({
     predatorRescueMin: 0, // new: every predatorRescueInterval ticks with fewer predators than this alive, one immigrant spawns as a predator; 0 is off (fitness-and-selection T15b)
     predatorRescueInterval: 600, // new: ticks between predator rescue checks
     predatorKillEnergy: 0, // new: energy the biter gains on a fatal bite; 0 is off (fitness-and-selection T15f)
+    alarmThreshold: 0, // new: the alarm output must exceed it; 0 is today's rule (fitness-and-selection T15m)
+    huntCallThreshold: 0, // new: the hunt output must exceed it; 0 is today's rule (fitness-and-selection T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch

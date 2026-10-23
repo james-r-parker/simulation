@@ -51,6 +51,8 @@ export const FEATURE_RULES = {
     predatorRescueMin: int(0, 50),
     predatorRescueInterval: int(1, 6000),
     predatorKillEnergy: num(0, 1000),
+    alarmThreshold: num(0, 0.95),
+    huntCallThreshold: num(0, 0.95),
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),

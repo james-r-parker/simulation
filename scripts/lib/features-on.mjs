@@ -8,6 +8,7 @@ import { FEATURE_RULES } from '../../js/sim/config-rules.js';
  * @type {Readonly<Record<string, any>>}
  */
 export const FEATURES_OFF = Object.freeze({
+    alarmThreshold: 0,
     birthWindowTicks: 3000,
     capBirthsEnabled: false,
     carcassShare: 0.5,
@@ -34,6 +35,7 @@ export const FEATURES_OFF = Object.freeze({
     handlingTicks: 0,
     hashCellSize: 128,
     hebbianRate: 0,
+    huntCallThreshold: 0,
     huntUpkeep: 0.002,
     invasionInterval: 180000,
     invasionSize: 12,
@@ -91,6 +93,9 @@ export const FEATURES_ON = Object.freeze({
     hashCellSize: 140,
     predatorRescueMin: 3, // the T15g starting value (fitness-and-selection); the screen tunes it, T15d sets the defaults
     predatorRescueInterval: 450,
+    // The call thresholds (T15m) stay 0 here: T15n's screen picks the values and T15d sets them.
+    alarmThreshold: 0,
+    huntCallThreshold: 0,
 });
 
 /** @returns {string[]} the `FEATURE_RULES` keys missing from `FEATURES_OFF` (a new feature key not yet pinned) */

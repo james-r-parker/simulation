@@ -62,14 +62,14 @@ function outputAbove(world, slot, output, threshold) {
 }
 
 /**
- * Fires an alarm call for a slot that is not a hunter: pays, starts the timer, deposits danger and pushes the event.
+ * Fires an alarm call for a slot that is not a hunter and whose alarm output is above `alarmThreshold`: pays, starts the timer, deposits danger and pushes the event.
  * @param {World} world the world
  * @param {number} slot an alive slot
  * @returns {void}
  */
 function alarm(world, slot) {
-    const { alarmCost, callTicks } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, 0) && world.alarmTimer[slot] === 0;
+    const { alarmCost, callTicks, alarmThreshold } = world.config;
+    const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && world.alarmTimer[slot] === 0;
     if (!wanted || world.energy[slot] <= alarmCost || specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
@@ -80,14 +80,14 @@ function alarm(world, slot) {
 }
 
 /**
- * Fires a hunt call for a hunter: pays, starts the timer, deposits hunt scent and pushes the event.
+ * Fires a hunt call for a hunter whose hunt output is above `huntCallThreshold`: pays, starts the timer, deposits hunt scent and pushes the event.
  * @param {World} world the world
  * @param {number} slot an alive slot
  * @returns {void}
  */
 function huntCall(world, slot) {
-    const { huntCallCost, callTicks } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, 0) && world.huntTimer[slot] === 0;
+    const { huntCallCost, callTicks, huntCallThreshold } = world.config;
+    const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && world.huntTimer[slot] === 0;
     if (!wanted || world.energy[slot] <= huntCallCost || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
