@@ -5,6 +5,8 @@ import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
+import { placeTerrain } from './terrain.js';
+import { drawSex } from './sex.js';
 import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
@@ -37,7 +39,7 @@ const SPAWN_SOURCE = new Map([
  * @param {number} radius circle radius
  * @returns {boolean} whether the circle overlaps no obstacle
  */
-function clearOfObstacles(world, x, y, radius) {
+export function clearOfObstacles(world, x, y, radius) {
     const { obsX, obsY, obsRadius } = world;
     for (let i = 0; i < obsX.length; i++) {
         const reach = obsRadius[i] + radius;
@@ -278,6 +280,7 @@ export function spawnAgent(world, policy, cause) {
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
     world.spec[slot] = chooseSpec(world, policy, slot, cause);
+    drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
     placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + c.initialEnergy / c.energyToSize));
@@ -295,6 +298,7 @@ export function spawnAgent(world, policy, cause) {
     d[o + 4] = id;
     d[o + 5] = world.spec[slot];
     d[o + 8] = cause;
+    d[o + 9] = world.sex[slot];
     return slot;
 }
 
@@ -310,6 +314,7 @@ export function createWorld(config, policy) {
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
     placeObstacles(world);
+    placeTerrain(world);
     createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {
         spawnFoodItem(world);

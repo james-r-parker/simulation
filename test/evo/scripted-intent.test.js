@@ -35,11 +35,11 @@ function hit(world, slot, k, channel) {
 }
 
 /**
- * @param {Record<number, number>} set the outputs that are not 0, by index
- * @returns {number[]} a full output row, so the SPLIT and memory outputs are pinned at 0
+ * @param {Record<number, number>} set the outputs that are not 0, by index; `SPLIT` is 1 unless set
+ * @returns {number[]} a full output row, so the SPLIT output is pinned at 1 and the memory outputs at 0
  */
 function fullRow(set) {
-    return Array.from({ length: OUTPUT_COUNT }, (_, i) => set[i] ?? 0);
+    return Array.from({ length: OUTPUT_COUNT }, (_, i) => set[i] ?? (i === O.SPLIT ? 1 : 0));
 }
 
 /**

@@ -6,6 +6,7 @@ import { nextFloat } from '../../js/sim/rng.js';
 import { createConfig } from '../../js/sim/config.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const MATE = { mateOut: 1, energy: 700 };
 
@@ -43,7 +44,7 @@ function peekLifecycle(w) {
  * @returns {any[]} four seasons
  */
 function seasonsWith(bonus) {
-    const base = createConfig({}).seasons;
+    const base = createConfig({ ...FEATURES_OFF }).seasons;
     return base.map((/** @type {any} */ season) => ({ ...season, reproductionBonus: bonus }));
 }
 

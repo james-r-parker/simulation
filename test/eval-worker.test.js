@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EVENT_STRIDE, EVENT_TYPE } from '../js/sim/events.js';
+import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
 
 /** @type {number[]} */
 const seenTicks = [];
@@ -26,7 +27,14 @@ vi.mock('../js/evo/policies/index.js', async (importOriginal) => {
 describe('runSeed', () => {
     it('passes the initial births from createWorld to onEvent before the first step', async () => {
         const { runSeed } = await import('../scripts/eval-worker.mjs');
-        const overrides = { maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+        const overrides = {
+            ...FEATURES_OFF,
+            maxAgents: 40,
+            initialAgents: 12,
+            minAgents: 4,
+            worldWidth: 1500,
+            worldHeight: 1000,
+        };
         await runSeed({ seed: 3, ticks: 5, policy: 'baseline-v5', overrides });
         expect(seenTicks.filter((tick) => tick === 0)).toHaveLength(12);
     });

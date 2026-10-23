@@ -8,6 +8,7 @@ import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
+import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
 
 export const predatorWorld = JSON.parse(
     readFileSync(new URL('../../../evals/predator-world.json', import.meta.url), 'utf8'),
@@ -62,7 +63,7 @@ export function playPredatorWorld(
         predatorEvery = 2,
     } = {},
 ) {
-    const config = createConfig({ ...base, ...extra, seed });
+    const config = createConfig({ ...FEATURES_OFF, ...base, ...extra, seed });
     const random = predator === RANDOM_ARM || prey === RANDOM_ARM;
     const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined, predatorEvery);
     const world = createWorld(config, policy);
@@ -83,10 +84,11 @@ export function playPredatorWorld(
  * @param {number} seed the world seed
  * @param {number} ticks ticks to run
  * @param {string} arm a key of `SCRIPTED_CONTROLLERS` or `random`
+ * @param {Record<string, any>} [extra] config overrides on top of the world file
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
-export function playMicroWorld(seed, ticks, arm) {
-    const config = createConfig({ ...microWorld, seed });
+export function playMicroWorld(seed, ticks, arm, extra = {}) {
+    const config = createConfig({ ...FEATURES_OFF, ...microWorld, ...extra, seed });
     const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));

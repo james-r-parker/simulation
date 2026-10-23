@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { runSeed } from '../scripts/eval-worker.mjs';
+import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
 
-const SMALL = { maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+const SMALL = { ...FEATURES_OFF, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
 /** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
 const UNPLACEABLE = {
+    ...FEATURES_OFF,
     worldWidth: 1000,
     worldHeight: 1000,
     obstacleCount: 100,
@@ -25,6 +27,14 @@ describe('runSeed (direct)', () => {
             births: expect.any(Number),
             deaths: expect.any(Number),
         });
+    });
+
+    it('returns a trace with a population sample per interval', { timeout: 30_000 }, () => {
+        const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL, traceInterval: 700 });
+        expect(result.trace.pop).toHaveLength(3);
+        expect(result.trace).toMatchObject({ interval: 700, deaths: expect.any(Array), lineages: expect.any(Number) });
+        expect(result.trace.mate).toHaveLength(4);
+        expect(result.trace.deaths).toHaveLength(4);
     });
 
     it('is deterministic for the same task', { timeout: 30_000 }, () => {

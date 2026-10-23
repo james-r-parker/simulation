@@ -62,7 +62,7 @@ describe('workerLayout', () => {
         expect(layout.effectsWords).toBe(2 + EFFECT_CAPACITY * EFFECT_WORDS);
         expect(layout.inspectOffset).toBe(layout.effectsOffset + layout.effectsWords);
         const inputs = config.rayCount * RAY_CHANNELS + EXTRA_INPUTS;
-        expect(layout.inspectWords).toBe(INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 12);
+        expect(layout.inspectWords).toBe(INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 15);
         expect(layout.bytes).toBe((layout.inspectOffset + layout.inspectWords) * 4);
     });
 
@@ -90,6 +90,9 @@ describe('writeInspect', () => {
         world.lastLoss[slot] = 2;
         world.bittenTimer[slot] = 7;
         world.ateTimer[slot] = 8;
+        world.vision[slot] = 1.1;
+        world.baseSize[slot] = 6;
+        world.childShare[slot] = 0.5;
         const observer = createObserver(world.config, createRng(1));
         observer.foodEnergy[slot] = 11;
         observer.biteEnergy[slot] = 12;
@@ -120,10 +123,24 @@ describe('writeInspect', () => {
         expect(views.f32[rows + layout.inputCount]).toBe(0.5);
         expect(views.f32[rows + layout.inputCount + layout.hidden]).toBe(0.75);
         const counters = rows + layout.inputCount + layout.hidden + layout.outputCount;
-        expect(Array.from(views.f32.subarray(counters, counters + 12))).toEqual([
-            33, 0.5, 44, 3, 11, 12, 13, 14, 99, 2, 7, 8,
+        expect(Array.from(views.f32.subarray(counters, counters + 15))).toEqual([
+            33,
+            0.5,
+            44,
+            3,
+            11,
+            12,
+            13,
+            14,
+            99,
+            2,
+            7,
+            8,
+            Math.fround(1.1),
+            6,
+            0.5,
         ]);
-        expect(INSPECT_COUNTERS).toHaveLength(12);
+        expect(INSPECT_COUNTERS).toHaveLength(15);
     });
 
     it('writes only the header, with valid 0, once the agent has died', () => {

@@ -11,6 +11,7 @@ import {
 import { addBorn, nextTick, observed, pushBorn } from './helpers/observer-world.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 /** @returns {{world: any, observer: any, counters: any}} */
 function setup() {
@@ -20,7 +21,7 @@ function setup() {
 
 describe('createLifeCounters', () => {
     it('sizes the cell bitset for 300 px cells: 48 x 27 on the default world', () => {
-        const counters = createLifeCounters(createConfig());
+        const counters = createLifeCounters(createConfig({ ...FEATURES_OFF }));
         expect([counters.cellCols, counters.cellRows, counters.cellBytes]).toEqual([48, 27, 162]);
     });
 });

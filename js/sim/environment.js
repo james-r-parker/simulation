@@ -2,6 +2,8 @@
 
 /** @typedef {import('./world.js').World} World */
 
+import { yearTicks } from './eras.js';
+
 const SEASONS_PER_YEAR = 4;
 
 /**
@@ -11,7 +13,7 @@ const SEASONS_PER_YEAR = 4;
  * @returns {void}
  */
 export function seasonAt(world, tick) {
-    const { seasonLength } = world.config;
+    const seasonLength = yearTicks(world.config);
     const phase = (tick % seasonLength) / seasonLength;
     world.season[0] = Math.floor(phase * SEASONS_PER_YEAR);
     world.season[1] = phase;
@@ -27,14 +29,14 @@ export function updateSeason(world) {
 }
 
 /**
- * Moves every obstacle one tick and bounces it off the walls.
+ * Moves every wandering obstacle one tick (the static terrain rocks after them stay put) and bounces it off the walls.
  * @param {World} world the world
  * @returns {void}
  */
 export function moveObstacles(world) {
     const { obsX, obsY, obsVx, obsVy, obsRadius } = world;
     const { worldWidth, worldHeight } = world.config;
-    for (let i = 0; i < obsX.length; i++) {
+    for (let i = 0; i < world.config.obstacleCount; i++) {
         const r = obsRadius[i];
         obsX[i] += obsVx[i];
         if (obsX[i] - r < 0) {

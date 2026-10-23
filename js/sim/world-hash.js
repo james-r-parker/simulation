@@ -73,6 +73,9 @@ const FIELD_ARRAYS = [
 /** Hashed after `foodAge` only when `carcassesEnabled`, so a world with carcasses off hashes as it always did. */
 const FOOD_KIND_FIELD = 'foodKind';
 
+/** The drought state, hashed (last) only when `erasEnabled`. */
+const ERA_FIELD = 'era';
+
 /** Patch arrays, hashed only when `foodPatchCount` is above 0. */
 const PATCH_ARRAYS = ['patchX', 'patchY', 'patchStock'];
 
@@ -107,6 +110,9 @@ function bytesOf(world, name) {
 function fieldNames(world) {
     const { foodPatchCount, carcassesEnabled } = world.config;
     const names = FIELD_ARRAYS.filter((name) => foodPatchCount > 0 || !PATCH_ARRAYS.includes(name));
+    if (world.config.erasEnabled) {
+        names.push(ERA_FIELD);
+    }
     if (!carcassesEnabled) {
         return names;
     }
@@ -117,7 +123,7 @@ function fieldNames(world) {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -129,6 +135,8 @@ function buildViews(world) {
         fastOut: bytesOf(world, 'fastOut'),
         vision: bytesOf(world, 'vision'),
         baseSize: bytesOf(world, 'baseSize'),
+        sex: bytesOf(world, 'sex'),
+        birthRing: bytesOf(world, 'birthRing'),
         rngSources: [],
         rngViews: [],
     };
@@ -196,6 +204,12 @@ export function hashWorld(world) {
     if (world.config.traitsEnabled) {
         fnv64Bytes(digest, views.vision);
         fnv64Bytes(digest, views.baseSize);
+    }
+    if (world.config.maxBirthsPerWindow > 0) {
+        fnv64Bytes(digest, views.birthRing);
+    }
+    if (world.config.sexesEnabled) {
+        fnv64Bytes(digest, views.sex);
     }
     fnv64Bytes(digest, views.hidden);
     for (const bytes of views.fields) {

@@ -11,6 +11,7 @@ import {
 import { createConfig } from '../../js/sim/config.js';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from '../../js/sim/world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
     maxAgents: 4,
@@ -36,7 +37,7 @@ const SMALL = {
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function worldWith(n = 2) {
-    const world = allocateWorld(createConfig(SMALL));
+    const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
     for (let i = 0; i < n; i++) {
         world.temperature[allocAgent(world)] = world.config.temperatureStart;
     }
@@ -301,7 +302,7 @@ describe('applyCosts temperature', () => {
      * @returns {ReturnType<typeof allocateWorld>} a world with one 100-energy sitter of size 20 at `t`
      */
     function sitter(t, over = {}) {
-        const world = allocateWorld(createConfig({ ...SMALL, ...over }));
+        const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }));
         const slot = allocAgent(world);
         world.energy[slot] = 100;
         world.size[slot] = 20;

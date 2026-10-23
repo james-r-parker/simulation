@@ -3,9 +3,11 @@
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { readyToMate } from './mate-eligibility.js';
 import { childSpec } from './heritable-spec.js';
-import { findMate } from './mate-search.js';
+import { findMale, findMate } from './mate-search.js';
+import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
@@ -66,19 +68,32 @@ function startMating(world, policy, mother, father) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {number} a a ready agent
+ * @param {number} chance the probability that the chosen pair mates
+ * @returns {number} the male the female `a` chooses, or -1 when `a` is a male or no choice wins the draw
+ */
+function femaleChoice(world, a, chance) {
+    return world.sex[a] === SEX.FEMALE ? findMale(world, a, chance) : -1;
+}
+
+/**
  * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
- * and starts a pregnancy when one wins the lifecycle draw. Uses the hash built this tick.
+ * and starts a pregnancy when one wins the lifecycle draw. With `sexesEnabled` only the ready females search, each
+ * choosing the strongest male in reach (`findMale`) and being the mother whatever her slot. Uses the hash built this
+ * tick.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function mate(world, policy) {
     const { alive } = world;
+    const { sexesEnabled, mateChanceScale } = world.config;
     const { reproductionBonus } = world.config.seasons[world.season[0]];
-    const chance = Math.min(1, reproductionBonus / world.config.mateChanceScale);
+    const chance = Math.min(1, reproductionBonus / mateChanceScale);
     for (let a = 0; a < alive.length; a++) {
         if (alive[a] === 1 && readyToMate(world, a)) {
-            const b = findMate(world, a, chance);
+            const b = sexesEnabled ? femaleChoice(world, a, chance) : findMate(world, a, chance);
             if (b >= 0) {
                 startMating(world, policy, a, b);
             }
@@ -148,6 +163,8 @@ function giveBirth(world, policy, mother, cause) {
     world.parentA[child] = world.genomeId[mother];
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
     world.spec[child] = childSpec(world, mother);
+    drawSex(world, child);
+    recordBirth(world, mother);
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);
@@ -163,21 +180,30 @@ function giveBirth(world, policy, mother, cause) {
     d[o + 6] = world.parentA[child];
     d[o + 7] = world.parentB[child];
     d[o + 8] = cause;
+    d[o + 9] = world.sex[child];
     return child;
 }
 
 /**
- * Counts every pregnancy down and attempts the birth of each that reaches 0.
+ * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` a pregnancy that
+ * falls due in a full world is not attempted: it stays at 1 and tries again next tick (no event, no energy change; the
+ * cooldown keeps counting down). It waits until a slot frees, the mother dies, or the energy gate fails the birth.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function advancePregnancies(world, policy) {
     const { alive, pregnancy } = world;
+    const { capBirthsEnabled, maxAgents } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && pregnancy[slot] > 0) {
             pregnancy[slot] -= 1;
-            if (pregnancy[slot] === 0) {
+            if (pregnancy[slot] > 0) {
+                continue;
+            }
+            if (capBirthsEnabled && world.population >= maxAgents) {
+                pregnancy[slot] = 1;
+            } else {
                 giveBirth(world, policy, slot, BORN_CAUSE.MATE);
             }
         }
@@ -185,22 +211,38 @@ export function advancePregnancies(world, policy) {
 }
 
 /**
- * Splits every mature, rested, not pregnant agent above `splitMinEnergy` in two.
+ * @param {World} world the world
+ * @param {number} slot an alive agent
+ * @returns {boolean} true when mature, rested, not pregnant, above `splitMinEnergy` and inside its birth budget;
+ *   sex does not matter, so splitting is the same with `sexesEnabled` on or off
+ */
+function readyToSplit(world, slot) {
+    const { maturityTicks, splitMinEnergy } = world.config;
+    return (
+        world.ageTicks[slot] >= maturityTicks &&
+        world.pregnancy[slot] === 0 &&
+        world.cooldown[slot] === 0 &&
+        world.energy[slot] > splitMinEnergy &&
+        !birthBudgetSpent(world, slot)
+    );
+}
+
+/**
+ * Splits every agent that `readyToSplit` in two, whatever its sex. With `capBirthsEnabled` splitting stops for the
+ * tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function splitAll(world, policy) {
     const { alive } = world;
-    const { maturityTicks, splitMinEnergy, splitCooldownMultiplier } = world.config;
+    const { splitCooldownMultiplier, maxAgents, capBirthsEnabled, splitCapMargin } = world.config;
+    const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
     for (let slot = 0; slot < alive.length; slot++) {
-        const ready =
-            alive[slot] === 1 &&
-            world.ageTicks[slot] >= maturityTicks &&
-            world.pregnancy[slot] === 0 &&
-            world.cooldown[slot] === 0 &&
-            world.energy[slot] > splitMinEnergy;
-        if (ready && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
+        if (world.population >= splitCeiling) {
+            break;
+        }
+        if (alive[slot] === 1 && readyToSplit(world, slot) && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
             world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
         }
     }

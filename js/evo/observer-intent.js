@@ -53,43 +53,20 @@ function popcount16(v) {
 }
 
 /**
- * @param {Record<string, any>} intent the intent state
- * @param {Record<string, any>} kind a `FOOD` or `PREY` descriptor
+ * @param {Record<string, any>} kind the food or prey target view of the intent state
  * @param {number} slot the slot
  * @param {number} tick the observed tick
  * @returns {boolean} whether the sighting is current, enough of the history shows the agent closing on the target,
  *   and the agent either turned towards it within the window or never saw it off the ray dead ahead
  */
-function isDeliberate(intent, kind, slot, tick) {
-    const bits = intent[kind.bits][slot] & CLOSING_MASK;
-    if (tick - intent[kind.seen][slot] > INTENT_WINDOW || popcount16(bits) < CLOSING_MIN) {
+function isDeliberate(kind, slot, tick) {
+    const bits = kind.bits[slot] & CLOSING_MASK;
+    if (tick - kind.seen[slot] > INTENT_WINDOW || popcount16(bits) < CLOSING_MIN) {
         return false;
     }
-    const turned = tick - intent[kind.turn][slot] <= INTENT_WINDOW;
-    return turned || intent[kind.off][slot] < intent[kind.start][slot];
+    const turned = tick - kind.turn[slot] <= INTENT_WINDOW;
+    return turned || kind.off[slot] < kind.start[slot];
 }
-
-/** What `trackTarget` needs to know about each kind of target: its state arrays and scan offsets. */
-const FOOD = Object.freeze({
-    bits: 'foodBits',
-    seen: 'lastFood',
-    turn: 'foodTurn',
-    off: 'foodOff',
-    start: 'foodStart',
-    prox: SCAN.FOOD,
-    ray: SCAN.FOOD_RAY,
-    clears: true,
-});
-const PREY = Object.freeze({
-    bits: 'preyBits',
-    seen: 'lastPrey',
-    turn: 'preyTurn',
-    off: 'preyOff',
-    start: 'preyStart',
-    prox: SCAN.PREY,
-    ray: SCAN.PREY_RAY,
-    clears: false,
-});
 
 /**
  * @param {Record<string, any>} world the world
@@ -112,25 +89,25 @@ function speedAlong(world, slot, k) {
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world after the step
  * @param {number} slot an alive slot
- * @param {Record<string, any>} kind `FOOD` or `PREY`
+ * @param {Record<string, any>} kind the food or prey target view of the intent state
  * @returns {void}
  */
 function trackTarget(intent, world, slot, kind) {
     const { tick } = world;
-    const bits = intent[kind.bits];
+    const { bits } = kind;
     if (intent.scan[kind.prox] < 0) {
         bits[slot] = (bits[slot] << 1) & 0xffff;
         return;
     }
     const k = intent.scan[kind.ray];
-    if (tick - intent[kind.seen][slot] > INTENT_WINDOW) {
-        intent[kind.start][slot] = tick;
+    if (tick - kind.seen[slot] > INTENT_WINDOW) {
+        kind.start[slot] = tick;
     }
-    intent[kind.seen][slot] = tick;
-    intent[kind.off][slot] = k === 0 ? intent[kind.off][slot] : tick;
+    kind.seen[slot] = tick;
+    kind.off[slot] = k === 0 ? kind.off[slot] : tick;
     const towards = world.turnRate[slot] * turnTowards(k, world.config.rayCount);
     const limit = TURN_THRESHOLD * world.config.maxTurn;
-    intent[kind.turn][slot] = towards > limit ? tick : intent[kind.turn][slot];
+    kind.turn[slot] = towards > limit ? tick : kind.turn[slot];
     const closes = speedAlong(world, slot, k) > CLOSING_SPEED * world.config.maxVelocity;
     bits[slot] = ((bits[slot] << 1) | (closes ? 1 : 0)) & 0xffff;
     if (kind.clears && towards < -limit) {
@@ -238,8 +215,8 @@ function countCueTicks(intent, tick, slot) {
  */
 function senseSlot(intent, world, slot) {
     summariseRays(world, slot, intent.scan, intent.arc);
-    trackTarget(intent, world, slot, FOOD);
-    trackTarget(intent, world, slot, PREY);
+    trackTarget(intent, world, slot, intent.food);
+    trackTarget(intent, world, slot, intent.prey);
     trackThreat(intent, world, slot);
     countCueTicks(intent, world.tick, slot);
     if (intent.hunterSpec[world.spec[slot]] === 0) {
@@ -254,7 +231,7 @@ function senseSlot(intent, world, slot) {
  * @returns {boolean} whether a bite by the slot this tick is deliberate
  */
 export function biteDeliberate(intent, slot, tick) {
-    return isDeliberate(intent, PREY, slot, tick);
+    return isDeliberate(intent.prey, slot, tick);
 }
 
 /**
@@ -297,7 +274,7 @@ function creditMeal(intent, world, slot) {
     if (gained <= 0) {
         return;
     }
-    if (isDeliberate(intent, FOOD, slot, world.tick)) {
+    if (isDeliberate(intent.food, slot, world.tick)) {
         intent.deliberateFood[slot] += gained;
         intent.run.foodDeliberate += gained;
     } else {

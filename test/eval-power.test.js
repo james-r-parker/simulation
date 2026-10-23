@@ -85,31 +85,34 @@ describe('powerRow and evalPower', () => {
     const base = { size: 16, splits: 4, powerSplits: 4 };
 
     it('gives watch, unknown and zero-mean metrics a note instead of numbers', () => {
-        const r = report({ 'eval.population_mean': flat, mystery: flat, 'eval.diversity': flat.map(() => 0) });
+        const r = report({ 'eval.population_mean': flat, mystery: flat, 'eval.births_per_1k': flat.map(() => 0) });
         expect(powerRow(r, 'eval.population_mean', base)).toMatchObject({ note: 'watch', falsePositive: null });
         expect(powerRow(r, 'mystery', base)).toMatchObject({ note: 'unknown metric' });
-        expect(powerRow(r, 'eval.diversity', base)).toMatchObject({ note: 'mean is 0', falsePositive: 0 });
+        expect(powerRow(r, 'eval.births_per_1k', base)).toMatchObject({ note: 'mean is 0', falsePositive: 0 });
     });
 
     it('gives no verdict below a metric seed minimum, and with nulls in every split', () => {
-        const r = report({ 'eval.floor_episodes': flat, 'eval.diversity': flat.map(() => null) });
+        const r = report({ 'eval.floor_episodes': flat, 'eval.births_per_1k': flat.map(() => null) });
         expect(powerRow(r, 'eval.floor_episodes', base).note).toBe('no verdict at this size');
-        expect(powerRow(r, 'eval.diversity', base).note).toBe('no verdict at this size');
+        expect(powerRow(r, 'eval.births_per_1k', base).note).toBe('no verdict at this size');
     });
 
     it('measures a metric whose planted effect never reaches 80% as detectable null', () => {
         const noisy = Array.from({ length: 64 }, (_, i) => (i % 2 === 0 ? 0 : 1000));
-        const row = powerRow(report({ 'eval.diversity': noisy }), 'eval.diversity', { ...base, powerSplits: 3 });
+        const row = powerRow(report({ 'eval.births_per_1k': noisy }), 'eval.births_per_1k', {
+            ...base,
+            powerSplits: 3,
+        });
         expect(row.detectable).toBeNull();
         expect(row.note).toBeUndefined();
     });
 
     it('covers each metric at each size, and refuses a report too small or a missing metric', () => {
-        const r = report({ 'eval.diversity': flat, 'eval.population_mean': flat });
+        const r = report({ 'eval.births_per_1k': flat, 'eval.population_mean': flat });
         const rows = evalPower(r, { splits: 2, powerSplits: 2, sizes: [16], metrics: [] });
-        expect(rows.map((x) => `${x.metric}@${x.size}`)).toEqual(['eval.diversity@16', 'eval.population_mean@16']);
+        expect(rows.map((x) => `${x.metric}@${x.size}`)).toEqual(['eval.births_per_1k@16', 'eval.population_mean@16']);
         expect(() =>
-            evalPower(report({ 'eval.diversity': flat.slice(0, 20) }, 20), { ...base, sizes: [16], metrics: [] }),
+            evalPower(report({ 'eval.births_per_1k': flat.slice(0, 20) }, 20), { ...base, sizes: [16], metrics: [] }),
         ).toThrow(/needs 32 seeds/);
         expect(() => evalPower(r, { ...base, sizes: [16], metrics: ['nope'] })).toThrow(/not in the report: nope/);
     });
@@ -131,7 +134,7 @@ describe('formatPower and main', () => {
     it('reads a report file and prints a table or JSON, and exits 2 on bad input', () => {
         const flat = Array.from({ length: 64 }, (_, i) => 10 + (i % 5));
         const path = join(dir, 'r.json');
-        writeFileSync(path, JSON.stringify(report({ 'eval.diversity': flat })));
+        writeFileSync(path, JSON.stringify(report({ 'eval.births_per_1k': flat })));
         /** @type {string[]} */
         const out = [];
         /** @type {string[]} */
@@ -139,9 +142,9 @@ describe('formatPower and main', () => {
         const io = { print: (/** @type {string} */ l) => out.push(l), error: (/** @type {string} */ l) => err.push(l) };
         const args = [path, '--splits', '3', '--power-splits', '3', '--sizes', '16'];
         expect(main(args, io)).toBe(0);
-        expect(out[0]).toMatch(/eval\.diversity\s+16/);
+        expect(out[0]).toMatch(/eval\.births_per_1k\s+16/);
         expect(main([...args, '--json'], io)).toBe(0);
-        expect(JSON.parse(out[1]).rows[0].metric).toBe('eval.diversity');
+        expect(JSON.parse(out[1]).rows[0].metric).toBe('eval.births_per_1k');
         expect(main([join(dir, 'missing.json')], io)).toBe(2);
         writeFileSync(join(dir, 'bad.json'), '{"version":1}');
         expect(main([join(dir, 'bad.json')], io)).toBe(2);

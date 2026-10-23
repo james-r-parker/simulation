@@ -3,11 +3,13 @@
 
 /**
  * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'seasons' | 'specialisations'} type the value type
+ * @property {'int' | 'num' | 'bool' | 'enum' | 'seasons' | 'specialisations'} type the value type
+ * @property {readonly string[]} [values] the allowed strings of an `enum`
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound
  * @property {number} [max] inclusive upper bound
  * @property {number} [lt] exclusive upper bound
+ * @property {boolean} [infinite] true when `Infinity` is also a valid value
  */
 
 /**
@@ -37,6 +39,12 @@ export const FEATURE_RULES = {
     carcassesEnabled: BOOL,
     carcassTicks: int(1),
     carcassShare: num(0, 1),
+    terrainLayout: { type: 'enum', values: ['open', 'basins'] },
+    wallGaps: int(0, 8),
+    wallGapWidth: positive(),
+    refugeCount: int(0, 8),
+    refugeSizeMax: positive(),
+    coldMarginWidth: num(0),
     specMutationRate: num(0, 1),
     huntUpkeep: num(0),
     floorRescueAtZero: BOOL,
@@ -46,8 +54,22 @@ export const FEATURE_RULES = {
     foodPatchDepletion: num(0),
     foodPatchRegrow: UNIT,
     foodBackgroundShare: UNIT,
+    foodAreaCapacity: BOOL,
+    foodRegrowPerArea: num(0),
+    erasEnabled: BOOL,
+    eraSeasonTicks: int(1),
+    winterRegrow: num(0),
+    droughtChance: UNIT,
+    invasionInterval: int(0),
+    invasionSize: int(0),
     leakEnabled: BOOL,
     hebbianRate: num(0, 1),
     traitsEnabled: BOOL,
     visionCost: num(0),
+    sexesEnabled: BOOL,
+    birthWindowTicks: int(1),
+    maxBirthsPerWindow: int(0, 16),
+    capBirthsEnabled: BOOL,
+    splitCapMargin: int(0),
+    mateDistanceMax: { type: 'num', gt: 0, infinite: true },
 };

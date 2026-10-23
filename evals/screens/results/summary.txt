@@ -1,0 +1,174 @@
+
+== defaults  mating_mean 0.16 FAIL  born_mean 0.88 ok  births/1k 0.15 food/1k 332.5 fedLife 4330
+  200460 above 0.87 ok | catch 0.0113 ok | lin 23.81151832460733 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 350 | mating 0.14 born 0.90 | collDeaths 1171/7025
+  597883 above 0.80 ok | catch 0.0118 ok | lin 36.5130890052356 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 264 | mating 0.18 born 0.88 | collDeaths 2083/8270
+  174238 above 0.79 FAIL | catch 0.0112 ok | lin 39.54973821989529 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 257 | mating 0.10 born 0.83 | collDeaths 1586/7262
+  553445 above 0.82 ok | catch 0.0058 ok | lin 32.87958115183246 ok | maxSpec 0.98 FAIL | endPop 456 ok | popMean 246 | mating 0.20 born 0.90 | collDeaths 1701/10712
+
+== minagents40  mating_mean 0.09 FAIL  born_mean 0.20 FAIL  births/1k 0.05 food/1k 99.0 fedLife 4172
+  200460 above 0.25 FAIL | catch 0.0059 ok | lin 35.62303664921466 ok | maxSpec 0.24 ok | endPop 41 ok | popMean 40 | mating 0.09 born 0.20 | collDeaths 377/2020
+  597883 above 0.31 FAIL | catch 0.0046 ok | lin 35.973821989528794 ok | maxSpec 0.22 ok | endPop 41 ok | popMean 40 | mating 0.07 born 0.20 | collDeaths 437/2190
+  174238 above 0.32 FAIL | catch 0.0029 ok | lin 36.05759162303665 ok | maxSpec 0.23 ok | endPop 40 ok | popMean 40 | mating 0.12 born 0.19 | collDeaths 487/2239
+  553445 above 0.25 FAIL | catch 0.0024 ok | lin 35.96335078534032 ok | maxSpec 0.20 ok | endPop 40 ok | popMean 40 | mating 0.06 born 0.19 | collDeaths 436/2110
+
+== minagents60  mating_mean 0.10 FAIL  born_mean 0.24 FAIL  births/1k 0.06 food/1k 118.5 fedLife 4112
+  200460 above 0.31 FAIL | catch 0.0101 ok | lin 51.916230366492144 ok | maxSpec 0.20 ok | endPop 60 ok | popMean 60 | mating 0.10 born 0.26 | collDeaths 655/3111
+  597883 above 0.29 FAIL | catch 0.0040 ok | lin 51.83769633507853 ok | maxSpec 0.21 ok | endPop 62 ok | popMean 60 | mating 0.10 born 0.25 | collDeaths 616/3058
+  174238 above 0.23 FAIL | catch 0.0085 ok | lin 52.455497382198956 ok | maxSpec 0.22 ok | endPop 60 ok | popMean 60 | mating 0.09 born 0.21 | collDeaths 628/3068
+  553445 above 0.33 FAIL | catch 0.0020 ok | lin 51.575916230366495 ok | maxSpec 0.21 ok | endPop 61 ok | popMean 61 | mating 0.11 born 0.26 | collDeaths 575/2963
+
+== minagents80  mating_mean 0.11 FAIL  born_mean 0.54 ok  births/1k 0.11 food/1k 217.2 fedLife 4129
+  200460 above 0.80 ok | catch 0.0129 ok | lin 26.418848167539267 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 287 | mating 0.19 born 0.90 | collDeaths 1842/8534
+  597883 above 0.51 FAIL | catch 0.0028 ok | lin 56.10471204188482 ok | maxSpec 0.33 ok | endPop 90 ok | popMean 81 | mating 0.07 born 0.47 | collDeaths 780/3831
+  174238 above 0.42 FAIL | catch 0.0068 ok | lin 62.41361256544503 ok | maxSpec 0.21 ok | endPop 80 ok | popMean 81 | mating 0.09 born 0.37 | collDeaths 846/3972
+  553445 above 0.53 FAIL | catch 0.0049 ok | lin 59.17277486910995 ok | maxSpec 0.21 ok | endPop 80 ok | popMean 81 | mating 0.09 born 0.43 | collDeaths 792/3796
+
+== satiation  mating_mean 0.16 FAIL  born_mean 0.88 ok  births/1k 0.15 food/1k 332.5 fedLife 4330
+  200460 above 0.87 ok | catch 0.0113 ok | lin 23.81151832460733 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 350 | mating 0.14 born 0.90 | collDeaths 1171/7025
+  597883 above 0.80 ok | catch 0.0118 ok | lin 36.5130890052356 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 264 | mating 0.18 born 0.88 | collDeaths 2083/8270
+  174238 above 0.79 FAIL | catch 0.0112 ok | lin 39.54973821989529 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 257 | mating 0.10 born 0.83 | collDeaths 1586/7262
+  553445 above 0.82 ok | catch 0.0058 ok | lin 32.87958115183246 ok | maxSpec 0.98 FAIL | endPop 456 ok | popMean 246 | mating 0.20 born 0.90 | collDeaths 1701/10712
+
+== digest  mating_mean 0.15 FAIL  born_mean 0.83 ok  births/1k 0.15 food/1k 301.5 fedLife 4219
+  200460 above 0.62 FAIL | catch 0.0076 ok | lin 61.204188481675395 ok | maxSpec 0.69 ok | endPop 303 ok | popMean 113 | mating 0.13 born 0.62 | collDeaths 1225/4949
+  597883 above 0.69 FAIL | catch 0.0090 ok | lin 49.30890052356021 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 182 | mating 0.09 born 0.79 | collDeaths 1792/6471
+  174238 above 0.96 ok | catch 0.0223 ok | lin 14.193717277486911 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 381 | mating 0.18 born 0.96 | collDeaths 1735/10271
+  553445 above 0.88 ok | catch 0.0119 ok | lin 23.455497382198953 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 332 | mating 0.20 born 0.94 | collDeaths 2026/10111
+
+== handling  mating_mean 0.14 FAIL  born_mean 0.85 ok  births/1k 0.14 food/1k 311.2 fedLife 4373
+  200460 above 0.73 FAIL | catch 0.0169 ok | lin 43.45026178010471 ok | maxSpec 0.78 FAIL | endPop 500 FAIL | popMean 212 | mating 0.10 born 0.82 | collDeaths 1582/6855
+  597883 above 0.75 FAIL | catch 0.0046 ok | lin 49.92670157068063 ok | maxSpec 0.98 FAIL | endPop 428 ok | popMean 165 | mating 0.17 born 0.77 | collDeaths 1604/7083
+  174238 above 0.92 ok | catch 0.0099 ok | lin 20.06806282722513 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 366 | mating 0.17 born 0.93 | collDeaths 1820/7579
+  553445 above 0.78 FAIL | catch 0.0054 ok | lin 38.596858638743456 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 255 | mating 0.13 born 0.86 | collDeaths 1777/8141
+
+== carcasses  mating_mean 0.11 FAIL  born_mean 0.89 ok  births/1k 0.15 food/1k 373.9 fedLife 4293
+  200460 above 0.89 ok | catch 0.0098 ok | lin 25.387434554973822 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 310 | mating 0.06 born 0.95 | collDeaths 2186/13601
+  597883 above 0.81 ok | catch 0.0116 ok | lin 37.40837696335078 ok | maxSpec 0.93 FAIL | endPop 500 FAIL | popMean 268 | mating 0.14 born 0.84 | collDeaths 1324/6998
+  174238 above 0.90 ok | catch 0.0100 ok | lin 19.041884816753928 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 378 | mating 0.12 born 0.92 | collDeaths 1098/6798
+  553445 above 0.81 ok | catch 0.0140 ok | lin 42.58638743455497 ok | maxSpec 0.98 FAIL | endPop 500 FAIL | popMean 201 | mating 0.13 born 0.86 | collDeaths 2124/8309
+
+== basins  mating_mean 0.18 FAIL  born_mean 0.82 ok  births/1k 0.16 food/1k 302.4 fedLife 4161
+  200460 above 0.84 ok | catch 0.0081 ok | lin 28.513089005235603 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 300 | mating 0.15 born 0.89 | collDeaths 1885/7766
+  597883 above 0.74 FAIL | catch 0.0076 ok | lin 46.282722513089006 ok | maxSpec 0.98 FAIL | endPop 500 FAIL | popMean 178 | mating 0.22 born 0.80 | collDeaths 1671/7111
+  174238 above 0.72 FAIL | catch 0.0108 ok | lin 45.37696335078534 ok | maxSpec 0.94 FAIL | endPop 446 ok | popMean 191 | mating 0.21 born 0.82 | collDeaths 1675/8166
+  553445 above 0.75 FAIL | catch 0.0049 ok | lin 52.769633507853406 ok | maxSpec 0.86 FAIL | endPop 500 FAIL | popMean 165 | mating 0.16 born 0.77 | collDeaths 1613/6657
+
+== basins-nodamage  mating_mean 0.17 FAIL  born_mean 0.90 ok  births/1k 0.14 food/1k 308.1 fedLife 4744
+  200460 above 0.80 ok | catch 0.0315 ok | lin 39.10471204188482 ok | maxSpec 0.94 FAIL | endPop 500 FAIL | popMean 251 | mating 0.20 born 0.87 | collDeaths 1262/8388
+  597883 above 0.83 ok | catch 0.0109 ok | lin 26.38219895287958 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 329 | mating 0.21 born 0.91 | collDeaths 1298/8081
+  174238 above 0.92 ok | catch 0.0081 ok | lin 16.643979057591622 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 383 | mating 0.14 born 0.95 | collDeaths 1157/8752
+  553445 above 0.86 ok | catch 0.0164 ok | lin 38.97905759162304 ok | maxSpec 0.55 ok | endPop 500 FAIL | popMean 239 | mating 0.14 born 0.88 | collDeaths 1416/8034
+
+== specmut  mating_mean 0.16 FAIL  born_mean 0.95 ok  births/1k 0.14 food/1k 333.4 fedLife 4741
+  200460 above 0.92 ok | catch 0.0019 ok | lin 20.015706806282722 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 368 | mating 0.16 born 0.94 | collDeaths 1905/7894
+  597883 above 0.95 ok | catch 0.0054 ok | lin 19.612565445026178 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 345 | mating 0.20 born 0.96 | collDeaths 3088/11428
+  174238 above 0.92 ok | catch 0.0054 ok | lin 16.958115183246072 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 403 | mating 0.12 born 0.94 | collDeaths 1900/8365
+  553445 above 0.91 ok | catch 0.0054 ok | lin 25.12565445026178 ok | maxSpec 0.92 FAIL | endPop 500 FAIL | popMean 318 | mating 0.17 born 0.94 | collDeaths 2388/10407
+
+== patches  mating_mean 0.04 FAIL  born_mean 1.00 ok  births/1k 0.07 food/1k 828.2 fedLife 8510
+  200460 above 1.00 ok | catch 0.0061 ok | lin 6.958115183246074 ok | maxSpec 0.99 FAIL | endPop 500 FAIL | popMean 496 | mating 0.03 born 1.00 | collDeaths 1789/6184
+  597883 above 1.00 ok | catch 0.0206 ok | lin 6.994764397905759 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 475 | mating 0.05 born 0.99 | collDeaths 1482/6075
+  174238 above 1.00 ok | catch 0.0379 ok | lin 6.795811518324608 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 500 | mating 0.04 born 1.00 | collDeaths 1902/6254
+  553445 above 1.00 ok | catch 0.0239 ok | lin 6.2565445026178015 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 491 | mating 0.06 born 1.00 | collDeaths 1843/6279
+
+== eras  mating_mean 0.12 FAIL  born_mean 0.97 ok  births/1k 0.14 food/1k 359.2 fedLife 4721
+  200460 above 0.97 ok | catch 0.0565 ok | lin 19.57591623036649 ok | maxSpec 0.51 ok | endPop 500 FAIL | popMean 342 | mating 0.13 born 0.96 | collDeaths 2382/10523
+  597883 above 0.99 ok | catch 0.0148 ok | lin 10.225130890052355 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 395 | mating 0.12 born 0.98 | collDeaths 1704/9207
+  174238 above 0.95 ok | catch 0.0151 ok | lin 16.287958115183248 ok | maxSpec 0.97 FAIL | endPop 500 FAIL | popMean 339 | mating 0.12 born 0.95 | collDeaths 2190/8840
+  553445 above 0.99 ok | catch 0.0217 ok | lin 14.38219895287958 ok | maxSpec 0.89 FAIL | endPop 500 FAIL | popMean 374 | mating 0.11 born 0.97 | collDeaths 2233/10002
+
+== leak  mating_mean 0.15 FAIL  born_mean 0.88 ok  births/1k 0.15 food/1k 325.7 fedLife 4361
+  200460 above 0.82 ok | catch 0.0188 ok | lin 34.225130890052355 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 261 | mating 0.10 born 0.88 | collDeaths 1833/8424
+  597883 above 0.92 ok | catch 0.0194 ok | lin 21.554973821989527 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 363 | mating 0.16 born 0.93 | collDeaths 1447/7552
+  174238 above 0.91 ok | catch 0.0123 ok | lin 18.87958115183246 ok | maxSpec 1.00 FAIL | endPop 499 ok | popMean 348 | mating 0.22 born 0.94 | collDeaths 2435/9823
+  553445 above 0.74 FAIL | catch 0.0068 ok | lin 48.90052356020942 ok | maxSpec 0.96 FAIL | endPop 385 ok | popMean 147 | mating 0.14 born 0.77 | collDeaths 1509/6688
+
+== hebbian  mating_mean 0.02 FAIL  born_mean 0.18 FAIL  births/1k 0.09 food/1k 165.5 fedLife 1969
+  200460 above 0.16 FAIL | catch 0.0027 ok | lin 90.47643979057591 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.02 born 0.18 | collDeaths 891/9931
+  597883 above 0.16 FAIL | catch 0.0035 ok | lin 90.63874345549738 ok | maxSpec 0.20 ok | endPop 100 ok | popMean 100 | mating 0.02 born 0.18 | collDeaths 863/10208
+  174238 above 0.17 FAIL | catch 0.0025 ok | lin 90.26701570680628 ok | maxSpec 0.22 ok | endPop 100 ok | popMean 100 | mating 0.03 born 0.19 | collDeaths 789/9994
+  553445 above 0.19 FAIL | catch 0.0022 ok | lin 90.23560209424083 ok | maxSpec 0.20 ok | endPop 100 ok | popMean 100 | mating 0.02 born 0.19 | collDeaths 896/9913
+
+== hebbian-0.003  mating_mean 0.06 FAIL  born_mean 0.31 FAIL  births/1k 0.11 food/1k 199.1 fedLife 2578
+  200460 above 0.34 FAIL | catch 0.0037 ok | lin 82.42408376963351 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 101 | mating 0.06 born 0.32 | collDeaths 1133/7356
+  597883 above 0.35 FAIL | catch 0.0061 ok | lin 84.13089005235602 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 101 | mating 0.04 born 0.31 | collDeaths 1037/7430
+  174238 above 0.32 FAIL | catch 0.0059 ok | lin 83.74869109947645 ok | maxSpec 0.21 ok | endPop 104 ok | popMean 101 | mating 0.06 born 0.30 | collDeaths 1000/7322
+  553445 above 0.35 FAIL | catch 0.0069 ok | lin 82.40837696335079 ok | maxSpec 0.23 ok | endPop 100 ok | popMean 101 | mating 0.06 born 0.33 | collDeaths 1025/7268
+
+== hebbian-0.001  mating_mean 0.07 FAIL  born_mean 0.42 FAIL  births/1k 0.12 food/1k 215.6 fedLife 3221
+  200460 above 0.44 FAIL | catch 0.0055 ok | lin 76.6020942408377 ok | maxSpec 0.21 ok | endPop 107 ok | popMean 101 | mating 0.08 born 0.42 | collDeaths 1022/5916
+  597883 above 0.51 FAIL | catch 0.0062 ok | lin 75.61256544502618 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 101 | mating 0.07 born 0.42 | collDeaths 1085/5901
+  174238 above 0.39 FAIL | catch 0.0080 ok | lin 78.61780104712042 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 101 | mating 0.07 born 0.38 | collDeaths 1037/5788
+  553445 above 0.45 FAIL | catch 0.0043 ok | lin 72.41884816753927 ok | maxSpec 0.25 ok | endPop 100 ok | popMean 101 | mating 0.06 born 0.46 | collDeaths 1139/5898
+
+== hebbian-0.0003  mating_mean 0.09 FAIL  born_mean 0.63 ok  births/1k 0.16 food/1k 271.5 fedLife 3674
+  200460 above 0.84 ok | catch 0.0090 ok | lin 32.37696335078534 ok | maxSpec 0.98 FAIL | endPop 417 ok | popMean 210 | mating 0.09 born 0.90 | collDeaths 1821/9911
+  597883 above 0.61 FAIL | catch 0.0052 ok | lin 65.93717277486911 ok | maxSpec 0.28 ok | endPop 114 ok | popMean 102 | mating 0.09 born 0.55 | collDeaths 1007/5072
+  174238 above 0.59 FAIL | catch 0.0109 ok | lin 65.45026178010471 ok | maxSpec 0.43 ok | endPop 102 ok | popMean 103 | mating 0.08 born 0.55 | collDeaths 1006/5227
+  553445 above 0.53 FAIL | catch 0.0079 ok | lin 69.64921465968587 ok | maxSpec 0.23 ok | endPop 100 ok | popMean 102 | mating 0.09 born 0.50 | collDeaths 1088/5219
+
+== hebbian-0.0001  mating_mean 0.10 FAIL  born_mean 0.86 ok  births/1k 0.15 food/1k 314.5 fedLife 4730
+  200460 above 0.85 ok | catch 0.0022 ok | lin 29.63350785340314 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 304 | mating 0.08 born 0.91 | collDeaths 1459/8906
+  597883 above 0.64 FAIL | catch 0.0107 ok | lin 59.90052356020942 ok | maxSpec 0.57 ok | endPop 177 ok | popMean 113 | mating 0.09 born 0.64 | collDeaths 1166/5441
+  174238 above 0.89 ok | catch 0.0158 ok | lin 19.2565445026178 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 370 | mating 0.07 born 0.94 | collDeaths 1355/8550
+  553445 above 0.90 ok | catch 0.0070 ok | lin 20.581151832460733 ok | maxSpec 0.99 FAIL | endPop 500 FAIL | popMean 334 | mating 0.16 born 0.95 | collDeaths 2046/12430
+
+== hebbian-0.00003  mating_mean 0.14 FAIL  born_mean 0.76 ok  births/1k 0.17 food/1k 309.6 fedLife 3721
+  200460 above 0.71 FAIL | catch 0.0098 ok | lin 51.13612565445026 ok | maxSpec 0.94 FAIL | endPop 279 ok | popMean 131 | mating 0.10 born 0.74 | collDeaths 1391/6022
+  597883 above 0.62 FAIL | catch 0.0073 ok | lin 59.083769633507856 ok | maxSpec 0.79 FAIL | endPop 308 ok | popMean 119 | mating 0.09 born 0.64 | collDeaths 1152/5478
+  174238 above 0.82 ok | catch 0.0141 ok | lin 32.246073298429316 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 261 | mating 0.23 born 0.90 | collDeaths 1617/10126
+  553445 above 0.71 FAIL | catch 0.0064 ok | lin 54.52879581151832 ok | maxSpec 0.98 FAIL | endPop 494 ok | popMean 149 | mating 0.14 born 0.75 | collDeaths 1420/6416
+
+== traits  mating_mean 0.17 FAIL  born_mean 0.87 ok  births/1k 0.17 food/1k 332.9 fedLife 3967
+  200460 above 0.95 ok | catch 0.0124 ok | lin 14.340314136125654 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 374 | mating 0.13 born 0.96 | collDeaths 1941/9863
+  597883 above 0.69 FAIL | catch 0.0085 ok | lin 54.769633507853406 ok | maxSpec 0.98 FAIL | endPop 412 ok | popMean 142 | mating 0.13 born 0.74 | collDeaths 1486/6396
+  174238 above 0.79 FAIL | catch 0.0078 ok | lin 40.07329842931937 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 221 | mating 0.19 born 0.86 | collDeaths 1969/8302
+  553445 above 0.85 ok | catch 0.0214 ok | lin 31.75392670157068 ok | maxSpec 0.99 FAIL | endPop 500 FAIL | popMean 256 | mating 0.21 born 0.91 | collDeaths 1868/10297
+
+== sexes  mating_mean 0.21 ok  born_mean 0.15 FAIL  births/1k 0.02 food/1k 199.0 fedLife 5512
+  200460 above 0.21 FAIL | catch 0.0065 ok | lin 90.16753926701571 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.20 born 0.19 | collDeaths 773/3103
+  597883 above 0.15 FAIL | catch 0.0062 ok | lin 92.73821989528795 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.20 born 0.15 | collDeaths 830/3241
+  174238 above 0.16 FAIL | catch 0.0027 ok | lin 95.70157068062828 ok | maxSpec 0.20 ok | endPop 100 ok | popMean 100 | mating 0.28 born 0.10 | collDeaths 884/3388
+  553445 above 0.20 FAIL | catch 0.0072 ok | lin 90.66492146596859 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.15 born 0.16 | collDeaths 795/3295
+
+== sexes-split25  mating_mean 0.19 FAIL  born_mean 0.18 FAIL  births/1k 0.03 food/1k 202.8 fedLife 5353
+  200460 above 0.21 FAIL | catch 0.0110 ok | lin 93.94240837696336 ok | maxSpec 0.22 ok | endPop 102 ok | popMean 100 | mating 0.22 born 0.15 | collDeaths 730/3191
+  597883 above 0.25 FAIL | catch 0.0070 ok | lin 87.68062827225131 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.12 born 0.23 | collDeaths 829/3352
+  174238 above 0.16 FAIL | catch 0.0040 ok | lin 92.80628272251309 ok | maxSpec 0.21 ok | endPop 103 ok | popMean 100 | mating 0.23 born 0.15 | collDeaths 868/3426
+  553445 above 0.22 FAIL | catch 0.0048 ok | lin 91.67015706806282 ok | maxSpec 0.22 ok | endPop 102 ok | popMean 100 | mating 0.19 born 0.17 | collDeaths 765/3192
+
+== sexes-split10  mating_mean 0.16 FAIL  born_mean 0.18 FAIL  births/1k 0.03 food/1k 209.2 fedLife 5181
+  200460 above 0.28 FAIL | catch 0.0088 ok | lin 88.64397905759162 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.15 born 0.20 | collDeaths 737/3173
+  597883 above 0.13 FAIL | catch 0.0030 ok | lin 92.70157068062828 ok | maxSpec 0.21 ok | endPop 100 ok | popMean 100 | mating 0.20 born 0.16 | collDeaths 890/3341
+  174238 above 0.26 FAIL | catch 0.0035 ok | lin 83.43979057591623 ok | maxSpec 0.53 ok | endPop 100 ok | popMean 101 | mating 0.11 born 0.21 | collDeaths 779/3514
+  553445 above 0.21 FAIL | catch 0.0033 ok | lin 92.3717277486911 ok | maxSpec 0.23 ok | endPop 103 ok | popMean 100 | mating 0.18 born 0.16 | collDeaths 764/3340
+
+== birthbudget  mating_mean 0.18 FAIL  born_mean 0.88 ok  births/1k 0.15 food/1k 307.5 fedLife 4451
+  200460 above 0.88 ok | catch 0.0094 ok | lin 22.649214659685864 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 338 | mating 0.24 born 0.93 | collDeaths 1776/9556
+  597883 above 0.81 ok | catch 0.0115 ok | lin 41.55497382198953 ok | maxSpec 0.60 ok | endPop 500 FAIL | popMean 203 | mating 0.15 born 0.85 | collDeaths 1489/7269
+  174238 above 0.74 FAIL | catch 0.0107 ok | lin 48.795811518324605 ok | maxSpec 0.94 FAIL | endPop 500 FAIL | popMean 183 | mating 0.18 born 0.80 | collDeaths 1718/7543
+  553445 above 0.92 ok | catch 0.0059 ok | lin 18.75392670157068 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 379 | mating 0.14 born 0.95 | collDeaths 1736/8431
+
+== matedistance  mating_mean 0.04 FAIL  born_mean 0.84 ok  births/1k 0.14 food/1k 310.0 fedLife 4609
+  200460 above 0.89 ok | catch 0.0065 ok | lin 23.403141361256544 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 353 | mating 0.04 born 0.92 | collDeaths 1457/7454
+  597883 above 0.68 FAIL | catch 0.0071 ok | lin 51.56020942408377 ok | maxSpec 0.99 FAIL | endPop 500 FAIL | popMean 151 | mating 0.05 born 0.74 | collDeaths 1466/5755
+  174238 above 0.71 FAIL | catch 0.0113 ok | lin 48.738219895287955 ok | maxSpec 0.98 FAIL | endPop 380 ok | popMean 161 | mating 0.05 born 0.77 | collDeaths 1344/6439
+  553445 above 0.90 ok | catch 0.0172 ok | lin 20.952879581151834 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 347 | mating 0.04 born 0.94 | collDeaths 2517/9828
+
+== predplant  mating_mean 0.15 FAIL  born_mean 0.86 ok  births/1k 0.14 food/1k 309.8 fedLife 4654
+  200460 above 0.82 ok | catch 0.0059 ok | lin 26.607329842931936 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 321 | mating 0.15 born 0.89 | collDeaths 2055/8512
+  597883 above 0.69 FAIL | catch 0.0076 ok | lin 43.60732984293194 ok | maxSpec 0.99 FAIL | endPop 497 ok | popMean 194 | mating 0.24 born 0.80 | collDeaths 1680/8204
+  174238 above 0.78 FAIL | catch 0.0093 ok | lin 37.03664921465968 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 283 | mating 0.10 born 0.83 | collDeaths 1326/8123
+  553445 above 0.88 ok | catch 0.0093 ok | lin 21.643979057591622 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 353 | mating 0.11 born 0.92 | collDeaths 2285/8558
+
+== allon  mating_mean 0.00 FAIL  born_mean 0.07 FAIL  births/1k 0.03 food/1k 125.8 fedLife 2702
+  200460 above 0.05 FAIL | catch 0.0020 ok | lin 38.361256544502616 ok | maxSpec 0.30 ok | endPop 40 ok | popMean 40 | mating 0.01 born 0.06 | collDeaths 221/3208
+  597883 above 0.14 FAIL | catch 0.0000 FAIL | lin 37.30890052356021 ok | maxSpec 0.33 ok | endPop 40 ok | popMean 40 | mating 0.00 born 0.08 | collDeaths 197/3167
+  174238 above 0.07 FAIL | catch 0.0000 FAIL | lin 37.795811518324605 ok | maxSpec 0.38 ok | endPop 40 ok | popMean 40 | mating 0.00 born 0.07 | collDeaths 207/3309
+  553445 above 0.12 FAIL | catch 0.0000 FAIL | lin 38.18324607329843 ok | maxSpec 0.45 ok | endPop 40 ok | popMean 40 | mating 0.00 born 0.07 | collDeaths 174/3041
+
+== allon-min100-nohebb-nosexes  mating_mean 0.01 FAIL  born_mean 0.99 ok  births/1k 0.08 food/1k 614.1 fedLife 8038
+  200460 above 0.99 ok | catch 0.0227 ok | lin 9.31413612565445 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 467 | mating 0.02 born 0.99 | collDeaths 1913/6499
+  597883 above 0.98 ok | catch 0.0061 ok | lin 11.69109947643979 ok | maxSpec 0.54 ok | endPop 500 FAIL | popMean 475 | mating 0.02 born 0.99 | collDeaths 2231/7546
+  174238 above 0.97 ok | catch 0.0055 ok | lin 11.450261780104713 ok | maxSpec 0.84 FAIL | endPop 500 FAIL | popMean 458 | mating 0.01 born 0.98 | collDeaths 1878/6702
+  553445 above 1.00 ok | catch 0.0065 ok | lin 5.895287958115183 ok | maxSpec 1.00 FAIL | endPop 500 FAIL | popMean 492 | mating 0.01 born 1.00 | collDeaths 1965/6499

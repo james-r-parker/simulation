@@ -6,6 +6,7 @@ import { createWorld, placeClear, spawnAgent, spawnFoodItem } from '../../js/sim
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { fixedSpecPolicy, testPolicy } from './helpers/test-policy.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
     worldWidth: 1000,
@@ -28,7 +29,7 @@ const SMALL = {
  * @returns {ReturnType<typeof createWorld>}
  */
 function build(over = {}) {
-    return createWorld(createConfig({ ...SMALL, ...over }), testPolicy);
+    return createWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }), testPolicy);
 }
 
 /**
@@ -243,7 +244,7 @@ describe('spawnAgent', () => {
     });
 
     it('honours policy.initSpec', () => {
-        const w = createWorld(createConfig(SMALL), fixedSpecPolicy(3));
+        const w = createWorld(createConfig({ ...FEATURES_OFF, ...SMALL }), fixedSpecPolicy(3));
         for (let s = 0; s < 6; s++) {
             expect(w.spec[s]).toBe(3);
         }
@@ -285,5 +286,30 @@ describe('placeClear', () => {
         placeClear(w, w.rng.spawn, 25);
         expect(w.point[0]).toBeGreaterThanOrEqual(25);
         expect(w.point[1]).toBeLessThanOrEqual(975);
+    });
+});
+
+describe('spawnAgent sex', () => {
+    it('draws every spawn a sex and reports it in AGENT_BORN field 9 when sexes are on', () => {
+        const w = build({ sexesEnabled: true, initialAgents: 0, maxAgents: 64 });
+        const slots = [];
+        for (let i = 0; i < 40; i++) {
+            slots.push(spawnAgent(w, testPolicy, i % 2 === 0 ? BORN_CAUSE.FLOOR : BORN_CAUSE.IMMIGRANT));
+        }
+        const sexes = slots.map((s) => w.sex[s]);
+        expect(sexes).toContain(0);
+        expect(sexes).toContain(1);
+        for (let i = 0; i < slots.length; i++) {
+            expect(w.events.data[i * EVENT_STRIDE + 9]).toBe(sexes[i]);
+        }
+    });
+
+    it('makes everyone female without a draw when sexes are off', () => {
+        const w = build({ initialAgents: 0 });
+        const before = Array.from(w.rng.lifecycle.s);
+        const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        expect(w.sex[slot]).toBe(0);
+        expect(w.events.data[9]).toBe(0);
+        expect(Array.from(w.rng.lifecycle.s)).toEqual(before);
     });
 });

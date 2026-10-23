@@ -5,6 +5,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const TICKS = 10000;
 const COLD_START = 20;
@@ -16,7 +17,7 @@ const COLD_TICKS = 3000;
  * @returns {number} the population at the end
  */
 function populationAfter(name) {
-    const config = createConfig({ seed: 1, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ ...FEATURES_OFF, seed: 1, minAgents: 0, immigrationInterval: 0 });
     const brain = createBaselineV5().brain;
     const world = createWorld(config, brain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') });
@@ -63,6 +64,7 @@ describe('body temperature cold band', () => {
             // This pins body temperature, not predation, so the predator keeps the neutral multipliers: the tuned ones
             // slow the scripted foodSeeker's warm-up past COLD_TICKS.
             const config = createConfig({
+                ...FEATURES_OFF,
                 seed: 1,
                 initialAgents: 30,
                 minAgents: 0,
@@ -105,5 +107,5 @@ describe('body temperature cold band', () => {
 
 /** @returns {number} the starting population, which the gentle forager must exceed */
 function config100() {
-    return createConfig().initialAgents;
+    return createConfig({ ...FEATURES_OFF }).initialAgents;
 }

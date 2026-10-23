@@ -6,6 +6,7 @@ import { actAll, integrate, resolveContacts } from '../../js/sim/physics.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const PI = Math.PI;
 const SMALL = {
@@ -27,7 +28,7 @@ const SMALL = {
  * @returns {any} a world with no agents
  */
 function setup(extra = {}) {
-    return allocateWorld(createConfig({ ...SMALL, ...extra }));
+    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...extra }));
 }
 
 /**

@@ -48,11 +48,13 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Replay a shuffled test order                     | `TEST_SEED=<seed> scripts/check.sh --only=test` (the seed is on the `test (seed <n>)` line)                                                                                                                                                                                                                                                                                                                |
 | Read a failed gate                               | The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the next run). Do not rerun the tool to see why                                                                                                                                                                                                                                                                                    |
 | Benchmark the sim core (step and phase ms)       | `npm run bench` (`-- --json`, `-- --sizes=500`, `-- --policy <name>` to bench a registered policy with its hooks; `bench/baseline.json` is what `bench-check` compares)                                                                                                                                                                                                                                    |
+| Function microbenchmarks (hot functions, ops/s)  | `npm run bench:micro` (`-- --compare <ref>` runs the same files on a worktree of `<ref>` and this tree, alternating, and prints the change per function with its margin; `--runs <n>` (3), `--filter <text>`; about 5 minutes for a compare; a tool, not a gate)                                                                                                                                           |
 | Parallel throughput by worker count              | `npm run bench:parallel` (`-- --counts 1,8,16,24,32 --ticks 2000 --agents 500 --json`; prints `bench.parallel_ticks_per_s@<n>` and the recommended worker default)                                                                                                                                                                                                                                         |
 | Check the golden hashes in Chromium              | `npm run browser:hash` (`-- --cdp=<url>` to use a running Chrome)                                                                                                                                                                                                                                                                                                                                          |
 | Measure the app's frame times in Chrome          | `npm run perf:browser` (`-- --app v6` is the default, `--agents <n>` (500), `--viewport <w>x<h>` (3840x2160), `--seconds <n>`, `--cdp=http://127.0.0.1:9222` for Windows Chrome on the GPU; refuses a display under 120 Hz without `--allow-low-refresh` and software GL without `--allow-fallback`; writes `bench/browser-baseline.json` by viewport; `--app legacy` writes `bench/legacy-baseline.json`) |
 | Replay a world and log its events                | `npm run replay -- --seed <n> --ticks <n>` (`--config <file.json>`, `--dump <tick>`, `--level debug`, `--check-invariants`, `--policy <name>`, `--follow <genomeId>`); logs go to `.sim/logs/<runId>.jsonl`                                                                                                                                                                                                |
 | Evaluate a policy on fixed seeds                 | `npm run eval -- --seeds <n> --ticks <t> --policy <name>` (defaults 16 seeds, 200000 ticks; `--seed-offset <k>`, `--config <file.json>`, `--out <path>`, `--workers <n>`; seeds come from `evals/seeds.json`; reports go to `evals/results/`, logs to `.sim/logs/eval-<id>.jsonl`)                                                                                                                         |
+| Screen a grid of config arms                     | `npm run screen -- --grid <grid.json>` (`--workers <total>` for all arms and seeds, default cores - 2; `--out`, `--seeds`, `--seed-offset`, `--ticks`, `--force`; takes the CPU lock itself, so do not wrap it in `flock`; resumable per arm; `table.md` and `verdicts.json` in `evals/screens/results/<grid>/`; example `evals/screens/t59.grid.json`)                                                    |
 | Run the skill ladder                             | `npm run ladder` (`--ticks`, `--seeds`, `--config <file.json>`, `--out <path>`, `--workers <n>`; default 10000 ticks on seeds 1-3, no floor; reports to `evals/ladder/<id>.json`, logs to `.sim/logs/ladder-<id>.jsonl`)                                                                                                                                                                                   |
 | Measure eval power from one report               | `npm run eval:power -- <report.json>` (`--splits`, `--power-splits`, `--sizes`, `--metrics`, `--json`; false-positive rate and detectable change per metric from split resampling, no new runs)                                                                                                                                                                                                            |
 | Compare two eval reports                         | `npm run eval:compare -- <before.json> <after.json>` (`--targets <m,...>`, `--fail-on-worse`, `--allow-config-diff <key,...>`, `--allow-seed-diff`, `--min-effect <fraction>` (default 0.05), `--json`; a verdict needs the interval to exclude 0 and a change of at least that share of the before mean; refuses under 16 seeds; BCa intervals on per-seed differences; exits 2 on a refusal)             |
@@ -90,6 +92,26 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 6. **Something misbehaves** - the `debug-sim` skill: find the event in the logs, replay from seed and config,
    failing test, fix.
 7. **Docs drift** - the `audit-docs` skill proposes fixes; nothing is applied without approval.
+
+## Delegating to subagents
+
+When one agent hands tasks to others (user, 2026-10-22):
+
+- **One task at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
+  and the plan doc, and the rework costs more than the parallelism saves.
+- **Pick the model by the task's tag.** `[mechanical]` tasks (run a command, re-pin, re-record, fill a table) go to
+  Haiku; `[judgement]` tasks (deciding a verdict, diagnosis, review, optimisation) go to Sonnet. The delegating agent
+  reviews every result before it merges.
+- **Wait without polling.** Start long runs (evals, screens, the full gate) in the background and wait for the
+  completion notice; never loop on sleep or check progress every few minutes. Leave no waiting loops behind.
+- **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
+  short table instead of reading whole reports.
+- **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,
+  `perf:browser`, `alloc-check`) and the full gate (`scripts/check.sh`, whose `bench-check` and slow-test timeouts
+  fail under load) run through `flock /tmp/claude-1000/cpu.lock <cmd>` and only while no eval or screen is running.
+  Evals, screens, the ladder and replays are deterministic whatever the load, so they run side by side and may fill
+  the CPU.
+- **Report once, briefly**: PR link, what changed, measurements, decisions, anything unsure.
 
 ## Hard rules
 

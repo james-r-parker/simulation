@@ -29,6 +29,7 @@ export default [
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
+            'bench/**/*.js',
         ],
         plugins: { jsdoc },
         rules: {
@@ -48,6 +49,7 @@ export default [
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
+            'bench/**/*.js',
             'test/**/*.js',
             '*.config.js',
         ],
@@ -164,7 +166,7 @@ export default [
         languageOptions: { globals: { ...globals.browser, __PRODUCTION__: 'readonly' } },
     },
     {
-        files: ['scripts/**/*.{js,mjs}', 'test/**/*.js', '*.config.js'],
+        files: ['scripts/**/*.{js,mjs}', 'bench/**/*.js', 'test/**/*.js', '*.config.js'],
         languageOptions: { globals: { ...globals.node } },
     },
     {

@@ -94,6 +94,38 @@ The core needs these beyond the design doc's Config table. All are "new" in Sour
 `TIMER_CAP` (30, the cap on `ateTimer` and `bittenTimer`) is a named constant in `world.js`, not a key: it is bound to
 the `Uint8Array` storage.
 
+### Feature keys (world-balance Phase 3)
+
+Each feature key defaults to its off state, and a feature that is off draws no random number and writes no hashed state
+([world-balance.md](world-balance.md) says what each rule does). The rules are `FEATURE_RULES` in `config-rules.js`;
+`scripts/lib/features-on.mjs` exports `FEATURES_OFF` (every `FEATURE_RULES` key at its default, plus `obstacleCount` 25
+and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-on sets). A test fails when a
+`FEATURE_RULES` key is missing from `FEATURES_OFF`.
+
+| Key                                                                | Default                        | Rule                                                     | Off state                                            |
+| ------------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------- | ---------------------------------------------------- |
+| `leakEnabled`                                                      | `false`                        | Boolean                                                  | `false`                                              |
+| `hebbianRate`                                                      | `0`                            | `0 .. 1`                                                 | `0`                                                  |
+| `traitsEnabled`, `visionCost`                                      | `false`, `0.5`                 | Boolean; `>= 0`                                          | `traitsEnabled` `false`                              |
+| `sexesEnabled`                                                     | `false`                        | Boolean                                                  | `sexesEnabled` `false`                               |
+| `mateDistanceMax`                                                  | `Infinity`                     | `> 0` or `Infinity`                                      | `Infinity`                                           |
+| `birthWindowTicks`, `maxBirthsPerWindow`                           | `3000`, `0`                    | Integer `>= 1`; integer `0 .. 16`                        | `maxBirthsPerWindow` `0`                             |
+| `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust` | `0`, `0`, `0`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` | `satiationShare`, `digestTicks`, `handlingTicks` `0` |
+| `specMutationRate`, `huntUpkeep`                                   | `0`, `0.002`                   | `0 .. 1`; `>= 0`                                         | `specMutationRate` `0`                               |
+| `floorRescueAtZero`                                                | `false`                        | Boolean                                                  | `false`                                              |
+| `carcassesEnabled`, `carcassTicks`, `carcassShare`                 | `false`, `300`, `0.5`          | Boolean; integer `>= 1`; `0 .. 1`                        | `carcassesEnabled` `false`                           |
+| `specialisations.<s>.plantFoodValue`, `.meatFoodValue`             | `1` (meat `0.3`, predator `1`) | `0 .. 1`                                                 | `1` for plants                                       |
+| `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`           | `0`, `400`, `1`                | Integer `0 .. 256`; `> 0`; `> 0`                         | `foodPatchCount` `0`                                 |
+| `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`     | `0.02`, `0.0005`, `0.2`        | `>= 0`; `0 .. 1`; `0 .. 1`                               | with `foodPatchCount` `0`                            |
+| `foodAreaCapacity`, `foodRegrowPerArea`                            | `false`, `0.06`                | Boolean; `>= 0`                                          | `foodAreaCapacity` `false`                           |
+| `terrainLayout`, `wallGaps`, `wallGapWidth`                        | `'open'`, `3`, `300`           | `'open'` or `'basins'`; integer `0 .. 8`; `> 0`          | `'open'`                                             |
+| `refugeCount`, `refugeSizeMax`, `coldMarginWidth`                  | `4`, `30`, `600`               | Integer `0 .. 8`; `> 0`; `>= 0`                          | with `terrainLayout` `'open'`                        |
+| `erasEnabled`, `eraSeasonTicks`, `winterRegrow`                    | `false`, `36000`, `0.2`        | Boolean; integer `>= 1`; `>= 0`                          | `erasEnabled` `false`                                |
+| `droughtChance`, `invasionInterval`, `invasionSize`                | `0.25`, `180000`, `12`         | `0 .. 1`; integer `>= 0`; integer `>= 0`                 | `erasEnabled` `false`; `invasionInterval` `0`        |
+
+`plantFoodValue` and `meatFoodValue` are specialisation fields (`SPECIALISATION_FIELDS`), so every specialisation carries
+both. `minAgents` stays 100 until the switch-on. `rulesHash` covers every key.
+
 ### Shapes and ranges
 
 Validation runs after the merge. Integer means `Number.isInteger`. A failure throws naming the key path (`seasons[2].energyDrain`), the value and the rule.
@@ -128,7 +160,8 @@ Validation runs after the merge. Integer means `Number.isInteger`. A failure thr
 Cross-key rule: `0 < temperatureColdStress < temperatureColdModerate <= temperatureOptimalMax < temperatureHeatModerate
 <= temperatureHeatStress < temperatureMax` and `temperatureColdStress < temperatureOptimalMin <= temperatureOptimalMax`.
 Cross-key rule: `maxAgents x weightCount` is at most 2^24 (64 MB per weight array). Cross-key rule: the largest radius - `baseSize + maxEnergy / energyToSize`, `foodRadius`, `highFoodRadius` - must be
-below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it is 125 against 128.
+below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it is 125 against 128; with `traitsEnabled` the base size is `baseSize x TRAIT_MAX` (1.3), the radius 132.5, and `hashCellSize` must be larger (140 passes).
+Cross-key rule: with `foodPatchCount` above 0, `2 x foodPatchRadius` is at most the shorter world side. Cross-key rule: `terrainProblem` in `terrain.js` rejects `terrainLayout` `basins` unless `obstacleCount` is 0, the wall gaps leave wall between them, the refuges fit the basins, the cold margins leave room between them and (with patches) a patch disc fits a basin.
 
 - `seasons` is an array of exactly four objects in the order spring, summer, autumn, winter, each with exactly the
   keys `foodScarcity`, `energyDrain`, `reproductionBonus`, each finite and `>= 0`, and `temperatureModifier`, finite
@@ -150,20 +183,26 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. At the defaults it 
 
 The design doc's World state table (the `temperature` array is `Float32`), plus:
 
-| Group         | Arrays (type)                                                                                                                     |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Food          | `foodAlive` (`Uint8`), `foodX`, `foodY`, `foodRadius` (`Float32`), `foodValue` (`Float64`), `foodAge` (`Uint32`)                  |
-| Obstacles     | `obsX`, `obsY`, `obsVx`, `obsVy`, `obsRadius` (`Float32`), `obstacleCount` entries each                                           |
-| Fertile zones | `zoneAlive` (`Uint8`), `zoneX`, `zoneY` (`Float32`), `zoneFertility`, `zoneInitial` (`Float64`)                                   |
-| Pheromones    | `danger`, `attack`, `hunt`, `pheromoneScratch` (`Float32`), `cols x rows` with `cols = Math.ceil(worldWidth / pheromoneCellSize)` |
-| Calls         | `alarmTimer`, `huntTimer`, `smokeTimer` (`Uint16`, per agent); `heard` (`Float32`, 6 per agent)                                   |
-| Bites         | `lastBiteTick`, `prevBiter`, `prevBiteTick` (`Uint32`, per agent)                                                                 |
-| Smoke         | `cloudX`, `cloudY` (`Float32`), `cloudTtl` (`Uint16`), `maxClouds` entries each                                                   |
-| Tables        | `antennaCos`, `antennaSin`, `biteBySpec`, `turnBySpec`, `sprintBySpec` (not hashed)                                               |
-| Ledger        | `ledger` (`Float64Array(2)`): `[in, out]`                                                                                         |
-| Scalars       | `tick`, `nextId` (starts at 1; 0 means "none"), `population`, `foodCount`, `cloudCount`                                           |
+| Group         | Arrays (type)                                                                                                                                                                                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Food          | `foodAlive` (`Uint8`), `foodX`, `foodY`, `foodRadius` (`Float32`), `foodValue` (`Float64`), `foodAge` (`Uint32`)                                                                                                                                                                                                  |
+| Obstacles     | `obsX`, `obsY`, `obsVx`, `obsVy`, `obsRadius` (`Float32`), `obstacleSlots(config)` entries each: the `obstacleCount` wandering obstacles, then the static rocks of `terrainLayout` `basins` (`terrainRockCount`, none when `open`)                                                                                |
+| Food kind     | `foodKind` (`Uint8`, `FOOD_KIND`: plant 0, meat 1), `maxFood` entries; hashed only when `carcassesEnabled`                                                                                                                                                                                                        |
+| Patches       | `patchX`, `patchY` (`Float32`), `patchStock` (`Float64`), `foodPatchCount` entries each (empty when 0); hashed only when `foodPatchCount` is above 0                                                                                                                                                              |
+| Brain extras  | `fastOut` (`Float32`, `brainHidden x OUTPUT_COUNT` per agent; hashed only when `hebbianRate` is above 0), `leakRate` (`Float32`, `brainHidden` per agent; derived, not hashed)                                                                                                                                    |
+| Traits, sex   | `sex` (`Uint8`; hashed only when `sexesEnabled`), `vision` and `baseSize` (`Float32`; hashed only when `traitsEnabled`), `childShare` (`Float32`; derived, not hashed), `birthRing` (`Uint32`, `maxBirthsPerWindow` per agent, so empty when the budget is off; hashed only when `maxBirthsPerWindow` is above 0) |
+| Era           | `era` (`Int32Array(1)`): the basin in drought (0 west, 1 east), -1 for none; hashed only when `erasEnabled`                                                                                                                                                                                                       |
+| Fertile zones | `zoneAlive` (`Uint8`), `zoneX`, `zoneY` (`Float32`), `zoneFertility`, `zoneInitial` (`Float64`)                                                                                                                                                                                                                   |
+| Pheromones    | `danger`, `attack`, `hunt`, `pheromoneScratch` (`Float32`), `cols x rows` with `cols = Math.ceil(worldWidth / pheromoneCellSize)`                                                                                                                                                                                 |
+| Calls         | `alarmTimer`, `huntTimer`, `smokeTimer` (`Uint16`, per agent); `heard` (`Float32`, 6 per agent)                                                                                                                                                                                                                   |
+| Bites         | `lastBiteTick`, `prevBiter`, `prevBiteTick` (`Uint32`, per agent)                                                                                                                                                                                                                                                 |
+| Smoke         | `cloudX`, `cloudY` (`Float32`), `cloudTtl` (`Uint16`), `maxClouds` entries each                                                                                                                                                                                                                                   |
+| Tables        | `antennaCos`, `antennaSin`, `biteBySpec`, `turnBySpec`, `sprintBySpec`, `visionBySpec`, `plantFoodBySpec`, `meatFoodBySpec` (not hashed)                                                                                                                                                                          |
+| Ledger        | `ledger` (`Float64Array(2)`): `[in, out]`                                                                                                                                                                                                                                                                         |
+| Scalars       | `tick`, `nextId` (starts at 1; 0 means "none"), `population`, `foodCount`, `cloudCount`                                                                                                                                                                                                                           |
 
 - Every agent row array is `maxAgents` rows; `hidden` has `maxAgents + 1` rows, the last being the scratch row.
+- `allocateWorld` returns a spread copy of the object it filled, so `world` is in V8's fast-properties mode (the many keyed stores leave the first object in dictionary mode, which makes every `world.x` in the hot loops a hash lookup); `test/sim/world-shape.test.js` guards it with `%HasFastProperties`. A world's arrays are never reassigned.
 - The slot free-list is derived from `alive` and is not hashed: `allocAgent` scans for the lowest slot with
   `alive === 0` and throws when none is free. Callers check `population < maxAgents` first.
 - `freeAgent` zeroes every agent row array at the slot and sets `alive` to 0. `removeFood(world, slot)` (in
@@ -172,13 +211,14 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Ids and codes
 
-| Code set      | Values                                                                                                                                    |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4                                                                                |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                        |
-| Blocked cause | `capacity` 0, `energy` 1                                                                                                                  |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                 |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8 |
+| Code set      | Values                                                                                                                                                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4                                                                                                                                                                       |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                                                                                                               |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                         |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                        |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `InvasionArrived` 12 |
+| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                         |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -193,19 +233,23 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 - `step` sets `count = 0` before its first phase. Events from `createWorld` stay until the first `step`.
 - `readEvents(ring)` returns `count`; callers read `ring.data` directly. Nothing is allocated.
 
-| Type              | Fields 2 .. 11                                                                                                         |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `AgentBorn`       | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`                                                 |
-| `AgentDied`       | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy`, `prevBiter` (field 11) |
-| `BirthBlocked`    | `slot` (the mother or splitter), `cause`                                                                               |
-| `PopulationFloor` | `added`                                                                                                                |
-| `AlarmCalled`     | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
-| `SmokeReleased`   | `slot`, `genomeId`, `spec`, `x`, `y`, `cloud`                                                                          |
-| `PackCalled`      | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
-| `SmokeRefused`    | `slot`, `genomeId`                                                                                                     |
+| Type                 | Fields 2 .. 11                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `AgentBorn`          | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`, `sex` (field 9; 0 with `sexesEnabled` false)   |
+| `AgentDied`          | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy`, `prevBiter` (field 11) |
+| `BirthBlocked`       | `slot` (the mother or splitter), `cause`                                                                               |
+| `PopulationFloor`    | `added`                                                                                                                |
+| `AlarmCalled`        | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
+| `SmokeReleased`      | `slot`, `genomeId`, `spec`, `x`, `y`, `cloud`                                                                          |
+| `PackCalled`         | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
+| `SmokeRefused`       | `slot`, `genomeId`                                                                                                     |
+| `FoodPatchesCreated` | `count`, `radius` (pushed once by `createPatches`, only when `foodPatchCount` is above 0)                              |
+| `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                 |
+| `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                       |
+| `InvasionArrived`    | `count`, `lineageId`, `spec`, `edge` (0 west, 1 east, 2 north, 3 south, as `placeAtEdge` reads it)                     |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
-ticks before the death, else 0. The four call events are debug level. `createConfig` requires `eventCapacity >= 6 x maxAgents`
+ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, `DroughtStarted` and `InvasionArrived` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 6 x maxAgents`
 (a slot adds at most 3 call, release or refuse events, 1 death and 1 birth per tick).
 
 ## Energy - `energy.js`
@@ -239,52 +283,83 @@ ticks before the death, else 0. The four call events are debug level. `createCon
   then `x = radius + nextFloat x (worldWidth - 2 radius)` and `y` the same way with no rejection (obstacles may
   overlap each other), then `heading = nextFloat x 2 PI` and
   `speed = nextFloat x obstacleMaxSpeed`, giving `vx = speed x detCos(heading)`, `vy = speed x detSin(heading)`.
-- `spawnFoodItem(world, config)` uses the `food` stream in this order: `high = nextFloat < highFoodChance`; when any
-  zone is alive, `fromZone = nextFloat < fertileZoneSpawnChance`; the zone, by a roulette over alive zones in
-  ascending index with `nextFloat x total fertility`; the position; then
-  `energy = base + (2 nextFloat - 1) x variance`. A zone position is `r = fertileZoneRadius x Math.sqrt(nextFloat)`,
+- `placeTerrain(world)` (`terrain.js`) follows `placeObstacles` on the same `obstacles` stream and draws nothing when
+  `terrainLayout` is `open`. With `basins` it writes the static rocks after the wandering obstacles: the wall at
+  `worldWidth / 2`, `wallShape(config).count` rocks of radius `step` (touching) with `wallGaps` gaps of whole rocks, one
+  gap start drawn per equal band along the wall (`wallGaps` draws, `nextFloat x (band - gapRocks + 1)`); then the
+  refuges, alternating west and east, each a ring of `REFUGE_ROCKS` (8) rocks of radius `REFUGE_ROCK_RADIUS` (50) at a
+  `ringRadius` that leaves gaps as wide as `refugeSizeMax`, its centre drawn as `x` then `y` (two draws per refuge).
+- `createPatches(world)` (`food-patches.js`) follows `placeTerrain` on the `food` stream: per patch one draw for x and
+  one for y, x inside the patch's basin (`basinPatchX`: even patches west, odd east, discs clear of the wall) under
+  `basins` and anywhere inside `[foodPatchRadius, worldWidth - foodPatchRadius]` otherwise, y in the same margin; stock
+  starts at `foodPatchCapacity`. It pushes `FoodPatchesCreated` when `foodPatchCount` is above 0.
+- `spawnFoodItem(world, config)` uses the `food` stream in this order: `high = nextFloat < highFoodChance`; then
+  `placeFood`: when any zone is alive, `fromZone = nextFloat < fertileZoneSpawnChance`, and a zone is picked by a
+  roulette over alive zones in ascending index with `nextFloat x total fertility`; else, when `foodPatchCount` is above
+  0, one draw `nextFloat >= foodBackgroundShare` decides a patch, picked by `pickPatch` with one draw
+  `nextFloat x total stock` (roulette in ascending index, the last patch on rounding); else `placeClear`. A zone or
+  patch position goes through `placeInDisc`: `r = discRadius x Math.sqrt(nextFloat)`,
   `theta = nextFloat x 2 PI` around the centre, clamped to `[radius, size - radius]`, and redrawn the same way while
-  it lies in an obstacle, up to `placementTries`, after which it places uniformly with `placeClear`. It takes the lowest free food slot, with age 0.
+  it lies in an obstacle, up to `placementTries`, after which it places uniformly with `placeClear`. Last,
+  `energy = base + (2 nextFloat - 1) x variance`. It takes the lowest free food slot, with age 0 and `foodKind` plant.
 - `spawnAgent(world, config, policy, cause)` uses the `spawn` stream: allocates the slot; sets `genomeId = nextId++`,
-  `lineageId = genomeId`, `parentA = parentB = 0`; spec from `policy.initSpec` or `nextInt(spawn, 5)`; then
-  `policy.initBrain` with the `brain-init` stream; then the position by `placeClear` with the radius for
-  `initialEnergy`, `angle = nextFloat x 2 PI - PI`, zero velocity, `ateTimer = bittenTimer = TIMER_CAP`, `temperature = temperatureStart`, energy by
-  `addEnergy`; then pushes `AgentBorn`.
+  `lineageId = genomeId`, `parentA = parentB = 0`; spec from `policy.initSpec`, else (floor spawns with
+  `floorRescueAtZero` and a specialisation with 0 alive) `pickEmptySpec`, a `nextInt` over the empty ones, else
+  `nextInt(spawn, 5)`; then `drawSex` (one `lifecycle` draw when `sexesEnabled`, none otherwise); then
+  `policy.initBrain` with the `brain-init` stream; then `applyGenes`; then the position by `placeClear` with the radius for
+  `initialEnergy` (the slot's `baseSizeOf` plus `initialEnergy / energyToSize`), `angle = nextFloat x 2 PI - PI`, zero velocity, `ateTimer = bittenTimer = TIMER_CAP`, `temperature = temperatureStart`, energy by
+  `addEnergy`; then pushes `AgentBorn` with the sex in field 9.
 - `createWorld(config, policy)` lives here, not in `world.js`, so that `spawn.js` can import `world.js` without a
-  cycle: it calls `allocateWorld(config)`, forks the streams, then places obstacles, then `initialFood` food items,
-  then `initialAgents` agents with cause `initial`.
+  cycle: it calls `allocateWorld(config)`, forks the streams, then places obstacles, then the terrain, then the food
+  patches, then `initialFood` food items, then `initialAgents` agents with cause `initial`.
 
 ## Tick details
 
 ### Order inside phases
 
+- `STEP_PHASES` runs `environment` (`updateSeason`, `advanceEra`, `moveObstacles`), `hash`, `sense`, `brain`, `signal`,
+  `physics` (`actAll`, `integrate`, `buildHash`, `resolveContacts`), `lifecycle` (`feed`, `mate`, `applyCosts`,
+  `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `invade`), `field` (`regrowPatches`, `spawnFood`, `ageFood`,
+  `decayFertileZones`, `updatePheromones`, `ageSmoke`) and `invariants`.
 - Each function visits slots `0 .. maxAgents - 1` and acts on a slot if it is alive when visited. An agent born
   earlier in the same function at a higher slot is visited; one at a lower slot is not.
 - `applyCosts`, per alive agent: `ageTicks += 1`; `cooldown = max(0, cooldown - 1)`;
   `ateTimer = min(TIMER_CAP, ateTimer + 1)`; the same for `bittenTimer`; then `stepTemperature(world, slot)`; then the
   cost by `removeEnergy` with cause `cost`, whose passive and size terms are multiplied by `passiveMultiplier` of the
-  stepped temperature. A newborn's first increment is on the tick after its birth.
+  stepped temperature. The passive term adds `passiveLoss x visionCost x (vision - 1)` for an agent whose vision trait is
+  above 1 (only with `traitsEnabled`), and a `canHunt` agent pays `huntUpkeep` once per tick while `specMutationRate`
+  is above 0. A newborn's first increment is on the tick after its birth.
 - `advancePregnancies`: `pregnancy -= 1` where it is above 0; at 0, the birth is attempted.
 - `reap`, per alive agent: `ageTicks >= maxAgeTicks` dies of `old-age` first; otherwise energy at 0 dies of the
   cause mapped from `lastLoss` (none or `cost` to `starved`, `bite` to `eaten`, `collision` to `collision`). `by` is
-  `lastBiter` for `eaten`, else 0.
+  `lastBiter` for `eaten`, else 0. After the event, the death hook and the ledger entry, `leaveCarcass` fills the
+  lowest free food slot with a meat item when `carcassesEnabled` and the agent took in energy (below), then the fertile
+  zone is added and the slot freed.
 - `fillFloor`: first the floor, while `population < minAgents`; then one immigrant when `immigrationInterval > 0`,
   `tick > 0`, `tick % immigrationInterval === 0` and `population < maxAgents`. `tick` is the value before `step`
   increments it. `PopulationFloor` is pushed once per tick in which the floor added any agent; `added` counts floor agents only, not
-  the immigrant.
+  the immigrant. Then `invade` (last in `lifecycle`) spawns an invasion pulse when `erasEnabled`, `invasionInterval` is
+  above 0, `tick > 0` and `tick % invasionInterval === 0`: `count = min(invasionSize, maxAgents - population)`, nothing
+  when that is 0. It draws the edge with `nextInt(spawn, 4)` then the position along it with one `spawn` `nextFloat`,
+  spawns the first agent as an ordinary `immigrant` through the policy, and each of the others as an `immigrant` whose
+  weights row, `lineageId` and `spec` are then overwritten with the first's (new `genomeId`s, `applyGenes`, a fresh sex
+  draw); all are placed by `placeAtEdge` in a band of `SPREAD` (150) px at that edge, two `spawn` draws per attempt, up
+  to `placementTries`, keeping the spawn position when none is clear. It then pushes `InvasionArrived`.
 - `ateTimer` and `bittenTimer` reset to 0 when the agent eats or is bitten.
 
 ### Motion and body inputs
 
 - `actAll`: `turnRate = out2 x maxTurn x turnBySpec[spec]`; `angle += turnRate`, then `angle -= 2 PI` when `angle >= PI` or
-  `angle += 2 PI` when `angle < -PI` (one conditional); thrust `out1 x maxThrust x thrustEfficiency(config, temperature)`, times `1 + sprintMultiplier` when
-  sprinting, is added to `vx`, `vy` along the new heading.
+  `angle += 2 PI` when `angle < -PI` (one conditional); thrust `out1 x maxThrust x thrustEfficiency(config, temperature)`, times `1 + sprintMultiplier x sprintBySpec[spec]` when
+  sprinting, and times `handlingThrust` while `ateTimer < handlingTicks` (`handlingTicks` 0 never matches), is added to
+  `vx`, `vy` along the new heading.
 - `integrate`: `vx *= damping`, `vy *= damping`; when `speed = Math.sqrt(vx x vx + vy x vy)` exceeds the cap,
   `s = cap / speed`, `vx *= s`, `vy *= s`; then `x += vx`, `y += vy`.
 - `stepTemperature`: `speed = Math.sqrt(vx x vx + vy x vy)` of the velocity left by `integrate` and
   `resolveContacts`; `loss = max(0, 1 - seasons[world.season[0]].temperatureModifier x temperatureSeasonSlope)`;
-  `next = temperature + min(speed / maxVelocity, 1) x temperatureGainMove - temperatureLossPassive x loss`, clamped to
-  `0 .. temperatureMax`. `actAll` runs before `applyCosts`, so it reads the temperature of the end of the previous tick.
+  `next = temperature + min(speed / maxVelocity, 1) x temperatureGainMove - temperatureLossPassive x loss x cold`, clamped to
+  `0 .. temperatureMax`, where `cold` is `coldFactor(config, y)` under `basins` (2 when `y < coldMarginWidth` or
+  `y > worldHeight - coldMarginWidth`, else 1) and 1 otherwise. `actAll` runs before `applyCosts`, so it reads the temperature of the end of the previous tick.
 - Body inputs 16 to 19 (0-based offsets 15 to 18 from `rayCount x RAY_CHANNELS`) come from `temperatureInputs(config, t, out,
 offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)` with `middle` the mean of
   `temperatureOptimalMin` and `temperatureOptimalMax`; cold stress, 1 below `temperatureColdStress`, else
@@ -297,14 +372,30 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   (`writeScentInputs`, called from `senseAll`): danger, attack and hunt sampled at the two antennae, and the loudest heard
   alarm and hunt call with their ahead and side components. The antennae sit `antennaReach` from the agent at the heading
   plus and minus `antennaAngle`. [predator-prey.md](predator-prey.md) lists every offset.
-- The season: `seasonAt(config, tick)` in `environment.js` writes the index and phase into `world.season`
-  (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick.
+- Body inputs 33 to 35 (offsets 32 to 34 from `rayCount x RAY_CHANNELS`, `BODY_INPUT`): `sex` (0 female, 1 male; always 0
+  with `sexesEnabled` false) and last tick's `MEMORY_A` and `MEMORY_B` outputs, which are 0 unless `leakEnabled`.
+  `writeBodyInputs` writes offsets 0 to 18 and 32 to 34.
+- The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
+  (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `seasonLength`,
+  or with `erasEnabled` `4 x eraSeasonTicks` (and `seasonLength` is then unused), so every rule keyed by season index or
+  phase - `foodScarcity`, `energyDrain`, `reproductionBonus`, `temperatureModifier` and body inputs 10 and 11 - stretches with it.
+- Eras (`eras.js`, only with `erasEnabled`): `advanceEra` runs in the `environment` phase after `updateSeason`. On every
+  tick above 0 divisible by `eraSeasonTicks` it pushes `SeasonChanged` (`world.season[0]`, the zero-based year
+  `floor(tick / (4 x eraSeasonTicks))`) and updates `world.era[0]`: outside summer it becomes -1; at the start of summer
+  one `food` draw `< droughtChance` starts a drought, and a second `food` draw (`< 0.5` west) picks the basin, pushing
+  `DroughtStarted` (basin, year). A basin is the half of the world on one side of `worldWidth / 2` (0 west, 1 east).
+  `regrowPatches` multiplies each patch's `foodPatchRegrow` by `patchRegrowFactor`: 0 for a patch in the drought basin,
+  else `winterRegrow` in winter, 1.5 in summer, 1 otherwise.
 
 ### Feeding
 
 - `feed` visits alive agents in ascending slot. Each eats every alive food it overlaps, found through `cellRange`
   of its circle, cells ascending and entries in cell order. Food is removed when eaten even if the eater stored
-  only part of it.
+  only part of it. `tryEat` skips an item when the eater's share is 0 (`plantFoodBySpec` for plant, `meatFoodBySpec`
+  for meat; the item stays) or `canEatNow` is false: energy at or above `satiationShare x maxEnergy` (when `satiationShare`
+  is above 0), or `ateTimer < digestTicks`. The stored amount is `foodValue x share`. Eating a plant item calls
+  `depletePatchAt`: the nearest patch whose disc holds the item (lowest index on ties) loses `foodPatchDepletion`
+  stock, floored at 5% of `foodPatchCapacity`; meat depletes nothing.
 - Eating raises the eater's temperature by `temperatureGainEat x stored / foodEnergy` (`stored` is what `addEnergy`
   returned), and a bite raises the biter's by `temperatureGainEat x transferGained / foodEnergy`; both through
   `gainTemperature`. The victim's is unchanged.
@@ -364,14 +455,17 @@ In `integrate`, after moving:
 - `allocateWorld` builds `world.rayCos` and `world.raySin` (not hashed): `detCos` and `detSin` of
   `2 PI k / rayCount`. Each tick, with `cH = detCos(angle)` and `sH = detSin(angle)`, ray `k` has
   `dx = cH x rayCos[k] - sH x raySin[k]` and `dy = sH x rayCos[k] + cH x raySin[k]`. Its origin is the agent centre
-  and its length is `visionRange`.
+  and its length is `visionOf(world, slot)`: the specialisation's `visionRange`, times the slot's `vision` trait when
+  `traitsEnabled`.
 - Ray-circle: with `ox, oy` the origin minus the circle centre, `b = dx x ox + dy x oy`,
   `c = ox x ox + oy x oy - R x R`; no hit when `b x b - c < 0`; else `t = -b - Math.sqrt(b x b - c)`, and 0 when
   `t < 0` and `c <= 0`; a circle with `t < 0` and `c > 0` is behind the ray.
 - `distance` is from the centre to the hit surface: the smaller root of the ray-circle intersection, or 0 when the
   origin is inside the circle. The agent never hits itself.
-- The DDA steps along x when `tMaxX <= tMaxY` (x first on a tie). It stops after the first cell in which the nearest
-  hit so far lies within that cell's stretch of the ray, or at `visionRange`.
+- `gatherNear` (`ray-gather.js`) collects once per casting agent every circle one of its rays could hit - the
+  obstacles (static rocks included) and live clouds, then the agents and food in the hash cells under the vision box,
+  never the caster - into `world.rayLocal`, keeping a circle whose surface lies within the ray length of the origin; each
+  ray then tests only those.
 - Equal distances are broken by kind (food, agent, obstacle, wall), then by lower index.
 - A wall hit's distance is to the nearest boundary line the ray crosses within `visionRange`.
 - The agent class is `couldBite` (`js/sim/bite-rule.js`), the bite rule `feed` uses without the jaws: the biter's
@@ -403,25 +497,55 @@ controllers, the snapshot rays and the inspector read it; only the sense phase w
 
 Row layout, all row-major:
 
-| Block     | Index of weight                                  |
-| --------- | ------------------------------------------------ |
-| `wIn`     | `i x brainHidden + j` (input `i` to hidden `j`)  |
-| `wRec`    | `k x brainHidden + j` (hidden `k` to hidden `j`) |
-| `bHidden` | `j`                                              |
-| `wOut`    | `j x OUTPUT_COUNT + o`                           |
-| `bOut`    | `o`                                              |
+| Block       | Index of weight                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------ |
+| `wIn`       | `i x brainHidden + j` (input `i` to hidden `j`)                                            |
+| `wRec`      | `k x brainHidden + j` (hidden `k` to hidden `j`)                                           |
+| `bHidden`   | `j`                                                                                        |
+| `wOut`      | `j x OUTPUT_COUNT + o`                                                                     |
+| `bOut`      | `o`                                                                                        |
+| trait genes | `traitStart + t`, `t` from `TRAIT_INDEX`: `SIZE` 0, `VISION` 1, `CHILD_SHARE` 2, `LEARN` 3 |
+| leak genes  | `leakStart + j`, one per hidden unit                                                       |
 
-The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
+`OUTPUT_COUNT` is 11 (`OUTPUT_INDEX`: thrust 0, turn 1, sprint 2, mate 3, bite 4, alarm 5, smoke 6, hunt 7, `SPLIT` 8,
+`MEMORY_A` 9, `MEMORY_B` 10), `EXTRA_INPUTS` 35 and `TRAIT_GENES` 4, so `weightCount = inputCount x H + H x H + H + H x OUTPUT_COUNT + OUTPUT_COUNT + TRAIT_GENES + H`:
+179 inputs and 7183 weights at the defaults. The genes after `bOut` never enter the sums below. The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
 `bHidden[j]`, then adds `wIn[i, j] x x_i` for `i` ascending, **skipping every `i` whose input is exactly 0**, then
 `wRec[k, j] x h_k` for `k` ascending. `h'_j = Math.fround(detTanh(sum))`. Outputs sum `bOut[o]` then
-`wOut[j, o] x h'_j` for `j` ascending, then `detTanh`. Any loop nesting is allowed as long as each sum adds its terms
-in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0` changes the sign bit.
+`wOut[j, o] x h'_j` for `j` ascending, then `detTanh`.
+
+- With `leakEnabled`, the hidden update is `h'_j = Math.fround((1 - a_j) x h_j + a_j x detTanh(sum))`, `a_j` being
+  `leakRate[slot x H + j]` = `LEAK_MIN + (1 - LEAK_MIN) x detSigmoid(leakGene_j)` with `LEAK_MIN` 0.05, and `h_j` the unit's value
+  from the previous tick; with it off the rule above applies (`a = 1`).
+- With `hebbianRate` above 0, the output sums read `fastOut[slot x H x OUTPUT_COUNT + j x OUTPUT_COUNT + o]` in place of
+  `wOut[j, o]` (`bOut` still comes from `weights`). After the outputs of a slot, `hebbianStep` sets, for `j` then `o`
+  ascending, `fastOut[j, o]` to `min(HEBB_CLAMP, max(-HEBB_CLAMP, f + eta x (h'_j x out_o - HEBB_DECAY x (f - w[j, o]))))`
+  with `f` the old value, `w` the genome's `wOut` block, `eta = hebbianRate x detSigmoid(learnGene)`, `HEBB_DECAY` 0.01 and
+  `HEBB_CLAMP` 4. `world.weights` never changes during a life.
+- `applyGenes(world, slot)` runs after every write of a weight row (`spawnAgent`, `giveBirth` after `childBrain`, and an
+  invasion's copied genome). With `traitsEnabled` it sets `vision = traitValue(visionGene)`, `baseSize = baseSize x
+traitValue(sizeGene)` and `childShare = childEnergyShare x traitValue(childShareGene)`, `traitValue(g) = 1 + TRAIT_SPAN x
+detTanh(g)` with `TRAIT_SPAN` 0.3. With `hebbianRate` above 0 it copies the genome's `wOut` block into `fastOut`; with
+  `leakEnabled` it fills the slot's `leakRate`. `visionOf`, `baseSizeOf` and `childShareOf` in `traits.js` return the
+  specialisation or config value when `traitsEnabled` is false.
+- `geneticDistance(world, a, b)` in `genetics.js` is the mean over `SIMILARITY_DIMS` (64) sampled weight indices
+  `(k x 7919) mod traitStart` of `abs(w_a - w_b) x invSd`, with `invSd = Math.sqrt(inputCount + H)` for an index below
+  `bHidden` and `Math.sqrt(H)` otherwise, summed left to right. Any loop nesting is allowed as long as each sum adds its terms
+  in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0` changes the sign bit.
 
 ### Food, zones and pheromones
 
 - `spawnFood` draws one `nextFloat` for the fraction every tick, even when the fraction is 0, and spawns
-  `min(free food slots, whole + (draw < fraction ? 1 : 0))`.
-- `ageFood` adds 1 to each alive food's age, then removes food whose age exceeds `foodMaxAge`.
+  `min(free food slots, whole + (draw < fraction ? 1 : 0))`. The expected count is the population rule from the Config
+  table, or with `foodAreaCapacity` `foodRegrowPerArea x worldWidth x worldHeight x foodScarcity / 1000000`
+  (no population term). Meat counts toward `foodCount` and so toward `maxFood`.
+- `regrowPatches` (first in the `field` phase) sets each patch's stock to
+  `min(foodPatchCapacity, s + foodPatchRegrow x factor x s x (1 - s / foodPatchCapacity))`, with `s` the stock clamped to
+  `[0.05 x foodPatchCapacity, foodPatchCapacity]` and `factor` from `patchRegrowFactor` (1 without eras). It draws nothing.
+- `ageFood` adds 1 to each alive food's age, then removes food whose age exceeds `foodMaxAge` (`carcassTicks` for meat).
+- `leaveCarcass(world, slot)` writes, into the lowest free food slot (no draw; nothing when none is free), a meat item
+  at the dead agent's position with radius `size[slot]`, age 0 and value `carcassShare x (foodEnergy + biteEnergy)` of the
+  agent, when `carcassesEnabled` and that value is above 0. The energy enters the ledger when eaten, like plant food.
 - A death adds a zone with `zoneInitial = zoneFertility = size x fertileZoneFertility`. When all `fertileZoneMax`
   slots are alive it replaces the zone with the lowest `zoneFertility / zoneInitial`, lowest index on a tie.
 - `decayFertileZones`: `zoneFertility -= fertileZoneDecay x zoneInitial`; a zone at or below 0 is freed.
@@ -435,23 +559,44 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 
 ### Mating and births
 
-- `mate` walks alive slots `a` in ascending order. For each `a` that is ready (`readyToMate`; `isReadyToMate` is false when `temperature < temperatureColdStress` or `temperature > temperatureHeatStress`, and the block draws nothing), `findMate` scans the
+- `mate` walks alive slots `a` in ascending order. For each `a` that is ready (`readyToMate`; `isReadyToMate` is false when `temperature < temperatureColdStress` or `temperature > temperatureHeatStress`, and the block draws nothing), with
+  `sexesEnabled` false `findMate` scans the
   hash cells covered by `size[a] + mateRange` in row-major order, entries in entry order, and takes the first `b > a`
   whose edge-to-edge gap is below `mateRange` (0 is the contact test of `resolvePair`), which passes `canMatePair`
   and wins the draw. A `b` is taken only in the first scanned cell that contains it. The lower slot is the mother.
   The hash is the one built in the `physics` phase, so a body pushed across a cell edge by `resolveContacts` can be
   missed for a tick.
+- With `sexesEnabled`, only a ready female (`sex` `female`) searches. `findMale` scans the same cells, in the same order and with the same first-cell
+  rule and gap test, for any alive male `b` (a lower slot too) that passes `canMatePair`, and keeps the one with the most
+  energy, the lower slot on equal energy. Then one `lifecycle` `nextFloat` against `chance` decides whether they mate; no
+  candidate means no draw. The female is the mother whatever her slot: `startMating(world, policy, mother, father)`.
+  A male is limited only by `mateCost` and his cooldown.
+- `canMatePair(a, b)` holds when both are `readyToMate`, share a `spec`, differ in sex (when `sexesEnabled`), have a size
+  ratio within `1 / mateSizeRatio .. mateSizeRatio`, the pair's mother (`motherOf`: the lower slot, or the female) has
+  not spent her birth budget and holds more than `childEnergyMin / childShareOf(mother)`, and
+  `geneticDistance(a, b) < mateDistanceMax` (always true for `Infinity`). `test/sim/helpers/mate-search-reference.js` is
+  the O(n^2) reference for both searches.
+- The birth budget (`birth-budget.js`, only when `maxBirthsPerWindow` is above 0): `birthRing` keeps, per slot, the last
+  `maxBirthsPerWindow` birth ticks plus one (0 is empty). `birthBudgetSpent` holds when the oldest entry is non-empty and
+  `tick - (entry - 1) < birthWindowTicks`; `recordBirth` overwrites the oldest entry. A spent mother can neither be the
+  mother in `canMatePair` nor split.
 - The mating draw is one `lifecycle` `nextFloat`, drawn only for pairs that pass every other condition. Readiness is
   re-checked for every `a` and `b`, so no agent is in two matings in one tick.
 - Each pays `mateCost` with `removeEnergy` (cause `cost`) and sets `cooldown` to
-  `reproductionCooldown x cooldownMultiplier` rounded down. The lower slot copies the other's `weights` row into
+  `reproductionCooldown x cooldownMultiplier` rounded down. The mother copies the father's `weights` row into
   `fatherWeights` and sets `fatherId`, `fatherLineage` and `pregnancy = pregnancyTicks`; then `policy.onMate`.
-- A birth needs `population < maxAgents` (else `BirthBlocked` `capacity`) and a gift `energy[mother] x childEnergyShare`
+- A birth needs `population < maxAgents` (else `BirthBlocked` `capacity`) and a gift `energy[mother] x childShareOf(mother)`
   of at least `childEnergyMin` (else `energy`). The child takes the gift by transfer, `parentA` is the mother's `genomeId`, `parentB`
   `fatherId`, `lineageId` the mother's.
-- A split needs a free slot (else `BirthBlocked` `capacity`); the child takes `energy / 2` by transfer, both parents
+- A split needs `readyToSplit`: mature, not pregnant, off cooldown, energy above `splitMinEnergy`, the budget not spent,
+  whatever the sex and `sexesEnabled` (world-balance T69). A free slot is required
+  (else `BirthBlocked` `capacity`); the child takes `energy / 2` by transfer, both parents
   are the splitter, and the cooldown is `reproductionCooldown x cooldownMultiplier x splitCooldownMultiplier`
   rounded down.
+- A birth runs these steps in order: `childSpec` (the mother's `spec`; with `specMutationRate` above 0, one `mutation`
+  `nextFloat` and, when it is below the rate, a `mutation` `nextInt(4)` that picks another specialisation), `drawSex`
+  (one `lifecycle` draw with `sexesEnabled`), `recordBirth`, `policy.childBrain`, `applyGenes`, the energy transfer,
+  child placement, `AgentBorn` with the sex in field 9.
 - Child placement: `theta = nextFloat x 2 PI` on `lifecycle`; centre at the parent's plus `(r_parent + r_child)` along
   `theta`, clamped to `[r, size - r]`; `angle = theta - PI` wrapped; zero velocity; timers at `TIMER_CAP`; `temperature = temperatureStart`.
 - `childBrain` gets `world.birthOptions`, one object reused for every birth: its `cause` and `rng` (the `mutation`
@@ -462,9 +607,10 @@ in exactly this order. The zero-skip is part of the contract: adding `+0` to `-0
 - `options.mutationSigma` (default `0.02`) and `options.initScale` (default 1) are named defaults in
   `birth-policy.js`.
 - `initBrain`: `wIn` and `wRec` weights are `nextGaussian x initScale / Math.sqrt(inputCount + brainHidden)`, `wOut`
-  `nextGaussian x initScale / Math.sqrt(brainHidden)`, biases 0, in row order.
-- `childBrain`: the child row is the mother's `weights` row plus `nextGaussian x mutationSigma` per weight, in row
-  order. The father is ignored: the reference policy is asexual.
+  `nextGaussian x initScale / Math.sqrt(brainHidden)`, biases, trait genes and leak genes 0, in row order (a leak gene of 0
+  is a rate of about 0.53; `randomWeights` in `js/evo/mutation.js`, used by the evolving policies, starts leak genes at 3).
+- `childBrain`: the child row is the mother's `weights` row plus `nextGaussian x mutationSigma` per weight (trait and
+  leak genes included), in row order. The father is ignored: the reference policy is asexual.
 
 ## `hashWorld`
 
@@ -472,8 +618,11 @@ FNV-1a over raw little-endian bytes, in this order:
 
 1. `tick`, `nextId`, `population`, `foodCount`, `cloudCount`, as one `Uint32Array(5)`.
 2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order (`temperature` follows `lastLoss`; then `lastBiteTick`, `prevBiter`, `prevBiteTick`, `alarmTimer`, `huntTimer`, `smokeTimer`, `heard`). `hidden` is
-   hashed without its scratch row. `inputs` and `outputs` are left out: they are recomputed every tick.
-3. Food, obstacles, zones, in the order of this file's Arrays table; then `danger`, `attack`, `hunt`, `cloudX`, `cloudY`, `cloudTtl` and `ledger`.
+   hashed without its scratch row. `inputs` and `outputs` are left out: they are recomputed every tick. After the
+   agent arrays, and before `hidden`, come the arrays a feature adds, each only when its switch is on, in this order:
+   `fastOut` (`hebbianRate` above 0); `vision` then `baseSize` (`traitsEnabled`); `birthRing` (`maxBirthsPerWindow` above
+   0); `sex` (`sexesEnabled`). With every feature off none of them is hashed.
+3. Food, obstacles, zones, in the order of this file's Arrays table (the obstacle arrays cover every slot, rocks included, and `foodKind` follows `foodAge` when `carcassesEnabled`); then `danger`, `attack`, `hunt`, `cloudX`, `cloudY`, `cloudTtl`, then `patchX`, `patchY`, `patchStock` when `foodPatchCount` is above 0, then `ledger`, then `era` when `erasEnabled`.
 4. The six RNG streams' `s` arrays, in the Determinism table order.
 
 The result is `fnv64Hex`. The `world-hash` test changes one element of each covered array and expects a different
@@ -489,17 +638,18 @@ a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it 
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Header, 6 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                         |
 | Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
-| Food, 3 each, alive only                                  | `x`, `y`, `radius` (`Float32`)                                                                                                                                                                            |
-| Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`)                                                                                                                                                                            |
+| Food, 3 each, alive only                                  | `x`, `y`, `radius` (`Float32`); the radius is negative for a meat item (`FOOD_KIND.MEAT`), so the layout does not depend on `carcassesEnabled`                                                            |
+| Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `obstacleSlots(config)` of them: the wandering obstacles, then the static rocks                                                                                           |
 | Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                             |
 | Rays, `rayCount` per agent, only when `withRays`          | Ray `k`'s proximity (channel 0 of the agent's inputs row, `1 - distance / visionRange`, 0 for a miss), in agent order                                                                                     |
 
 `speed` is `sqrt(vx x vx + vy x vy)` in world units per tick. `SNAPSHOT_FLAG` names the `flags` bits: the `ate` and
 `bitten` timers (`ateTimer`, `bittenTimer`, 0 to `TIMER_CAP`) in 5-bit fields at bits 0 and 5, then `JAW_OPEN` (bit 10: the
 specialisation has `canHunt` and the `BITE` output is above 0), `ALARMING` (11, `alarmTimer` above 0), `HUNT_CALLING` (12,
-`huntTimer` above 0) and `PREGNANT` (13, `pregnancy` above 0).
+`huntTimer` above 0), `PREGNANT` (13, `pregnancy` above 0) and `MALE` (14, `sex` is male; clear for a female and for every agent when
+`sexesEnabled` is false).
 
-Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleCount`, `maxClouds` and the
+Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `obstacleSlots(config)`, `maxClouds` and the
 ray part. A snapshot is not part of `worldHash`.
 
 ## Decisions
@@ -515,7 +665,9 @@ ray part. A snapshot is not part of `worldHash`.
 - `test/sim/golden.slow.test.js` sets a 120 s timeout. Its first expected hash is a self-pin: the task that adds it runs
   it, commits the value, and says so in the commit body.
 - `npm run bench -- --json` prints one flat object of `"bench.<metric>": number`. `bench-check` runs
-  `npm run bench -- --json --sizes=500` and compares `bench.step_ms@500` with `bench/baseline.json`.
+  `npm run bench -- --json --sizes=500` and compares `bench.step_ms@500` with `bench/baseline.json`. `BENCH_CONFIG`
+  spreads `FEATURES_OFF`, so the gated world stays the frozen one whatever the defaults become; the extra `defaults` row
+  (not gated) and `scripts/alloc-check.mjs` run `FEATURES_ON`.
 - If `bench.step_ms@500` cannot get under 8 ms, the PR states the measured value and the profile, and the target is
   agreed with the user; it is never lowered silently.
 - `test/sim/golden.json` holds named cases, each with config overrides, a tick count and the expected hash;
@@ -560,7 +712,7 @@ ray part. A snapshot is not part of `worldHash`.
   them.
 - `isReadyToMate(world, slot)` in `mate-eligibility.js` (mature, not pregnant, cooldown 0, energy above
   `mateMinEnergy`, temperature not past a stress threshold) is shared by body input 7 and `mate`, which also needs the mate output above 0. `canMatePair`
-  adds the pair conditions, including that the lower slot holds more than `childEnergyMin / childEnergyShare`.
+  adds the pair conditions, including that the mother (the lower slot, or the female with `sexesEnabled`) holds more than `childEnergyMin / childEnergyShare` (her `childShare` trait with `traitsEnabled`).
 - `actAll` adds thrust along the heading as computed in double precision before it is stored in the `Float32Array`;
   sensing later reads the stored float32 `angle`.
 - Mating does not mark a pair as done: pregnancy and the cooldown, re-checked by `readyToMate` for every `a` and `b`,

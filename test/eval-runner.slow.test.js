@@ -4,8 +4,10 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { validateReport } from '../js/evo/report.js';
 import { pickSeeds, runEval } from '../scripts/eval.mjs';
+import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
 
 const SMALL = {
+    ...FEATURES_OFF,
     maxAgents: 60,
     initialAgents: 30,
     minAgents: 10,

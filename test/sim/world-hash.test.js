@@ -3,6 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork, nextFloat } from '../../js/sim/rng.js';
 import { allocateWorld } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
     maxAgents: 4,
@@ -84,7 +85,7 @@ const COVERED = [
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function makeWorld() {
-    const world = allocateWorld(createConfig(SMALL));
+    const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
     const root = createRng(1);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     return world;
@@ -158,7 +159,7 @@ describe('hashWorld', () => {
     });
 
     it('throws when world.rng is null', () => {
-        const world = allocateWorld(createConfig(SMALL));
+        const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
         expect(() => hashWorld(world)).toThrow(/hashWorld needs the RNG streams/);
     });
 
@@ -192,5 +193,21 @@ describe('hashWorld', () => {
         const world = makeWorld();
         world[name] = null;
         expect(() => hashWorld(world)).toThrow(`hashWorld: world.${name} is missing or is not a typed array`);
+    });
+});
+
+describe('hashWorld sex', () => {
+    it('ignores sex when sexes are off and covers it when on', () => {
+        const off = makeWorld();
+        const before = hashWorld(off);
+        off.sex[off.sex.length - 1] = 1;
+        expect(hashWorld(off)).toBe(before);
+
+        const on = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, sexesEnabled: true }));
+        const root = createRng(1);
+        on.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
+        const base = hashWorld(on);
+        on.sex[on.sex.length - 1] = 1;
+        expect(hashWorld(on)).not.toBe(base);
     });
 });

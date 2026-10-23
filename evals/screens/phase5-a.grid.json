@@ -1,0 +1,24 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "each": {
+    "splitMinEnergy": [750, 1200, 1500],
+    "splitCooldownMultiplier": [1, 3, 4],
+    "childEnergyShare": [0.35, 0.65],
+    "childEnergyMin": [100, 300],
+    "mateRange": [150, 200, 300],
+    "mateCost": [5, 40],
+    "reproductionCooldown": [150, 600],
+    "pregnancyTicks": [240, 960],
+    "mateChanceScale": [0.7, 1.0],
+    "mateDistanceMax": [0.6, 1.0],
+    "mateSizeRatio": [1.6],
+    "maxBirthsPerWindow": [0, 2, 5],
+    "birthWindowTicks": [1500, 6000],
+    "foodRegrowPerArea": [0.03, 0.045, 0.09],
+    "maxAgents-350": { "maxAgents": 350 },
+    "maxAgents-750": { "maxAgents": 750, "eventCapacity": 6144 }
+  }
+}

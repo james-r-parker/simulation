@@ -1,0 +1,10 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "arms": {
+    "predator-plant-1": { "specialisations": { "predator": { "plantFoodValue": 1 } } },
+    "predator-plant-0.3": { "specialisations": { "predator": { "plantFoodValue": 0.3 } } }
+  }
+}

@@ -117,3 +117,22 @@ describe('validateReport', () => {
         expect(() => validateReport(null)).toThrow('invalid report: report must be');
     });
 });
+
+describe('report traces', () => {
+    const trace = { interval: 1000, pop: [1, 2], mate: [1], split: [0], spec: [1], deaths: [0], lineages: 1 };
+    const input = { policy: 'p', fitnessName: 'v5', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed };
+
+    it('stores traces when given and validates them', () => {
+        const report = buildReport({ ...input, traces: [trace, trace, trace] });
+        expect(report.traces).toHaveLength(3);
+        expect(() => validateReport(report)).not.toThrow();
+        expect(() => validateReport({ ...report, traces: [trace] })).toThrow(/traces must be an array of 3/);
+        expect(() => validateReport({ ...report, traces: [trace, trace, { ...trace, pop: ['x'] }] })).toThrow(
+            /traces\[2\]\.pop/,
+        );
+    });
+
+    it('leaves traces out when none are given', () => {
+        expect(buildReport(input)).not.toHaveProperty('traces');
+    });
+});

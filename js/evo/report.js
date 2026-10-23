@@ -49,6 +49,8 @@ function collectMetrics(perSeed) {
  * @property {readonly number[]} seeds the seeds, in order
  * @property {string} sha the commit sha
  * @property {readonly Record<string, { value: number | null, reason?: string }>[]} perSeed `computeMetrics` per seed
+ * @property {readonly import('./trace.js').TraceRecord[]} [traces] `finishTrace` per seed, in seed order; stored as
+ *   `traces` when given
  */
 
 /**
@@ -66,9 +68,10 @@ export function seedlessConfig(config) {
  * @param {BuildReportInput} input the run's results
  * @returns {Record<string, any>} the report
  */
-export function buildReport({ policy, fitnessName, config, ticks, seeds, sha, perSeed }) {
+export function buildReport({ policy, fitnessName, config, ticks, seeds, sha, perSeed, traces }) {
     const rest = seedlessConfig(config);
     return {
+        ...(traces === undefined ? {} : { traces: [...traces] }),
         version: REPORT_VERSION,
         policy,
         fitnessName,
@@ -150,4 +153,27 @@ export function validateReport(report) {
     for (const [name, metric] of Object.entries(report.metrics)) {
         checkMetric(/** @type {any} */ (metric), `metrics.${name}`, report.seeds.length);
     }
+    if (report.traces !== undefined) {
+        checkTraces(report.traces, report.seeds.length);
+    }
+}
+
+const TRACE_ARRAYS = ['pop', 'mate', 'split', 'spec', 'deaths'];
+
+/**
+ * @param {unknown} traces the report's optional `traces`
+ * @param {number} count the seed count
+ * @returns {void}
+ */
+function checkTraces(traces, count) {
+    need(Array.isArray(traces) && traces.length === count, 'traces', `an array of ${count}`);
+    /** @type {Record<string, any>[]} */ (traces).forEach((trace, i) => {
+        need(isObject(trace), `traces[${i}]`, 'an object');
+        need(Number.isInteger(trace.interval) && trace.interval > 0, `traces[${i}].interval`, 'a positive integer');
+        need(Number.isInteger(trace.lineages), `traces[${i}].lineages`, 'an integer');
+        for (const key of TRACE_ARRAYS) {
+            const ok = Array.isArray(trace[key]) && trace[key].every((/** @type {unknown} */ v) => Number.isFinite(v));
+            need(ok, `traces[${i}].${key}`, 'an array of finite numbers');
+        }
+    });
 }

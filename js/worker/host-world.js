@@ -3,11 +3,13 @@
 
 import { feedPolicy } from '../evo/feed-policy.js';
 import { createObserver, observerPhases } from '../evo/observer.js';
+import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
 import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
 import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG } from '../sim/snapshot.js';
+import { hasTerrain, obstacleSlots, terrainRockCount } from '../sim/terrain.js';
 import { step } from '../sim/step.js';
 import {
     collectEffects,
@@ -102,6 +104,22 @@ export function fieldBytes(run) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the config
+ * @returns {Record<string, any>} the static terrain: the layout, the cold margin, the wall's x and the obstacle slots
+ *   that hold its rocks (they are drawn from the snapshot's obstacles)
+ */
+function terrainInfo(config) {
+    const on = hasTerrain(config);
+    return {
+        layout: config.terrainLayout,
+        coldMarginWidth: on ? config.coldMarginWidth : 0,
+        wallX: on ? config.worldWidth / 2 : 0,
+        rockFirst: config.obstacleCount,
+        rockCount: terrainRockCount(config),
+    };
+}
+
+/**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
  * @returns {Record<string, any>} `ready.info`
@@ -113,12 +131,14 @@ export function worldInfo({ config, world }) {
         worldHeight: config.worldHeight,
         maxAgents: config.maxAgents,
         maxFood: config.maxFood,
-        obstacleCount: config.obstacleCount,
+        obstacleCount: obstacleSlots(config),
         maxClouds: config.maxClouds,
         maxVelocity: config.maxVelocity,
         maxEnergy: config.maxEnergy,
         maxAgeTicks: config.maxAgeTicks,
-        seasonLength: config.seasonLength,
+        seasonLength: yearTicks(config) / SEASONS_PER_YEAR,
+        sexesEnabled: config.sexesEnabled,
+        traitsEnabled: config.traitsEnabled,
         seasonNames: [...SEASON_NAMES],
         ticksPerSecond: BASE_TICKS_PER_SECOND,
         rayCount: config.rayCount,
@@ -144,6 +164,7 @@ export function worldInfo({ config, world }) {
             y: world.patchY[i],
             radius: config.foodPatchRadius,
         })),
+        terrain: terrainInfo(config),
         specs: Object.entries(config.specialisations).map(([name, s]) => ({
             index: s.index,
             name,

@@ -8,12 +8,12 @@ describe('scripted parts', () => {
         expect(turnTowards(-1, 16)).toBe(0);
     });
 
-    it('write zeroes the row then sets thrust and turn; setOutput changes one output only', () => {
+    it('write zeroes the row then sets thrust, turn and SPLIT (the memory outputs stay 0); setOutput changes one output only', () => {
         const world = { outputs: new Float32Array(OUTPUT_COUNT * 2).fill(0.9) };
         write(world, 1, 0.5, -1);
         setOutput(world, 1, OUTPUT_INDEX.BITE, 1);
         expect(Array.from(world.outputs.subarray(0, OUTPUT_COUNT)).every((v) => Math.fround(0.9) === v)).toBe(true);
-        expect(Array.from(world.outputs.subarray(OUTPUT_COUNT))).toEqual([0.5, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
+        expect(Array.from(world.outputs.subarray(OUTPUT_COUNT))).toEqual([0.5, -1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
     });
 
     it('eachAlive runs the writer for alive slots only', () => {

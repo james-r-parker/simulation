@@ -21,7 +21,7 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 100, // the floor; world-balance lowers it to 40 at the Phase 4 switch-on (T41)
+    minAgents: 40, // the floor; 40 from the Phase 4 switch-on (world-balance T41), 100 before it
     immigrationInterval: 600, // new
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
@@ -34,7 +34,7 @@ export const DEFAULTS = deepFreeze({
     foodRadius: 20, // FOOD_SIZE_NORMAL
     highFoodRadius: 30, // FOOD_SIZE_HIGH
     foodMaxAge: 10000, // FOOD_MAX_AGE_BASE
-    obstacleCount: 25, // OBSTACLE_COUNT
+    obstacleCount: 0, // OBSTACLE_COUNT (25 before the T41 switch-on, which turns obstacles off with the basins)
     obstacleMinRadius: 40, // OBSTACLE_MIN_RADIUS
     obstacleMaxRadius: 120, // OBSTACLE_MAX_RADIUS
     obstacleMaxSpeed: 0.3, // OBSTACLE_MAX_SPEED
@@ -60,14 +60,20 @@ export const DEFAULTS = deepFreeze({
     biteEnergy: 5, // BITE_SIZE
     huntSizeRatio: 1.01, // tuned, E20 and jaws (legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
+    mateDistanceMax: 1.0, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41, 1.0 from T78)
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
-    mateRange: 100, // new: the largest edge-to-edge gap between two mates
+    mateRange: 200, // new: the largest edge-to-edge gap between two mates (100 before T78)
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
-    childEnergyMin: 200, // new: the smallest gift a mating birth may make
+    childEnergyMin: 100, // new: the smallest gift a mating birth may make (200 before T78)
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
+    sexesEnabled: true, // new: two sexes, female choice of the strongest male, asexual splitting for every sex (world-balance T37, T69)
+    birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
+    maxBirthsPerWindow: 5, // new: births (mating or splitting) a mother may have per span; 0 is off, 5 from T78 (3 from T41)
+    capBirthsEnabled: true, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
+    splitCapMargin: 50, // new: slots below maxAgents kept for pregnancies when capBirthsEnabled is on
     maxAgeTicks: 36000, // new
-    reproductionCooldown: 300, // REPRODUCTION_COOLDOWN_FRAMES
+    reproductionCooldown: 150, // REPRODUCTION_COOLDOWN_FRAMES (300 before T78)
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
     seasonLength: 3600, // SEASON_LENGTH
@@ -85,7 +91,7 @@ export const DEFAULTS = deepFreeze({
     pheromoneDiffusion: 0.05, // new
     pheromoneDeposit: 1, // new
     pheromoneMax: 5, // new
-    hashCellSize: 128, // new
+    hashCellSize: 140, // new
     maxContacts: 2000, // new
     eventCapacity: 4096, // new
     specialisations: {
@@ -112,7 +118,7 @@ export const DEFAULTS = deepFreeze({
             cooldownMultiplier: 1,
             biteMultiplier: 4,
             turnMultiplier: 0.7,
-            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
+            plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
         },
@@ -172,15 +178,21 @@ export const DEFAULTS = deepFreeze({
     temperatureStart: 50, // TEMPERATURE_START
     temperatureGainMove: 0.01, // TEMPERATURE_GAIN_MOVE (tuned, E17)
     temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
-    satiationShare: 0, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49)
-    digestTicks: 0, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
-    handlingTicks: 0, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
-    specMutationRate: 0, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
+    satiationShare: 0.95, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49, on from T41)
+    digestTicks: 10, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
+    handlingTicks: 20, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
+    specMutationRate: 0.002, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
-    carcassesEnabled: false, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
+    carcassesEnabled: true, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
+    terrainLayout: 'basins', // new: 'open' or 'basins' (a wall with gaps, refuges and a cold margin); open is off (T52)
+    wallGaps: 3, // new: gaps in the wall, basins only (T52)
+    wallGapWidth: 300, // new: width of each wall gap in px (T52)
+    refugeCount: 4, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52)
+    refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
+    coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
     temperaturePassiveLossFactor: 2, // TEMPERATURE_PASSIVE_LOSS_FACTOR (tuned, E17)
@@ -209,14 +221,22 @@ export const DEFAULTS = deepFreeze({
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
     floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
-    foodPatchCount: 0, // new: permanent food patches; 0 is off
+    foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
-    traitsEnabled: false, // new: evolvable size, vision and child share (world-balance T33)
+    foodAreaCapacity: true, // new: food regrows per world area through the patches, not toward a per-agent target
+    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 when foodAreaCapacity is on
+    erasEnabled: true, // new: long seasons, winter and drought on patch regrowth, invasion pulses (world-balance T53)
+    eraSeasonTicks: 36000, // new: ticks per season when eras are on (a year is 4 x this)
+    winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
+    droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
+    invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none
+    invasionSize: 12, // new: immigrants in a pulse
+    traitsEnabled: true, // new: evolvable size, vision and child share (world-balance T33)
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
-    hebbianRate: 0, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32)
-    leakEnabled: false, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
+    hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
+    leakEnabled: true, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
 });

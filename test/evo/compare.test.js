@@ -90,13 +90,27 @@ describe('bootstrapInterval', () => {
     });
 });
 
+/** Metrics whose eval:power false-positive rate exceeded 10% at 16 seeds on E29 (world-balance T41, T42, T70). */
+const WATCH_MOVED_BY_T41 = [
+    'eval.alarm_precision',
+    'eval.deliberate_food_share',
+    'eval.diversity',
+    'eval.evasion_skill',
+    'eval.hunt_call_answer',
+    'eval.pursuit_bite_share',
+    'eval.smoke_precision',
+];
+
 describe('metricDirection', () => {
     it('follows the metrics table', () => {
-        expect(metricDirection('eval.diversity')).toBe('higher');
+        expect(metricDirection('eval.births_per_1k')).toBe('higher');
         expect(metricDirection('eval.floor_episodes')).toBe('lower');
         expect(metricDirection('eval.population_mean')).toBe('watch');
         expect(metricDirection('eval.born_share')).toBe('watch');
         expect(metricDirection('eval.mating_share')).toBe('watch');
+        for (const metric of WATCH_MOVED_BY_T41) {
+            expect(metricDirection(metric)).toBe('watch');
+        }
         expect(metricDirection('eval.p90_fitness.forager')).toBe('higher');
         expect(metricDirection('eval.mean_fitness.all')).toBe('higher');
         expect(metricDirection('bench.step_ms@500')).toBe('lower');
@@ -108,7 +122,7 @@ describe('metricDirection', () => {
 
 describe('compareReports verdicts', () => {
     const metrics = {
-        'eval.diversity': BASE,
+        'eval.births_per_1k': BASE,
         'browser.frame_p95_ms': BASE,
         'eval.population_mean': BASE,
         'bench.step_ms@500': BASE,
@@ -130,7 +144,7 @@ describe('compareReports verdicts', () => {
         );
         expect(verdicts).toEqual({
             'bench.step_ms@500': 'worse',
-            'eval.diversity': 'better',
+            'eval.births_per_1k': 'better',
             'browser.frame_p95_ms': 'worse',
             'eval.population_mean': '-',
         });
@@ -138,18 +152,21 @@ describe('compareReports verdicts', () => {
         const back = Object.fromEntries(
             compareReports(report(metrics), report(down)).rows.map((r) => [r.metric, r.verdict]),
         );
-        expect(back['eval.diversity']).toBe('worse');
+        expect(back['eval.births_per_1k']).toBe('worse');
         expect(back['browser.frame_p95_ms']).toBe('better');
         expect(back['bench.step_ms@500']).toBe('better');
     });
 
     it('gives no-difference for a tiny shift whose interval excludes 0, and a verdict past 5%', () => {
-        const tiny = { 'eval.diversity': shift(BASE, 0.3) };
-        const [small] = compareReports(report({ 'eval.diversity': BASE }), report(tiny)).rows;
+        const tiny = { 'eval.births_per_1k': shift(BASE, 0.3) };
+        const [small] = compareReports(report({ 'eval.births_per_1k': BASE }), report(tiny)).rows;
         expect(small.low).toBeGreaterThan(0);
         expect(small.verdict).toBe('no-difference');
         expect(small.effect).toBeCloseTo(0.35 / 11.1875, 2);
-        const big = compareReports(report({ 'eval.diversity': BASE }), report({ 'eval.diversity': shift(BASE, 0.7) }));
+        const big = compareReports(
+            report({ 'eval.births_per_1k': BASE }),
+            report({ 'eval.births_per_1k': shift(BASE, 0.7) }),
+        );
         expect(big.rows[0].effect).toBeGreaterThan(0.05);
         expect(big.rows[0].verdict).toBe('better');
         expect(big.minEffect).toBe(MIN_EFFECT);
@@ -159,28 +176,34 @@ describe('compareReports verdicts', () => {
     it('uses |after mean| when the before mean is 0, and no-difference when both are 0', () => {
         const zeros = BASE.map(() => 0);
         const alt = BASE.map((_, i) => 1 + (i % 2) * 0.1);
-        const [grown] = compareReports(report({ 'eval.diversity': zeros }), report({ 'eval.diversity': alt })).rows;
+        const [grown] = compareReports(
+            report({ 'eval.births_per_1k': zeros }),
+            report({ 'eval.births_per_1k': alt }),
+        ).rows;
         expect(grown.effect).toBeCloseTo(1, 12);
         expect(grown.verdict).toBe('better');
-        const [flat] = compareReports(report({ 'eval.diversity': zeros }), report({ 'eval.diversity': zeros })).rows;
+        const [flat] = compareReports(
+            report({ 'eval.births_per_1k': zeros }),
+            report({ 'eval.births_per_1k': zeros }),
+        ).rows;
         expect(flat.effect).toBeNull();
         expect(flat.verdict).toBe('no-difference');
     });
 
     it('minEffect overrides the threshold', () => {
-        const before = report({ 'eval.diversity': BASE });
-        const after = report({ 'eval.diversity': shift(BASE, 0.3) });
+        const before = report({ 'eval.births_per_1k': BASE });
+        const after = report({ 'eval.births_per_1k': shift(BASE, 0.3) });
         expect(compareReports(before, after, { minEffect: 0.01 }).rows[0].verdict).toBe('better');
         expect(compareReports(before, after, { minEffect: 0.5 }).rows[0].verdict).toBe('no-difference');
         expect(compareReports(before, after, { minEffect: 0 }).rows[0].verdict).toBe('better');
     });
 
     it('is reproducible and independent of metric order', () => {
-        const after = report({ a: shift(BASE, 0.3), 'eval.diversity': shift(BASE, 0.3) });
-        const swapped = report({ 'eval.diversity': shift(BASE, 0.3), a: shift(BASE, 0.3) });
-        const first = compareReports(report({ a: BASE, 'eval.diversity': BASE }), after);
-        expect(compareReports(report({ a: BASE, 'eval.diversity': BASE }), after)).toEqual(first);
-        expect(compareReports(report({ 'eval.diversity': BASE, a: BASE }), swapped)).toEqual(first);
+        const after = report({ a: shift(BASE, 0.3), 'eval.births_per_1k': shift(BASE, 0.3) });
+        const swapped = report({ 'eval.births_per_1k': shift(BASE, 0.3), a: shift(BASE, 0.3) });
+        const first = compareReports(report({ a: BASE, 'eval.births_per_1k': BASE }), after);
+        expect(compareReports(report({ a: BASE, 'eval.births_per_1k': BASE }), after)).toEqual(first);
+        expect(compareReports(report({ 'eval.births_per_1k': BASE, a: BASE }), swapped)).toEqual(first);
     });
 
     it('gives - for null values, unknown metrics (with a note) and differing fitnessName', () => {
@@ -188,14 +211,14 @@ describe('compareReports verdicts', () => {
             'eval.qd_score': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, null],
             mystery: BASE,
             'eval.p90_fitness.all': BASE,
-            'eval.diversity': BASE,
+            'eval.births_per_1k': BASE,
         });
         const after = report(
             {
                 'eval.qd_score': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
                 mystery: shift(BASE, 5),
                 'eval.p90_fitness.all': shift(BASE, 5),
-                'eval.diversity': shift(BASE, 5),
+                'eval.births_per_1k': shift(BASE, 5),
             },
             { fitnessName: 'other' },
         );
@@ -206,17 +229,17 @@ describe('compareReports verdicts', () => {
         expect(rows.mystery.note).toBe('unknown metric');
         expect(rows['eval.p90_fitness.all'].verdict).toBe('-');
         expect(rows['eval.p90_fitness.all'].note).toMatch(/fitnessName/);
-        expect(rows['eval.diversity'].verdict).toBe('better');
+        expect(rows['eval.births_per_1k'].verdict).toBe('better');
     });
 
     it('gives a 16-seed report no verdict on a metric that needs 32 seeds, and the note `needs 32 seeds`', () => {
-        const before = report({ 'eval.floor_episodes': BASE, 'eval.diversity': BASE });
-        const after = report({ 'eval.floor_episodes': shift(BASE, -5), 'eval.diversity': shift(BASE, 5) });
+        const before = report({ 'eval.floor_episodes': BASE, 'eval.births_per_1k': BASE });
+        const after = report({ 'eval.floor_episodes': shift(BASE, -5), 'eval.births_per_1k': shift(BASE, 5) });
         const rows = Object.fromEntries(compareReports(before, after).rows.map((r) => [r.metric, r]));
         expect(rows['eval.floor_episodes']).toMatchObject({ verdict: '-', note: 'needs 32 seeds', minSeeds: 32 });
         expect(rows['eval.floor_episodes'].low).toBeNull();
-        expect(rows['eval.diversity']).toMatchObject({ verdict: 'better', minSeeds: 16 });
-        expect(rows['eval.diversity'].note).toBeUndefined();
+        expect(rows['eval.births_per_1k']).toMatchObject({ verdict: 'better', minSeeds: 16 });
+        expect(rows['eval.births_per_1k'].note).toBeUndefined();
     });
 
     it('gives a verdict on a 32-seed metric once the reports carry 32 seeds', () => {
@@ -250,7 +273,7 @@ describe('compareReports refusals', () => {
         }
         return undefined;
     }
-    const m = { 'eval.diversity': BASE };
+    const m = { 'eval.births_per_1k': BASE };
 
     it('refuses different seeds, ticks, configs and fewer than 16 seeds', () => {
         expect(refusedField(report(m), report(m, { seeds: [...SEEDS.slice(0, 15), 17] }))).toBe('seeds');

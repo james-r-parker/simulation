@@ -161,3 +161,6 @@ coverage/
 
 # Stryker sandbox (mutation testing)
 .stryker-tmp/
+
+# Function microbenchmark results (scripts/bench-micro.mjs)
+.bench-micro/

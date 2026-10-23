@@ -450,3 +450,122 @@ reverted. Instead (user, 2026-10-21) `scripts/check.sh` runs the test gate in tw
 except `STATISTICAL_TESTS` in `vitest.config.js` (`deliberate-controllers`, `survivable-world` and `anti-exploit`
 slow tests), then those three without coverage. If a branch in a hot function reads as uncovered with negative
 counts in `coverage-final.json`, suspect the same wrap before adding tests.
+
+### 2026-10-21 - Vitest 5 bench mode is a test-context API
+
+Vitest 5.0.3 has no `bench` export to call inside `describe`: a benchmark is `bench(name, options, fn)` taken from the
+test context (`test('x', async ({ bench }) => { await bench('name', fn).run() })`) in a `*.bench.js` file that
+`vitest bench --run` runs (`benchmark.include` in `vitest.config.js`). There is no `--outputJson`; `writeResult` in the
+bench options writes `{ latency, throughput, period, totalTime }` (each with `mean` and `rme`) to a path inside the
+project root, which `scripts/bench-micro.mjs` reads back. The import of a bench file's modules is most of its run time
+(about 30 s for the eight files; the benches themselves take about 20 s).
+
+### 2026-10-21 - A microbench win can be a loss in the full step
+
+`hebbianStep` with a ternary clamp and an unrolled loop was 37.5% faster in `bench:micro` and 7% to 14.5% slower on the brain phase of the full step with every feature on (old and new trees benched at the same time on separate cores, 5 runs). The micro state repeats one call on one world, so branches and caches behave differently from a living world. Confirm a microbench gain with `bench.phase_ms.*@500defaults` before keeping it. Benching old and new at the same time on separate cores cancels host noise that swung sequential runs by 30%.
+
+### 2026-10-21 - An object built by many keyed stores is in dictionary mode, and slow in every hot loop
+
+`allocateWorld` (`js/sim/world.js`) added about 110 fields with `world[name] = ...` inside `allocRows`, and
+`createIntentState` added 50 slot arrays the same way; V8 moves an object to dictionary ("slow") properties once keyed
+stores pass a small limit, so every `world.x[slot]` in a hot loop was a hash lookup, field loads could not be folded, and
+the cost grew with the number of distinct fields a loop touched. Check with `node --allow-natives-syntax -e` and
+`%HasFastProperties(obj)`. Copying with a spread (`return { ...world }`) gives a fast object (`Object.assign({}, o)` and
+`Object.fromEntries` do too; the prototype trick and a plain return do not). Fixed, the bench step at 500 agents fell
+from 3.9 to 2.45 ms (frozen) and from 6.7 to 3.4 ms (all features on); the "all-on physics tripling" was this plus 76 more
+`obstacleBounce` calls per agent from the basins rocks. `test/sim/world-shape.test.js` fails if the world or the intent
+state falls back. Any new object that is filled by a loop of keyed stores and then read in a per-tick loop needs the same
+copy; a one-off check is the `fast4`-style walk: from the world, observer and policy, report objects of more than 8 keys
+whose `%HasFastProperties` is false (none were left after the fix).
+
+### 2026-10-21 - Observer cost scales with alarm calls, not with agents
+
+About 4.7 alarm calls land per tick in the frozen bench world (100 hunters among 500 agents, 3.8 with every feature on).
+The follow-up used to do O(agents) work in each call (refill band, genome and speed; a hunters-by-agents distance scan
+once per tick), so its cost depended on how often evolved agents call. It now fills one snapshot per tick that all the
+tick's calls share, and a call adds only its role row. When a future observer feature does per-event work over every
+slot, share what does not depend on the event across the tick's events first. A sorted-x scan seeded with each agent's
+nearest hunter of the last call is exact (`dx * dx <= dx * dx + dy * dy` holds in floating point) and cheaper than the
+all-pairs scan (the combat part 0.091 to 0.069 ms per tick); a uniform grid of the hunters was no faster than all-pairs in a 14400 x 8100 world
+(hunters cluster, so rings of empty cells are searched), and was dropped.
+
+### 2026-10-22 - Static rocks are obstacle slots, and `obstacleCount` counts only the wandering ones
+
+With `terrainLayout` `basins` the wall and the refuge rings are obstacles that never move, stored after the wandering
+ones (`obstacleSlots(config)` = `obstacleCount` + `terrainRockCount(config)`, 101 slots at the defaults and
+`obstacleCount` 0). Code that counts every obstacle must loop to `obsX.length` or `obstacleSlots` (collisions, ray
+gathering, placement, the snapshot and `worldInfo.obstacleCount`); code that moves them loops to `config.obstacleCount`
+(`moveObstacles`), which is what keeps the rocks still. `validateConfig` rejects `basins` with `obstacleCount` above 0, so
+the two never mix in one world. A new loop over `config.obstacleCount` that should see the rocks is a bug that only shows
+with terrain on.
+
+### 2026-10-22 - Carcasses are food items: they fill `maxFood` and the food target
+
+`leaveCarcass` writes the meat into the lowest free food slot, so a carcass raises `foodCount` like any item. Under the
+population rule a death-heavy stretch therefore lowers the plant spawn (`target - food` shrinks and `maxFood - food` caps
+the count), and when the pool is full `leaveCarcass` leaves no carcass and draws nothing. The area rule
+(`foodAreaCapacity`) has no population term, but `spawnFood` still stops at `maxFood - foodCount`. Read `foodKind` when
+counting plant food; `foodCount` and the snapshot's food count include meat.
+
+### 2026-10-22 - Eras stretch every season rule, and leave `seasonLength` unused
+
+`seasonAt` takes the year from `yearTicks(config)`, which is `4 x eraSeasonTicks` with `erasEnabled` and `seasonLength`
+otherwise. The whole season table moves with it: `foodScarcity`, `energyDrain`, `reproductionBonus` and
+`temperatureModifier` each hold for 36000 ticks, and the body inputs for the season's sine and cosine turn 10 times
+slower. A winter is `energyDrain` 1.8 and `foodScarcity` 0.4 for ten minutes at x1, not only a slower patch regrowth, so
+tuning that assumed the 3600-tick season (`seasonLength`) does not carry over. The UI calendar reads
+`worldInfo.seasonLength`, which already holds `eraSeasonTicks` when eras are on.
+
+### 2026-10-22 - The `SPLIT` output only matters with sexes on, so no brain was ever selected on it
+
+`readyToSplit` returns true for any mature, rested agent above `splitMinEnergy` when `sexesEnabled` is false and never reads
+`SPLIT`; with sexes on it needs a female with `SPLIT` above 0.5. Archive elites and floor immigrants were scored with the
+legacy rule, so only 1% to 8% of agents above 900 energy output `SPLIT` above 0.5 when sexes are switched on, and splitting (84%
+of the defaults' mating and split births) all but stops. The output is learnt slowly (6 of 100 agents at 200000 ticks, 17 of 100 at
+1000000), not fast enough for a 200000-tick eval. Any new gate on an output that the archive has never seen is a selection
+cliff: measure the share of agents that pass it before switching it on.
+
+### 2026-10-22 - The population-scaled food rule makes a thin population starve faster (an Allee effect)
+
+`populationExpected` targets `max(foodTargetMin, foodTargetPerAgent x population)` items, so the food per area is
+proportional to the population. At `minAgents` 40 the per-agent starvation rate is 0.21 per 1000 agent-ticks against 0.12 at 100,
+and births/1k fall from 0.15 to 0.05, so the floor never lets go. `foodTargetMin` 1200 (the stock at 100 agents) lets a 40-agent
+world take off in 25000 ticks on one seed. The area rule (`foodAreaCapacity`) has no population term and does not show it:
+all features on with `minAgents` 40 reaches `maxAgents` within 20000 to 50000 ticks. Read a floor-bound result against the food
+rule before blaming the feature.
+
+### 2026-10-22 - At `maxAgents` a freed slot goes to a splitter, and 97% of pregnancies are lost
+
+`giveBirth` is tried every tick by every agent above `splitMinEnergy`, so with 320 to 420 of 500 agents rich the event ring
+takes about 350 capacity `BIRTH_BLOCKED` events per tick (3 to 4 million per 10000 ticks). A slot freed by `reap` is taken by
+`splitAll` on the next tick unless a pregnancy happens to fall due that tick (`advancePregnancies` runs first); a pregnancy that
+falls due at the cap is dropped, with the `mateCost` and 480 ticks spent. `eval.mating_share` at the cap is therefore about
+0.01 whatever the mating rules are; a mating target needs a rule for the cap (a waiting pregnancy, or slots held back from
+splits), tested at 0.14 and 0.20 on one seed. Any per-agent per-tick event at the cap multiplies by the population.
+
+### 2026-10-22 - Emulate a rule change by wrapping the `lifecycle` phase, not by editing the sim
+
+`step(world, policy, overrides)` takes replacement `run` functions by phase name. A harness can replace `lifecycle` with the
+same calls (`feed`, `mate`, `applyCosts`, `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `invade`) plus a tweak between
+them, and `world.config` can be swapped for a spread copy around one call (`sexesEnabled: false` around `splitAll` gives
+asexual splitting with sexual mating). With no tweak the run reproduces the unwrapped world's counts exactly, which is the check
+to make first. Run independent arms as separate processes: they are single-threaded and 1000000 ticks at 100 agents takes about 15 minutes.
+
+### 2026-10-22 - JSON has no Infinity, so `mateDistanceMax: Infinity` written to a config file reads back as null
+
+`FEATURES_OFF` holds `mateDistanceMax: Infinity` (mate distance off). `JSON.stringify` writes it as `null`, and a config file
+with `null` fails `validateConfig` ("mateDistanceMax is null; expected a number > 0"). Tests that write a config or a grid to disk
+use 1e9 instead, which is off for any genetic distance. The golden hashes are re-pinned by running `runGolden` and `driveGolden`
+(test/sim/golden-run.js, test/worker/helpers/golden-drive.js) and copying the printed values into test/sim/golden.json and the
+busy effect constants in test/worker/sim-host.slow.test.js; there is no regeneration script.
+
+### 2026-10-22 - Five evals at once with default workers oversubscribe the host
+
+`npm run eval` defaults `--workers` to `os.availableParallelism()` (32 here), so one eval fills the machine. Five started
+together at the defaults pushed the load average to 86 on 32 cores, and every run slowed. Give each concurrent eval a share of
+the cores (`--workers`), or run the arms as one `npm run screen` grid, which shares one worker pool (`--workers <total>`) under
+one `flock` on the CPU lock. A bench taken while another eval runs measures the host, not the sim.
+
+### 2026-10-23 - `FEATURES_ON` spreads `FEATURES_OFF`, so a pinned old value must be restated
+
+`scripts/lib/features-on.mjs` builds `FEATURES_ON` as `{ ...FEATURES_OFF, ... }`. T78 pinned `mateRange`, `reproductionCooldown` and `childEnergyMin` at their old values in `FEATURES_OFF` to keep the frozen bench world, and that inherited into `FEATURES_ON` too, so the tracked `defaults` row would have run the old values. Any key pinned off that is retuned on must also be restated in `FEATURES_ON`. The golden hashes are re-pinned with `runGolden` and `driveGolden` in Node (as T41 did), and `npm run browser:hash` matches the default and busy cases.

@@ -3,7 +3,9 @@
 
 import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { FOOD_KIND } from './carcass.js';
+import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
+import { obstacleSlots } from './terrain.js';
 
 const HEADER_WORDS = 6;
 const AGENT_STRIDE = 12;
@@ -27,6 +29,7 @@ export const SNAPSHOT_FLAG = Object.freeze({
     ALARMING: 1 << 11,
     HUNT_CALLING: 1 << 12,
     PREGNANT: 1 << 13,
+    MALE: 1 << 14,
 });
 
 /**
@@ -38,7 +41,7 @@ function maxWords(config) {
         HEADER_WORDS +
         config.maxAgents * (AGENT_STRIDE + config.rayCount) +
         config.maxFood * FOOD_STRIDE +
-        config.obstacleCount * OBSTACLE_STRIDE +
+        obstacleSlots(config) * OBSTACLE_STRIDE +
         config.maxClouds * CLOUD_STRIDE
     );
 }
@@ -76,7 +79,7 @@ export function createSnapshotViews(buffer) {
  * @returns {number} the agent's `flags` word
  */
 function agentFlags(world, slot) {
-    const { ateTimer, bittenTimer, outputs, alarmTimer, huntTimer, pregnancy } = world;
+    const { ateTimer, bittenTimer, outputs, alarmTimer, huntTimer, pregnancy, sex } = world;
     let flags = (ateTimer[slot] << SNAPSHOT_FLAG.ATE_SHIFT) | (bittenTimer[slot] << SNAPSHOT_FLAG.BITTEN_SHIFT);
     if (
         outputs[slot * world.layout.outputCount + OUTPUT_INDEX.BITE] > 0 &&
@@ -92,6 +95,9 @@ function agentFlags(world, slot) {
     }
     if (pregnancy[slot] > 0) {
         flags |= SNAPSHOT_FLAG.PREGNANT;
+    }
+    if (sex[slot] === SEX.MALE) {
+        flags |= SNAPSHOT_FLAG.MALE;
     }
     return flags;
 }
@@ -202,7 +208,8 @@ function writeRays(world, f32, start) {
  */
 export function writeSnapshot(world, views, withRays = false) {
     const { f32, u32 } = views;
-    const { obstacleCount, rayCount } = world.config;
+    const { rayCount } = world.config;
+    const obstacleCount = obstacleSlots(world.config);
     const need = maxWords(world.config) * WORD_BYTES;
     if (f32.byteLength < need) {
         throw new Error(`writeSnapshot: buffer holds ${f32.byteLength} bytes, the config needs ${need}`);

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { playPredatorWorld, predatorPolicy, predatorWorld, runPredatorWorld } from './helpers/predator-world.js';
+import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const TICKS = 3000;
 const SEEDS = [1, 2, 3, 4, 5, 6];
 
 describe('evals/predator-world.json', () => {
     it('is the micro-world with a larger starting energy, so a sprinting fleer lives long enough to escape', () => {
-        const config = createConfig({ ...predatorWorld, seed: 1 });
+        const config = createConfig({ ...FEATURES_OFF, ...predatorWorld, seed: 1 });
         expect([config.worldWidth, config.worldHeight, config.initialAgents, config.maxAgents]).toEqual([
             2400, 1600, 40, 80,
         ]);

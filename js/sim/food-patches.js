@@ -2,6 +2,8 @@
 // by the food eaten inside them and regrown logistically. The arrays are empty when `foodPatchCount` is 0.
 
 import { EVENT_TYPE, pushEvent } from './events.js';
+import { patchRegrowFactor } from './eras.js';
+import { basinPatchX, hasTerrain } from './terrain.js';
 import { nextFloat } from './rng.js';
 
 /** The share of `foodPatchCapacity` a patch's stock never falls below, so a patch never dies. */
@@ -20,7 +22,10 @@ export function createPatches(world) {
     const { foodPatchCount, foodPatchRadius, foodPatchCapacity, worldWidth, worldHeight } = world.config;
     const rng = world.rng.food;
     for (let i = 0; i < foodPatchCount; i++) {
-        world.patchX[i] = foodPatchRadius + nextFloat(rng) * (worldWidth - 2 * foodPatchRadius);
+        const unit = nextFloat(rng);
+        world.patchX[i] = hasTerrain(world.config)
+            ? basinPatchX(world.config, i, unit)
+            : foodPatchRadius + unit * (worldWidth - 2 * foodPatchRadius);
         world.patchY[i] = foodPatchRadius + nextFloat(rng) * (worldHeight - 2 * foodPatchRadius);
         world.patchStock[i] = foodPatchCapacity;
     }
@@ -92,7 +97,7 @@ export function regrowPatches(world) {
     const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
     for (let i = 0; i < patchStock.length; i++) {
         const stock = Math.min(foodPatchCapacity, Math.max(floor, patchStock[i]));
-        const grown = stock + foodPatchRegrow * stock * (1 - stock / foodPatchCapacity);
+        const grown = stock + foodPatchRegrow * patchRegrowFactor(world, i) * stock * (1 - stock / foodPatchCapacity);
         patchStock[i] = Math.min(foodPatchCapacity, grown);
     }
 }

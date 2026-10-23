@@ -120,9 +120,19 @@ describe('intentMetrics', () => {
             expect(m[name], name).toBeDefined();
         }
         const lower = ['eval.idle_signals_per_1k', 'eval.undefended_bite_share'];
+        // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70).
+        const watch = [
+            'eval.unseen_bite_share',
+            'eval.deliberate_food_share',
+            'eval.pursuit_bite_share',
+            'eval.evasion_skill',
+            'eval.alarm_precision',
+            'eval.smoke_precision',
+            'eval.hunt_call_answer',
+        ];
         for (const name of NAMES) {
             const expected = lower.includes(name) ? 'lower' : 'higher';
-            expect(metricDirection(name), name).toBe(name === 'eval.unseen_bite_share' ? 'watch' : expected);
+            expect(metricDirection(name), name).toBe(watch.includes(name) ? 'watch' : expected);
         }
     });
 });

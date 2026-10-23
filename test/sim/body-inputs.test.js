@@ -181,3 +181,15 @@ describe('writeBodyInputs', () => {
         expect(body(w, slot)[6]).toBe(0);
     });
 });
+
+describe('sex input', () => {
+    it('is the agent sex: 0 for a female and 1 for a male', () => {
+        const { w, slot } = ready();
+        const at = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.SEX;
+        writeBodyInputs(w, slot);
+        expect(w.inputs[at]).toBe(0);
+        w.sex[slot] = 1;
+        writeBodyInputs(w, slot);
+        expect(w.inputs[at]).toBe(1);
+    });
+});

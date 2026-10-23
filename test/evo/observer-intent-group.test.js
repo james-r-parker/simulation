@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { sampleGroups } from '../../js/evo/observer-intent-group.js';
+import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { FORAGER, PREDATOR, intentArena } from './helpers/intent-world.js';
 import { addBorn } from './helpers/observer-world.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
@@ -57,5 +58,42 @@ describe('sampleGroups', () => {
         sampleGroups(intent, world);
         const { run } = intent;
         expect([run.groupThreatSum, run.groupThreatN, run.groupCalmSum, run.groupCalmN]).toEqual(sums);
+    });
+});
+
+describe('flee samples', () => {
+    /**
+     * One agent on a sample with the given threat, heard alarm and speed (3-4-5 split of the speed).
+     * @param {{prox?: number, loud?: number, speed: number, spec?: number}} f the agent's state
+     * @returns {{intent: any, slot: number}} the intent state and the agent's slot
+     */
+    function sample(f) {
+        const { world, intent } = intentArena({ maxVelocity: 10 });
+        const slot = addBorn(world, { spec: f.spec ?? FORAGER });
+        intent.threatProx[slot] = f.prox ?? 0;
+        world.heard[slot * HEARD_STRIDE] = f.loud ?? 0;
+        world.vx[slot] = f.speed * 0.6;
+        world.vy[slot] = f.speed * 0.8;
+        sampleGroups(intent, world);
+        return { intent, slot };
+    }
+
+    it('counts a threatened sample, and a flee when the speed is above half of maxVelocity', () => {
+        const fast = sample({ prox: 0.5, speed: 5.01 });
+        expect([fast.intent.threatSamples[fast.slot], fast.intent.fleeSamples[fast.slot]]).toEqual([1, 1]);
+        const slow = sample({ prox: 0.9, speed: 5 });
+        expect([slow.intent.threatSamples[slow.slot], slow.intent.fleeSamples[slow.slot]]).toEqual([1, 0]);
+    });
+
+    it('takes a heard alarm above 0.2 as a threat, and a calm agent as no sample', () => {
+        const loud = sample({ loud: 0.21, speed: 9 });
+        expect([loud.intent.threatSamples[loud.slot], loud.intent.fleeSamples[loud.slot]]).toEqual([1, 1]);
+        const quiet = sample({ loud: 0.19, prox: 0.49, speed: 9 });
+        expect([quiet.intent.threatSamples[quiet.slot], quiet.intent.fleeSamples[quiet.slot]]).toEqual([0, 0]);
+    });
+
+    it('skips agents that can hunt', () => {
+        const hunter = sample({ prox: 0.9, speed: 9, spec: PREDATOR });
+        expect(hunter.intent.threatSamples[hunter.slot]).toBe(0);
     });
 });

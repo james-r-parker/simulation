@@ -1,9 +1,11 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
+import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
+import { obstacleSlots } from './terrain.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
@@ -71,7 +73,7 @@ function singles(Type, names) {
  */
 function agentSpecs(layout) {
     return [
-        ...singles(Uint8Array, ['alive', 'spec', 'ateTimer', 'bittenTimer', 'lastLoss']),
+        ...singles(Uint8Array, ['alive', 'spec', 'sex', 'ateTimer', 'bittenTimer', 'lastLoss']),
         ...singles(Float32Array, ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'temperature']),
         ...singles(Float64Array, ['energy', 'foodEnergy', 'biteEnergy']),
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
@@ -97,7 +99,7 @@ function agentSpecs(layout) {
  */
 function allocAgentArrays(world, layout) {
     const n = world.config.maxAgents;
-    world.agentRows = allocRows(world, agentSpecs(layout), n);
+    world.agentRows = allocRows(world, [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow)], n);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
     // The last hidden row is the scratch row, which is not an agent row.
     world.agentRows.push({ array: world.hidden.subarray(0, n * layout.hidden), stride: layout.hidden });
@@ -108,7 +110,8 @@ function allocAgentArrays(world, layout) {
  * @returns {void}
  */
 function allocFoodAndObstacles(world) {
-    const { maxFood, obstacleCount } = world.config;
+    const { maxFood } = world.config;
+    const obstacleCount = obstacleSlots(world.config);
     world.foodRows = allocRows(
         world,
         [
@@ -211,6 +214,7 @@ export function allocateWorld(config) {
         contacts: new Int32Array(2 * config.maxContacts),
         contactCount: 0,
         season: new Float64Array(2),
+        era: new Int32Array([-1]),
         birthOptions: { cause: 0, rng: null },
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
@@ -226,7 +230,7 @@ export function allocateWorld(config) {
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
-            LOCAL_STRIDE * (config.maxAgents + config.maxFood + config.obstacleCount + config.maxClouds),
+            LOCAL_STRIDE * (config.maxAgents + config.maxFood + obstacleSlots(config) + config.maxClouds),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
@@ -237,7 +241,7 @@ export function allocateWorld(config) {
     allocClouds(world);
     allocPatches(world);
     world.events = createEventRing(config.eventCapacity);
-    return world;
+    return { ...world };
 }
 
 /**
