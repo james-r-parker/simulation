@@ -1,0 +1,43 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": { "predatorRescueMin": 3, "predatorRescueInterval": 450 },
+  "arms": {
+    "defaults": { "predatorRescueMin": 0 },
+    "base": {},
+    "bite-6": { "specialisations": { "predator": { "biteMultiplier": 6 } } },
+    "bite-8": { "specialisations": { "predator": { "biteMultiplier": 8 } } },
+    "carcassShare-0.75": { "carcassShare": 0.75 },
+    "carcassTicks-600": { "carcassTicks": 600 },
+    "move-0.7": { "specialisations": { "predator": { "moveCostMultiplier": 0.7 } } },
+    "kill-150": { "predatorKillEnergy": 150 },
+    "kill-300": { "predatorKillEnergy": 300 },
+    "passive-0.6": { "specialisations": { "predator": { "passiveLossMultiplier": 0.6 } } },
+    "split-0.6": { "specialisations": { "predator": { "splitMinEnergyMultiplier": 0.6 } } },
+    "kill300-passive0.6-split0.6": {
+      "predatorKillEnergy": 300,
+      "specialisations": { "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6 } }
+    },
+    "kill150-passive0.6-split0.6": {
+      "predatorKillEnergy": 150,
+      "specialisations": { "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6 } }
+    },
+    "kill300-passive0.6-split0.6-bite6": {
+      "predatorKillEnergy": 300,
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 6 }
+      }
+    },
+    "kill300-passive0.6-split0.6-bite6-carcass": {
+      "predatorKillEnergy": 300,
+      "carcassShare": 0.75,
+      "carcassTicks": 600,
+      "specialisations": {
+        "predator": { "passiveLossMultiplier": 0.6, "splitMinEnergyMultiplier": 0.6, "biteMultiplier": 6 }
+      }
+    }
+  }
+}
