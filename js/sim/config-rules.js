@@ -50,6 +50,7 @@ export const FEATURE_RULES = {
     floorRescueAtZero: BOOL,
     predatorRescueMin: int(0, 50),
     predatorRescueInterval: int(1, 6000),
+    predatorKillEnergy: num(0, 1000),
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),

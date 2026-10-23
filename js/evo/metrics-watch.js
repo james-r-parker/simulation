@@ -19,7 +19,7 @@ export const MIN_LAG_PAIRS = 5;
  *   without a hunter alive
  */
 export function createWatchPools(config) {
-    return { ...createVisitPools(config), checkpoints: 0, withHunter: 0 };
+    return { ...createVisitPools(config), checkpoints: 0, withHunter: 0, hunterBirths: 0 };
 }
 
 /** The `WINDOW_FIELDS` columns: hunter kills, hunter agent-ticks, escaped responded, escaped episodes. */
@@ -99,7 +99,7 @@ function lagCorr(windows) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three watch metrics, keyed by name
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four watch metrics, keyed by name
  */
 export function watchMetrics(observer) {
     const p = observer.watch;
@@ -113,6 +113,7 @@ export function watchMetrics(observer) {
         'eval.migration_index': migration,
         'eval.predator_presence':
             p.checkpoints === 0 ? none('no checkpoint after burn-in') : ok(p.withHunter / p.checkpoints),
+        'eval.predator_births': ok(p.hunterBirths),
         'eval.pred_prey_lag_corr': lagCorr(observer.windows),
     };
 }

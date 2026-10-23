@@ -102,28 +102,30 @@ Each feature key defaults to its off state, and a feature that is off draws no r
 and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-on sets). A test fails when a
 `FEATURE_RULES` key is missing from `FEATURES_OFF`.
 
-| Key                                                                | Default                        | Rule                                                     | Off state                                            |
-| ------------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------- | ---------------------------------------------------- |
-| `leakEnabled`                                                      | `false`                        | Boolean                                                  | `false`                                              |
-| `hebbianRate`                                                      | `0`                            | `0 .. 1`                                                 | `0`                                                  |
-| `traitsEnabled`, `visionCost`                                      | `false`, `0.5`                 | Boolean; `>= 0`                                          | `traitsEnabled` `false`                              |
-| `sexesEnabled`                                                     | `false`                        | Boolean                                                  | `sexesEnabled` `false`                               |
-| `mateDistanceMax`                                                  | `Infinity`                     | `> 0` or `Infinity`                                      | `Infinity`                                           |
-| `birthWindowTicks`, `maxBirthsPerWindow`                           | `3000`, `0`                    | Integer `>= 1`; integer `0 .. 16`                        | `maxBirthsPerWindow` `0`                             |
-| `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust` | `0`, `0`, `0`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` | `satiationShare`, `digestTicks`, `handlingTicks` `0` |
-| `specMutationRate`, `huntUpkeep`                                   | `0`, `0.002`                   | `0 .. 1`; `>= 0`                                         | `specMutationRate` `0`                               |
-| `floorRescueAtZero`                                                | `false`                        | Boolean                                                  | `false`                                              |
-| `predatorRescueMin`                                                | `0`                            | Integer 0 to 50; 0 is off                                | `0`                                                  |
-| `predatorRescueInterval`                                           | `600`                          | Integer 1 to 6000 ticks                                  | `600`                                                |
-| `carcassesEnabled`, `carcassTicks`, `carcassShare`                 | `false`, `300`, `0.5`          | Boolean; integer `>= 1`; `0 .. 1`                        | `carcassesEnabled` `false`                           |
-| `specialisations.<s>.plantFoodValue`, `.meatFoodValue`             | `1` (meat `0.3`, predator `1`) | `0 .. 1`                                                 | `1` for plants                                       |
-| `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`           | `0`, `400`, `1`                | Integer `0 .. 256`; `> 0`; `> 0`                         | `foodPatchCount` `0`                                 |
-| `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`     | `0.02`, `0.0005`, `0.2`        | `>= 0`; `0 .. 1`; `0 .. 1`                               | with `foodPatchCount` `0`                            |
-| `foodAreaCapacity`, `foodRegrowPerArea`                            | `false`, `0.06`                | Boolean; `>= 0`                                          | `foodAreaCapacity` `false`                           |
-| `terrainLayout`, `wallGaps`, `wallGapWidth`                        | `'open'`, `3`, `300`           | `'open'` or `'basins'`; integer `0 .. 8`; `> 0`          | `'open'`                                             |
-| `refugeCount`, `refugeSizeMax`, `coldMarginWidth`                  | `4`, `30`, `600`               | Integer `0 .. 8`; `> 0`; `>= 0`                          | with `terrainLayout` `'open'`                        |
-| `erasEnabled`, `eraSeasonTicks`, `winterRegrow`                    | `false`, `36000`, `0.2`        | Boolean; integer `>= 1`; `>= 0`                          | `erasEnabled` `false`                                |
-| `droughtChance`, `invasionInterval`, `invasionSize`                | `0.25`, `180000`, `12`         | `0 .. 1`; integer `>= 0`; integer `>= 0`                 | `erasEnabled` `false`; `invasionInterval` `0`        |
+| Key                                                                      | Default                        | Rule                                                     | Off state                                            |
+| ------------------------------------------------------------------------ | ------------------------------ | -------------------------------------------------------- | ---------------------------------------------------- |
+| `leakEnabled`                                                            | `false`                        | Boolean                                                  | `false`                                              |
+| `hebbianRate`                                                            | `0`                            | `0 .. 1`                                                 | `0`                                                  |
+| `traitsEnabled`, `visionCost`                                            | `false`, `0.5`                 | Boolean; `>= 0`                                          | `traitsEnabled` `false`                              |
+| `sexesEnabled`                                                           | `false`                        | Boolean                                                  | `sexesEnabled` `false`                               |
+| `mateDistanceMax`                                                        | `Infinity`                     | `> 0` or `Infinity`                                      | `Infinity`                                           |
+| `birthWindowTicks`, `maxBirthsPerWindow`                                 | `3000`, `0`                    | Integer `>= 1`; integer `0 .. 16`                        | `maxBirthsPerWindow` `0`                             |
+| `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust`       | `0`, `0`, `0`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` | `satiationShare`, `digestTicks`, `handlingTicks` `0` |
+| `specMutationRate`, `huntUpkeep`                                         | `0`, `0.002`                   | `0 .. 1`; `>= 0`                                         | `specMutationRate` `0`                               |
+| `floorRescueAtZero`                                                      | `false`                        | Boolean                                                  | `false`                                              |
+| `predatorRescueMin`                                                      | `0`                            | Integer 0 to 50; 0 is off                                | `0`                                                  |
+| `predatorRescueInterval`                                                 | `600`                          | Integer 1 to 6000 ticks                                  | `600`                                                |
+| `predatorKillEnergy`                                                     | `0`                            | `0 .. 1000`; 0 is off                                    | `0`                                                  |
+| `specialisations.<s>.passiveLossMultiplier`, `.splitMinEnergyMultiplier` | `1`, `1`                       | `> 0 .. 2`; `0.25 .. 2`                                  | `1`, `1`                                             |
+| `carcassesEnabled`, `carcassTicks`, `carcassShare`                       | `false`, `300`, `0.5`          | Boolean; integer `>= 1`; `0 .. 1`                        | `carcassesEnabled` `false`                           |
+| `specialisations.<s>.plantFoodValue`, `.meatFoodValue`                   | `1` (meat `0.3`, predator `1`) | `0 .. 1`                                                 | `1` for plants                                       |
+| `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                 | `0`, `400`, `1`                | Integer `0 .. 256`; `> 0`; `> 0`                         | `foodPatchCount` `0`                                 |
+| `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`           | `0.02`, `0.0005`, `0.2`        | `>= 0`; `0 .. 1`; `0 .. 1`                               | with `foodPatchCount` `0`                            |
+| `foodAreaCapacity`, `foodRegrowPerArea`                                  | `false`, `0.06`                | Boolean; `>= 0`                                          | `foodAreaCapacity` `false`                           |
+| `terrainLayout`, `wallGaps`, `wallGapWidth`                              | `'open'`, `3`, `300`           | `'open'` or `'basins'`; integer `0 .. 8`; `> 0`          | `'open'`                                             |
+| `refugeCount`, `refugeSizeMax`, `coldMarginWidth`                        | `4`, `30`, `600`               | Integer `0 .. 8`; `> 0`; `>= 0`                          | with `terrainLayout` `'open'`                        |
+| `erasEnabled`, `eraSeasonTicks`, `winterRegrow`                          | `false`, `36000`, `0.2`        | Boolean; integer `>= 1`; `>= 0`                          | `erasEnabled` `false`                                |
+| `droughtChance`, `invasionInterval`, `invasionSize`                      | `0.25`, `180000`, `12`         | `0 .. 1`; integer `>= 0`; integer `>= 0`                 | `erasEnabled` `false`; `invasionInterval` `0`        |
 
 `plantFoodValue` and `meatFoodValue` are specialisation fields (`SPECIALISATION_FIELDS`), so every specialisation carries
 both. `minAgents` stays 100 until the switch-on. `rulesHash` covers every key.
@@ -171,9 +173,9 @@ Cross-key rule: with `foodPatchCount` above 0, `2 x foodPatchRadius` is at most 
   `Math.floor(phase x 4)`.
 - `specialisations` is an object with exactly the keys `forager`, `predator`, `reproducer`, `scout`, `defender`. Each
   value has exactly `index` (fixed: 0, 1, 2, 3, 4 in that order), `visionRange` (`> 0`), `canHunt` (boolean),
-  `moveCostMultiplier`, `biteTakenMultiplier`, `cooldownMultiplier`, `biteMultiplier`, `turnMultiplier` and `sprintBoost` (each `> 0`). The defaults are the design
+  `moveCostMultiplier`, `biteTakenMultiplier`, `cooldownMultiplier`, `biteMultiplier`, `turnMultiplier` and `sprintBoost` (each `> 0`), `passiveLossMultiplier` (`> 0` and at most 2) and `splitMinEnergyMultiplier` (`0.25` to `2`). The defaults are the design
   doc's table: scout `moveCostMultiplier` 0.7, defender `biteTakenMultiplier` 0.5, reproducer `cooldownMultiplier`
-  0.5, predator `biteMultiplier` 4, `turnMultiplier` 0.7 and `sprintBoost` 1.6, every other multiplier 1.
+  0.5, predator `biteMultiplier` 4, `turnMultiplier` 0.7 and `sprintBoost` 1.6, every other multiplier 1, and both new multipliers 1 for every specialisation.
 - `config.js` keeps the merge, freezing and hashes; the per-key rules live in `js/sim/config-validate.js`
   (`validateConfig`), so neither file passes 300 lines.
 - Overrides deep-merge objects key by key; an override array replaces the default array whole.
@@ -354,6 +356,13 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
   specialisation (`spec` forces the specialisation, so `policy.initSpec` is skipped), then pushes `PredatorRescue`. The
   genome is whatever `policy.initBrain` gives that specialisation: the predator cell for the map-elites seeder, a random
   one for a policy without cells. It draws only what an ordinary immigrant draws, and nothing at `predatorRescueMin` 0.
+- Predator economy keys (fitness-and-selection T15f). `applyBite` (`feeding.js`) pays `predatorKillEnergy` to the biter,
+  through `addEnergy` with source `ENERGY_SOURCE.KILL` (booked in `ledger[0]`, capped at `maxEnergy`), when the bite takes
+  its victim from above 0 to 0 energy; a victim already at 0 pays nothing. `tickCost` (`energy.js`) multiplies the standing
+  term (`passiveLoss`, the size term and the vision term, before the temperature factor) by the specialisation's
+  `passiveLossMultiplier`, read from the `specParams` entry it already holds. `readyToSplit` (`reproduction.js`) compares
+  energy with `world.splitMinBySpec[spec]`, the table `splitMinEnergy x splitMinEnergyMultiplier` built once in
+  `allocateWorld`, as `biteBySpec` is. At 0 and 1 each is the old arithmetic exactly, so no `worldHash` moves.
 - `ateTimer` and `bittenTimer` reset to 0 when the agent eats or is bitten.
 
 ### Motion and body inputs

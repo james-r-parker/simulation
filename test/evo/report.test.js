@@ -134,6 +134,7 @@ describe('validateReport', () => {
             'lineage_lifespan_p50',
             'migration_index',
             'predator_presence',
+            'predator_births',
             'pred_prey_lag_corr',
         ];
         const seedMetrics = (/** @type {number} */ i) =>

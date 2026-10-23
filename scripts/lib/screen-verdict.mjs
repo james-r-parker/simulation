@@ -30,6 +30,7 @@ export const WATCH_METRICS = [
     'eval.child_survival',
     'eval.lineage_lifespan_p50',
     'eval.predator_presence',
+    'eval.predator_births',
     'eval.migration_index',
 ];
 

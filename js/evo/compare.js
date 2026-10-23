@@ -75,6 +75,7 @@ const DIRECTIONS = {
     'eval.winter_pop_ratio': 'watch',
     'eval.migration_index': 'higher',
     'eval.predator_presence': 'higher',
+    'eval.predator_births': 'higher',
     'eval.pred_prey_lag_corr': 'watch',
     'browser.frame_p95_ms': 'lower',
     'browser.main_long_tasks': 'lower',

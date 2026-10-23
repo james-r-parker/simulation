@@ -108,6 +108,8 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
+            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         },
         predator: {
             index: 1,
@@ -121,6 +123,8 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
+            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         },
         reproducer: {
             index: 2,
@@ -134,6 +138,8 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
+            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         },
         scout: {
             index: 3,
@@ -147,6 +153,8 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
+            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         },
         defender: {
             index: 4,
@@ -160,6 +168,8 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
+            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         },
     },
     checkInvariants: false, // new
@@ -223,6 +233,7 @@ export const DEFAULTS = deepFreeze({
     floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
     predatorRescueMin: 0, // new: every predatorRescueInterval ticks with fewer predators than this alive, one immigrant spawns as a predator; 0 is off (fitness-and-selection T15b)
     predatorRescueInterval: 600, // new: ticks between predator rescue checks
+    predatorKillEnergy: 0, // new: energy the biter gains on a fatal bite; 0 is off (fitness-and-selection T15f)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch

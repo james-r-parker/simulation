@@ -2,6 +2,7 @@
 
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
+import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
 import { terrainProblem } from './terrain.js';
@@ -14,20 +15,6 @@ const MAX_EVENTS_PER_SLOT = 6; // up to 3 call, release or refuse events, 1 deat
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
 const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];
-const SPECIALISATION_KEYS = ['forager', 'predator', 'reproducer', 'scout', 'defender'];
-const SPECIALISATION_FIELDS = [
-    'index',
-    'visionRange',
-    'canHunt',
-    'moveCostMultiplier',
-    'biteTakenMultiplier',
-    'cooldownMultiplier',
-    'biteMultiplier',
-    'turnMultiplier',
-    'plantFoodValue',
-    'meatFoodValue',
-    'sprintBoost',
-];
 
 /** @type {Rule} a finite number of either sign */
 const SIGNED = { type: 'num', min: -Infinity };
@@ -299,13 +286,8 @@ function checkSpecialisations(specialisations) {
         if (entry.index !== order) {
             fail(`${path}.index`, entry.index, `${order} (fixed by key order)`);
         }
-        checkScalar(`${path}.canHunt`, entry.canHunt, BOOL);
-        checkScalar(`${path}.plantFoodValue`, entry.plantFoodValue, num(0, 1));
-        checkScalar(`${path}.meatFoodValue`, entry.meatFoodValue, num(0, 1));
-        const shares = ['index', 'canHunt', 'plantFoodValue', 'meatFoodValue'];
-        const scaled = (/** @type {string} */ f) => !shares.includes(f);
-        for (const field of SPECIALISATION_FIELDS.filter(scaled)) {
-            checkScalar(`${path}.${field}`, entry[field], positive());
+        for (const field of SPECIALISATION_FIELDS.slice(1)) {
+            checkScalar(`${path}.${field}`, entry[field], SPEC_FIELD_RULES[field]);
         }
     });
 }

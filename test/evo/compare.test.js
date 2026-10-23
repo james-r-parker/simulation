@@ -149,6 +149,7 @@ describe('metricDirection', () => {
             }
         }
         expect(metricDirection('eval.predator_presence')).toBe('higher');
+        expect(metricDirection('eval.predator_births')).toBe('higher');
         expect(metricDirection('eval.p90_fitness.forager')).toBe('higher');
         expect(metricDirection('eval.mean_fitness.all')).toBe('higher');
         expect(metricDirection('bench.step_ms@500')).toBe('lower');

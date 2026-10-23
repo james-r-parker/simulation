@@ -217,12 +217,12 @@ export function advancePregnancies(world, policy) {
  *   sex does not matter, so splitting is the same with `sexesEnabled` on or off
  */
 function readyToSplit(world, slot) {
-    const { maturityTicks, splitMinEnergy } = world.config;
+    const { maturityTicks } = world.config;
     return (
         world.ageTicks[slot] >= maturityTicks &&
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
-        world.energy[slot] > splitMinEnergy &&
+        world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
         !birthBudgetSpent(world, slot)
     );
 }

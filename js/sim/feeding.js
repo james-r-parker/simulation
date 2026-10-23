@@ -114,8 +114,12 @@ function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
+    const wasAlive = world.energy[victim] > 0;
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
+    if (wasAlive && world.energy[victim] <= 0 && config.predatorKillEnergy > 0) {
+        addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
+    }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];

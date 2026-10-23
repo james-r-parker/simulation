@@ -182,6 +182,18 @@ function specTable(config, field) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Float64Array} `splitMinEnergy` times each specialisation's `splitMinEnergyMultiplier`, indexed by `index`
+ */
+function splitMinTable(config) {
+    const table = specTable(config, 'splitMinEnergyMultiplier');
+    for (let k = 0; k < table.length; k++) {
+        table[k] *= config.splitMinEnergy;
+    }
+    return table;
+}
+
+/**
  * @param {World} world the world being built
  * @returns {void}
  */
@@ -219,6 +231,7 @@ export function allocateWorld(config) {
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),
+        splitMinBySpec: splitMinTable(config),
         plantFoodBySpec: specTable(config, 'plantFoodValue'),
         meatFoodBySpec: specTable(config, 'meatFoodValue'),
         turnBySpec: specTable(config, 'turnMultiplier'),

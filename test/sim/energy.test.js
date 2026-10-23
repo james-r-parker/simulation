@@ -61,7 +61,7 @@ function aliveEnergy(world) {
 describe('energy codes', () => {
     it('exports the frozen loss-cause and energy-source sets', () => {
         expect(LOSS_CAUSE).toEqual({ NONE: 0, COST: 1, BITE: 2, COLLISION: 3 });
-        expect(ENERGY_SOURCE).toEqual({ FOOD: 0, INITIAL: 1, FLOOR: 2, IMMIGRANT: 3 });
+        expect(ENERGY_SOURCE).toEqual({ FOOD: 0, INITIAL: 1, FLOOR: 2, IMMIGRANT: 3, KILL: 4 });
         expect(Object.isFrozen(LOSS_CAUSE)).toBe(true);
         expect(Object.isFrozen(ENERGY_SOURCE)).toBe(true);
     });
@@ -96,8 +96,8 @@ describe('addEnergy', () => {
         for (const source of Object.values(ENERGY_SOURCE)) {
             addEnergy(world, 0, 1, source);
         }
-        expect(world.ledger[0]).toBe(4);
-        expect(world.energy[0]).toBe(4);
+        expect(world.ledger[0]).toBe(5);
+        expect(world.energy[0]).toBe(5);
     });
 
     it('throws on an unknown source, naming the slot and the value', () => {

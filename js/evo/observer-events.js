@@ -7,6 +7,7 @@ import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metr
 import { ensureRoom } from './growable-log.js';
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
+import { noteHunterBirth } from './watch-births.js';
 
 /** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
 export const BURN_IN_TICKS = 10000;
@@ -171,6 +172,7 @@ function startBirth(observer, d, o) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         observer.birthsAfterBurnIn[d[o + 8]] += 1;
     }
+    noteHunterBirth(observer, d, o);
     const child = isEligibleChild(observer.lineage, d, o);
     if (child) {
         noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
