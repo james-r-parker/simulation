@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     answerHuntCall,
     createHuntCalls,
+    popResolvedHuntCall,
     pushHuntCall,
     resolveHuntCalls,
     sampleHearers,
@@ -43,6 +44,37 @@ describe('hunt-call queue', () => {
         answerHuntCall(calls, 33, 34, 100);
         resolveHuntCalls(calls, 1000, 100);
         expect([calls.resolved, calls.answeredCalls, calls.size]).toEqual([40, 1, 0]);
+    });
+});
+
+describe('popResolvedHuntCall', () => {
+    it('returns -1 until a call is due, then the credit of an answered call and 0 for the others, in order', () => {
+        const calls = createHuntCalls();
+        pushHuntCall(calls, 10, 1, 42);
+        pushHuntCall(calls, 11, 1, 43);
+        pushHuntCall(calls, 12, 1);
+        answerHuntCall(calls, 0, 12, 20);
+        answerHuntCall(calls, 2, 13, 20);
+        expect(popResolvedHuntCall(calls, 29, 20)).toBe(-1);
+        expect(popResolvedHuntCall(calls, 33, 20)).toBe(42);
+        expect(popResolvedHuntCall(calls, 33, 20)).toBe(0);
+        expect(popResolvedHuntCall(calls, 33, 20)).toBe(0);
+        expect(popResolvedHuntCall(calls, 33, 20)).toBe(-1);
+        expect([calls.resolved, calls.answeredCalls]).toEqual([3, 2]);
+    });
+
+    it('keeps the credits through a growth of the ring', () => {
+        const calls = createHuntCalls();
+        for (let i = 0; i < 40; i++) {
+            pushHuntCall(calls, i, 1, 100 + i);
+        }
+        answerHuntCall(calls, 35, 36, 100);
+        const credits = [];
+        for (let c = popResolvedHuntCall(calls, 1000, 100); c >= 0; c = popResolvedHuntCall(calls, 1000, 100)) {
+            credits.push(c);
+        }
+        expect(credits.filter((c) => c > 0)).toEqual([135]);
+        expect(credits).toHaveLength(40);
     });
 });
 

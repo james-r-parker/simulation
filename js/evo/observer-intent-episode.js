@@ -2,6 +2,7 @@
 // was seen before the first bite and whether the agent responded, and classifies the episode once at
 // `episodeFirst + RESPONSE_WINDOW` as unseen, undefended or neither.
 
+import { creditAlarms, matchAlarms } from './observer-intent-alarms.js';
 import { CALM_MIN_TICKS, INTENT_WINDOW, RESPONSE_LIFT, RESPONSE_WINDOW } from './observer-intent-state.js';
 
 /** After a step, `bittenTimer` is 1 exactly when `feed` reset it this tick. */
@@ -10,17 +11,19 @@ export const BITTEN_THIS_TICK = 1;
 /**
  * Opens an episode on a fresh bite; a threat sighting within `INTENT_WINDOW` ticks makes it a seen one.
  * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} world the world
  * @param {number} slot an alive slot
- * @param {number} tick the observed tick
  * @returns {void}
  */
-function openEpisode(intent, slot, tick) {
+function openEpisode(intent, world, slot) {
+    const { tick } = world;
     const seen = tick - intent.lastThreat[slot] <= INTENT_WINDOW;
     intent.episodeOpen[slot] = 1;
     intent.episodeClassified[slot] = 0;
     intent.episodeFirst[slot] = tick;
     intent.threatAtFirst[slot] = seen ? 1 : 0;
     intent.responded[slot] = 0;
+    matchAlarms(intent, world, slot);
 }
 
 /**
@@ -70,7 +73,7 @@ export function trackIntentEpisode(intent, world, slot) {
         if (world.bittenTimer[slot] !== BITTEN_THIS_TICK) {
             return;
         }
-        openEpisode(intent, slot, tick);
+        openEpisode(intent, world, slot);
     }
     if (intent.episodeClassified[slot] === 1) {
         return;
@@ -81,18 +84,22 @@ export function trackIntentEpisode(intent, world, slot) {
 }
 
 /**
- * Ends the open episode of a slot whose bite episode resolved as escaped, crediting `respondedEscape` when it responded.
+ * Ends the open episode of a slot whose bite episode resolved as escaped, crediting `respondedEscape` when it
+ * responded, and the alarm callers noted at its first bite.
  * @param {Record<string, any>} intent the intent state
  * @param {number} slot the slot
+ * @param {Record<string, any>} world the world
  * @returns {void}
  */
-export function noteEscape(intent, slot) {
+export function noteEscape(intent, slot, world) {
     if (intent.episodeOpen[slot] === 0) {
         return;
     }
     if (intent.responded[slot] === 1) {
         intent.respondedEscape[slot] += 1;
         intent.run.escapedResponded += 1;
+        creditAlarms(intent, world, slot);
     }
+    intent.alarmMatches[slot] = 0;
     intent.episodeOpen[slot] = 0;
 }
