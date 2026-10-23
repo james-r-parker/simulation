@@ -15,6 +15,7 @@ export const WINDOW_FIELDS = Object.freeze([
     ['combat', 'huntKills'],
     ['run', 'escapedResponded'],
     ['combat', 'escapedEpisodes'],
+    ['combat', 'hunterAgentTicks'],
 ]);
 
 /**

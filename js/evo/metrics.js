@@ -12,6 +12,7 @@ import { behaviourCoverage } from './metrics-grids.js';
 import { lineageMetrics } from './metrics-lineage.js';
 import { intentMetrics } from './metrics-intent.js';
 import { selectionMetrics } from './metrics-selection.js';
+import { watchMetrics } from './metrics-watch.js';
 import { trendMetrics } from './metrics-trend.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
@@ -131,6 +132,7 @@ export function computeMetrics(observer, _world, options = {}) {
         ...environmentMetrics(observer),
         ...lineageMetrics(observer),
         ...selectionMetrics(observer),
+        ...watchMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

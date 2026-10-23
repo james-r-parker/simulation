@@ -4,11 +4,13 @@
 import { none, per1k, share } from './metrics-stats.js';
 
 /**
- * @param {Record<string, any>} combat the combat counters
- * @returns {import('./metrics-stats.js').MetricResult} eaten deaths by a `canHunt` killer per 1000 hunter agent-ticks
+ * @param {number} huntKills eaten deaths by a `canHunt` killer
+ * @param {number} hunterAgentTicks alive `canHunt` agent-ticks
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.catch_rate`, whole run or one window: kills per 1000
+ *   hunter agent-ticks
  */
-function catchRate(combat) {
-    return combat.hunterAgentTicks > 0 ? per1k(combat.huntKills, combat.hunterAgentTicks) : none('no hunters');
+export function catchShare(huntKills, hunterAgentTicks) {
+    return hunterAgentTicks > 0 ? per1k(huntKills, hunterAgentTicks) : none('no hunters');
 }
 
 /**
@@ -31,7 +33,7 @@ export function combatMetrics(observer) {
     const { combat } = observer;
     const resolved = combat.caughtEpisodes + combat.escapedEpisodes;
     return {
-        'eval.catch_rate': catchRate(combat),
+        'eval.catch_rate': catchShare(combat.huntKills, combat.hunterAgentTicks),
         'eval.escape_rate': share(combat.escapedEpisodes, resolved, 'no resolved bite episode'),
         'eval.pack_kill_share': share(combat.packKills, combat.eatenDeaths, 'no eaten death'),
         'eval.alarm_response': alarmResponse(combat.alarm),
