@@ -843,3 +843,31 @@ Conclusion:
 - **Blobs do not go silent and do not become precise.** `eval.idle_signals_per_1k` never nears zero, and `eval.alarm_precision` stays at 0.000 to 0.001 on every arm (the best, `alarm-10` and `alarm5-hunt5`, 0.0013). `eval.hunt_call_precision` sits at 0.004 to 0.011 (base 0.008); `hunt-10` and `hunt-5` are the only arms that lift it (0.011), a small, 4-seed difference. The prediction of silence was also wrong: with a cost the call still goes out, because the genome has no gradient against it at these sizes (the cost is 0.5 to 20 energy against a call that costs nothing in lost fitness when nothing happens).
 - **High `alarmCost` is harmful.** `alarm-5` to `alarm-20` cut population to 247, 268 and 134 and mating to 0.14, 0.14 and 0.09, with fed life -35% to -59%: the cost is paid by every blob that calls, spam or not. `alarm-2` costs mating (0.16) for -2.2 idle. `huntCallCost` is gentler: `hunt-10` keeps the population (388), the mating row (0.21, the only cost arm to pass 0.2 besides `hunt-5` at 0.20), catch rate (0.079) and births (55); `hunt-20` is already worse (mating 0.16). `smokeCost` 10 or 40 does little. The combinations are the worst on population (97 to 104 for the two heavy arms). `alarm5-hunt5` has 1533 predator births per seed and catch 0.24: the call costs kill off many blobs, which the rescue floor replaces with predators (a churn, not a better world).
 - **Proposed call costs for T15d: `huntCallCost` 10; `alarmCost` 0.5 and `smokeCost` 20 stay.** `hunt-10` is the only arm not worse than `base` on the judged rows (idle -11%, both precisions up, catch up, births up, population +8%, mating 0.21), and its effect is small and inside 4-seed noise. Honest summary: the call cost lever does not solve spam; it is cheap to set, so the final T15d package is the T15l predator package plus `huntCallCost` 10, with the idle-signal problem left open. The next lever is not the cost but the signal itself (what counts as an idle call, or giving the receiving side a response that makes spam unprofitable), a question for the E36 run and a later design. Caveat: 4 seeds, a screen not a verdict.
+
+### 2026-10-23 - How blobs use the basin terrain (fitness-and-selection T42a, measured early)
+
+Replays of the T15l package (`arc1.571-bite12-size0.8`) on seeds 200460, 597883, 174238 and 553445 for 80000 ticks,
+and `defaults` on seed 200460, tallied by a `stepFn` wrapper around `runReplay` (the user asked whether the refuges
+and wall gaps are too small).
+
+| Measure                                                                    | Package (4 seeds)                     | `defaults` (1 seed) |
+| -------------------------------------------------------------------------- | ------------------------------------- | ------------------- |
+| Blobs inside all 4 refuges (mean)                                          | 0.2 to 1.8 (0.14 to 1.4% of capacity) | 2.8 (2.2%)          |
+| Refuge entry after reaching the rocks, r under 25 / 25 to 30 / 30 and over | 21% / 20% / 11%                       | 27% / 22% / 9%      |
+| Wall-gap crossings per 1000 ticks                                          | 0.5 to 2.1                            | 2.8                 |
+| Collision share of deaths                                                  | 0.18 to 0.26                          | 0.33                |
+| Collision deaths at the world edge / wall / refuge rocks                   | 59% / 21% / 19%                       | 50% / 26% / 24%     |
+| Predator bites on prey inside or near refuges                              | 0                                     | 0                   |
+
+- A refuge gap is exactly 60 px (8 rocks of radius 50 on a 209 px ring, `refugeSizeMax` 30), so the path for a blob's
+  centre is `60 - 2r`: 6 px at radius 27 and none at 30. Blob radius is `baseSize` x the size trait plus energy / 250,
+  so 44 to 62% of prey ticks on full worlds are at radius 30 or more. Entrances are too tight; the user's concern holds.
+- Wall gaps are not the limit: 300 px is about 5 blob diameters, and big blobs cross as often as small ones.
+- Refuges have no pull and no push: none of the 16 food patches is centred in one (food items inside 0.9 to 1.7% against
+  0.48% of the area) and no predator bite happened near one, so prey use them at chance level. Predators and prey are
+  the same size, so `refugeSizeMax` keeps out rich blobs, not predators.
+- Collision deaths are starvation with a bump: 99.6% had 60 energy or less before a 50-energy bounce, so
+  `eval.terrain_death_share` overstates the terrain's cost.
+- Levers for the terrain round (T42c): `refugeRocks` 6 or 5 (gaps of 109 or 146 px at the same ring; a new key),
+  `refugeSizeMax` 45 or 60 (gap and interior grow together), a food patch in each refuge (new), and `wallGaps` 6 with
+  `wallGapWidth` 400; judged by refuge occupancy, entry rate, `eval.migration_index` and predator bites near refuges.
