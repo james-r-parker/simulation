@@ -182,7 +182,7 @@ function trackEpisode(combat, world, slot, intent) {
         combat.episodeOpen[slot] = 0;
         combat.escapedEpisodes += 1;
         if (intent !== undefined) {
-            noteEscape(intent, slot);
+            noteEscape(intent, slot, world);
         }
     }
 }

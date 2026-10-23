@@ -18,6 +18,7 @@ export function createHuntCalls() {
         tick: new Float64Array(START_CAPACITY),
         lineage: new Uint32Array(START_CAPACITY),
         answered: new Uint8Array(START_CAPACITY),
+        credit: new Uint32Array(START_CAPACITY),
         head: 0,
         size: 0,
         first: 0,
@@ -34,7 +35,7 @@ export function createHuntCalls() {
  */
 function grow(calls) {
     const capacity = calls.tick.length;
-    for (const name of ['tick', 'lineage', 'answered']) {
+    for (const name of ['tick', 'lineage', 'answered', 'credit']) {
         const old = calls[name];
         const next = new old.constructor(capacity * 2);
         for (let i = 0; i < calls.size; i++) {
@@ -50,9 +51,11 @@ function grow(calls) {
  * @param {Record<string, any>} calls the queue
  * @param {number} tick the call's tick
  * @param {number} lineage the caller's lineage id
+ * @param {number} [credit] the caller's genome id when the call is precise, which earns it a hunt credit if answered;
+ *   0 for none
  * @returns {void}
  */
-export function pushHuntCall(calls, tick, lineage) {
+export function pushHuntCall(calls, tick, lineage, credit = 0) {
     if (calls.size === calls.tick.length) {
         grow(calls);
     }
@@ -60,6 +63,7 @@ export function pushHuntCall(calls, tick, lineage) {
     calls.tick[at] = tick;
     calls.lineage[at] = lineage;
     calls.answered[at] = 0;
+    calls.credit[at] = credit;
     calls.size += 1;
 }
 
@@ -119,19 +123,37 @@ export function answerHuntCall(calls, number, tick, span) {
 }
 
 /**
- * Resolves the calls that are `span` ticks old.
+ * Resolves the oldest call when it is `span` ticks old.
+ * @param {Record<string, any>} calls the queue
+ * @param {number} tick the observed tick
+ * @param {number} span `packWindow`
+ * @returns {number} -1 when no call is due, else the genome id to credit (0 when the call was not answered or not
+ *   precise)
+ */
+export function popResolvedHuntCall(calls, tick, span) {
+    if (calls.size === 0 || calls.tick[calls.head] + span > tick) {
+        return -1;
+    }
+    const { head } = calls;
+    const credited = calls.answered[head] === 1 ? calls.credit[head] : 0;
+    calls.resolved += 1;
+    calls.answeredCalls += calls.answered[head];
+    calls.head = (head + 1) % calls.tick.length;
+    calls.size -= 1;
+    calls.first += 1;
+    calls.sampled = Math.max(calls.sampled, calls.first);
+    return credited;
+}
+
+/**
+ * Resolves the calls that are `span` ticks old, with no credits.
  * @param {Record<string, any>} calls the queue
  * @param {number} tick the observed tick
  * @param {number} span `packWindow`
  * @returns {void}
  */
 export function resolveHuntCalls(calls, tick, span) {
-    while (calls.size > 0 && calls.tick[calls.head] + span <= tick) {
-        calls.resolved += 1;
-        calls.answeredCalls += calls.answered[calls.head];
-        calls.head = (calls.head + 1) % calls.tick.length;
-        calls.size -= 1;
-        calls.first += 1;
-        calls.sampled = Math.max(calls.sampled, calls.first);
+    while (popResolvedHuntCall(calls, tick, span) >= 0) {
+        // each call is counted by the pop
     }
 }

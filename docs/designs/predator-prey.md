@@ -1,6 +1,6 @@
 # Predator and prey
 
-**Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitnessV2 on the D1 to D8 intent counters, niches and map-elites-v2) is next after world-balance.md Phase 1.
+**Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitnessV2 on the D1 to D8 intent counters, niches and map-elites-v2) is under way: T19 (the six new intent counters) is built.
 **Validated:** 830e60a (2026-10-17)
 **Priority:** 3 - Phase 3 (`fitnessV2`) is built on the intent counters of world-balance.md Phase 1; tuning nights and the trainer build on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md) (Phase 1, for Phase 3)
@@ -341,6 +341,17 @@ which this agent is the killer), `convergedKills`, `alarmCredits` and `huntCredi
 slot was reused, is dropped, and a death whose victim's biter is gone credits nobody. Unseen bites (`unseenBite`) cost nothing. Grouping (D5) is paid only through the alarm credit. Chance intake counts a quarter and every credit needs deliberate intake, so the anti-exploit suite's existing bound (`max(0.5, intake share + 0.1)` of the
 `foodSeeker`, intake as raw food plus bite energy) applies unchanged.
 
+**As built (T19).** The six counters are in the intent state (`observer-intent-state.js`), with `ALARM_HEARD_LEVEL` 0.2 and `FLEE_SPEED` 0.5.
+`noteIntentDeath` credits `deliberateKills` to the killer and, for a pack kill with both bites deliberate, `convergedKills` to the
+killer and the previous biter (the `AgentDied` previous-biter field). A precise `PackCalled` is queued with its caller's
+genome id and credits `huntCredits` when it resolves answered, `packWindow` ticks after the call. A precise `AlarmCalled`
+is queued in `observer-intent-alarms.js` (caller, lineage, position); `openEpisode` notes on the bitten slot the queued
+alarms of its lineage called 1 to `packWindow` ticks earlier from within `callRadius` of where it stands, and
+`noteEscape` credits their callers when the episode resolves with a response. `sampleGroups` takes the flee sample on the
+same pass as the grouping sample. Nothing in `js/sim/` changed, so the golden hashes are unchanged.
+
+> **Note:** state at 2026-10-23 (end of session) - T19 is merged (PR 117); world-balance Phase 5 round 1 is done (E34, T78: `mateRange` 200, `mateDistanceMax` 1.0, `reproductionCooldown` 150, `childEnergyMin` 100, `maxBirthsPerWindow` 5 are the defaults; golden hashes default `75c8dc9a60512678`, busy `b690703c6e579c89`). Next, one task at a time (user): T20, T21, T22, T23, then T24 (`E21`), T25, T26. Open for the user before T24 runs: (1) the done criterion needs verdicts on at least two of `eval.deliberate_food_share`, `eval.pursuit_kill_share` and `eval.evasion_skill`, but world-balance T41 moved the first and third to `watch`, so the rule says the user sets the criteria; (2) predators die out on about 12 of 32 seeds at the current defaults (E34 `all5-range200`: `eval.catch_rate` above 0 on 20 of 32), and a seed with no hunter agent-ticks is invalid, so many `E21` seeds may not count. Also before T24: measure the observer budget (0.25 ms per tick at 500 agents, world-balance As built (T63) method) with the T19 counters and the v2 policy, on a quiet machine.
+
 ## Archive niches
 
 `descriptorV1(counters, slot)` returns `[speedMean, crowdingMean]`, the descriptor of
@@ -383,6 +394,11 @@ choices and reasons within the plans").
 | `baiter` and `sprinter` join the suite                                                                                                             | They probe the escape credit and the sprint-as-response rule, the two cheapest routes to D4 credit               | Manager           |
 | With fewer than two comparable intent Targets, the phase waits for the user                                                                        | A calibration can move D metrics to `watch`, leaving no verdict to judge by                                      | Manager           |
 | The gated terms ramp in with `min(1, deliberate / GATE)`                                                                                           | A step at 500 multiplied fitness about 5x at one meal and gave no gradient below it (ML review)                  | Specialist review |
+| An alarm credit is matched at the victim's first bite, against the call's position, and holds at most 4 callers (the oldest)                       | The escape resolves 300 ticks later, far past any queue worth keeping; a fixed note per slot allocates nothing   | Builder (T19)     |
+| An alarm earns one credit per bitten kin that escapes with a response, not one per alarm                                                           | A per-alarm record would outlive the 300-tick escape; `CREDIT_CAP` bounds the sum either way                     | Builder (T19)     |
+| `deliberateKills` counts any eaten death by the killer, not only a `canHunt` killer's                                                              | The doc's rule is the killer's own deliberate fatal bite; the specialisation term reads it only for predators    | Builder (T19)     |
+| A hunt credit is paid when the call resolves, not when it is answered                                                                              | The answer can come any time in `packWindow`; paying at resolution reads the same queue slot once                | Builder (T19)     |
+| A credit goes to a caller found by slot and genome id, and is dropped when either differs                                                          | The doc's rule for a dead or reused slot, checked without a map for the alarm notes                              | Builder (T19)     |
 | Survival is capped at 10 x deliberate intake as well as at 30000 ticks                                                                             | Uncapped survival after the gate pays "forage to the gate, then idle"; `gateThenIdle` probes it (biology review) | Specialist review |
 | Waste is capped against base plus gated terms                                                                                                      | Capping against base alone let a long-lived spammer lose under 10% (ML review)                                   | Specialist review |
 | `descriptorV2` uses `[fleeShare, speedShare]` for non-hunters and `[pursuitShare, speedShare]` for hunters, and `eval.coverage` must not get worse | `biteShare` is 0 for every non-hunter, which would collapse the archive to a few cells (ML review)               | Specialist review |

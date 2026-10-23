@@ -2,6 +2,7 @@
 // tick; see docs/designs/world-balance.md (Intent state, Intent counters).
 
 import { hunterTable } from './hunter-table.js';
+import { ALARM_MATCH_CAP, createAlarmQueue } from './observer-intent-alarms.js';
 import { createHuntCalls } from './observer-intent-calls.js';
 import { SCAN, SCAN_SIZE } from './ray-summary.js';
 
@@ -35,9 +36,15 @@ export const CALM_MIN_TICKS = 30;
 /** An output above this counts as sprinting, calling, releasing smoke or biting for the response. */
 export const SIGNAL_LEVEL = 0.5;
 
+/** A heard alarm louder than this (body input `alarmLoud`) makes an agent threatened for the flee sample. */
+export const ALARM_HEARD_LEVEL = 0.2;
+
+/** An agent moving faster than this share of `maxVelocity` on a flee sample counts as fleeing. */
+export const FLEE_SPEED = 0.5;
+
 const NEVER = -Infinity;
 
-/** Per-slot arrays as `[type, value a reset slot holds]`; the counters are the last nine. */
+/** Per-slot arrays as `[type, value a reset slot holds]`; the counters are the last sixteen. */
 const SLOT_FIELDS = {
     lastFood: [Float64Array, NEVER],
     lastPrey: [Float64Array, NEVER],
@@ -83,6 +90,13 @@ const SLOT_FIELDS = {
     idleSignal: [Uint32Array, 0],
     undefendedBite: [Uint32Array, 0],
     unseenBite: [Uint32Array, 0],
+    deliberateKills: [Uint32Array, 0],
+    convergedKills: [Uint32Array, 0],
+    alarmCredits: [Uint32Array, 0],
+    huntCredits: [Uint32Array, 0],
+    threatSamples: [Uint32Array, 0],
+    fleeSamples: [Uint32Array, 0],
+    alarmMatches: [Uint8Array, 0],
 };
 
 const SLOT_NAMES = Object.keys(SLOT_FIELDS);
@@ -166,6 +180,9 @@ export function createIntentState(config) {
         groupKeys: new Float64Array(config.maxAgents + 1).fill(Infinity),
         groupKin: new Int32Array(config.maxAgents),
         calls: createHuntCalls(),
+        alarmQueue: createAlarmQueue(),
+        alarmMatchSlot: new Int32Array(config.maxAgents * ALARM_MATCH_CAP),
+        alarmMatchId: new Uint32Array(config.maxAgents * ALARM_MATCH_CAP),
         run: Object.fromEntries(RUN_TOTALS.map((name) => [name, 0])),
         packWindow: config.packWindow,
         callRadius: config.callRadius,
