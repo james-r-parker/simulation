@@ -113,6 +113,51 @@ describe('validateReport', () => {
         expect(() => validateReport(report)).not.toThrow();
     });
 
+    it('accepts each new trend, dominance, body, environment, lineage and watch metric', () => {
+        const names = [
+            'deliberate_food_trend',
+            'pursuit_trend',
+            'evasion_trend',
+            'skill_trend',
+            'spec_dominance',
+            'spec_effective',
+            'lineage_dominance',
+            'lineage_effective',
+            'trait_spread',
+            'body_plan_coverage',
+            'sex_balance',
+            'cold_stress_share',
+            'heat_stress_share',
+            'terrain_death_share',
+            'winter_pop_ratio',
+            'child_survival',
+            'lineage_lifespan_p50',
+            'migration_index',
+            'predator_presence',
+            'pred_prey_lag_corr',
+        ];
+        const seedMetrics = (/** @type {number} */ i) =>
+            Object.fromEntries(
+                names.map((name) => [
+                    `eval.${name}`,
+                    i === 2 ? { value: null, reason: 'no windows' } : { value: i + 0.5 },
+                ]),
+            );
+        const report = buildReport({
+            policy: 'p',
+            fitnessName: 'v5',
+            config,
+            ticks: 100,
+            seeds: [1, 2, 3],
+            sha: 'abc',
+            perSeed: [0, 1, 2].map(seedMetrics),
+        });
+        expect(Object.keys(report.metrics)).toHaveLength(names.length);
+        expect(Object.keys(report.metrics)).toEqual(expect.arrayContaining(names.map((name) => `eval.${name}`)));
+        expect(report.metrics['eval.skill_trend'].reasons).toEqual([null, null, 'no windows']);
+        expect(() => validateReport(JSON.parse(JSON.stringify(report)))).not.toThrow();
+    });
+
     it('rejects a non-object report', () => {
         expect(() => validateReport(null)).toThrow('invalid report: report must be');
     });
