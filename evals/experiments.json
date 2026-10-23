@@ -1403,6 +1403,19 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "T15h screen, 15 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict. Idle signals 8.0-12.9 on every arm (base 11.7), lower only with a population collapse (alarm-20 pop 134, mating 0.09); alarm_precision under 0.002 everywhere; no silence. High alarmCost cuts pop and mating. hunt-10 is the only arm not worse than base on the judged rows (idle 10.4, hunt precision 0.011, catch 0.079, pop 388, mating 0.21). Predictions wrong. Proposed: T15l package plus huntCallCost 10. See sim-notes 2026-10-23 \"Call cost screen\"."
+    },
+    {
+      "id": "E46",
+      "date": "2026-10-23",
+      "branch": "eval/fs-t15n-call-threshold",
+      "hypothesis": "On the T15l predator package with huntCallCost 10, an alarmThreshold and huntCallThreshold of 0.5 to 0.8 cut eval.idle_signals_per_1k and raise eval.alarm_precision and eval.hunt_call_precision without losing the predator gains.",
+      "prediction": "Idle signals fall about 30% at 0.5 and 60% or more at 0.8; precisions rise; population and mating stay near base; hunt at 0.8 may cut catch rate a little; both-0.5 or both-0.65 best.",
+      "targets": ["eval.idle_signals_per_1k", "eval.alarm_precision", "eval.hunt_call_precision"],
+      "before": "evals/screens/results/call-threshold/base.report.json",
+      "after": "evals/screens/results/call-threshold/<arm>.report.json (one per arm; table in evals/screens/results/call-threshold/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T15n screen, 9 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict. Idle 8.0 (alarm-0.8) to 11.4 against base 10.4: calls rarer, not near silent. alarm_precision under 0.0013 everywhere; hunt_call_precision up to 0.039 (hunt-0.5) from 0.011. Alarm threshold 0.5 loses pop and mating. both-0.65 is the only arm with mating above 0.2 and the predator gains kept (idle 8.9, hunt p 0.015, catch 0.084, births 72, pop 367, mating 0.24). Idle prediction wrong (smaller falls), hunt precision right. Proposed: alarmThreshold 0.65 and huntCallThreshold 0.65. See sim-notes 2026-10-23 \"Call threshold screen\"."
     }
   ]
 }
