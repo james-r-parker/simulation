@@ -108,6 +108,9 @@ When one agent hands tasks to others (user, 2026-10-22):
   subagent. A subagent runs a command that takes under about 9 minutes in the foreground, and does not end its turn
   while one of its background jobs is still running. When a subagent starts a longer run, the delegating agent starts
   its own background wait on that run's output file and resumes the subagent as soon as the file appears.
+- **Clean up after each merge (user, 2026-10-23).** Once a subagent's PR merges, remove its worktree with
+  `git worktree remove <path>` (unlock it first if its locking process has exited). Never use `--force`: a worktree
+  with uncommitted files is left for the user to inspect.
 - **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
   short table instead of reading whole reports.
 - **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,
