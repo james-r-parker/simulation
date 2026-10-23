@@ -104,9 +104,9 @@ function finishDeath(observer, d, o, fitness) {
 
 /**
  * Sets a newborn's generation depth and archive-lineage flag. A child of a mating or split is one generation deeper
- * than its deeper parent and inherits the flag of either; any other entrant is generation 0, and in the archive
- * lineage when the policy's `observer.archiveDraw(slot)` says its genome came from the archive. A parent that died
- * this tick is already untracked, so it counts as generation 0.
+ * than its deeper parent and inherits the flag of either (both read by `noteParentage` before the tick's deaths, so a
+ * parent that dies on the tick of the birth still counts); any other entrant is generation 0, and in the archive
+ * lineage when the policy's `observer.archiveDraw(slot)` says its genome came from the archive.
  * @param {Record<string, any>} observer the observer
  * @param {Float64Array} d the event data
  * @param {number} o the record offset of the `AgentBorn`
@@ -114,19 +114,37 @@ function finishDeath(observer, d, o, fitness) {
  */
 function setLineage(observer, d, o) {
     const slot = d[o + 2];
-    if (d[o + 8] !== BORN_CAUSE.MATE && d[o + 8] !== BORN_CAUSE.SPLIT) {
+    const packed = observer.parentage.get(d[o + 3]);
+    if (packed === undefined) {
         observer.archiveLineage[slot] = observer.archiveDraw?.(slot) ? 1 : 0;
         return;
     }
-    const a = observer.slotOf.get(d[o + 6]);
-    const b = observer.slotOf.get(d[o + 7]);
-    const depthA = a === undefined ? 0 : observer.generation[a];
-    const depthB = b === undefined ? 0 : observer.generation[b];
-    observer.generation[slot] = 1 + Math.max(depthA, depthB);
-    observer.archiveLineage[slot] = Math.max(
-        a === undefined ? 0 : observer.archiveLineage[a],
-        b === undefined ? 0 : observer.archiveLineage[b],
-    );
+    observer.generation[slot] = Math.floor(packed / 2);
+    observer.archiveLineage[slot] = packed % 2;
+}
+
+/**
+ * Reads, before the tick's deaths untrack anyone, the generation depth and archive flag each mating or split child
+ * gets from its parents, into `observer.parentage` (genome id to `depth * 2 + flag`).
+ * @param {Record<string, any>} observer the observer
+ * @param {Float64Array} d the event data
+ * @param {number} count the number of records
+ * @returns {void}
+ */
+function noteParentage(observer, d, count) {
+    const { slotOf, generation, archiveLineage, parentage } = observer;
+    parentage.clear();
+    for (let i = 0; i < count; i++) {
+        const o = i * EVENT_STRIDE;
+        if (d[o] !== EVENT_TYPE.AGENT_BORN || (d[o + 8] !== BORN_CAUSE.MATE && d[o + 8] !== BORN_CAUSE.SPLIT)) {
+            continue;
+        }
+        const a = slotOf.get(d[o + 6]);
+        const b = slotOf.get(d[o + 7]);
+        const depth = 1 + Math.max(a === undefined ? 0 : generation[a], b === undefined ? 0 : generation[b]);
+        const flag = Math.max(a === undefined ? 0 : archiveLineage[a], b === undefined ? 0 : archiveLineage[b]);
+        parentage.set(d[o + 3], depth * 2 + flag);
+    }
 }
 
 /**
@@ -183,6 +201,7 @@ export function applyEvents(observer, world, fitness) {
     const count = world.events.count;
     observer.ghosts.clear();
     creditRelations(observer, d, count);
+    noteParentage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {
             finishDeath(observer, d, i * EVENT_STRIDE, fitness);

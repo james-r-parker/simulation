@@ -81,6 +81,7 @@ export function createObserver(config, rng) {
         ...createCellGrid(config, CELL_SIZE, n),
         slotOf: new Map(),
         ghosts: new Set(),
+        parentage: new Map(),
         deathFields: DEATH_FIELDS,
         ticks: 0,
         agentTicks: 0,
