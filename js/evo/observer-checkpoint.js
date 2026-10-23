@@ -2,6 +2,7 @@
 
 import { nextInt } from '../sim/rng.js';
 import { ensureRoom } from './growable-log.js';
+import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
 export const DOMINANCE_MARGIN = 2;
@@ -33,6 +34,30 @@ function dominantLineage(observer, counts) {
         observer.dominantLineage = leader;
     }
     return observer.dominantLineage;
+}
+
+/** Specialisation indices fit this many counters (the checkpoint's `specMask` is a 32-bit set). */
+export const SPEC_SLOTS = 32;
+
+/**
+ * @returns {{specSamples: Float64Array, lineageSamples: Map<number, number>}} empty dominance pools
+ */
+export function createDominancePools() {
+    return { specSamples: new Float64Array(SPEC_SLOTS), lineageSamples: new Map() };
+}
+
+/**
+ * Adds one checkpoint's alive agents per lineage to the run-long map that `eval.lineage_dominance` and
+ * `eval.lineage_effective` read. Runs once per checkpoint at or after `BURN_IN_TICKS`: it may add map entries, but
+ * nothing per tick.
+ * @param {{lineageSamples: Map<number, number>}} pools the pools
+ * @param {Map<number, number>} counts alive agents per lineage at this checkpoint
+ * @returns {void}
+ */
+function poolLineages(pools, counts) {
+    for (const [lineage, n] of counts) {
+        pools.lineageSamples.set(lineage, (pools.lineageSamples.get(lineage) ?? 0) + n);
+    }
 }
 
 /**
@@ -97,13 +122,19 @@ export function checkpoint(observer, world) {
     let predators = 0;
     let specMask = 0;
     let archiveAgents = 0;
+    const pooled = world.tick >= BURN_IN_TICKS;
+    const { dominance } = observer;
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
             counts.set(world.lineageId[slot], (counts.get(world.lineageId[slot]) ?? 0) + 1);
             predators += world.spec[slot] === predator ? 1 : 0;
             specMask |= 1 << world.spec[slot];
+            dominance.specSamples[world.spec[slot]] += pooled ? 1 : 0;
             archiveAgents += observer.archiveLineage[slot];
         }
+    }
+    if (pooled) {
+        poolLineages(dominance, counts);
     }
     const log = observer.series;
     const row = observer.checkpointCount;
