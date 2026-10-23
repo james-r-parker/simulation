@@ -86,6 +86,8 @@ export const FEATURES_ON = Object.freeze({
     reproductionCooldown: 150,
     childEnergyMin: 100,
     hashCellSize: 140,
+    predatorRescueMin: 3, // the T15g starting value (fitness-and-selection); the screen tunes it, T15d sets the defaults
+    predatorRescueInterval: 450,
 });
 
 /** @returns {string[]} the `FEATURE_RULES` keys missing from `FEATURES_OFF` (a new feature key not yet pinned) */

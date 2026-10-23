@@ -31,7 +31,12 @@ const SWITCHED_ON = [
     'mateRange',
     'reproductionCooldown',
     'childEnergyMin',
+    // the predator rescue (T15b) is off in FEATURES_OFF and on here; the defaults stay off until T15d
+    'predatorRescueMin',
+    'predatorRescueInterval',
 ];
+
+const RESCUE_KEYS = ['predatorRescueMin', 'predatorRescueInterval'];
 
 describe('feature switch lists', () => {
     it('pin every FEATURE_RULES key, so a new feature key cannot slip into the frozen bench world', () => {
@@ -60,12 +65,20 @@ describe('feature switch lists', () => {
         expect(off.specialisations.predator.plantFoodValue).toBe(1);
         const defaults = createConfig({});
         for (const [key, value] of Object.entries(FEATURES_ON)) {
-            if (key !== 'specialisations') {
+            if (key !== 'specialisations' && !RESCUE_KEYS.includes(key)) {
                 expect(defaults[key]).toEqual(value);
             }
         }
         expect(defaults.specialisations.predator.plantFoodValue).toBe(0);
         expect(defaults.minAgents).toBe(40);
+    });
+
+    it('switch the predator rescue on', () => {
+        expect(FEATURES_ON.predatorRescueMin).toBe(3);
+        expect(FEATURES_ON.predatorRescueInterval).toBe(450);
+        const config = createConfig({ ...FEATURES_ON });
+        expect(config.predatorRescueMin).toBe(3);
+        expect(config.predatorRescueInterval).toBe(450);
     });
 
     it('build a world that steps when on', () => {
