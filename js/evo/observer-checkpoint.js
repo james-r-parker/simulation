@@ -3,6 +3,7 @@
 import { nextInt } from '../sim/rng.js';
 import { ensureRoom } from './growable-log.js';
 import { sampleBody } from './metrics-body.js';
+import { sampleEnvironment } from './metrics-environment.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
@@ -137,6 +138,7 @@ export function checkpoint(observer, world) {
     if (pooled) {
         poolLineages(dominance, counts);
         sampleBody(observer.body, world);
+        sampleEnvironment(observer.environment, world);
     }
     const log = observer.series;
     const row = observer.checkpointCount;
