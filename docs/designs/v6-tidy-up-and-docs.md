@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots.
 **Validated:** 23eaea3 (2026-10-17)
-**Priority:** 7 - the last stage of v6: nothing legacy is left and every doc describes the app as built
+**Priority:** 8 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
 The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 5 deletes the legacy

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1, 2, 3 and 4 built (Phase 4 closed with three failures that remain, user 2026-10-22); Phase 5 settles the balance on a tuning night in a session of its own, Phase 6 adds disease.
 **Validated:** 46097eb (2026-10-22)
-**Priority:** 1 - the `fitnessV2` terms in predator-prey.md Phase 3 are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
+**Priority:** 2 - the `fitnessV6` skill terms in fitness-and-selection.md are built on the D1 to D8 counters this doc's Phase 1 adds (user, 2026-10-17)
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the

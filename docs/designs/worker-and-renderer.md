@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phase 2 (renderer core) code merged, awaiting its dev-machine budget measurement and manual walk.
 **Validated:** 23eaea3 (2026-10-17)
-**Priority:** 4 - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
+**Priority:** 5 - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The browser app runs the simulation in a dedicated worker and only draws on the main thread. It runs unattended on a TV
