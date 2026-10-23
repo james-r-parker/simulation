@@ -3,6 +3,7 @@
 // the run are excluded. The queue is a ring over typed arrays that doubles when full.
 
 import { TIMER_CAP } from '../sim/world.js';
+import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 
 /** Ticks after a release at which the releaser's survival is read. */
 export const SMOKE_ESCAPE_TICKS = 300;
@@ -43,7 +44,8 @@ function grow(follow) {
 }
 
 /**
- * Queues a `SmokeReleased` event when the releaser is alive and was bitten within the last `TIMER_CAP` ticks.
+ * Queues a `SmokeReleased` event when the releaser is alive and was bitten before this step, within the last `TIMER_CAP`
+ * ticks.
  * A releaser already dead at the observed tick is skipped: its bite history is gone.
  * @param {Record<string, any>} follow the follow-up
  * @param {Record<string, any>} world the world after the step
@@ -52,7 +54,12 @@ function grow(follow) {
  * @returns {void}
  */
 export function noteSmokeRelease(follow, world, slot, genomeId) {
-    if (world.alive[slot] !== 1 || world.genomeId[slot] !== genomeId || world.bittenTimer[slot] >= TIMER_CAP) {
+    if (world.alive[slot] !== 1 || world.genomeId[slot] !== genomeId) {
+        return;
+    }
+    // A timer of 1 is a bite of this very step, which `feed` lands after the `signal` phase released the smoke.
+    const timer = world.bittenTimer[slot];
+    if (timer >= TIMER_CAP || timer === BITTEN_THIS_TICK) {
         return;
     }
     if (follow.size === follow.genome.length) {

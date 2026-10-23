@@ -47,7 +47,7 @@ describe('smoke follow-up', () => {
     it('excludes releases still pending at the end of the run, and grows past its first capacity', () => {
         const { world, observer } = observed({ maxAgents: 40 });
         for (let i = 0; i < 20; i++) {
-            addBorn(world, { bittenTimer: 1 });
+            addBorn(world, { bittenTimer: 2 });
         }
         nextTick(world, 1);
         for (let slot = 0; slot < 20; slot++) {
