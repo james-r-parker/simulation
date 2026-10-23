@@ -232,6 +232,21 @@ function emitInvasion(log, d, o) {
     });
 }
 
+/**
+ * Emits one `PredatorRescue` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitPredatorRescue(log, d, o) {
+    log.log('debug', 'PredatorRescue', {
+        tick: d[o + 1],
+        count: d[o + 2],
+        cause: causeName(BORN_NAMES, d[o + 3], 'PredatorRescue'),
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -247,6 +262,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.SEASON_CHANGED]: { level: LOG_LEVEL.info, emit: emitSeason },
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.INVASION_ARRIVED]: { level: LOG_LEVEL.info, emit: emitInvasion },
+    [EVENT_TYPE.PREDATOR_RESCUE]: { level: LOG_LEVEL.debug, emit: emitPredatorRescue },
 });
 
 /**

@@ -12,6 +12,7 @@ import { assertInvariants } from './invariants.js';
 import { forwardAll } from './brain.js';
 import { actAll, integrate, resolveContacts } from './physics.js';
 import { fillFloor, reap } from './population.js';
+import { rescuePredators } from './predator-rescue.js';
 import { updatePheromones } from './pheromones.js';
 import { advancePregnancies, mate, splitAll } from './reproduction.js';
 import { senseAll } from './sensors.js';
@@ -87,6 +88,7 @@ function lifecycle(world, policy) {
     splitAll(world, policy);
     reap(world, policy);
     fillFloor(world, policy);
+    rescuePredators(world, policy);
     invade(world, policy);
 }
 
