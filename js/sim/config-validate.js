@@ -65,7 +65,7 @@ const RULES = {
     minSize: positive(),
     energyToSize: positive(),
     biteEnergy: num(0),
-    huntSizeRatio: num(1),
+    huntSizeRatio: num(0.5),
     mateSizeRatio: { type: 'num', gt: 1 },
     mateMinEnergy: num(0),
     mateCost: num(0),

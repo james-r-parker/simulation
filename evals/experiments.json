@@ -1377,6 +1377,19 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "T15g screen, 15 arms x 4 seeds (offset 28) x 200000 ticks, policy live. Id E43 chosen to avoid the plan E36-E42 reservations. Presence 0.37 to 1.00 with the rescue; predator births 4.5 (reference) and 5 (rescue only) up to 41-44 on the three split-0.6 combinations, carried by one seed each (10-17 on the others); split-0.6 alone 59.8; kill payment idle (kill-300 4.0); catch_rate 0.003-0.022 everywhere. Proposed: kill150-passive0.6-split0.6. See sim-notes 2026-10-23 \"Predator economy screen\"."
+    },
+    {
+      "id": "E44",
+      "date": "2026-10-23",
+      "branch": "eval/fs-t15l-hunting-screen",
+      "hypothesis": "On the rescue and the T15g economy, wider bite arc, bigger predator bites and a lower huntSizeRatio give clumsy predators first bites and kills, lifting eval.catch_rate and the pursuit shares without a predator plague.",
+      "prediction": "The size gate levers are the strongest singles, arc 1.571 second; bite-12 and sprint-2.0 move catch_rate little alone; catch_rate stays under 0.03 on singles and reaches 0.03-0.1 on arc1.571-bite12-size0.8; pursuit_kill_share stays near 0 everywhere; size-0.8 and the wide combination are the plague risk.",
+      "targets": ["eval.catch_rate", "eval.predator_births", "eval.pursuit_kill_share", "eval.pursuit_bite_share"],
+      "before": "evals/screens/results/predator-hunting/defaults.report.json",
+      "after": "evals/screens/results/predator-hunting/<arm>.report.json (one per arm; table in evals/screens/results/predator-hunting/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T15l screen, 12 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict (4 seeds). Id E44 is the next free after E43 (the plan reserves E36-E42). Singles leave catch_rate at 0.004-0.010 (one seed in four at most clears 0.01); arc1.571-bite12-size0.8 reaches 0.069 on 4 of 4 seeds (base 0.003), pop 360 (= base), mating 0.17, pursuit_kill_share 0.09 (0 on base), 47.5 predator births. Predictions wrong: size gate singles weak, effect multiplicative. No plague; predator share about 1% (rescue floor). Proposed T15d package: T15g values plus biteArc 1.571, predator biteMultiplier 12, huntSizeRatio 0.8. Round B not run. See sim-notes 2026-10-23 \"Predator hunting screen\"."
     }
   ]
 }

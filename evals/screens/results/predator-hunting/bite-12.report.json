@@ -1,0 +1,782 @@
+{
+  "traces": [
+    {
+      "interval": 1000,
+      "pop": [
+        125, 133, 152, 149, 137, 106, 78, 54, 40, 41, 46, 41, 47, 47, 41, 45, 48, 62, 79, 78, 80, 69, 58, 55, 64, 88,
+        98, 103, 104, 82, 82, 91, 100, 95, 72, 63, 66, 79, 68, 66, 65, 49, 42, 41, 41, 41, 40, 40, 42, 42, 45, 53, 48,
+        42, 41, 46, 48, 61, 63, 71, 78, 79, 74, 62, 67, 59, 45, 40, 47, 58, 64, 50, 43, 55, 70, 71, 68, 58, 53, 63, 79,
+        89, 114, 120, 110, 81, 57, 42, 41, 57, 64, 62, 46, 44, 51, 43, 44, 42, 42, 51, 74, 96, 85, 75, 48, 44, 40, 41,
+        45, 55, 58, 61, 44, 40, 40, 45, 40, 40, 40, 42, 40, 40, 41, 48, 49, 40, 44, 48, 48, 48, 40, 45, 40, 40, 41, 40,
+        41, 40, 40, 43, 54, 73, 55, 42, 54, 63, 87, 123, 125, 108, 138, 223, 344, 450, 450, 451, 450, 450, 450, 450,
+        450, 450, 450, 454, 450, 450, 451, 450, 450, 451, 450, 450, 450, 451, 450, 450, 451, 450, 450, 450, 450, 450,
+        450, 451, 450, 450, 450, 450, 450, 450, 451, 450, 449, 450, 450, 450, 450, 450, 450, 450
+      ],
+      "mate": [97, 68, 40, 336],
+      "split": [655, 790, 733, 2186],
+      "deaths": [3901, 1, 1222, 120],
+      "spec": [75, 3, 3, 363, 6],
+      "lineages": 19
+    },
+    {
+      "interval": 1000,
+      "pop": [
+        135, 173, 207, 206, 177, 165, 186, 168, 138, 132, 144, 182, 216, 211, 199, 237, 332, 450, 450, 450, 450, 452,
+        451, 450, 451, 450, 452, 451, 451, 450, 450, 451, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450,
+        450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 451, 450, 450, 451, 448, 450, 450, 450, 449, 450,
+        450, 450, 451, 450, 450, 450, 450, 450, 451, 450, 450, 450, 450, 450, 451, 450, 450, 450, 450, 450, 450, 450,
+        450, 450, 450, 450, 451, 450, 450, 451, 450, 450, 450, 450, 450, 450, 452, 450, 450, 450, 450, 450, 450, 450,
+        450, 452, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 451, 450, 452,
+        450, 450, 450, 453, 450, 451, 450, 451, 451, 451, 450, 452, 450, 452, 452, 450, 456, 450, 451, 452, 451, 453,
+        450, 450, 454, 450, 451, 452, 451, 451, 450, 452, 451, 450, 452, 451, 450, 450, 450, 450, 450, 450, 451, 450,
+        451, 450, 450, 450, 449, 449, 450, 451, 451, 450, 451, 451, 451, 450, 450, 450, 450, 450, 450, 450, 450, 450,
+        450, 450
+      ],
+      "mate": [534, 376, 722, 551],
+      "split": [2368, 2203, 1891, 1408],
+      "deaths": [7714, 6, 1954, 458],
+      "spec": [3, 3, 189, 4, 251],
+      "lineages": 19
+    },
+    {
+      "interval": 1000,
+      "pop": [
+        122, 148, 166, 192, 210, 234, 224, 237, 290, 362, 450, 454, 450, 450, 450, 450, 450, 450, 450, 451, 451, 450,
+        450, 450, 450, 450, 450, 451, 450, 450, 451, 450, 450, 450, 450, 450, 452, 450, 450, 453, 451, 451, 451, 449,
+        451, 450, 450, 450, 449, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450, 450,
+        450, 450, 451, 451, 451, 450, 451, 450, 450, 450, 450, 450, 452, 450, 451, 450, 451, 450, 452, 450, 450, 450,
+        450, 450, 450, 451, 450, 450, 450, 450, 450, 452, 450, 452, 450, 450, 454, 450, 450, 450, 451, 450, 450, 450,
+        451, 450, 450, 450, 450, 450, 450, 450, 450, 449, 451, 450, 450, 451, 451, 448, 452, 451, 450, 450, 451, 452,
+        456, 452, 451, 452, 451, 450, 450, 451, 451, 453, 452, 450, 454, 450, 456, 452, 453, 452, 450, 451, 452, 451,
+        450, 452, 453, 451, 453, 456, 453, 451, 451, 450, 453, 457, 450, 454, 450, 450, 450, 451, 450, 450, 453, 453,
+        452, 450, 450, 450, 449, 450, 450, 451, 451, 451, 451, 450, 451, 450, 451, 450, 450, 452, 450, 450, 451, 450,
+        451, 450
+      ],
+      "mate": [691, 690, 1074, 779],
+      "split": [2123, 1970, 1693, 879],
+      "deaths": [7741, 10, 1730, 482],
+      "spec": [3, 3, 9, 29, 406],
+      "lineages": 21
+    },
+    {
+      "interval": 1000,
+      "pop": [
+        130, 167, 197, 230, 265, 281, 250, 219, 271, 332, 410, 451, 450, 450, 449, 451, 452, 450, 450, 451, 450, 450,
+        451, 450, 450, 450, 450, 450, 450, 450, 451, 450, 451, 450, 450, 450, 450, 452, 450, 451, 449, 450, 450, 450,
+        450, 450, 450, 450, 450, 450, 450, 450, 452, 450, 450, 450, 449, 450, 450, 450, 450, 450, 450, 450, 450, 450,
+        452, 450, 449, 450, 450, 450, 450, 450, 450, 450, 450, 450, 452, 450, 450, 450, 450, 451, 450, 450, 449, 454,
+        450, 450, 450, 450, 450, 450, 450, 452, 452, 450, 450, 450, 451, 450, 451, 450, 452, 450, 451, 450, 450, 450,
+        450, 451, 450, 450, 449, 450, 451, 450, 451, 450, 450, 450, 451, 451, 451, 450, 451, 450, 450, 450, 450, 451,
+        451, 450, 452, 450, 450, 452, 450, 450, 450, 450, 450, 449, 450, 453, 450, 455, 459, 451, 450, 450, 450, 450,
+        451, 451, 450, 450, 450, 450, 451, 451, 451, 450, 449, 450, 457, 450, 451, 450, 450, 451, 450, 451, 450, 451,
+        450, 450, 452, 452, 452, 450, 450, 449, 450, 451, 450, 450, 450, 451, 450, 450, 451, 450, 451, 451, 449, 450,
+        450, 450
+      ],
+      "mate": [684, 410, 652, 389],
+      "split": [2223, 1684, 1702, 1135],
+      "deaths": [6650, 6, 1744, 573],
+      "spec": [6, 3, 3, 429, 9],
+      "lineages": 22
+    }
+  ],
+  "version": 1,
+  "policy": "map-elites-v1q",
+  "fitnessName": "v1",
+  "config": {
+    "worldWidth": 14400,
+    "worldHeight": 8100,
+    "maxAgents": 500,
+    "initialAgents": 100,
+    "minAgents": 40,
+    "immigrationInterval": 600,
+    "maxFood": 1600,
+    "initialFood": 300,
+    "foodSpawnRate": 0.02,
+    "foodEnergy": 100,
+    "foodEnergyVariance": 20,
+    "highFoodChance": 0.1,
+    "highFoodEnergy": 140,
+    "highFoodEnergyVariance": 50,
+    "foodRadius": 20,
+    "highFoodRadius": 30,
+    "foodMaxAge": 10000,
+    "obstacleCount": 0,
+    "obstacleMinRadius": 40,
+    "obstacleMaxRadius": 120,
+    "obstacleMaxSpeed": 0.3,
+    "obstacleDamage": 50,
+    "wallDamage": 50,
+    "rayCount": 16,
+    "brainHidden": 32,
+    "maxThrust": 0.7,
+    "maxTurn": 0.2,
+    "maxVelocity": 8,
+    "damping": 0.95,
+    "sprintMultiplier": 0.5,
+    "sprintCost": 0.05,
+    "initialEnergy": 800,
+    "maxEnergy": 25000,
+    "passiveLoss": 0.06,
+    "movementCost": 0.015,
+    "turnCost": 0.1,
+    "sizeEnergyLoss": 0.00025,
+    "baseSize": 25,
+    "minSize": 20,
+    "energyToSize": 250,
+    "biteEnergy": 5,
+    "huntSizeRatio": 1.01,
+    "mateSizeRatio": 1.3,
+    "mateDistanceMax": 1,
+    "mateMinEnergy": 200,
+    "mateCost": 15,
+    "mateRange": 200,
+    "childEnergyShare": 0.5,
+    "childEnergyMin": 100,
+    "splitMinEnergy": 900,
+    "sexesEnabled": true,
+    "birthWindowTicks": 3000,
+    "maxBirthsPerWindow": 5,
+    "capBirthsEnabled": true,
+    "splitCapMargin": 50,
+    "maxAgeTicks": 36000,
+    "reproductionCooldown": 150,
+    "pregnancyTicks": 480,
+    "maturityTicks": 600,
+    "seasonLength": 3600,
+    "seasons": [
+      { "foodScarcity": 1.2, "energyDrain": 1, "reproductionBonus": 1.5, "temperatureModifier": -5 },
+      { "foodScarcity": 1, "energyDrain": 1.3, "reproductionBonus": 1.2, "temperatureModifier": 15 },
+      { "foodScarcity": 0.8, "energyDrain": 1.1, "reproductionBonus": 0.7, "temperatureModifier": 5 },
+      { "foodScarcity": 0.4, "energyDrain": 1.8, "reproductionBonus": 0.3, "temperatureModifier": -15 }
+    ],
+    "fertileZoneMax": 100,
+    "fertileZoneSpawnChance": 0.4,
+    "fertileZoneDecay": 0.001,
+    "pheromoneCellSize": 100,
+    "pheromoneDecay": 0.00167,
+    "pheromoneDiffusion": 0.05,
+    "pheromoneDeposit": 1,
+    "pheromoneMax": 5,
+    "hashCellSize": 140,
+    "maxContacts": 2000,
+    "eventCapacity": 4096,
+    "specialisations": {
+      "forager": {
+        "index": 0,
+        "visionRange": 300,
+        "canHunt": false,
+        "moveCostMultiplier": 1,
+        "biteTakenMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "biteMultiplier": 1,
+        "turnMultiplier": 1,
+        "plantFoodValue": 1,
+        "meatFoodValue": 0.3,
+        "sprintBoost": 1,
+        "passiveLossMultiplier": 1,
+        "splitMinEnergyMultiplier": 1
+      },
+      "predator": {
+        "index": 1,
+        "visionRange": 350,
+        "canHunt": true,
+        "moveCostMultiplier": 1,
+        "biteTakenMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "biteMultiplier": 12,
+        "turnMultiplier": 0.7,
+        "plantFoodValue": 0,
+        "meatFoodValue": 1,
+        "sprintBoost": 1.6,
+        "passiveLossMultiplier": 0.6,
+        "splitMinEnergyMultiplier": 0.6
+      },
+      "reproducer": {
+        "index": 2,
+        "visionRange": 250,
+        "canHunt": false,
+        "moveCostMultiplier": 1,
+        "biteTakenMultiplier": 1,
+        "cooldownMultiplier": 0.5,
+        "biteMultiplier": 1,
+        "turnMultiplier": 1,
+        "plantFoodValue": 1,
+        "meatFoodValue": 0.3,
+        "sprintBoost": 1,
+        "passiveLossMultiplier": 1,
+        "splitMinEnergyMultiplier": 1
+      },
+      "scout": {
+        "index": 3,
+        "visionRange": 400,
+        "canHunt": false,
+        "moveCostMultiplier": 0.7,
+        "biteTakenMultiplier": 1,
+        "cooldownMultiplier": 1,
+        "biteMultiplier": 1,
+        "turnMultiplier": 1,
+        "plantFoodValue": 1,
+        "meatFoodValue": 0.3,
+        "sprintBoost": 1,
+        "passiveLossMultiplier": 1,
+        "splitMinEnergyMultiplier": 1
+      },
+      "defender": {
+        "index": 4,
+        "visionRange": 350,
+        "canHunt": false,
+        "moveCostMultiplier": 1,
+        "biteTakenMultiplier": 0.5,
+        "cooldownMultiplier": 1,
+        "biteMultiplier": 1,
+        "turnMultiplier": 1,
+        "plantFoodValue": 1,
+        "meatFoodValue": 0.3,
+        "sprintBoost": 1,
+        "passiveLossMultiplier": 1,
+        "splitMinEnergyMultiplier": 1
+      }
+    },
+    "checkInvariants": false,
+    "restitution": 0.5,
+    "splitCooldownMultiplier": 1.5,
+    "mateChanceScale": 1.5,
+    "foodTargetPerAgent": 12,
+    "foodTargetMin": 50,
+    "foodRefillBoost": 4,
+    "foodSurplusRate": 0.2,
+    "foodSpawnAgentDivisor": 20,
+    "fertileZoneRadius": 150,
+    "fertileZoneFertility": 0.05,
+    "placementTries": 100,
+    "temperatureMax": 100,
+    "temperatureStart": 50,
+    "temperatureGainMove": 0.01,
+    "temperatureGainEat": 2,
+    "satiationShare": 0.95,
+    "digestTicks": 10,
+    "handlingTicks": 20,
+    "specMutationRate": 0.002,
+    "huntUpkeep": 0.002,
+    "handlingThrust": 0.2,
+    "carcassesEnabled": true,
+    "carcassTicks": 300,
+    "carcassShare": 0.5,
+    "terrainLayout": "basins",
+    "wallGaps": 3,
+    "wallGapWidth": 300,
+    "refugeCount": 4,
+    "refugeSizeMax": 30,
+    "coldMarginWidth": 600,
+    "temperatureLossPassive": 0.0075,
+    "temperatureSeasonSlope": 0.03,
+    "temperaturePassiveLossFactor": 2,
+    "temperatureColdStress": 30,
+    "temperatureColdModerate": 40,
+    "temperatureOptimalMin": 40,
+    "temperatureOptimalMax": 65,
+    "temperatureHeatModerate": 70,
+    "temperatureHeatStress": 85,
+    "temperatureEfficiencyColdSevere": 0.3,
+    "temperatureEfficiencyColdModerate": 0.7,
+    "temperatureEfficiencyHeatModerate": 0.9,
+    "temperatureEfficiencyHeatSevere": 0.6,
+    "biteArc": 0.7853981633974483,
+    "antennaAngle": 0.8,
+    "antennaReach": 150,
+    "callRadius": 300,
+    "callTicks": 60,
+    "alarmCost": 0.5,
+    "huntCallCost": 0.5,
+    "smokeCost": 20,
+    "smokeRadius": 80,
+    "smokeTicks": 180,
+    "smokeCooldown": 600,
+    "smokeThreshold": 0.8,
+    "packWindow": 120,
+    "maxClouds": 32,
+    "floorRescueAtZero": false,
+    "predatorRescueMin": 3,
+    "predatorRescueInterval": 450,
+    "predatorKillEnergy": 150,
+    "foodPatchCount": 16,
+    "foodPatchRadius": 400,
+    "foodPatchCapacity": 1,
+    "foodPatchDepletion": 0.02,
+    "foodPatchRegrow": 0.0005,
+    "foodBackgroundShare": 0.2,
+    "foodAreaCapacity": true,
+    "foodRegrowPerArea": 0.06,
+    "erasEnabled": true,
+    "eraSeasonTicks": 36000,
+    "winterRegrow": 0.2,
+    "droughtChance": 0.25,
+    "invasionInterval": 180000,
+    "invasionSize": 12,
+    "traitsEnabled": true,
+    "visionCost": 0.5,
+    "hebbianRate": 0.0001,
+    "leakEnabled": true
+  },
+  "configHash": "7d7d98b4f32313a8",
+  "ticks": 200000,
+  "seeds": [200460, 597883, 174238, 553445],
+  "sha": "0f88d7b",
+  "metrics": {
+    "eval.alarm_precision": {
+      "values": [0.000014693611698028203, 0.000029262734062065272, 0.000047775959744874823, 0.00029330292748629236],
+      "reasons": [null, null, null, null],
+      "mean": 0.00009625880824781516,
+      "sd": 0.00013205848044197966
+    },
+    "eval.alarm_response": {
+      "values": [0.0005478777906386625, -0.0007105059606667594, -0.00043809077417755944, -0.0007131663091629623],
+      "reasons": [null, null, null, null],
+      "mean": -0.0003284713133421546,
+      "sd": 0.0005983156607811165
+    },
+    "eval.archive_lineage_share": {
+      "values": [0.9340185676392573, 0.10260619253232464, 0.03962975022094051, 0.03408601274004029],
+      "reasons": [null, null, null, null],
+      "mean": 0.2775851307831407,
+      "sd": 0.43872431339068557
+    },
+    "eval.behaviour_coverage": {
+      "values": [0.1, 0.1, 0.1, 0.1],
+      "reasons": [null, null, null, null],
+      "mean": 0.1,
+      "sd": 0
+    },
+    "eval.births_per_1k": {
+      "values": [0.15821026612063427, 0.11763483423352708, 0.112965329515039, 0.10123410519654422],
+      "reasons": [null, null, null, null],
+      "mean": 0.12251113376643613,
+      "sd": 0.024779296946894958
+    },
+    "eval.body_plan_coverage": {
+      "values": [0.72, 0.96, 0.96, 0.96],
+      "reasons": [null, null, null, null],
+      "mean": 0.8999999999999999,
+      "sd": 0.12
+    },
+    "eval.born_share": {
+      "values": [0.8783459479416651, 0.9590008956115036, 0.9587136929460581, 0.9508083140877598],
+      "reasons": [null, null, null, null],
+      "mean": 0.9367172126467467,
+      "sd": 0.039098897491376135
+    },
+    "eval.catch_rate": {
+      "values": [0.0010871184078498648, 0.00802760425516543, 0.013582582782446414, 0.008507910939188288],
+      "reasons": [null, null, null, null],
+      "mean": 0.0078013040961625,
+      "sd": 0.005133354254227883
+    },
+    "eval.champion_elo": {
+      "values": [null, null, null, null],
+      "reasons": ["no league games", "no league games", "no league games", "no league games"],
+      "mean": null,
+      "sd": null
+    },
+    "eval.champion_win_rate": {
+      "values": [null, null, null, null],
+      "reasons": ["no league games", "no league games", "no league games", "no league games"],
+      "mean": null,
+      "sd": null
+    },
+    "eval.child_survival": {
+      "values": [0.912291798439806, 0.934427933077003, 0.9351269255803862, 0.9474452554744526],
+      "reasons": [null, null, null, null],
+      "mean": 0.9323229781429119,
+      "sd": 0.014631295095295148
+    },
+    "eval.cold_stress_share": {
+      "values": [0.0625, 0.06042655437795144, 0.05206056095632355, 0.06021823432823654],
+      "reasons": [null, null, null, null],
+      "mean": 0.05880133741562788,
+      "sd": 0.004610390410906285
+    },
+    "eval.coverage": {
+      "values": [0.648, 0.65, 0.686, 0.676],
+      "reasons": [null, null, null, null],
+      "mean": 0.665,
+      "sd": 0.018938496948455737
+    },
+    "eval.deliberate_food_share": {
+      "values": [0.1368152160413772, 0.10933591274953601, 0.13717623844629587, 0.12503788945320904],
+      "reasons": [null, null, null, null],
+      "mean": 0.12709131417260452,
+      "sd": 0.013111455524745495
+    },
+    "eval.deliberate_food_trend": {
+      "values": [-0.026637311854485285, -0.07865687960342416, -0.08372946118832252, -0.0542905922979095],
+      "reasons": [null, null, null, null],
+      "mean": -0.06082856123603536,
+      "sd": 0.026166688279444697
+    },
+    "eval.diversity": {
+      "values": [0.18909055158838683, 0.2803959448222368, 0.2771770716946787, 0.2749945186886066],
+      "reasons": [null, null, null, null],
+      "mean": 0.2554145216984772,
+      "sd": 0.04427160631421723
+    },
+    "eval.escape_rate": {
+      "values": [0.8333333333333334, 0.7450980392156863, 0.8173076923076923, 0.8260869565217391],
+      "reasons": [null, null, null, null],
+      "mean": 0.8054565053446128,
+      "sd": 0.04076897562426255
+    },
+    "eval.evasion_skill": {
+      "values": [0.1, 0.02631578947368421, 0.047058823529411764, 0],
+      "reasons": [null, null, null, null],
+      "mean": 0.043343653250773995,
+      "sd": 0.0423964013374652
+    },
+    "eval.evasion_trend": {
+      "values": [null, 0, null, null],
+      "reasons": [
+        "fewer than 4 compared windows have an escaped bite episode",
+        null,
+        "fewer than 4 compared windows have an escaped bite episode",
+        "fewer than 4 compared windows have an escaped bite episode"
+      ],
+      "mean": 0,
+      "sd": 0
+    },
+    "eval.fed_median_lifespan": {
+      "values": [3501, 5434, 5712.5, 6082.5],
+      "reasons": [null, null, null, null],
+      "mean": 5182.5,
+      "sd": 1152.0408702240848
+    },
+    "eval.fitness_lrs_corr": {
+      "values": [0.5505730689212684, 0.38940309559383773, 0.43651499674042094, 0.3271605942082979],
+      "reasons": [null, null, null, null],
+      "mean": 0.42591293886595627,
+      "sd": 0.0944061189537353
+    },
+    "eval.floor_episodes": {
+      "values": [249, 0, 0, 0],
+      "reasons": [null, null, null, null],
+      "mean": 62.25,
+      "sd": 124.5
+    },
+    "eval.food_energy_per_1k": {
+      "values": [519.0906989642368, 443.47890414646037, 416.386369526512, 429.89393941640407],
+      "reasons": [null, null, null, null],
+      "mean": 452.2124780134033,
+      "sd": 45.936909504442816
+    },
+    "eval.generation_depth_p90": {
+      "values": [15, 36, 41, 37],
+      "reasons": [null, null, null, null],
+      "mean": 32.25,
+      "sd": 11.7011395456454
+    },
+    "eval.group_cohesion_under_threat": {
+      "values": [-0.4371743927668935, 0.17057927152985242, 0.291643057578987, 2.9747708632301473],
+      "reasons": [null, null, null, null],
+      "mean": 0.7499546998930233,
+      "sd": 1.5171033684577193
+    },
+    "eval.heat_stress_share": {
+      "values": [0.407393899204244, 0.41486160177949066, 0.39558816689148335, 0.42874777282202375],
+      "reasons": [null, null, null, null],
+      "mean": 0.41164786017431043,
+      "sd": 0.013889385394821258
+    },
+    "eval.hunt_call_answer": { "values": [0, 0, 0, 0], "reasons": [null, null, null, null], "mean": 0, "sd": 0 },
+    "eval.hunt_call_precision": {
+      "values": [0.0034162777482243016, 0.005310108117717113, -0.0008569509017735321, 0.005912567981531466],
+      "reasons": [null, null, null, null],
+      "mean": 0.003445500736424837,
+      "sd": 0.0030591461532222166
+    },
+    "eval.idle_signals_per_1k": {
+      "values": [11.074202550104353, 12.030042810982247, 11.514144414128639, 9.484457879794128],
+      "reasons": [null, null, null, null],
+      "mean": 11.02571191375234,
+      "sd": 1.0992515935187837
+    },
+    "eval.kin_within_call_radius": {
+      "values": [1.2712124262462638, 2.1463471971249355, 3.314574851740297, 2.2182831055054932],
+      "reasons": [null, null, null, null],
+      "mean": 2.2376043951542472,
+      "sd": 0.8371539066692705
+    },
+    "eval.lineage_dominance": {
+      "values": [0.41843501326259946, 0.47747683450498996, 0.3858202707102656, 0.424916444434093],
+      "reasons": [null, null, null, null],
+      "mean": 0.42666214072798697,
+      "sd": 0.03795139229803163
+    },
+    "eval.lineage_effective": {
+      "values": [14.646762326201273, 4.832555492263055, 5.3494953857655085, 5.664407006251173],
+      "reasons": [null, null, null, null],
+      "mean": 7.6233050526202515,
+      "sd": 4.694845653820891
+    },
+    "eval.lineage_lifespan_p50": {
+      "values": [3446, 4988, 4795, 4610],
+      "reasons": [null, null, null, null],
+      "mean": 4459.75,
+      "sd": 693.2303008380404
+    },
+    "eval.lineage_turnover": {
+      "values": [13.68421052631579, 1.0526315789473684, 1.0526315789473684, 1.5789473684210527],
+      "reasons": [null, null, null, null],
+      "mean": 4.342105263157895,
+      "sd": 6.233010148593164
+    },
+    "eval.lineages_alive": {
+      "values": [18.10994764397906, 20.465968586387433, 19.79581151832461, 21.98952879581152],
+      "reasons": [null, null, null, null],
+      "mean": 20.090314136125656,
+      "sd": 1.6079713746079622
+    },
+    "eval.mating_share": {
+      "values": [0.11029561671763506, 0.217149109718492, 0.3266996666329932, 0.24045500619439125],
+      "reasons": [null, null, null, null],
+      "mean": 0.22364984981587788,
+      "sd": 0.08905638627680751
+    },
+    "eval.mean_fitness.defender": {
+      "values": [2242.2629481407116, 8036.832292809879, 8239.384853847576, 7097.935250136742],
+      "reasons": [null, null, null, null],
+      "mean": 6404.103836233727,
+      "sd": 2818.769248877293
+    },
+    "eval.mean_fitness.forager": {
+      "values": [5596.334223958207, 8341.158258338959, 5484.94366073993, 6506.22315610007],
+      "reasons": [null, null, null, null],
+      "mean": 6482.164824784291,
+      "sd": 1321.0578201682372
+    },
+    "eval.mean_fitness.predator": {
+      "values": [171.4973848892462, 400.23858799193624, 638.8846838666341, 368.7807319629592],
+      "reasons": [null, null, null, null],
+      "mean": 394.85034717769395,
+      "sd": 191.61416198770584
+    },
+    "eval.mean_fitness.reproducer": {
+      "values": [3741.4714504156254, 7781.745875462803, 7334.333547768568, 4564.124910159731],
+      "reasons": [null, null, null, null],
+      "mean": 5855.418945951682,
+      "sd": 2002.8428245523057
+    },
+    "eval.mean_fitness.scout": {
+      "values": [7602.601517529097, 5806.2563470484165, 7018.995028780306, 9549.355349326897],
+      "reasons": [null, null, null, null],
+      "mean": 7494.30206067118,
+      "sd": 1561.0240119245973
+    },
+    "eval.median_lifespan": {
+      "values": [3065, 4778, 5031, 5348.5],
+      "reasons": [null, null, null, null],
+      "mean": 4555.625,
+      "sd": 1020.7914719308085
+    },
+    "eval.migration_index": {
+      "values": [0.04960185799601858, 0.0652350639329806, 0.08568966483578075, 0.0634907120743034],
+      "reasons": [null, null, null, null],
+      "mean": 0.06600432470977083,
+      "sd": 0.014871264693992194
+    },
+    "eval.motion_coverage": {
+      "values": [0.68, 0.61, 0.59, 0.56],
+      "reasons": [null, null, null, null],
+      "mean": 0.61,
+      "sd": 0.05099019513592786
+    },
+    "eval.offspring_per_life": {
+      "values": [0.9924121405750799, 1.1838454424005755, 1.2890494137353434, 1.2079138375087801],
+      "reasons": [null, null, null, null],
+      "mean": 1.1683052085549448,
+      "sd": 0.12560238427088752
+    },
+    "eval.opportunity_for_selection": {
+      "values": [3.3841719127642618, 3.3272059612514004, 2.901004583676351, 3.507811170582662],
+      "reasons": [null, null, null, null],
+      "mean": 3.2800484070686693,
+      "sd": 0.2637016216927983
+    },
+    "eval.p90_fitness.defender": {
+      "values": [6372.178119576908, 22396.515008268965, 22579.486989259698, 20214.432048665825],
+      "reasons": [null, null, null, null],
+      "mean": 17890.65304144285,
+      "sd": 7753.77691309972
+    },
+    "eval.p90_fitness.forager": {
+      "values": [15150.730841927969, 22344.394179802468, 16846.99751584461, 18789.19553257343],
+      "reasons": [null, null, null, null],
+      "mean": 18282.829517537117,
+      "sd": 3088.924823612217
+    },
+    "eval.p90_fitness.predator": {
+      "values": [300, 300, 300, 300],
+      "reasons": [null, null, null, null],
+      "mean": 300,
+      "sd": 0
+    },
+    "eval.p90_fitness.reproducer": {
+      "values": [11203.37050363264, 21238.05309331398, 19179.2469714029, 12435.522544347681],
+      "reasons": [null, null, null, null],
+      "mean": 16014.048278174301,
+      "sd": 4941.564399875377
+    },
+    "eval.p90_fitness.scout": {
+      "values": [22221.862851777965, 15236.099686661735, 17454.7114501385, 24914.963758084243],
+      "reasons": [null, null, null, null],
+      "mean": 19956.90943666561,
+      "sd": 4406.788554275439
+    },
+    "eval.pack_convergence": {
+      "values": [null, null, null, null],
+      "reasons": ["no pack kill", "no pack kill", "no pack kill", "no pack kill"],
+      "mean": null,
+      "sd": null
+    },
+    "eval.pack_kill_share": { "values": [0, 0, 0, 0], "reasons": [null, null, null, null], "mean": 0, "sd": 0 },
+    "eval.population_mean": {
+      "values": [155.67, 428.12, 439.095, 439.405],
+      "reasons": [null, null, null, null],
+      "mean": 365.5725,
+      "sd": 140.03338331150422
+    },
+    "eval.pred_prey_lag_corr": {
+      "values": [null, -0.43362060670535457, 0.14756195007282197, null],
+      "reasons": [
+        "fewer than 5 usable pairs of a catch rate and the next evasion skill",
+        null,
+        null,
+        "catch rate or evasion skill does not vary across the windows"
+      ],
+      "mean": -0.1430293283162663,
+      "sd": 0.4109581270051843
+    },
+    "eval.predation_per_1k": {
+      "values": [0.000032254896252932574, 0.00007020879393227519, 0.00011411792051221236, 0.00006840912616052092],
+      "reasons": [null, null, null, null],
+      "mean": 0.00007124768421448526,
+      "sd": 0.00003350338976920476
+    },
+    "eval.predator_births": {
+      "values": [123, 18, 14, 19],
+      "reasons": [null, null, null, null],
+      "mean": 43.5,
+      "sd": 53.0440068873635
+    },
+    "eval.predator_presence": { "values": [1, 1, 1, 1], "reasons": [null, null, null, null], "mean": 1, "sd": 0 },
+    "eval.predator_share_cv": {
+      "values": [0.8888227240504758, 2.4106511796115577, 2.4616805017639294, 2.180653121910096],
+      "reasons": [null, null, null, null],
+      "mean": 1.9854518818340146,
+      "sd": 0.7412348199905211
+    },
+    "eval.pursuit_bite_share": {
+      "values": [0.2815955207363859, 0.04067664492519872, 0.21898386204636017, 0.027514716464386284],
+      "reasons": [null, null, null, null],
+      "mean": 0.14219268604308277,
+      "sd": 0.12752330289458877
+    },
+    "eval.pursuit_kill_share": {
+      "values": [1, 0, 0.1, 0],
+      "reasons": [null, null, null, null],
+      "mean": 0.275,
+      "sd": 0.48562674281111556
+    },
+    "eval.pursuit_trend": {
+      "values": [null, null, null, null],
+      "reasons": [
+        "fewer than 4 compared windows have a hunter kill",
+        "fewer than 4 compared windows have a hunter kill",
+        "fewer than 4 compared windows have a hunter kill",
+        "fewer than 4 compared windows have a hunter kill"
+      ],
+      "mean": null,
+      "sd": null
+    },
+    "eval.qd_score": {
+      "values": [1109.9764040050363, 2018.3619441541537, 1531.802526465546, 2045.0415264291019],
+      "reasons": [null, null, null, null],
+      "mean": 1676.2956002634596,
+      "sd": 445.1885825553255
+    },
+    "eval.sex_balance": {
+      "values": [0.04669999194911187, 0.04481607412468678, 0.028590616432097263, 0.031301349435531756],
+      "reasons": [null, null, null, null],
+      "mean": 0.037852007985356914,
+      "sd": 0.009228028651071913
+    },
+    "eval.skill_trend": {
+      "values": [-0.026637311854485285, -0.03932843980171208, -0.08372946118832252, -0.0542905922979095],
+      "reasons": [null, null, null, null],
+      "mean": -0.05099645128560734,
+      "sd": 0.02457513287935142
+    },
+    "eval.smoke_escapes": {
+      "values": [null, null, 1, null],
+      "reasons": [
+        "no smoke release after a bite",
+        "no smoke release after a bite",
+        null,
+        "no smoke release after a bite"
+      ],
+      "mean": 1,
+      "sd": 0
+    },
+    "eval.smoke_precision": {
+      "values": [0.004940471369563456, 0.0028523232633031743, 0.00465829175933161, 0.004061277510675785],
+      "reasons": [null, null, null, null],
+      "mean": 0.004128090975718507,
+      "sd": 0.0009261249142529477
+    },
+    "eval.spec_dominance": {
+      "values": [0.5092838196286472, 0.5618717957867941, 0.7218242708963207, 0.7948550733076358],
+      "reasons": [null, null, null, null],
+      "mean": 0.6469587399048495,
+      "sd": 0.13375642650857417
+    },
+    "eval.spec_effective": {
+      "values": [3.2457665801856646, 2.782936407871486, 2.3941412704087326, 1.9504614829594946],
+      "reasons": [null, null, null, null],
+      "mean": 2.5933264353563446,
+      "sd": 0.5521413349308033
+    },
+    "eval.spec_turnover": {
+      "values": [5.2631578947368425, 1.0526315789473684, 4.2105263157894735, 4.2105263157894735],
+      "reasons": [null, null, null, null],
+      "mean": 3.6842105263157894,
+      "sd": 1.823211376388292
+    },
+    "eval.terrain_death_share": {
+      "values": [0.23722044728434505, 0.19186106258349606, 0.17001675041876047, 0.19093889018965113],
+      "reasons": [null, null, null, null],
+      "mean": 0.19750928761906317,
+      "sd": 0.02833071579343034
+    },
+    "eval.trait_spread": {
+      "values": [0.06392217807963062, 0.090676187794676, 0.08613606774462218, 0.11187428691867948],
+      "reasons": [null, null, null, null],
+      "mean": 0.08815218013440207,
+      "sd": 0.019666101746374266
+    },
+    "eval.undefended_bite_share": {
+      "values": [0.9090909090909091, 0.9574468085106383, 0.9393939393939394, 0.9047619047619048],
+      "reasons": [null, null, null, null],
+      "mean": 0.9276733904393478,
+      "sd": 0.02512682816206336
+    },
+    "eval.unseen_bite_share": {
+      "values": [0, 0.02127659574468085, 0.020202020202020204, 0.07936507936507936],
+      "reasons": [null, null, null, null],
+      "mean": 0.030210923827945102,
+      "sd": 0.03419956771266339
+    },
+    "eval.winter_pop_ratio": {
+      "values": [0.24598862795497917, 1.0288155298471415, 1.0013178220502286, 1.001971879286694],
+      "reasons": [null, null, null, null],
+      "mean": 0.8195234647847609,
+      "sd": 0.3825711218598331
+    }
+  }
+}
