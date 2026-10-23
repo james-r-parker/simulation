@@ -235,6 +235,23 @@ describe('smoke release', () => {
         expect(w.cloudCount).toBe(1);
     });
 
+    it.each([
+        ['alarm', 'alarmThreshold', OUTPUT_INDEX.ALARM, FORAGER, EVENT_TYPE.ALARM_CALLED],
+        ['hunt call', 'huntCallThreshold', OUTPUT_INDEX.HUNT, PREDATOR, EVENT_TYPE.PACK_CALLED],
+    ])('fires the %s only above its threshold', (_name, key, output, spec, type) => {
+        const called = (/** @type {number} */ threshold, /** @type {number} */ value) => {
+            const w = build({ [key]: threshold });
+            setOutput(w, agent(w, { spec }), output, value);
+            run(w);
+            return events(w).filter((e) => e[0] === type).length;
+        };
+        expect(called(0, 0.6)).toBe(1);
+        expect(called(0, 0)).toBe(0);
+        expect(called(0.5, 0.6)).toBe(1);
+        expect(called(0.8, 0.6)).toBe(0);
+        expect(called(0.5, 0.5)).toBe(0);
+    });
+
     it('is open to a specialisation that can hunt', () => {
         const w = build();
         const a = agent(w, { spec: PREDATOR });

@@ -87,6 +87,14 @@ describe('feature switch lists', () => {
         expect([predator.passiveLossMultiplier, predator.splitMinEnergyMultiplier]).toEqual([1, 1]);
     });
 
+    it('pin the call thresholds at 0 in both lists until T15n and T15d pick them', () => {
+        for (const list of [FEATURES_OFF, FEATURES_ON]) {
+            expect([list.alarmThreshold, list.huntCallThreshold]).toEqual([0, 0]);
+        }
+        expect(createConfig({}).alarmThreshold).toBe(0);
+        expect(createConfig({}).huntCallThreshold).toBe(0);
+    });
+
     it('build a world that steps when on', () => {
         const config = createConfig({ ...FEATURES_ON, initialAgents: 40, minAgents: 40, maxAgents: 60 });
         const brain = cloneWithNoisePolicy();

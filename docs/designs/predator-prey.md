@@ -85,7 +85,8 @@ right at `a - antennaAngle`, where `a` is the heading; a positive `turnRate` tur
 `detCos` and `detSin` of the heading and a table of `antennaAngle`'s `detCos` and `detSin` built in `allocateWorld`
 (like `rayCos`), so nothing is allocated per tick. `samplePheromone` clamps a point to the grid.
 
-**Outputs.** `OUTPUT_INDEX` names them; an action fires when its output is above 0, like sprint and bite.
+**Outputs.** `OUTPUT_INDEX` names them; an action fires when its output is above 0, like sprint and bite; alarm, hunt call and smoke have a threshold key each
+(`alarmThreshold` and `huntCallThreshold` default 0, `smokeThreshold` 0.8).
 
 | Index | Name       | Action                                                                                                      |
 | ----- | ---------- | ----------------------------------------------------------------------------------------------------------- |
@@ -122,7 +123,7 @@ right at `a - antennaAngle`, where `a` is the heading; a positive `turnRate` tur
 `signalAll` runs in the new `signal` phase between `brain` and `physics`, in this order:
 
 1. For each alive slot ascending, `alarmTimer`, `huntTimer` and `smokeTimer` each decrease by 1 while above 0.
-2. For each alive slot ascending, each action fires when its output is above 0, its timer is 0 and the agent's energy
+2. For each alive slot ascending, each action fires when its output is above 0 (alarm: `alarmThreshold`, hunt call: `huntCallThreshold`, both 0 by default), its timer is 0 and the agent's energy
    exceeds its cost:
     - **Alarm**: only when the specialisation lacks `canHunt`. Pays `alarmCost` with `removeEnergy` (cause `cost`),
       sets `alarmTimer` to `callTicks`, deposits on `danger` at the agent and pushes `AlarmCalled`.
@@ -252,6 +253,8 @@ New keys in `createConfig`; the Source column names the legacy constant, as `con
 | `smokeTicks`                         | int    | 180             | new; 1 to 65535                                                                               |
 | `smokeCooldown`                      | int    | 600             | new; 0 to 65535                                                                               |
 | `smokeThreshold`                     | number | 0.8             | new; 0 to 1                                                                                   |
+| `alarmThreshold`                     | number | 0               | the alarm output must exceed it; 0 to 0.95 (fitness-and-selection T15m)                       |
+| `huntCallThreshold`                  | number | 0               | the hunt output must exceed it; 0 to 0.95 (fitness-and-selection T15m)                        |
 | `packWindow`                         | int    | 120             | new; 1 or more                                                                                |
 | `maxClouds`                          | int    | 32              | new; 0 to 256                                                                                 |
 | `huntSizeRatio`                      | number | 1.01            | from `PREDATOR_SIZE_RATIO_THRESHOLD` (1.1); 1 or more; tuned (E20, jaws)                      |
