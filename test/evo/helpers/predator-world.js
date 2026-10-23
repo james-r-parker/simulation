@@ -9,6 +9,7 @@ import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
 import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { PRE_T15D } from './pre-t15d.js';
 
 export const predatorWorld = JSON.parse(
     readFileSync(new URL('../../../evals/predator-world.json', import.meta.url), 'utf8'),
@@ -63,7 +64,7 @@ export function playPredatorWorld(
         predatorEvery = 2,
     } = {},
 ) {
-    const config = createConfig({ ...FEATURES_OFF, ...base, ...extra, seed });
+    const config = createConfig({ ...FEATURES_OFF, ...PRE_T15D, ...base, ...extra, seed });
     const random = predator === RANDOM_ARM || prey === RANDOM_ARM;
     const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined, predatorEvery);
     const world = createWorld(config, policy);
@@ -88,7 +89,7 @@ export function playPredatorWorld(
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
 export function playMicroWorld(seed, ticks, arm, extra = {}) {
-    const config = createConfig({ ...FEATURES_OFF, ...microWorld, ...extra, seed });
+    const config = createConfig({ ...FEATURES_OFF, ...PRE_T15D, ...microWorld, ...extra, seed });
     const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));

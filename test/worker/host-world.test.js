@@ -167,7 +167,7 @@ describe('worldInfo and readyLayout', () => {
             rayCount: 8,
             ticksPerSecond: BASE_TICKS_PER_SECOND,
             seasonNames: [...SEASON_NAMES],
-            biteArc: Math.PI / 4,
+            biteArc: 1.571,
             cellSize: 100,
         });
         expect(info.cols * info.rows).toBe(16 * 10);
@@ -179,6 +179,12 @@ describe('worldInfo and readyLayout', () => {
             'defender',
         ]);
         expect(info.specs[1]).toMatchObject({ index: 1, canHunt: true, visionRange: 350 });
+    });
+
+    it('passes the alarm and hunt call thresholds to the app, as it does smokeThreshold (T15d)', () => {
+        const overrides = { ...SMALL_CONFIG, alarmThreshold: 0.3, huntCallThreshold: 0.7, smokeThreshold: 0.6 };
+        const info = worldInfo(buildRun({ seed: 3, overrides, createPolicy: noisePolicy, log: LOG }));
+        expect(info).toMatchObject({ alarmThreshold: 0.3, huntCallThreshold: 0.7, smokeThreshold: 0.6 });
     });
 
     it('carries the buffer offsets, the effect kinds, the flag bits and the cause codes', () => {

@@ -23,8 +23,9 @@ const MEASURED_TICKS = 2000;
 /**
  * The tunables `bench/baseline.json` was recorded with (commit 282ffeb), frozen so `bench.step_ms@<n>` and `bench-check`
  * compare like with like when `createConfig` defaults are retuned. It lists only the keys whose defaults have changed
- * since; every other key follows the defaults. `biteArc` did not exist then and cannot be frozen out. Every Phase 3
- * feature key is pinned off (`FEATURES_OFF`), so the switch-on in world-balance T41 leaves this world as it was.
+ * since; every other key follows the defaults. Every Phase 3 feature key is pinned off (`FEATURES_OFF`), so the switch-on
+ * in world-balance T41 leaves this world as it was. The T15d defaults (`biteArc`, and the predator's `biteMultiplier`
+ * that `FEATURES_OFF` does not pin) are restated at their pre-T15d values, so the tuned defaults leave this world as it was.
  */
 export const BENCH_CONFIG = Object.freeze({
     ...FEATURES_OFF,
@@ -33,6 +34,10 @@ export const BENCH_CONFIG = Object.freeze({
     huntSizeRatio: 1.05,
     alarmCost: 4,
     huntCallCost: 4,
+    biteArc: Math.PI / 4,
+    specialisations: {
+        predator: { plantFoodValue: 1, passiveLossMultiplier: 1, splitMinEnergyMultiplier: 1, biteMultiplier: 4 },
+    },
 });
 
 /**

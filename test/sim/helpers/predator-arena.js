@@ -20,6 +20,8 @@ const TURN_GAIN = 4;
 
 /** An empty 8000 x 4000 world: no obstacles, no food, no floor and no immigrants. */
 const ARENA = {
+    // the pre-T15d ratio these arena tests assume (the default is now 0.8)
+    huntSizeRatio: 1.01,
     worldWidth: 8000,
     worldHeight: 4000,
     maxAgents: 8,

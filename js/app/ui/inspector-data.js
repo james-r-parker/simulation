@@ -213,6 +213,23 @@ function traitRows(c, info) {
     ];
 }
 
+/** The outputs that light only above a threshold, as the worker's output name and the `info` key it reads (as `calls.js` does). */
+const FIRING_THRESHOLD_KEY = Object.freeze({
+    smoke: 'smokeThreshold',
+    alarm: 'alarmThreshold',
+    hunt: 'huntCallThreshold',
+});
+
+/**
+ * @param {string} label the worker's output name
+ * @param {Record<string, any>} info `ready.info`
+ * @returns {number} the value an output must exceed to light: its call threshold, or 0 for the other outputs
+ */
+export function firingThreshold(label, info) {
+    const key = /** @type {Record<string, string>} */ (FIRING_THRESHOLD_KEY)[label];
+    return key === undefined ? 0 : info[key];
+}
+
 /**
  * @param {{snapshot: {u32: Uint32Array, f32: Float32Array}, ready: Record<string, any>,
  *   slots: import('../family-slots.js').FamilySlots}} source the newest snapshot, the `ready` message (layout, info,
@@ -255,7 +272,7 @@ export function inspectorView({ snapshot, ready, slots }) {
             return {
                 label: /** @type {Record<string, string>} */ (OUTPUT_TITLES)[label] ?? label,
                 value: clamp1(value),
-                firing: label === 'smoke' ? value > info.smokeThreshold : value > 0,
+                firing: value > firingThreshold(label, info),
             };
         }),
         counters: countersOf(counters, { specName: spec, family, info, male: (found.flags & layout.flags.MALE) !== 0 }),

@@ -65,6 +65,15 @@ describe('updateBoard leader', () => {
         updateBoard(board, setCounts(board, { 1: 5, 2: 9 }), 400);
         expect(updateBoard(board, setCounts(board, { 1: 9, 2: 5 }), 300 + LEAD_COOLDOWN_TICKS + 1).leader).toBe(1);
     });
+
+    it('forgets a lineage that has not led for the cooldown, but keeps the current leader', () => {
+        const board = createLineageBoard();
+        updateBoard(board, setCounts(board, { 1: 9, 2: 5 }), 100);
+        updateBoard(board, setCounts(board, { 1: 5, 2: 9 }), 200);
+        expect([...board.ledAt.keys()].sort()).toEqual([1, 2]);
+        updateBoard(board, setCounts(board, { 1: 5, 2: 9 }), 200 + LEAD_COOLDOWN_TICKS + 1);
+        expect([...board.ledAt.keys()]).toEqual([2]);
+    });
 });
 
 describe('updateBoard extinction', () => {

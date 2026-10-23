@@ -120,6 +120,19 @@ function terrainInfo(config) {
 }
 
 /**
+ * The output thresholds the app lights its indicators with (the inspector's firing lights).
+ * @param {Record<string, any>} config the run's config
+ * @returns {{smokeThreshold: number, alarmThreshold: number, huntCallThreshold: number}} the thresholds
+ */
+function callThresholds(config) {
+    return {
+        smokeThreshold: config.smokeThreshold,
+        alarmThreshold: config.alarmThreshold,
+        huntCallThreshold: config.huntCallThreshold,
+    };
+}
+
+/**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
  * @returns {Record<string, any>} `ready.info`
@@ -146,7 +159,7 @@ export function worldInfo({ config, world }) {
         callTicks: config.callTicks,
         smokeRadius: config.smokeRadius,
         smokeTicks: config.smokeTicks,
-        smokeThreshold: config.smokeThreshold,
+        ...callThresholds(config),
         antennaReach: config.antennaReach,
         antennaAngle: config.antennaAngle,
         biteArc: config.biteArc,

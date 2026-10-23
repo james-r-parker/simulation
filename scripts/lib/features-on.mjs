@@ -74,9 +74,14 @@ export const FEATURES_ON = Object.freeze({
     terrainLayout: 'basins',
     obstacleCount: 0,
     specMutationRate: 0.002,
-    // The predator economy keys (T15f) are at their neutral values here: T15g's screen picks the tuned ones and T15d sets them.
-    predatorKillEnergy: 0,
-    specialisations: { predator: { plantFoodValue: 0, passiveLossMultiplier: 1, splitMinEnergyMultiplier: 1 } },
+    // The tuned defaults of fitness-and-selection T15d (the same values as config-defaults.js).
+    predatorKillEnergy: 150,
+    huntSizeRatio: 0.8,
+    biteArc: 1.571,
+    huntCallCost: 10,
+    specialisations: {
+        predator: { plantFoodValue: 0, passiveLossMultiplier: 0.6, splitMinEnergyMultiplier: 0.6, biteMultiplier: 12 },
+    },
     foodPatchCount: 16,
     foodAreaCapacity: true,
     erasEnabled: true,
@@ -91,11 +96,10 @@ export const FEATURES_ON = Object.freeze({
     reproductionCooldown: 150,
     childEnergyMin: 100,
     hashCellSize: 140,
-    predatorRescueMin: 3, // the T15g starting value (fitness-and-selection); the screen tunes it, T15d sets the defaults
+    predatorRescueMin: 3,
     predatorRescueInterval: 450,
-    // The call thresholds (T15m) stay 0 here: T15n's screen picks the values and T15d sets them.
-    alarmThreshold: 0,
-    huntCallThreshold: 0,
+    alarmThreshold: 0.65,
+    huntCallThreshold: 0.65,
 });
 
 /** @returns {string[]} the `FEATURE_RULES` keys missing from `FEATURES_OFF` (a new feature key not yet pinned) */

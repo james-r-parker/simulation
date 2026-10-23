@@ -9,8 +9,14 @@ import { smallWorld } from './helpers/small-world.js';
 const FORAGER = 0;
 const PREDATOR = 1;
 const DEFENDER = 4;
-/** The neutral predator, so these tests read in whole `biteEnergy` units. */
-const NEUTRAL = { specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } } };
+/**
+ * The neutral predator, so these tests read in whole `biteEnergy` units. The size ratio is the pre-T15d 1.01, which
+ * these fixtures (a victim just too big to bite) assume; the default is now 0.8.
+ */
+const NEUTRAL = {
+    huntSizeRatio: 1.01,
+    specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
+};
 
 /**
  * @param {ReturnType<typeof smallWorld>} w
@@ -371,7 +377,7 @@ describe('feed: exact boundaries', () => {
         ['at exactly huntSizeRatio', 20, 0],
         ['just above huntSizeRatio', 21, 1],
     ])('bites a victim %s', (_name, biterSize, bites) => {
-        const w = smallWorld({ huntSizeRatio: 2, ...NEUTRAL });
+        const w = smallWorld({ ...NEUTRAL, huntSizeRatio: 2 });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50 });
         w.size[0] = biterSize;
