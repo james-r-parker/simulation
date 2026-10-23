@@ -6,6 +6,7 @@ import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { KILL, killKind } from './observer-combat.js';
 import { biteDeliberate, findAlive, recordBite } from './observer-intent.js';
 import { pruneAlarms, pushAlarm } from './observer-intent-alarms.js';
+import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { popResolvedHuntCall, pushHuntCall, sampleHearers } from './observer-intent-calls.js';
 import { INTENT_WINDOW } from './observer-intent-state.js';
 
@@ -125,7 +126,9 @@ function noteCall(intent, world, type, slot) {
         intent.huntCallCount[slot] += 1;
         pushHuntCall(intent.calls, tick, world.lineageId[slot], precise ? world.genomeId[slot] : 0);
     } else {
-        precise = threat || world.bittenTimer[slot] < TIMER_CAP;
+        // A bittenTimer of 1 is a bite of this very step, landed after the release (`signal` runs before `feed`).
+        const timer = world.bittenTimer[slot];
+        precise = threat || (timer > BITTEN_THIS_TICK && timer < TIMER_CAP);
         run.smokes += 1;
         run.smokesPrecise += precise ? 1 : 0;
     }
