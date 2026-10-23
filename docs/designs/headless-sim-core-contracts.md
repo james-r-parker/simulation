@@ -113,6 +113,8 @@ and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-o
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust` | `0`, `0`, `0`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` | `satiationShare`, `digestTicks`, `handlingTicks` `0` |
 | `specMutationRate`, `huntUpkeep`                                   | `0`, `0.002`                   | `0 .. 1`; `>= 0`                                         | `specMutationRate` `0`                               |
 | `floorRescueAtZero`                                                | `false`                        | Boolean                                                  | `false`                                              |
+| `predatorRescueMin`                                                | `0`                            | Integer 0 to 50; 0 is off                                | `0`                                                  |
+| `predatorRescueInterval`                                           | `600`                          | Integer 1 to 6000 ticks                                  | `600`                                                |
 | `carcassesEnabled`, `carcassTicks`, `carcassShare`                 | `false`, `300`, `0.5`          | Boolean; integer `>= 1`; `0 .. 1`                        | `carcassesEnabled` `false`                           |
 | `specialisations.<s>.plantFoodValue`, `.meatFoodValue`             | `1` (meat `0.3`, predator `1`) | `0 .. 1`                                                 | `1` for plants                                       |
 | `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`           | `0`, `400`, `1`                | Integer `0 .. 256`; `> 0`; `> 0`                         | `foodPatchCount` `0`                                 |
@@ -211,14 +213,14 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Ids and codes
 
-| Code set      | Values                                                                                                                                                                                                                           |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4                                                                                                                                                                       |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                                                                                                               |
-| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                         |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                        |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `InvasionArrived` 12 |
-| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                         |
+| Code set      | Values                                                                                                                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4                                                                                                                                                                                            |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                                                                                                                                    |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                              |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                             |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `InvasionArrived` 12, `PredatorRescue` 13 |
+| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                              |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -247,6 +249,7 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 | `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                 |
 | `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                       |
 | `InvasionArrived`    | `count`, `lineageId`, `spec`, `edge` (0 west, 1 east, 2 north, 3 south, as `placeAtEdge` reads it)                     |
+| `PredatorRescue`     | `count` (predators alive before the spawn), `cause` (the born cause, always `immigrant`); debug level in `drainEvents` |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
 ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, `DroughtStarted` and `InvasionArrived` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 6 x maxAgents`
@@ -345,6 +348,12 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
   weights row, `lineageId` and `spec` are then overwritten with the first's (new `genomeId`s, `applyGenes`, a fresh sex
   draw); all are placed by `placeAtEdge` in a band of `SPREAD` (150) px at that edge, two `spawn` draws per attempt, up
   to `placementTries`, keeping the spawn position when none is clear. It then pushes `InvasionArrived`.
+- `rescuePredators` (`predator-rescue.js`, after `fillFloor` in `lifecycle`): with `predatorRescueMin` above 0, `tick > 0`,
+  `tick % predatorRescueInterval === 0` and `population < maxAgents`, when fewer than `predatorRescueMin` alive agents have a
+  specialisation with `canHunt`, `spawnAgent(world, policy, IMMIGRANT, spec)` spawns one immigrant of the first `canHunt`
+  specialisation (`spec` forces the specialisation, so `policy.initSpec` is skipped), then pushes `PredatorRescue`. The
+  genome is whatever `policy.initBrain` gives that specialisation: the predator cell for the map-elites seeder, a random
+  one for a policy without cells. It draws only what an ordinary immigrant draws, and nothing at `predatorRescueMin` 0.
 - `ateTimer` and `bittenTimer` reset to 0 when the agent eats or is bitten.
 
 ### Motion and body inputs

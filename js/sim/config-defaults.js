@@ -221,6 +221,8 @@ export const DEFAULTS = deepFreeze({
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
     floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
+    predatorRescueMin: 0, // new: every predatorRescueInterval ticks with fewer predators than this alive, one immigrant spawns as a predator; 0 is off (fitness-and-selection T15b)
+    predatorRescueInterval: 600, // new: ticks between predator rescue checks
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch

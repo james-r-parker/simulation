@@ -19,6 +19,8 @@ export const FEATURES_OFF = Object.freeze({
     eraSeasonTicks: 36000,
     erasEnabled: false,
     floorRescueAtZero: false,
+    predatorRescueInterval: 600,
+    predatorRescueMin: 0,
     foodAreaCapacity: false,
     foodBackgroundShare: 0.2,
     foodPatchCapacity: 1,

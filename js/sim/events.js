@@ -17,6 +17,7 @@ export const EVENT_TYPE = Object.freeze({
     SEASON_CHANGED: 10,
     DROUGHT_STARTED: 11,
     INVASION_ARRIVED: 12,
+    PREDATOR_RESCUE: 13,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

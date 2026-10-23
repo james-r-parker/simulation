@@ -266,10 +266,12 @@ function chooseSpec(world, policy, slot, cause) {
  * @param {World} world the world
  * @param {Policy} policy the brain policy
  * @param {number} cause a `BORN_CAUSE` of `INITIAL`, `FLOOR` or `IMMIGRANT`
+ * @param {number} [forcedSpec] a specialisation index to use instead of the policy's pick (the predator rescue); -1 or
+ *   omitted leaves the pick to the policy
  * @returns {number} the agent slot
  * @throws {Error} when the cause is not a spawn cause or the world is full
  */
-export function spawnAgent(world, policy, cause) {
+export function spawnAgent(world, policy, cause, forcedSpec = -1) {
     const source = SPAWN_SOURCE.get(cause);
     if (source === undefined) {
         throw new Error(`spawnAgent: cause must be initial, floor or immigrant, got ${cause}`);
@@ -279,7 +281,7 @@ export function spawnAgent(world, policy, cause) {
     const id = world.nextId++;
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
-    world.spec[slot] = chooseSpec(world, policy, slot, cause);
+    world.spec[slot] = forcedSpec >= 0 ? forcedSpec : chooseSpec(world, policy, slot, cause);
     drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
