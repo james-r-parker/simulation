@@ -74,7 +74,7 @@ export function runSeed(task) {
     const { seed, policy: policyName, overrides } = task;
     const started = performance.now();
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'));
+    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: task.ticks });
     const log = createSimLog(() => {}, { level: 'error' });
     const policy = getPolicy(policyName).create({ config, log, observer });
     /** @type {Record<string, any> | undefined} */

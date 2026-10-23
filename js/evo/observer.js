@@ -8,6 +8,7 @@ import { createCombatCounters, observeCombat } from './observer-combat.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
+import { createWindows, noteWindows } from './observer-windows.js';
 import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
 
@@ -70,9 +71,11 @@ const DEATH_CAUSES = 4;
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {Record<string, any>} rng the `eval` stream, `fork(createRng(config.seed), 'eval')`; kept as `observer.rng`
+ * @param {{runTicks?: number}} [options] `runTicks`, the run length the trend metrics cut into windows; without it
+ *   (or at most the burn-in) they are `null`
  * @returns {Record<string, any>} a fresh observer with every counter at zero
  */
-export function createObserver(config, rng) {
+export function createObserver(config, rng, options = {}) {
     const n = config.maxAgents;
     const observer = {
         config,
@@ -99,6 +102,7 @@ export function createObserver(config, rng) {
         dominantLineage: 0,
         combat: createCombatCounters(config),
         intent: createIntentState(config),
+        windows: createWindows(options.runTicks ?? 0),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
@@ -127,6 +131,7 @@ export function observe(observer, world, fitness) {
     countTick(observer, world);
     observer.agentTicks += world.population;
     observer.ticks = world.tick;
+    noteWindows(observer.windows, observer, world.tick);
 }
 
 /**

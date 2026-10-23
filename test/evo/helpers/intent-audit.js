@@ -7,10 +7,11 @@ import { nextTick } from './observer-world.js';
  * A small empty arena (16 rays, `PI / 4` bite arc) for the intent metric audits, with its first `observe` at tick 0.
  * Call it after adding the agents with `addBorn`.
  * @param {Record<string, any>} [over] config overrides
+ * @param {{runTicks?: number}} [options] the observer's options
  * @returns {{world: any, observer: any, intent: any, start: () => void}}
  */
-export function auditArena(over = {}) {
-    const arena = intentArena({ maxAgents: 16, ...over });
+export function auditArena(over = {}, options = {}) {
+    const arena = intentArena({ maxAgents: 16, ...over }, options);
     return { ...arena, start: () => observe(arena.observer, arena.world) };
 }
 

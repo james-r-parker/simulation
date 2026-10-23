@@ -8,6 +8,7 @@ import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
 import { intentMetrics } from './metrics-intent.js';
 import { selectionMetrics } from './metrics-selection.js';
+import { trendMetrics } from './metrics-trend.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
 
@@ -120,6 +121,7 @@ export function computeMetrics(observer, _world, options = {}) {
         'eval.predator_share_cv': series.predatorShareCv(observer),
         ...combatMetrics(observer),
         ...intentMetrics(observer),
+        ...trendMetrics(observer),
         ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),

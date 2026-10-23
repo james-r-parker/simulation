@@ -20,6 +20,33 @@ function groupCohesion(run) {
 }
 
 /**
+ * @param {number} deliberate food energy eaten after a closing approach
+ * @param {number} chance food energy eaten otherwise
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.deliberate_food_share`, whole run or one window
+ */
+export function foodShare(deliberate, chance) {
+    return share(deliberate, deliberate + chance, 'no food eaten');
+}
+
+/**
+ * @param {number} deliberate hunter kills made by a deliberate bite
+ * @param {number} kills hunter kills
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.pursuit_kill_share`, whole run or one window
+ */
+export function killShare(deliberate, kills) {
+    return share(deliberate, kills, 'no hunter kill');
+}
+
+/**
+ * @param {number} responded escaped bite episodes in which the victim responded
+ * @param {number} escaped escaped bite episodes
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.evasion_skill`, whole run or one window
+ */
+export function evasionShare(responded, escaped) {
+    return share(responded, escaped, 'no escaped bite episode');
+}
+
+/**
  * @param {number} precise calls made with the cue current
  * @param {number} base the sum, over the calls, of the caller's own share of ticks with the cue current
  * @param {number} calls calls made
@@ -41,12 +68,12 @@ export function intentMetrics(observer) {
     const bases = callBases(intent);
     const huntBites = run.huntBiteDeliberate + run.huntBiteChance;
     return {
-        'eval.deliberate_food_share': share(run.foodDeliberate, run.foodDeliberate + run.foodChance, 'no food eaten'),
+        'eval.deliberate_food_share': foodShare(run.foodDeliberate, run.foodChance),
         'eval.pursuit_bite_share': share(run.huntBiteDeliberate, huntBites, 'no bite energy gained by hunters'),
-        'eval.pursuit_kill_share': share(run.huntKillsDeliberate, combat.huntKills, 'no hunter kill'),
+        'eval.pursuit_kill_share': killShare(run.huntKillsDeliberate, combat.huntKills),
         'eval.pack_convergence': share(run.packKillsConvergent, combat.packKills, 'no pack kill'),
         'eval.hunt_call_answer': share(calls.answeredCalls, calls.resolved, 'no resolved hunt call'),
-        'eval.evasion_skill': share(run.escapedResponded, combat.escapedEpisodes, 'no escaped bite episode'),
+        'eval.evasion_skill': evasionShare(run.escapedResponded, combat.escapedEpisodes),
         'eval.group_cohesion_under_threat': groupCohesion(run),
         'eval.alarm_precision': lift(run.alarmsPrecise, bases.alarm, run.alarms, 'no alarm call'),
         'eval.hunt_call_precision': lift(run.huntCallsPrecise, bases.hunt, run.huntCalls, 'no hunt call'),
