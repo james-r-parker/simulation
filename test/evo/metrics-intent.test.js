@@ -120,10 +120,10 @@ describe('intentMetrics', () => {
             expect(m[name], name).toBeDefined();
         }
         const lower = ['eval.idle_signals_per_1k', 'eval.undefended_bite_share'];
-        // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70).
+        // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70); `deliberate_food_share` and
+        // `diversity` returned to `higher` on E35's rates (fitness-and-selection T13).
         const watch = [
             'eval.unseen_bite_share',
-            'eval.deliberate_food_share',
             'eval.pursuit_bite_share',
             'eval.evasion_skill',
             'eval.alarm_precision',

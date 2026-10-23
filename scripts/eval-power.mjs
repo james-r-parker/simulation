@@ -8,9 +8,10 @@ import { compareReports, metricDirection } from '../js/evo/compare.js';
 import { validateReport } from '../js/evo/report.js';
 import { createRng, fork, nextInt } from '../js/sim/rng.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
+import { intendedDirection } from './lib/watch-intent.mjs';
 
 const USAGE =
-    'usage: eval:power <report.json> [--splits <n>] [--power-splits <n>] [--sizes <n,...>] [--metrics <m,...>] [--json]';
+    'usage: eval:power <report.json> [--splits <n>] [--power-splits <n>] [--sizes <n,...>] [--metrics <m,...>] [--include-watch] [--json]';
 
 /** Arm sizes to test: the default and the 32-seed minimum of the noisy metrics. */
 export const DEFAULT_SIZES = [16, 32];
@@ -21,7 +22,8 @@ const NOMINAL_ALPHA = 0.05;
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], splits: number, powerSplits: number, sizes: number[], metrics: string[], json: boolean }}
+ * @returns {{ files: string[], splits: number, powerSplits: number, sizes: number[], metrics: string[],
+ *   includeWatch: boolean, json: boolean }}
  *   parsed options
  */
 export function parseArgs(argv) {
@@ -36,8 +38,15 @@ export function parseArgs(argv) {
             '--sizes': (v, flag) => ['sizes', list(v).map((s) => intValue(flag, s, 16, USAGE))],
             '--metrics': (v) => ['metrics', list(v)],
         },
-        booleanFlags: { '--json': 'json' },
-        defaults: { splits: 1000, powerSplits: 200, sizes: DEFAULT_SIZES, metrics: [], json: false },
+        booleanFlags: { '--json': 'json', '--include-watch': 'includeWatch' },
+        defaults: {
+            splits: 1000,
+            powerSplits: 200,
+            sizes: DEFAULT_SIZES,
+            metrics: [],
+            includeWatch: false,
+            json: false,
+        },
         usage: USAGE,
     });
     if (files.length !== 1) {
@@ -80,11 +89,11 @@ function armReport(report, metric, { seeds, values }) {
  * Compares two disjoint random arms of `size` seeds with the planted change applied to the second.
  * @param {Record<string, any>} report the 64-seed report
  * @param {string} metric the metric
- * @param {{ order: number[], size: number, shift: number }} split a permutation of the seed indices, the arm size and
- *   the absolute shift added to the second arm
+ * @param {{ order: number[], size: number, shift: number, direction: string }} split a permutation of the seed indices,
+ *   the arm size, the absolute shift added to the second arm and the direction to score the metric in
  * @returns {string} the verdict, or `-` when the metric has no verdict here (watch, null, below its seed minimum)
  */
-function splitVerdict(report, metric, { order, size, shift }) {
+function splitVerdict(report, metric, { order, size, shift, direction }) {
     const all = report.metrics[metric].values;
     const first = order.slice(0, size);
     const second = order.slice(size, 2 * size);
@@ -95,9 +104,7 @@ function splitVerdict(report, metric, { order, size, shift }) {
     const { rows } = compareReports(
         armReport(report, metric, arm(first, 0)),
         armReport(report, metric, arm(second, shift)),
-        {
-            allowSeedDiff: true,
-        },
+        { allowSeedDiff: true, direction: () => /** @type {any} */ (direction) },
     );
     return rows[0].verdict;
 }
@@ -105,14 +112,19 @@ function splitVerdict(report, metric, { order, size, shift }) {
 /**
  * @param {Record<string, any>} report the 64-seed report
  * @param {string} metric a metric with a direction
- * @param {{ size: number, splits: number, shift: number, rng: import('../js/sim/rng.js').Rng }} options the arm size, how many
- *   random splits, the planted shift and the stream that draws them
+ * @param {{ size: number, splits: number, shift: number, direction: string, rng: import('../js/sim/rng.js').Rng }} options
+ *   the arm size, how many random splits, the planted shift, the direction to score in and the stream that draws them
  * @returns {{ better: number, worse: number, valid: number }} the verdicts over the splits that gave one
  */
-export function countVerdicts(report, metric, { size, splits, shift, rng }) {
+export function countVerdicts(report, metric, { size, splits, shift, direction, rng }) {
     const tally = { better: 0, worse: 0, valid: 0 };
     for (let s = 0; s < splits; s++) {
-        const verdict = splitVerdict(report, metric, { order: shuffled(report.seeds.length, rng), size, shift });
+        const verdict = splitVerdict(report, metric, {
+            order: shuffled(report.seeds.length, rng),
+            size,
+            shift,
+            direction,
+        });
         if (verdict !== '-') {
             tally.valid += 1;
             if (verdict === 'better' || verdict === 'worse') {
@@ -130,49 +142,72 @@ export function countVerdicts(report, metric, { size, splits, shift, rng }) {
  * @property {number | null} falsePositive share of A/A splits with a `better` or `worse` verdict; null when there is none
  * @property {number | null} detectable the smallest grid change (a fraction of the mean) detected in 80% of splits;
  *   null when none up to 100% is, or the metric has no verdict at this size
+ * @property {number} [validShare] share of the A/A splits that gave a verdict; the rest had a `null` seed in an
+ *   arm, which `eval:compare` refuses to compare
+ * @property {string} [direction] the direction the change was planted in, for a `watch` metric measured with
+ *   `includeWatch` (its intended direction)
  * @property {string} [note] why the row has no numbers
  */
 
 /**
  * @param {Record<string, any>} report the 64-seed report
- * @param {string} metric a metric name
- * @param {{ size: number, splits: number, powerSplits: number }} options arm size and split counts
- * @returns {PowerRow} the row for this metric and arm size
+ * @param {string} metric a metric with a direction and a non-zero mean
+ * @param {{ size: number, powerSplits: number, direction: string, rng: import('../js/sim/rng.js').Rng }} options the
+ *   arm size, splits per grid step, the direction to plant in and the stream that draws the splits
+ * @returns {number | null} the first `EFFECT_GRID` change detected in `POWER_TARGET` of splits; null when none is
  */
-export function powerRow(report, metric, { size, splits, powerSplits }) {
-    const base = { metric, size, falsePositive: null, detectable: null };
-    const direction = metricDirection(metric);
-    if (direction === null || direction === 'watch') {
-        return { ...base, note: direction === null ? 'unknown metric' : 'watch' };
-    }
-    const rng = fork(createRng(1), `power-${metric}-${size}`);
-    const none = countVerdicts(report, metric, { size, splits, shift: 0, rng });
-    if (none.valid === 0) {
-        return { ...base, note: 'no verdict at this size' };
-    }
+function detectableChange(report, metric, { size, powerSplits, direction, rng }) {
     const reference = Math.abs(report.metrics[metric].mean);
     const sign = direction === 'higher' ? 1 : -1;
-    const row = { ...base, falsePositive: (none.better + none.worse) / none.valid };
-    if (reference === 0) {
-        return { ...row, note: 'mean is 0' };
-    }
     for (const effect of EFFECT_GRID) {
         const shift = sign * effect * reference;
-        const tally = countVerdicts(report, metric, { size, splits: powerSplits, shift, rng });
+        const tally = countVerdicts(report, metric, { size, splits: powerSplits, shift, direction, rng });
         if (tally.better >= POWER_TARGET * tally.valid) {
-            return { ...row, detectable: effect };
+            return effect;
         }
     }
-    return row;
+    return null;
 }
 
 /**
  * @param {Record<string, any>} report the 64-seed report
- * @param {{ splits: number, powerSplits: number, sizes: number[], metrics: string[] }} options what to measure
+ * @param {string} metric a metric name
+ * @param {{ size: number, splits: number, powerSplits: number, includeWatch?: boolean }} options arm size and split
+ *   counts, and whether to measure a `watch` metric in its intended direction (`intendedDirection`) instead of skipping it
+ * @returns {PowerRow} the row for this metric and arm size
+ */
+export function powerRow(report, metric, { size, splits, powerSplits, includeWatch = false }) {
+    const base = { metric, size, falsePositive: null, detectable: null };
+    const declared = metricDirection(metric);
+    if (declared === null || (declared === 'watch' && !includeWatch)) {
+        return { ...base, note: declared === null ? 'unknown metric' : 'watch' };
+    }
+    const direction = declared === 'watch' ? intendedDirection(metric) : declared;
+    const rng = fork(createRng(1), `power-${metric}-${size}`);
+    const none = countVerdicts(report, metric, { size, splits, shift: 0, direction, rng });
+    if (none.valid === 0) {
+        return { ...base, note: 'no verdict at this size' };
+    }
+    const row = {
+        ...base,
+        falsePositive: (none.better + none.worse) / none.valid,
+        validShare: none.valid / splits,
+        ...(declared === 'watch' ? { direction } : {}),
+    };
+    if (Math.abs(report.metrics[metric].mean) === 0) {
+        return { ...row, note: 'mean is 0' };
+    }
+    return { ...row, detectable: detectableChange(report, metric, { size, powerSplits, direction, rng }) };
+}
+
+/**
+ * @param {Record<string, any>} report the 64-seed report
+ * @param {{ splits: number, powerSplits: number, sizes: number[], metrics: string[], includeWatch?: boolean }} options
+ *   what to measure
  * @returns {PowerRow[]} one row per metric (all of them when `metrics` is empty) and size
  * @throws {Error} when the report has fewer than twice the largest size in seeds, or a named metric is missing
  */
-export function evalPower(report, { splits, powerSplits, sizes, metrics }) {
+export function evalPower(report, { splits, powerSplits, sizes, metrics, includeWatch = false }) {
     const largest = Math.max(...sizes);
     if (report.seeds.length < 2 * largest) {
         throw new Error(
@@ -184,12 +219,32 @@ export function evalPower(report, { splits, powerSplits, sizes, metrics }) {
     if (missing.length > 0) {
         throw new Error(`metrics not in the report: ${missing.join(', ')}`);
     }
-    return names.flatMap((metric) => sizes.map((size) => powerRow(report, metric, { size, splits, powerSplits })));
+    return names.flatMap((metric) =>
+        sizes.map((size) => powerRow(report, metric, { size, splits, powerSplits, includeWatch })),
+    );
+}
+
+/**
+ * @param {PowerRow} row a row
+ * @returns {string} the note column: why there are no numbers, else `watch?` for a false-positive rate above twice the
+ *   nominal 5%, the planted direction of a measured `watch` metric, and the share of splits with a verdict when under 90%
+ */
+function rowNote(row) {
+    if (row.note !== undefined) {
+        return row.note;
+    }
+    const flag = row.falsePositive !== null && row.falsePositive > 2 * NOMINAL_ALPHA ? ['watch?'] : [];
+    const planted = row.direction === undefined ? [] : [`watch, planted ${row.direction}`];
+    const share =
+        row.validShare !== undefined && row.validShare < 0.9
+            ? [`verdicts in ${Math.round(row.validShare * 100)}%`]
+            : [];
+    return [...flag, ...planted, ...share].join('; ');
 }
 
 /**
  * @param {PowerRow[]} rows the rows
- * @returns {string[]} the table lines; a false-positive rate above twice the nominal 5% is flagged `watch?`
+ * @returns {string[]} the table lines
  */
 export function formatPower(rows) {
     const pct = (/** @type {number | null} */ v) => (v === null ? '-' : `${(v * 100).toFixed(1)}%`);
@@ -199,7 +254,7 @@ export function formatPower(rows) {
         String(r.size),
         pct(r.falsePositive),
         r.detectable === null ? (r.note === undefined ? '>100%' : '-') : `${pct(r.detectable)}`,
-        r.note ?? (r.falsePositive !== null && r.falsePositive > 2 * NOMINAL_ALPHA ? 'watch?' : ''),
+        rowNote(r),
     ]);
     const widths = head.map((_, c) => Math.max(...[head, ...body].map((line) => line[c].length)));
     return [head, ...body].map((line) =>
