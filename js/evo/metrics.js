@@ -9,6 +9,7 @@ import { dominanceMetrics } from './metrics-dominance.js';
 import { environmentMetrics } from './metrics-environment.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
+import { lineageMetrics } from './metrics-lineage.js';
 import { intentMetrics } from './metrics-intent.js';
 import { selectionMetrics } from './metrics-selection.js';
 import { trendMetrics } from './metrics-trend.js';
@@ -128,6 +129,7 @@ export function computeMetrics(observer, _world, options = {}) {
         ...dominanceMetrics(observer),
         ...bodyMetrics(observer),
         ...environmentMetrics(observer),
+        ...lineageMetrics(observer),
         ...selectionMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),

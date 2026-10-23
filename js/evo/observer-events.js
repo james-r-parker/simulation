@@ -3,6 +3,7 @@
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { noteDeath } from './metrics-environment.js';
+import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
 import { resetIntentSlot } from './observer-intent.js';
 
@@ -93,6 +94,9 @@ function finishDeath(observer, d, o, fitness) {
         observer.ghosts.add(genomeId);
     }
     observer.ageTicks[slot] = d[o + 8];
+    if (observer.eligibleChild[slot] === 1) {
+        noteChildDeath(observer.lineage, d[o + 8]);
+    }
     observer.foodEnergy[slot] = d[o + 9];
     observer.biteEnergy[slot] = d[o + 10];
     logDeath(observer, slot, fitness ? fitness(observer, slot, observer.config) : NaN);
@@ -164,6 +168,10 @@ function startBirth(observer, d, o) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         observer.birthsAfterBurnIn[d[o + 8]] += 1;
     }
+    const child = isEligibleChild(observer.lineage, d, o);
+    if (child) {
+        noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
+    }
     if (observer.ghosts.has(d[o + 3])) {
         return;
     }
@@ -172,6 +180,7 @@ function startBirth(observer, d, o) {
     observer.lineageId[slot] = d[o + 4];
     observer.spec[slot] = d[o + 5];
     observer.birthTick[slot] = d[o + 1];
+    observer.eligibleChild[slot] = child ? 1 : 0;
     setLineage(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);
 }
@@ -205,6 +214,7 @@ export function applyEvents(observer, world, fitness) {
     const count = world.events.count;
     observer.ghosts.clear();
     creditRelations(observer, d, count);
+    noteLineages(observer.lineage, d, count);
     noteParentage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {

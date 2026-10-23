@@ -67,6 +67,8 @@ const DIRECTIONS = {
     'eval.trait_spread': 'watch',
     'eval.body_plan_coverage': 'watch',
     'eval.sex_balance': 'watch',
+    'eval.child_survival': 'watch',
+    'eval.lineage_lifespan_p50': 'watch',
     'eval.cold_stress_share': 'watch',
     'eval.heat_stress_share': 'watch',
     'eval.terrain_death_share': 'watch',

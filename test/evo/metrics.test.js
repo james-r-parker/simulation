@@ -42,7 +42,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), {}));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(16 + 10 + 4 + 5 + 13 + 6 + 4 + 4 + 3 + 4);
+        expect(keys).toHaveLength(16 + 10 + 4 + 5 + 13 + 6 + 4 + 4 + 3 + 4 + 2);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
