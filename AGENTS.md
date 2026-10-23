@@ -104,6 +104,10 @@ When one agent hands tasks to others (user, 2026-10-22):
   reviews every result before it merges.
 - **Wait without polling.** Start long runs (evals, screens, the full gate) in the background and wait for the
   completion notice; never loop on sleep or check progress every few minutes. Leave no waiting loops behind.
+- **Never strand a run (user, 2026-10-23).** A subagent's background job finishing does not always wake the
+  subagent. A subagent runs a command that takes under about 9 minutes in the foreground, and does not end its turn
+  while one of its background jobs is still running. When a subagent starts a longer run, the delegating agent starts
+  its own background wait on that run's output file and resumes the subagent as soon as the file appears.
 - **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
   short table instead of reading whole reports.
 - **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,
