@@ -1,7 +1,7 @@
 // Eval observer: reads each tick's events and the world arrays into per-slot counters, run totals, a death log and
 // a checkpoint series. It runs outside `step` and allocates only when a log doubles or a birth is tracked.
 
-import { checkpoint } from './observer-checkpoint.js';
+import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
@@ -100,6 +100,7 @@ export function createObserver(config, rng, options = {}) {
         checkpointCount: 0,
         series: createLog(SERIES_FIELDS),
         dominantLineage: 0,
+        dominance: createDominancePools(),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
         windows: createWindows(options.runTicks ?? 0),
