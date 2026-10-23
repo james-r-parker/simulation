@@ -90,15 +90,47 @@ describe('bootstrapInterval', () => {
     });
 });
 
-/** Metrics whose eval:power false-positive rate exceeded 10% at 16 seeds on E29 (world-balance T41, T42, T70). */
-const WATCH_MOVED_BY_T41 = [
+/**
+ * Metrics that world-balance T41, T42 and T70 moved to `watch` on E29's eval:power rates and that E35 does not return
+ * (fitness-and-selection T13): a rate over 10% at 16 seeds, or too few verdicts (`evasion_skill`).
+ */
+const WATCH_AFTER_T13 = [
     'eval.alarm_precision',
-    'eval.deliberate_food_share',
-    'eval.diversity',
     'eval.evasion_skill',
     'eval.hunt_call_answer',
     'eval.pursuit_bite_share',
     'eval.smoke_precision',
+];
+
+/** Metrics T13 set from `watch` to their intended direction on E35's eval:power figures (rate <= 10%, detectable <= 50%). */
+const MOVED_BY_T13 = {
+    higher: [
+        'eval.deliberate_food_share',
+        'eval.deliberate_food_trend',
+        'eval.diversity',
+        'eval.trait_spread',
+        'eval.body_plan_coverage',
+        'eval.lineage_lifespan_p50',
+        'eval.spec_effective',
+    ],
+    lower: ['eval.spec_dominance', 'eval.lineage_dominance', 'eval.cold_stress_share', 'eval.terrain_death_share'],
+};
+
+/** New metrics T13 left on `watch`: a rate over 10%, a ceiling, too few non-null seeds, or no named direction. */
+const KEPT_WATCH_BY_T13 = [
+    'eval.lineage_effective',
+    'eval.skill_trend',
+    'eval.heat_stress_share',
+    'eval.winter_pop_ratio',
+    'eval.child_survival',
+    'eval.born_share',
+    'eval.pursuit_trend',
+    'eval.evasion_trend',
+    'eval.pred_prey_lag_corr',
+    'eval.migration_index',
+    'eval.sex_balance',
+    'eval.champion_elo',
+    'eval.champion_win_rate',
 ];
 
 describe('metricDirection', () => {
@@ -108,9 +140,15 @@ describe('metricDirection', () => {
         expect(metricDirection('eval.population_mean')).toBe('watch');
         expect(metricDirection('eval.born_share')).toBe('watch');
         expect(metricDirection('eval.mating_share')).toBe('watch');
-        for (const metric of WATCH_MOVED_BY_T41) {
-            expect(metricDirection(metric)).toBe('watch');
+        for (const metric of [...WATCH_AFTER_T13, ...KEPT_WATCH_BY_T13]) {
+            expect(metricDirection(metric), metric).toBe('watch');
         }
+        for (const [direction, metrics] of Object.entries(MOVED_BY_T13)) {
+            for (const metric of metrics) {
+                expect(metricDirection(metric), metric).toBe(direction);
+            }
+        }
+        expect(metricDirection('eval.predator_presence')).toBe('higher');
         expect(metricDirection('eval.p90_fitness.forager')).toBe('higher');
         expect(metricDirection('eval.mean_fitness.all')).toBe('higher');
         expect(metricDirection('bench.step_ms@500')).toBe('lower');
@@ -155,6 +193,19 @@ describe('compareReports verdicts', () => {
         expect(back['eval.births_per_1k']).toBe('worse');
         expect(back['browser.frame_p95_ms']).toBe('better');
         expect(back['bench.step_ms@500']).toBe('better');
+    });
+
+    it('scores a watch metric in the direction a `direction` option names, and leaves the others alone', () => {
+        const up = Object.fromEntries(Object.entries(metrics).map(([k, v]) => [k, shift(v, 3)]));
+        const rows = (/** @type {'higher' | 'lower'} */ way) =>
+            Object.fromEntries(
+                compareReports(report(metrics), report(up), {
+                    direction: (m) => (m === 'eval.population_mean' ? way : metricDirection(m)),
+                }).rows.map((r) => [r.metric, r.verdict]),
+            );
+        expect(rows('higher')['eval.population_mean']).toBe('better');
+        expect(rows('lower')['eval.population_mean']).toBe('worse');
+        expect(rows('higher')['eval.births_per_1k']).toBe('better');
     });
 
     it('gives no-difference for a tiny shift whose interval excludes 0, and a verdict past 5%', () => {

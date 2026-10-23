@@ -21,7 +21,7 @@ const DIRECTIONS = {
     'eval.born_share': 'watch',
     'eval.mating_share': 'watch',
     'eval.predation_per_1k': 'watch',
-    'eval.diversity': 'watch',
+    'eval.diversity': 'higher',
     'eval.lineages_alive': 'higher',
     'eval.lineage_turnover': 'higher',
     'eval.spec_turnover': 'watch',
@@ -37,7 +37,7 @@ const DIRECTIONS = {
     'eval.pack_kill_share': 'higher',
     'eval.alarm_response': 'higher',
     'eval.smoke_escapes': 'higher',
-    'eval.deliberate_food_share': 'watch',
+    'eval.deliberate_food_share': 'higher',
     'eval.pursuit_bite_share': 'watch',
     'eval.pursuit_kill_share': 'higher',
     'eval.pack_convergence': 'higher',
@@ -56,22 +56,22 @@ const DIRECTIONS = {
     'eval.fitness_lrs_corr': 'watch',
     'eval.archive_lineage_share': 'watch',
     'eval.kin_within_call_radius': 'watch',
-    'eval.deliberate_food_trend': 'watch',
+    'eval.deliberate_food_trend': 'higher',
     'eval.pursuit_trend': 'watch',
     'eval.evasion_trend': 'watch',
     'eval.skill_trend': 'watch',
-    'eval.spec_dominance': 'watch',
-    'eval.spec_effective': 'watch',
-    'eval.lineage_dominance': 'watch',
+    'eval.spec_dominance': 'lower',
+    'eval.spec_effective': 'higher',
+    'eval.lineage_dominance': 'lower',
     'eval.lineage_effective': 'watch',
-    'eval.trait_spread': 'watch',
-    'eval.body_plan_coverage': 'watch',
+    'eval.trait_spread': 'higher',
+    'eval.body_plan_coverage': 'higher',
     'eval.sex_balance': 'watch',
     'eval.child_survival': 'watch',
-    'eval.lineage_lifespan_p50': 'watch',
-    'eval.cold_stress_share': 'watch',
+    'eval.lineage_lifespan_p50': 'higher',
+    'eval.cold_stress_share': 'lower',
     'eval.heat_stress_share': 'watch',
-    'eval.terrain_death_share': 'watch',
+    'eval.terrain_death_share': 'lower',
     'eval.winter_pop_ratio': 'watch',
     'eval.migration_index': 'watch',
     'eval.predator_presence': 'higher',
@@ -350,10 +350,11 @@ function verdictFor(direction, { low, high, diff, ref, minEffect }) {
  * @param {string} metric the metric name
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {{ level: number, minEffect: number }} options the confidence level and the minimum relative effect for a verdict
+ * @param {{ level: number, minEffect: number, direction: (metric: string) => ReturnType<typeof metricDirection> }} options
+ *   the confidence level, the minimum relative effect for a verdict and the direction lookup
  * @returns {CompareRow} the row
  */
-function compareMetric(metric, before, after, { level, minEffect }) {
+function compareMetric(metric, before, after, { level, minEffect, direction: directionOf }) {
     const b = before.metrics[metric];
     const a = after.metrics[metric];
     const row = {
@@ -370,7 +371,7 @@ function compareMetric(metric, before, after, { level, minEffect }) {
     if (before.seeds.length < row.minSeeds) {
         return { ...row, note: `needs ${row.minSeeds} seeds` };
     }
-    const direction = metricDirection(metric);
+    const direction = directionOf(metric);
     const fitness = FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix));
     if (b.values.includes(null) || a.values.includes(null)) {
         return { ...row, note: 'null in a seed' };
@@ -395,9 +396,12 @@ function compareMetric(metric, before, after, { level, minEffect }) {
  * Compares two reports run on the same seeds, ticks and (up to `allowConfigDiff`) config. Different policies are fine.
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean }} [options] the
- *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ, and whether different seed lists (of equal length) may be paired by
- *   position - for the calibration experiment, where the two arms are independent samples, not paired by seed
+ * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean,
+ *   direction?: (metric: string) => ReturnType<typeof metricDirection> }} [options] the
+ *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ,
+ *   whether different seed lists (of equal length) may be paired by position - for the calibration experiment, where
+ *   the two arms are independent samples, not paired by seed - and the direction lookup (`metricDirection`; `eval:power`
+ *   overrides it to score a `watch` metric in its intended direction)
  * @returns {{ level: number, minEffect: number, paired: boolean, seedCount: number, seeds: number[], rows: CompareRow[] }}
  *   `paired` is true when the arms share seeds; one row per metric present in both reports, sorted by name
  * @throws {Error} with `field` set when the reports cannot be compared
@@ -405,7 +409,13 @@ function compareMetric(metric, before, after, { level, minEffect }) {
 export function compareReports(
     before,
     after,
-    { level = 0.95, minEffect = MIN_EFFECT, allowConfigDiff = [], allowSeedDiff = false } = {},
+    {
+        level = 0.95,
+        minEffect = MIN_EFFECT,
+        allowConfigDiff = [],
+        allowSeedDiff = false,
+        direction = metricDirection,
+    } = {},
 ) {
     checkComparable(before, after, { allowConfigDiff, allowSeedDiff });
     const names = Object.keys(before.metrics)
@@ -418,6 +428,6 @@ export function compareReports(
         paired,
         seedCount: before.seeds.length,
         seeds: [...before.seeds],
-        rows: names.map((name) => compareMetric(name, before, after, { level, minEffect })),
+        rows: names.map((name) => compareMetric(name, before, after, { level, minEffect, direction })),
     };
 }

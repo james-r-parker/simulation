@@ -44,6 +44,7 @@ describe('parseArgs', () => {
             powerSplits: 200,
             sizes: [16, 32],
             metrics: [],
+            includeWatch: false,
             json: false,
         });
         expect(
@@ -57,9 +58,17 @@ describe('parseArgs', () => {
                 '16',
                 '--metrics',
                 'a,b',
+                '--include-watch',
                 '--json',
             ]),
-        ).toMatchObject({ splits: 50, powerSplits: 20, sizes: [16], metrics: ['a', 'b'], json: true });
+        ).toMatchObject({
+            splits: 50,
+            powerSplits: 20,
+            sizes: [16],
+            metrics: ['a', 'b'],
+            includeWatch: true,
+            json: true,
+        });
     });
 
     it('rejects a wrong file count, bad numbers and unknown flags', () => {
@@ -89,6 +98,40 @@ describe('powerRow and evalPower', () => {
         expect(powerRow(r, 'eval.population_mean', base)).toMatchObject({ note: 'watch', falsePositive: null });
         expect(powerRow(r, 'mystery', base)).toMatchObject({ note: 'unknown metric' });
         expect(powerRow(r, 'eval.births_per_1k', base)).toMatchObject({ note: 'mean is 0', falsePositive: 0 });
+    });
+
+    it('measures a watch metric when asked, in its intended direction, and says so', () => {
+        const noise = Array.from({ length: 64 }, (_, i) => 100 + ((i * 7) % 11));
+        const r = report({ 'eval.population_mean': noise, 'eval.heat_stress_share': noise });
+        const on = { ...base, splits: 30, powerSplits: 6, includeWatch: true };
+        const higher = powerRow(r, 'eval.population_mean', on);
+        const lower = powerRow(r, 'eval.heat_stress_share', on);
+        expect(higher).toMatchObject({ direction: 'higher', validShare: 1 });
+        expect(higher.falsePositive).not.toBeNull();
+        expect(higher.detectable).not.toBeNull();
+        expect(lower).toMatchObject({ direction: 'lower' });
+        expect(lower.detectable).not.toBeNull();
+        expect(powerRow(r, 'eval.population_mean', base)).toMatchObject({ note: 'watch', falsePositive: null });
+        expect(powerRow(r, 'mystery', on).note).toBe('unknown metric');
+    });
+
+    it('does not change the numbers of a metric that already has a direction when watch metrics are included', () => {
+        const noise = Array.from({ length: 64 }, (_, i) => 100 + ((i * 7) % 11));
+        const r = report({ 'eval.births_per_1k': noise });
+        const off = powerRow(r, 'eval.births_per_1k', { ...base, splits: 20 });
+        const on = powerRow(r, 'eval.births_per_1k', { ...base, splits: 20, includeWatch: true });
+        expect(on).toEqual(off);
+        expect(on.direction).toBeUndefined();
+    });
+
+    it('reports the share of splits that gave a verdict when nulls remove some', () => {
+        const withNulls = Array.from({ length: 64 }, (_, i) => (i % 32 === 0 ? null : 10 + (i % 5)));
+        const row = powerRow(report({ 'eval.births_per_1k': withNulls }), 'eval.births_per_1k', {
+            ...base,
+            splits: 60,
+        });
+        expect(row.validShare).toBeLessThan(0.6);
+        expect(row.validShare).toBeGreaterThan(0);
     });
 
     it('gives no verdict below a metric seed minimum, and with nulls in every split', () => {
@@ -129,6 +172,13 @@ describe('formatPower and main', () => {
         expect(lines[1]).toMatch(/^a\s+16\s+4\.0%\s+20\.0%$/);
         expect(lines[2]).toMatch(/^b\s+16\s+20\.0%\s+>100%\s+watch\?$/);
         expect(lines[3]).toMatch(/^c\s+16\s+-\s+-\s+watch$/);
+    });
+
+    it('names the planted direction of a measured watch metric and the share of splits with a verdict', () => {
+        const [, line] = formatPower([
+            { metric: 'a', size: 16, falsePositive: 0.2, detectable: 0.1, direction: 'lower', validShare: 0.36 },
+        ]);
+        expect(line).toMatch(/watch\?; watch, planted lower; verdicts in 36%$/);
     });
 
     it('reads a report file and prints a table or JSON, and exits 2 on bad input', () => {
