@@ -6,6 +6,7 @@ import { noteDeath } from './metrics-environment.js';
 import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
 import { resetIntentSlot } from './observer-intent.js';
+import { noteVisitDeath, resetVisits } from './watch-visits.js';
 
 /** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
 export const BURN_IN_TICKS = 10000;
@@ -22,6 +23,7 @@ export function resetSlot(observer, slot) {
     }
     clearCells(observer, slot);
     resetIntentSlot(observer.intent, slot);
+    resetVisits(observer.watch, slot);
 }
 
 /**
@@ -103,6 +105,7 @@ function finishDeath(observer, d, o, fitness) {
     observer.deathsByCause[d[o + 4]] += 1;
     if (d[o + 1] >= BURN_IN_TICKS) {
         noteDeath(observer.environment, d[o + 4]);
+        noteVisitDeath(observer.watch, slot, d[o + 8]);
     }
     observer.foodEnergyDead += d[o + 9];
     if (observer.slotOf.get(genomeId) === slot) {

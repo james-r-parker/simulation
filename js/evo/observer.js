@@ -3,6 +3,8 @@
 
 import { createBodyPools } from './metrics-body.js';
 import { createEnvironmentPools } from './metrics-environment.js';
+import { createWatchPools } from './metrics-watch.js';
+import { sampleVisits } from './watch-visits.js';
 import { createLineagePools } from './metrics-lineage.js';
 import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
@@ -12,7 +14,7 @@ import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
 import { createWindows, noteWindows } from './observer-windows.js';
-import { CELL_SIZE, countCollisions, countTick } from './observer-tick.js';
+import { CELL_SIZE, countCollisions, countTick, MOTION_SAMPLE_TICKS } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
 
 export { checkpoint };
@@ -112,6 +114,7 @@ export function createObserver(config, rng, options = {}) {
             runTicks: options.runTicks ?? 0,
             maturityTicks: config.maturityTicks,
         }),
+        watch: createWatchPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
         windows: createWindows(options.runTicks ?? 0),
@@ -141,6 +144,9 @@ export function observe(observer, world, fitness) {
         return;
     }
     countTick(observer, world);
+    if (world.tick % MOTION_SAMPLE_TICKS === 0) {
+        sampleVisits(observer.watch, world);
+    }
     observer.agentTicks += world.population;
     observer.ticks = world.tick;
     noteWindows(observer.windows, observer, world.tick);
