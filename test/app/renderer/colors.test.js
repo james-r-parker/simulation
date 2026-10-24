@@ -199,4 +199,13 @@ describe('familyName', () => {
         const names = new Set(Array.from({ length: 300 }, (_, i) => familyName(3, i)));
         expect(names.size).toBeGreaterThanOrEqual(295);
     });
+
+    it('appends a Roman numeral when lineages in top share a base name', () => {
+        const clashing = [5104, 5809, 7292];
+        const top = clashing.map((id) => ({ id }));
+        expect(familyName(3, 5104, top)).toBe('Tiruli');
+        expect(familyName(3, 5809, top)).toBe('Tiruli II');
+        expect(familyName(3, 7292, top)).toBe('Tiruli III');
+        expect(familyName(3, 5809, clashing)).toBe('Tiruli II');
+    });
 });
