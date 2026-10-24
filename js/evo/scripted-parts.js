@@ -1,6 +1,7 @@
 // Shared pieces of the scripted controllers: channel constants, the output writer and the food-seeking behaviour.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { turnTowards } from '../sim/merit-state.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 
@@ -29,19 +30,8 @@ export const SEEK_THRUST = 0.4;
 /** @typedef {(world: Record<string, any>) => void} ControllerRun */
 /** @typedef {(context: ControllerContext) => ControllerRun} ControllerFactory */
 
-/**
- * The turn output towards ray `k`: +1 for the positive side, -1 for the negative side, 0 dead ahead and +1 for a ray
- * dead behind.
- * @param {number} k ray index
- * @param {number} rayCount rays per agent
- * @returns {number}
- */
-export function turnTowards(k, rayCount) {
-    if (k <= 0) {
-        return 0;
-    }
-    return 2 * k <= rayCount ? 1 : -1;
-}
+/** The turn output towards a ray: the sim's `turnTowards`, shared with the merit tracker. */
+export { turnTowards };
 
 /**
  * Every controller wants to split when it can: the sexes-off world splits any agent with the energy, and `SPLIT` is the
