@@ -62,7 +62,7 @@ export function peekView({ agents, index }, { info, layout, seed, slots }) {
     const lineage = agents.lineageId[index];
     return {
         type: String(info.specs[agents.spec[index]]?.name ?? ''),
-        name: familyName(seed, lineage),
+        name: familyName(seed, lineage, slots.top),
         color: familyCss(slots, lineage),
         now: nowLine(agents.flags[index], agents.speed[index], { maxVelocity: info.maxVelocity, bits: layout.flags }),
     };

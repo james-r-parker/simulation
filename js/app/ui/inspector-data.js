@@ -252,7 +252,7 @@ export function inspectorView({ snapshot, ready, slots }) {
     const found = findInSnapshot(snapshot, genomeId);
     const spec = found.specIndex < 0 ? '' : String(info.specs[found.specIndex]?.name ?? '');
     const counters = snapshot.f32.subarray(countersAt, countersAt + layout.counterCount);
-    const family = familyName(ready.seed, found.lineageId);
+    const family = familyName(ready.seed, found.lineageId, slots.top);
     return {
         valid: true,
         header: {

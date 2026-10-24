@@ -43,18 +43,11 @@ function showMessage(container, text) {
 /**
  * Wires the keys and the pointer.
  * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
- *   iface: ReturnType<typeof createInterface>}} wiring the canvas, the action runner, the pointer handlers and the
- *   interface that hears every input
+ *   iface: ReturnType<typeof createInterface>, toDevice: (e: MouseEvent) => {x: number, y: number}}} wiring the canvas,
+ *   the action runner, the pointer handlers, the interface that hears every input and the client-to-device mapper
  * @returns {void}
  */
-function listen({ canvas, perform, input, iface }) {
-    const toDevice = (/** @type {MouseEvent} */ e) => {
-        const r = canvas.getBoundingClientRect();
-        return {
-            x: ((e.clientX - r.left) * canvas.width) / r.width,
-            y: ((e.clientY - r.top) * canvas.height) / r.height,
-        };
-    };
+function listen({ canvas, perform, input, iface, toDevice }) {
     window.addEventListener('keydown', (e) => {
         iface.noteInput({ type: 'keydown' });
         const action = actionForKey(e);
@@ -153,6 +146,7 @@ function onReady(app, message) {
             perform: app.perform,
             input: createPointerInput(pointerOptions(app)),
             iface: app.iface,
+            toDevice: (e) => clientToDevice(app, { x: e.clientX, y: e.clientY }),
         });
     } else {
         app.deps.scene.rebuild();
@@ -234,7 +228,10 @@ function clientToDevice(app, client) {
     if (canvas === undefined || r === undefined) {
         return { x: -1, y: -1 };
     }
-    return { x: ((client.x - r.left) * canvas.width) / r.width, y: ((client.y - r.top) * canvas.height) / r.height };
+    return {
+        x: ((client.x - r.left) * app.size.width) / r.width,
+        y: ((client.y - r.top) * app.size.height) / r.height,
+    };
 }
 
 /**
