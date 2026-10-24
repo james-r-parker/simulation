@@ -7,6 +7,7 @@ import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { mountAudio } from './audio/audio.js';
+import { clipSupported, createCapture } from './capture.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
@@ -40,8 +41,11 @@ import { mountTopBar } from './ui/top-bar.js';
  * @property {Record<string, number>} overrides the config overrides the world was started with
  * @property {(action: string) => void} perform runs an action by name
  * @property {() => Promise<any>} loadUPlot loads the uPlot class (and its stylesheet)
- * @property {(file: {name: string, text: string}) => void} download saves a file
+ * @property {(file: {name: string, text?: string, blob?: any}) => void} download saves a file
  * @property {(ms: number, run: () => void) => unknown} setTimer a timer, for the toasts
+ * @property {(handle: unknown) => void} [clearTimer] cancels a timer, for the clip recorder
+ * @property {any} [MediaRecorder] the `MediaRecorder` constructor, if any
+ * @property {() => any} [getCanvas] the WebGL canvas, for screenshots and clips
  * @property {() => Record<string, any> | null} getFailedBundle the debug bundle the supervisor kept after a failure
  * @property {() => number} now wall time in ms
  * @property {import('./family-slots.js').FamilySlots} slots the family colour slots; the palette preference sets its palette
@@ -79,6 +83,7 @@ function mountServices(ctx) {
         enabled: prefs.audio,
         volume: prefs.volume,
     });
+    ctx.capture = createCapture({ ...deps, toast: ctx.toast });
 }
 
 /**
@@ -106,6 +111,7 @@ function mountParts(ctx) {
     ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
         current: prefs.uiScale,
         palette: prefs.palette,
+        clip: clipSupported(deps.MediaRecorder),
         onPalette(/** @type {string} */ name) {
             prefs.palette = name;
             deps.slots.palette = name;
@@ -256,6 +262,8 @@ function createHooks(ctx) {
         },
         exportArchive: () => deps.getClient()?.exportArchive(),
         exportBundle: () => exportBundle({ ...deps, toast: ctx.toast, takeFailed }),
+        screenshot: () => ctx.capture.screenshot(),
+        recordClip: () => ctx.capture.recordClip(),
         lensesChanged() {
             persist(ctx);
             syncRays(ctx);
@@ -297,6 +305,7 @@ function createListeners(ctx) {
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
+ *   afterDraw: (frame: {tick: number}) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {
@@ -308,6 +317,7 @@ export function createInterface(deps) {
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
         onEffect: (effect) => ctx.audio.onEffect(effect),
+        afterDraw: (frame) => ctx.capture.afterDraw(frame),
         pointer(x, y) {
             ctx.peekTracker.move(x, y, deps.now());
             ctx.peek.hide();

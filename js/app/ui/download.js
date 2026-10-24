@@ -5,11 +5,11 @@
  * @param {{doc: {createElement: (tag: string) => any, body: {appendChild: (c: any) => void}},
  *   url: {createObjectURL: (blob: any) => string, revokeObjectURL: (url: string) => void},
  *   makeBlob?: (text: string, type: string) => any}} deps the document, the URL object and, for tests, the Blob maker
- * @returns {(file: {name: string, text: string, type?: string}) => void} saves a file with the given name
+ * @returns {(file: {name: string, text?: string, type?: string, blob?: any}) => void} saves a file with the given name
  */
 export function createDownloader({ doc, url, makeBlob = (text, type) => new Blob([text], { type }) }) {
-    return ({ name, text, type = 'application/json' }) => {
-        const href = url.createObjectURL(makeBlob(text, type));
+    return ({ name, text = '', type = 'application/json', blob }) => {
+        const href = url.createObjectURL(blob ?? makeBlob(text, type));
         const link = doc.createElement('a');
         link.setAttribute('href', href);
         link.setAttribute('download', name);

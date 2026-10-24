@@ -54,6 +54,8 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {() => void} fullscreen enters or leaves fullscreen
  * @property {() => void} exportArchive asks the worker for the archive and downloads it
  * @property {() => void} exportBundle downloads the debug bundle
+ * @property {() => void} screenshot captures a PNG screenshot with a caption plate on the next frame
+ * @property {() => void} recordClip starts or stops recording a 15 s WebM clip
  * @property {(text: string) => void} toast shows a short message
  * @property {() => void} lensesChanged a lens was toggled: sync the worker's ray part and save the preference
  */
@@ -71,6 +73,8 @@ const NO_UI = Object.freeze({
     fullscreen() {},
     exportArchive() {},
     exportBundle() {},
+    screenshot() {},
+    recordClip() {},
     lensesChanged() {},
     toast() {},
 });
@@ -219,6 +223,8 @@ const ACTIONS = Object.freeze({
     fullscreen: viaUi('fullscreen'),
     exportArchive: viaUi('exportArchive'),
     exportBundle: viaUi('exportBundle'),
+    screenshot: viaUi('screenshot'),
+    recordClip: viaUi('recordClip'),
     panLeft: (deps) => pan(deps, -1, 0),
     panRight: (deps) => pan(deps, 1, 0),
     panUp: (deps) => pan(deps, 0, -1),

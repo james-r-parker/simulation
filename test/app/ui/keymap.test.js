@@ -42,6 +42,9 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'KeyK' })).toBe('toggleWakeLock');
         expect(actionForKey({ code: 'KeyE' })).toBe('exportArchive');
         expect(actionForKey({ code: 'KeyB' })).toBe('exportBundle');
+        expect(actionForKey({ code: 'KeyP' })).toBe('screenshot');
+        expect(actionForKey({ code: 'KeyP', shiftKey: true })).toBe('recordClip');
+        expect(actionForKey({ code: 'KeyP', shiftKey: true }, { clip: false })).toBeNull();
         expect(actionForKey({ code: 'Escape' })).toBe('escape');
     });
 

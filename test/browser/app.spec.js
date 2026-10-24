@@ -331,9 +331,17 @@ test('E and B download the archive and the debug bundle, Shift+F does not break 
     const archive = page.waitForEvent('download');
     await page.keyboard.press('KeyE');
     expect((await archive).suggestedFilename()).toBe('blob-archive-3.json');
+    const shot = page.waitForEvent('download');
+    await page.keyboard.press('KeyP');
+    expect((await shot).suggestedFilename()).toMatch(/^blob-3-\d+\.png$/);
+    const clip = page.waitForEvent('download');
+    await page.keyboard.press('Shift+KeyP');
+    await expect(page.locator('.toast').last()).toContainText('Recording 15 s clip');
+    await page.keyboard.press('Shift+KeyP');
+    expect((await clip).suggestedFilename()).toMatch(/^blob-3-\d+\.webm$/);
     await page.keyboard.press('Shift+KeyF');
     await page.keyboard.press('KeyK');
-    await expect(page.locator('.toast')).toContainText('Wake lock on');
+    await expect(page.locator('.toast').last()).toContainText('Wake lock on');
     await page.keyboard.press('KeyA');
     await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('audio: on');
     await page.keyboard.press('Digit9');

@@ -223,6 +223,8 @@ describe('page actions', () => {
             fullscreen: () => calls.push('fullscreen'),
             exportArchive: () => calls.push('archive'),
             exportBundle: () => calls.push('bundle'),
+            screenshot: () => calls.push('screenshot'),
+            recordClip: () => calls.push('clip'),
             lensesChanged: () => calls.push('lenses'),
             toast: (/** @type {string} */ t) => calls.push(`toast ${t}`),
         };
@@ -261,6 +263,8 @@ describe('page actions', () => {
             'fullscreen',
             'exportArchive',
             'exportBundle',
+            'screenshot',
+            'recordClip',
         ]) {
             expect(() => act(a), a).not.toThrow();
         }
@@ -284,6 +288,8 @@ describe('page actions', () => {
         }
         act('exportArchive');
         act('exportBundle');
+        act('screenshot');
+        act('recordClip');
         expect(calls).toEqual([
             'drawer charts',
             'drawer inspector',
@@ -297,6 +303,8 @@ describe('page actions', () => {
             'fullscreen',
             'archive',
             'bundle',
+            'screenshot',
+            'clip',
         ]);
     });
 

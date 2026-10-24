@@ -50,6 +50,7 @@ describe('createDownloader', () => {
             makeBlob: (text, type) => ({ text, type }),
         });
         save({ name: 'a.txt', text: 'x', type: 'text/plain' });
-        expect(types).toEqual(['text/plain']);
+        save({ name: 'b.png', blob: { type: 'image/png' } });
+        expect(types).toEqual(['text/plain', 'image/png']);
     });
 });
