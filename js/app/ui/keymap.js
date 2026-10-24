@@ -29,6 +29,7 @@ export const KEYMAP = Object.freeze([
     { action: 'toggleInspector', codes: ['KeyI'], title: 'Inspector drawer' },
     { action: 'toggleHelp', codes: ['Slash', 'F1'], title: 'Help' },
     { action: 'toggleHud', codes: ['KeyH'], title: 'Hide or show the HUD' },
+    { action: 'toggleWakeLock', codes: ['KeyK'], title: 'Wake lock on or off' },
     { action: 'exportArchive', codes: ['KeyE'], title: 'Export the archive' },
     { action: 'exportBundle', codes: ['KeyB'], title: 'Download the debug bundle' },
     { action: 'home', codes: ['Home'], title: 'Reset the camera' },

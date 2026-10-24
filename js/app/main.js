@@ -25,6 +25,7 @@ import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
+import { createWakeLock } from './wake-lock.js';
 
 const PERF_FRAMES = 32768;
 
@@ -34,9 +35,7 @@ const PERF_FRAMES = 32768;
  * @returns {void}
  */
 function showMessage(container, text) {
-    const p = document.createElement('p');
-    p.className = 'app-message';
-    p.textContent = text;
+    const p = Object.assign(document.createElement('p'), { className: 'app-message', textContent: text });
     container.appendChild(p);
 }
 
@@ -258,15 +257,15 @@ function safeStorage() {
  * @returns {ReturnType<typeof createInterface>} the interface over the page's elements
  */
 function makeInterface(app) {
-    const element = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    const el = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    const wakeLock = createWakeLock({
+        nav: navigator,
+        doc: document,
+        onRefused: (reason) => appLog('warn', 'WakeLockRefused', { reason }),
+    });
     return createInterface({
         doc: document,
-        elements: {
-            hud: element('hud'),
-            bar: element('top-bar'),
-            ticker: element('ticker'),
-            drawers: element('drawers'),
-        },
+        elements: { hud: el('hud'), bar: el('top-bar'), ticker: el('ticker'), drawers: el('drawers') },
         storage: safeStorage(),
         getClient: () => app.supervisor.client(),
         getReady: () => app.ready,
@@ -283,6 +282,8 @@ function makeInterface(app) {
         pickAt: (device) => agentAt({ agents: app.loop.agents(), camera: app.camera, minPx: app.minPx }, device),
         toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
+        tv: app.params.tv,
+        setWakeLock: (on) => wakeLock.setEnabled(on),
     });
 }
 

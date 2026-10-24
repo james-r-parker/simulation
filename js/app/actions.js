@@ -46,6 +46,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {(drawer: string) => void} toggleDrawer opens a drawer, or closes it when it is the open one
  * @property {() => boolean} closeDrawer closes the open drawer; false when none was open
  * @property {() => void} toggleHud hides or shows the HUD
+ * @property {() => void} toggleWakeLock turns the screen wake lock on or off
  * @property {() => void} focusSeed moves the keyboard to the seed field
  * @property {() => void} fullscreen enters or leaves fullscreen
  * @property {() => void} exportArchive asks the worker for the archive and downloads it
@@ -59,6 +60,7 @@ const NO_UI = Object.freeze({
     toggleDrawer() {},
     closeDrawer: () => false,
     toggleHud() {},
+    toggleWakeLock() {},
     focusSeed() {},
     fullscreen() {},
     exportArchive() {},
@@ -203,6 +205,7 @@ const ACTIONS = Object.freeze({
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
+    toggleWakeLock: viaUi('toggleWakeLock'),
     focusSeed: viaUi('focusSeed'),
     fullscreen: viaUi('fullscreen'),
     exportArchive: viaUi('exportArchive'),
