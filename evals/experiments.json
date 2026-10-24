@@ -1366,6 +1366,46 @@
       "note": "Single calibration report, not a comparison: evals/experiments/E35-calibration.json, a copy of the run output (64 seeds x 200000 ticks, policy map-elites-v1q, defaults config with configHash 55954e27356e22ed, commit 808d648, 30 workers, 3076.8 s). Power: evals/experiments/E35-power.json, the output of `npm run eval:power -- evals/experiments/E35-calibration.json --include-watch --json` (1000 A/A splits, 200 per planted change, 16 and 32 seeds per arm; the T13 commit). `--include-watch` measures a watch metric in its intended direction (scripts/lib/watch-intent.mjs), which the first run of this entry did in a scratch copy. Result (means, see the sim-notes entry): deliberate_food_share 0.115 and born_share 0.953 and mating_share 0.211 match the prediction. Differences: skill_trend -0.070 and deliberate_food_trend -0.071 decline rather than stay flat; spec_dominance 0.687 is below 0.75-0.85; spec_effective 2.26 is above 1.5-2; predator_presence 0.343 is above 0.1-0.3; child_survival 0.944 is above 0.4-0.7 (the prediction was too low). pursuit_trend (1 seed) and evasion_trend (2 seeds) are null on nearly all seeds, as predicted. pack_convergence is non-null on 2 seeds (both 0), not null on all. pred_prey_lag_corr is null on all 64 seeds (predicted most). migration_index 0.068 is low, as predicted. champion_elo and champion_win_rate are null on all 64 seeds: no league run was part of E35."
     },
     {
+      "id": "E36",
+      "date": "2026-10-24",
+      "branch": "eval/fs-t15e-e36",
+      "hypothesis": "The T15d predator package (main de7c9ef defaults: predatorRescueMin 0, predatorRescueInterval 600, predatorKillEnergy 0, biteArc pi/4, huntSizeRatio 1.01, huntCallCost 0.5, alarmThreshold 0, huntCallThreshold 0, predator biteMultiplier 4, turnMultiplier 0.7, sprintBoost 1.6, meatFoodValue 1) keeps predators alive and hunting under the live policy, against the same code with the pre-T15d values (E36-ref-config.json).",
+      "prediction": "Fix = main de7c9ef defaults (T15d package); reference = same code with the pre-T15d values (e36-ref.json). Policy live, seeds 1-32 (two sets of 16), 200000 ticks.\n- eval.predator_presence: reference ~0.34; fix ~1.0 (rescue floor) -> better on both sets.\n- eval.catch_rate: reference ~0.005; fix ~0.05-0.08 -> better on both sets.\n- eval.predator_births: reference ~5 per seed; fix mean ~40-60 but skewed; the >=30 on 12 of 16 seeds bar likely MISSED.\n- eval.idle_signals_per_1k: reference ~11.6; fix ~9 -> better, but small.\n- Population lower in fix (~360 vs ~436); mating ~0.2 both.",
+      "targets": [
+        "eval.predator_presence",
+        "eval.catch_rate",
+        "eval.predator_births",
+        "eval.idle_signals_per_1k",
+        "eval.alarm_precision",
+        "eval.hunt_call_precision",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan",
+        "eval.lineages_alive",
+        "eval.floor_episodes",
+        "eval.births_per_1k"
+      ],
+      "before": "evals/experiments/E36-ref.json",
+      "after": "evals/experiments/E36-fix.json",
+      "verdicts": {
+        "eval.alarm_precision": "-",
+        "eval.births_per_1k": "no-difference",
+        "eval.catch_rate": "better",
+        "eval.fed_median_lifespan": "no-difference",
+        "eval.floor_episodes": "no-difference",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.hunt_call_precision": "no-difference",
+        "eval.idle_signals_per_1k": "better",
+        "eval.lineages_alive": "better",
+        "eval.mating_share": "-",
+        "eval.population_mean": "-",
+        "eval.predator_births": "better",
+        "eval.predator_presence": "better",
+        "eval.pursuit_kill_share": "-"
+      },
+      "effect": "better",
+      "note": "T15e, PARTIAL PASS (user decision, 2026-10-24). Live policy map-elites-v1q, seeds 1-32 (split into seeds 1-16 and 17-32: E36-fix-seeds1-16.json, E36-fix-seeds17-32.json, E36-ref-seeds1-16.json, E36-ref-seeds17-32.json), 200000 ticks, commit de7c9ef. Verdicts shown are the full 32-seed eval:compare. Per seed set (1-16 / 17-32): predator_presence 0.338 to 0.999 / 0.351 to 1.000, better on both; catch_rate 0.006 to 0.107 / 0.005 to 0.087 (about 17-18x), better on both; pursuit_kill_share 0.045 to 0.143 / 0.016 to 0.153; predator_births mean 3.6 to 75.1 / 5.2 to 72.8, better on both, but at least 30 births on 10 of 16 / 11 of 16 seeds (per-seed range 8 to 284), so the bar of 12 of 16 is MISSED; idle_signals_per_1k 11.6 to 9.0 / 11.9 to 8.7, better on both. Population 379 to 373 / 422 to 368 (verdict - on both). Mating 0.203 to 0.218 / 0.217 to 0.216. Food 491 to 468 / 474 to 456, no-difference. lineages_alive 19.0 to 20.1 / 18.3 to 19.4. fed_median_lifespan 5802 to 5706 (no-difference) on seeds 1-16, but 6180 to 5598 (-9.4%, verdict worse) on seeds 17-32; the 32-seed verdict is no-difference (-5.7%). The prediction was right that presence and catch rate rise, that idle signals fall and that the births bar is missed; it was wrong that births would average 40-60 (they averaged 73-75). The predator bar is re-checked in Phase 4, where merit and fitnessV6 pay deliberate kills."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
