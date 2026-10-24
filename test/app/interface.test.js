@@ -255,12 +255,15 @@ describe('createInterface', () => {
         expect(state.selectedId).toBe(0);
     });
 
-    it('downloads the exported archive under the world seed', () => {
+    it('downloads the exported archive under the world seed and forwards capture actions', () => {
         const { ui, files, sent } = setup();
         ui.hooks.exportArchive();
         expect(sent.at(-1)).toEqual(['exportArchive']);
         ui.listeners.onArchive('{"cells":[]}');
         expect(files[0]).toEqual({ name: `blob-archive-${ready.seed}.json`, text: '{"cells":[]}' });
+        ui.hooks.screenshot();
+        ui.afterDraw({ tick: 1 });
+        ui.hooks.recordClip();
     });
 
     it('downloads the failed run bundle once, then the current run bundle', () => {

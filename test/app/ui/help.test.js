@@ -6,7 +6,7 @@ import { UI_SCALES } from '../../../js/app/ui/ui-scale.js';
 import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 
 /** @returns {any} a help body mounted over fakes, with the sizes asked for */
-function setup() {
+function setup(clip = true) {
     const doc = fakeDocument();
     const root = doc.createElement('div');
     const asked = /** @type {(string | number)[]} */ ([]);
@@ -15,18 +15,21 @@ function setup() {
         onScale: (v) => asked.push(v),
         palette: 'default',
         onPalette: (v) => asked.push(v),
+        clip,
     });
     return { root, asked, help };
 }
 
 describe('mountHelp', () => {
-    it('lists every binding with its keys and what it does', () => {
+    it('lists every binding with its keys and what it does, omitting Shift+P when clip is unsupported', () => {
         const { root, help } = setup();
         expect(help.rows).toBe(KEYMAP.length);
         const [list] = byClass(root, 'help-keys');
         expect(list.children).toHaveLength(KEYMAP.length * 2);
         expect(list.children[0].textContent).toBe(shortcutLabel(KEYMAP[0]));
         expect(list.children[1].textContent).toBe(KEYMAP[0].title);
+        const noClip = setup(false);
+        expect(noClip.help.rows).toBe(KEYMAP.length - 1);
     });
 
     it('has a button for each HUD size, marks the one in force and reports a click', () => {

@@ -35,6 +35,8 @@ export const KEYMAP = Object.freeze([
     { action: 'toggleWakeLock', codes: ['KeyK'], title: 'Wake lock on or off' },
     { action: 'exportArchive', codes: ['KeyE'], title: 'Export the archive' },
     { action: 'exportBundle', codes: ['KeyB'], title: 'Download the debug bundle' },
+    { action: 'screenshot', codes: ['KeyP'], shift: false, title: 'Screenshot with a caption plate' },
+    { action: 'recordClip', codes: ['KeyP'], shift: true, title: 'Record a 15 s clip' },
     { action: 'home', codes: ['Home'], title: 'Reset the camera' },
     { action: 'escape', codes: ['Escape'], title: 'Close a drawer, else clear the selection' },
     { action: 'panLeft', codes: ['ArrowLeft'], title: 'Pan left' },
@@ -49,23 +51,32 @@ export const KEYMAP = Object.freeze([
 const TYPING_TARGETS = new Set(['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT']);
 
 /**
+ * @param {{ctrlKey?: boolean, metaKey?: boolean, altKey?: boolean, target?: EventTarget | {tagName?: string} | null}} event
+ *   a key event
+ * @returns {boolean} whether the event is modified or aimed at a form control
+ */
+function ignoredEvent(event) {
+    const tag = /** @type {{tagName?: string}} */ (event.target)?.tagName ?? '';
+    return Boolean(event.ctrlKey || event.metaKey || event.altKey || TYPING_TARGETS.has(tag));
+}
+
+/**
  * @param {{code: string, shiftKey?: boolean, ctrlKey?: boolean, metaKey?: boolean, altKey?: boolean,
  *   target?: EventTarget | {tagName?: string} | null}} event a key event
+ * @param {{clip?: boolean}} [options] whether `MediaRecorder` clip recording is available
  * @returns {string | null} the action it triggers, null when it triggers none: a modified key (Ctrl, Alt, Meta), an
  *   unbound key, or an event whose target is a button, input, textarea or select
  */
-export function actionForKey(event) {
-    if (
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey ||
-        TYPING_TARGETS.has(/** @type {{tagName?: string}} */ (event.target)?.tagName ?? '')
-    ) {
+export function actionForKey(event, { clip = true } = {}) {
+    if (ignoredEvent(event)) {
         return null;
     }
     const shift = event.shiftKey === true;
     const hit = KEYMAP.find((b) => b.codes.includes(event.code) && (b.shift === undefined || b.shift === shift));
-    return hit === undefined ? null : hit.action;
+    if (hit === undefined || (hit.action === 'recordClip' && !clip)) {
+        return null;
+    }
+    return hit.action;
 }
 
 /** @type {Readonly<Record<string, string>>} */

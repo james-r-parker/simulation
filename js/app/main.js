@@ -6,6 +6,7 @@ import { createActions, createAppState, DEFAULT_TICKS_PER_SECOND } from './actio
 import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
+import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
@@ -49,7 +50,7 @@ function showMessage(container, text) {
 function listen({ canvas, perform, input, iface, toDevice }) {
     window.addEventListener('keydown', (e) => {
         iface.noteInput({ type: 'keydown' });
-        const action = actionForKey(e);
+        const action = actionForKey(e, { clip: clipSupported(globalThis.MediaRecorder) });
         if (action !== null) {
             e.preventDefault();
             perform(action);
@@ -280,6 +281,9 @@ function makeInterface(app) {
         loadUPlot,
         download: createDownloader({ doc: document, url: URL }),
         setTimer: (ms, run) => setTimeout(run, ms),
+        clearTimer: (handle) => clearTimeout(/** @type {any} */ (handle)),
+        MediaRecorder: globalThis.MediaRecorder,
+        getCanvas: () => app.deps.scene?.canvas ?? null,
         getFailedBundle: () => app.supervisor.lastBundle(),
         now: () => performance.now(),
         getWidth: () => app.container.clientWidth,
@@ -320,6 +324,7 @@ function createApp(container) {
         gpuTimer: null,
         clock: () => performance.now(),
         hidden: () => document.hidden,
+        afterDraw: (/** @type {{tick: number}} */ frame) => app.iface.afterDraw(frame),
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
