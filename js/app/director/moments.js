@@ -211,8 +211,19 @@ function largestCluster(points, radius) {
 }
 
 /**
+ * @typedef {object} RawEffectRecord
+ * @property {number} tick
+ * @property {number} kind
+ * @property {number} x
+ * @property {number} y
+ * @property {number} a
+ * @property {number} b
+ * @property {number} c
+ */
+
+/**
  * Scores one effect and resolves its focus (tracking the live victim for `escape` / `smoke-escape`).
- * @param {import('../renderer/effects-player.js').Effect} effect the effect record
+ * @param {RawEffectRecord} effect the effect record
  * @param {{ageS: number, kinds: Record<string, number>, eatenCause: number,
  *   currentByGenome: Map<number, AgentRecord>}} ctx scoring context
  * @returns {MomentCandidate | null} candidate or null
@@ -251,7 +262,7 @@ function clusterMoment(kind, points, radius, scoreFn) {
 /**
  * Collects single-effect (`pack-kill`, `kill`, `escape`, `smoke-escape`, `smoke-screen`) and clustered-effect
  * (`alarm-chorus`, `birth-cluster`) moments.
- * @param {readonly import('../renderer/effects-player.js').Effect[]} effects recent effect records
+ * @param {readonly RawEffectRecord[]} effects recent effect records
  * @param {{tick: number, ticksPerSecond: number, layout: Record<string, any>,
  *   currentByGenome: Map<number, AgentRecord>}} ctx timing, layout and alive agent lookup
  * @returns {MomentCandidate[]} effect-derived moment candidates
@@ -353,7 +364,7 @@ function findTickerMoments(ticker, { tick, ticksPerSecond, agents, info }) {
  * Scores candidate moments from the newest snapshot, an earlier snapshot (~1.5 s ago), recent effects and ticker items.
  * @param {{snapshot: {u32?: Uint32Array, f32?: Float32Array} | readonly AgentRecord[] | null,
  *   earlierSnapshot?: {u32?: Uint32Array, f32?: Float32Array} | readonly AgentRecord[] | null,
- *   effects?: readonly import('../renderer/effects-player.js').Effect[],
+ *   effects?: readonly RawEffectRecord[],
  *   ticker?: readonly {tick: number, kind: string, lineageId?: number, x?: number, y?: number}[],
  *   info: Record<string, any>, layout: Record<string, any>, tick: number,
  *   lastShownS?: Readonly<Record<string, number>>}} input world snapshots, effects, ticker and timing
