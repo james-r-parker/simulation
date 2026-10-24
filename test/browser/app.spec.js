@@ -186,6 +186,9 @@ test('the top bar shows the status, the calendar with the generation, the counts
     await expect(page.locator('#top-bar .top-bar-seasonBox')).toHaveText(/^Year \d+, \w+, Gen \d+$/);
     await expect(page.locator('#top-bar .top-bar-type')).toHaveCount(5);
     await expect(page.locator('#top-bar .top-bar-born')).toHaveText(/^born /);
+    await expect(page.locator('#top-bar .top-bar-predators')).toHaveText(/^pred (\d|-)/);
+    await expect(page.locator('#top-bar .top-bar-calls')).toHaveText(/^calls (\d|-)/);
+    await expect(page.locator('#top-bar .top-bar-dominant')).toHaveText(/^([a-z]+ \d+%|-)$/);
     await expect(page.locator('.help-elapsed')).toHaveText(/^\d+:\d\d/);
 });
 

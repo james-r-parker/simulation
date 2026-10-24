@@ -20,15 +20,15 @@
     },
     "js/app": {
       "lines": 100,
-      "branches": 97.68,
+      "branches": 97.92,
       "functions": 100,
       "statements": 100
     },
     "js/worker": {
       "lines": 99.83,
-      "branches": 98.45,
+      "branches": 98.49,
       "functions": 100,
-      "statements": 99.83
+      "statements": 99.84
     }
   },
   "floors": {

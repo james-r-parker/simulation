@@ -5,6 +5,7 @@ import { coverage, occupiedCount } from '../evo/archive.js';
 import { generationStats } from './generation.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { specParams } from '../sim/spec-params.js';
+import { callsPerKiloTick, createCallWindow, largestSpec, noteCalls, predatorCount } from './world-numbers.js';
 import { createLineageBoard, rebuildCounts, topLineages, updateBoard } from './lineage-board.js';
 
 /** Items held for the next `tickerEvents`; the oldest are dropped past this. */
@@ -43,6 +44,7 @@ const DEATH_CAUSES = 4;
  * @property {Float64Array} lastDeaths death totals at the last stats message, by cause
  * @property {{caught: number, escaped: number, huntKills: number, packKills: number} | null} lastCombat combat
  *   totals at the last stats message, null until the observer has them
+ * @property {import('./world-numbers.js').CallWindow} calls alarm and hunt calls in the last 1000 ticks
  * @property {number} lastElderScan the tick of the last elder scan
  * @property {{spec: number, cell: number, tick: number} | null} newestReplacement the latest `ArchiveReplaced`
  */
@@ -55,6 +57,7 @@ export function createLiveStats() {
         lastBirths: new Float64Array(BORN_CAUSES),
         lastDeaths: new Float64Array(DEATH_CAUSES),
         lastCombat: null,
+        calls: createCallWindow(),
         lastElderScan: 0,
         newestReplacement: null,
     };
@@ -81,6 +84,7 @@ function push(live, item) {
  * @returns {void}
  */
 export function noteTick(live, world, observer) {
+    noteCalls(live.calls, world);
     const d = world.events.data;
     for (let i = 0; i < world.events.count; i++) {
         const o = i * EVENT_STRIDE;
@@ -291,6 +295,7 @@ export function collectStats(live, { world, observer, policy, generations }, run
     const deaths = deltas(observer.deathsByCause, live.lastDeaths);
     const phase = world.season[1] * SEASONS;
     const generation = generationStats(generations, world);
+    const bySpec = countBySpec(world);
     return {
         tick,
         ticksPerSecond: run.ticksPerSecond,
@@ -299,7 +304,10 @@ export function collectStats(live, { world, observer, policy, generations }, run
         season: world.season[0],
         seasonProgress: phase - Math.floor(phase),
         population: world.population,
-        bySpec: countBySpec(world),
+        bySpec,
+        predators: predatorCount(world.config, bySpec),
+        callsPerKiloTick: callsPerKiloTick(live.calls, tick),
+        largestSpec: largestSpec(bySpec),
         bornShare: bornShare(observer),
         births: sum(births),
         birthsByCause: births,

@@ -47,13 +47,46 @@ export function elapsedLabel(ticks) {
  * @property {number} seasonProgress position within the season, 0 to 1
  * @property {{name: string, count: number}[]} types each specialisation with its count
  * @property {number | null} bornShare the share of births made in the world, null before any
+ * @property {number | null} predators alive agents that can hunt, null before any stats
+ * @property {number | null} callsPerKiloTick alarm and hunt calls per 1000 ticks lately, null before any stats
+ * @property {{name: string, share: number} | null} largest the most common specialisation and its share of the alive
+ *   agents, null before any stats or when none is alive
  */
+
+/**
+ * @param {{index: number, share: number} | undefined} largest `stats.largestSpec`
+ * @param {{index: number, name: string}[]} specs `ready.info.specs`
+ * @returns {{name: string, share: number} | null} the largest specialisation by name, null when unknown or none alive
+ */
+function largestOf(largest, specs) {
+    const spec = specs.find((s) => s.index === largest?.index);
+    return largest === undefined || spec === undefined || largest.share === 0
+        ? null
+        : { name: spec.name, share: largest.share };
+}
+
+/**
+ * @param {Record<string, any>} shown the newest stats message, empty before one
+ * @param {{index: number, name: string}[]} specs `ready.info.specs`
+ * @returns {Pick<TopBarInput, 'ticksPerSecond' | 'seasonProgress' | 'bornShare' | 'predators' | 'callsPerKiloTick' |
+ *   'largest'>} the plain numbers, with the live world numbers
+ */
+function liveFields(shown, specs) {
+    return {
+        ticksPerSecond: shown.ticksPerSecond ?? 0,
+        seasonProgress: shown.seasonProgress ?? 0,
+        bornShare: shown.bornShare ?? null,
+        predators: shown.predators ?? null,
+        callsPerKiloTick: shown.callsPerKiloTick ?? null,
+        largest: largestOf(shown.largestSpec, specs),
+    };
+}
 
 /**
  * @param {Record<string, any> | null} stats the newest stats message, null before one
  * @param {Record<string, any>} ready the `ready` message, empty before one
  * @param {'growing' | 'shrinking' | 'steady'} trend the population trend
- * @returns {Pick<TopBarInput, 'ticksPerSecond' | 'status' | 'calendar' | 'seasonProgress' | 'types' | 'bornShare'>} the
+ * @returns {Pick<TopBarInput, 'ticksPerSecond' | 'status' | 'calendar' | 'seasonProgress' | 'types' | 'bornShare' | 'predators' | 'callsPerKiloTick' | 'largest'>} the
  *   fields that come from the stats
  */
 function statsFields(stats, ready, trend) {
@@ -61,15 +94,13 @@ function statsFields(stats, ready, trend) {
     const world = ready.info === undefined ? null : { ...info, seed: ready.seed };
     const shown = stats ?? {};
     return {
-        ticksPerSecond: shown.ticksPerSecond ?? 0,
         status: statusLine({ stats, trend, world }),
         calendar: stats === null || world === null ? null : calendarOf(stats, world),
-        seasonProgress: shown.seasonProgress ?? 0,
         types: (info.specs ?? []).map((/** @type {{index: number, name: string}} */ spec) => ({
             name: spec.name,
             count: shown.bySpec?.[spec.index] ?? 0,
         })),
-        bornShare: shown.bornShare ?? null,
+        ...liveFields(shown, info.specs ?? []),
     };
 }
 
@@ -117,6 +148,20 @@ function bornText(share) {
     return typeof share === 'number' ? `born ${Math.round(share * 100)}%` : 'born -';
 }
 
+/**
+ * @param {TopBarInput} s what `topBarInput` read
+ * @returns {{predators: string, calls: string, dominant: string}} the live world numbers: `pred 34`, `calls
+ *   12/kt` (per 1000 ticks, so it does not move with the speed) and `scout 82%`, each `-` when unknown
+ */
+function liveNumbers(s) {
+    const calls = s.callsPerKiloTick;
+    return {
+        predators: typeof s.predators !== 'number' ? 'pred -' : `pred ${grouped(s.predators)}`,
+        calls: typeof calls !== 'number' ? 'calls -' : `calls ${calls < 10 ? calls.toFixed(1) : grouped(calls)}/kt`,
+        dominant: !s.largest ? '-' : `${s.largest.name} ${Math.round(s.largest.share * 100)}%`,
+    };
+}
+
 /** @type {TopBarInput} */
 const EMPTY_INPUT = Object.freeze({
     tick: 0,
@@ -127,6 +172,9 @@ const EMPTY_INPUT = Object.freeze({
     seasonProgress: 0,
     types: [],
     bornShare: null,
+    predators: null,
+    callsPerKiloTick: null,
+    largest: null,
 });
 
 /**
@@ -137,6 +185,9 @@ const EMPTY_INPUT = Object.freeze({
  * @property {string} speed `x4`, with the sustained rate beside it when it differs, or `paused`
  * @property {{name: string, count: string}[]} types the counts by specialisation
  * @property {string} born `born 42%`, `born -` before any birth
+ * @property {string} predators `pred 34`, `pred -` before any stats
+ * @property {string} calls `calls 12/kt` (alarm and hunt calls per 1000 ticks), `calls -` before any stats
+ * @property {string} dominant the largest specialisation with its share, `scout 82%`, `-` when unknown
  * @property {string} notice a short message, empty for none
  * @property {{tick: string, elapsed: string}} debug the tick and the run time, for the help drawer
  */
@@ -157,12 +208,13 @@ export function topBarView(stats, state, paused) {
         speed: speedText(stats, state, paused),
         types: s.types.map((t) => ({ name: t.name, count: grouped(t.count) })),
         born: bornText(s.bornShare),
+        ...liveNumbers(s),
         notice: state.notice,
         debug: { tick: `tick ${grouped(s.tick)}`, elapsed: elapsedLabel(s.tick) },
     };
 }
 
-const TEXT_FIELDS = ['status', 'calendar', 'speed', 'born', 'notice'];
+const TEXT_FIELDS = ['status', 'calendar', 'speed', 'born', 'predators', 'calls', 'dominant', 'notice'];
 
 /**
  * @param {any} node an element
@@ -197,7 +249,7 @@ export function mountTopBar(doc, root) {
     nodes.seasonBox.appendChild(nodes.calendar);
     make('speed');
     make('types');
-    for (const key of ['born', 'notice']) {
+    for (const key of ['born', 'predators', 'calls', 'dominant', 'notice']) {
         make(key);
     }
     /** @type {{box: any, count: any, name: string}[]} */
