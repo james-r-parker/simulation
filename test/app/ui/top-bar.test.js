@@ -45,6 +45,9 @@ describe('topBarView', () => {
             speed: 'x1',
             types: [],
             born: 'born -',
+            predators: 'pred -',
+            calls: 'calls -',
+            dominant: '-',
             notice: '',
             debug: { tick: 'tick 0', elapsed: '0:00' },
         });
@@ -80,6 +83,36 @@ describe('topBarView', () => {
     it('says paused while paused and carries the notice', () => {
         const state = { requestedTicksPerSecond: 60, notice: 'hello' };
         expect(topBarView(null, state, true)).toMatchObject({ speed: 'paused', notice: 'hello' });
+    });
+});
+
+describe('live world numbers', () => {
+    it('shows predators, calls per 1000 ticks and the largest specialisation, and dashes before any stats', () => {
+        const view = topBarView(
+            input({ predators: 1234, callsPerKiloTick: 3.456, largest: { name: 'scout', share: 0.824 } }),
+            STATE,
+            false,
+        );
+        expect([view.predators, view.calls, view.dominant]).toEqual(['pred 1,234', 'calls 3.5/kt', 'scout 82%']);
+        expect(topBarView(input({ callsPerKiloTick: 120.4 }), STATE, false).calls).toBe('calls 120/kt');
+        const empty = topBarView(null, STATE, false);
+        expect([empty.predators, empty.calls, empty.dominant]).toEqual(['pred -', 'calls -', '-']);
+    });
+
+    it('reads them from the stats, naming the specialisation from the ready info', () => {
+        const stats = {
+            tick: 5,
+            ticksPerSecond: 60,
+            predators: 7,
+            callsPerKiloTick: 12,
+            largestSpec: { index: 1, share: 0.9 },
+        };
+        const ready = { seed: 3, info: INFO };
+        const latest = { tick: 5, u32: new Uint32Array([0, 1]) };
+        const got = topBarInput({ latest, stats, ready }, 'steady');
+        expect(got).toMatchObject({ predators: 7, callsPerKiloTick: 12, largest: { name: 'forager', share: 0.9 } });
+        const empty = { ...stats, largestSpec: { index: 1, share: 0 } };
+        expect(topBarInput({ latest, stats: empty, ready }, 'steady')?.largest).toBeNull();
     });
 });
 

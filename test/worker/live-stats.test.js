@@ -178,6 +178,29 @@ describe('collectStats', () => {
         expect([stats.generationMax, stats.generationMedian]).toEqual([0, 0]);
     });
 
+    it('reports the predators, the calls per 1000 ticks and the largest specialisation', () => {
+        const { world, observer, live, policy } = setup();
+        for (const [slot, spec] of [
+            [0, 3],
+            [1, 3],
+            [2, 3],
+            [3, 1],
+        ]) {
+            world.alive[slot] = 1;
+            world.spec[slot] = spec;
+        }
+        world.population = 4;
+        world.tick = 10;
+        event(world, EVENT_TYPE.ALARM_CALLED, 10, []);
+        noteTick(live, world, observer);
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
+        expect(stats).toMatchObject({ predators: 1, callsPerKiloTick: 100, largestSpec: { index: 3, share: 0.75 } });
+    });
+
     it('reports births and deaths since the last stats message', () => {
         const { world, observer, live, policy } = setup();
         observer.births[BORN_CAUSE.MATE] = 4;
