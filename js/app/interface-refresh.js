@@ -54,7 +54,8 @@ function refreshPeek(ctx, now) {
         peek.hide();
         return;
     }
-    peek.show(peekView(hit, { info: ready.info, layout: ready.layout, seed: ready.seed, slots: deps.slots }), at);
+    const top = deps.getClient()?.stats?.lineages?.top;
+    peek.show(peekView(hit, { info: ready.info, layout: ready.layout, seed: ready.seed, slots: deps.slots, top }), at);
 }
 
 /** What `tick` refreshes: a part, when it needs it, and how. */
@@ -115,10 +116,12 @@ const REFRESHERS = Object.freeze([
         key: 'inspector',
         wanted: (/** @type {Record<string, any>} */ ctx) => ctx.drawers.state() === 'inspector',
         run(/** @type {Record<string, any>} */ ctx) {
-            const snapshot = ctx.deps.getClient()?.latest;
+            const client = ctx.deps.getClient();
+            const snapshot = client?.latest;
             const ready = ctx.deps.getReady();
+            const top = client?.stats?.lineages?.top;
             ctx.inspector.update(
-                snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots }) : NO_INSPECTION,
+                snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots, top }) : NO_INSPECTION,
             );
         },
     },

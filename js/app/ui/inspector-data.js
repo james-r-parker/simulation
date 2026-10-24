@@ -232,12 +232,12 @@ export function firingThreshold(label, info) {
 
 /**
  * @param {{snapshot: {u32: Uint32Array, f32: Float32Array}, ready: Record<string, any>,
- *   slots: import('../family-slots.js').FamilySlots}} source the newest snapshot, the `ready` message (layout, info,
- *   labels and seed) and the family colour slots
+ *   slots: import('../family-slots.js').FamilySlots, top?: readonly ({id: number} | number)[]}} source the newest
+ *   snapshot, the `ready` message (layout, info, labels and seed), the family colour slots and `stats.lineages.top`
  * @returns {InspectorView} the inspector's content; `valid` is false when nothing is selected, the agent has died or
  *   the snapshot has no inspect part
  */
-export function inspectorView({ snapshot, ready, slots }) {
+export function inspectorView({ snapshot, ready, slots, top = [] }) {
     const { layout, info, labels } = ready;
     const at = layout.inspectOffset;
     if (snapshot.u32.length <= at + 2 || snapshot.u32[at + 2] !== 1) {
@@ -252,7 +252,7 @@ export function inspectorView({ snapshot, ready, slots }) {
     const found = findInSnapshot(snapshot, genomeId);
     const spec = found.specIndex < 0 ? '' : String(info.specs[found.specIndex]?.name ?? '');
     const counters = snapshot.f32.subarray(countersAt, countersAt + layout.counterCount);
-    const family = familyName(ready.seed, found.lineageId);
+    const family = familyName(ready.seed, found.lineageId, top);
     return {
         valid: true,
         header: {

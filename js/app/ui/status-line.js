@@ -66,8 +66,11 @@ export function statusLine({ stats, trend, world }) {
         return `Replaying to tick ${stats.seekTarget}: ${done}%`;
     }
     const { year, season } = calendarOf(stats, world);
-    const lead = stats.lineages?.top?.[0];
+    const top = stats.lineages?.top;
+    const lead = top?.[0];
     const leader =
-        lead === undefined ? '' : `, ${familyName(world.seed, lead.id)} leads with ${Math.round(lead.share * 100)}%`;
+        lead === undefined
+            ? ''
+            : `, ${familyName(world.seed, lead.id, top)} leads with ${Math.round(lead.share * 100)}%`;
     return `${season}, year ${year}: ${stats.population} blobs and ${trend}${leader}`;
 }

@@ -55,14 +55,15 @@ export function nowLine(flags, speed, { maxVelocity, bits }) {
 /**
  * @param {{agents: import('../interpolate.js').Interpolated, index: number}} target the blended agents and the one hit
  * @param {{info: Record<string, any>, layout: Record<string, any>, seed: number,
- *   slots: import('../family-slots.js').FamilySlots}} world `ready` pieces and the family slots
+ *   slots: import('../family-slots.js').FamilySlots, top?: readonly ({id: number} | number)[]}} world `ready` pieces,
+ *   the family slots and `stats.lineages.top`
  * @returns {PeekView} the tag's content
  */
-export function peekView({ agents, index }, { info, layout, seed, slots }) {
+export function peekView({ agents, index }, { info, layout, seed, slots, top = [] }) {
     const lineage = agents.lineageId[index];
     return {
         type: String(info.specs[agents.spec[index]]?.name ?? ''),
-        name: familyName(seed, lineage),
+        name: familyName(seed, lineage, top),
         color: familyCss(slots, lineage),
         now: nowLine(agents.flags[index], agents.speed[index], { maxVelocity: info.maxVelocity, bits: layout.flags }),
     };
