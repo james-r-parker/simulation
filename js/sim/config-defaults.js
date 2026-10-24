@@ -118,7 +118,7 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
-            biteMultiplier: 12, // tuned, fitness-and-selection T15d (was 4)
+            biteMultiplier: 8, // tuned, fitness-and-selection T15o (E47)
             turnMultiplier: 0.7,
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)

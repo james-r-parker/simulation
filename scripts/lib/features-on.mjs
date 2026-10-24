@@ -80,7 +80,7 @@ export const FEATURES_ON = Object.freeze({
     biteArc: 1.571,
     huntCallCost: 10,
     specialisations: {
-        predator: { plantFoodValue: 0, passiveLossMultiplier: 0.6, splitMinEnergyMultiplier: 0.6, biteMultiplier: 12 },
+        predator: { plantFoodValue: 0, passiveLossMultiplier: 0.6, splitMinEnergyMultiplier: 0.6, biteMultiplier: 8 },
     },
     foodPatchCount: 16,
     foodAreaCapacity: true,

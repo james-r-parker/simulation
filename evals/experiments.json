@@ -1456,6 +1456,34 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "T15n screen, 9 arms x 4 seeds (offset 28) x 200000 ticks, policy live; a screen, not a verdict. Idle 8.0 (alarm-0.8) to 11.4 against base 10.4: calls rarer, not near silent. alarm_precision under 0.0013 everywhere; hunt_call_precision up to 0.039 (hunt-0.5) from 0.011. Alarm threshold 0.5 loses pop and mating. both-0.65 is the only arm with mating above 0.2 and the predator gains kept (idle 8.9, hunt p 0.015, catch 0.084, births 72, pop 367, mating 0.24). Idle prediction wrong (smaller falls), hunt precision right. Proposed: alarmThreshold 0.65 and huntCallThreshold 0.65. See sim-notes 2026-10-23 \"Call threshold screen\"."
+    },
+    {
+      "id": "E47",
+      "date": "2026-10-24",
+      "branch": "feat/fs-t15o-bite8",
+      "hypothesis": "Predator bite size (fitness-and-selection T15o): the T15d predator biteMultiplier 12 makes a kill need many bites, so catches and predator births are lower than they could be; softer bites (10 and 8) should keep the gain in catch rate and predator presence while recovering fed median lifespan, which the E36 partial pass left at no-difference on seeds 1-16 and worse (-9.4%) on seeds 17-32.",
+      "prediction": "T15o: predator biteMultiplier 8 and 10 against the T15d default 12, on main f047245, seeds 1-32, 200000 ticks, policy live; each compared with E36's reference per seed set.\n- catch_rate falls roughly in proportion to bite size (more bites per kill): bite 10 ~0.08, bite 8 ~0.06, both still `better` than the reference (~0.005).\n- predator_births fall: bite 10 ~60, bite 8 ~45 per seed, both `better`.\n- fed_median_lifespan on seeds 17-32: bite 10 recovers to about -5% (no-difference likely), bite 8 to about -3% (no-difference).\n- Expected pick: bite 10 if it clears fed lifespan on both sets, else bite 8.",
+      "targets": ["eval.catch_rate", "eval.predator_births", "eval.fed_median_lifespan"],
+      "before": "evals/experiments/E36-ref.json",
+      "after": "evals/experiments/E47-bite8-report.json",
+      "verdicts": {
+        "eval.alarm_precision": "-",
+        "eval.births_per_1k": "no-difference",
+        "eval.catch_rate": "better",
+        "eval.fed_median_lifespan": "no-difference",
+        "eval.floor_episodes": "no-difference",
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.hunt_call_precision": "no-difference",
+        "eval.idle_signals_per_1k": "better",
+        "eval.lineages_alive": "better",
+        "eval.mating_share": "-",
+        "eval.population_mean": "-",
+        "eval.predator_births": "better",
+        "eval.predator_presence": "better",
+        "eval.pursuit_kill_share": "-"
+      },
+      "effect": "better",
+      "note": "T15o decision (manager, 2026-10-24), predator biteMultiplier 12 to 8 (the new default). Live policy map-elites-v1q (policy live), seeds 1-32, 200000 ticks, measured on main f047245 with the biteMultiplier as the only change (configs: evals/experiments/E47-bite8-config.json and E47-bite10-config.json, each an overlay on the main f047245 defaults (predator biteMultiplier 12) that sets only the predator biteMultiplier to 8 or 10, compared with the E36 reference run). Reports: evals/experiments/E47-bite8-report.json and E47-bite10-report.json (32 seeds); per-set splits: E47-bite8-seeds1-16.json, E47-bite8-seeds17-32.json, E47-bite10-seeds1-16.json, E47-bite10-seeds17-32.json, each compared with E36-ref-seeds1-16.json or E36-ref-seeds17-32.json. Verdicts shown are the 32-seed eval:compare of bite 8 against E36-ref.json (--allow-config-diff on the E36-ref-config keys). Per set (1-16 / 17-32), from eval:compare with the same config-diff keys: bite 10: catch_rate better / better, predator_births better / better, fed_median_lifespan no-difference / worse (-8.5%, 6180 to 5656); bite 8: catch_rate better / better (0.006 to 0.060, 0.005 to 0.051), predator_births better / better (3.6 to 127.4, 5.2 to 39.5), fed_median_lifespan no-difference / no-difference (5802 to 5743, 6180 to 5760). Population bite 8 390 / 378 (x12 was 373 / 368). Predator births of 30 or more per seed: bite 8 7 of 16 on each set (x12 10 and 11 of 16; bite 10 9 of 16 on each set). Bite 8 is the softest arm that keeps catch_rate and predator_births better with fed_median_lifespan not worse on either set, so it is the default. The E36 partial-pass bar on births (12 of 16 on each set) is still missed and stays with Phase 4. Prediction check: catch rate and births fell in proportion to bite size as predicted, and both arms stayed better; the fed-lifespan recovery was predicted for bite 10 on seeds 17-32 (about -5%, no-difference) and it was WORSE (-8.5%), so the predicted expected pick (bite 10 if it clears fed lifespan on both sets) failed and the fallback (bite 8) applies. Golden hashes re-pinned with this change (see sim-notes 2026-10-24 E47 entry)."
     }
   ]
 }
