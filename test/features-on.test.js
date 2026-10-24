@@ -94,7 +94,7 @@ describe('feature switch lists', () => {
         expect(FEATURES_ON.predatorKillEnergy).toBe(150);
         const predator = createConfig({}).specialisations.predator;
         expect([predator.passiveLossMultiplier, predator.splitMinEnergyMultiplier, predator.biteMultiplier]).toEqual([
-            0.6, 0.6, 12,
+            0.6, 0.6, 8,
         ]);
     });
 

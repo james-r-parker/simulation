@@ -206,7 +206,7 @@ describe('validateConfig predator-prey keys', () => {
     it('defaults every specialisation multiplier to 1 except the predator', () => {
         const config = createConfig({ ...FEATURES_OFF });
         for (const [name, spec] of Object.entries(config.specialisations)) {
-            const expected = name === 'predator' ? [12, 0.7, 1.6] : [1, 1, 1];
+            const expected = name === 'predator' ? [8, 0.7, 1.6] : [1, 1, 1];
             expect([spec.biteMultiplier, spec.turnMultiplier, spec.sprintBoost]).toEqual(expected);
         }
     });
