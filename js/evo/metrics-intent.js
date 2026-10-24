@@ -1,4 +1,4 @@
-// The thirteen deliberate-behaviour metrics (world-balance.md, Deliberate-behaviour metrics), computed from the
+// The fifteen deliberate-behaviour metrics (world-balance.md, Deliberate-behaviour metrics), computed from the
 // observer's intent run totals and combat counters. Each is `null` with a reason when its denominator is 0.
 
 import { callBases } from './observer-intent-state.js';
@@ -69,6 +69,8 @@ export function intentMetrics(observer) {
     const huntBites = run.huntBiteDeliberate + run.huntBiteChance;
     return {
         'eval.deliberate_food_share': foodShare(run.foodDeliberate, run.foodChance),
+        'eval.deliberate_food_per_1k': per1k(run.foodDeliberate, agentTicks),
+        'eval.chance_food_per_1k': per1k(run.foodChance, agentTicks),
         'eval.pursuit_bite_share': share(run.huntBiteDeliberate, huntBites, 'no bite energy gained by hunters'),
         'eval.pursuit_kill_share': killShare(run.huntKillsDeliberate, combat.huntKills),
         'eval.pack_convergence': share(run.packKillsConvergent, combat.packKills, 'no pack kill'),
