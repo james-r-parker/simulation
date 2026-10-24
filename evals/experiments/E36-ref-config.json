@@ -1,0 +1,27 @@
+{
+  "predatorRescueMin": 0,
+  "predatorRescueInterval": 600,
+  "predatorKillEnergy": 0,
+  "biteArc": 0.7853981633974483,
+  "huntSizeRatio": 1.01,
+  "huntCallCost": 0.5,
+  "alarmThreshold": 0,
+  "huntCallThreshold": 0,
+  "specialisations": {
+    "predator": {
+      "index": 1,
+      "visionRange": 350,
+      "canHunt": true,
+      "moveCostMultiplier": 1,
+      "biteTakenMultiplier": 1,
+      "cooldownMultiplier": 1,
+      "biteMultiplier": 4,
+      "turnMultiplier": 0.7,
+      "plantFoodValue": 0,
+      "meatFoodValue": 1,
+      "sprintBoost": 1.6,
+      "passiveLossMultiplier": 1,
+      "splitMinEnergyMultiplier": 1
+    }
+  }
+}
