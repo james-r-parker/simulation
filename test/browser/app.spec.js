@@ -334,6 +334,12 @@ test('E and B download the archive and the debug bundle, Shift+F does not break 
     await page.keyboard.press('Shift+KeyF');
     await page.keyboard.press('KeyK');
     await expect(page.locator('.toast')).toContainText('Wake lock on');
+    await page.keyboard.press('KeyA');
+    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('audio: on');
+    await page.keyboard.press('Digit9');
+    await page.keyboard.press('Digit0');
+    await page.keyboard.press('KeyA');
+    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('audio: off');
     const before = await tickOf(page);
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
 });

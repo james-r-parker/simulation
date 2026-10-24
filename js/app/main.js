@@ -136,7 +136,12 @@ function onReady(app, message) {
             info: message.info,
             quality: app.params.quality,
             scale: app.params.scale,
-            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready, slots: app.slots }),
+            buildLayers: createLayerBuilder({
+                refs: app.deps.refs,
+                getReady: () => app.ready,
+                slots: app.slots,
+                sink: (effect) => app.iface.onEffect(effect),
+            }),
             onRestored: () => attachGpuTimer(app),
         });
         app.deps.scene.resize(app.size.width, app.size.height);
@@ -283,6 +288,9 @@ function makeInterface(app) {
         toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
         tv: app.params.tv,
+        audioOn: app.params.audio,
+        AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
+        getCamera: () => app.camera,
         setWakeLock: (on) => wakeLock.setEnabled(on),
     });
 }
@@ -335,11 +343,8 @@ function createApp(container) {
  * @returns {{geometries: number, textures: number, programs: number}} the counts `__perf` reports
  */
 function gpuCounts(info) {
-    return {
-        geometries: info?.memory.geometries ?? 0,
-        textures: info?.memory.textures ?? 0,
-        programs: info?.programs?.length ?? 0,
-    };
+    const m = info?.memory;
+    return { geometries: m?.geometries ?? 0, textures: m?.textures ?? 0, programs: info?.programs?.length ?? 0 };
 }
 
 /**
@@ -384,8 +389,7 @@ function start() {
         createCanvas: () => document.createElement('canvas'),
     });
     if (reason !== null) {
-        showMessage(container, reason);
-        return;
+        return showMessage(container, reason);
     }
     const app = createApp(container);
     observeSize(container, (next) => {
@@ -395,11 +399,7 @@ function start() {
         resizeCamera(app.camera, next);
     });
     startReporting(app);
-    const tick = (/** @type {number} */ now) => {
-        app.loop.frame(now);
-        app.iface.tick(now);
-        requestAnimationFrame(tick);
-    };
+    const tick = (/** @type {number} */ now) => (app.loop.frame(now), app.iface.tick(now), requestAnimationFrame(tick));
     requestAnimationFrame(tick);
     app.supervisor.start(chooseSeed(app.params.seed));
 }

@@ -36,6 +36,9 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'Slash', shiftKey: true })).toBe('toggleHelp');
         expect(actionForKey({ code: 'F1' })).toBe('toggleHelp');
         expect(actionForKey({ code: 'KeyH' })).toBe('toggleHud');
+        expect(actionForKey({ code: 'KeyA' })).toBe('toggleAudio');
+        expect(actionForKey({ code: 'Digit9' })).toBe('volumeDown');
+        expect(actionForKey({ code: 'Digit0' })).toBe('volumeUp');
         expect(actionForKey({ code: 'KeyK' })).toBe('toggleWakeLock');
         expect(actionForKey({ code: 'KeyE' })).toBe('exportArchive');
         expect(actionForKey({ code: 'KeyB' })).toBe('exportBundle');

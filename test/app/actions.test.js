@@ -215,6 +215,9 @@ describe('page actions', () => {
             toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
             closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
             toggleHud: () => calls.push('hud'),
+            toggleAudio: () => calls.push('audio'),
+            volumeDown: () => calls.push('volDown'),
+            volumeUp: () => calls.push('volUp'),
             toggleWakeLock: () => calls.push('wakeLock'),
             focusSeed: () => calls.push('seed'),
             fullscreen: () => calls.push('fullscreen'),
@@ -248,7 +251,17 @@ describe('page actions', () => {
             chooseSeed: () => 1,
             config: {},
         });
-        for (const a of ['toggleHud', 'toggleWakeLock', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
+        for (const a of [
+            'toggleHud',
+            'toggleAudio',
+            'volumeDown',
+            'volumeUp',
+            'toggleWakeLock',
+            'focusSeed',
+            'fullscreen',
+            'exportArchive',
+            'exportBundle',
+        ]) {
             expect(() => act(a), a).not.toThrow();
         }
     });
@@ -260,6 +273,9 @@ describe('page actions', () => {
             'toggleInspector',
             'toggleHelp',
             'toggleHud',
+            'toggleAudio',
+            'volumeDown',
+            'volumeUp',
             'toggleWakeLock',
             'focusSeed',
             'fullscreen',
@@ -273,6 +289,9 @@ describe('page actions', () => {
             'drawer inspector',
             'drawer help',
             'hud',
+            'audio',
+            'volDown',
+            'volUp',
             'wakeLock',
             'seed',
             'fullscreen',
