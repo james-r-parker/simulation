@@ -161,19 +161,19 @@ nothing and the agent stays ready; a child starts with 0 deliberate intake and m
 All keys are in `createConfig`, `config-validate.js` (through `FEATURE_RULES` in `config-rules.js`) and `rulesHash`.
 Defaults are the Phase 2 values (the feature off); T48b sets the tuned values.
 
-| Key                  | Type | Default | Bound                      | Meaning                                                                |
-| -------------------- | ---- | ------- | -------------------------- | ---------------------------------------------------------------------- |
-| `meritEnabled`       | bool | false   | -                          | Master switch: no tracking, no credit, every rule below inactive       |
-| `meritChanceWeight`  | num  | 0.25    | 0 to 1                     | Weight of chance intake against deliberate intake                      |
-| `meritMateBonus`     | num  | 150     | at least 0                 | Merit per mating                                                       |
-| `meritChildBonus`    | num  | 300     | at least 0                 | Merit per child that reaches maturity                                  |
-| `meritEscapeBonus`   | num  | 60      | at least 0                 | Merit per escape                                                       |
-| `meritHalfLife`      | int  | 20000   | at least 0 (0 is no decay) | Ticks for merit to halve                                               |
-| `meritHalf`          | num  | 1000    | above 0                    | Merit at which `m` is 0.5                                              |
-| `meritMateWeight`    | num  | 0       | 0 to 1                     | Share of the mate score taken from merit                               |
-| `meritBirthBoost`    | num  | 0       | 0 to 0.5                   | Swing of the birth gift: 1 - boost at merit 0, 1 + boost at high merit |
-| `splitDeliberateMin` | num  | 0       | at least 0                 | Deliberate intake a blob needs before it may split; 0 is no gate       |
-| `meritSplitFloorPop` | int  | 80      | 0 to `maxAgents`           | Below this population the split gate is open                           |
+| Key                  | Type | Default | Bound                                                    | Meaning                                                                |
+| -------------------- | ---- | ------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `meritEnabled`       | bool | false   | -                                                        | Master switch: no tracking, no credit, every rule below inactive       |
+| `meritChanceWeight`  | num  | 0.25    | 0 to 1                                                   | Weight of chance intake against deliberate intake                      |
+| `meritMateBonus`     | num  | 150     | at least 0                                               | Merit per mating                                                       |
+| `meritChildBonus`    | num  | 300     | at least 0                                               | Merit per child that reaches maturity                                  |
+| `meritEscapeBonus`   | num  | 60      | at least 0                                               | Merit per escape                                                       |
+| `meritHalfLife`      | int  | 20000   | at least 0 (0 is no decay)                               | Ticks for merit to halve                                               |
+| `meritHalf`          | num  | 1000    | above 0                                                  | Merit at which `m` is 0.5                                              |
+| `meritMateWeight`    | num  | 0       | 0 to 1                                                   | Share of the mate score taken from merit                               |
+| `meritBirthBoost`    | num  | 0       | 0 to 0.5                                                 | Swing of the birth gift: 1 - boost at merit 0, 1 + boost at high merit |
+| `splitDeliberateMin` | num  | 0       | at least 0                                               | Deliberate intake a blob needs before it may split; 0 is no gate       |
+| `meritSplitFloorPop` | int  | 80      | at least 0 (at or above `maxAgents` the gate stays open) | Below this population the split gate is open                           |
 
 `FEATURES_OFF` pins `meritEnabled` false and the other keys at the defaults above; `FEATURES_ON` restates the tuned
 values (a key pinned off and retuned must be restated, [sim-notes.md](sim-notes.md)).
@@ -408,6 +408,7 @@ adopted silently. With fewer than two of the skill metrics (`eval.deliberate_foo
 | After `E36`, soften the predators (T15o) before the merit work | On seeds 17-32 `eval.fed_median_lifespan` is `worse` (-9.4%) and population falls 13% with the fix, the cost of real predation; a weaker bite may keep the catches and breeding while prey live longer. A 4-seed screen cannot detect a change that size, so the arms run on 32 seeds | User | 2026-10-24 |
 | The predator `biteMultiplier` default is 8 (T15o, E47) | The softest arm keeping `eval.catch_rate` and `eval.predator_births` better with `eval.fed_median_lifespan` not worse on either seed set (bite 10 is worse on seeds 17-32, -8.5%); bite 8 lowers the predator-births-of-30 count from 10 and 11 to 7 of 16, which the E36 partial pass already defers to Phase 4 | Manager | 2026-10-24 |
 | The live numbers (T15j) are in the top bar as `pred N`, `calls R/kt` and `scout 82%`. Predators are alive agents whose specialisation has `canHunt`. Calls are `AlarmCalled` plus `PackCalled` events (smoke is a defence with no ring) over the last 1000 ticks, per 1000 ticks, from a preallocated ring in `js/worker/world-numbers.js`. The share is the most common specialisation's part of the alive agents, named from the ready info | Per 1000 ticks, not per real second: the figure then does not move with the speed or a slow frame, and the same run reads the same on every machine; 1000 ticks is about 17 s at x1, long enough to smooth bursts. The top bar's stats area already holds the other live counts, so no overlay is added | Manager | 2026-10-24 |
+| `meritSplitFloorPop` has no bound against `maxAgents` (at least 0 only) | A hard bound against `maxAgents` would reject every small test world with an inert key: the default 80 is above most fixtures' `maxAgents`, which broke about 1,270 test assertions. A floor at or above `maxAgents` keeps the split gate open, because the population is always below it, so nothing needs rejecting | Manager | 2026-10-24 |
 
 ## Phases
 
