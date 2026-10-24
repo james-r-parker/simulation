@@ -3,7 +3,12 @@
 // direction: `DIRECTIONS` in `js/evo/compare.js` is. A `watch` metric not listed here is treated as `higher`.
 
 /** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a more even sex ratio). */
-export const WATCH_INTENDED_LOWER = new Set(['eval.heat_stress_share', 'eval.unseen_bite_share', 'eval.sex_balance']);
+export const WATCH_INTENDED_LOWER = new Set([
+    'eval.heat_stress_share',
+    'eval.unseen_bite_share',
+    'eval.sex_balance',
+    'eval.chance_food_per_1k',
+]);
 
 /**
  * @param {string} metric a `watch` metric name

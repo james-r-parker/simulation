@@ -38,6 +38,8 @@ const DIRECTIONS = {
     'eval.alarm_response': 'higher',
     'eval.smoke_escapes': 'higher',
     'eval.deliberate_food_share': 'higher',
+    'eval.deliberate_food_per_1k': 'watch',
+    'eval.chance_food_per_1k': 'watch',
     'eval.pursuit_bite_share': 'watch',
     'eval.pursuit_kill_share': 'higher',
     'eval.pack_convergence': 'higher',

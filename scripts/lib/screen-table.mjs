@@ -5,6 +5,8 @@ import { TARGETS, WATCH_METRICS } from './screen-verdict.mjs';
 const TARGET_HEADS = ['mating', 'lineages', 'births/1k', 'food/1k', 'fed life'];
 const WATCH_HEADS = [
     'skill trend',
+    'delib food/1k',
+    'chance food/1k',
     'spec dom',
     'lineage eff',
     'trait spread',

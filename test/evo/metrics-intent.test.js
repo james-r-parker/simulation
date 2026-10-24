@@ -6,6 +6,8 @@ import { bareObserver } from './helpers/metrics-observer.js';
 
 const NAMES = [
     'eval.deliberate_food_share',
+    'eval.deliberate_food_per_1k',
+    'eval.chance_food_per_1k',
     'eval.pursuit_bite_share',
     'eval.pursuit_kill_share',
     'eval.pack_convergence',
@@ -22,6 +24,8 @@ const NAMES = [
 
 const REASONS = {
     'eval.deliberate_food_share': 'no food eaten',
+    'eval.deliberate_food_per_1k': 'no agent-ticks',
+    'eval.chance_food_per_1k': 'no agent-ticks',
     'eval.pursuit_bite_share': 'no bite energy gained by hunters',
     'eval.pursuit_kill_share': 'no hunter kill',
     'eval.pack_convergence': 'no pack kill',
@@ -76,6 +80,8 @@ describe('intentMetrics', () => {
         const v = Object.fromEntries(Object.entries(intentMetrics(o)).map(([name, r]) => [name, r.value]));
         expect(v).toEqual({
             'eval.deliberate_food_share': 0.75,
+            'eval.deliberate_food_per_1k': 7.5,
+            'eval.chance_food_per_1k': 2.5,
             'eval.pursuit_bite_share': 0.25,
             'eval.pursuit_kill_share': 0.75,
             'eval.pack_convergence': 0.5,
@@ -123,6 +129,8 @@ describe('intentMetrics', () => {
         // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70); `deliberate_food_share` and
         // `diversity` returned to `higher` on E35's rates (fitness-and-selection T13).
         const watch = [
+            'eval.deliberate_food_per_1k',
+            'eval.chance_food_per_1k',
             'eval.unseen_bite_share',
             'eval.pursuit_bite_share',
             'eval.evasion_skill',

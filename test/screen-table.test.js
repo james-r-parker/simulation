@@ -60,16 +60,34 @@ describe('renderTable', () => {
     it('prints each new metric mean as a column, `n/a` where the arm has none', () => {
         const table = renderTable({
             reference: 'ref',
-            arms: [verdict('ref', { watch: { 'eval.skill_trend': 0.4375, 'eval.lineage_lifespan_p50': 12345.6 } })],
+            arms: [
+                verdict('ref', {
+                    watch: {
+                        'eval.skill_trend': 0.4375,
+                        'eval.chance_food_per_1k': 3.25,
+                        'eval.lineage_lifespan_p50': 12345.6,
+                    },
+                }),
+            ],
         });
         const [head, , row] = table.split('\n');
-        for (const h of ['skill trend', 'spec dom', 'lineage eff', 'trait spread', 'child surv', 'life p50']) {
+        for (const h of [
+            'skill trend',
+            'spec dom',
+            'lineage eff',
+            'trait spread',
+            'child surv',
+            'life p50',
+            'delib food/1k',
+            'chance food/1k',
+        ]) {
             expect(head).toContain(h);
         }
         expect(head.indexOf('skill trend')).toBeLessThan(head.indexOf('migration'));
         expect(row).toContain('0.44');
         expect(row).toContain('12346');
-        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(7);
+        expect(row).toContain('3.25');
+        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(8);
     });
 });
 

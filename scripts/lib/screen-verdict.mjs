@@ -24,6 +24,8 @@ export const TARGETS = [
  */
 export const WATCH_METRICS = [
     'eval.skill_trend',
+    'eval.deliberate_food_per_1k',
+    'eval.chance_food_per_1k',
     'eval.spec_dominance',
     'eval.lineage_effective',
     'eval.trait_spread',

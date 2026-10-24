@@ -16,31 +16,52 @@ import { CH, FORAGER, PREDATOR, clearRays, seeThreat } from './helpers/intent-wo
 import { auditArena, closeOn, metric, ticks } from './helpers/intent-audit.js';
 import { addBorn, pushDied } from './helpers/observer-world.js';
 
-describe('audit: eval.deliberate_food_share', () => {
-    // Forager A closes on food for 6 ticks (CLOSING_MIN) and eats 30 at tick 6: deliberate. Forager B closes for only
-    // 5 and eats 10: chance. 30 of 40.
-    function meals(feed = true) {
-        const r = auditArena();
-        const a = addBorn(r.world, { spec: FORAGER });
-        const b = addBorn(r.world, { spec: FORAGER });
-        r.start();
-        ticks(r, 1, 6, (t) => {
-            closeOn(r.world, a, CH.FOOD, t);
-            if (t >= 2) {
-                closeOn(r.world, b, CH.FOOD, t);
-            }
-            r.world.foodEnergy[a] = feed && t === 6 ? 30 : 0;
-            r.world.foodEnergy[b] = feed && t === 6 ? 10 : 0;
-        });
-        return r;
-    }
+// Forager A closes on food for 6 ticks (CLOSING_MIN) and eats 30 at tick 6: deliberate. Forager B closes for only
+// 5 and eats 10: chance. 30 of 40.
+function meals(feed = true) {
+    const r = auditArena();
+    const a = addBorn(r.world, { spec: FORAGER });
+    const b = addBorn(r.world, { spec: FORAGER });
+    r.start();
+    ticks(r, 1, 6, (t) => {
+        closeOn(r.world, a, CH.FOOD, t);
+        if (t >= 2) {
+            closeOn(r.world, b, CH.FOOD, t);
+        }
+        r.world.foodEnergy[a] = feed && t === 6 ? 30 : 0;
+        r.world.foodEnergy[b] = feed && t === 6 ? 10 : 0;
+    });
+    return r;
+}
 
+describe('audit: eval.deliberate_food_share', () => {
     it('is the food energy eaten after a closing approach over all food energy eaten: 30 of 40', () => {
         expect(metric(meals(), 'deliberate_food_share')).toEqual({ value: 0.75 });
     });
 
     it('is null with reason `no food eaten` exactly when no food energy was gained', () => {
         expect(metric(meals(false), 'deliberate_food_share')).toEqual({ value: null, reason: 'no food eaten' });
+    });
+});
+
+describe('audit: eval.deliberate_food_per_1k and eval.chance_food_per_1k', () => {
+    // The same two foragers over 6 ticks: 12 agent-ticks; 30 deliberate and 10 chance food energy (bite energy is not
+    // food). Per 1000 agent-ticks: 30 / 12 x 1000 = 2500 and 10 / 12 x 1000 = 833.33.
+    it('are the deliberate and the chance food energy per 1000 agent-ticks: 2500 and 833.33', () => {
+        const r = meals();
+        expect(metric(r, 'deliberate_food_per_1k')).toEqual({ value: 2500 });
+        expect(metric(r, 'chance_food_per_1k').value).toBeCloseTo(10000 / 12, 10);
+    });
+
+    it('are 0 with agent-ticks and no food, and null with reason `no agent-ticks` without agent-ticks', () => {
+        const fed = meals(false);
+        expect(metric(fed, 'deliberate_food_per_1k')).toEqual({ value: 0 });
+        expect(metric(fed, 'chance_food_per_1k')).toEqual({ value: 0 });
+        const empty = auditArena();
+        addBorn(empty.world, { spec: FORAGER });
+        empty.start();
+        expect(metric(empty, 'deliberate_food_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
+        expect(metric(empty, 'chance_food_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
     });
 });
 
