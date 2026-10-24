@@ -332,6 +332,8 @@ test('E and B download the archive and the debug bundle, Shift+F does not break 
     await page.keyboard.press('KeyE');
     expect((await archive).suggestedFilename()).toBe('blob-archive-3.json');
     await page.keyboard.press('Shift+KeyF');
+    await page.keyboard.press('KeyK');
+    await expect(page.locator('.toast')).toContainText('Wake lock on');
     const before = await tickOf(page);
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
 });

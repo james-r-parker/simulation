@@ -49,6 +49,8 @@ import { mountTopBar } from './ui/top-bar.js';
  * @property {(client: {x: number, y: number}) => {x: number, y: number}} toDevice a point in client pixels as device
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
+ * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {(on: boolean) => void} setWakeLock turns the screen wake lock on or off
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
 
@@ -92,6 +94,10 @@ function mountParts(ctx) {
     });
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
+    prefs.wakeLock = prefs.wakeLock || deps.tv;
+    if (prefs.wakeLock) {
+        deps.setWakeLock(true);
+    }
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
 }
@@ -106,6 +112,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek'];
     const ctx = {
         deps,
         prefs,
@@ -115,16 +122,7 @@ function build(deps) {
         chartData: createChartData(),
         barUpdate: mountTopBar(doc, elements.bar),
         tickerUpdate: mountTicker(doc, elements.ticker),
-        last: {
-            bar: -Infinity,
-            ticker: -Infinity,
-            inspector: -Infinity,
-            charts: -Infinity,
-            idle: -Infinity,
-            shift: -Infinity,
-            card: -Infinity,
-            peek: -Infinity,
-        },
+        last: Object.fromEntries(lastKeys.map((k) => [k, -Infinity])),
         idle: createIdleTracker(deps.now),
         shifted: { x: 0, y: 0 },
         fade: createHudFade({
@@ -213,6 +211,12 @@ function createHooks(ctx) {
         toggleHud() {
             setHud(ctx, !ctx.hidden);
             persist(ctx);
+        },
+        toggleWakeLock() {
+            ctx.prefs.wakeLock = !ctx.prefs.wakeLock;
+            deps.setWakeLock(ctx.prefs.wakeLock);
+            persist(ctx);
+            ctx.toast(ctx.prefs.wakeLock ? 'Wake lock on' : 'Wake lock off');
         },
         focusSeed() {
             setHud(ctx, false);

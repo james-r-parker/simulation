@@ -36,6 +36,7 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'Slash', shiftKey: true })).toBe('toggleHelp');
         expect(actionForKey({ code: 'F1' })).toBe('toggleHelp');
         expect(actionForKey({ code: 'KeyH' })).toBe('toggleHud');
+        expect(actionForKey({ code: 'KeyK' })).toBe('toggleWakeLock');
         expect(actionForKey({ code: 'KeyE' })).toBe('exportArchive');
         expect(actionForKey({ code: 'KeyB' })).toBe('exportBundle');
         expect(actionForKey({ code: 'Escape' })).toBe('escape');

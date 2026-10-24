@@ -26,11 +26,11 @@ class FakeUPlot {
 }
 
 /**
- * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean}} [options] stored
- *   preferences, the failed bundle, whether the title card was seen and whether `?speed=` pinned the speed
+ * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean, tv?: boolean}} [options] stored
+ *   preferences, the failed bundle, whether the title card was seen, whether `?speed=` pinned the speed and whether `?tv=1` was given
  * @returns {any} an interface over fakes, with everything it was asked to do
  */
-function setup({ stored = {}, failed = null, seen = true, speedPinned = false } = {}) {
+function setup({ stored = {}, failed = null, seen = true, speedPinned = false, tv = false } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
     doc.documentElement = {
@@ -65,6 +65,7 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
     const pick = { hit: /** @type {any} */ (null) };
     let clock = 0;
     const width = { value: 3840 };
+    const wakeLocks = /** @type {boolean[]} */ ([]);
     const ui = createInterface({
         doc,
         elements,
@@ -84,6 +85,8 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
         pickAt: (/** @type {any} */ device) => (pick.hit === null ? null : { ...pick.hit, at: device }),
         toDevice: (/** @type {any} */ point) => point,
         speedPinned,
+        tv,
+        setWakeLock: (on) => wakeLocks.push(on),
     });
     return {
         ui,
@@ -97,6 +100,7 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
         sent,
         files,
         timers,
+        wakeLocks,
         doc,
         setClock: (/** @type {number} */ t) => (clock = t),
     };
@@ -148,6 +152,22 @@ describe('createInterface', () => {
         expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').hud).toBe(false);
         ui.hooks.focusSeed();
         expect(elements.hud.classList.contains('hud-hidden')).toBe(false);
+    });
+
+    it('toggles the wake lock, remembers it, and starts with it on when stored or in TV mode', () => {
+        const { ui, elements, store, wakeLocks } = setup();
+        expect(wakeLocks).toEqual([]);
+        ui.hooks.toggleWakeLock();
+        expect(wakeLocks).toEqual([true]);
+        expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').wakeLock).toBe(true);
+        expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toContain('Wake lock on');
+        ui.hooks.toggleWakeLock();
+        expect(wakeLocks).toEqual([true, false]);
+        expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').wakeLock).toBe(false);
+        expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toContain('Wake lock off');
+
+        const fromTv = setup({ tv: true });
+        expect(fromTv.wakeLocks).toEqual([true]);
     });
 
     it('opens one drawer at a time and says whether Escape closed one', () => {

@@ -215,6 +215,7 @@ describe('page actions', () => {
             toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
             closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
             toggleHud: () => calls.push('hud'),
+            toggleWakeLock: () => calls.push('wakeLock'),
             focusSeed: () => calls.push('seed'),
             fullscreen: () => calls.push('fullscreen'),
             exportArchive: () => calls.push('archive'),
@@ -247,14 +248,22 @@ describe('page actions', () => {
             chooseSeed: () => 1,
             config: {},
         });
-        for (const a of ['toggleHud', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
+        for (const a of ['toggleHud', 'toggleWakeLock', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
             expect(() => act(a), a).not.toThrow();
         }
     });
 
     it('routes each page action to its hook', () => {
         const { act, calls } = withUi(false);
-        for (const a of ['toggleCharts', 'toggleInspector', 'toggleHelp', 'toggleHud', 'focusSeed', 'fullscreen']) {
+        for (const a of [
+            'toggleCharts',
+            'toggleInspector',
+            'toggleHelp',
+            'toggleHud',
+            'toggleWakeLock',
+            'focusSeed',
+            'fullscreen',
+        ]) {
             act(a);
         }
         act('exportArchive');
@@ -264,6 +273,7 @@ describe('page actions', () => {
             'drawer inspector',
             'drawer help',
             'hud',
+            'wakeLock',
             'seed',
             'fullscreen',
             'archive',
