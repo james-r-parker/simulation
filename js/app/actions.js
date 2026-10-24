@@ -46,6 +46,9 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @property {(drawer: string) => void} toggleDrawer opens a drawer, or closes it when it is the open one
  * @property {() => boolean} closeDrawer closes the open drawer; false when none was open
  * @property {() => void} toggleHud hides or shows the HUD
+ * @property {() => void} toggleAudio turns generative audio on or off
+ * @property {() => void} volumeDown lowers audio volume
+ * @property {() => void} volumeUp raises audio volume
  * @property {() => void} toggleWakeLock turns the screen wake lock on or off
  * @property {() => void} focusSeed moves the keyboard to the seed field
  * @property {() => void} fullscreen enters or leaves fullscreen
@@ -60,6 +63,9 @@ const NO_UI = Object.freeze({
     toggleDrawer() {},
     closeDrawer: () => false,
     toggleHud() {},
+    toggleAudio() {},
+    volumeDown() {},
+    volumeUp() {},
     toggleWakeLock() {},
     focusSeed() {},
     fullscreen() {},
@@ -205,6 +211,9 @@ const ACTIONS = Object.freeze({
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
+    toggleAudio: viaUi('toggleAudio'),
+    volumeDown: viaUi('volumeDown'),
+    volumeUp: viaUi('volumeUp'),
     toggleWakeLock: viaUi('toggleWakeLock'),
     focusSeed: viaUi('focusSeed'),
     fullscreen: viaUi('fullscreen'),

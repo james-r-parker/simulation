@@ -6,6 +6,7 @@
 import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
+import { mountAudio } from './audio/audio.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
@@ -50,9 +51,35 @@ import { mountTopBar } from './ui/top-bar.js';
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {boolean} audioOn whether `?audio=1` started with audio on
+ * @property {(new () => any) | null} AudioContext the Web Audio constructor
+ * @property {() => {x: number, y: number, zoom: number, canvas: {width: number, height: number}}} getCamera the camera
  * @property {(on: boolean) => void} setWakeLock turns the screen wake lock on or off
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
+
+/**
+ * @param {Record<string, any>} ctx the shared parts
+ * @returns {void}
+ */
+function mountServices(ctx) {
+    const { deps, prefs } = ctx;
+    prefs.wakeLock = prefs.wakeLock || deps.tv;
+    prefs.audio = prefs.audio || deps.audioOn;
+    if (prefs.wakeLock) {
+        deps.setWakeLock(true);
+    }
+    ctx.audio = mountAudio({
+        doc: deps.doc,
+        AudioContext: deps.AudioContext,
+        now: deps.now,
+        getCamera: deps.getCamera,
+        getReady: deps.getReady,
+        onStatus: (s) => (deps.state.notice = s),
+        enabled: prefs.audio,
+        volume: prefs.volume,
+    });
+}
 
 /**
  * Mounts the controls, the drawers and what goes in them, and applies the HUD state and size.
@@ -94,10 +121,7 @@ function mountParts(ctx) {
     });
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
-    prefs.wakeLock = prefs.wakeLock || deps.tv;
-    if (prefs.wakeLock) {
-        deps.setWakeLock(true);
-    }
+    mountServices(ctx);
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
 }
@@ -212,6 +236,9 @@ function createHooks(ctx) {
             setHud(ctx, !ctx.hidden);
             persist(ctx);
         },
+        toggleAudio: () => void ((ctx.prefs.audio = ctx.audio.toggle()), persist(ctx)),
+        volumeDown: () => void ((ctx.prefs.volume = ctx.audio.stepVolume(-1)), persist(ctx)),
+        volumeUp: () => void ((ctx.prefs.volume = ctx.audio.stepVolume(1)), persist(ctx)),
         toggleWakeLock() {
             ctx.prefs.wakeLock = !ctx.prefs.wakeLock;
             deps.setWakeLock(ctx.prefs.wakeLock);
@@ -257,6 +284,7 @@ function createListeners(ctx) {
         onStats(/** @type {Record<string, any>} */ stats) {
             assignSlots(deps.slots, stats.lineages?.top ?? []);
             ctx.chartData.stats(stats, deps.now());
+            ctx.audio.onStats(stats);
         },
         onTicker: (/** @type {{text: string, kind: string}[]} */ items) => ctx.queue.push(items, deps.now()),
         onArchive: (/** @type {string} */ json) =>
@@ -268,10 +296,8 @@ function createListeners(ctx) {
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
- *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface:
- *   `hooks` for the actions, `listeners` (`onReady`, `onStats`, `onTicker`, `onArchive`) for the worker client,
- *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes, `pointer` for each pointer move in client pixels, `noteInput` for each
- *   key, press, wheel and counted pointer move
+ *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
+ *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -281,11 +307,13 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        onEffect: (effect) => ctx.audio.onEffect(effect),
         pointer(x, y) {
             ctx.peekTracker.move(x, y, deps.now());
             ctx.peek.hide();
         },
         noteInput(event) {
+            ctx.audio.gesture(event.type);
             const counted = ctx.idle.input(event);
             if (counted) {
                 dismissCard(ctx);
