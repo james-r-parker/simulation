@@ -6,6 +6,7 @@ import { noteDeath } from './metrics-environment.js';
 import { noteMateBirth, noteMeritDeath } from './metrics-merit.js';
 import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
+import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from './observer-lineage-counters.js';
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
 import { noteHunterBirth } from './watch-births.js';
@@ -98,6 +99,7 @@ function finishDeath(observer, d, o, fitness) {
         observer.ghosts.add(genomeId);
     }
     observer.ageTicks[slot] = d[o + 8];
+    readDescendants(observer, slot, genomeId);
     if (observer.eligibleChild[slot] === 1) {
         noteChildDeath(observer.lineage, d[o + 8]);
     }
@@ -196,6 +198,7 @@ function startBirth(observer, world, d, o) {
     observer.birthTick[slot] = d[o + 1];
     observer.eligibleChild[slot] = child ? 1 : 0;
     setLineage(observer, d, o);
+    recordParents(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);
 }
 
@@ -230,11 +233,13 @@ export function applyEvents(observer, world, fitness) {
     creditRelations(observer, d, count);
     noteLineages(observer.lineage, d, count);
     noteParentage(observer, d, count);
+    noteBirthLineage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {
             finishDeath(observer, d, i * EVENT_STRIDE, fitness);
         }
     }
+    releaseDeaths(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_BORN) {
             startBirth(observer, world, d, i * EVENT_STRIDE);
