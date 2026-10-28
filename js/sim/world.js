@@ -234,6 +234,8 @@ export function allocateWorld(config) {
         season: new Float64Array(2),
         era: new Int32Array([-1]),
         birthOptions: { cause: 0, rng: null },
+        capSlots: new Int32Array(config.maxAgents),
+        capKeys: new Float64Array(config.maxAgents),
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),

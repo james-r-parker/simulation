@@ -4,6 +4,7 @@ import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { birthBudgetSpent, recordBirth } from './birth-budget.js';
+import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
 import { childSpec } from './heritable-spec.js';
 import { findMale, findMate } from './mate-search.js';
@@ -214,6 +215,40 @@ function giveBirth(world, policy, mother, cause) {
 }
 
 /**
+ * `advancePregnancies` with merit at the cap: counts every pregnancy down, collects those now due in slot order, and
+ * when fewer slots are free than pregnancies due, attempts them best merit first (ties to the lower slot). A pregnancy
+ * left without a slot waits at 1, as without merit.
+ * @param {World} world the world
+ * @param {BirthPolicy} policy the policy
+ * @returns {void}
+ */
+function advanceRanked(world, policy) {
+    const { alive, pregnancy, capSlots } = world;
+    const maxAgents = world.config.maxAgents;
+    let due = 0;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 1 && pregnancy[slot] > 0) {
+            pregnancy[slot] -= 1;
+            if (pregnancy[slot] === 0) {
+                capSlots[due++] = slot;
+            }
+        }
+    }
+    const ranked = world.population + due > maxAgents;
+    if (ranked) {
+        stampKeys(world, due);
+    }
+    for (let i = 0; i < due; i++) {
+        const slot = ranked ? pickBest(world, due, i) : capSlots[i];
+        if (world.population >= maxAgents) {
+            pregnancy[slot] = 1;
+        } else {
+            giveBirth(world, policy, slot, BORN_CAUSE.MATE);
+        }
+    }
+}
+
+/**
  * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` a pregnancy that
  * falls due in a full world is not attempted: it stays at 1 and tries again next tick (no event, no energy change; the
  * cooldown keeps counting down). It waits until a slot frees, the mother dies, or the energy gate fails the birth.
@@ -222,6 +257,10 @@ function giveBirth(world, policy, mother, cause) {
  * @returns {void}
  */
 export function advancePregnancies(world, policy) {
+    if (meritCapOn(world)) {
+        advanceRanked(world, policy);
+        return;
+    }
     const { alive, pregnancy } = world;
     const { capBirthsEnabled, maxAgents } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
@@ -276,6 +315,35 @@ function readyToSplit(world, slot) {
 }
 
 /**
+ * `splitAll` with merit at the cap: collects the ready agents in slot order and, when fewer slots are free below the
+ * split ceiling than agents are ready, splits the highest merit first (ties to the lower slot). The rest stay ready.
+ * @param {World} world the world
+ * @param {BirthPolicy} policy the policy
+ * @returns {void}
+ */
+function splitRanked(world, policy) {
+    const { alive, capSlots } = world;
+    const { splitCooldownMultiplier, maxAgents, splitCapMargin } = world.config;
+    const free = maxAgents - splitCapMargin - world.population;
+    let ready = 0;
+    for (let slot = 0; free > 0 && slot < alive.length; slot++) {
+        if (alive[slot] === 1 && readyToSplit(world, slot)) {
+            capSlots[ready++] = slot;
+        }
+    }
+    const ranked = ready > free;
+    if (ranked) {
+        stampKeys(world, ready);
+    }
+    const count = ranked ? free : ready;
+    for (let i = 0; i < count; i++) {
+        const slot = ranked ? pickBest(world, ready, i) : capSlots[i];
+        giveBirth(world, policy, slot, BORN_CAUSE.SPLIT);
+        world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
+    }
+}
+
+/**
  * Splits every agent that `readyToSplit` in two, whatever its sex. With `capBirthsEnabled` splitting stops for the
  * tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
  * @param {World} world the world
@@ -283,6 +351,10 @@ function readyToSplit(world, slot) {
  * @returns {void}
  */
 export function splitAll(world, policy) {
+    if (meritCapOn(world)) {
+        splitRanked(world, policy);
+        return;
+    }
     const { alive } = world;
     const { splitCooldownMultiplier, maxAgents, capBirthsEnabled, splitCapMargin } = world.config;
     const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
