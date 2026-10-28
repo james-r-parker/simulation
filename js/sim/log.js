@@ -247,6 +247,24 @@ function emitPredatorRescue(log, d, o) {
     });
 }
 
+/**
+ * Emits one `MeritSummary` event.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitMeritSummary(log, d, o) {
+    log.log('debug', 'MeritSummary', {
+        tick: d[o + 1],
+        meritMean: d[o + 2],
+        meritP90: d[o + 3],
+        readyToSplit: d[o + 4],
+        gatedSplits: d[o + 5],
+        deliberateReadyShare: d[o + 6],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -263,6 +281,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.INVASION_ARRIVED]: { level: LOG_LEVEL.info, emit: emitInvasion },
     [EVENT_TYPE.PREDATOR_RESCUE]: { level: LOG_LEVEL.debug, emit: emitPredatorRescue },
+    [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
 });
 
 /**

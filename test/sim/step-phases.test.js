@@ -40,6 +40,8 @@ vi.mock('../../js/sim/reproduction.js', () => ({
     mate: rec('mate'),
     splitAll: rec('splitAll'),
 }));
+vi.mock('../../js/sim/merit-phase.js', () => ({ meritPhase: rec('meritPhase') }));
+vi.mock('../../js/sim/merit-tally.js', () => ({ tallyReady: rec('tallyReady') }));
 vi.mock('../../js/sim/sensors.js', () => ({ senseAll: rec('senseAll') }));
 vi.mock('../../js/sim/smoke.js', () => ({ ageSmoke: rec('ageSmoke') }));
 vi.mock('../../js/sim/spatial-hash.js', () => ({ buildHash: rec('buildHash') }));
@@ -88,9 +90,23 @@ describe('step phase bodies', () => {
             ['decayFertileZones', world],
             ['updatePheromones', world],
             ['ageSmoke', world],
+            ['meritPhase', world],
             ['assertInvariants', world],
         ]);
         expect(world.tick).toBe(4);
+    });
+
+    it('tallies the ready agents just before splitAll only with merit on', () => {
+        const { world, policy } = sentinels(false);
+        calls.length = 0;
+        step(world, policy);
+        expect(calls.some((c) => c[0] === 'tallyReady')).toBe(false);
+        world.config.meritEnabled = true;
+        calls.length = 0;
+        step(world, policy);
+        const names = calls.map((c) => c[0]);
+        expect(names.indexOf('tallyReady')).toBe(names.indexOf('splitAll') - 1);
+        expect(calls[names.indexOf('tallyReady')]).toEqual(['tallyReady', world]);
     });
 
     it('skips the invariant check when the config does not ask for it', () => {

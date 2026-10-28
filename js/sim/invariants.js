@@ -10,6 +10,7 @@ export const INVARIANT = Object.freeze({
     LEDGER: 'ledger',
     TEMPERATURE: 'temperature',
     CALLS: 'calls',
+    MERIT: 'merit',
 });
 
 /** Relative tolerance on the ledger comparison. */
@@ -234,6 +235,21 @@ function checkCalls(world) {
 }
 
 /**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkMerit(world) {
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        for (const name of ['merit', 'deliberateIntake']) {
+            const value = world[name][slot];
+            if (world.alive[slot] === 1 && !(Number.isFinite(value) && value >= 0)) {
+                throw violation(INVARIANT.MERIT, world, { slot, value }, `${name} is negative or not finite`);
+            }
+        }
+    }
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -245,4 +261,5 @@ export function assertInvariants(world) {
     checkLedger(world);
     checkTemperature(world);
     checkCalls(world);
+    checkMerit(world);
 }
