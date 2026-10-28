@@ -96,7 +96,7 @@ the `Uint8Array` storage.
 
 ### Feature keys (world-balance Phase 3)
 
-Each feature key defaults to its off state, and a feature that is off draws no random number and writes no hashed state
+Each feature key defaults to its off state, and a feature that is off draws no random number and writes no hashed state (the merit arrays are the exception: they are hashed with `meritEnabled` off, see the 2026-10-28 merit entry in [sim-notes.md](sim-notes.md))
 ([world-balance.md](world-balance.md) says what each rule does). The rules are `FEATURE_RULES` in `config-rules.js`;
 `scripts/lib/features-on.mjs` exports `FEATURES_OFF` (every `FEATURE_RULES` key at its default, plus `obstacleCount` 25
 and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-on sets). A test fails when a
@@ -130,7 +130,7 @@ and `hashCellSize` 128) and `FEATURES_ON` (the values the world-balance switch-o
 | `meritEnabled`                                                                | `false`                        | Boolean                                                  | `false`                                              |
 | `meritChanceWeight`, `meritMateWeight`, `meritBirthBoost`                     | `0.25`, `0`, `0`               | `0 .. 1`; `0 .. 1`; `0 .. 0.5`                           | with `meritEnabled` `false`                          |
 | `meritMateBonus`, `meritChildBonus`, `meritEscapeBonus`, `splitDeliberateMin` | `150`, `300`, `60`, `0`        | `>= 0`                                                   | with `meritEnabled` `false`                          |
-| `meritHalfLife`, `meritHalf`, `meritSplitFloorPop`                            | `20000`, `1000`, `80`          | Integer `>= 0`; `> 0`; integer `0 .. maxAgents`          | with `meritEnabled` `false`                          |
+| `meritHalfLife`, `meritHalf`, `meritSplitFloorPop`                            | `20000`, `1000`, `80`          | Integer `>= 0`; `> 0`; integer `>= 0`                    | with `meritEnabled` `false`                          |
 
 `plantFoodValue` and `meatFoodValue` are specialisation fields (`SPECIALISATION_FIELDS`), so every specialisation carries
 both. `minAgents` stays 100 until the switch-on. `rulesHash` covers every key.
@@ -194,6 +194,7 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 | Group         | Arrays (type)                                                                                                                                                                                                                                                                                                     |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Merit         | `merit`, `deliberateIntake`, `meritStamp` (`Float64`), `parentSlotA`, `parentSlotB` (`Int32`), the tracker, escape and mark arrays of `meritSpecs()` in `merit-state.js` (`Float64`, `Uint16`, `Uint8`, `Uint32`); `maxAgents` entries each, always allocated and hashed after the agent arrays                   |
 | Food          | `foodAlive` (`Uint8`), `foodX`, `foodY`, `foodRadius` (`Float32`), `foodValue` (`Float64`), `foodAge` (`Uint32`)                                                                                                                                                                                                  |
 | Obstacles     | `obsX`, `obsY`, `obsVx`, `obsVy`, `obsRadius` (`Float32`), `obstacleSlots(config)` entries each: the `obstacleCount` wandering obstacles, then the static rocks of `terrainLayout` `basins` (`terrainRockCount`, none when `open`)                                                                                |
 | Food kind     | `foodKind` (`Uint8`, `FOOD_KIND`: plant 0, meat 1), `maxFood` entries; hashed only when `carcassesEnabled`                                                                                                                                                                                                        |
@@ -330,7 +331,7 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
 - `STEP_PHASES` runs `environment` (`updateSeason`, `advanceEra`, `moveObstacles`), `hash`, `sense`, `brain`, `signal`,
   `physics` (`actAll`, `integrate`, `buildHash`, `resolveContacts`), `lifecycle` (`feed`, `mate`, `applyCosts`,
   `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `invade`), `field` (`regrowPatches`, `spawnFood`, `ageFood`,
-  `decayFertileZones`, `updatePheromones`, `ageSmoke`) and `invariants`.
+  `decayFertileZones`, `updatePheromones`, `ageSmoke`), `merit` (`meritPhase`) and `invariants`. With `meritEnabled`, `lifecycle` runs `tallyReady` before `splitAll`.
 - Each function visits slots `0 .. maxAgents - 1` and acts on a slot if it is alive when visited. An agent born
   earlier in the same function at a higher slot is visited; one at a lower slot is not.
 - `applyCosts`, per alive agent: `ageTicks += 1`; `cooldown = max(0, cooldown - 1)`;
@@ -642,7 +643,7 @@ FNV-1a over raw little-endian bytes, in this order:
 1. `tick`, `nextId`, `population`, `foodCount`, `cloudCount`, as one `Uint32Array(5)`.
 2. Each agent array, whole (every slot, alive or not), in the design doc's World state table order (`temperature` follows `lastLoss`; then `lastBiteTick`, `prevBiter`, `prevBiteTick`, `alarmTimer`, `huntTimer`, `smokeTimer`, `heard`). `hidden` is
    hashed without its scratch row. `inputs` and `outputs` are left out: they are recomputed every tick. After the
-   agent arrays, and before `hidden`, come the arrays a feature adds, each only when its switch is on, in this order:
+   agent arrays, and before `hidden`, come the merit arrays (`meritSpecs()` order, always hashed), then the arrays a feature adds, each only when its switch is on, in this order:
    `fastOut` (`hebbianRate` above 0); `vision` then `baseSize` (`traitsEnabled`); `birthRing` (`maxBirthsPerWindow` above
    0); `sex` (`sexesEnabled`). With every feature off none of them is hashed.
 3. Food, obstacles, zones, in the order of this file's Arrays table (the obstacle arrays cover every slot, rocks included, and `foodKind` follows `foodAge` when `carcassesEnabled`); then `danger`, `attack`, `hunt`, `cloudX`, `cloudY`, `cloudTtl`, then `patchX`, `patchY`, `patchStock` when `foodPatchCount` is above 0, then `ledger`, then `era` when `erasEnabled`.
