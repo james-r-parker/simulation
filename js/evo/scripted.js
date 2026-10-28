@@ -5,6 +5,7 @@ import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 import { INTENT_CONTROLLERS } from './scripted-intent.js';
+import { V6_CONTROLLERS } from './scripted-v6.js';
 import {
     CH_THREAT,
     CH_FIRST_AGENT,
@@ -12,6 +13,7 @@ import {
     CH_LAST_AGENT,
     CH_WALL,
     SEEK_THRUST,
+    createMealMeter,
     createWander,
     eachAlive,
     seekFood,
@@ -114,14 +116,9 @@ function wallTurn(world, slot) {
 
 /** @type {ControllerFactory} */
 function explorerAfterMeal({ world }) {
-    const owner = new Uint32Array(world.alive.length);
-    const baseline = new Float64Array(world.alive.length);
+    const eaten = createMealMeter(world);
     return eachAlive((w, slot) => {
-        if (owner[slot] !== w.genomeId[slot]) {
-            owner[slot] = w.genomeId[slot];
-            baseline[slot] = w.foodEnergy[slot];
-        }
-        if (w.foodEnergy[slot] - baseline[slot] < MEAL_ENERGY) {
+        if (eaten(w, slot) < MEAL_ENERGY) {
             seekFood(w, slot);
         } else {
             write(w, slot, 1, wallTurn(w, slot));
@@ -145,4 +142,5 @@ export const SCRIPTED_CONTROLLERS = Object.freeze({
     thrust100: constantThrust(CONSTANT_THRUSTS.thrust100),
     ...COMBAT_CONTROLLERS,
     ...INTENT_CONTROLLERS,
+    ...V6_CONTROLLERS,
 });

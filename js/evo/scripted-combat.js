@@ -6,7 +6,7 @@ import { nearestClassRay } from './observer-tick.js';
 import { CH_THREAT, CH_PREY, eachAlive, seekFood, setOutput, turnTowards, write } from './scripted-parts.js';
 
 /** Offsets within the body inputs (see predator-prey.md, Brain layout). */
-const BODY_BITTEN = 12;
+export const BODY_BITTEN = 12;
 const BODY_ATTACK_LEFT = 21;
 const BODY_ATTACK_RIGHT = 22;
 
@@ -16,7 +16,7 @@ const BODY_ATTACK_RIGHT = 22;
  * @param {number} offset a body input offset
  * @returns {number} the input's value
  */
-function bodyInput(world, slot, offset) {
+export function bodyInput(world, slot, offset) {
     return world.inputs[slot * world.layout.inputCount + world.config.rayCount * RAY_CHANNELS + offset];
 }
 

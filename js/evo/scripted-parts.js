@@ -1,6 +1,7 @@
 // Shared pieces of the scripted controllers: channel constants, the output writer and the food-seeking behaviour.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { detCos, detSin } from '../sim/det-math.js';
 import { turnTowards } from '../sim/merit-state.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
@@ -113,5 +114,48 @@ export function createWander(world, rng) {
         );
         const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
         write(w, slot, 1, k < 0 ? drift[slot] : -turnTowards(k, w.config.rayCount));
+    };
+}
+
+/**
+ * The ray index that points most nearly at a world position, in the frame of the agent's heading.
+ * @param {Record<string, any>} w the world
+ * @param {number} slot an alive agent
+ * @param {number} targetX the target's x
+ * @param {number} targetY the target's y
+ * @returns {number} the ray index
+ */
+export function rayTowardPoint(w, slot, targetX, targetY) {
+    const cos = detCos(w.angle[slot]);
+    const sin = detSin(w.angle[slot]);
+    const dx = targetX - w.x[slot];
+    const dy = targetY - w.y[slot];
+    let ray = 0;
+    let bestDot = -Infinity;
+    for (let k = 0; k < w.config.rayCount; k++) {
+        const dot = dx * (cos * w.rayCos[k] - sin * w.raySin[k]) + dy * (sin * w.rayCos[k] + cos * w.raySin[k]);
+        if (dot > bestDot) {
+            bestDot = dot;
+            ray = k;
+        }
+    }
+    return ray;
+}
+
+/**
+ * Food energy an agent has eaten since its genome was born into the slot (the slot's baseline is taken the first time
+ * the genome is seen).
+ * @param {Record<string, any>} world the world the controller runs on
+ * @returns {(w: Record<string, any>, slot: number) => number} the energy eaten so far
+ */
+export function createMealMeter(world) {
+    const owner = new Uint32Array(world.alive.length);
+    const baseline = new Float64Array(world.alive.length);
+    return (w, slot) => {
+        if (owner[slot] !== w.genomeId[slot]) {
+            owner[slot] = w.genomeId[slot];
+            baseline[slot] = w.foodEnergy[slot];
+        }
+        return w.foodEnergy[slot] - baseline[slot];
     };
 }

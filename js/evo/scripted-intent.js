@@ -2,7 +2,6 @@
 // (world-balance.md) can be checked against a controller that should score low. They join the anti-exploit suite.
 
 import { OUTPUT_INDEX } from '../sim/brain-layout.js';
-import { detCos, detSin } from '../sim/det-math.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
@@ -10,6 +9,7 @@ import {
     CH_THREAT,
     createWander,
     eachAlive,
+    rayTowardPoint,
     SEEK_THRUST,
     seekFood,
     setOutput,
@@ -89,23 +89,7 @@ function nearestMateRay(w, slot) {
             best = s;
         }
     }
-    if (best < 0) {
-        return -1;
-    }
-    const cos = detCos(w.angle[slot]);
-    const sin = detSin(w.angle[slot]);
-    const dx = w.x[best] - w.x[slot];
-    const dy = w.y[best] - w.y[slot];
-    let ray = 0;
-    let bestDot = -Infinity;
-    for (let k = 0; k < w.config.rayCount; k++) {
-        const dot = dx * (cos * w.rayCos[k] - sin * w.raySin[k]) + dy * (sin * w.rayCos[k] + cos * w.raySin[k]);
-        if (dot > bestDot) {
-            bestDot = dot;
-            ray = k;
-        }
-    }
-    return ray;
+    return best < 0 ? -1 : rayTowardPoint(w, slot, w.x[best], w.y[best]);
 }
 
 /**
