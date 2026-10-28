@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { createHarness, SMALL_CONFIG } from './helpers/host-harness.js';
 import { driveGolden, effectStreamHash } from './helpers/golden-drive.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const { cases } = JSON.parse(readFileSync(new URL('../sim/golden.json', import.meta.url), 'utf8'));
 const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c]));
-const TIMEOUT_MS = 300_000;
+const TIMEOUT_MS = scaleTimeout(300_000);
 
 /** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin. */
 const BUSY_EFFECT_HASH = 'dd77d19ae7805ad7';

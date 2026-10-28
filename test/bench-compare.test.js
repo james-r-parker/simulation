@@ -10,6 +10,7 @@ import {
     formatRows,
     main,
     parseArgs,
+    relativeNoise,
     skipReason,
 } from '../scripts/bench-compare.mjs';
 
@@ -49,7 +50,7 @@ describe('compare', () => {
 describe('formatRows', () => {
     it('prints base median, head median and change, marking failures', () => {
         const lines = formatRows(compare([run(10)], [run(11.1)]));
-        expect(lines[0]).toBe('FAIL bench.phase.sense_ms@500: base 5, head 5.55, change +11.0% (limit +10%)');
+        expect(lines[0]).toBe('FAIL bench.phase.sense_ms@500: base 5, head 5.55, change +11.0% (limit +10.0%)');
     });
 });
 
@@ -81,11 +82,20 @@ describe('parseArgs', () => {
             sizes: '100,250',
             skipCheck: true,
             runs: 5,
+            threshold: 0.1,
+            noise: 0,
         });
     });
 
     it('defaults to no base and 500 agents', () => {
-        expect(parseArgs([])).toEqual({ base: null, sizes: '500', skipCheck: false, runs: 5 });
+        expect(parseArgs([])).toEqual({
+            base: null,
+            sizes: '500',
+            skipCheck: false,
+            runs: 5,
+            threshold: 0.1,
+            noise: 0,
+        });
     });
 
     it('rejects bad sizes and unknown arguments', () => {
@@ -232,5 +242,45 @@ describe('base worktree install', () => {
     it('logs errors only, so npm warnings do not fill the digest', () => {
         expect(BASE_INSTALL_ARGS).toContain('--loglevel=error');
         expect(BASE_INSTALL_ARGS.slice(0, 2)).toEqual(['ci', '--ignore-scripts']);
+    });
+});
+
+describe('compare with a noise-widened limit', () => {
+    const noisyBase = [8, 12, 10, 9, 11].map(run);
+
+    it('relativeNoise is the standard deviation over the mean, 0 for one run', () => {
+        expect(relativeNoise([10, 10, 10])).toBe(0);
+        expect(relativeNoise([10])).toBe(0);
+        expect(relativeNoise([8, 12])).toBeCloseTo(Math.sqrt(8) / 10, 10);
+    });
+
+    it('fails a +20% head on a quiet base by default and passes it on a noisy base with --noise', () => {
+        const head = [12, 12, 12, 12, 12].map(run);
+        expect(compare(noisyBase, head).every((row) => row.ok)).toBe(false);
+        const rows = compare(noisyBase, head, 0.1, 3);
+        expect(rows.every((row) => row.ok)).toBe(true);
+        expect(rows[0].limit).toBeGreaterThan(0.2);
+    });
+
+    it('still fails a head far past three times the noise', () => {
+        const rows = compare(BASE, [20, 20, 20, 20, 20].map(run), 0.1, 3);
+        expect(rows.some((row) => !row.ok)).toBe(true);
+    });
+
+    it('never goes below the threshold on a quiet base', () => {
+        const rows = compare([10, 10, 10].map(run), [10.5, 10.5, 10.5].map(run), 0.1, 3);
+        expect(rows[0].limit).toBe(0.1);
+    });
+
+    it('prints the limit used per row', () => {
+        const rows = compare(noisyBase, [13, 13, 13, 13, 13].map(run), 0.1, 3);
+        expect(formatRows(rows)[0]).toMatch(/\(limit \+\d+\.\d%\)$/);
+    });
+
+    it('parseArgs reads --threshold and --noise and rejects bad values', () => {
+        expect(parseArgs(['--threshold=0.25', '--noise=3'])).toMatchObject({ threshold: 0.25, noise: 3 });
+        expect(parseArgs([])).toMatchObject({ threshold: 0.1, noise: 0 });
+        expect(() => parseArgs(['--noise=-1'])).toThrow(/--noise/);
+        expect(() => parseArgs(['--threshold=abc'])).toThrow(/--threshold/);
     });
 });

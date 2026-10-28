@@ -6,6 +6,7 @@ import {
     runPredatorWorld,
     survivableWorld,
 } from './helpers/predator-world.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const SHORT = { ticks: 5000, seeds: [1, 2] };
 const LONG = { ticks: 20000, seeds: [1, 2, 3] };
@@ -178,7 +179,7 @@ describe('chance-or-waste controllers score below skill on the intent metrics', 
                         const skill = metricsOf(skillSetup, ticks, seed, sexesEnabled)[metric].value;
                         expect({ chance, skill, holds: holds(metric, chance, skill) }).toMatchObject({ holds: true });
                     },
-                    120_000,
+                    scaleTimeout(120_000),
                 );
             },
         );

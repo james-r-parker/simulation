@@ -5,12 +5,13 @@ import { PATCH_FLOOR_SHARE } from '../../js/sim/food-patches.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 8000;
 const SETTLED = 3000;
 const SAMPLE_EVERY = 250;
 const MAX_AGENTS = 300;
-const TIMEOUT_MS = 240_000;
+const TIMEOUT_MS = scaleTimeout(240_000);
 
 /**
  * Runs a small patchy world on area food and samples the population once it has settled.
