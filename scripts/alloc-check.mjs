@@ -1,4 +1,4 @@
-// Fails when a steady-state tick allocates: heap growth over 1000 ticks of the default world with every Phase 3 feature on must stay under 1 MB.
+// Fails when a steady-state tick allocates: heap growth over 1000 ticks of the default world with every Phase 3 feature and merit on must stay under 1 MB.
 // Run with `node --expose-gc scripts/alloc-check.mjs [--policy <name>]`. With `--policy` the ticks run through
 // `feedPolicy` with the eval observer, as `npm run bench -- --policy` does, so the observer's per-tick work counts.
 import { fileURLToPath } from 'node:url';
@@ -6,8 +6,7 @@ import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
 import { createConfig } from '../js/sim/config.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
-import { createSubject } from './bench.mjs';
-import { FEATURES_ON } from './lib/features-on.mjs';
+import { createSubject, MERIT_ON } from './bench.mjs';
 
 const WARMUP_TICKS = 500;
 const MEASURED_TICKS = 1000;
@@ -43,7 +42,7 @@ export function parseArgs(argv) {
  * @returns {{world: Record<string, any>, advance: (world: Record<string, any>) => void}} a fresh world and one tick
  */
 function createRun(policyName) {
-    const config = createConfig(FEATURES_ON);
+    const config = createConfig(MERIT_ON);
     if (policyName === undefined) {
         const brain = cloneWithNoisePolicy();
         return { world: createWorld(config, brain), advance: (world) => step(world, brain) };

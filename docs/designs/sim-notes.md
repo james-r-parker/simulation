@@ -1028,3 +1028,7 @@ The E36 reference is 0.006 / 0.005 catch rate, 3.6 / 5.2 predator births and 580
 - **Why `shortCases` moves too.** The 300-tick cases were expected to keep their hash, since the merit state is still zero at that length. They do not: `hashWorld` reads every merit array at every checkpoint, and the `parentSlotA` and `parentSlotB` arrays are set at birth even with merit off, so the 300-tick worlds carry nonzero merit state into their hash.
 - **What is hashed.** The arrays are taken from `meritSpecs()` in its order, so the list cannot drift from the allocation. `capSlots`, `capKeys` and `meritTally` are scratch and counters and are not hashed; a test pins that.
 - **Browser check.** `npm run browser:hash` matches both `cases` in Chromium 156.
+
+### 2026-10-28 - merit costs 0.05 ms per tick (fitness-and-selection T25)
+
+- **Merit on, 500 agents, 5-run medians:** the `merit` phase takes 0.054 ms (0.0002 with `meritEnabled` off, so the registered phase is free when off); the whole step goes 3.166 to 3.211 ms against the `defaults` row (+1.4%); the observer adds 0.12 ms. All inside the budgets (0.15, 15% and 0.25 ms), so nothing was optimised. `bench.mjs` has a permanent `merit` tracked row (`MERIT_ON`), and `alloc-check` runs on it: 3800 bytes of heap growth over 1000 ticks, so `trackMerit`, the tally and the cap allocate nothing per tick.

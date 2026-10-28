@@ -41,11 +41,24 @@ export const BENCH_CONFIG = Object.freeze({
 });
 
 /**
+ * `FEATURES_ON` with merit on at representative settings (fitness-and-selection T25): the merit score, mate choice by
+ * merit, birth energy by merit and the split gate, so the `merit` row records what the merit phase and its users cost.
+ */
+export const MERIT_ON = Object.freeze({
+    ...FEATURES_ON,
+    meritEnabled: true,
+    meritMateWeight: 0.05,
+    meritBirthBoost: 0.25,
+    splitDeliberateMin: 200,
+});
+
+/**
  * Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults. The `defaults`
  * row runs every Phase 3 feature on (`FEATURES_ON`), so it records what the features cost.
  */
 export const TRACKED_VARIANTS = Object.freeze([
     { suffix: 'defaults', overrides: FEATURES_ON },
+    { suffix: 'merit', overrides: MERIT_ON },
     { suffix: 'w7680', overrides: Object.freeze({ worldWidth: 7680, worldHeight: 4320 }) },
 ]);
 

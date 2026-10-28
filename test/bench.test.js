@@ -150,8 +150,12 @@ describe('tracked variants', () => {
             'bench.step_ms@500w7680': 1,
             'bench.phase_ms.brain@500w7680': 2,
         });
-        expect(TRACKED_VARIANTS.map((v) => v.suffix)).toEqual(['defaults', 'w7680']);
-        expect(createConfig(TRACKED_VARIANTS[1].overrides)).toMatchObject({ worldWidth: 7680, worldHeight: 4320 });
+        expect(TRACKED_VARIANTS.map((v) => v.suffix)).toEqual(['defaults', 'merit', 'w7680']);
+        expect(createConfig(TRACKED_VARIANTS[2].overrides)).toMatchObject({ worldWidth: 7680, worldHeight: 4320 });
+        expect(createConfig(TRACKED_VARIANTS[1].overrides)).toMatchObject({
+            meritEnabled: true,
+            capBirthsEnabled: true,
+        });
         expect(createConfig(TRACKED_VARIANTS[0].overrides).maxFood).toBe(DEFAULTS.maxFood);
     });
 });
