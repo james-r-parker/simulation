@@ -110,6 +110,96 @@ describe('kill credits', () => {
     });
 });
 
+describe('packKills', () => {
+    /**
+     * A convergent pack kill at tick 2 by hunters `a` (killer) and `b` (previous biter) of lineage 4, with a victim at
+     * (500, 500) and one more agent per `bystanders` entry; each is `[lineageId, dx]` from the victim.
+     * @param {Array<[number, number]>} bystanders lineage and x offset of the others
+     * @param {{killerGone?: boolean, staleSlot?: boolean}} [f] the scene; `staleSlot` leaves the first bystander's observer slot
+     *   holding another genome
+     * @returns {{observer: any, slots: number[], a: number, b: number}} the observer, the bystanders' slots, a and b
+     */
+    function packKill(bystanders, f = {}) {
+        const arena = intentArena();
+        const { world, intent, observer } = arena;
+        const a = addBorn(world, { spec: PREDATOR, lineageId: 4 });
+        const b = addBorn(world, { spec: PREDATOR, lineageId: 4 });
+        const slots = bystanders.map(([lineageId, dx]) => addBorn(world, { spec: PREDATOR, lineageId, x: 500 + dx }));
+        const victim = addBorn(world, { spec: FORAGER });
+        start(arena);
+        for (let slot = 0; slot < world.alive.length; slot++) {
+            observer.genomeId[slot] = world.genomeId[slot];
+        }
+        observer.genomeId[slots[0]] = f.staleSlot ? 999 : world.genomeId[slots[0]];
+        intent.lastBiteDeliberate[victim] = 1;
+        intent.prevBiteDeliberate[victim] = 1;
+        tick(arena, 2, () => {
+            world.alive[a] = f.killerGone ? 0 : 1;
+            pushDied(world, {
+                slot: victim,
+                genomeId: world.genomeId[victim],
+                cause: DEATH_CAUSE.EATEN,
+                by: world.genomeId[a],
+                prevBiter: world.genomeId[b],
+            });
+        });
+        return { observer, slots, a, b };
+    }
+
+    it('credits the kin of the killer within callRadius of the kill', () => {
+        const { observer, slots } = packKill([
+            [4, 100],
+            [4, -299],
+            [4, 301],
+        ]);
+        expect(slots.map((s) => observer.packKills[s])).toEqual([1, 1, 0]);
+    });
+
+    it('does not credit another lineage, however near', () => {
+        const { observer, slots } = packKill([[5, 10]]);
+        expect(observer.packKills[slots[0]]).toBe(0);
+    });
+
+    it('leaves the killer and the previous biter to the converged-kill credit', () => {
+        const { observer, a, b } = packKill([[4, 10]]);
+        expect([observer.packKills[a], observer.packKills[b]]).toEqual([0, 0]);
+        expect([observer.intent.convergedKills[a], observer.intent.convergedKills[b]]).toEqual([1, 1]);
+    });
+
+    it('skips a newborn whose observer slot has not been reset', () => {
+        const { observer, slots } = packKill([[4, 10]], { staleSlot: true });
+        expect(observer.packKills[slots[0]]).toBe(0);
+    });
+
+    it('credits nobody when the killer is gone', () => {
+        const { observer, slots } = packKill([[4, 10]], { killerGone: true });
+        expect(observer.packKills[slots[0]]).toBe(0);
+    });
+
+    it('does not credit a kill that is not convergent', () => {
+        const arena = intentArena();
+        const { world, intent, observer } = arena;
+        const a = addBorn(world, { spec: PREDATOR, lineageId: 4 });
+        const b = addBorn(world, { spec: PREDATOR, lineageId: 4 });
+        const kin = addBorn(world, { spec: PREDATOR, lineageId: 4, x: 520 });
+        const victim = addBorn(world, { spec: FORAGER });
+        start(arena);
+        observer.genomeId[kin] = world.genomeId[kin];
+        intent.lastBiteDeliberate[victim] = 1;
+        intent.prevBiteDeliberate[victim] = 0;
+        tick(arena, 2, () =>
+            pushDied(world, {
+                slot: victim,
+                genomeId: world.genomeId[victim],
+                cause: DEATH_CAUSE.EATEN,
+                by: world.genomeId[a],
+                prevBiter: world.genomeId[b],
+            }),
+        );
+        expect(observer.packKills[kin]).toBe(0);
+    });
+});
+
 describe('huntCredits', () => {
     /**
      * Hunter `caller` calls at tick 1 (with prey ahead when `precise`); its kin `biter` hears it and bites

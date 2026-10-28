@@ -9,6 +9,7 @@ import { pruneAlarms, pushAlarm } from './observer-intent-alarms.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { popResolvedHuntCall, pushHuntCall, sampleHearers } from './observer-intent-calls.js';
 import { INTENT_WINDOW } from './observer-intent-state.js';
+import { notePackKin } from './observer-watch-counters.js';
 
 /**
  * Counts a call or smoke release as precise or idle for its caller's slot.
@@ -64,7 +65,7 @@ function creditAgent(observer, world, counter, genomeId) {
 /**
  * Reads the fatal bite of an eaten death and counts the kill toward pursuit and pack convergence: the run totals, and
  * the killer's `deliberateKills`, and for a convergent pack kill the `convergedKills` of the killer and the previous
- * biter.
+ * biter and the `packKills` of the kin around the kill.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
  * @param {number} o the record offset of the `AgentDied`
@@ -94,6 +95,7 @@ export function noteIntentDeath(observer, world, o) {
         if (convergent === 1) {
             creditAgent(observer, world, intent.convergedKills, killerId);
             creditAgent(observer, world, intent.convergedKills, previousId);
+            notePackKin(observer, world, { victim: slot, killerId, previousId });
         }
     }
 }

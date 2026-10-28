@@ -52,6 +52,10 @@ const SLOT_TYPES = {
     chaseTicks: Uint32Array,
     chainPrey: Uint32Array,
     chainTick: Float64Array,
+    packKills: Uint32Array,
+    sizeTrait: Float32Array,
+    visionTrait: Float32Array,
+    niche: Uint8Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -114,7 +118,8 @@ export function createObserver(config, rng, options = {}) {
         lastFloorTick: -Infinity,
         deathCount: 0,
         deathsDrained: 0,
-        deaths: createLog([...DEATH_FIELDS, 'fitness']),
+        deaths: createLog([...DEATH_FIELDS, 'fitness', 'roleSkill', 'bodyPlan']),
+        nicheTally: undefined,
         checkpointCount: 0,
         series: createLog(SERIES_FIELDS),
         dominantLineage: 0,

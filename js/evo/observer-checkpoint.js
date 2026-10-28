@@ -6,6 +6,7 @@ import { sampleBody } from './metrics-body.js';
 import { sampleEnvironment } from './metrics-environment.js';
 import { sampleMerit } from './metrics-merit.js';
 import { samplePresence } from './metrics-watch.js';
+import { createNicheTally, tallyNiches } from './fitness-v6-diversity.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
@@ -144,6 +145,8 @@ export function checkpoint(observer, world) {
         sampleMerit(observer.merit, world);
         samplePresence(observer.watch, world, observer.combat.hunterSpec);
     }
+    observer.nicheTally ??= createNicheTally(world.config.traitsEnabled);
+    tallyNiches(observer.nicheTally, world);
     const log = observer.series;
     const row = observer.checkpointCount;
     ensureRoom(log, row);

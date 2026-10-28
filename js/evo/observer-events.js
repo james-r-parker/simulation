@@ -6,6 +6,9 @@ import { noteDeath } from './metrics-environment.js';
 import { noteMateBirth, noteMeritDeath } from './metrics-merit.js';
 import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
+import { noteBirthBody, noteBody } from './observer-body.js';
+import { deliberateIntake, chanceIntake } from './fitness-v6-skill.js';
+import { bodyPlanOf, roleSkillOf } from './descriptors.js';
 import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from './observer-lineage-counters.js';
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
@@ -76,6 +79,8 @@ function logDeath(observer, slot, fitness) {
         log[name][row] = observer[name][slot];
     }
     log.fitness[row] = fitness;
+    log.roleSkill[row] = roleSkillOf(deliberateIntake(observer.intent, slot), chanceIntake(observer.intent, slot));
+    log.bodyPlan[row] = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot], observer.config.traitsEnabled);
     observer.deathCount = row + 1;
 }
 
@@ -97,6 +102,7 @@ function finishDeath(observer, d, o, fitness) {
         observer.lineageId[slot] = d[o + 7];
         observer.spec[slot] = d[o + 6];
         observer.ghosts.add(genomeId);
+        noteBody(observer, slot, 1, 1);
     }
     observer.ageTicks[slot] = d[o + 8];
     readDescendants(observer, slot, genomeId);
@@ -197,6 +203,7 @@ function startBirth(observer, world, d, o) {
     observer.spec[slot] = d[o + 5];
     observer.birthTick[slot] = d[o + 1];
     observer.eligibleChild[slot] = child ? 1 : 0;
+    noteBirthBody(observer, world, slot, d[o + 3]);
     setLineage(observer, d, o);
     recordParents(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);

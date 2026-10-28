@@ -3,13 +3,13 @@ import { FITNESS_V6_WATCH, createWatchGroup } from '../../js/evo/fitness-v6-watc
 
 /**
  * A stand-in for the observer with the watch counters; slot 0 holds the given values.
- * @param {{chaseTicks?: number, convergedKills?: number, patches?: number}} fields
+ * @param {{chaseTicks?: number, packKills?: number, patches?: number}} fields
  * @returns {any}
  */
-function observerWith({ chaseTicks = 0, convergedKills = 0, patches = 0 }) {
+function observerWith({ chaseTicks = 0, packKills = 0, patches = 0 }) {
     return {
         chaseTicks: Uint32Array.of(chaseTicks),
-        intent: { convergedKills: Uint32Array.of(convergedKills) },
+        packKills: Uint32Array.of(packKills),
         watch: { visited: Uint32Array.of(patches) },
     };
 }
@@ -42,10 +42,10 @@ describe('createWatchGroup', () => {
         expect(g.chase(observerWith({ chaseTicks: 100000 }), 0)).toBe(300);
     });
 
-    it('pays PACK per converged kill with no cap', () => {
+    it('pays PACK per kill the pack stood around, with no cap', () => {
         const g = createWatchGroup();
-        expect(g.pack(observerWith({ convergedKills: 3 }), 0)).toBe(90);
-        expect(g.pack(observerWith({ convergedKills: 1000 }), 0)).toBe(30000);
+        expect(g.pack(observerWith({ packKills: 3 }), 0)).toBe(90);
+        expect(g.pack(observerWith({ packKills: 1000 }), 0)).toBe(30000);
     });
 
     it('pays MIGRATE per distinct patch visited', () => {
@@ -60,7 +60,7 @@ describe('createWatchGroup', () => {
     });
 
     it('sums the three terms into watch', () => {
-        const o = observerWith({ chaseTicks: 100, convergedKills: 2, patches: 2 });
+        const o = observerWith({ chaseTicks: 100, packKills: 2, patches: 2 });
         expect(createWatchGroup().watch(o, 0)).toBe(50 + 60 + 80);
     });
 
@@ -72,7 +72,7 @@ describe('createWatchGroup', () => {
         const g = createWatchGroup();
         const o = {
             chaseTicks: Uint32Array.of(0, 10),
-            intent: { convergedKills: Uint32Array.of(0, 1) },
+            packKills: Uint32Array.of(0, 1),
             watch: { visited: Uint32Array.of(0, 2) },
         };
         expect(g.watch(o, 0)).toBe(0);
