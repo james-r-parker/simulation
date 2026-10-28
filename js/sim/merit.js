@@ -1,9 +1,11 @@
 // In-world merit: a per-slot running score that rewards deliberate foraging, mating, raising children to maturity
 // and escaping predators, and decays with a half-life. Pure functions of sim state: no RNG, no clock, no allocation.
-// Callers (the `merit` phase and the reproduction hooks, later tasks) gate every call on `meritEnabled`; nothing here
-// is called by `step` yet. See docs/designs/fitness-and-selection.md (In-world merit).
+// Callers (the `merit` phase and `startMating`) gate every call on `meritEnabled`. See docs/designs/fitness-and-selection.md (In-world merit).
 
 import { detExp } from './det-math.js';
+
+/** Ticks between `MeritSummary` log events. */
+export const MERIT_LOG_TICKS = 1000;
 
 /** Below this exponent `0.5 ^ x` is zero for any merit a world can hold (and `detExp` is out of range). */
 const MIN_EXPONENT = -700;

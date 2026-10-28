@@ -14,6 +14,8 @@ import { actAll, integrate, resolveContacts } from './physics.js';
 import { fillFloor, reap } from './population.js';
 import { rescuePredators } from './predator-rescue.js';
 import { updatePheromones } from './pheromones.js';
+import { meritPhase } from './merit-phase.js';
+import { tallyReady } from './merit-tally.js';
 import { advancePregnancies, mate, splitAll } from './reproduction.js';
 import { senseAll } from './sensors.js';
 import { ageSmoke } from './smoke.js';
@@ -85,6 +87,9 @@ function lifecycle(world, policy) {
     mate(world, policy);
     applyCosts(world);
     advancePregnancies(world, policy);
+    if (world.config.meritEnabled) {
+        tallyReady(world);
+    }
     splitAll(world, policy);
     reap(world, policy);
     fillFloor(world, policy);
@@ -103,6 +108,14 @@ function field(world) {
     decayFertileZones(world);
     updatePheromones(world);
     ageSmoke(world);
+}
+
+/**
+ * @param {World} world the world
+ * @returns {void}
+ */
+function merit(world) {
+    meritPhase(world);
 }
 
 /**
@@ -134,6 +147,7 @@ export const STEP_PHASES = Object.freeze([
     phase('physics', physics),
     phase('lifecycle', lifecycle),
     phase('field', field),
+    phase('merit', merit),
     phase('invariants', invariants),
 ]);
 

@@ -30,6 +30,15 @@ export const ESCAPE_TICKS = 300;
 /** An agent moving faster than this share of `maxVelocity` counts as fleeing. */
 export const FLEE_SPEED = 0.5;
 
+/**
+ * Slots of `world.meritTally`, agent-ticks counted at each tick's split decision while `meritEnabled`: the cumulative
+ * totals first, then the totals at the last `MeritSummary` (the log reads the difference).
+ */
+export const TALLY = Object.freeze({ READY: 0, GATED: 1, DELIBERATE: 2, MARK: 3 });
+
+/** Length of `world.meritTally`. */
+export const MERIT_TALLY_SIZE = 6;
+
 const NEVER = -Infinity;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
@@ -56,6 +65,8 @@ const MERIT_FIELDS = [
     [Float64Array, 'meritPreyTurn', NEVER],
     [Float64Array, 'meritPreyOff', NEVER],
     [Float64Array, 'meritPreyStart', NEVER],
+    [Float64Array, 'meritFoodMark', 0],
+    [Float64Array, 'meritBiteMark', 0],
     [Uint8Array, 'biteOpen', 0],
     [Uint32Array, 'biteFirst', 0],
     [Uint8Array, 'biteResponded', 0],

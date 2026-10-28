@@ -18,6 +18,7 @@ export const EVENT_TYPE = Object.freeze({
     DROUGHT_STARTED: 11,
     INVASION_ARRIVED: 12,
     PREDATOR_RESCUE: 13,
+    MERIT_SUMMARY: 14,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

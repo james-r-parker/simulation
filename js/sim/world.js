@@ -4,7 +4,7 @@ import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
-import { createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
+import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
 import { obstacleSlots } from './terrain.js';
 
@@ -236,6 +236,7 @@ export function allocateWorld(config) {
         birthOptions: { cause: 0, rng: null },
         capSlots: new Int32Array(config.maxAgents),
         capKeys: new Float64Array(config.maxAgents),
+        meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),

@@ -54,6 +54,28 @@ describe('assertInvariants', () => {
         expect(Object.isFrozen(INVARIANT)).toBe(true);
     });
 
+    it.each([
+        ['merit', -1],
+        ['merit', Number.NaN],
+        ['deliberateIntake', -0.5],
+        ['deliberateIntake', Infinity],
+    ])('throws the merit invariant when %s is %s on an alive slot', (name, value) => {
+        const world = validWorld();
+        /** @type {any} */ (world)[name][1] = value;
+        const error = violationOf(world);
+        expect(error.invariant).toBe(INVARIANT.MERIT);
+        expect([error.tick, error.slot]).toEqual([0, 1]);
+        expect(error.value).toBe(value);
+    });
+
+    it('accepts zero and positive merit, and ignores a dead slot', () => {
+        const world = validWorld();
+        world.merit[0] = 12.5;
+        world.deliberateIntake[2] = 3;
+        world.merit[3] = -4;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
     it('ignores dead slots holding junk', () => {
         const world = validWorld();
         world.x[3] = Number.NaN;
@@ -214,7 +236,7 @@ describe('assertInvariants', () => {
         });
     });
 
-    it('names the six invariants', () => {
+    it('names the seven invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
@@ -222,6 +244,7 @@ describe('assertInvariants', () => {
             LEDGER: 'ledger',
             TEMPERATURE: 'temperature',
             CALLS: 'calls',
+            MERIT: 'merit',
         });
     });
 

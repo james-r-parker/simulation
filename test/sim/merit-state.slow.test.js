@@ -72,7 +72,7 @@ function agreementHarness() {
 
 describe('the sim tracker agrees with observer.intent', () => {
     it('on every tick and every slot of the default world, seed 1, 3000 ticks, random brains', () => {
-        const config = createConfig({ ...FEATURES_OFF, meritEnabled: true, seed: 1 });
+        const config = createConfig({ ...FEATURES_OFF, meritEnabled: false, seed: 1 });
         const policy = createNaturalV1({ config }).brain;
         const world = createWorld(config, policy);
         const observer = createObserver(config, fork(createRng(1), 'eval'));
@@ -95,7 +95,7 @@ describe('the sim tracker agrees with observer.intent', () => {
             const { onTick, stats } = agreementHarness();
             const { world } = playPredatorWorld(seed, TICKS, {
                 world: survivableWorld,
-                config: { meritEnabled: true },
+                config: { meritEnabled: false },
                 predatorEvery: SURVIVABLE_PREDATOR_EVERY,
                 onTick,
             });

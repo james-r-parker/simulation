@@ -4,7 +4,18 @@ import { STEP_PHASES, step } from '../../js/sim/step.js';
 import { smallWorld } from './helpers/small-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
-const NAMES = ['environment', 'hash', 'sense', 'brain', 'signal', 'physics', 'lifecycle', 'field', 'invariants'];
+const NAMES = [
+    'environment',
+    'hash',
+    'sense',
+    'brain',
+    'signal',
+    'physics',
+    'lifecycle',
+    'field',
+    'merit',
+    'invariants',
+];
 
 /**
  * @param {string[]} log receives each phase name as it runs

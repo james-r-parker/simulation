@@ -297,6 +297,30 @@ describe('drainEvents', () => {
         expect(records.map((r) => r.cause)).toEqual(['capacity', 'energy']);
     });
 
+    it('logs MeritSummary at debug with its fields at their record offsets', () => {
+        const world = build();
+        world.events.count = 0;
+        const o = pushEvent(world.events, EVENT_TYPE.MERIT_SUMMARY, 1000);
+        world.events.data.set([55, 90, 12, 3, 0.5], o + 2);
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            {
+                level: 'debug',
+                event: 'MeritSummary',
+                tick: 1000,
+                meritMean: 55,
+                meritP90: 90,
+                readyToSplit: 12,
+                gatedSplits: 3,
+                deliberateReadyShare: 0.5,
+            },
+        ]);
+        const info = collect('info');
+        drainEvents(world, info.log);
+        expect(info.records).toEqual([]);
+    });
+
     it('does not hand records below the log level to the log at all', () => {
         const world = build();
         world.events.count = 0;
