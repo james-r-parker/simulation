@@ -11,6 +11,7 @@ import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
+import { createFamilyTree, noteMatured } from './observer-lineage-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
@@ -42,6 +43,11 @@ const SLOT_TYPES = {
     generation: Uint32Array,
     archiveLineage: Uint8Array,
     eligibleChild: Uint8Array,
+    matings: Uint32Array,
+    maturedChildren: Uint32Array,
+    descendantsAlive: Uint32Array,
+    parentGenomeA: Uint32Array,
+    parentGenomeB: Uint32Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -92,6 +98,7 @@ export function createObserver(config, rng, options = {}) {
         slotOf: new Map(),
         ghosts: new Set(),
         parentage: new Map(),
+        family: createFamilyTree(n),
         deathFields: DEATH_FIELDS,
         ticks: 0,
         agentTicks: 0,
@@ -146,6 +153,7 @@ export function observe(observer, world, fitness) {
     if (world.tick === 0) {
         return;
     }
+    noteMatured(observer, world);
     countTick(observer, world);
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         sampleVisits(observer.watch, world);
