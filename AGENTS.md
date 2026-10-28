@@ -99,6 +99,10 @@ When one agent hands tasks to others (user, 2026-10-22):
 
 - **One task at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
   and the plan doc, and the rework costs more than the parallelism saves.
+- **Batch related tasks (user, 2026-10-28).** One PR carries 2 to 4 related tasks of a phase, built in order by one
+  subagent on one branch, one commit per task. The delegating agent reviews each task's commit against its plan row;
+  the pre-commit hook runs per commit, the full gate and CI once per PR. Golden re-pins keep their own commit; timing
+  work (quiet machine), evals and screens are not batched with code tasks.
 - **Pick the model by the task's tag.** `[mechanical]` tasks (run a command, re-pin, re-record, fill a table) go to
   Haiku; `[judgement]` tasks (deciding a verdict, diagnosis, review, optimisation) go to Sonnet. The delegating agent
   reviews every result before it merges.
