@@ -38,7 +38,7 @@ import { mountTopBar } from './ui/top-bar.js';
  * @property {() => Record<string, any> | null} getClient the current worker client
  * @property {() => Record<string, any> | null} getReady the newest `ready` message
  * @property {import('./actions.js').AppState} state the shared state
- * @property {Record<string, number>} overrides the config overrides the world was started with
+ * @property {Record<string, number | boolean>} overrides the config overrides the world was started with
  * @property {(action: string) => void} perform runs an action by name
  * @property {() => Promise<any>} loadUPlot loads the uPlot class (and its stylesheet)
  * @property {(file: {name: string, text?: string, blob?: any}) => void} download saves a file

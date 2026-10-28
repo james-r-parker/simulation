@@ -20,13 +20,13 @@
     },
     "js/app": {
       "lines": 100,
-      "branches": 98.59,
+      "branches": 98.61,
       "functions": 100,
       "statements": 100
     },
     "js/worker": {
       "lines": 99.83,
-      "branches": 98.49,
+      "branches": 98.5,
       "functions": 100,
       "statements": 99.84
     }

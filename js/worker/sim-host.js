@@ -19,7 +19,7 @@ import { DIRECTION, MESSAGE_TYPES, POOLS, SELECTION_STATES, validateMessage } fr
  * @property {(delayMs: number, run: () => void) => void} schedule runs `run` after `delayMs`; the host keeps at most
  *   one scheduled
  * @property {(options: Record<string, any>) => Record<string, any>} createPolicy builds the policy from
- *   `{ config, log, observer }`
+ *   `{ config, log, observer, policyName }`, where `policyName` is the registered policy the page asked for, if any
  */
 
 /**
@@ -139,7 +139,7 @@ function poolFor(pool, want) {
 /**
  * Builds the world for `init` or `reset`, sizes the pools and announces it with `ready`.
  * @param {import('./host-output.js').HostState} host the host
- * @param {{seed: number, config: Record<string, any>}} message the `init` or `reset` message
+ * @param {{seed: number, config: Record<string, any>, policy?: string}} message the `init` or `reset` message
  * @returns {void}
  */
 function startWorld(host, message) {
@@ -149,6 +149,7 @@ function startWorld(host, message) {
         overrides: message.config,
         createPolicy: host.createPolicy,
         log: host.log,
+        policyName: message.policy,
     });
     if (host.selection !== null) {
         host.post({ type: MESSAGE_TYPES.SELECTION, genomeId: host.selection.genomeId, state: SELECTION_STATES.GONE });

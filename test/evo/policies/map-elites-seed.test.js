@@ -190,6 +190,46 @@ describe('initBrain sources', () => {
         expect(share('random')).toBeLessThan(0.24);
     });
 
+    it('takes the immigrant mix from archiveShare and cloneShareEnd', () => {
+        const { policy, world, records } = setup({ archiveShare: 0.1, cloneShareEnd: 0.9 });
+        fill(policy, { spec: 0, count: 12 });
+        const rng = createRng(11);
+        const draws = 3000;
+        for (let i = 0; i < draws; i++) {
+            world.spec[0] = 0;
+            policy.brain.initBrain(world, 0, rng);
+        }
+        const share = (/** @type {string} */ source) => records.filter((r) => r.source === source).length / draws;
+        expect(share('archive')).toBeGreaterThan(0.07);
+        expect(share('archive')).toBeLessThan(0.13);
+        expect(share('clone')).toBeGreaterThan(0.76);
+        expect(share('clone')).toBeLessThan(0.84);
+        expect(share('random')).toBeGreaterThan(0.07);
+        expect(share('random')).toBeLessThan(0.13);
+    });
+
+    it('can turn the archive child or the random genome off entirely', () => {
+        const noRandom = setup({ archiveShare: 0.5, cloneShareEnd: 1 });
+        fill(noRandom.policy, { spec: 0, count: 12 });
+        const noArchive = setup({ archiveShare: 0, cloneShareEnd: 0.8 });
+        fill(noArchive.policy, { spec: 0, count: 12 });
+        for (let i = 0; i < 200; i++) {
+            noRandom.world.spec[0] = 0;
+            noRandom.policy.brain.initBrain(noRandom.world, 0, createRng(i));
+            noArchive.world.spec[0] = 0;
+            noArchive.policy.brain.initBrain(noArchive.world, 0, createRng(i));
+        }
+        expect(noRandom.records.some((r) => r.source === 'random')).toBe(false);
+        expect(noArchive.records.some((r) => r.source === 'archive')).toBe(false);
+    });
+
+    it('rejects shares that are out of order or out of range, naming the option', () => {
+        expect(() => setup({ archiveShare: 0.9, cloneShareEnd: 0.5 })).toThrow(/archiveShare 0\.9/);
+        expect(() => setup({ archiveShare: -0.1 })).toThrow(/archiveShare -0\.1/);
+        expect(() => setup({ cloneShareEnd: 1.1 })).toThrow(/cloneShareEnd 1\.1/);
+        expect(() => setup({ archiveShare: Number.NaN })).toThrow(/archiveShare/);
+    });
+
     it('falls back to random for a specialisation with no genome', () => {
         const { policy, world, records } = setup();
         fill(policy, { spec: 0, count: 12 });

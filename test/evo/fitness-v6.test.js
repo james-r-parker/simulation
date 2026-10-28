@@ -32,6 +32,8 @@ function observerWith(fields) {
         maturedChildren: Uint32Array.of(0),
         descendantsAlive: Uint32Array.of(0),
         chaseTicks: Uint32Array.of(fields.chaseTicks ?? 0),
+        packKills: Uint32Array.of(fields.packKills ?? 0),
+        niche: Uint8Array.of(fields.niche ?? 0),
         watch: { visited: Uint32Array.of(fields.patches ?? 0) },
     };
 }
@@ -75,6 +77,12 @@ describe('createFitnessV6', () => {
         expect(score({ deliberateFood: 250, matings: 1, chaseTicks: 100 })).toBe(250 + 0.5 * (100 + 50));
         expect(score({ deliberateFood: 500, matings: 1, chaseTicks: 100 })).toBe(500 + 100 + 50);
         expect(score({ deliberateFood: 5000, matings: 1, chaseTicks: 100 })).toBe(5000 + 100 + 50);
+    });
+
+    it('pays the pack term from the pack counter, ungated below the gate and not from convergedKills', () => {
+        expect(score({ deliberateFood: 500, packKills: 2 })).toBe(500 + 60);
+        expect(score({ deliberateFood: 250, packKills: 2 })).toBe(250 + 0.5 * 60);
+        expect(score({ deliberateFood: 500, convergedKills: 2 })).toBe(500 + 100);
     });
 
     it('caps each capped term', () => {
@@ -122,5 +130,28 @@ describe('diversity in fitnessV6', () => {
 
     it('is 1 without a tally', () => {
         expect(f(observerWith({ deliberateFood: 1000 }), 0, config)).toBe(1000);
+    });
+});
+
+describe('fitnessV6 parts', () => {
+    const f = createFitnessV6({});
+    const parts = () => ({ skill: 0, waste: 0, lineage: 0, watch: 0, diversityFactor: 0 });
+
+    it('reports each group as paid, the gated lineage and watch included', () => {
+        const o = observerWith({ deliberateFood: 250, matings: 1, chaseTicks: 100, idleSignal: 2 });
+        expect(f.parts(o, 0, config, parts())).toEqual({
+            skill: 250,
+            waste: 40,
+            lineage: 50,
+            watch: 25,
+            diversityFactor: 1,
+        });
+    });
+
+    it('reports the niche factor when there is a tally', () => {
+        const o = { ...observerWith({}), nicheTally: { count: 5, shares: Float64Array.of(0.2) } };
+        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1);
+        o.nicheTally.shares[0] = 0;
+        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1.5);
     });
 });

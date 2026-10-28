@@ -1,4 +1,4 @@
-// The query-string parameters the page reads: seed, agents, speed, quality, scale, tv and audio. A value that is missing or
+// The query-string parameters the page reads: seed, agents, speed, quality, scale, tv, audio, policy and merit. A value that is missing or
 // invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
 
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
@@ -15,7 +15,20 @@ export const MAX_AGENTS_PARAM = 4096;
  * @property {number | null} scale a pinned render scale, 0.25 to 1
  * @property {boolean} tv TV mode: HUD hidden, director running, wake lock on
  * @property {boolean} audio start with audio on
+ * @property {string | null} policy a registered policy name to preview (dev switch); the worker rejects an unknown one
+ * @property {boolean} merit preview in-world merit with the `MERIT_PREVIEW` settings (dev switch)
  */
+
+/**
+ * The merit settings `?merit=1` previews: the `MERIT_ON` bench row of fitness-and-selection T25, before Phase 4 tunes
+ * them. Kept in step with `scripts/bench.mjs` by hand, since the page cannot import scripts.
+ */
+export const MERIT_PREVIEW = Object.freeze({
+    meritEnabled: true,
+    meritMateWeight: 0.05,
+    meritBirthBoost: 0.25,
+    splitDeliberateMin: 200,
+});
 
 /**
  * @param {string | null} text a parameter value
@@ -31,6 +44,14 @@ function uintOf(text) {
  */
 function flagOf(text) {
     return text === '1' || text === 'true';
+}
+
+/**
+ * @param {string | null} text the `policy` value
+ * @returns {string | null} the name when it is a lower-case word of letters, digits and hyphens, else null
+ */
+function policyOf(text) {
+    return text !== null && /^[a-z0-9][a-z0-9-]{0,63}$/.test(text) ? text : null;
 }
 
 /**
@@ -76,6 +97,8 @@ export function readParams(search) {
         scale: scaleOf(query.get('scale')),
         tv: flagOf(query.get('tv')),
         audio: flagOf(query.get('audio')),
+        policy: policyOf(query.get('policy')),
+        merit: flagOf(query.get('merit')),
     };
 }
 
@@ -86,16 +109,19 @@ const DEFAULT_MIN_AGENTS = 100;
 
 /**
  * @param {Params} params the validated parameters
- * @returns {Record<string, number>} the config overrides they imply: `agents` sets `initialAgents`, raises `maxAgents`
- *   when it exceeds the default and lowers `minAgents` when it is under the default; empty when `agents` is absent
+ * @returns {Record<string, number | boolean>} the config overrides they imply: `agents` sets `initialAgents`, raises
+ *   `maxAgents` when it exceeds the default and lowers `minAgents` when it is under the default, and `merit` adds
+ *   `MERIT_PREVIEW`; empty when neither is given
  */
-export function configOverrides({ agents }) {
+export function configOverrides({ agents, merit }) {
+    const merited = merit ? MERIT_PREVIEW : {};
     if (agents === null) {
-        return {};
+        return { ...merited };
     }
     return {
         initialAgents: agents,
         maxAgents: Math.max(DEFAULT_MAX_AGENTS, agents),
         minAgents: Math.min(DEFAULT_MIN_AGENTS, agents),
+        ...merited,
     };
 }

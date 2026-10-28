@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { elapsedLabel, mountTopBar, topBarInput, topBarView } from '../../../js/app/ui/top-bar.js';
+import { elapsedLabel, mountTopBar, runLabel, topBarInput, topBarView } from '../../../js/app/ui/top-bar.js';
 import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 
 const STATE = { requestedTicksPerSecond: 60, notice: '' };
@@ -26,6 +26,21 @@ function input(over = {}) {
         ...over,
     };
 }
+
+describe('runLabel', () => {
+    it('is empty before the worker is ready', () => {
+        expect(runLabel(null, {})).toBe('');
+        expect(runLabel({}, {})).toBe('');
+    });
+
+    it('names the policy, and merit when the overrides turn it on', () => {
+        expect(runLabel({ policy: 'map-elites-v1q' }, {})).toBe('policy map-elites-v1q');
+        expect(runLabel({ policy: 'map-elites-v6' }, { meritEnabled: true, meritMateWeight: 0.05 })).toBe(
+            'policy map-elites-v6, merit on',
+        );
+        expect(runLabel({ policy: 'map-elites-v6' }, { meritEnabled: false })).toBe('policy map-elites-v6');
+    });
+});
 
 describe('elapsedLabel', () => {
     it('counts simulated seconds at x1', () => {

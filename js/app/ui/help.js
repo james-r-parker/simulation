@@ -58,8 +58,9 @@ function buttonRow(doc, root, { title, values, label, current, onPick }) {
  *   each does, and whether `MediaRecorder` clip recording is supported
  * @returns {{rows: number, setScale: (value: string | number) => void, setPalette: (value: string) => void,
  *   setLegend: (view: import('./title-card.js').TitleCardView) => void,
- *   setDebug: (debug: {tick: string, elapsed: string}) => void}} the shortcut rows written, the functions that mark
- *   the size and the palette in force, fill the legend at the top, and write the debug lines
+ *   setDebug: (debug: {tick: string, elapsed: string}) => void, setRun: (text: string) => void}} the shortcut rows
+ *   written, the functions that mark the size and the palette in force, fill the legend at the top, write the debug
+ *   lines, and write the run line (the policy and merit)
  */
 export function mountHelp(doc, root, { current, onScale, palette, onPalette, clip = true }) {
     const legend = add(doc, root, 'div', 'legend help-legend');
@@ -88,11 +89,17 @@ export function mountHelp(doc, root, { current, onScale, palette, onPalette, cli
     const debug = add(doc, root, 'p', 'help-debug');
     const tick = add(doc, debug, 'span', 'help-tick');
     const elapsed = add(doc, debug, 'span', 'help-elapsed');
+    const run = add(doc, debug, 'span', 'help-run');
     return {
         rows: bindings.length,
         setScale,
         setPalette,
         setLegend: (view) => mountLegend(doc, legend, view),
+        setRun(text) {
+            if (run.textContent !== text) {
+                run.textContent = text;
+            }
+        },
         setDebug(values) {
             if (tick.textContent !== values.tick) {
                 tick.textContent = values.tick;

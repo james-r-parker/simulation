@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createArchive, nextClone, offer, selectParent } from '../../js/evo/archive.js';
-import { decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
+import { ARCHIVE_VERSION, decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
+import { descriptorV1, descriptorV6 } from '../../js/evo/descriptors.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createSimLog } from '../../js/sim/log.js';
@@ -70,7 +71,7 @@ describe('archive codec', () => {
 
     it('stores only occupied cells', () => {
         const json = encodeArchive(createArchive(layout), config);
-        expect(json).toMatchObject({ version: 1, cells: [] });
+        expect(json).toMatchObject({ version: ARCHIVE_VERSION, descriptor: 'v1', cells: [] });
     });
 
     it('rejects a mismatched layout field, rulesHash or version by name', () => {
@@ -78,7 +79,21 @@ describe('archive codec', () => {
         expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }))).toThrow(/layout\.inputCount/);
         expect(() => decodeArchive(json, createConfig({ rayCount: 2, brainHidden: 5 }))).toThrow(/layout\.brainHidden/);
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config)).toThrow(/rulesHash/);
-        expect(() => decodeArchive({ ...json, version: 2 }, config)).toThrow(/version/);
+        expect(() => decodeArchive({ ...json, version: ARCHIVE_VERSION - 1 }, config)).toThrow(/archive\.version/);
+    });
+
+    it('rejects an archive built under another descriptor, naming the field', () => {
+        const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV6 }), config));
+        expect(json.descriptor).toBe('v6');
+        expect(() => decodeArchive(json, config)).toThrow(/archive\.descriptor/);
+        expect(() => decodeArchive(json, config, undefined, descriptorV1)).toThrow(/archive\.descriptor/);
+        expect(decodeArchive(json, config, undefined, descriptorV6).descriptor).toBe(descriptorV6);
+    });
+
+    it('rejects an archive with no descriptor field', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        delete json.descriptor;
+        expect(() => decodeArchive(json, config)).toThrow(/archive\.descriptor/);
     });
 
     it('logs GenomeRejected with the field, expected and actual when it rejects', () => {

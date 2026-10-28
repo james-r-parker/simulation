@@ -56,6 +56,12 @@ describe('validateMessage', () => {
         },
     );
 
+    it('accepts an init or reset with or without a policy name', () => {
+        expect(validateMessage({ ...GOOD.init, policy: 'map-elites-v6' }).policy).toBe('map-elites-v6');
+        expect(validateMessage({ type: 'reset', seed: 2, config: {}, policy: 'natural-v1' }).policy).toBe('natural-v1');
+        expect(validateMessage(GOOD.init).policy).toBeUndefined();
+    });
+
     it('rejects a field of the wrong type with the value it got', () => {
         expect(() => validateMessage({ ...GOOD.select, genomeId: '4' })).toThrow(
             'select.genomeId must be an unsigned integer, got string 4',
@@ -68,6 +74,8 @@ describe('validateMessage', () => {
             'init.config must be an object, got null',
         );
         expect(() => validateMessage({ ...GOOD.select, genomeId: -1 })).toThrow('select.genomeId');
+        expect(() => validateMessage({ ...GOOD.init, policy: 3 })).toThrow('init.policy must be a string when present');
+        expect(() => validateMessage({ type: 'reset', seed: 1, config: {}, policy: null })).toThrow('reset.policy');
         expect(() => validateMessage({ ...GOOD.select, genomeId: 1.5 })).toThrow('select.genomeId');
     });
 

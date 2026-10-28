@@ -36,9 +36,12 @@ describe('observer events', () => {
         pushBorn(world, { slot: 1, genomeId: 6, tick: 0 });
         observe(observer, world);
         expect(observer.genomeId[1]).toBe(6);
-        for (const name of observer.slotArrays.filter((/** @type {string} */ n) => !/^(genomeId|lineageId)$/.test(n))) {
+        for (const name of observer.slotArrays.filter(
+            (/** @type {string} */ n) => !/^(genomeId|lineageId|sizeTrait|visionTrait)$/.test(n),
+        )) {
             expect(observer[name][1], name).toBe(0);
         }
+        expect([observer.sizeTrait[1], observer.visionTrait[1]]).toEqual([1, 1]);
         expect(
             observer.cellBits
                 .subarray(observer.cellBytes, 2 * observer.cellBytes)

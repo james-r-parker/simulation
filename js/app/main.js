@@ -96,7 +96,7 @@ function observeSize(container, onSize) {
  * @typedef {object} App
  * @property {HTMLElement} container the canvas parent
  * @property {import('./url-params.js').Params} params the URL parameters
- * @property {Record<string, number>} overrides the config overrides they imply
+ * @property {Record<string, number | boolean>} overrides the config overrides they imply
  * @property {import('./actions.js').AppState} state the selection, follow and speed
  * @property {import('./camera.js').CameraController} camera the view
  * @property {{width: number, height: number}} size the canvas in device pixels
@@ -194,6 +194,7 @@ function makeSupervisor(app) {
         setTimer: (ms, run) => setTimeout(run, ms),
         clearTimer: (handle) => clearTimeout(/** @type {any} */ (handle)),
         config: app.overrides,
+        policy: app.params.policy ?? undefined,
         listeners: {
             ...app.iface.listeners,
             onReady(message) {

@@ -8,7 +8,7 @@ import { persistentNodes } from './ui/hud-fade.js';
 import { inspectorView, NO_INSPECTION } from './ui/inspector-data.js';
 import { applyPixelShift } from './ui/pixel-shift.js';
 import { trendWord } from './ui/status-line.js';
-import { topBarInput, topBarView } from './ui/top-bar.js';
+import { runLabel, topBarInput, topBarView } from './ui/top-bar.js';
 
 /** How often each part refreshes, in ms. */
 export const REFRESH_MS = Object.freeze({
@@ -88,6 +88,7 @@ const REFRESHERS = Object.freeze([
             );
             ctx.barUpdate(view);
             ctx.help.setDebug(view.debug);
+            ctx.help.setRun(runLabel(ctx.deps.getReady(), ctx.deps.overrides));
             ctx.controls.update({ paused, seed: ctx.deps.getReady()?.seed ?? null, drawer: ctx.drawers.state() });
         },
     },

@@ -1,6 +1,6 @@
 // The watch group of `fitnessV6` (fitness-and-selection.md "Fitness v6"): chase, pack and migration, the terms that
-// pay what is good to watch. Pure: it reads the observer's per-slot counters at death (`observer-watch-counters.js` and
-// `observer.intent.convergedKills`) and allocates nothing per call. `fitness-v6.js` multiplies the sum by the skill gate
+// pay what is good to watch. Pure: it reads the observer's per-slot counters at death (`observer-watch-counters.js`)
+// and allocates nothing per call. `fitness-v6.js` multiplies the sum by the skill gate
 // (`createSkillGroup.gate`), as it does the lineage group, so this module returns the ungated value.
 
 import { patchesVisitedOf } from './observer-watch-counters.js';
@@ -31,7 +31,7 @@ export function createWatchGroup(overrides) {
     /** @type {(observer: any, slot: number) => number} */
     const chase = (observer, slot) => w.CHASE * Math.min(observer.chaseTicks[slot], w.CHASE_CAP);
     /** @type {(observer: any, slot: number) => number} */
-    const pack = (observer, slot) => w.PACK * observer.intent.convergedKills[slot];
+    const pack = (observer, slot) => w.PACK * observer.packKills[slot];
     /** @type {(observer: any, slot: number) => number} */
     const migrate = (observer, slot) => w.MIGRATE * Math.min(patchesVisitedOf(observer, slot), w.MIGRATE_CAP);
     return {

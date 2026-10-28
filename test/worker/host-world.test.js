@@ -60,8 +60,25 @@ describe('buildRun', () => {
             },
             log: LOG,
         });
-        expect(Object.keys(seen).sort()).toEqual(['config', 'log', 'observer']);
+        expect(Object.keys(seen).sort()).toEqual(['config', 'log', 'observer', 'policyName']);
         expect(seen.log).toBe(LOG);
+        expect(seen.policyName).toBeUndefined();
+    });
+
+    it('tells the policy factory which registered policy was asked for', () => {
+        /** @type {Record<string, any>} */
+        let seen = {};
+        buildRun({
+            seed: 1,
+            overrides: SMALL_CONFIG,
+            createPolicy: (options) => {
+                seen = options;
+                return noisePolicy();
+            },
+            log: LOG,
+            policyName: 'map-elites-v6',
+        });
+        expect(seen.policyName).toBe('map-elites-v6');
     });
 
     it('rejects an invalid config naming the key', () => {

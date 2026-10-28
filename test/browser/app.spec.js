@@ -227,6 +227,21 @@ test('the top bar shows the status, the calendar with the generation, the counts
     await expect(page.locator('.help-elapsed')).toHaveText(/^\d+:\d\d/);
 });
 
+test('?policy=map-elites-v6&merit=1 previews that policy with merit on and the world runs', async ({ page }) => {
+    await page.goto(appUrl() + WORLD + '&policy=map-elites-v6&merit=1');
+    await worldRunning(page);
+    await expect(page.locator('.help-run')).toHaveText('policy map-elites-v6, merit on');
+    await expect(page.locator(STATUS)).toHaveText(/blobs and (growing|shrinking|steady)/);
+    const first = await tickOf(page);
+    await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(first);
+});
+
+test('without the preview parameters the live policy runs with merit off', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await expect(page.locator('.help-run')).toHaveText('policy map-elites-v1q');
+});
+
 test('a first visit shows the title card at x2 and any key dismisses it for good', async ({ page }) => {
     await page.addInitScript(() => globalThis.localStorage.removeItem('blobEvolution.prefs.v1'));
     await page.goto(appUrl() + '?seed=3&agents=100&quality=2');

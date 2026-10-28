@@ -27,6 +27,7 @@ export const FAILURE_WINDOW_MS = 3600000;
  * @property {(ms: number, run: () => void) => unknown} setTimer runs `run` after `ms`
  * @property {(handle: unknown) => void} clearTimer cancels a timer
  * @property {Record<string, any>} config the config overrides sent with each `init`
+ * @property {string} [policy] the registered policy each `init` asks for; absent means the worker's live policy
  * @property {(event: {seed: number, reason: string, restarts: number, delayMs: number, previousSeed: number,
  *   previousTick: number}) => void} [onRestart] shows the toast naming the new seed
  * @property {(client: Record<string, any>) => void} [onClient] receives each new client, so the app can wire it
@@ -122,6 +123,7 @@ function launch(sup, seed) {
     const through = options.listeners ?? {};
     const client = createWorkerClient({
         post: (message, transfer) => worker.postMessage(message, transfer),
+        policy: options.policy,
         listeners: {
             ...through,
             onStats(stats) {

@@ -11,9 +11,12 @@ import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
 export const MIN_ARCHIVE_CELLS = 10;
-/** Below this draw, a mutated child of `selectParent`. */
+/** Below this draw, a mutated child of `selectParent` (the default of the `archiveShare` option). */
 export const ARCHIVE_SHARE = 0.5;
-/** Below this draw (and from `ARCHIVE_SHARE` up), an unmutated clone from `nextClone`; the rest are random. */
+/**
+ * Below this draw (and from `archiveShare` up), an unmutated clone from `nextClone`; the rest are random (the default of
+ * the `cloneShareEnd` option).
+ */
 export const CLONE_SHARE_END = 0.8;
 
 /**
@@ -59,20 +62,21 @@ export function randomEliteSpec(archive, rng) {
  * @param {Record<string, any>} archive the archive
  * @param {number} spec the specialisation
  * @param {any} rng the `brain-init` stream
- * @param {number} cellDraws the parent cell tournament size (`selectParent`)
+ * @param {{cellDraws: number, archiveShare: number, cloneShareEnd: number}} mix the parent cell tournament size
+ *   (`selectParent`) and the two cut points of the draw
  * @returns {{source: 'archive' | 'clone' | 'random', ref: ReturnType<typeof selectParent>}} the source; `ref` is null for
  *   random, or when the specialisation has no genome to give
  */
-function draw(archive, spec, rng, cellDraws) {
+function draw(archive, spec, rng, { cellDraws, archiveShare, cloneShareEnd }) {
     if (occupiedCount(/** @type {any} */ (archive)) < MIN_ARCHIVE_CELLS) {
         return { source: 'random', ref: null };
     }
     const u = nextFloat(rng);
-    if (u < ARCHIVE_SHARE) {
+    if (u < archiveShare) {
         const ref = selectParent(/** @type {any} */ (archive), spec, rng, cellDraws);
         return { source: ref === null ? 'random' : 'archive', ref };
     }
-    if (u < CLONE_SHARE_END) {
+    if (u < cloneShareEnd) {
         const ref = nextClone(/** @type {any} */ (archive), spec);
         return { source: ref === null ? 'random' : 'clone', ref };
     }
@@ -111,11 +115,58 @@ function chooseSpec({ world, slot, rng, archive, counts }) {
 }
 
 /**
- * @param {Record<string, any>} options `{ config, archive, birth, clones, log, cellDraws }`: the shared per-slot state in
- *   `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`
- * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
+ * @param {number} archiveShare the draw below which an immigrant is a mutated archive child
+ * @param {number} cloneShareEnd the draw below which (from `archiveShare` up) it is a clone
+ * @returns {void}
+ * @throws {Error} naming the option when the shares are not `0 <= archiveShare <= cloneShareEnd <= 1`
  */
-export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
+function checkShares(archiveShare, cloneShareEnd) {
+    if (!(archiveShare >= 0 && archiveShare <= cloneShareEnd)) {
+        throw new Error(
+            `createSeeder: archiveShare ${archiveShare} must be from 0 to cloneShareEnd (${cloneShareEnd})`,
+        );
+    }
+    if (!(cloneShareEnd <= 1)) {
+        throw new Error(`createSeeder: cloneShareEnd ${cloneShareEnd} must be at most 1`);
+    }
+}
+
+/**
+ * Records where a seeded slot's genome came from: a clone marks what it cloned, anything else clears the marks.
+ * @param {Record<string, any>} clones the per-slot clone state (`fromArchive` is optional)
+ * @param {number} slot the slot
+ * @param {{archiveRef: number, id: number} | null} cloned the archive genome the slot is an unmutated clone of
+ * @param {boolean} fromArchive whether the genome came from the archive at all (an archive child or a clone)
+ * @returns {void}
+ */
+function markSeeded(clones, slot, cloned, fromArchive) {
+    clones.isClone[slot] = cloned === null ? 0 : 1;
+    clones.archiveRef[slot] = cloned === null ? -1 : cloned.archiveRef;
+    clones.refId[slot] = cloned === null ? 0 : cloned.id;
+    if (clones.fromArchive !== undefined) {
+        clones.fromArchive[slot] = fromArchive ? 1 : 0;
+    }
+}
+
+/**
+ * @param {Record<string, any>} options `{ archive, birth, clones, log, cellDraws, archiveShare, cloneShareEnd }`: the
+ *   shared per-slot state in `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`; the draw below
+ *   `archiveShare` is a mutated archive child, from there to `cloneShareEnd` a clone, above it a random genome
+ *   (defaults `ARCHIVE_SHARE` and `CLONE_SHARE_END`)
+ * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
+ * @throws {Error} naming the option when the shares are not `0 <= archiveShare <= cloneShareEnd <= 1`
+ */
+export function createSeeder({
+    archive,
+    birth,
+    clones,
+    log,
+    cellDraws = 1,
+    archiveShare = ARCHIVE_SHARE,
+    cloneShareEnd = CLONE_SHARE_END,
+}) {
+    checkShares(archiveShare, cloneShareEnd);
+    const mix = { cellDraws, archiveShare, cloneShareEnd };
     const counts = new Int32Array(GENOME_SPECS.length);
     /** @type {(Float32Array | undefined)[]} */
     const own = [];
@@ -128,13 +179,8 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
     function initBrain(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
         const { layout } = world;
         const row = rowOf(own, world.weights, { slot, count: layout.weightCount });
-        const { source, ref } = draw(archive, world.spec[slot], rng, cellDraws);
-        clones.isClone[slot] = 0;
-        clones.archiveRef[slot] = -1;
-        clones.refId[slot] = 0;
-        if (clones.fromArchive !== undefined) {
-            clones.fromArchive[slot] = ref === null ? 0 : 1;
-        }
+        const { source, ref } = draw(archive, world.spec[slot], rng, mix);
+        markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
         if (ref === null) {
             randomWeights(row, layout, rng);
             birth.sigma[slot] = SIGMA_START;
@@ -152,9 +198,6 @@ export function createSeeder({ archive, birth, clones, log, cellDraws = 1 }) {
             checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = ref.sigma;
-            clones.isClone[slot] = 1;
-            clones.archiveRef[slot] = ref.archiveRef;
-            clones.refId[slot] = ref.id;
         }
         log?.log('debug', 'ImmigrantSeeded', {
             spec: world.spec[slot],

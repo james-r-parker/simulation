@@ -59,6 +59,20 @@ function snapshot(tick, { epoch = 1, effectTicks = [] } = {}) {
     return { type: 'snapshot', epoch, buffer, tick };
 }
 
+describe('the policy', () => {
+    it('asks for the policy it was created with on init and on reset, and for none by default', () => {
+        /** @type {Record<string, any>[]} */
+        const posted = [];
+        const named = createWorkerClient({ post: (message) => posted.push(message), policy: 'map-elites-v6' });
+        named.init(1, {});
+        named.reset(2, {});
+        const plain = createWorkerClient({ post: (message) => posted.push(message) });
+        plain.init(3, {});
+        expect(posted.map((m) => m.policy)).toEqual(['map-elites-v6', 'map-elites-v6', undefined]);
+        expect('policy' in posted[2]).toBe(false);
+    });
+});
+
 describe('the commands', () => {
     it('posts each command with its fields', () => {
         const { client, posted } = setup();

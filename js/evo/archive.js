@@ -9,6 +9,7 @@
 import { GENOME_SPECS, rejectGenome } from './genome.js';
 import { WELFORD_STRIDE, welfordAdd, welfordMean, welfordSd } from './welford.js';
 import { nextInt } from '../sim/rng.js';
+import { descriptorV1 } from './descriptors.js';
 
 /** Cells per grid axis. */
 export const CELLS_PER_AXIS = 10;
@@ -43,15 +44,19 @@ const PLACES = SPEC_COUNT * CELLS * 2;
  * @property {Int32Array} cursors `nextClone` cell cursor per specialisation
  * @property {Float64Array} scratch work array for the `cv` median
  * @property {Int32Array} near work array for `selectParent`
+ * @property {import('./descriptors.js').Descriptor} descriptor how a dying agent is placed in a cell
  */
 
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
+ * @param {{descriptor?: import('./descriptors.js').Descriptor}} [options] `descriptor`, the policy's descriptor
+ *   (default `descriptorV1`)
  * @returns {Archive} an empty archive with every row allocated
  */
-export function createArchive(layout) {
+export function createArchive(layout, { descriptor = descriptorV1 } = {}) {
     return {
         layout,
+        descriptor,
         rows: new Float32Array(PLACES * layout.weightCount),
         sigmas: new Float32Array(PLACES),
         ids: new Float64Array(PLACES),

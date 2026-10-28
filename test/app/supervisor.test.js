@@ -29,10 +29,11 @@ function statsMessage(tick) {
 }
 
 /**
- * @param {{throwOnCreate?: () => boolean}} [options] makes `createWorker` throw while it returns true
+ * @param {{throwOnCreate?: () => boolean, policy?: string}} [options] makes `createWorker` throw while it returns true;
+ *   `policy` is the policy the supervisor asks every worker for
  * @returns {Record<string, any>} a supervisor over fake workers, a fake clock and fake timers
  */
-function setup({ throwOnCreate = () => false } = {}) {
+function setup({ throwOnCreate = () => false, policy = undefined } = {}) {
     let t = 0;
     let nextId = 1;
     /** @type {{id: number, at: number, run: () => void}[]} */
@@ -76,6 +77,7 @@ function setup({ throwOnCreate = () => false } = {}) {
             timers = timers.filter((timer) => timer.id !== handle);
         },
         config: { maxAgents: 10 },
+        policy,
         onRestart: (event) => toasts.push(event),
         log: (level, event, fields) => logs.push({ level, event, ...fields }),
     });
@@ -109,6 +111,29 @@ describe('restartDelay', () => {
 
     it('forgets failures older than an hour', () => {
         expect(restartDelay([0, 1, 2, 3, 4, FAILURE_WINDOW_MS + 10], FAILURE_WINDOW_MS + 10)).toBe(BACKOFF_MS[0]);
+    });
+});
+
+describe('the policy', () => {
+    it('asks every worker it starts, restarts included, for the policy it was given', () => {
+        const s = setup({ policy: 'map-elites-v6' });
+        s.supervisor.start(7);
+        expect(s.workers[0].posted[0]).toEqual({
+            type: 'init',
+            seed: 7,
+            config: { maxAgents: 10 },
+            policy: 'map-elites-v6',
+        });
+        s.workers[0].onmessage({ data: READY });
+        s.advance(HEARTBEAT_MS + 1);
+        s.advance(BACKOFF_MS[0] + 1);
+        expect(s.workers[1].posted[0]).toMatchObject({ type: 'init', policy: 'map-elites-v6' });
+    });
+
+    it('sends no policy field without one', () => {
+        const s = setup();
+        s.supervisor.start(7);
+        expect('policy' in s.workers[0].posted[0]).toBe(false);
     });
 });
 

@@ -38,6 +38,18 @@ export function elapsedLabel(ticks) {
 }
 
 /**
+ * @param {Record<string, any> | null} ready the `ready` message, null before one
+ * @param {Record<string, unknown>} overrides the config overrides the world was started with
+ * @returns {string} the run line of the help drawer: `policy map-elites-v6, merit on`; empty before the worker is ready
+ */
+export function runLabel(ready, overrides) {
+    if (ready === null || typeof ready.policy !== 'string') {
+        return '';
+    }
+    return `policy ${ready.policy}${overrides.meritEnabled === true ? ', merit on' : ''}`;
+}
+
+/**
  * @typedef {object} TopBarInput
  * @property {number} tick the newest snapshot's tick
  * @property {number} population agents alive

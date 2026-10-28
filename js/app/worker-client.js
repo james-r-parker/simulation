@@ -272,13 +272,14 @@ function handle(client, data) {
 
 /**
  * Creates the client.
- * @param {{post: (message: Record<string, any>, transfer?: ArrayBuffer[]) => void, listeners?: ClientListeners}} options
- *   `post` sends a message to the worker
+ * @param {{post: (message: Record<string, any>, transfer?: ArrayBuffer[]) => void, listeners?: ClientListeners,
+ *   policy?: string}} options `post` sends a message to the worker; `policy`, when given, names the registered policy
+ *   every `init` and `reset` asks for (absent: the worker's live policy)
  * @returns {Client & Record<string, any>} the client: the state in `Client`; `handle(data)` for each message from the
  *   worker; `releaseField()`; and the commands `init`, `reset`, `setSpeed`, `pause`, `resume`, `step`, `select`,
  *   `setLenses`, `exportArchive` and `flush`
  */
-export function createWorkerClient({ post, listeners = {} }) {
+export function createWorkerClient({ post, listeners = {}, policy }) {
     /** @type {Client} */
     const client = {
         post,
@@ -295,17 +296,18 @@ export function createWorkerClient({ post, listeners = {} }) {
     };
     const send = (/** @type {string} */ type, /** @type {Record<string, any>} */ fields = {}) =>
         post({ type, ...fields });
+    const policyField = policy === undefined ? {} : { policy };
     return Object.assign(client, {
         handle: (/** @type {any} */ data) => handle(client, data),
         releaseField: () => releaseField(client),
         init(/** @type {number} */ seed, /** @type {Record<string, any>} */ config) {
             client.epoch = 1;
-            send(MESSAGE_TYPES.INIT, { seed, config });
+            send(MESSAGE_TYPES.INIT, { seed, config, ...policyField });
         },
         reset(/** @type {number} */ seed, /** @type {Record<string, any>} */ config) {
             client.epoch += 1;
             releaseWorld(client);
-            send(MESSAGE_TYPES.RESET, { seed, config });
+            send(MESSAGE_TYPES.RESET, { seed, config, ...policyField });
         },
         setSpeed: (/** @type {number} */ ticksPerSecond) => send(MESSAGE_TYPES.SET_SPEED, { ticksPerSecond }),
         pause() {

@@ -67,4 +67,14 @@ describe('mountHelp', () => {
         help.setDebug({ tick: 'tick 6', elapsed: '0:01' });
         expect(byClass(root, 'help-tick')[0].textContent).toBe('tick 6');
     });
+
+    it('writes the run line beside the debug lines, only when it changed', () => {
+        const { root, help } = setup();
+        expect(byClass(root, 'help-run')[0].textContent).toBe('');
+        help.setRun('policy map-elites-v6, merit on');
+        expect(byClass(root, 'help-run')[0].textContent).toBe('policy map-elites-v6, merit on');
+        help.setRun('policy map-elites-v6, merit on');
+        help.setRun('');
+        expect(byClass(root, 'help-run')[0].textContent).toBe('');
+    });
 });
