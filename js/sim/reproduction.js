@@ -7,6 +7,7 @@ import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { readyToMate } from './mate-eligibility.js';
 import { childSpec } from './heritable-spec.js';
 import { findMale, findMate } from './mate-search.js';
+import { meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
@@ -136,10 +137,35 @@ function placeChild(world, child, mother) {
     world.temperature[child] = world.config.temperatureStart;
 }
 
+/** The most of the mother's energy a merit-scaled gift may take. */
+const GIFT_CAP = 0.9;
+
+/**
+ * The energy a birth moves from `mother` to the child. A mating gives `childEnergyShare` of her energy, a split half.
+ * With `meritEnabled` and a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
+ * (`m = merit / (merit + meritHalf)`, her merit decayed to now without restamping it) and capped at 0.9 of her energy;
+ * otherwise it is the unscaled gift, exactly.
+ * @param {World} world the world
+ * @param {number} mother the mother or splitter
+ * @param {boolean} isMate true for a mating birth
+ * @returns {number}
+ */
+function giftOf(world, mother, isMate) {
+    const { meritEnabled, meritBirthBoost, meritHalf } = world.config;
+    const energy = world.energy[mother];
+    const gift = energy * (isMate ? childShareOf(world, mother) : 0.5);
+    if (!meritEnabled || meritBirthBoost === 0) {
+        return gift;
+    }
+    const merit = meritPeek(world, mother);
+    const factor = 1 + meritBirthBoost * ((2 * merit) / (merit + meritHalf) - 1);
+    return Math.min(gift * factor, energy * GIFT_CAP);
+}
+
 /**
  * Allocates a child of `mother`, runs the brain hook, moves its energy in, places it and pushes `AgentBorn`.
- * A mating birth gives `childEnergyShare` of the mother's energy, and is blocked when that is below `childEnergyMin`;
- * a split gives half. Either needs a free slot.
+ * A mating birth gives `childEnergyShare` of the mother's energy, and is blocked when that (scaled by merit, see
+ * `giftOf`) is below `childEnergyMin`; a split gives half, scaled the same way. Either needs a free slot.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @param {number} mother the mother or splitter
@@ -153,7 +179,7 @@ function giveBirth(world, policy, mother, cause) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
-    const gift = world.energy[mother] * (isMate ? childShareOf(world, mother) : 0.5);
+    const gift = giftOf(world, mother, isMate);
     if (isMate && gift < childEnergyMin) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;
