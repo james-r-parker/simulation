@@ -55,7 +55,7 @@ failing test, then fix. A fix without a reproducing test is a guess.
    positions) over the full replay once the cause is understood.
 
 5. **Performance problems.** For `bench.*`, run `npm run bench` and read the per-phase split (`environment`, `hash`, `sense`,
-   `brain`, `physics`, `lifecycle`, `field`). For the browser, open DevTools Performance, record 10 s, and look for long tasks on the main
+   `brain`, `physics`, `lifecycle`, `field`, `merit`). For the browser, open DevTools Performance, record 10 s, and look for long tasks on the main
    thread and a GC sawtooth; `window.__perf()` in dev builds (`dev-workflow-and-gate.md` Phase 2) returns the frame-time breakdown. A regression is
    confirmed only against a baseline recorded on the same machine.
 
