@@ -6,6 +6,7 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 10000;
 const COLD_START = 20;
@@ -29,7 +30,7 @@ function populationAfter(name) {
 
 // Each run takes about 10 s alone and several times that under the gate's coverage instrumentation, so each case has
 // its own generous timeout.
-const TIMEOUT_MS = 300_000;
+const TIMEOUT_MS = scaleTimeout(300_000);
 
 describe('body temperature sweet spot', () => {
     it(

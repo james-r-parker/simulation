@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SURVIVABLE_PREDATOR_EVERY, playPredatorWorld, survivableWorld } from './helpers/predator-world.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 5000;
 
@@ -41,6 +42,6 @@ describe.each([false, true])('the survivable-prey duel keeps prey alive, sexes %
             expect(caughtEpisodes + escapedEpisodes).toBeGreaterThanOrEqual(5);
             expect(escapedEpisodes).toBeGreaterThanOrEqual(3);
         },
-        120_000,
+        scaleTimeout(120_000),
     );
 });

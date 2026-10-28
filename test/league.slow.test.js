@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { playLeague } from '../scripts/league.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const TICKS = 100;
 /** @type {string} */
@@ -56,40 +57,48 @@ describe('playLeague', () => {
         expect(lines).toContain('eval.champion_win_rate null (no games)');
     });
 
-    it('gives the same results with 2 workers as with 1, and logs MatchPlayed in game order', async () => {
-        const leaguePath = league('two', two);
-        const run = (/** @type {number} */ workers) =>
-            playLeague(
-                { candidate: join(dir, 'cand.json'), admit: false, workers, ticks: TICKS },
+    it(
+        'gives the same results with 2 workers as with 1, and logs MatchPlayed in game order',
+        async () => {
+            const leaguePath = league('two', two);
+            const run = (/** @type {number} */ workers) =>
+                playLeague(
+                    { candidate: join(dir, 'cand.json'), admit: false, workers, ticks: TICKS },
+                    { ...paths(), leaguePath },
+                );
+            const [a, b] = [await run(2), await run(1)];
+            expect(a).toEqual(b);
+            expect(a.games).toBe(16);
+            expect(a.log.slice(0, 4).map((g) => [g.seed, g.champion])).toEqual([
+                [313056, 'x'],
+                [313056, 'y'],
+                [337535, 'x'],
+                [337535, 'y'],
+            ]);
+            const logged = readFileSync(join(dir, 'logs', `league-cand-${TICKS}.jsonl`), 'utf8')
+                .trim()
+                .split('\n')
+                .map((line) => JSON.parse(line));
+            expect(logged).toHaveLength(16);
+            expect(logged[0]).toMatchObject({ event: 'MatchPlayed', seed: 313056, a: 'cand', b: 'x', eloBefore: 1500 });
+            expect(logged.at(-1).eloAfter).toBe(a.elo);
+        },
+        scaleTimeout(60_000),
+    );
+
+    it(
+        'appends the candidate with its Elo on --admit',
+        async () => {
+            const leaguePath = league('admit', two);
+            const out = await playLeague(
+                { candidate: join(dir, 'cand.json'), admit: true, workers: 2, ticks: TICKS },
                 { ...paths(), leaguePath },
             );
-        const [a, b] = [await run(2), await run(1)];
-        expect(a).toEqual(b);
-        expect(a.games).toBe(16);
-        expect(a.log.slice(0, 4).map((g) => [g.seed, g.champion])).toEqual([
-            [313056, 'x'],
-            [313056, 'y'],
-            [337535, 'x'],
-            [337535, 'y'],
-        ]);
-        const logged = readFileSync(join(dir, 'logs', `league-cand-${TICKS}.jsonl`), 'utf8')
-            .trim()
-            .split('\n')
-            .map((line) => JSON.parse(line));
-        expect(logged).toHaveLength(16);
-        expect(logged[0]).toMatchObject({ event: 'MatchPlayed', seed: 313056, a: 'cand', b: 'x', eloBefore: 1500 });
-        expect(logged.at(-1).eloAfter).toBe(a.elo);
-    }, 60_000);
-
-    it('appends the candidate with its Elo on --admit', async () => {
-        const leaguePath = league('admit', two);
-        const out = await playLeague(
-            { candidate: join(dir, 'cand.json'), admit: true, workers: 2, ticks: TICKS },
-            { ...paths(), leaguePath },
-        );
-        const saved = JSON.parse(readFileSync(leaguePath, 'utf8'));
-        expect(saved.champions).toHaveLength(3);
-        expect(saved.champions[2]).toEqual({ file: 'cand.json', name: 'cand', elo: out.elo });
-        expect(saved.champions[0]).toEqual(two[0]);
-    }, 60_000);
+            const saved = JSON.parse(readFileSync(leaguePath, 'utf8'));
+            expect(saved.champions).toHaveLength(3);
+            expect(saved.champions[2]).toEqual({ file: 'cand.json', name: 'cand', elo: out.elo });
+            expect(saved.champions[0]).toEqual(two[0]);
+        },
+        scaleTimeout(60_000),
+    );
 });

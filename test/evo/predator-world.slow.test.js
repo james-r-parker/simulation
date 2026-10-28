@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { playPredatorWorld, predatorPolicy, predatorWorld, runPredatorWorld } from './helpers/predator-world.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 3000;
 const SEEDS = [1, 2, 3, 4, 5, 6];
@@ -24,20 +25,24 @@ describe('evals/predator-world.json', () => {
         expect(predatorPolicy().initSpec(world, 3)).toBe(0);
     });
 
-    it('gives hunters against fleers a catch rate and an escape rate above 0', () => {
-        const runs = SEEDS.map((seed) => runPredatorWorld(seed, TICKS));
-        const mean = (/** @type {string} */ name) => {
-            const values = runs.map((m) => m[name].value).filter((v) => v !== null);
-            return values.reduce((a, b) => a + b, 0) / values.length;
-        };
-        expect(mean('eval.catch_rate')).toBeGreaterThan(0);
-        expect(mean('eval.escape_rate')).toBeGreaterThan(0);
-        for (const run of runs) {
-            expect(run['eval.catch_rate'].value).toBeGreaterThan(0);
-        }
-    }, 60_000);
+    it(
+        'gives hunters against fleers a catch rate and an escape rate above 0',
+        () => {
+            const runs = SEEDS.map((seed) => runPredatorWorld(seed, TICKS));
+            const mean = (/** @type {string} */ name) => {
+                const values = runs.map((m) => m[name].value).filter((v) => v !== null);
+                return values.reduce((a, b) => a + b, 0) / values.length;
+            };
+            expect(mean('eval.catch_rate')).toBeGreaterThan(0);
+            expect(mean('eval.escape_rate')).toBeGreaterThan(0);
+            for (const run of runs) {
+                expect(run['eval.catch_rate'].value).toBeGreaterThan(0);
+            }
+        },
+        scaleTimeout(60_000),
+    );
 
-    it('is deterministic: the same seed gives the same metrics', { timeout: 60_000 }, () => {
+    it('is deterministic: the same seed gives the same metrics', { timeout: scaleTimeout(60_000) }, () => {
         expect(runPredatorWorld(2, 1500)).toEqual(runPredatorWorld(2, 1500));
     });
 });

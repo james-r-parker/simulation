@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runReplay } from '../scripts/replay.mjs';
 import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const CONFIG = { ...FEATURES_OFF, initialAgents: 20, minAgents: 20, maxAgents: 40 };
 // The economy the follow test needs so that agent 1 starves within the run.
@@ -35,31 +36,39 @@ async function run(extra) {
 }
 
 describe('runReplay', () => {
-    it('gives the same checkpoint hashes on two runs of the same seed and config', async () => {
-        const a = await run({});
-        const b = await run({});
+    it(
+        'gives the same checkpoint hashes on two runs of the same seed and config',
+        async () => {
+            const a = await run({});
+            const b = await run({});
 
-        expect(a.lines).toEqual(b.lines);
-        expect(a.result.hashes).toHaveLength(2);
-        expect(a.result.finalHash).toBe(b.result.finalHash);
-        expect(a.lines[0]).toMatch(/^tick 1000 worldHash [0-9a-f]{16}$/);
-    }, 60000);
+            expect(a.lines).toEqual(b.lines);
+            expect(a.result.hashes).toHaveLength(2);
+            expect(a.result.finalHash).toBe(b.result.finalHash);
+            expect(a.lines[0]).toMatch(/^tick 1000 worldHash [0-9a-f]{16}$/);
+        },
+        scaleTimeout(60000),
+    );
 
-    it('logs RunStarted, Checkpoint and RunFinished', async () => {
-        const { records, result } = await run({ ticks: 1000 });
+    it(
+        'logs RunStarted, Checkpoint and RunFinished',
+        async () => {
+            const { records, result } = await run({ ticks: 1000 });
 
-        const named = (/** @type {string} */ event) => records.find((r) => r.event === event);
-        expect(records[0].event).toBe('RunStarted');
-        expect(records.at(-1).event).toBe('RunFinished');
-        expect(named('RunStarted')).toMatchObject({
-            runId: result.runId,
-            seed: 1,
-            policy: 'baseline-v5',
-            ticks: 1000,
-        });
-        expect(named('Checkpoint')).toMatchObject({ tick: 1000, worldHash: result.hashes[0] });
-        expect(named('RunFinished')).toMatchObject({ tick: 1000, worldHash: result.finalHash });
-    }, 60000);
+            const named = (/** @type {string} */ event) => records.find((r) => r.event === event);
+            expect(records[0].event).toBe('RunStarted');
+            expect(records.at(-1).event).toBe('RunFinished');
+            expect(named('RunStarted')).toMatchObject({
+                runId: result.runId,
+                seed: 1,
+                policy: 'baseline-v5',
+                ticks: 1000,
+            });
+            expect(named('Checkpoint')).toMatchObject({ tick: 1000, worldHash: result.hashes[0] });
+            expect(named('RunFinished')).toMatchObject({ tick: 1000, worldHash: result.finalHash });
+        },
+        scaleTimeout(60000),
+    );
 
     it('logs InvariantViolated and stops when a step breaks an invariant', async () => {
         const stepFn = () => {
@@ -102,23 +111,36 @@ describe('runReplay', () => {
 });
 
 describe('runReplay with --follow', () => {
-    it('logs FollowSample every 10 ticks until the genome dies, then FollowEnded and nothing more', async () => {
-        const { records } = await run({ ticks: 3000, follow: 1, configOverrides: { ...CONFIG, ...HARSH } });
+    it(
+        'logs FollowSample every 10 ticks until the genome dies, then FollowEnded and nothing more',
+        async () => {
+            const { records } = await run({ ticks: 3000, follow: 1, configOverrides: { ...CONFIG, ...HARSH } });
 
-        const follow = records.filter((r) => r.event.startsWith('Follow'));
-        const samples = follow.filter((r) => r.event === 'FollowSample');
-        const ended = follow.filter((r) => r.event === 'FollowEnded');
-        expect(samples.length).toBeGreaterThan(0);
-        expect(samples.map((r) => r.tick)).toEqual(samples.map((_, i) => (i + 1) * 10));
-        expect(samples[0]).toMatchObject({ level: 'info', genomeId: 1 });
-        expect(Object.keys(samples[0])).toEqual(['level', 'event', 'tick', 'genomeId', 'x', 'y', 'energy', 'outputs']);
-        expect(samples[0].outputs.every((/** @type {unknown} */ v) => typeof v === 'number')).toBe(true);
-        expect(ended).toHaveLength(1);
-        expect(ended[0]).toMatchObject({ genomeId: 1, reason: 'died' });
-        expect(ended[0].tick).toBeLessThan(3000);
-        expect(ended[0].tick).toBeGreaterThanOrEqual(samples.at(-1).tick);
-        expect(follow.at(-1)).toBe(ended[0]);
-    }, 60000);
+            const follow = records.filter((r) => r.event.startsWith('Follow'));
+            const samples = follow.filter((r) => r.event === 'FollowSample');
+            const ended = follow.filter((r) => r.event === 'FollowEnded');
+            expect(samples.length).toBeGreaterThan(0);
+            expect(samples.map((r) => r.tick)).toEqual(samples.map((_, i) => (i + 1) * 10));
+            expect(samples[0]).toMatchObject({ level: 'info', genomeId: 1 });
+            expect(Object.keys(samples[0])).toEqual([
+                'level',
+                'event',
+                'tick',
+                'genomeId',
+                'x',
+                'y',
+                'energy',
+                'outputs',
+            ]);
+            expect(samples[0].outputs.every((/** @type {unknown} */ v) => typeof v === 'number')).toBe(true);
+            expect(ended).toHaveLength(1);
+            expect(ended[0]).toMatchObject({ genomeId: 1, reason: 'died' });
+            expect(ended[0].tick).toBeLessThan(3000);
+            expect(ended[0].tick).toBeGreaterThanOrEqual(samples.at(-1).tick);
+            expect(follow.at(-1)).toBe(ended[0]);
+        },
+        scaleTimeout(60000),
+    );
 
     it('ends with "run ended" when the agent outlives the run, and warns if the genome never appears', async () => {
         const alive = await run({ ticks: 100, follow: 1 });

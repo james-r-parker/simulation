@@ -14,6 +14,7 @@ import { hashWorld } from '../../../js/sim/world-hash.js';
 import { runReplay } from '../../../scripts/replay.mjs';
 import { dispatchEvents, runSeed } from '../../../scripts/eval-worker.mjs';
 import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../../../scripts/lib/test-timeout.mjs';
 
 const OVERRIDES = {
     ...FEATURES_OFF,
@@ -55,7 +56,7 @@ function evalRun(seed, ticks) {
 }
 
 describe('a real run', () => {
-    it('fills archive cells, seeds from them, and is deterministic', { timeout: 60000 }, () => {
+    it('fills archive cells, seeds from them, and is deterministic', { timeout: scaleTimeout(60000) }, () => {
         const a = evalRun(3, 6000);
         const b = evalRun(3, 6000);
         expect(occupiedCount(a.policy.archive)).toBeGreaterThan(0);
@@ -65,7 +66,7 @@ describe('a real run', () => {
         expect(Array.from(a.policy.archive.ids)).toEqual(Array.from(b.policy.archive.ids));
     });
 
-    it('replays an eval run to the same world hash', { timeout: 60000 }, async () => {
+    it('replays an eval run to the same world hash', { timeout: scaleTimeout(60000) }, async () => {
         const evaled = runSeed({ seed: 3, ticks: 3000, policy: 'map-elites-v1', overrides: OVERRIDES });
         const dir = mkdtempSync(join(tmpdir(), 'me-replay-'));
         const replayed = await runReplay({

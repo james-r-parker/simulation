@@ -6,9 +6,10 @@ import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 2500;
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = scaleTimeout(120_000);
 
 /**
  * Runs a small crowded world with sexes on.

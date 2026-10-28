@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { STARTING_PREDATORS, sample } from './helpers/predator-rescue-world.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = scaleTimeout(60_000);
 
 describe('the predator rescue in a world of non-predators', () => {
     it(

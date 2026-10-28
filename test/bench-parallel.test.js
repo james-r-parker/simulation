@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { gain, main, parseArgs, recommendDefault, runWave, throughput } from '../scripts/bench-parallel.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the doc sizes', () => {
@@ -53,13 +54,17 @@ describe('recommendDefault', () => {
 });
 
 describe('runWave', () => {
-    it('runs real worlds in workers', async () => {
-        for (const count of [1, 2]) {
-            const { total, cpu } = await runWave(count, { ticks: 20, agents: 50 });
-            expect(total).toBeGreaterThan(0);
-            expect(cpu.threads).toBeGreaterThan(0);
-        }
-    }, 60000);
+    it(
+        'runs real worlds in workers',
+        async () => {
+            for (const count of [1, 2]) {
+                const { total, cpu } = await runWave(count, { ticks: 20, agents: 50 });
+                expect(total).toBeGreaterThan(0);
+                expect(cpu.threads).toBeGreaterThan(0);
+            }
+        },
+        scaleTimeout(60000),
+    );
 });
 
 describe('main', () => {
@@ -79,23 +84,31 @@ describe('main', () => {
         return lines;
     }
 
-    it('prints a table with a row per count and the recommendation', async () => {
-        const lines = await logged(['--counts', '1,2', '--ticks', '10', '--agents', '30']);
-        expect(lines[0]).toBe('30 agents, 10 ticks per world; gain is over 1 worker(s)');
-        expect(lines[1]).toMatch(/ticks\/s/);
-        expect(lines[2]).toMatch(/^ {2}1 .*1\.00x.*cpu \d+% of \d+ threads$/);
-        expect(lines[3]).toMatch(/^ {2}2 /);
-        expect(lines[4]).toMatch(/^recommended default: 2 workers/);
-    }, 60000);
+    it(
+        'prints a table with a row per count and the recommendation',
+        async () => {
+            const lines = await logged(['--counts', '1,2', '--ticks', '10', '--agents', '30']);
+            expect(lines[0]).toBe('30 agents, 10 ticks per world; gain is over 1 worker(s)');
+            expect(lines[1]).toMatch(/ticks\/s/);
+            expect(lines[2]).toMatch(/^ {2}1 .*1\.00x.*cpu \d+% of \d+ threads$/);
+            expect(lines[3]).toMatch(/^ {2}2 /);
+            expect(lines[4]).toMatch(/^recommended default: 2 workers/);
+        },
+        scaleTimeout(60000),
+    );
 
-    it('prints metrics as JSON with --json', async () => {
-        const lines = await logged(['--counts', '1,2', '--ticks', '10', '--agents', '30', '--json']);
-        const metrics = JSON.parse(lines.join('\n'));
-        expect(Object.keys(metrics)).toEqual([
-            'bench.recommended_workers',
-            'bench.parallel_ticks_per_s@1',
-            'bench.parallel_ticks_per_s@2',
-        ]);
-        expect(metrics['bench.recommended_workers']).toBe(2);
-    }, 60000);
+    it(
+        'prints metrics as JSON with --json',
+        async () => {
+            const lines = await logged(['--counts', '1,2', '--ticks', '10', '--agents', '30', '--json']);
+            const metrics = JSON.parse(lines.join('\n'));
+            expect(Object.keys(metrics)).toEqual([
+                'bench.recommended_workers',
+                'bench.parallel_ticks_per_s@1',
+                'bench.parallel_ticks_per_s@2',
+            ]);
+            expect(metrics['bench.recommended_workers']).toBe(2);
+        },
+        scaleTimeout(60000),
+    );
 });
