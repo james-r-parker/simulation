@@ -45,9 +45,9 @@ new metrics on 64 seeds.
 | Module                                          | Holds                                                                                                                                                                          |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `js/sim/merit-state.js` (new)                   | Per-slot deliberate-intake tracker: the sim-side port of `isDeliberate` in [observer-intent.js](../../js/evo/observer-intent.js)                                               |
-| `js/sim/merit.js` (new)                         | `creditIntake`, `creditMating`, `creditMatured`, `creditEscape`, `meritNow` (lazy decay), `mateScore`, `birthFactor`, `splitGateOpen`                                          |
-| `js/sim/mate-search.js`                         | `bestInCell` compares `mateScore` instead of `world.energy`                                                                                                                    |
-| `js/sim/reproduction.js`                        | `giveBirth` scales the gift by `birthFactor`; `readyToSplit` adds `splitGateOpen`; `startMating` calls `creditMating`                                                          |
+| `js/sim/merit.js` (new)                         | `creditIntake`, `creditMating`, `creditMatured`, `creditEscape`, `meritNow` (lazy decay), `meritPeek` (decayed read, no restamp)                                               |
+| `js/sim/mate-search.js`                         | `bestInCell` compares the private `mateScore` instead of `world.energy`                                                                                                        |
+| `js/sim/reproduction.js`                        | `giveBirth` scales the gift by `birthFactor` (in `giftOf`); `readyToSplit` adds the exported `splitGateOpen`; `startMating` calls `creditMating`                               |
 | `js/sim/step.js`                                | `STEP_PHASES` gains `merit`, after `field` and before `invariants`                                                                                                             |
 | `js/evo/metrics-*.js` (new files, listed below) | The audited and new metrics                                                                                                                                                    |
 | `js/evo/observer-windows.js` (new)              | Cumulative intent snapshots at equal window ends after burn-in, for the trend metrics                                                                                          |
@@ -184,7 +184,7 @@ values (a key pinned off and retuned must be restated, [sim-notes.md](sim-notes.
 | -------------- | ----- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `MeritSummary` | debug | `tick`, `meritMean`, `meritP90`, `readyToSplit`, `gatedSplits`, `deliberateReadyShare` | Every `MERIT_LOG_TICKS` (new, in `merit.js`, 1000) ticks while `meritEnabled`; never per agent |
 
-`assertInvariants` throws the `merit` invariant (tick, slot, value) when `merit` or `deliberateIntake` is negative or not finite.
+`assertInvariants` throws the `merit` invariant (tick, slot, value) when an alive slot's `merit` or `deliberateIntake` is negative or not finite.
 
 ## Fitness v6
 

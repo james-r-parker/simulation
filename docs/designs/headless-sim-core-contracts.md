@@ -330,7 +330,7 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
 
 - `STEP_PHASES` runs `environment` (`updateSeason`, `advanceEra`, `moveObstacles`), `hash`, `sense`, `brain`, `signal`,
   `physics` (`actAll`, `integrate`, `buildHash`, `resolveContacts`), `lifecycle` (`feed`, `mate`, `applyCosts`,
-  `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `invade`), `field` (`regrowPatches`, `spawnFood`, `ageFood`,
+  `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `rescuePredators`, `invade`), `field` (`regrowPatches`, `spawnFood`, `ageFood`,
   `decayFertileZones`, `updatePheromones`, `ageSmoke`), `merit` (`meritPhase`) and `invariants`. With `meritEnabled`, `lifecycle` runs `tallyReady` before `splitAll`.
 - Each function visits slots `0 .. maxAgents - 1` and acts on a slot if it is alive when visited. An agent born
   earlier in the same function at a higher slot is visited; one at a lower slot is not.
