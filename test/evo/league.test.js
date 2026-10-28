@@ -6,6 +6,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 import { createWorld } from '../../js/sim/spawn.js';
 import { makeChampionFile } from './helpers/champion-file.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const config = createConfig();
 const champion = (/** @type {string} */ name, /** @type {number} */ seed, /** @type {number} */ specialisation = 0) =>
@@ -95,14 +96,18 @@ describe('decide', () => {
 describe('playMatch', () => {
     const options = { ticks: 200 };
 
-    it('counts each side by its founders and is deterministic', () => {
-        const a = champion('a', 1);
-        const b = champion('b', 2);
-        const first = playMatch(a, b, 7, options);
-        expect(playMatch(a, b, 7, options)).toEqual(first);
-        expect(first.aliveA + first.aliveB).toBeLessThanOrEqual(500);
-        expect(first.aliveA + first.aliveB).toBeGreaterThan(0);
-    }, 30_000);
+    it(
+        'counts each side by its founders and is deterministic',
+        () => {
+            const a = champion('a', 1);
+            const b = champion('b', 2);
+            const first = playMatch(a, b, 7, options);
+            expect(playMatch(a, b, 7, options)).toEqual(first);
+            expect(first.aliveA + first.aliveB).toBeLessThanOrEqual(500);
+            expect(first.aliveA + first.aliveB).toBeGreaterThan(0);
+        },
+        scaleTimeout(30_000),
+    );
 
     it('with no ticks, every founder is alive and the game is a draw', () => {
         expect(playMatch(champion('a', 1), champion('b', 2), 7, { ticks: 0 })).toEqual({

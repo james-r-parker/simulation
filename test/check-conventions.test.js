@@ -3,6 +3,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks; a child git that inherits them acts on this repo.
 const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -35,7 +36,7 @@ function conventions(files) {
 /** @param {string} text a line to wrap in two ordinary lines */
 const marker = (text) => `before\n${text}\nafter\n`;
 
-describe('conventions conflict markers', { timeout: 30_000 }, () => {
+describe('conventions conflict markers', { timeout: scaleTimeout(30_000) }, () => {
     it.each([
         ['ours', `${'<'.repeat(7)} HEAD`],
         ['base', `${'|'.repeat(7)} parent of abc1234`],

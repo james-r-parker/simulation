@@ -330,7 +330,11 @@ gate_bench_compare() {
   if [[ $status -eq 3 ]]; then
     skip_gate bench-compare "${reason#skipped: }"
   else
-    run_gate bench-compare node scripts/bench-compare.mjs --sizes=500
+    # CI runs on shared runners whose run-to-run noise exceeds 10% (the failed nightlies of 2026-10-22 to 24 showed +10%
+    # to +48% against a base a day older), so there the limit widens to three times each metric's measured noise.
+    local noise_args=()
+    [[ $CI -eq 1 ]] && noise_args=(--noise=3)
+    run_gate bench-compare node scripts/bench-compare.mjs --sizes=500 ${noise_args[@]+"${noise_args[@]}"}
   fi
 }
 

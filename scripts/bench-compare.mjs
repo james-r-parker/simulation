@@ -1,4 +1,7 @@
 // bench-compare: fails when a `bench.*` metric's head median is over 10% above the base median (`--base <ref>`).
+// `--threshold=<fraction>` changes the 10%. `--noise=<k>` widens each metric's limit to `k` times its measured noise
+// (the larger relative standard deviation of the base and head runs) when that is above the threshold, so a noisy
+// shared runner does not fail the nightly (docs/designs/quality-gates-and-test-tiers.md).
 // Exit codes: 0 within the limit, 1 regression or error, 3 skipped (the reason is on stdout as `skipped: ...`).
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -13,6 +16,7 @@ export const SKIP_EXIT = 3;
 // The base worktree's install: errors only, so a peer-range warning flood cannot bury the bench table in the digest.
 export const BASE_INSTALL_ARGS = ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'];
 const DEFAULT_RUNS = 5;
+const OPTION_VALUE = /^\d+(\.\d+)?$/;
 const DEFAULT_SIZES = '500';
 const STALE_HOURS = 25;
 const METRIC_PREFIX = 'bench.';
@@ -33,14 +37,41 @@ function parseRuns(arg) {
 }
 
 /**
+ * @param {string} arg a `--sizes=<list>` argument
+ * @returns {string} the comma-separated agent counts
+ */
+function parseSizes(arg) {
+    const sizes = arg.slice('--sizes='.length);
+    if (!/^\d+(,\d+)*$/.test(sizes)) {
+        throw new Error(`--sizes must be comma-separated positive integers, got: ${arg}`);
+    }
+    return sizes;
+}
+
+/**
+ * @param {string} arg a `--name=<number>` argument
+ * @returns {number} the non-negative number
+ */
+function parseNumber(arg) {
+    const text = arg.slice(arg.indexOf('=') + 1);
+    if (!OPTION_VALUE.test(text)) {
+        throw new Error(`${arg.slice(0, arg.indexOf('='))} must be a non-negative number, got: ${arg}`);
+    }
+    return Number(text);
+}
+
+/**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{base: string | null, sizes: string, skipCheck: boolean, runs: number}} parsed options; `base` null means the default
+ * @returns {{base: string | null, sizes: string, skipCheck: boolean, runs: number, threshold: number, noise: number}} parsed
+ * options; `base` null means the default
  */
 export function parseArgs(argv) {
     let base = null;
     let sizes = DEFAULT_SIZES;
     let skipCheck = false;
     let runs = DEFAULT_RUNS;
+    let threshold = TOLERANCE;
+    let noise = 0;
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         if (arg === '--base') {
@@ -51,19 +82,22 @@ export function parseArgs(argv) {
         } else if (arg.startsWith('--base=')) {
             base = arg.slice('--base='.length);
         } else if (arg.startsWith('--sizes=')) {
-            sizes = arg.slice('--sizes='.length);
-            if (!/^\d+(,\d+)*$/.test(sizes)) {
-                throw new Error(`--sizes must be comma-separated positive integers, got: ${arg}`);
-            }
+            sizes = parseSizes(arg);
         } else if (arg.startsWith('--runs=')) {
             runs = parseRuns(arg);
+        } else if (arg.startsWith('--threshold=')) {
+            threshold = parseNumber(arg);
+        } else if (arg.startsWith('--noise=')) {
+            noise = parseNumber(arg);
         } else if (arg === '--skip-check') {
             skipCheck = true;
         } else {
-            throw new Error(`unknown argument: ${arg} (expected --base <ref>, --sizes=500, --runs=5 or --skip-check)`);
+            throw new Error(
+                `unknown argument: ${arg} (expected --base <ref>, --sizes=500, --runs=5, --threshold=0.1, --noise=3 or --skip-check)`,
+            );
         }
     }
-    return { base, sizes, skipCheck, runs };
+    return { base, sizes, skipCheck, runs, threshold, noise };
 }
 
 /**
@@ -85,12 +119,27 @@ export function skipReason({ baseSha, headSha, basePackageJson }) {
 }
 
 /**
+ * @param {number[]} values one metric over the runs of one tree
+ * @returns {number} the relative standard deviation (standard deviation over the mean), 0 for one run or a zero mean
+ */
+export function relativeNoise(values) {
+    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+    if (values.length < 2 || mean <= 0) {
+        return 0;
+    }
+    const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (values.length - 1);
+    return Math.sqrt(variance) / mean;
+}
+
+/**
  * @param {Array<Record<string, number>>} baseRuns bench JSON objects from the base tree
  * @param {Array<Record<string, number>>} headRuns bench JSON objects from the head tree
  * @param {number} [tolerance] allowed fraction above the base median
- * @returns {Array<{metric: string, base: number, head: number, change: number, ok: boolean}>} one row per `bench.*` metric in both
+ * @param {number} [noiseMultiplier] when above 0, a metric's limit is at least this times its measured noise
+ * @returns {Array<{metric: string, base: number, head: number, change: number, limit: number, ok: boolean}>} one row per
+ * `bench.*` metric in both
  */
-export function compare(baseRuns, headRuns, tolerance = TOLERANCE) {
+export function compare(baseRuns, headRuns, tolerance = TOLERANCE, noiseMultiplier = 0) {
     const rows = [];
     for (const metric of Object.keys(baseRuns[0] ?? {}).sort()) {
         const baseValues = baseRuns.map((run) => run[metric]);
@@ -103,7 +152,9 @@ export function compare(baseRuns, headRuns, tolerance = TOLERANCE) {
         const base = median(baseValues);
         const head = median(headValues);
         const change = base > 0 ? head / base - 1 : head > 0 ? Infinity : 0;
-        rows.push({ metric, base, head, change, ok: change <= tolerance });
+        const noise = Math.max(relativeNoise(baseValues), relativeNoise(headValues));
+        const limit = Math.max(tolerance, noiseMultiplier * noise);
+        rows.push({ metric, base, head, change, limit, ok: change <= limit });
     }
     return rows;
 }
@@ -116,7 +167,7 @@ export function formatRows(rows) {
     return rows.map((row) => {
         const pct = `${row.change >= 0 ? '+' : ''}${(row.change * 100).toFixed(1)}%`;
         const mark = row.ok ? 'ok  ' : 'FAIL';
-        return `${mark} ${row.metric}: base ${row.base}, head ${row.head}, change ${pct} (limit +${TOLERANCE * 100}%)`;
+        return `${mark} ${row.metric}: base ${row.base}, head ${row.head}, change ${pct} (limit +${(row.limit * 100).toFixed(1)}%)`;
     });
 }
 
@@ -230,7 +281,7 @@ function withWorktree(baseSha, work, cwd) {
  * @returns {number} the process exit code
  */
 export function main(argv, cwd = process.cwd()) {
-    const { base, sizes, skipCheck, runs } = parseArgs(argv);
+    const { base, sizes, skipCheck, runs, threshold, noise } = parseArgs(argv);
     const baseSha = resolveBase(base, Math.floor(Date.now() / 1000), cwd);
     if (baseSha === null) {
         console.log('skipped: no base (origin/main is missing or has no commit old enough)');
@@ -260,7 +311,7 @@ export function main(argv, cwd = process.cwd()) {
         },
         cwd,
     );
-    const rows = compare(baseRuns, headRuns);
+    const rows = compare(baseRuns, headRuns, threshold, noise);
     if (rows.length === 0) {
         throw new Error('no bench.* metric is present in both trees');
     }

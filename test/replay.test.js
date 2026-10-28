@@ -6,6 +6,7 @@ import { createConfig } from '../js/sim/config.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
 import { dumpWorld, main, parseArgs, runIdFor } from '../scripts/replay.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const CONFIG = { initialAgents: 20, minAgents: 20, maxAgents: 40 };
 
@@ -65,41 +66,49 @@ describe('runIdFor and dumpWorld', () => {
 });
 
 describe('main', () => {
-    it('runs a config file and writes the log under the given directory', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'replay-main-'));
-        const configPath = join(dir, 'c.json');
-        writeFileSync(configPath, JSON.stringify(CONFIG));
-        const print = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it(
+        'runs a config file and writes the log under the given directory',
+        async () => {
+            const dir = mkdtempSync(join(tmpdir(), 'replay-main-'));
+            const configPath = join(dir, 'c.json');
+            writeFileSync(configPath, JSON.stringify(CONFIG));
+            const print = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-        const code = await main(['--seed', '1', '--ticks', '1000', '--config', configPath], {
-            logDir: join(dir, 'logs'),
-            dumpDir: join(dir, 'dumps'),
-        });
+            const code = await main(['--seed', '1', '--ticks', '1000', '--config', configPath], {
+                logDir: join(dir, 'logs'),
+                dumpDir: join(dir, 'dumps'),
+            });
 
-        expect(code).toBe(0);
-        expect(print).toHaveBeenCalledWith(expect.stringMatching(/^tick 1000 worldHash /));
-        expect(readdirSync(join(dir, 'logs'))).toHaveLength(1);
-        print.mockRestore();
-    }, 60000);
+            expect(code).toBe(0);
+            expect(print).toHaveBeenCalledWith(expect.stringMatching(/^tick 1000 worldHash /));
+            expect(readdirSync(join(dir, 'logs'))).toHaveLength(1);
+            print.mockRestore();
+        },
+        scaleTimeout(60000),
+    );
 
-    it('logs the events createWorld pushes before the first tick, such as FoodPatchesCreated', async () => {
-        const dir = mkdtempSync(join(tmpdir(), 'replay-created-'));
-        const configPath = join(dir, 'c.json');
-        writeFileSync(configPath, JSON.stringify({ ...CONFIG, foodPatchCount: 3 }));
-        const print = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it(
+        'logs the events createWorld pushes before the first tick, such as FoodPatchesCreated',
+        async () => {
+            const dir = mkdtempSync(join(tmpdir(), 'replay-created-'));
+            const configPath = join(dir, 'c.json');
+            writeFileSync(configPath, JSON.stringify({ ...CONFIG, foodPatchCount: 3 }));
+            const print = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-        const code = await main(['--seed', '1', '--ticks', '1', '--config', configPath], {
-            logDir: join(dir, 'logs'),
-            dumpDir: join(dir, 'dumps'),
-        });
+            const code = await main(['--seed', '1', '--ticks', '1', '--config', configPath], {
+                logDir: join(dir, 'logs'),
+                dumpDir: join(dir, 'dumps'),
+            });
 
-        expect(code).toBe(0);
-        const [file] = readdirSync(join(dir, 'logs'));
-        const lines = readFileSync(join(dir, 'logs', file), 'utf8')
-            .trim()
-            .split('\n')
-            .map((l) => JSON.parse(l));
-        expect(lines.find((l) => l.event === 'FoodPatchesCreated')).toMatchObject({ count: 3 });
-        print.mockRestore();
-    }, 60000);
+            expect(code).toBe(0);
+            const [file] = readdirSync(join(dir, 'logs'));
+            const lines = readFileSync(join(dir, 'logs', file), 'utf8')
+                .trim()
+                .split('\n')
+                .map((l) => JSON.parse(l));
+            expect(lines.find((l) => l.event === 'FoodPatchesCreated')).toMatchObject({ count: 3 });
+            print.mockRestore();
+        },
+        scaleTimeout(60000),
+    );
 });

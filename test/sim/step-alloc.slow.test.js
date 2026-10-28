@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 // Git exports GIT_DIR and friends to hooks; a child process that inherits them could act on the wrong repo.
 const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = scaleTimeout(120_000);
 
 describe('step allocation', () => {
     it(

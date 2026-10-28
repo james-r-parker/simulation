@@ -7,6 +7,7 @@ import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
 import { hashWorld } from '../../../js/sim/world-hash.js';
+import { scaleTimeout } from '../../../scripts/lib/test-timeout.mjs';
 
 /**
  * @param {number} seed
@@ -31,7 +32,7 @@ function run(seed, ticks, observed) {
 }
 
 /** Real worlds share CI's few cores with the golden runs, so these get more than the 5 s default. */
-const REAL_WORLD_TIMEOUT_MS = 30_000;
+const REAL_WORLD_TIMEOUT_MS = scaleTimeout(30_000);
 
 describe('in a real world', () => {
     it(

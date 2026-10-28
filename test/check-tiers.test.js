@@ -3,13 +3,14 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync,
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks; a child git that inherits them acts on this repo, not
 // the temporary one, so every spawn gets an environment without them.
 const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
 
 // Every test here spawns check.sh; a loaded CI runner needs more than Vitest's 5 s default.
-const SPAWN_TIMEOUT_MS = 30_000;
+const SPAWN_TIMEOUT_MS = scaleTimeout(30_000);
 
 /**
  * Runs scripts/check.sh with the given arguments.

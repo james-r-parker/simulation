@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runSeed } from '../scripts/eval-worker.mjs';
 import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const SMALL = { ...FEATURES_OFF, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
 /** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
@@ -15,7 +16,7 @@ const UNPLACEABLE = {
 };
 
 describe('runSeed (direct)', () => {
-    it('returns the metrics, hash and checkpoints for a seed', { timeout: 30_000 }, () => {
+    it('returns the metrics, hash and checkpoints for a seed', { timeout: scaleTimeout(30_000) }, () => {
         const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL });
         expect(result).toMatchObject({ seed: 3, fitnessName: 'v5' });
         expect(result.worldHash).toEqual(expect.any(String));
@@ -29,7 +30,7 @@ describe('runSeed (direct)', () => {
         });
     });
 
-    it('returns a trace with a population sample per interval', { timeout: 30_000 }, () => {
+    it('returns a trace with a population sample per interval', { timeout: scaleTimeout(30_000) }, () => {
         const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL, traceInterval: 700 });
         expect(result.trace.pop).toHaveLength(3);
         expect(result.trace).toMatchObject({ interval: 700, deaths: expect.any(Array), lineages: expect.any(Number) });
@@ -37,7 +38,7 @@ describe('runSeed (direct)', () => {
         expect(result.trace.deaths).toHaveLength(4);
     });
 
-    it('is deterministic for the same task', { timeout: 30_000 }, () => {
+    it('is deterministic for the same task', { timeout: scaleTimeout(30_000) }, () => {
         const task = { seed: 5, ticks: 50, policy: 'baseline-v5', overrides: SMALL };
         expect(runSeed(task).worldHash).toBe(runSeed(task).worldHash);
     });
