@@ -12,6 +12,7 @@ import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
 import { createFamilyTree, noteMatured } from './observer-lineage-counters.js';
+import { noteChase } from './observer-watch-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
@@ -48,6 +49,9 @@ const SLOT_TYPES = {
     descendantsAlive: Uint32Array,
     parentGenomeA: Uint32Array,
     parentGenomeB: Uint32Array,
+    chaseTicks: Uint32Array,
+    chainPrey: Uint32Array,
+    chainTick: Float64Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -147,6 +151,7 @@ export function createObserver(config, rng, options = {}) {
 export function observe(observer, world, fitness) {
     observeCombat(observer.combat, world, observer.intent);
     updateIntent(observer.intent, world, observer.slotOf);
+    noteChase(observer, world);
     noteIntentEvents(observer, world);
     applyEvents(observer, world, fitness);
     snapshotMerit(observer.merit, world);
