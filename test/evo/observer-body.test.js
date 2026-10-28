@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { noteBirthBody, noteBody } from '../../js/evo/observer-body.js';
+import { NICHE_TALLY_TICKS, noteBirthBody, noteBody, noteNiches } from '../../js/evo/observer-body.js';
 import { observe } from '../../js/evo/observer.js';
 import { createFitnessV6 } from '../../js/evo/fitness-v6.js';
-import { checkpoint } from '../../js/evo/observer-checkpoint.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
 describe('noteBody', () => {
@@ -92,17 +91,25 @@ describe('the observer at birth and death', () => {
 });
 
 describe('the niche tally', () => {
-    it('is absent until the first checkpoint, then rebuilt at each one', () => {
+    it('is absent until the first interval, then rebuilt at every one', () => {
         const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        nextTick(world, NICHE_TALLY_TICKS - 1);
+        addBorn(world);
+        addBorn(world);
+        observe(observer, world);
         expect(observer.nicheTally).toBeUndefined();
-        addBorn(world);
-        addBorn(world);
-        checkpoint(observer, world);
+        nextTick(world, NICHE_TALLY_TICKS);
+        observe(observer, world);
         const tally = observer.nicheTally;
         expect(tally.count).toBe(15);
         expect(tally.shares.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0)).toBeCloseTo(1, 12);
-        addBorn(world, { spec: 2 });
-        checkpoint(observer, world);
+        nextTick(world, NICHE_TALLY_TICKS + 1);
+        const third = addBorn(world, { spec: 2 });
+        world.spec[third] = 2;
+        observe(observer, world);
+        expect(Math.max(...tally.shares)).toBeCloseTo(1, 12);
+        nextTick(world, 2 * NICHE_TALLY_TICKS);
+        observe(observer, world);
         expect(observer.nicheTally).toBe(tally);
         expect(Math.max(...tally.shares)).toBeCloseTo(2 / 3, 12);
     });
@@ -119,7 +126,8 @@ describe('the niche tally', () => {
         const fitness = createFitnessV6({});
         const config = world.config;
         const before = [fitness(observer, common[0], config), fitness(observer, rare, config)];
-        checkpoint(observer, world);
+        world.tick = NICHE_TALLY_TICKS;
+        noteNiches(observer, world);
         expect(fitness(observer, common[0], config) / before[0]).toBeCloseTo(0.75, 6);
         expect(fitness(observer, rare, config) / before[1]).toBeCloseTo(0.875, 6);
     });

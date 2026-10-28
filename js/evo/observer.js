@@ -11,6 +11,7 @@ import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
+import { noteNiches } from './observer-body.js';
 import { createFamilyTree, noteMatured } from './observer-lineage-counters.js';
 import { noteChase } from './observer-watch-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
@@ -164,6 +165,7 @@ export function observe(observer, world, fitness) {
         return;
     }
     noteMatured(observer, world);
+    noteNiches(observer, world);
     countTick(observer, world);
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         sampleVisits(observer.watch, world);

@@ -3,7 +3,10 @@
 // scores the death, so the traits cannot be read from the world then. `fitnessV6` reads `observer.niche` for the
 // diversity factor and the death log's `bodyPlan` for the descriptor.
 
-import { nicheOf } from './fitness-v6-diversity.js';
+import { createNicheTally, nicheOf, tallyNiches } from './fitness-v6-diversity.js';
+
+/** The niche tally is rebuilt when the tick divides by this (the eval's checkpoint interval). */
+export const NICHE_TALLY_TICKS = 1000;
 
 /**
  * Stores a slot's traits and its niche.
@@ -31,4 +34,19 @@ export function noteBody(observer, slot, size, vision) {
 export function noteBirthBody(observer, world, slot, genomeId) {
     const held = world.config.traitsEnabled && world.genomeId[slot] === genomeId;
     noteBody(observer, slot, held ? world.baseSize[slot] / world.config.baseSize : 1, held ? world.vision[slot] : 1);
+}
+
+/**
+ * Rebuilds the niche tally every `NICHE_TALLY_TICKS` ticks, creating it the first time. The tally is the observer's
+ * own, not the checkpoint's, so a replay or the app (which never run the eval's checkpoints) diversify the same way.
+ * Until the first rebuild `observer.nicheTally` is undefined and the diversity factor is 1.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+export function noteNiches(observer, world) {
+    if (world.tick % NICHE_TALLY_TICKS === 0) {
+        observer.nicheTally ??= createNicheTally(world.config.traitsEnabled);
+        tallyNiches(observer.nicheTally, world);
+    }
 }

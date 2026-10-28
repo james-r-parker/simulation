@@ -77,12 +77,13 @@ function createOfferBuilder({ pending, observer, counters, descriptor }) {
 }
 
 /**
- * @param {Record<string, any>} options `{ config, archive, observer, counters, clones, sigma, log }`; `clones` is
- *   `{ isClone, archiveRef, refId }` and `sigma` the per-slot step sizes
+ * @param {Record<string, any>} options `{ config, archive, observer, counters, clones, sigma, log, scoreFields }`;
+ *   `clones` is `{ isClone, archiveRef, refId }`, `sigma` the per-slot step sizes and `scoreFields(row)`, when given,
+ *   the fields a debug `FitnessScored` event carries beside the offer's own (none given: no event)
  * @returns {{onDeath: Function, onEvent: Function}} the two hooks; both do nothing without an `observer`, which
  *   is the only source of fitness and speed, so an unobserved run leaves the archive empty
  */
-export function createOffers({ config, archive, observer, counters, clones, sigma, log }) {
+export function createOffers({ config, archive, observer, counters, clones, sigma, log, scoreFields }) {
     const pending = createPending(config.maxAgents, archive.layout.weightCount);
     const from = { ...clones, sigma };
     const offerOf = createOfferBuilder({ pending, observer, counters, descriptor: archive.descriptor });
@@ -114,7 +115,18 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
         }
         const row = scoredRow(d[o + 3]);
         if (d[o + 8] >= config.maturityTicks) {
-            offer(archive, offerOf(d, o, row), log);
+            const item = offerOf(d, o, row);
+            offer(archive, item, log);
+            if (scoreFields !== undefined) {
+                log?.log('debug', 'FitnessScored', {
+                    tick: d[o + 1],
+                    genomeId: d[o + 3],
+                    spec: item.spec,
+                    cell: item.cell,
+                    fitness: item.fitness,
+                    ...scoreFields(row),
+                });
+            }
             pending.id[d[o + 2]] = 0;
         }
     }

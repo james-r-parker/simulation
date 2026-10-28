@@ -132,3 +132,26 @@ describe('diversity in fitnessV6', () => {
         expect(f(observerWith({ deliberateFood: 1000 }), 0, config)).toBe(1000);
     });
 });
+
+describe('fitnessV6 parts', () => {
+    const f = createFitnessV6({});
+    const parts = () => ({ skill: 0, waste: 0, lineage: 0, watch: 0, diversityFactor: 0 });
+
+    it('reports each group as paid, the gated lineage and watch included', () => {
+        const o = observerWith({ deliberateFood: 250, matings: 1, chaseTicks: 100, idleSignal: 2 });
+        expect(f.parts(o, 0, config, parts())).toEqual({
+            skill: 250,
+            waste: 40,
+            lineage: 50,
+            watch: 25,
+            diversityFactor: 1,
+        });
+    });
+
+    it('reports the niche factor when there is a tally', () => {
+        const o = { ...observerWith({}), nicheTally: { count: 5, shares: Float64Array.of(0.2) } };
+        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1);
+        o.nicheTally.shares[0] = 0;
+        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1.5);
+    });
+});

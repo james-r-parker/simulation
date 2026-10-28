@@ -41,10 +41,22 @@ function pick(constants, overrides) {
 }
 
 /**
+ * @typedef {object} FitnessParts
+ * @property {number} skill the skill group (intake, survival, role and credits), before waste
+ * @property {number} waste the charge before its cap
+ * @property {number} lineage the lineage group as paid (multiplied by the skill gate)
+ * @property {number} watch the watch group as paid (multiplied by the skill gate)
+ * @property {number} diversityFactor the multiplier of the niche, 1 without a tally
+ */
+
+/**
  * Binds the life counters and the weights so `fitnessV6` fits the evals `fitness(observer, slot, config)` signature.
  * @param {Record<string, any>} counters the life counters
  * @param {Record<string, number>} [overrides] weights replacing `FITNESS_V6` entries (a screen arm varies a weight)
- * @returns {((observer: any, slot: number, config: any) => number) & {weights: Record<string, number>}}
+ * @returns {((observer: any, slot: number, config: any) => number) & {
+ *   weights: Record<string, number>,
+ *   parts: (observer: any, slot: number, config: any, out: FitnessParts) => FitnessParts,
+ * }} the fitness, with `parts` filling `out` with what the last call paid, group by group (for diagnostics)
  */
 export function createFitnessV6(counters, overrides = {}) {
     const unknown = Object.keys(overrides).filter((key) => !(key in FITNESS_V6));
@@ -57,6 +69,9 @@ export function createFitnessV6(counters, overrides = {}) {
     const diversity = createDiversityGroup(pick(FITNESS_V6_DIVERSITY, overrides));
     const born = overrides.BORN ?? FITNESS_V6.BORN;
     const weights = { ...skill.weights, ...lineage.weights, ...watch.weights, ...diversity.weights, BORN: born };
+    /** @type {(observer: any, slot: number) => number} */
+    const factorOf = (observer, slot) =>
+        observer.nicheTally === undefined ? 1 : diversity.factor(observer.nicheTally, observer.niche[slot]);
     /** @type {(observer: any, slot: number, config: any) => number} */
     const fitness = (observer, slot, config) => {
         const positive =
@@ -64,8 +79,17 @@ export function createFitnessV6(counters, overrides = {}) {
             born * observer.children[slot] +
             skill.gate(observer, slot) * (lineage.lineage(observer, slot) + watch.watch(observer, slot));
         const net = skill.net(positive, skill.waste(observer, slot));
-        const { nicheTally } = observer;
-        return nicheTally === undefined ? net : net * diversity.factor(nicheTally, observer.niche[slot]);
+        return net * factorOf(observer, slot);
     };
-    return Object.assign(fitness, { weights });
+    /** @type {(observer: any, slot: number, config: any, out: FitnessParts) => FitnessParts} */
+    const parts = (observer, slot, config, out) => {
+        const gate = skill.gate(observer, slot);
+        out.skill = skill.skill(observer, slot, config);
+        out.waste = skill.waste(observer, slot);
+        out.lineage = gate * lineage.lineage(observer, slot);
+        out.watch = gate * watch.watch(observer, slot);
+        out.diversityFactor = factorOf(observer, slot);
+        return out;
+    };
+    return Object.assign(fitness, { weights, parts });
 }
