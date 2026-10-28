@@ -54,13 +54,14 @@ function buttonRow(doc, root, { title, values, label, current, onPick }) {
  * @param {{createElement: (tag: string) => any, createElementNS: (ns: string, tag: string) => any}} doc the document
  * @param {any} root the help drawer body
  * @param {{current: string | number, onScale: (value: string | number) => void, palette: string,
- *   onPalette: (value: string) => void}} settings the current `uiScale` and palette and what a click on each does
+ *   onPalette: (value: string) => void, clip?: boolean}} settings the current `uiScale` and palette, what a click on
+ *   each does, and whether `MediaRecorder` clip recording is supported
  * @returns {{rows: number, setScale: (value: string | number) => void, setPalette: (value: string) => void,
  *   setLegend: (view: import('./title-card.js').TitleCardView) => void,
  *   setDebug: (debug: {tick: string, elapsed: string}) => void}} the shortcut rows written, the functions that mark
  *   the size and the palette in force, fill the legend at the top, and write the debug lines
  */
-export function mountHelp(doc, root, { current, onScale, palette, onPalette }) {
+export function mountHelp(doc, root, { current, onScale, palette, onPalette, clip = true }) {
     const legend = add(doc, root, 'div', 'legend help-legend');
     const setScale = buttonRow(doc, root, {
         title: 'HUD size',
@@ -78,7 +79,8 @@ export function mountHelp(doc, root, { current, onScale, palette, onPalette }) {
     });
     add(doc, root, 'h3', 'help-heading').textContent = 'Keyboard';
     const list = add(doc, root, 'dl', 'help-keys');
-    for (const binding of KEYMAP) {
+    const bindings = clip ? KEYMAP : KEYMAP.filter((b) => b.action !== 'recordClip');
+    for (const binding of bindings) {
         add(doc, list, 'dt', 'help-key').textContent = shortcutLabel(binding);
         add(doc, list, 'dd', 'help-what').textContent = binding.title;
     }
@@ -87,7 +89,7 @@ export function mountHelp(doc, root, { current, onScale, palette, onPalette }) {
     const tick = add(doc, debug, 'span', 'help-tick');
     const elapsed = add(doc, debug, 'span', 'help-elapsed');
     return {
-        rows: KEYMAP.length,
+        rows: bindings.length,
         setScale,
         setPalette,
         setLegend: (view) => mountLegend(doc, legend, view),

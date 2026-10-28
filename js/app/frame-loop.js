@@ -31,6 +31,7 @@ export const MAX_DT_MS = 100;
  *   extension
  * @property {() => number} clock a high-resolution clock in ms, for the draw time
  * @property {() => boolean} hidden whether the tab is hidden
+ * @property {(frame: import('./renderer/scene.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
  */
 
 /**
@@ -176,6 +177,7 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
     deps.scene?.draw(frame);
     deps.gpuTimer?.end();
     deps.gpuTimer?.poll();
+    deps.afterDraw?.(frame);
     const drawMs = deps.clock() - started;
     recordFrame(deps.stats, interval, drawMs, deps.hidden());
     recordFrame(loop.window, interval, drawMs, deps.hidden());

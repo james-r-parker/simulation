@@ -10,6 +10,7 @@ export const FAMILY_SLOTS = 8;
  * @property {Int32Array} ids the family (lineage) id in each slot, -1 for a free slot
  * @property {string} palette the palette name, `default`, `cvd-safe` or `high-contrast`
  * @property {number} version a counter that changes whenever an assignment does
+ * @property {{id: number}[]} top the latest `stats.lineages.top` ranking
  */
 
 /**
@@ -17,7 +18,7 @@ export const FAMILY_SLOTS = 8;
  * @returns {FamilySlots} slots with every slot free
  */
 export function createFamilySlots(palette = 'default') {
-    return { ids: new Int32Array(FAMILY_SLOTS).fill(-1), palette, version: 0 };
+    return { ids: new Int32Array(FAMILY_SLOTS).fill(-1), palette, version: 0, top: [] };
 }
 
 /**
@@ -68,6 +69,7 @@ function lowestFree(slots) {
  * @returns {boolean} whether any slot changed hands
  */
 export function assignSlots(slots, top) {
+    slots.top = top;
     let changed = false;
     for (let s = 0; s < FAMILY_SLOTS; s++) {
         if (slots.ids[s] >= 0 && !inList(top, slots.ids[s])) {

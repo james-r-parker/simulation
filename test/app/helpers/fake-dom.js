@@ -80,9 +80,20 @@ function createElement(tagName, context = null) {
  * @returns {any} a fake document
  */
 export function fakeDocument(context = null) {
+    /** @type {Record<string, Function[]>} */
+    const listeners = {};
     return {
+        hidden: false,
         createElement: (/** @type {string} */ tag) => createElement(tag, context),
         createElementNS: (/** @type {string} */ _ns, /** @type {string} */ tag) => createElement(tag),
+        addEventListener(/** @type {string} */ type, /** @type {Function} */ fn) {
+            (listeners[type] ??= []).push(fn);
+        },
+        dispatch(/** @type {string} */ type) {
+            for (const fn of listeners[type] ?? []) {
+                fn();
+            }
+        },
     };
 }
 

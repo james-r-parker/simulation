@@ -6,6 +6,8 @@
 import { createChartData } from './interface-data.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
+import { mountAudio } from './audio/audio.js';
+import { clipSupported, createCapture } from './capture.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
@@ -39,8 +41,11 @@ import { mountTopBar } from './ui/top-bar.js';
  * @property {Record<string, number>} overrides the config overrides the world was started with
  * @property {(action: string) => void} perform runs an action by name
  * @property {() => Promise<any>} loadUPlot loads the uPlot class (and its stylesheet)
- * @property {(file: {name: string, text: string}) => void} download saves a file
+ * @property {(file: {name: string, text?: string, blob?: any}) => void} download saves a file
  * @property {(ms: number, run: () => void) => unknown} setTimer a timer, for the toasts
+ * @property {(handle: unknown) => void} [clearTimer] cancels a timer, for the clip recorder
+ * @property {any} [MediaRecorder] the `MediaRecorder` constructor, if any
+ * @property {() => any} [getCanvas] the WebGL canvas, for screenshots and clips
  * @property {() => Record<string, any> | null} getFailedBundle the debug bundle the supervisor kept after a failure
  * @property {() => number} now wall time in ms
  * @property {import('./family-slots.js').FamilySlots} slots the family colour slots; the palette preference sets its palette
@@ -49,8 +54,37 @@ import { mountTopBar } from './ui/top-bar.js';
  * @property {(client: {x: number, y: number}) => {x: number, y: number}} toDevice a point in client pixels as device
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
+ * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {boolean} audioOn whether `?audio=1` started with audio on
+ * @property {(new () => any) | null} AudioContext the Web Audio constructor
+ * @property {() => {x: number, y: number, zoom: number, canvas: {width: number, height: number}}} getCamera the camera
+ * @property {(on: boolean) => void} setWakeLock turns the screen wake lock on or off
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
+
+/**
+ * @param {Record<string, any>} ctx the shared parts
+ * @returns {void}
+ */
+function mountServices(ctx) {
+    const { deps, prefs } = ctx;
+    prefs.wakeLock = prefs.wakeLock || deps.tv;
+    prefs.audio = prefs.audio || deps.audioOn;
+    if (prefs.wakeLock) {
+        deps.setWakeLock(true);
+    }
+    ctx.audio = mountAudio({
+        doc: deps.doc,
+        AudioContext: deps.AudioContext,
+        now: deps.now,
+        getCamera: deps.getCamera,
+        getReady: deps.getReady,
+        onStatus: (s) => (deps.state.notice = s),
+        enabled: prefs.audio,
+        volume: prefs.volume,
+    });
+    ctx.capture = createCapture({ ...deps, toast: ctx.toast });
+}
 
 /**
  * Mounts the controls, the drawers and what goes in them, and applies the HUD state and size.
@@ -77,6 +111,7 @@ function mountParts(ctx) {
     ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
         current: prefs.uiScale,
         palette: prefs.palette,
+        clip: clipSupported(deps.MediaRecorder),
         onPalette(/** @type {string} */ name) {
             prefs.palette = name;
             deps.slots.palette = name;
@@ -92,6 +127,7 @@ function mountParts(ctx) {
     });
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
+    mountServices(ctx);
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.hidden);
 }
@@ -106,6 +142,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek'];
     const ctx = {
         deps,
         prefs,
@@ -115,16 +152,7 @@ function build(deps) {
         chartData: createChartData(),
         barUpdate: mountTopBar(doc, elements.bar),
         tickerUpdate: mountTicker(doc, elements.ticker),
-        last: {
-            bar: -Infinity,
-            ticker: -Infinity,
-            inspector: -Infinity,
-            charts: -Infinity,
-            idle: -Infinity,
-            shift: -Infinity,
-            card: -Infinity,
-            peek: -Infinity,
-        },
+        last: Object.fromEntries(lastKeys.map((k) => [k, -Infinity])),
         idle: createIdleTracker(deps.now),
         shifted: { x: 0, y: 0 },
         fade: createHudFade({
@@ -214,6 +242,15 @@ function createHooks(ctx) {
             setHud(ctx, !ctx.hidden);
             persist(ctx);
         },
+        toggleAudio: () => void ((ctx.prefs.audio = ctx.audio.toggle()), persist(ctx)),
+        volumeDown: () => void ((ctx.prefs.volume = ctx.audio.stepVolume(-1)), persist(ctx)),
+        volumeUp: () => void ((ctx.prefs.volume = ctx.audio.stepVolume(1)), persist(ctx)),
+        toggleWakeLock() {
+            ctx.prefs.wakeLock = !ctx.prefs.wakeLock;
+            deps.setWakeLock(ctx.prefs.wakeLock);
+            persist(ctx);
+            ctx.toast(ctx.prefs.wakeLock ? 'Wake lock on' : 'Wake lock off');
+        },
         focusSeed() {
             setHud(ctx, false);
             ctx.controls.focusSeed();
@@ -225,6 +262,8 @@ function createHooks(ctx) {
         },
         exportArchive: () => deps.getClient()?.exportArchive(),
         exportBundle: () => exportBundle({ ...deps, toast: ctx.toast, takeFailed }),
+        screenshot: () => ctx.capture.screenshot(),
+        recordClip: () => ctx.capture.recordClip(),
         lensesChanged() {
             persist(ctx);
             syncRays(ctx);
@@ -253,6 +292,7 @@ function createListeners(ctx) {
         onStats(/** @type {Record<string, any>} */ stats) {
             assignSlots(deps.slots, stats.lineages?.top ?? []);
             ctx.chartData.stats(stats, deps.now());
+            ctx.audio.onStats(stats);
         },
         onTicker: (/** @type {{text: string, kind: string}[]} */ items) => ctx.queue.push(items, deps.now()),
         onArchive: (/** @type {string} */ json) =>
@@ -264,10 +304,9 @@ function createListeners(ctx) {
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
- *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface:
- *   `hooks` for the actions, `listeners` (`onReady`, `onStats`, `onTicker`, `onArchive`) for the worker client,
- *   `tick` each animation frame, `syncRays` after the selection or a lens changes, `startWorld` for the seed field, `resize` when the canvas width changes, `pointer` for each pointer move in client pixels, `noteInput` for each
- *   key, press, wheel and counted pointer move
+ *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
+ *   afterDraw: (frame: {tick: number}) => void,
+ *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -277,11 +316,14 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        onEffect: (effect) => ctx.audio.onEffect(effect),
+        afterDraw: (frame) => ctx.capture.afterDraw(frame),
         pointer(x, y) {
             ctx.peekTracker.move(x, y, deps.now());
             ctx.peek.hide();
         },
         noteInput(event) {
+            ctx.audio.gesture(event.type);
             const counted = ctx.idle.input(event);
             if (counted) {
                 dismissCard(ctx);

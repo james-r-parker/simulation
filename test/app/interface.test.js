@@ -6,6 +6,7 @@ import { createInterface, REFRESH_MS } from '../../js/app/interface.js';
 import { PREFS_KEY } from '../../js/app/prefs.js';
 import { byClass, fakeDocument } from './helpers/fake-dom.js';
 import { selectedWorld } from './helpers/inspect-world.js';
+import { FakeAudioContext } from './audio/fake-audio.js';
 
 const { ready, snapshot } = selectedWorld();
 
@@ -26,11 +27,11 @@ class FakeUPlot {
 }
 
 /**
- * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean}} [options] stored
- *   preferences, the failed bundle, whether the title card was seen and whether `?speed=` pinned the speed
+ * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean, tv?: boolean, audioOn?: boolean}} [options] stored
+ *   preferences, the failed bundle, whether the title card was seen, whether `?speed=` pinned the speed, `?tv=1` and `?audio=1`
  * @returns {any} an interface over fakes, with everything it was asked to do
  */
-function setup({ stored = {}, failed = null, seen = true, speedPinned = false } = {}) {
+function setup({ stored = {}, failed = null, seen = true, speedPinned = false, tv = false, audioOn = false } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
     doc.documentElement = {
@@ -65,6 +66,7 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
     const pick = { hit: /** @type {any} */ (null) };
     let clock = 0;
     const width = { value: 3840 };
+    const wakeLocks = /** @type {boolean[]} */ ([]);
     const ui = createInterface({
         doc,
         elements,
@@ -84,22 +86,14 @@ function setup({ stored = {}, failed = null, seen = true, speedPinned = false } 
         pickAt: (/** @type {any} */ device) => (pick.hit === null ? null : { ...pick.hit, at: device }),
         toDevice: (/** @type {any} */ point) => point,
         speedPinned,
+        tv,
+        audioOn,
+        AudioContext: FakeAudioContext,
+        getCamera: () => ({ x: 500, y: 500, zoom: 1, canvas: { width: 1000, height: 1000 } }),
+        setWakeLock: (on) => wakeLocks.push(on),
     });
-    return {
-        ui,
-        pick,
-        client,
-        slots,
-        width,
-        elements,
-        state,
-        store,
-        sent,
-        files,
-        timers,
-        doc,
-        setClock: (/** @type {number} */ t) => (clock = t),
-    };
+    const setClock = (/** @type {number} */ t) => (clock = t);
+    return { ui, pick, client, slots, width, elements, state, store, sent, files, timers, wakeLocks, doc, setClock };
 }
 
 describe('createInterface', () => {
@@ -148,6 +142,33 @@ describe('createInterface', () => {
         expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').hud).toBe(false);
         ui.hooks.focusSeed();
         expect(elements.hud.classList.contains('hud-hidden')).toBe(false);
+    });
+
+    it('toggles the wake lock, remembers it, and starts with it on when stored or in TV mode', () => {
+        const { ui, elements, store, wakeLocks } = setup();
+        expect(wakeLocks).toEqual([]);
+        ui.hooks.toggleWakeLock();
+        expect([wakeLocks, JSON.parse(store.get(PREFS_KEY) ?? '{}').wakeLock]).toEqual([[true], true]);
+        expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toContain('Wake lock on');
+        ui.hooks.toggleWakeLock();
+        expect([wakeLocks, JSON.parse(store.get(PREFS_KEY) ?? '{}').wakeLock]).toEqual([[true, false], false]);
+        expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toContain('Wake lock off');
+        expect(setup({ tv: true }).wakeLocks).toEqual([true]);
+    });
+
+    it('wires audio toggle, volume keys, gesture unlock and effect cues into the top bar notice and preferences', () => {
+        const waiting = setup({ audioOn: true });
+        expect(waiting.state.notice).toBe('audio: waiting for a key');
+        waiting.ui.noteInput({ type: 'keydown' });
+        expect(waiting.state.notice).toBe('audio: on');
+        waiting.ui.onEffect({ kind: 1, tick: 1, x: 500, y: 500, a: 1, b: 0, c: 0, d: 0 });
+        waiting.ui.hooks.volumeUp();
+        expect(JSON.parse(waiting.store.get(PREFS_KEY) ?? '{}').volume).toBe(0.6);
+        waiting.ui.hooks.volumeDown();
+        expect(JSON.parse(waiting.store.get(PREFS_KEY) ?? '{}').volume).toBe(0.5);
+        waiting.ui.hooks.toggleAudio();
+        expect(waiting.state.notice).toBe('audio: off');
+        expect(JSON.parse(waiting.store.get(PREFS_KEY) ?? '{}').audio).toBe(false);
     });
 
     it('opens one drawer at a time and says whether Escape closed one', () => {
@@ -234,12 +255,15 @@ describe('createInterface', () => {
         expect(state.selectedId).toBe(0);
     });
 
-    it('downloads the exported archive under the world seed', () => {
+    it('downloads the exported archive under the world seed and forwards capture actions', () => {
         const { ui, files, sent } = setup();
         ui.hooks.exportArchive();
         expect(sent.at(-1)).toEqual(['exportArchive']);
         ui.listeners.onArchive('{"cells":[]}');
         expect(files[0]).toEqual({ name: `blob-archive-${ready.seed}.json`, text: '{"cells":[]}' });
+        ui.hooks.screenshot();
+        ui.afterDraw({ tick: 1 });
+        ui.hooks.recordClip();
     });
 
     it('downloads the failed run bundle once, then the current run bundle', () => {
@@ -299,8 +323,7 @@ describe('createInterface', () => {
         const { elements, slots, store } = setup();
         const before = slots.version;
         byClass(elements.drawers, 'help-size')[6].dispatch('click');
-        expect(slots.palette).toBe('cvd-safe');
-        expect(slots.version).toBe(before + 1);
+        expect([slots.palette, slots.version]).toEqual(['cvd-safe', before + 1]);
         expect(JSON.parse(store.get(PREFS_KEY) ?? '{}').palette).toBe('cvd-safe');
     });
 

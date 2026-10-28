@@ -215,10 +215,16 @@ describe('page actions', () => {
             toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
             closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
             toggleHud: () => calls.push('hud'),
+            toggleAudio: () => calls.push('audio'),
+            volumeDown: () => calls.push('volDown'),
+            volumeUp: () => calls.push('volUp'),
+            toggleWakeLock: () => calls.push('wakeLock'),
             focusSeed: () => calls.push('seed'),
             fullscreen: () => calls.push('fullscreen'),
             exportArchive: () => calls.push('archive'),
             exportBundle: () => calls.push('bundle'),
+            screenshot: () => calls.push('screenshot'),
+            recordClip: () => calls.push('clip'),
             lensesChanged: () => calls.push('lenses'),
             toast: (/** @type {string} */ t) => calls.push(`toast ${t}`),
         };
@@ -247,27 +253,58 @@ describe('page actions', () => {
             chooseSeed: () => 1,
             config: {},
         });
-        for (const a of ['toggleHud', 'focusSeed', 'fullscreen', 'exportArchive', 'exportBundle']) {
+        for (const a of [
+            'toggleHud',
+            'toggleAudio',
+            'volumeDown',
+            'volumeUp',
+            'toggleWakeLock',
+            'focusSeed',
+            'fullscreen',
+            'exportArchive',
+            'exportBundle',
+            'screenshot',
+            'recordClip',
+        ]) {
             expect(() => act(a), a).not.toThrow();
         }
     });
 
     it('routes each page action to its hook', () => {
         const { act, calls } = withUi(false);
-        for (const a of ['toggleCharts', 'toggleInspector', 'toggleHelp', 'toggleHud', 'focusSeed', 'fullscreen']) {
+        for (const a of [
+            'toggleCharts',
+            'toggleInspector',
+            'toggleHelp',
+            'toggleHud',
+            'toggleAudio',
+            'volumeDown',
+            'volumeUp',
+            'toggleWakeLock',
+            'focusSeed',
+            'fullscreen',
+        ]) {
             act(a);
         }
         act('exportArchive');
         act('exportBundle');
+        act('screenshot');
+        act('recordClip');
         expect(calls).toEqual([
             'drawer charts',
             'drawer inspector',
             'drawer help',
             'hud',
+            'audio',
+            'volDown',
+            'volUp',
+            'wakeLock',
             'seed',
             'fullscreen',
             'archive',
             'bundle',
+            'screenshot',
+            'clip',
         ]);
     });
 

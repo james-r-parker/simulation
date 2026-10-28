@@ -124,11 +124,21 @@ test('pause, step and speed keys drive the worker', async ({ page }) => {
 
     await page.keyboard.press('Space');
     await expect(page.locator(SPEED)).toHaveText(/^x1/);
-    await page.keyboard.press('BracketRight');
-    await expect(page.locator(SPEED)).toHaveText(/^x2/);
     await page.keyboard.press('BracketLeft');
     await page.keyboard.press('BracketLeft');
-    await expect(page.locator(SPEED)).toHaveText(/^x0\.5/);
+    await expect(page.locator(SPEED)).toHaveText(/^x0\.25/);
+    const slowStart = await tickOf(page);
+    await page.waitForTimeout(1000);
+    const slowTicks = (await tickOf(page)) - slowStart;
+
+    for (let i = 0; i < 4; i++) {
+        await page.keyboard.press('BracketRight');
+    }
+    await expect(page.locator(SPEED)).toHaveText(/^x4/);
+    const fastStart = await tickOf(page);
+    await page.waitForTimeout(1000);
+    const fastTicks = (await tickOf(page)) - fastStart;
+    expect(fastTicks, 'raising speed raises the actual tick rate').toBeGreaterThan(slowTicks * 2);
 });
 
 test('N asks for confirmation and a second press starts a new world', async ({ page }) => {
@@ -146,16 +156,41 @@ test('N asks for confirmation and a second press starts a new world', async ({ p
     await worldRunning(page);
 });
 
-test('camera keys and a click do not break the loop', async ({ page }) => {
+test('F follows the lead agent, clicking selects it in the inspector, and Escape clears the selection', async ({
+    page,
+}) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
+    await expect(page.locator(STATUS)).toHaveText(/leads with \d+%/, { timeout: 20_000 });
+    await page.mouse.wheel(0, -200);
     for (const key of ['Equal', 'ArrowLeft', 'ArrowUp', 'Minus', 'Home']) {
         await page.keyboard.press(key);
     }
-    await page.mouse.click(300, 300);
-    await page.mouse.wheel(0, -200);
-    const before = await tickOf(page);
-    await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
+    await page.keyboard.press('Space');
+    await expect(page.locator(SPEED)).toHaveText('paused');
+    await page.keyboard.press('KeyI');
+    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
+    await page.keyboard.press('KeyF');
+    const box = await page.locator('#canvas-container canvas').boundingBox();
+    expect(box).not.toBeNull();
+    const cx = (box?.x ?? 0) + (box?.width ?? 0) / 2;
+    const cy = (box?.y ?? 0) + (box?.height ?? 0) / 2;
+    await expect
+        .poll(
+            async () => {
+                await page.mouse.click(cx, cy);
+                return page.locator('.inspector-body').isVisible();
+            },
+            { timeout: 15_000 },
+        )
+        .toBe(true);
+    await expect(page.locator('.inspector-title')).toHaveText(/^[a-z]+ - [A-Z][a-z]+( [IVX]+)? - #\d+$/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.drawer.open')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('KeyI');
+    await expect(page.locator('.inspector-empty')).toBeVisible();
+    await expect(page.locator('.inspector-body')).toBeHidden();
 });
 
 test('recovers from a lost WebGL context', async ({ page }) => {
@@ -257,13 +292,28 @@ test('keys 1 to 4 toggle the lenses and the choice is remembered', async ({ page
     expect(await stored()).toEqual([true, false, true, true]);
 });
 
-test('H hides and shows the HUD, Shift+N focuses the seed field', async ({ page }) => {
+test('H hides and shows the HUD, 30 s of idle fades it, and Shift+N focuses the seed field', async ({ page }) => {
+    await page.addInitScript(() => {
+        let offset = 0;
+        const origNow = performance.now.bind(performance);
+        performance.now = () => origNow() + offset;
+        /** @type {any} */ (globalThis).__advanceClock = (/** @type {number} */ ms) => {
+            offset += ms;
+        };
+    });
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
     await page.keyboard.press('KeyH');
     await expect(page.locator('#top-bar')).toBeHidden();
     await page.keyboard.press('KeyH');
     await expect(page.locator('#top-bar')).toBeVisible();
+    await page.evaluate(() => /** @type {any} */ (globalThis).__advanceClock(31_000));
+    await expect(page.locator('#hud')).toHaveClass(/\bhud-idle\b/);
+    await expect(page.locator('html')).toHaveClass(/\bcursor-hidden\b/);
+    await page.mouse.move(100, 100);
+    await page.mouse.move(200, 200);
+    await expect(page.locator('#hud')).not.toHaveClass(/\bhud-idle\b/);
+    await expect(page.locator('html')).not.toHaveClass(/\bcursor-hidden\b/);
     await page.keyboard.press('Shift+KeyN');
     await expect(page.locator('.control-seed')).toBeFocused();
     await expect(page.locator('.control-seed')).toHaveValue('3');
@@ -281,7 +331,23 @@ test('E and B download the archive and the debug bundle, Shift+F does not break 
     const archive = page.waitForEvent('download');
     await page.keyboard.press('KeyE');
     expect((await archive).suggestedFilename()).toBe('blob-archive-3.json');
+    const shot = page.waitForEvent('download');
+    await page.keyboard.press('KeyP');
+    expect((await shot).suggestedFilename()).toMatch(/^blob-3-\d+\.png$/);
+    const clip = page.waitForEvent('download');
+    await page.keyboard.press('Shift+KeyP');
+    await expect(page.locator('.toast').last()).toContainText('Recording 15 s clip');
+    await page.keyboard.press('Shift+KeyP');
+    expect((await clip).suggestedFilename()).toMatch(/^blob-3-\d+\.webm$/);
     await page.keyboard.press('Shift+KeyF');
+    await page.keyboard.press('KeyK');
+    await expect(page.locator('.toast').last()).toContainText('Wake lock on');
+    await page.keyboard.press('KeyA');
+    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('audio: on');
+    await page.keyboard.press('Digit9');
+    await page.keyboard.press('Digit0');
+    await page.keyboard.press('KeyA');
+    await expect(page.locator('#top-bar .top-bar-notice')).toHaveText('audio: off');
     const before = await tickOf(page);
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
 });

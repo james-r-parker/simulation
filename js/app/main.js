@@ -6,6 +6,7 @@ import { createActions, createAppState, DEFAULT_TICKS_PER_SECOND } from './actio
 import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
+import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
@@ -25,6 +26,7 @@ import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
+import { createWakeLock } from './wake-lock.js';
 
 const PERF_FRAMES = 32768;
 
@@ -34,30 +36,21 @@ const PERF_FRAMES = 32768;
  * @returns {void}
  */
 function showMessage(container, text) {
-    const p = document.createElement('p');
-    p.className = 'app-message';
-    p.textContent = text;
+    const p = Object.assign(document.createElement('p'), { className: 'app-message', textContent: text });
     container.appendChild(p);
 }
 
 /**
  * Wires the keys and the pointer.
  * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
- *   iface: ReturnType<typeof createInterface>}} wiring the canvas, the action runner, the pointer handlers and the
- *   interface that hears every input
+ *   iface: ReturnType<typeof createInterface>, toDevice: (e: MouseEvent) => {x: number, y: number}}} wiring the canvas,
+ *   the action runner, the pointer handlers, the interface that hears every input and the client-to-device mapper
  * @returns {void}
  */
-function listen({ canvas, perform, input, iface }) {
-    const toDevice = (/** @type {MouseEvent} */ e) => {
-        const r = canvas.getBoundingClientRect();
-        return {
-            x: ((e.clientX - r.left) * canvas.width) / r.width,
-            y: ((e.clientY - r.top) * canvas.height) / r.height,
-        };
-    };
+function listen({ canvas, perform, input, iface, toDevice }) {
     window.addEventListener('keydown', (e) => {
         iface.noteInput({ type: 'keydown' });
-        const action = actionForKey(e);
+        const action = actionForKey(e, { clip: clipSupported(globalThis.MediaRecorder) });
         if (action !== null) {
             e.preventDefault();
             perform(action);
@@ -144,7 +137,12 @@ function onReady(app, message) {
             info: message.info,
             quality: app.params.quality,
             scale: app.params.scale,
-            buildLayers: createLayerBuilder({ refs: app.deps.refs, getReady: () => app.ready, slots: app.slots }),
+            buildLayers: createLayerBuilder({
+                refs: app.deps.refs,
+                getReady: () => app.ready,
+                slots: app.slots,
+                sink: (effect) => app.iface.onEffect(effect),
+            }),
             onRestored: () => attachGpuTimer(app),
         });
         app.deps.scene.resize(app.size.width, app.size.height);
@@ -153,6 +151,7 @@ function onReady(app, message) {
             perform: app.perform,
             input: createPointerInput(pointerOptions(app)),
             iface: app.iface,
+            toDevice: (e) => clientToDevice(app, { x: e.clientX, y: e.clientY }),
         });
     } else {
         app.deps.scene.rebuild();
@@ -234,7 +233,10 @@ function clientToDevice(app, client) {
     if (canvas === undefined || r === undefined) {
         return { x: -1, y: -1 };
     }
-    return { x: ((client.x - r.left) * canvas.width) / r.width, y: ((client.y - r.top) * canvas.height) / r.height };
+    return {
+        x: ((client.x - r.left) * app.size.width) / r.width,
+        y: ((client.y - r.top) * app.size.height) / r.height,
+    };
 }
 
 /**
@@ -261,15 +263,15 @@ function safeStorage() {
  * @returns {ReturnType<typeof createInterface>} the interface over the page's elements
  */
 function makeInterface(app) {
-    const element = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    const el = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    const wakeLock = createWakeLock({
+        nav: navigator,
+        doc: document,
+        onRefused: (reason) => appLog('warn', 'WakeLockRefused', { reason }),
+    });
     return createInterface({
         doc: document,
-        elements: {
-            hud: element('hud'),
-            bar: element('top-bar'),
-            ticker: element('ticker'),
-            drawers: element('drawers'),
-        },
+        elements: { hud: el('hud'), bar: el('top-bar'), ticker: el('ticker'), drawers: el('drawers') },
         storage: safeStorage(),
         getClient: () => app.supervisor.client(),
         getReady: () => app.ready,
@@ -279,6 +281,9 @@ function makeInterface(app) {
         loadUPlot,
         download: createDownloader({ doc: document, url: URL }),
         setTimer: (ms, run) => setTimeout(run, ms),
+        clearTimer: (handle) => clearTimeout(/** @type {any} */ (handle)),
+        MediaRecorder: globalThis.MediaRecorder,
+        getCanvas: () => app.deps.scene?.canvas ?? null,
         getFailedBundle: () => app.supervisor.lastBundle(),
         now: () => performance.now(),
         getWidth: () => app.container.clientWidth,
@@ -286,6 +291,11 @@ function makeInterface(app) {
         pickAt: (device) => agentAt({ agents: app.loop.agents(), camera: app.camera, minPx: app.minPx }, device),
         toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
+        tv: app.params.tv,
+        audioOn: app.params.audio,
+        AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
+        getCamera: () => app.camera,
+        setWakeLock: (on) => wakeLock.setEnabled(on),
     });
 }
 
@@ -314,6 +324,7 @@ function createApp(container) {
         gpuTimer: null,
         clock: () => performance.now(),
         hidden: () => document.hidden,
+        afterDraw: (/** @type {{tick: number}} */ frame) => app.iface.afterDraw(frame),
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
@@ -337,11 +348,8 @@ function createApp(container) {
  * @returns {{geometries: number, textures: number, programs: number}} the counts `__perf` reports
  */
 function gpuCounts(info) {
-    return {
-        geometries: info?.memory.geometries ?? 0,
-        textures: info?.memory.textures ?? 0,
-        programs: info?.programs?.length ?? 0,
-    };
+    const m = info?.memory;
+    return { geometries: m?.geometries ?? 0, textures: m?.textures ?? 0, programs: info?.programs?.length ?? 0 };
 }
 
 /**
@@ -386,8 +394,7 @@ function start() {
         createCanvas: () => document.createElement('canvas'),
     });
     if (reason !== null) {
-        showMessage(container, reason);
-        return;
+        return showMessage(container, reason);
     }
     const app = createApp(container);
     observeSize(container, (next) => {
@@ -397,11 +404,7 @@ function start() {
         resizeCamera(app.camera, next);
     });
     startReporting(app);
-    const tick = (/** @type {number} */ now) => {
-        app.loop.frame(now);
-        app.iface.tick(now);
-        requestAnimationFrame(tick);
-    };
+    const tick = (/** @type {number} */ now) => (app.loop.frame(now), app.iface.tick(now), requestAnimationFrame(tick));
     requestAnimationFrame(tick);
     app.supervisor.start(chooseSeed(app.params.seed));
 }

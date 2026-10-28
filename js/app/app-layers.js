@@ -31,20 +31,23 @@ export function createLayerRefs() {
 /**
  * @param {Record<string, any>} ready the `ready` message of the world to draw
  * @param {import('./family-slots.js').FamilySlots} slots the family colour slots
+ * @param {((effect: import('./renderer/effects-player.js').Effect) => void) | undefined} sink optional effect sink
  * @returns {{info: Record<string, any>, layout: Record<string, any>, seed: number,
- *   slots: import('./family-slots.js').FamilySlots}} the parts the layers read
+ *   slots: import('./family-slots.js').FamilySlots,
+ *   sink: ((effect: import('./renderer/effects-player.js').Effect) => void) | undefined}} the parts the layers read
  */
-function worldOf(ready, slots) {
-    return { info: ready.info, layout: ready.layout, seed: ready.seed, slots };
+function worldOf(ready, slots, sink) {
+    return { info: ready.info, layout: ready.layout, seed: ready.seed, slots, sink };
 }
 
 /**
  * @param {LayerRefs} refs the references to fill
  * @param {{info: Record<string, any>, layout: Record<string, any>, seed: number,
- *   slots: import('./family-slots.js').FamilySlots}} world the world and the family colour slots
+ *   slots: import('./family-slots.js').FamilySlots,
+ *   sink: ((effect: import('./renderer/effects-player.js').Effect) => void) | undefined}} world the world and slots
  * @returns {import('./renderer/scene.js').LayerSet} the layers
  */
-function buildFor(refs, { info, layout, seed, slots }) {
+function buildFor(refs, { info, layout, seed, slots, sink }) {
     const agents = createAgentsLayer({ info, flagBits: layout.flags });
     const haze = createHazeLayer({ info });
     const smoke = createSmokeLayer({ info });
@@ -52,7 +55,7 @@ function buildFor(refs, { info, layout, seed, slots }) {
     const rings = createRingPool();
     const sparks = createSparkPool(seed);
     refs.haze = haze;
-    refs.player = createEffectsPlayer({ rings, sparks, layout, info, slots });
+    refs.player = createEffectsPlayer({ rings, sparks, layout, info, slots, sink });
     return {
         layers: [
             createTerritoryLayer({ info }),
@@ -72,18 +75,18 @@ function buildFor(refs, { info, layout, seed, slots }) {
 }
 
 /**
- * @param {{refs: LayerRefs, getReady: () => Record<string, any> | null, slots: import('./family-slots.js').FamilySlots}}
- *   options the references to fill, the newest `ready` message (the layers are built from the world it describes) and
- *   the family colour slots
+ * @param {{refs: LayerRefs, getReady: () => Record<string, any> | null, slots: import('./family-slots.js').FamilySlots,
+ *   sink?: (effect: import('./renderer/effects-player.js').Effect) => void}} options the references to fill, the newest
+ *   `ready` message, the family colour slots and an optional effect sink
  * @returns {() => import('./renderer/scene.js').LayerSet} the `buildLayers` function the scene calls
  * @throws {Error} when called before a `ready` message arrived
  */
-export function createLayerBuilder({ refs, getReady, slots }) {
+export function createLayerBuilder({ refs, getReady, slots, sink }) {
     return () => {
         const ready = getReady();
         if (ready === null) {
             throw new Error('buildLayers: no ready message yet, so there is no world to draw');
         }
-        return buildFor(refs, worldOf(ready, slots));
+        return buildFor(refs, worldOf(ready, slots, sink));
     };
 }

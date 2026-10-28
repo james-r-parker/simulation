@@ -186,15 +186,14 @@ export function temperatureRamp(bands, out) {
 
 const ONSETS = Object.freeze(['v', 'l', 'k', 'm', 'r', 's', 'n', 't', 'd', 'z', 'h', 'b', 'f', 'g']);
 const VOWELS = Object.freeze(['a', 'e', 'i', 'o', 'u']);
+const NUMERALS = Object.freeze(['', ' II', ' III', ' IV', ' V', ' VI', ' VII', ' VIII', ' IX', ' X', ' XI', ' XII']);
 
 /**
- * A pronounceable name for a family, such as "Velari": three consonant-vowel syllables drawn from a generator seeded by
- * the world seed and the lineage id, so the same family has the same name in every run of a seed.
  * @param {number} seed the world seed
  * @param {number} lineageId a lineage id
- * @returns {string} the name
+ * @returns {string} the three-syllable base name
  */
-export function familyName(seed, lineageId) {
+function baseName(seed, lineageId) {
     const prng = createPrng(Math.imul(seed ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(lineageId + 1, 0xc2b2ae35));
     prng.next();
     let name = '';
@@ -202,4 +201,27 @@ export function familyName(seed, lineageId) {
         name += ONSETS[prng.int(ONSETS.length)] + VOWELS[prng.int(VOWELS.length)];
     }
     return name[0].toUpperCase() + name.slice(1);
+}
+
+/**
+ * A pronounceable name for a family, such as "Velari": three consonant-vowel syllables drawn from a generator seeded by
+ * the world seed and the lineage id, unique among `top` (a clash takes a numeral: "Velari II").
+ * @param {number} seed the world seed
+ * @param {number} lineageId a lineage id
+ * @param { readonly ({id: number} | number)[] } [top] `stats.lineages.top` in rank order
+ * @returns {string} the name
+ */
+export function familyName(seed, lineageId, top = []) {
+    const base = baseName(seed, lineageId);
+    let clashes = 0;
+    for (const entry of top) {
+        const id = typeof entry === 'number' ? entry : entry.id;
+        if (id === lineageId) {
+            break;
+        }
+        if (baseName(seed, id) === base) {
+            clashes++;
+        }
+    }
+    return `${base}${NUMERALS[clashes]}`;
 }
