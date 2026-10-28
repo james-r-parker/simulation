@@ -1,4 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config';
+import { testTimeoutFor, timeoutFactorFor } from './scripts/lib/test-timeout.mjs';
 
 // TEST_SCOPE=fast leaves out the *.slow.test.js files (real worlds over many ticks, worker pools, the golden runs). They
 // sit beside the fast test of the same module; CI runs the fast scope, every local run and the nightly run everything.
@@ -28,6 +29,10 @@ export default defineConfig({
         include: SCOPE === 'statistical' ? STATISTICAL_TESTS : ['test/**/*.test.js'],
         exclude: excluded(),
         environment: 'node',
+        // Coverage slows the sim tests several times: a longer default, and tests scale explicit timeouts with
+        // scaleTimeout (scripts/lib/test-timeout.mjs) from TEST_TIMEOUT_FACTOR.
+        testTimeout: testTimeoutFor(process.argv),
+        env: { TEST_TIMEOUT_FACTOR: String(timeoutFactorFor(process.argv)) },
         benchmark: { include: ['bench/micro/**/*.bench.js'] },
         coverage: {
             provider: 'v8',
