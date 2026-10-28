@@ -8,6 +8,7 @@ import {
     RESPONSE_WINDOW,
     biteDeliberate,
     mealDeliberate,
+    meritSpecs,
     noteMeritBite,
     resolveEscape,
     slotOfGenome,
@@ -91,16 +92,28 @@ describe('merit arrays', () => {
         expect([w.meritFoodSeen[slot], w.parentSlotA[slot]]).toEqual([NEVER, -1]);
     });
 
-    it('are not hashed yet: setting them leaves hashWorld unchanged', () => {
+    it('are hashed: setting a value in each meritSpecs() array changes hashWorld', () => {
         const w = arena();
         const slot = adult(w);
-        const before = hashWorld(w);
-        w.merit[slot] = 12;
-        w.deliberateIntake[slot] = 3;
-        w.parentSlotA[slot] = 2;
-        w.meritFoodSeen[slot] = 4;
-        w.biteOpen[slot] = 1;
-        expect(hashWorld(w)).toBe(before);
+        const base = hashWorld(w);
+        for (const [, name] of meritSpecs()) {
+            const arr = w[name];
+            const old = arr[slot];
+            arr[slot] = old === 1 ? 2 : 1;
+            expect(hashWorld(w), name).not.toBe(base);
+            arr[slot] = old;
+        }
+        expect(hashWorld(w)).toBe(base);
+    });
+
+    it('scratch and counters are not hashed: capSlots, capKeys and meritTally leave hashWorld unchanged', () => {
+        const w = arena();
+        adult(w);
+        const base = hashWorld(w);
+        w.capSlots[0] = 3;
+        w.capKeys[0] = 5;
+        w.meritTally[0] = 7;
+        expect(hashWorld(w)).toBe(base);
     });
 });
 

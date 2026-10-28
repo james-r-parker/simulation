@@ -1,5 +1,6 @@
 // Hashes a world's state bytes at a checkpoint, in the fixed order of the design doc's hashWorld section.
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
+import { meritSpecs } from './merit-state.js';
 
 /** Agent arrays hashed whole, in the World state table order; `hidden` is handled separately. */
 const AGENT_ARRAYS = [
@@ -40,7 +41,14 @@ const AGENT_ARRAYS = [
     'heard',
 ];
 
-/** Arrays hashed after the agents: food, obstacles, fertile zones, pheromones, then the ledger. */
+/**
+ * Merit arrays hashed after the agent arrays, in `meritSpecs` order: the merit and stamp, the parent slots, the
+ * food and prey tracker state, the escape episode state and the T22a mark arrays. The scratch and counters
+ * (`capSlots`, `capKeys`, `meritTally`) are left out.
+ */
+const MERIT_ARRAYS = meritSpecs().map(([, name]) => name);
+
+/** Arrays hashed after the merit arrays: food, obstacles, fertile zones, pheromones, then the ledger. */
 const FIELD_ARRAYS = [
     'foodAlive',
     'foodX',
@@ -123,13 +131,14 @@ function fieldNames(world) {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
     const hiddenRows = world.hidden.subarray(0, maxAgents * world.layout.hidden);
     return {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
+        merit: MERIT_ARRAYS.map((name) => bytesOf(world, name)),
         fields: fieldNames(world).map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
         fastOut: bytesOf(world, 'fastOut'),
@@ -177,8 +186,32 @@ function rngState(world, name) {
 }
 
 /**
+ * Hashes the arrays that exist only with their feature on: `fastOut`, `vision` and `baseSize`, `birthRing` and `sex`.
+ * @param {Record<string, any>} world the world
+ * @param {ReturnType<typeof buildViews>} views the cached byte views
+ * @returns {void}
+ */
+function hashOptionalArrays(world, views) {
+    const { config } = world;
+    if (config.hebbianRate > 0) {
+        fnv64Bytes(digest, views.fastOut);
+    }
+    if (config.traitsEnabled) {
+        fnv64Bytes(digest, views.vision);
+        fnv64Bytes(digest, views.baseSize);
+    }
+    if (config.maxBirthsPerWindow > 0) {
+        fnv64Bytes(digest, views.birthRing);
+    }
+    if (config.sexesEnabled) {
+        fnv64Bytes(digest, views.sex);
+    }
+}
+
+/**
  * Hashes a world's checkpoint state: scalars, agent arrays (without `inputs`, `outputs` and the scratch hidden row),
- * food, obstacles, zones, pheromones, the ledger and the RNG streams.
+ * the merit arrays (`MERIT_ARRAYS`, without the scratch and counters), food, obstacles, zones, pheromones, the ledger
+ * and the RNG streams.
  * @param {Record<string, any>} world the world; `world.rng` must hold the six named streams
  * @returns {string} 16 lowercase hex characters
  * @throws {Error} when `world.rng` is null or a stream is missing
@@ -198,19 +231,10 @@ export function hashWorld(world) {
     for (const bytes of views.agents) {
         fnv64Bytes(digest, bytes);
     }
-    if (world.config.hebbianRate > 0) {
-        fnv64Bytes(digest, views.fastOut);
+    for (const bytes of views.merit) {
+        fnv64Bytes(digest, bytes);
     }
-    if (world.config.traitsEnabled) {
-        fnv64Bytes(digest, views.vision);
-        fnv64Bytes(digest, views.baseSize);
-    }
-    if (world.config.maxBirthsPerWindow > 0) {
-        fnv64Bytes(digest, views.birthRing);
-    }
-    if (world.config.sexesEnabled) {
-        fnv64Bytes(digest, views.sex);
-    }
+    hashOptionalArrays(world, views);
     fnv64Bytes(digest, views.hidden);
     for (const bytes of views.fields) {
         fnv64Bytes(digest, bytes);
