@@ -683,7 +683,7 @@ ray part. A snapshot is not part of `worldHash`.
 
 ## Tooling and tasks
 
-- Playwright and its pin exist (`@playwright/test` 1.64.0). Under WSL, `browser-hash.mjs` runs Playwright's Chromium:
+- Playwright and its pin exist (`@playwright/test` 1.64.1). Under WSL, `browser-hash.mjs` runs Playwright's Chromium:
   hashing needs no GPU.
 - `test/sim/golden.slow.test.js` sets a 120 s timeout. Its first expected hash is a self-pin: the task that adds it runs
   it, commits the value, and says so in the commit body.
