@@ -240,10 +240,28 @@ export function advancePregnancies(world, policy) {
 }
 
 /**
+ * The merit split gate: open when `meritEnabled` is off, `splitDeliberateMin` is 0, the population is below
+ * `meritSplitFloorPop`, or the agent's `deliberateIntake` has reached `splitDeliberateMin`. Reads only; a closed
+ * gate changes nothing, so the agent stays ready.
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, rested, not pregnant, above `splitMinEnergy` and inside its birth budget;
- *   sex does not matter, so splitting is the same with `sexesEnabled` on or off
+ * @returns {boolean} true when the gate lets the agent split
+ */
+export function splitGateOpen(world, slot) {
+    const { meritEnabled, splitDeliberateMin, meritSplitFloorPop } = world.config;
+    return (
+        !meritEnabled ||
+        splitDeliberateMin === 0 ||
+        world.population < meritSplitFloorPop ||
+        world.deliberateIntake[slot] >= splitDeliberateMin
+    );
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot an alive agent
+ * @returns {boolean} true when mature, rested, not pregnant, above `splitMinEnergy`, inside its birth budget and
+ *   through the merit split gate; sex does not matter, so splitting is the same with `sexesEnabled` on or off
  */
 function readyToSplit(world, slot) {
     const { maturityTicks } = world.config;
@@ -252,7 +270,8 @@ function readyToSplit(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
-        !birthBudgetSpent(world, slot)
+        !birthBudgetSpent(world, slot) &&
+        splitGateOpen(world, slot)
     );
 }
 
