@@ -54,6 +54,50 @@ describe('expandGrid', () => {
         expect(() => expandGrid(/** @type {any} */ (grid))).toThrow(message);
     });
 
+    it("lays an arm's policyOptions over the base's and keeps them out of the config overrides", () => {
+        const plan = expandGrid({
+            base: { maxAgents: 300, policyOptions: { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } } },
+            ticks: 10,
+            policy: 'map-elites-v6',
+            reference: 'plain',
+            arms: {
+                plain: {},
+                weight: { policyOptions: { fitnessOverrides: { BORN: 9 } } },
+                mix: { policyOptions: { cloneShareEnd: 0.9, descriptor: 'v1' } },
+            },
+        });
+        const byName = Object.fromEntries(plan.arms.map((a) => [a.name, a]));
+        expect(byName.plain.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } });
+        expect(byName.weight.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 9, MATING: 2 } });
+        expect(byName.mix.policyOptions).toMatchObject({ cloneShareEnd: 0.9, descriptor: 'v1' });
+        expect(byName.weight.overrides).toEqual({ maxAgents: 300 });
+    });
+
+    it('gives an arm with no policyOptions an empty object', () => {
+        expect(expandGrid({ ticks: 10, arms: { a: {} } }).arms.map((a) => a.policyOptions)).toEqual([{}, {}]);
+    });
+
+    it.each([
+        [
+            { policy: 'map-elites-v6', arms: { a: { policyOptions: { fitnessOverrides: { NOPE: 1 } } } } },
+            /arm "a": .*fitnessOverrides\.NOPE/,
+        ],
+        [
+            { policy: 'map-elites-v6', arms: { a: { policyOptions: { descriptor: 'v9' } } } },
+            /arm "a": .*descriptor "v9"/,
+        ],
+        [
+            { policy: 'live', arms: { a: { policyOptions: { fitnessOverrides: { BORN: 1 } } } } },
+            /arm "a": .*map-elites-v1q" does not take "fitnessOverrides"/,
+        ],
+        [
+            { policy: 'map-elites-v6', base: { policyOptions: { archiveShare: 2 } }, arms: { a: {} } },
+            /arm "base": .*archiveShare 2/,
+        ],
+    ])('rejects bad policyOptions %j early, naming the arm and the key', (grid, message) => {
+        expect(() => expandGrid(/** @type {any} */ ({ ticks: 10, ...grid }))).toThrow(message);
+    });
+
     it('expands the T59 worked example', async () => {
         const { default: grid } = await import('../evals/screens/t59.grid.json', { with: { type: 'json' } });
         const plan = expandGrid(/** @type {any} */ (grid));

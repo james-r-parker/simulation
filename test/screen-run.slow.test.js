@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { expandGrid } from '../scripts/lib/screen-grid.mjs';
 import { reportPath, runScreen } from '../scripts/lib/screen-run.mjs';
 import { main, parseArgs, screen } from '../scripts/screen.mjs';
 import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
@@ -44,7 +45,7 @@ function plan(arms = grid.arms) {
         ticks: grid.ticks,
         policy: grid.policy,
         reference: 'ref',
-        arms: Object.entries(arms).map(([name, overrides]) => ({ name, overrides })),
+        arms: Object.entries(arms).map(([name, overrides]) => ({ name, overrides, policyOptions: {} })),
     };
 }
 
@@ -69,6 +70,30 @@ describe('runScreen', () => {
         expect(again).toMatchObject({ ran: ['wide'], skipped: ['ref'] });
         const forced = await runScreen({ plan: changed, outDir: dir, workers: 2, sha: 'abc', force: true });
         expect(forced.ran.sort()).toEqual(['ref', 'wide']);
+    });
+});
+
+describe('runScreen with policyOptions', () => {
+    /**
+     * @param {Record<string, any>} tuned the tuned arm's policyOptions
+     * @returns {import('../scripts/lib/screen-grid.mjs').ScreenPlan} a two-arm map-elites-v6 plan
+     */
+    const v6Plan = (tuned) =>
+        expandGrid({
+            ...grid,
+            policy: 'map-elites-v6',
+            arms: { ref: SMALL, tuned: { ...SMALL, policyOptions: tuned } },
+        });
+
+    it('runs each arm with its options, records them, and reruns only the arm whose options changed', async () => {
+        const first = await runScreen({ plan: v6Plan({ archiveShare: 0.2 }), outDir: dir, workers: 2, sha: 'abc' });
+        expect(first.reports.tuned.policyOptions).toEqual({ archiveShare: 0.2 });
+        expect(first.reports.ref).not.toHaveProperty('policyOptions');
+        const same = await runScreen({ plan: v6Plan({ archiveShare: 0.2 }), outDir: dir, workers: 2, sha: 'abc' });
+        expect(same).toMatchObject({ ran: [], skipped: ['ref', 'tuned'] });
+        const changed = await runScreen({ plan: v6Plan({ archiveShare: 0.3 }), outDir: dir, workers: 2, sha: 'abc' });
+        expect(changed).toMatchObject({ ran: ['tuned'], skipped: ['ref'] });
+        expect(changed.reports.tuned.policyOptions).toEqual({ archiveShare: 0.3 });
     });
 });
 

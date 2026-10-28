@@ -30,6 +30,18 @@ describe('buildReport with ragged metrics', () => {
     });
 });
 
+describe('buildReport policyOptions', () => {
+    it('stores non-empty policy options, leaves empty ones out, and validates the field', () => {
+        const input = { policy: 'p', fitnessName: 'v6', config, ticks: 1, seeds: [1], sha: 's', perSeed: [{}] };
+        const stored = buildReport({ ...input, policyOptions: { archiveShare: 0.2 } });
+        expect(stored.policyOptions).toEqual({ archiveShare: 0.2 });
+        expect(buildReport({ ...input, policyOptions: {} })).not.toHaveProperty('policyOptions');
+        expect(buildReport(input)).not.toHaveProperty('policyOptions');
+        expect(() => validateReport(stored)).not.toThrow();
+        expect(() => validateReport({ ...stored, policyOptions: 3 })).toThrow(/policyOptions must be an object/);
+    });
+});
+
 describe('buildReport', () => {
     it('stores the config without its seed and hashes that object', () => {
         const report = sample();

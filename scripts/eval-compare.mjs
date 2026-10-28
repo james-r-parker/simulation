@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, MIN_EFFECT } from '../js/evo/compare.js';
+import { canonicalOptions } from '../js/evo/policy-options.js';
 import { validateReport } from '../js/evo/report.js';
 import { parseFlags } from './lib/cli-args.mjs';
 
@@ -135,12 +136,25 @@ function refuse({ error }, field, reason) {
 }
 
 /**
+ * Policy options are the treatment under test, like the policy name, so differing options are compared, not refused;
+ * the output says so.
+ * @param {Record<string, any>[]} reports the before and after reports
+ * @returns {{ differ: boolean, before: string, after: string }} each report's options (`{}` when it has none)
+ */
+function optionsOf([before, after]) {
+    const [a, b] = [canonicalOptions(before.policyOptions), canonicalOptions(after.policyOptions)];
+    return { differ: a !== b, before: a, after: b };
+}
+
+/**
  * @param {ReturnType<typeof parseArgs>} args the parsed options
  * @param {{ print: (line: string) => void, error: (line: string) => void }} io the output sinks
  * @returns {number} the exit code
  */
 function run(args, { print, error }) {
-    const [before, after] = args.files.map(loadReport);
+    const reports = args.files.map(loadReport);
+    const [before, after] = reports;
+    const options = optionsOf(reports);
     const result = compareReports(before, after, {
         minEffect: args.minEffect,
         allowConfigDiff: args.allowConfigDiff,
@@ -152,8 +166,11 @@ function run(args, { print, error }) {
         return 2;
     }
     const text = args.json
-        ? JSON.stringify({ ...result, targets: args.targets }, null, 2)
-        : formatTable(result, args.targets).join('\n');
+        ? JSON.stringify({ ...result, targets: args.targets, policyOptions: options }, null, 2)
+        : [
+              ...formatTable(result, args.targets),
+              ...(options.differ ? [`policyOptions differ: before ${options.before}, after ${options.after}`] : []),
+          ].join('\n');
     print(text);
     const scope = args.targets.length > 0 ? result.rows.filter((r) => args.targets.includes(r.metric)) : result.rows;
     return args.failOnWorse && scope.some((r) => r.verdict === 'worse') ? 1 : 0;

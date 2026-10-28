@@ -52,6 +52,8 @@ describe('parseArgs', () => {
             'x.json',
             '--config',
             'c.json',
+            '--policy-options',
+            'o.json',
         ]);
         expect(args).toMatchObject({
             seeds: 2,
@@ -61,7 +63,9 @@ describe('parseArgs', () => {
             workers: 4,
             out: 'x.json',
             config: 'c.json',
+            policyOptions: 'o.json',
         });
+        expect(parseArgs([]).policyOptions).toBeNull();
     });
 
     it.each([
@@ -151,6 +155,27 @@ describe('main', () => {
             expect(code).toBe(0);
             expect(out.some((line) => line.startsWith(`wrote ${target}`))).toBe(true);
             expect(() => validateReport(JSON.parse(readFileSync(target, 'utf8')))).not.toThrow();
+        },
+        scaleTimeout(60_000),
+    );
+
+    it(
+        'records --policy-options in the report, and refuses a bad key before running',
+        async () => {
+            const config = join(dir, 'small-v6.json');
+            writeFileSync(config, JSON.stringify({ ...SMALL, mateDistanceMax: JSON_MATE_OFF }));
+            const options = join(dir, 'options.json');
+            writeFileSync(options, JSON.stringify({ archiveShare: 0.2, fitnessOverrides: { BORN: 40 } }));
+            const target = join(dir, 'options-report.json');
+            const base = ['--seeds', '1', '--ticks', '50', '--policy', 'map-elites-v6', '--config', config];
+            const ok = await runMain([...base, '--policy-options', options, '--out', target], 'options');
+            expect(ok.code).toBe(0);
+            expect(JSON.parse(readFileSync(target, 'utf8')).policyOptions).toEqual({
+                archiveShare: 0.2,
+                fitnessOverrides: { BORN: 40 },
+            });
+            writeFileSync(options, JSON.stringify({ fitnessOverrides: { NOPE: 1 } }));
+            await expect(main([...base, '--policy-options', options])).rejects.toThrow(/fitnessOverrides\.NOPE/);
         },
         scaleTimeout(60_000),
     );

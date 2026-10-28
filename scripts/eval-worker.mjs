@@ -23,6 +23,7 @@ const CHECKPOINT_INTERVAL = 1000;
  * @property {number} ticks ticks to run
  * @property {string} policy a key of `POLICIES`
  * @property {Record<string, any>} overrides config overrides (the `--config` object, or `{}`)
+ * @property {Record<string, any>} [policyOptions] options for the policy (`validatePolicyOptions`), default none
  * @property {number} [traceInterval] ticks between the trace's population samples, default 1000
  */
 
@@ -76,7 +77,7 @@ export function runSeed(task) {
     const config = createConfig({ ...overrides, seed });
     const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: task.ticks });
     const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy(policyName).create({ config, log, observer });
+    const policy = getPolicy(policyName).create({ config, log, observer, ...task.policyOptions });
     /** @type {Record<string, any> | undefined} */
     let world;
     let checkpoints;

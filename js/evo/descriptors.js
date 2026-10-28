@@ -69,3 +69,6 @@ export const descriptorV6 = Object.freeze({
         out[1] = deaths.bodyPlan[row];
     },
 });
+
+/** The registered descriptors by name, for a policy option that names one. */
+export const DESCRIPTORS = Object.freeze({ v1: descriptorV1, v6: descriptorV6 });
