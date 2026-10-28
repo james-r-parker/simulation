@@ -3,14 +3,14 @@
 // stays `map-elites-v1q` until the experiments choose.
 //
 // Options beyond the eval runner's `{ config, log, observer }`: `fitnessOverrides` (weights replacing `FITNESS_V6`
-// entries), `archiveShare` and `cloneShareEnd` (the immigrant mix) and `cellDraws` (the parent cell tournament, default
-// that of `map-elites-v1q`).
+// entries), `archiveShare` and `cloneShareEnd` (the immigrant mix), `cellDraws` (the parent cell tournament, default
+// that of `map-elites-v1q`) and `descriptor` (the name of a registered descriptor, default `v6`).
 //
 // With a debug log and an observer, every scored death also keeps its group values in extra columns of the observer's
 // death log, which `FitnessScored` reads when the policy offers the death. The wrapped fitness computes the parts a
 // second time, so nothing is added at the default level.
 
-import { descriptorV6 } from '../../evo/descriptors.js';
+import { DESCRIPTORS } from '../../evo/descriptors.js';
 import { createFitnessV6 } from '../../evo/fitness-v6.js';
 import { ensureRoom } from '../../evo/growable-log.js';
 import { LOG_LEVEL } from '../../sim/log.js';
@@ -69,14 +69,19 @@ function createScoring({ counters, observer, log, fitnessOverrides }) {
  * @returns {Record<string, any>} the `map-elites-v1` policy object with `name` `map-elites-v6` and `fitnessName` `v6`
  */
 export function createMapElitesV6(options) {
-    const { fitnessOverrides, ...rest } = options;
+    const { fitnessOverrides, descriptor: descriptorName = 'v6', ...rest } = options;
+    if (!Object.hasOwn(DESCRIPTORS, descriptorName)) {
+        throw new Error(
+            `createMapElitesV6: unknown descriptor "${descriptorName}"; known: ${Object.keys(DESCRIPTORS).join(', ')}`,
+        );
+    }
     return createMapElitesV1({
         cellDraws: QUALITY_CELL_DRAWS,
         ...rest,
         name: 'map-elites-v6',
         scoring: {
             fitnessName: 'v6',
-            descriptor: descriptorV6,
+            descriptor: DESCRIPTORS[/** @type {keyof typeof DESCRIPTORS} */ (descriptorName)],
             createScoring: (/** @type {Record<string, any>} */ ctx) => createScoring({ ...ctx, fitnessOverrides }),
         },
     });

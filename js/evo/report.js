@@ -44,6 +44,8 @@ function collectMetrics(perSeed) {
  * @typedef {object} BuildReportInput
  * @property {string} policy the policy name
  * @property {string} fitnessName the fitness the policy reports
+ * @property {Readonly<Record<string, any>>} [policyOptions] the options the policy ran with; stored as `policyOptions`
+ *   only when it has keys, and a report without the field ran with none
  * @property {Readonly<Record<string, any>>} config the resolved config (`createConfig(overrides)`); `seed` is dropped
  * @property {number} ticks ticks per seed
  * @property {readonly number[]} seeds the seeds, in order
@@ -68,12 +70,14 @@ export function seedlessConfig(config) {
  * @param {BuildReportInput} input the run's results
  * @returns {Record<string, any>} the report
  */
-export function buildReport({ policy, fitnessName, config, ticks, seeds, sha, perSeed, traces }) {
+export function buildReport({ policy, policyOptions, fitnessName, config, ticks, seeds, sha, perSeed, traces }) {
     const rest = seedlessConfig(config);
+    const hasOptions = policyOptions !== undefined && Object.keys(policyOptions).length > 0;
     return {
         ...(traces === undefined ? {} : { traces: [...traces] }),
         version: REPORT_VERSION,
         policy,
+        ...(hasOptions ? { policyOptions: structuredClone(policyOptions) } : {}),
         fitnessName,
         config: rest,
         configHash: configHash(rest),
@@ -141,6 +145,7 @@ export function validateReport(report) {
     need(report.version === REPORT_VERSION, 'version', `${REPORT_VERSION}`);
     need(isText(report.policy), 'policy', 'a non-empty string');
     need(isText(report.fitnessName), 'fitnessName', 'a non-empty string');
+    need(report.policyOptions === undefined || isObject(report.policyOptions), 'policyOptions', 'an object');
     need(isObject(report.config), 'config', 'an object');
     need(isText(report.configHash), 'configHash', 'a non-empty string');
     need(Number.isInteger(report.ticks) && report.ticks > 0, 'ticks', 'a positive integer');

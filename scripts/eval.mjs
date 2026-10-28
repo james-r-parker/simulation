@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildReport, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
+import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
@@ -17,7 +18,7 @@ const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
 const WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 const CPU_PRINT_MS = 10_000;
 const USAGE =
-    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--out <path>] [--workers <n>] [--trace-interval <ticks>]';
+    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--policy-options <file.json>] [--out <path>] [--workers <n>] [--trace-interval <ticks>]';
 
 /**
  * @typedef {object} EvalArgs
@@ -26,6 +27,7 @@ const USAGE =
  * @property {string} policy a key of `POLICIES`
  * @property {number} seedOffset
  * @property {string | null} config
+ * @property {string | null} policyOptions path of the policy options JSON file
  * @property {string | null} out
  * @property {number | null} workers
  * @property {number | null} traceInterval
@@ -40,6 +42,7 @@ const VALUE_FLAGS = {
     '--trace-interval': (value, flag) => ['traceInterval', intValue(flag, value, 1, USAGE)],
     '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
+    '--policy-options': (value) => ['policyOptions', String(value)],
     '--out': (value) => ['out', String(value)],
 };
 
@@ -72,6 +75,7 @@ export function parseArgs(argv) {
                 policy: LIVE_POLICY,
                 seedOffset: 0,
                 config: null,
+                policyOptions: null,
                 out: null,
                 workers: null,
                 traceInterval: null,
@@ -174,6 +178,7 @@ function failureRecord(error) {
  * @property {string} [policy] a key of `POLICIES`, default the live policy
  * @property {number} [seedOffset] default 0
  * @property {Record<string, any>} [configOverrides] default `{}`
+ * @property {Record<string, any>} [policyOptions] options for the policy (`validatePolicyOptions`), default `{}`
  * @property {string | null} [out] default `evals/results/<policy>-<sha>-<n>x<t>.json`
  * @property {number | null} [workers] default `os.availableParallelism()`, capped at the seed count
  * @property {number | null} [traceInterval] ticks between the trace's population samples, default 1000
@@ -194,21 +199,26 @@ function failureDetail(message) {
 
 /**
  * @param {EvalOptions} options the run options
- * @returns {{ policyName: string, seeds: number[], overrides: Record<string, any>, sha: string, runId: string }} the
+ * @returns {{ policyName: string, seeds: number[], overrides: Record<string, any>, policyOptions: Record<string, any>,
+ *   sha: string, runId: string }} the
  *   resolved run: the config overrides have `seed` removed, since each task sets its own
  */
 function resolveRun(options) {
     const { seeds: count = 16, ticks, seedOffset = 0, configOverrides = {} } = options;
     const policyName = options.policy ?? LIVE_POLICY;
+    const policyOptions = validatePolicyOptions(policyName, options.policyOptions);
+    const optionsTag = Object.keys(policyOptions).length > 0 ? `-p${configHash(policyOptions).slice(0, 8)}` : '';
     const overrides = Object.fromEntries(Object.entries(configOverrides).filter(([key]) => key !== 'seed'));
     const sha = options.sha ?? gitSha();
     return {
         policyName,
         seeds: pickSeeds(count, seedOffset),
         overrides,
+        policyOptions,
         sha,
-        // A non-zero offset names a different seed list, so it must not overwrite the offset-0 report or log.
-        runId: `${policyName}-${sha}-${count}x${ticks}${seedOffset > 0 ? `-o${seedOffset}` : ''}`,
+        // A non-zero offset names a different seed list, and other policy options a different run, so neither may
+        // overwrite another run's report or log.
+        runId: `${policyName}-${sha}-${count}x${ticks}${seedOffset > 0 ? `-o${seedOffset}` : ''}${optionsTag}`,
     };
 }
 
@@ -233,12 +243,13 @@ function seedLogger({ jsonl, metrics, policyName, print }) {
 
 /**
  * Builds the report from the per-seed results (no timing goes in), validates it and writes it as JSON.
- * @param {{ policyName: string, results: Record<string, any>[], config: Record<string, any>, ticks: number, seeds: number[], sha: string, out: string }} input the run
+ * @param {{ policyName: string, policyOptions: Record<string, any>, results: Record<string, any>[], config: Record<string, any>, ticks: number, seeds: number[], sha: string, out: string }} input the run
  * @returns {Record<string, any>} the report
  */
-function buildAndWrite({ policyName, results, config, ticks, seeds, sha, out }) {
+function buildAndWrite({ policyName, policyOptions, results, config, ticks, seeds, sha, out }) {
     const report = buildReport({
         policy: policyName,
+        policyOptions,
         fitnessName: results[0].fitnessName,
         config,
         ticks,
@@ -261,7 +272,7 @@ function buildAndWrite({ policyName, results, config, ticks, seeds, sha, out }) 
  */
 export async function runEval(options) {
     const { ticks, logDir = '.sim/logs' } = options;
-    const { policyName, seeds, overrides, sha, runId } = resolveRun(options);
+    const { policyName, seeds, overrides, policyOptions, sha, runId } = resolveRun(options);
     const config = createConfig(overrides);
     const out = options.out ?? join('evals', 'results', `${runId}.json`);
     const logPath = join(logDir, `eval-${runId}.jsonl`);
@@ -274,6 +285,7 @@ export async function runEval(options) {
         level: 'info',
         event: 'EvalStarted',
         policy: policyName,
+        policyOptions,
         seeds,
         ticks,
         workers,
@@ -283,10 +295,11 @@ export async function runEval(options) {
     const started = performance.now();
     try {
         const traceInterval = options.traceInterval ?? undefined;
-        const tasks = seeds.map((seed) => ({ seed, ticks, policy: policyName, overrides, traceInterval }));
+        const shared = { ticks, policy: policyName, overrides, policyOptions, traceInterval };
+        const tasks = seeds.map((seed) => ({ seed, ...shared }));
         const onResult = seedLogger({ jsonl, metrics, policyName, print });
         const results = await runPool(tasks, { workerUrl: WORKER_URL, workers, onResult });
-        const report = buildAndWrite({ policyName, results, config, ticks, seeds, sha, out });
+        const report = buildAndWrite({ policyName, policyOptions, results, config, ticks, seeds, sha, out });
         const wallMs = performance.now() - started;
         jsonl.sink({ level: 'info', event: 'EvalFinished', out, wallMs });
         print(
@@ -313,8 +326,10 @@ export async function main(argv, { logDir } = {}) {
     pickSeeds(args.seeds, args.seedOffset);
     getPolicy(args.policy);
     const configOverrides = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const policyOptions = args.policyOptions === null ? {} : JSON.parse(readFileSync(args.policyOptions, 'utf8'));
+    validatePolicyOptions(args.policy, policyOptions);
     try {
-        await runEval({ ...args, configOverrides, logDir, print: (line) => console.log(line) });
+        await runEval({ ...args, configOverrides, policyOptions, logDir, print: (line) => console.log(line) });
         return 0;
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

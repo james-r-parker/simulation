@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { canonicalOptions } from '../js/evo/policy-options.js';
 import { loadReusable, reportMatches, reportPath } from '../scripts/lib/screen-run.mjs';
 import { parseArgs } from '../scripts/screen.mjs';
 
@@ -29,6 +30,16 @@ describe('reusable reports', () => {
         ]) {
             expect(reportMatches({ ...report, ...change }, expected)).toBe(false);
         }
+    });
+
+    it('keys the resume on the policy options, with a report that has none reading as {}', () => {
+        const report = { configHash: 'h', ticks: 10, seeds: [1, 2], policy: 'p', traces: [] };
+        const withOptions = { ...expected, policyOptions: canonicalOptions({ b: 1, a: { y: 1, x: 2 } }) };
+        expect(reportMatches(report, withOptions)).toBe(false);
+        expect(reportMatches({ ...report, policyOptions: { a: { x: 2, y: 1 }, b: 1 } }, withOptions)).toBe(true);
+        expect(reportMatches({ ...report, policyOptions: { b: 2 } }, withOptions)).toBe(false);
+        expect(reportMatches({ ...report, policyOptions: { b: 1 } }, expected)).toBe(false);
+        expect(reportMatches(report, { ...expected, policyOptions: '{}' })).toBe(true);
     });
 
     it('treats a missing, corrupt or invalid file as not reusable', () => {

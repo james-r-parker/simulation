@@ -175,6 +175,17 @@ describe('main exit codes', () => {
         expect(JSON.parse(run([same, offset, '--allow-seed-diff', '--json']).out[0]).paired).toBe(false);
     });
 
+    it('compares reports whose policyOptions differ and says what differed', () => {
+        const tuned = write('tuned.json', report(BASE, { policyOptions: { fitnessOverrides: { BORN: 9 }, a: 1 } }));
+        const { code, out } = run([same, tuned]);
+        expect(code).toBe(0);
+        expect(out[0]).toMatch(/policyOptions differ: before \{\}, after \{"a":1,"fitnessOverrides":\{"BORN":9\}\}$/);
+        const json = JSON.parse(run([same, tuned, '--json']).out[0]);
+        expect(json.policyOptions).toMatchObject({ differ: true, before: '{}' });
+        expect(run([tuned, tuned]).out[0]).not.toMatch(/policyOptions differ/);
+        expect(run([same, same]).out[0]).not.toMatch(/policyOptions differ/);
+    });
+
     it('exits 2 on unknown targets, invalid reports and bad arguments', () => {
         const unknown = run([same, better, '--targets', 'eval.births_per_1k,eval.nope']);
         expect(unknown.code).toBe(2);

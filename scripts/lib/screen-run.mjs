@@ -1,10 +1,11 @@
 // Screen run: runs every pending arm's seeds through one shared worker pool and writes one report per arm.
-// An arm whose report already exists for the same config, seeds, ticks and policy is skipped (resume).
+// An arm whose report already exists for the same config, seeds, ticks, policy and policy options is skipped (resume).
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildReport, seedlessConfig, validateReport } from '../../js/evo/report.js';
 import { LIVE_POLICY } from '../../js/evo/policies/index.js';
+import { canonicalOptions } from '../../js/evo/policy-options.js';
 import { configHash, createConfig } from '../../js/sim/config.js';
 import { gitSha, pickSeeds } from '../eval.mjs';
 import { runPool } from './worker-pool.mjs';
@@ -26,18 +27,21 @@ export function reportPath(outDir, arm) {
  * @property {number} ticks ticks per seed
  * @property {number[]} seeds the seeds, in order
  * @property {string} policy the policy name
+ * @property {string} [policyOptions] the arm's policy options as `canonicalOptions` text, default `{}`
  */
 
 /**
  * @param {any} report a parsed report
  * @param {Expected} expected what the arm should have run
- * @returns {boolean} whether the report is for that run and carries traces
+ * @returns {boolean} whether the report is for that run (the policy options included; a report without any has `{}`)
+ *   and carries traces
  */
 export function reportMatches(report, expected) {
     return (
         report?.configHash === expected.configHash &&
         report.ticks === expected.ticks &&
         report.policy === expected.policy &&
+        canonicalOptions(report.policyOptions) === (expected.policyOptions ?? '{}') &&
         Array.isArray(report.traces) &&
         JSON.stringify(report.seeds) === JSON.stringify(expected.seeds)
     );
@@ -81,7 +85,13 @@ function resolveArm(arm, { plan }) {
     const policy = plan.policy === 'live' ? LIVE_POLICY : plan.policy;
     const seeds = pickSeeds(plan.seeds, plan.seedOffset);
     const config = createConfig(arm.overrides);
-    const expected = { configHash: configHash(seedlessConfig(config)), ticks: plan.ticks, seeds, policy };
+    const expected = {
+        configHash: configHash(seedlessConfig(config)),
+        ticks: plan.ticks,
+        seeds,
+        policy,
+        policyOptions: canonicalOptions(arm.policyOptions),
+    };
     return { config, expected, seeds };
 }
 
@@ -89,6 +99,7 @@ function resolveArm(arm, { plan }) {
  * @typedef {object} Pending
  * @property {ReturnType<typeof resolveArm>} resolved the arm resolved
  * @property {any[]} results the seeds' results by slot
+ * @property {Record<string, any>} policyOptions the arm's policy options
  * @property {number} left seeds still running
  */
 
@@ -117,7 +128,7 @@ function planTasks(options) {
             skipped.push(arm.name);
             continue;
         }
-        pending[arm.name] = { resolved, results: [], left: resolved.seeds.length };
+        pending[arm.name] = { resolved, results: [], policyOptions: arm.policyOptions, left: resolved.seeds.length };
         const overrides = Object.fromEntries(Object.entries(arm.overrides).filter(([key]) => key !== 'seed'));
         const { policy } = resolved.expected;
         resolved.seeds.forEach((seed, slot) => {
@@ -126,6 +137,7 @@ function planTasks(options) {
                 ticks: plan.ticks,
                 policy,
                 overrides,
+                policyOptions: arm.policyOptions,
                 traceInterval: options.traceInterval ?? undefined,
             });
             owners.push({ arm: arm.name, slot });
@@ -143,6 +155,7 @@ function writeArmReport({ name, pending, ticks, sha, outDir }) {
     const { resolved, results } = pending;
     const report = buildReport({
         policy: resolved.expected.policy,
+        policyOptions: pending.policyOptions,
         fitnessName: results[0].fitnessName,
         config: resolved.config,
         ticks,

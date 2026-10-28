@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ELITE, placeOf } from '../../../js/evo/archive.js';
-import { descriptorV6 } from '../../../js/evo/descriptors.js';
+import { descriptorV1, descriptorV6 } from '../../../js/evo/descriptors.js';
 import { FITNESS_V6 } from '../../../js/evo/fitness-v6.js';
 import { ensureRoom } from '../../../js/evo/growable-log.js';
 import { createObserver } from '../../../js/evo/observer.js';
@@ -70,6 +70,12 @@ describe('map-elites-v6 shape', () => {
     it('passes fitness weight overrides to fitnessV6 and refuses an unknown one', () => {
         expect(v6({ fitnessOverrides: { MATING: 7 } }).policy.fitness.weights.MATING).toBe(7);
         expect(() => v6({ fitnessOverrides: { NOPE: 1 } })).toThrow(/NOPE/);
+    });
+
+    it('places by a descriptor named in the options, and refuses an unregistered name', () => {
+        expect(v6({ descriptor: 'v1' }).policy.archive.descriptor).toBe(descriptorV1);
+        expect(v6({ descriptor: 'v6' }).policy.archive.descriptor).toBe(descriptorV6);
+        expect(() => v6({ descriptor: 'v7' })).toThrow(/unknown descriptor "v7"; known: v1, v6/);
     });
 
     it('takes the immigrant mix options', () => {
