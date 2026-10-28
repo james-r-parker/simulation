@@ -4,13 +4,17 @@ import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 import { DEFAULT_MIN_SEEDS, minSeedsFor } from './compare-seeds.js';
+import { MERIT_DIRECTIONS } from './metrics-merit.js';
 
 export const RESAMPLES = 10000;
 export const MIN_SEEDS = DEFAULT_MIN_SEEDS;
 export const MIN_EFFECT = 0.05;
 const BOOTSTRAP_SEED = 1;
 
-/** Metric directions by exact name; the families below cover the parameterised names. */
+/**
+ * Metric directions by exact name; the families below cover the parameterised names.
+ * @type {Record<string, 'higher' | 'lower' | 'watch'>}
+ */
 const DIRECTIONS = {
     'eval.food_energy_per_1k': 'higher',
     'eval.median_lifespan': 'higher',
@@ -79,6 +83,7 @@ const DIRECTIONS = {
     'eval.predator_presence': 'higher',
     'eval.predator_births': 'higher',
     'eval.pred_prey_lag_corr': 'watch',
+    ...MERIT_DIRECTIONS,
     'browser.frame_p95_ms': 'lower',
     'browser.main_long_tasks': 'lower',
     'browser.gc_pause_ms': 'lower',
@@ -91,9 +96,7 @@ const FITNESS_PREFIXES = ['eval.p90_fitness.', 'eval.mean_fitness.'];
  */
 export function metricDirection(metric) {
     if (Object.hasOwn(DIRECTIONS, metric)) {
-        return /** @type {'higher' | 'lower' | 'watch'} */ (
-            DIRECTIONS[/** @type {keyof typeof DIRECTIONS} */ (metric)]
-        );
+        return DIRECTIONS[metric];
     }
     if (FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix))) {
         return 'higher';

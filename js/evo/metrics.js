@@ -10,6 +10,7 @@ import { environmentMetrics } from './metrics-environment.js';
 import { fitnessMetrics } from './metrics-fitness.js';
 import { behaviourCoverage } from './metrics-grids.js';
 import { lineageMetrics } from './metrics-lineage.js';
+import { meritMetrics } from './metrics-merit.js';
 import { intentMetrics } from './metrics-intent.js';
 import { selectionMetrics } from './metrics-selection.js';
 import { watchMetrics } from './metrics-watch.js';
@@ -96,13 +97,13 @@ function matingShare(observer) {
 /**
  * Computes every metric from the observer after the run. `bench.*` and `browser.*` are not here.
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
- * @param {Record<string, any>} _world the world at the end (the observer already holds what the metrics need)
+ * @param {Record<string, any>} world the world at the end (the observer holds most of what the metrics need; the split-gate tally lives on the world)
  * @param {{fitness?: (observer: any, slot: number, config: any) => number, fitnessName?: string, archive?: any}} [options]
  *   the policy's fitness (without it the fitness metrics are `null` with reason `no fitness`) and its archive
  *   (without it `eval.qd_score` and `eval.coverage` are `null` with reason `no archive`)
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} results keyed by metric name, in sorted order
  */
-export function computeMetrics(observer, _world, options = {}) {
+export function computeMetrics(observer, world, options = {}) {
     const grids = behaviourCoverage(observer);
     const { archive } = options;
     const { births, deathsByCause, agentTicks } = observer;
@@ -133,6 +134,7 @@ export function computeMetrics(observer, _world, options = {}) {
         ...lineageMetrics(observer),
         ...selectionMetrics(observer),
         ...watchMetrics(observer),
+        ...meritMetrics(observer, world),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),
