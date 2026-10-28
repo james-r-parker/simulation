@@ -268,6 +268,12 @@ micro-world `evals/micro-world.json` (2400 x 1600, 40 agents all running the con
 | `grouper`           | Runs `fleer`, and with a threat on its rays steers towards the nearest lineage mate within `callRadius` instead of straight away                |
 | `cruiser`           | Holds `SEEK_THRUST` straight ahead and never turns: eats only what lies in its path                                                             |
 
+[fitness-and-selection.md](fitness-and-selection.md) adds `fitnessV6` to the suite with no expected failures, and
+seven controllers in `js/evo/scripted-v6.js` that run against `fitnessV6` only: `baiter`, `sprinter`, `gateThenIdle`,
+`splitSpammer`, `mateHopper`, `chaseDrifter` and `patrol`. The `fitnessV6` arms run the micro-world with 8 food
+patches (`patrol` needs them), and its pair bounds on `evals/predator-world.json` (4 seeds, 3000 ticks) hold in the
+same file. Their behaviour and what each probes are in that doc's Phase 3 section.
+
 Each agent is scored at death or, if alive, at the last tick. For each fitness function under test, every exploiter's
 mean fitness, as a share of the `foodSeeker`'s, is at most the larger of 0.5 and its intake share (food energy plus
 bite energy) of the `foodSeeker`'s plus 0.1: fitness that comes with feeding is not an exploit, fitness without intake is. (The bound was a

@@ -1,8 +1,6 @@
 # Predator and prey
 
-**Status:** In progress - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes); Phase 3 (fitnessV2 on the D1 to D8 intent counters, niches and map-elites-v2) is under way: T19 (the six new intent counters) is built.
-**Validated:** 830e60a (2026-10-17)
-**Priority:** 4 - Phase 3 is carried by fitness-and-selection.md, which replaces `fitnessV2`; tuning nights and the trainer build on that doc
+**Status:** Implemented - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes). Phase 3 is closed as superseded by [fitness-and-selection.md](fitness-and-selection.md), which built `fitnessV6`, `descriptorV6`, `map-elites-v6` and the v6 exploit controllers instead of `fitnessV2` and `map-elites-v2`; only T19 (the six new intent counters) was built here.
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md) (Phase 1, for Phase 3), [fitness-and-selection.md](fitness-and-selection.md) (replaces Phase 3)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core
@@ -13,8 +11,8 @@ supplies senses, actions and costs, and evolution finds the use.
 - Only specialisations with `canHunt` bite. Catching is retuned: a hunter lands bites more easily and sprints faster,
   and prey turn tighter.
 - Phase 1 builds the rules in `js/sim/`. Phase 2 measures them with five metrics and four scripted controllers.
-  Phase 3 adds selection pressure: capped fitness terms, a hunter-versus-evader archive descriptor and the
-  `map-elites-v2` policy.
+  Phase 3 was to add selection pressure; [fitness-and-selection.md](fitness-and-selection.md) built it instead
+  (`fitnessV6`, `descriptorV6`, `map-elites-v6`).
 - Drawing clouds, calls and scent belongs to [worker-and-renderer.md](worker-and-renderer.md).
 
 The brain layout changes, so every saved genome, archive and champion from the earlier layout is rejected by the
@@ -37,9 +35,9 @@ Phase 3 changes it again (layout v2, below) with the same effect.
 | `js/evo/observer-combat.js`                  | `createCombatCounters`, `observeCombat`                                                                                   | Bite episodes, hunter agent-ticks, call and smoke follow-ups                                                                                  |
 | `js/evo/metrics-combat.js`                   | `combatMetrics`                                                                                                           | The five metrics below                                                                                                                        |
 | `js/evo/scripted-combat.js`                  | `COMBAT_CONTROLLERS`                                                                                                      | `hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`, and in Phase 3 `baiter`, `sprinter` and `gateThenIdle`, merged into `SCRIPTED_CONTROLLERS` |
-| `js/evo/descriptors.js`                      | `descriptorV1`, `descriptorV2`                                                                                            | Archive cell coordinates from the life and intent counters                                                                                    |
-| `js/evo/fitness.js`                          | `fitnessV2`, `FITNESS_V2`, `createFitnessV2`                                                                              | Deliberate intake, capped credits and waste charges from the intent counters (changed)                                                        |
-| `js/evo/policies/map-elites-v2.js`           | `createMapElitesV2`                                                                                                       | `map-elites-v1q` with `fitnessV2` and `descriptorV2`                                                                                          |
+| `js/evo/descriptors.js`                      | `descriptorV1`, `descriptorV6` (built by fitness-and-selection.md)                                                        | Archive cell coordinates from the life and intent counters                                                                                    |
+| `js/evo/fitness-v6.js`                       | `fitnessV6`, `FITNESS_V6`, `createFitnessV6` (replaces `fitnessV2`)                                                       | Deliberate intake, capped credits and waste charges from the intent counters (changed)                                                        |
+| `js/evo/policies/map-elites-v6.js`           | `createMapElitesV6` (replaces `map-elites-v2`)                                                                            | `map-elites-v1q` with `fitnessV2` and `descriptorV2`                                                                                          |
 
 ## Brain layout
 
@@ -297,15 +295,17 @@ Added to `SCRIPTED_CONTROLLERS` from `scripted-combat.js`; they write all `OUTPU
 | `fleer`        | Turns away from the nearest "can bite me" ray hit and from the higher of `attackLeft` and `attackRight`, sprints while a "can bite me" agent is in sight, calls an alarm when it first sees one, and releases smoke when its bite-timer input shows a bite |
 | `alarmSpammer` | Seeks food and sets the `ALARM` output every tick                                                                                                                                                                                                          |
 | `smokeSpammer` | Seeks food and sets the `SMOKE` output every tick                                                                                                                                                                                                          |
-| `baiter`       | Phase 3: seeks a bigger agent until bitten, then runs `fleer` for 300 ticks, then seeks again                                                                                                                                                              |
-| `sprinter`     | Phase 3: seeks food with `SPRINT` set every tick                                                                                                                                                                                                           |
-| `gateThenIdle` | Phase 3: runs `foodSeeker` until its deliberate intake reaches 500, then holds still                                                                                                                                                                       |
+| `baiter`       | Planned here, built in `scripted-v6.js` (fitness-and-selection.md T34): seeks a bigger agent until bitten, then runs `fleer` for 300 ticks, then seeks again                                                                                               |
+| `sprinter`     | Planned here, built in `scripted-v6.js` (T34): seeks food with `SPRINT` set every tick                                                                                                                                                                     |
+| `gateThenIdle` | Planned here, built in `scripted-v6.js` (T34): runs `foodSeeker` until its deliberate intake reaches 500, then holds still                                                                                                                                 |
 
 `evals/predator-world.json` is `evals/micro-world.json` plus `initialEnergy` 3000 (the micro-world's 800 lets foragers starve
 while sprinting before any survives the 300 ticks that count as an escape), with a test policy whose `initSpec` gives the predator
 specialisation to even slots and the forager to odd slots; `hunter` runs on the predators and `fleer` on the foragers.
 
 ## Fitness v2
+
+> Superseded: `fitnessV2` was never merged (draft PR 120 closed). Its terms, constants and tests are carried into `fitnessV6`; see [fitness-and-selection.md](fitness-and-selection.md) (Fitness v6). The text below is the original plan.
 
 `fitnessV2(observer, counters, slot, config)` (`fitnessName` `v2`) pays for deliberate behaviour from the intent
 counters of [world-balance.md](world-balance.md) Phase 1 (`observer.intent`), discounts chance intake and charges
@@ -372,6 +372,8 @@ speedShare]` and hunters `[pursuitShare, speedShare]`:
 `decodeArchive` throws naming `descriptor` when it differs from the running policy's.
 
 ## Live policy
+
+> Superseded: `map-elites-v2` was not built. `map-elites-v6` replaces it ([fitness-and-selection.md](fitness-and-selection.md)); `LIVE_POLICY` stays `map-elites-v1q` until that doc's Phase 4 decides. The text below is the original plan.
 
 `createMapElitesV2({ config, log, archive? })` is the live policy `map-elites-v1q` (the four-draw cell tournament,
 `QUALITY_CELL_DRAWS`) with `fitnessV2` and `descriptorV2`; its `fitnessName` is `v2`. `LIVE_POLICY` becomes
@@ -447,9 +449,9 @@ cases. Done when both policies' reports carry the five metrics, `hunter` against
 above 0 and `eval.escape_rate` above 0 on `evals/predator-world.json`, and the spammers stay within the anti-exploit
 bound under `fitnessV1`.
 
-### Phase 3 - Fitness terms, niches and the v2 policy
+### Phase 3 - Fitness terms, niches and the v2 policy (superseded)
 
-> Note: [fitness-and-selection.md](fitness-and-selection.md) replaces this phase. Its T20 (`fitnessV2`, draft PR 120) is carried into `fitnessV6`, T21 and T23 move there, and T22, T24, T25 and T26 are superseded. T19 stays built.
+> Note: [fitness-and-selection.md](fitness-and-selection.md) replaced this phase and its Phase 3 is built (as-built in that doc's Decisions table). T20 (`fitnessV2`, draft PR 120, closed unmerged) became `fitnessV6` (T30 to T33), T21 became `descriptors.js` (T35), T23 became the v6 controllers and bounds (T34, T37, T38), and T22, T24, T25 and T26 were superseded by `map-elites-v6` (T36) and Phase 4 there. T19 is built. The task table below is the original plan, kept for the record; nothing in it is built.
 
 **Targets:** eval.deliberate_food_share, eval.pursuit_kill_share, eval.evasion_skill, eval.idle_signals_per_1k, eval.undefended_bite_share, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.coverage
 
@@ -514,7 +516,7 @@ it is reported, not compared. `fitnessV2` passes the anti-exploit suite with no 
 | T17 | Run `baseline-v5` and `map-elites-v1q` for the new metrics and record the figures in [sim-notes.md](sim-notes.md)       | [mechanical] | T14                     |
 | T18 | Conformance review of Phase 2                                                                                           | [judgement]  | T13, T14, T15, T16, T17 |
 
-### Phase 3 - Fitness terms, niches and the v2 policy
+### Phase 3 - Fitness terms, niches and the v2 policy (superseded)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Nature       | Depends on                        |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------- |
@@ -530,14 +532,14 @@ it is reported, not compared. `fitnessV2` passes the anti-exploit suite with no 
 ## Verification
 
 1. `scripts/check.sh` is green, including `bench-check`, `eval-smoke` and the golden test, and
-   `test/evo/anti-exploit.slow.test.js` passes with no expected failures for `fitnessV1` and `fitnessV2`.
+   `test/evo/anti-exploit.slow.test.js` passes with no expected failures for `fitnessV1` and `fitnessV6` (the `fitnessV2` entry was never added).
 2. `npm run browser:hash` prints both re-pinned golden hashes from a Chromium worker.
 3. `npx vitest run test/sim/predator-prey.test.js` passes: the hunter catches the stationary prey, the sprinting
    prey escapes and smoke cuts the hunter's rays.
 4. `npm run bench` shows `bench.step_ms@500` within 15% of `bench/baseline.json`, and `scripts/alloc-check.mjs`
    reports no per-tick allocation.
-5. `npm run replay -- --seed 1 --ticks 20000 --level debug` with `--policy map-elites-v2` logs `AlarmCalled`,
+5. `npm run replay -- --seed 1 --ticks 20000 --level debug` with `--policy map-elites-v6` logs `AlarmCalled`,
    `PackCalled` or `SmokeReleased` events.
-6. `npm run eval:compare -- <map-elites-v1q.json> <map-elites-v2.json>` meets the Phase 3 done criteria.
+6. Phase 3's comparison is `E41` in [fitness-and-selection.md](fitness-and-selection.md) Phase 4 (`map-elites-v6` against `map-elites-v1q`).
 7. Loading an archive file written before the layout change stops with a layout mismatch naming `inputCount`.
 8. Manual browser walk: none - drawing clouds, calls and scent is verified in worker-and-renderer.md.

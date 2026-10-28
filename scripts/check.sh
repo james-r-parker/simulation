@@ -294,6 +294,11 @@ eval_smoke() {
   node scripts/eval.mjs --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json \
     --out "$out/report.json"
   status=$?
+  if [ "$status" -eq 0 ]; then
+    node scripts/eval.mjs --seeds 2 --ticks 10000 --policy map-elites-v6 --config evals/smoke-config.json \
+      --out "$out/report-v6.json"
+    status=$?
+  fi
   rm -rf "$out"
   return "$status"
 }

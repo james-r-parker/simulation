@@ -37,6 +37,7 @@ Write the prediction first. A prediction written after the result is not a predi
   per arm; `npm run eval:power -- <report>` decides which metrics are watch-only, so run it on the report and do not
   claim a verdict on a metric it lists as watch-only.
 - Every finalist also runs `npm run ladder`, so the skill ladder shows the change did not break deliberate behaviour.
+- Screens (`npm run screen`) use 4 seeds and are not verdicts; a finalist runs the 16-seed arms above.
 - Never fewer than **16 seeds** per arm (the `eval` default; `eval:compare` refuses fewer); the same seed list on both arms (`--seeds` takes a count from the fixed
   benchmark seed list, so two runs with the same count share seeds).
 - Run both arms on the same machine, from builds that do not change during the run:
@@ -47,6 +48,18 @@ Write the prediction first. A prediction written after the result is not a predi
     npm run eval -- --seeds 16 --ticks 200000 --policy <afterPolicy> --out <scratch>/after.json
     ```
 
+- A policy arm other than `live` runs with `--policy <name>`. `map-elites-v6` is the `fitnessV6` candidate of
+  [fitness-and-selection.md](fitness-and-selection.md); `LIVE_POLICY` stays `map-elites-v1q` until that doc's Phase 4
+  decides. Compare it with `map-elites-v1q` on the same seeds.
+- To vary the policy rather than the world, pass `policyOptions`: `npm run eval -- --policy map-elites-v6
+--policy-options <file.json>`, or a `policyOptions` object on the `base` and on each arm of a screen grid
+  (`npm run screen`; the arm's is laid over the base's, with `fitnessOverrides` merged weight by weight). The keys are
+  `fitnessOverrides` (any `FITNESS_V6` weight), `descriptor` (`v1` or `v6`), `archiveShare` and `cloneShareEnd`; the
+  last two also work on `map-elites-v1` and `v1q`. A bad key or value stops the run before any worker starts
+  (`validatePolicyOptions`). The options are part of an arm's resume key and are stored in the report; an eval with
+  options gets `-p<hash>` in its default output name. `eval:compare` accepts reports whose options differ and prints
+  `policyOptions differ`, so read that line before calling a difference the treatment. `npm run replay` does not take
+  policy options yet.
 - `bench.*` metrics: `npm run bench` on an otherwise idle machine; compare with `bench/baseline.json`.
 - Do not run long evals while the user is using the machine for something else - ask first.
 
