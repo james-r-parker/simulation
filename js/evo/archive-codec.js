@@ -3,12 +3,13 @@
 import { CELLS, CHALLENGER, ELITE, createArchive, placeOf } from './archive.js';
 import { decodeWeights, encodeWeights } from './base64.js';
 import { GENOME_SPECS, rejectGenome } from './genome.js';
+import { descriptorV1 } from './descriptors.js';
 import { WELFORD_STRIDE } from './welford.js';
 import { brainLayout } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
 
 /** The archive format version. */
-export const ARCHIVE_VERSION = 1;
+export const ARCHIVE_VERSION = 2;
 
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
@@ -39,7 +40,7 @@ function encodePlace(archive, place) {
 /**
  * @param {import('./archive.js').Archive} archive the archive
  * @param {Readonly<Record<string, any>>} config the config the archive was built under
- * @returns {Record<string, any>} JSON-able `{ version, layout, rulesHash, cursors, cells }`; only occupied cells are
+ * @returns {Record<string, any>} JSON-able `{ version, descriptor, layout, rulesHash, cursors, cells }`; only occupied cells are
  *   listed, in specialisation then cell order, each with its `elite` and `challenger` (or null)
  */
 export function encodeArchive(archive, config) {
@@ -60,6 +61,7 @@ export function encodeArchive(archive, config) {
     }
     return {
         version: ARCHIVE_VERSION,
+        descriptor: archive.descriptor.name,
         layout: layoutStamp(archive.layout),
         rulesHash: rulesHash(config),
         cursors: Array.from(archive.cursors),
@@ -85,13 +87,17 @@ function decodePlace(archive, place, entry) {
 /**
  * @param {Record<string, any>} json the object `encodeArchive` returns, after a JSON round trip
  * @param {Readonly<Record<string, any>>} config the running config
- * @param {import('../sim/log.js').SimLog} [log] receives `GenomeRejected`
+ * @param {import('../sim/log.js').SimLog | undefined} log receives `GenomeRejected`
+ * @param {import('./descriptors.js').Descriptor} descriptor the running policy's descriptor
  * @returns {void}
  * @throws {Error} naming the mismatched field
  */
-function assertFits(json, config, log) {
+function assertFits(json, config, log, descriptor) {
     if (json.version !== ARCHIVE_VERSION) {
         rejectGenome(log, { field: 'archive.version', expected: ARCHIVE_VERSION, actual: json.version });
+    }
+    if (json.descriptor !== descriptor.name) {
+        rejectGenome(log, { field: 'archive.descriptor', expected: descriptor.name, actual: json.descriptor });
     }
     const want = layoutStamp(brainLayout(config));
     for (const [field, value] of Object.entries(want)) {
@@ -108,13 +114,14 @@ function assertFits(json, config, log) {
  * @param {Record<string, any>} json the object `encodeArchive` returns, after a JSON round trip
  * @param {Readonly<Record<string, any>>} config the running config
  * @param {import('../sim/log.js').SimLog} [log] receives `GenomeRejected` before a throw
+ * @param {import('./descriptors.js').Descriptor} [descriptor] the running policy's descriptor (default `descriptorV1`)
  * @returns {import('./archive.js').Archive} an archive that behaves identically to the encoded one
- * @throws {Error} when the layout or `rulesHash` does not match the config (the message names the field), or a
- *   cell is malformed
+ * @throws {Error} when the version, descriptor, layout or `rulesHash` does not match the running one (the message
+ *   names the field), or a cell is malformed
  */
-export function decodeArchive(json, config, log) {
-    assertFits(json, config, log);
-    const archive = createArchive(brainLayout(config));
+export function decodeArchive(json, config, log, descriptor = descriptorV1) {
+    assertFits(json, config, log, descriptor);
+    const archive = createArchive(brainLayout(config), { descriptor });
     for (const entry of json.cells) {
         const spec = GENOME_SPECS.indexOf(entry.specialisation);
         if (spec < 0 || !Number.isInteger(entry.cell) || entry.cell < 0 || entry.cell >= CELLS) {

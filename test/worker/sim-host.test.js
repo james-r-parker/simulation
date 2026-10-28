@@ -329,6 +329,6 @@ describe('exportArchive and flush', () => {
         const h = started({ createPolicy: (/** @type {any} */ options) => createMapElitesV1(options) });
         h.send({ type: 'exportArchive' });
         expect(h.of('archive')).toHaveLength(1);
-        expect(JSON.parse(h.of('archive')[0].json)).toMatchObject({ version: 1 });
+        expect(JSON.parse(h.of('archive')[0].json)).toMatchObject({ version: 2, descriptor: 'v1' });
     });
 });

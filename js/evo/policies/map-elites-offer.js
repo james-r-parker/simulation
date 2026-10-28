@@ -4,7 +4,6 @@
 // record, so a slot refilled in the same tick does not matter.
 
 import { cellOf, offer } from '../../evo/archive.js';
-import { crowdingMean } from '../../evo/life-counters.js';
 import { EVENT_TYPE } from '../../sim/events.js';
 
 /**
@@ -36,11 +35,14 @@ function createPending(slots, wc) {
 }
 
 /**
- * @param {Record<string, any>} options `{ pending, observer, counters }`
+ * @param {Record<string, any>} options `{ pending, observer, counters, descriptor }`
  * @returns {(d: Float64Array, o: number, row: number) => import("../../evo/archive.js").Offer} builds the offer for a mature death
- *   from the pending row, the descriptors and the score of the death-log row; it fills and returns one reused object
+ *   from the pending row, the archive's descriptor and the score of the death-log row; it fills and returns one
+ *   reused object
  */
-function createOfferBuilder({ pending, observer, counters }) {
+function createOfferBuilder({ pending, observer, counters, descriptor }) {
+    const point = new Float64Array(2);
+    const source = { deaths: observer?.deaths, row: 0, counters, slot: 0 };
     const item = {
         spec: 0,
         cell: 0,
@@ -57,14 +59,16 @@ function createOfferBuilder({ pending, observer, counters }) {
         if (pending.id[slot] !== d[o + 3]) {
             throw new Error(`map-elites-v1: no pending row for genome ${d[o + 3]} in slot ${slot}`);
         }
-        const { samples, speedSum, fitness } = observer.deaths;
-        const speed = samples[row] === 0 ? 0 : Math.min(1, speedSum[row] / samples[row]);
+        source.deaths = observer.deaths;
+        source.row = row;
+        source.slot = slot;
+        descriptor.point(source, point);
         item.spec = d[o + 6];
-        item.cell = cellOf(speed, crowdingMean(counters, slot));
+        item.cell = cellOf(point[0], point[1]);
         item.row = pending.views[slot];
         item.sigma = pending.sigma[slot];
         item.id = d[o + 3];
-        item.fitness = fitness[row];
+        item.fitness = observer.deaths.fitness[row];
         item.isClone = pending.isClone[slot] === 1;
         item.archiveRef = pending.archiveRef[slot];
         item.refId = pending.refId[slot];
@@ -81,7 +85,7 @@ function createOfferBuilder({ pending, observer, counters }) {
 export function createOffers({ config, archive, observer, counters, clones, sigma, log }) {
     const pending = createPending(config.maxAgents, archive.layout.weightCount);
     const from = { ...clones, sigma };
-    const offerOf = createOfferBuilder({ pending, observer, counters });
+    const offerOf = createOfferBuilder({ pending, observer, counters, descriptor: archive.descriptor });
     let deathsSeen = 0;
 
     function onDeath(/** @type {any} */ world, /** @type {number} */ slot) {
