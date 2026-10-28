@@ -22,7 +22,7 @@ export function createFailedBundleTaker(getFailed) {
 /**
  * Downloads the debug bundle: the failed run's the first time after a restart, else the current run's.
  * @param {{getReady: () => Record<string, any> | null, getClient: () => Record<string, any> | null,
- *   overrides: Record<string, number>, download: (file: {name: string, text: string}) => void,
+ *   overrides: Record<string, number | boolean>, download: (file: {name: string, text: string}) => void,
  *   toast: (text: string) => void, takeFailed: () => Record<string, any> | null}} deps the run and the outputs
  * @returns {void}
  */

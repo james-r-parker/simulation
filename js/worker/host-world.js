@@ -50,13 +50,14 @@ export const BASE_TICKS_PER_SECOND = 60;
 /**
  * Builds a run and feeds the observer and the policy the initial population, as the eval runner does.
  * @param {{seed: number, overrides: Record<string, any>, createPolicy: (options: Record<string, any>) => Record<string, any>,
- *   log: import('../sim/log.js').SimLog}} options the seed, the config overrides, the policy factory and the log
+ *   log: import('../sim/log.js').SimLog, policyName?: string}} options the seed, the config overrides, the policy
+ *   factory, the log and the registered policy asked for (the factory's default when absent)
  * @returns {Run} the run, at tick 0
  */
-export function buildRun({ seed, overrides, createPolicy, log }) {
+export function buildRun({ seed, overrides, createPolicy, log, policyName }) {
     const config = createConfig({ ...overrides, seed });
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
-    const policy = createPolicy({ config, log, observer });
+    const policy = createPolicy({ config, log, observer, policyName });
     const world = createWorld(config, policy.brain);
     feedPolicy({ policy, observer }, world);
     const generations = createGenerations(config);

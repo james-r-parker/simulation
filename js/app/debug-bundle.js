@@ -6,7 +6,7 @@ export const BUNDLE_CONFIG_FILE = 'replay-config.json';
 /**
  * @typedef {object} BundleInput
  * @property {Record<string, any>} ready the newest `ready` message (seed, policy, hashes)
- * @property {Record<string, number>} overrides the config overrides the world was started with
+ * @property {Record<string, number | boolean>} overrides the config overrides the world was started with
  * @property {number} tick the tick to replay to
  * @property {string | null} [archive] the archive JSON the worker started from; null until Phase 5 stores one
  */
@@ -14,7 +14,7 @@ export const BUNDLE_CONFIG_FILE = 'replay-config.json';
 /**
  * @param {BundleInput} input what the run was
  * @returns {{app: string, seed: number, tick: number, policy: string, configHash: string, rulesHash: string,
- *   config: Record<string, number>, archive: string | null, configFile: string, replay: string}} the bundle; `replay`
+ *   config: Record<string, number | boolean>, archive: string | null, configFile: string, replay: string}} the bundle; `replay`
  *   is the command that reproduces the run once `config` is saved as `configFile`
  * @throws {Error} when there is no `ready` message, since there is no world to describe
  */

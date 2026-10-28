@@ -73,6 +73,8 @@ const isStats = (value) => isObject(value) && isNumber(value.tick) && isNumber(v
 const SEED = ['seed', isUint, 'an unsigned integer'];
 /** @type {Field} */
 const CONFIG = ['config', isObject, 'an object'];
+/** @type {Field} the registered policy to run; optional, absent means the live policy (the worker rejects an unknown name) */
+const POLICY = ['policy', (value) => value === undefined || isString(value), 'a string when present'];
 /** @type {Field} */
 const EPOCH = ['epoch', isUint, 'an unsigned integer'];
 /** @type {Field} */
@@ -87,8 +89,8 @@ const CONFIG_HASH = ['configHash', isString, 'a string'];
  * @type {Readonly<Record<string, {direction: string, fields: readonly Field[]}>>}
  */
 const SHAPES = Object.freeze({
-    init: { direction: DIRECTION.TO_WORKER, fields: [SEED, CONFIG] },
-    reset: { direction: DIRECTION.TO_WORKER, fields: [SEED, CONFIG] },
+    init: { direction: DIRECTION.TO_WORKER, fields: [SEED, CONFIG, POLICY] },
+    reset: { direction: DIRECTION.TO_WORKER, fields: [SEED, CONFIG, POLICY] },
     setSpeed: {
         direction: DIRECTION.TO_WORKER,
         fields: [['ticksPerSecond', isSpeed, `one of ${TICKS_PER_SECOND_CHOICES.join(', ')}`]],

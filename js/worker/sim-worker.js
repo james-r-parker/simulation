@@ -29,7 +29,7 @@ const host = createSimHost({
             setTimeout(run, delayMs);
         }
     },
-    createPolicy: (options) => getPolicy(LIVE_POLICY).create(options),
+    createPolicy: (options) => getPolicy(options.policyName ?? LIVE_POLICY).create(options),
 });
 
 scope.onmessage = (event) => host.receive(event.data);

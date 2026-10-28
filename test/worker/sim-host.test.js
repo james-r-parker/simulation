@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { createHarness, noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 
@@ -52,6 +53,40 @@ describe('init', () => {
         const g = started();
         g.send({ type: 'init', seed: 1, config: {} });
         expect(g.of('error')[0].message).toMatch(/already initialised/);
+    });
+});
+
+describe('init with a policy name', () => {
+    /** The factory `sim-worker.js` passes: the registered policy named in the message, else the live one. */
+    const createPolicy = (/** @type {Record<string, any>} */ options) =>
+        getPolicy(options.policyName ?? LIVE_POLICY).create(options);
+
+    /**
+     * @param {string} [policy] the policy asked for in the message
+     * @returns {import('./helpers/host-harness.js').Harness} a harness over the registry
+     */
+    function startedWith(policy) {
+        const h = createHarness({ createPolicy });
+        h.send({ type: 'init', seed: 5, config: SMALL_CONFIG, ...(policy === undefined ? {} : { policy }) });
+        return h;
+    }
+
+    it('runs the live policy when the message names none', () => {
+        expect(startedWith().of('ready')[0].policy).toBe(LIVE_POLICY);
+    });
+
+    it('runs the registered policy the message names and steps its world', () => {
+        const h = startedWith('map-elites-v6');
+        expect(h.of('ready')[0].policy).toBe('map-elites-v6');
+        runTo(h, 30);
+        expect(h.of('error')).toHaveLength(0);
+        expect(h.run().policy.fitnessName).toBe('v6');
+    });
+
+    it('fails loudly on an unknown policy, listing the known ones', () => {
+        const h = startedWith('no-such-policy');
+        expect(h.of('ready')).toHaveLength(0);
+        expect(h.of('error')[0].message).toMatch(/Unknown policy "no-such-policy"; known: .*map-elites-v6/);
     });
 });
 
