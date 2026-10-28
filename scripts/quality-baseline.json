@@ -2,7 +2,7 @@
   "coverage": {
     "scripts": {
       "lines": 94.6,
-      "branches": 87.62,
+      "branches": 87.67,
       "functions": 97.81,
       "statements": 94.82
     },
