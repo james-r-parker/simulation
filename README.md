@@ -19,9 +19,10 @@ plans live in [docs/designs/](docs/designs/README.md) and every claim below name
 3. [The brain](#the-brain)
 4. [The world](#the-world)
 5. [Evolution](#evolution)
-6. [Determinism, evals and quality](#determinism-evals-and-quality)
-7. [Where we are going](#where-we-are-going)
-8. [Developing](#developing)
+6. [How agents improve, and how we measure it](#how-agents-improve-and-how-we-measure-it)
+7. [Determinism, evals and quality](#determinism-evals-and-quality)
+8. [Where we are going](#where-we-are-going)
+9. [Developing](#developing)
 
 ## What we have now
 
@@ -310,12 +311,132 @@ the energy a child is born with (`meritBirthBoost`) and gates splitting on delib
 
 Details, constants and decisions: [fitness-and-selection.md](docs/designs/fitness-and-selection.md).
 
+## How agents improve, and how we measure it
+
+There is no gradient training and no reward fed to a network. A blob's weights never change because of a score. Brains
+improve only because the ones that live well are copied, mixed and mutated into the next ones. The score decides **which
+genomes get copied**; the measurements tell us whether the whole loop is making worlds more skilful and more watchable,
+or has stalled ("behaviour stops improving").
+
+### The loop inside one run
+
+```
+   +--> seed new blobs: mutate or clone an archive elite, or random
+   |                              |
+   |                              v
+   |              blob lives: senses -> brain -> acts (eat, bite, flee, mate, split)
+   |                              |      the observer counts what it did
+   |                              v
+   |              blob dies: a fitness function scores its life
+   |                              |
+   |                              v
+   +--- MAP-ELITES ARCHIVE <--- offered to the cell its descriptor picks; the best genome per cell stays
+        (10 x 10 cells per type)
+
+   In the world, at the same time: mating (crossover) and splitting (a mutated copy) pass genes on
+   without the archive. In-world merit (built, off) tilts who mates, how much energy a child gets and who may split.
+```
+
+| Step                  | What happens                                                                                                                                                                                                                          | Code                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Watch a life          | The observer keeps per-blob counters: food and bite energy, children, and for `fitnessV6` whether each meal or bite was deliberate, plus chases, pack kills and patches visited                                                      | `js/evo/observer.js` and `observer-*.js`, `life-counters.js`        |
+| Score at death        | The live policy `map-elites-v1q` (`LIVE_POLICY`) scores with `fitnessV1`. The candidate `map-elites-v6` scores with `fitnessV6` (skill, born, lineage, watch, waste, diversity; see [the candidate](#the-candidate-fitnessv6-and-in-world-merit-built-off)) | `js/evo/policies/index.js`, `fitness.js`, `fitness-v6.js`           |
+| Keep the best         | The blob is offered to the cell its descriptor picks (`descriptorV1`: speed by crowding; `descriptorV6`: deliberate share by body plan). A cell keeps an elite and a challenger                                                      | `js/evo/archive.js`, `descriptors.js`, `policies/map-elites-offer.js` |
+| Seed from the archive | Once 10 cells are occupied, a new lineage (initial agent, floor spawn, immigrant) is a mutated archive parent below `archiveShare` (0.5), an unmutated clone up to `cloneShareEnd` (0.8), otherwise random. Both are policy options a screen can vary | `js/evo/policies/map-elites-seed.js`, `policy-options.js`           |
+| Select in the world   | Blobs that eat, avoid being eaten and mature pass genes on by mating (crossover of whole neurons) and splitting, whatever the policy. In-world merit (`meritEnabled`, off) biases mate choice, birth energy and the split gate          | `js/evo/crossover.js`, `js/sim/reproduction.js`, `js/sim/merit*.js` |
+
+Only the genome is inherited. The hidden state and the Hebbian `fastOut` weights adapt **within a life** and are zeroed
+when a slot is reused (`zeroSlot` in `js/sim/world.js`), so a child gets its parent's genome and never what the parent learned.
+
+### Watching a run live
+
+| What                           | Where                                                                                                                                                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Top bar                        | Year, season, generation, speed, count per type, `born %`, predators alive, calls per 1000 ticks, the largest type ([The top bar](#the-top-bar))                                                                                                        |
+| Charts drawer (`C`)            | Five uPlot charts (`chartDefs` in `js/app/ui/charts.js`): family river, population by type, births against deaths, catch against escape, archive coverage                                                                                              |
+| Inspector (`I`)                | The selected blob's inputs in groups, a radar of its rays, the hidden layer as a grid, its 11 outputs and counters such as kills, children and `fitnessSoFar` (`js/app/ui/inspector-data.js`)                                                             |
+| Logs and replays               | `npm run replay -- --seed <n> --ticks <n> --level debug` replays a world and writes `.sim/logs/<runId>.jsonl`; `--follow <genomeId>` traces one genome; `--check-invariants` audits the world. `E` and `B` in the app export the archive and a debug bundle that replays the run |
+| Events to look for             | `FitnessScored` (debug): a death's score and, for `fitnessV6`, its parts, written when the policy offers the death to the archive. `MeritSummary` (debug): merit mean and p90, blobs ready to split, gated splits (`js/sim/log.js`)                      |
+| Telemetry dashboard (optional) | `bash -lic 'npm run aspire:dashboard'`, then run with `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`; UI at http://127.0.0.1:18888. Nothing is sent unless that variable is set (`scripts/lib/otel.mjs`)                                           |
+
+### Measuring offline
+
+One run is an anecdote and evolution is noisy, so every claim is measured on many fixed seeds and compared with a
+bootstrap. All of this runs headless on the sim core.
+
+| Tool               | Command                                                      | What it answers                                                                                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Eval               | `npm run eval -- --seeds 16 --ticks 200000 --policy <name>`  | A scorecard of metrics (`js/evo/metrics*.js`) over seeds from `evals/seeds.json`, on a worker pool; reports go to `evals/results/`                                                                                                                             |
+| Compare            | `npm run eval:compare -- before.json after.json`            | Per metric, a BCa 95% interval on per-seed differences and a verdict: `better`, `worse` or `no-difference`. It needs the interval to exclude 0 and a change of at least 5% of the before mean (`--min-effect`). It refuses under 16 seeds or mismatched config and seeds |
+| Power              | `npm run eval:power -- report.json`                          | How big a change each metric can detect and how often it cries wolf, by resampling one report with no new runs                                                                                                                                                 |
+| Screen             | `npm run screen -- --grid evals/screens/<grid>.json`        | A grid of arms (config overrides and `policyOptions`) on a few seeds, resumable per arm; `table.md` and `verdicts.json` land in `evals/screens/results/<grid>/`. A screen cuts bad ideas; it is not a verdict                                                  |
+| Skill ladder       | `npm run ladder`                                             | Scripted controllers from `random` up through `wanderer`, `sloppyForager`, `foodSeeker` and `fleer`, then hunter against forager and fleer, in the default world: does skill beat chance there? (`LADDER_RUNGS` in `js/evo/ladder.js`)                         |
+| Champion league    | `npm run league -- candidate.json [--admit]`                | A candidate genome plays 8 seeds against every admitted champion and its Elo moves (`evals/league.json`, `js/evo/league.js`, `elo.js`)                                                                                                                         |
+| Anti-exploit suite | `test/evo/anti-exploit.slow.test.js`                         | Scripted cheats (`spinner`, `sitter`, `jawSitter`; for `fitnessV6` also `gateThenIdle`, `mateHopper`, `splitSpammer` in `js/evo/scripted-v6.js`) must not out-score an honest `foodSeeker` beyond a bound, so a fitness cannot be farmed                      |
+| Determinism        | `test/sim/golden.json`, `npm run browser:hash`              | The same seed and config give the same world hash in Node and in Chromium, so a changed number means a changed world, never noise                                                                                                                              |
+| Speed              | `npm run bench`, the `bench-check` gate                      | Milliseconds per tick and per phase against `bench/baseline.json`                                                                                                                                                                                              |
+
+Each eval metric has a direction. `higher` or `lower` gets a verdict from `eval:compare`; `watch` is reported with an
+interval and no verdict.
+
+| Group              | Examples                                                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skill, not luck    | `eval.deliberate_food_share` (food eaten after seeing it and closing on it), `eval.pursuit_kill_share`, `eval.evasion_skill`, `eval.skill_trend` (is skill rising across the run?) |
+| Predators and prey | `eval.predator_presence`, `eval.predator_births`, `eval.catch_rate`, `eval.escape_rate`, `eval.pack_kill_share`                                                                 |
+| Lineage            | `eval.lineages_alive`, `eval.lineage_lifespan_p50`, `eval.child_survival`, `eval.offspring_per_life`                                                                            |
+| Diversity          | `eval.spec_dominance` (lower is better), `eval.spec_effective`, `eval.body_plan_coverage`, `eval.trait_spread`, `eval.behaviour_coverage`                                       |
+| Worth watching     | `eval.migration_index`, `eval.lineage_turnover`, `eval.idle_signals_per_1k` (call and smoke spam, lower is better), `eval.alarm_precision`, `eval.hunt_call_precision`           |
+| World health       | `eval.food_energy_per_1k`, `eval.fed_median_lifespan`, `eval.births_per_1k`, `eval.floor_episodes`, `eval.born_share`                                                           |
+| Merit (when on)    | `eval.merit_mean`, `eval.merit_mate_gain`, `eval.split_gated_share`, `eval.merit_fitness_corr`                                                                                  |
+
+Definitions and directions: [evolution-evals.md](docs/designs/evolution-evals.md#metrics).
+
+### How a change is accepted
+
+The `run-evolution-loop` skill (`.claude/skills/run-evolution-loop/SKILL.md`) is the rule for any change that claims to
+improve evolution or speed.
+
+1. **Predict first.** Add an entry to `evals/experiments.json` (`id`, `hypothesis`, `prediction`, `targets`, the policies) before running. A prediction written after the result is not one.
+2. **Run both arms.** At least 16 seeds per arm, the same seeds on the same machine, on two seed sets (1-16 and 17-32); Targets that need it (lineage metrics, `eval.floor_episodes`) run 32 seeds.
+3. **Compare.** `eval:compare` with `--targets` and `--fail-on-worse`. `no-difference` stays `no-difference`; with about 25 metrics one stray verdict is expected by chance (experiment `E0` calibrates this).
+4. **Check for exploits.** A fitness gain with no gain in food or lifespan is replayed with `--follow` before it is believed.
+5. **Record and act.** Fill in the experiment with its verdicts; keep a `better` change, revert a `no-difference` one, never merge a `worse` target.
+
+A real one is `E47` (`evals/experiments.json`, `evals/experiments/E47-prediction.md`). After the predator fix, a predator
+`biteMultiplier` of 12 had cost fed blobs some lifespan. The prediction, written before the run, was that 10 or 8 would
+keep the gain in catches and predator births while recovering that lifespan. On 32 seeds of 200,000 ticks, bite 8 against
+the reference (seeds 1-16 / 17-32):
+
+| Metric                     | Reference     | Bite 8        | Verdict                      |
+| -------------------------- | ------------- | ------------- | ---------------------------- |
+| `eval.catch_rate`          | 0.006 / 0.005 | 0.060 / 0.051 | `better` on both sets        |
+| `eval.predator_births`     | 3.6 / 5.2     | 127.4 / 39.5  | `better` on both sets        |
+| `eval.fed_median_lifespan` | 5802 / 6180   | 5743 / 5760   | `no-difference` on both sets |
+
+Bite 10 lost lifespan on the second set (`worse`, -8.5%), so bite 8 became the default. The prediction was right about
+`catch_rate` (about 0.06) and too low about predator births (about 45 expected, 40 to 127 seen).
+
+### Where it is heading
+
+Fitness and selection Phase 4 ([fitness-and-selection.md](docs/designs/fitness-and-selection.md), tasks T43 to T51) turns the candidate into the default:
+
+1. A reference run of the live policy (`E37`), then **round A** (each merit lever alone) and **round B** (pairs, and `fitnessV6` weights through `policyOptions`) as screens, then an **archive round** (`immigrationInterval`, `archiveShare`, `cloneShareEnd`, `descriptorV1` against `descriptorV6`).
+2. At most three **finalists** at 16 seeds on two seed sets, with the ladder, the anti-exploit suite and `eval:power`.
+3. If a finalist meets the done criteria (for example `eval.deliberate_food_share` at least 0.20 from 0.115, `eval.skill_trend` positive on at least 10 of 16 seeds, `eval.spec_dominance` at most 0.55, `eval.mating_share` at least 0.35), merit is switched on, `LIVE_POLICY` becomes `map-elites-v6`, the golden hashes and baselines are re-pinned, and a 600,000-tick run (`E42`) must show skill still rising.
+
+The goal is worlds that keep getting more skilful and more watchable instead of settling into one dominant type.
+
+`npm run train` does not exist yet. [AGENTS.md](AGENTS.md) lists it as arriving with a planned design doc, and Phase 3 of
+[evolution-rework.md](docs/designs/evolution-rework.md) specifies it: a headless trainer that runs generations of episodes on
+its own seeds, resumes from an archive file and exports champion genomes for the league. It waits for the work above.
+An automated improvement loop is planned separately in [improvement-loop.md](docs/designs/improvement-loop.md). Today the
+loop is run by hand, by agents following the skill.
+
 ## Determinism, evals and quality
 
 - **Determinism.** `step` in `js/sim/step.js` runs fixed phases in order (`STEP_PHASES`: environment, hash, sense, brain, signal, physics, lifecycle, field, merit, invariants). Randomness comes from named streams of one seeded generator (`js/sim/rng.js`),
   and `Math.tanh`, `exp` and friends are replaced by `det-math.js` so results do not depend on the engine. `test/sim/golden.json` pins a world hash for fixed seeds; `npm run browser:hash` checks it in Chromium.
-- **Evals.** `npm run eval -- --seeds 16 --ticks 200000 --policy <name>` runs the sim headless on fixed seeds (`evals/seeds.json`) in a worker pool and writes a scorecard of metrics (`js/evo/metrics*.js`). `npm run eval:compare` compares two reports with
-  bootstrap intervals and refuses under 16 seeds. `npm run screen` runs a grid of config arms; `npm run replay` replays a seed with an event log.
+- **Evals.** Fixed-seed runs, comparisons, screens, the ladder and the league are described in [How agents improve, and how we measure it](#how-agents-improve-and-how-we-measure-it).
 - **Quality.** `scripts/check.sh` is the one gate (conventions, design index, format, lint, typecheck, deps, duplicates, tests with a coverage ratchet, benchmark check, build, eval smoke). CI runs the same script. Small modules, size limits and a test for every behaviour are enforced.
 
 Commands, tiers and rules: [AGENTS.md](AGENTS.md) and [docs/coding-standards.md](docs/coding-standards.md). Measuring an evolution change: the `run-evolution-loop` skill in `.claude/skills/`. Verified platform facts and
