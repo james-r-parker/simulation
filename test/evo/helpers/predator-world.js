@@ -47,9 +47,12 @@ export function predatorPolicy(brain = createBaselineV5().brain, predatorEvery =
  * @param {number} seed the world seed
  * @param {number} ticks ticks to run
  * @param {{onTick?: (world: any, observer: any) => void, config?: Record<string, any>, predator?: string,
- *   prey?: string, world?: Record<string, any>, predatorEvery?: number}} [options] a per-tick hook, config overrides
- *   on top of the world file, the arm of the predators (default `hunter`) and of the prey (default `fleer`): a key of
- *   `SCRIPTED_CONTROLLERS` or `random`; the world file (default `predatorWorld`) and the predator spacing (default 2)
+ *   prey?: string, world?: Record<string, any>, predatorEvery?: number,
+ *   scoring?: (config: any) => {fitness: (observer: any, slot: number, config: any) => number,
+ *   afterStep: (world: any) => void}}} [options] a per-tick hook, config overrides on top of the world file, the arm of
+ *   the predators (default `hunter`) and of the prey (default `fleer`): a key of `SCRIPTED_CONTROLLERS` or `random`;
+ *   the world file (default `predatorWorld`) and the predator spacing (default 2); and `scoring`, which builds the
+ *   fitness that scores deaths and the hook that feeds its counters, from the run's config
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
 export function playPredatorWorld(
@@ -62,6 +65,7 @@ export function playPredatorWorld(
         prey = 'fleer',
         world: base = predatorWorld,
         predatorEvery = 2,
+        scoring,
     } = {},
 ) {
     const config = createConfig({ ...FEATURES_OFF, ...PRE_T15D, ...base, ...extra, seed });
@@ -69,12 +73,15 @@ export function playPredatorWorld(
     const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined, predatorEvery);
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
-    observe(observer, world);
+    const { fitness, afterStep } = scoring?.(config) ?? { fitness: undefined, afterStep: () => {} };
+    observe(observer, world, fitness);
+    afterStep(world);
     const brain = createControllerBrain(world, fork(createRng(seed), 'scripted'), { canHunt: predator, rest: prey });
     const overrides = { ...observerPhases(observer), brain };
     for (let t = 0; t < ticks; t++) {
         step(world, policy, overrides);
-        observe(observer, world);
+        observe(observer, world, fitness);
+        afterStep(world);
         onTick(world, observer);
     }
     return { world, observer };

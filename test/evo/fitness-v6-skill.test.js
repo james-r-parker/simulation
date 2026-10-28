@@ -47,7 +47,7 @@ describe('FITNESS_V6_SKILL', () => {
             GATE: 500,
             SURVIVAL_RATE: 0.5,
             SURVIVAL_CAP: 30000,
-            SURVIVAL_PER_DELIBERATE: 10,
+            SURVIVAL_PER_DELIBERATE: 1,
             CREDIT_CAP: 0.25,
             ESCAPE: 60,
             CONVERGED_KILL: 50,
@@ -84,19 +84,19 @@ describe('skill intake', () => {
 
 describe('skill gate and survival', () => {
     it('ramps the gated terms in with deliberate intake over 500', () => {
-        // survival = 0.5 * min(age, cap, 10 * 250 = 2500) = 1250, half of it paid
-        expect(score({ deliberateFood: 250, ageTicks: 10000 })).toBe(250 + 0.5 * 1250);
-        expect(score({ deliberateFood: 500, ageTicks: 10000 })).toBe(500 + 0.5 * 5000);
+        // survival = 0.5 * min(age, cap, 1 * 250) = 125, half of it paid
+        expect(score({ deliberateFood: 250, ageTicks: 10000 })).toBe(250 + 0.5 * 125);
+        expect(score({ deliberateFood: 500, ageTicks: 10000 })).toBe(500 + 0.5 * 500);
     });
 
     it('does not count chance intake toward the gate', () => {
         expect(score({ chanceFood: 4000, ageTicks: 10000 })).toBe(1000);
     });
 
-    it('caps survival by age, by the survival cap and by ten per deliberate energy', () => {
+    it('caps survival by age, by the survival cap and by one per deliberate energy', () => {
         expect(score({ deliberateFood: 2000, ageTicks: 100 })).toBe(2000 + 50);
-        expect(score({ deliberateFood: 20000, ageTicks: 50000 })).toBe(20000 + 0.5 * 30000);
-        expect(score({ deliberateFood: 600, ageTicks: 50000 })).toBe(600 + 0.5 * 6000);
+        expect(score({ deliberateFood: 40000, ageTicks: 50000 })).toBe(40000 + 0.5 * 30000);
+        expect(score({ deliberateFood: 600, ageTicks: 50000 })).toBe(600 + 0.5 * 600);
     });
 
     it('takes the gate from deliberate intake only', () => {
