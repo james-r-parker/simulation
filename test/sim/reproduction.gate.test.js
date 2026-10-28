@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { tallyReady, splitGatedShare } from '../../js/sim/merit-tally.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { mate, splitAll, splitGateOpen } from '../../js/sim/reproduction.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
@@ -76,5 +77,19 @@ describe('split gate in splitAll', () => {
         mate(w, recordingPolicy([]));
         expect(w.pregnancy[a]).toBeGreaterThan(0);
         expect(w.deliberateIntake[a]).toBe(0);
+    });
+
+    it('with no deliberate forager, blocks every split, still mates and reads a gated share of 1', () => {
+        const w = lifeWorld({ ...GATED, sexesEnabled: false });
+        const a = addBlob(w, { energy: 1000, mateOut: 1 });
+        const b = addBlob(w, { energy: 1000, mateOut: 1 });
+        w.x[b] = w.x[a] + w.size[a] + w.size[b];
+        buildHash(w.hash, w);
+        tallyReady(w);
+        splitAll(w, recordingPolicy([]));
+        expect(w.population).toBe(2);
+        expect(splitGatedShare(w)).toBe(1);
+        mate(w, recordingPolicy([]));
+        expect(w.pregnancy[a]).toBeGreaterThan(0);
     });
 });
