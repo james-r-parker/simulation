@@ -4,28 +4,25 @@
 import { hunterTable } from './hunter-table.js';
 import { ALARM_MATCH_CAP, createAlarmQueue } from './observer-intent-alarms.js';
 import { createHuntCalls } from './observer-intent-calls.js';
+import {
+    arcRays,
+    CLOSING_BITS,
+    CLOSING_MIN,
+    CLOSING_SPEED,
+    FLEE_SPEED,
+    INTENT_WINDOW,
+    RESPONSE_WINDOW,
+} from '../sim/merit-state.js';
 import { SCAN, SCAN_SIZE } from './ray-summary.js';
 
-/** Ticks a sighting stays current. */
-export const INTENT_WINDOW = 30;
-
-/** Ticks of closing history read. */
-export const CLOSING_BITS = 10;
-
-/** Of those ticks, how many must show the nearest target's proximity rising. */
-export const CLOSING_MIN = 6;
-
-/** Ticks after the first bite of an episode in which a response still counts. */
-export const RESPONSE_WINDOW = 30;
+// These constants and `arcRays` live in the sim's merit tracker, which ports this state's target tracking exactly.
+export { arcRays, CLOSING_BITS, CLOSING_MIN, CLOSING_SPEED, FLEE_SPEED, INTENT_WINDOW, RESPONSE_WINDOW };
 
 /** Proximity of a channel-2 ("can bite me") hit that makes an agent threatened for the grouping sample. */
 export const THREAT_PROXIMITY = 0.5;
 
 /** Ticks between grouping samples. */
 export const GROUP_SAMPLE_TICKS = 10;
-
-/** A tick counts as closing on a target when the agent's speed towards it exceeds this share of `maxVelocity`. */
-export const CLOSING_SPEED = 0.25;
 
 /** The response share, over the unthreatened share, that an episode needs to count as responded. */
 export const RESPONSE_LIFT = 0.25;
@@ -38,9 +35,6 @@ export const SIGNAL_LEVEL = 0.5;
 
 /** A heard alarm louder than this (body input `alarmLoud`) makes an agent threatened for the flee sample. */
 export const ALARM_HEARD_LEVEL = 0.2;
-
-/** An agent moving faster than this share of `maxVelocity` on a flee sample counts as fleeing. */
-export const FLEE_SPEED = 0.5;
 
 const NEVER = -Infinity;
 
@@ -131,22 +125,6 @@ const RUN_TOTALS = [
 ];
 
 /**
- * The arc rays: ray `k` points `2 pi k / rayCount` from the heading, and is an arc ray when that angle, wrapped to
- * -PI..PI, is within `biteArc + 1e-9` of 0; every ray is one when `biteArc` is at least PI.
- * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {Uint8Array} 1 for each arc ray
- */
-export function arcRays(config) {
-    const arc = new Uint8Array(config.rayCount);
-    for (let k = 0; k < config.rayCount; k++) {
-        let angle = (2 * Math.PI * k) / config.rayCount;
-        angle = angle > Math.PI ? angle - 2 * Math.PI : angle;
-        arc[k] = config.biteArc >= Math.PI || Math.abs(angle) <= config.biteArc + 1e-9 ? 1 : 0;
-    }
-    return arc;
-}
-
-/**
  * What `trackTarget` and `isDeliberate` need about one kind of target, as direct references: its state arrays (the
  * same arrays the intent state holds under their names) and its scan offsets. Named loads on one shape stay
  * monomorphic where a keyed load by a name string did not.
@@ -161,8 +139,7 @@ function targetView(intent, food) {
         turn: food ? intent.foodTurn : intent.preyTurn,
         off: food ? intent.foodOff : intent.preyOff,
         start: food ? intent.foodStart : intent.preyStart,
-        prox: food ? SCAN.FOOD : SCAN.PREY,
-        ray: food ? SCAN.FOOD_RAY : SCAN.PREY_RAY,
+        at: food ? SCAN.FOOD : SCAN.PREY,
         clears: food,
     };
 }

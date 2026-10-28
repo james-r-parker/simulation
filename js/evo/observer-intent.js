@@ -3,18 +3,11 @@
 // state `step` leaves behind and draws no randomness. See docs/designs/world-balance.md (Intent state).
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
-import { detCos, detSin } from '../sim/det-math.js';
+import { isDeliberate, trackTarget } from '../sim/merit-state.js';
 import { answerHuntCall } from './observer-intent-calls.js';
 import { BITTEN_THIS_TICK, trackIntentEpisode } from './observer-intent-episode.js';
 import { sampleGroups } from './observer-intent-group.js';
-import {
-    CLOSING_BITS,
-    CLOSING_MIN,
-    CLOSING_SPEED,
-    GROUP_SAMPLE_TICKS,
-    INTENT_WINDOW,
-    SIGNAL_LEVEL,
-} from './observer-intent-state.js';
+import { GROUP_SAMPLE_TICKS, INTENT_WINDOW, SIGNAL_LEVEL } from './observer-intent-state.js';
 import { SCAN, SCAN_SIZE, summariseRays } from './ray-summary.js';
 import { turnTowards } from './scripted-parts.js';
 import { TURN_THRESHOLD } from './observer-tick.js';
@@ -38,82 +31,6 @@ export { noteEscape } from './observer-intent-episode.js';
 
 /** The scan row length, re-exported for tests that build their own row. */
 export { SCAN_SIZE };
-
-const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
-
-/**
- * @param {number} v a 16-bit value
- * @returns {number} the number of set bits
- */
-function popcount16(v) {
-    const pairs = v - ((v >> 1) & 0x5555);
-    const nibbles = (pairs & 0x3333) + ((pairs >> 2) & 0x3333);
-    const bytes = (nibbles + (nibbles >> 4)) & 0x0f0f;
-    return (bytes + (bytes >> 8)) & 0x1f;
-}
-
-/**
- * @param {Record<string, any>} kind the food or prey target view of the intent state
- * @param {number} slot the slot
- * @param {number} tick the observed tick
- * @returns {boolean} whether the sighting is current, enough of the history shows the agent closing on the target,
- *   and the agent either turned towards it within the window or never saw it off the ray dead ahead
- */
-function isDeliberate(kind, slot, tick) {
-    const bits = kind.bits[slot] & CLOSING_MASK;
-    if (tick - kind.seen[slot] > INTENT_WINDOW || popcount16(bits) < CLOSING_MIN) {
-        return false;
-    }
-    const turned = tick - kind.turn[slot] <= INTENT_WINDOW;
-    return turned || kind.off[slot] < kind.start[slot];
-}
-
-/**
- * @param {Record<string, any>} world the world
- * @param {number} slot an alive agent
- * @param {number} k a ray index
- * @returns {number} the agent's velocity component along ray `k`'s direction
- */
-function speedAlong(world, slot, k) {
-    const cosH = detCos(world.angle[slot]);
-    const sinH = detSin(world.angle[slot]);
-    const dx = cosH * world.rayCos[k] - sinH * world.raySin[k];
-    const dy = sinH * world.rayCos[k] + cosH * world.raySin[k];
-    return world.vx[slot] * dx + world.vy[slot] * dy;
-}
-
-/**
- * Updates one target kind for an agent: the sighting, the closing history (a tick closes when the agent's speed
- * towards the nearest target ray is above `CLOSING_SPEED x maxVelocity`), turns towards the target and off-axis ticks.
- * Turning away from food clears its closing history.
- * @param {Record<string, any>} intent the intent state
- * @param {Record<string, any>} world the world after the step
- * @param {number} slot an alive slot
- * @param {Record<string, any>} kind the food or prey target view of the intent state
- * @returns {void}
- */
-function trackTarget(intent, world, slot, kind) {
-    const { tick } = world;
-    const { bits } = kind;
-    if (intent.scan[kind.prox] < 0) {
-        bits[slot] = (bits[slot] << 1) & 0xffff;
-        return;
-    }
-    const k = intent.scan[kind.ray];
-    if (tick - kind.seen[slot] > INTENT_WINDOW) {
-        kind.start[slot] = tick;
-    }
-    kind.seen[slot] = tick;
-    kind.off[slot] = k === 0 ? kind.off[slot] : tick;
-    const towards = world.turnRate[slot] * turnTowards(k, world.config.rayCount);
-    const limit = TURN_THRESHOLD * world.config.maxTurn;
-    kind.turn[slot] = towards > limit ? tick : kind.turn[slot];
-    const closes = speedAlong(world, slot, k) > CLOSING_SPEED * world.config.maxVelocity;
-    bits[slot] = ((bits[slot] << 1) | (closes ? 1 : 0)) & 0xffff;
-    if (kind.clears && towards < -limit) {
-        bits[slot] = 0;
-    }
-}
 
 /**
  * Whether the agent responds to the threat this tick: turns away from it, sprints, releases smoke or bites with it on
@@ -215,8 +132,8 @@ function countCueTicks(intent, tick, slot) {
  */
 function senseSlot(intent, world, slot) {
     summariseRays(world, slot, intent.scan, intent.arc);
-    trackTarget(intent, world, slot, intent.food);
-    trackTarget(intent, world, slot, intent.prey);
+    trackTarget(world, slot, intent.food, intent.scan);
+    trackTarget(world, slot, intent.prey, intent.scan);
     trackThreat(intent, world, slot);
     countCueTicks(intent, world.tick, slot);
     if (intent.hunterSpec[world.spec[slot]] === 0) {

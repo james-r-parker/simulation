@@ -2,6 +2,7 @@
 // follow-ups. `observeCombat` runs at the top of `observe`, before the observer reassigns slots, so a killer or a
 // victim is still found by its genome id. It reads the world and draws nothing.
 
+import { ESCAPE_TICKS } from '../sim/merit-state.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
@@ -10,8 +11,8 @@ import { createSmokeFollow, noteSmokeRelease, resolveSmoke } from './observer-sm
 
 export { ALARM_RESPONSE_TICKS } from './observer-alarm.js';
 
-/** Ticks after an episode's last bite at which the victim's survival is read. */
-export const ESCAPE_TICKS = 300;
+/** Ticks after an episode's last bite at which the victim's survival is read (the sim's `ESCAPE_TICKS`). */
+export { ESCAPE_TICKS };
 
 /** The `knownAgents` and `diedAt` maps are pruned when `world.tick` divides by this. */
 export const PRUNE_TICKS = 256;
