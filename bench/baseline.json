@@ -8,6 +8,7 @@
   "bench.phase_ms.physics@100": 0.0752,
   "bench.phase_ms.lifecycle@100": 0.0144,
   "bench.phase_ms.field@100": 0.0838,
+  "bench.phase_ms.merit@100": 0.0001,
   "bench.phase_ms.invariants@100": 0.0001,
   "bench.step_ms@250": 1.1951,
   "bench.phase_ms.environment@250": 0.0003,
@@ -18,6 +19,7 @@
   "bench.phase_ms.physics@250": 0.1052,
   "bench.phase_ms.lifecycle@250": 0.038,
   "bench.phase_ms.field@250": 0.0847,
+  "bench.phase_ms.merit@250": 0.0001,
   "bench.phase_ms.invariants@250": 0.0001,
   "bench.step_ms@500": 2.372,
   "bench.phase_ms.environment@500": 0.0003,
@@ -28,5 +30,6 @@
   "bench.phase_ms.physics@500": 0.1543,
   "bench.phase_ms.lifecycle@500": 0.0798,
   "bench.phase_ms.field@500": 0.0847,
+  "bench.phase_ms.merit@500": 0.0002,
   "bench.phase_ms.invariants@500": 0.0001
 }
