@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { creditEscape, creditIntake, creditMating, creditMatured, meritNow } from '../../js/sim/merit.js';
+import { creditEscape, creditIntake, creditMating, creditMatured, meritNow, meritPeek } from '../../js/sim/merit.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
@@ -165,5 +165,19 @@ describe('creditMatured', () => {
         w.parentSlotA[child] = w.parentSlotB[child] = mother;
         expect(creditMatured(w, child)).toBe(1);
         expect(w.merit[mother]).toBe(w.config.meritChildBonus);
+    });
+});
+
+describe('meritPeek', () => {
+    it('equals meritNow without storing the decay', () => {
+        const w = lifeWorld({ maxAgents: 8, meritEnabled: true, meritHalfLife: 100 });
+        const s = addBlob(w);
+        w.merit[s] = 800;
+        w.tick = 200;
+        const peeked = meritPeek(w, s);
+        expect(w.merit[s]).toBe(800);
+        expect(w.meritStamp[s]).toBe(0);
+        expect(peeked).toBeCloseTo(200, 6);
+        expect(meritNow(w, s)).toBe(peeked);
     });
 });

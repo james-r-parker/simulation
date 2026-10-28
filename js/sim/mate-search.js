@@ -1,5 +1,6 @@
 // Finds a mating partner for one agent among the agents within `mateRange` of it, using the tick's spatial hash.
 
+import { meritPeek } from './merit.js';
 import { canMatePair } from './mate-eligibility.js';
 import { nextFloat } from './rng.js';
 import { SEX } from './sex.js';
@@ -115,7 +116,49 @@ function isChoice(world, a, e, cell) {
 }
 
 /**
- * Finds the candidate of one cell that beats `best`: the male with the most energy, ties to the lower slot.
+ * Whether the mate score blends merit in (`meritEnabled` with a non-zero `meritMateWeight`).
+ * @param {World} world the world
+ * @returns {boolean}
+ */
+function meritRanks(world) {
+    return world.config.meritEnabled && world.config.meritMateWeight > 0;
+}
+
+/**
+ * The mate score of male `b`: `(1 - w) x energy / maxEnergy + w x m`, `m = merit / (merit + meritHalf)` of his merit
+ * decayed to now. Reads merit without restamping it, so the order of the scan changes nothing in the world.
+ * @param {World} world the world
+ * @param {number} b the male
+ * @returns {number}
+ */
+function mateScore(world, b) {
+    const { meritMateWeight, maxEnergy, meritHalf } = world.config;
+    const merit = meritPeek(world, b);
+    return ((1 - meritMateWeight) * world.energy[b]) / maxEnergy + (meritMateWeight * merit) / (merit + meritHalf);
+}
+
+/**
+ * Whether male `b` beats `pick` (a slot, or -1): more score, ties to the lower slot.
+ * @param {World} world the world
+ * @param {number} b the candidate
+ * @param {number} pick the best so far, or -1
+ * @returns {boolean}
+ */
+function beats(world, b, pick) {
+    if (pick < 0) {
+        return true;
+    }
+    if (meritRanks(world)) {
+        const sb = mateScore(world, b);
+        const sp = mateScore(world, pick);
+        return sb > sp || (sb === sp && b < pick);
+    }
+    return world.energy[b] > world.energy[pick] || (world.energy[b] === world.energy[pick] && b < pick);
+}
+
+/**
+ * Finds the candidate of one cell that beats `best`: the male with the best mate score (energy alone unless merit
+ * ranks), ties to the lower slot.
  * @param {World} world the world
  * @param {number} a the searching female
  * @param {number} cell the cell index
@@ -128,18 +171,14 @@ function bestInCell(world, a, cell, best) {
     for (let e = hash.cellStart[cell]; e < hash.cellStart[cell + 1]; e++) {
         const b = hash.entries[e];
         if (isChoice(world, a, e, cell)) {
-            const better =
-                pick < 0 ||
-                world.energy[b] > world.energy[pick] ||
-                (world.energy[b] === world.energy[pick] && b < pick);
-            pick = better ? b : pick;
+            pick = beats(world, b, pick) ? b : pick;
         }
     }
     return pick;
 }
 
 /**
- * Female choice: the male with the most energy (ties to the lower slot) among those of her specialisation within
+ * Female choice: the male with the best mate score (most energy unless merit ranks; ties to the lower slot) among those of her specialisation within
  * `mateRange` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
  * @param {World} world the world, with the hash built this tick
  * @param {number} a the searching female, alive
