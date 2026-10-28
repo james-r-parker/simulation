@@ -83,7 +83,7 @@ function sprinter() {
 
 /**
  * Runs `foodSeeker` until the food it has eaten reaches the skill gate, then holds still: the survival term pays age up
- * to ten times the deliberate intake, and an idle blob lives long. The meal is the food energy gained since the genome
+ * to the deliberate intake (it was ten times before the survival fix), and an idle blob lives long. The meal is the food energy gained since the genome
  * was born (the world's own deliberate-intake tracker runs only with merit on; a seeker's food is deliberate).
  * @type {ControllerFactory}
  */
