@@ -136,6 +136,11 @@ describe('validateReport', () => {
             'predator_presence',
             'predator_births',
             'pred_prey_lag_corr',
+            'merit_mean',
+            'merit_p90',
+            'merit_mate_gain',
+            'split_gated_share',
+            'merit_fitness_corr',
         ];
         const seedMetrics = (/** @type {number} */ i) =>
             Object.fromEntries(

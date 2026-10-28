@@ -150,6 +150,12 @@ describe('metricDirection', () => {
         }
         expect(metricDirection('eval.predator_presence')).toBe('higher');
         expect(metricDirection('eval.predator_births')).toBe('higher');
+        for (const metric of ['eval.merit_mean', 'eval.merit_p90', 'eval.split_gated_share']) {
+            expect(metricDirection(metric), metric).toBe('watch');
+        }
+        for (const metric of ['eval.merit_mate_gain', 'eval.merit_fitness_corr']) {
+            expect(metricDirection(metric), metric).toBe('higher');
+        }
         expect(metricDirection('eval.p90_fitness.forager')).toBe('higher');
         expect(metricDirection('eval.mean_fitness.all')).toBe('higher');
         expect(metricDirection('bench.step_ms@500')).toBe('lower');

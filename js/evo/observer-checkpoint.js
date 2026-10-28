@@ -4,6 +4,7 @@ import { nextInt } from '../sim/rng.js';
 import { ensureRoom } from './growable-log.js';
 import { sampleBody } from './metrics-body.js';
 import { sampleEnvironment } from './metrics-environment.js';
+import { sampleMerit } from './metrics-merit.js';
 import { samplePresence } from './metrics-watch.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
@@ -140,6 +141,7 @@ export function checkpoint(observer, world) {
         poolLineages(dominance, counts);
         sampleBody(observer.body, world);
         sampleEnvironment(observer.environment, world);
+        sampleMerit(observer.merit, world);
         samplePresence(observer.watch, world, observer.combat.hunterSpec);
     }
     const log = observer.series;

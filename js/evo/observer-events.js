@@ -3,6 +3,7 @@
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { noteDeath } from './metrics-environment.js';
+import { noteMateBirth, noteMeritDeath } from './metrics-merit.js';
 import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
 import { resetIntentSlot } from './observer-intent.js';
@@ -107,6 +108,10 @@ function finishDeath(observer, d, o, fitness) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         noteDeath(observer.environment, d[o + 4]);
         noteVisitDeath(observer.watch, slot, d[o + 8]);
+        if (d[o + 8] >= observer.config.maturityTicks && !observer.ghosts.has(genomeId)) {
+            const logged = observer.deaths.fitness[observer.deathCount - 1];
+            noteMeritDeath(observer.merit, { slot, tick: d[o + 1], fitness: logged });
+        }
     }
     observer.foodEnergyDead += d[o + 9];
     if (observer.slotOf.get(genomeId) === slot) {
@@ -162,17 +167,21 @@ function noteParentage(observer, d, count) {
 /**
  * Starts tracking a newborn in its slot with zeroed counters.
  * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
  * @param {Float64Array} d the event data
  * @param {number} o the record offset
  * @returns {void}
  */
-function startBirth(observer, d, o) {
+function startBirth(observer, world, d, o) {
     const slot = d[o + 2];
     observer.births[d[o + 8]] += 1;
     if (d[o + 1] >= BURN_IN_TICKS) {
         observer.birthsAfterBurnIn[d[o + 8]] += 1;
     }
     noteHunterBirth(observer, d, o);
+    if (d[o + 8] === BORN_CAUSE.MATE && d[o + 1] >= BURN_IN_TICKS) {
+        noteMateBirth(observer.merit, world, d[o + 2], d[o + 7]);
+    }
     const child = isEligibleChild(observer.lineage, d, o);
     if (child) {
         noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
@@ -228,7 +237,7 @@ export function applyEvents(observer, world, fitness) {
     }
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_BORN) {
-            startBirth(observer, d, i * EVENT_STRIDE);
+            startBirth(observer, world, d, i * EVENT_STRIDE);
         }
     }
     for (let i = 0; i < count; i++) {
