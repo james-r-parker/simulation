@@ -3,6 +3,7 @@
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { LOSS_CAUSE } from '../sim/energy.js';
+import { TURN_THRESHOLD } from '../sim/merit-state.js';
 import { markCell } from './cell-grid.js';
 
 /** Grid cell edge, in world px, for `cellsVisited`. */
@@ -14,8 +15,8 @@ export const CELL_SAMPLE_TICKS = 10;
 /** The motion samples are taken when `world.tick` divides by this. */
 export const MOTION_SAMPLE_TICKS = 100;
 
-/** A turn counts only above this fraction of `maxTurn`. */
-export const TURN_THRESHOLD = 0.1;
+/** A turn counts only above this fraction of `maxTurn` (shared with the sim's merit tracker). */
+export { TURN_THRESHOLD };
 
 const FOOD_CHANNEL = 1;
 

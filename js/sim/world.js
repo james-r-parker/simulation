@@ -4,6 +4,7 @@ import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
 import { obstacleSlots } from './terrain.js';
 
@@ -99,7 +100,12 @@ function agentSpecs(layout) {
  */
 function allocAgentArrays(world, layout) {
     const n = world.config.maxAgents;
-    world.agentRows = allocRows(world, [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow)], n);
+    world.agentRows = allocRows(
+        world,
+        [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow), ...meritSpecs()],
+        n,
+    );
+    createMeritViews(world);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
     // The last hidden row is the scratch row, which is not an agent row.
     world.agentRows.push({ array: world.hidden.subarray(0, n * layout.hidden), stride: layout.hidden });
@@ -268,6 +274,7 @@ export function allocAgent(world) {
         if (alive[slot] === 0) {
             alive[slot] = 1;
             world.population += 1;
+            resetMeritSlot(world, slot);
             return slot;
         }
     }

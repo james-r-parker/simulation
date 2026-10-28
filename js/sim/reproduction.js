@@ -11,6 +11,7 @@ import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
+import { slotOfGenome } from './merit-state.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -162,6 +163,8 @@ function giveBirth(world, policy, mother, cause) {
     world.lineageId[child] = world.lineageId[mother];
     world.parentA[child] = world.genomeId[mother];
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
+    world.parentSlotA[child] = mother;
+    world.parentSlotB[child] = isMate ? slotOfGenome(world, world.fatherId[mother]) : mother;
     world.spec[child] = childSpec(world, mother);
     drawSex(world, child);
     recordBirth(world, mother);
