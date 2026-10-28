@@ -9,18 +9,29 @@ import { detExp } from './det-math.js';
 const MIN_EXPONENT = -700;
 
 /**
+ * The slot's merit decayed to the current tick, without storing it.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot a slot
+ * @returns {number} the decayed merit
+ */
+export function meritPeek(world, slot) {
+    const { meritHalfLife } = world.config;
+    const elapsed = world.tick - world.meritStamp[slot];
+    if (meritHalfLife > 0 && elapsed > 0) {
+        const exponent = (-Math.LN2 * elapsed) / meritHalfLife;
+        return exponent < MIN_EXPONENT ? 0 : world.merit[slot] * detExp(exponent);
+    }
+    return world.merit[slot];
+}
+
+/**
  * Decays the slot's merit to the current tick and restamps it.
  * @param {Record<string, any>} world the world
  * @param {number} slot a slot
  * @returns {void}
  */
 function decay(world, slot) {
-    const { meritHalfLife } = world.config;
-    const elapsed = world.tick - world.meritStamp[slot];
-    if (meritHalfLife > 0 && elapsed > 0) {
-        const exponent = (-Math.LN2 * elapsed) / meritHalfLife;
-        world.merit[slot] = exponent < MIN_EXPONENT ? 0 : world.merit[slot] * detExp(exponent);
-    }
+    world.merit[slot] = meritPeek(world, slot);
     world.meritStamp[slot] = world.tick;
 }
 
