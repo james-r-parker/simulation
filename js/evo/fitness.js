@@ -22,7 +22,7 @@ export const FITNESS_V1 = Object.freeze({
  * @param {Record<string, any>} config the sim config
  * @returns {number}
  */
-function specTerm(observer, counters, slot, config) {
+export function specTerm(observer, counters, slot, config) {
     const specs = config.specialisations;
     const spec = observer.spec[slot];
     if (spec === specs.forager.index) {
