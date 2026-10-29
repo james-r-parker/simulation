@@ -13,6 +13,8 @@
 #   Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
+# - scripts/flag-ledger.json lists every boolean or enum config rule, names no key that is gone, and names no plan that
+#   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
@@ -100,6 +102,15 @@ while IFS= read -r line; do
 done <<<"$experiments_out"
 if ((experiments_status != 0)) && [[ -z "$experiments_out" ]]; then
   fail "experiments: scripts/check-experiments.mjs exited $experiments_status with no output"
+fi
+
+flag_out="$(node scripts/check-flag-ledger.mjs 2>&1)"
+flag_status=$?
+while IFS= read -r line; do
+  [[ -n "$line" ]] && fail "$line"
+done <<<"$flag_out"
+if ((flag_status != 0)) && [[ -z "$flag_out" ]]; then
+  fail "flag-ledger: scripts/check-flag-ledger.mjs exited $flag_status with no output"
 fi
 
 while IFS= read -r file; do

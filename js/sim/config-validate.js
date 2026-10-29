@@ -127,6 +127,9 @@ const RULES = {
     ...FEATURE_RULES,
 };
 
+/** The rule of every top-level config key, which scripts/check-flag-ledger.mjs reads for the boolean and enum ones. */
+export { RULES as CONFIG_RULES };
+
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
 const AT_MOST = [
     ['initialAgents', 'maxAgents'],

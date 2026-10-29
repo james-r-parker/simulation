@@ -57,3 +57,23 @@ describe('conventions conflict markers', { timeout: scaleTimeout(30_000) }, () =
         expect(out).not.toContain('merge conflict marker');
     });
 });
+
+describe('conventions flag ledger', { timeout: scaleTimeout(30_000) }, () => {
+    const STUB = 'scripts/check-flag-ledger.mjs';
+
+    it('reports each line the ledger check prints as a violation', () => {
+        const out = conventions({
+            [STUB]: "console.log('flag-ledger: mode: a boolean or enum rule with no ledger entry');\nprocess.exitCode = 1;\n",
+        });
+        expect(out).toContain('flag-ledger: mode: a boolean or enum rule with no ledger entry');
+    });
+
+    it('reports a check that fails without printing anything', () => {
+        const out = conventions({ [STUB]: 'process.exitCode = 3;\n' });
+        expect(out).toContain('flag-ledger: scripts/check-flag-ledger.mjs exited 3 with no output');
+    });
+
+    it('stays quiet when the check passes', () => {
+        expect(conventions({ [STUB]: '' })).not.toContain('flag-ledger');
+    });
+});
