@@ -4,6 +4,7 @@
 
 import { createAgentsLayer } from './renderer/agents-layer.js';
 import { createAuroraLayer } from './renderer/aurora-layer.js';
+import { createTerrainLayer } from './renderer/terrain-layer.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
 import { createOverlays } from './renderer/overlays.js';
@@ -60,6 +61,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     return {
         layers: [
             createAuroraLayer({ info }),
+            createTerrainLayer({ info, seed }),
             createTerritoryLayer({ info }),
             haze,
             createFoodLayer({ info }),

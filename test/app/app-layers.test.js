@@ -13,8 +13,8 @@ describe('createLayerBuilder', () => {
             slots: createFamilySlots(),
         });
         const set = build();
-        expect(set.layers).toHaveLength(12);
-        expect(set.layers[2]).toBe(refs.haze);
+        expect(set.layers).toHaveLength(13);
+        expect(set.layers[3]).toBe(refs.haze);
         expect(set.afterBloom).toHaveLength(1);
         for (const layer of [...set.layers, ...set.afterBloom]) {
             expect(layer.object).toBeDefined();
