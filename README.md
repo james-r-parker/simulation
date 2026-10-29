@@ -444,6 +444,10 @@ learnings: [docs/designs/sim-notes.md](docs/designs/sim-notes.md).
 
 ## Where we are going
 
+Everything below works towards one goal: a world that is interesting to watch. The principles behind it - no
+spinning, no single type taking over, travel, hunting, real selection, many small families, cooperation and pack
+hunting - are in [docs/principles.md](docs/principles.md), each with the metrics that measure it.
+
 The order of work is the **Build queue** in [docs/designs/README.md](docs/designs/README.md), which is generated and always current. In short:
 
 1. **Fitness and selection** (priority 1, in progress). Phases 1 to 3 are built: the metric audit and new metrics, the predator survival fix, in-world merit (off), `fitnessV6`, `descriptorV6`, `map-elites-v6` and the exploit bounds.

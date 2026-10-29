@@ -6,6 +6,9 @@ Blob Evolution is a browser artificial-life simulation: agents with recurrent ne
 world through rays, eat, fight, mate and die, and their genomes evolve. It is built in short sessions over a long
 period, so **every piece of work starts from a design doc**.
 
+The goal is a world that is interesting to watch. [docs/principles.md](docs/principles.md) lists what the world must
+not look like and what it should, each with its metrics; read it before any design, tuning or done-criteria call.
+
 The current app (`js/*.js`, Three.js and WebGPU) is the legacy implementation. Its replacement - a deterministic
 headless sim core, an evolution archive, an eval system and a worker-driven renderer - is planned in
 `docs/designs/` and built phase by phase.
