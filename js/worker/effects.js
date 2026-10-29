@@ -1,7 +1,7 @@
 // Render effects: turns each tick's event records and the alive slots into bite, birth, death, call and smoke effects,
 // and writes the pending ones into a snapshot's effects part. Reads the world and never changes it.
 
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { TIMER_CAP } from '../sim/world.js';
 
 /** Effect kinds; the `kind` word of a record. */
@@ -12,6 +12,8 @@ export const EFFECT_KIND = Object.freeze({
     ALARM: 4,
     PACK_CALL: 5,
     SMOKE: 6,
+    ESCAPED: 7,
+    MATED: 8,
 });
 
 /** Records the log holds; when full the oldest are dropped. */
@@ -41,6 +43,7 @@ const DEATH_CAUSE_SHIFT = 256;
  * @property {Uint32Array} cacheGenome the genome that was in each slot, 0 when empty
  * @property {Uint32Array} cacheLineage that genome's lineage
  * @property {Uint8Array} cacheSpec that genome's specialisation
+ * @property {Uint16Array} cachePregnancy that genome's pregnancy count at the start of the tick
  */
 
 /**
@@ -60,6 +63,7 @@ export function createEffectLog(maxAgents) {
         cacheGenome: new Uint32Array(maxAgents),
         cacheLineage: new Uint32Array(maxAgents),
         cacheSpec: new Uint8Array(maxAgents),
+        cachePregnancy: new Uint16Array(maxAgents),
     };
 }
 
@@ -125,13 +129,54 @@ function lineageOf(log, world, slot, genomeId) {
 }
 
 /**
+ * Emits MATED when pregnancyTicks is 1, where mating and birth occur on the same tick.
+ * @param {EffectLog} log the log
+ * @param {Record<string, any>} world the world
+ * @param {number} o the event record offset
+ * @param {Map<number, number> | undefined} slotOf genome id to slot map
+ * @returns {void}
+ */
+function addMatedSingleTick(log, world, o, slotOf) {
+    const d = world.events.data;
+    const motherGenome = d[o + 6];
+    const fatherGenome = d[o + 7];
+    const motherSlot = slotOf?.get(motherGenome);
+    let x;
+    let y;
+    let spec = d[o + 5];
+    let lineage = d[o + 4];
+    if (motherSlot !== undefined && aliveIn(world, motherSlot, motherGenome)) {
+        x = world.x[motherSlot];
+        y = world.y[motherSlot];
+        spec = world.spec[motherSlot];
+        lineage = world.lineageId[motherSlot];
+    } else if (motherSlot !== undefined && log.cacheGenome[motherSlot] === motherGenome) {
+        x = log.cacheX[motherSlot];
+        y = log.cacheY[motherSlot];
+        spec = log.cacheSpec[motherSlot];
+        lineage = log.cacheLineage[motherSlot];
+    } else {
+        const childSlot = d[o + 2];
+        x = world.x[childSlot];
+        y = world.y[childSlot];
+    }
+    const m = begin(log, EFFECT_KIND.MATED, d[o + 1]);
+    place(log, m, x, y);
+    log.u32[m + 4] = motherGenome;
+    log.u32[m + 5] = fatherGenome;
+    log.u32[m + 6] = spec;
+    log.u32[m + 7] = lineage;
+}
+
+/**
  * A newborn that is still alive yields `BORN`; one that was born and died within the tick yields nothing.
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world
  * @param {number} o the event record offset
+ * @param {Map<number, number> | undefined} slotOf genome id to slot map
  * @returns {void}
  */
-function addBorn(log, world, o) {
+function addBorn(log, world, o, slotOf) {
     const d = world.events.data;
     const slot = d[o + 2];
     if (aliveIn(world, slot, d[o + 3])) {
@@ -141,6 +186,9 @@ function addBorn(log, world, o) {
         log.u32[w + 5] = d[o + 4];
         log.u32[w + 6] = d[o + 5];
         log.u32[w + 7] = d[o + 8];
+    }
+    if (world.config.pregnancyTicks === 1 && d[o + 8] === BORN_CAUSE.MATE) {
+        addMatedSingleTick(log, world, o, slotOf);
     }
 }
 
@@ -198,15 +246,16 @@ function addCall(log, world, o) {
 /**
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world just stepped
+ * @param {Map<number, number> | undefined} slotOf genome to slot map
  * @returns {void}
  */
-function addEventEffects(log, world) {
+function addEventEffects(log, world, slotOf) {
     const d = world.events.data;
     for (let i = 0; i < world.events.count; i++) {
         const o = i * EVENT_STRIDE;
         switch (d[o]) {
             case EVENT_TYPE.AGENT_BORN:
-                addBorn(log, world, o);
+                addBorn(log, world, o, slotOf);
                 break;
             case EVENT_TYPE.AGENT_DIED:
                 addDied(log, world, o);
@@ -249,13 +298,43 @@ function addBites(log, world, slotOf) {
 }
 
 /**
+ * Adds a MATED effect for newly pregnant agents when pregnancyTicks > 1.
+ * @param {EffectLog} log the log
+ * @param {Record<string, any>} world the world just stepped
+ * @returns {void}
+ */
+function addMatedPregnancies(log, world) {
+    if ((world.config.pregnancyTicks ?? 0) <= 1) {
+        return;
+    }
+    const { alive, pregnancy, fatherId, genomeId, lineageId, spec, x, y } = world;
+    const targetPregnancy = world.config.pregnancyTicks - 1;
+    const tick = world.tick > 0 ? world.tick - 1 : 0;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (
+            alive[slot] === 1 &&
+            pregnancy[slot] === targetPregnancy &&
+            log.cacheGenome[slot] === genomeId[slot] &&
+            log.cachePregnancy[slot] === 0
+        ) {
+            const w = begin(log, EFFECT_KIND.MATED, tick);
+            place(log, w, x[slot], y[slot]);
+            log.u32[w + 4] = genomeId[slot];
+            log.u32[w + 5] = fatherId[slot];
+            log.u32[w + 6] = spec[slot];
+            log.u32[w + 7] = lineageId[slot];
+        }
+    }
+}
+
+/**
  * Remembers each alive slot's place, genome, lineage and specialisation for the next tick's deaths and bites.
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world just stepped
  * @returns {void}
  */
 function refreshCache(log, world) {
-    const { alive, x, y, genomeId, lineageId, spec } = world;
+    const { alive, x, y, genomeId, lineageId, spec, pregnancy } = world;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             log.cacheX[slot] = x[slot];
@@ -263,8 +342,10 @@ function refreshCache(log, world) {
             log.cacheGenome[slot] = genomeId[slot];
             log.cacheLineage[slot] = lineageId[slot];
             log.cacheSpec[slot] = spec[slot];
+            log.cachePregnancy[slot] = pregnancy ? pregnancy[slot] : 0;
         } else {
             log.cacheGenome[slot] = 0;
+            log.cachePregnancy[slot] = 0;
         }
     }
 }
@@ -290,8 +371,9 @@ export function primeEffects(log, world) {
  * @returns {void}
  */
 export function collectEffects(log, world, slotOf) {
-    addEventEffects(log, world);
+    addEventEffects(log, world, slotOf);
     addBites(log, world, slotOf);
+    addMatedPregnancies(log, world);
     refreshCache(log, world);
 }
 

@@ -188,6 +188,53 @@ describe('collectEffects', () => {
         collectEffects(log, world, NO_SLOTS);
         expect(drain(log).count).toBe(0);
     });
+
+    it('yields MATED once per mating with pregnancyTicks > 1, and ignores pregnancy held at 1', () => {
+        const world = smallWorld({ pregnancyTicks: 5 });
+        place(world, 1, { x: 50, y: 60, genomeId: 10, lineageId: 3, spec: 2 });
+        const log = createEffectLog(world.config.maxAgents);
+        primeEffects(log, world);
+
+        world.tick = 2;
+        world.pregnancy[1] = 4;
+        world.fatherId[1] = 99;
+        collectEffects(log, world, NO_SLOTS);
+        const { records, floats } = drain(log);
+        expect(records).toEqual([[EFFECT_KIND.MATED, 1, expect.anything(), expect.anything(), 10, 99, 2, 3]]);
+        expect(floats[0].slice(2, 4)).toEqual([50, 60]);
+
+        world.tick = 3;
+        world.pregnancy[1] = 3;
+        collectEffects(log, world, NO_SLOTS);
+        expect(drain(log).count).toBe(0);
+
+        world.tick = 4;
+        world.pregnancy[1] = 1;
+        collectEffects(log, world, NO_SLOTS);
+        expect(drain(log).count).toBe(0);
+
+        world.tick = 5;
+        world.pregnancy[1] = 1;
+        collectEffects(log, world, NO_SLOTS);
+        expect(drain(log).count).toBe(0);
+    });
+
+    it('yields MATED from AGENT_BORN when pregnancyTicks is 1', () => {
+        const world = smallWorld({ pregnancyTicks: 1 });
+        world.tick = 4;
+        place(world, 1, { x: 50, y: 60, genomeId: 10, lineageId: 3, spec: 2 });
+        place(world, 2, { x: 52, y: 62, genomeId: 20, lineageId: 3, spec: 2 });
+        const slotOf = new Map([
+            [10, 1],
+            [99, 3],
+        ]);
+        event(world, EVENT_TYPE.AGENT_BORN, [2, 20, 3, 2, 10, 99, BORN_CAUSE.MATE]);
+        const log = createEffectLog(world.config.maxAgents);
+        primeEffects(log, world);
+        collectEffects(log, world, slotOf);
+        const { records } = drain(log);
+        expect(records).toContainEqual([EFFECT_KIND.MATED, 4, expect.anything(), expect.anything(), 10, 99, 2, 3]);
+    });
 });
 
 describe('primeEffects', () => {
