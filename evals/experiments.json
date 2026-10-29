@@ -1481,7 +1481,7 @@
       "after": "evals/screens/results/fitness-archive/<arm>.report.json (one per arm; table in evals/screens/results/fitness-archive/table.md)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "T46 screen in progress; result to be recorded after the run."
+      "note": "T46 screen, 9 arms x 4 seeds (offset 28) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. No archive arm beats split-300 (share 0.134, skill_trend +0.012): share -1% to -18% on every arm. share-0.75 clearly worse (share 0.111, skill_trend -0.081). cloneend-0.95 keeps the trend (+0.020, share 0.124, births +7%, predator births 930). descriptor-v1 share 0.128, skill_trend +0.012, births +47% but pop 249, mating 0.115. imm-300 lineages 37, mating 0.105; imm-1800 births +79%, lineages 12, pop 210. Predictions: nothing collapses right; share-0.75 help wrong (it hurt); descriptor-v1 losing share wrong (-4%). Finalists for T47: split-300, split-300 + cloneShareEnd 0.95, split-300 + descriptor v1. See sim-notes 2026-10-29 \"Archive round\"."
     },
     {
       "id": "E43",
