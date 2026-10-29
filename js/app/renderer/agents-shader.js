@@ -6,6 +6,12 @@
 /** Half the quad side in radii. */
 export const QUAD_HALF = 2.4;
 
+/** Body centre fill share at zero edge. */
+export const BODY_CENTRE_FILL = 0.34;
+
+/** Brightness multiplier floor at zero energy. */
+export const BRIGHTNESS_FLOOR = 0.7;
+
 export const AGENT_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iPose;   // x, y, angle, radius
@@ -130,7 +136,7 @@ void main() {
     float cover = 1.0 - smoothstep(-vPx, vPx, d);
     float contrast = uPalette > 1.5 ? 1.0 : 0.0;
     float faint = contrast * vNeutral;                // a neutral family in the high-contrast palette
-    float bright = (0.7 + 1.5 * vColor.a) * (1.0 - 0.65 * faint);
+    float bright = (${BRIGHTNESS_FLOOR.toFixed(1)} + 1.5 * vColor.a) * (1.0 - 0.65 * faint);
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
     // The halo and the rim are sized in screen pixels (capped in radii for small agents), so zooming in never lets the
     // glow swallow the silhouette: a luminous membrane around a darker body with a glowing core.
@@ -142,7 +148,7 @@ void main() {
     float rim = exp(-abs(d) / rimWidth) * 1.0;
     float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
     float nucleus = exp(-dot(vP, vP) * 3.2) * 0.45 * (1.0 - small);
-    float fill = 0.34 + 0.5 * edge;
+    float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
     vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
     rgb += base * bright * rim * 0.85;
     rgb += mix(base, vec3(1.0), 0.4) * bright * nucleus * cover;

@@ -52,12 +52,29 @@ const deg = (/** @type {number} */ r) => (r * 180) / Math.PI;
  * @param {number} ap the adjusted a*
  * @returns {number} the hue angle in degrees, 0 to 360
  */
-function hueAngle(b, ap) {
+export function hueAngle(b, ap) {
     if (b === 0 && ap === 0) {
         return 0;
     }
     const h = deg(Math.atan2(b, ap));
     return h >= 0 ? h : h + 360;
+}
+
+/**
+ * @param {ArrayLike<number>} rgb linear RGB
+ * @returns {number} hue angle in degrees, 0 to 360
+ */
+export function labHue(rgb) {
+    const [, a, b] = toLab(rgb);
+    return hueAngle(b, a);
+}
+
+/**
+ * @param {ArrayLike<number>} rgb linear RGB
+ * @returns {number} relative luminance (linear Y)
+ */
+export function luminance(rgb) {
+    return 0.2126729 * rgb[0] + 0.7151522 * rgb[1] + 0.072175 * rgb[2];
 }
 
 /**

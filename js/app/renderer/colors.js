@@ -17,6 +17,12 @@ export const PALETTE = Object.freeze({
     meat: [0.9, 0.1, 0.15],
     obstacleBody: [0.012, 0.016, 0.024],
     obstacleRim: [0.09, 0.12, 0.18],
+    rockBody: [0.012, 0.016, 0.024],
+    rockRim: [0.09, 0.12, 0.18],
+    rockContact: [0.004, 0.005, 0.006],
+    lichen: [0.006, 0.014, 0.006],
+    frost: [0.006, 0.012, 0.024],
+    refugeGlow: [0.011, 0.012, 0.013],
     eye: [0.85, 0.95, 1.0],
     huntScent: [1.0, 0.74, 0.2],
     dangerScent: [0.75, 0.03, 0.04],
@@ -85,7 +91,25 @@ export const NEUTRAL_FAMILY = Object.freeze({
 });
 
 /** The share of a family's colour an agent at zero energy is drawn with; full energy is drawn at the colour itself. */
-const ENERGY_FLOOR = 0.82;
+export const ENERGY_FLOOR = 0.82;
+
+/**
+ * Aurora stops per season (spring, summer, autumn, winter), indexed like `stats.season`. Starting linear RGB before
+ * scaling to `AURORA_MAX_LUMINANCE`.
+ * @type {readonly Rgb[]}
+ */
+export const AURORA = Object.freeze([
+    [0.1, 0.3, 0.55], // spring: steel blue
+    [0.35, 0.1, 0.25], // summer: dusky plum/rose
+    [0.3, 0.35, 0.2], // autumn: dull gold
+    [0.12, 0.18, 0.35], // winter: indigo-blue
+]);
+
+/** The maximum luminance (linear Y) of the aurora. */
+export const AURORA_MAX_LUMINANCE = 0.01;
+
+/** The maximum luminance (linear Y) of any scenery colour (lichen, frost, refuge glow). */
+export const SCENERY_MAX_LUMINANCE = 0.012;
 
 /**
  * The colour of a family: its slot's colour in the current palette, else the neutral colour, dimmed a little at low
