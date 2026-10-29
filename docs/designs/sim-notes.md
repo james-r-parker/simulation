@@ -1350,3 +1350,11 @@ Prediction check (recorded before the run in `evals/experiments.json` as E41): d
 
 - No arm reaches heat stress 0.3. `loss-0.009` lowers heat less than `eat-1.5` and raises cold more (the passive loss is doubled in the cold margin), so the two levers do not add up as predicted; `both` breaks the cold limit. No arm collapses. Heat 0.3 needs a different lever (a smaller `coldFactor`, or heat from movement); it was not screened.
 - Not yet tested together: `share-0.2` with `temperatureGainEat` 1.5. T48g adopts both only after a 16-seed `eval:compare` on the combination.
+
+### 2026-10-29 - T48g confirm (fitness-and-selection, E63)
+
+- **What ran**: both T48f winners together (`splitDeliberateShareMin` 0.2, `temperatureGainEat` 1.5) against the live default, 16 seeds at offset 32, 200000 ticks, `map-elites-v6`. `eval:compare` refuses the pair on config until `--allow-config-diff splitDeliberateShareMin,temperatureGainEat` is given.
+- **Treatment**: `eval.split_bumper_share` 0.331 to 0.105, `eval.mating_share` 0.125 to 0.204, `eval.deliberate_food_share` 0.126 to 0.173, `eval.skill_trend` -0.036 to +0.003, heat stress 0.496 to 0.304, cold stress 0.074 to 0.093. The two heat levers compound when `share-0.2` is on: heat reaches 0.30, which `eat-1.5` alone did not (0.415 on the old split default).
+- **Cost**: `eval.food_energy_per_1k` 599 to 481 (-20%, worse), `eval.fed_median_lifespan` 7753 to 5577 (-28%, worse), `eval.median_lifespan` -25%, population mean 346 to 256 (lowest seed 75, five seeds under 200, reference lowest 145). The 8-seed screen saw only the lifespan cost; the food cost is new. The user adopted both anyway (Decisions, 2026-10-29).
+- **Floor**: the population never fell below `minAgents` on average (`popAboveMin` 16 of 16); the minimum tick population is 40 on both arms. `specShare` fails on most seeds on both arms (3 of 16 pass for the reference, 5 of 16 for the candidate).
+- **Unseparated**: the 16-seed run did not split the food and lifespan cost between the two keys.
