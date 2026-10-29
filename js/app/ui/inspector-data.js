@@ -185,7 +185,7 @@ function countersOf(c, { specName, family, info, male }) {
         { label: 'children', text: grouped(c[COUNTER_AT.children]) },
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
     ];
-    return [...rows, ...sexRows(male, info), ...traitRows(c, info)];
+    return [...rows, ...sexRows(male, info), ...traitRows(c)];
 }
 
 /**
@@ -199,13 +199,9 @@ function sexRows(male, info) {
 
 /**
  * @param {Float32Array} c the counters
- * @param {Record<string, any>} info `ready.info`
- * @returns {InspectorView['counters']} the vision, size and child share traits, or nothing with traits off
+ * @returns {InspectorView['counters']} the vision, size and child share traits
  */
-function traitRows(c, info) {
-    if (!info.traitsEnabled) {
-        return [];
-    }
+function traitRows(c) {
     return [
         { label: 'vision', text: `x${c[COUNTER_AT.vision].toFixed(2)}` },
         { label: 'size', text: c[COUNTER_AT.baseSize].toFixed(1) },

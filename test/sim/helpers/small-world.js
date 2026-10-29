@@ -26,5 +26,7 @@ export function smallWorld(over = {}) {
         fertileZoneMax: 3,
         ...over,
     });
-    return createWorld(config, testPolicy);
+    const world = createWorld(config, testPolicy);
+    world.leakRate.fill(1); // hand-built agents take each new hidden value whole, the plain tanh rule
+    return world;
 }

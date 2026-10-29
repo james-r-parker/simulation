@@ -142,11 +142,11 @@ describe('findMate candidates', () => {
 
     it('takes the first partner in cell then entry order, not the nearest', () => {
         const w = placed([
-            [500, 500],
             [560, 500],
-            [520, 500],
+            [500, 500],
+            [570, 500],
         ]);
-        expect(findMate(w, 0, 1)).toBe(2);
+        expect(findMate(w, 0, 1)).toBe(1);
     });
 
     it('moves on to the next candidate when the draw fails, drawing for each', () => {

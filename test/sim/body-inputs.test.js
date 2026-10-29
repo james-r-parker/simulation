@@ -138,18 +138,8 @@ describe('writeBodyInputs', () => {
         expect(body(w, slot).slice(15)).toEqual([1, 0.95, 0, 1].map(Math.fround));
     });
 
-    it('writes sex 0 and the memory read-backs as 0 while leakEnabled is false', () => {
+    it('feeds last tick MEMORY_A and MEMORY_B back as inputs 33 and 34', () => {
         const { w, slot } = ready();
-        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
-        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
-        writeBodyInputs(w, slot);
-        const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
-        expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 35))).toEqual([0, 0, 0]);
-    });
-
-    it('feeds last tick MEMORY_A and MEMORY_B back as inputs 33 and 34 when leakEnabled', () => {
-        const { w, slot } = ready();
-        w.config = { ...w.config, leakEnabled: true };
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
         writeBodyInputs(w, slot);

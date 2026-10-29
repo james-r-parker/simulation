@@ -18,18 +18,14 @@ describe('roleSkillOf', () => {
 
 describe('bodyPlanOf', () => {
     it('maps the two traits from 0.7 to 1.3 onto 0 to 1', () => {
-        expect(bodyPlanOf(1.3, 1.3, true)).toBeCloseTo(1);
-        expect(bodyPlanOf(1, 1, true)).toBeCloseTo(0.5);
-        expect(bodyPlanOf(0.7, 0.7, true)).toBeCloseTo(0);
+        expect(bodyPlanOf(1.3, 1.3)).toBeCloseTo(1);
+        expect(bodyPlanOf(1, 1)).toBeCloseTo(0.5);
+        expect(bodyPlanOf(0.7, 0.7)).toBeCloseTo(0);
     });
 
     it('clamps values outside the trait span', () => {
-        expect(bodyPlanOf(2, 2, true)).toBe(1);
-        expect(bodyPlanOf(0, 0, true)).toBe(0);
-    });
-
-    it('is 0.5 with traits off', () => {
-        expect(bodyPlanOf(1.3, 0.7, false)).toBe(0.5);
+        expect(bodyPlanOf(2, 2)).toBe(1);
+        expect(bodyPlanOf(0, 0)).toBe(0);
     });
 });
 

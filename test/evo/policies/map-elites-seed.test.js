@@ -267,11 +267,10 @@ describe('initBrain sources', () => {
 
 /**
  * Seeds slot 0 until an archive child appears (its parent has the smallest sigma, so brain weights barely move).
- * @param {{traitsEnabled: boolean}} biology the biology flag under test
  * @returns {{brainMove: number, traitMove: number}} the largest change of a brain weight / of a trait or leak gene
  */
-function mutatedParts({ traitsEnabled }) {
-    const { policy, world, records } = setup({}, { traitsEnabled, hashCellSize: 256 });
+function mutatedParts() {
+    const { policy, world, records } = setup({}, { hashCellSize: 256 });
     fill(policy, { spec: 0, count: 12, sigma: SIGMA_MIN });
     const row = world.weights.subarray(0, world.layout.weightCount);
     const rng = createRng(3);
@@ -286,16 +285,10 @@ function mutatedParts({ traitsEnabled }) {
 }
 
 describe('initBrain mutation of an archive child', () => {
-    it('steps the trait and leak genes by TRAIT_SIGMA and the brain by the row sigma when biology is on', () => {
-        const { brainMove, traitMove } = mutatedParts({ traitsEnabled: true });
+    it('steps the trait and leak genes by TRAIT_SIGMA and the brain by the row sigma', () => {
+        const { brainMove, traitMove } = mutatedParts();
         expect(brainMove).toBeLessThan(0.03);
         expect(traitMove).toBeGreaterThan(0.03);
-    });
-
-    it('steps every gene by the row sigma when biology is off', () => {
-        const { brainMove, traitMove } = mutatedParts({ traitsEnabled: false });
-        expect(brainMove).toBeLessThan(0.03);
-        expect(traitMove).toBeLessThan(0.03);
     });
 });
 

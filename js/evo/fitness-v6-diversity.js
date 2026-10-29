@@ -1,6 +1,6 @@
 // The diversity group of `fitnessV6` (fitness-and-selection.md "Fitness v6"): a frequency-dependent factor on the
-// fitness at death. A niche is the specialisation and the tercile of the size trait (15 niches; 5 with `traitsEnabled`
-// off). The factor reads the niche's share of the alive agents at the latest checkpoint, so a death reads one number:
+// fitness at death. A niche is the specialisation and the tercile of the size trait (15 niches).
+// The factor reads the niche's share of the alive agents at the latest checkpoint, so a death reads one number:
 // `tallyNiches` rebuilds the shares once per checkpoint (one pass over the slots the checkpoint already walks) and
 // nothing allocates after `createNicheTally`. Pure: no clock, no randomness.
 
@@ -20,15 +20,11 @@ const TERCILES = 3;
 
 /**
  * @param {number} spec the specialisation index
- * @param {number} sizeMultiplier the size trait as a multiple of the default `baseSize` (ignored when traits are off)
- * @param {boolean} traitsEnabled whether the config has traits on
+ * @param {number} sizeMultiplier the size trait as a multiple of the default `baseSize`
  * @param {Record<string, number>} [weights] `FITNESS_V6_DIVERSITY` entries (the size cut points)
- * @returns {number} the niche index: `spec` with traits off, else `spec * 3` plus the size tercile (0 small, 1 mid, 2 large)
+ * @returns {number} the niche index: `spec * 3` plus the size tercile (0 small, 1 mid, 2 large)
  */
-export function nicheOf(spec, sizeMultiplier, traitsEnabled, weights = FITNESS_V6_DIVERSITY) {
-    if (!traitsEnabled) {
-        return spec;
-    }
+export function nicheOf(spec, sizeMultiplier, weights = FITNESS_V6_DIVERSITY) {
     let tercile = 1;
     if (sizeMultiplier < weights.SIZE_LOW) {
         tercile = 0;
@@ -39,11 +35,10 @@ export function nicheOf(spec, sizeMultiplier, traitsEnabled, weights = FITNESS_V
 }
 
 /**
- * @param {boolean} traitsEnabled whether the config has traits on
  * @returns {{count: number, shares: Float64Array}} a tally with the niche count and a zero share per niche
  */
-export function createNicheTally(traitsEnabled) {
-    const count = traitsEnabled ? SPEC_COUNT * TERCILES : SPEC_COUNT;
+export function createNicheTally() {
+    const count = SPEC_COUNT * TERCILES;
     return { count, shares: new Float64Array(count) };
 }
 
@@ -56,12 +51,12 @@ export function createNicheTally(traitsEnabled) {
  */
 export function tallyNiches(tally, world, weights = FITNESS_V6_DIVERSITY) {
     const { shares } = tally;
-    const { traitsEnabled, baseSize } = world.config;
+    const { baseSize } = world.config;
     shares.fill(0);
     let alive = 0;
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
-            shares[nicheOf(world.spec[slot], world.baseSize[slot] / baseSize, traitsEnabled, weights)]++;
+            shares[nicheOf(world.spec[slot], world.baseSize[slot] / baseSize, weights)]++;
             alive++;
         }
     }

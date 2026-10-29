@@ -101,6 +101,9 @@ describe('inspectorView on a real selected agent', () => {
             'kills',
             'children',
             'fitness so far',
+            'vision',
+            'size',
+            'child share',
         ]);
         expect(view.counters.find((c) => c.label === 'age')?.text).toMatch(/ticks \(.+ seasons\)$/);
         expect(view.counters.find((c) => c.label === 'energy')?.text).toMatch(/^\d+%$/);
@@ -156,7 +159,7 @@ describe('inspectorView sex and trait rows', () => {
             return inspectorView({ snapshot, ready: { ...ready, info }, slots }).counters;
         };
         expect(labels(ready.info).map((c) => c.label)).not.toContain('sex');
-        const on = { ...ready.info, sexesEnabled: true, traitsEnabled: true };
+        const on = { ...ready.info, sexesEnabled: true };
         expect(labels(on).find((c) => c.label === 'sex')?.text).toBe('female');
         expect(labels(on, ready.layout.flags.MALE).find((c) => c.label === 'sex')?.text).toBe('male');
         expect(

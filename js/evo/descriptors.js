@@ -40,13 +40,9 @@ export function roleSkillOf(deliberate, chance) {
 /**
  * @param {number} size the size trait as a multiple of the default
  * @param {number} vision the vision trait as a multiple of the default
- * @param {boolean} traitsEnabled whether the config has traits on
- * @returns {number} `(size + vision - 1.4) / 1.2` clamped to 0..1; 0.5 with traits off
+ * @returns {number} `(size + vision - 1.4) / 1.2` clamped to 0..1
  */
-export function bodyPlanOf(size, vision, traitsEnabled) {
-    if (!traitsEnabled) {
-        return 0.5;
-    }
+export function bodyPlanOf(size, vision) {
     return Math.max(0, Math.min(1, (size + vision - BODY_PLAN_MIN) / BODY_PLAN_SPAN));
 }
 

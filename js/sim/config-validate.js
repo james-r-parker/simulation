@@ -322,7 +322,7 @@ function checkCrossKey(config) {
             `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents (${events})`,
         );
     }
-    const baseSizeMax = config.traitsEnabled ? config.baseSize * TRAIT_MAX : config.baseSize;
+    const baseSizeMax = config.baseSize * TRAIT_MAX;
     const largest = Math.max(
         baseSizeMax + config.maxEnergy / config.energyToSize,
         config.foodRadius,

@@ -3,7 +3,7 @@ import { aliveSlots, microSuite, microWorld, seededValues } from './fixture.js';
 
 const COUNT = 1024;
 const genes = seededValues('leak-genes', COUNT, -4, 4);
-const world = microWorld({ leakEnabled: true });
+const world = microWorld();
 const slots = aliveSlots(world);
 
 microSuite('traits', [
@@ -18,7 +18,7 @@ microSuite('traits', [
         },
     ],
     [
-        `applyGenes with leakEnabled x ${slots.length} agents`,
+        `applyGenes x ${slots.length} agents`,
         () => {
             for (const slot of slots) {
                 applyGenes(world, slot);

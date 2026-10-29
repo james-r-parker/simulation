@@ -35,7 +35,7 @@ export function createNicheScene() {
  */
 function cellId(observer, world, slot) {
     const skill = roleSkillOf(deliberateIntake(observer.intent, slot), chanceIntake(observer.intent, slot));
-    const body = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot], world.config.traitsEnabled);
+    const body = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot]);
     return world.spec[slot] * CELLS + cellOf(skill, body);
 }
 

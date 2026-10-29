@@ -19,7 +19,7 @@ export const NICHE_TALLY_TICKS = 1000;
 export function noteBody(observer, slot, size, vision) {
     observer.sizeTrait[slot] = size;
     observer.visionTrait[slot] = vision;
-    observer.niche[slot] = nicheOf(observer.spec[slot], size, observer.config.traitsEnabled);
+    observer.niche[slot] = nicheOf(observer.spec[slot], size);
 }
 
 /**
@@ -32,7 +32,7 @@ export function noteBody(observer, slot, size, vision) {
  * @returns {void}
  */
 export function noteBirthBody(observer, world, slot, genomeId) {
-    const held = world.config.traitsEnabled && world.genomeId[slot] === genomeId;
+    const held = world.genomeId[slot] === genomeId;
     noteBody(observer, slot, held ? world.baseSize[slot] / world.config.baseSize : 1, held ? world.vision[slot] : 1);
 }
 
@@ -46,7 +46,7 @@ export function noteBirthBody(observer, world, slot, genomeId) {
  */
 export function noteNiches(observer, world) {
     if (world.tick % NICHE_TALLY_TICKS === 0) {
-        observer.nicheTally ??= createNicheTally(world.config.traitsEnabled);
+        observer.nicheTally ??= createNicheTally();
         tallyNiches(observer.nicheTally, world);
     }
 }

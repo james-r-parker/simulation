@@ -204,8 +204,8 @@ describe('validateConfig error text', () => {
     });
 
     it('states the largest radius when the hash cell is too small', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, hashCellSize: 125 }))).toBe(
-            'config.hashCellSize is 125; expected > the largest radius (125)',
+        expect(message(() => createConfig({ ...FEATURES_OFF, hashCellSize: 132 }))).toBe(
+            'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
     });
 });

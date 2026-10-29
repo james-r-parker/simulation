@@ -81,7 +81,7 @@ function logDeath(observer, slot, fitness) {
     }
     log.fitness[row] = fitness;
     log.roleSkill[row] = roleSkillOf(deliberateIntake(observer.intent, slot), chanceIntake(observer.intent, slot));
-    log.bodyPlan[row] = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot], observer.config.traitsEnabled);
+    log.bodyPlan[row] = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot]);
     observer.deathCount = row + 1;
 }
 

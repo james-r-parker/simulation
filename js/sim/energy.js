@@ -129,7 +129,7 @@ export function transferEnergy(world, giver, receiver, amount) {
  * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1
  */
 function visionLoss(world, slot) {
-    if (!world.config.traitsEnabled || !(world.vision[slot] > 1)) {
+    if (!(world.vision[slot] > 1)) {
         return 0;
     }
     return world.config.passiveLoss * world.config.visionCost * (world.vision[slot] - 1);

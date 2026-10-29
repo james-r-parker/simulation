@@ -65,7 +65,7 @@ describe('childBrain', () => {
         const mother = row(world, 0);
         const child = row(world, 2);
         expect(Array.from(child)).not.toEqual(Array.from(mother));
-        const maxDelta = Math.max(...child.map((w, i) => Math.abs(w - mother[i])));
+        const maxDelta = Math.max(...child.slice(0, world.layout.traitStart).map((w, i) => Math.abs(w - mother[i])));
         expect(maxDelta).toBeGreaterThan(0);
         expect(maxDelta).toBeLessThan(0.1);
         expect(policy.sigma[2]).toBeGreaterThanOrEqual(SIGMA_MIN);

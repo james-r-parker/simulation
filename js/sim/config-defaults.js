@@ -241,10 +241,8 @@ export const DEFAULTS = deepFreeze({
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
     invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none
     invasionSize: 12, // new: immigrants in a pulse
-    traitsEnabled: true, // new: evolvable size, vision and child share (world-balance T33)
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
-    leakEnabled: true, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
     meritEnabled: true, // new: fitness-and-selection T16; on from T48b (the E41 finalist split-300)
     meritChanceWeight: 0.25, // new: fitness-and-selection T16 (merit, off)
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)

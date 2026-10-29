@@ -1,5 +1,5 @@
+import { allocBody } from './body.js';
 import { OUTPUT_COUNT } from '../../../js/sim/brain-layout.js';
-import { allocAgent } from '../../../js/sim/world.js';
 import { ENERGY_SOURCE, addEnergy } from '../../../js/sim/energy.js';
 import { smallWorld } from './small-world.js';
 
@@ -38,7 +38,7 @@ export function lifeWorld(over = {}) {
  * @returns {number} the slot
  */
 export function addBlob(w, fields = {}) {
-    const slot = allocAgent(w);
+    const slot = allocBody(w);
     w.genomeId[slot] = w.nextId++;
     w.lineageId[slot] = w.genomeId[slot];
     w.x[slot] = 500;

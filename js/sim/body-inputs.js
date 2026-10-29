@@ -31,8 +31,8 @@ function seasonTrig(phase) {
 }
 
 /**
- * Writes body inputs 32 to 34: `sex` (0 female, 1 male; always 0 unless `sexesEnabled`) and, when `leakEnabled`, last tick's `MEMORY_A` and
- * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing); otherwise 0.
+ * Writes body inputs 32 to 34: `sex` (0 female, 1 male; always 0 unless `sexesEnabled`) and last tick's `MEMORY_A` and
+ * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing).
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} o the offset of the agent's body block in `world.inputs`
@@ -41,9 +41,8 @@ function seasonTrig(phase) {
 function writeMemoryInputs(world, slot, o) {
     const out = world.inputs;
     out[o + BODY_INPUT.SEX] = world.sex[slot];
-    const remember = world.config.leakEnabled;
-    out[o + BODY_INPUT.MEMORY_A] = remember ? world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] : 0;
-    out[o + BODY_INPUT.MEMORY_B] = remember ? world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] : 0;
+    out[o + BODY_INPUT.MEMORY_A] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A];
+    out[o + BODY_INPUT.MEMORY_B] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B];
 }
 
 /**

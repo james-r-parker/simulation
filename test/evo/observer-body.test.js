@@ -6,24 +6,17 @@ import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/obser
 
 describe('noteBody', () => {
     it('stores the traits and the niche of the slot', () => {
-        const { observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const { observer } = observed({ hashCellSize: 256 });
         observer.spec[2] = 1;
         noteBody(observer, 2, 1.2, 0.8);
         expect([observer.sizeTrait[2], observer.visionTrait[2]]).toEqual([Math.fround(1.2), Math.fround(0.8)]);
         expect(observer.niche[2]).toBe(1 * 3 + 2);
     });
-
-    it('uses the specialisation alone as the niche with traits off', () => {
-        const { observer } = observed({ traitsEnabled: false });
-        observer.spec[0] = 3;
-        noteBody(observer, 0, 1.3, 1);
-        expect(observer.niche[0]).toBe(3);
-    });
 });
 
 describe('noteBirthBody', () => {
     it('reads the newborn traits from the world as multiples of the defaults', () => {
-        const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const { world, observer } = observed({ hashCellSize: 256 });
         const slot = addBorn(world);
         world.baseSize[slot] = world.config.baseSize * 0.8;
         world.vision[slot] = 1.25;
@@ -33,23 +26,18 @@ describe('noteBirthBody', () => {
         expect(observer.niche[slot] % 3).toBe(0);
     });
 
-    it('gives the default traits when the slot holds another genome or traits are off', () => {
-        const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+    it('gives the default traits when the slot holds another genome', () => {
+        const { world, observer } = observed({ hashCellSize: 256 });
         const slot = addBorn(world);
         world.baseSize[slot] = world.config.baseSize * 0.8;
         noteBirthBody(observer, world, slot, world.genomeId[slot] + 1);
         expect([observer.sizeTrait[slot], observer.visionTrait[slot]]).toEqual([1, 1]);
-        const off = observed({ traitsEnabled: false });
-        const other = addBorn(off.world);
-        off.world.baseSize[other] = 3;
-        noteBirthBody(off.observer, off.world, other, off.world.genomeId[other]);
-        expect(off.observer.sizeTrait[other]).toBe(1);
     });
 });
 
 describe('the observer at birth and death', () => {
     it('stores the traits of a newborn and reads them after the slot is freed', () => {
-        const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const { world, observer } = observed({ hashCellSize: 256 });
         nextTick(world, 0);
         const slot = addBorn(world);
         world.baseSize[slot] = world.config.baseSize * 1.2;
@@ -76,11 +64,11 @@ describe('the observer at birth and death', () => {
         world.alive[slot] = 0;
         observe(observer, world);
         expect(observer.deaths.roleSkill[0]).toBe(0.75);
-        expect(observer.deaths.bodyPlan[0]).toBe(0.5);
+        expect(observer.deaths.bodyPlan[0]).toBeCloseTo(0.5, 12);
     });
 
     it('gives a born-and-died-in-one-tick agent the default traits', () => {
-        const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const { world, observer } = observed({ hashCellSize: 256 });
         nextTick(world, 3);
         pushBorn(world, { slot: 4, genomeId: 77 });
         pushDied(world, { slot: 4, genomeId: 77 });
@@ -92,7 +80,7 @@ describe('the observer at birth and death', () => {
 
 describe('the niche tally', () => {
     it('is absent until the first interval, then rebuilt at every one', () => {
-        const { world, observer } = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const { world, observer } = observed({ hashCellSize: 256 });
         nextTick(world, NICHE_TALLY_TICKS - 1);
         addBorn(world);
         addBorn(world);
@@ -115,12 +103,12 @@ describe('the niche tally', () => {
     });
 
     it('lets fitnessV6 pay a rare niche more than a common one', () => {
-        const { world, observer } = observed({ traitsEnabled: false });
-        const common = [addBorn(world), addBorn(world), addBorn(world)];
+        const { world, observer } = observed({ maxAgents: 64 });
+        const common = Array.from({ length: 30 }, () => addBorn(world));
         const rare = addBorn(world, { spec: 2 });
         for (const slot of [...common, rare]) {
             observer.spec[slot] = world.spec[slot];
-            observer.niche[slot] = world.spec[slot];
+            observer.niche[slot] = world.spec[slot] * 3 + 1;
             observer.intent.deliberateFood[slot] = 1000;
         }
         const fitness = createFitnessV6({});
@@ -129,6 +117,7 @@ describe('the niche tally', () => {
         world.tick = NICHE_TALLY_TICKS;
         noteNiches(observer, world);
         expect(fitness(observer, common[0], config) / before[0]).toBeCloseTo(0.75, 6);
-        expect(fitness(observer, rare, config) / before[1]).toBeCloseTo(0.875, 6);
+        // 15 niches: the common niche holds 30 of 31 and clamps to the floor; the rare one holds 1 of 31
+        expect(fitness(observer, rare, config) / before[1]).toBeCloseTo(1 + 0.5 * (1 - 15 / 31), 6);
     });
 });

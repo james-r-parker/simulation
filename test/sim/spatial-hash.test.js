@@ -19,7 +19,7 @@ const SMALL = {
     worldHeight: 1000,
 };
 const MAX_SIZE = 125;
-const CELL = 128;
+const CELL = 140;
 
 /** @returns {{ config: any, world: any, hash: any }} */
 function setup() {
@@ -120,7 +120,7 @@ describe('cellRange', () => {
     it('clamps a circle past every edge to the grid', () => {
         const { hash } = setup();
         expect(Array.from(cellRange(hash, 0, 0, 50))).toEqual([0, 0, 0, 0]);
-        const far = cellRange(hash, 1000, 1000, 50);
+        const far = cellRange(hash, 1000, 1000, 5);
         expect(Array.from(far)).toEqual([hash.cols - 1, hash.rows - 1, hash.cols - 1, hash.rows - 1]);
         expect(Array.from(cellRange(hash, -500, 5000, 10))).toEqual([0, hash.rows - 1, 0, hash.rows - 1]);
     });

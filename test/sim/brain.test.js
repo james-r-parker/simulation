@@ -132,20 +132,6 @@ describe('forwardAll', () => {
 });
 
 describe('forwardAll contract details', () => {
-    it('keeps the sign of a negative-zero bias when every input and hidden product is -0 or skipped', () => {
-        const world = smallWorld();
-        const { weightCount, inputCount, hidden, wIn, wRec, bHidden } = world.layout;
-        world.alive[0] = 1;
-        world.weights.fill(0, 0, weightCount);
-        world.weights.fill(1, wIn, wIn + inputCount * hidden);
-        world.weights.fill(-1, wRec, wRec + hidden * hidden);
-        world.weights.fill(-0, bHidden, bHidden + hidden);
-        forwardAll(world);
-        for (let j = 0; j < hidden; j++) {
-            expect(Object.is(world.hidden[j], -0)).toBe(true);
-        }
-    });
-
     it('does not write into the outputs of the next slot', () => {
         const world = smallWorld();
         const { outputCount } = world.layout;

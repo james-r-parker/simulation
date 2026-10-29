@@ -92,17 +92,13 @@ function hiddenStep(world, slot) {
     }
     addInputs(world, slot);
     addRecurrent(world, slot);
-    if (world.config.leakEnabled) {
-        const hBase = slot * H;
-        const { leakRate } = world;
-        detTanhInto(acc, acc, 0, H); // in place: each group of four is read whole before it is written
-        for (let j = 0; j < H; j++) {
-            const a = leakRate[hBase + j];
-            hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * acc[j]);
-        }
-        return;
+    const hBase = slot * H;
+    const { leakRate } = world;
+    detTanhInto(acc, acc, 0, H); // in place: each group of four is read whole before it is written
+    for (let j = 0; j < H; j++) {
+        const a = leakRate[hBase + j];
+        hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * acc[j]);
     }
-    detTanhInto(acc, hidden, scratchBase, H);
 }
 
 /**

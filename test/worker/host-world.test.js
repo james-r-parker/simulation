@@ -139,7 +139,7 @@ describe('worldInfo patches', () => {
 describe('worldInfo calendar and switches', () => {
     it('sends one season in ticks (eraSeasonTicks)', () => {
         const base = worldInfo(small());
-        expect(base).toMatchObject({ seasonLength: 36000, sexesEnabled: false, traitsEnabled: false });
+        expect(base).toMatchObject({ seasonLength: 36000, sexesEnabled: false });
         const run = buildRun({
             seed: 3,
             overrides: { ...SMALL_CONFIG, eraSeasonTicks: 500, sexesEnabled: true },

@@ -1,3 +1,4 @@
+import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import {
     ENERGY_SOURCE,
@@ -10,7 +11,7 @@ import {
 } from '../../js/sim/energy.js';
 import { createConfig } from '../../js/sim/config.js';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
-import { TIMER_CAP, allocAgent, allocateWorld } from '../../js/sim/world.js';
+import { TIMER_CAP, allocateWorld } from '../../js/sim/world.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const SMALL = {
@@ -39,7 +40,7 @@ const SMALL = {
 function worldWith(n = 2) {
     const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
     for (let i = 0; i < n; i++) {
-        world.temperature[allocAgent(world)] = world.config.temperatureStart;
+        world.temperature[allocBody(world)] = world.config.temperatureStart;
     }
     return world;
 }
@@ -303,7 +304,7 @@ describe('applyCosts temperature', () => {
      */
     function sitter(t, over = {}) {
         const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }));
-        const slot = allocAgent(world);
+        const slot = allocBody(world);
         world.energy[slot] = 100;
         world.size[slot] = 20;
         world.temperature[slot] = t;

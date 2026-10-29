@@ -152,7 +152,6 @@ export function worldInfo({ config, world }) {
         maxAgeTicks: config.maxAgeTicks,
         seasonLength: yearTicks(config) / SEASONS_PER_YEAR,
         sexesEnabled: config.sexesEnabled,
-        traitsEnabled: config.traitsEnabled,
         seasonNames: [...SEASON_NAMES],
         ticksPerSecond: BASE_TICKS_PER_SECOND,
         rayCount: config.rayCount,

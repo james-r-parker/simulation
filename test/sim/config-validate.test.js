@@ -244,11 +244,11 @@ describe('validateConfig cross-key rules', () => {
     });
 
     it('rejects a hashCellSize not above the largest radius', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 125 })).toThrow(/hashCellSize/);
+        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 132 })).toThrow(/hashCellSize/);
     });
 
     it('accepts a hashCellSize just above the largest radius', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 125.5 })).not.toThrow();
+        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 132.6 })).not.toThrow();
     });
 
     it('counts the food radius in the largest radius', () => {

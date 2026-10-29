@@ -37,11 +37,12 @@ describe('observer events', () => {
         observe(observer, world);
         expect(observer.genomeId[1]).toBe(6);
         for (const name of observer.slotArrays.filter(
-            (/** @type {string} */ n) => !/^(genomeId|lineageId|sizeTrait|visionTrait)$/.test(n),
+            (/** @type {string} */ n) => !/^(genomeId|lineageId|sizeTrait|visionTrait|niche)$/.test(n),
         )) {
             expect(observer[name][1], name).toBe(0);
         }
         expect([observer.sizeTrait[1], observer.visionTrait[1]]).toEqual([1, 1]);
+        expect(observer.niche[1]).toBe(1); // the mid size tercile of specialisation 0
         expect(
             observer.cellBits
                 .subarray(observer.cellBytes, 2 * observer.cellBytes)

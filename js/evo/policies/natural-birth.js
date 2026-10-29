@@ -4,7 +4,6 @@
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { BORN_CAUSE } from '../../sim/events.js';
-import { biologyOn } from '../../sim/traits.js';
 
 /**
  * Row views are built once per slot and reused (a `subarray` allocates), so births allocate nothing after warm-up.
@@ -66,7 +65,7 @@ export function createBirth(config) {
         } else {
             row.set(motherRow);
         }
-        mutateWeights(row, childSigma, rng, biologyOn(world.config) ? layout.traitStart : count);
+        mutateWeights(row, childSigma, rng, layout.traitStart);
         sigma[child] = childSigma;
     }
 

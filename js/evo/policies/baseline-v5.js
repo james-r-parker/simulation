@@ -3,7 +3,6 @@
 import { fitnessV5 } from '../../evo/fitness-v5.js';
 import { nextFloat, nextGaussian } from '../../sim/rng.js';
 import { BORN_CAUSE } from '../../sim/events.js';
-import { biologyOn } from '../../sim/traits.js';
 import { LEAK_GENE_START, TRAIT_SIGMA, WEIGHT_CLAMP } from '../../evo/mutation.js';
 
 /** NN_WEIGHT_INIT_STD_DEV */
@@ -32,12 +31,10 @@ function initBrain(world, slot, rng) {
     for (let i = 0; i < count; i++) {
         world.weights[slot * count + i] = nextGaussian(rng) * INIT_SIGMA;
     }
-    if (biologyOn(world.config)) {
-        // the same trait and leak genes as the live policy (`randomWeights`); the draws above are unchanged
-        const { traitStart, leakStart } = world.layout;
-        world.weights.fill(0, slot * count + traitStart, slot * count + leakStart);
-        world.weights.fill(LEAK_GENE_START, slot * count + leakStart, (slot + 1) * count);
-    }
+    // the same trait and leak genes as the live policy (`randomWeights`); the draws above are unchanged
+    const { traitStart, leakStart } = world.layout;
+    world.weights.fill(0, slot * count + traitStart, slot * count + leakStart);
+    world.weights.fill(LEAK_GENE_START, slot * count + leakStart, (slot + 1) * count);
 }
 
 /**
@@ -53,8 +50,8 @@ function childBrain(world, child, mother, opts) {
     const count = layout.weightCount;
     const mate = opts.cause === BORN_CAUSE.MATE;
     const { rng } = opts;
-    // with a biology feature on, the trait and leak genes (the end of the row) mutate as the live policy's do
-    const geneStart = biologyOn(world.config) ? layout.traitStart : count;
+    // the trait and leak genes (the end of the row) mutate as the live policy's do
+    const geneStart = layout.traitStart;
     for (let i = 0; i < count; i++) {
         let w = weights[mother * count + i];
         if (mate && nextFloat(rng) < CROSSOVER_PROBABILITY) {

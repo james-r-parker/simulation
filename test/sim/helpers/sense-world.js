@@ -1,4 +1,4 @@
-import { allocAgent } from '../../../js/sim/world.js';
+import { allocBody } from './body.js';
 import { buildHash } from '../../../js/sim/spatial-hash.js';
 import { smallWorld } from './small-world.js';
 
@@ -29,7 +29,7 @@ export function senseWorld(over = {}) {
  * @returns {number} the slot
  */
 export function addAgent(w, x, y, size) {
-    const slot = allocAgent(w);
+    const slot = allocBody(w);
     w.x[slot] = x;
     w.y[slot] = y;
     w.size[slot] = size;

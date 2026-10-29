@@ -59,7 +59,7 @@ describe('eval.mother_wait_by_condition', () => {
 
 describe('eval.childshare_by_condition', () => {
     it('is the mean within-lineage slope of childShare on energy before the birth', () => {
-        const r = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const r = observed({ hashCellSize: 256 });
         const { maxEnergy } = r.world.config;
         const mother = addBlob(r.world);
         const flat = addBlob(r.world);
@@ -79,7 +79,7 @@ describe('eval.childshare_by_condition', () => {
     });
 
     it('adds the child gift back to the mother energy, and is null below the least births', () => {
-        const r = observed({ traitsEnabled: true, hashCellSize: 256 });
+        const r = observed({ hashCellSize: 256 });
         const { maxEnergy } = r.world.config;
         const mother = addBlob(r.world, { energy: 0.2 * maxEnergy });
         const child = addBlob(r.world, { energy: 0.1 * maxEnergy });

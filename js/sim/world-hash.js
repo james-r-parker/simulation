@@ -191,10 +191,8 @@ function hashOptionalArrays(world, views) {
     if (config.hebbianRate > 0) {
         fnv64Bytes(digest, views.fastOut);
     }
-    if (config.traitsEnabled) {
-        fnv64Bytes(digest, views.vision);
-        fnv64Bytes(digest, views.baseSize);
-    }
+    fnv64Bytes(digest, views.vision);
+    fnv64Bytes(digest, views.baseSize);
     if (config.maxBirthsPerWindow > 0) {
         fnv64Bytes(digest, views.birthRing);
     }

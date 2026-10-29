@@ -5,7 +5,7 @@ import { detTanh } from '../../js/sim/det-math.js';
 import { canMatePair } from '../../js/sim/mate-eligibility.js';
 import { castRays } from '../../js/sim/ray-march.js';
 import { advancePregnancies } from '../../js/sim/reproduction.js';
-import { TRAIT_MAX, TRAIT_SPAN, applyGenes, biologyOn, traitValue, visionOf } from '../../js/sim/traits.js';
+import { TRAIT_MAX, TRAIT_SPAN, applyGenes, traitValue, visionOf } from '../../js/sim/traits.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -29,9 +29,6 @@ function setGenes(w, slot, genes) {
     applyGenes(w, slot);
 }
 
-/** The config that switches traits on; the cell size must cover a body 1.3 x as wide at its base. */
-const ON = { traitsEnabled: true, hashCellSize: 140 };
-
 describe('traitValue', () => {
     it('is 1 for a gene of 0 and runs from 0.7 to 1.3', () => {
         expect(traitValue(0)).toBe(1);
@@ -42,18 +39,9 @@ describe('traitValue', () => {
     });
 });
 
-describe('biologyOn', () => {
-    it('is false until a feature is switched on', () => {
-        expect(biologyOn({ leakEnabled: false, traitsEnabled: false, hebbianRate: 0 })).toBe(false);
-        expect(biologyOn({ leakEnabled: true, traitsEnabled: false, hebbianRate: 0 })).toBe(true);
-        expect(biologyOn({ leakEnabled: false, traitsEnabled: true, hebbianRate: 0 })).toBe(true);
-        expect(biologyOn({ leakEnabled: false, traitsEnabled: false, hebbianRate: 0.01 })).toBe(true);
-    });
-});
-
-describe('applyGenes with traitsEnabled', () => {
+describe('applyGenes', () => {
     it('derives vision, base size and child share from the trait genes', () => {
-        const w = lifeWorld({ ...ON });
+        const w = lifeWorld({});
         const slot = addBlob(w);
         setGenes(w, slot, { SIZE: 1, VISION: -1, CHILD_SHARE: 0.5 });
         expect(w.baseSize[slot]).toBe(Math.fround(w.config.baseSize * traitValue(1)));
@@ -61,58 +49,43 @@ describe('applyGenes with traitsEnabled', () => {
         expect(w.childShare[slot]).toBe(Math.fround(w.config.childEnergyShare * traitValue(0.5)));
     });
 
-    it('writes nothing while traitsEnabled is false, and a freed slot is zeroed', () => {
-        const off = lifeWorld();
-        const slot = addBlob(off);
-        setGenes(off, slot, { SIZE: 1, VISION: 1, CHILD_SHARE: 1 });
-        expect(off.vision[slot] + off.baseSize[slot] + off.childShare[slot]).toBe(0);
-        const on = lifeWorld({ ...ON });
+    it('zeroes a freed slot', () => {
+        const on = lifeWorld();
         const s = addBlob(on);
         setGenes(on, s, { SIZE: 1, VISION: 1, CHILD_SHARE: 1 });
         freeAgent(on, s);
         expect(on.vision[s] + on.baseSize[s] + on.childShare[s]).toBe(0);
     });
 
-    it('sizes a body from its own base size, and leaves the config value when off', () => {
-        const on = lifeWorld({ ...ON });
+    it('sizes a body from its own base size', () => {
+        const on = lifeWorld({});
         const a = addBlob(on);
         setGenes(on, a, { SIZE: 40 });
         updateSize(on, a);
         expect(on.size[a]).toBeCloseTo(on.config.baseSize * 1.3 + on.energy[a] / on.config.energyToSize, 4);
-        const off = lifeWorld();
-        const b = addBlob(off);
-        updateSize(off, b);
-        expect(off.size[b]).toBe(off.config.baseSize + off.energy[b] / off.config.energyToSize);
     });
 });
 
 describe('vision trait', () => {
-    it('scales the ray length through visionOf, and is the spec range when off', () => {
-        const on = lifeWorld({ ...ON });
+    it('scales the ray length through visionOf', () => {
+        const on = lifeWorld({});
         const a = addBlob(on, { spec: 1 });
         setGenes(on, a, { VISION: 40 });
         expect(visionOf(on, a)).toBeCloseTo(on.visionBySpec[1] * 1.3, 4);
-        const off = lifeWorld();
-        const b = addBlob(off, { spec: 1 });
-        expect(visionOf(off, b)).toBe(off.visionBySpec[1]);
     });
 
-    it('lets a ray march reach food at 1.25 x the spec range for the largest vision trait, and not otherwise', () => {
-        const seen = (/** @type {boolean} */ traitsEnabled) => {
-            const w = senseWorld({ ...(traitsEnabled ? ON : {}), worldWidth: 3000, worldHeight: 3000 });
-            const me = addAgent(w, 500, 500, 20);
-            const range = w.visionBySpec[w.spec[me]];
-            setGenes(w, me, { VISION: 40 });
-            addFood(w, 500 + 1.25 * range, 500, 5);
-            castRays(w, rebuild(w), me);
-            return w.inputs[me * w.layout.inputCount + 1] === 1;
-        };
-        expect(seen(true)).toBe(true);
-        expect(seen(false)).toBe(false);
+    it('lets a ray march reach food at 1.25 x the spec range for the largest vision trait', () => {
+        const w = senseWorld({ worldWidth: 3000, worldHeight: 3000 });
+        const me = addAgent(w, 500, 500, 20);
+        const range = w.visionBySpec[w.spec[me]];
+        setGenes(w, me, { VISION: 40 });
+        addFood(w, 500 + 1.25 * range, 500, 5);
+        castRays(w, rebuild(w), me);
+        expect(w.inputs[me * w.layout.inputCount + 1]).toBe(1);
     });
 
     it('stops at the ray length: food beyond 1.3 x the range is missed even with the largest trait', () => {
-        const w = senseWorld({ ...ON, worldWidth: 3000, worldHeight: 3000 });
+        const w = senseWorld({ worldWidth: 3000, worldHeight: 3000 });
         const me = addAgent(w, 500, 500, 20);
         setGenes(w, me, { VISION: 40 });
         addFood(w, 500 + 1.4 * w.visionBySpec[w.spec[me]], 500, 5);
@@ -122,7 +95,7 @@ describe('vision trait', () => {
     });
 
     it('charges passiveLoss x visionCost x (vision - 1) only above 1', () => {
-        const w = lifeWorld({ ...ON, visionCost: 0.5 });
+        const w = lifeWorld({ visionCost: 0.5 });
         const far = addBlob(w, { energy: 100 });
         const near = addBlob(w, { energy: 100 });
         const flat = addBlob(w, { energy: 100 });
@@ -139,7 +112,7 @@ describe('vision trait', () => {
 
 describe('child share trait', () => {
     it('sets the mating gift to the mother share and the mate threshold from the same share', () => {
-        const w = lifeWorld({ ...ON });
+        const w = lifeWorld({});
         const mother = addBlob(w, { energy: 800, pregnancy: 1, fatherId: 77 });
         setGenes(w, mother, { CHILD_SHARE: 40 });
         advancePregnancies(w, recordingPolicy([]));
@@ -150,17 +123,9 @@ describe('child share trait', () => {
         expect(w.energy[mother]).toBeCloseTo(800 * (1 - share), 3);
     });
 
-    it('uses childEnergyShare for a mother when traits are off', () => {
-        const w = lifeWorld();
-        const mother = addBlob(w, { energy: 800, pregnancy: 1, fatherId: 77 });
-        advancePregnancies(w, recordingPolicy([]));
-        expect(w.alive.indexOf(1, mother + 1)).toBeGreaterThan(mother);
-        expect(w.energy[mother]).toBeCloseTo(800 * (1 - w.config.childEnergyShare), 3);
-    });
-
     it('moves the canMatePair energy threshold with the lower slot share', () => {
         const mate = { mateOut: 1, spec: 2, energy: 700 };
-        const w = lifeWorld({ ...ON, childEnergyMin: 250 });
+        const w = lifeWorld({ childEnergyMin: 250 });
         const a = addBlob(w, mate);
         const b = addBlob(w, mate);
         w.size[a] = 25;
@@ -172,13 +137,9 @@ describe('child share trait', () => {
     });
 });
 
-describe('hashWorld and traitsEnabled', () => {
-    it('ignores vision and baseSize while off and includes them when on', () => {
-        const off = [lifeWorld({ seed: 4 }), lifeWorld({ seed: 4 })];
-        off[1].vision[0] = 0.9;
-        off[1].baseSize[0] = 30;
-        expect(hashWorld(off[1])).toBe(hashWorld(off[0]));
-        const on = [lifeWorld({ seed: 4, ...ON }), lifeWorld({ seed: 4, ...ON })];
+describe('hashWorld and traits', () => {
+    it('includes vision and baseSize', () => {
+        const on = [lifeWorld({ seed: 4 }), lifeWorld({ seed: 4 })];
         on[1].vision[0] = 0.9;
         expect(hashWorld(on[1])).not.toBe(hashWorld(on[0]));
         on[1].vision[0] = 0;
@@ -187,15 +148,14 @@ describe('hashWorld and traitsEnabled', () => {
     });
 });
 
-describe('hashCellSize with traitsEnabled', () => {
+describe('hashCellSize with traits', () => {
     it('must cover the largest body the size trait allows', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, traitsEnabled: false })).not.toThrow();
-        expect(() => createConfig({ ...FEATURES_OFF, traitsEnabled: true })).toThrow(/hashCellSize/);
-        expect(() => createConfig({ ...FEATURES_OFF, traitsEnabled: true, hashCellSize: 140 })).not.toThrow();
+        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 128 })).toThrow(/hashCellSize/);
+        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 140 })).not.toThrow();
     });
 
     it('keeps the hash able to build with a 1.3 x base size body', () => {
-        const w = lifeWorld({ ...ON });
+        const w = lifeWorld({});
         const slot = addBlob(w);
         setGenes(w, slot, { SIZE: 40 });
         updateSize(w, slot);

@@ -9,7 +9,7 @@ import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed } from './helpers/observer-world.js';
 
-const ON = { traitsEnabled: true, sexesEnabled: true, hashCellSize: 256 };
+const ON = { sexesEnabled: true, hashCellSize: 256 };
 const NAMES = ['trait_spread', 'body_plan_coverage', 'sex_balance'];
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
 const NO_SPREAD = 'no checkpoint after burn-in with 2 alive agents';
@@ -82,12 +82,6 @@ describe('eval.trait_spread', () => {
         checkpointWith(r, 10000, [{}]);
         expect(read(r).trait_spread).toEqual({ value: null, reason: NO_SPREAD });
     });
-
-    it('is null with traitsEnabled off, whatever the population', () => {
-        const r = observed({ ...ON, traitsEnabled: false });
-        checkpointWith(r, 10000, [{ size: 0.8 }, { size: 1.2 }]);
-        expect(read(r).trait_spread).toEqual({ value: null, reason: 'traitsEnabled is off' });
-    });
 });
 
 describe('eval.body_plan_coverage', () => {
@@ -126,15 +120,12 @@ describe('eval.body_plan_coverage', () => {
         expect(read(r).body_plan_coverage).toEqual({ value: 1 });
     });
 
-    it('is null with a reason when no checkpoint after burn-in has an agent, and with traitsEnabled off', () => {
+    it('is null with a reason when no checkpoint after burn-in has an agent', () => {
         const r = observed(ON);
         checkpointWith(r, 9999, [{}]);
         expect(read(r).body_plan_coverage).toEqual({ value: null, reason: NO_SAMPLE });
         checkpointWith(r, 10000, []);
         expect(read(r).body_plan_coverage).toEqual({ value: null, reason: NO_SAMPLE });
-        const off = observed({ ...ON, traitsEnabled: false });
-        checkpointWith(off, 10000, [{}]);
-        expect(read(off).body_plan_coverage).toEqual({ value: null, reason: 'traitsEnabled is off' });
     });
 });
 
@@ -165,12 +156,6 @@ describe('eval.sex_balance', () => {
         const off = observed({ ...ON, sexesEnabled: false });
         checkpointWith(off, 10000, [F, M]);
         expect(read(off).sex_balance).toEqual({ value: null, reason: 'sexesEnabled is off' });
-    });
-
-    it('does not depend on traitsEnabled', () => {
-        const r = observed({ ...ON, traitsEnabled: false });
-        checkpointWith(r, 10000, [F, F, F, M]);
-        expect(read(r).sex_balance).toEqual({ value: 0.25 });
     });
 });
 

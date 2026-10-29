@@ -24,12 +24,10 @@ describe('births', () => {
 
 describe('birth mutation of the trait and leak genes', () => {
     /**
-     * @param {Record<string, any>} over config overrides
      * @returns {number[]} the child's trait genes after a split from a mother whose genes are all 0
      */
-    function childGenes(over) {
+    function childGenes() {
         const { policy, world } = setup();
-        world.config = { ...world.config, ...over };
         const { layout } = world;
         world.alive[0] = 1;
         world.weights.fill(0, 0, layout.weightCount);
@@ -39,10 +37,7 @@ describe('birth mutation of the trait and leak genes', () => {
         return Array.from(world.weights.subarray(from, from + 4));
     }
 
-    it('uses the weight sigma while every biology feature is off and TRAIT_SIGMA once one is on', () => {
-        const off = childGenes({});
-        const on = childGenes({ leakEnabled: true });
-        expect(Math.max(...off.map(Math.abs))).toBeLessThan(0.02);
-        expect(Math.max(...on.map(Math.abs))).toBeGreaterThan(0.01);
+    it('steps the trait genes by TRAIT_SIGMA, not the weight sigma', () => {
+        expect(Math.max(...childGenes().map(Math.abs))).toBeGreaterThan(0.01);
     });
 });

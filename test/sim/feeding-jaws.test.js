@@ -1,8 +1,8 @@
+import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
-import { allocAgent } from '../../js/sim/world.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -18,8 +18,8 @@ const ARC = Math.PI / 4;
  */
 function bitten(dx, dy, over = {}) {
     const w = smallWorld({ biteArc: ARC, ...over });
-    const biter = allocAgent(w);
-    const victim = allocAgent(w);
+    const biter = allocBody(w);
+    const victim = allocBody(w);
     for (const [slot, x, y, energy, spec] of [
         [biter, 100, 100, 2000, PREDATOR],
         [victim, 100 + dx, 100 + dy, 50, 0],
@@ -67,8 +67,8 @@ describe('feed: jaws', () => {
 
     it('follows the biter heading, not the world axes', () => {
         const w = smallWorld({ biteArc: ARC });
-        const biter = allocAgent(w);
-        const victim = allocAgent(w);
+        const biter = allocBody(w);
+        const victim = allocBody(w);
         w.x[biter] = 100;
         w.y[biter] = 100;
         w.angle[biter] = Math.PI / 2;
