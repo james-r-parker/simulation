@@ -53,7 +53,7 @@ export function motherOf(world, a, b) {
  * @param {number} mother the mother of a pair
  * @returns {boolean} true when she holds more than `childEnergyMin / childEnergyShare` and has not spent her birth budget
  */
-function canBear(world, mother) {
+export function canBear(world, mother) {
     return (
         !birthBudgetSpent(world, mother) &&
         world.energy[mother] > world.config.childEnergyMin / childShareOf(world, mother)

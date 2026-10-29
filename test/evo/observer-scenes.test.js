@@ -88,7 +88,17 @@ describe('observeScenes', () => {
 
     it('creates every scene empty, and resetSceneSlot is safe on a fresh one', () => {
         const scenes = createScenes(observed().world.config);
-        expect(Object.keys(scenes).sort()).toEqual(['approach', 'basin', 'carcass', 'patch', 'terrain']);
+        expect(Object.keys(scenes).sort()).toEqual([
+            'approach',
+            'basin',
+            'carcass',
+            'condition',
+            'patch',
+            'season',
+            'spend',
+            'style',
+            'terrain',
+        ]);
         expect(() => resetSceneSlot(scenes, 0)).not.toThrow();
     });
 });

@@ -156,7 +156,7 @@ const GIFT_CAP = 0.9;
  * @param {boolean} isMate true for a mating birth
  * @returns {number}
  */
-function giftOf(world, mother, isMate) {
+export function giftOf(world, mother, isMate) {
     const { meritEnabled, meritBirthBoost, meritHalf } = world.config;
     const energy = world.energy[mother];
     const gift = energy * (isMate ? childShareOf(world, mother) : 0.5);

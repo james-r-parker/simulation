@@ -21,6 +21,7 @@
 
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { biteDeliberate, findAlive } from './observer-intent.js';
+import { noteStyleBite } from './style.js';
 
 /**
  * Credits the chain bite a victim took this tick to its biter.
@@ -36,9 +37,11 @@ function creditBite(observer, world, victim) {
     }
     const prey = world.genomeId[victim];
     const gap = world.tick - observer.chainTick[biter];
-    if (observer.chainPrey[biter] === prey && gap <= observer.intent.packWindow) {
+    const continues = observer.chainPrey[biter] === prey && gap <= observer.intent.packWindow;
+    if (continues) {
         observer.chaseTicks[biter] += gap;
     }
+    noteStyleBite(observer.scenes.style, biter, { continues, gap });
     observer.chainPrey[biter] = prey;
     observer.chainTick[biter] = world.tick;
 }

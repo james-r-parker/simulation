@@ -4,11 +4,16 @@
 // world is untouched, so the golden `worldHash` cannot move. Each scene lives in its own `scene-*.js` module; this one
 // creates them, hands them the tick's events and the 10-tick and 100-tick samples, and resets a slot on a birth.
 
-import { EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events.js';
 import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproaches } from './scene-approach.js';
-import { createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
+import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
+import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
+import { createSeasonScene, sampleSeason } from './scene-season.js';
+import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
+import { BURN_IN_TICKS } from './observer-events.js';
+import { createStyle, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
@@ -24,6 +29,10 @@ export function createScenes(config) {
         terrain: createTerrainScene(config),
         basin: createBasinScene(),
         carcass: createCarcassScene(config),
+        style: createStyle(config),
+        condition: createConditionScene(config),
+        spend: createSpendScene(config),
+        season: createSeasonScene(),
     };
 }
 
@@ -36,6 +45,27 @@ export function createScenes(config) {
 export function resetSceneSlot(scenes, slot) {
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
+    resetStyleSlot(scenes.style, slot);
+    resetConditionSlot(scenes.condition, slot);
+    resetSpendSlot(scenes.spend, slot);
+}
+
+/**
+ * Moves a dying agent's per-life counters into the run totals. A slot the observer does not track under this genome (born
+ * and died in one tick) has nothing to move.
+ * @param {Record<string, any>} scenes the scenes
+ * @param {Record<string, any>} observer the observer
+ * @param {{slot: number, genomeId: number, tick: number}} death the dying agent
+ * @returns {void}
+ */
+function noteDeath(scenes, observer, { slot, genomeId, tick }) {
+    if (observer.genomeId[slot] !== genomeId) {
+        return;
+    }
+    flushCondition(scenes.condition, observer.config, slot);
+    if (tick >= BURN_IN_TICKS) {
+        noteStyleDeath(observer, slot);
+    }
 }
 
 /**
@@ -53,6 +83,7 @@ function noteEvents(scenes, observer, world) {
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
+            noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
             resetSceneSlot(scenes, d[o + 2]);
         }
     }
@@ -60,6 +91,9 @@ function noteEvents(scenes, observer, world) {
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             resetSceneSlot(scenes, d[o + 2]);
             noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
+            if (d[o + 8] === BORN_CAUSE.MATE) {
+                noteSpendBirth(scenes.spend, world, { child: d[o + 2], motherId: d[o + 6] });
+            }
         }
     }
 }
@@ -78,11 +112,17 @@ export function observeScenes(observer, world) {
     }
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
+    tickStyle(observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
         sampleBasins(scenes.basin, world);
+        sampleSpend(scenes.spend, world);
     }
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         samplePatches(scenes.patch, world);
+        sampleCondition(scenes.condition, world);
+    }
+    if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
+        sampleSeason(scenes.season, scenes.terrain, world);
     }
 }

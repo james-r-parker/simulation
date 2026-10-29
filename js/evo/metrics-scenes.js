@@ -6,7 +6,11 @@ import { approachMetrics } from './scene-approach.js';
 import { basinMetrics } from './scene-basin.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
+import { conditionMetrics } from './scene-condition.js';
+import { seasonMetrics } from './scene-season.js';
+import { spendMetrics } from './scene-spend.js';
 import { terrainMetrics } from './scene-terrain.js';
+import { styleMetrics } from './style.js';
 import { hasTerrain } from '../sim/terrain.js';
 
 const WATCH = [
@@ -21,6 +25,12 @@ const WATCH = [
     'eval.gap_never_share',
     'eval.basin_pop_cv',
     'eval.basin_recolonisations',
+    'eval.condition_gait_shift',
+    'eval.mother_wait_by_condition',
+    'eval.childshare_by_condition',
+    'eval.winter_basin_density',
+    'eval.winter_shelter_distance',
+    'eval.style_separation',
 ];
 
 /** The direction of each scene metric, as the Detectors table names them. */
@@ -41,5 +51,9 @@ export function sceneMetrics(observer) {
         ...terrainMetrics(s.terrain),
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin, hasTerrain(observer.config)),
+        ...conditionMetrics(s.condition, observer),
+        ...spendMetrics(s.spend),
+        ...seasonMetrics(s.season),
+        ...styleMetrics(s.style),
     };
 }
