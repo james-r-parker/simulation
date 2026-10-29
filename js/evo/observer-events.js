@@ -4,6 +4,7 @@ import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { noteDeath } from './metrics-environment.js';
 import { noteMateBirth, noteMeritDeath } from './metrics-merit.js';
+import { noteMateParents, noteSplitBirth } from './metrics-diet.js';
 import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metrics-lineage.js';
 import { ensureRoom } from './growable-log.js';
 import { noteBirthBody, noteBody } from './observer-body.js';
@@ -173,6 +174,23 @@ function noteParentage(observer, d, count) {
 }
 
 /**
+ * Feeds a birth after burn-in to the mate-gain and parent-diet metrics.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @param {Float64Array} d the event data
+ * @param {number} o the record offset
+ * @returns {void}
+ */
+function noteDietBirth(observer, world, d, o) {
+    if (d[o + 8] === BORN_CAUSE.MATE) {
+        noteMateBirth(observer.merit, world, d[o + 2], d[o + 7]);
+        noteMateParents(observer.diet, world, d[o + 2], d[o + 7]);
+    } else if (d[o + 8] === BORN_CAUSE.SPLIT) {
+        noteSplitBirth(observer.diet, world, d[o + 2]);
+    }
+}
+
+/**
  * Starts tracking a newborn in its slot with zeroed counters.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
@@ -187,8 +205,8 @@ function startBirth(observer, world, d, o) {
         observer.birthsAfterBurnIn[d[o + 8]] += 1;
     }
     noteHunterBirth(observer, d, o);
-    if (d[o + 8] === BORN_CAUSE.MATE && d[o + 1] >= BURN_IN_TICKS) {
-        noteMateBirth(observer.merit, world, d[o + 2], d[o + 7]);
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        noteDietBirth(observer, world, d, o);
     }
     const child = isEligibleChild(observer.lineage, d, o);
     if (child) {
