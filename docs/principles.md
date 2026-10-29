@@ -186,7 +186,7 @@ metric before a change claims the scene (`natural-selection.md` T1 and T2).
 | Boom and bust               | `eval.floor_episodes`, `eval.population_mean`, `eval.predator_share_cv`                                                  | floor episodes 21.3 (E63 candidate)                               | `eval.basin_pop_cv`, `eval.basin_recolonisations` (built, T1)                                                                        |
 | Something unnamed           | none, by design                                                                                                          | -                                                                 | The user's watch of the default world (`Shift+P`)                                                                                    |
 
-The selection rules have their own detectors, planned in `natural-selection.md`: lineage persistence through winter,
+The selection rules have their own detectors, built in `natural-selection.md` T2 (`eval.birth_source_share.<cause>`, `eval.skill_heritability`, `eval.niche_replacement`, `eval.social_return`, `eval.mate_skill_gap`, `eval.mate_hunter_lean`; the three that need the proof rule read `null` until T6): lineage persistence through winter,
 drought and predation (rules 1 and 4), heritability of the skill without the bonus (rules 2 and 9), and the share of
 births by source (archive, immigrant, floor, rescue, split, mate).
 

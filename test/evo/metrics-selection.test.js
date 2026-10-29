@@ -20,7 +20,8 @@ const LATE = { birthTick: BURN_IN_TICKS, ageTicks: 100 };
 describe('selectionMetrics', () => {
     it('is null with a reason for every metric on an empty observer', () => {
         const m = selectionMetrics(bareObserver());
-        expect(Object.keys(m)).toEqual(NAMES);
+        expect(Object.keys(m).slice(0, NAMES.length)).toEqual(NAMES);
+        expect(Object.keys(m).length).toBe(NAMES.length + 14);
         expect(m['eval.offspring_per_life']).toEqual({ value: null, reason: 'no completed life after burn-in' });
         expect(m['eval.archive_lineage_share']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.kin_within_call_radius']).toEqual({ value: null, reason: 'no alarm call' });

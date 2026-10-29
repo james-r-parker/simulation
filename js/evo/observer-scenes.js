@@ -13,6 +13,11 @@ import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.j
 import { createSeasonScene, sampleSeason } from './scene-season.js';
 import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
 import { BURN_IN_TICKS } from './observer-events.js';
+import { createBirthScene, noteBirthSource } from './scene-births.js';
+import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
+import { createMateScene, resetMateSlot } from './scene-mate.js';
+import { createNicheScene } from './scene-niche.js';
+import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
@@ -33,6 +38,10 @@ export function createScenes(config) {
         condition: createConditionScene(config),
         spend: createSpendScene(config),
         season: createSeasonScene(),
+        births: createBirthScene(),
+        heritage: createHeritageScene(config),
+        niche: createNicheScene(),
+        mate: createMateScene(config),
     };
 }
 
@@ -48,6 +57,8 @@ export function resetSceneSlot(scenes, slot) {
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
     resetSpendSlot(scenes.spend, slot);
+    resetHeritageSlot(scenes.heritage, slot);
+    resetMateSlot(scenes.mate, slot);
 }
 
 /**
@@ -55,16 +66,19 @@ export function resetSceneSlot(scenes, slot) {
  * and died in one tick) has nothing to move.
  * @param {Record<string, any>} scenes the scenes
  * @param {Record<string, any>} observer the observer
- * @param {{slot: number, genomeId: number, tick: number}} death the dying agent
+ * @param {{slot: number, genomeId: number, tick: number, age: number}} death the dying agent
  * @returns {void}
  */
-function noteDeath(scenes, observer, { slot, genomeId, tick }) {
+function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
     if (observer.genomeId[slot] !== genomeId) {
         return;
     }
     flushCondition(scenes.condition, observer.config, slot);
     if (tick >= BURN_IN_TICKS) {
         noteStyleDeath(observer, slot);
+        if (age >= observer.config.maturityTicks) {
+            noteHeritageDeath(scenes.heritage, observer, { slot, age });
+        }
     }
 }
 
@@ -79,11 +93,12 @@ function noteEvents(scenes, observer, world) {
     const d = world.events.data;
     const end = world.events.count * EVENT_STRIDE;
     for (let o = 0; o < end; o += EVENT_STRIDE) {
+        noteBirthSource(scenes.births, d, o);
         if (d[o] === EVENT_TYPE.AGENT_DIED) {
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
-            noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
+            noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
             resetSceneSlot(scenes, d[o + 2]);
         }
     }
@@ -93,6 +108,9 @@ function noteEvents(scenes, observer, world) {
             noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
             if (d[o + 8] === BORN_CAUSE.MATE) {
                 noteSpendBirth(scenes.spend, world, { child: d[o + 2], motherId: d[o + 6] });
+            }
+            if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
+                noteHeritageBirth(scenes.heritage, world, d[o + 2]);
             }
         }
     }
@@ -113,6 +131,7 @@ export function observeScenes(observer, world) {
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
+    trackSlots(scenes, observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
         sampleBasins(scenes.basin, world);

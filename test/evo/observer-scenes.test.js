@@ -91,8 +91,12 @@ describe('observeScenes', () => {
         expect(Object.keys(scenes).sort()).toEqual([
             'approach',
             'basin',
+            'births',
             'carcass',
             'condition',
+            'heritage',
+            'mate',
+            'niche',
             'patch',
             'season',
             'spend',

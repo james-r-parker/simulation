@@ -13,6 +13,7 @@ import { SEX } from '../sim/sex.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { DIET_DIRECTIONS } from './metrics-diet.js';
 import { none, ok, spearman } from './metrics-stats.js';
+import { RULE_DIRECTIONS } from './metrics-rules.js';
 import { SCENE_DIRECTIONS } from './metrics-scenes.js';
 import { WATCHABILITY_DIRECTIONS } from './metrics-watchability.js';
 
@@ -32,6 +33,7 @@ export const MERIT_DIRECTIONS = Object.freeze({
     ...DIET_DIRECTIONS,
     ...WATCHABILITY_DIRECTIONS,
     ...SCENE_DIRECTIONS,
+    ...RULE_DIRECTIONS,
 });
 
 const OFF = 'meritEnabled is off';
