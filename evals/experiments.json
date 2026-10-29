@@ -1636,6 +1636,21 @@
       "note": "T47 finalists, the facts only (the decision is T48a). Six 16-seed runs, `map-elites-v6`, config meritEnabled true and splitDeliberateMin 300; F1 no options, F2 cloneShareEnd 0.95, F3 descriptor v1; compared with E37 per seed set. Done-criteria table in sim-notes 2026-10-29 \"Finalists (E41)\". Deliberate share 0.128 to 0.136 (mean below the 0.20 row; verdict better on 5 of 6 sets, no change on F1 s1-16): Skill row fails everywhere. skill_trend negative on every set (-0.023 to -0.037), so the Behaviour row fails; deliberate_food_trend better only on F1 s17-32. spec_dominance means 0.62 to 0.73, no change, largest specialisation at most 70% on 6 to 10 of 16: No monoculture fails. predator_presence about 1.0 (pass). predator_births means 368 to 907 per seed (E37 83), at least 30 on 7 to 12 of 16: Predator row passes on F3 s17-32 only. Calls: idle_signals no change (7.1 to 7.9 against E37 8.5); alarm -; hunt precision worse on F3 s1-16. Mating 0.109 to 0.131, verdict -: fails. lineage_lifespan_p50 worse on all six sets; child_survival 0.93 to 0.94 (pass the 0.90 mean). World: births_per_1k -18.8% on F2 s17-32 (outside 15%), others within; food and fed lifespan not worse; seedChecks pass on every seed. Ladder order holds (random 98.7 below the foragers at 450). Anti-exploit suite on default weights: 114 passed, 14 expected failures (legacy). eval:power refused on 16-seed reports (smallest arm 16 seeds), so no power figures. Prediction (above) held on deliberate share and the failed rows; skill_trend, predator births size and lineage p50 were wrong."
     },
     {
+      "id": "E42",
+      "date": "2026-10-29",
+      "branch": "eval/fs-t49-e42",
+      "hypothesis": "Long run (fitness-and-selection T49): the live defaults (map-elites-v6 with splitDeliberateShareMin 0.2 and temperatureGainEat 1.5, the T48g adoption) keep improving over 600000 ticks, so eval.skill_trend stays positive over 16 seeds.",
+      "prediction": "16 seeds (1-16, the default seed list), 600000 ticks, map-elites-v6, no config or policy options (the live defaults). Predicted means: eval.skill_trend positive (above 0) and positive on at least 10 of 16 seeds; eval.deliberate_food_share about 0.17 (the E63 candidate gave 0.173 at 200000 ticks); eval.mating_share about 0.2 (E63 gave 0.204); eval.split_bumper_share about 0.10 to 0.15; eval.heat_stress_share about 0.30 (E63 gave 0.304); population mean below the 200000-tick figure of about 256 with the lowest seed mean above minAgents on every seed.",
+      "targets": ["eval.skill_trend", "eval.deliberate_food_share", "eval.mating_share", "eval.heat_stress_share"],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/experiments/E63-cand-report.json",
+      "after": "evals/experiments/E42-report.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction only (written before the run; the run has not started). Result note to follow after the run."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
