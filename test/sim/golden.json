@@ -11,18 +11,19 @@
       "overrides": {
         "worldWidth": 2400,
         "worldHeight": 1600,
-        "obstacleCount": 4,
-        "terrainLayout": "open",
         "maxAgents": 150,
         "minAgents": 30,
         "maturityTicks": 200,
         "reproductionCooldown": 150,
         "pregnancyTicks": 200,
         "mateMinEnergy": 100,
-        "splitMinEnergy": 900
+        "splitMinEnergy": 900,
+        "wallGaps": 2,
+        "refugeCount": 0,
+        "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "45172f943fc66638"
+      "worldHash": "06bac02ff73b9153"
     }
   ],
   "shortCases": [
@@ -37,18 +38,19 @@
       "overrides": {
         "worldWidth": 2400,
         "worldHeight": 1600,
-        "obstacleCount": 4,
-        "terrainLayout": "open",
         "maxAgents": 150,
         "minAgents": 30,
         "maturityTicks": 200,
         "reproductionCooldown": 150,
         "pregnancyTicks": 200,
         "mateMinEnergy": 100,
-        "splitMinEnergy": 900
+        "splitMinEnergy": 900,
+        "wallGaps": 2,
+        "refugeCount": 0,
+        "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "b5f7c8be6d5055ed"
+      "worldHash": "ea2f1777935fd218"
     }
   ]
 }
