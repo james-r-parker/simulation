@@ -1,6 +1,6 @@
 // A `brain` phase driven by scripted controllers chosen by name: one for every agent, or one for the agents with
 // `canHunt` and one for the rest. The arm `random` is no controller: its agents keep the outputs their own brain
-// computes, so with `natural-v1`'s random first genomes it is the untrained baseline.
+// computes, so with the random brain (`js/evo/policies/random-brain.js`) it is the untrained baseline.
 
 import { forwardAll } from '../sim/brain.js';
 import { OUTPUT_COUNT } from '../sim/brain-layout.js';

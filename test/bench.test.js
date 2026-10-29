@@ -17,7 +17,7 @@ describe('parseArgs', () => {
     });
 
     it('reads --policy as a separate or joined value', () => {
-        expect(parseArgs(['--policy', 'natural-v1'])).toMatchObject({ policy: 'natural-v1' });
+        expect(parseArgs(['--policy', 'baseline-v5'])).toMatchObject({ policy: 'baseline-v5' });
         expect(parseArgs(['--policy=baseline-v5']).policy).toBe('baseline-v5');
     });
 

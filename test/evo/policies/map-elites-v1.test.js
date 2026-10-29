@@ -2,14 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { createRng } from '../../../js/sim/rng.js';
 import { occupiedCount } from '../../../js/evo/archive.js';
-import { POLICIES } from '../../../js/evo/policies/index.js';
-import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
 import { setup } from '../helpers/map-elites-world.js';
 
 describe('map-elites-v1 shape', () => {
-    it('is registered and exposes the archive and the per-slot state', () => {
+    it('exposes the archive and the per-slot state', () => {
         const { policy } = setup();
-        expect(POLICIES['map-elites-v1'].create).toBe(createMapElitesV1);
         expect(policy.name).toBe('map-elites-v1');
         expect(policy.fitnessName).toBe('v1');
         expect(occupiedCount(policy.archive)).toBe(0);

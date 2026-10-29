@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { POLICIES } from '../../../js/evo/policies/index.js';
-import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
+import { createRandomBrain } from '../../../js/evo/policies/random-brain.js';
 import { SIGMA_MAX, SIGMA_MIN, SIGMA_START, WEIGHT_CLAMP } from '../../../js/evo/mutation.js';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { createRng } from '../../../js/sim/rng.js';
 import { smallWorld } from '../../sim/helpers/small-world.js';
 
-/** @returns {{policy: any, world: any}} a policy and a two-slot world (mother 0, father 1, child 2) of 4 hidden units */
+/** @returns {{policy: any, world: any}} a random brain and a world (mother 0, father 1, child 2) of 4 hidden units */
 function pair() {
     const world = smallWorld({ brainHidden: 4, maxAgents: 8 });
-    return { policy: createNaturalV1({ config: world.config }), world };
+    return { policy: createRandomBrain(world.config), world };
 }
 
 /**
@@ -20,17 +19,14 @@ function pair() {
 const row = (world, slot) =>
     world.weights.subarray(slot * world.layout.weightCount, (slot + 1) * world.layout.weightCount);
 
-describe('natural-v1 shape', () => {
-    it('is registered and has the documented policy shape', () => {
-        expect(POLICIES['natural-v1'].create).toBe(createNaturalV1);
+describe('random brain shape', () => {
+    it('has the birth hooks and per-slot step sizes, and no archive or fitness', () => {
         const { policy } = pair();
-        expect(policy.name).toBe('natural-v1');
-        expect(policy.fitnessName).toBe('v1');
-        expect(typeof policy.fitness).toBe('function');
-        expect(policy.brain.initSpec).toBeUndefined();
-        expect(policy.archive).toBeUndefined();
+        expect(Object.keys(policy.brain).sort()).toEqual(['childBrain', 'initBrain', 'onMate']);
         expect(policy.sigma).toHaveLength(8);
         expect(policy.fatherSigma).toHaveLength(8);
+        expect(policy.archive).toBeUndefined();
+        expect(policy.fitness).toBeUndefined();
     });
 });
 
@@ -123,7 +119,7 @@ describe('childBrain', () => {
         world.fatherWeights.set(row(world, 0), 0);
         policy.brain.childBrain(world, 2, 0, { cause: BORN_CAUSE.MATE, rng: createRng(3) });
         const ratio = policy.sigma[2] / ((Math.fround(0.02) + Math.fround(0.2)) / 2);
-        const split = createNaturalV1({ config: world.config });
+        const split = createRandomBrain(world.config);
         split.sigma[0] = 0.02;
         split.brain.childBrain(world, 3, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(3) });
         expect(ratio).toBeCloseTo(split.sigma[3] / 0.02, 4);

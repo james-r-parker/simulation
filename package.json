@@ -6,7 +6,6 @@
   "scripts": {
     "prepare": "node scripts/prepare-hooks.mjs",
     "dev": "vite",
-    "serve": "npx http-server -p 8000 -c-1",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "wrangler pages deploy dist",

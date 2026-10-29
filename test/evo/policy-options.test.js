@@ -14,12 +14,9 @@ describe('validatePolicyOptions', () => {
         expect(validatePolicyOptions('map-elites-v6', options)).toEqual(options);
     });
 
-    it('lets the v1 policies take the immigrant mix only', () => {
-        expect(validatePolicyOptions('map-elites-v1q', { archiveShare: 0.1 })).toEqual({ archiveShare: 0.1 });
-        expect(() => validatePolicyOptions('map-elites-v1q', { descriptor: 'v6' })).toThrow(
-            /policy "map-elites-v1q" does not take "descriptor"/,
-        );
-        expect(() => validatePolicyOptions('natural-v1', { archiveShare: 0.1 })).toThrow(/takes: none/);
+    it('lets baseline-v5 take no options and map-elites-v6 the immigrant mix', () => {
+        expect(validatePolicyOptions('map-elites-v6', { archiveShare: 0.1 })).toEqual({ archiveShare: 0.1 });
+        expect(() => validatePolicyOptions('baseline-v5', { archiveShare: 0.1 })).toThrow(/takes: none/);
     });
 
     it('names a fitness weight that is not in FITNESS_V6', () => {

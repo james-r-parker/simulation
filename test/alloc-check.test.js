@@ -7,7 +7,7 @@ describe('alloc-check arguments', () => {
     });
 
     it('reads --policy in both spellings', () => {
-        expect(parseArgs(['--policy', 'map-elites-v1q'])).toEqual({ policy: 'map-elites-v1q' });
+        expect(parseArgs(['--policy', 'map-elites-v6'])).toEqual({ policy: 'map-elites-v6' });
         expect(parseArgs(['--policy=baseline-v5'])).toEqual({ policy: 'baseline-v5' });
     });
 
@@ -26,7 +26,7 @@ describe('measureHeapGrowth', () => {
         };
         const base = { gc, warmup: 5, measured: 5, runs: 2 };
         expect(Number.isFinite(measureHeapGrowth(base))).toBe(true);
-        expect(Number.isFinite(measureHeapGrowth({ ...base, policy: 'map-elites-v1q' }))).toBe(true);
+        expect(Number.isFinite(measureHeapGrowth({ ...base, policy: 'map-elites-v6' }))).toBe(true);
         expect(collections).toBe(8);
     });
 

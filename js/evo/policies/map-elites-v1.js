@@ -1,5 +1,6 @@
-// map-elites-v1: `natural-v1` plus the MAP-Elites archive. Mature agents that die are scored (`fitnessV1`) and
-// offered to the archive cell of their specialisation and descriptors (speedMean x crowdingMean); initial agents,
+// map-elites-v1: the engine of the MAP-Elites policies (`map-elites-v6` is built on it, and is the only registered
+// one): the birth half plus the archive. Mature agents that die are scored (`fitnessV1` unless a variant brings its own
+// scoring) and offered to the archive cell of their specialisation and descriptors (speedMean x crowdingMean); initial agents,
 // floor spawns and immigrants are seeded from the archive once it holds `MIN_ARCHIVE_CELLS` cells.
 //
 // The scorer is the eval observer (`options.observer`): it holds the speed samples and the energy counters that
@@ -16,7 +17,7 @@ import { createSeeder } from './map-elites-seed.js';
 import { createBirth } from './natural-birth.js';
 import { brainLayout } from '../../sim/brain-layout.js';
 
-/** `map-elites-v1q`'s parent cell tournament: the best elite of this many uniform cell draws. */
+/** the parent cell tournament of `map-elites-v6`: the best elite of this many uniform cell draws. */
 export const QUALITY_CELL_DRAWS = 4;
 
 /**

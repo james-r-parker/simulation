@@ -1,4 +1,4 @@
-// The birth half shared by `natural-v1` and `map-elites-v1`: per-slot `sigma`, per-mother `fatherSigma`, `onMate`
+// The birth half shared by the random brain and the MAP-Elites policies: per-slot `sigma`, per-mother `fatherSigma`, `onMate`
 // and `childBrain` (self-adaptive mutation, neuron-block crossover).
 
 import { crossNeurons } from '../../evo/crossover.js';

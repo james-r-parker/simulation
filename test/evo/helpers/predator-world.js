@@ -4,7 +4,7 @@ import { RANDOM_ARM, createControllerBrain } from '../../../js/evo/controller-br
 import { computeMetrics } from '../../../js/evo/metrics.js';
 import { createObserver, observe, observerPhases } from '../../../js/evo/observer.js';
 import { createBaselineV5 } from '../../../js/evo/policies/baseline-v5.js';
-import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
+import { createRandomBrain } from '../../../js/evo/policies/random-brain.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
@@ -70,7 +70,7 @@ export function playPredatorWorld(
 ) {
     const config = createConfig({ ...SIMPLE_WORLD, ...PRE_T15D, ...base, ...extra, seed });
     const random = predator === RANDOM_ARM || prey === RANDOM_ARM;
-    const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined, predatorEvery);
+    const policy = predatorPolicy(random ? createRandomBrain(config).brain : undefined, predatorEvery);
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     const { fitness, afterStep } = scoring?.(config) ?? { fitness: undefined, afterStep: () => {} };
@@ -98,7 +98,7 @@ export function playPredatorWorld(
  */
 export function playMicroWorld(seed, ticks, arm, extra = {}, onTick = () => {}) {
     const config = createConfig({ ...SIMPLE_WORLD, ...PRE_T15D, ...microWorld, ...extra, seed });
-    const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
+    const policy = arm === RANDOM_ARM ? createRandomBrain(config).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     observe(observer, world);

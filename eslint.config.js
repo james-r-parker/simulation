@@ -5,19 +5,9 @@ import globals from 'globals';
 const MATH_MSG = 'Not bit-exact across engines: use js/sim/det-math.js, or + - * / and Math.sqrt.';
 const POW_MSG = 'The ** operator is not bit-exact across engines: multiply out or use det-math.js.';
 
-// Lint covers the new code only. Legacy modules under js/ join as they are replaced
-// (docs/designs/worker-and-renderer.md widens this list and the tsconfig include together).
 export default [
     {
-        ignores: [
-            'dist/**',
-            'node_modules/**',
-            'public/**',
-            'js/*.js',
-            'js/constants/**',
-            'vite.config.js',
-            'test/fixtures/**',
-        ],
+        ignores: ['dist/**', 'node_modules/**', 'public/**', 'vite.config.js', 'test/fixtures/**'],
     },
     js.configs.recommended,
     // Coding standards (docs/coding-standards.md and the AGENTS.md size limits): small single-purpose modules and functions.
@@ -25,7 +15,6 @@ export default [
         files: [
             'js/sim/**/*.js',
             'js/evo/**/*.js',
-            'js/dev/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
@@ -45,7 +34,6 @@ export default [
         files: [
             'js/sim/**/*.js',
             'js/evo/**/*.js',
-            'js/dev/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createObserver, observe, observerPhases } from '../../../js/evo/observer.js';
-import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
+import { createRandomBrain } from '../../../js/evo/policies/random-brain.js';
 import { SIGMA_START } from '../../../js/evo/mutation.js';
 import { createConfig } from '../../../js/sim/config.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
@@ -18,15 +18,14 @@ import { scaleTimeout } from '../../../scripts/lib/test-timeout.mjs';
 function run(seed, ticks, observed) {
     const config = createConfig({ seed, maxAgents: 60, initialAgents: 30, minAgents: 10, rayCount: 4, brainHidden: 6 });
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
-    const policy = createNaturalV1({ config, observer });
+    const policy = createRandomBrain(config);
     const world = createWorld(config, policy.brain);
     const phases = observed ? observerPhases(observer) : undefined;
     for (let t = 0; t < ticks; t++) {
         step(world, policy.brain, phases);
         if (observed) {
-            observe(observer, world, policy.fitness);
+            observe(observer, world);
         }
-        policy.afterStep(world);
     }
     return { policy, world, hash: String(hashWorld(world)) };
 }

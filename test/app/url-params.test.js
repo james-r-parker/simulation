@@ -83,7 +83,7 @@ describe('configOverrides', () => {
 describe('policy and merit', () => {
     it('reads a policy name of lower-case letters, digits and hyphens', () => {
         expect(readParams('?policy=map-elites-v6').policy).toBe('map-elites-v6');
-        expect(readParams('?policy=natural-v1').policy).toBe('natural-v1');
+        expect(readParams('?policy=baseline-v5').policy).toBe('baseline-v5');
     });
 
     it('does not judge whether the policy exists: the worker rejects an unknown name', () => {

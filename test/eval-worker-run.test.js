@@ -50,7 +50,7 @@ describe('runSeed (direct)', () => {
         const task = { seed: 3, ticks: 20, overrides: SMALL };
         const plain = runSeed({ ...task, policy: 'baseline-v5' });
         expect(plain.metrics['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
-        const learned = runSeed({ ...task, policy: 'map-elites-v1' });
+        const learned = runSeed({ ...task, policy: 'map-elites-v6' });
         expect(learned.metrics['eval.qd_score'].value).toBe(0);
         expect(learned.metrics['eval.coverage'].value).toBe(0);
     });
