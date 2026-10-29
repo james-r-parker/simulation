@@ -30,7 +30,6 @@ function run(foodRegrowPerArea) {
             minAgents: 0,
             maxFood: 400,
             initialFood: 100,
-            foodAreaCapacity: true,
             foodRegrowPerArea,
             foodPatchCount: 6,
             foodPatchRadius: 300,

@@ -137,12 +137,12 @@ describe('worldInfo patches', () => {
 });
 
 describe('worldInfo calendar and switches', () => {
-    it('sends one season in ticks, with eras off (a quarter of the config year) and on', () => {
+    it('sends one season in ticks (eraSeasonTicks)', () => {
         const base = worldInfo(small());
-        expect(base).toMatchObject({ seasonLength: 900, sexesEnabled: false, traitsEnabled: false });
+        expect(base).toMatchObject({ seasonLength: 36000, sexesEnabled: false, traitsEnabled: false });
         const run = buildRun({
             seed: 3,
-            overrides: { ...SMALL_CONFIG, erasEnabled: true, eraSeasonTicks: 500, sexesEnabled: true },
+            overrides: { ...SMALL_CONFIG, eraSeasonTicks: 500, sexesEnabled: true },
             createPolicy: noisePolicy,
             log: LOG,
         });
@@ -150,9 +150,9 @@ describe('worldInfo calendar and switches', () => {
     });
 
     it.each([
-        ['off', {}],
-        ['on', { erasEnabled: true, eraSeasonTicks: 500 }],
-    ])('gives a calendar that matches the sim season and year with eras %s', (_name, extra) => {
+        ['default', {}],
+        ['short', { eraSeasonTicks: 500 }],
+    ])('gives a calendar that matches the sim season and year with %s eras', (_name, extra) => {
         const run = buildRun({
             seed: 3,
             overrides: { ...SMALL_CONFIG, ...extra },

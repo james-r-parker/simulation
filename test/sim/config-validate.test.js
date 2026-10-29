@@ -112,10 +112,6 @@ describe('validateConfig types and ranges', () => {
         expect(() => createConfig({ ...FEATURES_OFF, childEnergyMin: 0 })).toThrow(/childEnergyMin.*> 0/);
     });
 
-    it('rejects a seasonLength below 4', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, seasonLength: 3 })).toThrow(/seasonLength/);
-    });
-
     it('rejects a seasons array of the wrong length', () => {
         expect(() => createConfig({ ...FEATURES_OFF, seasons: [] })).toThrow(/seasons.*exactly 4/);
     });
@@ -326,7 +322,6 @@ describe('validateConfig food patches and the floor', () => {
         ['foodPatchRegrow', 1.1],
         ['foodBackgroundShare', -0.1],
         ['floorRescueAtZero', 1],
-        ['foodAreaCapacity', 1],
         ['foodRegrowPerArea', -1],
     ])('rejects %s of %s', (key, value) => {
         expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(new RegExp(`config\\.${key}`));

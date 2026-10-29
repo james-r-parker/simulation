@@ -142,7 +142,7 @@ describe('the ticker queue', () => {
 
 describe('collectStats', () => {
     it('reports pace, identity, the season and the population by type', () => {
-        const { world, observer, live, policy } = setup({ seasonLength: 400 });
+        const { world, observer, live, policy } = setup({ eraSeasonTicks: 100 });
         world.tick = 150;
         world.season[0] = 1;
         world.season[1] = 150 / 400;

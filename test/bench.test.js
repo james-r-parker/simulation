@@ -131,7 +131,6 @@ describe('BENCH_CONFIG', () => {
         expect(Object.isFrozen(BENCH_CONFIG)).toBe(true);
         expect(createConfig(BENCH_CONFIG)).toMatchObject({
             maxFood: 800,
-            foodTargetPerAgent: 8,
             huntSizeRatio: 1.05,
             alarmCost: 4,
             huntCallCost: 4,

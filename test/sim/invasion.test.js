@@ -7,7 +7,7 @@ import { fork, createRng } from '../../js/sim/rng.js';
 import { testPolicy } from './helpers/test-policy.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const INVASION = { erasEnabled: true, invasionInterval: 100, invasionSize: 5, maxAgents: 8, obstacleCount: 0 };
+const INVASION = { invasionInterval: 100, invasionSize: 5, maxAgents: 8, obstacleCount: 0 };
 
 /**
  * @param {ReturnType<typeof smallWorld>} w the world
@@ -18,11 +18,10 @@ function aliveSlots(w) {
 }
 
 describe('invade', () => {
-    it('does nothing and draws nothing off the interval, with eras off, or with an interval of 0', () => {
+    it('does nothing and draws nothing off the interval or with an interval of 0', () => {
         /** @type {[Record<string, any>, number][]} */
         const cases = [
             [{}, 99],
-            [{ erasEnabled: false }, 100],
             [{ invasionInterval: 0 }, 100],
             [{}, 0],
         ];

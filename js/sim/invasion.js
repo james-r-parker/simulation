@@ -66,14 +66,14 @@ function copyGenome(world, slot, leader) {
 
 /**
  * On every `invasionInterval` ticks, spawns the pulse at a random edge and pushes `InvasionArrived`. Stops at
- * `maxAgents`. Nothing happens, and nothing is drawn, when eras are off or the interval is 0.
+ * `maxAgents`. Nothing happens, and nothing is drawn, when the interval is 0.
  * @param {World} world the world
  * @param {any} policy the brain policy
  * @returns {void}
  */
 export function invade(world, policy) {
-    const { erasEnabled, invasionInterval, invasionSize, maxAgents } = world.config;
-    const due = erasEnabled && invasionInterval > 0 && world.tick > 0 && world.tick % invasionInterval === 0;
+    const { invasionInterval, invasionSize, maxAgents } = world.config;
+    const due = invasionInterval > 0 && world.tick > 0 && world.tick % invasionInterval === 0;
     const count = due ? Math.min(invasionSize, maxAgents - world.population) : 0;
     if (count <= 0) {
         return;

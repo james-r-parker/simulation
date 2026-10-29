@@ -76,7 +76,6 @@ export const DEFAULTS = deepFreeze({
     reproductionCooldown: 150, // REPRODUCTION_COOLDOWN_FRAMES (300 before T78)
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
-    seasonLength: 3600, // SEASON_LENGTH
     seasons: [
         { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5, temperatureModifier: -5 }, // spring, SEASON_*
         { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2, temperatureModifier: 15 }, // summer, SEASON_*
@@ -176,11 +175,6 @@ export const DEFAULTS = deepFreeze({
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
     mateChanceScale: 1.5, // new
-    foodTargetPerAgent: 12, // tuned, E20
-    foodTargetMin: 50, // new
-    foodRefillBoost: 4, // new
-    foodSurplusRate: 0.2, // new
-    foodSpawnAgentDivisor: 20, // new
     fertileZoneRadius: 150, // new
     fertileZoneFertility: 0.05, // FERTILE_ZONE_FERTILITY_FACTOR
     placementTries: 100, // new
@@ -241,10 +235,8 @@ export const DEFAULTS = deepFreeze({
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
-    foodAreaCapacity: true, // new: food regrows per world area through the patches, not toward a per-agent target
-    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 when foodAreaCapacity is on
-    erasEnabled: true, // new: long seasons, winter and drought on patch regrowth, invasion pulses (world-balance T53)
-    eraSeasonTicks: 36000, // new: ticks per season when eras are on (a year is 4 x this)
+    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 of world, through the patches
+    eraSeasonTicks: 36000, // new: ticks per season (a year is 4 x this)
     winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
     invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none

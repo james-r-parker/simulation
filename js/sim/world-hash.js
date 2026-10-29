@@ -81,7 +81,7 @@ const FIELD_ARRAYS = [
 /** Hashed after `foodAge`. */
 const FOOD_KIND_FIELD = 'foodKind';
 
-/** The drought state, hashed (last) only when `erasEnabled`. */
+/** The drought state, hashed last. */
 const ERA_FIELD = 'era';
 
 /** Patch arrays, hashed only when `foodPatchCount` is above 0. */
@@ -118,9 +118,7 @@ function bytesOf(world, name) {
 function fieldNames(world) {
     const { foodPatchCount } = world.config;
     const names = FIELD_ARRAYS.filter((name) => foodPatchCount > 0 || !PATCH_ARRAYS.includes(name));
-    if (world.config.erasEnabled) {
-        names.push(ERA_FIELD);
-    }
+    names.push(ERA_FIELD);
     const at = names.indexOf('foodAge') + 1;
     return [...names.slice(0, at), FOOD_KIND_FIELD, ...names.slice(at)];
 }

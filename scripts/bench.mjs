@@ -30,7 +30,6 @@ const MEASURED_TICKS = 2000;
 export const BENCH_CONFIG = Object.freeze({
     ...FEATURES_OFF,
     maxFood: 800,
-    foodTargetPerAgent: 8,
     huntSizeRatio: 1.05,
     alarmCost: 4,
     huntCallCost: 4,

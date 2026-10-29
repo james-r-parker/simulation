@@ -4,7 +4,7 @@ import { smallWorld } from './helpers/small-world.js';
 
 describe('seasonAt', () => {
     it('writes the index and phase across a year', () => {
-        const w = smallWorld({ seasonLength: 400 });
+        const w = smallWorld({ eraSeasonTicks: 100 });
         const expected = [
             [0, 0, 0],
             [99, 0, 0.2475],
@@ -21,7 +21,7 @@ describe('seasonAt', () => {
     });
 
     it('updateSeason uses the world tick', () => {
-        const w = smallWorld({ seasonLength: 400 });
+        const w = smallWorld({ eraSeasonTicks: 100 });
         w.tick = 300;
         updateSeason(w);
         expect([w.season[0], w.season[1]]).toEqual([3, 0.75]);

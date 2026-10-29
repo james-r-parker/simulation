@@ -27,7 +27,6 @@ function run() {
             minAgents: 0,
             maxFood: 300,
             initialFood: 100,
-            foodAreaCapacity: true,
             foodPatchCount: 6,
             foodPatchRadius: 300,
             obstacleCount: 2,

@@ -16,8 +16,6 @@ const SWITCHED_ON = [
     'specMutationRate',
     'specialisations',
     'foodPatchCount',
-    'foodAreaCapacity',
-    'erasEnabled',
     'leakEnabled',
     'hebbianRate',
     'traitsEnabled',

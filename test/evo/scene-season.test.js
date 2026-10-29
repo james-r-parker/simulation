@@ -16,7 +16,6 @@ const BASINS = {
     refugeCount: 2,
     wallGaps: 1,
     maxAgents: 64,
-    erasEnabled: true,
 };
 
 const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
@@ -69,11 +68,7 @@ describe('eval.winter_basin_density and eval.winter_shelter_distance', () => {
         checkpoint(early, 9000, WINTER);
         checkpoint(early, 9500, 0);
         expect(read(early, 'winter_basin_density').value).toBeNull();
-        const noEras = observed({ ...BASINS, erasEnabled: false });
-        crowd(noEras.world, { n: 2, x: 1950, y: 500 });
-        checkpoint(noEras, 11000, WINTER);
-        expect(noEras.observer.scenes.season.checkpoints[0]).toBe(0);
-        const open = observed({ erasEnabled: true });
+        const open = observed();
         crowd(open.world, { n: 1, x: 100, y: 500 });
         checkpoint(open, 11000, WINTER);
         expect(read(open, 'winter_shelter_distance').value).toBeNull();
