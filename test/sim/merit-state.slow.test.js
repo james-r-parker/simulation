@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
-import { isDeliberate, biteDeliberate, mealDeliberate, trackMerit } from '../../js/sim/merit-state.js';
+import { isDeliberate, biteDeliberate, mealDeliberate } from '../../js/sim/merit-state.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
@@ -13,7 +13,22 @@ const TICKS = 3000;
 const MAX_SLOTS = 4096;
 
 /**
- * The agreement harness: a sim-side mirror of the observer's meal and bite credit, fed the same world each tick.
+ * Runs `read` at the tick the merit phase tracked, which `step` has already left behind.
+ * @param {any} world the world
+ * @param {() => boolean} read the classification to read
+ * @returns {boolean} what `read` returned
+ */
+function atPhaseTick(world, read) {
+    world.tick -= 1;
+    try {
+        return read();
+    } finally {
+        world.tick += 1;
+    }
+}
+
+/**
+ * The agreement harness: a sim-side mirror of the observer's meal and bite credit, fed the same world each tick (the merit phase has already tracked the tick).
  * @returns {{onTick: (world: any, observer: any) => void, stats: Record<string, number>}} the per-tick hook and the
  *   counts it gathered
  */
@@ -41,24 +56,27 @@ function agreementHarness() {
                 foodDeliberate[slot] = 0;
                 biteDeliberateSum[slot] = 0;
             }
-            trackMerit(world, slot);
             if (world.ageTicks[slot] === 0) {
                 continue;
             }
             // The classification itself, every tick.
-            check(mealDeliberate(world, slot) === isDeliberate(intent.food, slot, world.tick));
-            check(biteDeliberate(world, slot) === isDeliberate(intent.prey, slot, world.tick));
+            check(
+                atPhaseTick(world, () => mealDeliberate(world, slot)) === isDeliberate(intent.food, slot, world.tick),
+            );
+            check(
+                atPhaseTick(world, () => biteDeliberate(world, slot)) === isDeliberate(intent.prey, slot, world.tick),
+            );
             const meal = world.foodEnergy[slot] - foodMark[slot];
             foodMark[slot] = world.foodEnergy[slot];
             const bite = world.biteEnergy[slot] - biteMark[slot];
             biteMark[slot] = world.biteEnergy[slot];
             stats.meals += meal > 0 ? 1 : 0;
             stats.bites += bite > 0 ? 1 : 0;
-            if (meal > 0 && mealDeliberate(world, slot)) {
+            if (meal > 0 && atPhaseTick(world, () => mealDeliberate(world, slot))) {
                 foodDeliberate[slot] += meal;
                 stats.deliberateMeals += 1;
             }
-            if (bite > 0 && biteDeliberate(world, slot)) {
+            if (bite > 0 && atPhaseTick(world, () => biteDeliberate(world, slot))) {
                 biteDeliberateSum[slot] += bite;
                 stats.deliberateBites += 1;
             }

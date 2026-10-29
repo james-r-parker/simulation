@@ -8,7 +8,7 @@ import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const CONFIG = { ...SIMPLE_WORLD, initialAgents: 20, minAgents: 20, maxAgents: 40 };
 // The economy the follow test needs so that agent 1 starves within the run.
-const HARSH = { movementCost: 0.03, passiveLoss: 0.2, foodEnergy: 70 };
+const HARSH = { movementCost: 0.03, passiveLoss: 0.2, foodEnergy: 70, foodRegrowPerArea: 0.002 };
 
 /**
  * @param {Record<string, any>} extra run options

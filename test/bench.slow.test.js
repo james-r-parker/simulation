@@ -16,8 +16,8 @@ describe('benchSize', () => {
     it(
         'suffixes every key of a tracked variant',
         () => {
-            const metrics = benchSize(8, undefined, { suffix: 'defaults', overrides: {} });
-            expect(Object.keys(metrics).every((key) => key.endsWith('@8defaults'))).toBe(true);
+            const metrics = benchSize(8, undefined, { suffix: 'merit', overrides: {} });
+            expect(Object.keys(metrics).every((key) => key.endsWith('@8merit'))).toBe(true);
         },
         scaleTimeout(60000),
     );
@@ -55,7 +55,7 @@ describe('main', () => {
                 await benchMain(['--sizes=8'], { trackedSize: 8 });
                 const text = String(log.mock.calls[0][0]);
                 expect(text).toContain('bench.step_ms@8 ');
-                expect(text).toContain('bench.step_ms@8defaults ');
+                expect(text).toContain('bench.step_ms@8merit ');
                 expect(text).toContain('bench.step_ms@8w7680 ');
             } finally {
                 log.mockRestore();

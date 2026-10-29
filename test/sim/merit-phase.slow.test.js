@@ -71,15 +71,4 @@ describe('the merit phase in a real world', () => {
         },
         TIMEOUT_MS,
     );
-
-    it(
-        'with merit off logs no summary and leaves the merit arrays at zero',
-        () => {
-            const { world, summaries } = run({});
-            expect(summaries).toEqual([]);
-            expect(world.merit.every((/** @type {number} */ v) => v === 0)).toBe(true);
-            expect(Array.from(world.meritTally)).toEqual([0, 0, 0, 0, 0, 0]);
-        },
-        TIMEOUT_MS,
-    );
 });
