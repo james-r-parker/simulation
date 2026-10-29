@@ -161,7 +161,7 @@ describe('buildV6Entry', () => {
     });
 
     it('rejects a payload from another app and times that are not finite', () => {
-        expect(() => buildV6Entry({ perf: { ...perf, app: 'legacy' }, longTaskTimes: [], gcPauseMs: 0, run })).toThrow(
+        expect(() => buildV6Entry({ perf: { ...perf, app: 'other' }, longTaskTimes: [], gcPauseMs: 0, run })).toThrow(
             '"v6"',
         );
         expect(() => buildV6Entry({ perf: null, longTaskTimes: [], gcPauseMs: 0, run })).toThrow('"v6"');

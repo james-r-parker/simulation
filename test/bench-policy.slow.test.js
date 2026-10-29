@@ -19,9 +19,9 @@ function smallRun(name) {
 
 describe('createSubject with a real run', () => {
     it(
-        'fills archive cells for map-elites-v1, whose deaths need the observer to be scored',
+        'fills archive cells for map-elites-v6, whose deaths need the observer to be scored',
         () => {
-            const { subject, world } = smallRun('map-elites-v1');
+            const { subject, world } = smallRun('map-elites-v6');
             const archive = subject.policy?.archive;
             expect(occupiedCount(archive)).toBe(0);
             for (let t = 0; t < 6000 && occupiedCount(archive) === 0; t++) {

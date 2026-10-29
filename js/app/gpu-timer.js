@@ -1,7 +1,7 @@
 // GPU frame time through EXT_disjoint_timer_query_webgl2: one query around each frame's draw, results collected a few
 // frames later without stalling. Absent extension: no timer, and the app reports no GPU time.
 
-import { createFrameRing } from '../dev/perf-probe.js';
+import { createFrameRing } from './frame-stats.js';
 
 /** Queries in flight at once; a frame is skipped when all are busy. */
 export const MAX_IN_FLIGHT = 8;

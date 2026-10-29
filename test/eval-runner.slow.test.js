@@ -58,13 +58,13 @@ describe('runEval', () => {
     );
 
     it(
-        'gives map-elites-v1 identical reports for 1 and 2 workers, with the archive metrics set',
+        'gives map-elites-v6 identical reports for 1 and 2 workers, with the archive metrics set',
         async () => {
             const go = (/** @type {string} */ name, /** @type {number} */ workers) =>
                 runEval({
                     seeds: 2,
                     ticks: 3000,
-                    policy: 'map-elites-v1',
+                    policy: 'map-elites-v6',
                     configOverrides: { ...SMALL, maturityTicks: 100 },
                     out: join(dir, `${name}.json`),
                     logDir: join(dir, 'logs'),

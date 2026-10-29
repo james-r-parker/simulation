@@ -8,9 +8,9 @@
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
 # - Every module under js/worker/ and js/app/ has a test at the mirrored path (test/worker/, test/app/), except the
 #   browser shells in BROWSER_SHELLS, which test/browser/app.spec.js covers (docs/designs/worker-and-renderer.md).
-# - Legacy code only shrinks: each js/*.js and js/constants/*.js file stays within its line count in
-#   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (docs/coding-standards.md).
-#   Lower a budget when a file shrinks; remove the entry when the file is deleted.
+# - The legacy app stays deleted: no file directly under js/ (code lives in js/sim/, js/evo/, js/worker/ or js/app/),
+#   none of the deleted legacy paths (LEGACY_PATHS) comes back, and AGENTS.md, README.md and the skills under
+#   .claude/skills/ do not use the word "legacy" except on a line that links legacy-audit.md or bench/legacy-baseline.json.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
@@ -24,6 +24,9 @@ LARGE_FILE_BYTES=$((5 * 1024 * 1024))
 
 # Shells that need a real worker, window, WebGL context or AudioContext; the browser spec covers them.
 BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/renderer/scene.js" "js/app/renderer/bloom.js" "js/app/audio/engine.js")
+
+# Paths of the deleted legacy app (pathspecs); a tracked file under any of them is a violation.
+LEGACY_PATHS=("legacy.html" "js/constants" "js/dev" "css/style.css" "css/toast.css" "public/database-worker.js")
 
 violations=0
 fail() { echo "$1"; violations=$((violations + 1)); }
@@ -62,26 +65,21 @@ for file in "${app_files[@]}"; do
   [[ -f "$test_file" ]] || fail "$file: no test at $test_file - every module ships with its tests"
 done
 
-while IFS= read -r line; do
-  fail "$line"
-done < <(node -e '
-const fs = require("fs");
-const { execSync } = require("child_process");
-const budget = JSON.parse(fs.readFileSync("scripts/quality-baseline.json", "utf8")).legacyLines;
-const files = execSync("git ls-files --cached --others --exclude-standard -- \":(glob)js/*.js\" \":(glob)js/constants/*.js\"")
-  .toString().split("\n").filter((f) => f && fs.existsSync(f));
-for (const file of files) {
-  const text = fs.readFileSync(file, "utf8");
-  const lines = text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
-  if (!(file in budget)) {
-    console.log(`${file}: new file in the legacy area - put new code in a linted module (js/sim, js/evo)`);
-  } else if (lines > budget[file]) {
-    console.log(`${file}: ${lines} lines, over its legacy budget of ${budget[file]} - legacy files only shrink`);
-  }
-}
-for (const file of Object.keys(budget)) {
-  if (!files.includes(file)) console.log(`${file}: no longer exists - remove its entry from scripts/quality-baseline.json legacyLines`);
-}')
+while IFS= read -r file; do
+  fail "$file: sits directly under js/ - put code in js/sim/, js/evo/, js/worker/ or js/app/ (the legacy app is deleted)"
+done < <(git ls-files --cached --others --exclude-standard -- ':(glob)js/*')
+
+while IFS= read -r file; do
+  fail "$file: a deleted legacy path came back - the legacy app is gone (docs/designs/legacy-audit.md records why)"
+done < <(git ls-files --cached --others --exclude-standard -- "${LEGACY_PATHS[@]}")
+
+# "legacy" in the instructions is allowed only on a line that links the audit or the recorded baseline.
+while IFS= read -r file; do
+  [[ -f "$file" ]] || continue
+  while IFS= read -r hit; do
+    fail "$file:${hit%%:*}: the word \"legacy\" outside a link to legacy-audit.md or bench/legacy-baseline.json - describe the repo as it is"
+  done < <(grep -niE 'legacy' "$file" | grep -vE 'legacy-audit\.md|bench/legacy-baseline\.json')
+done < <(git ls-files --cached --others --exclude-standard -- 'AGENTS.md' 'README.md' '.claude/skills/*.md' '.claude/skills/**/*.md')
 
 if [[ -d public ]]; then
   while IFS= read -r served; do

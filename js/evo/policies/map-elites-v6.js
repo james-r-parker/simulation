@@ -4,7 +4,7 @@
 //
 // Options beyond the eval runner's `{ config, log, observer }`: `fitnessOverrides` (weights replacing `FITNESS_V6`
 // entries), `archiveShare` and `cloneShareEnd` (the immigrant mix), `cellDraws` (the parent cell tournament, default
-// that of `map-elites-v1q`) and `descriptor` (the name of a registered descriptor, default `v6`).
+// `QUALITY_CELL_DRAWS`, four) and `descriptor` (the name of a registered descriptor, default `v6`).
 //
 // With a debug log and an observer, every scored death also keeps its group values in extra columns of the observer's
 // death log, which `FitnessScored` reads when the policy offers the death. The wrapped fitness computes the parts a

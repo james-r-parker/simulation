@@ -34,7 +34,7 @@ If unsure, ask the user in one line before writing a doc.
 1. Read `docs/designs/STYLE.md` in full. It is the contract; this skill only explains it.
 2. Check for an existing doc first: `fd -e md . docs/designs` and `rg -il '<feature words>' docs/designs`.
    Extend an existing `Proposed` doc rather than starting a sibling. Read `legacy-audit.md` when it exists - it is
-   the evidence for what the legacy code does wrong.
+   the evidence for what the replaced v5 code did wrong.
 3. The plan lives at `docs/designs/<kebab-feature>.md` - never `~/.claude/plans`, a scratch file or the
    conversation alone. If plan mode writes elsewhere, copy the content into the design doc before finishing.
 4. Stamp the head of the doc:

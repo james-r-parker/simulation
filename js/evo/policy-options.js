@@ -10,8 +10,6 @@ const MIX_KEYS = ['archiveShare', 'cloneShareEnd'];
 
 /** The option keys each policy takes; a policy not listed takes none. */
 const ACCEPTED = Object.freeze({
-    'map-elites-v1': MIX_KEYS,
-    'map-elites-v1q': MIX_KEYS,
     'map-elites-v6': [...MIX_KEYS, 'fitnessOverrides', 'descriptor'],
 });
 

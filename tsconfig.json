@@ -14,7 +14,6 @@
   "include": [
     "js/sim/**/*.js",
     "js/evo/**/*.js",
-    "js/dev/**/*.js",
     "js/worker/**/*.js",
     "js/app/**/*.js",
     "js/app/**/*.d.ts",

@@ -57,3 +57,36 @@ describe('conventions conflict markers', { timeout: scaleTimeout(30_000) }, () =
         expect(out).not.toContain('merge conflict marker');
     });
 });
+
+describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
+    it('flags a file directly under js/ but not one in a module directory', () => {
+        expect(conventions({ 'js/game.js': 'x\n' })).toContain('js/game.js: sits directly under js/');
+        expect(conventions({ 'js/app/main.js': 'x\n' })).not.toContain('directly under js/');
+    });
+
+    it.each(['legacy.html', 'js/constants/agents.js', 'js/dev/perf-probe.js', 'public/database-worker.js'])(
+        'flags the recreated legacy path %s',
+        (path) => {
+            expect(conventions({ [path]: 'x\n' })).toContain(`${path}: a deleted legacy path came back`);
+        },
+    );
+
+    it('flags the word legacy in AGENTS.md, README.md and a skill', () => {
+        const out = conventions({
+            'AGENTS.md': 'ok\nthe legacy app\n',
+            'README.md': 'The Legacy build\n',
+            '.claude/skills/x/SKILL.md': 'legacy wording\n',
+        });
+        expect(out).toContain('AGENTS.md:2: the word "legacy"');
+        expect(out).toContain('README.md:1: the word "legacy"');
+        expect(out).toContain('.claude/skills/x/SKILL.md:1: the word "legacy"');
+    });
+
+    it('allows the word legacy on a line that links the audit or the recorded baseline', () => {
+        const out = conventions({
+            'AGENTS.md': 'See [legacy-audit.md](docs/designs/legacy-audit.md) for the old app\n',
+            'README.md': 'Before: `bench/legacy-baseline.json`\n',
+        });
+        expect(out).not.toContain('the word "legacy"');
+    });
+});

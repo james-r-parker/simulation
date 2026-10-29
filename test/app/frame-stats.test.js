@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
     clearFrameStats,
+    createFrameRing,
     createFrameStats,
     frameReport,
     MAX_INTERVAL_MS,
+    percentile,
     recordFrame,
 } from '../../js/app/frame-stats.js';
 
@@ -63,5 +65,32 @@ describe('frame stats', () => {
         expect(frameReport(stats).frames).toBe(0);
         recordFrame(stats, 6, 1);
         expect(frameReport(stats).frames).toBe(1);
+    });
+});
+
+describe('percentile', () => {
+    it('returns nearest-rank values on a sorted array', () => {
+        const sorted = Array.from({ length: 100 }, (_, i) => i + 1);
+        expect(percentile(sorted, 50)).toBe(50);
+        expect(percentile(sorted, 95)).toBe(95);
+        expect(percentile(sorted, 99)).toBe(99);
+    });
+
+    it('returns 0 for an empty array', () => {
+        expect(percentile([], 50)).toBe(0);
+    });
+});
+
+describe('createFrameRing', () => {
+    it('keeps the newest samples once capacity is exceeded', () => {
+        const ring = createFrameRing(3);
+        [1, 2, 3, 4, 5].forEach((v) => ring.push(v));
+        expect(Array.from(ring.values())).toEqual([3, 4, 5]);
+    });
+
+    it('returns only pushed samples before it is full', () => {
+        const ring = createFrameRing(4);
+        ring.push(7);
+        expect(Array.from(ring.values())).toEqual([7]);
     });
 });

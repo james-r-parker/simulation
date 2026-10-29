@@ -67,12 +67,12 @@ describe('a real run', () => {
     });
 
     it('replays an eval run to the same world hash', { timeout: scaleTimeout(60000) }, async () => {
-        const evaled = runSeed({ seed: 3, ticks: 3000, policy: 'map-elites-v1', overrides: OVERRIDES });
+        const evaled = runSeed({ seed: 3, ticks: 3000, policy: 'map-elites-v6', overrides: OVERRIDES });
         const dir = mkdtempSync(join(tmpdir(), 'me-replay-'));
         const replayed = await runReplay({
             seed: 3,
             ticks: 3000,
-            policy: 'map-elites-v1',
+            policy: 'map-elites-v6',
             configOverrides: OVERRIDES,
             logDir: join(dir, 'logs'),
             dumpDir: join(dir, 'dumps'),

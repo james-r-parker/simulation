@@ -10,27 +10,25 @@ The goal is a world that is interesting to watch. [docs/principles.md](docs/prin
 worth watching, the selection rules and how each scene is detected; read it before any design, tuning or
 done-criteria call.
 
-The current app (`js/*.js`, Three.js and WebGPU) is the legacy implementation. Its replacement - a deterministic
-headless sim core, an evolution archive, an eval system and a worker-driven renderer - is planned in
-`docs/designs/` and built phase by phase.
+The app is a deterministic headless sim core, an evolution archive, an eval system and a worker-driven renderer,
+planned in `docs/designs/` and built phase by phase. The old single-thread app was deleted; `docs/designs/legacy-audit.md`
+records why each part was replaced.
 
 ## Where things are
 
-| Path                        | Holds                                                                                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/designs/`             | Design docs - the plans and the as-built descriptions. Index: [docs/designs/README.md](docs/designs/README.md)                                     |
-| `docs/designs/STYLE.md`     | Design doc conventions. Read before writing or editing any doc                                                                                     |
-| `docs/designs/sim-notes.md` | Verified platform and library facts, and learnings from each phase                                                                                 |
-| `.claude/skills/`           | Workflow skills for agents working on this repo (below)                                                                                            |
-| `scripts/check.sh`          | The local gate; CI runs it                                                                                                                         |
-| `scripts/designs-index.mjs` | Design doc index generator and lint                                                                                                                |
-| `js/`                       | The legacy app (`legacy.html`, `npm run dev` only): `game.js`, `agent.js`, `neural-network.js`, `gpu-*.js`, `renderer.js`, `ui.js`, `database*.js` |
-| `js/constants/`             | Legacy tunables; the defaults the new config is built from                                                                                         |
-| `js/sim/`, `js/evo/`        | The headless sim core and evolution (DOM-free and deterministic)                                                                                   |
-| `js/worker/`                | The sim worker and its message protocol (imports `js/sim/` and `js/evo/`; no DOM)                                                                  |
-| `js/app/`                   | The app on `index.html`: `main.js`, the frame loop, `renderer/` (three, WebGL2), `ui/` (imports `three` and `js/worker/protocol.js` only)          |
-| `test/`                     | Vitest tests                                                                                                                                       |
-| `public/`                   | Static files served at the site root, including the database worker                                                                                |
+| Path                        | Holds                                                                                                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/designs/`             | Design docs - the plans and the as-built descriptions. Index: [docs/designs/README.md](docs/designs/README.md)                            |
+| `docs/designs/STYLE.md`     | Design doc conventions. Read before writing or editing any doc                                                                            |
+| `docs/designs/sim-notes.md` | Verified platform and library facts, and learnings from each phase                                                                        |
+| `.claude/skills/`           | Workflow skills for agents working on this repo (below)                                                                                   |
+| `scripts/check.sh`          | The local gate; CI runs it                                                                                                                |
+| `scripts/designs-index.mjs` | Design doc index generator and lint                                                                                                       |
+| `js/sim/`, `js/evo/`        | The headless sim core and evolution (DOM-free and deterministic)                                                                          |
+| `js/worker/`                | The sim worker and its message protocol (imports `js/sim/` and `js/evo/`; no DOM)                                                         |
+| `js/app/`                   | The app on `index.html`: `main.js`, the frame loop, `renderer/` (three, WebGL2), `ui/` (imports `three` and `js/worker/protocol.js` only) |
+| `test/`                     | Vitest tests                                                                                                                              |
+| `public/`                   | Static files served at the site root, including the database worker                                                                       |
 
 ## Commands
 
@@ -55,7 +53,7 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Function microbenchmarks (hot functions, ops/s)  | `npm run bench:micro` (`-- --compare <ref>` runs the same files on a worktree of `<ref>` and this tree, alternating, and prints the change per function with its margin; `--runs <n>` (3), `--filter <text>`; about 5 minutes for a compare; a tool, not a gate)                                                                                                                                                                                              |
 | Parallel throughput by worker count              | `npm run bench:parallel` (`-- --counts 1,8,16,24,32 --ticks 2000 --agents 500 --json`; prints `bench.parallel_ticks_per_s@<n>` and the recommended worker default)                                                                                                                                                                                                                                                                                            |
 | Check the golden hashes in Chromium              | `npm run browser:hash` (`-- --cdp=<url>` to use a running Chrome)                                                                                                                                                                                                                                                                                                                                                                                             |
-| Measure the app's frame times in Chrome          | `npm run perf:browser` (`-- --app v6` is the default, `--agents <n>` (500), `--viewport <w>x<h>` (3840x2160), `--seconds <n>`, `--cdp=http://127.0.0.1:9222` for Windows Chrome on the GPU; refuses a display under 120 Hz without `--allow-low-refresh` and software GL without `--allow-fallback`; writes `bench/browser-baseline.json` by viewport; `--app legacy` writes `bench/legacy-baseline.json`)                                                    |
+| Measure the app's frame times in Chrome          | `npm run perf:browser` (`-- --app v6` is the default, `--agents <n>` (500), `--viewport <w>x<h>` (3840x2160), `--seconds <n>`, `--cdp=http://127.0.0.1:9222` for Windows Chrome on the GPU; refuses a display under 120 Hz without `--allow-low-refresh` and software GL without `--allow-fallback`; writes `bench/browser-baseline.json` by viewport; `bench/legacy-baseline.json` is the recorded before-number from the deleted app)                       |
 | Replay a world and log its events                | `npm run replay -- --seed <n> --ticks <n>` (`--config <file.json>`, `--dump <tick>`, `--level debug`, `--check-invariants`, `--policy <name>`, `--follow <genomeId>`); logs go to `.sim/logs/<runId>.jsonl`                                                                                                                                                                                                                                                   |
 | Evaluate a policy on fixed seeds                 | `npm run eval -- --seeds <n> --ticks <t> --policy <name>` (defaults 16 seeds, 200000 ticks; `--seed-offset <k>`, `--config <file.json>`, `--policy-options <file.json>` (policy options: `fitnessOverrides` weights, `archiveShare`, `cloneShareEnd`, `descriptor`; checked before the run, written to the report), `--out <path>`, `--workers <n>`; seeds come from `evals/seeds.json`; reports go to `evals/results/`, logs to `.sim/logs/eval-<id>.jsonl`) |
 | Screen a grid of config arms                     | `npm run screen -- --grid <grid.json>` (`--workers <total>` for all arms and seeds, default cores - 2; `--out`, `--seeds`, `--seed-offset`, `--ticks`, `--force`; takes the CPU lock itself, so do not wrap it in `flock`; resumable per arm; an arm may set `policyOptions` (also in `base`) beside its config keys, part of its resume key; `table.md` and `verdicts.json` in `evals/screens/results/<grid>/`; example `evals/screens/t59.grid.json`)       |
@@ -176,24 +174,23 @@ New code is small modules that each do one job and are tested on their own.
 
 ### Size limits (enforced)
 
-| Limit                              | Value                                                                                  | Gate                              |
-| ---------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------- |
-| Lines per source file              | 300 (blank lines and comments excluded)                                                | `lint` (`max-lines`)              |
-| Lines per test file                | 400                                                                                    | `lint` (`max-lines`)              |
-| Lines per function                 | 50                                                                                     | `lint` (`max-lines-per-function`) |
-| Cyclomatic complexity per function | 10                                                                                     | `lint` (`complexity`)             |
-| Nesting depth                      | 3                                                                                      | `lint` (`max-depth`)              |
-| Parameters per function            | 4 - pass an options object beyond that                                                 | `lint` (`max-params`)             |
-| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`                               | `conventions`                     |
-| Legacy files                       | Only shrink; no new files beside them (`scripts/quality-baseline.json`, `legacyLines`) | `conventions`                     |
+| Limit                              | Value                                                                | Gate                              |
+| ---------------------------------- | -------------------------------------------------------------------- | --------------------------------- |
+| Lines per source file              | 300 (blank lines and comments excluded)                              | `lint` (`max-lines`)              |
+| Lines per test file                | 400                                                                  | `lint` (`max-lines`)              |
+| Lines per function                 | 50                                                                   | `lint` (`max-lines-per-function`) |
+| Cyclomatic complexity per function | 10                                                                   | `lint` (`complexity`)             |
+| Nesting depth                      | 3                                                                    | `lint` (`max-depth`)              |
+| Parameters per function            | 4 - pass an options object beyond that                               | `lint` (`max-params`)             |
+| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`             | `conventions`                     |
+| Files directly under `js/`         | None - code lives in `js/sim/`, `js/evo/`, `js/worker/` or `js/app/` | `conventions`                     |
 
 A test that runs a real world for many ticks, a worker pool or a full eval (about 0.5 s or more) goes in
 `<module>.slow.test.js` beside the mirrored test; CI runs only the fast tests, every local run runs all
 (`docs/designs/quality-gates-and-test-tiers.md`).
 
 A limit is a signal to split, never a target to pad up to. Do not silence a limit with `eslint-disable`; split the
-module or function instead. When a legacy file shrinks, lower its budget (`legacyLines` in `scripts/quality-baseline.json`) in the same
-commit; when it is deleted, remove its entry.
+module or function instead.
 
 Read [docs/coding-standards.md](docs/coding-standards.md) before writing code: module design, correctness,
 hot-path performance, tests and reviews. In short: one job per module, pure core with a thin shell, fail loudly,
@@ -201,7 +198,7 @@ per-tick code allocates nothing, test behaviour against a naive reference for cl
 
 ## Debugging
 
-Follow the `debug-sim` skill; for the legacy app, the browser console and `window.__perf()` in dev builds.
+Follow the `debug-sim` skill; for the app, the browser console and `window.__perf()` in dev builds.
 
 ## Environment and tools
 
