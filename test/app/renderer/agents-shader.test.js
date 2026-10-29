@@ -3,7 +3,7 @@ import { AGENT_FRAGMENT, AGENT_VERTEX, QUAD_HALF } from '../../../js/app/rendere
 
 describe('agent shader', () => {
     it('declares every attribute and uniform the layer feeds, and the quad size matches the design', () => {
-        for (const name of ['corner', 'iPose', 'iColor', 'iState', 'iExtra']) {
+        for (const name of ['corner', 'iPose', 'iColor', 'iState', 'iExtra', 'iMotion']) {
             expect(AGENT_VERTEX).toContain(name);
         }
         for (const name of [
@@ -16,6 +16,7 @@ describe('agent shader', () => {
             'uRamp',
             'uSmoke',
             'uView',
+            'uMotion',
         ]) {
             expect(AGENT_FRAGMENT).toContain(name);
         }
@@ -29,5 +30,11 @@ describe('agent shader', () => {
         expect(AGENT_FRAGMENT).toContain('small * uHunter');
         expect(AGENT_FRAGMENT).toContain('mix(9.0, 4.0, small)');
         expect(AGENT_FRAGMENT).toContain('smoothstep(23.0, 25.0, across)');
+    });
+
+    it('applies motion wobble and squash when uMotion is positive', () => {
+        expect(AGENT_FRAGMENT).toContain('uMotion > 0.0');
+        expect(AGENT_FRAGMENT).toContain('0.08 * speed01 * sin');
+        expect(AGENT_FRAGMENT).toContain('1.0 / (1.0 + 0.12 * turn01)');
     });
 });

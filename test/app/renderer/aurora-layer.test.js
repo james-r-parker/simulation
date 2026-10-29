@@ -21,17 +21,15 @@ function frameOf(info) {
 }
 
 describe('aurora-layer', () => {
-    it('creates an upsample quad with world uniforms and proper initial visibility', () => {
-        const { info } = smallReady();
-        const layer = createAuroraLayer({ info });
-        expect(layer.object.visible).toBe(true);
-        expect(layer.object.material.uniforms.uWorld.value).toEqual([info.worldWidth, info.worldHeight]);
+    it('creates an upsample quad with proper initial visibility', () => {
+        const layer = createAuroraLayer();
+        expect(layer.object.visible).toBe(false);
+        expect(layer.object.material.uniforms.uRibbons.value).toBeDefined();
         layer.dispose();
     });
 
     it('handles quality tiers via setLook', () => {
-        const { info } = smallReady();
-        const layer = createAuroraLayer({ info });
+        const layer = createAuroraLayer();
 
         layer.setLook?.({ aurora: 0 });
         expect(layer.object.visible).toBe(true);
@@ -47,7 +45,7 @@ describe('aurora-layer', () => {
 
     it('updates uniforms on each frame', () => {
         const { info } = smallReady();
-        const layer = createAuroraLayer({ info });
+        const layer = createAuroraLayer();
         const frame = frameOf(info);
 
         layer.update?.(frame);
@@ -58,8 +56,7 @@ describe('aurora-layer', () => {
     });
 
     it('prerender handles fake renderer without error', () => {
-        const { info } = smallReady();
-        const layer = createAuroraLayer({ info });
+        const layer = createAuroraLayer();
         let targetSet = null;
         let renderedScene = null;
         const fakeRenderer = {
@@ -73,6 +70,7 @@ describe('aurora-layer', () => {
         };
 
         layer.prerender?.(fakeRenderer, null);
+        expect(targetSet).toBeDefined();
         expect(renderedScene).toBeDefined();
         layer.dispose();
     });

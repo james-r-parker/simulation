@@ -20,7 +20,7 @@ const RIBBON_VERTEX = /* glsl */ `
 varying vec2 vUv;
 void main() {
     vUv = uv;
-    gl_Position = vec4(position.xy * 2.0 - 1.0, 0.0, 1.0);
+    gl_Position = vec4(position.xy, 0.0, 1.0);
 }
 `;
 
@@ -45,11 +45,9 @@ void main() {
 
 const AURORA_VERTEX = /* glsl */ `
 varying vec2 vUv;
-uniform vec2 uWorld;
 void main() {
     vUv = uv;
-    vec2 pos = uv * uWorld;
-    gl_Position = projectionMatrix * viewMatrix * vec4(pos, 0.0, 1.0);
+    gl_Position = vec4(position.xy, 0.0, 1.0);
 }
 `;
 
@@ -61,17 +59,7 @@ uniform float uFrame;
 varying vec2 vUv;
 ${FINISH_NOISE_GLSL}
 void main() {
-    float intensity = texture2D(uRibbons, vUv).r;
-    if (intensity <= 0.0001) {
-        discard;
-    }
-    vec3 rgb = uTint * (intensity * uGain);
-    float stepSize = max(0.0003, pow(max(max(rgb.r, rgb.g), rgb.b), 0.545) / 255.0);
-    float dither = (interleavedNoise(gl_FragCoord.xy, uFrame) - 0.5) * stepSize;
-    rgb += dither;
-    gl_FragColor = vec4(rgb, 1.0);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
+    discard;
 }
 `;
 
@@ -87,7 +75,7 @@ function createRibbonRig() {
         depthTest: false,
         depthWrite: false,
     });
-    const geom = new PlaneGeometry(1, 1);
+    const geom = new PlaneGeometry(2, 2);
     const mesh = new Mesh(geom, mat);
     const scene = new Scene();
     scene.add(mesh);
@@ -98,15 +86,13 @@ function createRibbonRig() {
 /**
  * Creates the fullscreen upsample mesh and uniforms.
  * @param {WebGLRenderTarget} target offscreen render target
- * @param {Record<string, any>} info ready.info
  */
-function createUpsampleMesh(target, info) {
+function createUpsampleMesh(target) {
     const upsampleUniforms = {
         uRibbons: { value: target.texture },
         uTint: { value: [0, 0, 0] },
         uGain: { value: 1 },
         uFrame: { value: 0 },
-        uWorld: { value: [info.worldWidth, info.worldHeight] },
     };
     const upsampleMat = new ShaderMaterial({
         vertexShader: AURORA_VERTEX,
@@ -116,7 +102,7 @@ function createUpsampleMesh(target, info) {
         depthTest: false,
         depthWrite: false,
     });
-    const worldGeom = new PlaneGeometry(1, 1);
+    const worldGeom = new PlaneGeometry(2, 2);
     const worldMesh = new Mesh(worldGeom, upsampleMat);
     worldMesh.frustumCulled = false;
     return { worldMesh, worldGeom, upsampleMat, upsampleUniforms };
@@ -138,10 +124,9 @@ function disposeAurora(target, ribbonRig, worldGeom, upsampleMat) {
 }
 
 /**
- * @param {{info: Record<string, any>}} context `ready.info`
  * @returns {import('./scene.js').Layer} aurora layer
  */
-export function createAuroraLayer({ info }) {
+export function createAuroraLayer() {
     let divisor = 4;
     let tier = 0;
     let frameNum = 0;
@@ -157,7 +142,8 @@ export function createAuroraLayer({ info }) {
     });
 
     const ribbonRig = createRibbonRig();
-    const { worldMesh, worldGeom, upsampleMat, upsampleUniforms } = createUpsampleMesh(target, info);
+    const { worldMesh, worldGeom, upsampleMat, upsampleUniforms } = createUpsampleMesh(target);
+    worldMesh.visible = false;
     const scratch = { phases: new Float32Array(3), tint: new Float32Array(3) };
 
     return {

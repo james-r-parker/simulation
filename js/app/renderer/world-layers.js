@@ -1,7 +1,15 @@
 // The static parts of the world: food dots, obstacle discs and the border line. Food and obstacles are
 // instanced meshes fed from the newest snapshot with the count set per frame.
 
-import { BufferGeometry, Float32BufferAttribute, Group, LineBasicMaterial, LineLoop, ShaderMaterial } from 'three';
+import {
+    AdditiveBlending,
+    BufferGeometry,
+    Float32BufferAttribute,
+    Group,
+    LineBasicMaterial,
+    LineLoop,
+    ShaderMaterial,
+} from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
@@ -78,7 +86,12 @@ export function createFoodLayer({ info }) {
         uTime: { value: 0 },
     };
     const geometry = createQuadGeometry(info.maxFood, ['iBody']);
-    const mat = material({ vertexShader: FOOD_VERTEX, fragmentShader: FOOD_FRAGMENT, uniforms });
+    const mat = material({
+        vertexShader: FOOD_VERTEX,
+        fragmentShader: FOOD_FRAGMENT,
+        uniforms,
+        blending: AdditiveBlending,
+    });
     const mesh = createQuadMesh(geometry, mat, info.maxFood);
     const packed = new Float32Array(info.maxFood * VEC4);
     return {

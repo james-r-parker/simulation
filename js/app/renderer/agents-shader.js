@@ -18,10 +18,12 @@ attribute vec4 iPose;   // x, y, angle, radius
 attribute vec4 iColor;  // r, g, b, energy01
 attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
 attribute vec4 iExtra;  // pregnant, neutral family, reserved
+attribute vec4 iMotion; // speed01, turn01, phase, 0
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;
 varying vec4 vColor;
 varying vec4 vState;
+varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
 varying vec2 vWorld;
@@ -37,6 +39,7 @@ void main() {
     vPx = 1.0 / (uZoom * radius);                    // one device pixel in radii
     vColor = iColor;
     vState = iState;
+    vMotion = iMotion;
     vPregnant = iExtra.x;
     vNeutral = iExtra.y;
     gl_Position = projectionMatrix * viewMatrix * vec4(world, 0.0, 1.0);
@@ -51,12 +54,14 @@ uniform float uBiteArc;    // the jaw wedge's half-angle when fully open, radian
 uniform float uTempLens;   // 1 replaces the lineage colour with the temperature ramp
 uniform float uDim;        // 0.55 under the scent lens
 uniform float uPalette;    // 2 for the high-contrast palette: a rim twice as wide, neutral families faint with no halo
+uniform float uMotion;     // 1 level 0 (wobble + squash), 0.5 level 1 (squash), 0 level 2
 uniform sampler2D uRamp;
 uniform sampler2D uSmoke;  // smoke alpha over the view, quarter resolution
 uniform vec4 uView;        // left, bottom, width, height of the view in world units
 varying vec2 vP;
 varying vec4 vColor;
 varying vec4 vState;
+varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
 varying vec2 vWorld;
@@ -126,12 +131,22 @@ float body(vec2 p, float open, out float noseX) {
 }
 
 void main() {
+    vec2 p = vP;
+    if (uMotion > 0.0) {
+        float speed01 = vMotion.x;
+        float turn01 = vMotion.y;
+        float phase = vMotion.z;
+        if (uMotion > 0.75) {
+            p.y += 0.08 * speed01 * sin(uTime * (4.0 + 10.0 * speed01) + 6.2831853 * phase + 2.5 * p.x) * smoothstep(0.2, -1.0, p.x);
+        }
+        p *= vec2(1.0 / (1.0 + 0.12 * turn01), 1.0 + 0.12 * turn01);
+    }
     float open = vState.w;
     float noseX;
-    float d = body(vP, open, noseX);
+    float d = body(p, open, noseX);
     if (uShape > 0.5 && uHunter > 0.5) {
         // the heading notch is part of the body outline, so the rim follows it
-        d = max(d, -sdWedge(vP, vec2(noseX - 0.5, 0.0), 0.5));
+        d = max(d, -sdWedge(p, vec2(noseX - 0.5, 0.0), 0.5));
     }
     float cover = 1.0 - smoothstep(-vPx, vPx, d);
     float contrast = uPalette > 1.5 ? 1.0 : 0.0;
@@ -147,7 +162,7 @@ void main() {
     float halo = exp(-max(d, 0.0) / haloWidth) * 0.45 * (1.0 - faint);
     float rim = exp(-abs(d) / rimWidth) * 1.0;
     float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
-    float nucleus = exp(-dot(vP, vP) * 3.2) * 0.45 * (1.0 - small);
+    float nucleus = exp(-dot(p, p) * 3.2) * 0.45 * (1.0 - small);
     float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
     vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
     rgb += base * bright * rim * 0.85;
@@ -156,9 +171,9 @@ void main() {
         rgb += base * bright * 0.9 * smoothstep(-0.2, -0.08, d) * (1.0 - smoothstep(-0.08, 0.0, d));
     }
     // below 24 px a hunter gets a hot white-red tip at the nose, so it reads as a hunter at a glance
-    float tip = 1.0 - smoothstep(0.0, 0.42, length(vP - vec2(noseX * 0.8, 0.0)));
+    float tip = 1.0 - smoothstep(0.0, 0.42, length(p - vec2(noseX * 0.8, 0.0)));
     rgb += vec3(1.0, 0.45, 0.35) * 1.6 * tip * small * uHunter * cover;
-    vec2 eyeAt = vP - vec2(0.45, 0.0);
+    vec2 eyeAt = p - vec2(0.45, 0.0);
     rgb += vec3(0.85, 0.95, 1.0) * 1.1 * (1.0 - smoothstep(0.13 - vPx, 0.13 + vPx, length(eyeAt))) * cover;
     rgb += vec3(0.35, 0.9, 0.7) * vState.y * 0.9 * (cover + halo * 0.5);
     rgb += vec3(1.0, 0.18, 0.15) * vState.z * 1.3 * (cover + halo * 0.5);

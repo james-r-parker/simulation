@@ -114,3 +114,19 @@ describe('setSmokeTexture', () => {
         layer.dispose();
     });
 });
+
+describe('setLook', () => {
+    it('sets uMotion by quality tier (1 for 0, 0.5 for 1, 0 for off)', () => {
+        const { info, layout } = smallReady();
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const u = layer.object.children[0].material.uniforms;
+        expect(u.uMotion.value).toBe(1);
+        layer.setLook?.({ motion: 1 });
+        expect(u.uMotion.value).toBe(0.5);
+        layer.setLook?.({ motion: 2 });
+        expect(u.uMotion.value).toBe(0);
+        layer.setLook?.({ motion: 0 });
+        expect(u.uMotion.value).toBe(1);
+        layer.dispose();
+    });
+});

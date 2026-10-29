@@ -10,6 +10,7 @@ import {
     HEADER_WORDS,
     interpolateInto,
     lerpAngle,
+    shortestArc,
     simTickAt,
     stepPlayhead,
 } from '../../js/app/interpolate.js';
@@ -28,6 +29,15 @@ describe('lerpAngle', () => {
         expect(lerpAngle(3.0, -3.0, 0.5)).toBeCloseTo(Math.PI, 5);
         expect(lerpAngle(-3.0, 3.0, 0.5)).toBeCloseTo(-Math.PI, 5);
         expect(lerpAngle(0, 1, 0.25)).toBeCloseTo(0.25, 6);
+    });
+});
+
+describe('shortestArc', () => {
+    it('returns the signed shortest angle difference across plus and minus pi', () => {
+        expect(shortestArc(3.0, -3.0)).toBeCloseTo(2 * Math.PI - 6.0, 5);
+        expect(shortestArc(-3.0, 3.0)).toBeCloseTo(-2 * Math.PI + 6.0, 5);
+        expect(shortestArc(0, 0.5)).toBeCloseTo(0.5, 5);
+        expect(shortestArc(0.5, 0)).toBeCloseTo(-0.5, 5);
     });
 });
 
@@ -51,6 +61,8 @@ describe('interpolateInto', () => {
         interpolateInto(prev, next, 0.5, out);
         expect([out.x[0], out.y[0], out.size[0], out.energy[0]]).toEqual([5, 10, 15, 0.5]);
         expect(out.angle[0]).toBeCloseTo(Math.PI, 5);
+        expect(out.turn[0]).toBeCloseTo(2 * Math.PI - 6.0, 5);
+        expect(out.turn[1]).toBe(0);
         expect(out.flags[0]).toBe(7);
     });
 

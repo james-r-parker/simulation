@@ -26,7 +26,7 @@ const FALLBACK_SHAPE = SILHOUETTES.forager;
 const RAMP_TEXELS = 64;
 /** Dimming of agents under the scent lens. */
 export const SCENT_DIM = 0.55;
-const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra'];
+const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra', 'iMotion'];
 
 /**
  * @param {Record<string, any>} info `ready.info`
@@ -80,8 +80,8 @@ function agentMesh(capacity, kind, shared) {
  * @returns {void}
  */
 function upload(mesh, bucket) {
-    const { pose, color, state, extra } = bucket;
-    uploadInstances(mesh, { iPose: pose, iColor: color, iState: state, iExtra: extra }, bucket.count);
+    const { pose, color, state, extra, motion } = bucket;
+    uploadInstances(mesh, { iPose: pose, iColor: color, iState: state, iExtra: extra, iMotion: motion }, bucket.count);
 }
 
 /**
@@ -113,6 +113,7 @@ function sharedUniforms(info, ramp, blank) {
         uPalette: { value: 0 },
         uRamp: { value: ramp },
         uSmoke: { value: blank },
+        uMotion: { value: 1.0 },
         uView: { value: new Vector4(0, 0, 1, 1) },
     };
 }
@@ -156,6 +157,13 @@ export function createAgentsLayer({ info, flagBits }) {
     return {
         object: group,
         store,
+        setLook(look) {
+            if (!look) {
+                return;
+            }
+            const tier = look.motion ?? 0;
+            shared.uMotion.value = tier === 0 ? 1.0 : tier === 1 ? 0.5 : 0.0;
+        },
         setSmokeTexture(texture) {
             shared.uSmoke.value = texture;
         },

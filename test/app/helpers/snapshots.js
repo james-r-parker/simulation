@@ -46,7 +46,7 @@ export function makeSnapshot(tick, agents, extra = {}) {
         u32[w + AGENT_FIELD.GENOME] = a.genomeId;
         u32[w + AGENT_FIELD.SLOT] = a.slot;
         f32[w + AGENT_FIELD.TEMPERATURE] = a.temperature ?? 0.5;
-        f32[w + AGENT_FIELD.SPEED] = 0;
+        f32[w + AGENT_FIELD.SPEED] = a.speed ?? 0;
         u32[w + AGENT_FIELD.FLAGS] = a.flags ?? 0;
     });
     let w = HEADER_WORDS + agents.length * AGENT_STRIDE;

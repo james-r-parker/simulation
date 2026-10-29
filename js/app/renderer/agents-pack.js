@@ -5,12 +5,35 @@ import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
 import { familyColor } from './colors.js';
 
-/** Floats per vec4 attribute, and the attributes per instance: pose, colour, state and extra. */
+/** Floats per vec4 attribute, and the attributes per instance: pose, colour, state, extra and motion. */
 export const ITEM = 4;
 /** Ticks an ate or bitten flash lasts after the event. */
 export const FLASH_TICKS = 12;
 /** How fast the jaw eases open and shut, per second. */
 export const JAW_RATE = 28;
+/** Full turn rate in radians per tick for clamping. */
+export const TURN_FULL = 0.2;
+/** Smoothing factor per frame for turn cues. */
+export const MOTION_SMOOTHING = 0.25;
+/** Golden ratio fractional multiplier for stable phase. */
+export const PHI_FRAC = 0.6180339;
+
+/**
+ * Pure helper for motion attributes calculation and clamping.
+ *
+ * @param {number} speedFrac speed divided by max velocity
+ * @param {number} turn turn rate in radians per tick
+ * @param {number} smoothedPrev previous smoothed turn
+ * @param {number} genomeId genome identifier
+ * @returns {{speed01: number, turn01: number, phase: number}} normalized motion attributes
+ */
+export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
+    const speed01 = Math.max(0, Math.min(1, speedFrac));
+    const targetTurn = Math.max(0, Math.min(1, Math.abs(turn) / TURN_FULL));
+    const turn01 = smoothedPrev + (targetTurn - smoothedPrev) * MOTION_SMOOTHING;
+    const phase = genomeId * PHI_FRAC - Math.floor(genomeId * PHI_FRAC);
+    return { speed01, turn01, phase };
+}
 
 /**
  * @typedef {object} Bucket
@@ -18,6 +41,7 @@ export const JAW_RATE = 28;
  * @property {Float32Array} color linear r, g, b and energy01
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
  * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), then 2 reserved
+ * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {number} count agents packed this frame
  */
 
@@ -25,6 +49,7 @@ export const JAW_RATE = 28;
  * @typedef {object} AgentStore
  * @property {Bucket[]} buckets one per mesh
  * @property {Float32Array} jaw each slot's jaw openness, 0 to 1
+ * @property {Float32Array} smoothedTurn each slot's smoothed turn rate
  * @property {Int8Array} meshOfSpec the mesh index for each `spec`, -1 for an unknown one
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
@@ -45,12 +70,14 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             color: new Float32Array(capacity * ITEM),
             state: new Float32Array(capacity * ITEM),
             extra: new Float32Array(capacity * ITEM),
+            motion: new Float32Array(capacity * ITEM),
             count: 0,
         });
     }
     return {
         buckets,
         jaw: new Float32Array(capacity),
+        smoothedTurn: new Float32Array(capacity),
         meshOfSpec: Int8Array.from(meshOfSpec),
         minPx: Float32Array.from(minPx),
         rgb: [0, 0, 0],
@@ -70,12 +97,10 @@ export function flashOf(timer) {
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {AgentStore} store the store
  * @param {Record<string, number>} bits `ready.layout.flags`
- * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots}} view the frame time, the zoom
- *   in device px per world unit (which turns each mesh's minimum width into the radius it is drawn at) and the family
- *   colour slots
+ * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity?: number}} view
  * @returns {void}
  */
-export function packAgents(agents, store, bits, { dtMs, zoom, slots }) {
+export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity = 200 }) {
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
@@ -107,5 +132,12 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots }) {
         bucket.state[o + 3] = store.jaw[slot];
         bucket.extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
         bucket.extra[o + 1] = slotOf(slots, agents.lineageId[i]) < 0 ? 1 : 0;
+
+        const m = motionOf(agents.speed[i] / maxVelocity, agents.turn[i], store.smoothedTurn[slot], agents.genomeId[i]);
+        store.smoothedTurn[slot] = m.turn01;
+        bucket.motion[o] = m.speed01;
+        bucket.motion[o + 1] = m.turn01;
+        bucket.motion[o + 2] = m.phase;
+        bucket.motion[o + 3] = 0;
     }
 }

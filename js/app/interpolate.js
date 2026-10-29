@@ -62,6 +62,7 @@ export function createInterpolated(capacity) {
         energy: new Float32Array(capacity),
         temperature: new Float32Array(capacity),
         speed: new Float32Array(capacity),
+        turn: new Float32Array(capacity),
         spec: new Uint32Array(capacity),
         lineageId: new Uint32Array(capacity),
         genomeId: new Uint32Array(capacity),
@@ -74,17 +75,26 @@ export function createInterpolated(capacity) {
 /**
  * @param {number} from an angle in radians
  * @param {number} to an angle in radians
- * @param {number} alpha 0 to 1
- * @returns {number} the angle `alpha` of the way from `from` to `to` by the shorter arc
+ * @returns {number} the shortest arc difference in [-PI, PI]
  */
-export function lerpAngle(from, to, alpha) {
+export function shortestArc(from, to) {
     let delta = (to - from) % (2 * Math.PI);
     if (delta > Math.PI) {
         delta -= 2 * Math.PI;
     } else if (delta < -Math.PI) {
         delta += 2 * Math.PI;
     }
-    return from + delta * alpha;
+    return delta;
+}
+
+/**
+ * @param {number} from an angle in radians
+ * @param {number} to an angle in radians
+ * @param {number} alpha 0 to 1
+ * @returns {number} the angle `alpha` of the way from `from` to `to` by the shorter arc
+ */
+export function lerpAngle(from, to, alpha) {
+    return from + shortestArc(from, to) * alpha;
 }
 
 /**
@@ -105,6 +115,7 @@ export function interpolateInto(prev, next, alpha, out) {
         previous[older.u32[HEADER_WORDS + i * AGENT_STRIDE + AGENT_FIELD.SLOT]] = i + 1;
     }
     const count = Math.min(next.u32[1], out.x.length);
+    const tickDelta = prev !== null && next.u32[0] > prev.u32[0] ? next.u32[0] - prev.u32[0] : 1;
     for (let i = 0; i < count; i++) {
         const n = HEADER_WORDS + i * AGENT_STRIDE;
         const index = previous[next.u32[n + AGENT_FIELD.SLOT]];
@@ -114,6 +125,8 @@ export function interpolateInto(prev, next, alpha, out) {
         if (matched) {
             blendAt.p = p;
             blendAt.alpha = alpha;
+            blendAt.tickDelta = tickDelta;
+            blendAt.nextAngle = next.f32[n + AGENT_FIELD.ANGLE];
             blend(out, i, older.f32, blendAt);
         }
     }
@@ -125,24 +138,25 @@ export function interpolateInto(prev, next, alpha, out) {
 }
 
 /** Scratch for `blend`, so the per-agent call passes no object: the word offset in the older snapshot and alpha. */
-const blendAt = { p: 0, alpha: 0 };
+const blendAt = { p: 0, alpha: 0, tickDelta: 1, nextAngle: 0 };
 
 /**
  * Moves the agent at output index `i` from its `prev` values towards the ones already written there.
  * @param {Interpolated} out the arrays, holding the newest values
  * @param {number} i the output index
  * @param {Float32Array} g the older snapshot's floats
- * @param {{p: number, alpha: number}} at the agent's word offset in `g` and the blend factor
+ * @param {{p: number, alpha: number, tickDelta: number, nextAngle: number}} at word offset, blend factor, tickDelta, nextAngle
  * @returns {void}
  */
 function blend(out, i, g, at) {
-    const { p, alpha } = at;
+    const { p, alpha, tickDelta, nextAngle } = at;
     out.x[i] = g[p + AGENT_FIELD.X] + (out.x[i] - g[p + AGENT_FIELD.X]) * alpha;
     out.y[i] = g[p + AGENT_FIELD.Y] + (out.y[i] - g[p + AGENT_FIELD.Y]) * alpha;
     out.size[i] = g[p + AGENT_FIELD.SIZE] + (out.size[i] - g[p + AGENT_FIELD.SIZE]) * alpha;
     out.energy[i] = g[p + AGENT_FIELD.ENERGY] + (out.energy[i] - g[p + AGENT_FIELD.ENERGY]) * alpha;
     out.temperature[i] = g[p + AGENT_FIELD.TEMPERATURE] + (out.temperature[i] - g[p + AGENT_FIELD.TEMPERATURE]) * alpha;
     out.angle[i] = lerpAngle(g[p + AGENT_FIELD.ANGLE], out.angle[i], alpha);
+    out.turn[i] = shortestArc(g[p + AGENT_FIELD.ANGLE], nextAngle) / tickDelta;
 }
 
 /**
@@ -157,6 +171,7 @@ function writeNewest(out, i, next, n) {
     const f = next.f32;
     const u = next.u32;
     out.angle[i] = f[n + AGENT_FIELD.ANGLE];
+    out.turn[i] = 0;
     out.x[i] = f[n + AGENT_FIELD.X];
     out.y[i] = f[n + AGENT_FIELD.Y];
     out.size[i] = f[n + AGENT_FIELD.SIZE];
