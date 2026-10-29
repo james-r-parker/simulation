@@ -1,4 +1,4 @@
-// Finds a mating partner for one agent among the agents within `mateRange` of it, using the tick's spatial hash.
+// Female choice: finds the male a ready female mates with among the agents within `mateRange`, using the tick's spatial hash.
 
 import { meritPeek } from './merit.js';
 import { canMatePair } from './mate-eligibility.js';
@@ -38,59 +38,6 @@ function isPartner(world, a, b) {
     const dx = x[b] - x[a];
     const dy = y[b] - y[a];
     return Math.sqrt(dx * dx + dy * dy) < size[a] + size[b] + world.config.mateRange && canMatePair(world, a, b);
-}
-
-/**
- * Scans one cell's entries in order for a partner of `a` that is owned by the cell and wins the draw.
- * @param {World} world the world
- * @param {number} a the searching agent
- * @param {number} cell the cell index
- * @param {number} chance the probability that an eligible pair mates
- * @returns {number} the partner slot, or -1
- */
-function scanCell(world, a, cell, chance) {
-    const hash = world.hash;
-    const col = cell % hash.cols;
-    const row = (cell - col) / hash.cols;
-    for (let e = hash.cellStart[cell]; e < hash.cellStart[cell + 1]; e++) {
-        const b = hash.entries[e];
-        if (
-            b > a &&
-            b < hash.maxAgents &&
-            world.alive[b] === 1 &&
-            firstScannedCell(hash, e, col, row) &&
-            isPartner(world, a, b) &&
-            nextFloat(world.rng.lifecycle) < chance
-        ) {
-            return b;
-        }
-    }
-    return -1;
-}
-
-/**
- * Finds the first partner for `a` with a higher slot: scanning the cells that cover `a`'s body plus `mateRange` in
- * row-major order and each cell's entries in entry order, the first that passes `canMatePair` and the `chance` draw.
- * One `lifecycle` draw is made for each pair that passes everything but the draw. Allocates nothing.
- * @param {World} world the world, with the hash built this tick
- * @param {number} a the searching agent, alive
- * @param {number} chance the probability that an eligible pair mates
- * @returns {number} the partner slot, or -1
- */
-export function findMate(world, a, chance) {
-    const hash = world.hash;
-    const range = cellRange(hash, world.x[a], world.y[a], world.size[a] + world.config.mateRange);
-    const col0 = range[0];
-    const col1 = range[2];
-    for (let row = range[1]; row <= range[3]; row++) {
-        for (let col = col0; col <= col1; col++) {
-            const b = scanCell(world, a, row * hash.cols + col, chance);
-            if (b >= 0) {
-                return b;
-            }
-        }
-    }
-    return -1;
 }
 
 /**

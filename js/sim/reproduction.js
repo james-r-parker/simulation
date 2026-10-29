@@ -7,7 +7,7 @@ import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
 import { childSpec } from './heritable-spec.js';
-import { findMale, findMate } from './mate-search.js';
+import { findMale } from './mate-search.js';
 import { creditMating, meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
@@ -87,7 +87,7 @@ function femaleChoice(world, a, chance) {
 
 /**
  * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
- * and starts a pregnancy when one wins the lifecycle draw. With `sexesEnabled` only the ready females search, each
+ * and starts a pregnancy when one wins the lifecycle draw. Only the ready females search, each
  * choosing the strongest male in reach (`findMale`) and being the mother whatever her slot. Uses the hash built this
  * tick.
  * @param {World} world the world
@@ -96,12 +96,12 @@ function femaleChoice(world, a, chance) {
  */
 export function mate(world, policy) {
     const { alive } = world;
-    const { sexesEnabled, mateChanceScale } = world.config;
+    const { mateChanceScale } = world.config;
     const { reproductionBonus } = world.config.seasons[world.season[0]];
     const chance = Math.min(1, reproductionBonus / mateChanceScale);
     for (let a = 0; a < alive.length; a++) {
         if (alive[a] === 1 && readyToMate(world, a)) {
-            const b = sexesEnabled ? femaleChoice(world, a, chance) : findMate(world, a, chance);
+            const b = femaleChoice(world, a, chance);
             if (b >= 0) {
                 startMating(world, policy, a, b);
             }
@@ -324,8 +324,7 @@ export function readyBeforeGate(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when `readyBeforeGate` and through the merit split gate; sex does not matter, so splitting
- *   is the same with `sexesEnabled` on or off
+ * @returns {boolean} true when `readyBeforeGate` and through the merit split gate; sex does not matter
  */
 function readyToSplit(world, slot) {
     return readyBeforeGate(world, slot) && splitGateOpen(world, slot);

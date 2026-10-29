@@ -31,9 +31,8 @@ describe('v6 exploit controllers in the micro-world', () => {
     it(
         'mateHopper mates (the MATING term has something to pay) and foodSeeker does not',
         () => {
-            expect(run('mateHopper', { sexesEnabled: false }).mateBirths).toBeGreaterThan(0);
-            expect(run('mateHopper', { sexesEnabled: true }).mateBirths).toBeGreaterThan(0);
-            expect(run('foodSeeker', { sexesEnabled: false }).mateBirths).toBe(0);
+            expect(run('mateHopper', {}).mateBirths).toBeGreaterThan(0);
+            expect(run('foodSeeker', {}).mateBirths).toBe(0);
         },
         scaleTimeout(60_000),
     );

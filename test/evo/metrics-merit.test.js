@@ -12,7 +12,7 @@ import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
-const ON = { meritEnabled: true, meritHalfLife: 0, sexesEnabled: true, maxAgents: 40 };
+const ON = { meritEnabled: true, meritHalfLife: 0, maxAgents: 40 };
 const NAMES = ['merit_mean', 'merit_p90', 'merit_mate_gain', 'split_gated_share', 'merit_fitness_corr'];
 const OFF = 'meritEnabled is off';
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
@@ -154,9 +154,7 @@ describe('eval.merit_mate_gain', () => {
         });
     });
 
-    it('is null with sexes off, and with no merit among the males', () => {
-        const off = observed({ ...ON, sexesEnabled: false });
-        expect(read(off, 'merit_mate_gain')).toEqual({ value: null, reason: 'sexesEnabled is off' });
+    it('is null with no merit among the males', () => {
         const { r, father, child } = mated();
         for (let slot = 0; slot < 3; slot++) {
             r.world.merit[slot] = 0;

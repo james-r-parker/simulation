@@ -33,16 +33,6 @@ describe('mateDistanceMax rule', () => {
     });
 });
 
-describe('sexes keys', () => {
-    it('default to off', () => {
-        expect(createConfig({ ...FEATURES_OFF }).sexesEnabled).toBe(false);
-    });
-
-    it('rejects a bad sexesEnabled', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, sexesEnabled: 1 })).toThrow(/sexesEnabled/);
-    });
-});
-
 describe('birth budget keys', () => {
     it('default to a 3000 tick window and the budget off', () => {
         const c = createConfig({ ...FEATURES_OFF });

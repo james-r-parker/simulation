@@ -2,7 +2,7 @@
 // mother turns pregnant, when the candidates are still where they were):
 //
 // - `eval.mate_skill_gap`: the chosen mate's within-specialisation rank percentile minus the mean percentile of the
-//   candidates in range (alive, of her specialisation, of the other sex with `sexesEnabled`, within
+//   candidates in range (alive, of her specialisation, of the other sex, within
 //   `size + size + mateRange`, and ready to mate; the chosen mate is always one). Positive when mates are chosen on rank.
 // - `eval.mate_hunter_lean`: the `canHunt` share of the matings minus the `canHunt` share of the other adults ready to
 //   mate at those matings; negative when grazers are favoured.
@@ -90,7 +90,7 @@ function isCandidate(world, { mother, other, father }) {
     const dx = world.x[other] - world.x[mother];
     const dy = world.y[other] - world.y[mother];
     const reach = world.size[mother] + world.size[other] + world.config.mateRange;
-    const sexOk = !world.config.sexesEnabled || world.sex[other] !== world.sex[mother];
+    const sexOk = world.sex[other] !== world.sex[mother];
     const near = Math.sqrt(dx * dx + dy * dy) < reach;
     return (
         world.alive[other] === 1 &&

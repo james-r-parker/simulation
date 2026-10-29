@@ -69,9 +69,9 @@ describe('split gate in splitAll', () => {
     });
 
     it('does not gate mating', () => {
-        const w = lifeWorld({ ...GATED, sexesEnabled: false });
+        const w = lifeWorld(GATED);
         const a = addBlob(w, { energy: 1000, mateOut: 1 });
-        const b = addBlob(w, { energy: 1000, mateOut: 1 });
+        const b = addBlob(w, { energy: 1000, mateOut: 1, sex: 1 });
         w.x[b] = w.x[a] + w.size[a] + w.size[b];
         buildHash(w.hash, w);
         mate(w, recordingPolicy([]));
@@ -80,9 +80,9 @@ describe('split gate in splitAll', () => {
     });
 
     it('with no deliberate forager, blocks every split, still mates and reads a gated share of 1', () => {
-        const w = lifeWorld({ ...GATED, sexesEnabled: false });
+        const w = lifeWorld(GATED);
         const a = addBlob(w, { energy: 1000, mateOut: 1 });
-        const b = addBlob(w, { energy: 1000, mateOut: 1 });
+        const b = addBlob(w, { energy: 1000, mateOut: 1, sex: 1 });
         w.x[b] = w.x[a] + w.size[a] + w.size[b];
         buildHash(w.hash, w);
         tallyReady(w);

@@ -22,7 +22,7 @@ describe('eval.mother_wait_by_condition', () => {
         const r = observed({ maxAgents: 16 });
         const { maxEnergy, pregnancyTicks } = r.world.config;
         const waits = [100, 100, 50, 50, 20, 20];
-        const mothers = waits.map((_, i) => addBlob(r.world, { energy: maxEnergy * 0.1 * (i + 1) }));
+        const mothers = waits.map((_, i) => addBlob(r.world, { energy: maxEnergy * 0.1 * (i + 1), sex: 0 }));
         r.world.tick = T0;
         sampleSpend(r.observer.scenes.spend, r.world);
         const child = addBlob(r.world);

@@ -88,7 +88,7 @@ describe('invade', () => {
     it('writes the final lineage, specialisation and sex into every AgentBorn record', () => {
         let next = 0;
         const policy = { initSpec: () => next++ % 3, initBrain() {} };
-        const w = smallWorld({ ...INVASION, sexesEnabled: true });
+        const w = smallWorld(INVASION);
         const observer = createObserver(w.config, fork(createRng(w.config.seed), 'eval'));
         w.tick = 100;
         invade(w, policy);

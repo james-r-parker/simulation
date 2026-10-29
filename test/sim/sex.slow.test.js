@@ -33,7 +33,6 @@ function run(seed) {
             maturityTicks: 50,
             reproductionCooldown: 60,
             pregnancyTicks: 40,
-            sexesEnabled: true,
             checkInvariants: true,
             seed,
         }),

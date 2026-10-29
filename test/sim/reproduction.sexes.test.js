@@ -16,7 +16,7 @@ const MALE = 1;
  * @returns {any} a sexes-on world
  */
 function sexWorld(over = {}) {
-    return lifeWorld({ sexesEnabled: true, ...over });
+    return lifeWorld(over);
 }
 
 /**
@@ -119,13 +119,6 @@ describe('mating with sexes', () => {
         addBlob(off, MATE);
         expect(canMatePair(off, 0, 1)).toBe(true);
     });
-
-    it('still uses the lower slot as mother with sexes off', () => {
-        const w = lifeWorld();
-        addBlob(w, MATE);
-        addBlob(w, MATE);
-        expect(motherOf(w, 1, 0)).toBe(0);
-    });
 });
 
 describe('splitting with sexes', () => {
@@ -154,18 +147,6 @@ describe('splitting with sexes', () => {
         expect(w.population).toBe(2);
         expect(w.ledger[1]).toBe(0);
         expect(w.lastLoss[0]).not.toBe(LOSS_CAUSE.COST);
-    });
-
-    it('splits exactly as with sexes off: same energy, ledger and cooldown', () => {
-        const on = sexWorld();
-        const off = lifeWorld();
-        for (const w of [on, off]) {
-            addBlob(w, { ...SPLITTER, sex: MALE });
-            splitAll(w, recordingPolicy([]));
-        }
-        expect([on.energy[0], on.energy[1], on.cooldown[0]]).toEqual([off.energy[0], off.energy[1], off.cooldown[0]]);
-        expect(on.energy[0]).toBe(600);
-        expect(imbalance(on)).toBeCloseTo(0, 9);
     });
 
     it('reports a split blocked by a full world', () => {
@@ -233,18 +214,5 @@ describe('the sex of a child and AGENT_BORN field 9', () => {
         const e = event(w, 0);
         expect(e[8]).toBe(BORN_CAUSE.MATE);
         expect(e[9]).toBe(w.sex[e[2]]);
-    });
-
-    it('leaves every child female, with field 9 at 0, when sexes are off', () => {
-        const w = lifeWorld({ maxAgents: 64 });
-        for (let i = 0; i < 24; i++) {
-            addBlob(w, { energy: 1500 });
-        }
-        splitAll(w, recordingPolicy([]));
-        expect(w.events.count).toBe(24);
-        expect(Array.from(w.sex).every((v) => v === 0)).toBe(true);
-        for (let i = 0; i < w.events.count; i++) {
-            expect(event(w, i)[9]).toBe(0);
-        }
     });
 });

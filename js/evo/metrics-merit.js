@@ -135,7 +135,7 @@ export function noteMeritDeath(pools, death) {
  */
 export function noteMateBirth(pools, world, child, fatherId) {
     const father = world.parentSlotB[child];
-    if (!pools.enabled || !world.config.sexesEnabled || father < 0) {
+    if (!pools.enabled || father < 0) {
         return;
     }
     if (world.alive[father] !== 1 || world.genomeId[father] !== fatherId) {
@@ -172,15 +172,11 @@ function meritLevel(pools) {
 
 /**
  * @param {Record<string, any>} pools the merit pools
- * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {import('./metrics-stats.js').MetricResult} the mean father advantage over the mean male merit
  */
-function mateGain(pools, config) {
+function mateGain(pools) {
     if (!pools.enabled) {
         return none(OFF);
-    }
-    if (!config.sexesEnabled) {
-        return none('sexesEnabled is off');
     }
     if (pools.matings === 0) {
         return none('no mating birth after burn-in with a living father');
@@ -217,7 +213,7 @@ export function meritMetrics(observer, world) {
     return {
         'eval.merit_mean': level.mean,
         'eval.merit_p90': level.p90,
-        'eval.merit_mate_gain': mateGain(pools, observer.config),
+        'eval.merit_mate_gain': mateGain(pools),
         'eval.split_gated_share':
             gated === null ? none(pools.enabled ? 'no agent was ready to split' : OFF) : ok(gated),
         'eval.merit_fitness_corr': fitnessCorr(pools),

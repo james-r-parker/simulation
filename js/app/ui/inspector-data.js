@@ -185,16 +185,7 @@ function countersOf(c, { specName, family, info, male }) {
         { label: 'children', text: grouped(c[COUNTER_AT.children]) },
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
     ];
-    return [...rows, ...sexRows(male, info), ...traitRows(c)];
-}
-
-/**
- * @param {boolean} male whether the agent is male
- * @param {Record<string, any>} info `ready.info`
- * @returns {InspectorView['counters']} the sex row, or nothing with sexes off
- */
-function sexRows(male, info) {
-    return info.sexesEnabled ? [{ label: 'sex', text: male ? 'male' : 'female' }] : [];
+    return [...rows, { label: 'sex', text: male ? 'male' : 'female' }, ...traitRows(c)];
 }
 
 /**

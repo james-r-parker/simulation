@@ -120,7 +120,7 @@ describe('birth budget in mating', () => {
     });
 
     it('counts the female as the mother when sexes are on', () => {
-        const w = pairWorld({ ...ON, sexesEnabled: true });
+        const w = pairWorld(ON);
         w.sex[1] = 1;
         birthAt(w, 1, 0);
         birthAt(w, 1, 1);

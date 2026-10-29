@@ -39,12 +39,9 @@ export function readyToMate(world, slot) {
  * @param {World} world the world
  * @param {number} a an agent slot
  * @param {number} b another agent slot
- * @returns {number} the mother of the pair: the lower slot, or with `sexesEnabled` the female
+ * @returns {number} the mother of the pair: the female
  */
 export function motherOf(world, a, b) {
-    if (!world.config.sexesEnabled) {
-        return Math.min(a, b);
-    }
     return world.sex[a] === SEX.FEMALE ? a : b;
 }
 
@@ -64,15 +61,15 @@ export function canBear(world, mother) {
  * @param {World} world the world
  * @param {number} a an agent slot
  * @param {number} b another agent slot
- * @returns {boolean} true when both are ready, share a specialisation (and, with `sexesEnabled`, are a female and a
- *   male), their sizes are within `mateSizeRatio`, their genetic distance is below `mateDistanceMax` (any when
+ * @returns {boolean} true when both are ready, share a specialisation and are a female and a
+ *   male, their sizes are within `mateSizeRatio`, their genetic distance is below `mateDistanceMax` (any when
  *   `Infinity`) and the mother holds more than `childEnergyMin / childEnergyShare` and has not spent her birth budget
  */
 export function canMatePair(world, a, b) {
     if (world.spec[a] !== world.spec[b] || !readyToMate(world, a) || !readyToMate(world, b)) {
         return false;
     }
-    if (world.config.sexesEnabled && world.sex[a] === world.sex[b]) {
+    if (world.sex[a] === world.sex[b]) {
         return false;
     }
     if (!canBear(world, motherOf(world, a, b))) {

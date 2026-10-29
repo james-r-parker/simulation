@@ -33,10 +33,15 @@ function pair(over = {}) {
 
 /**
  * @param {any} w the world
+ * @param {number} [skip] draws to pass first
  * @returns {number} the next lifecycle draw, without consuming it
  */
-function peekLifecycle(w) {
-    return nextFloat({ seed: 0, s: Uint32Array.from(w.rng.lifecycle.s) });
+function peekLifecycle(w, skip = 0) {
+    const copy = { seed: 0, s: Uint32Array.from(w.rng.lifecycle.s) };
+    for (let i = 0; i < skip; i++) {
+        nextFloat(copy);
+    }
+    return nextFloat(copy);
 }
 
 /**
@@ -66,8 +71,8 @@ describe('mate thresholds', () => {
         const w = lifeWorld();
         const far = addBlob(w, { ...MATE, spec: 2 });
         w.x[far] = 100;
-        const m = addBlob(w, { ...MATE, spec: 2 });
-        const f = addBlob(w, { ...MATE, spec: 2 });
+        const m = addBlob(w, { ...MATE, spec: 2, sex: 0 });
+        const f = addBlob(w, { ...MATE, spec: 2, sex: 1 });
         buildHash(w.hash, w);
         const n = w.layout.weightCount;
         for (let i = 0; i < 4 * n; i++) {
@@ -160,7 +165,7 @@ describe('child placement', () => {
         for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
             const w = lifeWorld({ seed });
             const mother = addBlob(w, { x: at, y: at, pregnancy: 1, energy: 900 });
-            const draw = peekLifecycle(w);
+            const draw = peekLifecycle(w, 1); // the child's sex takes the first draw
             advancePregnancies(w, recordingPolicy([]));
             const c = 1;
             const theta = draw * 6.283185307179586;

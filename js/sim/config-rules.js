@@ -66,7 +66,6 @@ export const FEATURE_RULES = {
     invasionSize: int(0),
     hebbianRate: num(0, 1),
     visionCost: num(0),
-    sexesEnabled: BOOL,
     birthWindowTicks: int(1),
     maxBirthsPerWindow: int(0, 16),
     capBirthsEnabled: BOOL,

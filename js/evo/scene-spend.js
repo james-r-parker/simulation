@@ -1,6 +1,6 @@
 // Parent spends (natural-selection.md, Detectors), both read at mate births after burn-in.
 //
-// - `eval.mother_wait_by_condition`: every 10 ticks a female (any agent without `sexesEnabled`) that `isReadyToMate`
+// - `eval.mother_wait_by_condition`: every 10 ticks a female that `isReadyToMate`
 //   and `canBear` and has no sample open is noted, with her energy over `maxEnergy`. At her next mate birth the wait is
 //   the birth tick less that sample less `pregnancyTicks`, so it is the search time and the cap delay. `canBear` is in
 //   the test, so a mother who cannot afford the gift is not counted as waiting by choice. The metric is the mean wait
@@ -61,9 +61,9 @@ export function resetSpendSlot(scene, slot) {
  * @returns {void}
  */
 export function sampleSpend(scene, world) {
-    const { sexesEnabled, maxEnergy } = world.config;
+    const { maxEnergy } = world.config;
     for (let slot = 0; slot < world.alive.length; slot++) {
-        const mother = world.alive[slot] === 1 && (!sexesEnabled || world.sex[slot] === SEX.FEMALE);
+        const mother = world.alive[slot] === 1 && world.sex[slot] === SEX.FEMALE;
         if (mother && scene.readySince[slot] < 0 && isReadyToMate(world, slot) && canBear(world, slot)) {
             scene.readySince[slot] = world.tick;
             scene.readyShare[slot] = world.energy[slot] / maxEnergy;

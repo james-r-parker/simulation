@@ -32,7 +32,7 @@ export function lifeWorld(over = {}) {
 }
 
 /**
- * Adds a mature agent with energy and, optionally, a mate output.
+ * Adds a mature agent with energy and, optionally, a mate output. Even slots are female, odd slots male.
  * @param {any} w the world
  * @param {Record<string, number>} [fields] per-slot array values to set
  * @returns {number} the slot
@@ -44,6 +44,7 @@ export function addBlob(w, fields = {}) {
     w.x[slot] = 500;
     w.y[slot] = 500;
     w.temperature[slot] = w.config.temperatureStart;
+    w.sex[slot] = slot % 2; // adjacent slots are a female and a male, so the lower slot of a pair is the mother
     addEnergy(w, slot, 1000, ENERGY_SOURCE.INITIAL);
     for (const [k, v] of Object.entries(fields)) {
         if (k === 'mateOut') {

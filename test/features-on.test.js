@@ -17,7 +17,6 @@ const SWITCHED_ON = [
     'specialisations',
     'foodPatchCount',
     'hebbianRate',
-    'sexesEnabled',
     'maxBirthsPerWindow',
     'capBirthsEnabled',
     'mateDistanceMax',

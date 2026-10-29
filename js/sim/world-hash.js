@@ -196,9 +196,7 @@ function hashOptionalArrays(world, views) {
     if (config.maxBirthsPerWindow > 0) {
         fnv64Bytes(digest, views.birthRing);
     }
-    if (config.sexesEnabled) {
-        fnv64Bytes(digest, views.sex);
-    }
+    fnv64Bytes(digest, views.sex);
 }
 
 /**

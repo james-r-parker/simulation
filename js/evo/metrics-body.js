@@ -10,7 +10,6 @@ import { none, ok } from './metrics-stats.js';
 /** The body-plan grid is this many bins on each of the size and vision traits. */
 export const GRID_BINS = 5;
 
-const NO_SEXES = 'sexesEnabled is off';
 const NO_SPREAD = 'no checkpoint after burn-in with 2 alive agents';
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
 
@@ -92,7 +91,6 @@ export function sampleBody(pools, world) {
  */
 export function bodyMetrics(observer) {
     const { sampled, spreadSum, spreadCount, cells, sexSum } = observer.body;
-    const { sexesEnabled } = observer.config;
     let occupied = 0;
     for (let i = 0; i < cells.length; i++) {
         occupied += cells[i];
@@ -103,6 +101,6 @@ export function bodyMetrics(observer) {
     return {
         'eval.trait_spread': spread,
         'eval.body_plan_coverage': coverage,
-        'eval.sex_balance': sexesEnabled ? balance : none(NO_SEXES),
+        'eval.sex_balance': balance,
     };
 }

@@ -10,7 +10,7 @@ import { addBlob, lifeWorld } from './helpers/life-world.js';
  * @returns {any}
  */
 function placed(males, over) {
-    const w = lifeWorld({ maxAgents: 16, mateRange: 100, sexesEnabled: true, ...over });
+    const w = lifeWorld({ maxAgents: 16, mateRange: 100, ...over });
     const f = addBlob(w, { mateOut: 1, energy: 700, spec: 2, sex: 0 });
     w.x[f] = 500;
     w.y[f] = 500;

@@ -31,7 +31,7 @@ function seasonTrig(phase) {
 }
 
 /**
- * Writes body inputs 32 to 34: `sex` (0 female, 1 male; always 0 unless `sexesEnabled`) and last tick's `MEMORY_A` and
+ * Writes body inputs 32 to 34: `sex` (0 female, 1 male) and last tick's `MEMORY_A` and
  * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing).
  * @param {World} world the world
  * @param {number} slot the alive agent

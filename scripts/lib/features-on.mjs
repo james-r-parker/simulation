@@ -58,7 +58,6 @@ export const FEATURES_OFF = Object.freeze({
     refugeCount: 4,
     refugeSizeMax: 30,
     satiationShare: 0,
-    sexesEnabled: false,
     specialisations: { predator: { plantFoodValue: 1, passiveLossMultiplier: 1, splitMinEnergyMultiplier: 1 } },
     specMutationRate: 0,
     splitCapMargin: 50,
@@ -92,7 +91,6 @@ export const FEATURES_ON = Object.freeze({
     },
     foodPatchCount: 16,
     hebbianRate: 0.0001, // the 0.01 in the design doc pinned the 4-seed screen (world-balance T59) at the floor; 0.0001 escapes it
-    sexesEnabled: true,
     maxBirthsPerWindow: 5,
     capBirthsEnabled: true,
     mateDistanceMax: 1.0,

@@ -197,13 +197,8 @@ describe('hashWorld', () => {
 });
 
 describe('hashWorld sex', () => {
-    it('ignores sex when sexes are off and covers it when on', () => {
-        const off = makeWorld();
-        const before = hashWorld(off);
-        off.sex[off.sex.length - 1] = 1;
-        expect(hashWorld(off)).toBe(before);
-
-        const on = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, sexesEnabled: true }));
+    it('covers sex', () => {
+        const on = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
         const root = createRng(1);
         on.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
         const base = hashWorld(on);

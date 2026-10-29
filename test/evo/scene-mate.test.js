@@ -14,7 +14,7 @@ const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetric
 
 /** A world with a female of spec 0, four males of spec 0 with deliberate meals 0, 3, 6 and 9 of 10, and two hunters. */
 function herd() {
-    const r = observed({ sexesEnabled: true, maxAgents: 16 });
+    const r = observed({ maxAgents: 16 });
     const { predator } = r.world.config.specialisations;
     const mother = addBlob(r.world, { sex: SEX.FEMALE });
     const males = [0, 3, 6, 9].map((k) => addBlob(r.world, { sex: SEX.MALE, mealsTotal: 10, mealsDeliberate: k }));

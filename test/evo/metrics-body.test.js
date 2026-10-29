@@ -9,7 +9,7 @@ import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed } from './helpers/observer-world.js';
 
-const ON = { sexesEnabled: true, hashCellSize: 256 };
+const ON = { hashCellSize: 256 };
 const NAMES = ['trait_spread', 'body_plan_coverage', 'sex_balance'];
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
 const NO_SPREAD = 'no checkpoint after burn-in with 2 alive agents';
@@ -147,15 +147,12 @@ describe('eval.sex_balance', () => {
         expect(read(r).sex_balance).toEqual({ value: 0.5 });
     });
 
-    it('is null with a reason before burn-in, with no agents, and with sexesEnabled off', () => {
+    it('is null with a reason before burn-in, and with no agents', () => {
         const r = observed(ON);
         checkpointWith(r, 9999, [F]);
         expect(read(r).sex_balance).toEqual({ value: null, reason: NO_SAMPLE });
         checkpointWith(r, 10000, []);
         expect(read(r).sex_balance).toEqual({ value: null, reason: NO_SAMPLE });
-        const off = observed({ ...ON, sexesEnabled: false });
-        checkpointWith(off, 10000, [F, M]);
-        expect(read(off).sex_balance).toEqual({ value: null, reason: 'sexesEnabled is off' });
     });
 });
 

@@ -67,7 +67,6 @@ export const DEFAULTS = deepFreeze({
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
     childEnergyMin: 100, // new: the smallest gift a mating birth may make (200 before T78)
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
-    sexesEnabled: true, // new: two sexes, female choice of the strongest male, asexual splitting for every sex (world-balance T37, T69)
     birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
     maxBirthsPerWindow: 5, // new: births (mating or splitting) a mother may have per span; 0 is off, 5 from T78 (3 from T41)
     capBirthsEnabled: true, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
