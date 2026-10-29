@@ -1460,7 +1460,7 @@
       "after": "evals/screens/results/fitness-b/<arm>.report.json (one per arm; table in evals/screens/results/fitness-b/table.md)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Predicted, not yet run (T45). Grid evals/screens/fitness-b.grid.json."
+      "note": "T45 screen, 8 arms (5 chosen plus base, merit-only, nocap references) x 4 seeds (offset 28) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. split-300 reproduces E38 and stays the only skill signal (delib share 0.134, skill_trend +0.012, births +7% vs merit-only). split-300-childmin-50: share 0.128, skill_trend -0.073, pop 257, births +29% vs merit-only. Triple with birth-0.25: share 0.125, births -20% vs base. capBirthsEnabled off is a different world (nocap: mating 0.026, lineages 8.6, pop at max on 4/4), so the cap ranking is not isolated; split-300-nocap share +9%, births +10% vs nocap. chance-0.1 (bounds kept: gateThenIdle 0.661, sprinter 1.483): share +2%, skill_trend -0.031, births -2%, noise. Predictions right: split-300 reproduces E38, the triple adds no share; wrong: the pair keeps the share, nocap isolates the births cost, chance-0.1 lifts share 5-10%. Carry split-300 into T46. See sim-notes 2026-10-29 \"Round B\"."
     },
     {
       "id": "E43",

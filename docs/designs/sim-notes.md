@@ -1225,3 +1225,26 @@ Zero damage still leaves 0.11 to 0.13 labelled collision (the last loss before a
   in every arm here.
 - Not in the plan: the bump itself. A lower `wallDamage` and `obstacleDamage`, or a damage that scales with impact
   speed, removes most of the drain; `wallDamage` 0 is the largest single gain here.
+
+### 2026-10-29 - Round B (fitness-and-selection T45, E39)
+
+`E39` is the round B screen: `evals/screens/fitness-b.grid.json`, policy `map-elites-v6`, 4 seeds at offset 28, 200000 ticks, 8 arms, `--workers 30`. Reports, `table.md` and `verdicts.json` are in `evals/screens/results/fitness-b/`. A screen, not a verdict. `base` and `merit-only` reproduce round A exactly (the runs are deterministic). `nocap` (`capBirthsEnabled` false, merit off) is the reference for `split-300-nocap`. Five arms are the choice; the three references are not counted against the limit of 5. The `chance-0.1` weight keeps the anti-exploit bounds (suite run with `CHANCE_WEIGHT` 0.1: `gateThenIdle` 0.661 of 0.696 allowed, `sprinter` prey pair 1.483 of 1.506, `mateHopper` 0.994 and 1.059 of 1.18, 114 passed and 14 expected failures).
+
+| Arm                                | births/1k | delib share | skill_trend | mating | lineages | child surv | spec dom | pop | pred births | reference  | births vs ref | share vs ref | births vs base | share vs base |
+| ---------------------------------- | --------- | ----------- | ----------- | ------ | -------- | ---------- | -------- | --- | ----------- | ---------- | ------------- | ------------ | -------------- | ------------- |
+| `base`                             | 0.111     | 0.115       | +0.021      | 0.199  | 20.9     | 0.939      | 0.557    | 390 | 82          | -          | -             | -            | +0%            | +0%           |
+| `merit-only`                       | 0.084     | 0.118       | -0.075      | 0.155  | 22.8     | 0.946      | 0.495    | 390 | 36          | merit-only | +0%           | +0%          | -24%           | +3%           |
+| `nocap`                            | 0.108     | 0.113       | -0.081      | 0.026  | 8.6      | 0.952      | 0.513    | 430 | 38          | base       | -2%           | -2%          | -2%            | -2%           |
+| `split-300`                        | 0.089     | 0.134       | +0.012      | 0.147  | 19.9     | 0.943      | 0.701    | 349 | 249         | merit-only | +7%           | +14%         | -19%           | +17%          |
+| `split-300-childmin-50`            | 0.108     | 0.128       | -0.073      | 0.163  | 20.1     | 0.931      | 0.634    | 257 | 100         | merit-only | +29%          | +9%          | -2%            | +11%          |
+| `split-300-childmin-50-birth-0.25` | 0.089     | 0.125       | -0.028      | 0.136  | 21.0     | 0.947      | 0.719    | 305 | 28          | merit-only | +6%           | +6%          | -20%           | +8%           |
+| `split-300-nocap`                  | 0.119     | 0.123       | -0.048      | 0.054  | 13.6     | 0.946      | 0.642    | 285 | 39          | nocap      | +10%          | +9%          | +8%            | +7%           |
+| `chance-0.1`                       | 0.108     | 0.117       | -0.031      | 0.229  | 21.7     | 0.937      | 0.747    | 355 | 40          | base       | -2%           | +2%          | -2%            | +2%           |
+
+Means over the 4 seeds. "vs ref" is against `merit-only` for the merit arms, `nocap` for `split-300-nocap`, `base` for `chance-0.1`.
+
+- **`capBirthsEnabled` off is not an isolation, it is a different world.** `nocap` alone: `mating_share` 0.026, `lineages_alive` 8.6, population at `maxAgents` on 4 of 4 seeds, `predator_presence` 0.60. So the cap ranking cannot be separated by switching the cap off; the births cost of merit stays tied to the cap. Against `nocap`, `split-300-nocap` moves share +9% and births +10%, but both worlds fail mating and lineages, so neither is a candidate.
+- **`split-300` stays the only skill signal:** share 0.134 and `skill_trend` +0.012 (vs `merit-only` +14%, births +7%). Its dominance (0.70) and `predator_births` 249 are still skewed.
+- **`childmin-50` on top of `split-300` costs the skill:** share 0.128, `skill_trend` -0.073, population 257, but births +29% over `merit-only` and mating 0.163. The triple with `birth-0.25` has share 0.125, `skill_trend` -0.028, births -20% vs `base`. Neither beats `split-300`.
+- **`chance-0.1`** (merit off, archive weights only): share 0.117 (+2%), `skill_trend` -0.031, births -2%, mating 0.229, population 355, dominance 0.75. The skill metrics do not move beyond noise at 4 seeds; mating 0.199 to 0.229 is likely noise (the weight does not touch mating).
+- The prediction was right that `split-300` reproduces round A and that the triple gains no share; wrong that the pair keeps the share and that `nocap` isolates the births cost.
