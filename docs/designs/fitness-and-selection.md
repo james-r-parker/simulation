@@ -324,7 +324,7 @@ A result short of a criterion that improves the mean with no regression is repor
 adopted silently. With fewer than two of the skill metrics (`eval.deliberate_food_share`, `eval.pursuit_kill_share`,
 `eval.evasion_skill`, `eval.skill_trend`) comparable, the user sets the criteria.
 
-> **Note:** state at 2026-10-28 - Phases 1 to 3 built (T27 and T42 reviews done; the user's `Shift+P` clip reviews of the default world are deferred, User 2026-10-28). Next, one task at a time: the terrain round T42a to T42c, then Phase 4 (T43 onwards). Golden hashes: default `1969d11fcd461153`, busy `a657b81b9af3c39e` (T22b; short cases `d328ec7cf550c9cd` and `7642f4a7b7400ff0`).
+> **Note:** state at 2026-10-28 - Phases 1 to 3 built (T27 and T42 reviews done; the user's `Shift+P` clip reviews of the default world are deferred, User 2026-10-28). Next, one task at a time: the terrain round T42a to T42c, then Phase 4 (T43 onwards). Golden hashes: default `6a071841cce97696`, busy `778566888b16e69f` (T48b/T48c, F1 `split-300` adopted; short cases `60429c3dc35c214d` and `40984ad04e6ef7a6`; `BUSY_EFFECT_HASH` `1bcb8565c2f7c1a9`).
 
 ## Decisions
 
