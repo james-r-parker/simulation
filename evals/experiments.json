@@ -1463,6 +1463,27 @@
       "note": "T45 screen, 8 arms (5 chosen plus base, merit-only, nocap references) x 4 seeds (offset 28) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. split-300 reproduces E38 and stays the only skill signal (delib share 0.134, skill_trend +0.012, births +7% vs merit-only). split-300-childmin-50: share 0.128, skill_trend -0.073, pop 257, births +29% vs merit-only. Triple with birth-0.25: share 0.125, births -20% vs base. capBirthsEnabled off is a different world (nocap: mating 0.026, lineages 8.6, pop at max on 4/4), so the cap ranking is not isolated; split-300-nocap share +9%, births +10% vs nocap. chance-0.1 (bounds kept: gateThenIdle 0.661, sprinter 1.483): share +2%, skill_trend -0.031, births -2%, noise. Predictions right: split-300 reproduces E38, the triple adds no share; wrong: the pair keeps the share, nocap isolates the births cost, chance-0.1 lifts share 5-10%. Carry split-300 into T46. See sim-notes 2026-10-29 \"Round B\"."
     },
     {
+      "id": "E40",
+      "date": "2026-10-29",
+      "branch": "eval/fs-t46-archive",
+      "hypothesis": "Archive round (fitness-and-selection T46) on the round B winner split-300 (meritEnabled, splitDeliberateMin 300, map-elites-v6): the archive mix and the descriptor shape how much of what the archive learned reaches new blobs, so a higher archiveShare (more mutated archive children, fewer clones and randoms) and fewer random immigrants lift eval.deliberate_food_share and eval.skill_trend, while descriptorV1 (the legacy descriptor) is worse than descriptorV6 for skill since V6 places agents by role skill.",
+      "prediction": "Screen of 9 arms x 4 seeds (29-32) x 200000 ticks, map-elites-v6; split-300 is the reference (reproduces E39: share 0.134, skill_trend +0.012, births 0.089/1k) and merit-only the second reference. Defaults: immigrationInterval 600, archiveShare 0.5, cloneShareEnd 0.8 (clones 0.3, random 0.2), descriptor v6.\n- imm-300 / imm-1800: immigrationInterval is the cadence of single immigrants; faster raises archive-sourced immigrants, so imm-300 lowers dominance and raises lineages a little (+10%) with share within noise; imm-1800 the reverse; neither moves share beyond 10%.\n- share-0.75: more mutated archive children, so share +5 to +10% and skill_trend up if the archive carries skill; dominance rises above 0.70. share-0.25: share down 5%, lineages up.\n- cloneend-0.6 (clones 0.1, random 0.4): more random blood, lineages up, share down. cloneend-0.95 (clones 0.45, random 0.05): fewer randoms, dominance up, share near split-300.\n- descriptor-v1: share down 5 to 15% against split-300 and the archive less diverse; the arm most likely to separate from the reference.\n- No collapse (population above minAgents on 4 of 4). Expected finalists: share-0.75 and split-300 itself if nothing clears the noise (4 seeds cannot see under about 10%).",
+      "targets": [
+        "eval.deliberate_food_share",
+        "eval.skill_trend",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/screens/results/fitness-archive/split-300.report.json",
+      "after": "evals/screens/results/fitness-archive/<arm>.report.json (one per arm; table in evals/screens/results/fitness-archive/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T46 screen, 9 arms x 4 seeds (offset 28) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. No archive arm beats split-300 (share 0.134, skill_trend +0.012): share -1% to -18% on every arm. share-0.75 clearly worse (share 0.111, skill_trend -0.081). cloneend-0.95 keeps the trend (+0.020, share 0.124, births +7%, predator births 930). descriptor-v1 share 0.128, skill_trend +0.012, births +47% but pop 249, mating 0.115. imm-300 lineages 37, mating 0.105; imm-1800 births +79%, lineages 12, pop 210. Predictions: nothing collapses right; share-0.75 help wrong (it hurt); descriptor-v1 losing share wrong (-4%). Finalists for T47: split-300, split-300 + cloneShareEnd 0.95, split-300 + descriptor v1. See sim-notes 2026-10-29 \"Archive round\"."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
