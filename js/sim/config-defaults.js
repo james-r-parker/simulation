@@ -254,7 +254,7 @@ export const DEFAULTS = deepFreeze({
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
     leakEnabled: true, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
-    meritEnabled: false, // new: fitness-and-selection T16 (merit, off)
+    meritEnabled: true, // new: fitness-and-selection T16; on from T48b (the E41 finalist split-300)
     meritChanceWeight: 0.25, // new: fitness-and-selection T16 (merit, off)
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)
     meritChildBonus: 300, // new: fitness-and-selection T16 (merit, off)
@@ -263,6 +263,6 @@ export const DEFAULTS = deepFreeze({
     meritHalf: 1000, // new: fitness-and-selection T16 (merit, off)
     meritMateWeight: 0, // new: fitness-and-selection T16 (merit, off)
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
-    splitDeliberateMin: 0, // new: fitness-and-selection T16 (merit, off)
+    splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
 });

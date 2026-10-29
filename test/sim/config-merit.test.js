@@ -4,8 +4,9 @@ import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { FEATURE_RULES } from '../../js/sim/config-rules.js';
 import { FEATURES_OFF, FEATURES_ON } from '../../scripts/lib/features-on.mjs';
 
-// The merit keys of fitness-and-selection T16 (docs/designs/fitness-and-selection.md, "### Config").
-const MERIT_DEFAULTS = {
+// The merit keys of fitness-and-selection T16 (docs/designs/fitness-and-selection.md, "### Config") at their old off
+// values, which `FEATURES_OFF` keeps pinning for the frozen bench world.
+const MERIT_OFF = {
     meritEnabled: false,
     meritChanceWeight: 0.25,
     meritMateBonus: 150,
@@ -18,6 +19,8 @@ const MERIT_DEFAULTS = {
     splitDeliberateMin: 0,
     meritSplitFloorPop: 80,
 };
+// The defaults from T48b: the E41 finalist split-300 (merit on, the split gate at 300), every other key unchanged.
+const MERIT_DEFAULTS = { ...MERIT_OFF, meritEnabled: true, splitDeliberateMin: 300 };
 
 /**
  * @param {Record<string, any>} overrides keys to set over FEATURES_OFF
@@ -31,15 +34,25 @@ describe('merit keys: defaults', () => {
     });
 
     it('pins every merit key at its default in FEATURES_OFF and FEATURES_ON', () => {
-        for (const [key, value] of Object.entries(MERIT_DEFAULTS)) {
+        for (const [key, value] of Object.entries(MERIT_OFF)) {
             expect(FEATURES_OFF[key]).toBe(value);
+        }
+        for (const [key, value] of Object.entries(MERIT_DEFAULTS)) {
             expect(FEATURES_ON[key]).toBe(value);
         }
     });
 
-    it('reads the defaults back through createConfig with merit off', () => {
-        const config = off({});
+    it('reads the defaults back through createConfig, with merit on and the split gate at 300', () => {
+        const config = createConfig({});
         for (const [key, value] of Object.entries(MERIT_DEFAULTS)) {
+            expect(config[key]).toBe(value);
+        }
+        expect(config.meritEnabled).toBe(true);
+    });
+
+    it('reads the old values back from FEATURES_OFF, with merit off', () => {
+        const config = off({});
+        for (const [key, value] of Object.entries(MERIT_OFF)) {
             expect(config[key]).toBe(value);
         }
         expect(config.meritEnabled).toBe(false);

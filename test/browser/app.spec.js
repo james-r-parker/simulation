@@ -236,10 +236,10 @@ test('?policy=map-elites-v6&merit=1 previews that policy with merit on and the w
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(first);
 });
 
-test('without the preview parameters the live policy runs with merit off', async ({ page }) => {
+test('without the preview parameters the live policy runs, merit on by default', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
-    await expect(page.locator('.help-run')).toHaveText('policy map-elites-v1q');
+    await expect(page.locator('.help-run')).toHaveText('policy map-elites-v6');
 });
 
 test('a first visit shows the title card at x2 and any key dismisses it for good', async ({ page }) => {

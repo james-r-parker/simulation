@@ -111,8 +111,8 @@ export const FEATURES_ON = Object.freeze({
     predatorRescueInterval: 450,
     alarmThreshold: 0.65,
     huntCallThreshold: 0.65,
-    // The merit keys (fitness-and-selection T16) stay at their off values until T48b sets the tuned values.
-    meritEnabled: false,
+    // The merit keys (fitness-and-selection T16); T48b adopts the E41 finalist split-300: merit on, split gate at 300.
+    meritEnabled: true,
     meritChanceWeight: 0.25,
     meritMateBonus: 150,
     meritChildBonus: 300,
@@ -121,7 +121,7 @@ export const FEATURES_ON = Object.freeze({
     meritHalf: 1000,
     meritMateWeight: 0,
     meritBirthBoost: 0,
-    splitDeliberateMin: 0,
+    splitDeliberateMin: 300,
     meritSplitFloorPop: 80,
 });
 

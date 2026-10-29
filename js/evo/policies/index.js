@@ -6,7 +6,7 @@ import { createMapElitesV6 } from './map-elites-v6.js';
 import { createNaturalV1 } from './natural-v1.js';
 
 /** The policy the browser and nightly evals run. */
-export const LIVE_POLICY = 'map-elites-v1q';
+export const LIVE_POLICY = 'map-elites-v6';
 
 export { QUALITY_CELL_DRAWS };
 
