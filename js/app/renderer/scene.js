@@ -6,7 +6,7 @@ import { NeutralToneMapping, OrthographicCamera, Scene, WebGLRenderer } from 'th
 import { viewBounds } from '../camera.js';
 import { appLog } from '../app-log.js';
 import { createBloom } from './bloom.js';
-import { createQuality, QUALITY_LEVELS, supportsFloatTargets } from './quality.js';
+import { createQuality, LOOK_ALL, lookFor, lookItems, QUALITY_LEVELS, supportsFloatTargets } from './quality.js';
 import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from './software.js';
 
 /**
@@ -17,6 +17,8 @@ import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from 
  * @property {(renderer: any, camera: any) => void} [prerender] renders into the layer's own targets before the frame
  * @property {(width: number, height: number) => void} [resize] the canvas changed, in device pixels
  * @property {(level: number) => void} [setQuality] the quality level changed
+ * @property {(look: import('./quality.js').Look) => void} [setLook] the Phase 6 look items that draw, and each
+ *   item's tier, changed (with the level or once after a build)
  * @property {() => void} dispose frees the layer's GPU resources
  */
 
@@ -69,6 +71,8 @@ import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from 
  * @property {(context: SceneContext) => LayerSet} buildLayers makes the layers
  * @property {Built} built the current layers and scenes
  * @property {boolean} lost whether the context is lost
+ * @property {number} lookMask the `?look=` mask: the Phase 6 items that may draw
+ * @property {string} lookDrawn the items drawn at the current level, comma-joined, for `LookChanged`
  */
 
 const BOUNDS = { left: 0, right: 0, top: 0, bottom: 0 };
@@ -132,6 +136,13 @@ function setLevel(rig, level) {
     rig.quality.level = Math.max(rig.quality.floor, Math.min(2, level));
     rig.built.bloom?.setScale(QUALITY_LEVELS[rig.quality.level].bloomScale);
     eachAll(rig, (l) => l.setQuality?.(rig.quality.level));
+    const look = lookFor(rig.quality.level, rig.lookMask);
+    eachAll(rig, (l) => l.setLook?.(look));
+    const drawn = lookItems(look).join(',');
+    if (drawn !== rig.lookDrawn) {
+        rig.lookDrawn = drawn;
+        appLog('info', 'LookChanged', { level: rig.quality.level, items: drawn });
+    }
 }
 
 /**
@@ -266,17 +277,12 @@ function watchContext(rig, canvas, { disposeAll, onRestored }) {
 }
 
 /**
- * @param {{container: HTMLElement, info: Record<string, any>, buildLayers: (context: SceneContext) => LayerSet,
- *   quality?: number | null, scale?: number | null, onRestored?: () => void}} options `container` receives the canvas; `buildLayers` makes
- *   the layers (and is called again after a context restore); `quality` pins a level and `scale` the render scale
- * @returns {{canvas: HTMLCanvasElement, renderer: any, quality: import('./quality.js').Quality,
- *   resize: (width: number, height: number) => void, draw: (frame: Frame) => boolean,
- *   setQualityLevel: (level: number) => void, rebuild: () => void, isLost: () => boolean, dispose: () => void}} the scene
+ * @param {any} renderer the renderer
+ * @param {number | null} quality pinned quality
+ * @param {number | null} scale pinned render scale
+ * @returns {{renderScale: number, state: import('./quality.js').Quality}} the detected settings
  */
-export function createScene({ container, info, buildLayers, quality = null, scale = null, onRestored }) {
-    const renderer = createRenderer();
-    const canvas = renderer.domElement;
-    container.appendChild(canvas);
+function detectHardware(renderer, quality, scale) {
     const name = rendererName(renderer.getContext());
     const software = isSoftwareRenderer(name);
     const renderScale = chooseRenderScale({ software, override: scale });
@@ -284,6 +290,31 @@ export function createScene({ container, info, buildLayers, quality = null, scal
     if (software) {
         appLog('info', 'SoftwareRenderer', { renderer: name, renderScale, level: state.level });
     }
+    return { renderScale, state };
+}
+
+/**
+ * @param {{container: HTMLElement, info: Record<string, any>, buildLayers: (context: SceneContext) => LayerSet,
+ *   quality?: number | null, scale?: number | null, look?: number, onRestored?: () => void}} options `container` receives the canvas; `buildLayers` makes
+ *   the layers (and is called again after a context restore); `quality` pins a level and `scale` the render scale;
+ *   `look` is the `?look=` mask (`LOOK_ALL` by default), which only removes items from what a level draws
+ * @returns {{canvas: HTMLCanvasElement, renderer: any, quality: import('./quality.js').Quality,
+ *   resize: (width: number, height: number) => void, draw: (frame: Frame) => boolean,
+ *   setQualityLevel: (level: number) => void, rebuild: () => void, isLost: () => boolean, dispose: () => void}} the scene
+ */
+export function createScene({
+    container,
+    info,
+    buildLayers,
+    quality = null,
+    scale = null,
+    look = LOOK_ALL,
+    onRestored,
+}) {
+    const renderer = createRenderer();
+    const canvas = renderer.domElement;
+    container.appendChild(canvas);
+    const { renderScale, state } = detectHardware(renderer, quality, scale);
     const base = {
         renderer,
         camera: new OrthographicCamera(-1, 1, 1, -1, -1, 1),
@@ -293,6 +324,8 @@ export function createScene({ container, info, buildLayers, quality = null, scal
         info,
         buildLayers,
         lost: false,
+        lookMask: look,
+        lookDrawn: '',
     };
     /** @type {Rig} */
     const rig = { ...base, built: build(base) };

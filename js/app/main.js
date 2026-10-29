@@ -137,6 +137,7 @@ function onReady(app, message) {
             info: message.info,
             quality: app.params.quality,
             scale: app.params.scale,
+            look: app.params.look,
             buildLayers: createLayerBuilder({
                 refs: app.deps.refs,
                 getReady: () => app.ready,
@@ -219,7 +220,7 @@ function makeSupervisor(app) {
                       ...buildDebugBundle({ ready: app.ready, overrides: app.overrides, tick: info.tick }),
                       reason: info.reason,
                   },
-        log: (level, event, fields) => appLog(level, event, fields),
+        log: appLog,
     });
 }
 
@@ -358,11 +359,10 @@ function gpuCounts(info) {
  * @returns {import('./perf.js').PerfInputs} the live values `__perf` reports
  */
 function readPerf(app) {
-    const info = app.deps.scene?.renderer.info;
     return {
         stats: app.stats,
         worker: app.supervisor.client()?.stats ?? null,
-        gpu: gpuCounts(info),
+        gpu: gpuCounts(app.deps.scene?.renderer.info),
         gpuSamples: app.deps.gpuTimer?.samples() ?? null,
         heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
     };
