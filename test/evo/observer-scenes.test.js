@@ -73,7 +73,7 @@ describe('observeScenes', () => {
     });
 
     it('only reads the world: the hash is the same after forty observed ticks', () => {
-        const r = observed({ ...BASINS, carcassesEnabled: true });
+        const r = observed(BASINS);
         addBlob(r.world, { x: 300 });
         r.world.foodAlive[0] = 1;
         r.world.tick = T0;

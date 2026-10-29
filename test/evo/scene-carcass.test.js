@@ -27,7 +27,7 @@ function meat(
 
 describe('the carcass metrics', () => {
     it('credit each vanished carcass to the agent that overlapped it and gained food, at its meat share', () => {
-        const r = observed({ carcassesEnabled: true });
+        const r = observed();
         const { world, observer } = r;
         const { predator } = world.config.specialisations;
         const grazer = addBlob(world, { x: 700 });
@@ -56,7 +56,7 @@ describe('the carcass metrics', () => {
     });
 
     it('give a carcass two agents overlap to the lower slot, and none to a carcass nobody gained from', () => {
-        const r = observed({ carcassesEnabled: true });
+        const r = observed();
         const { world, observer } = r;
         const { predator } = world.config.specialisations;
         const grazer = addBlob(world, { x: 500 });
@@ -76,7 +76,7 @@ describe('the carcass metrics', () => {
     });
 
     it('do not take plant food or a still-present carcass for an eaten one', () => {
-        const r = observed({ carcassesEnabled: true });
+        const r = observed();
         const { world, observer } = r;
         const grazer = addBlob(world, { x: 500 });
         meat(world, 0, 500, 0);
@@ -93,11 +93,5 @@ describe('the carcass metrics', () => {
         expect(observer.scenes.carcass.eaten).toBe(0);
         expect(read(r, 'carcass_meal_share').value).toBeNull();
         expect(read(r, 'carcass_hunter_share').reason).toContain('no carcass eaten');
-    });
-
-    it('read null with carcasses off', () => {
-        const r = observed({ carcassesEnabled: false });
-        expect(read(r, 'carcass_meal_share')).toEqual({ value: null, reason: 'carcassesEnabled is off' });
-        expect(read(r, 'carcass_hunter_share').value).toBeNull();
     });
 });

@@ -78,7 +78,7 @@ const FIELD_ARRAYS = [
     'ledger',
 ];
 
-/** Hashed after `foodAge` only when `carcassesEnabled`, so a world with carcasses off hashes as it always did. */
+/** Hashed after `foodAge`. */
 const FOOD_KIND_FIELD = 'foodKind';
 
 /** The drought state, hashed (last) only when `erasEnabled`. */
@@ -113,16 +113,13 @@ function bytesOf(world, name) {
 
 /**
  * @param {Record<string, any>} world the world
- * @returns {string[]} the field arrays to hash, with `foodKind` after `foodAge` when carcasses are on
+ * @returns {string[]} the field arrays to hash, with `foodKind` after `foodAge`
  */
 function fieldNames(world) {
-    const { foodPatchCount, carcassesEnabled } = world.config;
+    const { foodPatchCount } = world.config;
     const names = FIELD_ARRAYS.filter((name) => foodPatchCount > 0 || !PATCH_ARRAYS.includes(name));
     if (world.config.erasEnabled) {
         names.push(ERA_FIELD);
-    }
-    if (!carcassesEnabled) {
-        return names;
     }
     const at = names.indexOf('foodAge') + 1;
     return [...names.slice(0, at), FOOD_KIND_FIELD, ...names.slice(at)];

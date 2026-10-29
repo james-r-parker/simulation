@@ -8,7 +8,7 @@
 //   of the hunters (the intent state's hunter bite totals).
 // - `eval.carcass_hunter_share`: the share of the carcass energy eaten by `canHunt` agents.
 //
-// Counts run over the whole run, as the intent state's bite totals do. Both read `null` with `carcassesEnabled` off.
+// Counts run over the whole run, as the intent state's bite totals do.
 // Preallocated arrays only.
 
 import { FOOD_KIND } from '../sim/carcass.js';
@@ -70,16 +70,13 @@ function creditEaten(scene, observer, world, food) {
 
 /**
  * Compares the meat items of the last tick with now, credits the eaten ones, and stores this tick's meat. Run once a
- * tick after the step; does nothing with carcasses off.
+ * tick after the step.
  * @param {Record<string, any>} scene the carcass scene
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function trackCarcasses(scene, observer, world) {
-    if (!world.config.carcassesEnabled) {
-        return;
-    }
     const { foodAlive, foodKind, foodValue, foodX, foodY, foodAge } = world;
     const { carcassTicks } = world.config;
     for (let food = 0; food < foodAlive.length; food++) {
@@ -102,10 +99,6 @@ export function trackCarcasses(scene, observer, world) {
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two carcass metrics
  */
 export function carcassMetrics(scene, observer) {
-    if (!observer.config.carcassesEnabled) {
-        const off = none('carcassesEnabled is off');
-        return { 'eval.carcass_meal_share': off, 'eval.carcass_hunter_share': off };
-    }
     const { huntBiteDeliberate, huntBiteChance } = observer.intent.run;
     const meat = scene.eaten + huntBiteDeliberate + huntBiteChance;
     return {

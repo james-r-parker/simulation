@@ -194,7 +194,6 @@ export const DEFAULTS = deepFreeze({
     specMutationRate: 0.002, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
-    carcassesEnabled: true, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
     terrainLayout: 'basins', // new: 'open' or 'basins' (a wall with gaps, refuges and a cold margin); open is off (T52)

@@ -6,7 +6,7 @@ export const FOOD_KIND = Object.freeze({ PLANT: 0, MEAT: 1 });
 /** @typedef {import('./world.js').World} World */
 
 /**
- * Leaves a carcass at a dying agent's place when `carcassesEnabled`: a meat item of `carcassShare` x the energy the
+ * Leaves a carcass at a dying agent's place: a meat item of `carcassShare` x the energy the
  * agent took in over its life (`foodEnergy` plus `biteEnergy`, both zeroed when the slot is freed), as large as the
  * agent. A body is worth what it built itself from; an agent that took in nothing leaves none. Like spawned plant
  * food it enters the ledger only when eaten, so the death still books out just the agent's remaining energy. It
@@ -17,9 +17,8 @@ export const FOOD_KIND = Object.freeze({ PLANT: 0, MEAT: 1 });
  * @returns {void}
  */
 export function leaveCarcass(world, slot) {
-    const { carcassesEnabled, carcassShare } = world.config;
-    const value = carcassShare * (world.foodEnergy[slot] + world.biteEnergy[slot]);
-    if (!carcassesEnabled || !(value > 0)) {
+    const value = world.config.carcassShare * (world.foodEnergy[slot] + world.biteEnergy[slot]);
+    if (!(value > 0)) {
         return;
     }
     const { foodAlive } = world;

@@ -11,7 +11,6 @@ const SWITCHED_ON = [
     'satiationShare',
     'digestTicks',
     'handlingTicks',
-    'carcassesEnabled',
     'terrainLayout',
     'obstacleCount',
     'specMutationRate',

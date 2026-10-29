@@ -36,7 +36,6 @@ export const FEATURE_RULES = {
     digestTicks: int(0, 30),
     handlingTicks: int(0, 30),
     handlingThrust: num(0, 1),
-    carcassesEnabled: BOOL,
     carcassTicks: int(1),
     carcassShare: num(0, 1),
     terrainLayout: { type: 'enum', values: ['open', 'basins'] },
