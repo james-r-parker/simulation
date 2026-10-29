@@ -34,9 +34,8 @@ The project is being rebuilt as "v6" in short sessions, one design doc at a time
 | Evolution                  | `js/evo/`            | Genomes, mutation, crossover, the fitness functions, the MAP-Elites archive, the policies that decide which brains get born, and the observer and metrics the evals read.      |
 | Worker and renderer (app)  | `js/worker/`, `js/app/` | The app on `index.html`. The sim and the live policy run in a Web Worker behind a validated message protocol (`js/worker/protocol.js`); the main thread only draws (three.js, WebGL2) and runs the interface. |
 
-The previous app (WebGPU, one big `game.js`) is still in `js/*.js` and runs at `/legacy.html` under `npm run dev`. It is
-not in the production build and is deleted in Phase 5 of [the worker and renderer design](docs/designs/worker-and-renderer.md).
-The per-file notes beside it (`js/game.js.README.md` and friends) describe that legacy code, not v6.
+The previous app (WebGPU, one big `game.js`) is deleted; [legacy-audit.md](docs/designs/legacy-audit.md) records what
+it did wrong and which design replaced each part.
 
 Time is counted in ticks, 60 a second at speed x1. A blob lives at most `maxAgeTicks` (36,000 ticks, 10 minutes at x1).
 The speeds are x0.25 to x16 (`TICKS_PER_SECOND_CHOICES` in `js/worker/protocol.js`).
@@ -199,7 +198,7 @@ and test aid; it now equals the defaults except where noted.
 | Terrain (`basins`)     | A wall of touching rocks down the middle splits the world into a west and an east basin, with `wallGaps` = 3 gaps of 300 (`js/sim/terrain.js`). |
 | Refuges                | `refugeCount` = 4 rings of 8 rocks (alternating basins). Their gaps fit only blobs of radius up to `refugeSizeMax` (30), so small blobs can hide from big predators. No food inside. |
 | Cold margin            | The 600 units along the north and south edges double the passive temperature loss (`coldFactor`).                                             |
-| Wandering obstacles    | `obstacleCount` = 0 (the legacy world had 25; the basins replaced them). A hit costs `obstacleDamage`.                                       |
+| Wandering obstacles    | `obstacleCount` = 0 (the v5 world had 25; the basins replaced them). A hit costs `obstacleDamage`.                                       |
 | Population             | Start `initialAgents` 100, cap `maxAgents` 500, floor `minAgents` 40. Under the floor, new lineages spawn from the policy; one immigrant arrives every `immigrationInterval` (600) ticks while there is room (`fillFloor` in `js/sim/population.js`). |
 
 ### Food
@@ -272,7 +271,7 @@ When the predator count falls under `predatorRescueMin` (3) an immigrant arrives
 
 | Policy            | What it does                                                                                                                              | Status                                         |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `baseline-v5`     | The legacy fitness on the new core, for comparison                                                                                        | Instrument                                     |
+| `baseline-v5`     | The v5 fitness on the new core, for comparison                                                                                        | Instrument                                     |
 | `natural-v1`      | Children by crossover and mutation; every immigrant is random; no archive                                                                 | Instrument                                     |
 | `map-elites-v1q`  | `natural-v1` plus the MAP-Elites archive, scored by `fitnessV1`, parents drawn by a 4-cell tournament                                     | **Live** (`LIVE_POLICY`): the app and nightly evals |
 | `map-elites-v6`   | The same archive scored by `fitnessV6` and placed by `descriptorV6`                                                                       | Built, not live: preview with `?policy=map-elites-v6` |
@@ -455,7 +454,7 @@ The order of work is the **Build queue** in [docs/designs/README.md](docs/design
    That will change the default behaviour of the world, so the golden hashes and baselines are re-pinned in the same step.
 2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain). Phase 5 settles the balance on a tuning night; Phase 6 adds disease.
 3. **Quality gates and test tiers** ([quality-gates-and-test-tiers.md](docs/designs/quality-gates-and-test-tiers.md)). Faster pre-commit checks, mutation testing, a browser smoke test and a pull-request performance job.
-4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio and capture are built; what remains is the dev-machine budget measurements, manual walks, and Phase 5: saving the archive between sessions and deleting the legacy app.
+4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio and capture are built; what remains is the dev-machine budget measurements, manual walks, and Phase 5: saving the archive between sessions.
 5. **Later.** The evolution trainer and champions ([evolution-rework.md](docs/designs/evolution-rework.md)), an automated improvement loop ([improvement-loop.md](docs/designs/improvement-loop.md)), v6 tidy-up with new screenshots and docs ([v6-tidy-up-and-docs.md](docs/designs/v6-tidy-up-and-docs.md)), and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md)).
 
 ## Developing
