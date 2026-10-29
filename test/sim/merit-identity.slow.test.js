@@ -9,7 +9,7 @@ import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
 const TICKS = 3000;
-const NEUTRAL = { meritMateWeight: 0, meritBirthBoost: 0, splitDeliberateMin: 0 };
+const NEUTRAL = { meritMateWeight: 0, meritBirthBoost: 0, splitDeliberateMin: 0, splitDeliberateShareMin: 0 };
 
 /**
  * Runs a seed-1 world and records every birth, with its tick and event fields, plus the final positions.
