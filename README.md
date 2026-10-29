@@ -188,8 +188,7 @@ A genome (`js/evo/genome.js`) is the 7,183-float row plus a specialisation, ids 
 ## The world
 
 Defaults are `DEFAULTS` in `js/sim/config-defaults.js`. The app runs exactly those (`createConfig` with only seed and URL overrides),
-so every feature listed below as "on" is on in the app. The older `FEATURES_ON` set in `scripts/lib/features-on.mjs` is only a bench
-and test aid; it now equals the defaults except where noted.
+so every feature listed below as "on" is on in the app.
 
 ### The arena
 
