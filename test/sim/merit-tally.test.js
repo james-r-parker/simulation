@@ -3,7 +3,7 @@ import { TALLY } from '../../js/sim/merit-state.js';
 import { splitGatedShare, tallyReady } from '../../js/sim/merit-tally.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
-const ON = { meritEnabled: true, splitDeliberateMin: 50, meritSplitFloorPop: 0, splitMinEnergy: 100 };
+const ON = { splitDeliberateMin: 50, meritSplitFloorPop: 0, splitMinEnergy: 100 };
 
 /**
  * @param {any} w the world

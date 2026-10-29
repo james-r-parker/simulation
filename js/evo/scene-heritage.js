@@ -3,7 +3,7 @@
 // - `eval.skill_heritability`: over split and mate births after burn-in, the Pearson correlation between the parent's
 //   deliberate meal share at the birth (the mean of both parents for a mate birth, the one that is still alive here)
 //   and the child's at its tenth meal. A child with fewer than ten meals is left out; its `bonus` terms are not read.
-//   The meal counters are the sim's `mealsTotal` and `mealsDeliberate`, so it needs `meritEnabled`.
+//   The meal counters are the sim's `mealsTotal` and `mealsDeliberate`.
 // - `eval.social_return`: the matured grandchildren of agents that earned a social credit (a pack kill, an alarm or a
 //   hunt-call credit) minus those of agents that did not, over agents of equal age (buckets of `AGE_BUCKET_TICKS`,
 //   weighted by the smaller group of the two), over mature deaths after burn-in. A grandchild is credited to each
@@ -76,14 +76,14 @@ function liveParent(world, slot, genomeId) {
 }
 
 /**
- * Notes a split or mate birth after burn-in: opens a pair with the parents' deliberate share now. Needs `meritEnabled`.
+ * Notes a split or mate birth after burn-in: opens a pair with the parents' deliberate share now.
  * @param {Record<string, any>} scene the heritage scene
  * @param {Record<string, any>} world the world
  * @param {number} child the newborn's slot
  * @returns {void}
  */
 export function noteHeritageBirth(scene, world, child) {
-    if (!world.config.meritEnabled || world.tick < BURN_IN_TICKS) {
+    if (world.tick < BURN_IN_TICKS) {
         return;
     }
     const a = world.parentSlotA[child];
@@ -194,7 +194,7 @@ export function noteHeritageDeath(scene, observer, { slot, age }) {
  */
 function heritability(scene) {
     if (scene.pairCount < MIN_HERITABILITY_PAIRS) {
-        return none(`fewer than ${MIN_HERITABILITY_PAIRS} children with ten meals after burn-in (needs meritEnabled)`);
+        return none(`fewer than ${MIN_HERITABILITY_PAIRS} children with ten meals after burn-in`);
     }
     const r = pearson(scene.pairs.parent.subarray(0, scene.pairCount), scene.pairs.child.subarray(0, scene.pairCount));
     return Number.isNaN(r) ? none('parent or child share is constant') : ok(r);

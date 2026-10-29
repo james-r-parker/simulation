@@ -42,16 +42,16 @@ function breed(/** @type {any} */ r, /** @type {number} */ n, /** @type {(i: num
 
 describe('eval.skill_heritability', () => {
     it('is the correlation of parent share at the birth and child share at its tenth meal', () => {
-        const same = observed({ meritEnabled: true });
+        const same = observed({});
         breed(same, MIN_HERITABILITY_PAIRS, (i) => i);
         expect(read(same, 'skill_heritability').value).toBeCloseTo(1, 12);
-        const opposite = observed({ meritEnabled: true });
+        const opposite = observed({});
         breed(opposite, MIN_HERITABILITY_PAIRS, (i) => 9 - i);
         expect(read(opposite, 'skill_heritability').value).toBeCloseTo(-1, 12);
     });
 
     it('leaves out a child with fewer than ten meals, and reads the mean of two live parents', () => {
-        const r = observed({ meritEnabled: true });
+        const r = observed({});
         const { parent, kid } = breed(r, 1, () => 0);
         const other = addBlob(r.world);
         r.world.mealsTotal[parent] = 10;
@@ -68,8 +68,8 @@ describe('eval.skill_heritability', () => {
         expect(r.observer.scenes.heritage.pending[kid]).toBe(1);
     });
 
-    it('opens no pair before burn-in, with merit off or with no parent alive; null below the least pairs', () => {
-        const early = observed({ meritEnabled: true });
+    it('opens no pair before burn-in or with no parent alive; null below the least pairs', () => {
+        const early = observed({});
         const parent = addBlob(early.world);
         const kid = addBlob(early.world);
         early.world.parentSlotA[kid] = parent;
@@ -81,10 +81,7 @@ describe('eval.skill_heritability', () => {
         early.world.alive[parent] = 0;
         noteHeritageBirth(early.observer.scenes.heritage, early.world, kid);
         expect(early.observer.scenes.heritage.pending[kid]).toBe(0);
-        const off = observed();
-        breed(off, MIN_HERITABILITY_PAIRS, (i) => i);
-        expect(read(off, 'skill_heritability').value).toBeNull();
-        expect(read(observed({ meritEnabled: true }), 'skill_heritability').reason).toContain('fewer than');
+        expect(read(observed({}), 'skill_heritability').reason).toContain('fewer than');
     });
 });
 

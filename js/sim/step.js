@@ -87,9 +87,7 @@ function lifecycle(world, policy) {
     mate(world, policy);
     applyCosts(world);
     advancePregnancies(world, policy);
-    if (world.config.meritEnabled) {
-        tallyReady(world);
-    }
+    tallyReady(world);
     splitAll(world, policy);
     reap(world, policy);
     fillFloor(world, policy);

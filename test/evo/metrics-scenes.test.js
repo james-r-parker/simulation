@@ -7,12 +7,13 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { SCENE_DIRECTIONS, sceneMetrics } from '../../js/evo/metrics-scenes.js';
 import { intendedDirection } from '../../scripts/lib/watch-intent.mjs';
 import { observed } from './helpers/observer-world.js';
+import { EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 describe('the scene metrics', () => {
     it('are the Detectors table names, and computeMetrics carries every one', () => {
         const names = Object.keys(sceneMetrics(observed().observer)).sort();
         expect(names).toEqual(Object.keys(SCENE_DIRECTIONS).sort());
-        const all = computeMetrics(observed().observer, {});
+        const all = computeMetrics(observed().observer, EMPTY_WORLD);
         for (const name of names) {
             expect(all, name).toHaveProperty([name]);
         }

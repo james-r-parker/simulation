@@ -12,9 +12,7 @@ import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
-const ON = { meritEnabled: true, meritHalfLife: 0, maxAgents: 40 };
-const NAMES = ['merit_mean', 'merit_p90', 'merit_mate_gain', 'split_gated_share', 'merit_fitness_corr'];
-const OFF = 'meritEnabled is off';
+const ON = { meritHalfLife: 0, maxAgents: 40 };
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 
 const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
@@ -43,18 +41,6 @@ function checkpointAt({ world, observer }, tick) {
     world.tick = tick;
     checkpoint(observer, world);
 }
-
-describe('with meritEnabled off', () => {
-    it('reports every merit metric as null with the reason', () => {
-        const r = observed({ meritEnabled: false });
-        addBorn(r.world);
-        observe(r.observer, r.world);
-        checkpointAt(r, 10000);
-        for (const name of NAMES) {
-            expect(read(r, name), name).toEqual({ value: null, reason: OFF });
-        }
-    });
-});
 
 describe('eval.merit_mean and eval.merit_p90', () => {
     it('averages the alive merit over agents, and the 90th percentile over checkpoints', () => {

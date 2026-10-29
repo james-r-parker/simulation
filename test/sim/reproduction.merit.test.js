@@ -4,7 +4,7 @@ import { advancePregnancies, mate, splitAll } from '../../js/sim/reproduction.js
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const MERIT_ON = { meritEnabled: true, meritHalf: 1000, childEnergyShare: 0.5, childEnergyMin: 100 };
+const MERIT_ON = { meritHalf: 1000, childEnergyShare: 0.5, childEnergyMin: 100 };
 
 /**
  * A pregnant mother due to give birth, with the given energy and merit.
@@ -30,18 +30,13 @@ function birthGift(w) {
 }
 
 describe('birth gift by merit (mating)', () => {
-    it('gives the unscaled gift at boost 0, to the bit, with merit on and any merit', () => {
-        const off = due(777.7, 0, { meritEnabled: false, meritBirthBoost: 0 });
+    it('gives the unscaled gift at boost 0, to the bit, and any merit', () => {
+        const off = due(777.7, 0, { meritBirthBoost: 0 });
         const on = due(777.7, 123456, { meritBirthBoost: 0 });
         const base = birthGift(off);
         expect(base).toBeGreaterThan(0);
         expect(Object.is(birthGift(on), base)).toBe(true);
         expect(Object.is(on.energy[0], off.energy[0])).toBe(true);
-    });
-
-    it('ignores merit and boost when merit is off', () => {
-        const w = due(800, 5000, { meritEnabled: false, meritBirthBoost: 0.5 });
-        expect(birthGift(w)).toBe(400);
     });
 
     it('gives 1 - boost of the gift at merit 0', () => {
@@ -108,9 +103,8 @@ describe('birth gift by merit (split)', () => {
         expect(split(1e12, { meritBirthBoost: 0.5 }).energy[1]).toBeCloseTo(750, 4);
     });
 
-    it('gives exactly half at boost 0 and when merit is off', () => {
+    it('gives exactly half at boost 0', () => {
         expect(split(5, { meritBirthBoost: 0 }).energy[1]).toBe(500);
-        expect(split(5, { meritEnabled: false, meritBirthBoost: 0.5 }).energy[1]).toBe(500);
     });
 
     it('never leaves the splitter below a tenth of her energy', () => {
@@ -122,11 +116,10 @@ describe('birth gift by merit (split)', () => {
 
 describe('startMating merit credit', () => {
     /**
-     * @param {boolean} meritEnabled whether merit is on
      * @returns {any} a world with two mating-ready agents after one `mate` call
      */
-    function mated(meritEnabled) {
-        const w = lifeWorld({ meritEnabled, meritMateBonus: 150, meritHalfLife: 0 });
+    function mated() {
+        const w = lifeWorld({ meritMateBonus: 150, meritHalfLife: 0 });
         addBlob(w, { mateOut: 1, energy: 700, spec: 2 });
         addBlob(w, { mateOut: 1, energy: 700, spec: 2 });
         buildHash(w.hash, w);
@@ -134,14 +127,8 @@ describe('startMating merit credit', () => {
         return w;
     }
 
-    it('credits both parents meritMateBonus with merit on', () => {
-        const w = mated(true);
+    it('credits both parents meritMateBonus', () => {
+        const w = mated();
         expect([w.merit[0], w.merit[1]]).toEqual([150, 150]);
-    });
-
-    it('credits nothing with merit off', () => {
-        const w = mated(false);
-        expect([w.merit[0], w.merit[1]]).toEqual([0, 0]);
-        expect([w.meritStamp[0], w.meritStamp[1]]).toEqual([0, 0]);
     });
 });

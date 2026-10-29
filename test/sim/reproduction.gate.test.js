@@ -4,7 +4,7 @@ import { buildHash } from '../../js/sim/spatial-hash.js';
 import { mate, splitAll, splitGateOpen } from '../../js/sim/reproduction.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const GATED = { meritEnabled: true, splitDeliberateMin: 100, meritSplitFloorPop: 0, splitMinEnergy: 200 };
+const GATED = { splitDeliberateMin: 100, meritSplitFloorPop: 0, splitMinEnergy: 200 };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -21,11 +21,6 @@ describe('splitGateOpen', () => {
     it('is closed below the threshold with the gate on and the population at the floor', () => {
         const { w, slot } = gated({}, 99.9);
         expect(splitGateOpen(w, slot)).toBe(false);
-    });
-
-    it('opens when merit is off', () => {
-        const { w, slot } = gated({ meritEnabled: false }, 0);
-        expect(splitGateOpen(w, slot)).toBe(true);
     });
 
     it('opens when splitDeliberateMin is 0', () => {

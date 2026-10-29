@@ -31,7 +31,7 @@ export const ESCAPE_TICKS = 300;
 export const FLEE_SPEED = 0.5;
 
 /**
- * Slots of `world.meritTally`, agent-ticks counted at each tick's split decision while `meritEnabled`: the cumulative
+ * Slots of `world.meritTally`, agent-ticks counted at each tick's split decision: the cumulative
  * totals first, then the totals at the last `MeritSummary` (the log reads the difference).
  */
 export const TALLY = Object.freeze({ READY: 0, GATED: 1, DELIBERATE: 2, MARK: 3 });

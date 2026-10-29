@@ -79,6 +79,7 @@ describe('step phase bodies', () => {
             ['mate', world, policy],
             ['applyCosts', world],
             ['advancePregnancies', world, policy],
+            ['tallyReady', world],
             ['splitAll', world, policy],
             ['reap', world, policy],
             ['fillFloor', world, policy],
@@ -96,12 +97,8 @@ describe('step phase bodies', () => {
         expect(world.tick).toBe(4);
     });
 
-    it('tallies the ready agents just before splitAll only with merit on', () => {
+    it('tallies the ready agents just before splitAll', () => {
         const { world, policy } = sentinels(false);
-        calls.length = 0;
-        step(world, policy);
-        expect(calls.some((c) => c[0] === 'tallyReady')).toBe(false);
-        world.config.meritEnabled = true;
         calls.length = 0;
         step(world, policy);
         const names = calls.map((c) => c[0]);

@@ -63,12 +63,12 @@ function isChoice(world, a, e, cell) {
 }
 
 /**
- * Whether the mate score blends merit in (`meritEnabled` with a non-zero `meritMateWeight`).
+ * Whether the mate score blends merit in (a non-zero `meritMateWeight`).
  * @param {World} world the world
  * @returns {boolean}
  */
 function meritRanks(world) {
-    return world.config.meritEnabled && world.config.meritMateWeight > 0;
+    return world.config.meritMateWeight > 0;
 }
 
 /**

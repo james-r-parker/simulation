@@ -66,10 +66,8 @@ function startMating(world, policy, mother, father) {
     world.fatherId[mother] = world.genomeId[father];
     world.fatherLineage[mother] = world.lineageId[father];
     world.pregnancy[mother] = pregnancyTicks;
-    if (world.config.meritEnabled) {
-        creditMating(world, mother);
-        creditMating(world, father);
-    }
+    creditMating(world, mother);
+    creditMating(world, father);
     if (policy.onMate) {
         policy.onMate(world, mother, father);
     }
@@ -148,7 +146,7 @@ const GIFT_CAP = 0.9;
 
 /**
  * The energy a birth moves from `mother` to the child. A mating gives `childEnergyShare` of her energy, a split half.
- * With `meritEnabled` and a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
+ * With a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
  * (`m = merit / (merit + meritHalf)`, her merit decayed to now without restamping it) and capped at 0.9 of her energy;
  * otherwise it is the unscaled gift, exactly.
  * @param {World} world the world
@@ -157,10 +155,10 @@ const GIFT_CAP = 0.9;
  * @returns {number}
  */
 export function giftOf(world, mother, isMate) {
-    const { meritEnabled, meritBirthBoost, meritHalf } = world.config;
+    const { meritBirthBoost, meritHalf } = world.config;
     const energy = world.energy[mother];
     const gift = energy * (isMate ? childShareOf(world, mother) : 0.5);
-    if (!meritEnabled || meritBirthBoost === 0) {
+    if (meritBirthBoost === 0) {
         return gift;
     }
     const merit = meritPeek(world, mother);
@@ -287,7 +285,7 @@ export function advancePregnancies(world, policy) {
 }
 
 /**
- * The merit split gate: open when `meritEnabled` is off or the population is below `meritSplitFloorPop`; otherwise
+ * The merit split gate: open when the population is below `meritSplitFloorPop`; otherwise
  * open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, and `splitKeysAllow` (the
  * share minimum, the per-life cap and `preySplit`). Reads only; a closed gate changes nothing, so the agent stays ready.
  * @param {World} world the world
@@ -295,8 +293,8 @@ export function advancePregnancies(world, policy) {
  * @returns {boolean} true when the gate lets the agent split
  */
 export function splitGateOpen(world, slot) {
-    const { meritEnabled, splitDeliberateMin, meritSplitFloorPop } = world.config;
-    if (!meritEnabled || world.population < meritSplitFloorPop) {
+    const { splitDeliberateMin, meritSplitFloorPop } = world.config;
+    if (world.population < meritSplitFloorPop) {
         return true;
     }
     return (

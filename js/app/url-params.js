@@ -24,7 +24,6 @@ export const MAX_AGENTS_PARAM = 4096;
  * them. Kept in step with `scripts/bench.mjs` by hand, since the page cannot import scripts.
  */
 export const MERIT_PREVIEW = Object.freeze({
-    meritEnabled: true,
     meritMateWeight: 0.05,
     meritBirthBoost: 0.25,
     splitDeliberateMin: 200,

@@ -4,7 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { combatMetrics } from '../../js/evo/metrics-combat.js';
 import { metricDirection } from '../../js/evo/compare.js';
-import { bareObserver } from './helpers/metrics-observer.js';
+import { bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 
 const NAMES = [
@@ -53,7 +53,7 @@ describe('combatMetrics', () => {
     });
 
     it('is merged into computeMetrics and ranked higher-is-better by eval:compare', () => {
-        const m = computeMetrics(bareObserver(), {});
+        const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
             expect(m[name], name).toBeDefined();
             expect(metricDirection(name)).toBe('higher');
@@ -63,7 +63,7 @@ describe('combatMetrics', () => {
     it('builds a report that validates, and an older report without the metrics still validates', () => {
         const config = createConfig({ ...FEATURES_OFF, seed: 1 });
         const input = { policy: 'p', fitnessName: 'f', config, ticks: 10, seeds: [1], sha: 'abc' };
-        const metrics = computeMetrics(bareObserver(), {});
+        const metrics = computeMetrics(bareObserver(), EMPTY_WORLD);
         const report = buildReport({ ...input, perSeed: [metrics] });
         expect(() => validateReport(report)).not.toThrow();
         expect(report.metrics['eval.catch_rate'].reasons).toEqual(['no hunters']);

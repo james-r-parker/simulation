@@ -7,6 +7,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { RULE_DIRECTIONS, ruleMetrics } from '../../js/evo/metrics-rules.js';
 import { selectionMetrics } from '../../js/evo/metrics-selection.js';
 import { observed } from './helpers/observer-world.js';
+import { EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 describe('the rule metrics', () => {
     it('are the Detectors table names, all watch in the compare table', () => {
@@ -34,7 +35,7 @@ describe('the rule metrics', () => {
     it('are merged into the selection metrics and computeMetrics', () => {
         const o = observed().observer;
         const selection = selectionMetrics(o);
-        const all = computeMetrics(o, {});
+        const all = computeMetrics(o, EMPTY_WORLD);
         for (const name of Object.keys(RULE_DIRECTIONS)) {
             expect(selection, name).toHaveProperty([name]);
             expect(all, name).toHaveProperty([name]);

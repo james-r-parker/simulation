@@ -13,7 +13,7 @@ const PREDATOR = 1;
  * @returns {any} a merit-on world without decay
  */
 function world(over = {}) {
-    return lifeWorld({ meritEnabled: true, meritHalfLife: 0, maturityTicks: 100, ...over });
+    return lifeWorld({ meritHalfLife: 0, maturityTicks: 100, ...over });
 }
 
 /**
@@ -30,38 +30,11 @@ function makeDeliberate(w, slot, kind) {
     view.turn[slot] = w.tick;
 }
 
-/**
- * @param {any} w the world
- * @returns {Record<string, number[]>} a copy of every merit array and the tally
- */
-function snapshot(w) {
-    const names = [
-        'merit',
-        'deliberateIntake',
-        'meritStamp',
-        'meritFoodMark',
-        'meritBiteMark',
-        'biteOpen',
-        'meritTally',
-    ];
-    return Object.fromEntries(names.map((n) => [n, Array.from(w[n])]));
-}
-
 describe('meritPhase', () => {
     it('is a named step phase after field and before invariants', () => {
         const names = STEP_PHASES.map((p) => p.name);
         expect(names.indexOf('merit')).toBe(names.indexOf('field') + 1);
         expect(names.indexOf('merit')).toBe(names.indexOf('invariants') - 1);
-    });
-
-    it('does nothing with meritEnabled off, whatever the agents gained', () => {
-        const w = world({ meritEnabled: false });
-        addBlob(w, { ageTicks: 5, foodEnergy: 40, biteEnergy: 10, bittenTimer: 1 });
-        w.tick = 1000;
-        const before = snapshot(w);
-        meritPhase(w);
-        expect(snapshot(w)).toEqual(before);
-        expect(w.events.count).toBe(0);
     });
 
     it('credits a chance meal at meritChanceWeight and a deliberate one in full', () => {

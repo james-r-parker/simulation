@@ -10,7 +10,7 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushBorn } from './helpers/observer-world.js';
 
-const ON = { meritEnabled: true, maxAgents: 40 };
+const ON = { maxAgents: 40 };
 const NAMES = ['split_parent_delib_share', 'mate_parent_delib_share', 'split_bumper_share'];
 
 const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
@@ -55,13 +55,6 @@ describe('the parent diet metrics', () => {
         expect(Object.keys(DIET_DIRECTIONS).sort()).toEqual(NAMES.map((n) => `eval.${n}`).sort());
         expect(Object.values(DIET_DIRECTIONS)).toEqual(['watch', 'watch', 'watch']);
         expect(MERIT_DIRECTIONS).toMatchObject(DIET_DIRECTIONS);
-    });
-
-    it('are null with the reason when meritEnabled is off', () => {
-        const r = observed({ meritEnabled: false });
-        for (const name of NAMES) {
-            expect(read(r, name), name).toEqual({ value: null, reason: 'meritEnabled is off' });
-        }
     });
 
     it('are null with no birth after burn-in', () => {

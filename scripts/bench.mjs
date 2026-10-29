@@ -45,7 +45,6 @@ export const BENCH_CONFIG = Object.freeze({
  */
 export const MERIT_ON = Object.freeze({
     ...FEATURES_ON,
-    meritEnabled: true,
     meritMateWeight: 0.05,
     meritBirthBoost: 0.25,
     splitDeliberateMin: 200,

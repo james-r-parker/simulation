@@ -1,4 +1,5 @@
 import { ensureRoom } from '../../../js/evo/growable-log.js';
+import { MERIT_TALLY_SIZE } from '../../../js/sim/merit-state.js';
 import { observed } from './observer-world.js';
 
 /**
@@ -59,3 +60,6 @@ export function addAlive(observer, slot, f) {
         observer[name][slot] = v;
     }
 }
+
+/** A world with nothing in it but an empty split-gate tally, for metrics computed from hand-built observer state. */
+export const EMPTY_WORLD = Object.freeze({ meritTally: new Float64Array(MERIT_TALLY_SIZE) });

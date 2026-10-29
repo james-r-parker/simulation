@@ -32,24 +32,19 @@ const RICH_POOR = [
 ];
 
 describe('findMale by merit', () => {
-    it('picks the richest male when merit is off, whatever the weight and merit values', () => {
-        const w = placed(RICH_POOR, { meritEnabled: false, meritMateWeight: 1 });
-        expect(findMale(w, 0, 1)).toBe(1);
-    });
-
     it('picks the same male as the energy rule at weight 0', () => {
-        const w = placed(RICH_POOR, { meritEnabled: true, meritMateWeight: 0 });
+        const w = placed(RICH_POOR, { meritMateWeight: 0 });
         expect(findMale(w, 0, 1)).toBe(1);
     });
 
     it('picks the high-merit male at weight 1', () => {
-        const w = placed(RICH_POOR, { meritEnabled: true, meritMateWeight: 1 });
+        const w = placed(RICH_POOR, { meritMateWeight: 1 });
         expect(findMale(w, 0, 1)).toBe(2);
     });
 
     it('blends energy and merit by the weight', () => {
-        const low = placed(RICH_POOR, { meritEnabled: true, meritMateWeight: 0.01 });
-        const high = placed(RICH_POOR, { meritEnabled: true, meritMateWeight: 0.5 });
+        const low = placed(RICH_POOR, { meritMateWeight: 0.01 });
+        const high = placed(RICH_POOR, { meritMateWeight: 0.5 });
         expect(findMale(low, 0, 1)).toBe(1);
         expect(findMale(high, 0, 1)).toBe(2);
     });
@@ -60,7 +55,7 @@ describe('findMale by merit', () => {
                 { energy: 700, merit: 4000 },
                 { energy: 700, merit: 2000 },
             ],
-            { meritEnabled: true, meritMateWeight: 1, meritHalfLife: 100 },
+            { meritMateWeight: 1, meritHalfLife: 100 },
         );
         w.meritStamp[1] = 0;
         w.meritStamp[2] = 300;
@@ -74,13 +69,13 @@ describe('findMale by merit', () => {
                 { energy: 700, merit: 800 },
                 { energy: 700, merit: 800 },
             ],
-            { meritEnabled: true, meritMateWeight: 0.5 },
+            { meritMateWeight: 0.5 },
         );
         expect(findMale(w, 0, 1)).toBe(1);
     });
 
     it('does not write merit or its stamp', () => {
-        const w = placed(RICH_POOR, { meritEnabled: true, meritMateWeight: 0.5, meritHalfLife: 100 });
+        const w = placed(RICH_POOR, { meritMateWeight: 0.5, meritHalfLife: 100 });
         w.tick = 250;
         const merit = Array.from(w.merit);
         const stamp = Array.from(w.meritStamp);

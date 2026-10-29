@@ -137,7 +137,7 @@ export function createObserver(config, rng, options = {}) {
         }),
         watch: createWatchPools(config),
         merit: createMeritPools(config),
-        diet: createDietPools(config),
+        diet: createDietPools(),
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),

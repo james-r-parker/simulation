@@ -5,7 +5,7 @@ import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 /** @returns {any} a world with the merit keys at their documented defaults */
 function world() {
-    return lifeWorld({ maxAgents: 8, meritEnabled: true });
+    return lifeWorld({ maxAgents: 8 });
 }
 
 /**
@@ -170,7 +170,7 @@ describe('creditMatured', () => {
 
 describe('meritPeek', () => {
     it('equals meritNow without storing the decay', () => {
-        const w = lifeWorld({ maxAgents: 8, meritEnabled: true, meritHalfLife: 100 });
+        const w = lifeWorld({ maxAgents: 8, meritHalfLife: 100 });
         const s = addBlob(w);
         w.merit[s] = 800;
         w.tick = 200;

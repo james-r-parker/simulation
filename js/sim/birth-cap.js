@@ -1,4 +1,4 @@
-// Merit at the cap: when `capBirthsEnabled` and `meritEnabled` are on and fewer free slots remain than candidates
+// Merit at the cap: when `capBirthsEnabled` is on and fewer free slots remain than candidates
 // (pregnancies falling due, or agents ready to split), the slots go to the candidates with the highest merit, ties to
 // the lower slot. The candidates sit in the world's preallocated `capSlots` (ascending slot order as collected) with
 // their merits in `capKeys`; ranking is a repeated max-pick that swaps the best of the rest into place, so it
@@ -14,7 +14,7 @@ import { meritPeek } from './merit.js';
  * @returns {boolean} true when the cap rules rank candidates by merit
  */
 export function meritCapOn(world) {
-    return world.config.capBirthsEnabled && world.config.meritEnabled;
+    return world.config.capBirthsEnabled;
 }
 
 /**

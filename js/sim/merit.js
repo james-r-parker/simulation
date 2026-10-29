@@ -1,6 +1,6 @@
 // In-world merit: a per-slot running score that rewards deliberate foraging, mating, raising children to maturity
 // and escaping predators, and decays with a half-life. Pure functions of sim state: no RNG, no clock, no allocation.
-// Callers (the `merit` phase and `startMating`) gate every call on `meritEnabled`. See docs/designs/fitness-and-selection.md (In-world merit).
+// Callers are the `merit` phase and `startMating`. See docs/designs/fitness-and-selection.md (In-world merit).
 
 import { detExp } from './det-math.js';
 import { noteMeal } from './split-gate.js';

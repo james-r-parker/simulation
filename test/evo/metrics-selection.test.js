@@ -3,7 +3,7 @@ import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { MIN_CORRELATION_DEATHS, selectionMetrics } from '../../js/evo/metrics-selection.js';
-import { addCheckpoint, addDeath, bareObserver } from './helpers/metrics-observer.js';
+import { addCheckpoint, addDeath, bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 const NAMES = [
     'eval.offspring_per_life',
@@ -88,7 +88,7 @@ describe('selectionMetrics', () => {
     });
 
     it('is merged into computeMetrics and is watch-only', () => {
-        const m = computeMetrics(bareObserver(), {});
+        const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
             expect(m[name], name).toBeDefined();
             expect(metricDirection(name)).toBe('watch');

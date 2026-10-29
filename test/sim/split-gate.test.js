@@ -10,7 +10,7 @@ import { freeAgent } from '../../js/sim/world.js';
 import { FEATURES_ON } from '../../scripts/lib/features-on.mjs';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const BASE = { meritEnabled: true, splitDeliberateMin: 0, meritSplitFloorPop: 0, splitMinEnergy: 200 };
+const BASE = { splitDeliberateMin: 0, meritSplitFloorPop: 0, splitMinEnergy: 200 };
 const PREDATOR = 1;
 
 /**
@@ -65,11 +65,6 @@ describe('splitDeliberateShareMin', () => {
         creditIntake(w, slot, 1, false);
         creditIntake(w, slot, 1, false);
         expect(splitGateOpen(w, slot)).toBe(false);
-    });
-
-    it('is ignored when meritEnabled is false', () => {
-        const { w, slot } = blobWorld({ meritEnabled: false, splitDeliberateShareMin: 0.5 });
-        expect(splitGateOpen(w, slot)).toBe(true);
     });
 });
 

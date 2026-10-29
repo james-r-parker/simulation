@@ -1,5 +1,5 @@
 // The extra split gates (fitness-and-selection T48d): a diet-share minimum, a splits-per-life cap and a prey-cannot-split
-// switch. Each key is off at its default. They apply only while `meritEnabled` and are bypassed with the count gate when
+// switch. They are bypassed with the count gate when
 // the population is below `meritSplitFloorPop`. The counters are per-slot typed arrays that `freeAgent` zeroes, so a
 // birth starts at 0; they are derived state and are not in `worldHash`. No RNG, no clock, no allocation.
 

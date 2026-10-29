@@ -17,7 +17,7 @@ function record(w) {
 
 describe('summaryDue', () => {
     it('is true on every MERIT_LOG_TICKS multiple but tick 0', () => {
-        const w = lifeWorld({ meritEnabled: true });
+        const w = lifeWorld({});
         const due = [0, 1, MERIT_LOG_TICKS - 1, MERIT_LOG_TICKS, MERIT_LOG_TICKS + 1, 3 * MERIT_LOG_TICKS].map((t) => {
             w.tick = t;
             return summaryDue(w);
@@ -29,7 +29,7 @@ describe('summaryDue', () => {
 
 describe('pushMeritSummary', () => {
     it('reports the mean and nearest-rank 90th percentile of alive merit', () => {
-        const w = lifeWorld({ meritEnabled: true, meritHalfLife: 0, maxAgents: 16 });
+        const w = lifeWorld({ meritHalfLife: 0, maxAgents: 16 });
         for (let i = 1; i <= 10; i++) {
             addBlob(w, { merit: i * 10 });
         }
@@ -42,7 +42,7 @@ describe('pushMeritSummary', () => {
     });
 
     it('decays merit to the tick without storing it', () => {
-        const w = lifeWorld({ meritEnabled: true, meritHalfLife: 100 });
+        const w = lifeWorld({ meritHalfLife: 100 });
         const a = addBlob(w, { merit: 80 });
         w.tick = 1000;
         pushMeritSummary(w);
@@ -54,14 +54,14 @@ describe('pushMeritSummary', () => {
     });
 
     it('reports zeros with no agent alive', () => {
-        const w = lifeWorld({ meritEnabled: true });
+        const w = lifeWorld({});
         w.tick = 2000;
         pushMeritSummary(w);
         expect(record(w)).toEqual([2000, 0, 0, 0, 0, 0]);
     });
 
     it('reports the tally of the window and restarts it', () => {
-        const w = lifeWorld({ meritEnabled: true });
+        const w = lifeWorld({});
         addBlob(w);
         w.meritTally.set([10, 4, 5, 0, 0, 0]);
         w.tick = 1000;
@@ -78,7 +78,7 @@ describe('pushMeritSummary', () => {
     });
 
     it('writes one record of EVENT_STRIDE fields', () => {
-        const w = lifeWorld({ meritEnabled: true });
+        const w = lifeWorld({});
         pushMeritSummary(w);
         expect(w.events.data.length).toBe(w.events.capacity * EVENT_STRIDE);
         expect(w.events.count).toBe(1);
