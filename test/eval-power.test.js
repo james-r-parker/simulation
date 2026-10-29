@@ -111,6 +111,9 @@ describe('powerRow and evalPower', () => {
         expect(higher.detectable).not.toBeNull();
         expect(lower).toMatchObject({ direction: 'lower' });
         expect(lower.detectable).not.toBeNull();
+        for (const name of ['eval.mean_energy_share', 'eval.energy_over_split']) {
+            expect(powerRow(report({ [name]: noise }), name, on)).toMatchObject({ direction: 'lower' });
+        }
         expect(powerRow(r, 'eval.population_mean', base)).toMatchObject({ note: 'watch', falsePositive: null });
         expect(powerRow(r, 'mystery', on).note).toBe('unknown metric');
     });

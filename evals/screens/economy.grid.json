@@ -1,0 +1,25 @@
+{
+  "seeds": 8,
+  "seedOffset": 32,
+  "ticks": 200000,
+  "policy": "map-elites-v6",
+  "reference": "ref",
+  "arms": {
+    "ref": {},
+    "max-4000": { "maxEnergy": 4000 },
+    "max-2000": { "maxEnergy": 2000 },
+    "max-1200": { "maxEnergy": 1200 },
+    "max-2000-scout-move-1": {
+      "maxEnergy": 2000,
+      "specialisations": { "scout": { "moveCostMultiplier": 1 } }
+    },
+    "max-2000-alarm-5": { "maxEnergy": 2000, "alarmCost": 5 },
+    "regrow-0.045": { "foodRegrowPerArea": 0.045 },
+    "combo": {
+      "maxEnergy": 2000,
+      "alarmCost": 5,
+      "foodRegrowPerArea": 0.05,
+      "specialisations": { "scout": { "moveCostMultiplier": 1 } }
+    }
+  }
+}

@@ -2,12 +2,14 @@
 // the change in the right direction when it measures a `watch` metric's detectable change. It is not a verdict
 // direction: `DIRECTIONS` in `js/evo/compare.js` is. A `watch` metric not listed here is treated as `higher`.
 
-/** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a more even sex ratio). */
+/** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a more even sex ratio, a smaller energy bank). */
 export const WATCH_INTENDED_LOWER = new Set([
     'eval.heat_stress_share',
     'eval.unseen_bite_share',
     'eval.sex_balance',
     'eval.chance_food_per_1k',
+    'eval.mean_energy_share',
+    'eval.energy_over_split',
 ]);
 
 /**
