@@ -1,0 +1,18 @@
+{
+  "seeds": 4,
+  "seedOffset": 28,
+  "ticks": 200000,
+  "policy": "map-elites-v6",
+  "reference": "base",
+  "arms": {
+    "base": {},
+    "merit-only": { "meritEnabled": true },
+    "mate-0.005": { "meritEnabled": true, "meritMateWeight": 0.005 },
+    "mate-0.02": { "meritEnabled": true, "meritMateWeight": 0.02 },
+    "birth-0.25": { "meritEnabled": true, "meritBirthBoost": 0.25 },
+    "split-100": { "meritEnabled": true, "splitDeliberateMin": 100 },
+    "split-300": { "meritEnabled": true, "splitDeliberateMin": 300 },
+    "maturity-1200": { "maturityTicks": 1200 },
+    "childmin-50": { "childEnergyMin": 50 }
+  }
+}

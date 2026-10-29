@@ -1406,6 +1406,42 @@
       "note": "T15e, PARTIAL PASS (user decision, 2026-10-24). Live policy map-elites-v1q, seeds 1-32 (split into seeds 1-16 and 17-32: E36-fix-seeds1-16.json, E36-fix-seeds17-32.json, E36-ref-seeds1-16.json, E36-ref-seeds17-32.json), 200000 ticks, commit de7c9ef. Verdicts shown are the full 32-seed eval:compare. Per seed set (1-16 / 17-32): predator_presence 0.338 to 0.999 / 0.351 to 1.000, better on both; catch_rate 0.006 to 0.107 / 0.005 to 0.087 (about 17-18x), better on both; pursuit_kill_share 0.045 to 0.143 / 0.016 to 0.153; predator_births mean 3.6 to 75.1 / 5.2 to 72.8, better on both, but at least 30 births on 10 of 16 / 11 of 16 seeds (per-seed range 8 to 284), so the bar of 12 of 16 is MISSED; idle_signals_per_1k 11.6 to 9.0 / 11.9 to 8.7, better on both. Population 379 to 373 / 422 to 368 (verdict - on both). Mating 0.203 to 0.218 / 0.217 to 0.216. Food 491 to 468 / 474 to 456, no-difference. lineages_alive 19.0 to 20.1 / 18.3 to 19.4. fed_median_lifespan 5802 to 5706 (no-difference) on seeds 1-16, but 6180 to 5598 (-9.4%, verdict worse) on seeds 17-32; the 32-seed verdict is no-difference (-5.7%). The prediction was right that presence and catch rate rise, that idle signals fall and that the births bar is missed; it was wrong that births would average 40-60 (they averaged 73-75). The predator bar is re-checked in Phase 4, where merit and fitnessV6 pay deliberate kills."
     },
     {
+      "id": "E37",
+      "date": "2026-10-28",
+      "branch": "eval/fs-t43-t44",
+      "hypothesis": "The Phase 4 reference (fitness-and-selection T43): map-elites-v1q on seeds 1-32 at 200000 ticks, current defaults on main 8036aba, merit off. It is the arm every Phase 4 finalist (E41) is compared with. The plan expected its shared metrics to equal E35's on seeds 1-32; defaults changed since E35 (T15d predator package, bite 8 from E47, call costs), so only the metrics those changes do not touch should match.",
+      "prediction": "Policy map-elites-v1q, seeds 1-32, 200000 ticks, main 8036aba, 30 workers. Versus E35 on seeds 1-32:\n- Unchanged within seed noise (|diff| under 10%): deliberate_food_share ~0.115, mating_share ~0.21, born_share ~0.95, child_survival ~0.94, spec_dominance ~0.69, skill_trend ~-0.07 (still declining), food_energy_per_1k ~470.\n- Changed by the predator package and bite 8: predator_presence 0.34 to ~1.0; catch_rate 0.005 to ~0.06; predator_births ~5 to ~45 per seed; idle_signals_per_1k 11.6 to ~9; population_mean ~420 to ~370; fed_median_lifespan a few percent lower.\n- So the plan's equal check fails on the predator metrics and passes on the rest; E37, not E35, is the reference.",
+      "targets": [],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v1q",
+      "before": "evals/experiments/E35-calibration.json",
+      "after": "evals/experiments/E37-ref.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T43. Reference run, not a comparison: evals/experiments/E37-ref.json (map-elites-v1q, seeds 1-32, 200000 ticks, main 8036aba, configHash 700f1d6f0ec3ee94, 30 workers, merit off). The plan's 'equal to E35' check does not hold: defaults changed since E35 (T15d predator package, bite 8, call costs); eval:compare would refuse the pair on config hash, so the figures are per-metric means on seeds 1-32 (table in sim-notes 2026-10-28 'E37 reference'). Prediction held on the unchanged metrics (deliberate_food_share 0.114, mating_share 0.208, child_survival 0.942, born_share 0.947, spec_dominance 0.708, food_energy_per_1k 479) and on predator_presence (1.00), catch_rate (0.056), idle_signals_per_1k (8.5), population (384). Wrong: predator_births 83 per seed against ~45 predicted; skill_trend -0.033 against ~-0.07 predicted (the decline halved); floor_episodes rose 13.3 to 20.8, not predicted. E37 is the reference for E41."
+    },
+    {
+      "id": "E38",
+      "date": "2026-10-28",
+      "branch": "eval/fs-t43-t44",
+      "hypothesis": "Round A screen (fitness-and-selection T44): each in-world merit lever alone, on policy map-elites-v6 with the default fitnessV6 weights, moves eval.deliberate_food_share and eval.skill_trend up without a collapse. The newborn arms (maturityTicks 1200, childEnergyMin 50) test whether a longer immaturity or a smaller minimum gift changes child survival and lineage success.",
+      "prediction": "Screen of 9 arms x 4 seeds (29-32) x 200000 ticks, policy map-elites-v6, base = merit off; not a verdict, 4 seeds are noisy.\n- merit-only (credits and tracker, every lever 0): metrics equal base exactly or within noise (merit changes nothing the sim reads).\n- mate-0.005: within noise of base; mate-0.02: mating choice tilts to high-merit males, deliberate_food_share up a little (+5 to +15%), skill_trend not clearly different at 4 seeds.\n- birth-0.25: small effect, deliberate share up slightly; births and population near base.\n- split-100: gate blocks some splits (floor population 80 keeps it open below that); births_per_1k down 5 to 15%, deliberate share up. split-300: a stronger gate (typical lifetime deliberate intake is a few hundred), births_per_1k down more than 15% so it is CUT by Scorecard item 3, or lineages_alive falls.\n- maturity-1200: fewer matured children, population and births lower; child_survival lower. childmin-50: more, weaker births; births_per_1k up, child_survival down.\n- Expected survivors for round B: merit-only (as the switch), mate-0.005, mate-0.02, birth-0.25, split-100. No arm collapses (population above minAgents on 4 of 4) except possibly split-300.",
+      "targets": [
+        "eval.deliberate_food_share",
+        "eval.skill_trend",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.spec_dominance"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/screens/results/fitness-a/base.report.json",
+      "after": "evals/screens/results/fitness-a/<arm>.report.json (one per arm; table in evals/screens/results/fitness-a/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "T44 screen, 9 arms x 4 seeds (offset 28, benchmark seeds 29-32) x 200000 ticks, policy map-elites-v6, grid evals/screens/fitness-a.grid.json; a screen, not a verdict. Scorecard: merit-only, mate-0.005, mate-0.02, birth-0.25, split-100, split-300 CUT by item 3 (births_per_1k -16% to -28%); maturity-1200 and childmin-50 pass; none collapses (item 1 ok everywhere). Prediction wrong on the central point: merit-only was predicted equal to base, but meritEnabled switches on merit ranking of free slots at the population cap (birth-cap.js, T21a), so merit-only alone gives births -24%, mating 0.199 to 0.155, fed lifespan 5547 to 8304; the 3000-tick identity test never reaches the cap. Against merit-only: split-300 deliberate_food_share 0.134 (+14%), skill_trend +0.012, births +7%; split-100 share +7%; mate-0.005 equals merit-only; mate-0.02 worse; birth-0.25 share +1%. Predicted split-300 cut and maturity-1200/childmin-50 effects held in direction (childmin-50 mating +42%, births +4%; maturity-1200 mating -38%, child_survival 0.88). See sim-notes 2026-10-28 \"Round A\"."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
