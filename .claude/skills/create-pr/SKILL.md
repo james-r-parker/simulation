@@ -52,7 +52,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
 - Stage explicit paths: `git add js/sim/rng.js test/sim/rng.test.js`. Never `git add -A` or `git add .`. Review
   first with `git diff --staged`.
-- One self-contained commit per task; each commit passes the gate.
+- One self-contained commit per task; each commit passes the pre-commit hook and its own test files. The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
 - Conventional subject: `<type>(<optional scope>): <subject>`.
     - types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
     - lower-case subject, no trailing period, <= 100 characters

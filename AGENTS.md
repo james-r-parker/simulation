@@ -87,7 +87,7 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
    for a body of work are approved, and the user confirms the Build queue, before its code changes.
 2. **Picking work back up** - the `resume-plan` skill re-validates the doc against `origin/main` and names the next
    phase.
-3. **Build one phase per branch and PR** - commit per task.
+3. **Build one chunk per branch and PR** - commit per task.
 4. **Before pushing** - the `create-pr` skill: `scripts/check.sh --fix`, a plan-conformance review agent in parallel
    with the final check, measurements for the phase's Targets, the phase marked `(built)` and the status line moved
    in the same PR.
@@ -101,12 +101,16 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 
 When one agent hands tasks to others (user, 2026-10-22):
 
-- **One task at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
+- **One chunk at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
   and the plan doc, and the rework costs more than the parallelism saves.
-- **Batch related tasks (user, 2026-10-28).** One PR carries 2 to 4 related tasks of a phase, built in order by one
-  subagent on one branch, one commit per task. The delegating agent reviews each task's commit against its plan row;
-  the pre-commit hook runs per commit, the full gate and CI once per PR. Golden re-pins keep their own commit; timing
-  work (quiet machine), evals and screens are not batched with code tasks.
+- **Build in chunks (user, 2026-10-29).** One PR carries one chunk: 4 to 8 related tasks, usually most of a phase,
+  built in order by one subagent on one branch, one commit per task. During the chunk each commit runs only the
+  pre-commit hook (`scripts/check.sh --tier 1`) and the task's own test files (`npx vitest run <files>`); the full gate
+  (`scripts/check.sh`) and CI run once per chunk PR. The delegating agent still reviews each task's commit against its
+  plan row. Golden re-pins keep their own commit inside the chunk. Long runs stay separate: evals, screens and timing
+  runs (quiet machine) never go in a code chunk; the one exception is a baseline re-record, a [mechanical] commit of its
+  own inside an adopt chunk, run on a quiet machine under the CPU lock. A design doc lists its chunks in a "Chunks" table under each phase. A chunk with any [judgement] task is built by
+  Sonnet; a chunk that is all [mechanical] goes to Haiku.
 - **Pick the model by the task's tag.** `[mechanical]` tasks (run a command, re-pin, re-record, fill a table) go to
   Haiku; `[judgement]` tasks (deciding a verdict, diagnosis, review, optimisation) go to Sonnet. The delegating agent
   reviews every result before it merges.
