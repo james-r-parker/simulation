@@ -6,16 +6,22 @@ import { NOISE_GLSL } from './noise-glsl.js';
 export const FOOD_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iBody;   // x, y, radius, phase
+attribute float iAge;   // carcass normalized age (0 to 1)
 uniform float uZoom;    // device pixels per world unit
 uniform float uPad;     // extra quad half-size in device pixels (the rim, the soft edge)
 uniform float uMinPx;   // smallest radius in device pixels
+uniform float uDecay;   // 1 when decay look enabled, 0 when off
 varying vec2 vLocal;    // in radii
 varying float vPx;      // one device pixel in radii
 varying float vPhase;
 varying float vMeat;    // 1 for a carcass: the snapshot marks meat with a negative radius
+varying float vDim;     // carcass dimming factor
 void main() {
-    float radius = max(abs(iBody.z), uMinPx / uZoom);
     vMeat = iBody.z < 0.0 ? 1.0 : 0.0;
+    float age01 = vMeat * uDecay * clamp(iAge, 0.0, 1.0);
+    float scale = 1.0 - 0.4 * age01;
+    vDim = 1.0 - 0.65 * smoothstep(0.1, 1.0, age01);
+    float radius = max(abs(iBody.z) * scale, uMinPx / uZoom);
     float halfSize = radius + uPad / uZoom;
     vLocal = corner * halfSize / radius;
     vPx = 1.0 / (uZoom * radius);
@@ -33,6 +39,7 @@ varying vec2 vLocal;
 varying float vPx;
 varying float vPhase;
 varying float vMeat;
+varying float vDim;
 void main() {
     float d = length(vLocal);
     float twinkle = 1.0 + 0.15 * sin(uTime * 2.0943951 + vPhase);
@@ -40,7 +47,7 @@ void main() {
     float star = sqrt(p.x) + sqrt(p.y);
     float core = 1.0 - smoothstep(0.8, 1.0, star);
     float glow = exp(-dot(p, p) * 2.5) * 0.35;
-    vec3 rgb = mix(uColor, uMeatColor, vMeat) * uIntensity * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
+    vec3 rgb = mix(uColor, uMeatColor, vMeat) * uIntensity * vDim * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

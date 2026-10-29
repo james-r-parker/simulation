@@ -53,9 +53,10 @@ export function createQuadMesh(geometry, material, capacity) {
 export function uploadInstances(mesh, sources, count) {
     for (const name of Object.keys(sources)) {
         const attribute = mesh.geometry.getAttribute(name);
-        attribute.array.set(sources[name].subarray(0, count * VEC4));
+        const len = count * attribute.itemSize;
+        attribute.array.set(sources[name].subarray(0, len));
         attribute.clearUpdateRanges();
-        attribute.addUpdateRange(0, count * VEC4);
+        attribute.addUpdateRange(0, len);
         attribute.needsUpdate = true;
     }
     mesh.count = count;

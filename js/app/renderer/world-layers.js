@@ -4,8 +4,10 @@
 import {
     AdditiveBlending,
     BufferGeometry,
+    DynamicDrawUsage,
     Float32BufferAttribute,
     Group,
+    InstancedBufferAttribute,
     LineBasicMaterial,
     LineLoop,
     ShaderMaterial,
@@ -13,6 +15,7 @@ import {
 import { createSections, FOOD_STRIDE, readSections } from '../snapshot-view.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
+import { LOOK_OFF } from './quality.js';
 import { packRockShape, rockShape, SHAPE_FLOATS } from './rock-shape.js';
 import { FOOD_FRAGMENT, FOOD_VERTEX, OBSTACLE_FRAGMENT, OBSTACLE_VERTEX } from './world-layers-shader.js';
 
@@ -60,6 +63,51 @@ export function packBodies(f32, part, out, stride = 3) {
 }
 
 /**
+ * Packs the age01 values from the food records.
+ * @param {Float32Array} f32 snapshot floats
+ * @param {{start: number, count: number}} part food section
+ * @param {Float32Array} out target array for age01
+ * @returns {number} count of ages written
+ */
+export function packFoodAges(f32, part, out) {
+    const count = Math.min(part.count, out.length);
+    for (let i = 0; i < count; i++) {
+        out[i] = f32[part.start + i * FOOD_STRIDE + 3];
+    }
+    return count;
+}
+
+/**
+ * @param {number} min lower edge
+ * @param {number} max upper edge
+ * @param {number} x input
+ * @returns {number} smoothstep value 0..1
+ */
+function smoothstep(min, max, x) {
+    if (x <= min) {
+        return 0;
+    }
+    if (x >= max) {
+        return 1;
+    }
+    const t = (x - min) / (max - min);
+    return t * t * (3 - 2 * t);
+}
+
+/**
+ * Returns dimming and scale factors for carcass decay.
+ * @param {number} age01 normalized age 0..1
+ * @returns {{dim: number, scale: number}}
+ */
+export function carcassLook(age01) {
+    const a = Math.max(0, Math.min(1, age01));
+    return {
+        dim: 1 - 0.65 * smoothstep(0.1, 1, a),
+        scale: 1 - 0.4 * a,
+    };
+}
+
+/**
  * @param {import('three').ShaderMaterialParameters} options material parameters
  * @returns {ShaderMaterial} a transparent shader material
  */
@@ -85,8 +133,12 @@ export function createFoodLayer({ info }) {
         uMeatColor: { value: PALETTE.meat },
         uIntensity: { value: FOOD_INTENSITY },
         uTime: { value: 0 },
+        uDecay: { value: 1 },
     };
     const geometry = createQuadGeometry(info.maxFood, ['iBody']);
+    const ageAttr = new InstancedBufferAttribute(new Float32Array(info.maxFood), 1);
+    ageAttr.setUsage(DynamicDrawUsage);
+    geometry.setAttribute('iAge', ageAttr);
     const mat = material({
         vertexShader: FOOD_VERTEX,
         fragmentShader: FOOD_FRAGMENT,
@@ -95,8 +147,12 @@ export function createFoodLayer({ info }) {
     });
     const mesh = createQuadMesh(geometry, mat, info.maxFood);
     const packed = new Float32Array(info.maxFood * VEC4);
+    const packedAges = new Float32Array(info.maxFood);
     return {
         object: mesh,
+        setLook(look) {
+            uniforms.uDecay.value = (look.decay ?? 0) === LOOK_OFF ? 0 : 1;
+        },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
             uniforms.uTime.value = frame.nowMs * 0.001;
@@ -106,7 +162,8 @@ export function createFoodLayer({ info }) {
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
             const count = packBodies(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packed, FOOD_STRIDE);
-            uploadInstances(mesh, { iBody: packed }, count);
+            packFoodAges(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packedAges);
+            uploadInstances(mesh, { iBody: packed, iAge: packedAges }, count);
         },
         dispose() {
             geometry.dispose();
