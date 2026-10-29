@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "id": "a4723db-3x10000",
+  "ticks": 10000,
+  "seeds": [1, 2, 3],
+  "config": {},
+  "sha": "a4723db",
+  "rungs": [
+    {
+      "ladder": "forage",
+      "rung": "random",
+      "meanPopulation": 98.66666666666667,
+      "saturated": false,
+      "ratioToPrevious": null,
+      "metrics": {
+        "eval.food_energy_per_1k": 176.30635274364056,
+        "eval.births_per_1k": 0.20423014662937147,
+        "eval.deliberate_food_share": 0.21081984063950499,
+        "eval.pursuit_bite_share": 0.015539285480965372,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": 0,
+        "eval.evasion_skill": 0.1111111111111111,
+        "eval.group_cohesion_under_threat": -0.08274611133414096,
+        "eval.alarm_precision": 0.0028692603215002156,
+        "eval.hunt_call_precision": -0.022098490988385455,
+        "eval.smoke_precision": 0.015936290749768812,
+        "eval.undefended_bite_share": 0.9215686274509803
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 151
+        },
+        {
+          "seed": 2,
+          "population": 49
+        },
+        {
+          "seed": 3,
+          "population": 96
+        }
+      ]
+    },
+    {
+      "ladder": "forage",
+      "rung": "wanderer",
+      "meanPopulation": 2,
+      "saturated": false,
+      "ratioToPrevious": 0.020270270270270268,
+      "metrics": {
+        "eval.food_energy_per_1k": 102.99258106463778,
+        "eval.births_per_1k": 0.035676198774993485,
+        "eval.deliberate_food_share": 0.06260117176513313,
+        "eval.pursuit_bite_share": null,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": null,
+        "eval.evasion_skill": null,
+        "eval.group_cohesion_under_threat": -0.015009097416313663,
+        "eval.alarm_precision": null,
+        "eval.hunt_call_precision": null,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": null
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 2
+        },
+        {
+          "seed": 2,
+          "population": 2
+        },
+        {
+          "seed": 3,
+          "population": 2
+        }
+      ]
+    },
+    {
+      "ladder": "forage",
+      "rung": "sloppyForager",
+      "meanPopulation": 450,
+      "saturated": true,
+      "ratioToPrevious": 225,
+      "metrics": {
+        "eval.food_energy_per_1k": 1309.8469234070037,
+        "eval.births_per_1k": 0.24889054225046844,
+        "eval.deliberate_food_share": 0.2625459334333203,
+        "eval.pursuit_bite_share": null,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": null,
+        "eval.evasion_skill": null,
+        "eval.group_cohesion_under_threat": 0.10639347334710408,
+        "eval.alarm_precision": null,
+        "eval.hunt_call_precision": null,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": null
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 450
+        },
+        {
+          "seed": 2,
+          "population": 450
+        },
+        {
+          "seed": 3,
+          "population": 450
+        }
+      ]
+    },
+    {
+      "ladder": "forage",
+      "rung": "foodSeeker",
+      "meanPopulation": 450,
+      "saturated": true,
+      "ratioToPrevious": 1,
+      "metrics": {
+        "eval.food_energy_per_1k": 1884.5935085264548,
+        "eval.births_per_1k": 0.17625263037082808,
+        "eval.deliberate_food_share": 0.2556078445630536,
+        "eval.pursuit_bite_share": null,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": null,
+        "eval.evasion_skill": null,
+        "eval.group_cohesion_under_threat": 0.5037950293560063,
+        "eval.alarm_precision": null,
+        "eval.hunt_call_precision": null,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": null
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 450
+        },
+        {
+          "seed": 2,
+          "population": 450
+        },
+        {
+          "seed": 3,
+          "population": 450
+        }
+      ]
+    },
+    {
+      "ladder": "forage",
+      "rung": "fleer",
+      "meanPopulation": 450,
+      "saturated": true,
+      "ratioToPrevious": 1,
+      "metrics": {
+        "eval.food_energy_per_1k": 1906.120678217069,
+        "eval.births_per_1k": 0.17494969861232104,
+        "eval.deliberate_food_share": 0.24886892372088873,
+        "eval.pursuit_bite_share": null,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": null,
+        "eval.evasion_skill": null,
+        "eval.group_cohesion_under_threat": 0.20243012819013487,
+        "eval.alarm_precision": 0.9460098797137659,
+        "eval.hunt_call_precision": null,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": null
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 450
+        },
+        {
+          "seed": 2,
+          "population": 450
+        },
+        {
+          "seed": 3,
+          "population": 450
+        }
+      ]
+    },
+    {
+      "ladder": "combat",
+      "rung": "jawSitter-vs-foodSeeker",
+      "meanPopulation": 449.6666666666667,
+      "saturated": false,
+      "ratioToPrevious": null,
+      "metrics": {
+        "eval.food_energy_per_1k": 1805.0504121286642,
+        "eval.births_per_1k": 0.17659659637758732,
+        "eval.deliberate_food_share": 0.24624107944405793,
+        "eval.pursuit_bite_share": 0,
+        "eval.pack_convergence": 0,
+        "eval.hunt_call_answer": null,
+        "eval.evasion_skill": 0.01858981021217296,
+        "eval.group_cohesion_under_threat": 0.45776897846148445,
+        "eval.alarm_precision": null,
+        "eval.hunt_call_precision": null,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": 0.9624038676396643
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 449
+        },
+        {
+          "seed": 2,
+          "population": 450
+        },
+        {
+          "seed": 3,
+          "population": 450
+        }
+      ]
+    },
+    {
+      "ladder": "combat",
+      "rung": "hunter-vs-foodSeeker",
+      "meanPopulation": 193.33333333333334,
+      "saturated": false,
+      "ratioToPrevious": 0.429948109710897,
+      "metrics": {
+        "eval.food_energy_per_1k": 993.2928635950257,
+        "eval.births_per_1k": 1.098999758162486,
+        "eval.deliberate_food_share": 0.3413930447496892,
+        "eval.pursuit_bite_share": 0.7817808755110845,
+        "eval.pack_convergence": 0.4906232191358222,
+        "eval.hunt_call_answer": 0.7310446392109219,
+        "eval.evasion_skill": 0.044880174291938996,
+        "eval.group_cohesion_under_threat": 0.1367969235645108,
+        "eval.alarm_precision": null,
+        "eval.hunt_call_precision": 0.3232275450481781,
+        "eval.smoke_precision": null,
+        "eval.undefended_bite_share": 0.9203868037371091
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 121
+        },
+        {
+          "seed": 2,
+          "population": 283
+        },
+        {
+          "seed": 3,
+          "population": 176
+        }
+      ]
+    },
+    {
+      "ladder": "combat",
+      "rung": "hunter-vs-fleer",
+      "meanPopulation": 2,
+      "saturated": false,
+      "ratioToPrevious": 0.010344827586206896,
+      "metrics": {
+        "eval.food_energy_per_1k": 324.1207029730695,
+        "eval.births_per_1k": 0.2500019567257757,
+        "eval.deliberate_food_share": 0.33812872290111057,
+        "eval.pursuit_bite_share": 0.9522634776955625,
+        "eval.pack_convergence": null,
+        "eval.hunt_call_answer": 0.05128205128205129,
+        "eval.evasion_skill": 1,
+        "eval.group_cohesion_under_threat": -0.34697116432743974,
+        "eval.alarm_precision": 0.6347547861571093,
+        "eval.hunt_call_precision": 0.6726852004340248,
+        "eval.smoke_precision": 0.9696969696969697,
+        "eval.undefended_bite_share": 0.030303030303030304
+      },
+      "perSeed": [
+        {
+          "seed": 1,
+          "population": 2
+        },
+        {
+          "seed": 2,
+          "population": 2
+        },
+        {
+          "seed": 3,
+          "population": 2
+        }
+      ]
+    }
+  ]
+}
