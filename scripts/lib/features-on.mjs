@@ -53,6 +53,7 @@ export const FEATURES_OFF = Object.freeze({
     meritMateWeight: 0,
     meritSplitFloorPop: 80,
     splitDeliberateShareMin: 0,
+    temperatureGainEat: 2,
     splitMaxPerLife: 0,
     preySplit: true,
     mateRange: 100,
@@ -125,6 +126,8 @@ export const FEATURES_ON = Object.freeze({
     meritMateWeight: 0,
     meritBirthBoost: 0,
     splitDeliberateMin: 300,
+    splitDeliberateShareMin: 0.2,
+    temperatureGainEat: 1.5,
     meritSplitFloorPop: 80,
 });
 

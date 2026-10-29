@@ -43,6 +43,9 @@ const SWITCHED_ON = [
     // the E41 finalist split-300 (fitness-and-selection T48b)
     'meritEnabled',
     'splitDeliberateMin',
+    // the E63 winner (fitness-and-selection T48g)
+    'splitDeliberateShareMin',
+    'temperatureGainEat',
 ];
 
 describe('feature switch lists', () => {

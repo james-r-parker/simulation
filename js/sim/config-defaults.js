@@ -187,7 +187,7 @@ export const DEFAULTS = deepFreeze({
     temperatureMax: 100, // TEMPERATURE_MAX
     temperatureStart: 50, // TEMPERATURE_START
     temperatureGainMove: 0.01, // TEMPERATURE_GAIN_MOVE (tuned, E17)
-    temperatureGainEat: 2, // TEMPERATURE_GAIN_EAT
+    temperatureGainEat: 1.5, // TEMPERATURE_GAIN_EAT (2 before T48g)
     satiationShare: 0.95, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49, on from T41)
     digestTicks: 10, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
     handlingTicks: 20, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
@@ -265,7 +265,7 @@ export const DEFAULTS = deepFreeze({
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
-    splitDeliberateShareMin: 0, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off
+    splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
     preySplit: true, // new: fitness-and-selection T48d; false lets only canHunt agents split
 });

@@ -155,9 +155,9 @@ describe('determinism', () => {
 });
 
 describe('config', () => {
-    it('defaults the keys to no-ops', () => {
+    it('defaults splitDeliberateShareMin to 0.2 and the other keys to no-ops', () => {
         const config = createConfig({});
-        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.preySplit]).toEqual([0, 0, true]);
+        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.preySplit]).toEqual([0.2, 0, true]);
     });
 
     it.each([
