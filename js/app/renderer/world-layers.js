@@ -10,7 +10,7 @@ import {
     LineLoop,
     ShaderMaterial,
 } from 'three';
-import { createSections, readSections } from '../snapshot-view.js';
+import { createSections, FOOD_STRIDE, readSections } from '../snapshot-view.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 import { packRockShape, rockShape, SHAPE_FLOATS } from './rock-shape.js';
@@ -37,18 +37,19 @@ function bodyPart(start, count) {
 }
 
 /**
- * Packs `x, y, radius, phase` records from a snapshot's 3-word records. The phase offsets each dot's twinkle by its
+ * Packs `x, y, radius, phase` records from a snapshot's records. The phase offsets each dot's twinkle by its
  * position. The radius keeps its sign: a negative food radius marks meat, and the vertex shader takes `abs` for the size
  * and reads the sign as the kind.
  * @param {Float32Array} f32 the snapshot's floats
  * @param {{start: number, count: number}} part where the records are and how many
  * @param {Float32Array} out `capacity x 4` floats
+ * @param {number} [stride=3] words per record in the snapshot
  * @returns {number} the records written, at most the capacity
  */
-export function packBodies(f32, part, out) {
+export function packBodies(f32, part, out, stride = 3) {
     const count = Math.min(part.count, out.length / VEC4);
     for (let i = 0; i < count; i++) {
-        const w = part.start + i * 3;
+        const w = part.start + i * stride;
         const o = i * VEC4;
         out[o] = f32[w];
         out[o + 1] = f32[w + 1];
@@ -104,7 +105,7 @@ export function createFoodLayer({ info }) {
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packBodies(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packed);
+            const count = packBodies(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packed, FOOD_STRIDE);
             uploadInstances(mesh, { iBody: packed }, count);
         },
         dispose() {

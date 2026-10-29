@@ -2,9 +2,9 @@
 
 import { AGENT_STRIDE, HEADER_WORDS } from './interpolate.js';
 
-const FOOD_STRIDE = 3;
-const OBSTACLE_STRIDE = 3;
-const CLOUD_STRIDE = 3;
+export const FOOD_STRIDE = 4;
+export const OBSTACLE_STRIDE = 3;
+export const CLOUD_STRIDE = 3;
 
 /**
  * @typedef {object} Sections

@@ -38,6 +38,20 @@ describe('packBodies', () => {
         expect(out[3]).toBeCloseTo(10 * 0.013 + 20 * 0.007);
         expect(out[7]).not.toBe(out[3]);
     });
+
+    it('handles both 3-word and 4-word strides', () => {
+        const f32_3 = Float32Array.from([10, 20, 3, 30, 40, 4]);
+        const out3 = new Float32Array(2 * 4);
+        expect(packBodies(f32_3, { start: 0, count: 2 }, out3, 3)).toBe(2);
+        expect(Array.from(out3.slice(0, 3))).toEqual([10, 20, 3]);
+        expect(Array.from(out3.slice(4, 7))).toEqual([30, 40, 4]);
+
+        const f32_4 = Float32Array.from([10, 20, 3, 0.1, 30, 40, 4, 0.8]);
+        const out4 = new Float32Array(2 * 4);
+        expect(packBodies(f32_4, { start: 0, count: 2 }, out4, 4)).toBe(2);
+        expect(Array.from(out4.slice(0, 3))).toEqual([10, 20, 3]);
+        expect(Array.from(out4.slice(4, 7))).toEqual([30, 40, 4]);
+    });
 });
 
 describe('meat in the food records', () => {
