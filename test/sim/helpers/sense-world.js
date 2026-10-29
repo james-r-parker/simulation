@@ -11,7 +11,7 @@ const PARKED = 5000;
  * @returns {ReturnType<typeof smallWorld>}
  */
 export function senseWorld(over = {}) {
-    const w = smallWorld({ obstacleCount: 2, ...over });
+    const w = smallWorld({ ...over });
     for (let i = 0; i < w.obsX.length; i++) {
         w.obsX[i] = PARKED;
         w.obsY[i] = PARKED;

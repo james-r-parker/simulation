@@ -1,6 +1,6 @@
 // The body-temperature rules as functions of the world and one temperature value; allocates nothing.
 
-import { coldFactor, hasTerrain } from './terrain.js';
+import { coldFactor } from './terrain.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {Readonly<Record<string, any>>} Config */
@@ -33,7 +33,7 @@ export function stepTemperature(world, slot) {
     const next =
         world.temperature[slot] +
         Math.min(speed / c.maxVelocity, 1) * c.temperatureGainMove -
-        c.temperatureLossPassive * loss * (hasTerrain(c) ? coldFactor(c, world.y[slot]) : 1);
+        c.temperatureLossPassive * loss * coldFactor(c, world.y[slot]);
     world.temperature[slot] = Math.min(c.temperatureMax, Math.max(0, next));
 }
 

@@ -10,7 +10,7 @@
 // slots, eight rocks to a ring). Samples count from `BURN_IN_TICKS`. Nothing is allocated per sample but a Map entry
 // the first time a lineage is seen.
 
-import { REFUGE_ROCKS, hasTerrain, ringRadius, terrainRockCount } from '../sim/terrain.js';
+import { REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 import { THREAT_PROXIMITY } from './observer-intent-state.js';
@@ -47,9 +47,9 @@ export function createTerrainScene(config) {
 export function refugeCentres(scene, world) {
     if (scene.centres === undefined) {
         const { config } = world;
-        const count = hasTerrain(config) ? config.refugeCount : 0;
+        const count = config.refugeCount;
         const centres = new Float64Array(2 * count);
-        const first = config.obstacleCount + terrainRockCount(config) - count * REFUGE_ROCKS;
+        const first = terrainRockCount(config) - count * REFUGE_ROCKS;
         for (let i = 0; i < count; i++) {
             for (let r = 0; r < REFUGE_ROCKS; r++) {
                 centres[2 * i] += world.obsX[first + i * REFUGE_ROCKS + r] / REFUGE_ROCKS;
@@ -109,14 +109,14 @@ function sampleSide(scene, world, slot) {
 }
 
 /**
- * Runs one 10-tick sample at or after burn-in; does nothing without terrain.
+ * Runs one 10-tick sample at or after burn-in.
  * @param {Record<string, any>} scene the terrain scene
  * @param {Record<string, any>} observer the observer, with its intent state current for this tick
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleTerrain(scene, observer, world) {
-    if (!hasTerrain(world.config) || world.tick < BURN_IN_TICKS) {
+    if (world.tick < BURN_IN_TICKS) {
         return;
     }
     const { threatProx } = observer.intent;

@@ -1,9 +1,6 @@
-// The extra split gates (fitness-and-selection T48d): a diet-share minimum, a splits-per-life cap and a prey-cannot-split
-// switch. They are bypassed with the count gate when
-// the population is below `meritSplitFloorPop`. The counters are per-slot typed arrays that `freeAgent` zeroes, so a
+// The extra split gates (fitness-and-selection T48d): a diet-share minimum and a splits-per-life cap. They are bypassed
+// with the count gate when the population is below `meritSplitFloorPop`. The counters are per-slot typed arrays that `freeAgent` zeroes, so a
 // birth starts at 0; they are derived state and are not in `worldHash`. No RNG, no clock, no allocation.
-
-import { specParams } from './spec-params.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -46,13 +43,10 @@ export function noteSplit(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when `splitDeliberateShareMin`, `splitMaxPerLife` and `preySplit` all let the agent split
+ * @returns {boolean} true when `splitDeliberateShareMin` and `splitMaxPerLife` both let the agent split
  */
 export function splitKeysAllow(world, slot) {
-    const { splitDeliberateShareMin, splitMaxPerLife, preySplit } = world.config;
-    if (!preySplit && !specParams(world.config, world.spec[slot]).canHunt) {
-        return false;
-    }
+    const { splitDeliberateShareMin, splitMaxPerLife } = world.config;
     if (splitMaxPerLife > 0 && world.splitsDone[slot] >= splitMaxPerLife) {
         return false;
     }

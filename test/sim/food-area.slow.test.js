@@ -34,7 +34,6 @@ function run(foodRegrowPerArea) {
             foodPatchCount: 6,
             foodPatchRadius: 300,
             foodPatchDepletion: 0.05,
-            obstacleCount: 4,
             seed: 3,
         }),
         policy,

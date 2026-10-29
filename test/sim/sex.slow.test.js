@@ -29,7 +29,6 @@ function run(seed) {
             minAgents: 20,
             maxFood: 400,
             initialFood: 200,
-            obstacleCount: 2,
             maturityTicks: 50,
             reproductionCooldown: 60,
             pregnancyTicks: 40,

@@ -11,8 +11,6 @@ import { nextTick, observed, pushBorn, pushDied } from './helpers/observer-world
 
 const T0 = 10000;
 const BASINS = {
-    terrainLayout: 'basins',
-    obstacleCount: 0,
     worldWidth: 4000,
     worldHeight: 2000,
     refugeCount: 2,

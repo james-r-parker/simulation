@@ -287,7 +287,7 @@ export function advancePregnancies(world, policy) {
 /**
  * The merit split gate: open when the population is below `meritSplitFloorPop`; otherwise
  * open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, and `splitKeysAllow` (the
- * share minimum, the per-life cap and `preySplit`). Reads only; a closed gate changes nothing, so the agent stays ready.
+ * share minimum, and the per-life cap). Reads only; a closed gate changes nothing, so the agent stays ready.
  * @param {World} world the world
  * @param {number} slot an alive agent
  * @returns {boolean} true when the gate lets the agent split

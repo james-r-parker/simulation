@@ -13,7 +13,7 @@ describe('evals/predator-world.json', () => {
         expect([config.worldWidth, config.worldHeight, config.initialAgents, config.maxAgents]).toEqual([
             2400, 1600, 40, 80,
         ]);
-        expect([config.minAgents, config.immigrationInterval, config.obstacleCount]).toEqual([0, 0, 4]);
+        expect([config.minAgents, config.immigrationInterval]).toEqual([0, 0]);
         expect([config.maxFood, config.initialFood, config.initialEnergy]).toEqual([60, 60, 3000]);
     });
 

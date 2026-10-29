@@ -25,7 +25,7 @@ describe('hot state objects keep V8 fast properties', () => {
             const { createConfig } = await import('${ROOT}js/sim/config.js');
             const { createWorld } = await import('${ROOT}js/sim/spawn.js');
             const { cloneWithNoisePolicy } = await import('${ROOT}js/sim/birth-policy.js');
-            const config = createConfig({ initialAgents: 20, minAgents: 20, maxAgents: 20, terrainLayout: 'basins', obstacleCount: 0 });
+            const config = createConfig({ initialAgents: 20, minAgents: 20, maxAgents: 20 });
             const world = createWorld(config, cloneWithNoisePolicy());
             console.log(JSON.stringify(%HasFastProperties(world)));
         `);

@@ -29,7 +29,6 @@ function run() {
             initialFood: 100,
             foodPatchCount: 6,
             foodPatchRadius: 300,
-            obstacleCount: 2,
             erasEnabled: true,
             eraSeasonTicks: SEASON,
             droughtChance: 1,

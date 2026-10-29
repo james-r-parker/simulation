@@ -66,7 +66,6 @@ describe('step phase bodies', () => {
             ['clearEvents', world.events],
             ['updateSeason', world],
             ['advanceEra', world],
-            ['moveObstacles', world],
             ['buildHash', hash, world],
             ['senseAll', world, hash],
             ['forwardAll', world],

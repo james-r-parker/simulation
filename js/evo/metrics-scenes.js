@@ -11,7 +11,6 @@ import { seasonMetrics } from './scene-season.js';
 import { spendMetrics } from './scene-spend.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
-import { hasTerrain } from '../sim/terrain.js';
 
 const WATCH = [
     'eval.hunt_abort_rate',
@@ -50,7 +49,7 @@ export function sceneMetrics(observer) {
         ...approachMetrics(s.approach),
         ...terrainMetrics(s.terrain),
         ...carcassMetrics(s.carcass, observer),
-        ...basinMetrics(s.basin, hasTerrain(observer.config)),
+        ...basinMetrics(s.basin),
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),

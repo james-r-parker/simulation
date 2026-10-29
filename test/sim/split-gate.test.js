@@ -11,7 +11,6 @@ import { FEATURES_ON } from '../../scripts/lib/features-on.mjs';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 const BASE = { splitDeliberateMin: 0, meritSplitFloorPop: 0, splitMinEnergy: 200 };
-const PREDATOR = 1;
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -88,23 +87,9 @@ describe('splitMaxPerLife', () => {
     });
 });
 
-describe('preySplit', () => {
-    it('false closes the gate for prey and leaves it open for a predator', () => {
-        const { w, slot } = blobWorld({ preySplit: false });
-        const hunter = addBlob(w, { energy: 1000, spec: PREDATOR });
-        expect(splitGateOpen(w, slot)).toBe(false);
-        expect(splitGateOpen(w, hunter)).toBe(true);
-    });
-
-    it('true (the default) lets prey split', () => {
-        const { w, slot } = blobWorld({});
-        expect(splitGateOpen(w, slot)).toBe(true);
-    });
-});
-
 describe('the near-extinction bypass', () => {
     it('opens every key below meritSplitFloorPop, a floor near minAgents', () => {
-        const over = { splitDeliberateShareMin: 1, splitMaxPerLife: 1, preySplit: false, meritSplitFloorPop: 2 };
+        const over = { splitDeliberateShareMin: 1, splitMaxPerLife: 1, meritSplitFloorPop: 2 };
         const { w, slot } = blobWorld(over, { splitsDone: 5 });
         expect(w.population).toBe(1);
         expect(splitGateOpen(w, slot)).toBe(true);
@@ -136,7 +121,6 @@ describe('determinism', () => {
                 initialAgents: 30,
                 splitDeliberateShareMin: 0.1,
                 splitMaxPerLife: 3,
-                preySplit: false,
             });
             const policy = cloneWithNoisePolicy();
             const world = createWorld(config, policy);
@@ -152,7 +136,7 @@ describe('determinism', () => {
 describe('config', () => {
     it('defaults splitDeliberateShareMin to 0.2 and the other keys to no-ops', () => {
         const config = createConfig({});
-        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.preySplit]).toEqual([0.2, 0, true]);
+        expect([config.splitDeliberateShareMin, config.splitMaxPerLife]).toEqual([0.2, 0]);
     });
 
     it.each([
@@ -162,8 +146,6 @@ describe('config', () => {
         ['splitMaxPerLife', 3, true],
         ['splitMaxPerLife', -1, false],
         ['splitMaxPerLife', 1.5, false],
-        ['preySplit', false, true],
-        ['preySplit', 0, false],
     ])('%s = %s accepted: %s', (key, value, accepted) => {
         if (accepted) {
             expect(createConfig({ [key]: value })[key]).toBe(value);

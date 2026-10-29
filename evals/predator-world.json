@@ -7,6 +7,8 @@
   "immigrationInterval": 0,
   "maxFood": 60,
   "initialFood": 60,
-  "obstacleCount": 4,
-  "initialEnergy": 3000
+  "initialEnergy": 3000,
+  "wallGaps": 1,
+  "refugeCount": 0,
+  "coldMarginWidth": 0
 }

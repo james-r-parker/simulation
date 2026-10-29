@@ -20,9 +20,6 @@ export function smallWorld(over = {}) {
         brainHidden: 3,
         maxFood: 4,
         initialFood: 0,
-        obstacleCount: 2,
-        obstacleMinRadius: 20,
-        obstacleMaxRadius: 60,
         fertileZoneMax: 3,
         ...over,
     });

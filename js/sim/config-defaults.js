@@ -34,10 +34,6 @@ export const DEFAULTS = deepFreeze({
     foodRadius: 20, // FOOD_SIZE_NORMAL
     highFoodRadius: 30, // FOOD_SIZE_HIGH
     foodMaxAge: 10000, // FOOD_MAX_AGE_BASE
-    obstacleCount: 0, // OBSTACLE_COUNT (25 before the T41 switch-on, which turns obstacles off with the basins)
-    obstacleMinRadius: 40, // OBSTACLE_MIN_RADIUS
-    obstacleMaxRadius: 120, // OBSTACLE_MAX_RADIUS
-    obstacleMaxSpeed: 0.3, // OBSTACLE_MAX_SPEED
     obstacleDamage: 50, // OBSTACLE_COLLISION_PENALTY
     wallDamage: 50, // WALL_COLLISION_DAMAGE
     rayCount: 16, // new
@@ -189,7 +185,6 @@ export const DEFAULTS = deepFreeze({
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
-    terrainLayout: 'basins', // new: 'open' or 'basins' (a wall with gaps, refuges and a cold margin); open is off (T52)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
     wallGapWidth: 300, // new: width of each wall gap in px (T52)
     refugeCount: 4, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52)
@@ -254,5 +249,4 @@ export const DEFAULTS = deepFreeze({
     meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
-    preySplit: true, // new: fitness-and-selection T48d; false lets only canHunt agents split
 });

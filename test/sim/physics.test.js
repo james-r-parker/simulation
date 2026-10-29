@@ -17,7 +17,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 8,
     initialFood: 0,
-    obstacleCount: 0,
     fertileZoneMax: 3,
     worldWidth: 1000,
     worldHeight: 1000,
@@ -214,7 +213,7 @@ describe('integrate with obstacles', () => {
      * @returns {any}
      */
     function withObstacle(agent) {
-        const w = setup({ obstacleCount: 1 });
+        const w = setup();
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 50;
@@ -236,13 +235,6 @@ describe('integrate with obstacles', () => {
         integrate(w);
         expect(w.x[0]).toBeCloseTo(575, 4);
         expect(w.energy[0]).toBe(100);
-    });
-
-    it('uses the obstacle velocity for the normal speed', () => {
-        const w = withObstacle({ x: 560, y: 500, vx: 0.5 });
-        w.obsVx[0] = 4;
-        integrate(w);
-        expect(w.energy[0]).toBe(100 - w.config.obstacleDamage);
     });
 
     it('uses the +x normal when the centres coincide', () => {

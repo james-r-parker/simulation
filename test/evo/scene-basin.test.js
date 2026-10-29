@@ -12,8 +12,6 @@ const T0 = 10000;
 const WEST = 500;
 const EAST = 3000;
 const BASINS = {
-    terrainLayout: 'basins',
-    obstacleCount: 0,
     worldWidth: 4000,
     worldHeight: 2000,
     refugeCount: 2,
@@ -91,7 +89,7 @@ describe('eval.basin_recolonisations and eval.basin_pop_cv', () => {
         expect(Array.from(scene.entrant)).toEqual([1, 0]);
     });
 
-    it('count nothing before burn-in, and read null on an open world or before a checkpoint', () => {
+    it('count nothing before burn-in, and read null before a checkpoint', () => {
         const r = observed(BASINS);
         const scene = r.observer.scenes.basin;
         fill(r.world, 6, EAST);
@@ -102,8 +100,5 @@ describe('eval.basin_recolonisations and eval.basin_pop_cv', () => {
         sampleBasins(scene, r.world);
         expect(scene.recolonised).toBe(0);
         expect(read(r, 'basin_pop_cv').value).toBeNull();
-        const open = observed();
-        expect(read(open, 'basin_recolonisations').reason).toContain('not basins');
-        expect(read(open, 'basin_pop_cv').value).toBeNull();
     });
 });

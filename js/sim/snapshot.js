@@ -5,7 +5,7 @@ import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { FOOD_KIND } from './carcass.js';
 import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
-import { obstacleSlots } from './terrain.js';
+import { terrainRockCount } from './terrain.js';
 
 const HEADER_WORDS = 6;
 const AGENT_STRIDE = 12;
@@ -41,7 +41,7 @@ function maxWords(config) {
         HEADER_WORDS +
         config.maxAgents * (AGENT_STRIDE + config.rayCount) +
         config.maxFood * FOOD_STRIDE +
-        obstacleSlots(config) * OBSTACLE_STRIDE +
+        terrainRockCount(config) * OBSTACLE_STRIDE +
         config.maxClouds * CLOUD_STRIDE
     );
 }
@@ -209,7 +209,7 @@ function writeRays(world, f32, start) {
 export function writeSnapshot(world, views, withRays = false) {
     const { f32, u32 } = views;
     const { rayCount } = world.config;
-    const obstacleCount = obstacleSlots(world.config);
+    const obstacleCount = terrainRockCount(world.config);
     const need = maxWords(world.config) * WORD_BYTES;
     if (f32.byteLength < need) {
         throw new Error(`writeSnapshot: buffer holds ${f32.byteLength} bytes, the config needs ${need}`);

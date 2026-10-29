@@ -12,7 +12,6 @@ const SMALL = {
     initialAgents: 0,
     minAgents: 0,
     initialFood: 0,
-    obstacleCount: 2,
 };
 
 const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];

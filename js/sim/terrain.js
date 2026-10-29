@@ -1,7 +1,5 @@
-// Static terrain (`terrainLayout` `basins`): a wall of touching rocks across the middle with gaps, refuges ringed by
-// rocks too tight for large agents, and a cold margin along the north and south edges. The rocks are obstacles that
-// never move, stored after the wandering ones. Nothing here runs, and no random number is drawn, when the layout is
-// `open`.
+// Static terrain: a wall of touching rocks across the middle with gaps, refuges ringed by rocks too tight for large
+// agents, and a cold margin along the north and south edges. The rocks are the world's only obstacles and never move.
 
 import { detCos, detSin } from './det-math.js';
 import { nextFloat } from './rng.js';
@@ -21,14 +19,6 @@ const TWO_PI = 6.283185307179586;
 
 /**
  * @param {Config} config the config
- * @returns {boolean} whether the config builds terrain
- */
-export function hasTerrain(config) {
-    return config.terrainLayout === 'basins';
-}
-
-/**
- * @param {Config} config the config
  * @returns {{count: number, step: number, gapRocks: number}} the wall: rock positions along it, their spacing (also
  *   their radius, so neighbours touch) and the positions removed per gap
  */
@@ -40,22 +30,11 @@ function wallShape(config) {
 
 /**
  * @param {Config} config the config
- * @returns {number} the static rocks the layout adds: zero when open
+ * @returns {number} the static rocks: the wall less its gaps, and the refuge rings
  */
 export function terrainRockCount(config) {
-    if (!hasTerrain(config)) {
-        return 0;
-    }
     const { count, gapRocks } = wallShape(config);
     return count - config.wallGaps * gapRocks + config.refugeCount * REFUGE_ROCKS;
-}
-
-/**
- * @param {Config} config the config
- * @returns {number} the obstacle slots: the wandering obstacles, then the static rocks
- */
-export function obstacleSlots(config) {
-    return config.obstacleCount + terrainRockCount(config);
 }
 
 /**
@@ -72,12 +51,6 @@ export function ringRadius(config) {
  * @returns {string | null} what is wrong with the terrain keys, or null when they fit the world
  */
 export function terrainProblem(config) {
-    if (!hasTerrain(config)) {
-        return null;
-    }
-    if (config.obstacleCount > 0) {
-        return 'obstacleCount must be 0 when terrainLayout is basins (wandering obstacles stay off)';
-    }
     const { count, step, gapRocks } = wallShape(config);
     if (config.wallGaps > 0 && Math.floor(count / config.wallGaps) < gapRocks + 2) {
         return `wallGaps ${config.wallGaps} of ${config.wallGapWidth} px leave no wall between them`;
@@ -177,24 +150,22 @@ function placeRefuges(world, first) {
 }
 
 /**
- * Fills the static rock slots (after the wandering obstacles) from the `obstacles` stream; does nothing when open.
+ * Fills the static rock slots from the `obstacles` stream.
  * @param {World} world the world
  * @returns {void}
  */
 export function placeTerrain(world) {
-    if (hasTerrain(world.config)) {
-        placeRefuges(world, placeWall(world, world.config.obstacleCount));
-    }
+    placeRefuges(world, placeWall(world, 0));
 }
 
 /**
  * @param {Config} config the config
  * @param {number} y an agent's y
- * @returns {number} the factor on passive temperature loss: 2 in the cold margin of `basins`, otherwise 1
+ * @returns {number} the factor on passive temperature loss: 2 in the cold margin, otherwise 1
  */
 export function coldFactor(config, y) {
     const cold = y < config.coldMarginWidth || y > config.worldHeight - config.coldMarginWidth;
-    return hasTerrain(config) && cold ? 2 : 1;
+    return cold ? 2 : 1;
 }
 
 /**

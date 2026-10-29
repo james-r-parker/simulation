@@ -20,7 +20,6 @@ function worldWith(x, y) {
         brainHidden: 3,
         maxFood: 8,
         initialFood: 0,
-        obstacleCount: 1,
         fertileZoneMax: 3,
         worldWidth: 1000,
         worldHeight: 1000,

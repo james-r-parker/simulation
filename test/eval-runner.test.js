@@ -18,9 +18,6 @@ const UNPLACEABLE = {
     ...FEATURES_OFF,
     worldWidth: 1000,
     worldHeight: 1000,
-    obstacleCount: 100,
-    obstacleMinRadius: 120,
-    obstacleMaxRadius: 120,
     placementTries: 1,
 };
 /** @type {string} */

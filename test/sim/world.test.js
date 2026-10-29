@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createConfig } from '../../js/sim/config.js';
+import { terrainRockCount } from '../../js/sim/terrain.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
 import { HEARD_STRIDE, TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
@@ -14,7 +15,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 10,
     initialFood: 0,
-    obstacleCount: 2,
     fertileZoneMax: 3,
 };
 
@@ -90,7 +90,7 @@ describe('allocateWorld', () => {
     it('sizes food, obstacle, zone and pheromone arrays', () => {
         const w = smallWorld();
         expect(w.foodValue.length).toBe(10);
-        expect(w.obsX.length).toBe(2);
+        expect(w.obsX.length).toBe(terrainRockCount(w.config));
         expect(w.zoneAlive.length).toBe(3);
         expect(w.danger.length).toBe(
             Math.ceil(w.config.worldWidth / w.config.pheromoneCellSize) *

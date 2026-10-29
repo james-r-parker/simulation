@@ -15,8 +15,6 @@ import { observed } from './helpers/observer-world.js';
 
 const T0 = 10000;
 const BASINS = {
-    terrainLayout: 'basins',
-    obstacleCount: 0,
     worldWidth: 4000,
     worldHeight: 2000,
     refugeCount: 2,

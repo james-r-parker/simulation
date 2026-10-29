@@ -1,5 +1,5 @@
-// Season changes the map (natural-selection.md, Detectors), read at the 1000-tick checkpoints from `BURN_IN_TICKS` on a
-// `basins` world (winter is the era season `WINTER`):
+// Season changes the map (natural-selection.md, Detectors), read at the 1000-tick checkpoints from `BURN_IN_TICKS` on the
+// basins world (winter is the era season `WINTER`):
 //
 // - `eval.winter_basin_density`: per basin, the mean alive count at winter checkpoints over the mean at the other
 //   checkpoints; the mean of the two basins' ratios.
@@ -10,7 +10,6 @@
 // Sums only; nothing is allocated.
 
 import { WINTER } from '../sim/eras.js';
-import { hasTerrain } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 import { ringDistance } from './scene-terrain.js';
@@ -42,14 +41,14 @@ function shelterDistance(terrain, world, slot) {
 }
 
 /**
- * Runs one checkpoint (call when the tick divides by 1000); does nothing before burn-in or off the `basins` layout.
+ * Runs one checkpoint (call when the tick divides by 1000); does nothing before burn-in.
  * @param {Record<string, any>} scene the season scene
  * @param {Record<string, any>} terrain the terrain scene
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleSeason(scene, terrain, world) {
-    if (world.tick < BURN_IN_TICKS || !hasTerrain(world.config)) {
+    if (world.tick < BURN_IN_TICKS) {
         return;
     }
     const group = world.season[0] === WINTER ? 0 : 1;

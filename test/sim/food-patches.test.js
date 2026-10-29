@@ -15,7 +15,7 @@ import { createRng } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100, obstacleCount: 0 };
+const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100 };
 
 /**
  * @param {Record<string, any>} [over] config overrides

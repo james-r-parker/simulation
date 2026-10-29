@@ -14,7 +14,6 @@ const SMALL = {
     minAgents: 10,
     worldWidth: 2000,
     worldHeight: 1000,
-    obstacleCount: 4,
 };
 /** @type {string} */
 let dir;

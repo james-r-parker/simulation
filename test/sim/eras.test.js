@@ -12,7 +12,6 @@ const ERAS = {
     eraSeasonTicks: 100,
     foodPatchCount: 2,
     foodPatchRadius: 100,
-    obstacleCount: 0,
     foodPatchRegrow: 0.01,
     foodPatchCapacity: 1,
 };

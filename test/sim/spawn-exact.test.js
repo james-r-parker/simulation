@@ -28,7 +28,6 @@ function empty(over = {}) {
             maxFood: 10,
             foodEnergy: 70,
             initialFood: 0,
-            obstacleCount: 0,
             fertileZoneMax: 4,
             fertileZoneRadius: 50,
             ...over,
@@ -62,25 +61,6 @@ function setZone(w, zone, x, y, fertility, alive = 1) {
     w.zoneY[zone] = y;
     w.zoneFertility[zone] = fertility;
 }
-
-describe('placeObstacles draws', () => {
-    it('derives radius, position and velocity from the obstacles stream in order', () => {
-        const c = { obstacleCount: 3, obstacleMinRadius: 20, obstacleMaxRadius: 60, obstacleMaxSpeed: 2 };
-        const w = empty(c);
-        const u = peek('obstacles', 15);
-        for (let i = 0; i < 3; i++) {
-            const [a, b, d, e, f] = u.slice(i * 5, i * 5 + 5);
-            const radius = 20 + a * 40;
-            const heading = e * TWO_PI;
-            const speed = f * 2;
-            expect(w.obsRadius[i]).toBeCloseTo(radius, 3);
-            expect(w.obsX[i]).toBeCloseTo(radius + b * (1000 - 2 * radius), 3);
-            expect(w.obsY[i]).toBeCloseTo(radius + d * (1000 - 2 * radius), 3);
-            expect(w.obsVx[i]).toBeCloseTo(speed * detCos(heading), 5);
-            expect(w.obsVy[i]).toBeCloseTo(speed * detSin(heading), 5);
-        }
-    });
-});
 
 describe('placeClear sampling', () => {
     /**
@@ -210,18 +190,18 @@ describe('spawnFoodItem draws', () => {
         const rest = 1 - target;
         setZone(w, 0, 100, 100, 5, 0);
         setZone(w, 1, 200, 200, 2 * target);
-        setZone(w, 2, 600, 400, rest);
+        setZone(w, 2, 800, 400, rest);
         setZone(w, 3, 800, 800, rest);
         const s = spawnFoodItem(w);
         const r = 50 * Math.sqrt(ru);
         const theta = tu * TWO_PI;
-        expect(w.foodX[s]).toBeCloseTo(600 + r * detCos(theta), 3);
+        expect(w.foodX[s]).toBeCloseTo(800 + r * detCos(theta), 3);
         expect(w.foodY[s]).toBeCloseTo(400 + r * detSin(theta), 3);
         expect(w.foodValue[s]).toBeCloseTo(70 + (2 * v - 1) * 20, 9);
     });
 
     it('places uniformly after exactly placementTries zone attempts when an obstacle covers the zone', () => {
-        const w = empty({ fertileZoneSpawnChance: 1, placementTries: 5, obstacleCount: 1 });
+        const w = empty({ fertileZoneSpawnChance: 1, placementTries: 5 });
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 400;

@@ -219,28 +219,22 @@ describe('worldInfo and readyLayout', () => {
 });
 
 describe('worldInfo terrain', () => {
-    it('is open with no rocks by default and describes the static rocks in basins', () => {
-        expect(worldInfo(small()).terrain).toEqual({
-            layout: 'open',
-            coldMarginWidth: 0,
-            wallX: 0,
-            rockFirst: SMALL_CONFIG.obstacleCount,
-            rockCount: 0,
-        });
+    it('describes the static rocks of the basins', () => {
         const run = buildRun({
             seed: 3,
             overrides: {
                 ...SMALL_CONFIG,
                 worldWidth: 6000,
                 worldHeight: 4000,
-                obstacleCount: 0,
-                terrainLayout: 'basins',
+                wallGaps: 3,
+                refugeCount: 4,
+                coldMarginWidth: 600,
             },
             createPolicy: noisePolicy,
             log: LOG,
         });
         const info = worldInfo(run);
-        expect(info.terrain).toMatchObject({ layout: 'basins', coldMarginWidth: 600, wallX: 3000, rockFirst: 0 });
+        expect(info.terrain).toMatchObject({ coldMarginWidth: 600, wallX: 3000, rockFirst: 0 });
         expect(info.terrain.rockCount).toBeGreaterThan(0);
         expect(info.obstacleCount).toBe(info.terrain.rockCount);
         expect(run.world.obsX.length).toBe(info.obstacleCount);

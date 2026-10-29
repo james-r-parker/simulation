@@ -38,7 +38,6 @@ export const FEATURE_RULES = {
     handlingThrust: num(0, 1),
     carcassTicks: int(1),
     carcassShare: num(0, 1),
-    terrainLayout: { type: 'enum', values: ['open', 'basins'] },
     wallGaps: int(0, 8),
     wallGapWidth: positive(),
     refugeCount: int(0, 8),
@@ -83,5 +82,4 @@ export const FEATURE_RULES = {
     meritSplitFloorPop: int(0),
     splitDeliberateShareMin: UNIT,
     splitMaxPerLife: int(0),
-    preySplit: BOOL,
 };

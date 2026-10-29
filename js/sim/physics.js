@@ -76,7 +76,7 @@ function wallAxis(world, slot, horizontal) {
  * @returns {void}
  */
 function obstacleBounce(world, slot, k) {
-    const { x, y, vx, vy, size, obsX, obsY, obsVx, obsVy, obsRadius } = world;
+    const { x, y, vx, vy, size, obsX, obsY, obsRadius } = world;
     const reach = obsRadius[k] + size[slot];
     const dx = x[slot] - obsX[k];
     const dy = y[slot] - obsY[k];
@@ -92,7 +92,7 @@ function obstacleBounce(world, slot, k) {
     const ny = d === 0 ? 0 : dy / d;
     x[slot] = obsX[k] + nx * reach;
     y[slot] = obsY[k] + ny * reach;
-    const vn = (vx[slot] - obsVx[k]) * nx + (vy[slot] - obsVy[k]) * ny;
+    const vn = vx[slot] * nx + vy[slot] * ny;
     if (vn < 0) {
         vx[slot] -= 2 * vn * nx;
         vy[slot] -= 2 * vn * ny;

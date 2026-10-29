@@ -13,7 +13,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 64,
     initialFood: 0,
-    obstacleCount: 2,
     fertileZoneMax: 3,
     worldWidth: 1000,
     worldHeight: 1000,

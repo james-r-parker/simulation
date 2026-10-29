@@ -39,7 +39,6 @@ export function config(over) {
         immigrationInterval: 0,
         maxFood: 100,
         initialFood: 60,
-        obstacleCount: 0,
         specialisations: { predator: { plantFoodValue: 0 } },
         initialEnergy: 250,
         seed: 11,

@@ -14,7 +14,6 @@ const BASE = {
     brainHidden: 3,
     maxFood: 1000,
     initialFood: 0,
-    obstacleCount: 0,
     fertileZoneMax: 3,
     foodPatchCount: 4,
     foodPatchRadius: 200,
@@ -75,7 +74,7 @@ describe('spawnFoodItem with patches', () => {
     });
 
     it('keeps items inside the world and clear of obstacles', () => {
-        const w = build({ foodBackgroundShare: 0, obstacleCount: 6, obstacleMinRadius: 100, obstacleMaxRadius: 150 });
+        const w = build({ foodBackgroundShare: 0 });
         for (let i = 0; i < 200; i++) {
             const s = spawnFoodItem(w);
             expect(w.foodX[s]).toBeGreaterThanOrEqual(w.foodRadius[s]);

@@ -9,10 +9,11 @@ import { hashWorld } from '../js/sim/world-hash.js';
 
 const SWITCHED_ON = [
     'satiationShare',
+    'wallGaps',
+    'refugeCount',
+    'coldMarginWidth',
     'digestTicks',
     'handlingTicks',
-    'terrainLayout',
-    'obstacleCount',
     'specMutationRate',
     'specialisations',
     'foodPatchCount',

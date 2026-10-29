@@ -49,7 +49,7 @@ describe('area food', () => {
     });
 
     it('places items through the patches by stock', () => {
-        const w = smallWorld({ ...AREA, maxFood: 1000, obstacleCount: 0 });
+        const w = smallWorld({ ...AREA, maxFood: 1000 });
         w.patchX.set([200, 800]);
         w.patchY.set([200, 800]);
         w.patchStock.set([1, 0.05]);

@@ -36,6 +36,7 @@ function fakeWorld(t, speed, season) {
         temperature: Float32Array.of(t),
         vx: Float32Array.of(speed),
         vy: Float32Array.of(0),
+        y: Float32Array.of(1000),
         season: Uint32Array.of(season, 0),
     };
 }

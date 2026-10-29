@@ -41,10 +41,6 @@ const RULES = {
     foodRadius: positive(),
     highFoodRadius: positive(),
     foodMaxAge: int(1),
-    obstacleCount: int(0, 100),
-    obstacleMinRadius: positive(),
-    obstacleMaxRadius: positive(),
-    obstacleMaxSpeed: num(0),
     obstacleDamage: num(0),
     wallDamage: num(0),
     rayCount: int(1, 64),
@@ -136,7 +132,6 @@ const AT_MOST = [
     ['initialAgents', 'maxAgents'],
     ['minAgents', 'maxAgents'],
     ['initialFood', 'maxFood'],
-    ['obstacleMinRadius', 'obstacleMaxRadius'],
     ['initialEnergy', 'maxEnergy'],
     ['minSize', 'baseSize'],
     ['temperatureStart', 'temperatureMax'],
@@ -334,7 +329,7 @@ function checkCrossKey(config) {
     }
     const terrain = terrainProblem(config);
     if (terrain !== null) {
-        fail('terrainLayout', config.terrainLayout, terrain);
+        fail('wallGaps', config.wallGaps, terrain);
     }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);

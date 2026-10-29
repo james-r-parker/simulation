@@ -2,7 +2,7 @@
 import { signalAll } from './calls.js';
 import { applyCosts } from './energy.js';
 import { clearEvents } from './events.js';
-import { decayFertileZones, moveObstacles, updateSeason } from './environment.js';
+import { decayFertileZones, updateSeason } from './environment.js';
 import { feed } from './feeding.js';
 import { ageFood, spawnFood } from './food.js';
 import { advanceEra } from './eras.js';
@@ -31,7 +31,6 @@ import { buildHash } from './spatial-hash.js';
 function environment(world) {
     updateSeason(world);
     advanceEra(world);
-    moveObstacles(world);
 }
 
 /**

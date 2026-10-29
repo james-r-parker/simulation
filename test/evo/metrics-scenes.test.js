@@ -28,23 +28,16 @@ describe('the scene metrics', () => {
         expect(metricDirection('eval.hunt_abort_rate')).toBe('watch');
     });
 
-    it('are null with a reason on a fresh observer, except the recolonisation count of a basins world', () => {
-        const metrics = sceneMetrics(observed().observer);
+    it('are null with a reason on a fresh observer, except the recolonisation count', () => {
+        const metrics = sceneMetrics(observed({ worldWidth: 4000, worldHeight: 2000, refugeCount: 2 }).observer);
         for (const [name, result] of Object.entries(metrics)) {
-            expect(result.value, name).toBeNull();
-            expect(result.reason, name).toBeTypeOf('string');
+            if (name === 'eval.basin_recolonisations') {
+                expect(result).toEqual({ value: 0 });
+            } else {
+                expect(result.value, name).toBeNull();
+                expect(result.reason, name).toBeTypeOf('string');
+            }
         }
-        const basins = sceneMetrics(
-            observed({
-                terrainLayout: 'basins',
-                obstacleCount: 0,
-                worldWidth: 4000,
-                worldHeight: 2000,
-                refugeCount: 2,
-                wallGaps: 1,
-            }).observer,
-        );
-        expect(basins['eval.basin_recolonisations']).toEqual({ value: 0 });
     });
 
     it('name an intended direction for the watch metrics where lower is better', () => {

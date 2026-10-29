@@ -225,10 +225,6 @@ describe('validateConfig cross-key rules', () => {
         expect(() => createConfig({ ...FEATURES_OFF, maxFood: 800, initialFood: 900 })).toThrow(/initialFood.*maxFood/);
     });
 
-    it('rejects obstacleMinRadius above obstacleMaxRadius', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, obstacleMinRadius: 130 })).toThrow(/obstacleMinRadius/);
-    });
-
     it('rejects initialEnergy above maxEnergy', () => {
         expect(() => createConfig({ ...FEATURES_OFF, initialEnergy: 30000 })).toThrow(/initialEnergy.*maxEnergy/);
     });

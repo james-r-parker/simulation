@@ -27,7 +27,6 @@ const OVERRIDES = {
     worldHeight: 1600,
     maxFood: 120,
     initialFood: 80,
-    obstacleCount: 4,
 };
 
 /**

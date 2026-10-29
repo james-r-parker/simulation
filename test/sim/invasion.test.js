@@ -7,7 +7,7 @@ import { fork, createRng } from '../../js/sim/rng.js';
 import { testPolicy } from './helpers/test-policy.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const INVASION = { invasionInterval: 100, invasionSize: 5, maxAgents: 8, obstacleCount: 0 };
+const INVASION = { invasionInterval: 100, invasionSize: 5, maxAgents: 8 };
 
 /**
  * @param {ReturnType<typeof smallWorld>} w the world
@@ -60,9 +60,6 @@ describe('invade', () => {
             const w = smallWorld({
                 ...INVASION,
                 seed,
-                obstacleCount: 8,
-                obstacleMinRadius: 100,
-                obstacleMaxRadius: 200,
             });
             w.tick = 100;
             invade(w, testPolicy);
@@ -70,7 +67,7 @@ describe('invade', () => {
             const edge = w.events.data[o + 5];
             edges.add(edge);
             for (const s of aliveSlots(w)) {
-                for (let k = 0; k < 8; k++) {
+                for (let k = 0; k < w.obsX.length; k++) {
                     expect(Math.hypot(w.x[s] - w.obsX[k], w.y[s] - w.obsY[k])).toBeGreaterThan(w.obsRadius[k]);
                 }
             }

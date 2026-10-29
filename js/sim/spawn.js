@@ -87,27 +87,6 @@ export function placeClear(world, rng, radius) {
 }
 
 /**
- * Fills the obstacle arrays from the `obstacles` stream; obstacles may overlap each other.
- * @param {World} world the world
- * @returns {void}
- */
-export function placeObstacles(world) {
-    const { obstacleCount, obstacleMinRadius, obstacleMaxRadius, obstacleMaxSpeed } = world.config;
-    const { worldWidth, worldHeight } = world.config;
-    const rng = world.rng.obstacles;
-    for (let i = 0; i < obstacleCount; i++) {
-        const radius = obstacleMinRadius + nextFloat(rng) * (obstacleMaxRadius - obstacleMinRadius);
-        world.obsRadius[i] = radius;
-        world.obsX[i] = radius + nextFloat(rng) * (worldWidth - 2 * radius);
-        world.obsY[i] = radius + nextFloat(rng) * (worldHeight - 2 * radius);
-        const heading = nextFloat(rng) * TWO_PI;
-        const speed = nextFloat(rng) * obstacleMaxSpeed;
-        world.obsVx[i] = speed * detCos(heading);
-        world.obsVy[i] = speed * detSin(heading);
-    }
-}
-
-/**
  * @param {World} world the world
  * @returns {number} the summed fertility of the alive zones
  */
@@ -315,7 +294,6 @@ export function createWorld(config, policy) {
     const root = createRng(config.seed);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
-    placeObstacles(world);
     placeTerrain(world);
     createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {

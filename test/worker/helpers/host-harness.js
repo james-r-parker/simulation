@@ -12,7 +12,6 @@ export const SMALL_CONFIG = Object.freeze({
     minAgents: 20,
     maxFood: 60,
     initialFood: 40,
-    obstacleCount: 2,
     rayCount: 8,
     brainHidden: 8,
     fertileZoneMax: 4,

@@ -27,7 +27,6 @@ function empty(over = {}) {
             brainHidden: 3,
             maxFood: 4,
             initialFood: 0,
-            obstacleCount: 0,
             fertileZoneMax: 2,
             ...over,
         }),

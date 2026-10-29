@@ -9,8 +9,6 @@ import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
 const BASINS = {
-    terrainLayout: 'basins',
-    obstacleCount: 0,
     worldWidth: 4000,
     worldHeight: 2000,
     refugeCount: 2,

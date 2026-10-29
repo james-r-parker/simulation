@@ -9,7 +9,6 @@
 // Only the `basins` layout has basins; any other layout reads `null`. Per-basin state only; nothing is allocated.
 
 import { BORN_CAUSE } from '../sim/events.js';
-import { hasTerrain } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
@@ -70,15 +69,12 @@ function follow(scene, basin, tick) {
 
 /**
  * Runs one 10-tick sample: the alive count per basin, the extinction state, and on a 1000-tick checkpoint at or after
- * burn-in the sums behind the coefficient of variation. Does nothing without terrain.
+ * burn-in the sums behind the coefficient of variation.
  * @param {Record<string, any>} scene the basin scene
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleBasins(scene, world) {
-    if (!hasTerrain(world.config)) {
-        return;
-    }
     scene.count.fill(0);
     const half = world.config.worldWidth / 2;
     for (let slot = 0; slot < world.alive.length; slot++) {
@@ -99,14 +95,9 @@ export function sampleBasins(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the basin scene
- * @param {boolean} terrain whether the layout has basins
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two basin metrics
  */
-export function basinMetrics(scene, terrain) {
-    if (!terrain) {
-        const off = none('terrainLayout is not basins');
-        return { 'eval.basin_pop_cv': off, 'eval.basin_recolonisations': off };
-    }
+export function basinMetrics(scene) {
     let cvSum = 0;
     let basins = 0;
     for (let b = 0; b < 2; b++) {
