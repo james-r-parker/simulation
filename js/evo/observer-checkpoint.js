@@ -6,6 +6,7 @@ import { sampleBody } from './metrics-body.js';
 import { sampleEnvironment } from './metrics-environment.js';
 import { sampleMerit } from './metrics-merit.js';
 import { samplePresence } from './metrics-watch.js';
+import { sampleWatchability } from './metrics-watchability.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
@@ -142,6 +143,7 @@ export function checkpoint(observer, world) {
         sampleBody(observer.body, world);
         sampleEnvironment(observer.environment, world);
         sampleMerit(observer.merit, world);
+        sampleWatchability(observer.watchability, world);
         samplePresence(observer.watch, world, observer.combat.hunterSpec);
     }
     const log = observer.series;
