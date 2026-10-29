@@ -15,7 +15,7 @@ describe('createLayerBuilder', () => {
         const set = build();
         expect(set.layers).toHaveLength(14);
         expect(set.layers[3]).toBe(refs.haze);
-        expect(set.afterBloom).toHaveLength(1);
+        expect(set.afterBloom).toHaveLength(2);
         for (const layer of [...set.layers, ...set.afterBloom]) {
             expect(layer.object).toBeDefined();
             layer.dispose();

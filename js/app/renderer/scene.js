@@ -6,7 +6,15 @@ import { NeutralToneMapping, OrthographicCamera, Scene, WebGLRenderer } from 'th
 import { viewBounds } from '../camera.js';
 import { appLog } from '../app-log.js';
 import { createBloom } from './bloom.js';
-import { createQuality, LOOK_ALL, lookFor, lookItems, QUALITY_LEVELS, supportsFloatTargets } from './quality.js';
+import {
+    createQuality,
+    LOOK_ALL,
+    LOOK_OFF,
+    lookFor,
+    lookItems,
+    QUALITY_LEVELS,
+    supportsFloatTargets,
+} from './quality.js';
 import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from './software.js';
 
 /**
@@ -213,7 +221,7 @@ function drawRig(rig, frame) {
         rig.renderer.clear();
         rig.renderer.render(rig.built.main, rig.camera);
     }
-    if (level.motes > 0) {
+    if (level.motes > 0 || (level.look && level.look.finish !== LOOK_OFF)) {
         rig.renderer.render(rig.built.motes, rig.camera);
     }
     return true;
