@@ -8,9 +8,6 @@
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
 # - Every module under js/worker/ and js/app/ has a test at the mirrored path (test/worker/, test/app/), except the
 #   browser shells in BROWSER_SHELLS, which test/browser/app.spec.js covers (docs/designs/worker-and-renderer.md).
-# - Legacy code only shrinks: each js/*.js and js/constants/*.js file stays within its line count in
-#   legacyLines in scripts/quality-baseline.json, and no new file appears there - new code goes in a linted module (docs/coding-standards.md).
-#   Lower a budget when a file shrinks; remove the entry when the file is deleted.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
 # - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
@@ -61,27 +58,6 @@ for file in "${app_files[@]}"; do
   test_file="${test_file%.js}.test.js"
   [[ -f "$test_file" ]] || fail "$file: no test at $test_file - every module ships with its tests"
 done
-
-while IFS= read -r line; do
-  fail "$line"
-done < <(node -e '
-const fs = require("fs");
-const { execSync } = require("child_process");
-const budget = JSON.parse(fs.readFileSync("scripts/quality-baseline.json", "utf8")).legacyLines;
-const files = execSync("git ls-files --cached --others --exclude-standard -- \":(glob)js/*.js\" \":(glob)js/constants/*.js\"")
-  .toString().split("\n").filter((f) => f && fs.existsSync(f));
-for (const file of files) {
-  const text = fs.readFileSync(file, "utf8");
-  const lines = text.split("\n").length - (text.endsWith("\n") ? 1 : 0);
-  if (!(file in budget)) {
-    console.log(`${file}: new file in the legacy area - put new code in a linted module (js/sim, js/evo)`);
-  } else if (lines > budget[file]) {
-    console.log(`${file}: ${lines} lines, over its legacy budget of ${budget[file]} - legacy files only shrink`);
-  }
-}
-for (const file of Object.keys(budget)) {
-  if (!files.includes(file)) console.log(`${file}: no longer exists - remove its entry from scripts/quality-baseline.json legacyLines`);
-}')
 
 if [[ -d public ]]; then
   while IFS= read -r served; do

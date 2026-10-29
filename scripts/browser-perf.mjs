@@ -1,16 +1,15 @@
 // Records a browser frame-time baseline through Playwright or a Chrome over CDP: the v6 app into
-// bench/browser-baseline.json (keyed by viewport) or, with --app legacy, the legacy app into bench/legacy-baseline.json.
+// bench/browser-baseline.json (keyed by viewport).
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runLegacy, runV6 } from './lib/perf-run.mjs';
+import { runV6 } from './lib/perf-run.mjs';
 import { parseViewport } from './lib/perf-v6.mjs';
 
 const DEFAULT_SECONDS = 60;
-const DEFAULT_OUT = 'bench/legacy-baseline.json';
 
 const DEFAULT_AGENTS = 500;
 const DEFAULT_VIEWPORT = '3840x2160';
-const DEFAULT_OUTS = { v6: 'bench/browser-baseline.json', legacy: DEFAULT_OUT };
+const DEFAULT_OUT = 'bench/browser-baseline.json';
 
 /** @type {Record<string, 'headed' | 'allowFallback' | 'allowLowRefresh'>} */
 const BOOLEAN_FLAGS = {
@@ -48,8 +47,8 @@ const PARSERS = {
     },
     '--agents': (arg, value) => ({ agents: positiveInt(arg, '--agents', value) }),
     '--app': (arg, value) => {
-        if (value !== 'v6' && value !== 'legacy') {
-            throw new Error(`--app must be v6 or legacy, got "${arg}"`);
+        if (value !== 'v6') {
+            throw new Error(`--app must be v6, got "${arg}"`);
         }
         return { app: value };
     },
@@ -81,7 +80,7 @@ function applyValueFlag(options, arg) {
  * @property {boolean} allowFallback accept a software adapter or renderer
  * @property {boolean} allowLowRefresh record a display under 120 Hz
  * @property {string} cdp a Chrome DevTools endpoint to measure instead of launching one
- * @property {'v6' | 'legacy'} app which app to measure
+ * @property {'v6'} app which app to measure
  * @property {number} agents v6: the starting agent count
  * @property {{width: number, height: number}} viewport v6: the canvas size
  */
@@ -89,7 +88,7 @@ function applyValueFlag(options, arg) {
 /**
  * Parses the command line.
  * @param {string[]} argv Arguments after the script name.
- * @returns {Options} The run options; `out` defaults to the app's baseline file.
+ * @returns {Options} The run options; `out` defaults to the browser baseline file.
  */
 export function parseArgs(argv) {
     /** @type {Record<string, any>} */
@@ -115,89 +114,8 @@ export function parseArgs(argv) {
             );
         }
     }
-    options.out ||= DEFAULT_OUTS[/** @type {'v6' | 'legacy'} */ (options.app)];
+    options.out ||= DEFAULT_OUT;
     return /** @type {Options} */ (options);
-}
-
-/**
- * Checks that a value is a finite number.
- * @param {unknown} value The value to check.
- * @param {string} name What the value is, for the error message.
- * @returns {number} The value.
- */
-function requireFinite(value, name) {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-        throw new Error(`${name} must be a finite number, got ${JSON.stringify(value)}`);
-    }
-    return value;
-}
-
-/**
- * Validates a `window.__perf()` payload and builds the baseline JSON object.
- * @param {object} input The recorded run.
- * @param {any} input.perf The `window.__perf()` payload.
- * @param {number} input.longTasks Long-task count from the PerformanceObserver.
- * @param {string} input.browserVersion `browser.version()`.
- * @param {string} input.gpuAdapter The WebGPU adapter description.
- * @param {number | null} input.agentCount Agents alive at the end of the run, or null when unreachable.
- * @param {number} input.seconds Run length in seconds.
- * @param {string} input.commit Git commit sha of the measured tree.
- * @param {string} input.recordedAt ISO timestamp.
- * @returns {Record<string, unknown>} The baseline file contents.
- */
-export function buildBaseline({
-    perf,
-    longTasks,
-    browserVersion,
-    gpuAdapter,
-    agentCount,
-    seconds,
-    commit,
-    recordedAt,
-}) {
-    if (!perf || perf.app !== 'legacy') {
-        throw new Error(`window.__perf().app must be "legacy", got ${JSON.stringify(perf?.app)}`);
-    }
-    const frameMs = perf.frameMs ?? {};
-    const p50 = requireFinite(frameMs.p50, 'frameMs.p50');
-    const p95 = requireFinite(frameMs.p95, 'frameMs.p95');
-    const p99 = requireFinite(frameMs.p99, 'frameMs.p99');
-    const frames = requireFinite(perf.frames, 'frames');
-    return {
-        metrics: {
-            'browser.frame_p50_ms': p50,
-            'browser.frame_p95_ms': p95,
-            'browser.frame_p99_ms': p99,
-            'browser.main_long_tasks': requireFinite(longTasks, 'longTasks'),
-        },
-        frames,
-        phases: perf.phases ?? null,
-        browser: browserVersion,
-        gpuAdapter,
-        agentCount,
-        seconds,
-        commit,
-        recordedAt,
-    };
-}
-
-/**
- * Describes the WebGPU adapter as one line, refusing a software fallback adapter unless allowed.
- * @param {{ vendor: string, architecture: string, description: string, fallback: boolean } | null} adapter Adapter fields.
- * @param {boolean} allowFallback Accept a software adapter such as SwiftShader.
- * @returns {string} Vendor, architecture and description, with "(fallback)" for a software adapter.
- */
-export function describeAdapter(adapter, allowFallback) {
-    if (adapter === null) {
-        throw new Error('No WebGPU adapter available in this Chromium. Re-run with --headed to use a visible browser.');
-    }
-    const name = [adapter.vendor, adapter.architecture, adapter.description].filter(Boolean).join(' / ') || 'unknown';
-    if (adapter.fallback && !allowFallback) {
-        throw new Error(
-            `WebGPU adapter "${name}" is a software fallback, not the GPU; pass --allow-fallback to record it anyway.`,
-        );
-    }
-    return adapter.fallback ? `${name} (fallback)` : name;
 }
 
 /**
@@ -206,7 +124,7 @@ export function describeAdapter(adapter, allowFallback) {
  * @returns {Promise<void>}
  */
 function run(options) {
-    return options.app === 'legacy' ? runLegacy(options, { buildBaseline, describeAdapter }) : runV6(options);
+    return runV6(options);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

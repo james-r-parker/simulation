@@ -1,5 +1,4 @@
 // Layering rules (docs/designs/quality-gates-and-test-tiers.md, "Layering and duplication").
-// The legacy js/*.js and js/constants/*.js files match no `from` pattern below, so they are outside every rule.
 const checked = '^(js/sim|js/evo|js/worker|js/app|scripts|test)/';
 
 /** @type {import('dependency-cruiser').IConfiguration} */
@@ -7,7 +6,7 @@ module.exports = {
     forbidden: [
         {
             name: 'sim-standalone',
-            comment: 'js/sim/ imports only js/sim/: no legacy code, js/evo/, npm packages or Node built-ins.',
+            comment: 'js/sim/ imports only js/sim/: no js/evo/, npm packages or Node built-ins.',
             severity: 'error',
             from: { path: '^js/sim/' },
             to: { pathNot: '^js/sim/' },
