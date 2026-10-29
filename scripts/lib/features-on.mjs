@@ -126,9 +126,6 @@ export const FEATURES_ON = Object.freeze({
     meritBirthBoost: 0,
     splitDeliberateMin: 300,
     meritSplitFloorPop: 80,
-    splitDeliberateShareMin: 0,
-    splitMaxPerLife: 0,
-    preySplit: true,
 });
 
 /** @returns {string[]} the `FEATURE_RULES` keys missing from `FEATURES_OFF` (a new feature key not yet pinned) */
