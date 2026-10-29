@@ -166,6 +166,9 @@ When one agent hands tasks to others (user, 2026-10-22):
   printed; report a failed command rather than guessing why.
 - Add or upgrade a dependency only when the user asks or a design doc names it.
 - Stay in scope: touch only the files the task needs, and do not reformat or refactor unrelated code.
+- Delete what a switch replaces (user, 2026-10-29). When a flag or option's new value becomes the default, the plan's
+  cleanup deletes the old path, the flag and its `FEATURES_OFF` entry once the runs that compare against it are done;
+  a plan that adds flags carries that deletion task. A kept path needs a written reason in the plan's Decisions table.
 
 ## Coding standards
 
