@@ -8,7 +8,7 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { createConfig } from '../../js/sim/config.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 import { smallWorld } from './helpers/small-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 describe('leakRateOf', () => {
     it('runs from LEAK_MIN for a very negative gene to 1 for a very positive one', () => {
@@ -51,7 +51,7 @@ describe('applyGenes', () => {
 describe('applyGenes call sites', () => {
     it('runs after a spawn writes the weight row', () => {
         const config = createConfig({
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             maxAgents: 4,
             initialAgents: 0,
             minAgents: 0,

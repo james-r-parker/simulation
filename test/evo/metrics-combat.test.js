@@ -5,7 +5,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { combatMetrics } from '../../js/evo/metrics-combat.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const NAMES = [
     'eval.catch_rate',
@@ -61,7 +61,7 @@ describe('combatMetrics', () => {
     });
 
     it('builds a report that validates, and an older report without the metrics still validates', () => {
-        const config = createConfig({ ...FEATURES_OFF, seed: 1 });
+        const config = createConfig({ ...SIMPLE_WORLD, seed: 1 });
         const input = { policy: 'p', fitnessName: 'f', config, ticks: 10, seeds: [1], sha: 'abc' };
         const metrics = computeMetrics(bareObserver(), EMPTY_WORLD);
         const report = buildReport({ ...input, perSeed: [metrics] });

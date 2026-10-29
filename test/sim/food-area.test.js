@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { spawnFood } from '../../js/sim/food.js';
 import { createConfig } from '../../js/sim/config.js';
 import { smallWorld } from './helpers/small-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SEASON = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
 // 1000 x 1000 px is 1 unit of area, so foodRegrowPerArea is the expected spawns per tick.
@@ -18,7 +18,7 @@ const AREA = {
 
 describe('area food', () => {
     it('defaults to a rate of 0.06', () => {
-        expect(createConfig({ ...FEATURES_OFF }).foodRegrowPerArea).toBe(0.06);
+        expect(createConfig({ ...SIMPLE_WORLD }).foodRegrowPerArea).toBe(0.06);
     });
 
     it('spawns the area rate per tick whatever the population', () => {

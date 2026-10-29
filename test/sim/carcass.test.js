@@ -11,7 +11,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 import { createConfig } from '../../js/sim/config.js';
 import { validateConfig } from '../../js/sim/config-validate.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const PREDATOR = 1;
 const ON = { carcassTicks: 5, carcassShare: 0.5, maxAgeTicks: 10, maxEnergy: 1000 };
@@ -31,7 +31,7 @@ function killOld(w, energy) {
 
 describe('carcass config', () => {
     it('defaults to 300 ticks, a 0.5 share and meat values per specialisation', () => {
-        const c = createConfig({ ...FEATURES_OFF });
+        const c = createConfig({ ...SIMPLE_WORLD });
         expect([c.carcassTicks, c.carcassShare]).toEqual([300, 0.5]);
         expect(Object.values(c.specialisations).map((s) => s.meatFoodValue)).toEqual([0.3, 1, 0.3, 0.3, 0.3]);
     });
@@ -42,13 +42,13 @@ describe('carcass config', () => {
         ['carcassShare', -0.1],
         ['carcassShare', 1.1],
     ])('rejects %s = %s', (key, value) => {
-        expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(key);
+        expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(key);
     });
 
     it.each([-0.1, 1.1, 'x'])('rejects a meatFoodValue of %s', (value) => {
-        const specialisations = structuredClone(createConfig({ ...FEATURES_OFF }).specialisations);
+        const specialisations = structuredClone(createConfig({ ...SIMPLE_WORLD }).specialisations);
         specialisations.scout.meatFoodValue = value;
-        expect(() => validateConfig({ ...createConfig({ ...FEATURES_OFF }), specialisations })).toThrow(
+        expect(() => validateConfig({ ...createConfig({ ...SIMPLE_WORLD }), specialisations })).toThrow(
             'specialisations.scout.meatFoodValue',
         );
     });

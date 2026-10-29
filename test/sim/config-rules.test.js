@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FEATURE_RULES, UNIT, int, num, positive } from '../../js/sim/config-rules.js';
 import { createConfig } from '../../js/sim/config.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 describe('config rules', () => {
     it('builds int, num, positive and unit rules', () => {
@@ -12,30 +12,30 @@ describe('config rules', () => {
     });
 
     it('covers every feature key with a rule the defaults pass', () => {
-        const config = createConfig({ ...FEATURES_OFF });
+        const config = createConfig({ ...SIMPLE_WORLD });
         for (const key of Object.keys(FEATURE_RULES)) {
             expect(config).toHaveProperty(key);
         }
-        expect(() => createConfig({ ...FEATURES_OFF, foodPatchCount: 257 })).toThrow(/foodPatchCount/);
-        expect(() => createConfig({ ...FEATURES_OFF, hebbianRate: 2 })).toThrow(/hebbianRate/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, foodPatchCount: 257 })).toThrow(/foodPatchCount/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, hebbianRate: 2 })).toThrow(/hebbianRate/);
     });
 });
 
 describe('mateDistanceMax rule', () => {
     it('defaults to Infinity and accepts it, and any finite number above 0', () => {
-        expect(createConfig({ ...FEATURES_OFF }).mateDistanceMax).toBe(Infinity);
-        expect(createConfig({ ...FEATURES_OFF, mateDistanceMax: Infinity }).mateDistanceMax).toBe(Infinity);
-        expect(createConfig({ ...FEATURES_OFF, mateDistanceMax: 0.8 }).mateDistanceMax).toBe(0.8);
+        expect(createConfig({ ...SIMPLE_WORLD }).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ ...SIMPLE_WORLD, mateDistanceMax: Infinity }).mateDistanceMax).toBe(Infinity);
+        expect(createConfig({ ...SIMPLE_WORLD, mateDistanceMax: 0.8 }).mateDistanceMax).toBe(0.8);
     });
 
     it.each([0, -1, NaN, -Infinity, '0.8'])('rejects %s', (value) => {
-        expect(() => createConfig({ ...FEATURES_OFF, mateDistanceMax: value })).toThrow(/mateDistanceMax/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, mateDistanceMax: value })).toThrow(/mateDistanceMax/);
     });
 });
 
 describe('birth budget keys', () => {
     it('default to a 3000 tick window and the budget off', () => {
-        const c = createConfig({ ...FEATURES_OFF });
+        const c = createConfig({ ...SIMPLE_WORLD });
         expect([c.birthWindowTicks, c.maxBirthsPerWindow]).toEqual([3000, 0]);
     });
 
@@ -45,6 +45,6 @@ describe('birth budget keys', () => {
         ['maxBirthsPerWindow', 1.5],
         ['maxBirthsPerWindow', 17],
     ])('rejects a bad %s', (key, value) => {
-        expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(new RegExp(key));
+        expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(new RegExp(key));
     });
 });

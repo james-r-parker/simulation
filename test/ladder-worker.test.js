@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runRung } from '../scripts/ladder-worker.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 
-const SMALL = { ...FEATURES_OFF, maxAgents: 20, initialAgents: 8, worldWidth: 1500, worldHeight: 1000 };
+const SMALL = { ...SIMPLE_WORLD, maxAgents: 20, initialAgents: 8, worldWidth: 1500, worldHeight: 1000 };
 
 describe('runRung', () => {
     it('runs one rung on one seed and reports its wall time', () => {

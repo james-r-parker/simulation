@@ -13,7 +13,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 /**
  * Sets one trait gene of a slot's row and derives the slot's values.
@@ -150,8 +150,8 @@ describe('hashWorld and traits', () => {
 
 describe('hashCellSize with traits', () => {
     it('must cover the largest body the size trait allows', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 128 })).toThrow(/hashCellSize/);
-        expect(() => createConfig({ ...FEATURES_OFF, hashCellSize: 140 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, hashCellSize: 128 })).toThrow(/hashCellSize/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, hashCellSize: 140 })).not.toThrow();
     });
 
     it('keeps the hash able to build with a 1.3 x base size body', () => {

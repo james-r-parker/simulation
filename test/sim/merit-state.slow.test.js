@@ -7,7 +7,7 @@ import { step } from '../../js/sim/step.js';
 import { createObserver, observe, observerPhases } from '../../js/evo/observer.js';
 import { createNaturalV1 } from '../../js/evo/policies/natural-v1.js';
 import { SURVIVABLE_PREDATOR_EVERY, playPredatorWorld, survivableWorld } from '../evo/helpers/predator-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const TICKS = 3000;
 const MAX_SLOTS = 4096;
@@ -72,7 +72,7 @@ function agreementHarness() {
 
 describe('the sim tracker agrees with observer.intent', () => {
     it('on every tick and every slot of the default world, seed 1, 3000 ticks, random brains', () => {
-        const config = createConfig({ ...FEATURES_OFF, seed: 1 });
+        const config = createConfig({ ...SIMPLE_WORLD, seed: 1 });
         const policy = createNaturalV1({ config }).brain;
         const world = createWorld(config, policy);
         const observer = createObserver(config, fork(createRng(1), 'eval'));

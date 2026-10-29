@@ -3,7 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, cellOf, cellRange, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 64,
@@ -22,7 +22,7 @@ const CELL = 140;
 
 /** @returns {{ config: any, world: any, hash: any }} */
 function setup() {
-    const config = createConfig({ ...FEATURES_OFF, ...SMALL });
+    const config = createConfig({ ...SIMPLE_WORLD, ...SMALL });
     const world = allocateWorld(config);
     return { config, world, hash: createSpatialHash(config) };
 }

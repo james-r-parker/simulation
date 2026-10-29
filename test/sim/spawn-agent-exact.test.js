@@ -4,7 +4,7 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { createRng, fork, nextFloat, nextInt } from '../../js/sim/rng.js';
 import { createWorld, spawnAgent } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SEED = 31;
 const TWO_PI = 6.283185307179586;
@@ -16,7 +16,7 @@ const TWO_PI = 6.283185307179586;
 function empty(over = {}) {
     return createWorld(
         createConfig({
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             seed: SEED,
             worldWidth: 1000,
             worldHeight: 1000,

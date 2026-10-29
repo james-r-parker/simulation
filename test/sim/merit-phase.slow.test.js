@@ -8,7 +8,7 @@ import { splitGatedShare } from '../../js/sim/merit-tally.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
@@ -23,7 +23,7 @@ const MERIT = { splitDeliberateMin: 200, meritSplitFloorPop: 20 };
  */
 function run(over) {
     const policy = cloneWithNoisePolicy();
-    const world = createWorld(createConfig({ ...FEATURES_OFF, seed: 1, checkInvariants: true, ...over }), policy);
+    const world = createWorld(createConfig({ ...SIMPLE_WORLD, seed: 1, checkInvariants: true, ...over }), policy);
     /** @type {number[][]} */
     const summaries = [];
     for (let t = 0; t < TICKS; t++) {

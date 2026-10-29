@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expandGrid } from '../scripts/lib/screen-grid.mjs';
 import { reportPath, runScreen } from '../scripts/lib/screen-run.mjs';
 import { main, parseArgs, screen } from '../scripts/screen.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 
 // The grid file is JSON, which has no Infinity: 1e9 is mate distance off (no genetic distance reaches it).
 const SMALL = {
-    ...FEATURES_OFF,
+    ...SIMPLE_WORLD,
     mateDistanceMax: 1e9,
     maxAgents: 40,
     initialAgents: 12,

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { runSeed } from '../scripts/eval-worker.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
-const SMALL = { ...FEATURES_OFF, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+const SMALL = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
 /** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
 const UNPLACEABLE = {
-    ...FEATURES_OFF,
+    ...SIMPLE_WORLD,
     worldWidth: 1000,
     worldHeight: 1000,
     placementTries: 1,

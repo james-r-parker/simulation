@@ -5,9 +5,9 @@ import { FITNESS_V6_SKILL, chanceIntake, createSkillGroup, deliberateIntake } fr
 import { createLifeCounters } from '../../js/evo/life-counters.js';
 import { createObserver } from '../../js/evo/observer.js';
 import { createRng, fork } from '../../js/sim/rng.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
-const config = createConfig({ ...FEATURES_OFF, maxAgents: 8, initialAgents: 0, minAgents: 0 });
+const config = createConfig({ ...SIMPLE_WORLD, maxAgents: 8, initialAgents: 0, minAgents: 0 });
 const { specialisations } = config;
 
 /**

@@ -5,7 +5,7 @@ import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, readEvents } from '../../js/sim/e
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 2500;
@@ -21,7 +21,7 @@ function run(seed) {
     const policy = cloneWithNoisePolicy();
     const world = createWorld(
         createConfig({
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             worldWidth: 1500,
             worldHeight: 1500,
             maxAgents: 150,

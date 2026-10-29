@@ -7,7 +7,6 @@ import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { freeAgent } from '../../js/sim/world.js';
-import { FEATURES_ON } from '../../scripts/lib/features-on.mjs';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 const BASE = { splitDeliberateMin: 0, meritSplitFloorPop: 0, splitMinEnergy: 200 };
@@ -116,7 +115,6 @@ describe('determinism', () => {
     it('gives one hash for one seed and config with the keys on', () => {
         const run = () => {
             const config = createConfig({
-                ...FEATURES_ON,
                 maxAgents: 60,
                 initialAgents: 30,
                 splitDeliberateShareMin: 0.1,

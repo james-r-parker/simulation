@@ -34,7 +34,7 @@ const config = {
  * @returns {any} the observer
  */
 function rareDeath(withTally) {
-    const tally = createNicheTally(false);
+    const tally = createNicheTally();
     tally.shares[0] = 0.95;
     tally.shares[1] = 0.05;
     return {
@@ -66,7 +66,7 @@ describe('the diversity factor at DIVERSITY 0', () => {
     });
 
     it('is exactly 1 in every niche, rare or common', () => {
-        const tally = createNicheTally(false);
+        const tally = createNicheTally();
         tally.shares[0] = 0.95;
         tally.shares[1] = 0.05;
         const off = createDiversityGroup({ DIVERSITY: 0 });

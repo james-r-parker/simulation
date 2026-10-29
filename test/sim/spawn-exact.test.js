@@ -4,7 +4,7 @@ import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createRng, fork, nextFloat } from '../../js/sim/rng.js';
 import { createWorld, placeClear, spawnFoodItem } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const TWO_PI = 6.283185307179586;
 const SEED = 99;
@@ -16,7 +16,7 @@ const SEED = 99;
 function empty(over = {}) {
     return createWorld(
         createConfig({
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             seed: SEED,
             worldWidth: 1000,
             worldHeight: 1000,

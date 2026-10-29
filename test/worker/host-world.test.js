@@ -18,7 +18,7 @@ import { seasonAt } from '../../js/sim/environment.js';
 import { yearTicks } from '../../js/sim/eras.js';
 import { calendarOf } from '../../js/app/ui/status-line.js';
 import { noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const LOG = createSimLog(() => {}, { level: 'error' });
 
@@ -91,7 +91,7 @@ describe('buildRun', () => {
 describe('tickOnce', () => {
     it('steps the world exactly as the core does without the host', () => {
         const run = small();
-        const config = createConfig({ ...FEATURES_OFF, ...SMALL_CONFIG, seed: 3 });
+        const config = createConfig({ ...SIMPLE_WORLD, ...SMALL_CONFIG, seed: 3 });
         const policy = cloneWithNoisePolicy();
         const reference = createWorld(config, policy);
         for (let t = 0; t < 120; t++) {

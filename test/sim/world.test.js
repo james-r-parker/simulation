@@ -5,7 +5,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { terrainRockCount } from '../../js/sim/terrain.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
 import { HEARD_STRIDE, TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 8,
@@ -23,7 +23,7 @@ const SMALL = {
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function smallWorld(over = {}) {
-    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }));
+    return allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...over }));
 }
 
 /**
@@ -214,7 +214,7 @@ describe('allocateWorld platform check', () => {
     });
 
     it('refuses a big-endian platform', () => {
-        const config = createConfig({ ...FEATURES_OFF, ...SMALL });
+        const config = createConfig({ ...SIMPLE_WORLD, ...SMALL });
         vi.stubGlobal(
             'Uint16Array',
             class {

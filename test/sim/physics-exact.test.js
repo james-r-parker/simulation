@@ -4,7 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { actAll, integrate, resolveContacts } from '../../js/sim/physics.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 64,
@@ -25,7 +25,7 @@ const SMALL = {
  * @returns {any} a world with no agents and no damping
  */
 function setup(extra = {}) {
-    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...extra }));
+    return allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...extra }));
 }
 
 /**

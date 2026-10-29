@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { runReplay } from '../scripts/replay.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
-const CONFIG = { ...FEATURES_OFF, initialAgents: 20, minAgents: 20, maxAgents: 40 };
+const CONFIG = { ...SIMPLE_WORLD, initialAgents: 20, minAgents: 20, maxAgents: 40 };
 // The economy the follow test needs so that agent 1 starves within the run.
 const HARSH = { movementCost: 0.03, passiveLoss: 0.2, foodEnergy: 70 };
 

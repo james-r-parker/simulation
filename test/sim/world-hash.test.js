@@ -3,7 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork, nextFloat } from '../../js/sim/rng.js';
 import { allocateWorld } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 4,
@@ -84,7 +84,7 @@ const COVERED = [
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function makeWorld() {
-    const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
+    const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
     const root = createRng(1);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     return world;
@@ -158,7 +158,7 @@ describe('hashWorld', () => {
     });
 
     it('throws when world.rng is null', () => {
-        const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
+        const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
         expect(() => hashWorld(world)).toThrow(/hashWorld needs the RNG streams/);
     });
 
@@ -197,7 +197,7 @@ describe('hashWorld', () => {
 
 describe('hashWorld sex', () => {
     it('covers sex', () => {
-        const on = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
+        const on = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
         const root = createRng(1);
         on.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
         const base = hashWorld(on);

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createConfig, rulesHash } from '../../js/sim/config.js';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { FEATURE_RULES } from '../../js/sim/config-rules.js';
-import { FEATURES_OFF, FEATURES_ON } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
-// The merit keys of fitness-and-selection T16 (docs/designs/fitness-and-selection.md, "### Config") at their old off
-// values, which `FEATURES_OFF` keeps pinning for the frozen bench world.
+// The merit keys of fitness-and-selection T16 (docs/designs/fitness-and-selection.md, "### Config") at their values
+// before the E41 finalist.
 const MERIT_OFF = {
     meritChanceWeight: 0.25,
     meritMateBonus: 150,
@@ -22,22 +22,19 @@ const MERIT_OFF = {
 const MERIT_DEFAULTS = { ...MERIT_OFF, splitDeliberateMin: 300 };
 
 /**
- * @param {Record<string, any>} overrides keys to set over FEATURES_OFF
+ * @param {Record<string, any>} overrides keys to set over SIMPLE_WORLD
  * @returns {Record<string, any>} the merged, validated config
  */
-const off = (overrides) => createConfig({ ...FEATURES_OFF, ...overrides });
+const off = (overrides) => createConfig({ ...SIMPLE_WORLD, ...overrides });
 
 describe('merit keys: defaults', () => {
     it.each(Object.entries(MERIT_DEFAULTS))('%s defaults to %s in config-defaults', (key, value) => {
         expect(DEFAULTS[key]).toBe(value);
     });
 
-    it('pins every merit key at its default in FEATURES_OFF and FEATURES_ON', () => {
+    it('leaves every merit key but the split gate at its default in SIMPLE_WORLD', () => {
         for (const [key, value] of Object.entries(MERIT_OFF)) {
-            expect(FEATURES_OFF[key]).toBe(value);
-        }
-        for (const [key, value] of Object.entries(MERIT_DEFAULTS)) {
-            expect(FEATURES_ON[key]).toBe(value);
+            expect(SIMPLE_WORLD[key] ?? value).toBe(value);
         }
     });
 

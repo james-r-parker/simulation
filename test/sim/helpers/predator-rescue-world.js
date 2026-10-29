@@ -2,7 +2,7 @@
 import { createConfig } from '../../../js/sim/config.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
-import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
 
 export const PREDATOR = 1;
 export const STARTING_PREDATORS = 3;
@@ -30,7 +30,7 @@ export function foragerPolicy(genomes = []) {
  */
 export function config(over) {
     return createConfig({
-        ...FEATURES_OFF,
+        ...SIMPLE_WORLD,
         worldWidth: 2000,
         worldHeight: 2000,
         maxAgents: 40,

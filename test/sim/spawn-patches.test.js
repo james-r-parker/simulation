@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { createWorld, spawnFoodItem } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const BASE = {
     worldWidth: 4000,
@@ -24,7 +24,7 @@ const BASE = {
  * @returns {ReturnType<typeof createWorld>}
  */
 function build(over) {
-    return createWorld(createConfig({ ...FEATURES_OFF, ...BASE, ...over }), testPolicy);
+    return createWorld(createConfig({ ...SIMPLE_WORLD, ...BASE, ...over }), testPolicy);
 }
 
 /**
