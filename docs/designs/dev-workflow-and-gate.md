@@ -14,7 +14,7 @@ The repo is planned, built and checked the same way in every session:
 | ------- | ---------------------------------------------------------------------------------------------------- | -------------------- |
 | Plan    | Explore, one interview batch, draft to STYLE.md, fresh-agent review, present, commit on `docs/<doc>` | `create-plan`        |
 | Resume  | Re-validate the doc against `origin/main`, restamp, name the next phase                              | `resume-plan`        |
-| Build   | One phase per branch and PR, one commit per task                                                     | -                    |
+| Build   | One chunk (4 to 8 tasks) per branch and PR, one commit per task                                      | -                    |
 | Ship    | `scripts/check.sh --fix`, conformance review in parallel, Status and `(built)` moved in the same PR  | `create-pr`          |
 | Measure | Eval and benchmark runs compared against baselines; experiments recorded                             | `run-evolution-loop` |
 | Debug   | Find the event in the logs, replay from seed and config, failing test first                          | `debug-sim`          |
