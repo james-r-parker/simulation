@@ -18,8 +18,8 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-# preview.mp4 predates this gate; moving it to a release asset is a separate change.
-LARGE_FILE_ALLOWLIST=("preview.mp4")
+# No file is allowlisted today.
+LARGE_FILE_ALLOWLIST=()
 LARGE_FILE_BYTES=$((5 * 1024 * 1024))
 
 # Shells that need a real worker, window, WebGL context or AudioContext; the browser spec covers them.
