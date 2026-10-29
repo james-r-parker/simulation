@@ -67,7 +67,7 @@ function setup(client) {
 describe('createFrameLoop', () => {
     it('draws the snapshot with the selection and the leading lineage', () => {
         const client = fakeClient();
-        client.stats = { lineages: { top: [{ id: 4 }] } };
+        client.stats = { season: 2, seasonProgress: 0.45, lineages: { top: [{ id: 4 }] } };
         const { deps, drawn, loop } = setup(client);
         const after = /** @type {number[]} */ ([]);
         deps.afterDraw = (/** @type {any} */ f) => after.push(f.selectedId);
@@ -76,7 +76,14 @@ describe('createFrameLoop', () => {
         expect(drawn).toHaveLength(1);
         expect(after).toEqual([9]);
         expect(drawn[0].agents.count).toBe(client.latest.u32[1]);
-        expect(drawn[0]).toMatchObject({ selectedId: 9, leadLineageId: 4, alpha: 1, nowMs: 1000 });
+        expect(drawn[0]).toMatchObject({
+            selectedId: 9,
+            leadLineageId: 4,
+            alpha: 1,
+            nowMs: 1000,
+            season: 2,
+            seasonProgress: 0.45,
+        });
         expect(drawn[0].snapshot).toBe(client.latest);
     });
 

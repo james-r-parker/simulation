@@ -36,6 +36,8 @@ import { chooseRenderScale, isSoftwareRenderer, rendererName, scaledSize } from 
  * @property {number} selectedId the selected agent's genome id, 0 for none
  * @property {number} followId the followed agent's genome id, 0 for none
  * @property {number} leadLineageId the leading lineage's id, 0 for none
+ * @property {number} season the current season index (0: spring, 1: summer, 2: autumn, 3: winter)
+ * @property {number} seasonProgress the progress through the season [0, 1]
  * @property {import('../family-slots.js').FamilySlots} family the family colour slots and the palette
  */
 
