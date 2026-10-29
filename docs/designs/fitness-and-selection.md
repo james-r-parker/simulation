@@ -162,19 +162,24 @@ nothing and the agent stays ready; a child starts with 0 deliberate intake and m
 All keys are in `createConfig`, `config-validate.js` (through `FEATURE_RULES` in `config-rules.js`) and `rulesHash`.
 Defaults are the E41 finalist `split-300` (T48b): merit on and `splitDeliberateMin` 300; every other key keeps its Phase 2 value.
 
-| Key                  | Type | Default | Bound                                                    | Meaning                                                                |
-| -------------------- | ---- | ------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `meritEnabled`       | bool | true    | -                                                        | Master switch: no tracking, no credit, every rule below inactive       |
-| `meritChanceWeight`  | num  | 0.25    | 0 to 1                                                   | Weight of chance intake against deliberate intake                      |
-| `meritMateBonus`     | num  | 150     | at least 0                                               | Merit per mating                                                       |
-| `meritChildBonus`    | num  | 300     | at least 0                                               | Merit per child that reaches maturity                                  |
-| `meritEscapeBonus`   | num  | 60      | at least 0                                               | Merit per escape                                                       |
-| `meritHalfLife`      | int  | 20000   | at least 0 (0 is no decay)                               | Ticks for merit to halve                                               |
-| `meritHalf`          | num  | 1000    | above 0                                                  | Merit at which `m` is 0.5                                              |
-| `meritMateWeight`    | num  | 0       | 0 to 1                                                   | Share of the mate score taken from merit                               |
-| `meritBirthBoost`    | num  | 0       | 0 to 0.5                                                 | Swing of the birth gift: 1 - boost at merit 0, 1 + boost at high merit |
-| `splitDeliberateMin` | num  | 300     | at least 0                                               | Deliberate intake a blob needs before it may split; 0 is no gate       |
-| `meritSplitFloorPop` | int  | 80      | at least 0 (at or above `maxAgents` the gate stays open) | Below this population the split gate is open                           |
+| Key                       | Type | Default | Bound                                                    | Meaning                                                                                                                           |
+| ------------------------- | ---- | ------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `meritEnabled`            | bool | true    | -                                                        | Master switch: no tracking, no credit, every rule below inactive                                                                  |
+| `meritChanceWeight`       | num  | 0.25    | 0 to 1                                                   | Weight of chance intake against deliberate intake                                                                                 |
+| `meritMateBonus`          | num  | 150     | at least 0                                               | Merit per mating                                                                                                                  |
+| `meritChildBonus`         | num  | 300     | at least 0                                               | Merit per child that reaches maturity                                                                                             |
+| `meritEscapeBonus`        | num  | 60      | at least 0                                               | Merit per escape                                                                                                                  |
+| `meritHalfLife`           | int  | 20000   | at least 0 (0 is no decay)                               | Ticks for merit to halve                                                                                                          |
+| `meritHalf`               | num  | 1000    | above 0                                                  | Merit at which `m` is 0.5                                                                                                         |
+| `meritMateWeight`         | num  | 0       | 0 to 1                                                   | Share of the mate score taken from merit                                                                                          |
+| `meritBirthBoost`         | num  | 0       | 0 to 0.5                                                 | Swing of the birth gift: 1 - boost at merit 0, 1 + boost at high merit                                                            |
+| `splitDeliberateMin`      | num  | 300     | at least 0                                               | Deliberate intake a blob needs before it may split; 0 is no gate                                                                  |
+| `meritSplitFloorPop`      | int  | 80      | at least 0 (at or above `maxAgents` the gate stays open) | Below this population the split gate is open                                                                                      |
+| `splitDeliberateShareMin` | num  | 0       | 0 to 1                                                   | A blob may split only if its deliberate meals over its meals (counts) is at least this; 0 is off. No meals closes the gate (T48d) |
+| `splitMaxPerLife`         | int  | 0       | at least 0                                               | Splits per lifetime; 0 is unlimited (T48d)                                                                                        |
+| `preySplit`               | bool | true    | -                                                        | false lets only `canHunt` blobs split (T48d)                                                                                      |
+
+The T48d keys are no-ops at their defaults, apply only while `meritEnabled`, and share the `meritSplitFloorPop` bypass (one floor opens every split gate). A "bypass only near extinction" needs no new key: set `meritSplitFloorPop` just above `minAgents` (40). The counters (`mealsTotal`, `mealsDeliberate`, `splitsDone`, `js/sim/split-gate.js`) are per-slot arrays outside `worldHash`, so the golden hashes do not move.
 
 `FEATURES_OFF` pins `meritEnabled` false and `splitDeliberateMin` 0 (the old values) and the other keys at the defaults above; `FEATURES_ON` restates the tuned
 values (a key pinned off and retuned must be restated, [sim-notes.md](sim-notes.md)).
