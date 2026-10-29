@@ -1484,6 +1484,37 @@
       "note": "T46 screen, 9 arms x 4 seeds (offset 28) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. No archive arm beats split-300 (share 0.134, skill_trend +0.012): share -1% to -18% on every arm. share-0.75 clearly worse (share 0.111, skill_trend -0.081). cloneend-0.95 keeps the trend (+0.020, share 0.124, births +7%, predator births 930). descriptor-v1 share 0.128, skill_trend +0.012, births +47% but pop 249, mating 0.115. imm-300 lineages 37, mating 0.105; imm-1800 births +79%, lineages 12, pop 210. Predictions: nothing collapses right; share-0.75 help wrong (it hurt); descriptor-v1 losing share wrong (-4%). Finalists for T47: split-300, split-300 + cloneShareEnd 0.95, split-300 + descriptor v1. See sim-notes 2026-10-29 \"Archive round\"."
     },
     {
+      "id": "E41",
+      "date": "2026-10-29",
+      "branch": "eval/fs-t47-finalists",
+      "hypothesis": "Finalists (fitness-and-selection T47): the three T46 finalists on policy map-elites-v6 at 16 seeds on each of seeds 1-16 and 17-32, 200000 ticks, against the Phase 4 reference E37 (map-elites-v1q, seeds 1-32, merit off). F1 split-300 (no policy options), F2 split-300 with cloneShareEnd 0.95, F3 split-300 with descriptor v1. All three use config meritEnabled true and splitDeliberateMin 300. The verdicts are read against the done criteria in the design doc.",
+      "prediction": "Predictions made before the run, per finalist and seed set, read as means:\n- eval.deliberate_food_share: about 0.12 to 0.14 on both sets for all three (the E39/E40 4-seed figures were 0.124 to 0.134), so `better` than E37 (0.114) on most sets but below the 0.20 Skill row: the Skill criterion fails.\n- eval.skill_trend: about 0 to +0.02 mean; positive on about 9 to 12 of 16 seeds, so the Behaviour row is borderline; F2 the highest of the three (E40 +0.020 against +0.012).\n- eval.mating_share: about 0.15 on all three (no childEnergyMin lever in these arms), `worse` than E37's 0.21: the Mating row fails.\n- eval.spec_dominance: about 0.66 to 0.70, not at or below 0.55: the No monoculture row fails on the mean.\n- eval.predator_presence about 1.0 (passes against 0.60); eval.predator_births above 30 on most seeds; F3 the highest births (about +40% against split-300, E40).\n- eval.idle_signals_per_1k and eval.child_survival near E37 (about 8 to 9 and 0.94).\nExpected verdict: the Skill, Mating and No monoculture rows fail for all three; the predator and world rows pass or are no-difference. No finalist is expected to meet the done criteria.",
+      "targets": [
+        "eval.deliberate_food_share",
+        "eval.skill_trend",
+        "eval.deliberate_food_trend",
+        "eval.spec_dominance",
+        "eval.predator_presence",
+        "eval.predator_births",
+        "eval.mating_share",
+        "eval.child_survival",
+        "eval.lineage_lifespan_p50",
+        "eval.idle_signals_per_1k",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.floor_episodes",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan"
+      ],
+      "beforePolicy": "map-elites-v1q",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/experiments/E37-ref.json",
+      "after": "evals/experiments/E41-F<1-3>-s<1-16|17-32>.json (config evals/experiments/E41-config.json; options E41-F2-options.json and E41-F3-options.json)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Pending: the runs, the eval:compare verdicts and the decision (T48a) are recorded when the reports exist."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
