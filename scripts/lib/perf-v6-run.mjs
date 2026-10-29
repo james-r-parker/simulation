@@ -31,14 +31,15 @@ function webglRenderer(page) {
 
 /**
  * @param {import('@playwright/test').Browser} browser the browser
- * @param {{viewport: {width: number, height: number}, agents: number}} options the canvas size and the agent count
+ * @param {{viewport: {width: number, height: number}, agents: number, look?: string}} options the canvas size, agent count and look
  * @param {string} url the app URL
  * @returns {Promise<import('@playwright/test').Page>} a page that has loaded the app and whose worker is running
  */
-async function openApp(browser, { viewport, agents }, url) {
+async function openApp(browser, { viewport, agents, look }, url) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     await page.addInitScript(LONG_TASK_SCRIPT);
-    await page.goto(`${url}?agents=${agents}&quality=0&seed=${SEED}`);
+    const lookQuery = look ? `&look=${encodeURIComponent(look)}` : '';
+    await page.goto(`${url}?agents=${agents}&quality=0&seed=${SEED}${lookQuery}`);
     await page.waitForFunction(
         () => {
             const w = /** @type {any} */ (globalThis);

@@ -56,6 +56,7 @@ const PARSERS = {
     '--viewport': (_arg, value) => ({ viewport: parseViewport(value) }),
     '--out': (_arg, value) => ({ out: value }),
     '--cdp': (_arg, value) => ({ cdp: value }),
+    '--look': (_arg, value) => ({ look: value }),
 };
 
 /**
@@ -84,6 +85,7 @@ function applyValueFlag(options, arg) {
  * @property {'v6' | 'legacy'} app which app to measure
  * @property {number} agents v6: the starting agent count
  * @property {{width: number, height: number}} viewport v6: the canvas size
+ * @property {string} look v6: the ?look= parameter
  */
 
 /**
@@ -103,11 +105,27 @@ export function parseArgs(argv) {
         app: 'v6',
         agents: DEFAULT_AGENTS,
         viewport: parseViewport(DEFAULT_VIEWPORT),
+        look: '',
     };
-    for (const arg of argv) {
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
         if (arg in BOOLEAN_FLAGS) {
             options[BOOLEAN_FLAGS[arg]] = true;
-        } else if (!applyValueFlag(options, arg)) {
+        } else if (arg.includes('=')) {
+            if (!applyValueFlag(options, arg)) {
+                throw new Error(
+                    `Unknown argument "${arg}"; expected ${Object.keys(PARSERS)
+                        .map((f) => `${f}=<v>`)
+                        .join(', ')}, ${Object.keys(BOOLEAN_FLAGS).join(', ')}`,
+                );
+            }
+        } else if (arg in PARSERS) {
+            const next = argv[++i];
+            if (next === undefined || next.startsWith('--')) {
+                throw new Error(`${arg} requires a value`);
+            }
+            Object.assign(options, PARSERS[arg](`${arg}=${next}`, next));
+        } else {
             throw new Error(
                 `Unknown argument "${arg}"; expected ${Object.keys(PARSERS)
                     .map((f) => `${f}=<v>`)
