@@ -87,7 +87,7 @@ describe('expandGrid', () => {
             /arm "a": .*descriptor "v9"/,
         ],
         [
-            { policy: 'live', arms: { a: { policyOptions: { fitnessOverrides: { BORN: 1 } } } } },
+            { policy: 'map-elites-v1q', arms: { a: { policyOptions: { fitnessOverrides: { BORN: 1 } } } } },
             /arm "a": .*map-elites-v1q" does not take "fitnessOverrides"/,
         ],
         [

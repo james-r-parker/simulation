@@ -1313,3 +1313,10 @@ Things that look odd (facts for T48a):
 - `body_plan_coverage` is `worse` in 5 of 6 cells.
 
 Prediction check (recorded before the run in `evals/experiments.json` as E41): deliberate share 0.13 was right; mating near 0.15 was low (0.11 to 0.13); skill_trend 0 to +0.02 was wrong (negative); spec_dominance 0.66 to 0.70 roughly right (0.62 to 0.73); the Skill, Mating and No monoculture rows failed as predicted. Predator births were predicted above 30 per seed on most seeds, which held but understated the size (hundreds of births per seed on average); `lineage_lifespan_p50` was not in the prediction.
+
+### 2026-10-29 - Adopting F1 split-300 re-pins the golden hashes and the busy effect stream (T48b, T48c)
+
+- The defaults now have `meritEnabled` true and `splitDeliberateMin` 300, and `LIVE_POLICY` is `map-elites-v6`. The pre-commit hook runs the golden tests on any commit that touches the defaults, so the Node re-pin cannot sit in a commit of its own; it is in the T48b commit.
+- **Hashes, old to new** (`test/sim/golden.json`): `cases` default `1969d11fcd461153` to `6a071841cce97696`; `cases` busy `a657b81b9af3c39e` to `778566888b16e69f`; `shortCases` default `d328ec7cf550c9cd` to `60429c3dc35c214d`; `shortCases` busy `7642f4a7b7400ff0` to `40984ad04e6ef7a6`. `npm run browser:hash` matches both long cases in Chromium 156.
+- **`BUSY_EFFECT_HASH` changed** (unlike T22b): `dd77d19ae7805ad7` to `1bcb8565c2f7c1a9`, records 2558 to 1487, because the busy world now runs with merit on (the split gate blocks splits).
+- `baseline-v5` and `baseline-v5-o16` are re-recorded (16 seeds x 200000 ticks, seeds 1-16 and 17-32). `bench/baseline.json` is left as it was: the frozen-world code path did not change, a re-run read `bench.step_ms@500` 2.524 ms against 2.372 (machine noise), and `bench-check` passes against the old baseline, so a noisier reading is not recorded. The tracked rows (not gated) read `defaults` 3.483 ms, `merit` 3.375 ms, `w7680` 4.106 ms.

@@ -1,6 +1,6 @@
 // map-elites-v6: `map-elites-v1` scored by `fitnessV6` and placed by `descriptorV6` (role skill x body plan), with an
-// immigrant mix set by options (fitness-and-selection.md "Archive"). It is the candidate Phase 4 tunes; the live policy
-// stays `map-elites-v1q` until the experiments choose.
+// immigrant mix set by options (fitness-and-selection.md "Archive"). It is the live policy from T48b (the E41 finalist
+// split-300, with merit on and the split gate at 300).
 //
 // Options beyond the eval runner's `{ config, log, observer }`: `fitnessOverrides` (weights replacing `FITNESS_V6`
 // entries), `archiveShare` and `cloneShareEnd` (the immigrant mix), `cellDraws` (the parent cell tournament, default
