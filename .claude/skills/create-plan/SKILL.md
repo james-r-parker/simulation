@@ -117,6 +117,10 @@ reads it, so the format is strict:
 - `[mechanical]`: fully specified, little room for choice. `[judgement]`: design decisions remain. Tag honestly.
 - Make dependencies explicit so independent tasks can run in parallel.
 - Group tasks under `### Phase N - ...` headings that match the doc's phases.
+- A plan that adds a flag or an enum value carries the task that deletes the losing path once the new value wins, and
+  adds the flag to `scripts/flag-ledger.json` (`key`, `plan`, `task`, `reason`) in the same change; the `conventions`
+  gate fails a boolean or enum config rule missing from the ledger, and an entry whose plan is built while the key
+  still exists.
 
 ### 5. Mandated final task
 
@@ -153,3 +157,4 @@ The last task of every phase is the conformance review:
 - Rationale, history or alternatives in the doc - they go in the commit and PR body.
 - Code changes starting before the doc is approved.
 - No conformance review task, or the review replacing `scripts/check.sh`.
+- A flag or enum value with no task that deletes the losing path, or no entry in `scripts/flag-ledger.json`.

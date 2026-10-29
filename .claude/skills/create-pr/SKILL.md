@@ -39,6 +39,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 6. **Design doc phase:** if the work delivers a phase of a design doc:
     - run a fresh conformance review agent over the design doc and the full diff (`git diff origin/main...HEAD`),
       checking every Delivery requirements row - **in parallel with** the final check, never instead of it
+    - the review also checks that the old path of every flag the PR switched on is deleted, or kept with a reason in
+      `scripts/flag-ledger.json`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
