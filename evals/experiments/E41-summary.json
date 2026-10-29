@@ -1,0 +1,410 @@
+{
+  "table": [
+    {
+      "criterion": "Skill: deliberate_food_share better, mean >= 0.20",
+      "cells": [
+        {
+          "text": "0.129 no change",
+          "pass": false
+        },
+        {
+          "text": "0.136 better",
+          "pass": false
+        },
+        {
+          "text": "0.131 better",
+          "pass": false
+        },
+        {
+          "text": "0.128 better",
+          "pass": false
+        },
+        {
+          "text": "0.128 better",
+          "pass": false
+        },
+        {
+          "text": "0.133 better",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "Behaviour: deliberate_food_trend better",
+      "cells": [
+        {
+          "text": "-0.073 no change",
+          "pass": false
+        },
+        {
+          "text": "-0.056 better",
+          "pass": true
+        },
+        {
+          "text": "-0.073 no change",
+          "pass": false
+        },
+        {
+          "text": "-0.072 no change",
+          "pass": false
+        },
+        {
+          "text": "-0.075 no change",
+          "pass": false
+        },
+        {
+          "text": "-0.064 no change",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "Behaviour: skill_trend mean >= 0, positive on >= 10 of 16",
+      "cells": [
+        {
+          "text": "-0.024 (5/16 > 0)",
+          "pass": false
+        },
+        {
+          "text": "-0.023 (7/16 > 0)",
+          "pass": false
+        },
+        {
+          "text": "-0.037 (2/16 > 0)",
+          "pass": false
+        },
+        {
+          "text": "-0.030 (2/16 > 0)",
+          "pass": false
+        },
+        {
+          "text": "-0.037 (5/16 > 0)",
+          "pass": false
+        },
+        {
+          "text": "-0.026 (5/16 > 0)",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "No monoculture: spec_dominance better, mean <= 0.55",
+      "cells": [
+        {
+          "text": "0.674 no change",
+          "pass": false
+        },
+        {
+          "text": "0.678 no change",
+          "pass": false
+        },
+        {
+          "text": "0.645 no change",
+          "pass": false
+        },
+        {
+          "text": "0.727 no change",
+          "pass": false
+        },
+        {
+          "text": "0.667 no change",
+          "pass": false
+        },
+        {
+          "text": "0.623 no change",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "No monoculture: largest specialisation <= 70% on >= 12 of 16",
+      "cells": [
+        {
+          "text": "8/16",
+          "pass": false
+        },
+        {
+          "text": "8/16",
+          "pass": false
+        },
+        {
+          "text": "9/16",
+          "pass": false
+        },
+        {
+          "text": "6/16",
+          "pass": false
+        },
+        {
+          "text": "7/16",
+          "pass": false
+        },
+        {
+          "text": "10/16",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "Predators persist: predator_presence mean >= 0.60, not worse than E37",
+      "cells": [
+        {
+          "text": "0.999 no change",
+          "pass": true
+        },
+        {
+          "text": "1.000 no change",
+          "pass": true
+        },
+        {
+          "text": "0.998 no change",
+          "pass": true
+        },
+        {
+          "text": "1.000 no change",
+          "pass": true
+        },
+        {
+          "text": "1.000 no change",
+          "pass": true
+        },
+        {
+          "text": "1.000 no change",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "criterion": "Predators breed: predator_births >= 30 on >= 12 of 16",
+      "cells": [
+        {
+          "text": "698.3 mean, 9/16 >= 30",
+          "pass": false
+        },
+        {
+          "text": "850.0 mean, 11/16 >= 30",
+          "pass": false
+        },
+        {
+          "text": "906.6 mean, 7/16 >= 30",
+          "pass": false
+        },
+        {
+          "text": "368.2 mean, 8/16 >= 30",
+          "pass": false
+        },
+        {
+          "text": "861.1 mean, 11/16 >= 30",
+          "pass": false
+        },
+        {
+          "text": "436.9 mean, 12/16 >= 30",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "criterion": "Calls: idle_signals_per_1k better; alarm and hunt-call precision not worse",
+      "cells": [
+        {
+          "text": "idle 7.48 no change; alarm -; hunt no change",
+          "pass": false
+        },
+        {
+          "text": "idle 7.06 no change; alarm -; hunt better",
+          "pass": false
+        },
+        {
+          "text": "idle 7.61 no change; alarm -; hunt no change",
+          "pass": false
+        },
+        {
+          "text": "idle 7.93 no change; alarm -; hunt no change",
+          "pass": false
+        },
+        {
+          "text": "idle 7.51 no change; alarm -; hunt worse",
+          "pass": false
+        },
+        {
+          "text": "idle 7.45 no change; alarm -; hunt no change",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "Mating: mating_share better, mean >= 0.35",
+      "cells": [
+        {
+          "text": "0.115 -",
+          "pass": false
+        },
+        {
+          "text": "0.127 -",
+          "pass": false
+        },
+        {
+          "text": "0.122 -",
+          "pass": false
+        },
+        {
+          "text": "0.126 -",
+          "pass": false
+        },
+        {
+          "text": "0.131 -",
+          "pass": false
+        },
+        {
+          "text": "0.109 -",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "Lineage: lineage_lifespan_p50 better; child_survival mean >= 0.90",
+      "cells": [
+        {
+          "text": "p50 worse; child_survival 0.934",
+          "pass": false
+        },
+        {
+          "text": "p50 worse; child_survival 0.934",
+          "pass": false
+        },
+        {
+          "text": "p50 worse; child_survival 0.930",
+          "pass": false
+        },
+        {
+          "text": "p50 worse; child_survival 0.941",
+          "pass": false
+        },
+        {
+          "text": "p50 worse; child_survival 0.933",
+          "pass": false
+        },
+        {
+          "text": "p50 worse; child_survival 0.936",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "criterion": "World: none worse of food_energy, fed_median_lifespan, lineages_alive, floor_episodes",
+      "cells": [
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        },
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        },
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        },
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        },
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        },
+        {
+          "text": "food_energy_per_1k better; fed_median_lifespan better; lineages_alive -; floor_episodes -",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "criterion": "World: births_per_1k down at most 15%",
+      "cells": [
+        {
+          "text": "-4.1%",
+          "pass": true
+        },
+        {
+          "text": "5.4%",
+          "pass": true
+        },
+        {
+          "text": "1.2%",
+          "pass": true
+        },
+        {
+          "text": "-18.8%",
+          "pass": false
+        },
+        {
+          "text": "-3.2%",
+          "pass": true
+        },
+        {
+          "text": "7.3%",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "criterion": "World: seedChecks on every seed (pop above min, below max, lineages >= 5, born_share >= 0.5)",
+      "cells": [
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        },
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        },
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        },
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        },
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        },
+        {
+          "text": "born_share >= 0.5 on 16/16; checks all pass",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "criterion": "Diversity recorded (spec_effective, body_plan_coverage, trait_spread): verdicts",
+      "cells": [
+        {
+          "text": "spec_effective no change; body_plan_coverage worse; trait_spread no change",
+          "pass": true
+        },
+        {
+          "text": "spec_effective no change; body_plan_coverage worse; trait_spread worse",
+          "pass": true
+        },
+        {
+          "text": "spec_effective no change; body_plan_coverage no change; trait_spread no change",
+          "pass": true
+        },
+        {
+          "text": "spec_effective no change; body_plan_coverage worse; trait_spread worse",
+          "pass": true
+        },
+        {
+          "text": "spec_effective no change; body_plan_coverage worse; trait_spread worse",
+          "pass": true
+        },
+        {
+          "text": "spec_effective better; body_plan_coverage worse; trait_spread worse",
+          "pass": true
+        }
+      ]
+    }
+  ]
+}
