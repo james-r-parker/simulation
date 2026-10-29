@@ -1,0 +1,16 @@
+{
+  "seeds": 8,
+  "seedOffset": 32,
+  "ticks": 200000,
+  "policy": "map-elites-v6",
+  "reference": "ref",
+  "arms": {
+    "ref": {},
+    "share-0.2": { "splitDeliberateShareMin": 0.2 },
+    "share-0.3": { "splitDeliberateShareMin": 0.3 },
+    "share-0.4": { "splitDeliberateShareMin": 0.4 },
+    "share-0.3-once": { "splitDeliberateShareMin": 0.3, "splitMaxPerLife": 1 },
+    "prey-no-split": { "preySplit": false },
+    "share-0.3-strict": { "splitDeliberateShareMin": 0.3, "meritSplitFloorPop": 45 }
+  }
+}
