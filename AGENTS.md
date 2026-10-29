@@ -109,7 +109,8 @@ When one agent hands tasks to others (user, 2026-10-22):
   (`scripts/check.sh`) and CI run once per chunk PR. The delegating agent still reviews each task's commit against its
   plan row. Golden re-pins keep their own commit inside the chunk. Long runs stay separate: evals, screens and timing
   runs (quiet machine) never go in a code chunk; the one exception is a baseline re-record, a [mechanical] commit of its
-  own inside an adopt chunk, run on a quiet machine under the CPU lock. A design doc lists its chunks in a "Chunks" table under each phase.
+  own inside an adopt chunk, run on a quiet machine under the CPU lock. A design doc lists its chunks in a "Chunks" table under each phase. A chunk with any [judgement] task is built by
+  Sonnet; a chunk that is all [mechanical] goes to Haiku.
 - **Pick the model by the task's tag.** `[mechanical]` tasks (run a command, re-pin, re-record, fill a table) go to
   Haiku; `[judgement]` tasks (deciding a verdict, diagnosis, review, optimisation) go to Sonnet. The delegating agent
   reviews every result before it merges.
