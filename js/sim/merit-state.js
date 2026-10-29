@@ -155,7 +155,7 @@ export function slotOfGenome(world, genomeId) {
  * @param {number} v a 16-bit value
  * @returns {number} the number of set bits
  */
-function popcount16(v) {
+export function popcount16(v) {
     const pairs = v - ((v >> 1) & 0x5555);
     const nibbles = (pairs & 0x3333) + ((pairs >> 2) & 0x3333);
     const bytes = (nibbles + (nibbles >> 4)) & 0x0f0f;

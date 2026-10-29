@@ -13,6 +13,7 @@ import { lineageMetrics } from './metrics-lineage.js';
 import { dietMetrics } from './metrics-diet.js';
 import { meritMetrics } from './metrics-merit.js';
 import { intentMetrics } from './metrics-intent.js';
+import { sceneMetrics } from './metrics-scenes.js';
 import { selectionMetrics } from './metrics-selection.js';
 import { watchMetrics } from './metrics-watch.js';
 import { watchabilityMetrics } from './metrics-watchability.js';
@@ -139,6 +140,7 @@ export function computeMetrics(observer, world, options = {}) {
         ...meritMetrics(observer, world),
         ...dietMetrics(observer),
         ...watchabilityMetrics(observer),
+        ...sceneMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

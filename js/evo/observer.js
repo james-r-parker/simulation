@@ -19,6 +19,7 @@ import { noteChase } from './observer-watch-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
+import { createScenes, observeScenes } from './observer-scenes.js';
 import { createWindows, noteWindows } from './observer-windows.js';
 import { CELL_SIZE, countCollisions, countTick, MOTION_SAMPLE_TICKS } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -140,6 +141,7 @@ export function createObserver(config, rng, options = {}) {
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
+        scenes: createScenes(config),
         windows: createWindows(options.runTicks ?? 0),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
@@ -163,6 +165,7 @@ export function observe(observer, world, fitness) {
     updateIntent(observer.intent, world, observer.slotOf);
     noteChase(observer, world);
     noteIntentEvents(observer, world);
+    observeScenes(observer, world);
     applyEvents(observer, world, fitness);
     snapshotMerit(observer.merit, world);
     if (world.tick === 0) {
