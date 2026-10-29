@@ -8,7 +8,7 @@ import { RANDOM_ARM, createControllerBrain } from './controller-brain.js';
 import { computeMetrics } from './metrics.js';
 import { createObserver, observe, observerPhases } from './observer.js';
 import { createBaselineV5 } from './policies/baseline-v5.js';
-import { createNaturalV1 } from './policies/natural-v1.js';
+import { createRandomBrain } from './policies/random-brain.js';
 
 /** The metrics a rung records: food, births and the deliberate-behaviour metrics. */
 export const RUNG_METRICS = Object.freeze([
@@ -45,7 +45,7 @@ export function runControllerSeed({ rung, seed, ticks, overrides = {} }) {
     const config = createConfig({ ...overrides, minAgents: 0, immigrationInterval: 0, seed });
     const arms = rung.arms;
     const random = typeof arms === 'string' ? arms === RANDOM_ARM : [arms.canHunt, arms.rest].includes(RANDOM_ARM);
-    const policy = random ? createNaturalV1({ config }).brain : createBaselineV5().brain;
+    const policy = random ? createRandomBrain(config).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: ticks });
     observe(observer, world);

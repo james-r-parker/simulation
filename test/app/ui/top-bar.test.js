@@ -34,7 +34,7 @@ describe('runLabel', () => {
     });
 
     it('names the policy, and merit when the overrides turn it on', () => {
-        expect(runLabel({ policy: 'map-elites-v1q' }, {})).toBe('policy map-elites-v1q');
+        expect(runLabel({ policy: 'map-elites-v6' }, {})).toBe('policy map-elites-v6');
         expect(runLabel({ policy: 'map-elites-v6' }, { meritEnabled: true, meritMateWeight: 0.05 })).toBe(
             'policy map-elites-v6, merit on',
         );
