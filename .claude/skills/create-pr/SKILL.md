@@ -70,6 +70,9 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
     ## Summary
     <what changed and why, 1-5 bullets>
 
+    ## Scene served
+    <the scene or selection rule from docs/principles.md and the detector metric; "None - no behaviour change">
+
     ## Design doc
     [<doc>.md](docs/designs/<doc>.md) - Status: <old> -> <new>
 
@@ -112,6 +115,7 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
 - Hand-editing `docs/designs/README.md` instead of running the generator.
 - Leaving the design doc Status line behind the code, or forgetting `(built)`.
 - Claiming a Target moved without the measurement in the PR body.
+- A sim, evo or brain behaviour change whose body names no scene or selection rule from `docs/principles.md`.
 - Rationale in the design doc instead of the commit body.
 - A subject with a capital letter, trailing period or non-conventional type.
 - Pushing or opening a PR the user did not ask for.
