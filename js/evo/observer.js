@@ -6,6 +6,7 @@ import { createEnvironmentPools } from './metrics-environment.js';
 import { createWatchPools } from './metrics-watch.js';
 import { sampleVisits } from './watch-visits.js';
 import { createLineagePools } from './metrics-lineage.js';
+import { createDietPools } from './metrics-diet.js';
 import { createMeritPools, snapshotMerit } from './metrics-merit.js';
 import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
@@ -134,6 +135,7 @@ export function createObserver(config, rng, options = {}) {
         }),
         watch: createWatchPools(config),
         merit: createMeritPools(config),
+        diet: createDietPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
         windows: createWindows(options.runTicks ?? 0),

@@ -3,6 +3,7 @@
 // Callers (the `merit` phase and `startMating`) gate every call on `meritEnabled`. See docs/designs/fitness-and-selection.md (In-world merit).
 
 import { detExp } from './det-math.js';
+import { noteMeal } from './split-gate.js';
 
 /** Ticks between `MeritSummary` log events. */
 export const MERIT_LOG_TICKS = 1000;
@@ -68,6 +69,7 @@ export function meritNow(world, slot) {
  * @returns {void}
  */
 export function creditIntake(world, slot, energy, deliberate) {
+    noteMeal(world, slot, deliberate);
     if (deliberate) {
         world.deliberateIntake[slot] += energy;
         add(world, slot, energy);

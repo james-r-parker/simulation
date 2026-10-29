@@ -11,6 +11,7 @@ import { meritPeek } from '../sim/merit.js';
 import { splitGatedShare } from '../sim/merit-tally.js';
 import { SEX } from '../sim/sex.js';
 import { createLog, ensureRoom } from './growable-log.js';
+import { DIET_DIRECTIONS } from './metrics-diet.js';
 import { none, ok, spearman } from './metrics-stats.js';
 
 /** Fewest mature deaths the merit-to-fitness correlation is computed from. */
@@ -19,13 +20,14 @@ export const MIN_CORRELATION_DEATHS = 30;
 /** Most (merit, fitness) pairs kept for the correlation; later deaths are not added. */
 export const MAX_PAIRS = 1 << 18;
 
-/** The direction of each merit metric, as the metrics table names them. */
+/** The direction of each merit metric, and of the parent-diet metrics beside them, as the metrics table names them. */
 export const MERIT_DIRECTIONS = Object.freeze({
     'eval.merit_mean': 'watch',
     'eval.merit_p90': 'watch',
     'eval.merit_mate_gain': 'higher',
     'eval.split_gated_share': 'watch',
     'eval.merit_fitness_corr': 'higher',
+    ...DIET_DIRECTIONS,
 });
 
 const OFF = 'meritEnabled is off';

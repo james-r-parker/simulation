@@ -88,4 +88,7 @@ export const FEATURE_RULES = {
     meritBirthBoost: num(0, 0.5),
     splitDeliberateMin: num(0),
     meritSplitFloorPop: int(0),
+    splitDeliberateShareMin: UNIT,
+    splitMaxPerLife: int(0),
+    preySplit: BOOL,
 };

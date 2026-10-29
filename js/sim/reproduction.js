@@ -14,6 +14,7 @@ import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
+import { noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -199,6 +200,9 @@ function giveBirth(world, policy, mother, cause) {
     world.spec[child] = childSpec(world, mother);
     drawSex(world, child);
     recordBirth(world, mother);
+    if (!isMate) {
+        noteSplit(world, mother);
+    }
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);
@@ -283,20 +287,20 @@ export function advancePregnancies(world, policy) {
 }
 
 /**
- * The merit split gate: open when `meritEnabled` is off, `splitDeliberateMin` is 0, the population is below
- * `meritSplitFloorPop`, or the agent's `deliberateIntake` has reached `splitDeliberateMin`. Reads only; a closed
- * gate changes nothing, so the agent stays ready.
+ * The merit split gate: open when `meritEnabled` is off or the population is below `meritSplitFloorPop`; otherwise
+ * open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, and `splitKeysAllow` (the
+ * share minimum, the per-life cap and `preySplit`). Reads only; a closed gate changes nothing, so the agent stays ready.
  * @param {World} world the world
  * @param {number} slot an alive agent
  * @returns {boolean} true when the gate lets the agent split
  */
 export function splitGateOpen(world, slot) {
     const { meritEnabled, splitDeliberateMin, meritSplitFloorPop } = world.config;
+    if (!meritEnabled || world.population < meritSplitFloorPop) {
+        return true;
+    }
     return (
-        !meritEnabled ||
-        splitDeliberateMin === 0 ||
-        world.population < meritSplitFloorPop ||
-        world.deliberateIntake[slot] >= splitDeliberateMin
+        (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) && splitKeysAllow(world, slot)
     );
 }
 

@@ -265,4 +265,7 @@ export const DEFAULTS = deepFreeze({
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
+    splitDeliberateShareMin: 0, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off
+    splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
+    preySplit: true, // new: fitness-and-selection T48d; false lets only canHunt agents split
 });
