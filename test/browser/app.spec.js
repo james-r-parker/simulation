@@ -168,8 +168,6 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
     }
     await page.keyboard.press('Space');
     await expect(page.locator(SPEED)).toHaveText('paused');
-    await page.keyboard.press('KeyI');
-    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
     await page.keyboard.press('KeyF');
     const box = await page.locator('#canvas-container canvas').boundingBox();
     expect(box).not.toBeNull();
@@ -184,6 +182,7 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
             { timeout: 15_000 },
         )
         .toBe(true);
+    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
     await expect(page.locator('.inspector-title')).toHaveText(/^[a-z]+ - [A-Z][a-z]+( [IVX]+)? - #\d+$/);
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer.open')).toHaveCount(0);

@@ -177,6 +177,7 @@ function pointerOptions(app) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
             app.iface.syncRays();
+            app.iface.openInspectorOnPick();
         },
     };
 }
@@ -230,9 +231,8 @@ function makeSupervisor(app) {
  * @returns {{x: number, y: number}} the same point in device pixels on the canvas
  */
 function clientToDevice(app, client) {
-    const canvas = app.deps.scene?.canvas;
-    const r = canvas?.getBoundingClientRect();
-    if (canvas === undefined || r === undefined) {
+    const r = app.deps.scene?.canvas?.getBoundingClientRect();
+    if (!r) {
         return { x: -1, y: -1 };
     }
     return {

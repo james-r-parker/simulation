@@ -14,6 +14,20 @@ import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
 
 export { REFRESH_MS };
+
+/**
+ * Whether a selecting pick should open the inspector drawer.
+ * @param {string | null} drawer currently open drawer, or null
+ * @param {number} id picked agent genome id, 0 for empty space
+ * @param {boolean} hudShown whether the HUD is visible
+ * @returns {boolean} whether to open the inspector drawer
+ */
+export function shouldOpenInspector(drawer, id, hudShown) {
+    if (!hudShown || !id) {
+        return false;
+    }
+    return drawer === null || drawer === 'inspector';
+}
 import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
@@ -318,6 +332,11 @@ export function createInterface(deps) {
         toast: ctx.toast,
         onEffect: (effect) => ctx.audio.onEffect(effect),
         afterDraw: (frame) => ctx.capture.afterDraw(frame),
+        openInspectorOnPick(id = deps.state.selectedId) {
+            if (shouldOpenInspector(ctx.drawers.state(), id, !ctx.hidden)) {
+                ctx.drawers.dispatch({ type: 'open', drawer: 'inspector' });
+            }
+        },
         pointer(x, y) {
             ctx.peekTracker.move(x, y, deps.now());
             ctx.peek.hide();
