@@ -4,6 +4,7 @@
 
 import { createFamilySlots } from '../family-slots.js';
 import { familyColor, PALETTE } from './colors.js';
+import { spawnMateThread } from './mate-threads.js';
 import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
 import { spawnBurst } from './sparks.js';
 
@@ -54,6 +55,7 @@ const RING = {
  * @typedef {object} EffectsPlayer
  * @property {import('./rings.js').RingPool} rings
  * @property {import('./sparks.js').SparkPool} sparks
+ * @property {import('./mate-threads.js').MateThreadPool} [threads]
  * @property {Record<string, number>} kinds `ready.layout.effectKinds`
  * @property {number} eatenCause `ready.layout.deathCauses.EATEN`
  * @property {{callRadius: number, callTicks: number}} info the call ranges
@@ -64,16 +66,26 @@ const RING = {
  */
 
 /**
- * @param {{rings: import('./rings.js').RingPool, sparks: import('./sparks.js').SparkPool, layout: Record<string, any>,
+ * @param {{rings: import('./rings.js').RingPool, sparks: import('./sparks.js').SparkPool,
+ *   threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
  *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
  *   sink?: ((effect: Effect) => void) | null}} options the pools to play into, `ready.layout` and `ready.info`, and
  *   the family colour slots (all neutral when absent)
  * @returns {EffectsPlayer} a player
  */
-export function createEffectsPlayer({ rings, sparks, layout, info, slots = createFamilySlots(), sink = null }) {
+export function createEffectsPlayer({
+    rings,
+    sparks,
+    threads,
+    layout,
+    info,
+    slots = createFamilySlots(),
+    sink = null,
+}) {
     return {
         rings,
         sparks,
+        threads,
         kinds: layout.effectKinds,
         eatenCause: layout.deathCauses.EATEN,
         info: { callRadius: info.callRadius, callTicks: info.callTicks },
@@ -215,6 +227,8 @@ function dispatch(player, agents) {
         playCall(player, 'alarm');
     } else if (e.kind === kinds.PACK_CALL) {
         playCall(player, 'hunt');
+    } else if (e.kind === kinds.MATED && player.threads) {
+        spawnMateThread(player.threads, e);
     }
 }
 

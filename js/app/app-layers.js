@@ -9,6 +9,7 @@ import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
 import { createOverlays } from './renderer/overlays.js';
 import { createParticles } from './renderer/particles.js';
+import { createMateThreadLayer, createMateThreadPool } from './renderer/mate-threads.js';
 import { createRingLayer, createRingPool } from './renderer/rings.js';
 import { createSmokeLayer } from './renderer/smoke-layer.js';
 import { createTerritoryLayer } from './renderer/territory-layer.js';
@@ -56,8 +57,9 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     agents.setSmokeTexture(smoke.texture);
     const rings = createRingPool();
     const sparks = createSparkPool(seed);
+    const threads = createMateThreadPool();
     refs.haze = haze;
-    refs.player = createEffectsPlayer({ rings, sparks, layout, info, slots, sink });
+    refs.player = createEffectsPlayer({ rings, sparks, threads, layout, info, slots, sink });
     return {
         layers: [
             createAuroraLayer({ info }),
@@ -71,6 +73,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             smoke,
             createRingLayer({ pool: rings }),
             createSparkLayer({ pool: sparks }),
+            createMateThreadLayer({ pool: threads }),
             createOverlays({ info }),
             createBorderLayer({ info }),
         ],
