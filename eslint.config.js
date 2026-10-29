@@ -25,7 +25,6 @@ export default [
         files: [
             'js/sim/**/*.js',
             'js/evo/**/*.js',
-            'js/dev/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
@@ -45,7 +44,6 @@ export default [
         files: [
             'js/sim/**/*.js',
             'js/evo/**/*.js',
-            'js/dev/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
             'scripts/**/*.{js,mjs}',
