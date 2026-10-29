@@ -1442,6 +1442,27 @@
       "note": "T44 screen, 9 arms x 4 seeds (offset 28, benchmark seeds 29-32) x 200000 ticks, policy map-elites-v6, grid evals/screens/fitness-a.grid.json; a screen, not a verdict. Scorecard: merit-only, mate-0.005, mate-0.02, birth-0.25, split-100, split-300 CUT by item 3 (births_per_1k -16% to -28%); maturity-1200 and childmin-50 pass; none collapses (item 1 ok everywhere). Prediction wrong on the central point: merit-only was predicted equal to base, but meritEnabled switches on merit ranking of free slots at the population cap (birth-cap.js, T21a), so merit-only alone gives births -24%, mating 0.199 to 0.155, fed lifespan 5547 to 8304; the 3000-tick identity test never reaches the cap. Against merit-only: split-300 deliberate_food_share 0.134 (+14%), skill_trend +0.012, births +7%; split-100 share +7%; mate-0.005 equals merit-only; mate-0.02 worse; birth-0.25 share +1%. Predicted split-300 cut and maturity-1200/childmin-50 effects held in direction (childmin-50 mating +42%, births +4%; maturity-1200 mating -38%, child_survival 0.88). See sim-notes 2026-10-28 \"Round A\"."
     },
     {
+      "id": "E39",
+      "date": "2026-10-29",
+      "branch": "eval/fs-t45-round-b",
+      "hypothesis": "Round B screen (fitness-and-selection T45): the round A lead (splitDeliberateMin 300 on merit) lifts eval.deliberate_food_share and eval.skill_trend without the births cost; childEnergyMin 50 adds mating on top; the births cost belongs to the merit cap ranking (birth-cap.js), so capBirthsEnabled off removes it; a lower CHANCE_WEIGHT in fitnessV6 (0.25 to 0.1) pays luck less and lifts deliberate food in the archive.",
+      "prediction": "Screen of 8 arms x 4 seeds (29-32) x 200000 ticks, policy map-elites-v6; base, merit-only and nocap (capBirthsEnabled false, merit off) are references, the other 5 arms are the choice (references repeated for a fair comparison; deterministic, so base and merit-only should reproduce round A's figures exactly). Read merit arms against merit-only, the nocap arm against nocap.\n- split-300: reproduces E38 (delib share ~0.134, skill_trend ~+0.012, births -19% vs base).\n- split-300-childmin-50: mating 0.15 to about 0.22-0.28 (childmin lifted base +42%), delib share about 0.13, births near split-300 or a little higher.\n- split-300-childmin-50-birth-0.25: births +5 to +10% over the pair, share within noise of the pair (birth-0.25 added ~1% share in round A); population drops to ~340.\n- split-300-nocap: births per 1k near nocap (-0 to -10%) if the cap ranking is the births cost; delib share at or above split-300's 0.134 when read against nocap; if births still fall 15% or more the cost is the split gate, not the ranking.\n- chance-0.1 (CHANCE_WEIGHT 0.1, merit off, anti-exploit bounds checked: gateThenIdle 0.661 of 0.696 allowed, sprinter prey 1.483 of 1.506): delib share +5 to +10% over base (0.115 to ~0.12-0.125), skill_trend not clearly different at 4 seeds, births/lineages within 10% of base. Fitness weights only act through the archive, so the effect is smaller than split-300's.\n- No collapse expected anywhere (population above minAgents on 4 of 4). Expected winner for round C (archive): split-300-childmin-50 if the pair holds, else split-300.",
+      "targets": [
+        "eval.deliberate_food_share",
+        "eval.skill_trend",
+        "eval.births_per_1k",
+        "eval.lineages_alive",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/screens/results/fitness-b/base.report.json",
+      "after": "evals/screens/results/fitness-b/<arm>.report.json (one per arm; table in evals/screens/results/fitness-b/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Predicted, not yet run (T45). Grid evals/screens/fitness-b.grid.json."
+    },
+    {
       "id": "E43",
       "date": "2026-10-23",
       "branch": "eval/fs-t15g-predator-economy",
