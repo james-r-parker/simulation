@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open, to `/next/` and every same-repo PR to a preview; Phases 2 to 4 add a read-only gene library, verified community uploads and an `npx` contributor trainer.
 **Validated:** 23eaea3 (2026-10-17)
-**Priority:** 9 - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
+**Priority:** 10 - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The app is published on Cloudflare Pages by GitHub Actions, and then opened to the community:
