@@ -1716,7 +1716,7 @@
       "note": "T15o decision (manager, 2026-10-24), predator biteMultiplier 12 to 8 (the new default). Live policy map-elites-v1q (policy live), seeds 1-32, 200000 ticks, measured on main f047245 with the biteMultiplier as the only change (configs: evals/experiments/E47-bite8-config.json and E47-bite10-config.json, each an overlay on the main f047245 defaults (predator biteMultiplier 12) that sets only the predator biteMultiplier to 8 or 10, compared with the E36 reference run). Reports: evals/experiments/E47-bite8-report.json and E47-bite10-report.json (32 seeds); per-set splits: E47-bite8-seeds1-16.json, E47-bite8-seeds17-32.json, E47-bite10-seeds1-16.json, E47-bite10-seeds17-32.json, each compared with E36-ref-seeds1-16.json or E36-ref-seeds17-32.json. Verdicts shown are the 32-seed eval:compare of bite 8 against E36-ref.json (--allow-config-diff on the E36-ref-config keys). Per set (1-16 / 17-32), from eval:compare with the same config-diff keys: bite 10: catch_rate better / better, predator_births better / better, fed_median_lifespan no-difference / worse (-8.5%, 6180 to 5656); bite 8: catch_rate better / better (0.006 to 0.060, 0.005 to 0.051), predator_births better / better (3.6 to 127.4, 5.2 to 39.5), fed_median_lifespan no-difference / no-difference (5802 to 5743, 6180 to 5760). Population bite 8 390 / 378 (x12 was 373 / 368). Predator births of 30 or more per seed: bite 8 7 of 16 on each set (x12 10 and 11 of 16; bite 10 9 of 16 on each set). Bite 8 is the softest arm that keeps catch_rate and predator_births better with fed_median_lifespan not worse on either set, so it is the default. The E36 partial-pass bar on births (12 of 16 on each set) is still missed and stays with Phase 4. Prediction check: catch rate and births fell in proportion to bite size as predicted, and both arms stayed better; the fed-lifespan recovery was predicted for bite 10 on seeds 17-32 (about -5%, no-difference) and it was WORSE (-8.5%), so the predicted expected pick (bite 10 if it clears fed lifespan on both sets) failed and the fallback (bite 8) applies. Golden hashes re-pinned with this change (see sim-notes 2026-10-24 E47 entry)."
     },
     {
-      "id": "E48",
+      "id": "E61",
       "date": "2026-10-29",
       "branch": "eval/fs-t48f-split-heat",
       "hypothesis": "Split screen (fitness-and-selection T48f): on the live default (map-elites-v6, meritEnabled, splitDeliberateMin 300), gating splits on a deliberate-meal share, limiting splits per life, or barring prey from splitting cuts the clone bumper births (eval.split_bumper_share) and raises the share of births that are matings, without a population collapse.",
@@ -1726,10 +1726,10 @@
       "after": "evals/screens/results/split/<arm>.report.json (one per arm; table in evals/screens/results/split/table.md)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "T48f split screen, 7 arms x 8 seeds (offset 32) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. Result to be filled in after the run."
+      "note": "T48f split screen, 7 arms x 8 seeds (offset 32) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. Id E61 (E48-E60 are reserved by the brain plan). ref: split_bumper_share 0.291 (predicted 0.4-0.5, wrong), mating 0.129, deliberate share 0.130, pop 353, skill_trend -0.022. share-0.2: bumper 0.111, mating 0.146, delib 0.162, skill_trend +0.012, pop 250 (min seed 94), floor episodes 4.5 (ref 7.75), fed lifespan -26%, predator births 41 (ref 672 carried by one seed of 5238). share-0.3 and 0.4: bumper 0.233 and 0.384, pop 157 and 95, food/1k -34% and -40%. share-0.3-once: bumper 0.410, pop 99. prey-no-split: bumper 0.458 (rises: only predators split), pop 97, floor episodes 30. share-0.3-strict: pop 59, cold stress 0.161, floor episodes 18, lifespan -30%. Predictions: ordering of severity right, share-0.2 as the pick right; ref bumper share, the 'once' and 'prey-no-split' gentleness, and share-0.3-once population all wrong (every gate that bites cuts population by 30-80%). Pick: share-0.2 (fed lifespan -26% to be judged at 16 seeds). See sim-notes 2026-10-29 'Split and heat screens'."
     },
     {
-      "id": "E49",
+      "id": "E62",
       "date": "2026-10-29",
       "branch": "eval/fs-t48f-split-heat",
       "hypothesis": "Heat screen (fitness-and-selection T48f): lowering temperatureGainEat to 1.5 and raising temperatureLossPassive to 0.009 on the live default brings eval.heat_stress_share near 0.3 and keeps eval.cold_stress_share under 0.1 without a collapse.",
@@ -1739,7 +1739,7 @@
       "after": "evals/screens/results/heat/<arm>.report.json (one per arm; table in evals/screens/results/heat/table.md)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "T48f heat screen, 4 arms x 16 seeds (offset 32) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. Result to be filled in after the run. E48 and E49 are the next free ids after E47 (E42 stays reserved for the 600000-tick run)."
+      "note": "T48f heat screen, 4 arms x 16 seeds (offset 32) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. Ids E61 and E62 (E48-E60 are reserved by the brain plan). ref: heat 0.496, cold 0.074, mating 0.125, fed lifespan 7753, skill_trend -0.036. eat-1.5: heat 0.415, cold 0.097, mating 0.183, fed lifespan -6%, skill_trend -0.015. loss-0.009: heat 0.387, cold 0.137. both: heat 0.358, cold 0.159, mating 0.171, skill_trend -0.001. No arm reaches heat 0.3; only ref and eat-1.5 keep cold under 0.1. No collapse (pop 307-346). Predictions: heat for both (0.28-0.33) and cold for loss-0.009 wrong (heat stayed higher, cold rose more); eat-1.5 heat (0.35-0.38) a little low. Pick: eat-1.5 (cold limit holds). See sim-notes 2026-10-29 'Split and heat screens'."
     }
   ]
 }
