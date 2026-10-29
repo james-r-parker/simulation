@@ -1,17 +1,11 @@
-// The static parts of the world: food dots, obstacle discs and the border line. Food and obstacles are one
-// `InstancedMesh` each, fed from the newest snapshot with the count set per frame.
+// The static parts of the world: food dots, obstacle discs and the border line. Food and obstacles are
+// instanced meshes fed from the newest snapshot with the count set per frame.
 
-import {
-    AdditiveBlending,
-    BufferGeometry,
-    Float32BufferAttribute,
-    LineBasicMaterial,
-    LineLoop,
-    ShaderMaterial,
-} from 'three';
-import { PALETTE } from './colors.js';
-import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
+import { BufferGeometry, Float32BufferAttribute, Group, LineBasicMaterial, LineLoop, ShaderMaterial } from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
+import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
+import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
+import { packRockShape, rockShape, SHAPE_FLOATS } from './rock-shape.js';
 import { FOOD_FRAGMENT, FOOD_VERTEX, OBSTACLE_FRAGMENT, OBSTACLE_VERTEX } from './world-layers-shader.js';
 
 /** The food dot's colour intensity, and its smallest radius in device pixels. */
@@ -57,42 +51,43 @@ export function packBodies(f32, part, out) {
 }
 
 /**
- * @param {Record<string, any>} options the material parts
- * @returns {any} a shader material that draws without depth
+ * @param {import('three').ShaderMaterialParameters} options material parameters
+ * @returns {ShaderMaterial} a transparent shader material
  */
 function material(options) {
-    return new ShaderMaterial({ transparent: true, depthTest: false, depthWrite: false, ...options });
+    return new ShaderMaterial({
+        ...options,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+    });
 }
 
 /**
  * @param {{info: Record<string, any>}} context `ready.info`
- * @returns {import('./scene.js').Layer} the food dots, drawn additively
+ * @returns {import('./scene.js').Layer} the food dots: four-point sparkles in plant teal or meat amber
  */
 export function createFoodLayer({ info }) {
     const uniforms = {
         uZoom: { value: 1 },
-        uPad: { value: 3 },
+        uPad: { value: 6 },
         uMinPx: { value: FOOD_MIN_PX },
-        uTime: { value: 0 },
         uColor: { value: PALETTE.food },
         uMeatColor: { value: PALETTE.meat },
         uIntensity: { value: FOOD_INTENSITY },
+        uTime: { value: 0 },
     };
     const geometry = createQuadGeometry(info.maxFood, ['iBody']);
-    const mat = material({
-        vertexShader: FOOD_VERTEX,
-        fragmentShader: FOOD_FRAGMENT,
-        uniforms,
-        blending: AdditiveBlending,
-    });
+    const mat = material({ vertexShader: FOOD_VERTEX, fragmentShader: FOOD_FRAGMENT, uniforms });
     const mesh = createQuadMesh(geometry, mat, info.maxFood);
     const packed = new Float32Array(info.maxFood * VEC4);
     return {
         object: mesh,
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
-            uniforms.uTime.value = frame.nowMs / 1000;
+            uniforms.uTime.value = frame.nowMs * 0.001;
             if (frame.snapshot === null) {
+                mesh.count = 0;
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
@@ -108,37 +103,130 @@ export function createFoodLayer({ info }) {
 }
 
 /**
- * @param {{info: Record<string, any>}} context `ready.info`
- * @returns {import('./scene.js').Layer} the obstacles: near-black discs with a 2 px rim, drawn over the haze and food
+ * @param {number} count obstacle count
+ * @param {number} seed world seed
+ * @returns {Float32Array} packed shape attributes
  */
-export function createObstacleLayer({ info }) {
-    const uniforms = {
+function initObstacleShapes(count, seed) {
+    const packed = new Float32Array(count * VEC4);
+    const scratch = new Float32Array(SHAPE_FLOATS);
+    for (let i = 0; i < count; i++) {
+        rockShape(seed, i, scratch);
+        packRockShape(scratch, packed, i * VEC4);
+    }
+    return packed;
+}
+
+/**
+ * @param {number} pass 0 for rim, 1 for body
+ * @returns {Record<string, {value: any}>} uniform dictionary
+ */
+function obstacleUniforms(pass) {
+    return {
         uZoom: { value: 1 },
         uPad: { value: 2 },
         uMinPx: { value: 2 },
-        uBody: { value: PALETTE.obstacleBody },
-        uRim: { value: PALETTE.obstacleRim },
+        uBody: { value: PALETTE.rockBody },
+        uRim: { value: PALETTE.rockRim },
+        uContact: { value: PALETTE.rockContact },
+        uLichen: { value: PALETTE.lichen },
+        uSceneryMax: { value: SCENERY_MAX_LUMINANCE },
         uRimPx: { value: OBSTACLE_RIM_PX },
+        uTime: { value: 0 },
+        uTier: { value: 0 },
+        uPass: { value: pass },
     };
-    const geometry = createQuadGeometry(info.obstacleCount, ['iBody']);
-    const mat = material({ vertexShader: OBSTACLE_VERTEX, fragmentShader: OBSTACLE_FRAGMENT, uniforms });
-    const mesh = createQuadMesh(geometry, mat, info.obstacleCount);
-    const packed = new Float32Array(info.obstacleCount * VEC4);
+}
+
+/**
+ * @param {import('three').BufferGeometry} geometry shared quad geometry
+ * @param {Record<string, {value: any}>} rimUniforms rim uniforms
+ * @param {Record<string, {value: any}>} bodyUniforms body uniforms
+ * @param {number} count instance count
+ */
+function createObstacleMeshes(geometry, rimUniforms, bodyUniforms, count) {
+    const rimMat = material({
+        vertexShader: OBSTACLE_VERTEX,
+        fragmentShader: OBSTACLE_FRAGMENT,
+        uniforms: rimUniforms,
+    });
+    const bodyMat = material({
+        vertexShader: OBSTACLE_VERTEX,
+        fragmentShader: OBSTACLE_FRAGMENT,
+        uniforms: bodyUniforms,
+    });
+    const rimMesh = createQuadMesh(geometry, rimMat, count);
+    const bodyMesh = createQuadMesh(geometry, bodyMat, count);
+    rimMesh.renderOrder = 0;
+    bodyMesh.renderOrder = 1;
+
+    const group = new Group();
+    group.add(rimMesh);
+    group.add(bodyMesh);
+    Object.defineProperty(group, 'count', {
+        get() {
+            return rimMesh.count;
+        },
+        set(v) {
+            rimMesh.count = v;
+            bodyMesh.count = v;
+        },
+    });
+    Object.defineProperty(group, 'material', {
+        get() {
+            return rimMat;
+        },
+    });
+    return { rimMat, bodyMat, rimMesh, bodyMesh, group };
+}
+
+/**
+ * @param {{info: Record<string, any>, seed?: number}} context `ready.info` and seed
+ * @returns {import('./scene.js').Layer} two-pass rock obstacles with rim and shaded body
+ */
+export function createObstacleLayer({ info, seed = 0 }) {
+    const count = info.obstacleCount;
+    const geometry = createQuadGeometry(count, ['iBody', 'iShape']);
+    geometry.getAttribute('iShape').copyArray(initObstacleShapes(count, seed ?? info.seed ?? 0));
+    geometry.getAttribute('iShape').needsUpdate = true;
+
+    const rimUniforms = obstacleUniforms(0);
+    const bodyUniforms = obstacleUniforms(1);
+    const { rimMat, bodyMat, rimMesh, bodyMesh, group } = createObstacleMeshes(
+        geometry,
+        rimUniforms,
+        bodyUniforms,
+        count,
+    );
+    const packed = new Float32Array(count * VEC4);
+
     return {
-        object: mesh,
+        object: group,
+        setLook(look) {
+            const tier = look.rocks === 0 ? 0 : look.rocks === 1 ? 1 : 2;
+            rimUniforms.uTier.value = tier;
+            bodyUniforms.uTier.value = tier;
+        },
         update(frame) {
-            uniforms.uZoom.value = frame.camera.zoom;
+            rimUniforms.uZoom.value = frame.camera.zoom;
+            bodyUniforms.uZoom.value = frame.camera.zoom;
+            rimUniforms.uTime.value = frame.nowMs * 0.001;
+            bodyUniforms.uTime.value = frame.nowMs * 0.001;
             if (frame.snapshot === null) {
+                group.count = 0;
                 return;
             }
             const s = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packBodies(frame.snapshot.f32, bodyPart(s.obstacleStart, s.obstacleCount), packed);
-            uploadInstances(mesh, { iBody: packed }, count);
+            const n = packBodies(frame.snapshot.f32, bodyPart(s.obstacleStart, s.obstacleCount), packed);
+            uploadInstances(rimMesh, { iBody: packed }, n);
+            uploadInstances(bodyMesh, { iBody: packed }, n);
         },
         dispose() {
             geometry.dispose();
-            mat.dispose();
-            mesh.dispose();
+            rimMat.dispose();
+            bodyMat.dispose();
+            rimMesh.dispose();
+            bodyMesh.dispose();
         },
     };
 }

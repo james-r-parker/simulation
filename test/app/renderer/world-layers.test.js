@@ -84,6 +84,22 @@ describe('food and obstacle layers', () => {
         expect(obstacles.object.material.uniforms.uRim.value).toEqual(PALETTE.obstacleRim);
     });
 
+    it('draws obstacles as two passes: rim and body', () => {
+        const { info } = smallReady();
+        const obstacles = createObstacleLayer({ info });
+        expect(obstacles.object.children.length).toBe(2);
+        const [rimMesh, bodyMesh] = obstacles.object.children;
+        expect(rimMesh.material.uniforms.uPass.value).toBe(0);
+        expect(bodyMesh.material.uniforms.uPass.value).toBe(1);
+        expect(rimMesh.geometry.getAttribute('iShape')).toBeDefined();
+        obstacles.setLook?.({ rocks: 1 });
+        expect(rimMesh.material.uniforms.uTier.value).toBe(1);
+        expect(bodyMesh.material.uniforms.uTier.value).toBe(1);
+        obstacles.setLook?.({ rocks: -1 });
+        expect(rimMesh.material.uniforms.uTier.value).toBe(2);
+        obstacles.dispose();
+    });
+
     it('draw nothing before a snapshot', () => {
         const { info } = smallReady();
         const food = createFoodLayer({ info });

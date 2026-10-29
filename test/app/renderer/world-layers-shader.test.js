@@ -2,18 +2,23 @@ import { describe, expect, it } from 'vitest';
 import * as shaders from '../../../js/app/renderer/world-layers-shader.js';
 
 describe('world layer shaders', () => {
-    it('share the instanced vertex shader and avoid reserved words', () => {
-        expect(shaders.FOOD_VERTEX).toBe(shaders.OBSTACLE_VERTEX);
-        expect(shaders.FOOD_VERTEX).toContain('attribute vec4 iBody');
-        expect(shaders.FOOD_VERTEX).not.toMatch(/float half\b/);
+    it('sets up obstacle vertex shader with instanced shape attribute and world position', () => {
+        expect(shaders.OBSTACLE_VERTEX).toContain('attribute vec4 iBody');
+        expect(shaders.OBSTACLE_VERTEX).toContain('attribute vec4 iShape');
+        expect(shaders.OBSTACLE_VERTEX).toContain('varying vec4 vShape');
+        expect(shaders.OBSTACLE_VERTEX).toContain('varying vec2 vWorld');
+        expect(shaders.OBSTACLE_VERTEX).not.toMatch(/float half\b/);
     });
 
-    it('declare what the layers set', () => {
+    it('declares two-pass obstacle uniforms and controls', () => {
+        for (const u of ['uBody', 'uRim', 'uContact', 'uLichen', 'uSceneryMax', 'uRimPx', 'uTime', 'uTier', 'uPass']) {
+            expect(shaders.OBSTACLE_FRAGMENT).toContain(u);
+        }
+    });
+
+    it('declares food uniforms', () => {
         for (const u of ['uColor', 'uIntensity', 'uTime']) {
             expect(shaders.FOOD_FRAGMENT).toContain(u);
-        }
-        for (const u of ['uBody', 'uRim', 'uRimPx']) {
-            expect(shaders.OBSTACLE_FRAGMENT).toContain(u);
         }
         for (const u of ['uZoom', 'uPad', 'uMinPx']) {
             expect(shaders.FOOD_VERTEX).toContain(u);

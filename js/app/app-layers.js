@@ -61,7 +61,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createTerritoryLayer({ info }),
             haze,
             createFoodLayer({ info }),
-            createObstacleLayer({ info }),
+            createObstacleLayer({ info, seed }),
             agents,
             createVisionLayer({ info }),
             smoke,
