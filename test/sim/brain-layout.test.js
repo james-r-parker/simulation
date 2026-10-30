@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     BODY_INPUT,
     EXTRA_INPUTS,
+    GENE_OUTPUTS,
+    GENE_OUTPUT_COUNT,
     OUTPUT_COUNT,
     OUTPUT_INDEX,
     POOLED_VALUES,
@@ -13,30 +15,31 @@ import {
 import { createConfig } from '../../js/sim/config.js';
 
 /**
- * The per-block derivation of the genome row: wIn, wRec, bHidden, wOut, bOut, wSkip, trait genes, leak genes.
+ * The per-block derivation of the genome row: wIn, wRec, bHidden, wOut, bOut, wSkip, trait genes, leak genes. The
+ * three output blocks have 10 columns: the 11 outputs less `SPLIT`.
  * @param {number} inputs the inputs the brain multiplies
  * @param {number} H hidden units
  * @returns {number} floats in a row
  */
 function derive(inputs, H) {
-    return inputs * H + H * H + H + H * 11 + 11 + 48 * 11 + 4 + H;
+    return inputs * H + H * H + H + H * 10 + 10 + 48 * 10 + 4 + H;
 }
 
 describe('brainLayout', () => {
-    it('gives 81 inputs (48 pooled and 33 body), 177 raw values and 4575 weights at the defaults', () => {
+    it('gives 81 inputs (48 pooled and 33 body), 177 raw values and 4494 weights at the defaults', () => {
         const layout = brainLayout(createConfig());
         expect(layout.inputCount).toBe(81);
         expect(layout.rawInputCount).toBe(177);
-        expect(layout.weightCount).toBe(4575);
+        expect(layout.weightCount).toBe(4494);
         expect(layout.outputCount).toBe(OUTPUT_COUNT);
     });
 
     it.each([
-        [16, 2303],
-        [24, 3375],
-        [32, 4575],
-        [48, 7359],
-        [64, 10655],
+        [16, 2238],
+        [24, 3302],
+        [32, 4494],
+        [48, 7262],
+        [64, 10542],
     ])('pins the genome size at %i hidden to %i floats, equal to the per-block derivation', (hidden, floats) => {
         const layout = brainLayout(createConfig({ brainHidden: hidden }));
         expect(layout.weightCount).toBe(floats);
@@ -79,8 +82,8 @@ describe('brainLayout', () => {
         expect(l.wRec).toBe(l.inputCount * 3);
         expect(l.bHidden).toBe(l.wRec + 9);
         expect(l.wOut).toBe(l.bHidden + 3);
-        expect(l.bOut).toBe(l.wOut + 3 * OUTPUT_COUNT);
-        expect(l.traitStart).toBe(l.wSkip + 48 * OUTPUT_COUNT);
+        expect(l.bOut).toBe(l.wOut + 3 * 10);
+        expect(l.traitStart).toBe(l.wSkip + 48 * 10);
         expect(l.leakStart).toBe(l.traitStart + TRAIT_GENES);
         expect(l.weightCount).toBe(l.leakStart + 3);
     });
@@ -92,9 +95,9 @@ describe('brainLayout', () => {
             wIn: 81 * H,
             wRec: H * H,
             bHidden: H,
-            wOut: H * 11,
-            bOut: 11,
-            wSkip: 48 * 11,
+            wOut: H * 10,
+            bOut: 10,
+            wSkip: 48 * 10,
             traitStart: 4,
             leakStart: H,
         };
@@ -104,6 +107,15 @@ describe('brainLayout', () => {
             at += size;
         }
         expect(l.weightCount).toBe(at);
+    });
+
+    it('gives the SPLIT output no gene column: 10 gene columns map to the other ten outputs', () => {
+        expect(GENE_OUTPUT_COUNT).toBe(10);
+        expect(GENE_OUTPUTS).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 9, 10]);
+        expect(GENE_OUTPUTS).not.toContain(OUTPUT_INDEX.SPLIT);
+        const layout = brainLayout(createConfig());
+        expect(layout.geneOutputs).toBe(10);
+        expect(layout.outputCount).toBe(11);
     });
 
     it('is frozen', () => {

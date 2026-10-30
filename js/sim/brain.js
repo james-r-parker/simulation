@@ -2,7 +2,7 @@
 
 import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
-import { POOLED_VALUES } from './brain-layout.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from './brain-layout.js';
 import { poolRays } from './ray-pool.js';
 
 /**
@@ -113,7 +113,7 @@ function hiddenStep(world, slot) {
  */
 function addSkip(world, slot) {
     const { weights, pooled, layout, brainScratch: sums } = world;
-    const OUT = layout.outputCount;
+    const G = layout.geneOutputs;
     const inBase = slot * layout.inputCount;
     const skip = slot * layout.weightCount + layout.wSkip;
     for (let i = 0; i < POOLED_VALUES; i++) {
@@ -121,9 +121,9 @@ function addSkip(world, slot) {
         if (x === 0) {
             continue;
         }
-        const row = skip + i * OUT;
-        for (let o = 0; o < OUT; o++) {
-            sums[o] += weights[row + o] * x;
+        const row = skip + i * G;
+        for (let g = 0; g < G; g++) {
+            sums[GENE_OUTPUTS[g]] += weights[row + g] * x;
         }
     }
 }
@@ -138,21 +138,23 @@ function outputStep(world, slot) {
     const { weights, hidden, outputs, layout } = world;
     const H = layout.hidden;
     const OUT = layout.outputCount;
+    const G = layout.geneOutputs;
     const wBase = slot * layout.weightCount;
     const hBase = slot * H;
     const scratchBase = world.config.maxAgents * H;
     // With Hebbian learning on, the plastic copy of the block is read; the genome's block never changes in a life.
     const plastic = world.config.hebbianRate > 0;
     const block = plastic ? world.fastOut : weights;
-    const wOut = plastic ? slot * H * OUT : wBase + layout.wOut;
+    const wOut = plastic ? slot * H * G : wBase + layout.wOut;
     const bOut = wBase + layout.bOut;
     const sums = world.brainScratch;
-    for (let o = 0; o < OUT; o++) {
-        let sum = weights[bOut + o];
+    sums[OUTPUT_INDEX.SPLIT] = 0; // no genes: the output reads 0
+    for (let g = 0; g < G; g++) {
+        let sum = weights[bOut + g];
         for (let j = 0; j < H; j++) {
-            sum += block[wOut + j * OUT + o] * hidden[scratchBase + j];
+            sum += block[wOut + j * G + g] * hidden[scratchBase + j];
         }
-        sums[o] = sum;
+        sums[GENE_OUTPUTS[g]] = sum;
     }
     addSkip(world, slot);
     detTanhInto(sums, outputs, slot * OUT, OUT);

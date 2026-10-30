@@ -77,15 +77,15 @@ computed (no `genomeSize` function is added). T1a pins every cell below in `../.
 a per-block derivation, so this table and the test change in one commit. Blocks, in row order: `wIn` (inputs x H),
 `wRec` (H x H), `bHidden` (H), `wOut` (H x outputs with genes), `bOut`, `wSkip` (skip source values x outputs with
 genes), trait genes 4, leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
-inputs (48 pooled and 33 body; the season inputs are deleted). The built layout is the second row.
+inputs (48 pooled and 33 body; the season inputs are deleted). The built layout is the last row.
 
 | Layout and options                                                                                                                     | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
 | -------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | --------- | --------- |
 | `elman-v1`, 179 inputs (deleted; the record)                                                                                           | 3,343     | 5,199     | 7,183     | 11,535    | 16,399    |
-| `pooled-v2` top 2, 81 inputs, `SPLIT` genes kept, no skip (the layout built)                                                           | 1,775     | 2,847     | 4,047     | 6,831     | 10,127    |
+| `pooled-v2` top 2, 81 inputs, `SPLIT` genes kept, no skip (built until B3)                                                             | 1,775     | 2,847     | 4,047     | 6,831     | 10,127    |
 | `pooled-v2` top 2, `SPLIT` genes kept, `brainSkip` (48 x 11)                                                                           | 2,303     | 3,375     | 4,575     | 7,359     | 10,655    |
 | `pooled-v2` top 2, no `SPLIT` genes, no skip                                                                                           | 1,758     | 2,822     | 4,014     | 6,782     | 10,062    |
-| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10)                                                                             | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
+| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (the layout built)                                                          | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
 | (the earlier 57-input strongest-hit variant, never built, had 1,391 / 2,271 / 3,279 / 5,679 / 8,591 for the `SPLIT`-kept, no-skip row) |           |           |           |           |           |
 
 ## Hypotheses

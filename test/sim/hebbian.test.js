@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
-import { TRAIT_INDEX } from '../../js/sim/brain-layout.js';
+import { GENE_OUTPUTS, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
 import { detSigmoid } from '../../js/sim/det-math.js';
 import { HEBB_CLAMP, HEBB_DECAY, hebbianStep } from '../../js/sim/hebbian.js';
 import { createRng, nextGaussian } from '../../js/sim/rng.js';
@@ -38,7 +38,7 @@ function randomWorld(over, seed) {
 function genomeBlock(world) {
     const { layout } = world;
     const from = layout.weightCount + layout.wOut;
-    return Array.from(world.weights.subarray(from, from + layout.hidden * layout.outputCount));
+    return Array.from(world.weights.subarray(from, from + layout.hidden * layout.geneOutputs));
 }
 
 /**
@@ -46,7 +46,7 @@ function genomeBlock(world) {
  * @returns {number[]} slot 1's plastic block
  */
 function plasticBlock(world) {
-    const size = world.layout.hidden * world.layout.outputCount;
+    const size = world.layout.hidden * world.layout.geneOutputs;
     return Array.from(world.fastOut.subarray(size, 2 * size));
 }
 
@@ -85,15 +85,16 @@ describe('forwardAll with hebbianRate above 0', () => {
         const { layout } = on;
         const H = layout.hidden;
         const OUT = layout.outputCount;
+        const G = layout.geneOutputs;
         const w = genomeBlock(on);
         forwardAll(on);
         const eta = 0.05 * detSigmoid(on.weights[layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN]);
         const f = plasticBlock(on);
         for (let j = 0; j < H; j++) {
-            for (let o = 0; o < OUT; o++) {
-                const i = j * OUT + o;
+            for (let g = 0; g < G; g++) {
+                const i = j * G + g;
                 const h = on.hidden[H + j];
-                const out = on.outputs[OUT + o];
+                const out = on.outputs[OUT + GENE_OUTPUTS[g]];
                 // fastOut started equal to the genome, so the decay term is 0 on the first step.
                 expect(f[i]).toBeCloseTo(w[i] + eta * (h * out), 5);
             }
@@ -103,7 +104,7 @@ describe('forwardAll with hebbianRate above 0', () => {
 
     it('decays a displaced weight toward the genome when the unit is silent', () => {
         const on = randomWorld({ hebbianRate: 0.5 }, 13);
-        const size = on.layout.hidden * on.layout.outputCount;
+        const size = on.layout.hidden * on.layout.geneOutputs;
         const w = genomeBlock(on);
         on.fastOut.set(
             w.map((v) => v + 1),
@@ -121,7 +122,7 @@ describe('forwardAll with hebbianRate above 0', () => {
 
     it('clamps the plastic weights to plus or minus HEBB_CLAMP', () => {
         const on = randomWorld({ hebbianRate: 1 }, 15);
-        const size = on.layout.hidden * on.layout.outputCount;
+        const size = on.layout.hidden * on.layout.geneOutputs;
         on.weights[on.layout.weightCount + on.layout.traitStart + TRAIT_INDEX.LEARN] = 40;
         on.fastOut.fill(HEBB_CLAMP, size, 2 * size);
         on.hidden.fill(1, on.layout.hidden, 2 * on.layout.hidden);
@@ -141,7 +142,7 @@ describe('forwardAll with hebbianRate above 0', () => {
     it('includes fastOut in hashWorld', () => {
         const a = randomWorld({ hebbianRate: 0.05 }, 17);
         const b = randomWorld({ hebbianRate: 0.05 }, 17);
-        b.fastOut[a.layout.hidden * a.layout.outputCount] += 1;
+        b.fastOut[a.layout.hidden * a.layout.geneOutputs] += 1;
         expect(hashWorld(b)).not.toBe(hashWorld(a));
     });
 });
@@ -150,7 +151,7 @@ describe('fastOut across births and slot reuse', () => {
     it('gives a child the genome block, not what its mother learned', () => {
         const w = lifeWorld({ hebbianRate: 0.05, splitMinEnergy: 500 });
         const mother = addBlob(w, { energy: 900 });
-        const size = w.layout.hidden * w.layout.outputCount;
+        const size = w.layout.hidden * w.layout.geneOutputs;
         w.weights.fill(0.25, mother * w.layout.weightCount, (mother + 1) * w.layout.weightCount);
         applyGenes(w, mother);
         w.fastOut.fill(2.5, mother * size, (mother + 1) * size);
@@ -167,7 +168,7 @@ describe('fastOut across births and slot reuse', () => {
     it('zeroes fastOut when a slot is freed and re-copies the genome when the slot is reused', () => {
         const w = lifeWorld({ hebbianRate: 0.05, splitMinEnergy: 500 });
         const mother = addBlob(w, { energy: 900 });
-        const size = w.layout.hidden * w.layout.outputCount;
+        const size = w.layout.hidden * w.layout.geneOutputs;
         w.weights.fill(0.5, mother * w.layout.weightCount, (mother + 1) * w.layout.weightCount);
         applyGenes(w, mother);
         w.fastOut.fill(3, mother * size, (mother + 1) * size);
@@ -194,15 +195,16 @@ function naiveStep(world) {
     const { layout, weights, hidden, outputs, fastOut } = world;
     const H = layout.hidden;
     const OUT = layout.outputCount;
+    const G = layout.geneOutputs;
     const learn = weights[layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN];
     const eta = world.config.hebbianRate * detSigmoid(learn);
     const result = [];
     for (let j = 0; j < H; j++) {
-        for (let o = 0; o < OUT; o++) {
-            const i = j * OUT + o;
-            const f = fastOut[H * OUT + i];
-            const g = weights[layout.weightCount + layout.wOut + i];
-            const next = f + eta * (hidden[H + j] * outputs[OUT + o] - HEBB_DECAY * (f - g));
+        for (let g = 0; g < G; g++) {
+            const i = j * G + g;
+            const f = fastOut[H * G + i];
+            const gw = weights[layout.weightCount + layout.wOut + i];
+            const next = f + eta * (hidden[H + j] * outputs[OUT + GENE_OUTPUTS[g]] - HEBB_DECAY * (f - gw));
             result.push(Math.fround(Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, next))));
         }
     }
@@ -214,7 +216,7 @@ describe('hebbianStep against the naive rule', () => {
         for (let seed = 1; seed <= 40; seed++) {
             const world = randomWorld({ hebbianRate: seed % 2 === 0 ? 0.9 : 0.05 }, seed);
             const { layout } = world;
-            const size = layout.hidden * layout.outputCount;
+            const size = layout.hidden * layout.geneOutputs;
             const rng = createRng(seed + 1000);
             for (let i = 0; i < size; i++) {
                 const draw = nextGaussian(rng);

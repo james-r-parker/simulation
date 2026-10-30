@@ -30,7 +30,7 @@ export function createHebbPools() {
  */
 function addAgent(pools, world, slot) {
     const { layout, weights, fastOut } = world;
-    const size = layout.hidden * layout.outputCount;
+    const size = layout.hidden * layout.geneOutputs;
     const genome = slot * layout.weightCount + layout.wOut;
     let delta = 0;
     let norm = 0;

@@ -18,6 +18,18 @@ export const OUTPUT_INDEX = Object.freeze({
     MEMORY_B: 10,
 });
 
+/**
+ * The outputs that have genes (weights in `wOut`, a bias in `bOut`, a column in `wSkip`), in column order: every output
+ * but `SPLIT`, which has none and reads 0 (the split rule reads energy and age, not the brain). Gene column `g` drives
+ * output `GENE_OUTPUTS[g]`.
+ */
+export const GENE_OUTPUTS = Object.freeze(
+    Array.from({ length: OUTPUT_COUNT }, (_, o) => o).filter((o) => o !== OUTPUT_INDEX.SPLIT),
+);
+
+/** Outputs with genes: `OUTPUT_COUNT` less the `SPLIT` output (10). */
+export const GENE_OUTPUT_COUNT = GENE_OUTPUTS.length;
+
 /** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke. */
 export const RAY_CHANNELS = 9;
 
@@ -66,13 +78,14 @@ export const TRAIT_INDEX = Object.freeze({ SIZE: 0, VISION: 1, CHILD_SHARE: 2, L
  * @property {number} rawInputCount the values in the `inputs` row (`rayCount x RAY_CHANNELS + EXTRA_INPUTS`): the raw
  *   rays and the body block, which the observer and the scripted controllers read
  * @property {number} hidden hidden units
- * @property {number} outputCount outputs (`OUTPUT_COUNT`)
+ * @property {number} outputCount outputs (`OUTPUT_COUNT`, the width of the `outputs` row)
+ * @property {number} geneOutputs outputs with genes (`GENE_OUTPUT_COUNT`): the column count of `wOut`, `bOut` and `wSkip`
  * @property {number} wIn offset of the input-to-hidden block (`inputCount x hidden`)
  * @property {number} wRec offset of the hidden-to-hidden block (`hidden x hidden`)
  * @property {number} bHidden offset of the hidden biases
- * @property {number} wOut offset of the hidden-to-output block (`hidden x outputCount`)
+ * @property {number} wOut offset of the hidden-to-output block (`hidden x geneOutputs`, hidden-major)
  * @property {number} bOut offset of the output biases
- * @property {number} wSkip offset of the pooled-to-output skip block (`POOLED_VALUES x outputCount`, input-major)
+ * @property {number} wSkip offset of the pooled-to-output skip block (`POOLED_VALUES x geneOutputs`, input-major)
  * @property {number} traitStart offset of the trait genes (`TRAIT_GENES`)
  * @property {number} leakStart offset of the leak genes (one per hidden unit)
  * @property {number} weightCount floats in one weight row
@@ -91,9 +104,9 @@ export function brainLayout(config) {
     const wRec = wIn + inputCount * hidden;
     const bHidden = wRec + hidden * hidden;
     const wOut = bHidden + hidden;
-    const bOut = wOut + hidden * OUTPUT_COUNT;
-    const wSkip = bOut + OUTPUT_COUNT;
-    const traitStart = wSkip + POOLED_VALUES * OUTPUT_COUNT;
+    const bOut = wOut + hidden * GENE_OUTPUT_COUNT;
+    const wSkip = bOut + GENE_OUTPUT_COUNT;
+    const traitStart = wSkip + POOLED_VALUES * GENE_OUTPUT_COUNT;
     const leakStart = traitStart + TRAIT_GENES;
     const weightCount = leakStart + hidden;
     return Object.freeze({
@@ -101,6 +114,7 @@ export function brainLayout(config) {
         rawInputCount: config.rayCount * RAY_CHANNELS + EXTRA_INPUTS,
         hidden,
         outputCount: OUTPUT_COUNT,
+        geneOutputs: GENE_OUTPUT_COUNT,
         wIn,
         wRec,
         bHidden,

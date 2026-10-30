@@ -5,7 +5,7 @@ import { createRng, nextFloat } from '../../js/sim/rng.js';
 
 const layout = brainLayout({ rayCount: 2, brainHidden: 12 });
 const H = layout.hidden;
-const OUT = layout.outputCount;
+const OUT = layout.geneOutputs; // gene columns: the outputs but SPLIT
 
 /**
  * @param {number} seed the stream seed

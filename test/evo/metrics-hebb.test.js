@@ -20,7 +20,7 @@ describe('the Hebbian drift metrics', () => {
     it('reads the norm of fastOut minus wOut over the norm of wOut, and the clamped share', () => {
         const { world, observer, slot } = setup();
         const { layout } = world;
-        const size = layout.hidden * layout.outputCount;
+        const size = layout.hidden * layout.geneOutputs;
         const w = Array.from({ length: size }, (_, i) => (i % 3) - 1);
         world.weights.set(w, slot * layout.weightCount + layout.wOut);
         const f = w.map((v, i) => (i < 4 ? HEBB_CLAMP : v + (i % 2 ? 0.1 : -0.1)));

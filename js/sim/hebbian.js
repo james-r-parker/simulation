@@ -2,7 +2,7 @@
 // The genome row in `world.weights` never changes, so a child inherits the genome and not what its parent learned.
 
 import { detSigmoid } from './det-math.js';
-import { TRAIT_INDEX } from './brain-layout.js';
+import { GENE_OUTPUTS, TRAIT_INDEX } from './brain-layout.js';
 
 /** How strongly a plastic weight is pulled back toward its genome value each tick. */
 export const HEBB_DECAY = 0.01;
@@ -18,7 +18,7 @@ export const HEBB_CLAMP = 4;
  */
 export function resetFastOut(world, slot) {
     const { layout, weights, fastOut } = world;
-    const size = layout.hidden * layout.outputCount;
+    const size = layout.hidden * layout.geneOutputs;
     const from = slot * layout.weightCount + layout.wOut;
     const to = slot * size;
     for (let i = 0; i < size; i++) {
@@ -37,17 +37,18 @@ export function hebbianStep(world, slot) {
     const { layout, weights, hidden, outputs, fastOut } = world;
     const H = layout.hidden;
     const OUT = layout.outputCount;
+    const G = layout.geneOutputs;
     const eta =
         world.config.hebbianRate *
         detSigmoid(weights[slot * layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN]);
     const genome = slot * layout.weightCount + layout.wOut;
-    const plastic = slot * H * OUT;
+    const plastic = slot * H * G;
     for (let j = 0; j < H; j++) {
         const h = hidden[slot * H + j];
-        for (let o = 0; o < OUT; o++) {
-            const i = j * OUT + o;
+        for (let g = 0; g < G; g++) {
+            const i = j * G + g;
             const f = fastOut[plastic + i];
-            const next = f + eta * (h * outputs[slot * OUT + o] - HEBB_DECAY * (f - weights[genome + i]));
+            const next = f + eta * (h * outputs[slot * OUT + GENE_OUTPUTS[g]] - HEBB_DECAY * (f - weights[genome + i]));
             fastOut[plastic + i] = Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, next));
         }
     }

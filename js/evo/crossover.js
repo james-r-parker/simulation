@@ -4,7 +4,7 @@ import { POOLED_VALUES, TRAIT_GENES } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
 
 /**
- * Writes the skip block's columns, one `nextFloat` per output: the whole column comes from the mother (below 0.5) or the
+ * Writes the skip block's columns, one `nextFloat` per output with genes: the whole column comes from the mother (below 0.5) or the
  * father.
  * @param {Float32Array} child the child row
  * @param {Float32Array} mother the mother's row
@@ -14,11 +14,11 @@ import { nextFloat } from '../sim/rng.js';
  */
 function crossSkip(child, mother, father, context) {
     const { layout, rng } = context;
-    const { outputCount } = layout;
-    for (let o = 0; o < outputCount; o++) {
+    const { geneOutputs } = layout;
+    for (let g = 0; g < geneOutputs; g++) {
         const src = nextFloat(rng) < 0.5 ? mother : father;
         for (let i = 0; i < POOLED_VALUES; i++) {
-            child[layout.wSkip + i * outputCount + o] = src[layout.wSkip + i * outputCount + o];
+            child[layout.wSkip + i * geneOutputs + g] = src[layout.wSkip + i * geneOutputs + g];
         }
     }
 }
@@ -27,9 +27,9 @@ function crossSkip(child, mother, father, context) {
  * Writes the child row from two parent rows. Each hidden neuron h, in index order, draws one `nextFloat`; below 0.5
  * its whole block comes from the mother, otherwise from the father. A block is column h of `wIn` (every input into
  * h; `wIn` is input-major, so `wIn + i * hidden + h`), column h of `wRec` (`wRec + k * hidden + h`), `bHidden[h]`
- * row h of `wOut` (h's weights to every output, `wOut + h * outputCount + o`) and leak gene h. `bOut` comes from the
+ * row h of `wOut` (h's weights to every output with genes, `wOut + h * geneOutputs + g`) and leak gene h. `bOut` comes from the
  * mother. After the neurons, each trait gene in order draws one `nextFloat` and is taken whole from the mother (below
- * 0.5) or the father. Last, each output's skip column (`wSkip + i * outputCount + o` for every pooled value `i`) draws
+ * 0.5) or the father. Last, each output's skip column (`wSkip + i * geneOutputs + g` for every pooled value `i`) draws
  * one `nextFloat` and comes whole from one parent, so a reflex (food ahead to thrust) is inherited as a unit.
  * @param {Float32Array} child the child row, written in full
  * @param {Float32Array} mother the mother's row
@@ -40,7 +40,7 @@ function crossSkip(child, mother, father, context) {
  */
 export function crossNeurons(child, mother, father, context) {
     const { layout, rng } = context;
-    const { inputCount, hidden, outputCount } = layout;
+    const { inputCount, hidden, geneOutputs } = layout;
     for (let h = 0; h < hidden; h++) {
         const src = nextFloat(rng) < 0.5 ? mother : father;
         for (let i = 0; i < inputCount; i++) {
@@ -50,13 +50,13 @@ export function crossNeurons(child, mother, father, context) {
             child[layout.wRec + k * hidden + h] = src[layout.wRec + k * hidden + h];
         }
         child[layout.bHidden + h] = src[layout.bHidden + h];
-        for (let o = 0; o < outputCount; o++) {
-            child[layout.wOut + h * outputCount + o] = src[layout.wOut + h * outputCount + o];
+        for (let g = 0; g < geneOutputs; g++) {
+            child[layout.wOut + h * geneOutputs + g] = src[layout.wOut + h * geneOutputs + g];
         }
         child[layout.leakStart + h] = src[layout.leakStart + h];
     }
-    for (let o = 0; o < outputCount; o++) {
-        child[layout.bOut + o] = mother[layout.bOut + o];
+    for (let g = 0; g < geneOutputs; g++) {
+        child[layout.bOut + g] = mother[layout.bOut + g];
     }
     for (let t = 0; t < TRAIT_GENES; t++) {
         child[layout.traitStart + t] = (nextFloat(rng) < 0.5 ? mother : father)[layout.traitStart + t];
