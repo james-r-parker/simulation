@@ -1,6 +1,6 @@
 # Brain capacity and memory
 
-**Status:** Proposed - Phase 1 first: the instruments, the keys the experiments sweep and the memory probes; the live brain changes only at a phase's decision step, when a measured winner becomes the default.
+**Status:** In progress - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip block, no `SPLIT` genes) built as the defaults on the natural-selection big-bang branch, one PR; the experiments follow as tuning screens on the new world.
 **Validated:** d8a8561 (2026-10-29)
 **Priority:** 3 - measurement before redesign: a brain experiment judged by `fitnessV1` measures the wrong thing, so it queues after natural-selection.md (Priority 1), which closes fitness-and-selection.md Phase 4 (user, 2026-10-29)
 **Depends on:** [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md) (Phase 4), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md) (Phase 3, built)
@@ -430,8 +430,49 @@ every arm, the bottleneck is the horizon, not the hidden size, and the follow-up
 | A circling share above 0.30 after natural-selection.md T17 routes to this plan: `E50` reads `eval.circling_share` and `eval.output_saturation` per arm (the `mutationRate` and `weightDecay` arms), and if both stay high an output-saturation arm (decay on `wOut` rows, a separate key as the bias-decay arm is) follows. A heritability miss routes to `E50` too. The map is not tuned to hide a gait                                                                                                                                                                                                                                                                                                                                                                                                                             | Circling is a gait the brain produces; natural-selection.md T17b is for the monoculture only                                                                                                                                                                                                                                                            | User    | 2026-10-29 |
 | Phase 1 describes the brain natural-selection.md T18 leaves (`pooled-v2`, 81 inputs, `SPLIT` column kept, no skip) and `E48` runs on it; the Baseline stays as the `elman-v1` record. Genome sizes come from one function, `brainLayout(config).weightCount`, pinned per layout and hidden width by a test (T1a), and the doc quotes its Genome sizes table. `E53` is narrowed to the skip block and `splitGenes`; if `no-input-layout` won and `elman-v1` returned, it runs on `elman-v1`. Probes read every offset from the layout's offset table, never a literal, and a check fails on a literal; `eval.input_active_share` samples the row the genome multiplies and the silent-weight decay judges silence on that row. The group-hunt probe's primary control is three clones that sense each other against three that cannot | The metrics and probes must measure the brain that is live. Hand-written counts had drifted (3,550 and 1,646 match no layout; 3,486 is the skip-without-`SPLIT` count only). A literal offset breaks silently when natural-selection.md T10d moves the body block. More hunters meet prey more often, so a kill ratio above 1 alone is not coordination | User    | 2026-10-29 |
 | Work is built in chunks of 4 to 8 tasks, one PR each, with each commit running only the pre-commit hook and its own tests and the full gate and CI once per chunk; screens, evals and timing work stay out of code chunks; each phase lists its chunks in a Chunks table beside the task table, which keeps its columns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Less time goes on the gate and CI between tasks; the review of each commit against its plan row stays                                                                                                                                                                                                                                                   | User    | 2026-10-29 |
+| The big bang overrides Phases 1 to 4: the instruments, the probes and a chosen brain (`mutationRate` `invsqrt`, `weightDecay` 0.005, `leakGeneStart` 0, `leakMin` 0.02, the skip block, no `SPLIT` genes) are built as the defaults on the natural-selection big-bang branch with no flags; the experiments become tuning screens around those values after the merge                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Each brain change would otherwise re-pin, re-bench and re-screen the world a second time; the values follow H1 to H4 and H7, each stays a knob where it is a number, and the screens can still move any of them                                                                                                                                         | User    | 2026-10-30 |
 
 ## Phases
+
+### The big bang (overrides Phases 1 to 4)
+
+The user folded this plan into the natural-selection big bang (2026-10-30): every brain change re-pins the goldens,
+re-records the bench and re-runs the survival screen, so building them after that branch merges would pay for all three
+twice. The brain ships with the world on the same branch and PR, and the experiments become tuning screens on the new
+world. The task rows below still say what each change is; this section overrides how and when they are delivered.
+
+- **No flags.** As in [natural-selection.md](natural-selection.md): a behaviour change replaces the old code outright.
+  A numeric value stays a config key, since those are the tuning knobs; it defaults to the big-bang value. A boolean with
+  one chosen value is not a key: its other path is not built.
+- **The big-bang brain.** Each value is the hypothesis's own reading of the evidence in the code, not a measurement:
+
+| Item                        | Big-bang value                                                       | Today         | From   | Key kept                      |
+| --------------------------- | -------------------------------------------------------------------- | ------------- | ------ | ----------------------------- |
+| Mutation rule               | `mutationRate` `invsqrt` (about 67 of the 4,494 genes per birth)     | every gene    | H1     | `mutationRate`                |
+| Silent-row decay            | `weightDecay` 0.005                                                  | none          | H2     | `weightDecay`                 |
+| Leak start                  | `leakGeneStart` 0 (`a` 0.525: memory from generation 0)              | 3 (`a` 0.955) | H3     | `leakGeneStart`               |
+| Leak floor                  | `leakMin` 0.02 (a half-life of 34 ticks)                             | 0.05 (13.5)   | H7     | `leakMin`                     |
+| Skip block                  | built, the only path: `wSkip` from the 48 pooled values              | none          | H4     | none (`brainSkip` not built)  |
+| `SPLIT` genes               | deleted: the column keeps its slot and reads 0                       | 33 genes      | H4     | none (`splitGenes` not built) |
+| Hidden size, Hebbian, decay | unchanged: `brainHidden` 32, `hebbianRate` 0.0001, `HEBB_DECAY` 0.01 | the same      | H5, H6 | the existing two only         |
+| Memory read-back            | unchanged (on); `memoryReadback` is not built                        | on            | H8     | none                          |
+
+- **Genome.** 4,494 floats at 32 hidden (the Genome sizes table: `brainSkip`, no `SPLIT` genes). `ARCHIVE_VERSION` goes
+  to 4. `hebbianDecay` is not added: nothing points at the decay yet, and `E56` adds it if
+  `eval.hebb_drift_clamped_share` is high.
+- **Built on the big-bang branch after stage 6a**, one agent per chunk, one commit per task, the pre-commit hook per
+  commit: (B1) the instruments: T1a and the samplers and diagnostics T3 to T8, with `leakMin` and the mutation keys (T1
+  and T2 cut to the keys above) built at today's values so the goldens hold; (B2) the probes T10, T10a, T10b and T11, with
+  `--save-champions`; (B3) the big-bang brain: the skip block and the `SPLIT` deletion (T26 cut to the one path), then the
+  values in the table, each in its own commit with the short goldens pinned in it. The long goldens re-pin once, after
+  B3, with the world's (natural-selection T13).
+- **Then the natural-selection close.** The survival screen runs on the world and the brain together; the bench is
+  re-recorded once (T9's observer budget is read in the same quiet-machine slot); the full gate, the conformance review of
+  both docs and the one PR.
+- **Afterwards.** `E48` and `E49` run on the merged defaults (their seeds, metrics and probes unchanged) and T15 sets the
+  done numbers. `E50` to `E58` become tuning screens around the big-bang values (each arm a knob value, the big-bang value
+  the reference), judged by the scorecard as written. A knob whose screen beats its big-bang value changes on its own PR.
+  `E59`, `E60` and the architecture verdict (T41) close the plan as written.
 
 ### Phase 1 - Instruments, keys and probes
 

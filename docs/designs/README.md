@@ -29,10 +29,11 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (7)
+## In progress (8)
 
 Partly built - the note says which phases are real.
 
+- [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip b... _(validated d8a8561, 2026-10-29)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
 - [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Ph... _(validated 23eaea3, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 - [Fitness and selection](fitness-and-selection.md) - Phases 1 to 3 built: the metric audit and new metrics (E35), the predator fix (E36, E47), in-world merit (off by default), `fitnessV6`, `descriptorV6`, `map-eli... _(validated d8a8561, 2026-10-29)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Natural selection](natural-selection.md) - the big bang (user, 2026-10-29) is built on one branch: stages 1 to 6a (the legacy and dead code deleted, the detectors, every change of the switch as the defau... _(validated d8a8561, 2026-10-29)_ _(depends on [fitness-and-selection.md](fitness-and-selection.md))_
@@ -41,11 +42,10 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1, 2, 3 and 4 built (Phase 4 closed with three failures that remain, user 2026-10-22); Phase 5 settles the balance on a tuning night in a session of its... _(validated 46097eb, 2026-10-22)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (3)
+## Proposed (2)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
-- [Brain capacity and memory](brain-capacity-and-memory.md) - Phase 1 first: the instruments, the keys the experiments sweep and the memory probes; the live brain changes only at a phase's decision step, when a measured wi... _(validated d8a8561, 2026-10-29)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 
