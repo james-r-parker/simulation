@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createSimLog } from '../../js/sim/log.js';
-import { probeScenario, probeSubject } from '../../js/evo/memory-probe.js';
+import { probeGroup, probeScenario, probeSubject } from '../../js/evo/memory-probe.js';
 import { referenceSubject } from '../../js/evo/memory-probe-references.js';
 import { SCENARIOS } from '../../js/evo/memory-probe-scenarios.js';
 
@@ -87,5 +87,36 @@ describe('probeScenario', () => {
     it('runs the named scenarios only', () => {
         const result = probeSubject(referenceSubject('memoryless'), { scenarios: ['food-then-blind'], trials: 1 });
         expect(result.scenarios.map((s) => s.scenario)).toEqual(['food-then-blind']);
+    });
+});
+
+describe('probeGroup', () => {
+    it('reports the three scores, the difference and the per-hunter ratio against a solo hunter', () => {
+        const result = probeGroup(referenceSubject('memoryless'), { trials: 2 });
+        const { senses, solo } = result.scores;
+        expect(Object.keys(result.scores)).toEqual(['senses', 'kin-blind', 'solo']);
+        expect(result.coordination).toBe(senses - result.scores['kin-blind']);
+        expect(result.gain).toBe(solo > 0 ? senses / 3 / solo : null);
+        expect(result.skipped).toBeNull();
+    });
+
+    it('skips a specialisation that cannot hunt', () => {
+        const forager = { name: 'g', id: 1, spec: 0, weights: null, act: null };
+        expect(probeGroup(forager, { trials: 1 })).toMatchObject({ coordination: null, gain: null });
+        expect(probeGroup(forager, { trials: 1 }).skipped).toBe('the specialisation cannot hunt');
+    });
+
+    it('logs the group trials under the group-hunt name and runs through probeSubject', () => {
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        const result = probeSubject(referenceSubject('memoryless'), { scenarios: ['group-hunt'], trials: 1, log });
+        expect(result.scenarios).toEqual([]);
+        expect(result.group).not.toBeNull();
+        expect(records.map((r) => [r.scenario, r.control])).toEqual([
+            ['group-hunt', 'senses'],
+            ['group-hunt', 'kin-blind'],
+            ['group-hunt', 'solo'],
+        ]);
     });
 });

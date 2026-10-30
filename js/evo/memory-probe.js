@@ -6,9 +6,12 @@
 import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { CONTROL } from './memory-probe-controls.js';
+import { GROUP_CONTROL, TRIO, huntScore } from './memory-probe-group.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
-import { SCENARIOS } from './memory-probe-scenarios.js';
+import { PREDATOR_SPEC, SCENARIOS } from './memory-probe-scenarios.js';
 
+/** The name that selects the group-hunt probe. */
+export const GROUP_SCENARIO = 'group-hunt';
 /** Trials per scenario per control. */
 export const TRIALS = 32;
 /** A score at or above this is good. */
@@ -135,15 +138,64 @@ export function probeScenario(scenario, subject, options = {}) {
 }
 
 /**
- * Runs every scenario, or the named ones.
+ * @typedef {object} GroupResult
+ * @property {Record<string, number>} scores the share of trials in which the prey died: three clones with the senses
+ *   intact (`senses`), three with the allies hidden (`kin-blind`), and one hunter (`solo`)
+ * @property {number | null} coordination `probe.group_coordination`: senses minus kin-blind
+ * @property {number | null} ratio senses over kin-blind; null when the blind trio never killed
+ * @property {number | null} gain `probe.group_gain`: kills per hunter of the trio over the solo hunter's, a `watch`
+ *   reading (three bodies meet prey more often, so a ratio above 1 alone is not coordination); null when the solo
+ *   hunter never killed
+ * @property {string | null} skipped why the subject was not probed, or null
+ */
+
+/**
+ * The group-hunt probe: three clones of the subject, with and without the allies visible, against a solo hunter.
+ * @param {import('./memory-probe-run.js').Subject} subject a genome with a `canHunt` specialisation
+ * @param {ProbeOptions} [options] the probe options
+ * @returns {GroupResult} the scores, `probe.group_coordination` and `probe.group_gain`
+ */
+export function probeGroup(subject, options = {}) {
+    const { config = {}, seed = 1, trials = TRIALS, log } = options;
+    const base = createConfig(config);
+    const staged = { ...subject, spec: subject.spec ?? PREDATOR_SPEC };
+    if (!canHunt(staged.spec, base)) {
+        return { scores: {}, coordination: null, ratio: null, gain: null, skipped: 'the specialisation cannot hunt' };
+    }
+    const view = viewOf(staged, base);
+    /** @type {Record<string, number>} */
+    const scores = {};
+    for (const control of Object.values(GROUP_CONTROL)) {
+        const onTrial = (/** @type {number} */ trial, /** @type {boolean} */ won) =>
+            log?.log('debug', 'ProbeTrial', {
+                scenario: GROUP_SCENARIO,
+                genomeId: subject.id,
+                control,
+                trial,
+                score: won ? 1 : 0,
+            });
+        scores[control] = huntScore(control, staged, { config, view, seed, trials, onTrial });
+    }
+    const { senses, [GROUP_CONTROL.BLIND]: blind, solo } = scores;
+    return {
+        scores,
+        coordination: senses - blind,
+        ratio: blind > 0 ? senses / blind : null,
+        gain: solo > 0 ? senses / TRIO / solo : null,
+        skipped: null,
+    };
+}
+
+/**
+ * Runs every scenario and the group-hunt probe, or the named ones.
  * @param {import('./memory-probe-run.js').Subject} subject the subject
  * @param {ProbeOptions & {scenarios?: readonly string[]}} [options] the probe options and the scenario names to run
- *   (default all four)
- * @returns {{scenarios: ScenarioResult[]}} the results
+ *   (default all four and `group-hunt`)
+ * @returns {{scenarios: ScenarioResult[], group: GroupResult | null}} the results
  * @throws {Error} on an unknown scenario name
  */
 export function probeSubject(subject, options = {}) {
-    const known = SCENARIOS.map((s) => s.name);
+    const known = [...SCENARIOS.map((s) => s.name), GROUP_SCENARIO];
     const names = options.scenarios ?? known;
     for (const name of names) {
         if (!known.includes(name)) {
@@ -152,5 +204,6 @@ export function probeSubject(subject, options = {}) {
     }
     return {
         scenarios: SCENARIOS.filter((s) => names.includes(s.name)).map((s) => probeScenario(s, subject, options)),
+        group: names.includes(GROUP_SCENARIO) ? probeGroup(subject, options) : null,
     };
 }

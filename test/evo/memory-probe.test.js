@@ -32,7 +32,7 @@ describe('probeScenario', () => {
 describe('probeSubject', () => {
     it('rejects an unknown scenario name, listing the known ones', () => {
         expect(() => probeSubject(referenceSubject('memoryless'), { scenarios: ['nap'] })).toThrow(
-            'scenario: expected one of food-then-blind, predator-out-of-view, scent-after-sight-loss, food-then-blind@600, got "nap"',
+            'scenario: expected one of food-then-blind, predator-out-of-view, scent-after-sight-loss, food-then-blind@600, group-hunt, got "nap"',
         );
     });
 });
