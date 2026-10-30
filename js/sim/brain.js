@@ -5,6 +5,9 @@ import { hebbianStep } from './hebbian.js';
 import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from './brain-layout.js';
 import { poolRays } from './ray-pool.js';
 
+/** The gene outputs' running sums in `outputStep`, in double precision as a local sum would be. */
+const geneSums = new Float64Array(GENE_OUTPUTS.length);
+
 /**
  * Adds each nonzero pooled input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
  * each unit still takes its terms one after another in the same order, so the sums are bit-identical to adding the
@@ -149,12 +152,21 @@ function outputStep(world, slot) {
     const bOut = wBase + layout.bOut;
     const sums = world.brainScratch;
     sums[OUTPUT_INDEX.SPLIT] = 0; // no genes: the output reads 0
+    // Row by row over the block (it is stored hidden-major); each output still adds its terms in hidden order, so the
+    // sums are bit-identical to one output at a time.
+    const acc = geneSums;
     for (let g = 0; g < G; g++) {
-        let sum = weights[bOut + g];
-        for (let j = 0; j < H; j++) {
-            sum += block[wOut + j * G + g] * hidden[scratchBase + j];
+        acc[g] = weights[bOut + g];
+    }
+    for (let j = 0; j < H; j++) {
+        const h = hidden[scratchBase + j];
+        const row = wOut + j * G;
+        for (let g = 0; g < G; g++) {
+            acc[g] += block[row + g] * h;
         }
-        sums[GENE_OUTPUTS[g]] = sum;
+    }
+    for (let g = 0; g < G; g++) {
+        sums[GENE_OUTPUTS[g]] = acc[g];
     }
     addSkip(world, slot);
     detTanhInto(sums, outputs, slot * OUT, OUT);
