@@ -1,0 +1,98 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "bite20-kill600",
+  "arms": {
+    "bite8-kill150": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 8
+        }
+      },
+      "predatorKillEnergy": 150
+    },
+    "bite8-kill300": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 8
+        }
+      },
+      "predatorKillEnergy": 300
+    },
+    "bite8-kill600": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 8
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "bite12-kill150": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 12
+        }
+      },
+      "predatorKillEnergy": 150
+    },
+    "bite12-kill300": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 12
+        }
+      },
+      "predatorKillEnergy": 300
+    },
+    "bite12-kill600": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 12
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "bite16-kill150": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 16
+        }
+      },
+      "predatorKillEnergy": 150
+    },
+    "bite16-kill300": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 16
+        }
+      },
+      "predatorKillEnergy": 300
+    },
+    "bite16-kill600": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 16
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "bite20-kill150": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 20
+        }
+      },
+      "predatorKillEnergy": 150
+    },
+    "bite20-kill300": {
+      "specialisations": {
+        "predator": {
+          "biteMultiplier": 20
+        }
+      },
+      "predatorKillEnergy": 300
+    },
+    "bite20-kill600": {}
+  }
+}
