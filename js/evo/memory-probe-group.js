@@ -23,6 +23,8 @@ const SHARED_PARENT = 7777;
 const HUNTER_SPACING = 60;
 /** The prey's energy: the world's cap, so one bite (a few hundred) cannot kill it. */
 const PREY_ENERGY = 2000;
+/** The arena's wall costs nothing, so the prey dies only to the hunters and an idle hunter cannot win. */
+const ARENA_RULES = Object.freeze({ wallDamage: 0 });
 
 /** The group probe's controls: the senses intact, the allies hidden, and a lone hunter. */
 export const GROUP_CONTROL = Object.freeze({ SENSES: 'senses', BLIND: 'kin-blind', SOLO: 'solo' });
@@ -75,7 +77,7 @@ export function huntScore(control, subject, { config, view, seed, trials, onTria
             subject,
             controlSpec: { name: control, kinBlind: control === GROUP_CONTROL.BLIND },
             seed: seed + trial,
-            config,
+            config: { ...config, ...ARENA_RULES },
         });
         kills += won ? 1 : 0;
         onTrial?.(trial, won);
