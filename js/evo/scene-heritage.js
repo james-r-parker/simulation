@@ -13,7 +13,7 @@
 
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok, pearson } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /** The child meal at which its deliberate share is read. */
 export const TENTH_MEAL = 10;

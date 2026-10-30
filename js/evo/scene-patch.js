@@ -5,7 +5,7 @@
 // One pending sample per slot; nothing is allocated after creation.
 
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /** Ticks between the sample that finds an agent in a depleted patch and the one that reads where it is. */
 export const PATCH_STAY_TICKS = 300;

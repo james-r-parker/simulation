@@ -5,7 +5,7 @@
 
 import { BORN_CAUSE, EVENT_TYPE } from '../sim/events.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /** The metric suffixes, in the order the doc names them. */
 export const BIRTH_SOURCES = Object.freeze(['split', 'mate', 'floor', 'immigrant', 'rescue', 'invasion']);

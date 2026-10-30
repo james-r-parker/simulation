@@ -10,7 +10,7 @@
 
 import { BORN_CAUSE } from '../sim/events.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /** Alive agents a basin needs after an extinction to count as recolonised. */
 export const RECOLONISED_MIN = 5;

@@ -12,7 +12,7 @@
 
 import { REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { THREAT_PROXIMITY } from './observer-intent-state.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
 

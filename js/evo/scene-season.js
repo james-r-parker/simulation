@@ -11,7 +11,7 @@
 
 import { WINTER } from '../sim/eras.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { ringDistance } from './scene-terrain.js';
 
 /**

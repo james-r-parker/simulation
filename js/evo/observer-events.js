@@ -14,9 +14,9 @@ import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from 
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
 import { noteHunterBirth } from './watch-births.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
-/** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
-export const BURN_IN_TICKS = 10000;
+export { BURN_IN_TICKS };
 
 /**
  * Zeroes every per-slot counter and the cell bitset of a slot.

@@ -14,7 +14,7 @@
 
 import { isReadyToMate } from '../sim/mate-eligibility.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { findAlive } from './observer-intent.js';
 
 /** A non-hunter with fewer meals than this scores 0. */

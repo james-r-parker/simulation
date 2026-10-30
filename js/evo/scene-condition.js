@@ -8,7 +8,7 @@
 // sample. Per-slot arrays only.
 
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 const NEUTRAL = 0;
 const STATES = 4;

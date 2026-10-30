@@ -18,7 +18,7 @@ import { canBear, isReadyToMate } from '../sim/mate-eligibility.js';
 import { childShareOf } from '../sim/traits.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok } from './metrics-stats.js';
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
 
 /** Fewest mate births a lineage needs for the `childShare` slope. */
