@@ -2,7 +2,7 @@
 
 **Status:** In progress - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip block, no `SPLIT` genes) built as the defaults on the natural-selection big-bang branch, one PR (chunk B3 built the skip block, the deleted `SPLIT` genes, the silent-input mask as world state and the four defaults; `instinctWeight` 1 is a default from the survival screen; the long goldens are re-pinned); the experiments follow as tuning screens on the new world.
 **Validated:** d8a8561 (2026-10-29)
-**Priority:** 4 - measurement before redesign: a brain experiment judged by `fitnessV1` measures the wrong thing, so it queues after natural-selection.md (Priority 1), which closes fitness-and-selection.md Phase 4 (user, 2026-10-29)
+**Priority:** 5 - measurement before redesign: a brain experiment judged by `fitnessV1` measures the wrong thing, so it queues after natural-selection.md (Priority 1), which closes fitness-and-selection.md Phase 4 (user, 2026-10-29)
 **Depends on:** [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md) (Phase 4), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md) (Phase 3, built)
 
 Every blob thinks with one Elman recurrent network of 32 leaky hidden units. How much of that network evolution uses, and whether the mutation operator and the input code let it be used, is unmeasured. This doc measures first -
