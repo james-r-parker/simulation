@@ -1,7 +1,7 @@
 // The genome: shape check against a brain layout, and the JSON form with base64 float32 weights.
 
 import { decodeWeights, encodeWeights } from './base64.js';
-import { brainLayout } from '../sim/brain-layout.js';
+import { BRAIN_LAYOUT_NAME, brainLayout } from '../sim/brain-layout.js';
 
 /** The genome format version. */
 export const GENOME_VERSION = 2;
@@ -15,7 +15,8 @@ export const GENOME_SPECS = Object.freeze(['forager', 'predator', 'reproducer', 
  * @property {number} lineageId the agent's `lineageId`
  * @property {[number, number]} parents `[parentA, parentB]`, `[0, 0]` for a random genome
  * @property {string} specialisation one of `GENOME_SPECS`
- * @property {{ inputCount: number, brainHidden: number, outputCount: number }} layout
+ * @property {{ name: string, inputCount: number, brainHidden: number, outputCount: number }} layout `name` is
+ *   `BRAIN_LAYOUT_NAME`; the sizes alone cannot tell two layouts of the same length apart
  * @property {number} sigma the genome's own mutation step size
  * @property {Float32Array} weights one brain row (`weightCount` floats)
  */
@@ -57,6 +58,9 @@ export function assertGenomeFits(genome, layout) {
     if (!GENOME_SPECS.includes(genome.specialisation)) {
         mismatch('specialisation', genome.specialisation, `one of ${GENOME_SPECS.join(', ')}`);
     }
+    if (genome.layout.name !== BRAIN_LAYOUT_NAME) {
+        mismatch('layout.name', genome.layout.name, BRAIN_LAYOUT_NAME);
+    }
     if (genome.layout.inputCount !== layout.inputCount) {
         mismatch('layout.inputCount', genome.layout.inputCount, layout.inputCount);
     }
@@ -94,7 +98,10 @@ export function encodeGenome(genome) {
  * @throws {Error} when the weights are not base64 of the layout's float count
  */
 export function decodeGenome(obj) {
-    const { inputCount, brainHidden, outputCount } = obj.layout;
+    const { name, inputCount, brainHidden, outputCount } = obj.layout;
+    if (name !== BRAIN_LAYOUT_NAME) {
+        throw new Error(`genome.layout.name: expected ${BRAIN_LAYOUT_NAME}, got ${name}`);
+    }
     const layout = brainLayout({ rayCount: 0, brainHidden });
     if (inputCount !== layout.inputCount || outputCount !== layout.outputCount) {
         throw new Error(
@@ -108,7 +115,7 @@ export function decodeGenome(obj) {
         lineageId: obj.lineageId,
         parents: [obj.parents[0], obj.parents[1]],
         specialisation: obj.specialisation,
-        layout: { inputCount, brainHidden, outputCount },
+        layout: { name, inputCount, brainHidden, outputCount },
         sigma: obj.sigma,
         weights: decodeWeights(obj.weights, count),
     };

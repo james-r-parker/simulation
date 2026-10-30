@@ -5,6 +5,7 @@ import { CELLS, ELITE, placeOf, refOf } from './archive.js';
 import { encodeWeights } from './base64.js';
 import { GENOME_SPECS } from './genome.js';
 import { CHAMPION_VERSION } from './league.js';
+import { layoutStamp } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
 
 /**
@@ -28,7 +29,7 @@ export function exportChampions(archive, config, { count, label }) {
         version: CHAMPION_VERSION,
         name: `${label}-${GENOME_SPECS[elite.spec]}-cell${elite.cell}`,
         rulesHash: rulesHash(config),
-        layout: { inputCount: layout.inputCount, brainHidden: layout.hidden, outputCount: layout.outputCount },
+        layout: layoutStamp(layout),
         specialisation: elite.spec,
         weights: encodeWeights(elite.row),
         cell: elite.cell,

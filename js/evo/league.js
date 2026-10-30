@@ -1,6 +1,6 @@
 // Champion league: champion files, head-to-head games between two champions, and the candidate's Elo.
 
-import { brainLayout } from '../sim/brain-layout.js';
+import { brainLayout, layoutStamp } from '../sim/brain-layout.js';
 import { createConfig, rulesHash } from '../sim/config.js';
 import { createWorld } from '../sim/spawn.js';
 import { step } from '../sim/step.js';
@@ -39,8 +39,7 @@ function checkHeader(file, config) {
         throw new Error(`champion.version: expected ${CHAMPION_VERSION}, got ${file.version}`);
     }
     const layout = brainLayout(config);
-    const want = { inputCount: layout.inputCount, brainHidden: layout.hidden, outputCount: layout.outputCount };
-    for (const [key, value] of Object.entries(want)) {
+    for (const [key, value] of Object.entries(layoutStamp(layout))) {
         if (file.layout?.[key] !== value) {
             throw new Error(`champion.layout.${key}: expected ${value}, got ${file.layout?.[key]}`);
         }

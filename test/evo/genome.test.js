@@ -16,7 +16,12 @@ function makeGenome() {
         lineageId: 3,
         parents: [4, 5],
         specialisation: 'scout',
-        layout: { inputCount: layout.inputCount, brainHidden: layout.hidden, outputCount: layout.outputCount },
+        layout: {
+            name: 'pooled-v2',
+            inputCount: layout.inputCount,
+            brainHidden: layout.hidden,
+            outputCount: layout.outputCount,
+        },
         sigma: 0.05,
         weights,
     };
@@ -30,6 +35,11 @@ describe('assertGenomeFits', () => {
     it.each([
         ['version', (/** @type {any} */ g) => (g.version = 1), /genome\.version: expected 2, got 1/],
         ['specialisation', (/** @type {any} */ g) => (g.specialisation = 'x'), /genome\.specialisation.*got x/],
+        [
+            'layout.name',
+            (/** @type {any} */ g) => (g.layout.name = 'elman-v1'),
+            /genome\.layout\.name: expected pooled-v2/,
+        ],
         ['layout.inputCount', (/** @type {any} */ g) => (g.layout.inputCount += 1), /genome\.layout\.inputCount/],
         [
             'layout.brainHidden',
@@ -82,6 +92,12 @@ describe('encodeGenome and decodeGenome', () => {
         expect(() => decodeGenome(encoded)).toThrow(
             /genome\.layout: expected 81 inputs and 11 outputs, got 179 and 11/,
         );
+    });
+
+    it('refuses a genome of the same sizes but another layout name when decoding', () => {
+        const encoded = encodeGenome(makeGenome());
+        encoded.layout.name = 'elman-v1';
+        expect(() => decodeGenome(encoded)).toThrow(/genome\.layout\.name: expected pooled-v2, got elman-v1/);
     });
 
     it('rejects weights of the wrong size', () => {
