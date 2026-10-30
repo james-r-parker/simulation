@@ -1,0 +1,45 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "bite8-upkeep0.002",
+  "arms": {
+    "bite4-upkeep0.001": {
+      "biteCost": 4,
+      "huntUpkeep": 0.001
+    },
+    "bite4-upkeep0.002": {
+      "biteCost": 4,
+      "huntUpkeep": 0.002
+    },
+    "bite4-upkeep0.004": {
+      "biteCost": 4,
+      "huntUpkeep": 0.004
+    },
+    "bite8-upkeep0.001": {
+      "biteCost": 8,
+      "huntUpkeep": 0.001
+    },
+    "bite8-upkeep0.002": {
+      "biteCost": 8,
+      "huntUpkeep": 0.002
+    },
+    "bite8-upkeep0.004": {
+      "biteCost": 8,
+      "huntUpkeep": 0.004
+    },
+    "bite12-upkeep0.001": {
+      "biteCost": 12,
+      "huntUpkeep": 0.001
+    },
+    "bite12-upkeep0.002": {
+      "biteCost": 12,
+      "huntUpkeep": 0.002
+    },
+    "bite12-upkeep0.004": {
+      "biteCost": 12,
+      "huntUpkeep": 0.004
+    }
+  }
+}

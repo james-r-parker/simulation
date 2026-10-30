@@ -1,0 +1,22 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "old-brain": { "mutationRate": 1, "leakGeneStart": 3, "leakMin": 0.05, "weightDecay": 0 },
+    "energy-6k": { "maxEnergy": 6000 },
+    "energy-25k": { "maxEnergy": 25000 },
+    "no-kick": { "biteCost": 0, "recoilEnergy": 0 },
+    "energy-6k-no-kick": { "maxEnergy": 6000, "biteCost": 0, "recoilEnergy": 0 },
+    "old-brain-energy-6k": {
+      "mutationRate": 1,
+      "leakGeneStart": 3,
+      "leakMin": 0.05,
+      "weightDecay": 0,
+      "maxEnergy": 6000
+    }
+  }
+}
