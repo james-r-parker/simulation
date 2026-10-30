@@ -455,7 +455,7 @@ The order of work is the **Build queue** in [docs/designs/README.md](docs/design
    That will change the default behaviour of the world, so the golden hashes and baselines are re-pinned in the same step.
 2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain). Phase 5 settles the balance on a tuning night; Phase 6 adds disease.
 3. **Quality gates and test tiers** ([quality-gates-and-test-tiers.md](docs/designs/quality-gates-and-test-tiers.md)). Faster pre-commit checks, mutation testing, a browser smoke test and a pull-request performance job.
-4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio and capture are built; what remains is the dev-machine budget measurements, manual walks, and Phase 5: saving the archive between sessions and deleting the legacy app.
+4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio, capture and Phase 6 Look (tasks T57–T75) are built; what remains is Phase 5: saving the archive between sessions and deleting the legacy app.
 5. **Later.** The evolution trainer and champions ([evolution-rework.md](docs/designs/evolution-rework.md)), an automated improvement loop ([improvement-loop.md](docs/designs/improvement-loop.md)), v6 tidy-up with new screenshots and docs ([v6-tidy-up-and-docs.md](docs/designs/v6-tidy-up-and-docs.md)), and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md)).
 
 ## Developing

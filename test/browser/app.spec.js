@@ -106,6 +106,18 @@ test('draws frames: the animation loop runs and the canvas is not blank', async 
     expect(shot.length, 'a drawn world compresses to more than a flat black PNG').toBeGreaterThan(8000);
 });
 
+// Quality 0 draws every Phase 6 look item (aurora, terrain, threads, finish...) so a shader that fails to link is a
+// console error here; the other flows run at quality 2 where most of them are off.
+for (const look of ['all', 'none']) {
+    test(`loads at quality 0 with ?look=${look} and logs no error`, async ({ page }) => {
+        await page.goto(`${appUrl()}?seed=3&agents=100&quality=0&scale=0.25&look=${look}`);
+        await worldRunning(page);
+        await page.waitForTimeout(2000);
+        const shot = await page.locator('#canvas-container canvas').screenshot();
+        expect(shot.length).toBeGreaterThan(8000);
+    });
+}
+
 test('pause, step and speed keys drive the worker', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
@@ -168,8 +180,6 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
     }
     await page.keyboard.press('Space');
     await expect(page.locator(SPEED)).toHaveText('paused');
-    await page.keyboard.press('KeyI');
-    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
     await page.keyboard.press('KeyF');
     const box = await page.locator('#canvas-container canvas').boundingBox();
     expect(box).not.toBeNull();
@@ -184,6 +194,7 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
             { timeout: 15_000 },
         )
         .toBe(true);
+    await expect(page.locator('.drawer-inspector.open')).toBeAttached();
     await expect(page.locator('.inspector-title')).toHaveText(/^[a-z]+ - [A-Z][a-z]+( [IVX]+)? - #\d+$/);
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer.open')).toHaveCount(0);

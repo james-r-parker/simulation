@@ -3,10 +3,12 @@ import { createCameraController } from '../../../js/app/camera.js';
 import { createInterpolated } from '../../../js/app/interpolate.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
 import {
+    carcassLook,
     createBorderLayer,
     createFoodLayer,
     createObstacleLayer,
     packBodies,
+    packFoodAges,
 } from '../../../js/app/renderer/world-layers.js';
 import { smallReady } from '../helpers/ready.js';
 
@@ -37,6 +39,20 @@ describe('packBodies', () => {
         expect(Array.from(out.slice(0, 3))).toEqual([10, 20, 3]);
         expect(out[3]).toBeCloseTo(10 * 0.013 + 20 * 0.007);
         expect(out[7]).not.toBe(out[3]);
+    });
+
+    it('handles both 3-word and 4-word strides', () => {
+        const f32_3 = Float32Array.from([10, 20, 3, 30, 40, 4]);
+        const out3 = new Float32Array(2 * 4);
+        expect(packBodies(f32_3, { start: 0, count: 2 }, out3, 3)).toBe(2);
+        expect(Array.from(out3.slice(0, 3))).toEqual([10, 20, 3]);
+        expect(Array.from(out3.slice(4, 7))).toEqual([30, 40, 4]);
+
+        const f32_4 = Float32Array.from([10, 20, 3, 0.1, 30, 40, 4, 0.8]);
+        const out4 = new Float32Array(2 * 4);
+        expect(packBodies(f32_4, { start: 0, count: 2 }, out4, 4)).toBe(2);
+        expect(Array.from(out4.slice(0, 3))).toEqual([10, 20, 3]);
+        expect(Array.from(out4.slice(4, 7))).toEqual([30, 40, 4]);
     });
 });
 
@@ -84,6 +100,22 @@ describe('food and obstacle layers', () => {
         expect(obstacles.object.material.uniforms.uRim.value).toEqual(PALETTE.obstacleRim);
     });
 
+    it('draws obstacles as two passes: rim and body', () => {
+        const { info } = smallReady();
+        const obstacles = createObstacleLayer({ info });
+        expect(obstacles.object.children.length).toBe(2);
+        const [rimMesh, bodyMesh] = obstacles.object.children;
+        expect(rimMesh.material.uniforms.uPass.value).toBe(0);
+        expect(bodyMesh.material.uniforms.uPass.value).toBe(1);
+        expect(rimMesh.geometry.getAttribute('iShape')).toBeDefined();
+        obstacles.setLook?.({ rocks: 1 });
+        expect(rimMesh.material.uniforms.uTier.value).toBe(1);
+        expect(bodyMesh.material.uniforms.uTier.value).toBe(1);
+        obstacles.setLook?.({ rocks: -1 });
+        expect(rimMesh.material.uniforms.uTier.value).toBe(2);
+        obstacles.dispose();
+    });
+
     it('draw nothing before a snapshot', () => {
         const { info } = smallReady();
         const food = createFoodLayer({ info });
@@ -105,5 +137,59 @@ describe('border layer', () => {
         expect(Array.from(p.array.slice(3, 6))).toEqual([info.worldWidth, 0, 0]);
         expect(border.object.material.color.r).toBeCloseTo(0.06);
         border.dispose();
+    });
+});
+
+describe('carcassLook', () => {
+    it('is exact at 0, 0.1, 0.5 and 1, and monotone in between', () => {
+        const at0 = carcassLook(0);
+        expect(at0.dim).toBe(1);
+        expect(at0.scale).toBe(1);
+
+        const at01 = carcassLook(0.1);
+        expect(at01.dim).toBe(1);
+        expect(at01.scale).toBeCloseTo(0.96, 4);
+
+        const at05 = carcassLook(0.5);
+        expect(at05.dim).toBeCloseTo(0.7289, 3);
+        expect(at05.scale).toBeCloseTo(0.8, 4);
+
+        const at1 = carcassLook(1);
+        expect(at1.dim).toBeCloseTo(0.35, 4);
+        expect(at1.scale).toBeCloseTo(0.6, 4);
+
+        let prevDim = 1;
+        let prevScale = 1;
+        for (let t = 0; t <= 1.001; t += 0.05) {
+            const cur = carcassLook(t);
+            expect(cur.dim).toBeLessThanOrEqual(prevDim + 1e-6);
+            expect(cur.scale).toBeLessThanOrEqual(prevScale + 1e-6);
+            prevDim = cur.dim;
+            prevScale = cur.scale;
+        }
+    });
+});
+
+describe('packFoodAges', () => {
+    it('packs the fourth word of each food record into the age array', () => {
+        const f32 = Float32Array.from([10, 20, 3, 0.25, 30, 40, -4, 0.75]);
+        const out = new Float32Array(2);
+        expect(packFoodAges(f32, { start: 0, count: 2 }, out)).toBe(2);
+        expect(out[0]).toBeCloseTo(0.25, 4);
+        expect(out[1]).toBeCloseTo(0.75, 4);
+    });
+});
+
+describe('decay look toggle', () => {
+    it('toggles uDecay uniform on food layer', () => {
+        const { info } = smallReady();
+        const food = createFoodLayer({ info });
+        expect(food.object.geometry.getAttribute('iAge')).toBeDefined();
+        expect(food.object.geometry.getAttribute('iAge').itemSize).toBe(1);
+        food.setLook?.({ decay: -1 });
+        expect(food.object.material.uniforms.uDecay.value).toBe(0);
+        food.setLook?.({ decay: 0 });
+        expect(food.object.material.uniforms.uDecay.value).toBe(1);
+        food.dispose();
     });
 });

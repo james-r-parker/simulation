@@ -1393,6 +1393,12 @@ Prediction check (recorded before the run in `evals/experiments.json` as E41): d
 - **Pick**: `max-2000-scout-move-1` (best on dominance and `specShare`; mess metrics within 0.03 of the best arm). `alarmCost` 5 stacks well on circling and alarms but costs lifespan and keeps dominance at 0.62, so T48j confirms `max-2000-scout-move-1` with and without it at 16 seeds.
 - **Prediction check** (E64): the direction held for every lever. Wrong: max-1200 did not have the lowest spec dominance (0.69 against 0.63 for `max-2000`), and `combo` fell over (population 158, floor 86) rather than being the best all-round arm; spec dominance stayed above 0.5 in every arm, as predicted for all but `max-2000-scout-move-1` (0.54); populations fell more than predicted (`max-2000` 40% against 15 to 30%). The split bumper rise was not predicted.
 
+### 2026-10-30 - Dither the aurora in linear light, and declare no attribute `ShaderMaterial` adds
+
+The aurora is dim (at most `AURORA_MAX_LUMINANCE` 0.010 linear, about 28 of 255 encoded), so its smooth gradients cover only a few dozen 8-bit steps and the encode in `OutputPass` can show them as contours. The upsample therefore adds interleaved gradient noise (`finish-glsl.js`) scaled to one sRGB step at that value, in linear light. Banding was judged by eye in screenshots only; no banding metric has been measured.
+
+A `ShaderMaterial` prepends `attribute vec3 position` (and `uv`, `normal`) to its vertex shader, so a shader that declares `position` again fails to link: the program is dropped with a `console.error` and the layer draws nothing. The unit tests build no GL context and did not see this; `test/app/renderer/shader-sources.test.js` scans every layer's vertex shader for it and the browser spec loads quality 0, where those layers draw.
+
 ### 2026-10-30 - Deploy on merge to main
 
 `.github/workflows/deploy.yml` deploys `main` to production on Cloudflare Pages (project `matrix`) after the `check` workflow succeeds on a push, with the repo's pinned wrangler and the secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; `workflow_dispatch` redeploys main's HEAD. Roll back from the Pages dashboard or by redeploying. This is the interim pipeline ahead of `deployment-and-community.md` Phase 1 (Release Please, `/v/<version>/`, `/next/`, PR previews), which replaces it.

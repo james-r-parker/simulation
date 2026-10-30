@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { createEffectsPlayer, JAW_REACH, playEffects, STALE_TICKS } from '../../../js/app/renderer/effects-player.js';
+import { createMateThreadPool } from '../../../js/app/renderer/mate-threads.js';
 import { createRingPool, RING_CAPACITY } from '../../../js/app/renderer/rings.js';
 import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = {
-    effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6 },
+    effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6, ESCAPED: 7, MATED: 8 },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
 };
 const info = { callRadius: 300, callTicks: 40 };
@@ -34,14 +35,15 @@ const alive = (/** @type {any[]} */ list) => {
     return out;
 };
 
-/** @returns {{player: any, rings: any, sparks: any, seen: number[]}} a player with a recording sink */
+/** @returns {{player: any, rings: any, sparks: any, threads: any, seen: number[]}} a player with a recording sink */
 function build() {
     const rings = createRingPool();
     const sparks = createSparkPool(1);
+    const threads = createMateThreadPool();
     /** @type {number[]} */
     const seen = [];
-    const player = createEffectsPlayer({ rings, sparks, layout, info, sink: (e) => seen.push(e.kind) });
-    return { player, rings, sparks, seen };
+    const player = createEffectsPlayer({ rings, sparks, threads, layout, info, sink: (e) => seen.push(e.kind) });
+    return { player, rings, sparks, threads, seen };
 }
 
 /**
@@ -162,5 +164,14 @@ describe('playEffects', () => {
         playEffects(player, queueOf([[6, 1, 0, 0, 0, 0, 0, 0]]), alive([]), 1);
         expect(liveRings(rings, 2)).toBe(0);
         expect(seen).toEqual([6]);
+    });
+
+    it('spawns a courtship thread when MATED plays', () => {
+        const { player, threads, seen } = build();
+        playEffects(player, queueOf([[8, 10, 50, 60, 11, 22, 0, 3]]), alive([]), 10);
+        expect(threads.count).toBe(1);
+        expect(threads.motherGenome[0]).toBe(11);
+        expect(threads.fatherGenome[0]).toBe(22);
+        expect(seen).toEqual([8]);
     });
 });

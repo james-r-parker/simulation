@@ -63,7 +63,7 @@ export function obstacleSlots(config) {
  * @returns {number} the distance from a refuge's centre to its rocks, so the gap between neighbours is as wide as
  *   an agent of `refugeSizeMax`
  */
-function ringRadius(config) {
+export function ringRadius(config) {
     return (REFUGE_ROCK_RADIUS + config.refugeSizeMax) / RING_HALF_ANGLE_SIN;
 }
 

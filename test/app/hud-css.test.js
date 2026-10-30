@@ -25,7 +25,7 @@ describe('css/app.css', () => {
         const bar = rule('#top-bar');
         expect(bar).not.toMatch(/background/);
         expect(bar).toMatch(/text-shadow/);
-        expect(rule(':root')).toMatch(/--bar-height: 2\.25rem/);
+        expect(rule(':root')).toMatch(/--bar-height: 2\.5rem/);
     });
 
     it('keeps the text at most 70% luminance', () => {

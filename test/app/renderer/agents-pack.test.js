@@ -1,3 +1,4 @@
+import { ENERGY_FLOOR, lineageColor } from '../../../js/app/renderer/colors.js';
 import { describe, expect, it } from 'vitest';
 import { AGENT_FIELD } from '../../../js/app/interpolate.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
@@ -7,7 +8,10 @@ import {
     flashOf,
     ITEM,
     JAW_RATE,
+    motionOf,
+    MESH_GAIN,
     packAgents,
+    TURN_FULL,
 } from '../../../js/app/renderer/agents-pack.js';
 import { fitZoom, snapZoom } from '../../../js/app/camera.js';
 import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
@@ -188,5 +192,64 @@ describe('packAgents', () => {
                 }
             }
         }
+    });
+
+    it('motionOf clamps, 25% smoothing converges, and phase is stable in [0, 1)', () => {
+        const m1 = motionOf(2.0, 0.5, 0, 42);
+        expect(m1.speed01).toBe(1.0);
+        expect(m1.turn01).toBe(0.25);
+        const { phase: phase1, turn01: turn1 } = m1;
+        expect(phase1).toBeGreaterThanOrEqual(0);
+        expect(phase1).toBeLessThan(1);
+
+        const mClamped = motionOf(-0.5, -0.5, 0, 42);
+        expect(mClamped.speed01).toBe(0);
+        expect(mClamped.turn01).toBe(0.25);
+
+        const m2 = motionOf(0.5, 0.1, turn1, 42);
+        expect(m2.speed01).toBe(0.5);
+        expect(m2.phase).toBe(phase1);
+        expect(motionOf(1, 0, 0, 7)).toBe(m2);
+
+        let smoothed = 0;
+        for (let i = 0; i < 40; i++) {
+            const m = motionOf(0.5, 0.1, smoothed, 42);
+            smoothed = m.turn01;
+        }
+        expect(smoothed).toBeCloseTo(0.1 / TURN_FULL, 4);
+    });
+
+    it('packAgents writes motion attributes and reuses the same buffer', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const prev = makeSnapshot(1, [{ slot: 0, genomeId: 10, spec: 1, speed: 2, angle: 0 }]);
+        const next = makeSnapshot(2, [{ slot: 0, genomeId: 10, spec: 1, speed: 2, angle: 0.1 }]);
+        const out = createInterpolated(16);
+        interpolateInto(prev, next, 0.5, out);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        const b = store.buckets[1];
+        const motionArr = b.motion;
+        expect(motionArr[0]).toBeGreaterThan(0);
+        expect(motionArr[1]).toBeGreaterThan(0);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        expect(store.buckets[1].motion).toBe(motionArr);
+    });
+
+    it('gives an unslotted family its lineage hue and the predator a brighter body, and leaves slotted ones alone', () => {
+        expect(MESH_GAIN[0]).toBeGreaterThan(MESH_GAIN[1]);
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const snap = makeSnapshot(1, [
+            { slot: 0, genomeId: 10, spec: 0, speed: 0, angle: 0, lineageId: 3 },
+            { slot: 1, genomeId: 11, spec: 3, speed: 0, angle: 0, lineageId: 4 },
+        ]);
+        const out = createInterpolated(16);
+        interpolateInto(null, snap, 1, out);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        const a = store.buckets[meshOfSpec[0]].color;
+        const b = store.buckets[meshOfSpec[3]].color;
+        const expectA = lineageColor(3);
+        const expectB = lineageColor(4);
+        const k = ENERGY_FLOOR + (1 - ENERGY_FLOOR) * out.energy[0];
+        expect(a[0]).toBeCloseTo(expectA[0] * k * MESH_GAIN[0], 4);
+        expect(b[2]).toBeCloseTo(expectB[2] * (ENERGY_FLOOR + (1 - ENERGY_FLOOR) * out.energy[1]), 4);
     });
 });

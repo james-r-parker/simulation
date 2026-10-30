@@ -140,6 +140,8 @@ function newFrame(deps, loop) {
         selectedId: 0,
         followId: 0,
         leadLineageId: 0,
+        season: 0,
+        seasonProgress: 0,
         family: deps.slots,
         lenses: { temperature: false, scent: false, territory: false, vision: false, calls: false },
     };
@@ -161,6 +163,8 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
     frame.selectedId = deps.state.selectedId;
     frame.followId = deps.state.followId;
     frame.leadLineageId = client.stats?.lineages?.top?.[0]?.id ?? 0;
+    frame.season = client.stats?.season ?? 0;
+    frame.seasonProgress = client.stats?.seasonProgress ?? 0;
     lensUniforms(deps.state.lenses, frame.lenses);
 }
 

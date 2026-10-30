@@ -16,6 +16,7 @@ import {
 } from '../../js/worker/host-world.js';
 import { seasonAt } from '../../js/sim/environment.js';
 import { yearTicks } from '../../js/sim/eras.js';
+import { validateMessage } from '../../js/worker/protocol.js';
 import { calendarOf } from '../../js/app/ui/status-line.js';
 import { noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
@@ -219,13 +220,31 @@ describe('worldInfo and readyLayout', () => {
 });
 
 describe('worldInfo terrain', () => {
-    it('is open with no rocks by default and describes the static rocks in basins', () => {
+    it('lists no refuges for a basins world with none', () => {
+        const run = buildRun({
+            seed: 3,
+            overrides: {
+                ...SMALL_CONFIG,
+                worldWidth: 6000,
+                worldHeight: 4000,
+                obstacleCount: 0,
+                terrainLayout: 'basins',
+                refugeCount: 0,
+            },
+            createPolicy: noisePolicy,
+            log: LOG,
+        });
+        expect(worldInfo(run).terrain.refuges).toEqual([]);
+    });
+
+    it('is open with no rocks by default and describes the static rocks and refuges in basins', () => {
         expect(worldInfo(small()).terrain).toEqual({
             layout: 'open',
             coldMarginWidth: 0,
             wallX: 0,
             rockFirst: SMALL_CONFIG.obstacleCount,
             rockCount: 0,
+            refuges: [],
         });
         const run = buildRun({
             seed: 3,
@@ -244,5 +263,26 @@ describe('worldInfo terrain', () => {
         expect(info.terrain.rockCount).toBeGreaterThan(0);
         expect(info.obstacleCount).toBe(info.terrain.rockCount);
         expect(run.world.obsX.length).toBe(info.obstacleCount);
+        expect(info.terrain.refuges).toHaveLength(run.config.refugeCount);
+        for (const refuge of info.terrain.refuges) {
+            expect(refuge.x).toBeGreaterThan(0);
+            expect(refuge.x).toBeLessThan(6000);
+            expect(refuge.y).toBeGreaterThan(0);
+            expect(refuge.y).toBeLessThan(4000);
+            expect(refuge.radius).toBeGreaterThan(50);
+        }
+
+        const ready = {
+            type: 'ready',
+            epoch: 1,
+            configHash: 'a',
+            rulesHash: 'b',
+            layout: {},
+            info,
+            labels: {},
+            policy: 'p',
+            seed: 3,
+        };
+        expect(validateMessage(ready)).toBe(ready);
     });
 });

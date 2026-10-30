@@ -12,6 +12,7 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpo
  * @property {number} [size]
  * @property {number} [energy]
  * @property {number} [temperature]
+ * @property {number} [speed]
  * @property {number} [spec]
  * @property {number} [lineageId]
  * @property {number} [flags]
@@ -25,7 +26,8 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpo
  */
 export function makeSnapshot(tick, agents, extra = {}) {
     const { foods = [], clouds = [], obstacles = [] } = extra;
-    const words = HEADER_WORDS + agents.length * AGENT_STRIDE + (foods.length + clouds.length + obstacles.length) * 3;
+    const words =
+        HEADER_WORDS + agents.length * AGENT_STRIDE + foods.length * 4 + (clouds.length + obstacles.length) * 3;
     const buffer = new ArrayBuffer(words * 4);
     const u32 = new Uint32Array(buffer);
     const f32 = new Float32Array(buffer);
@@ -46,11 +48,15 @@ export function makeSnapshot(tick, agents, extra = {}) {
         u32[w + AGENT_FIELD.GENOME] = a.genomeId;
         u32[w + AGENT_FIELD.SLOT] = a.slot;
         f32[w + AGENT_FIELD.TEMPERATURE] = a.temperature ?? 0.5;
-        f32[w + AGENT_FIELD.SPEED] = 0;
+        f32[w + AGENT_FIELD.SPEED] = a.speed ?? 0;
         u32[w + AGENT_FIELD.FLAGS] = a.flags ?? 0;
     });
     let w = HEADER_WORDS + agents.length * AGENT_STRIDE;
-    for (const row of [...foods, ...obstacles, ...clouds]) {
+    for (const row of foods) {
+        f32.set(row, w);
+        w += 4;
+    }
+    for (const row of [...obstacles, ...clouds]) {
         f32.set(row, w);
         w += 3;
     }
