@@ -55,7 +55,7 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
-    biteCost: 8, // natural-selection T5a: the biter's kick per landed bite; 8 keeps a typical kick near a sixth of a 40-energy bite, stage 6's survival screen tunes it
+    biteCost: 8, // natural-selection T5a: the biter's kick per landed bite; 8 keeps a typical kick near a sixth of a 40-energy bite; the survival screen (E67) found the cost is not the predator lever and kept 8
     recoilEnergy: 20, // natural-selection T5b: a hunter that lunges at kin or something too big loses this once a tick (half of a 40-energy bite)
     huntSizeRatio: 0.8, // tuned, fitness-and-selection T15d (was 1.01, tuned E20 and jaws; legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
