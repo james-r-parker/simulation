@@ -124,10 +124,9 @@ export function interpolateInto(prev, next, alpha, out) {
         const matched = index > 0 && older.u32[p + AGENT_FIELD.GENOME] === next.u32[n + AGENT_FIELD.GENOME];
         writeNewest(out, i, next, n);
         if (matched) {
-            blendAt.p = p;
-            blendAt.alpha = alpha;
-            blendAt.tickDelta = tickDelta;
-            blendAt.nextAngle = next.f32[n + AGENT_FIELD.ANGLE];
+            blendAt[0] = p;
+            blendAt[1] = alpha;
+            blendAt[2] = tickDelta;
             blend(out, i, older.f32, blendAt);
         }
     }
@@ -138,26 +137,34 @@ export function interpolateInto(prev, next, alpha, out) {
     return count;
 }
 
-/** Scratch for `blend`, so the per-agent call passes no object: the word offset in the older snapshot and alpha. */
-const blendAt = { p: 0, alpha: 0, tickDelta: 1, nextAngle: 0 };
+/**
+ * Scratch for `blend`, so the per-agent call passes no object: the word offset in the older snapshot, alpha and the
+ * ticks between the snapshots. A typed array, so storing a double never boxes it.
+ */
+const blendAt = new Float64Array(3);
 
 /**
  * Moves the agent at output index `i` from its `prev` values towards the ones already written there.
  * @param {Interpolated} out the arrays, holding the newest values
  * @param {number} i the output index
  * @param {Float32Array} g the older snapshot's floats
- * @param {{p: number, alpha: number, tickDelta: number, nextAngle: number}} at word offset, blend factor, tickDelta, nextAngle
+ * @param {Float64Array} at word offset, blend factor and ticks between the snapshots, in that order
  * @returns {void}
  */
 function blend(out, i, g, at) {
-    const { p, alpha, tickDelta, nextAngle } = at;
+    const p = at[0];
+    const alpha = at[1];
+    const tickDelta = at[2];
     out.x[i] = g[p + AGENT_FIELD.X] + (out.x[i] - g[p + AGENT_FIELD.X]) * alpha;
     out.y[i] = g[p + AGENT_FIELD.Y] + (out.y[i] - g[p + AGENT_FIELD.Y]) * alpha;
     out.size[i] = g[p + AGENT_FIELD.SIZE] + (out.size[i] - g[p + AGENT_FIELD.SIZE]) * alpha;
     out.energy[i] = g[p + AGENT_FIELD.ENERGY] + (out.energy[i] - g[p + AGENT_FIELD.ENERGY]) * alpha;
     out.temperature[i] = g[p + AGENT_FIELD.TEMPERATURE] + (out.temperature[i] - g[p + AGENT_FIELD.TEMPERATURE]) * alpha;
-    out.angle[i] = lerpAngle(g[p + AGENT_FIELD.ANGLE], out.angle[i], alpha);
-    out.turn[i] = shortestArc(g[p + AGENT_FIELD.ANGLE], nextAngle) / tickDelta;
+    // one arc serves both: the angle blends along it and the turn is it per tick
+    const from = g[p + AGENT_FIELD.ANGLE];
+    const arc = shortestArc(from, out.angle[i]);
+    out.angle[i] = from + arc * alpha;
+    out.turn[i] = arc / tickDelta;
 }
 
 /**
