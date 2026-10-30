@@ -17,7 +17,7 @@ export const PALETTE = Object.freeze({
     meat: [0.9, 0.1, 0.15],
     obstacleBody: [0.012, 0.016, 0.024],
     obstacleRim: [0.09, 0.12, 0.18],
-    rockBody: [0.012, 0.016, 0.024],
+    rockBody: [0.02, 0.027, 0.04],
     rockRim: [0.09, 0.12, 0.18],
     rockContact: [0.004, 0.005, 0.006],
     lichen: [0.006, 0.014, 0.006],
@@ -111,6 +111,47 @@ export const AURORA_MAX_LUMINANCE = 0.01;
 
 /** The maximum luminance (linear Y) of any scenery colour (lichen, frost, refuge glow). */
 export const SCENERY_MAX_LUMINANCE = 0.012;
+
+/** The hues (degrees) an unslotted lineage may take: blue to indigo and pink to magenta, clear of the semantic reds, ambers, teals and the attack violet. */
+export const LINEAGE_HUES = Object.freeze({ blueFrom: 190, blueSpan: 40, pinkFrom: 322, pinkSpan: 26, blueShare: 0.6 });
+/** The luminance (linear Y) an unslotted lineage's colour is scaled to, a little above the neutral blue-grey's. */
+export const LINEAGE_LUMINANCE = 0.45;
+
+/**
+ * A strongly separated hue for a lineage that holds no colour slot, so the many agents outside the top 8 families still
+ * read as different lineages: the golden-ratio step spreads neighbouring ids over the hue range, saturation is 0.7 and
+ * the colour is scaled to `LINEAGE_LUMINANCE`.
+ * @param {number} lineageId a lineage id
+ * @param {number[] | Float32Array} [out] receives the linear RGB triple
+ * @returns {number[] | Float32Array} `out`
+ */
+export function lineageColor(lineageId, out = [0, 0, 0]) {
+    const u = (lineageId * 0.6180339) % 1;
+    const { blueFrom, blueSpan, pinkFrom, pinkSpan, blueShare } = LINEAGE_HUES;
+    const hue =
+        (u < blueShare
+            ? blueFrom + (blueSpan * u) / blueShare
+            : pinkFrom + (pinkSpan * (u - blueShare)) / (1 - blueShare)) / 60;
+    const sector = Math.floor(hue);
+    const f = hue - sector;
+    const lo = 0.3;
+    const rise = 0.3 + 0.7 * f;
+    const fall = 1 - 0.7 * f;
+    const table = [
+        [1, rise, lo],
+        [fall, 1, lo],
+        [lo, 1, rise],
+        [lo, fall, 1],
+        [rise, lo, 1],
+        [1, lo, fall],
+    ][sector % 6];
+    const y = 0.2126729 * table[0] + 0.7151522 * table[1] + 0.072175 * table[2];
+    const scale = Math.min(LINEAGE_LUMINANCE / y, 0.95);
+    out[0] = table[0] * scale;
+    out[1] = table[1] * scale;
+    out[2] = table[2] * scale;
+    return out;
+}
 
 /**
  * The colour of a family: its slot's colour in the current palette, else the neutral colour, dimmed a little at low

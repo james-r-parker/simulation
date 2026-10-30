@@ -15,6 +15,7 @@ import {
     temperatureBands,
     temperatureColor,
     temperatureRamp,
+    lineageColor,
 } from '../../../js/app/renderer/colors.js';
 import { ciede2000, colorDistance, labHue, luminance, MACHADO, toLab } from './helpers/color-metrics.js';
 
@@ -34,7 +35,7 @@ describe('PALETTE', () => {
         expect(PALETTE.smoke).toEqual([0.03, 0.04, 0.06]);
         expect(PALETTE.obstacleBody).toEqual([0.012, 0.016, 0.024]);
         expect(PALETTE.obstacleRim).toEqual([0.09, 0.12, 0.18]);
-        expect(PALETTE.rockBody).toEqual([0.012, 0.016, 0.024]);
+        expect(PALETTE.rockBody).toEqual([0.02, 0.027, 0.04]);
         expect(PALETTE.rockRim).toEqual([0.09, 0.12, 0.18]);
         expect(PALETTE.rockContact).toEqual([0.004, 0.005, 0.006]);
         expect(PALETTE.lichen).toEqual([0.006, 0.014, 0.006]);
@@ -307,5 +308,48 @@ describe('scenery colours', () => {
                 }
             }
         }
+    });
+});
+
+describe('lineageColor', () => {
+    const hueOf = (/** @type {number[] | Float32Array} */ c) => {
+        const [r, g, b] = [c[0], c[1], c[2]];
+        const max = Math.max(r, g, b);
+        const d = max - Math.min(r, g, b);
+        let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h *= 60;
+        return h < 0 ? h + 360 : h;
+    };
+
+    it('is deterministic, stays in the blue and pink hue bands and is at least as bright as the neutral family', () => {
+        const neutralY = 0.2126729 * 0.2 + 0.7151522 * 0.26 + 0.072175 * 0.38;
+        for (let id = 1; id <= 400; id++) {
+            const c = lineageColor(id);
+            expect(lineageColor(id)).toEqual(c);
+            const h = hueOf(c);
+            const inBlue = h >= 189 && h <= 231;
+            const inPink = h >= 321 && h <= 349;
+            expect(inBlue || inPink, `lineage ${id} hue ${h}`).toBe(true);
+            const y = 0.2126729 * c[0] + 0.7151522 * c[1] + 0.072175 * c[2];
+            expect(y).toBeGreaterThan(neutralY * 0.9);
+            expect(Math.max(...c)).toBeLessThanOrEqual(0.95 + 1e-9);
+        }
+    });
+
+    it('keeps its colours at least 15 from every semantic colour', () => {
+        for (let id = 1; id <= 400; id++) {
+            const c = lineageColor(id);
+            for (const [name, semantic] of Object.entries(SEMANTIC)) {
+                // the alarm is a thin white ring, told from a body by its shape, so its bar is 10
+                expect(colorDistance(c, semantic), `${name} vs lineage ${id}`).toBeGreaterThanOrEqual(
+                    name === 'alarm' ? 10 : 15,
+                );
+            }
+        }
+    });
+
+    it('separates neighbouring ids', () => {
+        const hues = [1, 2, 3, 4, 5, 6].map((id) => hueOf(lineageColor(id)));
+        expect(new Set(hues.map((h) => Math.round(h / 8))).size).toBeGreaterThan(3);
     });
 });

@@ -159,7 +159,7 @@ void main() {
     float small = 1.0 - smoothstep(23.0, 25.0, across);
     float haloWidth = min(0.263, mix(9.0, 4.0, small) * vPx);
     float rimWidth = min(2.2 * vPx * (1.0 + contrast), 0.12 * (1.0 + contrast));
-    float halo = exp(-max(d, 0.0) / haloWidth) * 0.45 * (1.0 - faint);
+    float halo = exp(-max(d, 0.0) / haloWidth) * 0.8 * (1.0 - faint);
     float rim = exp(-abs(d) / rimWidth) * 1.0;
     float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
     float nucleus = exp(-dot(p, p) * 3.2) * 0.45 * (1.0 - small);
@@ -175,6 +175,13 @@ void main() {
     rgb += vec3(1.0, 0.45, 0.35) * 1.6 * tip * small * uHunter * cover;
     vec2 eyeAt = p - vec2(0.45, 0.0);
     rgb += vec3(0.85, 0.95, 1.0) * 1.1 * (1.0 - smoothstep(0.13 - vPx, 0.13 + vPx, length(eyeAt))) * cover;
+    // A wake behind a moving agent: a comet tail along the reversed heading, longer and brighter the faster it goes, so
+    // heading, speed and a chase read in a still frame. It is part of the motion look (off at level 2).
+    float speed01 = sqrt(vMotion.x) * min(uMotion * 2.0, 1.0);
+    float tailT = clamp((-vP.x - 0.7) / 1.5, 0.0, 1.0);
+    float tailW = 0.12 + 0.4 * (1.0 - tailT);
+    float tail = exp(-vP.y * vP.y / (tailW * tailW)) * (1.0 - tailT) * (1.0 - tailT) * step(0.0, -vP.x - 0.5) * speed01;
+    rgb += base * bright * 0.55 * tail * (1.0 - cover);
     rgb += vec3(0.35, 0.9, 0.7) * vState.y * 0.9 * (cover + halo * 0.5);
     rgb += vec3(1.0, 0.18, 0.15) * vState.z * 1.3 * (cover + halo * 0.5);
     float window = 1.0 - smoothstep(0.3, 1.0, length(vP) / ${QUAD_HALF.toFixed(1)});

@@ -3,7 +3,7 @@
 
 import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
-import { familyColor } from './colors.js';
+import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
 
 /** Floats per vec4 attribute, and the attributes per instance: pose, colour, state, extra and motion. */
 export const ITEM = 4;
@@ -18,34 +18,28 @@ export const MOTION_SMOOTHING = 0.25;
 /** Golden ratio fractional multiplier for stable phase. */
 export const PHI_FRAC = 0.6180339;
 
-/**
- * Multipliers on the neutral family's colour by mesh (the specialisation, in `info.specs` order: predator, forager,
- * reproducer, scout, defender), so the many agents without a family colour still read as five kinds at a glance. Each
- * keeps the luminance within 2% of 1 so the dimmest-body ceilings of the Look section hold.
- */
-export const NEUTRAL_TINT = Object.freeze([
-    [1.3, 0.92, 0.8],
-    [0.85, 1.15, 0.95],
-    [1.2, 0.88, 1.35],
-    [0.78, 1.0, 1.42],
-    [1.3, 1.08, 0.78],
-]);
+/** The brightness gain by mesh (the specialisation, in `info.specs` order): the predator is drawn hotter and brighter. */
+export const MESH_GAIN = Object.freeze([1.6, 1, 1, 1, 1]);
 
 /**
- * @param {number[] | Float32Array} rgb the agent's colour, changed in place
- * @param {number} mesh the agent's mesh index
- * @param {boolean} neutral whether its family has no colour slot
+ * Gives an agent whose family holds no colour slot its lineage hue and its mesh's gain, dimmed by its energy like any
+ * family colour. Does nothing for an agent with a slot, or under a palette other than the default.
+ * @param {number[] | Float32Array} rgb the agent's colour, replaced for an unslotted agent
+ * @param {{mesh: number, lineageId: number, neutral: boolean, energy01: number}} agent the agent
  * @returns {void}
  */
-function tintNeutral(rgb, mesh, neutral) {
-    const tint = neutral ? NEUTRAL_TINT[mesh] : undefined;
-    if (tint !== undefined) {
-        rgb[0] *= tint[0];
-        rgb[1] *= tint[1];
-        rgb[2] *= tint[2];
+function colorUnslotted(rgb, { mesh, lineageId, neutral, energy01 }) {
+    if (!neutral) {
+        return;
     }
+    lineageColor(lineageId, rgb);
+    const k = (ENERGY_FLOOR + (1 - ENERGY_FLOOR) * Math.min(Math.max(energy01, 0), 1)) * (MESH_GAIN[mesh] ?? 1);
+    rgb[0] *= k;
+    rgb[1] *= k;
+    rgb[2] *= k;
 }
 
+const COLOR_AGENT = { mesh: 0, lineageId: 0, neutral: false, energy01: 0 };
 const MOTION = { speed01: 0, turn01: 0, phase: 0 };
 
 /**
@@ -149,7 +143,11 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         const o = bucket.count * ITEM;
         bucket.count += 1;
         const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
-        tintNeutral(rgb, mesh, slotOf(slots, agents.lineageId[i]) < 0);
+        COLOR_AGENT.mesh = mesh;
+        COLOR_AGENT.lineageId = agents.lineageId[i];
+        COLOR_AGENT.neutral = slots.palette === 'default' && slotOf(slots, agents.lineageId[i]) < 0;
+        COLOR_AGENT.energy01 = agents.energy[i];
+        colorUnslotted(rgb, COLOR_AGENT);
         bucket.pose[o] = agents.x[i];
         bucket.pose[o + 1] = agents.y[i];
         bucket.pose[o + 2] = agents.angle[i];

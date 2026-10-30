@@ -147,9 +147,13 @@ void main() {
         // inside the ridge wherever one rock's body covers its neighbour's, and touching rocks must read as one mass.
         float shade = 1.0;
         if (uTier < 0.5) {
-            shade = 0.45 + 1.3 * fbm2(vWorld * 0.03) * (0.7 + 0.6 * valueNoise(vWorld * 0.11));
+            // A relief lit from the upper left: the slope of a world-space height field, so it is seamless across rocks.
+            vec2 hp = vWorld * 0.045;
+            float h0 = fbm2(hp);
+            float relief = (fbm2(hp + vec2(0.5, -0.5)) - h0) * 2.4;
+            shade = 0.7 + 0.8 * h0 * (0.7 + 0.6 * valueNoise(vWorld * 0.11)) + relief;
         }
-        vec3 col = uBody * min(shade, 1.6);
+        vec3 col = uBody * clamp(shade, 0.55, 1.6);
 
         if (uTier < 0.5 && normD > 0.75) {
             vec2 cell = floor(vWorld * 0.4);
