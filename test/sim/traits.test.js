@@ -27,8 +27,10 @@ describe('leakRateOf', () => {
 });
 
 describe('leakMin', () => {
-    it('defaults to 0.05, the floor before the key', () => {
-        expect(createConfig().leakMin).toBe(0.05);
+    it('defaults to 0.02, the big-bang floor (a half-life of 34 ticks; 0.05 was 13.5)', () => {
+        expect(createConfig().leakMin).toBe(0.02);
+        expect(Math.log(0.5) / Math.log(1 - 0.02)).toBeCloseTo(34.3, 1);
+        expect(createConfig({ leakMin: 0.05 }).leakMin).toBe(0.05);
     });
 
     it('lowers the floor of the leak rate', () => {
