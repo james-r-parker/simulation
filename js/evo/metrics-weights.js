@@ -4,6 +4,7 @@
 // hidden state (`rare-saturation.js`) and the mean mutation step size. The checkpoint figures read the sampled agents
 // (`observer.sampled`) at or after burn-in. All `watch`.
 
+import { POOLED_CHANNELS, POOLED_STRIDE } from '../sim/brain-layout.js';
 import { meanActiveShare } from '../sim/input-activity.js';
 import { MIN_EVENTS } from './rare-saturation.js';
 import { none, ok, share } from './metrics-stats.js';
@@ -14,11 +15,40 @@ export const CLAMP_LEVEL = 3.9;
 /** The direction of each metric here. */
 export const WEIGHT_DIRECTIONS = Object.freeze({
     'eval.input_active_share': 'watch',
+    'eval.input_active_share.threat': 'watch',
+    'eval.input_active_share.prey': 'watch',
     'eval.weight_drift_silent': 'watch',
     'eval.weight_clamp_share': 'watch',
     'eval.rare_input_saturation_jump': 'watch',
     'eval.sigma_mean': 'watch',
 });
+
+/**
+ * @param {Record<string, any>} activity the input-activity state (`active` counts per input, `samples`)
+ * @param {string} channel a `POOLED_CHANNELS` name
+ * @returns {number | null} the share of nonzero values over the channel's pooled inputs, null with no sample
+ */
+export function channelActiveShare(activity, channel) {
+    if (activity.samples === 0) {
+        return null;
+    }
+    const from = POOLED_CHANNELS.indexOf(channel) * POOLED_STRIDE;
+    let total = 0;
+    for (let i = from; i < from + POOLED_STRIDE; i++) {
+        total += activity.active[i];
+    }
+    return total / (activity.samples * POOLED_STRIDE);
+}
+
+/**
+ * @param {Record<string, any>} activity the input-activity state
+ * @param {string} channel a `POOLED_CHANNELS` name
+ * @returns {import('./metrics-stats.js').MetricResult} the channel's active share
+ */
+function channelMetric(activity, channel) {
+    const value = channelActiveShare(activity, channel);
+    return value === null ? none('no input-activity sample after burn-in') : ok(value);
+}
 
 /**
  * @returns {Record<string, number>} empty checkpoint pools
@@ -134,7 +164,7 @@ export function sampleWeights(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five metrics
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the seven metrics
  */
 export function weightMetrics(observer) {
     const p = observer.weightPools;
@@ -146,6 +176,8 @@ export function weightMetrics(observer) {
             : none(`fewer than ${MIN_EVENTS} first firings of a rare input`);
     return {
         'eval.input_active_share': active === null ? none('no input-activity sample after burn-in') : ok(active),
+        'eval.input_active_share.threat': channelMetric(observer.activity, 'threat'),
+        'eval.input_active_share.prey': channelMetric(observer.activity, 'prey'),
         'eval.weight_drift_silent':
             p.ratios > 0 ? ok(p.ratioSum / p.ratios) : none('no input under 0.01, or none at or above'),
         'eval.weight_clamp_share': share(p.clamped, p.weights, 'no sampled agent after burn-in'),
