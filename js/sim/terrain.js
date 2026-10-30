@@ -14,6 +14,8 @@ export const REFUGE_ROCK_RADIUS = 50;
 /** The most wall gaps or refuges. */
 export const TERRAIN_MAX = 8;
 const WALL_ROCK_TARGET = 100;
+/** The clear distance between the extents of neighbouring rings in a cluster. */
+const CLUSTER_GAP = 100;
 const RING_HALF_ANGLE_SIN = 0.3826834323650898; // sin(pi / 8), half the angle between neighbouring rocks
 const TWO_PI = 6.283185307179586;
 
@@ -60,15 +62,41 @@ export function terrainProblem(config) {
 
 /**
  * @param {Config} config the config
+ * @returns {number} the refuge rings in the basin with more of them (the left one, which takes the odd ring)
+ */
+function ringsPerBasin(config) {
+    return Math.ceil(config.refugeCount / 2);
+}
+
+/**
+ * @param {Config} config the config
+ * @returns {number} the groups in the left basin: its rings in groups of `refugeCluster`, the last one possibly smaller
+ */
+function groupsPerBasin(config) {
+    return Math.ceil(ringsPerBasin(config) / config.refugeCluster);
+}
+
+/**
+ * @param {Config} config the config
+ * @returns {number} the distance between the centres of neighbouring rings in a group: two ring extents plus 100 px, so
+ *   prey can pass between them
+ */
+function clusterSpacing(config) {
+    return 2 * (ringRadius(config) + REFUGE_ROCK_RADIUS) + CLUSTER_GAP;
+}
+
+/**
+ * @param {Config} config the config
  * @param {number} step the wall rock radius
  * @returns {string | null} what is wrong with the refuges or the cold margin, or null
  */
 function refugeProblem(config, step) {
     const m = ringRadius(config) + REFUGE_ROCK_RADIUS;
-    const perBasin = Math.ceil(config.refugeCount / 2);
-    const basinTooNarrow = config.worldWidth / 2 - step < 2 * m;
-    if (config.refugeCount > 0 && (basinTooNarrow || config.worldHeight / perBasin < 2 * m)) {
-        return `${config.refugeCount} refuges of size ${config.refugeSizeMax} do not fit the basins`;
+    const widest = Math.min(config.refugeCluster, ringsPerBasin(config));
+    const rowWidth = 2 * m + (widest - 1) * clusterSpacing(config);
+    const basinTooNarrow = config.worldWidth / 2 - step < rowWidth;
+    if (config.refugeCount > 0 && (basinTooNarrow || config.worldHeight / groupsPerBasin(config) < 2 * m)) {
+        return `${config.refugeCount} refuges of size ${config.refugeSizeMax} in clusters of ${config.refugeCluster} (refugeCluster) do not fit the basins`;
     }
     return 2 * config.coldMarginWidth >= config.worldHeight
         ? 'coldMarginWidth must leave room between the two cold margins'
@@ -119,31 +147,54 @@ function placeWall(world, first) {
 }
 
 /**
- * Writes the refuges, alternating between the two basins; those in one basin share its height in equal bands.
+ * Writes one ring of rocks.
+ * @param {World} world the world
+ * @param {number} first the first slot to write
+ * @param {{x: number, y: number}} centre the ring's centre
+ * @returns {number} the next free slot
+ */
+function placeRing(world, first, centre) {
+    const ring = ringRadius(world.config);
+    let slot = first;
+    for (let r = 0; r < REFUGE_ROCKS; r++) {
+        const angle = (r / REFUGE_ROCKS) * TWO_PI;
+        world.obsX[slot] = centre.x + ring * detCos(angle);
+        world.obsY[slot] = centre.y + ring * detSin(angle);
+        world.obsRadius[slot] = REFUGE_ROCK_RADIUS;
+        slot++;
+    }
+    return slot;
+}
+
+/**
+ * Writes the refuges, alternating between the two basins. A basin's rings come in groups of `refugeCluster`; a group
+ * takes an equal height band and a random centre, and its rings sit in a row at that height, `clusterSpacing` apart.
+ * With a cluster of 1 every ring is a group and the draws, one x and one y per ring, are those of a ring alone.
  * @param {World} world the world
  * @param {number} first the first slot to write
  * @returns {number} the next free slot
  */
 function placeRefuges(world, first) {
-    const { refugeCount, worldWidth, worldHeight } = world.config;
-    const ring = ringRadius(world.config);
-    const m = ring + REFUGE_ROCK_RADIUS;
+    const { refugeCount, refugeCluster, worldWidth, worldHeight } = world.config;
+    const m = ringRadius(world.config) + REFUGE_ROCK_RADIUS;
     const wallEdge = wallShape(world.config).step;
-    const band = worldHeight / Math.ceil(refugeCount / 2);
+    const band = worldHeight / groupsPerBasin(world.config);
+    const spacing = clusterSpacing(world.config);
     const rng = world.rng.obstacles;
+    const rings = [Math.ceil(refugeCount / 2), Math.floor(refugeCount / 2)];
+    const groups = Math.ceil(rings[0] / refugeCluster) + Math.ceil(rings[1] / refugeCluster);
     let slot = first;
-    for (let i = 0; i < refugeCount; i++) {
-        const left = i % 2 === 0;
-        const x0 = left ? m : worldWidth / 2 + wallEdge + m;
-        const x1 = left ? worldWidth / 2 - wallEdge - m : worldWidth - m;
+    for (let g = 0; g < groups; g++) {
+        const side = g % 2;
+        const index = Math.floor(g / 2);
+        const count = Math.min(refugeCluster, rings[side] - index * refugeCluster);
+        const half = ((count - 1) * spacing) / 2;
+        const x0 = (side === 0 ? m : worldWidth / 2 + wallEdge + m) + half;
+        const x1 = (side === 0 ? worldWidth / 2 - wallEdge - m : worldWidth - m) - half;
         const cx = x0 + nextFloat(rng) * (x1 - x0);
-        const cy = Math.floor(i / 2) * band + m + nextFloat(rng) * (band - 2 * m);
-        for (let r = 0; r < REFUGE_ROCKS; r++) {
-            const angle = (r / REFUGE_ROCKS) * TWO_PI;
-            world.obsX[slot] = cx + ring * detCos(angle);
-            world.obsY[slot] = cy + ring * detSin(angle);
-            world.obsRadius[slot] = REFUGE_ROCK_RADIUS;
-            slot++;
+        const cy = index * band + m + nextFloat(rng) * (band - 2 * m);
+        for (let j = 0; j < count; j++) {
+            slot = placeRing(world, slot, { x: cx + (j - (count - 1) / 2) * spacing, y: cy });
         }
     }
     return slot;

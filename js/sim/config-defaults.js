@@ -194,8 +194,9 @@ export const DEFAULTS = deepFreeze({
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
-    wallGapWidth: 300, // new: width of each wall gap in px (T52)
-    refugeCount: 4, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52)
+    wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
+    refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
+    refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
     coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE

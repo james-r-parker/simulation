@@ -14,7 +14,7 @@ const SEED = 99;
  * @returns {ReturnType<typeof createWorld>} an empty 1000x1000 world with no obstacles
  */
 function empty(over = {}) {
-    return createWorld(
+    const world = createWorld(
         createConfig({
             ...SIMPLE_WORLD,
             seed: SEED,
@@ -34,6 +34,10 @@ function empty(over = {}) {
         }),
         testPolicy,
     );
+    // The terrain's wall rocks are not the draws under test: park them far outside the world so the world is empty.
+    world.obsX.fill(1e6);
+    world.obsY.fill(1e6);
+    return world;
 }
 
 /**

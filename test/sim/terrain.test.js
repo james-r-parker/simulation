@@ -18,6 +18,7 @@ const BASINS = {
     wallGaps: 3,
     wallGapWidth: 300,
     refugeCount: 4,
+    refugeCluster: 1,
     refugeSizeMax: 30,
     coldMarginWidth: 600,
 };
