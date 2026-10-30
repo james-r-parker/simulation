@@ -83,6 +83,14 @@ describe('archive codec', () => {
         expect(() => decodeArchive({ ...json, version: ARCHIVE_VERSION - 1 }, config)).toThrow(/archive\.version/);
     });
 
+    it('rejects an archive of the same sizes but another layout name, by name', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        expect(json.layout.name).toBe('pooled-v2');
+        expect(() => decodeArchive({ ...json, layout: { ...json.layout, name: 'elman-v1' } }, config)).toThrow(
+            /archive\.layout\.name: expected pooled-v2, got elman-v1/,
+        );
+    });
+
     it('rejects an archive built under another descriptor, naming the field', () => {
         const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV7 }), config));
         expect(json.descriptor).toBe('v7');
