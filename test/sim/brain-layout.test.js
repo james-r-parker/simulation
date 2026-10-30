@@ -85,6 +85,17 @@ describe('brainLayout', () => {
         expect(l.weightCount).toBe(l.leakStart + 3);
     });
 
+    it.each([16, 24, 32, 48, 64])('puts every block offset at its derived size at %i hidden', (H) => {
+        const l = brainLayout(createConfig({ brainHidden: H }));
+        const sizes = { wIn: 81 * H, wRec: H * H, bHidden: H, wOut: H * 11, bOut: 11, traitStart: 4, leakStart: H };
+        let at = 0;
+        for (const [block, size] of Object.entries(sizes)) {
+            expect(l[block]).toBe(at);
+            at += size;
+        }
+        expect(l.weightCount).toBe(at);
+    });
+
     it('is frozen', () => {
         expect(Object.isFrozen(brainLayout(createConfig()))).toBe(true);
     });
