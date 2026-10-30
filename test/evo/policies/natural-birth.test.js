@@ -96,7 +96,7 @@ describe('birth mutation keys', () => {
         birth.sigma[0] = 0.05;
         birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(32) });
         const child = world.weights.slice(layout.weightCount, 2 * layout.weightCount);
-        child.forEach((w, g) => {
+        child.forEach((/** @type {number} */ w, /** @type {number} */ g) => {
             const decayed = g >= layout.wIn + 2 * layout.hidden && g < layout.wIn + 3 * layout.hidden;
             expect(Math.abs(w - (decayed ? 0.45 : 0.5))).toBeLessThan(0.01);
         });

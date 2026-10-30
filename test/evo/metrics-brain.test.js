@@ -75,7 +75,7 @@ describe('the observer hooks', () => {
         observer.silentTarget = new Uint8Array(world.layout.inputCount).fill(1);
         world.tick = BURN_IN_TICKS;
         observeBrain(observer, world);
-        expect(observer.silentTarget.every((v) => v === 0)).toBe(true);
+        expect(observer.silentTarget.every((/** @type {number} */ v) => v === 0)).toBe(true);
     });
 
     it('takes the checkpoint samples only at or after burn-in', () => {

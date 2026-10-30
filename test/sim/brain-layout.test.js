@@ -86,7 +86,8 @@ describe('brainLayout', () => {
     });
 
     it.each([16, 24, 32, 48, 64])('puts every block offset at its derived size at %i hidden', (H) => {
-        const l = brainLayout(createConfig({ brainHidden: H }));
+        /** @type {Record<string, number>} */
+        const l = { ...brainLayout(createConfig({ brainHidden: H })) };
         const sizes = { wIn: 81 * H, wRec: H * H, bHidden: H, wOut: H * 11, bOut: 11, traitStart: 4, leakStart: H };
         let at = 0;
         for (const [block, size] of Object.entries(sizes)) {

@@ -60,7 +60,7 @@ export function createBrainPools(config, options = {}) {
  * @returns {void}
  */
 export function observeBrain(observer, world) {
-    snapshotHidden(observer.memory, observer, world);
+    snapshotHidden(observer.memory, /** @type {any} */ (observer), world);
     sampleMemoryOut(observer.memoryOut, world);
     sampleInputActivity(observer.activity, world);
     sampleSaturation(observer.saturation, { activity: observer.activity, world });

@@ -68,7 +68,9 @@ describe('sampleInputActivity', () => {
             world.tick = BURN_IN_TICKS + ticks++ * ACTIVITY_SAMPLE_TICKS;
             sampleInputActivity(activity, world);
         }
-        expect(activity.rareCount).toBe(activity.rare.reduce((s, v) => s + v, 0));
+        expect(activity.rareCount).toBe(
+            activity.rare.reduce((/** @type {number} */ s, /** @type {number} */ v) => s + v, 0),
+        );
         expect(activity.rare[5]).toBe(1);
         expect(activity.rare[4]).toBe(0);
         expect(Array.from(activity.rareIdx.subarray(0, activity.rareCount))).toContain(5);
