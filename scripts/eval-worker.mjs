@@ -1,6 +1,8 @@
 // Eval worker: runs one seed of one policy for N ticks and returns its metrics (see `scripts/eval.mjs`).
 import { isMainThread } from 'node:worker_threads';
 import { computeMetrics } from '../js/evo/metrics.js';
+import { logMemorySummary } from '../js/evo/memory-summary.js';
+import { activityTable } from '../js/evo/input-activity.js';
 import { checkpoint, createObserver, observerPhases } from '../js/evo/observer.js';
 import { createTrace, finishTrace, observeTrace } from '../js/evo/trace.js';
 import { getPolicy } from '../js/evo/policies/index.js';
@@ -45,7 +47,7 @@ function sum(values) {
  * @param {Record<string, any>} run the policy, observer and world
  * @returns {{tick: number, population: number, births: number, deaths: number}[]} one entry per checkpoint
  */
-function runTicks({ ticks }, { policy, observer, world, trace }) {
+function runTicks({ ticks }, { policy, observer, world, trace, log }) {
     const phases = observerPhases(observer);
     const checkpoints = [];
     for (let t = 0; t < ticks; t++) {
@@ -54,6 +56,7 @@ function runTicks({ ticks }, { policy, observer, world, trace }) {
         observeTrace(trace, world, observer);
         if (world.tick % CHECKPOINT_INTERVAL === 0 && world.tick >= CHECKPOINT_INTERVAL) {
             checkpoint(observer, world);
+            logMemorySummary(log, observer, world);
             checkpoints.push({
                 tick: world.tick,
                 population: world.population,
@@ -68,14 +71,17 @@ function runTicks({ ticks }, { policy, observer, world, trace }) {
 /**
  * Runs one seed.
  * @param {EvalTask} task the task
- * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints }`
+ * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints, inputActivity }`
  * @throws {Error} naming the seed and the tick at which a step failed
  */
 export function runSeed(task) {
     const { seed, policy: policyName, overrides } = task;
     const started = performance.now();
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: task.ticks });
+    const observer = createObserver(config, fork(createRng(seed), 'eval'), {
+        runTicks: task.ticks,
+        checkpointTicks: CHECKPOINT_INTERVAL,
+    });
     const log = createSimLog(() => {}, { level: 'error' });
     const policy = getPolicy(policyName).create({ config, log, observer, ...task.policyOptions });
     /** @type {Record<string, any> | undefined} */
@@ -85,7 +91,7 @@ export function runSeed(task) {
     try {
         world = createWorld(config, policy.brain);
         feedPolicy({ policy, observer }, world);
-        checkpoints = runTicks(task, { policy, observer, world, trace });
+        checkpoints = runTicks(task, { policy, observer, world, trace, log });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`seed ${seed} failed at tick ${world?.tick ?? 0}: ${message}`, { cause: error });
@@ -103,6 +109,7 @@ export function runSeed(task) {
         fitnessName: policy.fitnessName,
         checkpoints,
         trace: finishTrace(trace, world, observer),
+        inputActivity: activityTable(observer.activity),
     };
 }
 

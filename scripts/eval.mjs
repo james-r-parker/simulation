@@ -257,6 +257,7 @@ function buildAndWrite({ policyName, policyOptions, results, config, ticks, seed
         sha,
         perSeed: results.map((r) => r.metrics),
         traces: results.map((r) => r.trace),
+        inputActivity: results.map((r) => r.inputActivity ?? null),
     });
     validateReport(report);
     mkdirSync(dirname(out), { recursive: true });

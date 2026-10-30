@@ -14,6 +14,7 @@ import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from 
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
 import { noteHunterBirth } from './watch-births.js';
+import { noteBrainDeath, resetBrainSlot } from './metrics-brain.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 
 export { BURN_IN_TICKS };
@@ -31,6 +32,7 @@ export function resetSlot(observer, slot) {
     clearCells(observer, slot);
     resetIntentSlot(observer.intent, slot);
     resetVisits(observer.watch, slot);
+    resetBrainSlot(observer, slot);
 }
 
 /**
@@ -88,12 +90,13 @@ function logDeath(observer, { slot, eventIndex }, fitness) {
 /**
  * Finishes one dead agent: final values from the record, fitness, death log, totals, untracking.
  * @param {Record<string, any>} observer the observer
- * @param {Float64Array} d the event data
- * @param {number} o the record offset
+ * @param {{world: Record<string, any>, d: Float64Array, o: number}} record the world, the event data and the record
+ *   offset
  * @param {((observer: any, slot: number, config: any) => number) | undefined} fitness the policy's fitness
  * @returns {void}
  */
-function finishDeath(observer, d, o, fitness) {
+function finishDeath(observer, record, fitness) {
+    const { world, d, o } = record;
     const slot = d[o + 2];
     const genomeId = d[o + 3];
     if (observer.genomeId[slot] !== genomeId) {
@@ -121,6 +124,7 @@ function finishDeath(observer, d, o, fitness) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         noteDeath(observer.environment, d[o + 4]);
         noteVisitDeath(observer.watch, slot, d[o + 8]);
+        noteBrainDeath(observer, world, { slot, genomeId, ageTicks: d[o + 8] });
         if (d[o + 8] >= observer.config.maturityTicks && !observer.ghosts.has(genomeId)) {
             const logged = observer.deaths.fitness[observer.deathCount - 1];
             noteMeritDeath(observer.merit, { slot, tick: d[o + 1], fitness: logged });
@@ -265,7 +269,7 @@ export function applyEvents(observer, world, fitness) {
     noteBirthLineage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {
-            finishDeath(observer, d, i * EVENT_STRIDE, fitness);
+            finishDeath(observer, { world, d, o: i * EVENT_STRIDE }, fitness);
         }
     }
     releaseDeaths(observer, d, count);

@@ -14,7 +14,7 @@ import { createFitnessV1 } from '../../evo/fitness.js';
 import { createLifeCounters, updateLifeCounters } from '../../evo/life-counters.js';
 import { createOffers } from './map-elites-offer.js';
 import { createSeeder } from './map-elites-seed.js';
-import { createBirth } from './natural-birth.js';
+import { createBirth, shareBirth } from './natural-birth.js';
 import { brainLayout } from '../../sim/brain-layout.js';
 
 /** the parent cell tournament of `map-elites-v6`: the best elite of this many uniform cell draws. */
@@ -72,6 +72,8 @@ export function createMapElitesV1(options) {
     const archive = createArchive(brainLayout(config), { descriptor: scoring.descriptor });
     const clones = createClones(config.maxAgents);
     if (observer !== undefined) {
+        // The brain metrics read the step sizes, and the input-activity sample marks the silent inputs a birth decays.
+        shareBirth(observer, birth);
         // An entrant is in the archive lineage when its genome came from the archive or a clone of one.
         observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;
     }

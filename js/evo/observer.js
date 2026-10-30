@@ -5,6 +5,7 @@ import { createBodyPools } from './metrics-body.js';
 import { createEnvironmentPools } from './metrics-environment.js';
 import { createWatchPools } from './metrics-watch.js';
 import { sampleVisits } from './watch-visits.js';
+import { createBrainPools, observeBrain } from './metrics-brain.js';
 import { createLineagePools } from './metrics-lineage.js';
 import { createDietPools } from './metrics-diet.js';
 import { createWatchabilityPools, trackCircling } from './metrics-watchability.js';
@@ -91,8 +92,9 @@ const DEATH_CAUSES = 4;
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {Record<string, any>} rng the `eval` stream, `fork(createRng(config.seed), 'eval')`; kept as `observer.rng`
- * @param {{runTicks?: number}} [options] `runTicks`, the run length the trend metrics cut into windows; without it
- *   (or at most the burn-in) they are `null`
+ * @param {{runTicks?: number, checkpointTicks?: number}} [options] `runTicks`, the run length the trend metrics cut
+ *   into windows; without it (or at most the burn-in) they are `null`. `checkpointTicks`, the ticks between the run's
+ *   checkpoints, times the hidden-state snapshot; without it `eval.hidden_persistence` is `null`
  * @returns {Record<string, any>} a fresh observer with every counter at zero
  */
 export function createObserver(config, rng, options = {}) {
@@ -137,6 +139,7 @@ export function createObserver(config, rng, options = {}) {
         intent: createIntentState(config),
         scenes: createScenes(config),
         windows: createWindows(options.runTicks ?? 0),
+        ...createBrainPools(config, options),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
@@ -171,6 +174,7 @@ export function observe(observer, world, fitness) {
         sampleVisits(observer.watch, world);
     }
     trackCircling(observer.watchability, world, BURN_IN_TICKS);
+    observeBrain(observer, world);
     observer.agentTicks += world.population;
     observer.ticks = world.tick;
     noteWindows(observer.windows, observer, world.tick);

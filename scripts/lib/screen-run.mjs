@@ -163,6 +163,7 @@ function writeArmReport({ name, pending, ticks, sha, outDir }) {
         sha,
         perSeed: results.map((r) => r.metrics),
         traces: results.map((r) => r.trace),
+        inputActivity: results.map((r) => r.inputActivity ?? null),
     });
     validateReport(report);
     const path = reportPath(outDir, name);

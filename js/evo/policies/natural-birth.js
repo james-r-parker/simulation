@@ -26,6 +26,18 @@ export function rowOf(cache, array, { slot, count }) {
 }
 
 /**
+ * Lets the eval observer see a birth half: the brain metrics read its step sizes (`observer.sigma`), and the input-
+ * activity sample fills its silent-input mask (`observer.silentTarget`).
+ * @param {Record<string, any>} observer the eval observer
+ * @param {{sigma: Float32Array, silent: Uint8Array}} birth a `createBirth` result
+ * @returns {void}
+ */
+export function shareBirth(observer, birth) {
+    observer.sigma = birth.sigma;
+    observer.silentTarget = birth.silent;
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {{sigma: Float32Array, fatherSigma: Float32Array, silent: Uint8Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
  *   the step sizes (per slot, and per mother for the coming child), `silent` (one byte per input, nonzero is silent:
