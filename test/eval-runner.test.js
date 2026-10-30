@@ -65,10 +65,16 @@ describe('parseArgs', () => {
         expect(parseArgs([]).policyOptions).toBeNull();
     });
 
+    it('saves no champions by default and reads --save-champions', () => {
+        expect(parseArgs([]).saveChampions).toBe(0);
+        expect(parseArgs(['--save-champions', '4']).saveChampions).toBe(4);
+    });
+
     it.each([
         ['--seeds', '0'],
         ['--ticks', 'x'],
         ['--workers', '0'],
+        ['--save-champions', '0'],
         ['--policy', 'nope'],
         ['--bogus', '1'],
     ])('rejects %s %s with usage', (...argv) => {

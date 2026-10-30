@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -114,5 +114,30 @@ describe('runEval', () => {
             );
         },
         scaleTimeout(60_000),
+    );
+
+    it(
+        'writes champion files beside the report with --save-champions, and none otherwise',
+        async () => {
+            const lines = /** @type {string[]} */ ([]);
+            const base = {
+                seeds: 2,
+                ticks: 3000,
+                policy: 'map-elites-v6',
+                configOverrides: SMALL,
+                logDir: join(dir, 'logs'),
+                workers: 2,
+                sha: 'test',
+                print: (/** @type {string} */ line) => lines.push(line),
+            };
+            await runEval({ ...base, out: join(dir, 'plain.json') });
+            expect(existsSync(join(dir, 'plain-champions'))).toBe(false);
+            await runEval({ ...base, out: join(dir, 'with.json'), saveChampions: 2 });
+            const files = readdirSync(join(dir, 'with-champions'));
+            expect(files.length).toBeGreaterThan(0);
+            expect(files.length).toBeLessThanOrEqual(4);
+            expect(lines.some((line) => line.includes(`champions to ${join(dir, 'with-champions')}`))).toBe(true);
+        },
+        scaleTimeout(120_000),
     );
 });

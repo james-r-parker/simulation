@@ -54,4 +54,22 @@ describe('runSeed (direct)', () => {
         expect(learned.metrics['eval.qd_score'].value).toBe(0);
         expect(learned.metrics['eval.coverage'].value).toBe(0);
     });
+
+    it('returns no champions unless asked', () => {
+        expect(runSeed({ seed: 3, ticks: 20, overrides: SMALL, policy: 'map-elites-v6' }).champions).toEqual([]);
+    });
+
+    it('refuses --save-champions for a policy without an archive, naming it', () => {
+        const task = { seed: 3, ticks: 20, overrides: SMALL, policy: 'baseline-v5', saveChampions: 2 };
+        expect(() => runSeed(task)).toThrow('--save-champions needs a policy with an archive; "baseline-v5" has none');
+    });
+
+    it('returns at most the asked number of champion files from the archive', { timeout: scaleTimeout(60_000) }, () => {
+        const task = { seed: 3, ticks: 3000, overrides: SMALL, policy: 'map-elites-v6', saveChampions: 2 };
+        const { champions } = runSeed(task);
+        expect(champions.length).toBeGreaterThan(0);
+        expect(champions.length).toBeLessThanOrEqual(2);
+        expect(champions[0]).toMatchObject({ version: 1, specialisation: expect.any(Number) });
+        expect(champions[0].name).toMatch(/^map-elites-v6-s3-/);
+    });
 });

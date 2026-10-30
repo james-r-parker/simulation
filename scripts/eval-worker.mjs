@@ -1,5 +1,6 @@
 // Eval worker: runs one seed of one policy for N ticks and returns its metrics (see `scripts/eval.mjs`).
 import { isMainThread } from 'node:worker_threads';
+import { exportChampions } from '../js/evo/champion-export.js';
 import { computeMetrics } from '../js/evo/metrics.js';
 import { logMemorySummary } from '../js/evo/memory-summary.js';
 import { activityTable } from '../js/sim/input-activity.js';
@@ -27,6 +28,7 @@ const CHECKPOINT_INTERVAL = 1000;
  * @property {Record<string, any>} overrides config overrides (the `--config` object, or `{}`)
  * @property {Record<string, any>} [policyOptions] options for the policy (`validatePolicyOptions`), default none
  * @property {number} [traceInterval] ticks between the trace's population samples, default 1000
+ * @property {number} [saveChampions] how many of the archive's best genomes to return as champion files, default 0
  */
 
 /**
@@ -69,9 +71,27 @@ function runTicks({ ticks }, { policy, observer, world, trace, log }) {
 }
 
 /**
+ * @param {EvalTask} task the task
+ * @param {Record<string, any>} policy the policy that ran
+ * @param {Record<string, any>} config the config the seed ran on
+ * @returns {Record<string, any>[]} the champion files the task asks for (none by default)
+ * @throws {Error} when champions are asked for and the policy keeps no archive
+ */
+function championsOf(task, policy, config) {
+    const count = task.saveChampions ?? 0;
+    if (count === 0) {
+        return [];
+    }
+    if (policy.archive === undefined) {
+        throw new Error(`--save-champions needs a policy with an archive; "${task.policy}" has none`);
+    }
+    return exportChampions(policy.archive, config, { count, label: `${task.policy}-s${task.seed}` });
+}
+
+/**
  * Runs one seed.
  * @param {EvalTask} task the task
- * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints, inputActivity }`
+ * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints, inputActivity, champions }`
  * @throws {Error} naming the seed and the tick at which a step failed
  */
 export function runSeed(task) {
@@ -110,6 +130,7 @@ export function runSeed(task) {
         checkpoints,
         trace: finishTrace(trace, world, observer),
         inputActivity: activityTable(observer.activity),
+        champions: championsOf(task, policy, config),
     };
 }
 
