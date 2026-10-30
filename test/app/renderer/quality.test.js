@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     createQuality,
     DOWN_AFTER_MS,
+    LOOK_ALL,
+    LOOK_ITEMS,
+    LOOK_OFF,
+    lookFor,
+    lookItems,
+    parseLook,
     MAX_UP_WAIT_MS,
     QUALITY_LEVELS,
     stepQuality,
@@ -33,8 +39,8 @@ function hold(q, report, fromMs, forMs) {
 
 describe('quality levels', () => {
     it('level 0 is everything, 1 halves bloom and motes, 2 turns both off', () => {
-        expect(QUALITY_LEVELS[0]).toEqual({ bloom: true, bloomScale: 1, motes: 1 });
-        expect(QUALITY_LEVELS[1]).toEqual({ bloom: true, bloomScale: 0.5, motes: 0.5 });
+        expect(QUALITY_LEVELS[0]).toMatchObject({ bloom: true, bloomScale: 1, motes: 1 });
+        expect(QUALITY_LEVELS[1]).toMatchObject({ bloom: true, bloomScale: 0.5, motes: 0.5 });
         expect(QUALITY_LEVELS[2].bloom).toBe(false);
         expect(QUALITY_LEVELS[2].motes).toBe(0);
     });
@@ -172,5 +178,77 @@ describe('supportsFloatTargets', () => {
         expect(supportsFloatTargets(has(['EXT_color_buffer_float']))).toBe(true);
         expect(supportsFloatTargets(has(['EXT_color_buffer_half_float']))).toBe(true);
         expect(supportsFloatTargets(has(['OES_texture_float']))).toBe(false);
+    });
+});
+
+/** The Phase 6 quality-tier table: each item's tier at levels 0, 1 and 2. */
+const TIERS = {
+    rocks: [0, 1, 2],
+    aurora: [0, 1, LOOK_OFF],
+    terrain: [0, 1, LOOK_OFF],
+    motion: [0, 1, LOOK_OFF],
+    threads: [0, 1, LOOK_OFF],
+    decay: [0, 1, 2],
+    finish: [0, 1, LOOK_OFF],
+};
+
+describe('lookFor', () => {
+    it('gives every item its tier-table column at every level with the full mask', () => {
+        for (let level = 0; level < QUALITY_LEVELS.length; level++) {
+            const look = lookFor(level, LOOK_ALL);
+            for (const item of LOOK_ITEMS) {
+                expect(look[/** @type {keyof typeof look} */ (item)], `${item} at level ${level}`).toBe(
+                    TIERS[/** @type {keyof typeof TIERS} */ (item)][level],
+                );
+            }
+        }
+    });
+
+    it('turns off exactly the items the mask leaves out, at every level and every single-item mask', () => {
+        for (let level = 0; level < QUALITY_LEVELS.length; level++) {
+            LOOK_ITEMS.forEach((item, bit) => {
+                const look = lookFor(level, 1 << bit);
+                const drawn = lookItems(look);
+                const levelDraws = lookItems(lookFor(level, LOOK_ALL)).includes(item);
+                expect(drawn).toEqual(levelDraws ? [item] : []);
+            });
+        }
+    });
+
+    it('draws nothing with the empty mask', () => {
+        for (let level = 0; level < QUALITY_LEVELS.length; level++) {
+            expect(lookItems(lookFor(level, 0))).toEqual([]);
+        }
+    });
+
+    it('never adds an item from one level to the next, under every mask', () => {
+        for (let mask = 0; mask <= LOOK_ALL; mask++) {
+            for (let level = 1; level < QUALITY_LEVELS.length; level++) {
+                const before = lookItems(lookFor(level - 1, mask));
+                for (const item of lookItems(lookFor(level, mask))) {
+                    expect(before).toContain(item);
+                }
+            }
+        }
+    });
+
+    it('leaves the level table unchanged', () => {
+        lookFor(0, 0);
+        expect(lookItems(QUALITY_LEVELS[0].look)).toEqual([...LOOK_ITEMS]);
+    });
+});
+
+describe('parseLook', () => {
+    it('reads all, none and comma lists', () => {
+        expect(parseLook('all')).toBe(LOOK_ALL);
+        expect(parseLook('none')).toBe(0);
+        expect(parseLook('aurora,decay')).toBe((1 << 1) | (1 << 5));
+        expect(parseLook('aurora, decay')).toBe((1 << 1) | (1 << 5));
+    });
+
+    it('rejects an unknown or empty name', () => {
+        expect(parseLook('aurora,glitter')).toBeNull();
+        expect(parseLook('')).toBeNull();
+        expect(parseLook('rocks,')).toBeNull();
     });
 });

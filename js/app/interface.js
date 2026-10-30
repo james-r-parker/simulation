@@ -14,6 +14,7 @@ import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
 
 export { REFRESH_MS };
+
 import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
@@ -28,6 +29,20 @@ import { createTickerQueue, mountTicker } from './ui/ticker.js';
 import { mountTitleCard } from './ui/title-card.js';
 import { createToaster } from './ui/toast.js';
 import { mountTopBar } from './ui/top-bar.js';
+
+/**
+ * Whether a selecting pick should open the inspector drawer.
+ * @param {string | null} drawer currently open drawer, or null
+ * @param {number} id picked agent genome id, 0 for empty space
+ * @param {boolean} hudShown whether the HUD is visible
+ * @returns {boolean} whether to open the inspector drawer
+ */
+export function shouldOpenInspector(drawer, id, hudShown) {
+    if (!hudShown || !id) {
+        return false;
+    }
+    return drawer === null || drawer === 'inspector';
+}
 
 /**
  * @typedef {object} InterfaceDeps
@@ -305,7 +320,7 @@ function createListeners(ctx) {
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
- *   afterDraw: (frame: {tick: number}) => void,
+ *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {
@@ -318,6 +333,11 @@ export function createInterface(deps) {
         toast: ctx.toast,
         onEffect: (effect) => ctx.audio.onEffect(effect),
         afterDraw: (frame) => ctx.capture.afterDraw(frame),
+        openInspectorOnPick(id = deps.state.selectedId) {
+            if (shouldOpenInspector(ctx.drawers.state(), id, !ctx.hidden)) {
+                ctx.drawers.dispatch({ type: 'open', drawer: 'inspector' });
+            }
+        },
         pointer(x, y) {
             ctx.peekTracker.move(x, y, deps.now());
             ctx.peek.hide();

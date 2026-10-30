@@ -4,6 +4,7 @@ import { spawnAgent } from '../../js/sim/spawn.js';
 import { OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { terrainRockCount } from '../../js/sim/terrain.js';
+import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { smallWorld } from './helpers/small-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
@@ -14,11 +15,11 @@ describe('snapshotLayout', () => {
             headerWords: 6,
             agentStride: 12,
             rayStride: 4,
-            foodStride: 3,
+            foodStride: 4,
             obstacleStride: 3,
             cloudStride: 3,
         });
-        expect(layout.bytes).toBe((6 + 8 * (12 + 4) + 4 * 3 + terrainRockCount(smallWorld().config) * 3 + 32 * 3) * 4);
+        expect(layout.bytes).toBe((6 + 8 * (12 + 4) + 4 * 4 + terrainRockCount(smallWorld().config) * 3 + 32 * 3) * 4);
     });
 });
 
@@ -45,9 +46,9 @@ describe('writeSnapshot', () => {
         expect(u32[6 + 12 + 8]).toBe(2);
         expect(f32[6 + 12]).toBe(world.x[2]);
         expect(f32[6 + 12 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(30, 33))).toEqual([5, 6, 7]);
-        expect(f32[33]).toBe(world.obsX[0]);
-        expect(f32[35]).toBe(world.obsRadius[0]);
+        expect(Array.from(f32.subarray(30, 34))).toEqual([5, 6, 7, 0]);
+        expect(f32[34]).toBe(world.obsX[0]);
+        expect(f32[36]).toBe(world.obsRadius[0]);
     });
 
     it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
@@ -220,5 +221,32 @@ describe('writeSnapshot rays', () => {
         writeSnapshot(world, views, true);
         writeSnapshot(world, views);
         expect(views.u32[5]).toBe(0);
+    });
+
+    it('writes foodAge / carcassTicks for meat and 0 for plants', () => {
+        const world = smallWorld({ carcassTicks: 100 });
+        world.foodAlive[0] = 1;
+        world.foodX[0] = 10;
+        world.foodY[0] = 20;
+        world.foodRadius[0] = 5;
+        world.foodKind[0] = FOOD_KIND.PLANT;
+        world.foodAge[0] = 50;
+
+        world.foodAlive[1] = 1;
+        world.foodX[1] = 30;
+        world.foodY[1] = 40;
+        world.foodRadius[1] = 8;
+        world.foodKind[1] = FOOD_KIND.MEAT;
+        world.foodAge[1] = 25;
+
+        world.foodCount = 2;
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+
+        const foodStart = 6;
+        expect(views.f32[foodStart + 2]).toBe(5);
+        expect(views.f32[foodStart + 3]).toBe(0);
+        expect(views.f32[foodStart + 6]).toBe(-8);
+        expect(views.f32[foodStart + 7]).toBeCloseTo(0.25, 4);
     });
 });

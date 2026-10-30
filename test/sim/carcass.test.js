@@ -235,7 +235,7 @@ describe('carcass snapshot and hash', () => {
         const views = createSnapshotViews(buffer);
         writeSnapshot(w, views);
         const start = 6;
-        const radii = [views.f32[start + 2], views.f32[start + 5]];
+        const radii = [views.f32[start + 2], views.f32[start + 6]];
         expect(views.u32[2]).toBe(2);
         expect(radii[plant < meat ? 0 : 1]).toBe(7);
         expect(radii[plant < meat ? 1 : 0]).toBe(-w.foodRadius[meat]);

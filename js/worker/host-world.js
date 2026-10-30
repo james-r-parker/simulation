@@ -9,7 +9,7 @@ import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG } from '../sim/snapshot.js';
-import { terrainRockCount } from '../sim/terrain.js';
+import { REFUGE_ROCK_RADIUS, REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
 import { step } from '../sim/step.js';
 import {
     collectEffects,
@@ -105,16 +105,46 @@ export function fieldBytes(run) {
 }
 
 /**
- * @param {Readonly<Record<string, any>>} config the config
- * @returns {Record<string, any>} the static terrain: the cold margin, the wall's x and the obstacle slots
- *   that hold its rocks (they are drawn from the snapshot's obstacles)
+ * @param {Record<string, any>} config the run's config
+ * @param {import('../sim/world.js').World} [world] the world
+ * @returns {Array<{x: number, y: number, radius: number}>} the refuge zones
  */
-function terrainInfo(config) {
+function collectRefuges(config, world) {
+    if (!world || !config.refugeCount) {
+        return [];
+    }
+    const wallRockCount = terrainRockCount(config) - config.refugeCount * REFUGE_ROCKS;
+    const start = wallRockCount;
+    const ring = ringRadius(config);
+    const radius = ring + REFUGE_ROCK_RADIUS;
+    const refuges = [];
+    for (let i = 0; i < config.refugeCount; i++) {
+        const slot = start + i * REFUGE_ROCKS;
+        let sumX = 0;
+        let sumY = 0;
+        for (let r = 0; r < REFUGE_ROCKS; r++) {
+            sumX += world.obsX[slot + r];
+            sumY += world.obsY[slot + r];
+        }
+        refuges.push({ x: sumX / REFUGE_ROCKS, y: sumY / REFUGE_ROCKS, radius });
+    }
+    return refuges;
+}
+
+/**
+ * The static-terrain description: the cold-margin depth, the wall's x position, and the slots
+ * that hold its rocks (they are drawn from the snapshot's obstacles) and refuge zones.
+ * @param {Record<string, any>} config the run's config
+ * @param {import('../sim/world.js').World} [world] the world
+ * @returns {Record<string, any>} the terrain info
+ */
+function terrainInfo(config, world) {
     return {
         coldMarginWidth: config.coldMarginWidth,
         wallX: config.worldWidth / 2,
         rockFirst: 0,
         rockCount: terrainRockCount(config),
+        refuges: collectRefuges(config, world),
     };
 }
 
@@ -174,7 +204,7 @@ export function worldInfo({ config, world }) {
             y: world.patchY[i],
             radius: config.foodPatchRadius,
         })),
-        terrain: terrainInfo(config),
+        terrain: terrainInfo(config, world),
         specs: Object.entries(config.specialisations).map(([name, s]) => ({
             index: s.index,
             name,

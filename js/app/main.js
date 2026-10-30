@@ -137,6 +137,7 @@ function onReady(app, message) {
             info: message.info,
             quality: app.params.quality,
             scale: app.params.scale,
+            look: app.params.look,
             buildLayers: createLayerBuilder({
                 refs: app.deps.refs,
                 getReady: () => app.ready,
@@ -176,6 +177,7 @@ function pointerOptions(app) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
             app.iface.syncRays();
+            app.iface.openInspectorOnPick();
         },
     };
 }
@@ -219,7 +221,7 @@ function makeSupervisor(app) {
                       ...buildDebugBundle({ ready: app.ready, overrides: app.overrides, tick: info.tick }),
                       reason: info.reason,
                   },
-        log: (level, event, fields) => appLog(level, event, fields),
+        log: appLog,
     });
 }
 
@@ -229,9 +231,8 @@ function makeSupervisor(app) {
  * @returns {{x: number, y: number}} the same point in device pixels on the canvas
  */
 function clientToDevice(app, client) {
-    const canvas = app.deps.scene?.canvas;
-    const r = canvas?.getBoundingClientRect();
-    if (canvas === undefined || r === undefined) {
+    const r = app.deps.scene?.canvas?.getBoundingClientRect();
+    if (!r) {
         return { x: -1, y: -1 };
     }
     return {
@@ -358,11 +359,10 @@ function gpuCounts(info) {
  * @returns {import('./perf.js').PerfInputs} the live values `__perf` reports
  */
 function readPerf(app) {
-    const info = app.deps.scene?.renderer.info;
     return {
         stats: app.stats,
         worker: app.supervisor.client()?.stats ?? null,
-        gpu: gpuCounts(info),
+        gpu: gpuCounts(app.deps.scene?.renderer.info),
         gpuSamples: app.deps.gpuTimer?.samples() ?? null,
         heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
     };

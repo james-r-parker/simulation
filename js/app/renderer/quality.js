@@ -1,18 +1,102 @@
-// The quality levels and the rule that moves between them. Pure: the caller feeds it a frame report about once a
-// second and applies the level it returns.
+// The quality levels, what each level and the `?look=` mask draw, and the rule that moves between levels. Pure: the
+// caller feeds it a frame report about once a second and applies the level it returns.
 //
 // The report should come from a window of recent frames that the caller starts afresh whenever the level changes
 // (`stepQuality` sets `changed`), so frames drawn at the old level do not decide the new one.
 
+/** The Phase 6 look items, in the order of their bits in a look mask. */
+export const LOOK_ITEMS = Object.freeze(['rocks', 'aurora', 'terrain', 'motion', 'threads', 'decay', 'finish']);
+
+/** The mask with every look item on (`?look=all`, the default). */
+export const LOOK_ALL = (1 << LOOK_ITEMS.length) - 1;
+
+/** The tier of an item that does not draw. */
+export const LOOK_OFF = -1;
+
+/**
+ * Which column of the Phase 6 quality-tier table an item draws with: 0 full, 1 reduced, 2 the level-2 form,
+ * `LOOK_OFF` not drawn.
+ * @typedef {{rocks?: number, aurora?: number, terrain?: number, motion?: number, threads?: number, decay?: number,
+ *   finish?: number}} Look
+ */
+
+/**
+ * @param {number} tier the tier of every item but those in `off`
+ * @param {readonly string[]} [off] the items the level does not draw
+ * @returns {Readonly<Look>} the level's look entry
+ */
+function lookLevel(tier, off = []) {
+    /** @type {Record<string, number>} */
+    const look = {};
+    for (const item of LOOK_ITEMS) {
+        look[item] = off.includes(item) ? LOOK_OFF : tier;
+    }
+    return Object.freeze(/** @type {Look} */ (look));
+}
+
 /**
  * What each level draws.
- * @type {readonly {bloom: boolean, bloomScale: number, motes: number}[]}
+ * @type {readonly {bloom: boolean, bloomScale: number, motes: number, look: Readonly<Look>}[]}
  */
 export const QUALITY_LEVELS = Object.freeze([
-    Object.freeze({ bloom: true, bloomScale: 1, motes: 1 }),
-    Object.freeze({ bloom: true, bloomScale: 0.5, motes: 0.5 }),
-    Object.freeze({ bloom: false, bloomScale: 0, motes: 0 }),
+    Object.freeze({ bloom: true, bloomScale: 1, motes: 1, look: lookLevel(0) }),
+    Object.freeze({ bloom: true, bloomScale: 0.5, motes: 0.5, look: lookLevel(1) }),
+    Object.freeze({
+        bloom: false,
+        bloomScale: 0,
+        motes: 0,
+        look: lookLevel(2, ['aurora', 'terrain', 'motion', 'threads', 'finish']),
+    }),
 ]);
+
+/**
+ * What draws at a level under a `?look=` mask. The mask only removes items; it never adds one the level leaves off.
+ * @param {number} level the quality level, 0 to 2
+ * @param {number} mask the look mask, a bit per `LOOK_ITEMS` entry
+ * @returns {Look} a fresh look: each item's tier, `LOOK_OFF` where the level or the mask leaves it off
+ */
+export function lookFor(level, mask) {
+    const base = QUALITY_LEVELS[level].look;
+    const look = { ...base };
+    LOOK_ITEMS.forEach((item, bit) => {
+        if ((mask & (1 << bit)) === 0) {
+            look[/** @type {keyof Look} */ (item)] = LOOK_OFF;
+        }
+    });
+    return look;
+}
+
+/**
+ * @param {Look} look a look
+ * @returns {string[]} the names of the items that draw, in `LOOK_ITEMS` order
+ */
+export function lookItems(look) {
+    return LOOK_ITEMS.filter((item) => look[/** @type {keyof Look} */ (item)] !== LOOK_OFF);
+}
+
+/**
+ * Parses a `?look=` value: a comma list of `LOOK_ITEMS` names, `all` or `none`.
+ * @param {string} text the value
+ * @returns {number | null} the mask, or null when any name is unknown or the list is empty
+ */
+export function parseLook(text) {
+    if (text === 'all') {
+        return LOOK_ALL;
+    }
+    if (text === 'none') {
+        return 0;
+    }
+    const names = text.split(',');
+    let mask = 0;
+    for (const name of names) {
+        const bit = LOOK_ITEMS.indexOf(name.trim());
+        if (bit < 0) {
+            return null;
+        }
+        mask |= 1 << bit;
+    }
+    return mask;
+}
 
 /** Step down after this long with p95 above `SLOW_FACTOR` x the budget. */
 export const DOWN_AFTER_MS = 5000;

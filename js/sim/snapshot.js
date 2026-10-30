@@ -9,7 +9,7 @@ import { terrainRockCount } from './terrain.js';
 
 const HEADER_WORDS = 6;
 const AGENT_STRIDE = 12;
-const FOOD_STRIDE = 3;
+const FOOD_STRIDE = 4;
 const OBSTACLE_STRIDE = 3;
 const CLOUD_STRIDE = 3;
 const WORD_BYTES = 4;
@@ -136,21 +136,24 @@ function writeAgents(world, { f32, u32 }) {
 }
 
 /**
- * Writes the alive food as `x`, `y`, radius. A carcass has its radius written negative, so the layout is the same
- * with carcasses off.
+ * Writes the alive food as `x`, `y`, radius, `age01`. A carcass has its radius written negative, so the layout is the same
+ * with carcasses off. Meat has `age01 = foodAge / carcassTicks`, plant food has 0.
  * @param {import('./world.js').World} world the world
  * @param {Float32Array} f32 the float view
  * @param {number} start the first word of the section
  * @returns {number} the next free word
  */
 function writeFood(world, f32, start) {
-    const { foodAlive, foodX, foodY, foodRadius } = world;
+    const { foodAlive, foodX, foodY, foodRadius, foodKind, foodAge } = world;
+    const { carcassTicks } = world.config;
     let w = start;
     for (let slot = 0; slot < foodAlive.length; slot++) {
         if (foodAlive[slot] === 1) {
+            const isMeat = foodKind[slot] === FOOD_KIND.MEAT;
             f32[w] = foodX[slot];
             f32[w + 1] = foodY[slot];
-            f32[w + 2] = world.foodKind[slot] === FOOD_KIND.MEAT ? -foodRadius[slot] : foodRadius[slot];
+            f32[w + 2] = isMeat ? -foodRadius[slot] : foodRadius[slot];
+            f32[w + 3] = isMeat && carcassTicks > 0 ? foodAge[slot] / carcassTicks : 0;
             w += FOOD_STRIDE;
         }
     }

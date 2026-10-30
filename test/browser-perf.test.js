@@ -13,6 +13,7 @@ describe('parseArgs', () => {
             app: 'v6',
             agents: 500,
             viewport: { width: 3840, height: 2160 },
+            look: '',
         });
     });
 
@@ -27,6 +28,7 @@ describe('parseArgs', () => {
                 '--cdp=http://127.0.0.1:9222',
                 '--agents=300',
                 '--viewport=2560x1440',
+                '--look=rocks,aurora',
             ]),
         ).toEqual({
             seconds: 5,
@@ -38,7 +40,19 @@ describe('parseArgs', () => {
             app: 'v6',
             agents: 300,
             viewport: { width: 2560, height: 1440 },
+            look: 'rocks,aurora',
         });
+    });
+
+    it('rejects an unknown flag with or without a value', () => {
+        expect(() => parseArgs(['--nope=1'])).toThrow(/Unknown argument "--nope=1"/);
+        expect(() => parseArgs(['--nope'])).toThrow(/Unknown argument "--nope"/);
+        expect(() => parseArgs(['--look', '--headed'])).toThrow(/requires a value/);
+    });
+
+    it('supports space-separated flag values for look', () => {
+        expect(parseArgs(['--look', 'all']).look).toBe('all');
+        expect(() => parseArgs(['--look'])).toThrow(/requires a value/);
     });
 
     it('rejects a non-positive run length, a bad app, agents or viewport, and unknown flags', () => {

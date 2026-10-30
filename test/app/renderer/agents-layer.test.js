@@ -114,3 +114,37 @@ describe('setSmokeTexture', () => {
         layer.dispose();
     });
 });
+
+describe('motion cues', () => {
+    it('scale the speed cue by the world maxVelocity, not a fixed number', () => {
+        const { info, layout, snapshot } = smallReady(20);
+        const frame = frameOf(info, snapshot);
+        for (let i = 0; i < frame.agents.count; i++) {
+            frame.agents.speed[i] = info.maxVelocity / 2;
+        }
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        layer.update?.(frame);
+        const bucket = layer.store.buckets.find((/** @type {any} */ b) => b.count > 0);
+        if (!bucket) {
+            throw new Error('no agents were packed');
+        }
+        expect(bucket.motion[0]).toBeCloseTo(0.5, 5);
+        layer.dispose();
+    });
+});
+
+describe('setLook', () => {
+    it('sets uMotion by quality tier (1 for 0, 0.5 for 1, 0 for off)', () => {
+        const { info, layout } = smallReady();
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const u = layer.object.children[0].material.uniforms;
+        expect(u.uMotion.value).toBe(1);
+        layer.setLook?.({ motion: 1 });
+        expect(u.uMotion.value).toBe(0.5);
+        layer.setLook?.({ motion: 2 });
+        expect(u.uMotion.value).toBe(0);
+        layer.setLook?.({ motion: 0 });
+        expect(u.uMotion.value).toBe(1);
+        layer.dispose();
+    });
+});

@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
+import { BODY_CENTRE_FILL, BRIGHTNESS_FLOOR } from '../../../js/app/renderer/agents-shader.js';
+import { BLOOM } from '../../../js/app/renderer/bloom.js';
 import {
+    AURORA,
+    AURORA_MAX_LUMINANCE,
+    ENERGY_FLOOR,
     familyColor,
     familyName,
     FAMILY_PALETTES,
     NEUTRAL_FAMILY,
     PALETTE,
+    SCENERY_MAX_LUMINANCE,
     temperatureBands,
     temperatureColor,
     temperatureRamp,
+    lineageColor,
 } from '../../../js/app/renderer/colors.js';
-import { ciede2000, colorDistance, MACHADO, toLab } from './helpers/color-metrics.js';
+import { ciede2000, colorDistance, labHue, luminance, MACHADO, toLab } from './helpers/color-metrics.js';
 
 const bands = { cold: 0.3, optimalMin: 0.4, optimalMax: 0.65, heat: 0.85 };
 
@@ -28,6 +35,25 @@ describe('PALETTE', () => {
         expect(PALETTE.smoke).toEqual([0.03, 0.04, 0.06]);
         expect(PALETTE.obstacleBody).toEqual([0.012, 0.016, 0.024]);
         expect(PALETTE.obstacleRim).toEqual([0.09, 0.12, 0.18]);
+        expect(PALETTE.rockBody).toEqual([0.02, 0.027, 0.04]);
+        expect(PALETTE.rockRim).toEqual([0.09, 0.12, 0.18]);
+        expect(PALETTE.rockContact).toEqual([0.004, 0.005, 0.006]);
+        expect(PALETTE.lichen).toEqual([0.006, 0.014, 0.006]);
+        expect(PALETTE.frost).toEqual([0.006, 0.012, 0.024]);
+        expect(PALETTE.refugeGlow).toEqual([0.011, 0.012, 0.013]);
+        expect(PALETTE.patchGlow).toEqual([0.004, 0.014, 0.011]);
+    });
+
+    it('AURORA_MAX_LUMINANCE is at most half the dimmest agent body, and scenery stays below it and bloom', () => {
+        const dimmestLuminances = Object.values(NEUTRAL_FAMILY).map((neutral) => {
+            const rgb = neutral.map((c) => c * ENERGY_FLOOR * BRIGHTNESS_FLOOR * BODY_CENTRE_FILL);
+            return luminance(rgb);
+        });
+        const minBodyY = Math.min(...dimmestLuminances);
+        expect(minBodyY).toBeCloseTo(0.04, 2);
+        expect(AURORA_MAX_LUMINANCE).toBeLessThanOrEqual(0.5 * minBodyY);
+        expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(minBodyY);
+        expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(BLOOM.threshold);
     });
 });
 
@@ -207,5 +233,123 @@ describe('familyName', () => {
         expect(familyName(3, 5809, top)).toBe('Tiruli II');
         expect(familyName(3, 7292, top)).toBe('Tiruli III');
         expect(familyName(3, 5809, clashing)).toBe('Tiruli II');
+    });
+});
+
+describe('AURORA', () => {
+    it('holds four season stops, and summer is warmer than winter', () => {
+        expect(AURORA).toHaveLength(4);
+        const summerWarmth = AURORA[1][0] - AURORA[1][2];
+        const winterWarmth = AURORA[3][0] - AURORA[3][2];
+        expect(summerWarmth).toBeGreaterThan(winterWarmth);
+    });
+
+    it('each stop clears the semantic colours and hue angle', () => {
+        const seasons = ['spring', 'summer', 'autumn', 'winter'];
+        AURORA.forEach((rgb, i) => {
+            const maxC = Math.max(...rgb);
+            const unit = rgb.map((c) => c / maxC);
+            const scale = AURORA_MAX_LUMINANCE / luminance(rgb);
+            const displayed = rgb.map((c) => c * scale);
+            const uHue = labHue(unit);
+
+            for (const [what, semantic] of Object.entries(SEMANTIC)) {
+                const sHue = labHue(semantic);
+                let dh = Math.abs(uHue - sHue);
+                if (dh > 180) {
+                    dh = 360 - dh;
+                }
+                expect(dh, `${seasons[i]} hue vs ${what}`).toBeGreaterThanOrEqual(25);
+
+                expect(colorDistance(unit, semantic), `${seasons[i]} unit vs ${what}`).toBeGreaterThanOrEqual(15);
+                for (const [kind, matrix] of CVD) {
+                    expect(
+                        colorDistance(unit, semantic, matrix),
+                        `${seasons[i]} unit vs ${what} ${kind}`,
+                    ).toBeGreaterThanOrEqual(10);
+                }
+
+                expect(colorDistance(displayed, semantic), `${seasons[i]} displayed vs ${what}`).toBeGreaterThanOrEqual(
+                    15,
+                );
+                for (const [kind, matrix] of CVD) {
+                    expect(
+                        colorDistance(displayed, semantic, matrix),
+                        `${seasons[i]} displayed vs ${what} ${kind}`,
+                    ).toBeGreaterThanOrEqual(10);
+                }
+            }
+        });
+    });
+});
+
+describe('scenery colours', () => {
+    const scenery = {
+        lichen: PALETTE.lichen,
+        frost: PALETTE.frost,
+        refugeGlow: PALETTE.refugeGlow,
+        patchGlow: PALETTE.patchGlow,
+    };
+
+    it('each scenery colour peaks at or below SCENERY_MAX_LUMINANCE', () => {
+        for (const [name, rgb] of Object.entries(scenery)) {
+            expect(luminance(rgb), name).toBeLessThanOrEqual(SCENERY_MAX_LUMINANCE + 1e-6);
+        }
+    });
+
+    it('each scenery colour clears every semantic colour by 15, and 10 under CVD', () => {
+        for (const [name, rgb] of Object.entries(scenery)) {
+            for (const [what, semantic] of Object.entries(SEMANTIC)) {
+                expect(colorDistance(rgb, semantic), `${name} vs ${what}`).toBeGreaterThanOrEqual(15);
+                for (const [kind, matrix] of CVD) {
+                    expect(colorDistance(rgb, semantic, matrix), `${name} vs ${what} ${kind}`).toBeGreaterThanOrEqual(
+                        10,
+                    );
+                }
+            }
+        }
+    });
+});
+
+describe('lineageColor', () => {
+    const hueOf = (/** @type {number[] | Float32Array} */ c) => {
+        const [r, g, b] = [c[0], c[1], c[2]];
+        const max = Math.max(r, g, b);
+        const d = max - Math.min(r, g, b);
+        let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+        h *= 60;
+        return h < 0 ? h + 360 : h;
+    };
+
+    it('is deterministic, stays in the blue and pink hue bands and is at least as bright as the neutral family', () => {
+        const neutralY = 0.2126729 * 0.2 + 0.7151522 * 0.26 + 0.072175 * 0.38;
+        for (let id = 1; id <= 400; id++) {
+            const c = lineageColor(id);
+            expect(lineageColor(id)).toEqual(c);
+            const h = hueOf(c);
+            const inBlue = h >= 189 && h <= 231;
+            const inPink = h >= 321 && h <= 349;
+            expect(inBlue || inPink, `lineage ${id} hue ${h}`).toBe(true);
+            const y = 0.2126729 * c[0] + 0.7151522 * c[1] + 0.072175 * c[2];
+            expect(y).toBeGreaterThan(neutralY * 0.9);
+            expect(Math.max(...c)).toBeLessThanOrEqual(0.95 + 1e-9);
+        }
+    });
+
+    it('keeps its colours at least 15 from every semantic colour', () => {
+        for (let id = 1; id <= 400; id++) {
+            const c = lineageColor(id);
+            for (const [name, semantic] of Object.entries(SEMANTIC)) {
+                // the alarm is a thin white ring, told from a body by its shape, so its bar is 10
+                expect(colorDistance(c, semantic), `${name} vs lineage ${id}`).toBeGreaterThanOrEqual(
+                    name === 'alarm' ? 10 : 15,
+                );
+            }
+        }
+    });
+
+    it('separates neighbouring ids', () => {
+        const hues = [1, 2, 3, 4, 5, 6].map((id) => hueOf(lineageColor(id)));
+        expect(new Set(hues.map((h) => Math.round(h / 8))).size).toBeGreaterThan(3);
     });
 });

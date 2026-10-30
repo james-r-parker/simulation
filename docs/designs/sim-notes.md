@@ -1459,3 +1459,17 @@ Prediction check (recorded before the run in `evals/experiments.json` as E41): d
 - **Known issue left for balancing.** Predators boom and bust (about 2972 predator births per run, alive at the end in 3 of 8 seeds), and the lineage count per basin is low. Instincts alone fix the population but not the predators; only the three predator changes together hold them.
 - **Goldens moved by the defaults** (`test/sim/golden.json`): `cases` default `bc61370b43a2df99` to `8401c064ae9cbceb`; `cases` busy `d72f837a149dd80f` to `15f01d86733caf36`; `shortCases` default `e1e3ef13b277b1d5` to `007d5a41d009aa58`; `shortCases` busy `eee2d99decb6f926` to `87c57d4fa9d0a18c`; the busy effect stream `999b8f474640dcac` (2567 records) to `27108f937e31a6e4` (2359 records). An override with the five old values reproduces both old long hashes, so nothing else moved. Chromium 156 matches (`npm run browser:hash` reads `golden.json`; there is no separate pin).
 - **Fixtures that assumed the old values.** `test/helpers/simple-world.js` now pins `instinctWeight` 0, the predator `maxEnergyMultiplier` 1 and `biteMultiplier` 8, so tests that raise `maxEnergy` to 25000 do not trip the `hashCellSize` radius check with a 3x store (a 25000 x 3 body is 332 px). The same pin sits on the neutral predator of `feeding.test.js`.
+
+### 2026-10-30 - Dither the aurora in linear light, and declare no attribute `ShaderMaterial` adds
+
+The aurora is dim (at most `AURORA_MAX_LUMINANCE` 0.010 linear, about 28 of 255 encoded), so its smooth gradients cover only a few dozen 8-bit steps and the encode in `OutputPass` can show them as contours. The upsample therefore adds interleaved gradient noise (`finish-glsl.js`) scaled to one sRGB step at that value, in linear light. Banding was judged by eye in screenshots only; no banding metric has been measured.
+
+A `ShaderMaterial` prepends `attribute vec3 position` (and `uv`, `normal`) to its vertex shader, so a shader that declares `position` again fails to link: the program is dropped with a `console.error` and the layer draws nothing. The unit tests build no GL context and did not see this; `test/app/renderer/shader-sources.test.js` scans every layer's vertex shader for it and the browser spec loads quality 0, where those layers draw.
+
+### 2026-10-30 - Deploy on merge to main
+
+`.github/workflows/deploy.yml` deploys `main` to production on Cloudflare Pages (project `matrix`) after the `check` workflow succeeds on a push, with the repo's pinned wrangler and the secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; `workflow_dispatch` redeploys main's HEAD. Roll back from the Pages dashboard or by redeploying. This is the interim pipeline ahead of `deployment-and-community.md` Phase 1 (Release Please, `/v/<version>/`, `/next/`, PR previews), which replaces it.
+
+### 2026-10-30 - The merged effect stream (big bang plus the Look)
+
+The Look added a `MATED` worker effect and the big bang changed the sim, so the busy golden's effect-stream pin moved from `27108f937e31a6e4` (2359 records) to `f709be33928e72f4` (2400). Counted by kind (born, died, bite, alarm, pack call, smoke, mated): 86, 157, 608, 962, 336, 210, 41. The 2359 non-mated records are the same count as before the merge; the 41 mated records are the whole difference. `worldHash` did not move: the Look changes only the snapshot and worker, not the sim.

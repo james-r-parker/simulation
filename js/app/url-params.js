@@ -1,7 +1,9 @@
-// The query-string parameters the page reads: seed, agents, speed, quality, scale, tv, audio, policy and merit. A value that is missing or
+// The query-string parameters the page reads: seed, agents, speed, quality, scale, look, tv, audio, policy and merit. A value that is missing or
 // invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
 
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
+import { appLog } from './app-log.js';
+import { LOOK_ALL, LOOK_ITEMS, parseLook } from './renderer/quality.js';
 
 /** The most agents `?agents=` accepts. */
 export const MAX_AGENTS_PARAM = 4096;
@@ -13,6 +15,7 @@ export const MAX_AGENTS_PARAM = 4096;
  * @property {number | null} speed a multiple of 60 ticks a second: 0.25, 0.5, 1, 2, 4, 8 or 16
  * @property {0 | 1 | 2 | null} quality a pinned quality level
  * @property {number | null} scale a pinned render scale, 0.25 to 1
+ * @property {number} look the Phase 6 look items that draw, a mask over `LOOK_ITEMS`; `LOOK_ALL` by default
  * @property {boolean} tv TV mode: HUD hidden, director running, wake lock on
  * @property {boolean} audio start with audio on
  * @property {string | null} policy a registered policy name to preview (dev switch); the worker rejects an unknown one
@@ -81,6 +84,23 @@ function scaleOf(text) {
 }
 
 /**
+ * @param {string | null} text the `look` value
+ * @returns {number} the mask it names; `LOOK_ALL` when it is missing, and when it names an unknown item (logged as
+ *   `LookParamIgnored` with the allowed list)
+ */
+function lookOf(text) {
+    if (text === null) {
+        return LOOK_ALL;
+    }
+    const mask = parseLook(text);
+    if (mask === null) {
+        appLog('warn', 'LookParamIgnored', { value: text, allowed: ['all', 'none', ...LOOK_ITEMS].join(',') });
+        return LOOK_ALL;
+    }
+    return mask;
+}
+
+/**
  * @param {string} search the query string, e.g. `location.search`
  * @returns {Params} the validated parameters
  */
@@ -93,6 +113,7 @@ export function readParams(search) {
         speed: speedOf(query.get('speed')),
         quality: /** @type {0 | 1 | 2 | null} */ (quality),
         scale: scaleOf(query.get('scale')),
+        look: lookOf(query.get('look')),
         tv: flagOf(query.get('tv')),
         audio: flagOf(query.get('audio')),
         policy: policyOf(query.get('policy')),

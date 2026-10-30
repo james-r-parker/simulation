@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MERIT_PREVIEW, configOverrides, readParams } from '../../js/app/url-params.js';
+import { LOOK_ALL, LOOK_ITEMS } from '../../js/app/renderer/quality.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
@@ -11,6 +12,7 @@ describe('readParams', () => {
             speed: 4,
             quality: 1,
             scale: 0.75,
+            look: LOOK_ALL,
             tv: true,
             audio: true,
             policy: 'map-elites-v6',
@@ -25,6 +27,7 @@ describe('readParams', () => {
             speed: null,
             quality: null,
             scale: null,
+            look: LOOK_ALL,
             tv: false,
             audio: false,
             policy: null,
@@ -40,6 +43,7 @@ describe('readParams', () => {
             speed: null,
             quality: null,
             scale: null,
+            look: LOOK_ALL,
             tv: false,
             audio: false,
             policy: null,
@@ -55,6 +59,33 @@ describe('readParams', () => {
         expect(readParams('?speed=0.25').speed).toBe(0.25);
         expect(readParams('?speed=16').speed).toBe(16);
         expect(readParams('?quality=0').quality).toBe(0);
+    });
+});
+
+describe('readParams look', () => {
+    it('reads a comma list of look items as a mask', () => {
+        const mask = readParams('?look=rocks,finish').look;
+        expect(mask).toBe((1 << LOOK_ITEMS.indexOf('rocks')) | (1 << LOOK_ITEMS.indexOf('finish')));
+    });
+
+    it('reads all and none', () => {
+        expect(readParams('?look=all').look).toBe(LOOK_ALL);
+        expect(readParams('?look=none').look).toBe(0);
+    });
+
+    it('reads every item on its own', () => {
+        LOOK_ITEMS.forEach((item, bit) => expect(readParams(`?look=${item}`).look).toBe(1 << bit));
+    });
+
+    it('ignores an unknown item, draws everything and logs the allowed list', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        expect(readParams('?look=rocks,sparkles').look).toBe(LOOK_ALL);
+        expect(readParams('?look=').look).toBe(LOOK_ALL);
+        expect(warn).toHaveBeenCalledTimes(2);
+        const record = warn.mock.calls[0][0];
+        expect(record).toMatchObject({ level: 'warn', event: 'LookParamIgnored', value: 'rocks,sparkles' });
+        expect(record.allowed).toBe(`all,none,${LOOK_ITEMS.join(',')}`);
+        warn.mockRestore();
     });
 });
 

@@ -12,7 +12,7 @@ describe('readSections', () => {
                 { slot: 1, genomeId: 2 },
             ],
             {
-                foods: [[1, 2, 3]],
+                foods: [[1, 2, 3, 0]],
                 obstacles: [
                     [4, 5, 6],
                     [7, 8, 9],
@@ -22,7 +22,7 @@ describe('readSections', () => {
         );
         const s = readSections(snap.u32, createSections());
         expect(s).toMatchObject({ agentCount: 2, foodCount: 1, cloudCount: 1, rayCount: 0 });
-        expect(Array.from(snap.f32.slice(s.foodStart, s.foodStart + 3))).toEqual([1, 2, 3]);
+        expect(Array.from(snap.f32.slice(s.foodStart, s.foodStart + 4))).toEqual([1, 2, 3, 0]);
         expect(Array.from(snap.f32.slice(s.obstacleStart + 3, s.obstacleStart + 6))).toEqual([7, 8, 9]);
         expect(Array.from(snap.f32.slice(s.cloudStart, s.cloudStart + 3))).toEqual([10, 11, 0.5]);
         expect(s.rayStart).toBe(s.cloudStart + 3);

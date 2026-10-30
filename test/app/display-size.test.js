@@ -16,9 +16,9 @@ describe('drawnRadius', () => {
 });
 
 describe('minPxTable', () => {
-    it('gives hunters 16 px and every other type 12', () => {
+    it('gives hunters 24 px and every other type 20', () => {
         const info = { specs: [{ canHunt: true }, { canHunt: false }, { canHunt: false }] };
         expect(minPxTable(info)).toEqual([MIN_PX_HUNTER, MIN_PX_OTHER, MIN_PX_OTHER]);
-        expect([MIN_PX_HUNTER, MIN_PX_OTHER]).toEqual([16, 12]);
+        expect([MIN_PX_HUNTER, MIN_PX_OTHER]).toEqual([24, 20]);
     });
 });
