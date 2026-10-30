@@ -136,9 +136,11 @@ function disposeAurora(target, ribbonRig, worldGeom, upsampleMat) {
 }
 
 /**
+ * @param {{info?: Record<string, any>}} [_options] layer options
  * @returns {import('./scene.js').Layer} aurora layer
  */
-export function createAuroraLayer() {
+export function createAuroraLayer(_options = {}) {
+    void _options;
     let divisor = 4;
     let tier = 0;
     let frameNum = 0;
