@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { FAMILY_FLOOR, formatViability, viabilityTable } from '../scripts/lib/viability-table.mjs';
+import { main } from '../scripts/viability-table.mjs';
 
 /**
  * @param {Record<string, (number | null)[]>} values per-seed values by metric name
@@ -52,5 +56,24 @@ describe('formatViability', () => {
         expect(text).toMatch(/^### E81\n\n\| seed \|/);
         expect(text).toContain('| --- |');
         expect(text).toContain('Predators and a prey type alive at the last tick: 0 of 2 seeds.');
+    });
+});
+
+describe('the viability-table script', () => {
+    it('prints one table per report, and asks for a report when given none', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'viability-'));
+        try {
+            const file = join(dir, 'E81.json');
+            writeFileSync(file, JSON.stringify(report({ 'eval.predators_at_end': [1, 2] })));
+            /** @type {string[]} */
+            const out = [];
+            expect(main([file, file], (text) => out.push(text))).toBe(0);
+            expect(out).toHaveLength(2);
+            expect(out[0]).toMatch(/^### E81\.json/);
+            expect(main([], (text) => out.push(text))).toBe(2);
+            expect(out[2]).toMatch(/^usage/);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 });

@@ -3,14 +3,25 @@
 // per run: `node scripts/viability-table.mjs <report.json> [<report.json> ...]`.
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { formatViability, viabilityTable } from './lib/viability-table.mjs';
 
-const files = process.argv.slice(2);
-if (files.length === 0) {
-    console.error('usage: viability-table <report.json> [<report.json> ...]');
-    process.exit(2);
+/**
+ * @param {string[]} files the report paths
+ * @param {(text: string) => void} print where each table goes
+ * @returns {number} the exit code: 2 without a report
+ */
+export function main(files, print) {
+    if (files.length === 0) {
+        print('usage: viability-table <report.json> [<report.json> ...]');
+        return 2;
+    }
+    for (const file of files) {
+        print(formatViability(viabilityTable(JSON.parse(readFileSync(file, 'utf8'))), basename(file)));
+    }
+    return 0;
 }
-for (const file of files) {
-    const report = JSON.parse(readFileSync(file, 'utf8'));
-    console.log(formatViability(viabilityTable(report), basename(file)));
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    process.exitCode = main(process.argv.slice(2), console.log);
 }
