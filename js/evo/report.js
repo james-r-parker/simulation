@@ -67,6 +67,20 @@ export function seedlessConfig(config) {
 }
 
 /**
+ * The per-seed fields of a report, taken from the workers' results in seed order.
+ * @param {Record<string, any>[]} results one result per seed
+ * @returns {{ fitnessName: string, perSeed: any[], traces: any[], inputActivity: any[] }} the fields `buildReport` takes
+ */
+export function seedFields(results) {
+    return {
+        fitnessName: results[0].fitnessName,
+        perSeed: results.map((r) => r.metrics),
+        traces: results.map((r) => r.trace),
+        inputActivity: results.map((r) => r.inputActivity ?? null),
+    };
+}
+
+/**
  * Builds the report. Each seed's world is `config` with that seed, so the stored config has no `seed`, and
  * `configHash` is `configHash` of that stored object.
  * @param {BuildReportInput} input the run's results

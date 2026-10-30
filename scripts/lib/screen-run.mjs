@@ -3,7 +3,7 @@
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildReport, seedlessConfig, validateReport } from '../../js/evo/report.js';
+import { buildReport, seedFields, seedlessConfig, validateReport } from '../../js/evo/report.js';
 import { LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { canonicalOptions } from '../../js/evo/policy-options.js';
 import { configHash, createConfig } from '../../js/sim/config.js';
@@ -156,14 +156,11 @@ function writeArmReport({ name, pending, ticks, sha, outDir }) {
     const report = buildReport({
         policy: resolved.expected.policy,
         policyOptions: pending.policyOptions,
-        fitnessName: results[0].fitnessName,
+        ...seedFields(results),
         config: resolved.config,
         ticks,
         seeds: resolved.seeds,
         sha,
-        perSeed: results.map((r) => r.metrics),
-        traces: results.map((r) => r.trace),
-        inputActivity: results.map((r) => r.inputActivity ?? null),
     });
     validateReport(report);
     const path = reportPath(outDir, name);

@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildReport, seedlessConfig, validateReport } from '../js/evo/report.js';
+import { buildReport, seedFields, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
 import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
@@ -250,14 +250,11 @@ function buildAndWrite({ policyName, policyOptions, results, config, ticks, seed
     const report = buildReport({
         policy: policyName,
         policyOptions,
-        fitnessName: results[0].fitnessName,
+        ...seedFields(results),
         config,
         ticks,
         seeds,
         sha,
-        perSeed: results.map((r) => r.metrics),
-        traces: results.map((r) => r.trace),
-        inputActivity: results.map((r) => r.inputActivity ?? null),
     });
     validateReport(report);
     mkdirSync(dirname(out), { recursive: true });
