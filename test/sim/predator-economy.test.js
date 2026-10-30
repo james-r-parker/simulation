@@ -19,7 +19,7 @@ const FORAGER = 0;
  * @returns {{biterEnergy: number, balance: number}} the biter's energy after the bite and the ledger imbalance
  */
 function biteOnce(victimEnergy, over) {
-    const w = lifeWorld({ biteArc: Math.PI / 4, ...over });
+    const w = lifeWorld({ biteArc: Math.PI / 4, biteCost: 0, ...over });
     const biter = addBlob(w, { spec: PREDATOR, energy: 500, x: 100, y: 100, angle: 0 });
     const victim = addBlob(w, { spec: FORAGER, energy: victimEnergy, x: 110, y: 100, angle: 0 });
     updateSize(w, biter);

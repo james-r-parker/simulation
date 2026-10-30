@@ -55,6 +55,7 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
+    biteCost: 8, // natural-selection T5a: the biter's kick per landed bite; 8 keeps a typical kick near a sixth of a 40-energy bite, stage 6's survival screen tunes it
     huntSizeRatio: 0.8, // tuned, fitness-and-selection T15d (was 1.01, tuned E20 and jaws; legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
     mateDistanceMax: 1.0, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41, 1.0 from T78)
@@ -105,6 +106,7 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         },
         predator: {
             index: 1,
@@ -120,6 +122,7 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1.6,
             passiveLossMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales the standing (passive, size and vision) energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         },
         reproducer: {
             index: 2,
@@ -135,6 +138,7 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         },
         scout: {
             index: 3,
@@ -150,6 +154,7 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         },
         defender: {
             index: 4,
@@ -165,6 +170,7 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
         },
     },
     checkInvariants: false, // new

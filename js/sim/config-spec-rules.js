@@ -21,6 +21,7 @@ export const SPECIALISATION_FIELDS = [
     'sprintBoost',
     'passiveLossMultiplier',
     'splitMinEnergyMultiplier',
+    'kickMultiplier',
 ];
 
 /** @type {Record<string, Rule>} the rule of every field after `index` */

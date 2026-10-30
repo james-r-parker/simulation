@@ -15,6 +15,7 @@ const DEFENDER = 4;
  */
 const NEUTRAL = {
     huntSizeRatio: 1.01,
+    biteCost: 0,
     specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
 };
 

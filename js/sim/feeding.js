@@ -2,7 +2,7 @@
 
 import { canBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
-import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.js';
+import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
 import { depletePatchAt } from './food-patches.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
@@ -104,7 +104,23 @@ function bites(world, biter, victim) {
 }
 
 /**
- * Resolves one bite: moves energy, records the loss and deposits pheromones.
+ * The kick a landed bite costs the biter: `biteCost` x (victim size / biter size) x (0.5 + victim energy /
+ * `maxEnergy`) x the victim's `kickMultiplier`. A big, fed or defender victim kicks hardest, a small, starving one
+ * barely at all. Read before the bite moves energy.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the biting slot
+ * @param {number} victim the bitten slot
+ * @returns {number} the energy the biter loses
+ */
+function kickOf(world, biter, victim) {
+    const { config } = world;
+    const sizeRatio = world.size[victim] / world.size[biter];
+    const fullness = 0.5 + world.energy[victim] / config.maxEnergy;
+    return config.biteCost * sizeRatio * fullness * specParams(config, world.spec[victim]).kickMultiplier;
+}
+
+/**
+ * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
@@ -115,12 +131,14 @@ function applyBite(world, biter, victim) {
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
+    const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
     if (wasAlive && world.energy[victim] <= 0 && config.predatorKillEnergy > 0) {
         addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
     }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
+    removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (world.lastBiter[victim] !== biterId) {

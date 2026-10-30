@@ -5,7 +5,7 @@ import { validateConfig } from '../../js/sim/config-validate.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SPEC_FIELDS =
-    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier';
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier, kickMultiplier';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.
