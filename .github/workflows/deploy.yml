@@ -52,8 +52,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # The default shell is `bash -e` without pipefail: without this, a failed wrangler piped into tee would pass.
+          set -o pipefail
           sha="$(git rev-parse HEAD)"
-          npx wrangler pages deploy dist --project-name matrix --branch main --commit-hash "$sha" | tee deploy.log
+          npx wrangler pages deploy dist --project-name matrix --branch main --commit-hash "$sha" --commit-dirty=true | tee deploy.log
           url="$(grep -Eo 'https://[a-zA-Z0-9.-]+\.pages\.dev' deploy.log | tail -1 || true)"
           {
             echo "### Deployed to production"
