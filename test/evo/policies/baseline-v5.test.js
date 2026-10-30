@@ -125,7 +125,7 @@ describe('baseline-v5', () => {
         const on = (config) => ({ ...makeWorld(10, 0.5), layout, config });
 
         it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
-            const world = on({});
+            const world = on({ leakGeneStart: 3 });
             brain.initBrain(world, 1, createRng(1));
             expect(Array.from(world.weights.subarray(15, 18))).toEqual([0, 0, 0]);
             expect(Array.from(world.weights.subarray(18, 20))).toEqual([3, 3]);

@@ -3,7 +3,7 @@
 import { fitnessV5 } from '../../evo/fitness-v5.js';
 import { nextFloat, nextGaussian } from '../../sim/rng.js';
 import { BORN_CAUSE } from '../../sim/events.js';
-import { LEAK_GENE_START, TRAIT_SIGMA, WEIGHT_CLAMP } from '../../evo/mutation.js';
+import { TRAIT_SIGMA, WEIGHT_CLAMP } from '../../evo/mutation.js';
 
 /** NN_WEIGHT_INIT_STD_DEV */
 export const INIT_SIGMA = 0.1;
@@ -34,7 +34,7 @@ function initBrain(world, slot, rng) {
     // the same trait and leak genes as the live policy (`randomWeights`); the draws above are unchanged
     const { traitStart, leakStart } = world.layout;
     world.weights.fill(0, slot * count + traitStart, slot * count + leakStart);
-    world.weights.fill(LEAK_GENE_START, slot * count + leakStart, (slot + 1) * count);
+    world.weights.fill(world.config.leakGeneStart, slot * count + leakStart, (slot + 1) * count);
 }
 
 /**

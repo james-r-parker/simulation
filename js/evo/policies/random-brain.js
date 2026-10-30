@@ -20,7 +20,7 @@ export function createRandomBrain(config) {
     /** Initial agents, floor spawns and immigrants: a random genome. Draws from `brain-init` only. */
     function initBrain(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
         const count = world.layout.weightCount;
-        randomWeights(rowOf(own, world.weights, { slot, count }), world.layout, rng);
+        randomWeights(rowOf(own, world.weights, { slot, count }), world.layout, rng, world.config.leakGeneStart);
         sigma[slot] = SIGMA_START;
     }
 

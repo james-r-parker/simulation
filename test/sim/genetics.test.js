@@ -31,7 +31,7 @@ function randomWorld(count) {
     const rng = createRng(7);
     for (let s = 0; s < count; s++) {
         addBlob(w);
-        randomWeights(w.weights.subarray(s * w.layout.weightCount, (s + 1) * w.layout.weightCount), w.layout, rng);
+        randomWeights(w.weights.subarray(s * w.layout.weightCount, (s + 1) * w.layout.weightCount), w.layout, rng, 3);
     }
     return w;
 }

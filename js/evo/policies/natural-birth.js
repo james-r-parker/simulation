@@ -3,6 +3,9 @@
 
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { decaySilentInputs } from '../../evo/weight-decay.js';
+import { brainLayout } from '../../sim/brain-layout.js';
+import { resolveMutationRate } from '../../sim/mutation-rate.js';
 import { BORN_CAUSE } from '../../sim/events.js';
 
 /**
@@ -24,12 +27,20 @@ export function rowOf(cache, array, { slot, count }) {
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {{sigma: Float32Array, fatherSigma: Float32Array, onMate: Function, childBrain: Function}} the step sizes
- *   (per slot, and per mother for the coming child) and the two hooks that use them
+ * @returns {{sigma: Float32Array, fatherSigma: Float32Array, silent: Uint8Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
+ *   the step sizes (per slot, and per mother for the coming child), `silent` (one byte per input, nonzero is silent:
+ *   the input-activity sampler writes it, and a birth decays those inputs' `wIn` rows by `config.weightDecay`),
+ *   `mutation` (the options every `mutateWeights` call takes) and the two hooks that use them
  */
 export function createBirth(config) {
     const sigma = new Float32Array(config.maxAgents);
     const fatherSigma = new Float32Array(config.maxAgents);
+    const layout0 = brainLayout(config);
+    const silent = new Uint8Array(layout0.inputCount);
+    const mutation = {
+        traitStart: layout0.traitStart,
+        rate: resolveMutationRate(config.mutationRate, layout0.weightCount),
+    };
     /** @type {(Float32Array | undefined)[]} */
     const motherRows = [];
     /** @type {(Float32Array | undefined)[]} */
@@ -65,9 +76,12 @@ export function createBirth(config) {
         } else {
             row.set(motherRow);
         }
-        mutateWeights(row, childSigma, rng, layout.traitStart);
+        mutateWeights(row, childSigma, rng, mutation);
+        if (config.weightDecay > 0) {
+            decaySilentInputs(row, { layout, silent, decay: config.weightDecay });
+        }
         sigma[child] = childSigma;
     }
 
-    return { sigma, fatherSigma, onMate, childBrain };
+    return { sigma, fatherSigma, silent, mutation, onMate, childBrain };
 }

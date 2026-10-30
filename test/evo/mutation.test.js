@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    LEAK_GENE_START,
     mutateSigma,
     mutateWeights,
     randomWeights,
@@ -12,7 +11,7 @@ import {
 } from '../../js/evo/mutation.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { detExp } from '../../js/sim/det-math.js';
-import { createRng, nextGaussian } from '../../js/sim/rng.js';
+import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 
 /**
  * @param {ArrayLike<number>} values the values
@@ -81,7 +80,7 @@ describe('mutateWeights', () => {
         const rngA = createRng(7);
         const rngB = createRng(7);
         mutateWeights(rowA, 0.01, rngA);
-        mutateWeights(rowB, 0.01, rngB, 10000);
+        mutateWeights(rowB, 0.01, rngB, { traitStart: 10000 });
         expect(rngB.s).toEqual(rngA.s);
         expect(rowB.subarray(0, 10000)).toEqual(rowA.subarray(0, 10000));
         expect(stats(rowB.subarray(0, 10000)).sd).toBeLessThan(0.0105);
@@ -94,7 +93,7 @@ describe('mutateWeights', () => {
         const a = new Float32Array(100);
         const b = new Float32Array(100);
         mutateWeights(a, 0.2, createRng(8));
-        mutateWeights(b, 0.2, createRng(8), 100);
+        mutateWeights(b, 0.2, createRng(8), { traitStart: 100 });
         expect(b).toEqual(a);
     });
 
@@ -106,10 +105,55 @@ describe('mutateWeights', () => {
     });
 });
 
+describe('mutateWeights rate', () => {
+    it('at rate 1 gives the same row and draws as no options', () => {
+        const a = new Float32Array(300).fill(0.1);
+        const b = new Float32Array(300).fill(0.1);
+        const rngA = createRng(21);
+        const rngB = createRng(21);
+        mutateWeights(a, 0.05, rngA, { traitStart: 250 });
+        mutateWeights(b, 0.05, rngB, { traitStart: 250, rate: 1 });
+        expect(b).toEqual(a);
+        expect(rngB.s).toEqual(rngA.s);
+    });
+
+    it('below 1 mutates about rate x length genes and leaves the rest bit-identical', () => {
+        const row = new Float32Array(20000).fill(0.5);
+        mutateWeights(row, 0.05, createRng(22), { rate: 0.1 });
+        const hit = row.filter((w) => w !== 0.5).length;
+        expect(hit).toBeGreaterThan(1850);
+        expect(hit).toBeLessThan(2150);
+    });
+
+    it('below 1 draws one float per gene and one Gaussian per hit, in index order', () => {
+        const row = new Float32Array(50);
+        const ref = createRng(23);
+        const expected = new Float32Array(50);
+        for (let i = 0; i < 50; i++) {
+            if (nextFloat(ref) < 0.3) {
+                expected[i] = Math.fround(0.05 * nextGaussian(ref));
+            }
+        }
+        const rng = createRng(23);
+        mutateWeights(row, 0.05, rng, { rate: 0.3 });
+        expect(row).toEqual(expected);
+        expect(rng.s).toEqual(ref.s);
+    });
+
+    it('uses TRAIT_SIGMA for the trait genes on a hit', () => {
+        const row = new Float32Array(40000);
+        mutateWeights(row, 0.001, createRng(24), { traitStart: 20000, rate: 0.5 });
+        const traits = Array.from(row.subarray(20000)).filter((w) => w !== 0);
+        expect(stats(traits).sd).toBeGreaterThan(0.9 * TRAIT_SIGMA);
+        expect(stats(traits).sd).toBeLessThan(1.1 * TRAIT_SIGMA);
+    });
+});
+
 describe('randomWeights', () => {
     const layout = brainLayout({ rayCount: 8, brainHidden: 64 });
     const row = new Float32Array(layout.weightCount).fill(9);
-    randomWeights(row, layout, createRng(11));
+    const LEAK_GENE_START = 3;
+    randomWeights(row, layout, createRng(11), LEAK_GENE_START);
 
     it('draws hidden-input blocks with sd 1 / sqrt(inputCount + hidden)', () => {
         const expected = 1 / Math.sqrt(layout.inputCount + layout.hidden);
@@ -133,6 +177,13 @@ describe('randomWeights', () => {
         expect(row.subarray(layout.bOut, layout.traitStart).every((w) => w === 0)).toBe(true);
     });
 
+    it('starts leak genes at the leakGeneStart it is given', () => {
+        const other = new Float32Array(layout.weightCount);
+        randomWeights(other, layout, createRng(11), -1);
+        expect(other.subarray(layout.leakStart).every((w) => w === -1)).toBe(true);
+        expect(other.subarray(0, layout.leakStart)).toEqual(row.subarray(0, layout.leakStart));
+    });
+
     it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
         expect(row.subarray(layout.traitStart, layout.leakStart).every((w) => w === 0)).toBe(true);
         expect(row.subarray(layout.leakStart).length).toBe(layout.hidden);
@@ -141,7 +192,7 @@ describe('randomWeights', () => {
 
     it('is deterministic per stream', () => {
         const again = new Float32Array(layout.weightCount);
-        randomWeights(again, layout, createRng(11));
+        randomWeights(again, layout, createRng(11), LEAK_GENE_START);
         expect(again).toEqual(row);
     });
 });

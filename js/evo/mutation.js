@@ -2,7 +2,7 @@
 // Every draw is one `nextGaussian` from the stream the caller passes (the core's `mutation` or `brain-init`).
 
 import { detExp } from '../sim/det-math.js';
-import { nextGaussian } from '../sim/rng.js';
+import { nextFloat, nextGaussian } from '../sim/rng.js';
 
 /** Smallest mutation step size. */
 export const SIGMA_MIN = 0.002;
@@ -14,8 +14,6 @@ export const SIGMA_START = 0.05;
 export const WEIGHT_CLAMP = 4;
 /** The step size of the trait and leak genes once a biology feature is on, in place of the weight step size. */
 export const TRAIT_SIGMA = 0.1;
-/** A random genome's leak genes start here, so a hidden unit keeps about 5% of its old value (`a` about 0.95). */
-export const LEAK_GENE_START = 3;
 
 /**
  * The child's step size. Draws one Gaussian.
@@ -31,21 +29,42 @@ export function mutateSigma(parentSigma, weightCount, rng) {
 }
 
 /**
- * Adds `sigma x N(0, 1)` to every weight in place, then clamps to plus or minus `WEIGHT_CLAMP`. From `traitStart` to
- * the end of the row (the trait and leak genes) the step is `TRAIT_SIGMA` instead of `sigma`; the number of Gaussian
- * draws is the same either way.
- * Draw order: one Gaussian per weight, index 0 up.
+ * @typedef {object} MutateOptions
+ * @property {number} [traitStart] the first index mutated with `TRAIT_SIGMA`; the default, the row length, uses
+ *   `sigma` throughout (callers pass the layout's `traitStart`)
+ * @property {number} [rate] the probability that a gene mutates (`resolveMutationRate`); 1, the default, mutates every
+ *   gene
+ */
+
+/**
+ * @param {Float32Array} row the weight row
+ * @param {number} i the gene
+ * @param {number} size the Gaussian step size
+ * @param {import('../sim/rng.js').Rng} rng the mutation stream
+ * @returns {void}
+ */
+function stepGene(row, i, size, rng) {
+    row[i] = Math.min(WEIGHT_CLAMP, Math.max(-WEIGHT_CLAMP, row[i] + size * nextGaussian(rng)));
+}
+
+/**
+ * Adds `sigma x N(0, 1)` to genes in place, then clamps to plus or minus `WEIGHT_CLAMP`. From `traitStart` to the end
+ * of the row (the trait and leak genes) the step is `TRAIT_SIGMA` instead of `sigma`.
+ * Draw order at rate 1 (the default): one Gaussian per gene, index 0 up. Below 1: per gene, one `nextFloat`, then one
+ * Gaussian when it is below the rate, so about `rate x length` genes move.
  * @param {Float32Array} row the weight row (a `subarray` view is fine)
  * @param {number} sigma the step size
  * @param {import('../sim/rng.js').Rng} rng the mutation stream
- * @param {number} [traitStart] the first index mutated with `TRAIT_SIGMA`; the default, the row length, uses `sigma`
- *   throughout (callers pass the layout's `traitStart` only once a biology feature is on)
+ * @param {MutateOptions} [options] the trait boundary and the per-gene probability
  * @returns {void}
  */
-export function mutateWeights(row, sigma, rng, traitStart = row.length) {
+export function mutateWeights(row, sigma, rng, options = {}) {
+    const { traitStart = row.length, rate = 1 } = options;
     for (let i = 0; i < row.length; i++) {
-        const step = i < traitStart ? sigma : TRAIT_SIGMA;
-        row[i] = Math.min(WEIGHT_CLAMP, Math.max(-WEIGHT_CLAMP, row[i] + step * nextGaussian(rng)));
+        if (rate < 1 && nextFloat(rng) >= rate) {
+            continue;
+        }
+        stepGene(row, i, i < traitStart ? sigma : TRAIT_SIGMA, rng);
     }
 }
 
@@ -53,13 +72,14 @@ export function mutateWeights(row, sigma, rng, traitStart = row.length) {
  * Fills a row with a random brain in place. Draw order: wIn, wRec, then wOut, each index 0 up; biases draw nothing.
  * Weights into hidden units have standard deviation `1 / sqrt(inputCount + hidden)`, weights into outputs
  * `1 / sqrt(hidden)`, biases, trait genes are 0 and leak
- * genes are `LEAK_GENE_START`.
+ * genes are `leakGeneStart`.
  * @param {Float32Array} row the weight row, `layout.weightCount` floats
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {import('../sim/rng.js').Rng} rng the brain-init stream
+ * @param {number} leakGeneStart the leak genes' start value (`config.leakGeneStart`)
  * @returns {void}
  */
-export function randomWeights(row, layout, rng) {
+export function randomWeights(row, layout, rng, leakGeneStart) {
     const hiddenSd = 1 / Math.sqrt(layout.inputCount + layout.hidden);
     const outSd = 1 / Math.sqrt(layout.hidden);
     for (let i = layout.wIn; i < layout.bHidden; i++) {
@@ -70,5 +90,5 @@ export function randomWeights(row, layout, rng) {
         row[i] = outSd * nextGaussian(rng);
     }
     row.fill(0, layout.bOut, layout.leakStart);
-    row.fill(LEAK_GENE_START, layout.leakStart, layout.weightCount);
+    row.fill(leakGeneStart, layout.leakStart, layout.weightCount);
 }

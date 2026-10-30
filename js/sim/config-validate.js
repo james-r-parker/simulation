@@ -5,6 +5,7 @@ import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
+import { isMutationRate } from './mutation-rate.js';
 import { terrainProblem } from './terrain.js';
 import { TRAIT_MAX } from './traits.js';
 
@@ -200,15 +201,27 @@ function isTyped(value, rule) {
 
 /**
  * @param {unknown} value the value
+ * @param {Rule} rule a non-numeric rule: `enum`, `bool` or `mutationRate`
+ * @returns {string | null} what the value should have been when it breaks the rule, else null
+ */
+function kindViolation(value, rule) {
+    if (rule.type === 'enum') {
+        return rule.values?.includes(/** @type {string} */ (value)) ? null : `one of ${rule.values?.join(', ')}`;
+    }
+    if (rule.type === 'mutationRate') {
+        return isMutationRate(value) ? null : 'a number above 0 to 1, invsqrt, or genes:<k> with k above 0';
+    }
+    return typeof value === 'boolean' ? null : 'a boolean';
+}
+
+/**
+ * @param {unknown} value the value
  * @param {Rule} rule the rule
  * @returns {string | null} what the value should have been when it breaks the rule, else null
  */
 function violation(value, rule) {
-    if (rule.type === 'enum') {
-        return rule.values?.includes(/** @type {string} */ (value)) ? null : `one of ${rule.values?.join(', ')}`;
-    }
-    if (rule.type === 'bool') {
-        return typeof value === 'boolean' ? null : 'a boolean';
+    if (rule.type === 'enum' || rule.type === 'bool' || rule.type === 'mutationRate') {
+        return kindViolation(value, rule);
     }
     return isTyped(value, rule) && inBounds(/** @type {number} */ (value), rule) ? null : describe(rule);
 }

@@ -9,7 +9,7 @@ const layout = brainLayout({ rayCount: 2, brainHidden: 4 });
 /** @returns {import('../../js/evo/genome.js').Genome} a genome that fits `layout` */
 function makeGenome() {
     const weights = new Float32Array(layout.weightCount);
-    randomWeights(weights, layout, createRng(7));
+    randomWeights(weights, layout, createRng(7), 3);
     return {
         version: 2,
         id: 12,

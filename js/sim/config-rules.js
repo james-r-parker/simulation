@@ -3,7 +3,7 @@
 
 /**
  * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'enum' | 'seasons' | 'specialisations'} type the value type
+ * @property {'int' | 'num' | 'bool' | 'enum' | 'mutationRate' | 'seasons' | 'specialisations'} type the value type
  * @property {readonly string[]} [values] the allowed strings of an `enum`
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound
@@ -60,6 +60,9 @@ export const FEATURE_RULES = {
     winterRegrow: num(0),
     droughtChance: UNIT,
     hebbianRate: num(0, 1),
+    mutationRate: { type: 'mutationRate' },
+    weightDecay: num(0, 0.1),
+    leakGeneStart: num(-4, 4),
     leakMin: { type: 'num', gt: 0, lt: 1 },
     visionCost: num(0),
     birthWindowTicks: int(1),
