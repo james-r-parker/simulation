@@ -228,7 +228,7 @@ describe('spawnAgent', () => {
         const w = build({ initialAgents: 0 });
         const slot = spawnAgent(w, testPolicy, cause);
         expect(w.events.data[8]).toBe(cause);
-        expect(w.ledger[0]).toBe(w.config.initialEnergy);
+        expect(w.ledger[0]).toBe(w.config.entrantEnergy);
         expect(w.alive[slot]).toBe(1);
     });
 
@@ -273,5 +273,31 @@ describe('spawnAgent sex', () => {
         for (let i = 0; i < slots.length; i++) {
             expect(w.events.data[i * EVENT_STRIDE + 9]).toBe(sexes[i]);
         }
+    });
+});
+
+describe('spawnAgent entrantEnergy', () => {
+    const energyOf = (/** @type {any} */ w, /** @type {number} */ slot) => w.energy[slot];
+
+    it('keeps initialEnergy for the initial population and gives a floor or immigrant entrant entrantEnergy', () => {
+        const w = build({ initialEnergy: 800, entrantEnergy: 200, initialAgents: 2 });
+        expect([energyOf(w, 0), energyOf(w, 1)]).toEqual([800, 800]);
+        const floor = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        const immigrant = spawnAgent(w, testPolicy, BORN_CAUSE.IMMIGRANT);
+        expect([energyOf(w, floor), energyOf(w, immigrant)]).toEqual([200, 200]);
+    });
+
+    it('is poor by default and means initialEnergy at 0', () => {
+        const poor = build({ initialAgents: 1 });
+        expect(poor.config.entrantEnergy).toBe(200);
+        expect(energyOf(poor, spawnAgent(poor, testPolicy, BORN_CAUSE.FLOOR))).toBe(200);
+        const same = build({ entrantEnergy: 0, initialAgents: 1 });
+        expect(energyOf(same, spawnAgent(same, testPolicy, BORN_CAUSE.FLOOR))).toBe(same.config.initialEnergy);
+    });
+
+    it('sizes a poor entrant from its starting energy', () => {
+        const w = build({ initialAgents: 1 });
+        const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        expect(w.size[slot]).toBeLessThan(w.size[0]);
     });
 });

@@ -45,6 +45,7 @@ export const DEFAULTS = deepFreeze({
     sprintMultiplier: 0.5, // SPRINT_BONUS_MULTIPLIER
     sprintCost: 0.05, // SPRINT_COST_PER_FRAME
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
+    entrantEnergy: 200, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
     maxEnergy: 25000, // MAX_ENERGY
     passiveLoss: 0.06, // PASSIVE_LOSS
     movementCost: 0.015, // MOVEMENT_COST_MULTIPLIER x 0.5

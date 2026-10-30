@@ -52,6 +52,7 @@ const RULES = {
     sprintMultiplier: num(0),
     sprintCost: num(0),
     initialEnergy: positive(),
+    entrantEnergy: num(0),
     maxEnergy: positive(),
     passiveLoss: num(0),
     movementCost: num(0),

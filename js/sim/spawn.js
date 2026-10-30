@@ -238,6 +238,16 @@ function chooseSpec(world, policy, slot) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the config
+ * @param {number} cause the spawn cause
+ * @returns {number} `initialEnergy` for the initial population, else `entrantEnergy` (0 means `initialEnergy`): a
+ *   seeder entrant starts poor, so it has to eat to stay
+ */
+function startEnergy(config, cause) {
+    return cause === BORN_CAUSE.INITIAL || config.entrantEnergy === 0 ? config.initialEnergy : config.entrantEnergy;
+}
+
+/**
  * Spawns a fresh-lineage agent from the `spawn` and `brain-init` streams and pushes `AgentBorn`.
  * @param {World} world the world
  * @param {Policy} policy the brain policy
@@ -259,14 +269,15 @@ export function spawnAgent(world, policy, cause) {
     drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
-    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + c.initialEnergy / c.energyToSize));
+    const energy = startEnergy(c, cause);
+    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + energy / c.energyToSize));
     world.x[slot] = world.point[0];
     world.y[slot] = world.point[1];
     world.angle[slot] = nextFloat(world.rng.spawn) * TWO_PI - PI;
     world.ateTimer[slot] = TIMER_CAP;
     world.bittenTimer[slot] = TIMER_CAP;
     world.temperature[slot] = c.temperatureStart;
-    addEnergy(world, slot, c.initialEnergy, source);
+    addEnergy(world, slot, energy, source);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);
     const d = world.events.data;
     d[o + 2] = slot;
