@@ -2,6 +2,7 @@
 // Pure: no WebGL dependencies.
 
 import { AURORA, AURORA_MAX_LUMINANCE } from './colors.js';
+import { smoothstep } from './curves.js';
 
 export const AURORA_PERIOD_SECONDS = 40;
 export const GAIN_MIDPOINT = 0.775;
@@ -24,17 +25,6 @@ export const AURORA_STOPS = Object.freeze(
         return Object.freeze([rgb[0] * scale, rgb[1] * scale, rgb[2] * scale]);
     }),
 );
-
-/**
- * @param {number} edge0 lower edge
- * @param {number} edge1 upper edge
- * @param {number} x value
- * @returns {number} Hermite interpolation in [0, 1]
- */
-function smoothstep(edge0, edge1, x) {
-    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-    return t * t * (3 - 2 * t);
-}
 
 /**
  * Returns the season stop blended smoothly towards the next season between progress 0.7 and 1.0,

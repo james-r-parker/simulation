@@ -319,7 +319,7 @@ function createListeners(ctx) {
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
- *   afterDraw: (frame: {tick: number}) => void,
+ *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {

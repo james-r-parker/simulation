@@ -2,6 +2,7 @@
 // family colour mixed 40% towards white at intensity 1.1, following both agents while they live.
 
 import { familyColor } from './colors.js';
+import { smoothstep } from './curves.js';
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
 import { createLineMesh } from './line-mesh.js';
 
@@ -9,18 +10,6 @@ export const MATE_TICKS = 45;
 export const MATE_FADE_TICKS = 6;
 export const MATE_SEGMENTS = 12;
 export const MATE_POOL_CAPACITY = 32;
-
-/**
- * Standard GLSL-style smoothstep.
- * @param {number} edge0 lower edge
- * @param {number} edge1 upper edge
- * @param {number} x input value
- * @returns {number} smoothstep result in [0, 1]
- */
-function smoothstep(edge0, edge1, x) {
-    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-    return t * t * (3 - 2 * t);
-}
 
 /**
  * Alpha envelope of a courtship thread over its normalised age.
@@ -37,13 +26,10 @@ export function threadAt(age01) {
 /**
  * Evaluates a quadratic curve offset from the midpoint by 0.18 * length perpendicular.
  * Can be called as (a, b, t, out) where a and b are [x, y], or as (ax, ay, bx, by, t, out, sign).
- * @param {any} a start point [x, y] or start x
- * @param {any} b end point [x, y] or start y
- * @param {number} [t] parameter in [0, 1]
- * @param {number[]} [out] receiving point
+ * @param {...any} args arguments
  * @returns {number[]} out
  */
-export function threadCurve(a, b, t, out) {
+export function threadCurve(...args) {
     let ax;
     let ay;
     let bx;
@@ -51,22 +37,22 @@ export function threadCurve(a, b, t, out) {
     let actualT;
     let actualOut;
     let actualSign;
-    if (typeof a === 'number' && typeof b === 'number') {
-        ax = a;
-        ay = b;
-        bx = arguments[2];
-        by = arguments[3];
-        actualT = arguments[4];
-        actualOut = arguments[5] || [0, 0];
-        actualSign = arguments[6] ?? 1;
+    if (typeof args[0] === 'number' && typeof args[1] === 'number') {
+        ax = args[0];
+        ay = args[1];
+        bx = args[2];
+        by = args[3];
+        actualT = args[4];
+        actualOut = args[5] || [0, 0];
+        actualSign = args[6] ?? 1;
     } else {
-        ax = a[0];
-        ay = a[1];
-        bx = b[0];
-        by = b[1];
-        actualT = t;
-        actualOut = out || [0, 0];
-        actualSign = arguments[4] ?? 1;
+        ax = args[0][0];
+        ay = args[0][1];
+        bx = args[1][0];
+        by = args[1][1];
+        actualT = args[2];
+        actualOut = args[3] || [0, 0];
+        actualSign = args[4] ?? 1;
     }
     const mx = (ax + bx) * 0.5;
     const my = (ay + by) * 0.5;
@@ -152,6 +138,11 @@ export function spawnMateThread(pool, effect) {
     return idx;
 }
 
+/**
+ * @param {import('../interpolate.js').Interpolated} agents agents
+ * @param {number} genomeId genome id
+ * @returns {number} slot index or -1
+ */
 function findGenome(agents, genomeId) {
     for (let i = 0; i < agents.count; i++) {
         if (agents.genomeId[i] === genomeId) {

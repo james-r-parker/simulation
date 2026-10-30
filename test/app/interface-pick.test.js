@@ -50,6 +50,8 @@ function setup({ seen = true } = {}) {
         setWakeLock: () => {},
         getWidth: () => 1000,
         perform: () => {},
+        overrides: {},
+        download: () => {},
         getFailedBundle: () => null,
         setTimer: () => 0,
         clearTimer: () => {},

@@ -13,28 +13,12 @@ import {
 } from 'three';
 import { FINISH_NOISE_GLSL } from './finish-glsl.js';
 import { LOOK_OFF } from './quality.js';
+import { smoothstep } from './curves.js';
 
 export const FINISH = Object.freeze({
     vignette: 0.18,
     grain: 1.5 / 255,
 });
-
-/**
- * @param {number} min lower edge
- * @param {number} max upper edge
- * @param {number} x input value
- * @returns {number} smoothstep 0..1
- */
-function smoothstep(min, max, x) {
-    if (x <= min) {
-        return 0;
-    }
-    if (x >= max) {
-        return 1;
-    }
-    const t = (x - min) / (max - min);
-    return t * t * (3 - 2 * t);
-}
 
 /**
  * JS reference evaluation of the vignette curve.
@@ -75,7 +59,7 @@ void main() {
 
 /**
  * @param {Record<string, {value: any}>} uniforms shader uniforms
- * @returns {ShaderMaterial} the finish material
+ * @returns {any} the finish material
  */
 function finishMaterial(uniforms) {
     return new ShaderMaterial({

@@ -4,6 +4,10 @@ import { createInterpolated } from '../../../js/app/interpolate.js';
 import { createAuroraLayer } from '../../../js/app/renderer/aurora-layer.js';
 import { smallReady } from '../helpers/ready.js';
 
+/**
+ * @param {any} info
+ * @returns {any}
+ */
 function frameOf(info) {
     return {
         nowMs: 2500,
@@ -59,15 +63,15 @@ describe('aurora-layer', () => {
         const layer = createAuroraLayer();
         let targetSet = null;
         let renderedScene = null;
-        const fakeRenderer = {
+        const fakeRenderer = /** @type {any} */ ({
             getRenderTarget: () => null,
-            setRenderTarget: (t) => {
+            setRenderTarget: (/** @type {any} */ t) => {
                 targetSet = t;
             },
-            render: (s) => {
+            render: (/** @type {any} */ s) => {
                 renderedScene = s;
             },
-        };
+        });
 
         layer.prerender?.(fakeRenderer, null);
         expect(targetSet).toBeDefined();

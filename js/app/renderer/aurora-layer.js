@@ -85,7 +85,7 @@ function createRibbonRig() {
 
 /**
  * Creates the fullscreen upsample mesh and uniforms.
- * @param {WebGLRenderTarget} target offscreen render target
+ * @param {any} target offscreen render target
  */
 function createUpsampleMesh(target) {
     const upsampleUniforms = {
@@ -108,6 +108,12 @@ function createUpsampleMesh(target) {
     return { worldMesh, worldGeom, upsampleMat, upsampleUniforms };
 }
 
+/**
+ * @param {any} renderer
+ * @param {any} target
+ * @param {any} scene
+ * @param {any} camera
+ */
 function renderRibbons(renderer, target, scene, camera) {
     const prev = renderer.getRenderTarget();
     renderer.setRenderTarget(target);
@@ -115,6 +121,12 @@ function renderRibbons(renderer, target, scene, camera) {
     renderer.setRenderTarget(prev);
 }
 
+/**
+ * @param {any} target
+ * @param {any} ribbonRig
+ * @param {any} worldGeom
+ * @param {any} upsampleMat
+ */
 function disposeAurora(target, ribbonRig, worldGeom, upsampleMat) {
     target.dispose();
     ribbonRig.geom.dispose();
@@ -163,8 +175,10 @@ export function createAuroraLayer() {
             frameNum += 1;
             upsampleUniforms.uFrame.value = frameNum;
             const t = frame.nowMs * 0.001;
-            ribbonRig.uniforms.uPhases.value = auroraPhase(t, scratch.phases);
-            upsampleUniforms.uTint.value = auroraTint(frame.season, frame.seasonProgress, scratch.tint);
+            ribbonRig.uniforms.uPhases.value = /** @type {any} */ (auroraPhase(t, scratch.phases));
+            upsampleUniforms.uTint.value = /** @type {any} */ (
+                auroraTint(frame.season, frame.seasonProgress, scratch.tint)
+            );
             upsampleUniforms.uGain.value = auroraGain(t);
         },
         prerender(renderer) {

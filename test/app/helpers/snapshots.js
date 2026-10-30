@@ -12,6 +12,7 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpo
  * @property {number} [size]
  * @property {number} [energy]
  * @property {number} [temperature]
+ * @property {number} [speed]
  * @property {number} [spec]
  * @property {number} [lineageId]
  * @property {number} [flags]

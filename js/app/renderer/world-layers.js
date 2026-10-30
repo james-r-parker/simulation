@@ -14,6 +14,7 @@ import {
 } from 'three';
 import { createSections, FOOD_STRIDE, readSections } from '../snapshot-view.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
+import { smoothstep } from './curves.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 import { LOOK_OFF } from './quality.js';
 import { packRockShape, rockShape, SHAPE_FLOATS } from './rock-shape.js';
@@ -78,23 +79,6 @@ export function packFoodAges(f32, part, out) {
 }
 
 /**
- * @param {number} min lower edge
- * @param {number} max upper edge
- * @param {number} x input
- * @returns {number} smoothstep value 0..1
- */
-function smoothstep(min, max, x) {
-    if (x <= min) {
-        return 0;
-    }
-    if (x >= max) {
-        return 1;
-    }
-    const t = (x - min) / (max - min);
-    return t * t * (3 - 2 * t);
-}
-
-/**
  * Returns dimming and scale factors for carcass decay.
  * @param {number} age01 normalized age 0..1
  * @returns {{dim: number, scale: number}}
@@ -108,8 +92,8 @@ export function carcassLook(age01) {
 }
 
 /**
- * @param {import('three').ShaderMaterialParameters} options material parameters
- * @returns {ShaderMaterial} a transparent shader material
+ * @param {Record<string, any>} options material parameters
+ * @returns {any} a transparent shader material
  */
 function material(options) {
     return new ShaderMaterial({
@@ -210,7 +194,7 @@ function obstacleUniforms(pass) {
 }
 
 /**
- * @param {import('three').BufferGeometry} geometry shared quad geometry
+ * @param {any} geometry shared quad geometry
  * @param {Record<string, {value: any}>} rimUniforms rim uniforms
  * @param {Record<string, {value: any}>} bodyUniforms body uniforms
  * @param {number} count instance count

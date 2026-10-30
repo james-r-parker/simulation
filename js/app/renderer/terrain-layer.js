@@ -35,6 +35,12 @@ export function frostTexture(seed, out = new Uint8Array(FROST_WIDTH * FROST_HEIG
         table[i] = prng.next();
     }
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {number} periodX
+     * @returns {number}
+     */
     const sample = (x, y, periodX) => {
         const ix = Math.floor(x);
         const iy = Math.floor(y);
@@ -46,6 +52,11 @@ export function frostTexture(seed, out = new Uint8Array(FROST_WIDTH * FROST_HEIG
         const x1 = (x0 + 1) % periodX;
         const y0 = ((iy % 32) + 32) % 32;
         const y1 = (y0 + 1) % 32;
+        /**
+         * @param {number} gx
+         * @param {number} gy
+         * @returns {number}
+         */
         const h = (gx, gy) => table[(gx * 17 + gy * 31) % 512];
         const a = h(x0, y0);
         const b = h(x1, y0);
@@ -134,6 +145,12 @@ void main() {
 }
 `;
 
+/**
+ * @param {number} w world width
+ * @param {number} h world height
+ * @param {number} m margin
+ * @returns {any} geometry
+ */
 function createFrostGeometry(w, h, m) {
     const positions = new Float32Array([
         0,
@@ -181,6 +198,12 @@ function createFrostGeometry(w, h, m) {
     return geom;
 }
 
+/**
+ * @param {Record<string, any>} info world info
+ * @param {number} seed seed
+ * @param {Record<string, {value: any}>} uniforms uniforms
+ * @returns {any} mesh info
+ */
 function createFrostMesh(info, seed, uniforms) {
     const m = info.terrain?.coldMarginWidth ?? 0;
     if (m <= 0) {
@@ -208,6 +231,11 @@ function createFrostMesh(info, seed, uniforms) {
     return { mesh: new Mesh(geom, mat), tex, geom, mat };
 }
 
+/**
+ * @param {Record<string, any>} info world info
+ * @param {Record<string, {value: any}>} uniforms uniforms
+ * @returns {any} refuge mesh
+ */
 function createRefugeMesh(info, uniforms) {
     const refuges = info.terrain?.refuges ?? [];
     if (refuges.length === 0) {
@@ -236,6 +264,13 @@ function createRefugeMesh(info, uniforms) {
     return { mesh, geom, mat };
 }
 
+/**
+ * @param {boolean} hasBasins has basins layout
+ * @param {Record<string, any>} info world info
+ * @param {number} seed seed
+ * @param {Record<string, any>} uniforms uniforms
+ * @returns {{frost: any, refuge: any}} terrain meshes
+ */
 function buildTerrainMeshes(hasBasins, info, seed, uniforms) {
     if (!hasBasins) {
         return { frost: null, refuge: null };
@@ -247,6 +282,10 @@ function buildTerrainMeshes(hasBasins, info, seed, uniforms) {
     };
 }
 
+/**
+ * @param {any} frost frost mesh info
+ * @param {any} refuge refuge mesh info
+ */
 function disposeTerrain(frost, refuge) {
     if (frost) {
         frost.geom.dispose();

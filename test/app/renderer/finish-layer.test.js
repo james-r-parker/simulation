@@ -69,9 +69,9 @@ describe('createFinishLayer', () => {
         const mat = layer.object.material;
 
         expect(mat.uniforms.uFrame.value).toBe(0);
-        layer.update?.();
+        layer.update?.(/** @type {any} */ ({}));
         expect(mat.uniforms.uFrame.value).toBe(1);
-        layer.update?.();
+        layer.update?.(/** @type {any} */ ({}));
         expect(mat.uniforms.uFrame.value).toBe(2);
 
         layer.resize?.(1920, 1080);

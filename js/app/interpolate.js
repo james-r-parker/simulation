@@ -40,6 +40,7 @@ const MAX_FRAME_MS = 100;
  * @property {Float32Array} energy
  * @property {Float32Array} temperature
  * @property {Float32Array} speed
+ * @property {Float32Array} turn
  * @property {Uint32Array} spec
  * @property {Uint32Array} lineageId
  * @property {Uint32Array} genomeId
