@@ -48,8 +48,8 @@ describe('DEFAULTS tables', () => {
             ['forager', 0, 300, false, 1, 1, 1],
             ['predator', 1, 350, true, 1, 1, 1],
             ['reproducer', 2, 250, false, 1, 1, 0.5],
-            ['scout', 3, 400, false, 0.7, 1, 1],
-            ['defender', 4, 350, false, 1, 0.5, 1],
+            ['scout', 3, 400, false, 1, 1.5, 1],
+            ['defender', 4, 350, false, 1.2, 0.5, 1],
         ]);
     });
 });
@@ -204,7 +204,7 @@ describe('validateConfig error text', () => {
     });
 
     it('states the largest radius when the hash cell is too small', () => {
-        expect(message(() => createConfig({ ...SIMPLE_WORLD, hashCellSize: 132 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxEnergy: 25000, hashCellSize: 132 }))).toBe(
             'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
     });

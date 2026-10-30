@@ -19,7 +19,7 @@ function birth(/** @type {any} */ r, /** @type {number} */ mother, /** @type {nu
 
 describe('eval.mother_wait_by_condition', () => {
     it('is the poorest third mean wait minus the richest third, less the pregnancy ticks', () => {
-        const r = observed({ maxAgents: 16 });
+        const r = observed({ maxAgents: 16, maxEnergy: 25000 });
         const { maxEnergy, pregnancyTicks } = r.world.config;
         const waits = [100, 100, 50, 50, 20, 20];
         const mothers = waits.map((_, i) => addBlob(r.world, { energy: maxEnergy * 0.1 * (i + 1), sex: 0 }));

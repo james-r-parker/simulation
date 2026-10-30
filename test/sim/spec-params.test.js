@@ -6,7 +6,7 @@ describe('specParams', () => {
     it('returns the entry whose index matches', () => {
         const config = createConfig({});
         expect(specParams(config, 2)).toBe(config.specialisations.reproducer);
-        expect(specParams(config, 3).moveCostMultiplier).toBe(0.7);
+        expect(specParams(config, 3).biteTakenMultiplier).toBe(1.5);
     });
 
     it('throws for an unknown index', () => {

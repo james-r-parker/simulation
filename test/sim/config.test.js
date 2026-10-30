@@ -22,7 +22,7 @@ describe('createConfig', () => {
     it('deep-merges a nested object key by key', () => {
         const config = createConfig({ specialisations: { scout: { visionRange: 500 } } });
         expect(config.specialisations.scout.visionRange).toBe(500);
-        expect(config.specialisations.scout.moveCostMultiplier).toBe(0.7);
+        expect(config.specialisations.scout.moveCostMultiplier).toBe(1);
     });
 
     it('replaces an array whole instead of merging it', () => {

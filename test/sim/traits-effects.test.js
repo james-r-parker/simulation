@@ -150,8 +150,8 @@ describe('hashWorld and traits', () => {
 
 describe('hashCellSize with traits', () => {
     it('must cover the largest body the size trait allows', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, hashCellSize: 128 })).toThrow(/hashCellSize/);
-        expect(() => createConfig({ ...SIMPLE_WORLD, hashCellSize: 140 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxEnergy: 25000, hashCellSize: 128 })).toThrow(/hashCellSize/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxEnergy: 25000, hashCellSize: 140 })).not.toThrow();
     });
 
     it('keeps the hash able to build with a 1.3 x base size body', () => {

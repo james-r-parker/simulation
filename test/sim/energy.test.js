@@ -261,8 +261,10 @@ describe('applyCosts', () => {
         world.cooldown[0] = 5;
         world.ateTimer[0] = TIMER_CAP;
         const c = world.config;
+        const scout = c.specialisations.scout;
         const expected =
-            (c.passiveLoss + c.movementCost * 25 * 0.7 + c.turnCost * 0.2 * 0.7 + c.sizeEnergyLoss * 20) * 1;
+            (c.passiveLoss + c.sizeEnergyLoss * 20) * scout.passiveLossMultiplier +
+            (c.movementCost * 25 + c.turnCost * 0.2) * scout.moveCostMultiplier;
         applyCosts(world);
         expect(world.ageTicks[0]).toBe(1);
         expect(world.cooldown[0]).toBe(4);

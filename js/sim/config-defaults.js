@@ -46,7 +46,7 @@ export const DEFAULTS = deepFreeze({
     sprintCost: 0.05, // SPRINT_COST_PER_FRAME
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
     entrantEnergy: 200, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
-    maxEnergy: 25000, // MAX_ENERGY
+    maxEnergy: 2000, // natural-selection economy (was MAX_ENERGY 25000): a small store, so a mother has little to lose to a winter before she is dead
     passiveLoss: 0.06, // PASSIVE_LOSS
     movementCost: 0.015, // MOVEMENT_COST_MULTIPLIER x 0.5
     turnCost: 0.1, // ROTATION_COST_MULTIPLIER
@@ -70,7 +70,7 @@ export const DEFAULTS = deepFreeze({
     maxBirthsPerWindow: 5, // new: births (mating or splitting) a mother may have per span; 0 is off, 5 from T78 (3 from T41)
     capBirthsEnabled: true, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
     splitCapMargin: 50, // new: slots below maxAgents kept for pregnancies when capBirthsEnabled is on
-    maxAgeTicks: 36000, // new
+    maxAgeTicks: 72000, // natural-selection: two seasons of life, twice eraSeasonTicks (was 36000)
     reproductionCooldown: 150, // REPRODUCTION_COOLDOWN_FRAMES (300 before T78)
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
@@ -145,15 +145,15 @@ export const DEFAULTS = deepFreeze({
             index: 3,
             visionRange: 400,
             canHunt: false,
-            moveCostMultiplier: 0.7,
-            biteTakenMultiplier: 1,
+            moveCostMultiplier: 1, // natural-selection: no longer cheaper to move (was 0.7)
+            biteTakenMultiplier: 1.5, // natural-selection: the scout pays for far sight, every bite on it lands 1.5 times harder (was 1)
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            passiveLossMultiplier: 1.3, // natural-selection: the scout pays 30% more to stand (was 1); new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         },
@@ -161,7 +161,7 @@ export const DEFAULTS = deepFreeze({
             index: 4,
             visionRange: 350,
             canHunt: false,
-            moveCostMultiplier: 1,
+            moveCostMultiplier: 1.2, // natural-selection: the defender is costly to be, a fifth more to move (was 1)
             biteTakenMultiplier: 0.5,
             cooldownMultiplier: 1,
             biteMultiplier: 1,
@@ -216,7 +216,7 @@ export const DEFAULTS = deepFreeze({
     antennaReach: 150, // new: 1.5 pheromone cells
     callRadius: 300, // SHOUT_BASE_RANGE (200)
     callTicks: 60, // SHOUT_DURATION_FRAMES
-    alarmCost: 0.5, // tuned, E20
+    alarmCost: 5, // natural-selection: a call is not free (was 0.5, tuned E20)
     huntCallCost: 10, // tuned, fitness-and-selection T15d (was 0.5, tuned E20)
     smokeCost: 20, // new
     smokeRadius: 80, // new

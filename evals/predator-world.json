@@ -7,6 +7,7 @@
   "maxFood": 60,
   "initialFood": 60,
   "initialEnergy": 3000,
+  "maxEnergy": 25000,
   "wallGaps": 1,
   "refugeCount": 0,
   "coldMarginWidth": 0

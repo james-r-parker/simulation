@@ -22,17 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "big bang stage 4",
     "reason": "Natural-selection switch key: the switch sets the chance credit to 0 so a lucky meal earns no merit; stage 4 deletes the chance path."
-  },
-  {
-    "key": "alarmCost",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch raises it to 5; a number that stays a knob, listed so the pre-switch value is not kept as a branch."
-  },
-  {
-    "key": "maxEnergy",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch lowers it to 2000 with the scout move cost; a number that stays a knob, listed so the pre-switch value is not kept as a branch."
   }
 ]

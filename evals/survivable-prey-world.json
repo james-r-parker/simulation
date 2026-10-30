@@ -7,6 +7,7 @@
   "maxFood": 100,
   "initialFood": 100,
   "initialEnergy": 3000,
+  "maxEnergy": 25000,
   "wallDamage": 0,
   "obstacleDamage": 0,
   "wallGaps": 1,
