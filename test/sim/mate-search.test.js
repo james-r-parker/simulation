@@ -9,14 +9,15 @@ const MATE = { mateOut: 1, energy: 700, spec: 2 };
 
 /**
  * A sexes-on world with agents of size 25, all ready, with the hash built.
- * @param {{ x: number, y: number, sex: number, energy?: number }[]} agents the agents
+ * @param {{ x: number, y: number, sex: number, rank?: number }[]} agents the agents and the mate rank of each (0 by default)
  * @param {Record<string, any>} [over] config overrides
  * @returns {any}
  */
 function placed(agents, over = {}) {
     const w = lifeWorld({ maxAgents: 64, mateRange: 100, ...over });
-    for (const { x, y, sex, energy } of agents) {
-        const s = addBlob(w, { ...MATE, energy: energy ?? MATE.energy, sex });
+    for (const { x, y, sex, rank } of agents) {
+        const s = addBlob(w, { ...MATE, sex });
+        w.mateRank[s] = rank ?? 0;
         w.x[s] = x;
         w.y[s] = y;
         w.size[s] = 25;
@@ -34,17 +35,18 @@ function lifecycleState(w) {
 }
 
 describe('findMale', () => {
-    it('chooses the male with the most energy, whatever his slot', () => {
+    it('chooses the male with the highest mate rank, whatever his slot or energy', () => {
         const w = placed([
             { x: 500, y: 500, sex: 0 },
-            { x: 520, y: 500, sex: 1, energy: 600 },
-            { x: 540, y: 500, sex: 1, energy: 900 },
-            { x: 560, y: 500, sex: 1, energy: 800 },
+            { x: 520, y: 500, sex: 1, rank: 0.25 },
+            { x: 540, y: 500, sex: 1, rank: 0.75 },
+            { x: 560, y: 500, sex: 1, rank: 0.5 },
         ]);
+        w.energy[3] = 5000;
         expect(findMale(w, 0, 1)).toBe(2);
     });
 
-    it('breaks an energy tie toward the lower slot', () => {
+    it('breaks a rank tie toward the lower slot', () => {
         const w = placed([
             { x: 500, y: 500, sex: 0 },
             { x: 560, y: 500, sex: 1 },
@@ -64,10 +66,10 @@ describe('findMale', () => {
     it('ignores females, males out of range and males of another specialisation', () => {
         const w = placed([
             { x: 500, y: 500, sex: 0 },
-            { x: 520, y: 500, sex: 0, energy: 990 },
-            { x: 900, y: 500, sex: 1, energy: 990 },
-            { x: 540, y: 500, sex: 1, energy: 990 },
-            { x: 530, y: 500, sex: 1, energy: 700 },
+            { x: 520, y: 500, sex: 0, rank: 0.9 },
+            { x: 900, y: 500, sex: 1, rank: 0.9 },
+            { x: 540, y: 500, sex: 1, rank: 0.9 },
+            { x: 530, y: 500, sex: 1, rank: 0.1 },
         ]);
         w.spec[3] = 1;
         expect(findMale(w, 0, 1)).toBe(4);
@@ -100,7 +102,7 @@ describe('findMale against an O(n^2) reference', () => {
                     x: nextFloat(rng) * 1000,
                     y: nextFloat(rng) * 1000,
                     sex: nextFloat(rng) < 0.5 ? 0 : 1,
-                    energy: 300 + Math.floor(nextFloat(rng) * 4) * 100,
+                    rank: Math.floor(nextFloat(rng) * 4) / 4,
                 });
             }
             const range = [0, 30, 100, 300][Math.floor(nextFloat(rng) * 4)];

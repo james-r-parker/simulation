@@ -2,8 +2,8 @@ import { canMatePair } from '../../../js/sim/mate-eligibility.js';
 import { nextFloat } from '../../../js/sim/rng.js';
 
 /**
- * Female choice in O(n) per agent: every male in reach that passes `canMatePair` is a candidate, the one with the most
- * energy (ties to the lower slot) is chosen, and one draw against `chance` decides.
+ * Female choice in O(n) per agent: every male in reach that passes `canMatePair` is a candidate, the one with the highest
+ * mate rank (ties to the lower slot) is chosen, and one draw against `chance` decides.
  * @param {any} w the world
  * @param {number} a the searching female
  * @param {number} chance the probability that the chosen pair mates
@@ -16,7 +16,7 @@ function referenceFindMale(w, a, chance, rng) {
         const d = Math.hypot(w.x[b] - w.x[a], w.y[b] - w.y[a]);
         const inReach = d < w.size[a] + w.size[b] + w.config.mateRange;
         if (b !== a && w.alive[b] === 1 && w.sex[b] === 1 && inReach && canMatePair(w, a, b)) {
-            best = best < 0 || w.energy[b] > w.energy[best] ? b : best;
+            best = best < 0 || w.mateRank[b] > w.mateRank[best] ? b : best;
         }
     }
     return best >= 0 && nextFloat(rng) < chance ? best : -1;

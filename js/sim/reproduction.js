@@ -6,6 +6,7 @@ import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
+import { mateRankDue, refreshMateRanks } from './mate-rank.js';
 import { childSpec } from './heritable-spec.js';
 import { findMale } from './mate-search.js';
 import { creditMating, meritPeek } from './merit.js';
@@ -87,14 +88,17 @@ function femaleChoice(world, a, chance) {
 /**
  * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
  * and starts a pregnancy when one wins the lifecycle draw. Only the ready females search, each
- * choosing the strongest male in reach (`findMale`) and being the mother whatever her slot. Uses the hash built this
- * tick.
+ * choosing the highest ranked male in reach (`findMale`, on the mate ranks `refreshMateRanks` recomputes every
+ * `MATE_RANK_INTERVAL` ticks) and being the mother whatever her slot. Uses the hash built this tick.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function mate(world, policy) {
     const { alive } = world;
+    if (mateRankDue(world)) {
+        refreshMateRanks(world);
+    }
     const { mateChanceScale } = world.config;
     const { reproductionBonus } = world.config.seasons[world.season[0]];
     const chance = Math.min(1, reproductionBonus / mateChanceScale);

@@ -303,7 +303,7 @@ Its known weakness, and the reason for the next work: it rewards luck. In measur
 
 `map-elites-v6` places elites by `descriptorV6`: deliberate share of intake by body plan (size plus vision traits). Exploit bounds (`js/evo/scripted-v6.js`) are scripted blobs that try to farm each term, so a term is shown to be bounded.
 
-**In-world merit** (`js/sim/merit*.js`, `meritEnabled`, off by default) is a decaying per-blob score from sim state alone. When on it biases mate choice (`meritMateWeight`),
+**In-world merit** (`js/sim/merit*.js`, `meritEnabled`, off by default) is a decaying per-blob score from sim state alone. When on it scales
 the energy a child is born with (`meritBirthBoost`) and gates splitting on deliberate foraging (`splitDeliberateMin`), so selection acts inside the world and not only through the archive.
 `?merit=1` turns it on with the trial values `MERIT_PREVIEW`.
 

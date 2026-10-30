@@ -70,7 +70,7 @@ export const FEATURE_RULES = {
     meritEscapeBonus: num(0),
     meritHalfLife: int(0),
     meritHalf: positive(),
-    meritMateWeight: UNIT,
+    mateRank: { type: 'enum', values: ['rank', 'offspring'] },
     meritBirthBoost: num(0, 0.5),
     splitDeliberateMin: num(0),
     splitDeliberateShareMin: UNIT,

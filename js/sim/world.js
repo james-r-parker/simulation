@@ -4,6 +4,8 @@ import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { killSpecs } from './kills.js';
+import { mateRankSpecs } from './mate-rank.js';
 import { proofSpecs } from './proof.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
@@ -110,6 +112,8 @@ function allocAgentArrays(world, layout) {
             ...meritSpecs(),
             ...splitGateSpecs(),
             ...proofSpecs(),
+            ...killSpecs(),
+            ...mateRankSpecs(),
         ],
         n,
     );
@@ -197,6 +201,21 @@ function specTable(config, field) {
 }
 
 /**
+ * @param {number} n `maxAgents`
+ * @returns {Record<string, any>} the per-pass scratch that is not an agent row: the birth cap's slots and keys, the mate
+ *   scores of `refreshMateRanks`, and the kill log (`kills.js`) with its count
+ */
+function agentScratch(n) {
+    return {
+        capSlots: new Int32Array(n),
+        capKeys: new Float64Array(n),
+        mateScores: new Float64Array(n),
+        killLog: new Float64Array(n),
+        killCount: 0,
+    };
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {Float64Array} `splitMinEnergy` times each specialisation's `splitMinEnergyMultiplier`, indexed by `index`
  */
@@ -243,12 +262,12 @@ export function allocateWorld(config) {
         season: new Float64Array(2),
         era: new Int32Array([-1]),
         birthOptions: { cause: 0, rng: null },
-        capSlots: new Int32Array(config.maxAgents),
-        capKeys: new Float64Array(config.maxAgents),
+        ...agentScratch(config.maxAgents),
         meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
         visionBySpec: specTable(config, 'visionRange'),
         biteBySpec: specTable(config, 'biteMultiplier'),
+        huntBySpec: specTable(config, 'canHunt'),
         splitMinBySpec: splitMinTable(config),
         plantFoodBySpec: specTable(config, 'plantFoodValue'),
         meatFoodBySpec: specTable(config, 'meatFoodValue'),

@@ -109,12 +109,11 @@ describe('policy and merit', () => {
 
     it('previews the T25 bench values, and they make a valid config', async () => {
         expect(MERIT_PREVIEW).toEqual({
-            meritMateWeight: 0.05,
             meritBirthBoost: 0.25,
             splitDeliberateMin: 200,
         });
         const { createConfig } = await import('../../js/sim/config.js');
-        expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritMateWeight).toBe(0.05);
+        expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritBirthBoost).toBe(0.25);
     });
 });
 

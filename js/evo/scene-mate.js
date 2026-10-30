@@ -7,18 +7,15 @@
 // - `eval.mate_hunter_lean`: the `canHunt` share of the matings minus the `canHunt` share of the other adults ready to
 //   mate at those matings; negative when grazers are favoured.
 //
-// The percentile is the doc's `mateRank` `rank` score: a `canHunt` specialisation scores its `deliberateKills` (the
-// observer's intent counter), the others `(mealsDeliberate + 1) / (mealsTotal + 2)` and 0 under `RANK_MIN_MEALS` meals;
-// the percentile is (members scoring lower + half the other ties) / (members - 1), 0.5 for a lone member. It is
-// computed here on demand, for the chosen mate and the candidates, whatever `mateRank` is. Per-slot arrays only.
+// The percentile is the sim's mate rank (js/sim/mate-rank.js, the `rank` score whatever the world's `mateRank` is),
+// computed here on demand and fresh, for the chosen mate and the candidates, by the same functions the sim's pass uses.
+// Per-slot arrays only.
 
 import { isReadyToMate } from '../sim/mate-eligibility.js';
+import { fillScores, percentileInto } from '../sim/mate-rank.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { findAlive } from './observer-intent.js';
-
-/** A non-hunter with fewer meals than this scores 0. */
-export const RANK_MIN_MEALS = 5;
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -27,6 +24,8 @@ export const RANK_MIN_MEALS = 5;
 export function createMateScene(config) {
     return {
         wasPregnant: new Uint8Array(config.maxAgents),
+        scores: new Float64Array(config.maxAgents),
+        percentiles: new Float64Array(config.maxAgents),
         gapSum: 0,
         gapCount: 0,
         matings: 0,
@@ -43,42 +42,6 @@ export function createMateScene(config) {
  */
 export function resetMateSlot(scene, slot) {
     scene.wasPregnant[slot] = 0;
-}
-
-/**
- * @param {Record<string, any>} observer the observer
- * @param {Record<string, any>} world the world
- * @param {number} slot an alive slot
- * @returns {number} the slot's rank score
- */
-function scoreOf(observer, world, slot) {
-    if (observer.intent.hunterSpec[world.spec[slot]] === 1) {
-        return observer.intent.deliberateKills[slot];
-    }
-    const meals = world.mealsTotal[slot];
-    return meals < RANK_MIN_MEALS ? 0 : (world.mealsDeliberate[slot] + 1) / (meals + 2);
-}
-
-/**
- * @param {Record<string, any>} observer the observer
- * @param {Record<string, any>} world the world
- * @param {number} slot an alive slot
- * @returns {number} its percentile among the alive members of its specialisation
- */
-export function percentileOf(observer, world, slot) {
-    const own = scoreOf(observer, world, slot);
-    let members = 0;
-    let lower = 0;
-    let ties = 0;
-    for (let other = 0; other < world.alive.length; other++) {
-        if (world.alive[other] === 1 && world.spec[other] === world.spec[slot]) {
-            const score = scoreOf(observer, world, other);
-            members += 1;
-            lower += score < own ? 1 : 0;
-            ties += score === own && other !== slot ? 1 : 0;
-        }
-    }
-    return members <= 1 ? 0.5 : (lower + ties / 2) / (members - 1);
 }
 
 /**
@@ -113,6 +76,7 @@ function isCandidate(world, { mother, other, father }) {
 function noteMating(scene, observer, world, mother) {
     const father = findAlive(world, observer.slotOf, world.fatherId[mother]);
     const { hunterSpec } = observer.intent;
+    fillScores(world, scene.scores, 'rank');
     let candidates = 0;
     let percentiles = 0;
     for (let other = 0; other < world.alive.length; other++) {
@@ -122,13 +86,15 @@ function noteMating(scene, observer, world, mother) {
         }
         if (isCandidate(world, { mother, other, father })) {
             candidates += 1;
-            percentiles += percentileOf(observer, world, other);
+            percentileInto(world, scene.scores, { slot: other, out: scene.percentiles });
+            percentiles += scene.percentiles[other];
         }
     }
     scene.matings += 1;
     scene.hunterMatings += hunterSpec[world.spec[mother]];
     if (father >= 0 && candidates > 0) {
-        scene.gapSum += percentileOf(observer, world, father) - percentiles / candidates;
+        percentileInto(world, scene.scores, { slot: father, out: scene.percentiles });
+        scene.gapSum += scene.percentiles[father] - percentiles / candidates;
         scene.gapCount += 1;
     }
 }

@@ -245,7 +245,7 @@ export const DEFAULTS = deepFreeze({
     meritEscapeBonus: 60, // new: fitness-and-selection T16 (merit, off)
     meritHalfLife: 20000, // new: fitness-and-selection T16 (merit, off)
     meritHalf: 1000, // new: fitness-and-selection T16 (merit, off)
-    meritMateWeight: 0, // new: fitness-and-selection T16 (merit, off)
+    mateRank: 'rank', // natural-selection T8: a male's within-specialisation percentile, by deliberate kills (hunters) or deliberate meal share; 'offspring' ranks by matured children
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g

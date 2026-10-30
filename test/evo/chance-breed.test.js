@@ -11,6 +11,7 @@ import { AMBUSH_STILL, biteDeliberate, trackMerit } from '../../js/sim/merit-sta
 import { meritPhase } from '../../js/sim/merit-phase.js';
 import { creditIntake } from '../../js/sim/merit.js';
 import { findMale } from '../../js/sim/mate-search.js';
+import { refreshMateRanks } from '../../js/sim/mate-rank.js';
 import { giftOf } from '../../js/sim/reproduction.js';
 import { SEX } from '../../js/sim/sex.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -31,14 +32,18 @@ describe('chance energy moves nothing that breeds', () => {
         expect(giftOf(w, mother, false)).toBeGreaterThan(before);
     });
 
-    it('leaves the mate score as it was: a male fed by chance does not outrank one fed deliberately', () => {
-        const w = lifeWorld({ maxAgents: 16, meritMateWeight: 1, meritHalfLife: 0, mateRange: 100 });
+    it('gives a male fed by chance no mate rank over one fed deliberately, whatever his energy', () => {
+        const w = lifeWorld({ maxAgents: 16, meritHalfLife: 0, mateRange: 100 });
         const near = { mateOut: 1, energy: 700, spec: 2, y: 500, size: 25 };
         addBlob(w, { ...near, sex: SEX.FEMALE, x: 500 });
-        const lucky = addBlob(w, { ...near, sex: SEX.MALE, x: 520 });
+        const lucky = addBlob(w, { ...near, sex: SEX.MALE, x: 520, energy: 1900 });
         const skilled = addBlob(w, { ...near, sex: SEX.MALE, x: 530 });
-        creditIntake(w, lucky, 5000, false);
-        creditIntake(w, skilled, 10, true);
+        for (let meal = 0; meal < 8; meal++) {
+            creditIntake(w, lucky, 600, false);
+            creditIntake(w, skilled, 10, true);
+        }
+        refreshMateRanks(w);
+        expect(w.merit[lucky]).toBe(0);
         buildHash(w.hash, w);
         expect(findMale(w, 0, 1)).toBe(skilled);
     });

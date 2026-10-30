@@ -127,7 +127,7 @@ describe('tracked variants', () => {
         expect(TRACKED_VARIANTS.map((v) => v.suffix)).toEqual(['merit', 'w7680']);
         expect(createConfig(TRACKED_VARIANTS[1].overrides)).toMatchObject({ worldWidth: 7680, worldHeight: 4320 });
         expect(createConfig(TRACKED_VARIANTS[0].overrides)).toMatchObject({
-            meritMateWeight: 0.05,
+            meritBirthBoost: 0.25,
             capBirthsEnabled: true,
         });
         expect(createConfig(TRACKED_VARIANTS[0].overrides).maxFood).toBe(DEFAULTS.maxFood);

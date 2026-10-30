@@ -4,6 +4,7 @@ import { addFertileZone } from './environment.js';
 import { LOSS_CAUSE } from './energy.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { leaveCarcass } from './carcass.js';
+import { noteKill } from './kills.js';
 import { releaseProofAtDeath } from './proof.js';
 import { spawnAgent } from './spawn.js';
 import { freeAgent } from './world.js';
@@ -78,6 +79,9 @@ export function reap(world, policy) {
             continue;
         }
         pushDied(world, slot, cause);
+        if (cause === DEATH_CAUSE.EATEN) {
+            noteKill(world, slot);
+        }
         if (policy.onDeath) {
             policy.onDeath(world, slot, cause);
         }

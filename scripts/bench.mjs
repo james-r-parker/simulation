@@ -20,12 +20,11 @@ const WARMUP_TICKS = 500;
 const MEASURED_TICKS = 2000;
 
 /**
- * The defaults with merit at representative settings (fitness-and-selection T25): the merit score, mate choice by
- * merit, birth energy by merit and a lower split gate, so the `merit` row records what the merit phase and its users
+ * The defaults with merit at representative settings (fitness-and-selection T25): the merit score,
+ * birth energy by merit and a lower split gate, so the `merit` row records what the merit phase and its users
  * cost.
  */
 export const MERIT_ON = Object.freeze({
-    meritMateWeight: 0.05,
     meritBirthBoost: 0.25,
     splitDeliberateMin: 200,
 });

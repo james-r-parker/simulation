@@ -16,5 +16,11 @@
     "plan": null,
     "task": null,
     "reason": "Permanent: a specialisation's trait (it decides who may bite), not a switch between an old and a new rule."
+  },
+  {
+    "key": "mateRank",
+    "plan": "docs/designs/natural-selection.md",
+    "task": "T8 follow-up screen",
+    "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
   }
 ]

@@ -114,11 +114,13 @@ export function creditMatured(world, child) {
     const a = world.parentSlotA[child];
     if (a >= 0 && world.genomeId[a] !== 0 && world.genomeId[a] === world.parentA[child]) {
         add(world, a, bonus);
+        world.maturedKids[a] += 1;
         credited++;
     }
     const b = world.parentSlotB[child];
     if (b >= 0 && b !== a && world.genomeId[b] !== 0 && world.genomeId[b] === world.parentB[child]) {
         add(world, b, bonus);
+        world.maturedKids[b] += 1;
         credited++;
     }
     return credited;
