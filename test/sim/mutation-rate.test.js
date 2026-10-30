@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { isMutationRate, resolveMutationRate } from '../../js/sim/mutation-rate.js';
+import { randomWeights } from '../../js/evo/mutation.js';
+import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { createRng } from '../../js/sim/rng.js';
+import { leakRateOf } from '../../js/sim/traits.js';
 
 describe('isMutationRate', () => {
     it.each([1, 0.1, 0.0001, 'invsqrt', 'genes:22', 'genes:0.5'])('accepts %s', (value) => {
@@ -56,9 +60,20 @@ describe('the mutationRate config key', () => {
 });
 
 describe('weightDecay and leakGeneStart config keys', () => {
-    it('default to 0 and 3, today', () => {
+    it('default leakGeneStart to 0, the big-bang value: a random genome has a leak rate of about 0.5 from the start', () => {
         const c = createConfig();
-        expect([c.weightDecay, c.leakGeneStart]).toEqual([0, 3]);
+        expect(c.leakGeneStart).toBe(0);
+        const row = new Float32Array(brainLayout(c).weightCount);
+        randomWeights(row, brainLayout(c), createRng(1), c.leakGeneStart);
+        const layout = brainLayout(c);
+        for (let j = 0; j < layout.hidden; j++) {
+            expect(row[layout.leakStart + j]).toBe(0);
+            expect(leakRateOf(row[layout.leakStart + j], c.leakMin)).toBeCloseTo(0.5 + c.leakMin / 2, 6);
+        }
+    });
+
+    it('default weightDecay to 0, today', () => {
+        expect(createConfig().weightDecay).toBe(0);
     });
 
     it('have bounds 0 to 0.1 and minus 4 to 4', () => {
