@@ -33,6 +33,29 @@ describe('the Hebbian drift metrics', () => {
         expect(m['eval.hebb_drift_clamped_share'].value).toBe(4 / size);
     });
 
+    it('leaves an agent whose output weights are all zero out of the mean: its drift has no scale', () => {
+        const { world, observer, slot } = setup();
+        const { layout } = world;
+        const size = layout.hidden * layout.geneOutputs;
+        const silent = addBlob(world);
+        observer.ageTicks[silent] = 700;
+        observer.sampled = Int32Array.of(silent, slot);
+        world.weights.fill(
+            0,
+            silent * layout.weightCount + layout.wOut,
+            silent * layout.weightCount + layout.wOut + size,
+        );
+        world.fastOut.fill(0.5, silent * size, (silent + 1) * size);
+        const w = Array.from({ length: size }, (_, i) => (i % 2 ? 1 : -1));
+        world.weights.set(w, slot * layout.weightCount + layout.wOut);
+        world.fastOut.set(
+            w.map((v) => v * 1.5),
+            slot * size,
+        );
+        sampleHebb(observer.hebb, observer, world);
+        expect(hebbMetrics(observer)['eval.hebb_drift'].value).toBeCloseTo(0.5, 5);
+    });
+
     it('skips agents younger than 600 ticks', () => {
         const { world, observer, slot } = setup();
         observer.ageTicks[slot] = 599;

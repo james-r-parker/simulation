@@ -116,6 +116,16 @@ describe('lineage persistence', () => {
         expect(proofMetrics(scene)['eval.lineage_persistence'].value).toBe(0.25);
     });
 
+    it('takes no sample and no snapshot at the start of a season that is neither spring nor winter', () => {
+        const { r, slots } = lineages();
+        boundary(r, T0 + SEASON, 1);
+        boundary(r, T0 + 2 * SEASON, 2);
+        r.world.alive[slots[1]] = 0;
+        boundary(r, T0 + 4 * SEASON, 0);
+        expect(r.observer.scenes.proof.samples).toBe(0);
+        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence'].value).toBeNull();
+    });
+
     it('reads null before burn-in and with no established lineage', () => {
         const { r } = lineages();
         boundary(r, T0 - SEASON, WINTER);

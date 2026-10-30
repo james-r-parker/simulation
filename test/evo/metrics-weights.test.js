@@ -37,6 +37,18 @@ describe('eval.weight_drift_silent', () => {
         expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeCloseTo(rare / 0.5, 6);
     });
 
+    it('is null when every weight on the other inputs is zero: there is no scale to read the rare ones against', () => {
+        const { world, observer, slots } = setup(1);
+        const { layout } = world;
+        observer.activity.rare[1] = 1;
+        observer.activity.rareCount = 1;
+        const base = slots[0] * layout.weightCount + layout.wIn;
+        world.weights.fill(0, base, base + layout.inputCount * H);
+        world.weights.fill(1, base + H, base + 2 * H);
+        sampleWeights(observer.weightPools, observer, world);
+        expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeNull();
+    });
+
     it('is null with no rare input, and with every input rare', () => {
         const { world, observer } = setup(1);
         sampleWeights(observer.weightPools, observer, world);

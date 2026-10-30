@@ -33,6 +33,21 @@ describe('eval.mother_wait_by_condition', () => {
         expect(read(r, 'mother_wait_by_condition').value).toBe(80);
     });
 
+    it('ranks mothers of equal condition by order of sampling, the earliest as the poorest', () => {
+        const r = observed({ maxAgents: 16, maxEnergy: 25000 });
+        const { pregnancyTicks } = r.world.config;
+        const waits = [20, 20, 50, 50, 100, 100];
+        const mothers = waits.map(() => addBlob(r.world, { energy: 5000, sex: 0 }));
+        r.world.tick = T0;
+        sampleSpend(r.observer.scenes.spend, r.world);
+        const child = addBlob(r.world);
+        mothers.forEach((mother, i) => {
+            r.world.tick = T0 + waits[i] + pregnancyTicks;
+            birth(r, mother, child);
+        });
+        expect(read(r, 'mother_wait_by_condition').value).toBe(-80);
+    });
+
     it('samples a mother once, only when she is ready and can bear, and not before burn-in', () => {
         const r = observed({ maxAgents: 16 });
         const ready = addBlob(r.world, { energy: 5000 });

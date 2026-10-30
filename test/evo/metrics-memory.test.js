@@ -150,6 +150,23 @@ describe('eval.hidden_persistence', () => {
         );
     });
 
+    it('leaves out an agent whose hidden state is all zero, now or at the snapshot: a cosine has no direction', () => {
+        const { world, observer, slots } = withSnapshot(40);
+        world.hidden.fill(0, slots[0] * H, slots[0] * H + H);
+        observer.memory.snapshot.fill(0, slots[1] * H, slots[1] * H + H);
+        sampleMemory(observer.memory, observer, world);
+        const cos = slots.slice(2).map((_, k) => {
+            const i = k + 2;
+            const then = [1, i % 3 === 0 ? 0 : -1, 0.5, i];
+            const now = [0.5, 1, i % 2, 1];
+            return now.reduce((s, v, j) => s + v * then[j], 0) / Math.hypot(...now) / Math.hypot(...then);
+        });
+        expect(memoryMetrics(observer)['eval.hidden_persistence'].value).toBeCloseTo(
+            cos.reduce((a, b) => a + b) / cos.length,
+            5,
+        );
+    });
+
     it('skips a slot that holds a different agent than at the snapshot', () => {
         const { world, observer, slots } = withSnapshot(40);
         slots.forEach((slot) => {

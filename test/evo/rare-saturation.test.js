@@ -55,6 +55,19 @@ describe('sampleSaturation', () => {
         expect(state.events).toBe(1);
     });
 
+    it('credits two rare inputs that first fire at the same sample against the same earlier share', () => {
+        const { world, state, activity, slot, step } = setup();
+        activity.rare[3] = 1;
+        activity.rareIdx[1] = 3;
+        activity.rareCount = 2;
+        step([0, 0, 0, 0]); // share 0
+        world.pooled[slot * world.layout.inputCount + 3] = 1;
+        step([1, 0, 0, 0], true); // both fire; share 0.25
+        step([1, -1, 1, 0]); // share 0.75
+        expect(state.events).toBe(2);
+        expect(state.jumpSum).toBeCloseTo(1.5, 12);
+    });
+
     it('does not count a firing with no earlier sample of the life, nor an input that is not rare', () => {
         const first = setup();
         first.step([0, 0, 0, 0], true);

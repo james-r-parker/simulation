@@ -52,6 +52,27 @@ describe('eval.winter_basin_density and eval.winter_shelter_distance', () => {
         expect(read(r, 'winter_shelter_distance').value).toBeCloseTo(20, 12);
     });
 
+    it('read a basin that is empty outside winter as no ratio, and null when both are', () => {
+        const r = observed(BASINS);
+        const west = crowd(r.world, { n: 2, x: 1950, y: 500 });
+        checkpoint(r, 11000, 0);
+        r.world.alive[west[0]] = 0;
+        r.world.alive[west[1]] = 0;
+        // Winter: 1 agent in each basin. Other: 2 in the west only, so the east has no density to compare with.
+        crowd(r.world, { n: 1, x: 1950, y: 500 });
+        crowd(r.world, { n: 1, x: 2050, y: 500 });
+        checkpoint(r, 12000, WINTER);
+        expect(read(r, 'winter_basin_density').value).toBeCloseTo(0.5, 12);
+        const none = observed(BASINS);
+        checkpoint(none, 11000, 0);
+        crowd(none.world, { n: 1, x: 1950, y: 500 });
+        checkpoint(none, 12000, WINTER);
+        expect(read(none, 'winter_basin_density')).toMatchObject({
+            value: null,
+            reason: 'no agent in either basin outside winter',
+        });
+    });
+
     it('measure the distance to the nearer of the two margin edges (the south one here)', () => {
         const r = observed(BASINS);
         const { coldMarginWidth, worldHeight } = r.world.config;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { occupiedCount } from '../../../js/evo/archive.js';
 import { ensureRoom } from '../../../js/evo/growable-log.js';
 import { createObserver } from '../../../js/evo/observer.js';
-import { VERDICT, createPendingTable, verdictOf } from '../../../js/evo/policies/archive-proof.js';
+import { VERDICT, createPendingTable, createProofLedger, verdictOf } from '../../../js/evo/policies/archive-proof.js';
 import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
 import { DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../../js/sim/events.js';
 import { createRng } from '../../../js/sim/rng.js';
@@ -70,6 +70,74 @@ describe('the pending table', () => {
         expect(table.hold(offerOf(3, 3), { kids: 1 })).toBe(1);
         expect([table.has(1), table.has(2), table.has(3)]).toEqual([false, true, true]);
         expect(table.count()).toBe(2);
+    });
+});
+
+describe('the pending table, evicting repeatedly', () => {
+    it('evicts the oldest entry each time, however the entries sit in the table', () => {
+        const table = createPendingTable(2, WEIGHTS);
+        table.hold(offerOf(1, 1), { kids: 1 });
+        table.hold(offerOf(2, 2), { kids: 1 });
+        expect(table.hold(offerOf(3, 3), { kids: 1 })).toBe(1);
+        expect(table.hold(offerOf(4, 4), { kids: 1 })).toBe(2);
+        expect(table.hold(offerOf(5, 5), { kids: 1 })).toBe(3);
+        expect([1, 2, 3, 4, 5].map((id) => table.has(id))).toEqual([false, false, false, true, true]);
+    });
+});
+
+describe('the proof ledger', () => {
+    /**
+     * @param {number} slots table size
+     * @returns {{ledger: any, world: any, records: any[]}} a ledger that logs, and a world of proven parents
+     */
+    function build(slots) {
+        /** @type {any[]} */
+        const records = [];
+        const log = {
+            level: 'debug',
+            log: (/** @type {any} */ _l, /** @type {string} */ event, /** @type {any} */ f) =>
+                records.push({ event, ...f }),
+        };
+        const world = {
+            tick: 50,
+            proven: Uint8Array.of(1, 1, 0),
+            established: Uint8Array.of(0, 0, 0),
+            unprovenKids: Uint8Array.of(2, 1, 0),
+            parentA: Float64Array.of(0, 0, 100),
+            parentB: Float64Array.of(0, 0, 100),
+            genomeId: Float64Array.of(100, 101, 200),
+        };
+        return {
+            ledger: createProofLedger({ slots, weightCount: WEIGHTS, log: /** @type {any} */ (log) }),
+            world,
+            records,
+        };
+    }
+
+    it('keeps a held parent waiting for the other child when one dies in the tick the parent dies', () => {
+        const { ledger, world, records } = build(4);
+        ledger.died(world, { slot: 0, mature: true });
+        ledger.died(world, { slot: 2, mature: false });
+        const offered = ledger.settle(0, { tick: 50, item: offerOf(100, 1) });
+        expect(offered).toBe(false);
+        expect(ledger.table.has(100)).toBe(true);
+        expect(records).toEqual([{ event: 'ArchivePending', tick: 50, genomeId: 100, spec: 1, kids: 1 }]);
+        expect(ledger.table.childDied(100)).toBe(100);
+    });
+
+    it('says which parent was pushed out of a full table, and why', () => {
+        const { ledger, world, records } = build(2);
+        // Slots 0 and 1 die holding parents 100 and 101; the table is full. Slot 0 is reused and its next occupant, 102, dies too.
+        for (const [slot, id] of [
+            [0, 100],
+            [1, 101],
+            [0, 102],
+        ]) {
+            ledger.died(world, { slot, mature: true });
+            ledger.settle(slot, { tick: 60 + id, item: offerOf(id, 1) });
+        }
+        expect([100, 101, 102].map((id) => ledger.table.has(id))).toEqual([false, true, true]);
+        expect(records.at(-1)).toEqual({ event: 'ArchiveRefused', tick: 162, genomeId: 100, reason: 'pending-full' });
     });
 });
 

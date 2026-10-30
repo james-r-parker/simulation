@@ -50,6 +50,27 @@ describe('eval.skill_heritability', () => {
         expect(read(opposite, 'skill_heritability').value).toBeCloseTo(-1, 12);
     });
 
+    it('is null when the children all have the same share', () => {
+        const r = observed({});
+        breed(r, MIN_HERITABILITY_PAIRS, () => TENTH_MEAL / 2); // a share of 0.5, exact in binary
+        expect(read(r, 'skill_heritability')).toMatchObject({
+            value: null,
+            reason: 'parent or child share is constant',
+        });
+    });
+
+    it('reads the share of a parent with no meals as 0', () => {
+        const r = observed({});
+        const parent = addBlob(r.world);
+        const kid = addBlob(r.world);
+        r.world.tick = T0;
+        r.world.parentSlotA[kid] = parent;
+        r.world.parentA[kid] = r.world.genomeId[parent];
+        noteHeritageBirth(r.observer.scenes.heritage, r.world, kid);
+        expect(r.observer.scenes.heritage.pending[kid]).toBe(1);
+        expect(r.observer.scenes.heritage.parentShare[kid]).toBe(0);
+    });
+
     it('leaves out a child with fewer than ten meals, and reads the mean of two live parents', () => {
         const r = observed({});
         const { parent, kid } = breed(r, 1, () => 0);
@@ -136,5 +157,13 @@ describe('creditGrandparents', () => {
         r.observer.genomeId[c] = cid;
         creditGrandparents(r.observer.scenes.heritage, r.observer, c);
         expect(Array.from(r.observer.scenes.heritage.grand.slice(0, 3))).toEqual([1, 0, 0]);
+    });
+
+    it('credits nobody for a child that is not in the family tree', () => {
+        const r = observed();
+        const c = addBlob(r.world);
+        r.observer.genomeId[c] = 987654;
+        creditGrandparents(r.observer.scenes.heritage, r.observer, c);
+        expect(r.observer.scenes.heritage.grand.every((/** @type {number} */ n) => n === 0)).toBe(true);
     });
 });

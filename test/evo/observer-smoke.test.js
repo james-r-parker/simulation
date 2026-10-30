@@ -59,4 +59,20 @@ describe('smoke follow-up', () => {
         observeCombat(observer.combat, world);
         expect([observer.combat.smoke.bittenReleases, observer.combat.smoke.size]).toEqual([20, 0]);
     });
+
+    it('skips a releaser already dead, or replaced by another agent, at the observed tick: its bite history is gone', () => {
+        const { world, observer } = observed();
+        const dead = addBorn(world, { bittenTimer: 3 });
+        const replaced = addBorn(world, { bittenTimer: 3 });
+        nextTick(world, 1);
+        pushCall(world, EVENT_TYPE.SMOKE_RELEASED, dead);
+        pushCall(world, EVENT_TYPE.SMOKE_RELEASED, replaced);
+        world.alive[dead] = 0;
+        world.genomeId[replaced] += 50;
+        observeCombat(observer.combat, world);
+        expect(observer.combat.smoke.size).toBe(0);
+        nextTick(world, 1 + SMOKE_ESCAPE_TICKS);
+        observeCombat(observer.combat, world);
+        expect(observer.combat.smoke.bittenReleases).toBe(0);
+    });
 });

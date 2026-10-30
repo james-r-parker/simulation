@@ -157,6 +157,17 @@ describe('births', () => {
         expect(counters.cells300[slot]).toBe(1);
     });
 
+    it('counts nothing at tick 0, before the first step has happened', () => {
+        const { world, counters } = setup();
+        const slot = addBlob(world, { x: 100, y: 100 });
+        world.tick = 0;
+        updateLifeCounters(counters, world);
+        expect(counters.cells300[slot]).toBe(0);
+        nextTick(world, 10);
+        updateLifeCounters(counters, world);
+        expect(counters.cells300[slot]).toBe(1);
+    });
+
     it('resetLifeSlot zeroes every counter of one slot only', () => {
         const { world, counters } = setup();
         const a = addBorn(world);

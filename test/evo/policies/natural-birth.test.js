@@ -103,4 +103,19 @@ describe('birth mutation keys', () => {
         expect(child[layout.wIn + 2 * layout.hidden]).toBeLessThan(0.46);
         expect(child[layout.wIn]).toBeGreaterThan(0.49);
     });
+
+    it('weightDecay 0 leaves the silent inputs rows as the mutation left them', () => {
+        const child = (/** @type {number} */ weightDecay) => {
+            const world = smallWorld({ brainHidden: 4, maxAgents: 8, weightDecay, mutationRate: 0.000001 });
+            const birth = createBirth(world.config);
+            const { layout } = world;
+            world.weights.fill(0.5, 0, layout.weightCount);
+            world.inputActivity.rare[2] = 1;
+            birth.sigma[0] = 0.05;
+            birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(32) });
+            return world.weights[layout.weightCount + layout.wIn + 2 * layout.hidden];
+        };
+        expect(Math.abs(child(0) - 0.5)).toBeLessThan(0.01);
+        expect(child(0.1)).toBeLessThan(0.46);
+    });
 });
