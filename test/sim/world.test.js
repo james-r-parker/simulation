@@ -75,9 +75,10 @@ describe('allocateWorld', () => {
 
     it('sizes the agent arrays from the config', () => {
         const w = smallWorld();
-        const { inputCount, weightCount } = w.layout;
+        const { inputCount, rawInputCount, weightCount } = w.layout;
         expect(w.alive.length).toBe(8);
-        expect(w.inputs.length).toBe(8 * inputCount);
+        expect(w.inputs.length).toBe(8 * rawInputCount);
+        expect(w.pooled.length).toBe(8 * inputCount);
         expect(w.outputs.length).toBe(8 * OUTPUT_COUNT);
         expect(w.weights.length).toBe(8 * weightCount);
         expect(w.fatherWeights.length).toBe(8 * weightCount);

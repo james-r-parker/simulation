@@ -13,7 +13,7 @@ const COLS = 10;
  */
 function scent(w, slot) {
     writeScentInputs(w, slot);
-    const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+    const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 19;
     return Array.from(w.inputs.subarray(base, base + 13));
 }
 
@@ -164,13 +164,13 @@ describe('writeScentInputs heard calls', () => {
         const other = addAgent(w, 700, 700, 20);
         w.inputs.fill(9);
         writeScentInputs(w, me);
-        const start = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        const start = me * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 19;
         const touched = Array.from(w.inputs).flatMap((v, i) => (v !== 9 ? [i] : []));
         expect(touched.every((i) => i >= start && i < start + 13)).toBe(true);
-        expect(start + 16).toBe((me + 1) * w.layout.inputCount);
+        expect(start + 16).toBe((me + 1) * w.layout.rawInputCount);
         expect(
             w.inputs
-                .subarray(other * w.layout.inputCount, (other + 1) * w.layout.inputCount)
+                .subarray(other * w.layout.rawInputCount, (other + 1) * w.layout.rawInputCount)
                 .every((/** @type {number} */ v) => v === 9),
         ).toBe(true);
     });

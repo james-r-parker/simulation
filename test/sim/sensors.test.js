@@ -11,7 +11,7 @@ describe('senseAll scent inputs', () => {
         w.hunt[5 * 10 + 5] = 0.5;
         w.heard.set([0.25, 0, 1], me * HEARD_STRIDE);
         senseAll(w, rebuild(w));
-        const base = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        const base = me * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 19;
         expect(w.inputs[base + 4]).toBe(0.5);
         expect(Array.from(w.inputs.subarray(base + 7, base + 10))).toEqual([0.25, 0, 1]);
     });
@@ -26,9 +26,9 @@ describe('senseAll', () => {
         w.energy[a] = w.config.maxEnergy;
         w.energy[b] = w.config.maxEnergy;
         const dead = 5;
-        w.inputs.fill(7, dead * w.layout.inputCount, (dead + 1) * w.layout.inputCount);
+        w.inputs.fill(7, dead * w.layout.rawInputCount, (dead + 1) * w.layout.rawInputCount);
         senseAll(w, rebuild(w));
-        const { inputCount } = w.layout;
+        const { rawInputCount: inputCount } = w.layout;
         const rayEnd = w.config.rayCount * RAY_CHANNELS;
         expect(w.inputs[a * inputCount + 1]).toBe(1);
         expect(w.inputs[b * inputCount + 6]).toBe(1);

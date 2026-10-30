@@ -24,8 +24,8 @@ function randomWorld(over, seed) {
     for (let i = 0; i < layout.weightCount; i++) {
         world.weights[layout.weightCount + i] = nextGaussian(rng);
     }
-    for (let i = 0; i < layout.inputCount; i++) {
-        world.inputs[layout.inputCount + i] = nextGaussian(rng);
+    for (let i = 0; i < layout.rawInputCount; i++) {
+        world.inputs[layout.rawInputCount + i] = nextGaussian(rng);
     }
     applyGenes(world, 1);
     return world;

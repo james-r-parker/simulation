@@ -36,12 +36,12 @@ describe('audit: call, smoke and idle-signal metrics', () => {
             if (t <= 30) {
                 seeThreat(r.world, c, 2);
             } else {
-                r.world.inputs.fill(0, c * r.world.layout.inputCount, (c + 1) * r.world.layout.inputCount);
+                r.world.inputs.fill(0, c * r.world.layout.rawInputCount, (c + 1) * r.world.layout.rawInputCount);
             }
             if (t <= 10) {
                 closeOn(r.world, h, CH.PREY, t);
             } else {
-                r.world.inputs.fill(0, h * r.world.layout.inputCount, (h + 1) * r.world.layout.inputCount);
+                r.world.inputs.fill(0, h * r.world.layout.rawInputCount, (h + 1) * r.world.layout.rawInputCount);
             }
             r.world.bittenTimer[c] = timers.get(t) ?? 30;
             for (const at of [5, 60, 61, 95]) {

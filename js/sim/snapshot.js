@@ -185,7 +185,7 @@ function writeClouds(world, f32, start) {
 function writeRays(world, f32, start) {
     const { alive, inputs } = world;
     const { rayCount } = world.config;
-    const stride = world.layout.inputCount;
+    const stride = world.layout.rawInputCount;
     let w = start;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {

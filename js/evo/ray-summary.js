@@ -61,7 +61,7 @@ function rayKind(inputs, base, onArc) {
 export function summariseRays(world, slot, out, arc) {
     const { inputs } = world;
     const rayCount = world.config.rayCount;
-    const origin = slot * world.layout.inputCount;
+    const origin = slot * world.layout.rawInputCount;
     best.fill(-1);
     let smoke = 0;
     for (let k = 0; k < rayCount; k++) {

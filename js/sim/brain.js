@@ -2,9 +2,10 @@
 
 import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
+import { poolRays } from './ray-pool.js';
 
 /**
- * Adds each nonzero input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
+ * Adds each nonzero pooled input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
  * each unit still takes its terms one after another in the same order, so the sums are bit-identical to adding the
  * rows one at a time.
  * @param {Record<string, any>} world the world
@@ -12,14 +13,14 @@ import { hebbianStep } from './hebbian.js';
  * @returns {void}
  */
 function addInputs(world, slot) {
-    const { weights, inputs, brainScratch: acc, layout } = world;
+    const { weights, pooled, brainScratch: acc, layout } = world;
     const H = layout.hidden;
     const inBase = slot * layout.inputCount;
     const wIn = slot * layout.weightCount + layout.wIn;
     let pending = -1;
     let pendingX = 0;
     for (let i = 0; i < layout.inputCount; i++) {
-        const x = inputs[inBase + i];
+        const x = pooled[inBase + i];
         if (x === 0) {
             continue;
         }
@@ -143,6 +144,7 @@ export function forwardAll(world) {
     const learn = world.config.hebbianRate > 0;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
+            poolRays(world, slot);
             hiddenStep(world, slot);
             outputStep(world, slot);
             if (learn) {

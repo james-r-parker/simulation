@@ -15,7 +15,7 @@ const VISION = 300;
  * @returns {number[]} the `RAY_CHANNELS` values of a ray
  */
 function rayValues(w, slot, ray) {
-    const base = slot * w.layout.inputCount + ray * RAY_CHANNELS;
+    const base = slot * w.layout.rawInputCount + ray * RAY_CHANNELS;
     return Array.from(w.inputs.subarray(base, base + RAY_CHANNELS));
 }
 

@@ -78,7 +78,7 @@ describe('an ambush bite is deliberate', () => {
      * @returns {void}
      */
     function watch(w, { slot, count, step, speed = 0 }) {
-        const base = slot * w.layout.inputCount;
+        const base = slot * w.layout.rawInputCount;
         for (let i = 0; i < count; i++) {
             w.tick += 1;
             w.inputs.fill(0, base, base + w.config.rayCount * RAY_CHANNELS);

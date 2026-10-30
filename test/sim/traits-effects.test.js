@@ -81,7 +81,7 @@ describe('vision trait', () => {
         setGenes(w, me, { VISION: 40 });
         addFood(w, 500 + 1.25 * range, 500, 5);
         castRays(w, rebuild(w), me);
-        expect(w.inputs[me * w.layout.inputCount + 1]).toBe(1);
+        expect(w.inputs[me * w.layout.rawInputCount + 1]).toBe(1);
     });
 
     it('stops at the ray length: food beyond 1.3 x the range is missed even with the largest trait', () => {
@@ -90,7 +90,7 @@ describe('vision trait', () => {
         setGenes(w, me, { VISION: 40 });
         addFood(w, 500 + 1.4 * w.visionBySpec[w.spec[me]], 500, 5);
         castRays(w, rebuild(w), me);
-        const base = me * w.layout.inputCount;
+        const base = me * w.layout.rawInputCount;
         expect(w.inputs.subarray(base, base + RAY_CHANNELS).every((/** @type {number} */ v) => v === 0)).toBe(true);
     });
 

@@ -109,7 +109,7 @@ describe('crowdingMean', () => {
      * @param {number} channel
      */
     function setRay(world, slot, ray, proximity, channel) {
-        const base = slot * world.layout.inputCount + ray * RAY_CHANNELS;
+        const base = slot * world.layout.rawInputCount + ray * RAY_CHANNELS;
         world.inputs[base] = proximity;
         // Agent class channels carry the hit's proximity; food, wall, obstacle and smoke carry 1.
         world.inputs[base + channel] = channel >= 2 && channel <= 5 ? proximity : 1;

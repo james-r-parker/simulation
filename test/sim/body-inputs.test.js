@@ -12,7 +12,7 @@ import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/s
  */
 function body(w, slot) {
     writeBodyInputs(w, slot);
-    const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
+    const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
     return Array.from(w.inputs.subarray(base, base + 19));
 }
 
@@ -143,7 +143,7 @@ describe('writeBodyInputs', () => {
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
         writeBodyInputs(w, slot);
-        const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
+        const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
         expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 35))).toEqual([0, 0.5, -0.25]);
     });
 
@@ -152,12 +152,12 @@ describe('writeBodyInputs', () => {
         const next = addAgent(w, 700, 700, 25);
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
-        const end = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
-        expect(end + 16).toBe((slot + 1) * w.layout.inputCount);
+        const end = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        expect(end + 16).toBe((slot + 1) * w.layout.rawInputCount);
         expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(
             w.inputs
-                .subarray(next * w.layout.inputCount, (next + 1) * w.layout.inputCount)
+                .subarray(next * w.layout.rawInputCount, (next + 1) * w.layout.rawInputCount)
                 .every((/** @type {number} */ v) => v === 0),
         ).toBe(true);
     });
@@ -175,7 +175,7 @@ describe('writeBodyInputs', () => {
 describe('sex input', () => {
     it('is the agent sex: 0 for a female and 1 for a male', () => {
         const { w, slot } = ready();
-        const at = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.SEX;
+        const at = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.SEX;
         writeBodyInputs(w, slot);
         expect(w.inputs[at]).toBe(0);
         w.sex[slot] = 1;

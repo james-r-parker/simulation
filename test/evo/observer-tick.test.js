@@ -14,7 +14,7 @@ import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
  * @returns {void}
  */
 function setRay(world, slot, ray, proximity, food = 1) {
-    const base = slot * world.layout.inputCount + ray * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + ray * RAY_CHANNELS;
     world.inputs[base] = proximity;
     world.inputs[base + 1] = food;
 }

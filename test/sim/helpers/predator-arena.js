@@ -50,7 +50,7 @@ function nearestRayAngle(world, slot, channel) {
     let best = -1;
     let bestProximity = 0;
     for (let k = 0; k < rayCount; k++) {
-        const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+        const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
         if (world.inputs[base + channel] > 0 && world.inputs[base] > bestProximity) {
             bestProximity = world.inputs[base];
             best = k;
@@ -175,6 +175,6 @@ export function runArena(world, { ticks, prey, after = () => false }) {
  * @returns {number[]} the nine values of each of the agent's rays, flattened
  */
 export function rayValues(world, slot) {
-    const start = slot * world.layout.inputCount;
+    const start = slot * world.layout.rawInputCount;
     return Array.from(world.inputs.subarray(start, start + world.config.rayCount * RAY_CHANNELS));
 }

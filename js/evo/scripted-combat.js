@@ -17,7 +17,7 @@ const BODY_ATTACK_RIGHT = 22;
  * @returns {number} the input's value
  */
 export function bodyInput(world, slot, offset) {
-    return world.inputs[slot * world.layout.inputCount + world.config.rayCount * RAY_CHANNELS + offset];
+    return world.inputs[slot * world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS + offset];
 }
 
 /**

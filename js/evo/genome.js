@@ -1,7 +1,7 @@
 // The genome: shape check against a brain layout, and the JSON form with base64 float32 weights.
 
 import { decodeWeights, encodeWeights } from './base64.js';
-import { TRAIT_GENES } from '../sim/brain-layout.js';
+import { brainLayout } from '../sim/brain-layout.js';
 
 /** The genome format version. */
 export const GENOME_VERSION = 2;
@@ -95,14 +95,13 @@ export function encodeGenome(genome) {
  */
 export function decodeGenome(obj) {
     const { inputCount, brainHidden, outputCount } = obj.layout;
-    const count =
-        inputCount * brainHidden +
-        brainHidden * brainHidden +
-        brainHidden +
-        brainHidden * outputCount +
-        outputCount +
-        TRAIT_GENES +
-        brainHidden;
+    const layout = brainLayout({ rayCount: 0, brainHidden });
+    if (inputCount !== layout.inputCount || outputCount !== layout.outputCount) {
+        throw new Error(
+            `genome.layout: expected ${layout.inputCount} inputs and ${layout.outputCount} outputs, got ${inputCount} and ${outputCount}`,
+        );
+    }
+    const count = layout.weightCount;
     return {
         version: obj.version,
         id: obj.id,

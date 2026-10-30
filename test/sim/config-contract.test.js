@@ -174,15 +174,15 @@ describe('validateConfig error text', () => {
     });
 
     it('states the weight storage limit and the product', () => {
-        const wc = 128 * (64 * 9 + 35 + 128 + 1 + 11) + 11 + 4 + 128;
+        const wc = 128 * (24 + 35 + 128 + 1 + 11) + 11 + 4 + 128;
         expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 4096, rayCount: 64, brainHidden: 128 }))).toBe(
             `config.maxAgents is 4096; expected at most 16777216 / weightCount (maxAgents x weightCount is ${4096 * wc})`,
         );
     });
 
     it('accepts weight storage just under the limit', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 174, rayCount: 64, brainHidden: 128 })).not.toThrow();
-        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 175, rayCount: 64, brainHidden: 128 })).toThrow(
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 654, rayCount: 64, brainHidden: 128 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 655, rayCount: 64, brainHidden: 128 })).toThrow(
             /maxAgents/,
         );
     });

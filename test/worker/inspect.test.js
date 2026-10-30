@@ -81,7 +81,7 @@ describe('writeInspect', () => {
         const world = smallWorld({ maxEnergy: 1000 });
         spawnAgent(world, testPolicy, BORN_CAUSE.INITIAL);
         const slot = 0;
-        world.inputs.fill(0.25, 0, world.layout.inputCount);
+        world.inputs.fill(0.25, 0, world.layout.rawInputCount);
         world.hidden.fill(0.5, 0, world.layout.hidden);
         world.outputs.fill(0.75, 0, 8);
         world.ageTicks[slot] = 33;

@@ -76,7 +76,8 @@ describe('archive codec', () => {
 
     it('rejects a mismatched layout field, rulesHash or version by name', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
-        expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }))).toThrow(/layout\.inputCount/);
+        const oldLayout = { ...json.layout, inputCount: 179 };
+        expect(() => decodeArchive({ ...json, layout: oldLayout }, config)).toThrow(/layout\.inputCount/);
         expect(() => decodeArchive(json, createConfig({ rayCount: 2, brainHidden: 5 }))).toThrow(/layout\.brainHidden/);
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config)).toThrow(/rulesHash/);
         expect(() => decodeArchive({ ...json, version: ARCHIVE_VERSION - 1 }, config)).toThrow(/archive\.version/);
@@ -102,12 +103,13 @@ describe('archive codec', () => {
         const records = [];
         const log = createSimLog((r) => records.push(r), { level: 'debug' });
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config, log)).toThrow(/rulesHash/);
-        expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }), log)).toThrow(/inputCount/);
+        const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
+        expect(() => decodeArchive(old, config, log)).toThrow(/inputCount/);
         expect(records.map((r) => [r.event, r.level, r.field, r.actual])).toEqual([
             ['GenomeRejected', 'error', 'archive.rulesHash', 'x'],
-            ['GenomeRejected', 'error', 'archive.layout.inputCount', json.layout.inputCount],
+            ['GenomeRejected', 'error', 'archive.layout.inputCount', 179],
         ]);
-        expect(records[1].expected).toBe(brainLayout(createConfig({ rayCount: 3, brainHidden: 4 })).inputCount);
+        expect(records[1].expected).toBe(brainLayout(config).inputCount);
     });
 
     it('rejects an unknown specialisation', () => {

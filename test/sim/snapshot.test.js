@@ -194,7 +194,7 @@ describe('writeSnapshot rays', () => {
      */
     function twoAgents() {
         const world = smallWorld();
-        const stride = world.layout.inputCount;
+        const stride = world.layout.rawInputCount;
         for (const slot of [1, 3]) {
             world.alive[slot] = 1;
             for (let k = 0; k < world.config.rayCount; k++) {

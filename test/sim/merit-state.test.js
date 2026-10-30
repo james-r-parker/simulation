@@ -49,7 +49,7 @@ function adult(w) {
  * @returns {void}
  */
 function setRay(w, slot, k, channel) {
-    const base = slot * w.layout.inputCount;
+    const base = slot * w.layout.rawInputCount;
     w.inputs.fill(0, base, base + w.config.rayCount * RAY_CHANNELS);
     if (channel > 0) {
         w.inputs[base + k * RAY_CHANNELS] = 0.5;
@@ -220,7 +220,7 @@ describe('the prey tracker', () => {
     it('ignores a ray that shows a threat as well as prey', () => {
         const w = arena();
         const slot = adult(w);
-        const base = slot * w.layout.inputCount;
+        const base = slot * w.layout.rawInputCount;
         for (let i = 0; i < 8; i++) {
             w.tick += 1;
             w.inputs[base] = 0.5;

@@ -30,7 +30,7 @@ function setup(name) {
  * @returns {void}
  */
 function hit(world, slot, k, channel) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
     world.inputs[base + channel] = channel >= CH.threat ? 0.5 : 1;
 }
@@ -43,7 +43,7 @@ function hit(world, slot, k, channel) {
  * @returns {void}
  */
 function body(world, slot, offset, value) {
-    world.inputs[slot * world.layout.inputCount + RAYS * RAY_CHANNELS + offset] = value;
+    world.inputs[slot * world.layout.rawInputCount + RAYS * RAY_CHANNELS + offset] = value;
 }
 
 /**

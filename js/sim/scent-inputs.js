@@ -1,6 +1,6 @@
 // Writes an agent's scent and call body inputs (offsets 19 to 31): antenna samples, hunt scent and heard calls.
 
-import { RAY_CHANNELS } from './brain-layout.js';
+import { BODY_INPUT, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { samplePheromone } from './pheromones.js';
 import { HEARD_STRIDE } from './world.js';
@@ -8,7 +8,7 @@ import { HEARD_STRIDE } from './world.js';
 /** @typedef {import('./world.js').World} World */
 
 /** The first scent input within the body inputs; offsets 0 to 18 belong to `writeBodyInputs`. */
-const FIRST_SCENT_INPUT = 19;
+const FIRST_SCENT_INPUT = BODY_INPUT.SCENT;
 
 /** Offset from the alarm half of a `heard` row to the hunt half. */
 const ALARM_TO_HUNT = 3;
@@ -24,7 +24,7 @@ const ALARM_TO_HUNT = 3;
  */
 export function writeScentInputs(world, slot, cH = detCos(world.angle[slot]), sH = detSin(world.angle[slot])) {
     const { danger, attack, hunt, antennaCos, antennaSin, config, x, y } = world;
-    const o = slot * world.layout.inputCount + config.rayCount * RAY_CHANNELS + FIRST_SCENT_INPUT;
+    const o = slot * world.layout.rawInputCount + config.rayCount * RAY_CHANNELS + FIRST_SCENT_INPUT;
     const out = world.inputs;
     const reach = config.antennaReach;
     const cA = antennaCos[0];

@@ -213,7 +213,7 @@ const best = new Float64Array(4);
  */
 function scanRays(world, slot) {
     const { inputs, meritArc } = world;
-    const origin = slot * world.layout.inputCount;
+    const origin = slot * world.layout.rawInputCount;
     best.fill(-1);
     for (let k = 0; k < world.config.rayCount; k++) {
         const base = origin + k * RAY_CHANNELS;

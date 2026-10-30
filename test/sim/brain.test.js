@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
 import { detTanh } from '../../js/sim/det-math.js';
+import { poolRays } from '../../js/sim/ray-pool.js';
 import { createRng, nextGaussian, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -14,13 +15,13 @@ function randomise(world, seed, slots) {
     const rng = createRng(seed);
     for (const slot of slots) {
         world.alive[slot] = 1;
-        const { weightCount, inputCount, hidden, outputCount } = world.layout;
+        const { weightCount, rawInputCount, hidden, outputCount } = world.layout;
         for (let i = 0; i < weightCount; i++) {
             world.weights[slot * weightCount + i] = nextGaussian(rng);
         }
-        for (let i = 0; i < inputCount; i++) {
+        for (let i = 0; i < rawInputCount; i++) {
             const r = nextFloat(rng);
-            world.inputs[slot * inputCount + i] = r < 0.5 ? 0 : r < 0.6 ? -0 : nextGaussian(rng);
+            world.inputs[slot * rawInputCount + i] = r < 0.5 ? 0 : r < 0.6 ? -0 : nextGaussian(rng);
         }
         for (let j = 0; j < hidden; j++) {
             world.hidden[slot * hidden + j] = Math.tanh(nextGaussian(rng));
@@ -38,11 +39,12 @@ function randomise(world, seed, slots) {
 function reference(world, slot) {
     const { weightCount, inputCount, hidden: H, outputCount: OUT, wIn, wRec, bHidden, wOut, bOut } = world.layout;
     const w = (/** @type {number} */ i) => world.weights[slot * weightCount + i];
+    poolRays(world, slot);
     const next = [];
     for (let j = 0; j < H; j++) {
         let sum = w(bHidden + j);
         for (let i = 0; i < inputCount; i++) {
-            const x = world.inputs[slot * inputCount + i];
+            const x = world.pooled[slot * inputCount + i];
             if (x !== 0) {
                 sum += w(wIn + i * H + j) * x;
             }

@@ -29,7 +29,7 @@ function setup(name, seed = 1) {
  * @returns {void}
  */
 function hit(world, slot, k, channel) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
     world.inputs[base + channel] = 1;
 }

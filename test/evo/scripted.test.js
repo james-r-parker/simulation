@@ -33,7 +33,7 @@ function setup(name, seed = 1) {
  * @param {number} [proximity]
  */
 function hit(world, slot, k, channel, proximity = 0.5) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = proximity;
     world.inputs[base + channel] = channel >= CH.threat && channel <= CH.kin ? proximity : 1;
 }

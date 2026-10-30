@@ -20,8 +20,8 @@ function randomWorld(over, seed) {
     for (let i = 0; i < layout.weightCount; i++) {
         world.weights[layout.weightCount + i] = nextGaussian(rng);
     }
-    for (let i = 0; i < layout.inputCount; i++) {
-        world.inputs[layout.inputCount + i] = nextGaussian(rng);
+    for (let i = 0; i < layout.rawInputCount; i++) {
+        world.inputs[layout.rawInputCount + i] = nextGaussian(rng);
     }
     for (let j = 0; j < layout.hidden; j++) {
         world.hidden[layout.hidden + j] = Math.tanh(nextGaussian(rng));
@@ -73,7 +73,7 @@ describe('forwardAll with leaky hidden units', () => {
         const world = randomWorld({}, 14);
         forwardAll(world);
         writeBodyInputs(world, 1);
-        const base = world.layout.inputCount + world.config.rayCount * RAY_CHANNELS;
+        const base = world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS;
         expect(world.inputs[base + BODY_INPUT.MEMORY_A]).toBe(world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A]);
         expect(world.inputs[base + BODY_INPUT.MEMORY_B]).toBe(world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B]);
     });
