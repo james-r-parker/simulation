@@ -32,6 +32,17 @@ describe('aurora-layer', () => {
         layer.dispose();
     });
 
+    it('upsamples the ribbons with the tint, the gain and the dither instead of discarding every pixel', () => {
+        const layer = createAuroraLayer();
+        const { fragmentShader } = layer.object.material;
+        expect(fragmentShader).toContain('texture2D(uRibbons');
+        expect(fragmentShader).toContain('uTint');
+        expect(fragmentShader).toContain('uGain');
+        expect(fragmentShader).toContain('interleavedNoise(');
+        expect(fragmentShader).not.toMatch(/void main\(\) \{\s*discard;/);
+        layer.dispose();
+    });
+
     it('handles quality tiers via setLook', () => {
         const layer = createAuroraLayer();
 

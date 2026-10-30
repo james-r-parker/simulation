@@ -84,15 +84,13 @@ export function frostTexture(seed, out = new Uint8Array(FROST_WIDTH * FROST_HEIG
 }
 
 const FROST_VERTEX = /* glsl */ `
-attribute vec2 position;
 attribute float edgeDist;
-uniform vec2 uWorld;
 varying vec2 vWorld;
 varying float vEdgeDist;
 void main() {
-    vWorld = position;
+    vWorld = position.xy;
     vEdgeDist = edgeDist;
-    gl_Position = projectionMatrix * viewMatrix * vec4(position, 0.0, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * vec4(position.xy, 0.0, 1.0);
 }
 `;
 
@@ -152,48 +150,33 @@ void main() {
  * @returns {any} geometry
  */
 function createFrostGeometry(w, h, m) {
-    const positions = new Float32Array([
+    // Two bands of two triangles: the south band from y 0 to m and the north band from y h - m to h. `edgeDist` is the
+    // distance from the world edge, 0 at the edge and m at the inner side. The position is three floats because
+    // `ShaderMaterial` declares `attribute vec3 position` itself.
+    const quad = (/** @type {number} */ y0, /** @type {number} */ y1) => [
         0,
-        0,
-        w,
-        0,
-        w,
-        m,
-        0,
+        y0,
         0,
         w,
-        m,
+        y0,
         0,
-        m, // South
-        0,
-        h - m,
         w,
-        h - m,
+        y1,
+        0,
+        0,
+        y0,
+        0,
         w,
-        h,
-        0,
-        h - m,
-        w,
-        h,
-        0,
-        h, // North
-    ]);
-    const edgeDists = new Float32Array([
+        y1,
         0,
         0,
-        m,
+        y1,
         0,
-        m,
-        m, // South
-        m,
-        m,
-        0,
-        m,
-        0,
-        0, // North
-    ]);
+    ];
+    const positions = new Float32Array([...quad(0, m), ...quad(h - m, h)]);
+    const edgeDists = new Float32Array([0, 0, m, 0, m, m, m, m, 0, m, 0, 0]);
     const geom = new BufferGeometry();
-    geom.setAttribute('position', new Float32BufferAttribute(positions, 2));
+    geom.setAttribute('position', new Float32BufferAttribute(positions, 3));
     geom.setAttribute('edgeDist', new Float32BufferAttribute(edgeDists, 1));
     return geom;
 }
@@ -228,7 +211,9 @@ function createFrostMesh(info, seed, uniforms) {
         depthTest: false,
         depthWrite: false,
     });
-    return { mesh: new Mesh(geom, mat), tex, geom, mat };
+    const mesh = new Mesh(geom, mat);
+    mesh.frustumCulled = false;
+    return { mesh, tex, geom, mat };
 }
 
 /**
@@ -309,7 +294,6 @@ export function createTerrainLayer({ info, seed = 0 }) {
         uFrostTex: { value: null },
         uFrostColor: { value: PALETTE.frost },
         uColdMargin: { value: info.terrain?.coldMarginWidth ?? 0 },
-        uWorld: { value: [info.worldWidth, info.worldHeight] },
         uTime: { value: 0 },
         uTier: { value: 0 },
     };

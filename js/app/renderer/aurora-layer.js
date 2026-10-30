@@ -12,6 +12,7 @@ import {
     UnsignedByteType,
     WebGLRenderTarget,
 } from 'three';
+import { RIBBON_GLSL } from './aurora-ribbon.js';
 import { auroraGain, auroraPhase, auroraTint } from './aurora-tint.js';
 import { FINISH_NOISE_GLSL } from './finish-glsl.js';
 import { NOISE_GLSL } from './noise-glsl.js';
@@ -28,18 +29,10 @@ const RIBBON_FRAGMENT = /* glsl */ `
 uniform vec3 uPhases;
 varying vec2 vUv;
 ${NOISE_GLSL}
+${RIBBON_GLSL}
 void main() {
-    float intensity = 0.0;
-    for (int i = 0; i < 3; i++) {
-        float p = uPhases[i];
-        float idx = float(i);
-        float center = 0.2 + 0.3 * idx + 0.18 * (fbm2(vec2(vUv.x * 2.5 + p, idx * 3.7)) - 0.5);
-        float d = abs(vUv.x - center);
-        float band = exp(-d * d * 55.0);
-        float bright = 0.5 + 0.5 * valueNoise(vec2(vUv.y * 3.0 + p * 0.7, idx * 5.1));
-        intensity += band * bright;
-    }
-    gl_FragColor = vec4(intensity, 0.0, 0.0, 1.0);
+    float intensity = ribbonAt(vUv, 0.0, uPhases.x) + ribbonAt(vUv, 1.0, uPhases.y) + ribbonAt(vUv, 2.0, uPhases.z);
+    gl_FragColor = vec4(min(intensity, 1.0), 0.0, 0.0, 1.0);
 }
 `;
 
@@ -51,6 +44,9 @@ void main() {
 }
 `;
 
+// The tint is the display colour of the ribbon at gain 1, so the largest value written is the ceiling. The dither is one
+// 8-bit sRGB step at the value, so the banding that the encode would make breaks up into noise. Where the ribbons are
+// absent nothing is written and the frame keeps its black clear colour.
 const AURORA_FRAGMENT = /* glsl */ `
 uniform sampler2D uRibbons;
 uniform vec3 uTint;
@@ -58,8 +54,21 @@ uniform float uGain;
 uniform float uFrame;
 varying vec2 vUv;
 ${FINISH_NOISE_GLSL}
+vec3 toSrgb(vec3 c) {
+    return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+}
+vec3 fromSrgb(vec3 e) {
+    return mix(e / 12.92, pow((e + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), e));
+}
 void main() {
-    discard;
+    float ribbon = texture2D(uRibbons, vUv).r;
+    if (ribbon < 0.002) {
+        discard;
+    }
+    vec3 linear = uTint * (ribbon * uGain);
+    vec3 step8 = fromSrgb(toSrgb(linear) + 1.0 / 255.0) - linear;
+    float dither = interleavedNoise(gl_FragCoord.xy, uFrame) - 0.5;
+    gl_FragColor = vec4(max(linear + dither * step8, 0.0), 1.0);
 }
 `;
 
@@ -98,7 +107,6 @@ function createUpsampleMesh(target) {
         vertexShader: AURORA_VERTEX,
         fragmentShader: AURORA_FRAGMENT,
         uniforms: upsampleUniforms,
-        transparent: true,
         depthTest: false,
         depthWrite: false,
     });
