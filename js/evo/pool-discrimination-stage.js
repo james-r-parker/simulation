@@ -47,6 +47,9 @@ const STAGE_CONFIG = Object.freeze({
  * @property {number} angle heading in radians
  * @property {number} spec the specialisation index (0 forager, 1 predator)
  * @property {number} energy starting energy, at least the config's `initialEnergy` (energy is only added)
+ * @property {Float32Array} [weights] the brain row the agent is born with (default: all zero)
+ * @property {[number, number]} [parents] the agent's `parentA` and `parentB` ids (default `[0, 0]`; a shared nonzero
+ *   id makes two agents kin)
  */
 
 /**
@@ -55,7 +58,20 @@ const STAGE_CONFIG = Object.freeze({
  * @property {{x: number, y: number, r: number}[]} rocks rock centres and radii
  * @property {StagedAgent[]} agents agents by slot; slot 0 is the one the scene scores
  * @property {number} seed the world seed
+ * @property {Record<string, any>} [config] config keys applied over the staging knobs (the probes restore the rules a
+ *   genome's behaviour depends on)
  */
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @param {[number, number]} parents the ids to store as `parentA` and `parentB`
+ * @returns {void}
+ */
+function setParents(world, slot, parents) {
+    world.parentA[slot] = parents[0];
+    world.parentB[slot] = parents[1];
+}
 
 /**
  * Builds the world: the agents in slot order, the food items and the rocks.
@@ -63,12 +79,17 @@ const STAGE_CONFIG = Object.freeze({
  * @returns {Record<string, any>} the world
  * @throws {Error} when the world has too few rock slots for the stage
  */
-export function stageWorld({ foods, rocks, agents, seed }) {
+export function stageWorld({ foods, rocks, agents, seed, config = {} }) {
     const policy = {
         initSpec: (/** @type {any} */ _w, /** @type {number} */ slot) => agents[slot].spec,
-        initBrain() {},
+        initBrain(/** @type {any} */ w, /** @type {number} */ slot) {
+            const { weights } = agents[slot];
+            if (weights !== undefined) {
+                w.weights.set(weights, slot * w.layout.weightCount);
+            }
+        },
     };
-    const world = createWorld(createConfig({ ...STAGE_CONFIG, seed }), policy);
+    const world = createWorld(createConfig({ ...STAGE_CONFIG, ...config, seed }), policy);
     if (rocks.length > world.obsX.length) {
         throw new Error(`stageWorld: ${rocks.length} rocks do not fit ${world.obsX.length} rock slots`);
     }
@@ -91,6 +112,7 @@ export function stageWorld({ foods, rocks, agents, seed }) {
         world.x[slot] = agent.x;
         world.y[slot] = agent.y;
         world.angle[slot] = agent.angle;
+        setParents(world, slot, agent.parents ?? [0, 0]);
     }
     return { world, policy };
 }

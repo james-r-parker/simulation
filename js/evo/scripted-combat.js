@@ -85,7 +85,7 @@ function hunter({ world }) {
  * @param {number} rayCount rays per agent
  * @returns {number} the turn output
  */
-function turnAway(k, rayCount) {
+export function turnAway(k, rayCount) {
     if (k === 0) {
         return 1;
     }
