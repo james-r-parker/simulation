@@ -110,6 +110,27 @@ export default [
             ],
         },
     },
+    // The probes and the discrimination scenes zero and read inputs through `inputOffsets(config)`, never by a literal
+    // position (docs/designs/brain-capacity-and-memory.md, T10b): a numeric literal other than 0 and 1 as an array index
+    // or as a `fill` or `set` argument is an error. The sim core's `**` bans repeat here, since a later block replaces them.
+    {
+        files: ['js/evo/memory-probe*.js', 'js/evo/pool-discrimination*.js'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                { selector: "BinaryExpression[operator='**']", message: POW_MSG },
+                { selector: "AssignmentExpression[operator='**=']", message: POW_MSG },
+                {
+                    selector: 'MemberExpression[computed=true] > Literal[value>1]',
+                    message: 'Read an input position from inputOffsets(config), not a numeric literal.',
+                },
+                {
+                    selector: 'CallExpression[callee.property.name=/^(fill|set)$/] > Literal[value>1]',
+                    message: 'Pass an input position from inputOffsets(config) to fill or set, not a numeric literal.',
+                },
+            ],
+        },
+    },
     // The worker (docs/designs/worker-and-renderer.md): worker globals, but no DOM, no wall clock and no timers or ports
     // of its own - `postMessage`, `setTimeout` and the clock arrive as injected functions that `sim-worker.js` binds.
     {
