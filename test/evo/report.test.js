@@ -199,3 +199,27 @@ describe('report traces', () => {
         expect(buildReport(input)).not.toHaveProperty('traces');
     });
 });
+
+describe('buildReport inputActivity', () => {
+    const input = { policy: 'p', fitnessName: 'v6', config, ticks: 1, seeds: [1, 2], sha: 's', perSeed: [{}, {}] };
+
+    it('stores one table per seed, null for a seed with no sample, and validates it', () => {
+        const report = buildReport({ ...input, inputActivity: [[0, 0.5, 1], null] });
+        expect(report.inputActivity).toEqual([[0, 0.5, 1], null]);
+        expect(() => validateReport(report)).not.toThrow();
+        expect(buildReport(input)).not.toHaveProperty('inputActivity');
+    });
+
+    it('rejects a table of the wrong length or with a share outside 0 to 1', () => {
+        const report = buildReport({ ...input, inputActivity: [[0.5], null] });
+        expect(() => validateReport({ ...report, inputActivity: [[0.5]] })).toThrow(/inputActivity/);
+        expect(() => validateReport({ ...report, inputActivity: [[1.5], null] })).toThrow(/inputActivity\[0\]/);
+        expect(() => validateReport({ ...report, inputActivity: [['x'], null] })).toThrow(/inputActivity\[0\]/);
+    });
+
+    it('accepts the eighteen brain metrics as ordinary metrics', () => {
+        const names = ['eval.leak_rate_mean', 'eval.sigma_mean', 'eval.hebb_drift'];
+        const metrics = [{}, {}].map(() => Object.fromEntries(names.map((n) => [n, { value: 0.5 }])));
+        expect(() => validateReport(buildReport({ ...input, perSeed: metrics }))).not.toThrow();
+    });
+});
