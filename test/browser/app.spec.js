@@ -106,6 +106,18 @@ test('draws frames: the animation loop runs and the canvas is not blank', async 
     expect(shot.length, 'a drawn world compresses to more than a flat black PNG').toBeGreaterThan(8000);
 });
 
+// Quality 0 draws every Phase 6 look item (aurora, terrain, threads, finish...) so a shader that fails to link is a
+// console error here; the other flows run at quality 2 where most of them are off.
+for (const look of ['all', 'none']) {
+    test(`loads at quality 0 with ?look=${look} and logs no error`, async ({ page }) => {
+        await page.goto(`${appUrl()}?seed=3&agents=100&quality=0&scale=0.25&look=${look}`);
+        await worldRunning(page);
+        await page.waitForTimeout(2000);
+        const shot = await page.locator('#canvas-container canvas').screenshot();
+        expect(shot.length).toBeGreaterThan(8000);
+    });
+}
+
 test('pause, step and speed keys drive the worker', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
