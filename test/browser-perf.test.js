@@ -65,6 +65,12 @@ describe('parseArgs', () => {
         });
     });
 
+    it('rejects an unknown flag with or without a value', () => {
+        expect(() => parseArgs(['--nope=1'])).toThrow(/Unknown argument "--nope=1"/);
+        expect(() => parseArgs(['--nope'])).toThrow(/Unknown argument "--nope"/);
+        expect(() => parseArgs(['--look', '--headed'])).toThrow(/requires a value/);
+    });
+
     it('supports space-separated flag values for look', () => {
         expect(parseArgs(['--look', 'all']).look).toBe('all');
         expect(() => parseArgs(['--look'])).toThrow(/requires a value/);

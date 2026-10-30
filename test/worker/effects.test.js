@@ -219,6 +219,27 @@ describe('collectEffects', () => {
         expect(drain(log).count).toBe(0);
     });
 
+    it('places a single-tick MATED at the cached mother when she died the same tick, else at the child', () => {
+        for (const mode of ['cached', 'child']) {
+            const world = smallWorld({ pregnancyTicks: 1 });
+            world.tick = 4;
+            place(world, 1, { x: 50, y: 60, genomeId: 10, lineageId: 3, spec: 2 });
+            place(world, 2, { x: 52, y: 62, genomeId: 20, lineageId: 3, spec: 2 });
+            const log = createEffectLog(world.config.maxAgents);
+            primeEffects(log, world);
+            event(world, EVENT_TYPE.AGENT_BORN, [2, 20, 3, 2, 10, 99, BORN_CAUSE.MATE]);
+            const slotOf = new Map(mode === 'cached' ? [[10, 1]] : []);
+            if (mode === 'cached') {
+                world.alive[1] = 0;
+            }
+            collectEffects(log, world, slotOf);
+            const { records, floats } = drain(log);
+            const mated = records.findIndex((r) => r[0] === EFFECT_KIND.MATED);
+            expect(mated).toBeGreaterThanOrEqual(0);
+            expect(floats[mated].slice(2, 4)).toEqual(mode === 'cached' ? [50, 60] : [52, 62]);
+        }
+    });
+
     it('yields MATED from AGENT_BORN when pregnancyTicks is 1', () => {
         const world = smallWorld({ pregnancyTicks: 1 });
         world.tick = 4;
