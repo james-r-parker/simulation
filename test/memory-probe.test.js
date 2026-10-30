@@ -112,7 +112,7 @@ describe('loadChampions', () => {
                 event: 'probe.layout',
                 file: 'c0.json',
                 expected: { layout: 'pooled-v2', brainHidden: 32, inputCount: 81 },
-                actual: { layout: null, brainHidden: 48, inputCount: 81 },
+                actual: { layout: 'pooled-v2', brainHidden: 48, inputCount: 81 },
             },
         ]);
     });
