@@ -36,4 +36,10 @@ describe('world layer shaders', () => {
         expect(shaders.FOOD_FRAGMENT).toContain('uMeatColor');
         expect(shaders.FOOD_FRAGMENT).toContain('mix(uColor, uMeatColor, vMeat)');
     });
+
+    it('shades the rock body from world position only, so touching rocks leave no arc inside the ridge', () => {
+        expect(shaders.OBSTACLE_FRAGMENT).toContain('fbm2(vWorld');
+        expect(shaders.OBSTACLE_FRAGMENT).not.toMatch(/radialLit|d \/ max\(bodyRadius[^;]*\) *\*/);
+        expect(shaders.OBSTACLE_FRAGMENT).not.toContain('radialLit');
+    });
 });

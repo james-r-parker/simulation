@@ -141,12 +141,13 @@ void main() {
             discard;
         }
         float normD = clamp(d / max(bodyRadius, 0.001), 0.0, 1.0);
-        float radialLit = 0.75 + 0.25 * normD;
-        float noiseTerm = 0.0;
+        // The shading reads world position only, with no per-rock radial term: a radial gradient would leave an arc
+        // inside the ridge wherever one rock's body covers its neighbour's, and touching rocks must read as one mass.
+        float shade = 1.0;
         if (uTier < 0.5) {
-            noiseTerm = 0.15 * (fbm2(vWorld * 0.04) - 0.5);
+            shade = 0.62 + 0.9 * fbm2(vWorld * 0.03);
         }
-        vec3 col = uBody * clamp(radialLit + noiseTerm, 0.0, 1.0);
+        vec3 col = uBody * shade;
 
         if (uTier < 0.5 && normD > 0.75) {
             vec2 cell = floor(vWorld * 0.4);
