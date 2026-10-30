@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -168,5 +168,103 @@ describe('main --mutation', () => {
             console.error = original;
         }
         expect(errors.join('\n')).toContain(join(root, 'reports/mutation/mutation.json'));
+    });
+});
+
+describe('main end to end', () => {
+    /**
+     * @param {{baseline: object, report?: object}} files what to put in a throwaway repo root
+     * @returns {string} the root
+     */
+    function repo({ baseline, report }) {
+        const root = mkdtempSync(join(tmpdir(), 'ratchet-'));
+        mkdirSync(join(root, 'scripts'));
+        writeFileSync(join(root, 'scripts/quality-baseline.json'), JSON.stringify(baseline));
+        if (report) {
+            mkdirSync(join(root, 'reports/mutation'), { recursive: true });
+            writeFileSync(join(root, 'reports/mutation/mutation.json'), JSON.stringify(report));
+        }
+        return root;
+    }
+
+    /**
+     * @param {() => number} run the call to make
+     * @returns {{status: number, errors: string[]}} its exit status and what it printed to stderr
+     */
+    function quietly(run) {
+        /** @type {string[]} */
+        const errors = [];
+        const original = console.error;
+        console.error = (message) => errors.push(message);
+        try {
+            return { status: run(), errors };
+        } finally {
+            console.error = original;
+        }
+    }
+
+    const summaryAt = (/** @type {string} */ root, /** @type {number} */ covered) => ({
+        total: file(counts(1, 1)),
+        [join(root, 'js/sim/a.js')]: file(counts(covered, 10)),
+    });
+
+    it('--check passes a coverage at its baseline and prints nothing', () => {
+        const root = repo({ baseline: { coverage: { 'js/sim': { lines: 80 } } } });
+        mkdirSync(join(root, 'coverage'));
+        writeFileSync(join(root, 'coverage/coverage-summary.json'), JSON.stringify(summaryAt(root, 8)));
+        expect(quietly(() => main(['--check'], root))).toEqual({ status: 0, errors: [] });
+    });
+
+    it('--check fails a coverage below its baseline, printing the message for each metric', () => {
+        const root = repo({ baseline: { coverage: { 'js/sim': { lines: 90, branches: 90 } } } });
+        mkdirSync(join(root, 'coverage'));
+        writeFileSync(join(root, 'coverage/coverage-summary.json'), JSON.stringify(summaryAt(root, 5)));
+        const { status, errors } = quietly(() => main(['--check'], root));
+        expect(status).toBe(1);
+        expect(errors).toHaveLength(2);
+        expect(errors[0]).toContain('js/sim lines coverage is below its baseline: baseline 90.00%, measured 50.00%');
+    });
+
+    it('--write raises the coverage baseline to the measure and keeps what is higher', () => {
+        const root = repo({ baseline: { coverage: { 'js/sim': { lines: 40, branches: 99 } } } });
+        mkdirSync(join(root, 'coverage'));
+        writeFileSync(join(root, 'coverage/coverage-summary.json'), JSON.stringify(summaryAt(root, 7)));
+        expect(quietly(() => main(['--write'], root)).status).toBe(0);
+        const written = JSON.parse(readFileSync(join(root, 'scripts/quality-baseline.json'), 'utf8'));
+        expect(written.coverage['js/sim']).toMatchObject({ lines: 70, branches: 99 });
+    });
+
+    it('rejects a missing mode with the usage line', () => {
+        const root = repo({ baseline: {} });
+        const { status, errors } = quietly(() => main([], root));
+        expect([status, errors]).toEqual([2, ['usage: quality-ratchet.mjs --check | --write [--mutation]']]);
+    });
+
+    const survivor = { status: 'Survived', mutatorName: 'ConditionalExpression', location: { start: { line: 4 } } };
+    const killed = { ...survivor, status: 'Killed' };
+
+    it('--check --mutation fails a score below its baseline and lists the survivors', () => {
+        const report = { files: { 'js/sim/a.js': { mutants: [killed, survivor] } } };
+        const root = repo({ baseline: { mutation: { 'js/sim': 80 } }, report });
+        const { status, errors } = quietly(() => main(['--check', '--mutation'], root));
+        expect(status).toBe(1);
+        expect(errors).toEqual([
+            'js/sim mutation score is below its baseline: baseline 80.00%, measured 50.00%',
+            'surviving mutant: js/sim/a.js:4 ConditionalExpression',
+        ]);
+    });
+
+    it('--check --mutation passes a score at its baseline', () => {
+        const report = { files: { 'js/sim/a.js': { mutants: [killed, survivor] } } };
+        const root = repo({ baseline: { mutation: { 'js/sim': 50 } }, report });
+        expect(quietly(() => main(['--check', '--mutation'], root))).toEqual({ status: 0, errors: [] });
+    });
+
+    it('--write --mutation raises the mutation baseline to the score', () => {
+        const report = { files: { 'js/sim/a.js': { mutants: [killed, killed, killed, survivor] } } };
+        const root = repo({ baseline: { mutation: { 'js/sim': 10 } }, report });
+        expect(quietly(() => main(['--write', '--mutation'], root)).status).toBe(0);
+        const written = JSON.parse(readFileSync(join(root, 'scripts/quality-baseline.json'), 'utf8'));
+        expect(written.mutation).toEqual({ 'js/sim': 75 });
     });
 });

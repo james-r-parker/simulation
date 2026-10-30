@@ -132,7 +132,29 @@ describe('main', () => {
     });
 });
 
+describe('main on success', () => {
+    it('prints each subject to the console and exits 0', async () => {
+        const out = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const code = await main(['--scenarios', 'food-then-blind', '--trials', '1'], { logDir: join(root, 'logs4') });
+        const printed = out.mock.calls.map((call) => String(call[0])).join('\n');
+        out.mockRestore();
+        expect(code).toBe(0);
+        expect(printed).toContain('reference memoryless');
+        expect(printed).toContain('reference memory-storing');
+    });
+});
+
 describe('runProbe', () => {
+    it('runs without a print function, and still logs the trials', async () => {
+        const args = parseArgs(['--scenarios', 'food-then-blind', '--trials', '1']);
+        const scores = await runProbe(args, { logDir: join(root, 'logs5') });
+        expect(scores).toEqual({});
+        const log = readFileSync(join(root, 'logs5', 'probe-1x1.jsonl'), 'utf8')
+            .trim()
+            .split('\n');
+        expect(log).toHaveLength(2 * 3);
+    });
+
     it('prints both references per scenario and logs a ProbeTrial for each trial', async () => {
         const lines = /** @type {string[]} */ ([]);
         const args = parseArgs(['--scenarios', 'food-then-blind', '--trials', '2']);
