@@ -61,4 +61,11 @@ describe('pearson', () => {
     it('is NaN for a constant sample', () => {
         expect(pearson([1, 2, 3], [5, 5, 5])).toBeNaN();
     });
+
+    it('is NaN for a sample constant to within rounding, whose mean is not representable', () => {
+        const tenths = new Array(10).fill(0.1);
+        const rising = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        expect(pearson(tenths, rising)).toBeNaN();
+        expect(pearson(rising, new Float32Array(10).fill(0.7))).toBeNaN();
+    });
 });
