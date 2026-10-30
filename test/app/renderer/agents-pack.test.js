@@ -196,17 +196,18 @@ describe('packAgents', () => {
         const m1 = motionOf(2.0, 0.5, 0, 42);
         expect(m1.speed01).toBe(1.0);
         expect(m1.turn01).toBe(0.25);
-        expect(m1.phase).toBeGreaterThanOrEqual(0);
-        expect(m1.phase).toBeLessThan(1);
+        const { phase: phase1, turn01: turn1 } = m1;
+        expect(phase1).toBeGreaterThanOrEqual(0);
+        expect(phase1).toBeLessThan(1);
 
         const mClamped = motionOf(-0.5, -0.5, 0, 42);
         expect(mClamped.speed01).toBe(0);
         expect(mClamped.turn01).toBe(0.25);
 
-        const phase1 = m1.phase;
-        const m2 = motionOf(0.5, 0.1, m1.turn01, 42);
+        const m2 = motionOf(0.5, 0.1, turn1, 42);
         expect(m2.speed01).toBe(0.5);
         expect(m2.phase).toBe(phase1);
+        expect(motionOf(1, 0, 0, 7)).toBe(m2);
 
         let smoothed = 0;
         for (let i = 0; i < 40; i++) {

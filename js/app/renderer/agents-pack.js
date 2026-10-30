@@ -18,6 +18,8 @@ export const MOTION_SMOOTHING = 0.25;
 /** Golden ratio fractional multiplier for stable phase. */
 export const PHI_FRAC = 0.6180339;
 
+const MOTION = { speed01: 0, turn01: 0, phase: 0 };
+
 /**
  * Pure helper for motion attributes calculation and clamping.
  *
@@ -25,14 +27,15 @@ export const PHI_FRAC = 0.6180339;
  * @param {number} turn turn rate in radians per tick
  * @param {number} smoothedPrev previous smoothed turn
  * @param {number} genomeId genome identifier
- * @returns {{speed01: number, turn01: number, phase: number}} normalized motion attributes
+ * @returns {{speed01: number, turn01: number, phase: number}} normalized motion attributes: one shared scratch,
+ *   rewritten by the next call, so the per-agent loop allocates nothing
  */
 export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
-    const speed01 = Math.max(0, Math.min(1, speedFrac));
     const targetTurn = Math.max(0, Math.min(1, Math.abs(turn) / TURN_FULL));
-    const turn01 = smoothedPrev + (targetTurn - smoothedPrev) * MOTION_SMOOTHING;
-    const phase = genomeId * PHI_FRAC - Math.floor(genomeId * PHI_FRAC);
-    return { speed01, turn01, phase };
+    MOTION.speed01 = Math.max(0, Math.min(1, speedFrac));
+    MOTION.turn01 = smoothedPrev + (targetTurn - smoothedPrev) * MOTION_SMOOTHING;
+    MOTION.phase = genomeId * PHI_FRAC - Math.floor(genomeId * PHI_FRAC);
+    return MOTION;
 }
 
 /**
