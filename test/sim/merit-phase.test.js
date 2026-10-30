@@ -5,7 +5,6 @@ import { meritPhase } from '../../js/sim/merit-phase.js';
 import { STEP_PHASES } from '../../js/sim/step.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
-const CHANCE = 0.25;
 const PREDATOR = 1;
 
 /**
@@ -13,7 +12,7 @@ const PREDATOR = 1;
  * @returns {any} a merit-on world without decay
  */
 function world(over = {}) {
-    return lifeWorld({ meritEnabled: true, meritHalfLife: 0, maturityTicks: 100, ...over });
+    return lifeWorld({ meritHalfLife: 0, maturityTicks: 100, ...over });
 }
 
 /**
@@ -30,23 +29,6 @@ function makeDeliberate(w, slot, kind) {
     view.turn[slot] = w.tick;
 }
 
-/**
- * @param {any} w the world
- * @returns {Record<string, number[]>} a copy of every merit array and the tally
- */
-function snapshot(w) {
-    const names = [
-        'merit',
-        'deliberateIntake',
-        'meritStamp',
-        'meritFoodMark',
-        'meritBiteMark',
-        'biteOpen',
-        'meritTally',
-    ];
-    return Object.fromEntries(names.map((n) => [n, Array.from(w[n])]));
-}
-
 describe('meritPhase', () => {
     it('is a named step phase after field and before invariants', () => {
         const names = STEP_PHASES.map((p) => p.name);
@@ -54,24 +36,14 @@ describe('meritPhase', () => {
         expect(names.indexOf('merit')).toBe(names.indexOf('invariants') - 1);
     });
 
-    it('does nothing with meritEnabled off, whatever the agents gained', () => {
-        const w = world({ meritEnabled: false });
-        addBlob(w, { ageTicks: 5, foodEnergy: 40, biteEnergy: 10, bittenTimer: 1 });
-        w.tick = 1000;
-        const before = snapshot(w);
-        meritPhase(w);
-        expect(snapshot(w)).toEqual(before);
-        expect(w.events.count).toBe(0);
-    });
-
-    it('credits a chance meal at meritChanceWeight and a deliberate one in full', () => {
+    it('credits a chance meal nothing and a deliberate one in full', () => {
         const w = world();
         const chance = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
         const deliberate = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
         w.tick = 50;
         makeDeliberate(w, deliberate, 'meritFood');
         meritPhase(w);
-        expect(w.merit[chance]).toBe(CHANCE * 40);
+        expect(w.merit[chance]).toBe(0);
         expect(w.deliberateIntake[chance]).toBe(0);
         expect(w.merit[deliberate]).toBe(40);
         expect(w.deliberateIntake[deliberate]).toBe(40);
@@ -80,14 +52,16 @@ describe('meritPhase', () => {
     it('credits only the energy gained since the last tick', () => {
         const w = world();
         const slot = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
+        w.tick = 50;
+        makeDeliberate(w, slot, 'meritFood');
         meritPhase(w);
         w.tick += 1;
         meritPhase(w);
-        expect(w.merit[slot]).toBe(CHANCE * 40);
+        expect(w.merit[slot]).toBe(40);
         w.foodEnergy[slot] = 60;
         w.tick += 1;
         meritPhase(w);
-        expect(w.merit[slot]).toBe(CHANCE * 60);
+        expect(w.merit[slot]).toBe(60);
     });
 
     it('credits bite energy by the prey tracker', () => {
@@ -97,7 +71,7 @@ describe('meritPhase', () => {
         w.tick = 50;
         makeDeliberate(w, deliberate, 'meritPrey');
         meritPhase(w);
-        expect(w.merit[chance]).toBe(CHANCE * 20);
+        expect(w.merit[chance]).toBe(0);
         expect(w.merit[deliberate]).toBe(20);
         expect(w.deliberateIntake[deliberate]).toBe(20);
     });

@@ -8,13 +8,13 @@ import { splitGatedShare } from '../../js/sim/merit-tally.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
 
 const TICKS = 3000;
-const MERIT = { meritEnabled: true, splitDeliberateMin: 200, meritSplitFloorPop: 20 };
+const MERIT = { splitDeliberateMin: 200 };
 
 /**
  * Runs a seed-1 world with the reference policy, collecting the MeritSummary records.
@@ -23,7 +23,7 @@ const MERIT = { meritEnabled: true, splitDeliberateMin: 200, meritSplitFloorPop:
  */
 function run(over) {
     const policy = cloneWithNoisePolicy();
-    const world = createWorld(createConfig({ ...FEATURES_OFF, seed: 1, checkInvariants: true, ...over }), policy);
+    const world = createWorld(createConfig({ ...SIMPLE_WORLD, seed: 1, checkInvariants: true, ...over }), policy);
     /** @type {number[][]} */
     const summaries = [];
     for (let t = 0; t < TICKS; t++) {
@@ -68,17 +68,6 @@ describe('the merit phase in a real world', () => {
             expect(ready).toBeLessThanOrEqual(world.meritTally[TALLY.READY]);
             expect(world.meritTally[TALLY.MARK + TALLY.READY]).toBe(ready);
             expect(splitGatedShare(world)).toBeGreaterThanOrEqual(0);
-        },
-        TIMEOUT_MS,
-    );
-
-    it(
-        'with merit off logs no summary and leaves the merit arrays at zero',
-        () => {
-            const { world, summaries } = run({});
-            expect(summaries).toEqual([]);
-            expect(world.merit.every((/** @type {number} */ v) => v === 0)).toBe(true);
-            expect(Array.from(world.meritTally)).toEqual([0, 0, 0, 0, 0, 0]);
         },
         TIMEOUT_MS,
     );

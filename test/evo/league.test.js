@@ -3,7 +3,7 @@ import { ELO_START, expectedScore, updateElo } from '../../js/evo/elo.js';
 import { decide, matchPolicy, playMatch, runLeague, validateChampion } from '../../js/evo/league.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { makeChampionFile } from './helpers/champion-file.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
@@ -23,7 +23,10 @@ describe('validateChampion', () => {
     it.each([
         ['version', { version: 2 }],
         ['layout.inputCount', { layout: { inputCount: 1, brainHidden: 32, outputCount: 11 } }],
-        ['layout.brainHidden', { layout: { inputCount: 179, brainHidden: 16, outputCount: 11 } }],
+        [
+            'layout.brainHidden',
+            { layout: { inputCount: brainLayout(config).inputCount, brainHidden: 16, outputCount: 11 } },
+        ],
         ['rulesHash', { rulesHash: 'deadbeefdeadbeef' }],
         ['specialisation', { specialisation: 9 }],
         ['name', { name: '' }],
@@ -121,7 +124,7 @@ describe('playMatch', () => {
 
     it('stops once both sides have died out and decides on who lasted longer', () => {
         const starving = {
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             worldWidth: 2000,
             worldHeight: 1200,
             maxFood: 1,

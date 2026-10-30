@@ -3,7 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, cellOf, cellRange, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 64,
@@ -13,17 +13,16 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 64,
     initialFood: 0,
-    obstacleCount: 2,
     fertileZoneMax: 3,
     worldWidth: 1000,
     worldHeight: 1000,
 };
 const MAX_SIZE = 125;
-const CELL = 128;
+const CELL = 140;
 
 /** @returns {{ config: any, world: any, hash: any }} */
 function setup() {
-    const config = createConfig({ ...FEATURES_OFF, ...SMALL });
+    const config = createConfig({ ...SIMPLE_WORLD, ...SMALL });
     const world = allocateWorld(config);
     return { config, world, hash: createSpatialHash(config) };
 }
@@ -120,7 +119,7 @@ describe('cellRange', () => {
     it('clamps a circle past every edge to the grid', () => {
         const { hash } = setup();
         expect(Array.from(cellRange(hash, 0, 0, 50))).toEqual([0, 0, 0, 0]);
-        const far = cellRange(hash, 1000, 1000, 50);
+        const far = cellRange(hash, 1000, 1000, 5);
         expect(Array.from(far)).toEqual([hash.cols - 1, hash.rows - 1, hash.cols - 1, hash.rows - 1]);
         expect(Array.from(cellRange(hash, -500, 5000, 10))).toEqual([0, hash.rows - 1, 0, hash.rows - 1]);
     });

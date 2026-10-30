@@ -14,7 +14,7 @@ const N = 20000;
 function makeWorld(count, motherValue = 0, fatherValue = 0) {
     return {
         config: {},
-        layout: { weightCount: count },
+        layout: { weightCount: count, traitStart: count, leakStart: count }, // no extra genes
         weights: new Float32Array(count * 2).fill(0, count).fill(motherValue, 0, count),
         fatherWeights: new Float32Array(count * 2).fill(fatherValue),
     };
@@ -116,7 +116,7 @@ describe('baseline-v5', () => {
         expect(Math.min(...low.weights.subarray(2000))).toBe(-3);
     });
 
-    describe('with a biology feature on', () => {
+    describe('with trait and leak genes', () => {
         const layout = { weightCount: 10, traitStart: 5, leakStart: 8 };
         /**
          * @param {Record<string, any>} config
@@ -125,7 +125,7 @@ describe('baseline-v5', () => {
         const on = (config) => ({ ...makeWorld(10, 0.5), layout, config });
 
         it('starts trait genes at 0 and leak genes at LEAK_GENE_START', () => {
-            const world = on({ leakEnabled: true });
+            const world = on({ leakGeneStart: 3 });
             brain.initBrain(world, 1, createRng(1));
             expect(Array.from(world.weights.subarray(15, 18))).toEqual([0, 0, 0]);
             expect(Array.from(world.weights.subarray(18, 20))).toEqual([3, 3]);
@@ -133,7 +133,7 @@ describe('baseline-v5', () => {
         });
 
         it('mutates the genes with TRAIT_SIGMA, clamped to 4, drawing as before', () => {
-            const world = on({ traitsEnabled: true });
+            const world = on({});
             world.weights.fill(4, 5, 10);
             const draws = [];
             const rng = createRng(9);
@@ -147,14 +147,6 @@ describe('baseline-v5', () => {
                 draws.push(Math.min(4, 4 + nextGaussian(ref) * 0.1));
             }
             expect(Array.from(world.weights.subarray(15))).toEqual(draws.map((d) => Math.fround(d)));
-        });
-
-        it('is the legacy row when every feature is off', () => {
-            const world = on({ hebbianRate: 0 });
-            brain.initBrain(world, 1, createRng(1));
-            const plain = makeWorld(10, 0.5);
-            brain.initBrain(plain, 1, createRng(1));
-            expect(world.weights).toEqual(plain.weights);
         });
     });
 });

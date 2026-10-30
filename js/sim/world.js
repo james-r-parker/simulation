@@ -2,12 +2,16 @@
 
 import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
+import { createInputActivity } from './input-activity.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { killSpecs } from './kills.js';
+import { mateRankSpecs } from './mate-rank.js';
+import { proofSpecs } from './proof.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
-import { obstacleSlots } from './terrain.js';
+import { terrainRockCount } from './terrain.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
@@ -81,14 +85,15 @@ function agentSpecs(layout) {
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
         ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
-        ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick']),
+        ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick', 'recoilStamp']),
         ...singles(Uint16Array, ['alarmTimer', 'huntTimer', 'smokeTimer']),
         [Float32Array, 'heard', HEARD_STRIDE],
-        [Float32Array, 'inputs', layout.inputCount],
+        [Float32Array, 'inputs', layout.rawInputCount],
+        [Float32Array, 'pooled', layout.inputCount],
         [Float32Array, 'outputs', layout.outputCount],
         ...singles(Float32Array, ['vision', 'baseSize', 'childShare']),
         [Float32Array, 'leakRate', layout.hidden],
-        [Float32Array, 'fastOut', layout.hidden * layout.outputCount],
+        [Float32Array, 'fastOut', layout.hidden * layout.geneOutputs],
         [Float32Array, 'weights', layout.weightCount],
         [Float32Array, 'fatherWeights', layout.weightCount],
     ];
@@ -103,10 +108,19 @@ function allocAgentArrays(world, layout) {
     const n = world.config.maxAgents;
     world.agentRows = allocRows(
         world,
-        [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow), ...meritSpecs(), ...splitGateSpecs()],
+        [
+            ...agentSpecs(layout),
+            birthRingSpec(world.config.maxBirthsPerWindow),
+            ...meritSpecs(),
+            ...splitGateSpecs(),
+            ...proofSpecs(),
+            ...killSpecs(),
+            ...mateRankSpecs(),
+        ],
         n,
     );
     createMeritViews(world);
+    world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
     // The last hidden row is the scratch row, which is not an agent row.
     world.agentRows.push({ array: world.hidden.subarray(0, n * layout.hidden), stride: layout.hidden });
@@ -118,7 +132,7 @@ function allocAgentArrays(world, layout) {
  */
 function allocFoodAndObstacles(world) {
     const { maxFood } = world.config;
-    const obstacleCount = obstacleSlots(world.config);
+    const obstacleCount = terrainRockCount(world.config);
     world.foodRows = allocRows(
         world,
         [
@@ -129,6 +143,7 @@ function allocFoodAndObstacles(world) {
         ],
         maxFood,
     );
+    // obsVx and obsVy are always 0 now that no obstacle moves; they stay allocated and hashed so the world hash holds
     allocRows(world, singles(Float32Array, ['obsX', 'obsY', 'obsVx', 'obsVy', 'obsRadius']), obstacleCount);
 }
 
@@ -189,6 +204,21 @@ function specTable(config, field) {
 }
 
 /**
+ * @param {number} n `maxAgents`
+ * @returns {Record<string, any>} the per-pass scratch that is not an agent row: the birth cap's slots and keys, the mate
+ *   scores of `refreshMateRanks`, and the kill log (`kills.js`) with its count
+ */
+function agentScratch(n) {
+    return {
+        capSlots: new Int32Array(n),
+        capKeys: new Float64Array(n),
+        mateScores: new Float64Array(n),
+        killLog: new Float64Array(n),
+        killCount: 0,
+    };
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {Float64Array} `splitMinEnergy` times each specialisation's `splitMinEnergyMultiplier`, indexed by `index`
  */
@@ -198,6 +228,37 @@ function splitMinTable(config) {
         table[k] *= config.splitMinEnergy;
     }
     return table;
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Float64Array} `maxEnergy` times each specialisation's `maxEnergyMultiplier`, indexed by `index`: the energy
+ *   store of an agent of that specialisation
+ */
+function maxEnergyTable(config) {
+    const table = specTable(config, 'maxEnergyMultiplier');
+    for (let k = 0; k < table.length; k++) {
+        table[k] *= config.maxEnergy;
+    }
+    return table;
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Record<string, Float64Array>} the per-specialisation lookup tables, each indexed by `index`
+ */
+function specTables(config) {
+    return {
+        visionBySpec: specTable(config, 'visionRange'),
+        biteBySpec: specTable(config, 'biteMultiplier'),
+        huntBySpec: specTable(config, 'canHunt'),
+        splitMinBySpec: splitMinTable(config),
+        maxEnergyBySpec: maxEnergyTable(config),
+        plantFoodBySpec: specTable(config, 'plantFoodValue'),
+        meatFoodBySpec: specTable(config, 'meatFoodValue'),
+        turnBySpec: specTable(config, 'turnMultiplier'),
+        sprintBySpec: specTable(config, 'sprintBoost'),
+    };
 }
 
 /**
@@ -235,17 +296,10 @@ export function allocateWorld(config) {
         season: new Float64Array(2),
         era: new Int32Array([-1]),
         birthOptions: { cause: 0, rng: null },
-        capSlots: new Int32Array(config.maxAgents),
-        capKeys: new Float64Array(config.maxAgents),
+        ...agentScratch(config.maxAgents),
         meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
-        visionBySpec: specTable(config, 'visionRange'),
-        biteBySpec: specTable(config, 'biteMultiplier'),
-        splitMinBySpec: splitMinTable(config),
-        plantFoodBySpec: specTable(config, 'plantFoodValue'),
-        meatFoodBySpec: specTable(config, 'meatFoodValue'),
-        turnBySpec: specTable(config, 'turnMultiplier'),
-        sprintBySpec: specTable(config, 'sprintBoost'),
+        ...specTables(config),
         biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
@@ -253,7 +307,7 @@ export function allocateWorld(config) {
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
-            LOCAL_STRIDE * (config.maxAgents + config.maxFood + obstacleSlots(config) + config.maxClouds),
+            LOCAL_STRIDE * (config.maxAgents + config.maxFood + terrainRockCount(config) + config.maxClouds),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),

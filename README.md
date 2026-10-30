@@ -34,9 +34,8 @@ The project is being rebuilt as "v6" in short sessions, one design doc at a time
 | Evolution                  | `js/evo/`            | Genomes, mutation, crossover, the fitness functions, the MAP-Elites archive, the policies that decide which brains get born, and the observer and metrics the evals read.      |
 | Worker and renderer (app)  | `js/worker/`, `js/app/` | The app on `index.html`. The sim and the live policy run in a Web Worker behind a validated message protocol (`js/worker/protocol.js`); the main thread only draws (three.js, WebGL2) and runs the interface. |
 
-The previous app (WebGPU, one big `game.js`) is still in `js/*.js` and runs at `/legacy.html` under `npm run dev`. It is
-not in the production build and is deleted in Phase 5 of [the worker and renderer design](docs/designs/worker-and-renderer.md).
-The per-file notes beside it (`js/game.js.README.md` and friends) describe that legacy code, not v6.
+The previous app (WebGPU, one big `game.js`) is deleted; [legacy-audit.md](docs/designs/legacy-audit.md) records what
+it did wrong and which design replaced each part.
 
 Time is counted in ticks, 60 a second at speed x1. A blob lives at most `maxAgeTicks` (36,000 ticks, 10 minutes at x1).
 The speeds are x0.25 to x16 (`TICKS_PER_SECOND_CHOICES` in `js/worker/protocol.js`).
@@ -89,7 +88,7 @@ Read by `readParams` in `js/app/url-params.js`; a bad value is ignored, never an
 | `?policy=<name>`         | Preview a registered policy such as `map-elites-v6` (an unknown name stops the worker and lists the known ones)                                      |
 | `?merit=1`               | Turn in-world merit on with `MERIT_PREVIEW` (see [Evolution](#evolution)); the help drawer's debug line shows the policy and whether merit is on     |
 
-For example `http://localhost:5173/?policy=map-elites-v6&merit=1` previews the candidate fitness before it is tuned.
+For example `http://localhost:5173/?policy=map-elites-v6&merit=1` previews the in-world merit trial values.
 
 ### The top bar
 
@@ -107,35 +106,42 @@ Every blob has an Elman recurrent network: its hidden layer feeds back into itse
 One tick for one blob, `forwardAll` in `js/sim/brain.js`:
 
 ```
- rays (16 x 9 = 144) --+
- body inputs (35) -----+--> 179 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
+ rays (16 x 9 = 144) -> pool: 8 channels x 2 strongest hits x (strength, cos, sin) = 48 --+
+ body inputs (33) ------------------------------------------------------------------------+--> 81 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
                                                                                                          |
-        last tick's MEMORY_A, MEMORY_B (inputs 33, 34) <---------+                                      v
-                                                          11 outputs = tanh( hidden x W_out + bias )
+        last tick's MEMORY_A, MEMORY_B (inputs 31, 32) <---------+                                      v
+                                                          11 outputs = tanh( hidden x W_out + pooled x W_skip + bias )
 ```
 
-- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = rayCount x RAY_CHANNELS + EXTRA_INPUTS = 16 x 9 + 35 = 179`,
-  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **7,183 floats**: `W_in` 179x32, `W_rec` 32x32, 32 hidden biases,
-  `W_out` 32x11, 11 output biases, 4 trait genes and 32 leak genes.
+- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 8 x 2 x 3 + 33 = 81`,
+  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,494 floats**: `W_in` 81x32, `W_rec` 32x32, 32 hidden biases,
+  `W_out` 32x10, 10 output biases, `W_skip` 48x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
+  11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
+- **Skip.** `W_skip` joins the 48 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
+  threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
 - **Activation.** `tanh` on hidden units and outputs, through `detTanhInto` (`js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
-- **Memory.** (1) The recurrent hidden row persists in `world.hidden`. (2) With `leakEnabled` (on) each hidden unit is leaky:
-  `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.05 + 0.95 x sigmoid(leak gene)` per unit (`leakRateOf` in `js/sim/traits.js`),
+- **Memory.** (1) The recurrent hidden row persists in `world.hidden`. (2) Each hidden unit is leaky:
+  `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.02 + 0.98 x sigmoid(leak gene)` per unit (`leakMin` 0.02: a half-life of 34 ticks for the slowest) (`leakRateOf` in `js/sim/traits.js`),
   so evolution can pick slow and fast units. (3) Two spare outputs, `MEMORY_A` and `MEMORY_B`, are fed back as inputs next
-  tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else.
+  tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else. A random genome starts every leak gene at 0
+  (`leakGeneStart`, `a` about 0.5), so memory is there from generation 0.
+- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 67 of
+  the 4,494 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
+  share is under 0.01 over at least 10,000 agent-samples; `world.inputActivity` in `js/sim/input-activity.js`).
 - **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (`hebbianStep` in
   `js/sim/hebbian.js`). Each blob has its own copy, `fastOut`, which drifts by `eta x (hidden x output - 0.01 x (fastOut - genome weight))`
   with `eta = hebbianRate x sigmoid(learn gene)`, clamped to plus or minus 4. A child inherits the genome, never what its
   parent learned.
 
-### Inputs (179)
+### Inputs (81)
 
 | Group                | Count | What it is                                                                                                                                                                                       |
 | -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Rays                 | 144   | 16 rays spread evenly round the full circle (ray 0 dead ahead; `rayTables` in `js/sim/world.js`), 9 values each. Range is the blob's `visionRange` times its vision trait (`visionOf`).            |
-| Body (offsets 0-18)  | 19    | Energy; forward and sideways velocity; turn rate; size; pregnant; ready to mate; danger and attack scent here; season sine and cosine; just ate and just bitten (fade over 30 ticks); specialisation; age; four temperature inputs (level, distance from the optimal band, cold stress, heat stress). `writeBodyInputs` |
-| Scent and calls (19-31) | 13 | Danger and attack scent at a left and a right antenna (0.8 rad either side, 150 px out); hunt scent here and at both antennae; the loudest heard alarm and the loudest heard hunt call, each as loudness, ahead and side. `writeScentInputs` |
-| Sex and memory (32-34) | 3   | Sex (0 female, 1 male; always 0 with `sexesEnabled` off), and last tick's `MEMORY_A` and `MEMORY_B` (0 with `leakEnabled` off).                                                                  |
+| Pooled rays          | 48    | The 16 raw rays (below) are pooled by `poolRays` in `js/sim/ray-pool.js`: for each of the eight ray channels (food, threat, prey, other, kin, wall, obstacle, smoke) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
+| Body (offsets 0-16)  | 17    | Energy; forward and sideways velocity; turn rate; size; pregnant; ready to mate; danger and attack scent here; just ate and just bitten (fade over 30 ticks); specialisation; age; four temperature inputs (level, distance from the optimal band, cold stress, heat stress). `writeBodyInputs` |
+| Scent and calls (17-29) | 13 | Danger and attack scent at a left and a right antenna (0.8 rad either side, 150 px out); hunt scent here and at both antennae; the loudest heard alarm and the loudest heard hunt call, each as loudness, ahead and side. `writeScentInputs` |
+| Sex and memory (30-32) | 3   | Sex (0 female, 1 male), and last tick's `MEMORY_A` and `MEMORY_B`.                                                                  |
 
 The nine values of one ray (`RAY_CHANNELS`, `writeRay` in `js/sim/ray-march.js`) describe the **nearest thing** the ray hits:
 
@@ -188,40 +194,37 @@ A genome (`js/evo/genome.js`) is the 7,183-float row plus a specialisation, ids 
 ## The world
 
 Defaults are `DEFAULTS` in `js/sim/config-defaults.js`. The app runs exactly those (`createConfig` with only seed and URL overrides),
-so every feature listed below as "on" is on in the app. The older `FEATURES_ON` set in `scripts/lib/features-on.mjs` is only a bench
-and test aid; it now equals the defaults except where noted.
+so every feature listed below as "on" is on in the app.
 
 ### The arena
 
 | Thing                  | Default                                                                                                                                       |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Size                   | 14,400 x 8,100 world units. Walls at the edge bounce a blob and cost `wallDamage` energy.                                                     |
-| Terrain (`basins`)     | A wall of touching rocks down the middle splits the world into a west and an east basin, with `wallGaps` = 3 gaps of 300 (`js/sim/terrain.js`). |
-| Refuges                | `refugeCount` = 4 rings of 8 rocks (alternating basins). Their gaps fit only blobs of radius up to `refugeSizeMax` (30), so small blobs can hide from big predators. No food inside. |
+| Terrain                | A wall of touching rocks down the middle splits the world into a west and an east basin, with `wallGaps` = 3 gaps of 200 (`js/sim/terrain.js`). |
+| Refuges                | `refugeCount` = 8 rings of 8 rocks (4 per basin), in groups of `refugeCluster` = 2 that sit side by side in a band. Their gaps fit only blobs of radius up to `refugeSizeMax` (30), so small blobs can hide from big predators. No food inside. |
 | Cold margin            | The 600 units along the north and south edges double the passive temperature loss (`coldFactor`).                                             |
-| Wandering obstacles    | `obstacleCount` = 0 (the legacy world had 25; the basins replaced them). A hit costs `obstacleDamage`.                                       |
-| Population             | Start `initialAgents` 100, cap `maxAgents` 500, floor `minAgents` 40. Under the floor, new lineages spawn from the policy; one immigrant arrives every `immigrationInterval` (600) ticks while there is room (`fillFloor` in `js/sim/population.js`). |
+| Population             | Start `initialAgents` 100, cap `maxAgents` 500. The floor is a total-extinction guard (`fillFloor` in `js/sim/population.js`): only when fewer than `floorTrigger` (8) are alive does it refill the world to `minAgents` (40) with new lineages from the policy, each starting at `entrantEnergy` (200). There are no timed immigrants. |
 
 ### Food
 
 - Plant food: 100 energy (variance 20); 10% of items are "high" food (140, radius 30). At most `maxFood` 1,600 items, 300 at the start; items rot after 10,000 ticks.
 - **Food patches.** `foodPatchCount` = 16 permanent patches of radius 400, split between the two basins (`js/sim/food-patches.js`). Each holds a stock that
-  each meal eaten inside depletes by 0.02 and that regrows logistically (0.0005 a tick); 20% of spawns ignore the patches. With `foodAreaCapacity`
-  food regrows per world area, not toward a per-blob target, so food does not scale with the population.
+  each meal eaten inside depletes by 0.02 and that regrows logistically (0.0005 a tick); 20% of spawns ignore the patches. Food
+  regrows per world area (`foodRegrowPerArea`) through the patches, not toward a per-blob target, so food does not scale with the population.
 - **Carcasses.** A dead blob leaves a meat item worth half the energy it took in during its life (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
 
 ### Time, seasons and eras
 
-- A season modifies food (`foodScarcity`), energy drain, mating chance (`reproductionBonus`) and temperature. With `erasEnabled` (on) a season lasts
+- A season modifies food (`foodScarcity`), energy drain, mating chance (`reproductionBonus`) and temperature. A season lasts
   `eraSeasonTicks` = 36,000 ticks (10 minutes at x1) and a year is four of them, 40 minutes (`js/sim/eras.js`).
 - Winter cuts patch regrowth to 20% (`winterRegrow`), summer raises it to 150%. Each year there is a 25% chance (`droughtChance`) that one basin's patches stop regrowing for the summer.
-- Every `invasionInterval` (180,000 ticks) an invasion pulse of 12 blobs of one lineage arrives at a world edge (`js/sim/invasion.js`).
 
 ### Body, energy and temperature
 
-- Energy: start 800, max 25,000. Costs per tick are a passive loss, movement, turning, size and vision. A blob's radius is `baseSize` (25, x the size trait) plus energy / 250, never below `minSize`.
+- Energy: start 800, max 2,000 (`maxEnergy`: a small store, so a mother has little to lose to a winter before she is dead). Costs per tick are a passive loss, movement, turning, size and vision. A blob's radius is `baseSize` (25, x the size trait) plus energy / 250, never below `minSize`.
 - **Temperature** (`js/sim/temperature.js`): each blob has a body temperature from 0 to 100, starting at 50. Moving and eating warm it; passive loss cools it (faster in winter and in the cold margin).
   The optimal band is 40 to 65. Outside it passive energy loss rises (up to 2x), thrust efficiency drops (down to 0.3 cold, 0.6 hot), and past the stress thresholds a blob cannot mate.
 
@@ -234,11 +237,11 @@ Five types (`specialisations` in the defaults; `GENOME_SPECS`). Each has its own
 | Forager    | 300    | The baseline; eats plants                                                                           |
 | Predator   | 350    | `canHunt`; bites hit 8x; eats only meat; sprints 1.6x; cheaper standing costs; pays a `huntUpkeep`   |
 | Reproducer | 250    | Half the mating cooldown                                                                            |
-| Scout      | 400    | Moves at 0.7x energy cost, sees furthest                                                            |
-| Defender   | 350    | Takes half damage from bites                                                                        |
+| Scout      | 400    | Sees furthest; pays 30% more to stand and takes 1.5x the damage from a bite                         |
+| Defender   | 350    | Takes half damage from bites; costs a fifth more to move; a bite on it kicks the biter twice as hard |
 
-When the predator count falls under `predatorRescueMin` (3) an immigrant arrives as a predator every `predatorRescueInterval` (450) ticks
-(`js/sim/predator-rescue.js`), and the floor prefers a specialisation with none alive.
+Nothing restocks a type that dies out: there is no predator rescue and no timed immigrant. The floor guard refills the whole world only on a total crash. A
+bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size, fullness and type), and a hunter that lunges at kin or something too big loses `recoilEnergy`.
 
 ### Fighting, signalling and scent
 
@@ -251,7 +254,7 @@ When the predator count falls under `predatorRescueMin` (3) an immigrant arrives
 ### Reproduction
 
 - **Mating** (`js/sim/mate-eligibility.js`, `mate-search.js`): two mature (600 ticks), rested, energetic (above 200) blobs of the **same specialisation** and **opposite sex**
-  (`sexesEnabled`), within `mateRange` (200) edge to edge, whose sizes are within 1.3x and whose genomes are close enough (`mateDistanceMax`). The female picks the strongest male (by energy; by merit if merit is on). She is pregnant for 480 ticks, then gives the child a share of her energy (`childEnergyShare`, trait `childShare`).
+  within `mateRange` (200) edge to edge, whose sizes are within 1.3x and whose genomes are close enough (`mateDistanceMax`). The female picks the male with the best **mate rank** (`mateRank`: his percentile among the living males of his own specialisation, by deliberate kills for hunters and by deliberate meal share for the others; `js/sim/mate-rank.js`). She is pregnant for 480 ticks, then gives the child a share of her energy (`childEnergyShare`, trait `childShare`).
 - **Splitting.** A mature blob with enough energy (`splitMinEnergy` 900, scaled per type) splits asexually into a mutated copy. Sex does not matter.
 - **Limits.** A mother may give at most `maxBirthsPerWindow` (5) births per 3,000 ticks (`js/sim/birth-budget.js`). Near `maxAgents` births wait or stop short by `splitCapMargin` (`capBirthsEnabled`), so pregnancies are not lost to a full world.
 
@@ -264,7 +267,7 @@ When the predator count falls under `predatorRescueMin` (3) an immigrant arrives
 | `STARVED`    | Energy reached 0 through ordinary costs. Heat and cold act through these costs.            |
 | `EATEN`      | Energy reached 0 through a bite (or was bitten that tick)                                   |
 | `COLLISION`  | Energy reached 0 through a wall or rock impact                                              |
-| `OLD_AGE`    | `ageTicks` reached `maxAgeTicks` (36,000)                                                   |
+| `OLD_AGE`    | `ageTicks` reached `maxAgeTicks` (72,000: two seasons)                                                   |
 
 ## Evolution
 
@@ -272,10 +275,8 @@ When the predator count falls under `predatorRescueMin` (3) an immigrant arrives
 
 | Policy            | What it does                                                                                                                              | Status                                         |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `baseline-v5`     | The legacy fitness on the new core, for comparison                                                                                        | Instrument                                     |
-| `natural-v1`      | Children by crossover and mutation; every immigrant is random; no archive                                                                 | Instrument                                     |
-| `map-elites-v1q`  | `natural-v1` plus the MAP-Elites archive, scored by `fitnessV1`, parents drawn by a 4-cell tournament                                     | **Live** (`LIVE_POLICY`): the app and nightly evals |
-| `map-elites-v6`   | The same archive scored by `fitnessV6` and placed by `descriptorV6`                                                                       | Built, not live: preview with `?policy=map-elites-v6` |
+| `baseline-v5`     | The v5 fitness on the new core, for comparison                                                                                        | Instrument                                     |
+| `map-elites-v6`   | The MAP-Elites archive scored by `fitnessV6` and placed by `descriptorV7` (role skill by style); children by crossover and mutation, seeded from the archive | **Live** (`LIVE_POLICY`): the app and nightly evals |
 
 **Natural selection inside the world.** Blobs that eat, avoid being eaten and reach maturity pass genes on by mating and splitting, whatever the policy.
 **The archive adds a second path.** When a mature blob dies it is scored and offered to a MAP-Elites archive (`js/evo/archive.js`): per specialisation a 10 x 10 grid
@@ -283,31 +284,27 @@ of cells, each holding an elite and a challenger with running statistics. Once t
 (`js/evo/policies/map-elites-seed.js`): half a mutated child of an archive parent, three tenths an unmutated clone, the rest random. The archive can be exported with `E`.
 It lives in the worker's memory for the run; saving it between sessions is Phase 5 of the worker and renderer design.
 
-### How fitness is scored now (live)
+### How fitness is scored
 
-`fitnessV1` (`js/evo/fitness.js`): energy gathered from food and bites, plus 300 per child, plus 0.5 per tick of life (capped at 30,000) once the blob has eaten 500,
-plus a capped role term (forager food, predator kills, reproducer children, scout cells explored, defender kin bites absorbed). The archive cell is `descriptorV1` (`js/evo/descriptors.js`): mean speed by mean crowding.
-Its known weakness, and the reason for the next work: it rewards luck. In measured worlds most food is eaten by chance contact, one specialisation (the scout) holds the world, and behaviour stops improving.
+The live policy scores a death with `fitnessV6`; `fitnessV1` (`js/evo/fitness.js`, energy gathered from food and bites, 300 per child, 0.5 per tick of life) is kept as a comparison. Its known weakness, and the reason for `fitnessV6`: it rewards luck. In measured worlds most food was eaten by chance contact, one specialisation (the scout) held the world, and behaviour stopped improving.
 
-### The candidate: `fitnessV6` and in-world merit (built, off)
+### `fitnessV6` and in-world merit
 
-`fitnessV6` (`js/evo/fitness-v6.js`, with `fitness-v6-skill.js`, `-lineage.js`, `-watch.js`, `-diversity.js`) pays **skill over luck**. The observer classifies each meal or bite as
+`fitnessV6` (`js/evo/fitness-v6.js`, with `fitness-v6-skill.js` and `-lineage.js`) pays **skill over luck**; it pays no act (chase, migrate, mate, call) and no rarity. The observer classifies each meal or bite as
 *deliberate* (the blob had the food or prey in view on a ray, closed on it and turned towards it, `isDeliberate` in `js/sim/merit-state.js`) or *chance*.
 
 | Group     | Pays for                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Skill     | Deliberate intake in full and chance intake at a quarter; survival and role terms and credits (escape, converged kill, alarm and hunt call) that only count once the blob has fed on purpose (the gate) |
+| Skill     | Deliberate intake in full and chance intake nothing; survival and role terms and credits (escape, converged kill) that only count once the blob has fed on purpose (the gate) |
 | Born      | Children that were born                                                                                                   |
-| Lineage   | Matings, children that reached maturity, descendants still alive at death (gated)                                         |
-| Watch     | Chases, pack kills, visits to distinct food patches - things worth watching (gated)                                        |
+| Lineage   | Children that reached maturity, descendants still alive at death (gated)                                                  |
 | Waste     | A charge for idle calls and smoke and for undefended bites, capped at half the positive score                              |
-| Diversity | A multiplier that favours rare niches (specialisation by size tercile)                                                     |
 
-`map-elites-v6` places elites by `descriptorV6`: deliberate share of intake by body plan (size plus vision traits). Exploit bounds (`js/evo/scripted-v6.js`) are scripted blobs that try to farm each term, so a term is shown to be bounded.
+`map-elites-v6` places elites by `descriptorV7`: role skill by style (how a hunter chases, how a prey blob holds a refuge). Exploit bounds (`js/evo/scripted-v6.js`) are scripted blobs that try to farm each term, so a term is shown to be bounded.
 
-**In-world merit** (`js/sim/merit*.js`, `meritEnabled`, off by default) is a decaying per-blob score from sim state alone. When on it biases mate choice (`meritMateWeight`),
-the energy a child is born with (`meritBirthBoost`) and gates splitting on deliberate foraging (`splitDeliberateMin`), so selection acts inside the world and not only through the archive.
-`?merit=1` turns it on with the trial values `MERIT_PREVIEW`.
+**In-world merit** (`js/sim/merit*.js`) is a decaying per-blob score from sim state alone, always on. It scales
+the energy a child is born with (`meritBirthBoost`, 0 by default) and gates splitting on deliberate foraging (`splitDeliberateMin`, `splitDeliberateShareMin`) and, with the proof rule (`js/sim/proof.js`), on a child that matured, so selection acts inside the world and not only through the archive. Mates are ranked by `mateRank`, not energy.
+`?merit=1` previews the trial values `MERIT_PREVIEW` (a birth boost and a lower split gate).
 
 Details, constants and decisions: [fitness-and-selection.md](docs/designs/fitness-and-selection.md).
 
@@ -334,16 +331,16 @@ or has stalled ("behaviour stops improving").
         (10 x 10 cells per type)
 
    In the world, at the same time: mating (crossover) and splitting (a mutated copy) pass genes on
-   without the archive. In-world merit (built, off) tilts who mates, how much energy a child gets and who may split.
+   without the archive. In-world merit tilts who mates, how much energy a child gets and who may split.
 ```
 
 | Step                  | What happens                                                                                                                                                                                                                          | Code                                                                |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Watch a life          | The observer keeps per-blob counters: food and bite energy, children, and for `fitnessV6` whether each meal or bite was deliberate, plus chases, pack kills and patches visited                                                      | `js/evo/observer.js` and `observer-*.js`, `life-counters.js`        |
-| Score at death        | The live policy `map-elites-v1q` (`LIVE_POLICY`) scores with `fitnessV1`. The candidate `map-elites-v6` scores with `fitnessV6` (skill, born, lineage, watch, waste, diversity; see [the candidate](#the-candidate-fitnessv6-and-in-world-merit-built-off)) | `js/evo/policies/index.js`, `fitness.js`, `fitness-v6.js`           |
-| Keep the best         | The blob is offered to the cell its descriptor picks (`descriptorV1`: speed by crowding; `descriptorV6`: deliberate share by body plan). A cell keeps an elite and a challenger                                                      | `js/evo/archive.js`, `descriptors.js`, `policies/map-elites-offer.js` |
-| Seed from the archive | Once 10 cells are occupied, a new lineage (initial agent, floor spawn, immigrant) is a mutated archive parent below `archiveShare` (0.5), an unmutated clone up to `cloneShareEnd` (0.8), otherwise random. Both are policy options a screen can vary | `js/evo/policies/map-elites-seed.js`, `policy-options.js`           |
-| Select in the world   | Blobs that eat, avoid being eaten and mature pass genes on by mating (crossover of whole neurons) and splitting, whatever the policy. In-world merit (`meritEnabled`, off) biases mate choice, birth energy and the split gate          | `js/evo/crossover.js`, `js/sim/reproduction.js`, `js/sim/merit*.js` |
+| Score at death        | The live policy `map-elites-v6` (`LIVE_POLICY`) scores with `fitnessV6` (skill, born, lineage, waste; see [fitnessV6](#fitnessv6-and-in-world-merit)) | `js/evo/policies/index.js`, `fitness.js`, `fitness-v6.js`           |
+| Keep the best         | The blob is offered to the cell its descriptor picks (`descriptorV7`: role skill by style). A cell keeps an elite and a challenger                                                      | `js/evo/archive.js`, `descriptors.js`, `policies/map-elites-offer.js` |
+| Seed from the archive | Once 10 cells are occupied, a new lineage (initial agent, floor spawn) is a mutated archive parent below `archiveShare` (0.5), an unmutated clone up to `cloneShareEnd` (0.8), otherwise random. Both are policy options a screen can vary | `js/evo/policies/map-elites-seed.js`, `policy-options.js`           |
+| Select in the world   | Blobs that eat, avoid being eaten and mature pass genes on by mating (crossover of whole neurons) and splitting, whatever the policy. In-world merit and the proof rule bias mate choice, birth energy and who may split          | `js/evo/crossover.js`, `js/sim/reproduction.js`, `js/sim/merit*.js` |
 
 Only the genome is inherited. The hidden state and the Hebbian `fastOut` weights adapt **within a life** and are zeroed
 when a slot is reused (`zeroSlot` in `js/sim/world.js`), so a child gets its parent's genome and never what the parent learned.
@@ -418,11 +415,12 @@ Bite 10 lost lifespan on the second set (`worse`, -8.5%), so bite 8 became the d
 
 ### Where it is heading
 
-Fitness and selection Phase 4 ([fitness-and-selection.md](docs/designs/fitness-and-selection.md), tasks T43 to T51) turns the candidate into the default:
-
-1. A reference run of the live policy (`E37`), then **round A** (each merit lever alone) and **round B** (pairs, and `fitnessV6` weights through `policyOptions`) as screens, then an **archive round** (`immigrationInterval`, `archiveShare`, `cloneShareEnd`, `descriptorV1` against `descriptorV6`).
-2. At most three **finalists** at 16 seeds on two seed sets, with the ladder, the anti-exploit suite and `eval:power`.
-3. If a finalist meets the done criteria (for example `eval.deliberate_food_share` at least 0.20 from 0.115, `eval.skill_trend` positive on at least 10 of 16 seeds, `eval.spec_dominance` at most 0.55, `eval.mating_share` at least 0.35), merit is switched on, `LIVE_POLICY` becomes `map-elites-v6`, the golden hashes and baselines are re-pinned, and a 600,000-tick run (`E42`) must show skill still rising.
+The natural-selection big bang ([natural-selection.md](docs/designs/natural-selection.md)) made `fitnessV6` and `map-elites-v6` the live policy and built
+the rules of [principles.md](docs/principles.md) into the default world: a floor that only guards against total extinction, poor entrants,
+no predator rescue or invasion pulse, a bite cost and recoil, the proof rule for archive entries and splits, mates ranked inside their own
+specialisation, and the 81-input pooled brain. What is left before the PR is the survival screen, which tunes the knobs (`biteCost`, `huntUpkeep`) until the
+world keeps its predators without rescue, and the Chromium and bench re-records. Afterwards the work is balancing: screens on those knobs, judged by the
+detectors and the principles.
 
 The goal is worlds that keep getting more skilful and more watchable instead of settling into one dominant type.
 
@@ -450,12 +448,10 @@ hunting - are in [docs/principles.md](docs/principles.md), each with the metrics
 
 The order of work is the **Build queue** in [docs/designs/README.md](docs/designs/README.md), which is generated and always current. In short:
 
-1. **Fitness and selection** (priority 1, in progress). Phases 1 to 3 are built: the metric audit and new metrics, the predator survival fix, in-world merit (off), `fitnessV6`, `descriptorV6`, `map-elites-v6` and the exploit bounds.
-   Next is a **terrain round** (checking heat stress and terrain deaths, then terrain keys such as `refugeRocks` and refuge food, screened with `npm run screen`), then **Phase 4 tuning**: experiments that choose the weights, switch merit on and make `map-elites-v6` the live policy.
-   That will change the default behaviour of the world, so the golden hashes and baselines are re-pinned in the same step.
+1. **Natural selection** ([natural-selection.md](docs/designs/natural-selection.md), priority 1, in progress). The big bang is built on one branch: the detectors, the old app and dead-code removal, and every change of the switch as the defaults. The survival screen, the re-records and the PR remain.
 2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain). Phase 5 settles the balance on a tuning night; Phase 6 adds disease.
 3. **Quality gates and test tiers** ([quality-gates-and-test-tiers.md](docs/designs/quality-gates-and-test-tiers.md)). Faster pre-commit checks, mutation testing, a browser smoke test and a pull-request performance job.
-4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio, capture and Phase 6 Look (tasks T57–T75) are built; what remains is Phase 5: saving the archive between sessions and deleting the legacy app.
+4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio, capture and Phase 6 Look (tasks T57–T75) are built; what remains is Phase 5: saving the archive between sessions.
 5. **Later.** The evolution trainer and champions ([evolution-rework.md](docs/designs/evolution-rework.md)), an automated improvement loop ([improvement-loop.md](docs/designs/improvement-loop.md)), v6 tidy-up with new screenshots and docs ([v6-tidy-up-and-docs.md](docs/designs/v6-tidy-up-and-docs.md)), and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md)).
 
 ## Developing

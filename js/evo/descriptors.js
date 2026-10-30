@@ -22,7 +22,7 @@ import { crowdingMean } from './life-counters.js';
  * @property {(source: DescriptorSource, out: Float64Array) => void} point writes the x and y values, each 0..1
  */
 
-/** The size trait plus the vision trait at their lowest, the origin of `bodyPlan` (each trait is 0.7 to 1.3). */
+/** The size trait plus the vision trait at their lowest, the origin of `bodyPlanOf` (each trait is 0.7 to 1.3). */
 const BODY_PLAN_MIN = 1.4;
 /** The range of the sum of the two traits, 1.4 to 2.6. */
 const BODY_PLAN_SPAN = 1.2;
@@ -40,13 +40,9 @@ export function roleSkillOf(deliberate, chance) {
 /**
  * @param {number} size the size trait as a multiple of the default
  * @param {number} vision the vision trait as a multiple of the default
- * @param {boolean} traitsEnabled whether the config has traits on
- * @returns {number} `(size + vision - 1.4) / 1.2` clamped to 0..1; 0.5 with traits off
+ * @returns {number} `(size + vision - 1.4) / 1.2` clamped to 0..1
  */
-export function bodyPlanOf(size, vision, traitsEnabled) {
-    if (!traitsEnabled) {
-        return 0.5;
-    }
+export function bodyPlanOf(size, vision) {
     return Math.max(0, Math.min(1, (size + vision - BODY_PLAN_MIN) / BODY_PLAN_SPAN));
 }
 
@@ -60,15 +56,20 @@ export const descriptorV1 = Object.freeze({
     },
 });
 
-/** The deliberate share of intake (x) and the body plan (y), both written to the death log by the observer. */
-export const descriptorV6 = Object.freeze({
-    name: 'v6',
+/**
+ * The behaviour axis (natural-selection.md T10e): the deliberate share of intake (x, `roleSkill`) and the style (y,
+ * `styleOf` in `style.js`: the mean chase length of a hunter, the ring-sitting share under threat of the others), both
+ * written to the death log by the observer. Two agents of one specialisation and body plan that carry it out
+ * differently, a short chase and a long one, fall in different cells.
+ */
+export const descriptorV7 = Object.freeze({
+    name: 'v7',
     /** @type {Descriptor['point']} */
     point({ deaths, row }, out) {
         out[0] = deaths.roleSkill[row];
-        out[1] = deaths.bodyPlan[row];
+        out[1] = deaths.style[row];
     },
 });
 
 /** The registered descriptors by name, for a policy option that names one. */
-export const DESCRIPTORS = Object.freeze({ v1: descriptorV1, v6: descriptorV6 });
+export const DESCRIPTORS = Object.freeze({ v1: descriptorV1, v7: descriptorV7 });

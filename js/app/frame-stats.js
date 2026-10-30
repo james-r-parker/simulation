@@ -1,7 +1,48 @@
-// Frame-interval and draw-time rings with their percentiles, and the measured refresh rate. The percentile and ring
-// helpers come from the legacy probe until Phase 5 moves them here.
+// Frame-interval and draw-time rings with their percentiles, and the measured refresh rate.
 
-import { createFrameRing, percentile } from '../dev/perf-probe.js';
+/** Frames kept for percentile reporting (about a minute at 60 fps). */
+export const FRAME_RING_CAPACITY = 4096;
+
+/**
+ * Nearest-rank percentile of an ascending-sorted array.
+ * @param {ArrayLike<number>} sortedValues Values sorted ascending.
+ * @param {number} p Percentile in 0..100.
+ * @returns {number} The percentile value, or 0 when empty.
+ */
+export function percentile(sortedValues, p) {
+    const n = sortedValues.length;
+    if (n === 0) {
+        return 0;
+    }
+    const rank = Math.max(1, Math.ceil((p / 100) * n));
+    return sortedValues[Math.min(rank, n) - 1];
+}
+
+/**
+ * Fixed-capacity ring buffer of frame times that keeps the newest samples.
+ * @param {number} [capacity] Maximum samples retained.
+ * @returns {{ push: (ms: number) => void, values: () => Float64Array }} The ring.
+ */
+export function createFrameRing(capacity = FRAME_RING_CAPACITY) {
+    const buffer = new Float64Array(capacity);
+    let next = 0;
+    let count = 0;
+    return {
+        push(ms) {
+            buffer[next] = ms;
+            next = (next + 1) % capacity;
+            count = Math.min(count + 1, capacity);
+        },
+        values() {
+            const out = new Float64Array(count);
+            const start = count < capacity ? 0 : next;
+            for (let i = 0; i < count; i++) {
+                out[i] = buffer[(start + i) % capacity];
+            }
+            return out;
+        },
+    };
+}
 
 /** Intervals over this many ms (a stall, a debugger, a throttled tab) are not frames and are ignored. */
 export const MAX_INTERVAL_MS = 250;

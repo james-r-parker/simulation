@@ -9,11 +9,11 @@ const COLS = 10;
 /**
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the agent
- * @returns {number[]} body inputs 19 to 31
+ * @returns {number[]} body inputs 17 to 29
  */
 function scent(w, slot) {
     writeScentInputs(w, slot);
-    const base = slot * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+    const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
     return Array.from(w.inputs.subarray(base, base + 13));
 }
 
@@ -158,19 +158,19 @@ describe('writeScentInputs heard calls', () => {
         expect(scent(w, me).slice(7)).toEqual([0, 0, 0, 0, 0, 0]);
     });
 
-    it('writes only offsets 19 to 31 of its own row', () => {
+    it('writes only offsets 17 to 29 of its own row', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const other = addAgent(w, 700, 700, 20);
         w.inputs.fill(9);
         writeScentInputs(w, me);
-        const start = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        const start = me * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
         const touched = Array.from(w.inputs).flatMap((v, i) => (v !== 9 ? [i] : []));
         expect(touched.every((i) => i >= start && i < start + 13)).toBe(true);
-        expect(start + 16).toBe((me + 1) * w.layout.inputCount);
+        expect(start + 16).toBe((me + 1) * w.layout.rawInputCount);
         expect(
             w.inputs
-                .subarray(other * w.layout.inputCount, (other + 1) * w.layout.inputCount)
+                .subarray(other * w.layout.rawInputCount, (other + 1) * w.layout.rawInputCount)
                 .every((/** @type {number} */ v) => v === 9),
         ).toBe(true);
     });

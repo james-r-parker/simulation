@@ -1,13 +1,12 @@
 // The skill group of `fitnessV6` (fitness-and-selection.md "Fitness v6"): intake, the gate, survival, the role term,
-// the four credits and the waste charge. It carries the terms, constants and tests of `fitnessV2` (draft PR 120).
-// `fitness-v6.js` composes it with the lineage, watch and diversity groups. Pure: it reads the observer's per-slot
+// the two credits (escape and converged kill) and the waste charge. It carries the terms, constants and tests of `fitnessV2` (draft PR 120).
+// `fitness-v6.js` composes it with the lineage and diversity groups. Pure: it reads the observer's per-slot
 // intent counters and the life counters, and allocates nothing per call.
 
 import { FITNESS_V1, specTerm } from './fitness.js';
 
 /** The skill and waste constants of the doc's constants table, named so a change is one visible edit. */
 export const FITNESS_V6_SKILL = Object.freeze({
-    CHANCE_WEIGHT: 0.25,
     GATE: 500,
     SURVIVAL_RATE: 0.5,
     SURVIVAL_CAP: 30000,
@@ -15,8 +14,6 @@ export const FITNESS_V6_SKILL = Object.freeze({
     CREDIT_CAP: 0.25,
     ESCAPE: 60,
     CONVERGED_KILL: 50,
-    ALARM: 40,
-    HUNT_CALL: 40,
     IDLE_SIGNAL: 20,
     UNDEFENDED: 40,
     WASTE_CAP: 0.5,
@@ -82,8 +79,7 @@ export function chanceIntake(intent, slot) {
 export function createSkillGroup(counters, overrides) {
     const w = { ...FITNESS_V6_SKILL, ...overrides };
     /** @type {(observer: any, slot: number) => number} */
-    const intake = (observer, slot) =>
-        deliberateIntake(observer.intent, slot) + w.CHANCE_WEIGHT * chanceIntake(observer.intent, slot);
+    const intake = (observer, slot) => deliberateIntake(observer.intent, slot);
     /** @type {(observer: any, slot: number) => number} */
     const gate = (observer, slot) => Math.min(1, deliberateIntake(observer.intent, slot) / w.GATE);
     /** @type {(observer: any, slot: number, config: any) => number} */
@@ -97,9 +93,7 @@ export function createSkillGroup(counters, overrides) {
         const cap = w.CREDIT_CAP * total;
         const credits =
             Math.min(cap, w.ESCAPE * intent.respondedEscape[slot]) +
-            Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]) +
-            Math.min(cap, w.ALARM * intent.alarmCredits[slot]) +
-            Math.min(cap, w.HUNT_CALL * intent.huntCredits[slot]);
+            Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]);
         return survival + role + credits;
     };
     return {

@@ -1,0 +1,59 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "inst0",
+  "arms": {
+    "inst0": {},
+    "inst0.5": {
+      "instinctWeight": 0.5
+    },
+    "inst1": {
+      "instinctWeight": 1
+    },
+    "inst2": {
+      "instinctWeight": 2
+    },
+    "inst1-fastmeal": {
+      "instinctWeight": 1,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 0.3
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "inst1-gorge": {
+      "instinctWeight": 1,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 0.3,
+          "maxEnergyMultiplier": 3
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "inst1-gorge-bite20": {
+      "instinctWeight": 1,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 0.3,
+          "maxEnergyMultiplier": 3,
+          "biteMultiplier": 20
+        }
+      },
+      "predatorKillEnergy": 600
+    },
+    "inst0.5-gorge": {
+      "instinctWeight": 0.5,
+      "specialisations": {
+        "predator": {
+          "passiveLossMultiplier": 0.3,
+          "maxEnergyMultiplier": 3
+        }
+      },
+      "predatorKillEnergy": 600
+    }
+  }
+}

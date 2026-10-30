@@ -9,14 +9,15 @@ import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metr
 import { ensureRoom } from './growable-log.js';
 import { noteBirthBody, noteBody } from './observer-body.js';
 import { deliberateIntake, chanceIntake } from './fitness-v6-skill.js';
-import { bodyPlanOf, roleSkillOf } from './descriptors.js';
+import { roleSkillOf } from './descriptors.js';
 import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from './observer-lineage-counters.js';
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
 import { noteHunterBirth } from './watch-births.js';
+import { noteBrainDeath, resetBrainSlot } from './metrics-brain.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
-/** The end of burn-in: floor episodes and the after-burn-in metrics count from this tick. */
-export const BURN_IN_TICKS = 10000;
+export { BURN_IN_TICKS };
 
 /**
  * Zeroes every per-slot counter and the cell bitset of a slot.
@@ -31,6 +32,7 @@ export function resetSlot(observer, slot) {
     clearCells(observer, slot);
     resetIntentSlot(observer.intent, slot);
     resetVisits(observer.watch, slot);
+    resetBrainSlot(observer, slot);
 }
 
 /**
@@ -68,11 +70,11 @@ function creditRelations(observer, d, count) {
 /**
  * Appends a death-log row from the slot's counters.
  * @param {Record<string, any>} observer the observer
- * @param {number} slot the slot
+ * @param {{slot: number, eventIndex: number}} death the slot and the index of its `AgentDied` event
  * @param {number} fitness the agent's fitness, or NaN
  * @returns {void}
  */
-function logDeath(observer, slot, fitness) {
+function logDeath(observer, { slot, eventIndex }, fitness) {
     const log = observer.deaths;
     const row = observer.deathCount;
     ensureRoom(log, row);
@@ -81,19 +83,20 @@ function logDeath(observer, slot, fitness) {
     }
     log.fitness[row] = fitness;
     log.roleSkill[row] = roleSkillOf(deliberateIntake(observer.intent, slot), chanceIntake(observer.intent, slot));
-    log.bodyPlan[row] = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot], observer.config.traitsEnabled);
+    log.style[row] = observer.scenes.style.atDeath[eventIndex];
     observer.deathCount = row + 1;
 }
 
 /**
  * Finishes one dead agent: final values from the record, fitness, death log, totals, untracking.
  * @param {Record<string, any>} observer the observer
- * @param {Float64Array} d the event data
- * @param {number} o the record offset
+ * @param {{world: Record<string, any>, d: Float64Array, o: number}} record the world, the event data and the record
+ *   offset
  * @param {((observer: any, slot: number, config: any) => number) | undefined} fitness the policy's fitness
  * @returns {void}
  */
-function finishDeath(observer, d, o, fitness) {
+function finishDeath(observer, record, fitness) {
+    const { world, d, o } = record;
     const slot = d[o + 2];
     const genomeId = d[o + 3];
     if (observer.genomeId[slot] !== genomeId) {
@@ -112,11 +115,16 @@ function finishDeath(observer, d, o, fitness) {
     }
     observer.foodEnergy[slot] = d[o + 9];
     observer.biteEnergy[slot] = d[o + 10];
-    logDeath(observer, slot, fitness ? fitness(observer, slot, observer.config) : NaN);
+    logDeath(
+        observer,
+        { slot, eventIndex: o / EVENT_STRIDE },
+        fitness ? fitness(observer, slot, observer.config) : NaN,
+    );
     observer.deathsByCause[d[o + 4]] += 1;
     if (d[o + 1] >= BURN_IN_TICKS) {
         noteDeath(observer.environment, d[o + 4]);
         noteVisitDeath(observer.watch, slot, d[o + 8]);
+        noteBrainDeath(observer, world, { slot, genomeId, ageTicks: d[o + 8] });
         if (d[o + 8] >= observer.config.maturityTicks && !observer.ghosts.has(genomeId)) {
             const logged = observer.deaths.fitness[observer.deathCount - 1];
             noteMeritDeath(observer.merit, { slot, tick: d[o + 1], fitness: logged });
@@ -261,7 +269,7 @@ export function applyEvents(observer, world, fitness) {
     noteBirthLineage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {
-            finishDeath(observer, d, i * EVENT_STRIDE, fitness);
+            finishDeath(observer, { world, d, o: i * EVENT_STRIDE }, fitness);
         }
     }
     releaseDeaths(observer, d, count);

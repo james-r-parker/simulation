@@ -4,8 +4,9 @@
   "initialAgents": 40,
   "maxAgents": 80,
   "minAgents": 0,
-  "immigrationInterval": 0,
   "maxFood": 60,
   "initialFood": 60,
-  "obstacleCount": 4
+  "wallGaps": 1,
+  "refugeCount": 0,
+  "coldMarginWidth": 0
 }

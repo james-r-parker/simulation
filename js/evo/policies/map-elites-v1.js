@@ -1,5 +1,6 @@
-// map-elites-v1: `natural-v1` plus the MAP-Elites archive. Mature agents that die are scored (`fitnessV1`) and
-// offered to the archive cell of their specialisation and descriptors (speedMean x crowdingMean); initial agents,
+// map-elites-v1: the engine of the MAP-Elites policies (`map-elites-v6` is built on it, and is the only registered
+// one): the birth half plus the archive. Mature agents that die are scored (`fitnessV1` unless a variant brings its own
+// scoring) and offered to the archive cell of their specialisation and descriptors (speedMean x crowdingMean); initial agents,
 // floor spawns and immigrants are seeded from the archive once it holds `MIN_ARCHIVE_CELLS` cells.
 //
 // The scorer is the eval observer (`options.observer`): it holds the speed samples and the energy counters that
@@ -13,10 +14,10 @@ import { createFitnessV1 } from '../../evo/fitness.js';
 import { createLifeCounters, updateLifeCounters } from '../../evo/life-counters.js';
 import { createOffers } from './map-elites-offer.js';
 import { createSeeder } from './map-elites-seed.js';
-import { createBirth } from './natural-birth.js';
+import { createBirth, shareBirth } from './natural-birth.js';
 import { brainLayout } from '../../sim/brain-layout.js';
 
-/** `map-elites-v1q`'s parent cell tournament: the best elite of this many uniform cell draws. */
+/** the parent cell tournament of `map-elites-v6`: the best elite of this many uniform cell draws. */
 export const QUALITY_CELL_DRAWS = 4;
 
 /**
@@ -71,6 +72,8 @@ export function createMapElitesV1(options) {
     const archive = createArchive(brainLayout(config), { descriptor: scoring.descriptor });
     const clones = createClones(config.maxAgents);
     if (observer !== undefined) {
+        // The brain metrics read the step sizes (the silent inputs a birth decays come from the world's input-activity sample).
+        shareBirth(observer, birth);
         // An entrant is in the archive lineage when its genome came from the archive or a clone of one.
         observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;
     }

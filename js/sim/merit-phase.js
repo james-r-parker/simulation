@@ -1,9 +1,10 @@
-// The `merit` step phase: runs after `lifecycle` has aged and fed the agents, and only while `meritEnabled`. Pass 1
+// The `merit` step phase: runs after `lifecycle` has aged and fed the agents. Pass 1
 // advances every alive agent's deliberate-intake tracker; pass 2 credits what the tick brought (the meal and bite
 // energy gained, a landed bite opening an escape episode, a resolved escape, a child reaching maturity) in slot order,
 // the same order and classification the observer's intent state uses; then a `MeritSummary` when one is due.
 // Matings are credited at once by `startMating`. No RNG, no allocation per tick.
 
+import { creditKills, noteBite } from './kills.js';
 import { creditEscape, creditIntake, creditMatured } from './merit.js';
 import {
     biteDeliberate,
@@ -49,6 +50,7 @@ function creditEnergy(world, slot) {
  */
 function trackEscape(world, slot) {
     if (world.bittenTimer[slot] === BITTEN_THIS_TICK) {
+        noteBite(world, slot);
         const biter = slotOfGenome(world, world.lastBiter[slot]);
         if (biter >= 0 && specParams(world.config, world.spec[biter]).canHunt) {
             noteMeritBite(world, slot);
@@ -60,14 +62,11 @@ function trackEscape(world, slot) {
 }
 
 /**
- * Advances the merit of the world by one tick; does nothing with `meritEnabled` off.
+ * Advances the merit of the world by one tick.
  * @param {World} world the world
  * @returns {void}
  */
 export function meritPhase(world) {
-    if (!world.config.meritEnabled) {
-        return;
-    }
     const { alive } = world;
     const { maturityTicks } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
@@ -84,6 +83,7 @@ export function meritPhase(world) {
             }
         }
     }
+    creditKills(world);
     if (summaryDue(world)) {
         pushMeritSummary(world);
     }

@@ -30,7 +30,7 @@ export function intentArena(over = {}, options = {}) {
  * @returns {void}
  */
 export function setRay(world, slot, k, proximity, channel) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs.fill(0, base, base + RAY_CHANNELS);
     world.inputs[base] = proximity;
     world.inputs[base + channel] = channel >= CH.THREAT && channel <= CH.KIN ? proximity : 1;
@@ -55,7 +55,7 @@ export function seeThreat(world, slot, k, proximity = 0.6) {
  * @returns {void}
  */
 export function clearRays(world, slot) {
-    const base = slot * world.layout.inputCount;
+    const base = slot * world.layout.rawInputCount;
     world.inputs.fill(0, base, base + world.config.rayCount * RAY_CHANNELS);
 }
 

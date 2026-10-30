@@ -1,20 +1,19 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { validateReport } from '../js/evo/report.js';
 import { pickSeeds, runEval } from '../scripts/eval.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const SMALL = {
-    ...FEATURES_OFF,
+    ...SIMPLE_WORLD,
     maxAgents: 60,
     initialAgents: 30,
     minAgents: 10,
     worldWidth: 2000,
     worldHeight: 1000,
-    obstacleCount: 4,
 };
 /** @type {string} */
 let dir;
@@ -58,13 +57,13 @@ describe('runEval', () => {
     );
 
     it(
-        'gives map-elites-v1 identical reports for 1 and 2 workers, with the archive metrics set',
+        'gives map-elites-v6 identical reports for 1 and 2 workers, with the archive metrics set',
         async () => {
             const go = (/** @type {string} */ name, /** @type {number} */ workers) =>
                 runEval({
                     seeds: 2,
                     ticks: 3000,
-                    policy: 'map-elites-v1',
+                    policy: 'map-elites-v6',
                     configOverrides: { ...SMALL, maturityTicks: 100 },
                     out: join(dir, `${name}.json`),
                     logDir: join(dir, 'logs'),
@@ -115,5 +114,30 @@ describe('runEval', () => {
             );
         },
         scaleTimeout(60_000),
+    );
+
+    it(
+        'writes champion files beside the report with --save-champions, and none otherwise',
+        async () => {
+            const lines = /** @type {string[]} */ ([]);
+            const base = {
+                seeds: 2,
+                ticks: 3000,
+                policy: 'map-elites-v6',
+                configOverrides: SMALL,
+                logDir: join(dir, 'logs'),
+                workers: 2,
+                sha: 'test',
+                print: (/** @type {string} */ line) => lines.push(line),
+            };
+            await runEval({ ...base, out: join(dir, 'plain.json') });
+            expect(existsSync(join(dir, 'plain-champions'))).toBe(false);
+            await runEval({ ...base, out: join(dir, 'with.json'), saveChampions: 2 });
+            const files = readdirSync(join(dir, 'with-champions'));
+            expect(files.length).toBeGreaterThan(0);
+            expect(files.length).toBeLessThanOrEqual(4);
+            expect(lines.some((line) => line.includes(`champions to ${join(dir, 'with-champions')}`))).toBe(true);
+        },
+        scaleTimeout(120_000),
     );
 });

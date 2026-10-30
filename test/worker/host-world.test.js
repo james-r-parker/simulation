@@ -19,7 +19,7 @@ import { yearTicks } from '../../js/sim/eras.js';
 import { validateMessage } from '../../js/worker/protocol.js';
 import { calendarOf } from '../../js/app/ui/status-line.js';
 import { noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const LOG = createSimLog(() => {}, { level: 'error' });
 
@@ -92,7 +92,7 @@ describe('buildRun', () => {
 describe('tickOnce', () => {
     it('steps the world exactly as the core does without the host', () => {
         const run = small();
-        const config = createConfig({ ...FEATURES_OFF, ...SMALL_CONFIG, seed: 3 });
+        const config = createConfig({ ...SIMPLE_WORLD, ...SMALL_CONFIG, seed: 3 });
         const policy = cloneWithNoisePolicy();
         const reference = createWorld(config, policy);
         for (let t = 0; t < 120; t++) {
@@ -138,22 +138,22 @@ describe('worldInfo patches', () => {
 });
 
 describe('worldInfo calendar and switches', () => {
-    it('sends one season in ticks, with eras off (a quarter of the config year) and on', () => {
+    it('sends one season in ticks (eraSeasonTicks)', () => {
         const base = worldInfo(small());
-        expect(base).toMatchObject({ seasonLength: 900, sexesEnabled: false, traitsEnabled: false });
+        expect(base).toMatchObject({ seasonLength: 36000 });
         const run = buildRun({
             seed: 3,
-            overrides: { ...SMALL_CONFIG, erasEnabled: true, eraSeasonTicks: 500, sexesEnabled: true },
+            overrides: { ...SMALL_CONFIG, eraSeasonTicks: 500 },
             createPolicy: noisePolicy,
             log: LOG,
         });
-        expect(worldInfo(run)).toMatchObject({ seasonLength: 500, sexesEnabled: true });
+        expect(worldInfo(run)).toMatchObject({ seasonLength: 500 });
     });
 
     it.each([
-        ['off', {}],
-        ['on', { erasEnabled: true, eraSeasonTicks: 500 }],
-    ])('gives a calendar that matches the sim season and year with eras %s', (_name, extra) => {
+        ['default', {}],
+        ['short', { eraSeasonTicks: 500 }],
+    ])('gives a calendar that matches the sim season and year with %s eras', (_name, extra) => {
         const run = buildRun({
             seed: 3,
             overrides: { ...SMALL_CONFIG, ...extra },
@@ -220,46 +220,32 @@ describe('worldInfo and readyLayout', () => {
 });
 
 describe('worldInfo terrain', () => {
-    it('lists no refuges for a basins world with none', () => {
+    it('lists no refuges for a world with none', () => {
         const run = buildRun({
             seed: 3,
-            overrides: {
-                ...SMALL_CONFIG,
-                worldWidth: 6000,
-                worldHeight: 4000,
-                obstacleCount: 0,
-                terrainLayout: 'basins',
-                refugeCount: 0,
-            },
+            overrides: { ...SMALL_CONFIG, worldWidth: 6000, worldHeight: 4000, refugeCount: 0 },
             createPolicy: noisePolicy,
             log: LOG,
         });
         expect(worldInfo(run).terrain.refuges).toEqual([]);
     });
 
-    it('is open with no rocks by default and describes the static rocks and refuges in basins', () => {
-        expect(worldInfo(small()).terrain).toEqual({
-            layout: 'open',
-            coldMarginWidth: 0,
-            wallX: 0,
-            rockFirst: SMALL_CONFIG.obstacleCount,
-            rockCount: 0,
-            refuges: [],
-        });
+    it('describes the static rocks and refuges of the basins', () => {
         const run = buildRun({
             seed: 3,
             overrides: {
                 ...SMALL_CONFIG,
                 worldWidth: 6000,
                 worldHeight: 4000,
-                obstacleCount: 0,
-                terrainLayout: 'basins',
+                wallGaps: 3,
+                refugeCount: 4,
+                coldMarginWidth: 600,
             },
             createPolicy: noisePolicy,
             log: LOG,
         });
         const info = worldInfo(run);
-        expect(info.terrain).toMatchObject({ layout: 'basins', coldMarginWidth: 600, wallX: 3000, rockFirst: 0 });
+        expect(info.terrain).toMatchObject({ coldMarginWidth: 600, wallX: 3000, rockFirst: 0 });
         expect(info.terrain.rockCount).toBeGreaterThan(0);
         expect(info.obstacleCount).toBe(info.terrain.rockCount);
         expect(run.world.obsX.length).toBe(info.obstacleCount);

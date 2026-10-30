@@ -2,9 +2,11 @@
 
 import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from './brain-layout.js';
+import { poolRays } from './ray-pool.js';
 
 /**
- * Adds each nonzero input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
+ * Adds each nonzero pooled input times its weight row to `brainScratch`. Two nonzero inputs share one pass over the scratch;
  * each unit still takes its terms one after another in the same order, so the sums are bit-identical to adding the
  * rows one at a time.
  * @param {Record<string, any>} world the world
@@ -12,14 +14,14 @@ import { hebbianStep } from './hebbian.js';
  * @returns {void}
  */
 function addInputs(world, slot) {
-    const { weights, inputs, brainScratch: acc, layout } = world;
+    const { weights, pooled, brainScratch: acc, layout } = world;
     const H = layout.hidden;
     const inBase = slot * layout.inputCount;
     const wIn = slot * layout.weightCount + layout.wIn;
     let pending = -1;
     let pendingX = 0;
     for (let i = 0; i < layout.inputCount; i++) {
-        const x = inputs[inBase + i];
+        const x = pooled[inBase + i];
         if (x === 0) {
             continue;
         }
@@ -92,17 +94,38 @@ function hiddenStep(world, slot) {
     }
     addInputs(world, slot);
     addRecurrent(world, slot);
-    if (world.config.leakEnabled) {
-        const hBase = slot * H;
-        const { leakRate } = world;
-        detTanhInto(acc, acc, 0, H); // in place: each group of four is read whole before it is written
-        for (let j = 0; j < H; j++) {
-            const a = leakRate[hBase + j];
-            hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * acc[j]);
-        }
-        return;
+    const hBase = slot * H;
+    const { leakRate } = world;
+    detTanhInto(acc, acc, 0, H); // in place: each group of four is read whole before it is written
+    for (let j = 0; j < H; j++) {
+        const a = leakRate[hBase + j];
+        hidden[scratchBase + j] = Math.fround((1 - a) * hidden[hBase + j] + a * acc[j]);
     }
-    detTanhInto(acc, hidden, scratchBase, H);
+}
+
+/**
+ * Adds the skip block to the output sums: each nonzero pooled value times its row of `wSkip`, pooled values in index
+ * order, after the hidden terms of every output (so a reflex needs no hidden unit). The block is genome only; it is
+ * not plastic.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the alive slot
+ * @returns {void}
+ */
+function addSkip(world, slot) {
+    const { weights, pooled, layout, brainScratch: sums } = world;
+    const G = layout.geneOutputs;
+    const inBase = slot * layout.inputCount;
+    const skip = slot * layout.weightCount + layout.wSkip;
+    for (let i = 0; i < POOLED_VALUES; i++) {
+        const x = pooled[inBase + i];
+        if (x === 0) {
+            continue;
+        }
+        const row = skip + i * G;
+        for (let g = 0; g < G; g++) {
+            sums[GENE_OUTPUTS[g]] += weights[row + g] * x;
+        }
+    }
 }
 
 /**
@@ -115,22 +138,25 @@ function outputStep(world, slot) {
     const { weights, hidden, outputs, layout } = world;
     const H = layout.hidden;
     const OUT = layout.outputCount;
+    const G = layout.geneOutputs;
     const wBase = slot * layout.weightCount;
     const hBase = slot * H;
     const scratchBase = world.config.maxAgents * H;
     // With Hebbian learning on, the plastic copy of the block is read; the genome's block never changes in a life.
     const plastic = world.config.hebbianRate > 0;
     const block = plastic ? world.fastOut : weights;
-    const wOut = plastic ? slot * H * OUT : wBase + layout.wOut;
+    const wOut = plastic ? slot * H * G : wBase + layout.wOut;
     const bOut = wBase + layout.bOut;
     const sums = world.brainScratch;
-    for (let o = 0; o < OUT; o++) {
-        let sum = weights[bOut + o];
+    sums[OUTPUT_INDEX.SPLIT] = 0; // no genes: the output reads 0
+    for (let g = 0; g < G; g++) {
+        let sum = weights[bOut + g];
         for (let j = 0; j < H; j++) {
-            sum += block[wOut + j * OUT + o] * hidden[scratchBase + j];
+            sum += block[wOut + j * G + g] * hidden[scratchBase + j];
         }
-        sums[o] = sum;
+        sums[GENE_OUTPUTS[g]] = sum;
     }
+    addSkip(world, slot);
     detTanhInto(sums, outputs, slot * OUT, OUT);
     for (let j = 0; j < H; j++) {
         hidden[hBase + j] = hidden[scratchBase + j];
@@ -147,6 +173,7 @@ export function forwardAll(world) {
     const learn = world.config.hebbianRate > 0;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
+            poolRays(world, slot);
             hiddenStep(world, slot);
             outputStep(world, slot);
             if (learn) {

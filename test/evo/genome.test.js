@@ -9,7 +9,7 @@ const layout = brainLayout({ rayCount: 2, brainHidden: 4 });
 /** @returns {import('../../js/evo/genome.js').Genome} a genome that fits `layout` */
 function makeGenome() {
     const weights = new Float32Array(layout.weightCount);
-    randomWeights(weights, layout, createRng(7));
+    randomWeights(weights, layout, createRng(7), 3);
     return {
         version: 2,
         id: 12,
@@ -72,6 +72,15 @@ describe('encodeGenome and decodeGenome', () => {
         expect(back.weights).toHaveLength(layout.weightCount);
         expect(Array.from(back.weights.subarray(layout.traitStart))).toEqual(
             Array.from(genome.weights.subarray(layout.traitStart)),
+        );
+    });
+
+    it('sizes the weights from brainLayout and refuses a genome of the old 179-input layout by name', () => {
+        const encoded = encodeGenome(makeGenome());
+        expect(decodeGenome(encoded).weights).toHaveLength(brainLayout({ rayCount: 0, brainHidden: 4 }).weightCount);
+        encoded.layout.inputCount = 179;
+        expect(() => decodeGenome(encoded)).toThrow(
+            /genome\.layout: expected 81 inputs and 11 outputs, got 179 and 11/,
         );
     });
 

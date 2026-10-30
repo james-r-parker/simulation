@@ -46,7 +46,7 @@ export function runLabel(ready, overrides) {
     if (ready === null || typeof ready.policy !== 'string') {
         return '';
     }
-    return `policy ${ready.policy}${overrides.meritEnabled === true ? ', merit on' : ''}`;
+    return `policy ${ready.policy}${Number(overrides.meritBirthBoost) > 0 ? ', merit on' : ''}`;
 }
 
 /**

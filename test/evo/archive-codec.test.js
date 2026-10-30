@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createArchive, nextClone, offer, selectParent } from '../../js/evo/archive.js';
 import { ARCHIVE_VERSION, decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
-import { descriptorV1, descriptorV6 } from '../../js/evo/descriptors.js';
+import { descriptorV1, descriptorV7 } from '../../js/evo/descriptors.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createSimLog } from '../../js/sim/log.js';
@@ -76,18 +76,19 @@ describe('archive codec', () => {
 
     it('rejects a mismatched layout field, rulesHash or version by name', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
-        expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }))).toThrow(/layout\.inputCount/);
+        const oldLayout = { ...json.layout, inputCount: 179 };
+        expect(() => decodeArchive({ ...json, layout: oldLayout }, config)).toThrow(/layout\.inputCount/);
         expect(() => decodeArchive(json, createConfig({ rayCount: 2, brainHidden: 5 }))).toThrow(/layout\.brainHidden/);
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config)).toThrow(/rulesHash/);
         expect(() => decodeArchive({ ...json, version: ARCHIVE_VERSION - 1 }, config)).toThrow(/archive\.version/);
     });
 
     it('rejects an archive built under another descriptor, naming the field', () => {
-        const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV6 }), config));
-        expect(json.descriptor).toBe('v6');
+        const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV7 }), config));
+        expect(json.descriptor).toBe('v7');
         expect(() => decodeArchive(json, config)).toThrow(/archive\.descriptor/);
         expect(() => decodeArchive(json, config, undefined, descriptorV1)).toThrow(/archive\.descriptor/);
-        expect(decodeArchive(json, config, undefined, descriptorV6).descriptor).toBe(descriptorV6);
+        expect(decodeArchive(json, config, undefined, descriptorV7).descriptor).toBe(descriptorV7);
     });
 
     it('rejects an archive with no descriptor field', () => {
@@ -102,17 +103,58 @@ describe('archive codec', () => {
         const records = [];
         const log = createSimLog((r) => records.push(r), { level: 'debug' });
         expect(() => decodeArchive({ ...json, rulesHash: 'x' }, config, log)).toThrow(/rulesHash/);
-        expect(() => decodeArchive(json, createConfig({ rayCount: 3, brainHidden: 4 }), log)).toThrow(/inputCount/);
+        const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
+        expect(() => decodeArchive(old, config, log)).toThrow(/inputCount/);
         expect(records.map((r) => [r.event, r.level, r.field, r.actual])).toEqual([
             ['GenomeRejected', 'error', 'archive.rulesHash', 'x'],
-            ['GenomeRejected', 'error', 'archive.layout.inputCount', json.layout.inputCount],
+            ['GenomeRejected', 'error', 'archive.layout.inputCount', 179],
         ]);
-        expect(records[1].expected).toBe(brainLayout(createConfig({ rayCount: 3, brainHidden: 4 })).inputCount);
+        expect(records[1].expected).toBe(brainLayout(config).inputCount);
     });
 
     it('rejects an unknown specialisation', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
         json.cells[0].specialisation = 'wizard';
         expect(() => decodeArchive(json, config)).toThrow(/wizard/);
+    });
+
+    it('is version 4: the skip block and the deleted SPLIT genes made every earlier archive invalid', () => {
+        expect(ARCHIVE_VERSION).toBe(4);
+    });
+
+    it('rejects a stored archive from before the layout change by its version, cleanly, whatever else it holds', () => {
+        // The shape written at version 2: 179 inputs, descriptor v6, genomes of the old size.
+        const stored = {
+            version: 2,
+            descriptor: 'v6',
+            layout: { inputCount: 179, brainHidden: 4, outputCount: 11 },
+            rulesHash: 'deadbeefdeadbeef',
+            cursors: [0, 0, 0, 0, 0],
+            cells: [
+                {
+                    specialisation: 'forager',
+                    cell: 3,
+                    elite: { id: 1, sigma: 0.05, weights: 'AAAA' },
+                    challenger: null,
+                },
+            ],
+        };
+        /** @type {any[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        const stale = viaText(stored);
+        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 4, got 2/);
+        expect(records.map((r) => [r.event, r.field, r.expected, r.actual])).toEqual([
+            ['GenomeRejected', 'archive.version', 4, 2],
+        ]);
+        expect(() => decodeArchive({ version: 2 }, config)).toThrow(/archive\.version/);
+        expect(() => decodeArchive({ version: 3 }, config)).toThrow(/archive\.version: expected 4, got 3/);
+        expect(() => decodeArchive({}, config)).toThrow(/archive\.version/);
+    });
+
+    it('rejects a current-version archive stamped with the old 179-input layout by the layout field', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
+        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 81, got 179/);
     });
 });

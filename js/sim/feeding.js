@@ -1,8 +1,8 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
-import { canBite } from './bite-rule.js';
+import { canBite, couldBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
-import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, transferEnergy } from './energy.js';
+import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
 import { depletePatchAt } from './food-patches.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
@@ -48,8 +48,8 @@ function tryEat(world, slot, food) {
  * @returns {boolean} whether the agent may eat this tick
  */
 export function canEatNow(world, slot) {
-    const { satiationShare, digestTicks, maxEnergy } = world.config;
-    if (satiationShare > 0 && world.energy[slot] >= satiationShare * maxEnergy) {
+    const { satiationShare, digestTicks } = world.config;
+    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.maxEnergyBySpec[world.spec[slot]]) {
         return false;
     }
     return digestTicks === 0 || world.ateTimer[slot] >= digestTicks;
@@ -104,7 +104,23 @@ function bites(world, biter, victim) {
 }
 
 /**
- * Resolves one bite: moves energy, records the loss and deposits pheromones.
+ * The kick a landed bite costs the biter: `biteCost` x (victim size / biter size) x (0.5 + victim energy /
+ * its own store) x the victim's `kickMultiplier`. A big, fed or defender victim kicks hardest, a small, starving one
+ * barely at all. Read before the bite moves energy.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the biting slot
+ * @param {number} victim the bitten slot
+ * @returns {number} the energy the biter loses
+ */
+function kickOf(world, biter, victim) {
+    const { config } = world;
+    const sizeRatio = world.size[victim] / world.size[biter];
+    const fullness = 0.5 + world.energy[victim] / world.maxEnergyBySpec[world.spec[victim]];
+    return config.biteCost * sizeRatio * fullness * specParams(config, world.spec[victim]).kickMultiplier;
+}
+
+/**
+ * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
@@ -115,12 +131,14 @@ function applyBite(world, biter, victim) {
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
+    const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
     if (wasAlive && world.energy[victim] <= 0 && config.predatorKillEnergy > 0) {
         addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
     }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
+    removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (world.lastBiter[victim] !== biterId) {
@@ -132,6 +150,43 @@ function applyBite(world, biter, victim) {
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
     depositPheromone(world, world.danger, x[victim], y[victim]);
+}
+
+/**
+ * Charges `recoilEnergy` to a hunter that tries to bite something the bite rule refuses (kin, or too large), once per
+ * tick however many it touches. The stamp (tick + 1, so a fresh slot's 0 never matches) is derived state outside
+ * `worldHash`, cleared by `freeAgent`. A refusal for the jaws alone is not a recoil: `couldBite` still holds.
+ * @param {Record<string, any>} world the world
+ * @param {number} hunter the slot that wants to bite
+ * @param {number} target the slot it touches
+ * @returns {void}
+ */
+function recoil(world, hunter, target) {
+    const { config, recoilStamp } = world;
+    const wants = world.outputs[hunter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
+    if (!wants || recoilStamp[hunter] === world.tick + 1 || !specParams(config, world.spec[hunter]).canHunt) {
+        return;
+    }
+    if (couldBite(world, hunter, target)) {
+        return;
+    }
+    recoilStamp[hunter] = world.tick + 1;
+    removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+}
+
+/**
+ * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the slot that may bite
+ * @param {number} other the slot it touches
+ * @returns {void}
+ */
+function lunge(world, biter, other) {
+    if (bites(world, biter, other)) {
+        applyBite(world, biter, other);
+    } else if (world.config.recoilEnergy > 0) {
+        recoil(world, biter, other);
+    }
 }
 
 /**
@@ -150,11 +205,7 @@ export function feed(world, hash) {
     for (let c = 0; c < contactCount; c++) {
         const a = contacts[2 * c];
         const b = contacts[2 * c + 1];
-        if (bites(world, a, b)) {
-            applyBite(world, a, b);
-        }
-        if (bites(world, b, a)) {
-            applyBite(world, b, a);
-        }
+        lunge(world, a, b);
+        lunge(world, b, a);
     }
 }

@@ -5,6 +5,7 @@ import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
 import { bodyMetrics } from './metrics-body.js';
+import { brainMetrics } from './metrics-brain.js';
 import { dominanceMetrics } from './metrics-dominance.js';
 import { environmentMetrics } from './metrics-environment.js';
 import { fitnessMetrics } from './metrics-fitness.js';
@@ -13,6 +14,7 @@ import { lineageMetrics } from './metrics-lineage.js';
 import { dietMetrics } from './metrics-diet.js';
 import { meritMetrics } from './metrics-merit.js';
 import { intentMetrics } from './metrics-intent.js';
+import { sceneMetrics } from './metrics-scenes.js';
 import { selectionMetrics } from './metrics-selection.js';
 import { watchMetrics } from './metrics-watch.js';
 import { watchabilityMetrics } from './metrics-watchability.js';
@@ -139,6 +141,8 @@ export function computeMetrics(observer, world, options = {}) {
         ...meritMetrics(observer, world),
         ...dietMetrics(observer),
         ...watchabilityMetrics(observer),
+        ...sceneMetrics(observer),
+        ...brainMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

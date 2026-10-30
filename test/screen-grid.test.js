@@ -56,7 +56,7 @@ describe('expandGrid', () => {
 
     it("lays an arm's policyOptions over the base's and keeps them out of the config overrides", () => {
         const plan = expandGrid({
-            base: { maxAgents: 300, policyOptions: { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } } },
+            base: { maxAgents: 300, policyOptions: { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATURED: 2 } } },
             ticks: 10,
             policy: 'map-elites-v6',
             reference: 'plain',
@@ -67,8 +67,8 @@ describe('expandGrid', () => {
             },
         });
         const byName = Object.fromEntries(plan.arms.map((a) => [a.name, a]));
-        expect(byName.plain.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } });
-        expect(byName.weight.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 9, MATING: 2 } });
+        expect(byName.plain.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATURED: 2 } });
+        expect(byName.weight.policyOptions).toEqual({ archiveShare: 0.1, fitnessOverrides: { BORN: 9, MATURED: 2 } });
         expect(byName.mix.policyOptions).toMatchObject({ cloneShareEnd: 0.9, descriptor: 'v1' });
         expect(byName.weight.overrides).toEqual({ maxAgents: 300 });
     });
@@ -87,8 +87,8 @@ describe('expandGrid', () => {
             /arm "a": .*descriptor "v9"/,
         ],
         [
-            { policy: 'map-elites-v1q', arms: { a: { policyOptions: { fitnessOverrides: { BORN: 1 } } } } },
-            /arm "a": .*map-elites-v1q" does not take "fitnessOverrides"/,
+            { policy: 'baseline-v5', arms: { a: { policyOptions: { fitnessOverrides: { BORN: 1 } } } } },
+            /arm "a": .*baseline-v5" does not take "fitnessOverrides"/,
         ],
         [
             { policy: 'map-elites-v6', base: { policyOptions: { archiveShare: 2 } }, arms: { a: {} } },

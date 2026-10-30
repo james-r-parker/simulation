@@ -13,7 +13,7 @@ const VISION = 300;
  * @returns {number[]} the `RAY_CHANNELS` values of a ray
  */
 function rayValues(w, slot, ray) {
-    const base = slot * w.layout.inputCount + ray * RAY_CHANNELS;
+    const base = slot * w.layout.rawInputCount + ray * RAY_CHANNELS;
     return Array.from(w.inputs.subarray(base, base + RAY_CHANNELS));
 }
 
@@ -167,7 +167,7 @@ describe('castRays geometry edges', () => {
         const me = addAgent(w, 500, 500, 20);
         w.inputs.fill(9);
         cast(w, me);
-        const after = me * w.layout.inputCount + w.config.rayCount * RAY_CHANNELS;
+        const after = me * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
         expect(w.inputs[after]).toBe(9);
         expect(w.inputs[after - 1]).toBe(0);
     });

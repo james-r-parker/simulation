@@ -4,7 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { actAll, integrate, resolveContacts } from '../../js/sim/physics.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 64,
@@ -14,7 +14,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 8,
     initialFood: 0,
-    obstacleCount: 0,
     fertileZoneMax: 3,
     worldWidth: 1000,
     worldHeight: 1000,
@@ -26,7 +25,7 @@ const SMALL = {
  * @returns {any} a world with no agents and no damping
  */
 function setup(extra = {}) {
-    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...extra }));
+    return allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...extra }));
 }
 
 /**
@@ -119,7 +118,7 @@ describe('integrate obstacles exactly', () => {
      * @returns {any}
      */
     function withObstacle(agent) {
-        const w = setup({ obstacleCount: 1 });
+        const w = setup();
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 50;
@@ -145,14 +144,12 @@ describe('integrate obstacles exactly', () => {
         expect([w.x[0], w.vx[0], w.energy[0]]).toEqual([575, 0, 100]);
     });
 
-    it('reflects the velocity relative to the obstacle along the diagonal normal', () => {
+    it('reflects the velocity along the diagonal normal', () => {
         const w = withObstacle({ x: 540, y: 529, vx: -1, vy: -2 });
-        w.obsVx[0] = 0.5;
-        w.obsVy[0] = -0.25;
         integrate(w);
         const d = Math.hypot(39, 27);
         const [nx, ny] = [39 / d, 27 / d];
-        const vn = (-1 - 0.5) * nx + (-2 + 0.25) * ny;
+        const vn = -1 * nx + -2 * ny;
         expect(w.x[0]).toBeCloseTo(500 + nx * 75, 3);
         expect(w.y[0]).toBeCloseTo(500 + ny * 75, 3);
         expect(w.vx[0]).toBeCloseTo(-1 - 2 * vn * nx, 4);

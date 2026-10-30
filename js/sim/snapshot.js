@@ -5,7 +5,7 @@ import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { FOOD_KIND } from './carcass.js';
 import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
-import { obstacleSlots } from './terrain.js';
+import { terrainRockCount } from './terrain.js';
 
 const HEADER_WORDS = 6;
 const AGENT_STRIDE = 12;
@@ -41,7 +41,7 @@ function maxWords(config) {
         HEADER_WORDS +
         config.maxAgents * (AGENT_STRIDE + config.rayCount) +
         config.maxFood * FOOD_STRIDE +
-        obstacleSlots(config) * OBSTACLE_STRIDE +
+        terrainRockCount(config) * OBSTACLE_STRIDE +
         config.maxClouds * CLOUD_STRIDE
     );
 }
@@ -109,7 +109,8 @@ function agentFlags(world, slot) {
  */
 function writeAgents(world, { f32, u32 }) {
     const { alive, x, y, angle, size, energy, spec, lineageId, genomeId, temperature, vx, vy } = world;
-    const { maxEnergy, temperatureMax } = world.config;
+    const { temperatureMax } = world.config;
+    const { maxEnergyBySpec } = world;
     let w = HEADER_WORDS;
     let count = 0;
     for (let slot = 0; slot < alive.length; slot++) {
@@ -118,7 +119,7 @@ function writeAgents(world, { f32, u32 }) {
             f32[w + 1] = y[slot];
             f32[w + 2] = angle[slot];
             f32[w + 3] = size[slot];
-            f32[w + 4] = energy[slot] / maxEnergy;
+            f32[w + 4] = energy[slot] / maxEnergyBySpec[spec[slot]];
             u32[w + 5] = spec[slot];
             u32[w + 6] = lineageId[slot];
             u32[w + 7] = genomeId[slot];
@@ -188,7 +189,7 @@ function writeClouds(world, f32, start) {
 function writeRays(world, f32, start) {
     const { alive, inputs } = world;
     const { rayCount } = world.config;
-    const stride = world.layout.inputCount;
+    const stride = world.layout.rawInputCount;
     let w = start;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
@@ -212,7 +213,7 @@ function writeRays(world, f32, start) {
 export function writeSnapshot(world, views, withRays = false) {
     const { f32, u32 } = views;
     const { rayCount } = world.config;
-    const obstacleCount = obstacleSlots(world.config);
+    const obstacleCount = terrainRockCount(world.config);
     const need = maxWords(world.config) * WORD_BYTES;
     if (f32.byteLength < need) {
         throw new Error(`writeSnapshot: buffer holds ${f32.byteLength} bytes, the config needs ${need}`);

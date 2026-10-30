@@ -119,7 +119,8 @@ function emitBlocked(log, d, o) {
 }
 
 /**
- * Emits one `PopulationFloor` event.
+ * Emits one `PopulationFloor` event, and the `FloorGuard` record beside it (the population before the refill and
+ * the agents spawned).
  * @param {SimLog} log the log
  * @param {Float64Array} d ring data
  * @param {number} o record offset
@@ -127,6 +128,7 @@ function emitBlocked(log, d, o) {
  */
 function emitFloor(log, d, o) {
     log.log('info', 'PopulationFloor', { tick: d[o + 1], added: d[o + 2] });
+    log.log('info', 'FloorGuard', { tick: d[o + 1], population: d[o + 3], spawned: d[o + 2] });
 }
 
 /**
@@ -216,38 +218,6 @@ function emitDrought(log, d, o) {
 }
 
 /**
- * Emits one `InvasionArrived` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitInvasion(log, d, o) {
-    log.log('info', 'InvasionArrived', {
-        tick: d[o + 1],
-        count: d[o + 2],
-        lineageId: d[o + 3],
-        spec: d[o + 4],
-        edge: d[o + 5],
-    });
-}
-
-/**
- * Emits one `PredatorRescue` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitPredatorRescue(log, d, o) {
-    log.log('debug', 'PredatorRescue', {
-        tick: d[o + 1],
-        count: d[o + 2],
-        cause: causeName(BORN_NAMES, d[o + 3], 'PredatorRescue'),
-    });
-}
-
-/**
  * Emits one `MeritSummary` event.
  * @param {SimLog} log the log
  * @param {Float64Array} d ring data
@@ -265,6 +235,24 @@ function emitMeritSummary(log, d, o) {
     });
 }
 
+/**
+ * Emits one `LineProven` event: a child proved itself, so its parents' line is established.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitLineProven(log, d, o) {
+    log.log('debug', 'LineProven', {
+        tick: d[o + 1],
+        slot: d[o + 2],
+        genomeId: d[o + 3],
+        parentA: d[o + 4],
+        parentB: d[o + 5],
+        lineageId: d[o + 6],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -279,9 +267,8 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.FOOD_PATCHES_CREATED]: { level: LOG_LEVEL.info, emit: emitPatches },
     [EVENT_TYPE.SEASON_CHANGED]: { level: LOG_LEVEL.info, emit: emitSeason },
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
-    [EVENT_TYPE.INVASION_ARRIVED]: { level: LOG_LEVEL.info, emit: emitInvasion },
-    [EVENT_TYPE.PREDATOR_RESCUE]: { level: LOG_LEVEL.debug, emit: emitPredatorRescue },
     [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
+    [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
 });
 
 /**

@@ -103,7 +103,7 @@ function biteSeeker() {
  * @returns {number} the turn output
  */
 function wallTurn(world, slot) {
-    const stride = world.layout.inputCount;
+    const stride = world.layout.rawInputCount;
     const { rayCount } = world.config;
     for (const k of [0, 1, rayCount - 1]) {
         const base = slot * stride + k * RAY_CHANNELS;

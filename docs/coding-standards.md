@@ -3,7 +3,7 @@
 The rules for new code in `js/sim/`, `js/evo/`, `scripts/` and `test/`. The size limits and the hard rules are in
 [AGENTS.md](../AGENTS.md); this file is the detail behind them. Read it before writing code.
 
-The legacy app grew 2,000-line files (`agent.js`, `game.js`, `ui.js`) that mix simulation, rendering, persistence
+The v5 app grew 2,000-line files (`agent.js`, `game.js`, `ui.js`) that mix simulation, rendering, persistence
 and UI, and cannot be tested. New code is the opposite: small modules that each do one job and are tested on their
 own.
 
@@ -28,7 +28,7 @@ own.
 ## Correctness
 
 - **Fail loudly.** Invalid input throws an `Error` with a message that names the value and what was expected. Never
-  fall back silently - the legacy code randomised mismatched brain weights and kept their old fitness, which
+  fall back silently - the v5 code randomised mismatched brain weights and kept their old fitness, which
   corrupted evolution for months.
 - **Validate at the boundary.** Data from IndexedDB, files, workers or the user is checked once where it enters;
   internal code trusts its typed inputs.
@@ -52,8 +52,8 @@ own.
 
 ## Tests
 
-- **Scope.** Lint and typecheck cover the new code only (`js/sim/`, `js/evo/`, `scripts/`, `test/`); legacy modules
-  join as they are replaced. Simulation tests run headless on a seeded world, never with `Math.random`, wall-clock
+- **Scope.** Lint and typecheck cover the new code only (`js/sim/`, `js/evo/`, `scripts/`, `test/`); `js/worker/` and `js/app/` are covered
+  too. Simulation tests run headless on a seeded world, never with `Math.random`, wall-clock
   time, a real GPU or a browser.
 - **Test behaviour, not implementation.** Assert on outputs and observable state through the public API.
 - **Fast and isolated.** Unit tests need no browser, GPU, network or timers, and finish in milliseconds; each test

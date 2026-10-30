@@ -1,8 +1,8 @@
+import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy } from '../../js/sim/energy.js';
-import { allocAgent } from '../../js/sim/world.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -15,7 +15,9 @@ const DEFENDER = 4;
  */
 const NEUTRAL = {
     huntSizeRatio: 1.01,
-    specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
+    biteCost: 0,
+    maxEnergy: 25000,
+    specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1, maxEnergyMultiplier: 1 } },
 };
 
 /**
@@ -24,7 +26,7 @@ const NEUTRAL = {
  * @returns {number} the slot
  */
 function agent(w, a) {
-    const slot = allocAgent(w);
+    const slot = allocBody(w);
     w.x[slot] = a.x;
     w.y[slot] = a.y;
     w.angle[slot] = a.angle ?? 0;
@@ -106,9 +108,9 @@ describe('feed: eating', () => {
     });
 
     it('eats a food that spans several cells only once', () => {
-        const w = smallWorld({ hashCellSize: 130 });
-        const a = agent(w, { x: 130, y: 130, energy: 20 });
-        food(w, 130, 130, 6);
+        const w = smallWorld({ hashCellSize: 135 });
+        const a = agent(w, { x: 135, y: 135, energy: 20 });
+        food(w, 135, 135, 6);
         run(w);
         expect(w.energy[a]).toBe(26);
         expect(w.foodEnergy[a]).toBe(6);
@@ -242,7 +244,11 @@ describe('feed: biting', () => {
     });
 
     it('scales the bite by the biter specialisation biteMultiplier', () => {
-        const w = smallWorld({ specialisations: { predator: { biteMultiplier: 4 } } });
+        const w = smallWorld({
+            biteCost: 0,
+            maxEnergy: 25000,
+            specialisations: { predator: { biteMultiplier: 4, maxEnergyMultiplier: 1 } },
+        });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50 });
         run(w, pair);
@@ -251,7 +257,11 @@ describe('feed: biting', () => {
     });
 
     it('applies biteMultiplier together with the victim biteTakenMultiplier', () => {
-        const w = smallWorld({ specialisations: { predator: { biteMultiplier: 4 } } });
+        const w = smallWorld({
+            biteCost: 0,
+            maxEnergy: 25000,
+            specialisations: { predator: { biteMultiplier: 4, maxEnergyMultiplier: 1 } },
+        });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50, spec: DEFENDER });
         run(w, pair);

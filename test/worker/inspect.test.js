@@ -18,7 +18,7 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
 
 describe('inspectLabels', () => {
-    it('names the 9 ray channels, the 35 body inputs and the 11 outputs', () => {
+    it('names the 9 ray channels, the 33 body inputs and the 11 outputs', () => {
         const labels = inspectLabels();
         expect(labels.rayChannels).toHaveLength(RAY_CHANNELS);
         expect(labels.bodyInputs).toHaveLength(EXTRA_INPUTS);
@@ -40,11 +40,16 @@ describe('inspectLabels', () => {
     it('groups the body inputs as the inspector shows them', () => {
         const groups = inspectLabels().bodyInputs.map((input) => input.group);
         expect(groups.filter((g) => g === 'Body')).toHaveLength(9);
-        expect(groups.filter((g) => g === 'Senses')).toHaveLength(7);
+        expect(groups.filter((g) => g === 'Senses')).toHaveLength(5);
         expect(groups.filter((g) => g === 'Temperature')).toHaveLength(4);
         expect(groups.filter((g) => g === 'Scent antennae')).toHaveLength(7);
         expect(groups.filter((g) => g === 'Heard calls')).toHaveLength(6);
         expect(groups.filter((g) => g === 'Memory')).toHaveLength(2);
+    });
+
+    it('has no season input: the blob is not told the calendar', () => {
+        const names = inspectLabels().bodyInputs.map((input) => input.name);
+        expect(names.filter((name) => name.startsWith('season'))).toEqual([]);
     });
 
     it('gives every body input a distinct name', () => {
@@ -68,7 +73,7 @@ describe('workerLayout', () => {
 
     it('keeps the sim layout fields for the reader', () => {
         const layout = workerLayout(smallWorld().config);
-        expect(layout).toMatchObject({ headerWords: 6, agentStride: 12, rayStride: 4, inputCount: 4 * 9 + 35 });
+        expect(layout).toMatchObject({ headerWords: 6, agentStride: 12, rayStride: 4, inputCount: 4 * 9 + 33 });
     });
 });
 
@@ -81,7 +86,7 @@ describe('writeInspect', () => {
         const world = smallWorld({ maxEnergy: 1000 });
         spawnAgent(world, testPolicy, BORN_CAUSE.INITIAL);
         const slot = 0;
-        world.inputs.fill(0.25, 0, world.layout.inputCount);
+        world.inputs.fill(0.25, 0, world.layout.rawInputCount);
         world.hidden.fill(0.5, 0, world.layout.hidden);
         world.outputs.fill(0.75, 0, 8);
         world.ageTicks[slot] = 33;

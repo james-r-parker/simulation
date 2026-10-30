@@ -6,7 +6,7 @@ import { ENERGY_SOURCE, addEnergy } from '../../../js/sim/energy.js';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { spawnAgent, createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
-import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
 
 /** The hunter is slot 0 and the specialisation `predator`; the prey is slot 1 and a `forager`. */
 export const HUNTER = 0;
@@ -27,8 +27,6 @@ const ARENA = {
     maxAgents: 8,
     initialAgents: 0,
     minAgents: 0,
-    immigrationInterval: 0,
-    obstacleCount: 0,
     initialFood: 0,
     foodSpawnRate: 0,
     fertileZoneMax: 0,
@@ -52,7 +50,7 @@ function nearestRayAngle(world, slot, channel) {
     let best = -1;
     let bestProximity = 0;
     for (let k = 0; k < rayCount; k++) {
-        const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+        const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
         if (world.inputs[base + channel] > 0 && world.inputs[base] > bestProximity) {
             bestProximity = world.inputs[base];
             best = k;
@@ -124,7 +122,7 @@ export function fleeBrain(smoke) {
  * @returns {Record<string, any>} the world
  */
 export function createArena({ gap, hunterEnergy, preyHeading = 0, over = {} }) {
-    const world = createWorld(createConfig({ ...FEATURES_OFF, ...ARENA, ...over }), POLICY);
+    const world = createWorld(createConfig({ ...SIMPLE_WORLD, ...ARENA, ...over }), POLICY);
     spawnAgent(world, POLICY, BORN_CAUSE.INITIAL);
     spawnAgent(world, POLICY, BORN_CAUSE.INITIAL);
     addEnergy(world, HUNTER, hunterEnergy - world.energy[HUNTER], ENERGY_SOURCE.INITIAL);
@@ -177,6 +175,6 @@ export function runArena(world, { ticks, prey, after = () => false }) {
  * @returns {number[]} the nine values of each of the agent's rays, flattened
  */
 export function rayValues(world, slot) {
-    const start = slot * world.layout.inputCount;
+    const start = slot * world.layout.rawInputCount;
     return Array.from(world.inputs.subarray(start, start + world.config.rayCount * RAY_CHANNELS));
 }

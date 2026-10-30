@@ -10,7 +10,7 @@ import { WINTER } from '../../js/sim/eras.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushDied } from './helpers/observer-world.js';
 
-const ON = { erasEnabled: true, hashCellSize: 256 };
+const ON = { hashCellSize: 256 };
 const NAMES = ['cold_stress_share', 'heat_stress_share', 'terrain_death_share', 'winter_pop_ratio'];
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 const NO_DEATHS = 'no death after burn-in';
@@ -92,12 +92,6 @@ describe('eval.cold_stress_share and eval.heat_stress_share', () => {
         checkpointWith(r, 10000, []);
         expect(read(r).heat_stress_share).toEqual({ value: null, reason: NO_AGENTS });
     });
-
-    it('do not depend on erasEnabled', () => {
-        const r = observed({ ...ON, erasEnabled: false });
-        checkpointWith(r, 10000, [10, 50]);
-        expect(read(r).cold_stress_share).toEqual({ value: 0.5 });
-    });
 });
 
 describe('eval.terrain_death_share', () => {
@@ -137,13 +131,6 @@ describe('eval.winter_pop_ratio', () => {
         checkpointWith(r, 10000, [50, 50], SUMMER);
         checkpointWith(r, 11000, [], WINTER);
         expect(read(r).winter_pop_ratio).toEqual({ value: 0 });
-    });
-
-    it('is null with a reason with erasEnabled off, even in a winter season', () => {
-        const r = observed({ ...ON, erasEnabled: false });
-        checkpointWith(r, 10000, [50, 50], WINTER);
-        checkpointWith(r, 11000, [50, 50], SUMMER);
-        expect(read(r).winter_pop_ratio).toEqual({ value: null, reason: 'erasEnabled is off' });
     });
 
     it('is null with a reason with no winter checkpoint after burn-in', () => {

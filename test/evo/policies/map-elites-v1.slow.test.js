@@ -13,11 +13,11 @@ import { step } from '../../../js/sim/step.js';
 import { hashWorld } from '../../../js/sim/world-hash.js';
 import { runReplay } from '../../../scripts/replay.mjs';
 import { dispatchEvents, runSeed } from '../../../scripts/eval-worker.mjs';
-import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
 import { scaleTimeout } from '../../../scripts/lib/test-timeout.mjs';
 
 const OVERRIDES = {
-    ...FEATURES_OFF,
+    ...SIMPLE_WORLD,
     maxAgents: 60,
     initialAgents: 30,
     minAgents: 10,
@@ -27,7 +27,6 @@ const OVERRIDES = {
     worldHeight: 1600,
     maxFood: 120,
     initialFood: 80,
-    obstacleCount: 4,
 };
 
 /**
@@ -36,7 +35,7 @@ const OVERRIDES = {
  * @returns {{policy: any, hash: string, records: any[]}} the policy after an eval-style run
  */
 function evalRun(seed, ticks) {
-    const config = createConfig({ ...FEATURES_OFF, ...OVERRIDES, seed });
+    const config = createConfig({ ...SIMPLE_WORLD, ...OVERRIDES, seed });
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     /** @type {any[]} */
     const records = [];
@@ -67,12 +66,12 @@ describe('a real run', () => {
     });
 
     it('replays an eval run to the same world hash', { timeout: scaleTimeout(60000) }, async () => {
-        const evaled = runSeed({ seed: 3, ticks: 3000, policy: 'map-elites-v1', overrides: OVERRIDES });
+        const evaled = runSeed({ seed: 3, ticks: 3000, policy: 'map-elites-v6', overrides: OVERRIDES });
         const dir = mkdtempSync(join(tmpdir(), 'me-replay-'));
         const replayed = await runReplay({
             seed: 3,
             ticks: 3000,
-            policy: 'map-elites-v1',
+            policy: 'map-elites-v6',
             configOverrides: OVERRIDES,
             logDir: join(dir, 'logs'),
             dumpDir: join(dir, 'dumps'),

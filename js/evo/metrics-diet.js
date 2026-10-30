@@ -1,7 +1,7 @@
 // The parent diet metrics (fitness-and-selection T48e): at each birth after burn-in, how much of the parent's eating was
 // deliberate. A split birth reads its one parent; a mate birth reads the mean of both parents (the mother alone when the
 // father is gone). A parent's share is its `mealsDeliberate` over its `mealsTotal` at that moment, 0 with no meals.
-// Read-only on the world; with `meritEnabled` off the tracker does not classify meals, so every metric is `null`.
+// Read-only on the world;
 
 import { none, ok } from './metrics-stats.js';
 
@@ -15,15 +15,11 @@ export const DIET_DIRECTIONS = Object.freeze({
     'eval.split_bumper_share': 'watch',
 });
 
-const OFF = 'meritEnabled is off';
-
 /**
- * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} the parent-diet counters
  */
-export function createDietPools(config) {
+export function createDietPools() {
     return {
-        enabled: config.meritEnabled === true,
         splits: 0,
         splitShareSum: 0,
         splitBumpers: 0,
@@ -50,9 +46,6 @@ function shareOf(world, slot) {
  * @returns {void}
  */
 export function noteSplitBirth(pools, world, child) {
-    if (!pools.enabled) {
-        return;
-    }
     const share = shareOf(world, world.parentSlotA[child]);
     pools.splits += 1;
     pools.splitShareSum += share;
@@ -68,9 +61,6 @@ export function noteSplitBirth(pools, world, child) {
  * @returns {void}
  */
 export function noteMateParents(pools, world, child, fatherId) {
-    if (!pools.enabled) {
-        return;
-    }
     const mother = shareOf(world, world.parentSlotA[child]);
     const father = world.parentSlotB[child];
     const fatherHere = father >= 0 && world.alive[father] === 1 && world.genomeId[father] === fatherId;
@@ -86,9 +76,6 @@ export function noteMateParents(pools, world, child, fatherId) {
  * @returns {import('./metrics-stats.js').MetricResult} the mean, or `null` with a reason
  */
 function mean(pools, count, sum, what) {
-    if (!pools.enabled) {
-        return none(OFF);
-    }
     return count === 0 ? none(`no ${what} birth after burn-in`) : ok(sum / count);
 }
 

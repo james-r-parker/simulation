@@ -1,6 +1,9 @@
 // Eval worker: runs one seed of one policy for N ticks and returns its metrics (see `scripts/eval.mjs`).
 import { isMainThread } from 'node:worker_threads';
+import { exportChampions } from '../js/evo/champion-export.js';
 import { computeMetrics } from '../js/evo/metrics.js';
+import { logMemorySummary } from '../js/evo/memory-summary.js';
+import { activityTable } from '../js/sim/input-activity.js';
 import { checkpoint, createObserver, observerPhases } from '../js/evo/observer.js';
 import { createTrace, finishTrace, observeTrace } from '../js/evo/trace.js';
 import { getPolicy } from '../js/evo/policies/index.js';
@@ -25,6 +28,7 @@ const CHECKPOINT_INTERVAL = 1000;
  * @property {Record<string, any>} overrides config overrides (the `--config` object, or `{}`)
  * @property {Record<string, any>} [policyOptions] options for the policy (`validatePolicyOptions`), default none
  * @property {number} [traceInterval] ticks between the trace's population samples, default 1000
+ * @property {number} [saveChampions] how many of the archive's best genomes to return as champion files, default 0
  */
 
 /**
@@ -45,7 +49,7 @@ function sum(values) {
  * @param {Record<string, any>} run the policy, observer and world
  * @returns {{tick: number, population: number, births: number, deaths: number}[]} one entry per checkpoint
  */
-function runTicks({ ticks }, { policy, observer, world, trace }) {
+function runTicks({ ticks }, { policy, observer, world, trace, log }) {
     const phases = observerPhases(observer);
     const checkpoints = [];
     for (let t = 0; t < ticks; t++) {
@@ -54,6 +58,7 @@ function runTicks({ ticks }, { policy, observer, world, trace }) {
         observeTrace(trace, world, observer);
         if (world.tick % CHECKPOINT_INTERVAL === 0 && world.tick >= CHECKPOINT_INTERVAL) {
             checkpoint(observer, world);
+            logMemorySummary(log, observer, world);
             checkpoints.push({
                 tick: world.tick,
                 population: world.population,
@@ -66,16 +71,37 @@ function runTicks({ ticks }, { policy, observer, world, trace }) {
 }
 
 /**
+ * @param {EvalTask} task the task
+ * @param {Record<string, any>} policy the policy that ran
+ * @param {Record<string, any>} config the config the seed ran on
+ * @returns {Record<string, any>[]} the champion files the task asks for (none by default)
+ * @throws {Error} when champions are asked for and the policy keeps no archive
+ */
+function championsOf(task, policy, config) {
+    const count = task.saveChampions ?? 0;
+    if (count === 0) {
+        return [];
+    }
+    if (policy.archive === undefined) {
+        throw new Error(`--save-champions needs a policy with an archive; "${task.policy}" has none`);
+    }
+    return exportChampions(policy.archive, config, { count, label: `${task.policy}-s${task.seed}` });
+}
+
+/**
  * Runs one seed.
  * @param {EvalTask} task the task
- * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints }`
+ * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints, inputActivity, champions }`
  * @throws {Error} naming the seed and the tick at which a step failed
  */
 export function runSeed(task) {
     const { seed, policy: policyName, overrides } = task;
     const started = performance.now();
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: task.ticks });
+    const observer = createObserver(config, fork(createRng(seed), 'eval'), {
+        runTicks: task.ticks,
+        checkpointTicks: CHECKPOINT_INTERVAL,
+    });
     const log = createSimLog(() => {}, { level: 'error' });
     const policy = getPolicy(policyName).create({ config, log, observer, ...task.policyOptions });
     /** @type {Record<string, any> | undefined} */
@@ -85,7 +111,7 @@ export function runSeed(task) {
     try {
         world = createWorld(config, policy.brain);
         feedPolicy({ policy, observer }, world);
-        checkpoints = runTicks(task, { policy, observer, world, trace });
+        checkpoints = runTicks(task, { policy, observer, world, trace, log });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`seed ${seed} failed at tick ${world?.tick ?? 0}: ${message}`, { cause: error });
@@ -103,6 +129,8 @@ export function runSeed(task) {
         fitnessName: policy.fitnessName,
         checkpoints,
         trace: finishTrace(trace, world, observer),
+        inputActivity: activityTable(observer.activity),
+        champions: championsOf(task, policy, config),
     };
 }
 

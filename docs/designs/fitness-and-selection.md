@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 to 3 built: the metric audit and new metrics (E35), the predator fix (E36, E47), in-world merit (off by default), `fitnessV6`, `descriptorV6`, `map-elites-v6` and the v6 exploit bounds (instruments, not live); Phase 4 (tuning, the switch-on) is still to build; its watchability metrics (T48h) are built, and the economy screen (T48i) is built; the remaining Phase 4 work (the switch-on, the long run and the clip review) is superseded by [natural-selection.md](natural-selection.md), which closes it.
 **Validated:** d8a8561 (2026-10-29)
-**Priority:** 2 - after natural-selection.md (Priority 1), which closes this plan's Phase 4 when its T19 moves the status lines; the worlds sit in a scout monoculture where behaviour stops improving, and every later tuning night, the trainer and the champions measure a fitness this doc replaces
+**Priority:** 4 - after natural-selection.md (Priority 1), which closes this plan's Phase 4 when its T19 moves the status lines; the worlds sit in a scout monoculture where behaviour stops improving, and every later tuning night, the trainer and the champions measure a fitness this doc replaces
 **Depends on:** [world-balance.md](world-balance.md) (Phase 1, built), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md)
 
 Blobs reward luck. In the current worlds 88% of food is eaten by chance contact, population sits at the cap, one

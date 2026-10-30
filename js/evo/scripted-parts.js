@@ -35,8 +35,8 @@ export const SEEK_THRUST = 0.4;
 export { turnTowards };
 
 /**
- * Every controller wants to split when it can: the sexes-off world splits any agent with the energy, and `SPLIT` is the
- * output that gate reads with sexes on, so holding it at 1 keeps a controller's reproduction the same either way.
+ * Every controller holds the `SPLIT` output at 1, as the legacy controllers did. No rule reads it (a split needs only
+ * energy and the gates), and a brain's `SPLIT` has no genes and reads 0, so the value is a record only.
  * The controllers are memoryless by design, so `MEMORY_A` and `MEMORY_B` stay at 0 (`write` clears the row first).
  */
 export const SCRIPTED_SPLIT = 1;

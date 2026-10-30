@@ -6,14 +6,16 @@ import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
+import { mateRankDue, refreshMateRanks } from './mate-rank.js';
 import { childSpec } from './heritable-spec.js';
-import { findMale, findMate } from './mate-search.js';
+import { findMale } from './mate-search.js';
 import { creditMating, meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
+import { noteProofBirth, splitBraked } from './proof.js';
 import { noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
@@ -66,10 +68,8 @@ function startMating(world, policy, mother, father) {
     world.fatherId[mother] = world.genomeId[father];
     world.fatherLineage[mother] = world.lineageId[father];
     world.pregnancy[mother] = pregnancyTicks;
-    if (world.config.meritEnabled) {
-        creditMating(world, mother);
-        creditMating(world, father);
-    }
+    creditMating(world, mother);
+    creditMating(world, father);
     if (policy.onMate) {
         policy.onMate(world, mother, father);
     }
@@ -87,21 +87,24 @@ function femaleChoice(world, a, chance) {
 
 /**
  * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
- * and starts a pregnancy when one wins the lifecycle draw. With `sexesEnabled` only the ready females search, each
- * choosing the strongest male in reach (`findMale`) and being the mother whatever her slot. Uses the hash built this
- * tick.
+ * and starts a pregnancy when one wins the lifecycle draw. Only the ready females search, each
+ * choosing the highest ranked male in reach (`findMale`, on the mate ranks `refreshMateRanks` recomputes every
+ * `MATE_RANK_INTERVAL` ticks) and being the mother whatever her slot. Uses the hash built this tick.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
  */
 export function mate(world, policy) {
     const { alive } = world;
-    const { sexesEnabled, mateChanceScale } = world.config;
+    if (mateRankDue(world)) {
+        refreshMateRanks(world);
+    }
+    const { mateChanceScale } = world.config;
     const { reproductionBonus } = world.config.seasons[world.season[0]];
     const chance = Math.min(1, reproductionBonus / mateChanceScale);
     for (let a = 0; a < alive.length; a++) {
         if (alive[a] === 1 && readyToMate(world, a)) {
-            const b = sexesEnabled ? femaleChoice(world, a, chance) : findMate(world, a, chance);
+            const b = femaleChoice(world, a, chance);
             if (b >= 0) {
                 startMating(world, policy, a, b);
             }
@@ -148,7 +151,7 @@ const GIFT_CAP = 0.9;
 
 /**
  * The energy a birth moves from `mother` to the child. A mating gives `childEnergyShare` of her energy, a split half.
- * With `meritEnabled` and a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
+ * With a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
  * (`m = merit / (merit + meritHalf)`, her merit decayed to now without restamping it) and capped at 0.9 of her energy;
  * otherwise it is the unscaled gift, exactly.
  * @param {World} world the world
@@ -156,11 +159,11 @@ const GIFT_CAP = 0.9;
  * @param {boolean} isMate true for a mating birth
  * @returns {number}
  */
-function giftOf(world, mother, isMate) {
-    const { meritEnabled, meritBirthBoost, meritHalf } = world.config;
+export function giftOf(world, mother, isMate) {
+    const { meritBirthBoost, meritHalf } = world.config;
     const energy = world.energy[mother];
     const gift = energy * (isMate ? childShareOf(world, mother) : 0.5);
-    if (!meritEnabled || meritBirthBoost === 0) {
+    if (meritBirthBoost === 0) {
         return gift;
     }
     const merit = meritPeek(world, mother);
@@ -197,6 +200,7 @@ function giveBirth(world, policy, mother, cause) {
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
     world.parentSlotA[child] = mother;
     world.parentSlotB[child] = isMate ? slotOfGenome(world, world.fatherId[mother]) : mother;
+    noteProofBirth(world, child);
     world.spec[child] = childSpec(world, mother);
     drawSex(world, child);
     recordBirth(world, mother);
@@ -257,9 +261,10 @@ function advanceRanked(world, policy) {
 }
 
 /**
- * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` a pregnancy that
- * falls due in a full world is not attempted: it stays at 1 and tries again next tick (no event, no energy change; the
- * cooldown keeps counting down). It waits until a slot frees, the mother dies, or the energy gate fails the birth.
+ * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` the ranked path
+ * (`advanceRanked`) runs instead: a pregnancy that falls due in a full world is not attempted, it stays at 1 and tries
+ * again next tick (no event, no energy change; the cooldown keeps counting down). Without it, a due pregnancy in a
+ * full world is lost with a blocked-birth event.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
@@ -270,37 +275,30 @@ export function advancePregnancies(world, policy) {
         return;
     }
     const { alive, pregnancy } = world;
-    const { capBirthsEnabled, maxAgents } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && pregnancy[slot] > 0) {
             pregnancy[slot] -= 1;
             if (pregnancy[slot] > 0) {
                 continue;
             }
-            if (capBirthsEnabled && world.population >= maxAgents) {
-                pregnancy[slot] = 1;
-            } else {
-                giveBirth(world, policy, slot, BORN_CAUSE.MATE);
-            }
+            giveBirth(world, policy, slot, BORN_CAUSE.MATE);
         }
     }
 }
 
 /**
- * The merit split gate: open when `meritEnabled` is off or the population is below `meritSplitFloorPop`; otherwise
- * open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, and `splitKeysAllow` (the
- * share minimum, the per-life cap and `preySplit`). Reads only; a closed gate changes nothing, so the agent stays ready.
+ * The merit split gate: open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, `splitKeysAllow`
+ * (the share minimum, and the per-life cap) lets it and the proof rule's split brake (`splitBraked`) does not hold it. Reads only; a closed gate changes nothing, so the agent stays ready.
  * @param {World} world the world
  * @param {number} slot an alive agent
  * @returns {boolean} true when the gate lets the agent split
  */
 export function splitGateOpen(world, slot) {
-    const { meritEnabled, splitDeliberateMin, meritSplitFloorPop } = world.config;
-    if (!meritEnabled || world.population < meritSplitFloorPop) {
-        return true;
-    }
+    const { splitDeliberateMin } = world.config;
     return (
-        (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) && splitKeysAllow(world, slot)
+        (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) &&
+        splitKeysAllow(world, slot) &&
+        !splitBraked(world, slot)
     );
 }
 
@@ -324,8 +322,7 @@ export function readyBeforeGate(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when `readyBeforeGate` and through the merit split gate; sex does not matter, so splitting
- *   is the same with `sexesEnabled` on or off
+ * @returns {boolean} true when `readyBeforeGate` and through the merit split gate; sex does not matter
  */
 function readyToSplit(world, slot) {
     return readyBeforeGate(world, slot) && splitGateOpen(world, slot);
@@ -361,8 +358,8 @@ function splitRanked(world, policy) {
 }
 
 /**
- * Splits every agent that `readyToSplit` in two, whatever its sex. With `capBirthsEnabled` splitting stops for the
- * tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
+ * Splits every agent that `readyToSplit` in two, whatever its sex, in slot order. With `capBirthsEnabled` the ranked
+ * path (`splitRanked`) runs instead and keeps `splitCapMargin` slots below `maxAgents` for pregnancies.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
@@ -373,12 +370,8 @@ export function splitAll(world, policy) {
         return;
     }
     const { alive } = world;
-    const { splitCooldownMultiplier, maxAgents, capBirthsEnabled, splitCapMargin } = world.config;
-    const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
+    const { splitCooldownMultiplier } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
-        if (world.population >= splitCeiling) {
-            break;
-        }
         if (alive[slot] === 1 && readyToSplit(world, slot) && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
             world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
         }

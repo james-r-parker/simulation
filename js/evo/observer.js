@@ -5,6 +5,7 @@ import { createBodyPools } from './metrics-body.js';
 import { createEnvironmentPools } from './metrics-environment.js';
 import { createWatchPools } from './metrics-watch.js';
 import { sampleVisits } from './watch-visits.js';
+import { createBrainPools, observeBrain } from './metrics-brain.js';
 import { createLineagePools } from './metrics-lineage.js';
 import { createDietPools } from './metrics-diet.js';
 import { createWatchabilityPools, trackCircling } from './metrics-watchability.js';
@@ -13,12 +14,12 @@ import { checkpoint, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
-import { noteNiches } from './observer-body.js';
 import { createFamilyTree, noteMatured } from './observer-lineage-counters.js';
 import { noteChase } from './observer-watch-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
+import { createScenes, observeScenes } from './observer-scenes.js';
 import { createWindows, noteWindows } from './observer-windows.js';
 import { CELL_SIZE, countCollisions, countTick, MOTION_SAMPLE_TICKS } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -47,18 +48,14 @@ const SLOT_TYPES = {
     generation: Uint32Array,
     archiveLineage: Uint8Array,
     eligibleChild: Uint8Array,
-    matings: Uint32Array,
     maturedChildren: Uint32Array,
     descendantsAlive: Uint32Array,
     parentGenomeA: Uint32Array,
     parentGenomeB: Uint32Array,
-    chaseTicks: Uint32Array,
     chainPrey: Uint32Array,
     chainTick: Float64Array,
-    packKills: Uint32Array,
     sizeTrait: Float32Array,
     visionTrait: Float32Array,
-    niche: Uint8Array,
 };
 
 /** Death-log columns copied from the slot's counters; `fitness` is added separately. */
@@ -95,8 +92,9 @@ const DEATH_CAUSES = 4;
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {Record<string, any>} rng the `eval` stream, `fork(createRng(config.seed), 'eval')`; kept as `observer.rng`
- * @param {{runTicks?: number}} [options] `runTicks`, the run length the trend metrics cut into windows; without it
- *   (or at most the burn-in) they are `null`
+ * @param {{runTicks?: number, checkpointTicks?: number}} [options] `runTicks`, the run length the trend metrics cut
+ *   into windows; without it (or at most the burn-in) they are `null`. `checkpointTicks`, the ticks between the run's
+ *   checkpoints, times the hidden-state snapshot; without it `eval.hidden_persistence` is `null`
  * @returns {Record<string, any>} a fresh observer with every counter at zero
  */
 export function createObserver(config, rng, options = {}) {
@@ -121,8 +119,7 @@ export function createObserver(config, rng, options = {}) {
         lastFloorTick: -Infinity,
         deathCount: 0,
         deathsDrained: 0,
-        deaths: createLog([...DEATH_FIELDS, 'fitness', 'roleSkill', 'bodyPlan']),
-        nicheTally: undefined,
+        deaths: createLog([...DEATH_FIELDS, 'fitness', 'roleSkill', 'style']),
         checkpointCount: 0,
         series: createLog(SERIES_FIELDS),
         dominantLineage: 0,
@@ -136,11 +133,13 @@ export function createObserver(config, rng, options = {}) {
         }),
         watch: createWatchPools(config),
         merit: createMeritPools(config),
-        diet: createDietPools(config),
+        diet: createDietPools(),
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
+        scenes: createScenes(config),
         windows: createWindows(options.runTicks ?? 0),
+        ...createBrainPools(config, options),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
@@ -163,18 +162,19 @@ export function observe(observer, world, fitness) {
     updateIntent(observer.intent, world, observer.slotOf);
     noteChase(observer, world);
     noteIntentEvents(observer, world);
+    observeScenes(observer, world);
     applyEvents(observer, world, fitness);
     snapshotMerit(observer.merit, world);
     if (world.tick === 0) {
         return;
     }
     noteMatured(observer, world);
-    noteNiches(observer, world);
     countTick(observer, world);
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         sampleVisits(observer.watch, world);
     }
     trackCircling(observer.watchability, world, BURN_IN_TICKS);
+    observeBrain(observer, world);
     observer.agentTicks += world.population;
     observer.ticks = world.tick;
     noteWindows(observer.windows, observer, world.tick);

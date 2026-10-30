@@ -80,92 +80,64 @@ describe('reap', () => {
     });
 });
 
-describe('fillFloor', () => {
-    it('adds new lineages up to minAgents and pushes one PopulationFloor', () => {
-        const w = lifeWorld({ minAgents: 3 });
+describe('fillFloor, the extinction guard', () => {
+    it('restarts the world to minAgents when fewer than floorTrigger are alive, and pushes one PopulationFloor', () => {
+        const w = lifeWorld({ minAgents: 6, floorTrigger: 4 });
         addBlob(w);
         fillFloor(w, recordingPolicy([]));
-        expect(w.population).toBe(3);
+        expect(w.population).toBe(6);
         expect(w.lineageId[1]).toBe(w.genomeId[1]);
         expect(w.lineageId[1]).not.toBe(w.lineageId[2]);
-        expect(types(w)).toEqual([EVENT_TYPE.AGENT_BORN, EVENT_TYPE.AGENT_BORN, EVENT_TYPE.POPULATION_FLOOR]);
+        const floor = types(w).indexOf(EVENT_TYPE.POPULATION_FLOOR);
+        expect(types(w).filter((t) => t === EVENT_TYPE.POPULATION_FLOOR)).toHaveLength(1);
         expect(event(w, 0)[8]).toBe(BORN_CAUSE.FLOOR);
-        expect(event(w, 2)[2]).toBe(2);
+        // The record carries the agents added and the population before the refill.
+        expect([event(w, floor)[2], event(w, floor)[3]]).toEqual([5, 1]);
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });
 
-    it('with floorRescueAtZero, refills only a specialisation with 0 alive', () => {
-        const w = lifeWorld({ minAgents: 8, floorRescueAtZero: true });
-        // Specs 0, 1, 2 and 4 have an agent each; spec 3 has none.
-        [0, 1, 2, 4].forEach((spec) => addBlob(w, { spec }));
-        fillFloor(w, recordingPolicy([]));
-        expect(w.population).toBe(8);
-        // The first floor spawn must be spec 3; later ones all have a member somewhere, so any spec may follow.
-        expect(w.spec[4]).toBe(3);
-    });
-
-    it('with floorRescueAtZero, spawns every empty specialisation before repeating one', () => {
-        const w = lifeWorld({ minAgents: 5, floorRescueAtZero: true });
-        fillFloor(w, recordingPolicy([]));
-        expect(Array.from(w.spec.subarray(0, 5)).sort()).toEqual([0, 1, 2, 3, 4]);
-    });
-
-    it('without floorRescueAtZero, draws the specialisation uniformly as before', () => {
-        const w = lifeWorld({ minAgents: 5, floorRescueAtZero: false });
-        fillFloor(w, recordingPolicy([]));
-        const a = Array.from(w.spec.subarray(0, 5));
-        const b = lifeWorld({ minAgents: 5 });
-        fillFloor(b, recordingPolicy([]));
-        expect(Array.from(b.spec.subarray(0, 5))).toEqual(a);
-    });
-
-    it('adds nothing at or above the floor', () => {
-        const w = lifeWorld({ minAgents: 1 });
+    it('does nothing while the population is at or above floorTrigger, even far below minAgents', () => {
+        const w = lifeWorld({ minAgents: 6, floorTrigger: 2 });
+        addBlob(w);
         addBlob(w);
         fillFloor(w, recordingPolicy([]));
+        expect(w.population).toBe(2);
         expect(w.events.count).toBe(0);
     });
 
-    it('adds an immigrant exactly every immigrationInterval, never at tick 0', () => {
-        const w = lifeWorld({ immigrationInterval: 5 });
-        const born = [];
-        for (let t = 0; t < 16; t++) {
-            w.tick = t;
-            w.events.count = 0;
-            fillFloor(w, recordingPolicy([]));
-            if (w.events.count > 0) {
-                born.push(t);
-                expect(event(w, 0)[8]).toBe(BORN_CAUSE.IMMIGRANT);
-            }
+    it('lets a basin reach 0 and stay 0 while the world is above the trigger', () => {
+        const w = lifeWorld({ minAgents: 6, floorTrigger: 3 });
+        for (let i = 0; i < 4; i++) {
+            addBlob(w);
         }
-        expect(born).toEqual([5, 10, 15]);
-        expect(imbalance(w)).toBeCloseTo(0, 9);
+        for (let tick = 0; tick < 5; tick++) {
+            w.tick = tick;
+            fillFloor(w, recordingPolicy([]));
+        }
+        expect(w.population).toBe(4);
+        expect(w.events.count).toBe(0);
     });
 
-    it('adds no immigrant at maxAgents or when immigration is off', () => {
-        const full = lifeWorld({ immigrationInterval: 5, maxAgents: 1 });
-        addBlob(full);
-        full.tick = 5;
-        fillFloor(full, recordingPolicy([]));
-        expect(full.population).toBe(1);
-        const off = lifeWorld({ immigrationInterval: 0 });
-        off.tick = 5;
+    it('acts when the world is empty, the only source of entrants without immigration or rescue', () => {
+        const w = lifeWorld({ minAgents: 3, floorTrigger: 2 });
+        for (let tick = 1; tick <= 12; tick++) {
+            w.tick = tick;
+            fillFloor(w, recordingPolicy([]));
+        }
+        expect(w.population).toBe(3);
+        const born = Array.from({ length: w.events.count }, (_v, i) => event(w, i)).filter(
+            (e) => e[0] === EVENT_TYPE.AGENT_BORN,
+        );
+        expect(born.every((e) => e[8] === BORN_CAUSE.FLOOR)).toBe(true);
+    });
+
+    it('is off at floorTrigger 0 and when minAgents is 0', () => {
+        const off = lifeWorld({ minAgents: 5, floorTrigger: 0 });
         fillFloor(off, recordingPolicy([]));
         expect(off.population).toBe(0);
-    });
-
-    it('counts only floor agents in PopulationFloor when an immigrant arrives too', () => {
-        const w = lifeWorld({ immigrationInterval: 5, minAgents: 2 });
-        w.tick = 5;
-        fillFloor(w, recordingPolicy([]));
-        expect(w.population).toBe(3);
-        expect(types(w)).toEqual([
-            EVENT_TYPE.AGENT_BORN,
-            EVENT_TYPE.AGENT_BORN,
-            EVENT_TYPE.POPULATION_FLOOR,
-            EVENT_TYPE.AGENT_BORN,
-        ]);
-        expect(event(w, 2)[2]).toBe(2);
+        const none = lifeWorld({ minAgents: 0, floorTrigger: 8 });
+        fillFloor(none, recordingPolicy([]));
+        expect(none.population).toBe(0);
     });
 });
 

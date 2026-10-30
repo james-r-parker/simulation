@@ -6,7 +6,7 @@ import { addBlob, lifeWorld } from '../../sim/helpers/life-world.js';
 /**
  * A small empty world (8 slots, 4 rays) and an observer for it.
  * @param {Record<string, any>} [over] config overrides
- * @param {{runTicks?: number}} [options] the observer's options
+ * @param {{runTicks?: number, checkpointTicks?: number}} [options] the observer's options
  * @returns {{world: any, observer: any}}
  */
 export function observed(over = {}, options = {}) {

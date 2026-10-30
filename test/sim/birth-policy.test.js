@@ -41,7 +41,7 @@ describe('initBrain', () => {
         for (let j = 0; j < layout.hidden; j++) {
             expect(w.weights[base + layout.bHidden + j]).toBe(0);
         }
-        for (let o = 0; o < layout.outputCount; o++) {
+        for (let o = 0; o < layout.geneOutputs; o++) {
             expect(w.weights[base + layout.bOut + o]).toBe(0);
         }
     });
@@ -122,6 +122,8 @@ describe('cloneWithNoisePolicy exact values', () => {
                 expected = (nextGaussian(ref) * 2.5) / Math.sqrt(layout.inputCount + layout.hidden);
             } else if (i >= layout.wOut && i < layout.bOut) {
                 expected = (nextGaussian(ref) * 2.5) / Math.sqrt(layout.hidden);
+            } else if (i >= layout.wSkip && i < layout.traitStart) {
+                expected = (nextGaussian(ref) * 2.5) / Math.sqrt(48);
             }
             expect(w.weights[n + i]).toBe(Math.fround(expected));
         }

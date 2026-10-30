@@ -14,12 +14,9 @@ describe('validatePolicyOptions', () => {
         expect(validatePolicyOptions('map-elites-v6', options)).toEqual(options);
     });
 
-    it('lets the v1 policies take the immigrant mix only', () => {
-        expect(validatePolicyOptions('map-elites-v1q', { archiveShare: 0.1 })).toEqual({ archiveShare: 0.1 });
-        expect(() => validatePolicyOptions('map-elites-v1q', { descriptor: 'v6' })).toThrow(
-            /policy "map-elites-v1q" does not take "descriptor"/,
-        );
-        expect(() => validatePolicyOptions('natural-v1', { archiveShare: 0.1 })).toThrow(/takes: none/);
+    it('lets baseline-v5 take no options and map-elites-v6 the immigrant mix', () => {
+        expect(validatePolicyOptions('map-elites-v6', { archiveShare: 0.1 })).toEqual({ archiveShare: 0.1 });
+        expect(() => validatePolicyOptions('baseline-v5', { archiveShare: 0.1 })).toThrow(/takes: none/);
     });
 
     it('names a fitness weight that is not in FITNESS_V6', () => {
@@ -35,8 +32,8 @@ describe('validatePolicyOptions', () => {
     });
 
     it('names a descriptor that is not registered', () => {
-        expect(() => validatePolicyOptions('map-elites-v6', { descriptor: 'v7' })).toThrow(
-            /descriptor "v7" is not registered; known: v1, v6/,
+        expect(() => validatePolicyOptions('map-elites-v6', { descriptor: 'v6' })).toThrow(
+            /descriptor "v6" is not registered; known: v1, v7/,
         );
     });
 
@@ -70,10 +67,10 @@ describe('canonicalOptions and mergeOptions', () => {
     it('lays arm options over the base, merging fitness weights one by one', () => {
         expect(
             mergeOptions(
-                { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } },
+                { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATURED: 2 } },
                 { cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3 } },
             ),
-        ).toEqual({ archiveShare: 0.1, cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3, MATING: 2 } });
+        ).toEqual({ archiveShare: 0.1, cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3, MATURED: 2 } });
         expect(mergeOptions(undefined, undefined)).toEqual({});
     });
 });

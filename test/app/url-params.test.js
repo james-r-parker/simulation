@@ -114,7 +114,7 @@ describe('configOverrides', () => {
 describe('policy and merit', () => {
     it('reads a policy name of lower-case letters, digits and hyphens', () => {
         expect(readParams('?policy=map-elites-v6').policy).toBe('map-elites-v6');
-        expect(readParams('?policy=natural-v1').policy).toBe('natural-v1');
+        expect(readParams('?policy=baseline-v5').policy).toBe('baseline-v5');
     });
 
     it('does not judge whether the policy exists: the worker rejects an unknown name', () => {
@@ -140,13 +140,11 @@ describe('policy and merit', () => {
 
     it('previews the T25 bench values, and they make a valid config', async () => {
         expect(MERIT_PREVIEW).toEqual({
-            meritEnabled: true,
-            meritMateWeight: 0.05,
             meritBirthBoost: 0.25,
             splitDeliberateMin: 200,
         });
         const { createConfig } = await import('../../js/sim/config.js');
-        expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritEnabled).toBe(true);
+        expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritBirthBoost).toBe(0.25);
     });
 });
 

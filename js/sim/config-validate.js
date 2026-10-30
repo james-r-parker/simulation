@@ -5,6 +5,7 @@ import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
+import { isMutationRate } from './mutation-rate.js';
 import { terrainProblem } from './terrain.js';
 import { TRAIT_MAX } from './traits.js';
 
@@ -29,7 +30,7 @@ const RULES = {
     maxAgents: int(1, 4096),
     initialAgents: int(0),
     minAgents: int(0),
-    immigrationInterval: int(0),
+    floorTrigger: int(0),
     maxFood: int(1, 20000),
     initialFood: int(0),
     foodSpawnRate: num(0),
@@ -41,10 +42,6 @@ const RULES = {
     foodRadius: positive(),
     highFoodRadius: positive(),
     foodMaxAge: int(1),
-    obstacleCount: int(0, 100),
-    obstacleMinRadius: positive(),
-    obstacleMaxRadius: positive(),
-    obstacleMaxSpeed: num(0),
     obstacleDamage: num(0),
     wallDamage: num(0),
     rayCount: int(1, 64),
@@ -56,6 +53,7 @@ const RULES = {
     sprintMultiplier: num(0),
     sprintCost: num(0),
     initialEnergy: positive(),
+    entrantEnergy: num(0),
     maxEnergy: positive(),
     passiveLoss: num(0),
     movementCost: num(0),
@@ -65,6 +63,8 @@ const RULES = {
     minSize: positive(),
     energyToSize: positive(),
     biteEnergy: num(0),
+    biteCost: num(0),
+    recoilEnergy: num(0),
     huntSizeRatio: num(0.5),
     mateSizeRatio: { type: 'num', gt: 1 },
     mateMinEnergy: num(0),
@@ -77,7 +77,6 @@ const RULES = {
     reproductionCooldown: int(0),
     pregnancyTicks: int(1),
     maturityTicks: int(0),
-    seasonLength: int(SEASON_COUNT),
     seasons: { type: 'seasons' },
     fertileZoneMax: int(0),
     fertileZoneSpawnChance: UNIT,
@@ -95,11 +94,6 @@ const RULES = {
     restitution: UNIT,
     splitCooldownMultiplier: num(0),
     mateChanceScale: positive(),
-    foodTargetPerAgent: num(0),
-    foodTargetMin: num(0),
-    foodRefillBoost: num(0),
-    foodSurplusRate: num(0),
-    foodSpawnAgentDivisor: positive(),
     fertileZoneRadius: positive(),
     fertileZoneFertility: num(0),
     placementTries: int(1),
@@ -137,12 +131,14 @@ const RULES = {
     ...FEATURE_RULES,
 };
 
+/** The rule of every top-level config key, which scripts/check-flag-ledger.mjs reads for the boolean and enum ones. */
+export { RULES as CONFIG_RULES };
+
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
 const AT_MOST = [
     ['initialAgents', 'maxAgents'],
     ['minAgents', 'maxAgents'],
     ['initialFood', 'maxFood'],
-    ['obstacleMinRadius', 'obstacleMaxRadius'],
     ['initialEnergy', 'maxEnergy'],
     ['minSize', 'baseSize'],
     ['temperatureStart', 'temperatureMax'],
@@ -205,15 +201,27 @@ function isTyped(value, rule) {
 
 /**
  * @param {unknown} value the value
+ * @param {Rule} rule a non-numeric rule: `enum`, `bool` or `mutationRate`
+ * @returns {string | null} what the value should have been when it breaks the rule, else null
+ */
+function kindViolation(value, rule) {
+    if (rule.type === 'enum') {
+        return rule.values?.includes(/** @type {string} */ (value)) ? null : `one of ${rule.values?.join(', ')}`;
+    }
+    if (rule.type === 'mutationRate') {
+        return isMutationRate(value) ? null : 'a number above 0 to 1, invsqrt, or genes:<k> with k above 0';
+    }
+    return typeof value === 'boolean' ? null : 'a boolean';
+}
+
+/**
+ * @param {unknown} value the value
  * @param {Rule} rule the rule
  * @returns {string | null} what the value should have been when it breaks the rule, else null
  */
 function violation(value, rule) {
-    if (rule.type === 'enum') {
-        return rule.values?.includes(/** @type {string} */ (value)) ? null : `one of ${rule.values?.join(', ')}`;
-    }
-    if (rule.type === 'bool') {
-        return typeof value === 'boolean' ? null : 'a boolean';
+    if (rule.type === 'enum' || rule.type === 'bool' || rule.type === 'mutationRate') {
+        return kindViolation(value, rule);
     }
     return isTyped(value, rule) && inBounds(/** @type {number} */ (value), rule) ? null : describe(rule);
 }
@@ -328,19 +336,21 @@ function checkCrossKey(config) {
             `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents (${events})`,
         );
     }
-    const baseSizeMax = config.traitsEnabled ? config.baseSize * TRAIT_MAX : config.baseSize;
-    const largest = Math.max(
-        baseSizeMax + config.maxEnergy / config.energyToSize,
-        config.foodRadius,
-        config.highFoodRadius,
-    );
+    const baseSizeMax = config.baseSize * TRAIT_MAX;
+    const storeMultipliers = Object.values(config.specialisations).map((s) => s.maxEnergyMultiplier);
+    const storeMax = config.maxEnergy * Math.max(...storeMultipliers);
+    const storeMin = config.maxEnergy * Math.min(...storeMultipliers);
+    if (config.initialEnergy > storeMin) {
+        fail('initialEnergy', config.initialEnergy, `<= the smallest energy store (${storeMin})`);
+    }
+    const largest = Math.max(baseSizeMax + storeMax / config.energyToSize, config.foodRadius, config.highFoodRadius);
     const room = Math.min(config.worldWidth, config.worldHeight);
     if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
         fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
     }
     const terrain = terrainProblem(config);
     if (terrain !== null) {
-        fail('terrainLayout', config.terrainLayout, terrain);
+        fail('wallGaps', config.wallGaps, terrain);
     }
     if (largest >= config.hashCellSize) {
         fail('hashCellSize', config.hashCellSize, `> the largest radius (${largest})`);

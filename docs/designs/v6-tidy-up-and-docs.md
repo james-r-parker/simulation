@@ -1,8 +1,8 @@
 # v6 tidy-up and docs
 
-**Status:** Proposed - Phase 1 sweeps out every remaining trace of the legacy app; Phase 2 rewrites the docs and the README with screenshots.
+**Status:** In progress - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with screenshots) is still to build.
 **Validated:** 23eaea3 (2026-10-17)
-**Priority:** 9 - the last stage of v6: nothing legacy is left and every doc describes the app as built
+**Priority:** 11 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
 The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 5 deletes the legacy
@@ -87,9 +87,11 @@ GPU: full quality and full scale.
 
 ## Phases
 
-### Phase 1 - Legacy sweep
+### Phase 1 - Legacy sweep (built)
 
-**Targets:** none - removal and a guard; no behaviour changes
+Removal and a guard; no behaviour changes, and the golden hashes did not move. No dependency was removed: `three`, `uplot` and the
+dev tools are all used by the new app and scripts. `js/evo/policies/map-elites-v1.js` stays as the engine `map-elites-v6` is
+built on, and the random-genome brain moved to `js/evo/policies/random-brain.js`.
 
 - Everything in the Legacy sweep table removed, and the new `conventions` rule with its tests.
 - `scripts/check.sh` green with lint, typecheck and Prettier covering every file under `js/`, `scripts/` and `test/`.
@@ -119,7 +121,7 @@ GPU: full quality and full scale.
 
 ## Task breakdown
 
-### Phase 1 - Legacy sweep
+### Phase 1 - Legacy sweep (built)
 
 | #   | Task                                                                                                                                                               | Nature       | Depends on         |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |

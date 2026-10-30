@@ -29,35 +29,6 @@ export function updateSeason(world) {
 }
 
 /**
- * Moves every wandering obstacle one tick (the static terrain rocks after them stay put) and bounces it off the walls.
- * @param {World} world the world
- * @returns {void}
- */
-export function moveObstacles(world) {
-    const { obsX, obsY, obsVx, obsVy, obsRadius } = world;
-    const { worldWidth, worldHeight } = world.config;
-    for (let i = 0; i < world.config.obstacleCount; i++) {
-        const r = obsRadius[i];
-        obsX[i] += obsVx[i];
-        if (obsX[i] - r < 0) {
-            obsX[i] = r;
-            obsVx[i] = Math.abs(obsVx[i]);
-        } else if (obsX[i] + r > worldWidth) {
-            obsX[i] = worldWidth - r;
-            obsVx[i] = -Math.abs(obsVx[i]);
-        }
-        obsY[i] += obsVy[i];
-        if (obsY[i] - r < 0) {
-            obsY[i] = r;
-            obsVy[i] = Math.abs(obsVy[i]);
-        } else if (obsY[i] + r > worldHeight) {
-            obsY[i] = worldHeight - r;
-            obsVy[i] = -Math.abs(obsVy[i]);
-        }
-    }
-}
-
-/**
  * @param {World} world the world
  * @returns {number} the lowest free zone slot, or the alive zone with the lowest fertility ratio when all are alive
  */

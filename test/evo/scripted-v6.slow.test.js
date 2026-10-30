@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { patchesVisitedOf } from '../../js/evo/observer-watch-counters.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { playMicroWorld } from './helpers/predator-world.js';
 
@@ -21,8 +20,8 @@ function run(arm, extra) {
         }
     });
     let mostPatches = 0;
-    for (let slot = 0; slot < observer.matings.length; slot++) {
-        mostPatches = Math.max(mostPatches, patchesVisitedOf(observer, slot));
+    for (let slot = 0; slot < observer.genomeId.length; slot++) {
+        mostPatches = Math.max(mostPatches, observer.watch.visited[slot]);
     }
     return { mateBirths: mateChildren.size, mostPatches };
 }
@@ -31,9 +30,8 @@ describe('v6 exploit controllers in the micro-world', () => {
     it(
         'mateHopper mates (the MATING term has something to pay) and foodSeeker does not',
         () => {
-            expect(run('mateHopper', { sexesEnabled: false }).mateBirths).toBeGreaterThan(0);
-            expect(run('mateHopper', { sexesEnabled: true }).mateBirths).toBeGreaterThan(0);
-            expect(run('foodSeeker', { sexesEnabled: false }).mateBirths).toBe(0);
+            expect(run('mateHopper', {}).mateBirths).toBeGreaterThan(0);
+            expect(run('foodSeeker', {}).mateBirths).toBe(0);
         },
         scaleTimeout(60_000),
     );

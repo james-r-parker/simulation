@@ -5,7 +5,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 10000;
@@ -13,12 +13,21 @@ const COLD_START = 20;
 const COLD_TICKS = 3000;
 
 /**
- * Runs one constant-thrust controller on the default world with no floor and no immigrants.
+ * The food supply the sweet-spot cases run on. The default world regrows 0.06 items per 1,000,000 px2 per tick through
+ * the patches, which feeds a rusher as well as a forager (500 alive at 10000 ticks, the rusher's body at 95 degrees).
+ * The case was written on the old per-agent food target, which was scarce enough that heat cost the rusher its life;
+ * 0.003 is scarce enough here, and the cases hold across 0.002 to 0.005 (the rusher at 0, 17 and 51 alive, the gentle
+ * forager at 81, 136 and 180).
+ */
+const SCARCE_FOOD = Object.freeze({ foodRegrowPerArea: 0.003 });
+
+/**
+ * Runs one constant-thrust controller on the default world with scarce food, no floor and no immigrants.
  * @param {keyof typeof SCRIPTED_CONTROLLERS} name a `SCRIPTED_CONTROLLERS` key
  * @returns {number} the population at the end
  */
 function populationAfter(name) {
-    const config = createConfig({ ...FEATURES_OFF, seed: 1, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ ...SIMPLE_WORLD, ...SCARCE_FOOD, seed: 1, minAgents: 0 });
     const brain = createBaselineV5().brain;
     const world = createWorld(config, brain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') });
@@ -42,9 +51,11 @@ describe('body temperature sweet spot', () => {
     );
 
     it(
-        'a rusher overheats out',
+        'a rusher cannot sustain itself on food a gentle forager grows on',
         () => {
-            expect(populationAfter('thrust100')).toBe(0);
+            const rusher = populationAfter('thrust100');
+            expect(rusher).toBeLessThan(config100());
+            expect(rusher).toBeLessThan(populationAfter('thrust20') / 2);
         },
         TIMEOUT_MS,
     );
@@ -65,11 +76,10 @@ describe('body temperature cold band', () => {
             // This pins body temperature, not predation, so the predator keeps the neutral multipliers: the tuned ones
             // slow the scripted foodSeeker's warm-up past COLD_TICKS.
             const config = createConfig({
-                ...FEATURES_OFF,
+                ...SIMPLE_WORLD,
                 seed: 1,
                 initialAgents: 30,
                 minAgents: 0,
-                immigrationInterval: 0,
                 specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
             });
             const brain = createBaselineV5().brain;
@@ -108,5 +118,5 @@ describe('body temperature cold band', () => {
 
 /** @returns {number} the starting population, which the gentle forager must exceed */
 function config100() {
-    return createConfig({ ...FEATURES_OFF }).initialAgents;
+    return createConfig({ ...SIMPLE_WORLD }).initialAgents;
 }

@@ -4,6 +4,7 @@
 
 import { BURN_IN_TICKS } from './observer-events.js';
 import { mean, none, ok, quantile, spearman } from './metrics-stats.js';
+import { ruleMetrics } from './metrics-rules.js';
 
 /** Fewest mature deaths the fitness-to-children correlation is computed from. */
 export const MIN_CORRELATION_DEATHS = 30;
@@ -99,5 +100,6 @@ export function selectionMetrics(observer) {
         'eval.fitness_lrs_corr': fitnessCorrelation(observer),
         'eval.archive_lineage_share': archiveShare(observer),
         'eval.kin_within_call_radius': alarms > 0 ? ok(observer.intent.run.kinNearSum / alarms) : none('no alarm call'),
+        ...ruleMetrics(observer),
     };
 }

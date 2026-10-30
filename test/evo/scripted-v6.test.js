@@ -10,7 +10,7 @@ import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
 const CH = { food: 1, threat: 2, prey: 3 };
 const O = OUTPUT_INDEX;
-const BODY_BITTEN = 12;
+const BODY_BITTEN = 10;
 const SEEK = Math.fround(SEEK_THRUST);
 
 /**
@@ -24,7 +24,6 @@ function setup(name, extra = {}) {
         initialAgents: 3,
         maxAgents: 6,
         minAgents: 0,
-        immigrationInterval: 0,
         ...extra,
     });
     const world = createWorld(config, createBaselineV5().brain);
@@ -39,7 +38,7 @@ function setup(name, extra = {}) {
  * @returns {void}
  */
 function hit(world, slot, k, channel) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
     world.inputs[base + channel] = channel >= CH.threat ? 0.5 : 1;
 }
@@ -51,7 +50,7 @@ function hit(world, slot, k, channel) {
  * @returns {void}
  */
 function bitten(world, slot, value) {
-    world.inputs[slot * world.layout.inputCount + world.config.rayCount * RAY_CHANNELS + BODY_BITTEN] = value;
+    world.inputs[slot * world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS + BODY_BITTEN] = value;
 }
 
 /**

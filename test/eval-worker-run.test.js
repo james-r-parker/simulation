@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { runSeed } from '../scripts/eval-worker.mjs';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
-const SMALL = { ...FEATURES_OFF, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
+const SMALL = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500, worldHeight: 1000 };
 /** Overrides under which the first food item cannot be placed, so the world fails at tick 0. */
 const UNPLACEABLE = {
-    ...FEATURES_OFF,
+    ...SIMPLE_WORLD,
     worldWidth: 1000,
     worldHeight: 1000,
-    obstacleCount: 100,
-    obstacleMinRadius: 120,
-    obstacleMaxRadius: 120,
     placementTries: 1,
 };
 
@@ -53,8 +50,26 @@ describe('runSeed (direct)', () => {
         const task = { seed: 3, ticks: 20, overrides: SMALL };
         const plain = runSeed({ ...task, policy: 'baseline-v5' });
         expect(plain.metrics['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
-        const learned = runSeed({ ...task, policy: 'map-elites-v1' });
+        const learned = runSeed({ ...task, policy: 'map-elites-v6' });
         expect(learned.metrics['eval.qd_score'].value).toBe(0);
         expect(learned.metrics['eval.coverage'].value).toBe(0);
+    });
+
+    it('returns no champions unless asked', () => {
+        expect(runSeed({ seed: 3, ticks: 20, overrides: SMALL, policy: 'map-elites-v6' }).champions).toEqual([]);
+    });
+
+    it('refuses --save-champions for a policy without an archive, naming it', () => {
+        const task = { seed: 3, ticks: 20, overrides: SMALL, policy: 'baseline-v5', saveChampions: 2 };
+        expect(() => runSeed(task)).toThrow('--save-champions needs a policy with an archive; "baseline-v5" has none');
+    });
+
+    it('returns at most the asked number of champion files from the archive', { timeout: scaleTimeout(60_000) }, () => {
+        const task = { seed: 3, ticks: 3000, overrides: SMALL, policy: 'map-elites-v6', saveChampions: 2 };
+        const { champions } = runSeed(task);
+        expect(champions.length).toBeGreaterThan(0);
+        expect(champions.length).toBeLessThanOrEqual(2);
+        expect(champions[0]).toMatchObject({ version: 1, specialisation: expect.any(Number) });
+        expect(champions[0].name).toMatch(/^map-elites-v6-s3-/);
     });
 });

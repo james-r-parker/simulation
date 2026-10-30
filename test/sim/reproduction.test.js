@@ -265,7 +265,6 @@ describe('splitAll', () => {
         expect(w.spec[1]).toBe(2);
         expect(w.cooldown[a]).toBe(225);
         expect(log).toEqual([`brain 1 0 ${BORN_CAUSE.SPLIT} true ${id} 2`]);
-        expect(event(w, 0)[9]).toBe(0);
         expect(event(w, 0)[8]).toBe(BORN_CAUSE.SPLIT);
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });

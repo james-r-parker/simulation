@@ -1,9 +1,11 @@
-// Deaths, the population floor and immigration.
+// Deaths and the population floor guard.
 
 import { addFertileZone } from './environment.js';
 import { LOSS_CAUSE } from './energy.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { leaveCarcass } from './carcass.js';
+import { noteKill } from './kills.js';
+import { releaseProofAtDeath } from './proof.js';
 import { spawnAgent } from './spawn.js';
 import { freeAgent } from './world.js';
 
@@ -77,9 +79,13 @@ export function reap(world, policy) {
             continue;
         }
         pushDied(world, slot, cause);
+        if (cause === DEATH_CAUSE.EATEN) {
+            noteKill(world, slot);
+        }
         if (policy.onDeath) {
             policy.onDeath(world, slot, cause);
         }
+        releaseProofAtDeath(world, slot);
         world.ledger[1] += world.energy[slot];
         leaveCarcass(world, slot);
         addFertileZone(world, world.x[slot], world.y[slot], world.size[slot]);
@@ -88,24 +94,25 @@ export function reap(world, policy) {
 }
 
 /**
- * Tops the population up to `minAgents` with new lineages, then adds one immigrant on every `immigrationInterval`.
+ * The floor as a total-extinction guard: when fewer than `floorTrigger` agents are alive (at most `minAgents`), refills
+ * the world to `minAgents` with new lineages as a restart and pushes `PopulationFloor` (tick, agents added, population
+ * before the refill). Above the trigger a basin may go extinct and the floor never sees it.
  * @param {World} world the world
  * @param {Policy} policy the policy
  * @returns {void}
  */
 export function fillFloor(world, policy) {
-    const { minAgents, maxAgents, immigrationInterval } = world.config;
+    const { minAgents, floorTrigger } = world.config;
+    const before = world.population;
+    if (before >= Math.min(floorTrigger, minAgents)) {
+        return;
+    }
     let added = 0;
     while (world.population < minAgents) {
         spawnAgent(world, policy, BORN_CAUSE.FLOOR);
         added += 1;
     }
-    if (added > 0) {
-        const o = pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, world.tick);
-        world.events.data[o + 2] = added;
-    }
-    const due = immigrationInterval > 0 && world.tick > 0 && world.tick % immigrationInterval === 0;
-    if (due && world.population < maxAgents) {
-        spawnAgent(world, policy, BORN_CAUSE.IMMIGRANT);
-    }
+    const o = pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, world.tick);
+    world.events.data[o + 2] = added;
+    world.events.data[o + 3] = before;
 }

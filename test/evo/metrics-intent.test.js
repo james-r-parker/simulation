@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { intentMetrics } from '../../js/evo/metrics-intent.js';
-import { bareObserver } from './helpers/metrics-observer.js';
+import { bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 const NAMES = [
     'eval.deliberate_food_share',
@@ -121,7 +121,7 @@ describe('intentMetrics', () => {
     });
 
     it('is merged into computeMetrics with the directions of the design', () => {
-        const m = computeMetrics(bareObserver(), {});
+        const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
             expect(m[name], name).toBeDefined();
         }

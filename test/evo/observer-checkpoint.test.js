@@ -123,6 +123,29 @@ describe('diversity', () => {
         expect(diversity(observer, world)).toBeCloseTo((1 + 4 + 3) / 3 / Math.sqrt(n), 6);
     });
 
+    it('leaves the sampled slots in observer.sampled and draws as it always did', () => {
+        const { world, observer } = observed({ maxAgents: 80, maxFood: 4, initialFood: 0 });
+        for (let i = 0; i < 70; i++) {
+            addBlob(world);
+        }
+        const before = { ...observer.rng.s };
+        const reference = observed({ maxAgents: 80, maxFood: 4, initialFood: 0 }).observer;
+        diversity(observer, world);
+        expect(observer.sampled).toHaveLength(64);
+        expect(new Set(observer.sampled).size).toBe(64);
+        expect(observer.rng.s).not.toEqual(before);
+        expect(reference.sampled).toHaveLength(0);
+    });
+
+    it('leaves an empty sample under 2 agents without a draw', () => {
+        const { world, observer } = observed();
+        const before = JSON.stringify(observer.rng.s);
+        addBlob(world);
+        diversity(observer, world);
+        expect(observer.sampled).toHaveLength(0);
+        expect(JSON.stringify(observer.rng.s)).toBe(before);
+    });
+
     it('is deterministic for a given rng and samples at most 64 agents', () => {
         const over = { maxAgents: 80, maxFood: 4, initialFood: 0 };
         const run = () => {

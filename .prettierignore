@@ -3,22 +3,9 @@ docs/designs/README.md
 package-lock.json
 dist/
 test/fixtures/
-
-# Legacy code and docs, formatted as they are replaced (docs/designs/worker-and-renderer.md removes them).
-# New code under js/sim/, js/evo/, js/worker/ and js/app/ is formatted from the first line.
-js/**
-!js/sim/
-!js/sim/**
-!js/evo/
-!js/evo/**
-!js/worker/
-!js/worker/**
-!js/app/
-!js/app/**
 css/
 public/
 index.html
-legacy.html
 *.README.md
 README.md
 COLLISION_LOGIC.md

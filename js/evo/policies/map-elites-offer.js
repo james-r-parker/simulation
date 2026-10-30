@@ -2,8 +2,12 @@
 // mature dying agent's row into a per-slot pending buffer; `onEvent` for its `AgentDied` record scores it and
 // offers it. The score is read from the eval observer's death log, which the observer has already written for this
 // record, so a slot refilled in the same tick does not matter.
+//
+// Only an established genome is offered (the proof rule, natural-selection.md): `archive-proof.js` gives each mature death
+// its verdict, holds a proven parent whose children have not proven themselves, and `LineProven` releases it.
 
 import { cellOf, offer } from '../../evo/archive.js';
+import { createProofLedger } from './archive-proof.js';
 import { EVENT_TYPE } from '../../sim/events.js';
 
 /**
@@ -77,6 +81,45 @@ function createOfferBuilder({ pending, observer, counters, descriptor }) {
 }
 
 /**
+ * Offers a death to the archive, and logs its score when the policy keeps the parts.
+ * @param {{archive: any, log?: import('../../sim/log.js').SimLog}} sink the archive and the log
+ * @param {{tick: number, item: import('../../evo/archive.js').Offer, extra?: Record<string, number>}} scored the tick, the offer and the
+ *   debug fields of its `FitnessScored` event (none: no event)
+ * @returns {void}
+ */
+function offerScored({ archive, log }, { tick, item, extra }) {
+    offer(archive, item, log);
+    if (extra !== undefined) {
+        log?.log('debug', 'FitnessScored', {
+            tick,
+            genomeId: item.id,
+            spec: item.spec,
+            cell: item.cell,
+            fitness: item.fitness,
+            ...extra,
+        });
+    }
+}
+
+/**
+ * @param {Record<string, any> | undefined} observer the eval observer
+ * @returns {(genomeId: number) => number} the death-log row of the next `AgentDied` record: the observer logs deaths in
+ *   record order and the policy counts them the same; a host that empties the log (`drainObserverLogs`) adds the rows it
+ *   removed to `observer.deathsDrained`
+ */
+function createRowReader(observer) {
+    let deathsSeen = 0;
+    return (genomeId) => {
+        const row = deathsSeen++ - /** @type {any} */ (observer).deathsDrained;
+        const deaths = /** @type {any} */ (observer).deaths;
+        if (deaths.genomeId[row] !== genomeId || Number.isNaN(deaths.fitness[row])) {
+            throw new Error(`map-elites-v1: death log row ${row} is not genome ${genomeId} or unscored`);
+        }
+        return row;
+    };
+}
+
+/**
  * @param {Record<string, any>} options `{ config, archive, observer, counters, clones, sigma, log, scoreFields }`;
  *   `clones` is `{ isClone, archiveRef, refId }`, `sigma` the per-slot step sizes and `scoreFields(row)`, when given,
  *   the fields a debug `FitnessScored` event carries beside the offer's own (none given: no event)
@@ -87,45 +130,44 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
     const pending = createPending(config.maxAgents, archive.layout.weightCount);
     const from = { ...clones, sigma };
     const offerOf = createOfferBuilder({ pending, observer, counters, descriptor: archive.descriptor });
-    let deathsSeen = 0;
+    const ledger = createProofLedger({ slots: config.maxAgents, weightCount: archive.layout.weightCount, log });
+    const scoredRow = createRowReader(observer);
 
     function onDeath(/** @type {any} */ world, /** @type {number} */ slot) {
-        if (observer !== undefined && world.ageTicks[slot] >= config.maturityTicks) {
+        const mature = observer !== undefined && world.ageTicks[slot] >= config.maturityTicks;
+        if (mature) {
             pending.save(world, slot, from);
         }
+        ledger.died(world, { slot, mature });
     }
 
-    /**
-     * The death-log row of the record: the observer logs deaths in record order, the policy counts them the same.
-     * A host that empties the log (`drainObserverLogs`) adds the rows it removed to `observer.deathsDrained`.
-     */
-    function scoredRow(/** @type {number} */ genomeId) {
-        const row = deathsSeen++ - observer.deathsDrained;
-        const deaths = observer.deaths;
-        if (deaths.genomeId[row] !== genomeId || Number.isNaN(deaths.fitness[row])) {
-            throw new Error(`map-elites-v1: death log row ${row} is not genome ${genomeId} or unscored`);
+    /** A child proved itself: each parent held in the pending table is established and offered. */
+    function onProven(/** @type {Float64Array} */ d, /** @type {number} */ o) {
+        for (const id of d[o + 4] === d[o + 5] ? [d[o + 4]] : [d[o + 4], d[o + 5]]) {
+            const taken = ledger.table.take(id);
+            if (taken !== undefined) {
+                offerScored({ archive, log }, { tick: d[o + 1], item: taken, extra: taken.extra });
+            }
         }
-        return row;
     }
 
     function onEvent(/** @type {any} */ world, /** @type {number} */ o) {
         const d = world.events.data;
-        if (observer === undefined || d[o] !== EVENT_TYPE.AGENT_DIED) {
+        if (observer === undefined) {
+            return;
+        }
+        if (d[o] === EVENT_TYPE.LINE_PROVEN) {
+            onProven(d, o);
+        }
+        if (d[o] !== EVENT_TYPE.AGENT_DIED) {
             return;
         }
         const row = scoredRow(d[o + 3]);
         if (d[o + 8] >= config.maturityTicks) {
             const item = offerOf(d, o, row);
-            offer(archive, item, log);
-            if (scoreFields !== undefined) {
-                log?.log('debug', 'FitnessScored', {
-                    tick: d[o + 1],
-                    genomeId: d[o + 3],
-                    spec: item.spec,
-                    cell: item.cell,
-                    fitness: item.fitness,
-                    ...scoreFields(row),
-                });
+            const extra = scoreFields?.(row);
+            if (ledger.settle(d[o + 2], { tick: d[o + 1], item, extra })) {
+                offerScored({ archive, log }, { tick: d[o + 1], item, extra });
             }
             pending.id[d[o + 2]] = 0;
         }

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
-import { createRng, fork, nextFloat } from '../../js/sim/rng.js';
 import { createWorld, placeClear, spawnAgent, spawnFoodItem } from '../../js/sim/spawn.js';
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { fixedSpecPolicy, testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     worldWidth: 1000,
@@ -18,9 +17,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 20,
     initialFood: 10,
-    obstacleCount: 4,
-    obstacleMinRadius: 20,
-    obstacleMaxRadius: 60,
     fertileZoneMax: 3,
 };
 
@@ -29,7 +25,7 @@ const SMALL = {
  * @returns {ReturnType<typeof createWorld>}
  */
 function build(over = {}) {
-    return createWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }), testPolicy);
+    return createWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...over }), testPolicy);
 }
 
 /**
@@ -72,31 +68,6 @@ describe('createWorld', () => {
     });
 });
 
-describe('placeObstacles', () => {
-    it('keeps every obstacle inside the world with a radius in range', () => {
-        const w = build();
-        for (let i = 0; i < 4; i++) {
-            const r = w.obsRadius[i];
-            expect(r).toBeGreaterThanOrEqual(20);
-            expect(r).toBeLessThanOrEqual(60);
-            expect(w.obsX[i]).toBeGreaterThanOrEqual(r);
-            expect(w.obsX[i]).toBeLessThanOrEqual(1000 - r);
-            expect(w.obsY[i]).toBeGreaterThanOrEqual(r);
-            expect(w.obsY[i]).toBeLessThanOrEqual(1000 - r);
-            expect(Math.hypot(w.obsVx[i], w.obsVy[i])).toBeLessThanOrEqual(w.config.obstacleMaxSpeed + 1e-6);
-        }
-    });
-
-    it('draws exactly five values per obstacle from the obstacles stream', () => {
-        const w = build({ initialFood: 0, initialAgents: 0 });
-        const expected = fork(createRng(w.config.seed), 'obstacles');
-        for (let i = 0; i < 4 * 5; i++) {
-            nextFloat(expected);
-        }
-        expect(w.rng.obstacles.s).toEqual(expected.s);
-    });
-});
-
 describe('spawnFoodItem', () => {
     it('keeps food clear of obstacles with energy within the variance', () => {
         const w = build({ initialFood: 0, maxFood: 400, highFoodChance: 0.5 });
@@ -122,7 +93,7 @@ describe('spawnFoodItem', () => {
     });
 
     it('lands inside the fertile zone when the chance is 1', () => {
-        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 50, obstacleCount: 0 });
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 50 });
         w.zoneAlive[1] = 1;
         w.zoneX[1] = 500;
         w.zoneY[1] = 500;
@@ -138,7 +109,7 @@ describe('spawnFoodItem', () => {
     });
 
     it('clamps zone food into the world', () => {
-        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 200, obstacleCount: 0 });
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 200 });
         w.zoneAlive[0] = 1;
         w.zoneFertility[0] = 1;
         for (let i = 0; i < 15; i++) {
@@ -156,7 +127,7 @@ describe('spawnFoodItem', () => {
     });
 
     it('skips the zone roll when it is not chosen', () => {
-        const w = build({ initialFood: 0, fertileZoneSpawnChance: 0, obstacleCount: 0 });
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 0 });
         w.zoneAlive[0] = 1;
         w.zoneFertility[0] = 1;
         w.zoneX[0] = 10;
@@ -165,7 +136,7 @@ describe('spawnFoodItem', () => {
     });
 
     it('falls back to a uniform clear point when an obstacle covers the whole zone', () => {
-        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 10, obstacleCount: 1 });
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 10 });
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 400;
@@ -244,7 +215,7 @@ describe('spawnAgent', () => {
     });
 
     it('honours policy.initSpec', () => {
-        const w = createWorld(createConfig({ ...FEATURES_OFF, ...SMALL }), fixedSpecPolicy(3));
+        const w = createWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }), fixedSpecPolicy(3));
         for (let s = 0; s < 6; s++) {
             expect(w.spec[s]).toBe(3);
         }
@@ -257,7 +228,7 @@ describe('spawnAgent', () => {
         const w = build({ initialAgents: 0 });
         const slot = spawnAgent(w, testPolicy, cause);
         expect(w.events.data[8]).toBe(cause);
-        expect(w.ledger[0]).toBe(w.config.initialEnergy);
+        expect(w.ledger[0]).toBe(w.config.entrantEnergy);
         expect(w.alive[slot]).toBe(1);
     });
 
@@ -274,7 +245,7 @@ describe('spawnAgent', () => {
 
 describe('placeClear', () => {
     it('throws naming the tick and radius when obstacles fill the world', () => {
-        const w = build({ initialAgents: 0, initialFood: 0, obstacleCount: 1, placementTries: 5 });
+        const w = build({ initialAgents: 0, initialFood: 0, placementTries: 5 });
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 5000;
@@ -282,7 +253,7 @@ describe('placeClear', () => {
     });
 
     it('writes the first clear point to world.point', () => {
-        const w = build({ initialAgents: 0, initialFood: 0, obstacleCount: 0 });
+        const w = build({ initialAgents: 0, initialFood: 0 });
         placeClear(w, w.rng.spawn, 25);
         expect(w.point[0]).toBeGreaterThanOrEqual(25);
         expect(w.point[1]).toBeLessThanOrEqual(975);
@@ -291,7 +262,7 @@ describe('placeClear', () => {
 
 describe('spawnAgent sex', () => {
     it('draws every spawn a sex and reports it in AGENT_BORN field 9 when sexes are on', () => {
-        const w = build({ sexesEnabled: true, initialAgents: 0, maxAgents: 64 });
+        const w = build({ initialAgents: 0, maxAgents: 64 });
         const slots = [];
         for (let i = 0; i < 40; i++) {
             slots.push(spawnAgent(w, testPolicy, i % 2 === 0 ? BORN_CAUSE.FLOOR : BORN_CAUSE.IMMIGRANT));
@@ -303,13 +274,30 @@ describe('spawnAgent sex', () => {
             expect(w.events.data[i * EVENT_STRIDE + 9]).toBe(sexes[i]);
         }
     });
+});
 
-    it('makes everyone female without a draw when sexes are off', () => {
-        const w = build({ initialAgents: 0 });
-        const before = Array.from(w.rng.lifecycle.s);
+describe('spawnAgent entrantEnergy', () => {
+    const energyOf = (/** @type {any} */ w, /** @type {number} */ slot) => w.energy[slot];
+
+    it('keeps initialEnergy for the initial population and gives a floor or immigrant entrant entrantEnergy', () => {
+        const w = build({ initialEnergy: 800, entrantEnergy: 200, initialAgents: 2 });
+        expect([energyOf(w, 0), energyOf(w, 1)]).toEqual([800, 800]);
+        const floor = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
+        const immigrant = spawnAgent(w, testPolicy, BORN_CAUSE.IMMIGRANT);
+        expect([energyOf(w, floor), energyOf(w, immigrant)]).toEqual([200, 200]);
+    });
+
+    it('is poor by default and means initialEnergy at 0', () => {
+        const poor = build({ initialAgents: 1 });
+        expect(poor.config.entrantEnergy).toBe(200);
+        expect(energyOf(poor, spawnAgent(poor, testPolicy, BORN_CAUSE.FLOOR))).toBe(200);
+        const same = build({ entrantEnergy: 0, initialAgents: 1 });
+        expect(energyOf(same, spawnAgent(same, testPolicy, BORN_CAUSE.FLOOR))).toBe(same.config.initialEnergy);
+    });
+
+    it('sizes a poor entrant from its starting energy', () => {
+        const w = build({ initialAgents: 1 });
         const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
-        expect(w.sex[slot]).toBe(0);
-        expect(w.events.data[9]).toBe(0);
-        expect(Array.from(w.rng.lifecycle.s)).toEqual(before);
+        expect(w.size[slot]).toBeLessThan(w.size[0]);
     });
 });

@@ -3,10 +3,10 @@
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
-import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
+import { randomGenome } from '../../evo/instinct.js';
+import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
-import { countSpecs, pickEmptySpec } from '../../sim/spec-rescue.js';
-import { biologyOn } from '../../sim/traits.js';
+import { countSpecs } from '../../sim/spec-rescue.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -97,17 +97,13 @@ function checkRow(row, layout, log) {
 }
 
 /**
- * The specialisation for a new lineage, in order: a rescue of one with 0 alive (`floorRescueAtZero`), a random elite's
+ * The specialisation for a new lineage, in order: a random elite's
  * (`specMutationRate` above 0), the least populated.
  * @param {{world: Record<string, any>, slot: number, rng: any, archive: Record<string, any>, counts: Int32Array}} what
  *   the world, the slot being seeded, the `spawn` stream, the archive and scratch counts
  * @returns {number} the specialisation index
  */
 function chooseSpec({ world, slot, rng, archive, counts }) {
-    const rescue = world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
-    if (rescue >= 0) {
-        return rescue;
-    }
     if (world.config.specMutationRate > 0) {
         return randomEliteSpec(archive, rng);
     }
@@ -182,18 +178,13 @@ export function createSeeder({
         const { source, ref } = draw(archive, world.spec[slot], rng, mix);
         markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
         if (ref === null) {
-            randomWeights(row, layout, rng);
+            randomGenome(world, slot, { row, rng });
             birth.sigma[slot] = SIGMA_START;
         } else if (source === 'archive') {
             checkRow(ref.row, layout, log);
             row.set(ref.row);
             birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
-            mutateWeights(
-                row,
-                birth.sigma[slot],
-                rng,
-                biologyOn(world.config) ? layout.traitStart : layout.weightCount,
-            );
+            mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
         } else {
             checkRow(ref.row, layout, log);
             row.set(ref.row);

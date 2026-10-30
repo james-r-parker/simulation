@@ -1,4 +1,4 @@
-// Spawns food each tick, toward a population-scaled target or (foodAreaCapacity) at a rate per world area, and ages it out.
+// Spawns food each tick at a rate per world area, and ages it out.
 
 import { nextFloat } from './rng.js';
 import { spawnFoodItem } from './spawn.js';
@@ -9,19 +9,6 @@ import { FOOD_KIND } from './carcass.js';
 
 /** The area `foodRegrowPerArea` is quoted per, in px2. */
 const AREA_UNIT = 1000000;
-
-/**
- * @param {World} world the world
- * @returns {number} the expected spawns this tick under the population-scaled target rule
- */
-function populationExpected(world) {
-    const c = world.config;
-    const season = c.seasons[world.season[0]];
-    const food = world.foodCount;
-    const target = Math.min(c.maxFood, Math.max(c.foodTargetMin, c.foodTargetPerAgent * world.population));
-    const boost = food < target ? 1 + c.foodRefillBoost * (1 - food / target) : c.foodSurplusRate;
-    return ((c.foodSpawnRate * c.maxAgents) / c.foodSpawnAgentDivisor) * season.foodScarcity * boost;
-}
 
 /**
  * Area-based food: `foodRegrowPerArea` items per tick per 1,000,000 px2 of world, times the season's scarcity. Where
@@ -44,7 +31,7 @@ function areaExpected(world) {
 export function spawnFood(world) {
     const c = world.config;
     const food = world.foodCount;
-    const expected = c.foodAreaCapacity ? areaExpected(world) : populationExpected(world);
+    const expected = areaExpected(world);
     const whole = Math.floor(expected);
     const fraction = expected - whole;
     const extra = nextFloat(world.rng.food) < fraction ? 1 : 0;

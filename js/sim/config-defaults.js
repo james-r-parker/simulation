@@ -21,8 +21,8 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 40, // the floor; 40 from the Phase 4 switch-on (world-balance T41), 100 before it
-    immigrationInterval: 600, // new
+    minAgents: 40, // the restart size: the floor guard refills the world to this
+    floorTrigger: 8, // the floor guard acts only when fewer than this many are alive (natural-selection T3); 0 turns it off
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
@@ -34,10 +34,6 @@ export const DEFAULTS = deepFreeze({
     foodRadius: 20, // FOOD_SIZE_NORMAL
     highFoodRadius: 30, // FOOD_SIZE_HIGH
     foodMaxAge: 10000, // FOOD_MAX_AGE_BASE
-    obstacleCount: 0, // OBSTACLE_COUNT (25 before the T41 switch-on, which turns obstacles off with the basins)
-    obstacleMinRadius: 40, // OBSTACLE_MIN_RADIUS
-    obstacleMaxRadius: 120, // OBSTACLE_MAX_RADIUS
-    obstacleMaxSpeed: 0.3, // OBSTACLE_MAX_SPEED
     obstacleDamage: 50, // OBSTACLE_COLLISION_PENALTY
     wallDamage: 50, // WALL_COLLISION_DAMAGE
     rayCount: 16, // new
@@ -49,7 +45,8 @@ export const DEFAULTS = deepFreeze({
     sprintMultiplier: 0.5, // SPRINT_BONUS_MULTIPLIER
     sprintCost: 0.05, // SPRINT_COST_PER_FRAME
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
-    maxEnergy: 25000, // MAX_ENERGY
+    entrantEnergy: 200, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
+    maxEnergy: 2000, // natural-selection economy (was MAX_ENERGY 25000): a small store, so a mother has little to lose to a winter before she is dead
     passiveLoss: 0.06, // PASSIVE_LOSS
     movementCost: 0.015, // MOVEMENT_COST_MULTIPLIER x 0.5
     turnCost: 0.1, // ROTATION_COST_MULTIPLIER
@@ -58,6 +55,8 @@ export const DEFAULTS = deepFreeze({
     minSize: 20, // MIN_AGENT_SIZE
     energyToSize: 250, // ENERGY_TO_SIZE_RATIO
     biteEnergy: 5, // BITE_SIZE
+    biteCost: 8, // natural-selection T5a: the biter's kick per landed bite; 8 keeps a typical kick near a sixth of a 40-energy bite; the survival screen (E67) found the cost is not the predator lever and kept 8
+    recoilEnergy: 20, // natural-selection T5b: a hunter that lunges at kin or something too big loses this once a tick (half of a 40-energy bite)
     huntSizeRatio: 0.8, // tuned, fitness-and-selection T15d (was 1.01, tuned E20 and jaws; legacy PREDATOR_SIZE_RATIO_THRESHOLD 1.1)
     mateSizeRatio: 1.3, // new: the widest size ratio between two mates, apart from the hunt ratio (B14)
     mateDistanceMax: 1.0, // new: mates must be genetically closer than this; Infinity is off (T36, 0.8 from T41, 1.0 from T78)
@@ -67,16 +66,14 @@ export const DEFAULTS = deepFreeze({
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
     childEnergyMin: 100, // new: the smallest gift a mating birth may make (200 before T78)
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900
-    sexesEnabled: true, // new: two sexes, female choice of the strongest male, asexual splitting for every sex (world-balance T37, T69)
     birthWindowTicks: 3000, // new: the span the birth budget counts a mother's births over (world-balance T47)
     maxBirthsPerWindow: 5, // new: births (mating or splitting) a mother may have per span; 0 is off, 5 from T78 (3 from T41)
     capBirthsEnabled: true, // new: at maxAgents a due pregnancy waits and retries, and splits stop splitCapMargin short (world-balance T68)
     splitCapMargin: 50, // new: slots below maxAgents kept for pregnancies when capBirthsEnabled is on
-    maxAgeTicks: 36000, // new
+    maxAgeTicks: 72000, // natural-selection: two seasons of life, twice eraSeasonTicks (was 36000)
     reproductionCooldown: 150, // REPRODUCTION_COOLDOWN_FRAMES (300 before T78)
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
-    seasonLength: 3600, // SEASON_LENGTH
     seasons: [
         { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5, temperatureModifier: -5 }, // spring, SEASON_*
         { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2, temperatureModifier: 15 }, // summer, SEASON_*
@@ -110,6 +107,8 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         predator: {
             index: 1,
@@ -118,13 +117,15 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
-            biteMultiplier: 8, // tuned, fitness-and-selection T15o (E47)
+            biteMultiplier: 20, // survival screen (instinct, inst1-gorge-bite20): decisive bites, a predator lands a kill in few bites like a big cat's neck bite (was 8, tuned T15o E47)
             turnMultiplier: 0.7,
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
-            passiveLossMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales the standing (passive, size and vision) energy loss, T15f)
+            passiveLossMultiplier: 0.3, // survival screen (instinct, inst1-gorge-bite20): gorge and fast, a predator rests cheaply between meals like a python (was 0.6, T15d; scales the standing energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 3, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store, so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         reproducer: {
             index: 2,
@@ -140,27 +141,31 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         scout: {
             index: 3,
             visionRange: 400,
             canHunt: false,
-            moveCostMultiplier: 0.7,
-            biteTakenMultiplier: 1,
+            moveCostMultiplier: 1, // natural-selection: no longer cheaper to move (was 0.7)
+            biteTakenMultiplier: 1.5, // natural-selection: the scout pays for far sight, every bite on it lands 1.5 times harder (was 1)
             cooldownMultiplier: 1,
             biteMultiplier: 1,
             turnMultiplier: 1,
             plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
             meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
+            passiveLossMultiplier: 1.3, // natural-selection: the scout pays 30% more to stand (was 1); new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         defender: {
             index: 4,
             visionRange: 350,
             canHunt: false,
-            moveCostMultiplier: 1,
+            moveCostMultiplier: 1.2, // natural-selection: the defender is costly to be, a fifth more to move (was 1)
             biteTakenMultiplier: 0.5,
             cooldownMultiplier: 1,
             biteMultiplier: 1,
@@ -170,17 +175,14 @@ export const DEFAULTS = deepFreeze({
             sprintBoost: 1,
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
+            kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
     },
     checkInvariants: false, // new
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
     mateChanceScale: 1.5, // new
-    foodTargetPerAgent: 12, // tuned, E20
-    foodTargetMin: 50, // new
-    foodRefillBoost: 4, // new
-    foodSurplusRate: 0.2, // new
-    foodSpawnAgentDivisor: 20, // new
     fertileZoneRadius: 150, // new
     fertileZoneFertility: 0.05, // FERTILE_ZONE_FERTILITY_FACTOR
     placementTries: 100, // new
@@ -194,13 +196,12 @@ export const DEFAULTS = deepFreeze({
     specMutationRate: 0.002, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
-    carcassesEnabled: true, // new: a dead agent leaves a meat food item; false is off (world-balance T54)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.5, // new: share of an agent's energy at death that its carcass holds (T54)
-    terrainLayout: 'basins', // new: 'open' or 'basins' (a wall with gaps, refuges and a cold margin); open is off (T52)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
-    wallGapWidth: 300, // new: width of each wall gap in px (T52)
-    refugeCount: 4, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52)
+    wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
+    refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
+    refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
     coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
@@ -221,7 +222,7 @@ export const DEFAULTS = deepFreeze({
     antennaReach: 150, // new: 1.5 pheromone cells
     callRadius: 300, // SHOUT_BASE_RANGE (200)
     callTicks: 60, // SHOUT_DURATION_FRAMES
-    alarmCost: 0.5, // tuned, E20
+    alarmCost: 5, // natural-selection: a call is not free (was 0.5, tuned E20)
     huntCallCost: 10, // tuned, fitness-and-selection T15d (was 0.5, tuned E20)
     smokeCost: 20, // new
     smokeRadius: 80, // new
@@ -230,10 +231,7 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
-    floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
-    predatorRescueMin: 3, // tuned, fitness-and-selection T15d (0 is off; every predatorRescueInterval ticks, one immigrant spawns as a predator while fewer are alive, T15b)
-    predatorRescueInterval: 450, // tuned, fitness-and-selection T15d (ticks between predator rescue checks)
-    predatorKillEnergy: 150, // tuned, fitness-and-selection T15d (energy the biter gains on a fatal bite, T15f)
+    predatorKillEnergy: 600, // survival screen (instinct, inst1-gorge-bite20): a 600-energy meal per kill, the gorge in gorge-and-fast (was 150, T15d; energy the biter gains on a fatal bite, T15f)
     alarmThreshold: 0.65, // tuned, fitness-and-selection T15d (the alarm output must exceed it, T15m)
     huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
@@ -242,30 +240,25 @@ export const DEFAULTS = deepFreeze({
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
-    foodAreaCapacity: true, // new: food regrows per world area through the patches, not toward a per-agent target
-    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 when foodAreaCapacity is on
-    erasEnabled: true, // new: long seasons, winter and drought on patch regrowth, invasion pulses (world-balance T53)
-    eraSeasonTicks: 36000, // new: ticks per season when eras are on (a year is 4 x this)
+    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 of world, through the patches
+    eraSeasonTicks: 36000, // new: ticks per season (a year is 4 x this)
     winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
-    invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none
-    invasionSize: 12, // new: immigrants in a pulse
-    traitsEnabled: true, // new: evolvable size, vision and child share (world-balance T33)
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
-    leakEnabled: true, // new: leaky hidden units and the memory read-back inputs (world-balance T31)
-    meritEnabled: true, // new: fitness-and-selection T16; on from T48b (the E41 finalist split-300)
-    meritChanceWeight: 0.25, // new: fitness-and-selection T16 (merit, off)
+    mutationRate: 'invsqrt', // brain plan big bang (H1): a probability per gene, a number, 'invsqrt' (1 / sqrt(weightCount), about 67 genes per birth) or 'genes:<k>'; 1 mutates every gene
+    weightDecay: 0.005, // brain plan big bang (H2): per birth shrink of the wIn rows of silent inputs (the world's input-activity mask); 0 is off
+    instinctWeight: 1, // brain plan big bang, survival screen (instinct): the innate reflex prior of a random genome (js/evo/instinct.js), as a newborn animal has reflexes before it learns; 0 is random genomes
+    leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
+    leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)
     meritChildBonus: 300, // new: fitness-and-selection T16 (merit, off)
     meritEscapeBonus: 60, // new: fitness-and-selection T16 (merit, off)
     meritHalfLife: 20000, // new: fitness-and-selection T16 (merit, off)
     meritHalf: 1000, // new: fitness-and-selection T16 (merit, off)
-    meritMateWeight: 0, // new: fitness-and-selection T16 (merit, off)
+    mateRank: 'rank', // natural-selection T8: a male's within-specialisation percentile, by deliberate kills (hunters) or deliberate meal share; 'offspring' ranks by matured children
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
-    meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
-    preySplit: true, // new: fitness-and-selection T48d; false lets only canHunt agents split
 });

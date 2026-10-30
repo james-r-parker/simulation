@@ -5,9 +5,6 @@ description: Use when the simulation misbehaves or a bug report arrives - agents
 
 # debug-sim
 
-> For the legacy app (`js/*.js` outside `js/sim` and `js/evo`), use step 5 only: the browser console and the dev
-> performance monitor.
-
 ## Overview
 
 The headless sim is deterministic: the same seed and config replay the same world, tick for tick. Headless runs write

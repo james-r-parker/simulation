@@ -170,7 +170,6 @@ export function playMatch(a, b, seed, { ticks = MATCH_TICKS, config: overrides =
         seed,
         initialAgents: MATCH_AGENTS,
         minAgents: 0,
-        immigrationInterval: 0,
     });
     const policy = matchPolicy(a, b);
     const world = createWorld(config, policy);

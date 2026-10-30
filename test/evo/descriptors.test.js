@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bodyPlanOf, descriptorV1, descriptorV6, roleSkillOf } from '../../js/evo/descriptors.js';
-import { createArchive } from '../../js/evo/archive.js';
+import { DESCRIPTORS, bodyPlanOf, descriptorV1, descriptorV7, roleSkillOf } from '../../js/evo/descriptors.js';
+import { cellOf, createArchive } from '../../js/evo/archive.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 
@@ -18,18 +18,14 @@ describe('roleSkillOf', () => {
 
 describe('bodyPlanOf', () => {
     it('maps the two traits from 0.7 to 1.3 onto 0 to 1', () => {
-        expect(bodyPlanOf(1.3, 1.3, true)).toBeCloseTo(1);
-        expect(bodyPlanOf(1, 1, true)).toBeCloseTo(0.5);
-        expect(bodyPlanOf(0.7, 0.7, true)).toBeCloseTo(0);
+        expect(bodyPlanOf(1.3, 1.3)).toBeCloseTo(1);
+        expect(bodyPlanOf(1, 1)).toBeCloseTo(0.5);
+        expect(bodyPlanOf(0.7, 0.7)).toBeCloseTo(0);
     });
 
     it('clamps values outside the trait span', () => {
-        expect(bodyPlanOf(2, 2, true)).toBe(1);
-        expect(bodyPlanOf(0, 0, true)).toBe(0);
-    });
-
-    it('is 0.5 with traits off', () => {
-        expect(bodyPlanOf(1.3, 0.7, false)).toBe(0.5);
+        expect(bodyPlanOf(2, 2)).toBe(1);
+        expect(bodyPlanOf(0, 0)).toBe(0);
     });
 });
 
@@ -52,12 +48,27 @@ describe('descriptorV1', () => {
     });
 });
 
-describe('descriptorV6', () => {
-    it('reads the role skill and body plan of the death-log row', () => {
+describe('descriptorV7', () => {
+    it('reads the role skill and the style of the death-log row', () => {
         const point = new Float64Array(2);
-        const deaths = { roleSkill: [0, 0.8], bodyPlan: [0, 0.3] };
-        descriptorV6.point({ deaths, row: 1, counters: {}, slot: 0 }, point);
+        const deaths = { roleSkill: [0, 0.8], style: [0, 0.3] };
+        descriptorV7.point({ deaths, row: 1, counters: {}, slot: 0 }, point);
         expect(Array.from(point)).toEqual([0.8, 0.3]);
+    });
+
+    it('is registered with v1 and nothing else: the body-plan descriptor is gone', () => {
+        expect(Object.keys(DESCRIPTORS)).toEqual(['v1', 'v7']);
+        expect(descriptorV7.name).toBe('v7');
+    });
+
+    it('places two deaths of one specialisation and body plan with a short and a long chase in different cells', () => {
+        const deaths = { roleSkill: [0.85, 0.85], style: [0.1, 0.9] };
+        const [a, b] = [0, 1].map((row) => {
+            const point = new Float64Array(2);
+            descriptorV7.point({ deaths, row, counters: {}, slot: 0 }, point);
+            return cellOf(point[0], point[1]);
+        });
+        expect(a).not.toBe(b);
     });
 });
 
@@ -69,6 +80,6 @@ describe('createArchive descriptor option', () => {
     });
 
     it('keeps the descriptor it is given', () => {
-        expect(createArchive(layout, { descriptor: descriptorV6 }).descriptor).toBe(descriptorV6);
+        expect(createArchive(layout, { descriptor: descriptorV7 }).descriptor).toBe(descriptorV7);
     });
 });

@@ -51,6 +51,8 @@ function collectMetrics(perSeed) {
  * @property {readonly number[]} seeds the seeds, in order
  * @property {string} sha the commit sha
  * @property {readonly Record<string, { value: number | null, reason?: string }>[]} perSeed `computeMetrics` per seed
+ * @property {(number[] | null)[]} [inputActivity] each seed's active share per brain input (the
+ *   `pooled` row), `null` for a seed with no sample; stored as `inputActivity` when given (the sensory audit reads it)
  * @property {readonly import('./trace.js').TraceRecord[]} [traces] `finishTrace` per seed, in seed order; stored as
  *   `traces` when given
  */
@@ -65,16 +67,44 @@ export function seedlessConfig(config) {
 }
 
 /**
+ * The per-seed fields of a report, taken from the workers' results in seed order.
+ * @param {Record<string, any>[]} results one result per seed
+ * @returns {{ fitnessName: string, perSeed: any[], traces: any[], inputActivity: any[] }} the fields `buildReport` takes
+ */
+export function seedFields(results) {
+    return {
+        fitnessName: results[0].fitnessName,
+        perSeed: results.map((r) => r.metrics),
+        traces: results.map((r) => r.trace),
+        inputActivity: results.map((r) => r.inputActivity ?? null),
+    };
+}
+
+/**
  * Builds the report. Each seed's world is `config` with that seed, so the stored config has no `seed`, and
  * `configHash` is `configHash` of that stored object.
  * @param {BuildReportInput} input the run's results
  * @returns {Record<string, any>} the report
  */
-export function buildReport({ policy, policyOptions, fitnessName, config, ticks, seeds, sha, perSeed, traces }) {
+export function buildReport({
+    policy,
+    policyOptions,
+    fitnessName,
+    config,
+    ticks,
+    seeds,
+    sha,
+    perSeed,
+    traces,
+    inputActivity,
+}) {
     const rest = seedlessConfig(config);
     const hasOptions = policyOptions !== undefined && Object.keys(policyOptions).length > 0;
     return {
         ...(traces === undefined ? {} : { traces: [...traces] }),
+        ...(inputActivity === undefined
+            ? {}
+            : { inputActivity: inputActivity.map((row) => (row === null ? null : [...row])) }),
         version: REPORT_VERSION,
         policy,
         ...(hasOptions ? { policyOptions: structuredClone(policyOptions) } : {}),
@@ -161,6 +191,22 @@ export function validateReport(report) {
     if (report.traces !== undefined) {
         checkTraces(report.traces, report.seeds.length);
     }
+    if (report.inputActivity !== undefined) {
+        checkInputActivity(report.inputActivity, report.seeds.length);
+    }
+}
+
+/**
+ * @param {unknown} table the report's optional `inputActivity`
+ * @param {number} count the seed count
+ * @returns {void}
+ */
+function checkInputActivity(table, count) {
+    need(Array.isArray(table) && table.length === count, 'inputActivity', `an array of ${count}`);
+    /** @type {unknown[]} */ (table).forEach((row, i) => {
+        const ok = row === null || (Array.isArray(row) && row.every((v) => Number.isFinite(v) && v >= 0 && v <= 1));
+        need(ok, `inputActivity[${i}]`, 'null or an array of shares between 0 and 1');
+    });
 }
 
 const TRACE_ARRAYS = ['pop', 'mate', 'split', 'spec', 'deaths'];

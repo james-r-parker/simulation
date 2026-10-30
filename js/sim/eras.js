@@ -1,5 +1,5 @@
 // Eras (world-balance T53): seasons that last minutes, winter and summer acting on patch regrowth, and a drought that
-// stops one basin's patches regrowing for a summer. All of it is off unless `erasEnabled`; off draws nothing.
+// stops one basin's patches regrowing for a summer.
 
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { nextFloat } from './rng.js';
@@ -17,7 +17,7 @@ export const SUMMER_REGROW = 1.5;
  * @returns {number} the ticks in one full year of four seasons
  */
 export function yearTicks(config) {
-    return config.erasEnabled ? SEASONS_PER_YEAR * config.eraSeasonTicks : config.seasonLength;
+    return SEASONS_PER_YEAR * config.eraSeasonTicks;
 }
 
 /**
@@ -31,15 +31,12 @@ export function basinOf(world, x) {
 
 /**
  * The multiplier on one patch's regrowth rate this tick: the season's (winter `winterRegrow`, summer 1.5) and 0 for a
- * patch in the basin under drought. 1 when eras are off.
+ * patch in the basin under drought.
  * @param {World} world the world
  * @param {number} patch the patch index
  * @returns {number} the multiplier
  */
 export function patchRegrowFactor(world, patch) {
-    if (!world.config.erasEnabled) {
-        return 1;
-    }
     if (world.era[0] >= 0 && basinOf(world, world.patchX[patch]) === world.era[0]) {
         return 0;
     }
@@ -77,8 +74,8 @@ function updateDrought(world, year) {
  * @returns {void}
  */
 export function advanceEra(world) {
-    const { erasEnabled, eraSeasonTicks } = world.config;
-    if (!erasEnabled || world.tick === 0 || world.tick % eraSeasonTicks !== 0) {
+    const { eraSeasonTicks } = world.config;
+    if (world.tick === 0 || world.tick % eraSeasonTicks !== 0) {
         return;
     }
     const year = Math.floor(world.tick / (SEASONS_PER_YEAR * eraSeasonTicks));

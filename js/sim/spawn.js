@@ -7,7 +7,7 @@ import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain } from './terrain.js';
 import { drawSex } from './sex.js';
-import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
+import { SPEC_COUNT } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
@@ -84,27 +84,6 @@ export function placeClear(world, rng, radius) {
         }
     }
     throw placementError(world, radius);
-}
-
-/**
- * Fills the obstacle arrays from the `obstacles` stream; obstacles may overlap each other.
- * @param {World} world the world
- * @returns {void}
- */
-export function placeObstacles(world) {
-    const { obstacleCount, obstacleMinRadius, obstacleMaxRadius, obstacleMaxSpeed } = world.config;
-    const { worldWidth, worldHeight } = world.config;
-    const rng = world.rng.obstacles;
-    for (let i = 0; i < obstacleCount; i++) {
-        const radius = obstacleMinRadius + nextFloat(rng) * (obstacleMaxRadius - obstacleMinRadius);
-        world.obsRadius[i] = radius;
-        world.obsX[i] = radius + nextFloat(rng) * (worldWidth - 2 * radius);
-        world.obsY[i] = radius + nextFloat(rng) * (worldHeight - 2 * radius);
-        const heading = nextFloat(rng) * TWO_PI;
-        const speed = nextFloat(rng) * obstacleMaxSpeed;
-        world.obsVx[i] = speed * detCos(heading);
-        world.obsVy[i] = speed * detSin(heading);
-    }
 }
 
 /**
@@ -248,17 +227,24 @@ export function spawnFoodItem(world) {
  * @param {World} world the world
  * @param {Policy} policy the brain policy
  * @param {number} slot the allocated slot
- * @param {number} cause the spawn cause
- * @returns {number} the policy's pick, else a floor spawn's pick among the empty specialisations when
- *   `floorRescueAtZero` is on and one is empty, else uniform
+ * @returns {number} the policy's pick, else uniform
  */
-function chooseSpec(world, policy, slot, cause) {
+function chooseSpec(world, policy, slot) {
     const rng = world.rng.spawn;
     if (policy.initSpec) {
         return policy.initSpec(world, slot, rng);
     }
-    const rescue = cause === BORN_CAUSE.FLOOR && world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
-    return rescue >= 0 ? rescue : nextInt(rng, SPEC_COUNT);
+    return nextInt(rng, SPEC_COUNT);
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the config
+ * @param {number} cause the spawn cause
+ * @returns {number} `initialEnergy` for the initial population, else `entrantEnergy` (0 means `initialEnergy`): a
+ *   seeder entrant starts poor, so it has to eat to stay
+ */
+function startEnergy(config, cause) {
+    return cause === BORN_CAUSE.INITIAL || config.entrantEnergy === 0 ? config.initialEnergy : config.entrantEnergy;
 }
 
 /**
@@ -266,12 +252,10 @@ function chooseSpec(world, policy, slot, cause) {
  * @param {World} world the world
  * @param {Policy} policy the brain policy
  * @param {number} cause a `BORN_CAUSE` of `INITIAL`, `FLOOR` or `IMMIGRANT`
- * @param {number} [forcedSpec] a specialisation index to use instead of the policy's pick (the predator rescue); -1 or
- *   omitted leaves the pick to the policy
  * @returns {number} the agent slot
  * @throws {Error} when the cause is not a spawn cause or the world is full
  */
-export function spawnAgent(world, policy, cause, forcedSpec = -1) {
+export function spawnAgent(world, policy, cause) {
     const source = SPAWN_SOURCE.get(cause);
     if (source === undefined) {
         throw new Error(`spawnAgent: cause must be initial, floor or immigrant, got ${cause}`);
@@ -281,18 +265,19 @@ export function spawnAgent(world, policy, cause, forcedSpec = -1) {
     const id = world.nextId++;
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
-    world.spec[slot] = forcedSpec >= 0 ? forcedSpec : chooseSpec(world, policy, slot, cause);
+    world.spec[slot] = chooseSpec(world, policy, slot);
     drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
-    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + c.initialEnergy / c.energyToSize));
+    const energy = startEnergy(c, cause);
+    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + energy / c.energyToSize));
     world.x[slot] = world.point[0];
     world.y[slot] = world.point[1];
     world.angle[slot] = nextFloat(world.rng.spawn) * TWO_PI - PI;
     world.ateTimer[slot] = TIMER_CAP;
     world.bittenTimer[slot] = TIMER_CAP;
     world.temperature[slot] = c.temperatureStart;
-    addEnergy(world, slot, c.initialEnergy, source);
+    addEnergy(world, slot, energy, source);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);
     const d = world.events.data;
     d[o + 2] = slot;
@@ -315,7 +300,6 @@ export function createWorld(config, policy) {
     const root = createRng(config.seed);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
-    placeObstacles(world);
     placeTerrain(world);
     createPatches(world);
     for (let i = 0; i < config.initialFood; i++) {

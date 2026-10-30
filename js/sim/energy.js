@@ -53,7 +53,7 @@ export function updateSize(world, slot) {
 }
 
 /**
- * Adds energy from outside the world, capped at `maxEnergy`; books only the stored amount in `ledger[0]`.
+ * Adds energy from outside the world, capped at the agent's store (`maxEnergy` x its specialisation's `maxEnergyMultiplier`); books only the stored amount in `ledger[0]`.
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
  * @param {number} amount the energy offered, non-negative
@@ -65,8 +65,8 @@ export function addEnergy(world, slot, amount, source) {
     if (!SOURCES.includes(source)) {
         throw new Error(`addEnergy: slot ${slot} has unknown energy source ${source}`);
     }
-    const { config, energy, ledger } = world;
-    const stored = Math.min(amount, config.maxEnergy - energy[slot]);
+    const { energy, ledger } = world;
+    const stored = Math.min(amount, world.maxEnergyBySpec[world.spec[slot]] - energy[slot]);
     energy[slot] += stored;
     ledger[0] += stored;
     updateSize(world, slot);
@@ -98,7 +98,7 @@ export function removeEnergy(world, slot, amount, cause) {
 }
 
 /**
- * Moves energy from one agent to another. The giver loses up to `amount`; the receiver gains up to `maxEnergy`
+ * Moves energy from one agent to another. The giver loses up to `amount`; the receiver gains up to its own store (`maxEnergyBySpec`)
  * and the rest is booked in `ledger[1]`. Does not touch `lastLoss` or the ledger's inflow.
  * @param {import('./world.js').World} world the world
  * @param {number} giver the slot losing energy
@@ -111,9 +111,9 @@ export function transferEnergy(world, giver, receiver, amount) {
     if (giver === receiver) {
         throw new Error(`transferEnergy: giver and receiver are both slot ${giver}`);
     }
-    const { config, energy, ledger } = world;
+    const { energy, ledger } = world;
     const moved = Math.min(amount, energy[giver]);
-    const gained = Math.min(moved, config.maxEnergy - energy[receiver]);
+    const gained = Math.min(moved, world.maxEnergyBySpec[world.spec[receiver]] - energy[receiver]);
     energy[giver] -= moved;
     energy[receiver] += gained;
     ledger[1] += moved - gained;
@@ -129,7 +129,7 @@ export function transferEnergy(world, giver, receiver, amount) {
  * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1
  */
 function visionLoss(world, slot) {
-    if (!world.config.traitsEnabled || !(world.vision[slot] > 1)) {
+    if (!(world.vision[slot] > 1)) {
         return 0;
     }
     return world.config.passiveLoss * world.config.visionCost * (world.vision[slot] - 1);

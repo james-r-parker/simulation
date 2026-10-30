@@ -101,6 +101,10 @@ describe('inspectorView on a real selected agent', () => {
             'kills',
             'children',
             'fitness so far',
+            'sex',
+            'vision',
+            'size',
+            'child share',
         ]);
         expect(view.counters.find((c) => c.label === 'age')?.text).toMatch(/ticks \(.+ seasons\)$/);
         expect(view.counters.find((c) => c.label === 'energy')?.text).toMatch(/^\d+%$/);
@@ -146,17 +150,17 @@ describe('temperatureBand', () => {
 });
 
 describe('inspectorView sex and trait rows', () => {
-    it('adds a sex row and the trait rows only when the world has them', () => {
+    it('adds a sex row and the trait rows', () => {
         const { ready, snapshot } = selectedWorld();
         const slots = createFamilySlots();
         const labels = (/** @type {any} */ info, /** @type {number} */ flagBits = 0) => {
             for (let i = 0; i < snapshot.u32[1]; i++) {
-                snapshot.u32[HEADER_WORDS + i * AGENT_STRIDE + AGENT_FIELD.FLAGS] |= flagBits;
+                const at = HEADER_WORDS + i * AGENT_STRIDE + AGENT_FIELD.FLAGS;
+                snapshot.u32[at] = (snapshot.u32[at] & ~ready.layout.flags.MALE) | flagBits;
             }
             return inspectorView({ snapshot, ready: { ...ready, info }, slots }).counters;
         };
-        expect(labels(ready.info).map((c) => c.label)).not.toContain('sex');
-        const on = { ...ready.info, sexesEnabled: true, traitsEnabled: true };
+        const on = ready.info;
         expect(labels(on).find((c) => c.label === 'sex')?.text).toBe('female');
         expect(labels(on, ready.layout.flags.MALE).find((c) => c.label === 'sex')?.text).toBe('male');
         expect(

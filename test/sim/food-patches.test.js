@@ -1,3 +1,4 @@
+import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import {
     PATCH_FLOOR_SHARE,
@@ -12,10 +13,9 @@ import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { createRng } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
-import { allocAgent } from '../../js/sim/world.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100, obstacleCount: 0 };
+const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100 };
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -138,7 +138,7 @@ describe('depletion', () => {
 
     it('is applied when an agent eats food inside a patch, and not outside', () => {
         const w = patched({ foodPatchDepletion: 0.1, maxFood: 4 });
-        const slot = allocAgent(w);
+        const slot = allocBody(w);
         w.x[slot] = 200;
         w.y[slot] = 200;
         addEnergy(w, slot, 20, ENERGY_SOURCE.INITIAL);

@@ -3,7 +3,7 @@
 
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { patchRegrowFactor } from './eras.js';
-import { basinPatchX, hasTerrain } from './terrain.js';
+import { basinPatchX } from './terrain.js';
 import { nextFloat } from './rng.js';
 
 /** The share of `foodPatchCapacity` a patch's stock never falls below, so a patch never dies. */
@@ -19,13 +19,11 @@ export const PATCH_FLOOR_SHARE = 0.05;
  * @returns {void}
  */
 export function createPatches(world) {
-    const { foodPatchCount, foodPatchRadius, foodPatchCapacity, worldWidth, worldHeight } = world.config;
+    const { foodPatchCount, foodPatchRadius, foodPatchCapacity, worldHeight } = world.config;
     const rng = world.rng.food;
     for (let i = 0; i < foodPatchCount; i++) {
         const unit = nextFloat(rng);
-        world.patchX[i] = hasTerrain(world.config)
-            ? basinPatchX(world.config, i, unit)
-            : foodPatchRadius + unit * (worldWidth - 2 * foodPatchRadius);
+        world.patchX[i] = basinPatchX(world.config, i, unit);
         world.patchY[i] = foodPatchRadius + nextFloat(rng) * (worldHeight - 2 * foodPatchRadius);
         world.patchStock[i] = foodPatchCapacity;
     }

@@ -10,7 +10,6 @@ import { none, ok } from './metrics-stats.js';
 
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 const NO_DEATHS = 'no death after burn-in';
-const NO_ERAS = 'erasEnabled is off';
 const NO_WINTER = 'no winter checkpoint after burn-in';
 const NO_OTHER = 'no non-winter checkpoint after burn-in with an alive agent';
 
@@ -36,14 +35,13 @@ export function createEnvironmentPools() {
 
 /**
  * Adds one checkpoint to the environment pools: each alive agent's temperature against the two stress thresholds,
- * and the alive count to the winter or the other sum by `world.season[0]` (winter only with `erasEnabled`, where the
- * seasons last `eraSeasonTicks`; with eras off every checkpoint is "other" and the ratio is `null`).
+ * and the alive count to the winter or the other sum by `world.season[0]` (the seasons last `eraSeasonTicks`).
  * @param {ReturnType<typeof createEnvironmentPools>} pools the pools
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleEnvironment(pools, world) {
-    const { temperatureColdStress: cold, temperatureHeatStress: heat, erasEnabled } = world.config;
+    const { temperatureColdStress: cold, temperatureHeatStress: heat } = world.config;
     const { temperature, alive } = world;
     let n = 0;
     for (let slot = 0; slot < alive.length; slot++) {
@@ -54,7 +52,7 @@ export function sampleEnvironment(pools, world) {
         }
     }
     pools.agents += n;
-    if (erasEnabled && world.season[0] === WINTER) {
+    if (world.season[0] === WINTER) {
         pools.winterSum += n;
         pools.winterCount++;
     } else {
@@ -77,7 +75,7 @@ export function noteDeath(pools, cause) {
 /**
  * @param {Record<string, any>} observer the observer, checkpointed during the run
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four environment metrics, keyed by name;
- *   each `null` with a reason when nothing at or after burn-in could feed it (the winter ratio also with eras off)
+ *   each `null` with a reason when nothing at or after burn-in could feed it
  */
 export function environmentMetrics(observer) {
     const p = observer.environment;
@@ -87,19 +85,15 @@ export function environmentMetrics(observer) {
         'eval.cold_stress_share': share(p.cold, p.agents, NO_AGENTS),
         'eval.heat_stress_share': share(p.heat, p.agents, NO_AGENTS),
         'eval.terrain_death_share': share(p.collisions, p.deaths, NO_DEATHS),
-        'eval.winter_pop_ratio': winterRatio(observer.config, p),
+        'eval.winter_pop_ratio': winterRatio(p),
     };
 }
 
 /**
- * @param {Record<string, any>} config the config
  * @param {ReturnType<typeof createEnvironmentPools>} p the pools
  * @returns {import('./metrics-stats.js').MetricResult} the mean winter population over the mean of the others
  */
-function winterRatio(config, p) {
-    if (!config.erasEnabled) {
-        return none(NO_ERAS);
-    }
+function winterRatio(p) {
     if (p.winterCount === 0) {
         return none(NO_WINTER);
     }

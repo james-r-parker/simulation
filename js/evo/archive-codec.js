@@ -9,7 +9,7 @@ import { brainLayout } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
 
 /** The archive format version. */
-export const ARCHIVE_VERSION = 2;
+export const ARCHIVE_VERSION = 4;
 
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout` result

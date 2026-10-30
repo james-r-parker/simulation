@@ -3,7 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { integrate } from '../../js/sim/physics.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 /**
  * @param {number} x the agent's x
@@ -12,7 +12,7 @@ import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
  */
 function worldWith(x, y) {
     const config = createConfig({
-        ...FEATURES_OFF,
+        ...SIMPLE_WORLD,
         maxAgents: 4,
         initialAgents: 0,
         minAgents: 0,
@@ -20,7 +20,6 @@ function worldWith(x, y) {
         brainHidden: 3,
         maxFood: 8,
         initialFood: 0,
-        obstacleCount: 1,
         fertileZoneMax: 3,
         worldWidth: 1000,
         worldHeight: 1000,

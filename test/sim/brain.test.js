@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
 import { detTanh } from '../../js/sim/det-math.js';
+import { OUTPUT_INDEX, POOLED_VALUES } from '../../js/sim/brain-layout.js';
+import { poolRays } from '../../js/sim/ray-pool.js';
 import { createRng, nextGaussian, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -14,13 +16,13 @@ function randomise(world, seed, slots) {
     const rng = createRng(seed);
     for (const slot of slots) {
         world.alive[slot] = 1;
-        const { weightCount, inputCount, hidden, outputCount } = world.layout;
+        const { weightCount, rawInputCount, hidden, outputCount } = world.layout;
         for (let i = 0; i < weightCount; i++) {
             world.weights[slot * weightCount + i] = nextGaussian(rng);
         }
-        for (let i = 0; i < inputCount; i++) {
+        for (let i = 0; i < rawInputCount; i++) {
             const r = nextFloat(rng);
-            world.inputs[slot * inputCount + i] = r < 0.5 ? 0 : r < 0.6 ? -0 : nextGaussian(rng);
+            world.inputs[slot * rawInputCount + i] = r < 0.5 ? 0 : r < 0.6 ? -0 : nextGaussian(rng);
         }
         for (let j = 0; j < hidden; j++) {
             world.hidden[slot * hidden + j] = Math.tanh(nextGaussian(rng));
@@ -36,13 +38,26 @@ function randomise(world, seed, slots) {
  * @returns {{outputs: number[], hidden: number[]}}
  */
 function reference(world, slot) {
-    const { weightCount, inputCount, hidden: H, outputCount: OUT, wIn, wRec, bHidden, wOut, bOut } = world.layout;
+    const {
+        weightCount,
+        inputCount,
+        hidden: H,
+        outputCount: OUT,
+        wIn,
+        wRec,
+        bHidden,
+        wOut,
+        bOut,
+        wSkip,
+    } = world.layout;
+    const GENES = OUT - 1;
     const w = (/** @type {number} */ i) => world.weights[slot * weightCount + i];
+    poolRays(world, slot);
     const next = [];
     for (let j = 0; j < H; j++) {
         let sum = w(bHidden + j);
         for (let i = 0; i < inputCount; i++) {
-            const x = world.inputs[slot * inputCount + i];
+            const x = world.pooled[slot * inputCount + i];
             if (x !== 0) {
                 sum += w(wIn + i * H + j) * x;
             }
@@ -54,13 +69,32 @@ function reference(world, slot) {
     }
     const outputs = [];
     for (let o = 0; o < OUT; o++) {
-        let sum = w(bOut + o);
+        if (o === OUTPUT_INDEX.SPLIT) {
+            outputs.push(0); // no genes: reads 0
+            continue;
+        }
+        const c = o < OUTPUT_INDEX.SPLIT ? o : o - 1; // the gene column: the outputs after SPLIT shift down one
+        let sum = w(bOut + c);
         for (let j = 0; j < H; j++) {
-            sum += w(wOut + j * OUT + o) * next[j];
+            sum += w(wOut + j * GENES + c) * next[j];
+        }
+        for (let i = 0; i < POOLED_VALUES; i++) {
+            sum += w(wSkip + i * GENES + c) * world.pooled[slot * inputCount + i];
         }
         outputs.push(Math.fround(detTanh(sum)));
     }
     return { outputs, hidden: next };
+}
+
+/**
+ * @param {ReturnType<typeof smallWorld>} world a world whose slot 1 has pooled values
+ * @returns {number} the first nonzero pooled value's index in slot 1
+ */
+function firstPooled(world) {
+    const at = world.layout.inputCount;
+    const found = Array.from(world.pooled.subarray(at, at + POOLED_VALUES)).findIndex((x) => x !== 0);
+    expect(found).toBeGreaterThanOrEqual(0);
+    return found;
 }
 
 describe('forwardAll', () => {
@@ -90,6 +124,57 @@ describe('forwardAll', () => {
                 expect(Array.from(world.outputs.subarray(slot * OUT, (slot + 1) * OUT))).toEqual(expected[n].outputs);
             });
         }
+    });
+
+    it('lets a pooled value reach an output through the skip block with every hidden weight zero', () => {
+        const world = smallWorld();
+        randomise(world, 11, [1]);
+        const {
+            weightCount,
+            wIn,
+            wRec,
+            wOut,
+            bOut,
+            wSkip,
+            bHidden,
+            outputCount: OUT,
+            geneOutputs: G,
+            inputCount,
+        } = world.layout;
+        const base = weightCount;
+        world.weights.fill(0, base + wIn, base + bHidden);
+        world.weights.fill(0, base + wOut, base + bOut + G);
+        world.weights.fill(0, base + wSkip, base + wSkip + POOLED_VALUES * G);
+        world.weights[base + wRec] = 0;
+        world.fastOut.fill(0);
+        poolRays(world, 1);
+        const food = firstPooled(world);
+        world.weights[base + wSkip + food * G + 0] = 1.5;
+        forwardAll(world);
+        const x = world.pooled[inputCount + food];
+        expect(world.outputs[OUT + 0]).toBe(Math.fround(detTanh(Math.fround(1.5) * x)));
+        expect(world.outputs[OUT + 1]).toBe(0);
+        // the skip does not see the body inputs: a weight past the 48 pooled values is not read
+        expect(world.layout.wSkip + POOLED_VALUES * G).toBe(world.layout.traitStart);
+    });
+
+    it('reads 0 on the SPLIT output, and gene column 8 drives MEMORY_A', () => {
+        const world = smallWorld();
+        randomise(world, 11, [1]);
+        const { weightCount, wIn, bHidden, wOut, bOut, wSkip, geneOutputs: G, outputCount: OUT } = world.layout;
+        const base = weightCount;
+        world.weights.fill(0, base + wIn, base + bHidden);
+        world.weights.fill(0, base + wOut, base + bOut + G);
+        world.weights.fill(0, base + wSkip, base + wSkip + POOLED_VALUES * G);
+        world.fastOut.fill(0);
+        poolRays(world, 1);
+        const food = firstPooled(world);
+        world.weights[base + wSkip + food * G + 8] = 1.5;
+        forwardAll(world);
+        const x = world.pooled[world.layout.inputCount + food];
+        expect(x).not.toBe(0);
+        expect(world.outputs[OUT + OUTPUT_INDEX.SPLIT]).toBe(0);
+        expect(world.outputs[OUT + OUTPUT_INDEX.MEMORY_A]).toBe(Math.fround(detTanh(Math.fround(1.5) * x)));
     });
 
     it('lets the old hidden state change the outputs', () => {
@@ -132,20 +217,6 @@ describe('forwardAll', () => {
 });
 
 describe('forwardAll contract details', () => {
-    it('keeps the sign of a negative-zero bias when every input and hidden product is -0 or skipped', () => {
-        const world = smallWorld();
-        const { weightCount, inputCount, hidden, wIn, wRec, bHidden } = world.layout;
-        world.alive[0] = 1;
-        world.weights.fill(0, 0, weightCount);
-        world.weights.fill(1, wIn, wIn + inputCount * hidden);
-        world.weights.fill(-1, wRec, wRec + hidden * hidden);
-        world.weights.fill(-0, bHidden, bHidden + hidden);
-        forwardAll(world);
-        for (let j = 0; j < hidden; j++) {
-            expect(Object.is(world.hidden[j], -0)).toBe(true);
-        }
-    });
-
     it('does not write into the outputs of the next slot', () => {
         const world = smallWorld();
         const { outputCount } = world.layout;

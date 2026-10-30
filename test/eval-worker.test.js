@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EVENT_STRIDE, EVENT_TYPE } from '../js/sim/events.js';
-import { FEATURES_OFF } from '../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from './helpers/simple-world.js';
 
 /** @type {number[]} */
 const seenTicks = [];
@@ -37,7 +37,7 @@ describe('runSeed', () => {
     it('passes the initial births from createWorld to onEvent before the first step', async () => {
         const { runSeed } = await import('../scripts/eval-worker.mjs');
         const overrides = {
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             maxAgents: 40,
             initialAgents: 12,
             minAgents: 4,
@@ -50,7 +50,7 @@ describe('runSeed', () => {
 
     it('hands the policyOptions of the task to the policy beside config, log and observer', async () => {
         const { runSeed } = await import('../scripts/eval-worker.mjs');
-        const overrides = { ...FEATURES_OFF, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
+        const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
         created.length = 0;
         await runSeed({ seed: 3, ticks: 2, policy: 'baseline-v5', overrides, policyOptions: { archiveShare: 0.2 } });
         expect(created[0]).toMatchObject({ archiveShare: 0.2 });

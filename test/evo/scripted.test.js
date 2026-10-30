@@ -18,7 +18,7 @@ const CH = { food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7
  * @param {number} [seed]
  */
 function setup(name, seed = 1) {
-    const config = createConfig({ seed, initialAgents: 3, maxAgents: 6, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ seed, initialAgents: 3, maxAgents: 6, minAgents: 0 });
     const world = createWorld(config, createBaselineV5().brain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(seed), 'scripted') });
     return { world, run };
@@ -33,7 +33,7 @@ function setup(name, seed = 1) {
  * @param {number} [proximity]
  */
 function hit(world, slot, k, channel, proximity = 0.5) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = proximity;
     world.inputs[base + channel] = channel >= CH.threat && channel <= CH.kin ? proximity : 1;
 }

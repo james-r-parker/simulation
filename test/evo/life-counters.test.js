@@ -11,7 +11,7 @@ import {
 import { addBorn, nextTick, observed, pushBorn } from './helpers/observer-world.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 /** @returns {{world: any, observer: any, counters: any}} */
 function setup() {
@@ -21,7 +21,7 @@ function setup() {
 
 describe('createLifeCounters', () => {
     it('sizes the cell bitset for 300 px cells: 48 x 27 on the default world', () => {
-        const counters = createLifeCounters(createConfig({ ...FEATURES_OFF }));
+        const counters = createLifeCounters(createConfig({ ...SIMPLE_WORLD }));
         expect([counters.cellCols, counters.cellRows, counters.cellBytes]).toEqual([48, 27, 162]);
     });
 });
@@ -109,7 +109,7 @@ describe('crowdingMean', () => {
      * @param {number} channel
      */
     function setRay(world, slot, ray, proximity, channel) {
-        const base = slot * world.layout.inputCount + ray * RAY_CHANNELS;
+        const base = slot * world.layout.rawInputCount + ray * RAY_CHANNELS;
         world.inputs[base] = proximity;
         // Agent class channels carry the hit's proximity; food, wall, obstacle and smoke carry 1.
         world.inputs[base + channel] = channel >= 2 && channel <= 5 ? proximity : 1;
@@ -153,6 +153,17 @@ describe('births', () => {
         expect(counters.cells300[slot]).toBe(1);
         world.x[slot] = 800;
         nextTick(world, 30);
+        updateLifeCounters(counters, world);
+        expect(counters.cells300[slot]).toBe(1);
+    });
+
+    it('counts nothing at tick 0, before the first step has happened', () => {
+        const { world, counters } = setup();
+        const slot = addBlob(world, { x: 100, y: 100 });
+        world.tick = 0;
+        updateLifeCounters(counters, world);
+        expect(counters.cells300[slot]).toBe(0);
+        nextTick(world, 10);
         updateLifeCounters(counters, world);
         expect(counters.cells300[slot]).toBe(1);
     });

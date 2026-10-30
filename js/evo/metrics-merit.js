@@ -5,7 +5,7 @@
 // `freeAgent` zeroes a dead slot's merit before the observer sees the death, so the pools keep a per-tick copy of
 // `world.merit` and `world.meritStamp` (`snapshotMerit`) and read a death's merit from the copy: its merit as of the
 // end of the previous tick, decayed to the death tick. All pools live in `observer.merit`, outside `observer.series`
-// and the death log that the worker drains. With `meritEnabled` off nothing is allocated and every metric is `null`.
+// and the death log that the worker drains.
 
 import { meritPeek } from '../sim/merit.js';
 import { splitGatedShare } from '../sim/merit-tally.js';
@@ -13,6 +13,9 @@ import { SEX } from '../sim/sex.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { DIET_DIRECTIONS } from './metrics-diet.js';
 import { none, ok, spearman } from './metrics-stats.js';
+import { BRAIN_DIRECTIONS } from './metrics-brain.js';
+import { RULE_DIRECTIONS } from './metrics-rules.js';
+import { SCENE_DIRECTIONS } from './metrics-scenes.js';
 import { WATCHABILITY_DIRECTIONS } from './metrics-watchability.js';
 
 /** Fewest mature deaths the merit-to-fitness correlation is computed from. */
@@ -21,7 +24,7 @@ export const MIN_CORRELATION_DEATHS = 30;
 /** Most (merit, fitness) pairs kept for the correlation; later deaths are not added. */
 export const MAX_PAIRS = 1 << 18;
 
-/** The direction of each merit metric, and of the parent-diet and watchability metrics beside them, as the metrics table names them. */
+/** The direction of each merit metric, and of the parent-diet, watchability, scene, rule and brain metrics beside them, as the metrics table names them. */
 export const MERIT_DIRECTIONS = Object.freeze({
     'eval.merit_mean': 'watch',
     'eval.merit_p90': 'watch',
@@ -30,20 +33,20 @@ export const MERIT_DIRECTIONS = Object.freeze({
     'eval.merit_fitness_corr': 'higher',
     ...DIET_DIRECTIONS,
     ...WATCHABILITY_DIRECTIONS,
+    ...SCENE_DIRECTIONS,
+    ...RULE_DIRECTIONS,
+    ...BRAIN_DIRECTIONS,
 });
 
-const OFF = 'meritEnabled is off';
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {Record<string, any>} empty merit pools; with `meritEnabled` off only the flag is false and nothing is sized
+ * @returns {Record<string, any>} empty merit pools, sized to `maxAgents`
  */
 export function createMeritPools(config) {
-    const enabled = config.meritEnabled === true;
-    const n = enabled ? config.maxAgents : 0;
+    const n = config.maxAgents;
     return {
-        enabled,
         // A stand-in for the world that `meritPeek` reads: the copied arrays, the config and the tick to decay to.
         view: { config, tick: 0, merit: new Float64Array(n), meritStamp: new Float64Array(n) },
         scratch: new Float64Array(n),
@@ -66,10 +69,8 @@ export function createMeritPools(config) {
  * @returns {void}
  */
 export function snapshotMerit(pools, world) {
-    if (pools.enabled) {
-        pools.view.merit.set(world.merit);
-        pools.view.meritStamp.set(world.meritStamp);
-    }
+    pools.view.merit.set(world.merit);
+    pools.view.meritStamp.set(world.meritStamp);
 }
 
 /**
@@ -79,9 +80,6 @@ export function snapshotMerit(pools, world) {
  * @returns {void}
  */
 export function sampleMerit(pools, world) {
-    if (!pools.enabled) {
-        return;
-    }
     const { scratch } = pools;
     let n = 0;
     for (let slot = 0; slot < world.alive.length; slot++) {
@@ -110,7 +108,7 @@ export function sampleMerit(pools, world) {
  * @returns {void}
  */
 export function noteMeritDeath(pools, death) {
-    if (!pools.enabled || Number.isNaN(death.fitness) || pools.pairCount >= MAX_PAIRS) {
+    if (Number.isNaN(death.fitness) || pools.pairCount >= MAX_PAIRS) {
         return;
     }
     pools.view.tick = death.tick;
@@ -131,7 +129,7 @@ export function noteMeritDeath(pools, death) {
  */
 export function noteMateBirth(pools, world, child, fatherId) {
     const father = world.parentSlotB[child];
-    if (!pools.enabled || !world.config.sexesEnabled || father < 0) {
+    if (father < 0) {
         return;
     }
     if (world.alive[father] !== 1 || world.genomeId[father] !== fatherId) {
@@ -157,9 +155,6 @@ export function noteMateBirth(pools, world, child, fatherId) {
  *   of alive merit over all sampled agents, and the mean over checkpoints of each checkpoint's 90th percentile
  */
 function meritLevel(pools) {
-    if (!pools.enabled) {
-        return { mean: none(OFF), p90: none(OFF) };
-    }
     if (pools.meritCount === 0) {
         return { mean: none(NO_AGENTS), p90: none(NO_AGENTS) };
     }
@@ -168,16 +163,9 @@ function meritLevel(pools) {
 
 /**
  * @param {Record<string, any>} pools the merit pools
- * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {import('./metrics-stats.js').MetricResult} the mean father advantage over the mean male merit
  */
-function mateGain(pools, config) {
-    if (!pools.enabled) {
-        return none(OFF);
-    }
-    if (!config.sexesEnabled) {
-        return none('sexesEnabled is off');
-    }
+function mateGain(pools) {
     if (pools.matings === 0) {
         return none('no mating birth after burn-in with a living father');
     }
@@ -189,9 +177,6 @@ function mateGain(pools, config) {
  * @returns {import('./metrics-stats.js').MetricResult} Spearman correlation of merit and fitness at death
  */
 function fitnessCorr(pools) {
-    if (!pools.enabled) {
-        return none(OFF);
-    }
     if (pools.pairCount < MIN_CORRELATION_DEATHS) {
         return none(`fewer than ${MIN_CORRELATION_DEATHS} mature deaths with a fitness`);
     }
@@ -204,18 +189,17 @@ function fitnessCorr(pools) {
  * @param {Record<string, any>} observer the observer, checkpointed and fed every tick
  * @param {Record<string, any>} world the world at the end of the run (the gate tally lives on it)
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five merit metrics, keyed by name; each
- *   `null` with a reason when `meritEnabled` is off or nothing could feed it
+ *   `null` with a reason when nothing could feed it
  */
 export function meritMetrics(observer, world) {
     const pools = observer.merit;
     const level = meritLevel(pools);
-    const gated = pools.enabled ? splitGatedShare(world) : null;
+    const gated = splitGatedShare(world);
     return {
         'eval.merit_mean': level.mean,
         'eval.merit_p90': level.p90,
-        'eval.merit_mate_gain': mateGain(pools, observer.config),
-        'eval.split_gated_share':
-            gated === null ? none(pools.enabled ? 'no agent was ready to split' : OFF) : ok(gated),
+        'eval.merit_mate_gain': mateGain(pools),
+        'eval.split_gated_share': gated === null ? none('no agent was ready to split') : ok(gated),
         'eval.merit_fitness_corr': fitnessCorr(pools),
     };
 }

@@ -6,7 +6,7 @@ import { actAll, integrate, resolveContacts } from '../../js/sim/physics.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const PI = Math.PI;
 const SMALL = {
@@ -17,7 +17,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 8,
     initialFood: 0,
-    obstacleCount: 0,
     fertileZoneMax: 3,
     worldWidth: 1000,
     worldHeight: 1000,
@@ -28,7 +27,7 @@ const SMALL = {
  * @returns {any} a world with no agents
  */
 function setup(extra = {}) {
-    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...extra }));
+    return allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...extra }));
 }
 
 /**
@@ -214,7 +213,7 @@ describe('integrate with obstacles', () => {
      * @returns {any}
      */
     function withObstacle(agent) {
-        const w = setup({ obstacleCount: 1 });
+        const w = setup();
         w.obsX[0] = 500;
         w.obsY[0] = 500;
         w.obsRadius[0] = 50;
@@ -236,13 +235,6 @@ describe('integrate with obstacles', () => {
         integrate(w);
         expect(w.x[0]).toBeCloseTo(575, 4);
         expect(w.energy[0]).toBe(100);
-    });
-
-    it('uses the obstacle velocity for the normal speed', () => {
-        const w = withObstacle({ x: 560, y: 500, vx: 0.5 });
-        w.obsVx[0] = 4;
-        integrate(w);
-        expect(w.energy[0]).toBe(100 - w.config.obstacleDamage);
     });
 
     it('uses the +x normal when the centres coincide', () => {

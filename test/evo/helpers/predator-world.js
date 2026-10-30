@@ -4,11 +4,11 @@ import { RANDOM_ARM, createControllerBrain } from '../../../js/evo/controller-br
 import { computeMetrics } from '../../../js/evo/metrics.js';
 import { createObserver, observe, observerPhases } from '../../../js/evo/observer.js';
 import { createBaselineV5 } from '../../../js/evo/policies/baseline-v5.js';
-import { createNaturalV1 } from '../../../js/evo/policies/natural-v1.js';
+import { createRandomBrain } from '../../../js/evo/policies/random-brain.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
-import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
 import { PRE_T15D } from './pre-t15d.js';
 
 export const predatorWorld = JSON.parse(
@@ -68,9 +68,9 @@ export function playPredatorWorld(
         scoring,
     } = {},
 ) {
-    const config = createConfig({ ...FEATURES_OFF, ...PRE_T15D, ...base, ...extra, seed });
+    const config = createConfig({ ...SIMPLE_WORLD, ...PRE_T15D, ...base, ...extra, seed });
     const random = predator === RANDOM_ARM || prey === RANDOM_ARM;
-    const policy = predatorPolicy(random ? createNaturalV1({ config }).brain : undefined, predatorEvery);
+    const policy = predatorPolicy(random ? createRandomBrain(config).brain : undefined, predatorEvery);
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     const { fitness, afterStep } = scoring?.(config) ?? { fitness: undefined, afterStep: () => {} };
@@ -97,8 +97,8 @@ export function playPredatorWorld(
  * @returns {{world: any, observer: any}} the world and observer at the end
  */
 export function playMicroWorld(seed, ticks, arm, extra = {}, onTick = () => {}) {
-    const config = createConfig({ ...FEATURES_OFF, ...PRE_T15D, ...microWorld, ...extra, seed });
-    const policy = arm === RANDOM_ARM ? createNaturalV1({ config }).brain : createBaselineV5().brain;
+    const config = createConfig({ ...SIMPLE_WORLD, ...PRE_T15D, ...microWorld, ...extra, seed });
+    const policy = arm === RANDOM_ARM ? createRandomBrain(config).brain : createBaselineV5().brain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     observe(observer, world);

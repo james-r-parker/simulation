@@ -30,7 +30,7 @@ const FOOD_CHANNEL = 1;
  * @returns {number} the ray index, or -1 when no ray hits such a thing
  */
 export function nearestClassRay(world, slot, first, last) {
-    const stride = world.layout.inputCount;
+    const stride = world.layout.rawInputCount;
     let best = -1;
     let bestProximity = -1;
     for (let k = 0; k < world.config.rayCount; k++) {

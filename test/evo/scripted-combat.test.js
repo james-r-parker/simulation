@@ -10,14 +10,14 @@ import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 const RAYS = 16;
 const CH = { food: 1, threat: 2, prey: 3 };
 const O = OUTPUT_INDEX;
-const BODY = { bitten: 12, attackLeft: 21, attackRight: 22 };
+const BODY = { bitten: 10, attackLeft: 19, attackRight: 20 };
 
 /**
  * @param {keyof typeof COMBAT_CONTROLLERS} name the controller
  * @returns {{world: any, run: (w: any) => void}}
  */
 function setup(name) {
-    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0 });
     const world = createWorld(config, createBaselineV5().brain);
     return { world, run: COMBAT_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') }) };
 }
@@ -30,7 +30,7 @@ function setup(name) {
  * @returns {void}
  */
 function hit(world, slot, k, channel) {
-    const base = slot * world.layout.inputCount + k * RAY_CHANNELS;
+    const base = slot * world.layout.rawInputCount + k * RAY_CHANNELS;
     world.inputs[base] = 0.5;
     world.inputs[base + channel] = channel >= CH.threat ? 0.5 : 1;
 }
@@ -43,7 +43,7 @@ function hit(world, slot, k, channel) {
  * @returns {void}
  */
 function body(world, slot, offset, value) {
-    world.inputs[slot * world.layout.inputCount + RAYS * RAY_CHANNELS + offset] = value;
+    world.inputs[slot * world.layout.rawInputCount + RAYS * RAY_CHANNELS + offset] = value;
 }
 
 /**

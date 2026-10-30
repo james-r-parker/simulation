@@ -1,5 +1,5 @@
+import { allocBody } from './body.js';
 import { OUTPUT_COUNT } from '../../../js/sim/brain-layout.js';
-import { allocAgent } from '../../../js/sim/world.js';
 import { ENERGY_SOURCE, addEnergy } from '../../../js/sim/energy.js';
 import { smallWorld } from './small-world.js';
 
@@ -32,18 +32,19 @@ export function lifeWorld(over = {}) {
 }
 
 /**
- * Adds a mature agent with energy and, optionally, a mate output.
+ * Adds a mature agent with energy and, optionally, a mate output. Even slots are female, odd slots male.
  * @param {any} w the world
  * @param {Record<string, number>} [fields] per-slot array values to set
  * @returns {number} the slot
  */
 export function addBlob(w, fields = {}) {
-    const slot = allocAgent(w);
+    const slot = allocBody(w);
     w.genomeId[slot] = w.nextId++;
     w.lineageId[slot] = w.genomeId[slot];
     w.x[slot] = 500;
     w.y[slot] = 500;
     w.temperature[slot] = w.config.temperatureStart;
+    w.sex[slot] = slot % 2; // adjacent slots are a female and a male, so the lower slot of a pair is the mother
     addEnergy(w, slot, 1000, ENERGY_SOURCE.INITIAL);
     for (const [k, v] of Object.entries(fields)) {
         if (k === 'mateOut') {

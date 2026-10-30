@@ -17,7 +17,7 @@ nothing until the user ticks it.
 
 | Fact                | Source of truth                                                               | Mirrors to check                                       |
 | ------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Config keys         | `createConfig` defaults in `js/sim/config.js` (legacy: `js/constants/*`)      | Design docs' Config and persistence rows; README       |
+| Config keys         | `createConfig` defaults in `js/sim/config.js`                                 | Design docs' Config and persistence rows; README       |
 | npm scripts         | `package.json` `scripts`                                                      | AGENTS.md Commands table; skills                       |
 | Gate commands       | `scripts/check.sh`, `scripts/check-conventions.sh`, `.github/workflows/*.yml` | AGENTS.md; `dev-workflow-and-gate.md`; skills          |
 | Design status       | Each doc's `**Status:**` line                                                 | `docs/designs/README.md` (generated)                   |
@@ -80,8 +80,6 @@ Every hand-maintained copy of a list is a future stale finding. Prefer:
 - pointing at the source (`see createConfig in js/sim/config.js`) over copying the list
 - generated output (like the design index) over hand-written tables
 - one canonical table, linked from elsewhere
-
-The legacy per-file `js/*.js.README.md` docs are duplicated lists of this kind; they go with their modules.
 
 ## Red flags
 

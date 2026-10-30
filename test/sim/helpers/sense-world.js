@@ -1,4 +1,4 @@
-import { allocAgent } from '../../../js/sim/world.js';
+import { allocBody } from './body.js';
 import { buildHash } from '../../../js/sim/spatial-hash.js';
 import { smallWorld } from './small-world.js';
 
@@ -11,7 +11,7 @@ const PARKED = 5000;
  * @returns {ReturnType<typeof smallWorld>}
  */
 export function senseWorld(over = {}) {
-    const w = smallWorld({ obstacleCount: 2, ...over });
+    const w = smallWorld({ ...over });
     for (let i = 0; i < w.obsX.length; i++) {
         w.obsX[i] = PARKED;
         w.obsY[i] = PARKED;
@@ -29,7 +29,7 @@ export function senseWorld(over = {}) {
  * @returns {number} the slot
  */
 export function addAgent(w, x, y, size) {
-    const slot = allocAgent(w);
+    const slot = allocBody(w);
     w.x[slot] = x;
     w.y[slot] = y;
     w.size[slot] = size;

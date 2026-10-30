@@ -23,7 +23,7 @@ describe('runControllerSeed', () => {
             rung: rung('jawSitter-vs-foodSeeker'),
             seed: 1,
             ticks: 5,
-            overrides: { ...SMALL, minAgents: 15, immigrationInterval: 1 },
+            overrides: { ...SMALL, minAgents: 15 },
         });
         expect(run.population).toBeLessThanOrEqual(SMALL.initialAgents);
     });

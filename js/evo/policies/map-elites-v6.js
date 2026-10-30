@@ -1,10 +1,10 @@
-// map-elites-v6: `map-elites-v1` scored by `fitnessV6` and placed by `descriptorV6` (role skill x body plan), with an
+// map-elites-v6: `map-elites-v1` scored by `fitnessV6` and placed by `descriptorV7` (role skill x style), with an
 // immigrant mix set by options (fitness-and-selection.md "Archive"). It is the live policy from T48b (the E41 finalist
 // split-300, with merit on and the split gate at 300).
 //
 // Options beyond the eval runner's `{ config, log, observer }`: `fitnessOverrides` (weights replacing `FITNESS_V6`
 // entries), `archiveShare` and `cloneShareEnd` (the immigrant mix), `cellDraws` (the parent cell tournament, default
-// that of `map-elites-v1q`) and `descriptor` (the name of a registered descriptor, default `v6`).
+// `QUALITY_CELL_DRAWS`, four) and `descriptor` (the name of a registered descriptor, default `v7`).
 //
 // With a debug log and an observer, every scored death also keeps its group values in extra columns of the observer's
 // death log, which `FitnessScored` reads when the policy offers the death. The wrapped fitness computes the parts a
@@ -21,8 +21,6 @@ const PART_COLUMNS = Object.freeze({
     skill: 'scoreSkill',
     waste: 'scoreWaste',
     lineage: 'scoreLineage',
-    watch: 'scoreWatch',
-    diversityFactor: 'scoreDiversity',
 });
 
 /**
@@ -37,7 +35,7 @@ function recordParts(observer, base) {
     for (const column of Object.values(PART_COLUMNS)) {
         deaths[column] = new Float64Array(deaths.capacity);
     }
-    const parts = { skill: 0, waste: 0, lineage: 0, watch: 0, diversityFactor: 1 };
+    const parts = { skill: 0, waste: 0, lineage: 0 };
     const fitness = (/** @type {any} */ obs, /** @type {number} */ slot, /** @type {any} */ config) => {
         const value = base(obs, slot, config);
         ensureRoom(obs.deaths, obs.deathCount);
@@ -69,7 +67,7 @@ function createScoring({ counters, observer, log, fitnessOverrides }) {
  * @returns {Record<string, any>} the `map-elites-v1` policy object with `name` `map-elites-v6` and `fitnessName` `v6`
  */
 export function createMapElitesV6(options) {
-    const { fitnessOverrides, descriptor: descriptorName = 'v6', ...rest } = options;
+    const { fitnessOverrides, descriptor: descriptorName = 'v7', ...rest } = options;
     if (!Object.hasOwn(DESCRIPTORS, descriptorName)) {
         throw new Error(
             `createMapElitesV6: unknown descriptor "${descriptorName}"; known: ${Object.keys(DESCRIPTORS).join(', ')}`,

@@ -21,6 +21,8 @@ export const SPECIALISATION_FIELDS = [
     'sprintBoost',
     'passiveLossMultiplier',
     'splitMinEnergyMultiplier',
+    'kickMultiplier',
+    'maxEnergyMultiplier',
 ];
 
 /** @type {Record<string, Rule>} the rule of every field after `index` */
@@ -31,4 +33,5 @@ Object.assign(SPEC_FIELD_RULES, {
     meatFoodValue: num(0, 1),
     passiveLossMultiplier: { type: 'num', gt: 0, max: 2 },
     splitMinEnergyMultiplier: num(0.25, 2),
+    maxEnergyMultiplier: num(0.25, 10),
 });

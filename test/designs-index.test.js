@@ -2,9 +2,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CONCERNS } from '../scripts/design-docs/lint-tables.mjs';
-import { buildIndex, DesignDocError, parseDoc } from '../scripts/designs-index.mjs';
+import { buildIndex, DesignDocError, main, parseDoc } from '../scripts/designs-index.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -189,5 +189,45 @@ describe('repo design docs', () => {
     it('pass the lint, and the committed index is current', () => {
         const designsDir = path.join(root, 'docs', 'designs');
         expect(buildIndex(designsDir)).toBe(readFileSync(path.join(designsDir, 'README.md'), 'utf8'));
+    });
+});
+
+describe('main', () => {
+    /**
+     * @param {string[]} args the command line
+     * @returns {{code: number, out: string, err: string}} the exit code and what went to each stream
+     */
+    function run(args) {
+        const out = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+        const err = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+        try {
+            const code = main(args);
+            return {
+                code,
+                out: out.mock.calls.map((c) => String(c[0])).join(''),
+                err: err.mock.calls.map((c) => String(c[0])).join(''),
+            };
+        } finally {
+            out.mockRestore();
+            err.mockRestore();
+        }
+    }
+
+    it('rejects an unknown argument, naming it', () => {
+        const { code, err } = run(['--write', '--bogus']);
+        expect(code).toBe(2);
+        expect(err).toBe('unknown argument: --bogus (expected --write or --check)\n');
+    });
+
+    it('prints the index of the repo docs with no argument', () => {
+        const { code, out } = run([]);
+        expect(code).toBe(0);
+        expect(out).toBe(buildIndex(path.join(root, 'docs', 'designs')));
+    });
+
+    it('--check passes when the committed index is the one the docs build', () => {
+        const { code, out } = run(['--check']);
+        expect(code).toBe(0);
+        expect(out).toBe('Design doc index is up to date.\n');
     });
 });

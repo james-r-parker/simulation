@@ -1,8 +1,9 @@
 // In-world merit: a per-slot running score that rewards deliberate foraging, mating, raising children to maturity
 // and escaping predators, and decays with a half-life. Pure functions of sim state: no RNG, no clock, no allocation.
-// Callers (the `merit` phase and `startMating`) gate every call on `meritEnabled`. See docs/designs/fitness-and-selection.md (In-world merit).
+// Callers are the `merit` phase and `startMating`. See docs/designs/fitness-and-selection.md (In-world merit).
 
 import { detExp } from './det-math.js';
+import { noteProofMeal } from './proof.js';
 import { noteMeal } from './split-gate.js';
 
 /** Ticks between `MeritSummary` log events. */
@@ -61,7 +62,8 @@ export function meritNow(world, slot) {
 
 /**
  * Credits the energy of a meal or bite. A deliberate one adds its full energy to merit and to `deliberateIntake`
- * (which is not decayed: the split gate reads the raw total); a chance one adds `meritChanceWeight` x energy to merit.
+ * (which is not decayed: the split gate reads the raw total); a chance one adds nothing (principles rule 2: a lucky
+ * meal moves no mate score, birth gift or archive rank), though it still counts as a meal.
  * @param {Record<string, any>} world the world
  * @param {number} slot the eater
  * @param {number} energy energy gained, at least 0
@@ -73,9 +75,8 @@ export function creditIntake(world, slot, energy, deliberate) {
     if (deliberate) {
         world.deliberateIntake[slot] += energy;
         add(world, slot, energy);
-    } else {
-        add(world, slot, world.config.meritChanceWeight * energy);
     }
+    noteProofMeal(world, slot);
 }
 
 /**
@@ -113,11 +114,13 @@ export function creditMatured(world, child) {
     const a = world.parentSlotA[child];
     if (a >= 0 && world.genomeId[a] !== 0 && world.genomeId[a] === world.parentA[child]) {
         add(world, a, bonus);
+        world.maturedKids[a] += 1;
         credited++;
     }
     const b = world.parentSlotB[child];
     if (b >= 0 && b !== a && world.genomeId[b] !== 0 && world.genomeId[b] === world.parentB[child]) {
         add(world, b, bonus);
+        world.maturedKids[b] += 1;
         credited++;
     }
     return credited;

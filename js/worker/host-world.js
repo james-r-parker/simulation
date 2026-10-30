@@ -9,14 +9,7 @@ import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG } from '../sim/snapshot.js';
-import {
-    hasTerrain,
-    obstacleSlots,
-    REFUGE_ROCK_RADIUS,
-    REFUGE_ROCKS,
-    ringRadius,
-    terrainRockCount,
-} from '../sim/terrain.js';
+import { REFUGE_ROCK_RADIUS, REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
 import { step } from '../sim/step.js';
 import {
     collectEffects,
@@ -121,7 +114,7 @@ function collectRefuges(config, world) {
         return [];
     }
     const wallRockCount = terrainRockCount(config) - config.refugeCount * REFUGE_ROCKS;
-    const start = config.obstacleCount + wallRockCount;
+    const start = wallRockCount;
     const ring = ringRadius(config);
     const radius = ring + REFUGE_ROCK_RADIUS;
     const refuges = [];
@@ -139,21 +132,19 @@ function collectRefuges(config, world) {
 }
 
 /**
- * The static-terrain description: whether it is on, the cold-margin depth, the wall's x position, and the slots
+ * The static-terrain description: the cold-margin depth, the wall's x position, and the slots
  * that hold its rocks (they are drawn from the snapshot's obstacles) and refuge zones.
  * @param {Record<string, any>} config the run's config
  * @param {import('../sim/world.js').World} [world] the world
  * @returns {Record<string, any>} the terrain info
  */
 function terrainInfo(config, world) {
-    const on = hasTerrain(config);
     return {
-        layout: config.terrainLayout,
-        coldMarginWidth: on ? config.coldMarginWidth : 0,
-        wallX: on ? config.worldWidth / 2 : 0,
-        rockFirst: config.obstacleCount,
+        coldMarginWidth: config.coldMarginWidth,
+        wallX: config.worldWidth / 2,
+        rockFirst: 0,
         rockCount: terrainRockCount(config),
-        refuges: on ? collectRefuges(config, world) : [],
+        refuges: collectRefuges(config, world),
     };
 }
 
@@ -182,14 +173,12 @@ export function worldInfo({ config, world }) {
         worldHeight: config.worldHeight,
         maxAgents: config.maxAgents,
         maxFood: config.maxFood,
-        obstacleCount: obstacleSlots(config),
+        obstacleCount: terrainRockCount(config),
         maxClouds: config.maxClouds,
         maxVelocity: config.maxVelocity,
         maxEnergy: config.maxEnergy,
         maxAgeTicks: config.maxAgeTicks,
         seasonLength: yearTicks(config) / SEASONS_PER_YEAR,
-        sexesEnabled: config.sexesEnabled,
-        traitsEnabled: config.traitsEnabled,
         seasonNames: [...SEASON_NAMES],
         ticksPerSecond: BASE_TICKS_PER_SECOND,
         rayCount: config.rayCount,

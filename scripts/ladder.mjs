@@ -111,7 +111,7 @@ function planRun(options, id) {
     return {
         rungs: rungs.map((rung) => rung.name),
         seeds,
-        config: createConfig({ ...configOverrides, minAgents: 0, immigrationInterval: 0 }),
+        config: createConfig({ ...configOverrides, minAgents: 0 }),
         out: options.out ?? join('evals', 'ladder', `${id}.json`),
         workers: options.workers ?? Math.min(availableParallelism(), tasks.length),
         tasks,

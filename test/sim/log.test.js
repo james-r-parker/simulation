@@ -4,7 +4,7 @@ import { BLOCKED_CAUSE, BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from '.
 import { LOG_LEVEL, createSimLog, drainEvents } from '../../js/sim/log.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 /**
  * @param {Record<string, any>} [over]
@@ -13,7 +13,7 @@ import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
 function build(over = {}) {
     return createWorld(
         createConfig({
-            ...FEATURES_OFF,
+            ...SIMPLE_WORLD,
             worldWidth: 1000,
             worldHeight: 1000,
             maxAgents: 12,
@@ -23,9 +23,6 @@ function build(over = {}) {
             brainHidden: 3,
             maxFood: 20,
             initialFood: 10,
-            obstacleCount: 2,
-            obstacleMinRadius: 20,
-            obstacleMaxRadius: 60,
             fertileZoneMax: 3,
             ...over,
         }),
@@ -136,18 +133,19 @@ describe('drainEvents', () => {
         ]);
     });
 
-    it('logs BirthBlocked at warn and PopulationFloor at info', () => {
+    it('logs BirthBlocked at warn, and PopulationFloor with FloorGuard at info', () => {
         const world = build();
         world.events.count = 0;
         const a = pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 3);
         world.events.data.set([6, BLOCKED_CAUSE.ENERGY], a + 2);
         const b = pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, 4);
-        world.events.data[b + 2] = 2;
+        world.events.data.set([2, 5], b + 2);
         const { records, log } = collect('info');
         drainEvents(world, log);
         expect(records).toEqual([
             { level: 'warn', event: 'BirthBlocked', tick: 3, slot: 6, cause: 'energy' },
             { level: 'info', event: 'PopulationFloor', tick: 4, added: 2 },
+            { level: 'info', event: 'FloorGuard', tick: 4, population: 5, spawned: 2 },
         ]);
     });
 
@@ -164,14 +162,11 @@ describe('drainEvents', () => {
         world.events.data.set([2, 0], season + 2);
         const drought = pushEvent(world.events, EVENT_TYPE.DROUGHT_STARTED, 100);
         world.events.data.set([1, 0], drought + 2);
-        const invasion = pushEvent(world.events, EVENT_TYPE.INVASION_ARRIVED, 200);
-        world.events.data.set([12, 7, 3, 2], invasion + 2);
         const { records, log } = collect('info');
         drainEvents(world, log);
-        expect(records.slice(-3)).toEqual([
+        expect(records.slice(-2)).toEqual([
             { level: 'info', event: 'SeasonChanged', tick: 100, season: 2, year: 0 },
             { level: 'info', event: 'DroughtStarted', tick: 100, basin: 1, year: 0 },
-            { level: 'info', event: 'InvasionArrived', tick: 200, count: 12, lineageId: 7, spec: 3, edge: 2 },
         ]);
     });
 
@@ -319,6 +314,27 @@ describe('drainEvents', () => {
         const info = collect('info');
         drainEvents(world, info.log);
         expect(info.records).toEqual([]);
+    });
+
+    it('logs LineProven at debug with the child and its parents', () => {
+        const world = build();
+        world.events.count = 0;
+        const o = pushEvent(world.events, EVENT_TYPE.LINE_PROVEN, 4000);
+        world.events.data.set([3, 77, 40, 41, 9], o + 2);
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            {
+                level: 'debug',
+                event: 'LineProven',
+                tick: 4000,
+                slot: 3,
+                genomeId: 77,
+                parentA: 40,
+                parentB: 41,
+                lineageId: 9,
+            },
+        ]);
     });
 
     it('does not hand records below the log level to the log at all', () => {

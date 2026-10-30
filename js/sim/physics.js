@@ -3,6 +3,7 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
+import { cellOf } from './spatial-hash.js';
 import { thrustEfficiency } from './temperature.js';
 
 const PI = 3.141592653589793;
@@ -76,7 +77,7 @@ function wallAxis(world, slot, horizontal) {
  * @returns {void}
  */
 function obstacleBounce(world, slot, k) {
-    const { x, y, vx, vy, size, obsX, obsY, obsVx, obsVy, obsRadius } = world;
+    const { x, y, vx, vy, size, obsX, obsY, obsRadius } = world;
     const reach = obsRadius[k] + size[slot];
     const dx = x[slot] - obsX[k];
     const dy = y[slot] - obsY[k];
@@ -92,7 +93,7 @@ function obstacleBounce(world, slot, k) {
     const ny = d === 0 ? 0 : dy / d;
     x[slot] = obsX[k] + nx * reach;
     y[slot] = obsY[k] + ny * reach;
-    const vn = (vx[slot] - obsVx[k]) * nx + (vy[slot] - obsVy[k]) * ny;
+    const vn = vx[slot] * nx + vy[slot] * ny;
     if (vn < 0) {
         vx[slot] -= 2 * vn * nx;
         vy[slot] -= 2 * vn * ny;
@@ -247,18 +248,6 @@ function resolvePair(world, i, j) {
 }
 
 /**
- * Clamped cell coordinate of a bounding-box minimum, as the hash computes it.
- * @param {number} v the coordinate
- * @param {number} cellSize cell edge length
- * @param {number} last the last valid cell index
- * @returns {number}
- */
-function cellCoord(v, cellSize, last) {
-    const c = Math.floor(v / cellSize);
-    return c < 0 ? 0 : c > last ? last : c;
-}
-
-/**
  * Whether the pair of entries `a`, `b` is owned by `cell`: the cell of the corner of their boxes' intersection.
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash
  * @param {number} a first entry index
@@ -267,8 +256,8 @@ function cellCoord(v, cellSize, last) {
  * @returns {boolean}
  */
 function ownsPair(hash, a, b, cell) {
-    const col = cellCoord(Math.max(hash.boxX[a], hash.boxX[b]), hash.cellSize, hash.cols - 1);
-    const row = cellCoord(Math.max(hash.boxY[a], hash.boxY[b]), hash.cellSize, hash.rows - 1);
+    const col = cellOf(Math.max(hash.boxX[a], hash.boxX[b]), hash.cellSize, hash.cols - 1);
+    const row = cellOf(Math.max(hash.boxY[a], hash.boxY[b]), hash.cellSize, hash.rows - 1);
     return row * hash.cols + col === cell;
 }
 

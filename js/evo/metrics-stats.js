@@ -102,6 +102,25 @@ export function ranks(values) {
 /**
  * @param {ArrayLike<number>} x the first sample
  * @param {ArrayLike<number>} y the second sample, as long as the first
+ * @returns {number} Pearson's correlation, NaN when either sample is constant
+ */
+export function pearson(x, y) {
+    const mx = mean(x);
+    const my = mean(y);
+    let cov = 0;
+    let vx = 0;
+    let vy = 0;
+    for (let i = 0; i < x.length; i++) {
+        cov += (x[i] - mx) * (y[i] - my);
+        vx += (x[i] - mx) * (x[i] - mx);
+        vy += (y[i] - my) * (y[i] - my);
+    }
+    return cov / Math.sqrt(vx * vy);
+}
+
+/**
+ * @param {ArrayLike<number>} x the first sample
+ * @param {ArrayLike<number>} y the second sample, as long as the first
  * @returns {number} Spearman's rank correlation (Pearson on the ranks), NaN when either sample is constant
  */
 export function spearman(x, y) {

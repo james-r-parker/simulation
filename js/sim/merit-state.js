@@ -5,6 +5,7 @@
 
 import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
+import { visionOf } from './traits.js';
 
 /** Ticks a sighting stays current. */
 export const INTENT_WINDOW = 30;
@@ -17,6 +18,12 @@ export const CLOSING_MIN = 6;
 
 /** A tick counts as closing on a target when the agent's speed towards it exceeds this share of `maxVelocity`. */
 export const CLOSING_SPEED = 0.25;
+
+/**
+ * An agent moving slower than this share of `maxVelocity` is nearly still. Prey that closes on a nearly still agent at
+ * more than `CLOSING_SPEED` counts as a closing tick for it, so an ambush is deliberate (principles rule 2).
+ */
+export const AMBUSH_STILL = 0.1;
 
 /** A turn counts only above this fraction of `maxTurn`. */
 export const TURN_THRESHOLD = 0.1;
@@ -31,7 +38,7 @@ export const ESCAPE_TICKS = 300;
 export const FLEE_SPEED = 0.5;
 
 /**
- * Slots of `world.meritTally`, agent-ticks counted at each tick's split decision while `meritEnabled`: the cumulative
+ * Slots of `world.meritTally`, agent-ticks counted at each tick's split decision: the cumulative
  * totals first, then the totals at the last `MeritSummary` (the log reads the difference).
  */
 export const TALLY = Object.freeze({ READY: 0, GATED: 1, DELIBERATE: 2, MARK: 3 });
@@ -65,6 +72,8 @@ const MERIT_FIELDS = [
     [Float64Array, 'meritPreyTurn', NEVER],
     [Float64Array, 'meritPreyOff', NEVER],
     [Float64Array, 'meritPreyStart', NEVER],
+    [Float64Array, 'meritFoodProx', -1],
+    [Float64Array, 'meritPreyProx', -1],
     [Float64Array, 'meritFoodMark', 0],
     [Float64Array, 'meritBiteMark', 0],
     [Uint8Array, 'biteOpen', 0],
@@ -112,8 +121,10 @@ function targetView(world, name, at) {
         turn: array('Turn'),
         off: array('Off'),
         start: array('Start'),
+        prox: array('Prox'),
         at,
         clears: at === 0,
+        ambush: at !== 0,
     };
 }
 
@@ -155,7 +166,7 @@ export function slotOfGenome(world, genomeId) {
  * @param {number} v a 16-bit value
  * @returns {number} the number of set bits
  */
-function popcount16(v) {
+export function popcount16(v) {
     const pairs = v - ((v >> 1) & 0x5555);
     const nibbles = (pairs & 0x3333) + ((pairs >> 2) & 0x3333);
     const bytes = (nibbles + (nibbles >> 4)) & 0x0f0f;
@@ -202,7 +213,7 @@ const best = new Float64Array(4);
  */
 function scanRays(world, slot) {
     const { inputs, meritArc } = world;
-    const origin = slot * world.layout.inputCount;
+    const origin = slot * world.layout.rawInputCount;
     best.fill(-1);
     for (let k = 0; k < world.config.rayCount; k++) {
         const base = origin + k * RAY_CHANNELS;
@@ -231,6 +242,29 @@ export function speedAlong(world, slot, k) {
 }
 
 /**
+ * Notes the target's proximity for the next tick and tells whether this tick is an ambush closing: the agent is nearly
+ * still (`AMBUSH_STILL`) while the nearest prey's distance shrank by more than `CLOSING_SPEED x maxVelocity` since the
+ * tick before. Such a tick also counts as a turn towards the prey, which the ambusher holds still for.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot an alive slot
+ * @param {{kind: Record<string, any>, proximity: number}} target the target view and the nearest hit's proximity
+ * @returns {boolean} whether the tick is an ambush closing (prey kinds only)
+ */
+function ambushCloses(world, slot, { kind, proximity }) {
+    const previous = kind.prox[slot];
+    kind.prox[slot] = proximity;
+    if (!kind.ambush || previous < 0) {
+        return false;
+    }
+    const { maxVelocity } = world.config;
+    const still = AMBUSH_STILL * maxVelocity;
+    const nearlyStill = world.vx[slot] * world.vx[slot] + world.vy[slot] * world.vy[slot] <= still * still;
+    const closes = nearlyStill && (proximity - previous) * visionOf(world, slot) > CLOSING_SPEED * maxVelocity;
+    kind.turn[slot] = closes ? world.tick : kind.turn[slot];
+    return closes;
+}
+
+/**
  * Updates one target kind for an agent from a scan row (the nearest hit's proximity at `kind.at` and ray at
  * `kind.at + 1`, -1 for none): the sighting, the closing history (a tick closes when the agent's speed towards the
  * nearest target ray is above `CLOSING_SPEED x maxVelocity`), turns towards the target and off-axis ticks. Turning
@@ -246,6 +280,7 @@ export function trackTarget(world, slot, kind, scan) {
     const { bits } = kind;
     if (scan[kind.at] < 0) {
         bits[slot] = (bits[slot] << 1) & 0xffff;
+        kind.prox[slot] = -1;
         return;
     }
     const k = scan[kind.at + 1];
@@ -257,7 +292,8 @@ export function trackTarget(world, slot, kind, scan) {
     const towards = world.turnRate[slot] * turnTowards(k, world.config.rayCount);
     const limit = TURN_THRESHOLD * world.config.maxTurn;
     kind.turn[slot] = towards > limit ? tick : kind.turn[slot];
-    const closes = speedAlong(world, slot, k) > CLOSING_SPEED * world.config.maxVelocity;
+    const ambush = ambushCloses(world, slot, { kind, proximity: scan[kind.at] });
+    const closes = ambush || speedAlong(world, slot, k) > CLOSING_SPEED * world.config.maxVelocity;
     bits[slot] = ((bits[slot] << 1) | (closes ? 1 : 0)) & 0xffff;
     if (kind.clears && towards < -limit) {
         bits[slot] = 0;

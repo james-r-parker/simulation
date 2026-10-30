@@ -1,8 +1,7 @@
-// The observer's lineage counters (fitness-and-selection.md, Fitness v6): per slot `matings`, `maturedChildren` and
+// The observer's lineage counters (fitness-and-selection.md, Fitness v6): per slot `maturedChildren` and
 // `descendantsAlive`, all reset when a slot is reborn into and all still readable in `finishDeath`, because the
 // observer keeps its own slot arrays after the sim frees the slot.
 //
-// - `matings`: a `mate` AgentBorn credits the mother and father once each, by genome id.
 // - `maturedChildren`: a tracked child whose `world.ageTicks` equals `maturityTicks` (the sim's `creditMatured` test)
 //   credits its parents once, found by genome id, so a dead parent or a reused slot is never credited. A split child
 //   names one parent twice and credits it once.
@@ -171,29 +170,18 @@ export function descendantsOf(tree, genomeId) {
 }
 
 /**
- * Credits matings and starts the family node of every birth in a tick's events. Run before the tick's deaths, so a
- * parent that dies on the tick of the birth is still credited and still has the child as a descendant.
+ * Starts the family node of every birth in a tick's events. Run before the tick's deaths, so a
+ * parent that dies on the tick of the birth still has the child as a descendant.
  * @param {Record<string, any>} observer the observer
  * @param {Float64Array} d the event data
  * @param {number} count the number of records
  * @returns {void}
  */
 export function noteBirthLineage(observer, d, count) {
-    const { slotOf, matings } = observer;
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
         if (d[o] !== EVENT_TYPE.AGENT_BORN) {
             continue;
-        }
-        if (d[o + 8] === BORN_CAUSE.MATE) {
-            const a = slotOf.get(d[o + 6]);
-            const b = slotOf.get(d[o + 7]);
-            if (a !== undefined) {
-                matings[a] += 1;
-            }
-            if (b !== undefined && b !== a) {
-                matings[b] += 1;
-            }
         }
         const child = d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT;
         addNode(observer.family, d[o + 3], child ? d[o + 6] : 0, child ? d[o + 7] : 0);

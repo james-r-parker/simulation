@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { spawnFood } from '../../js/sim/food.js';
 import { createConfig } from '../../js/sim/config.js';
-import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SEASON = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
 // 1000 x 1000 px is 1 unit of area, so foodRegrowPerArea is the expected spawns per tick.
 const AREA = {
     maxFood: 400,
-    foodAreaCapacity: true,
     foodRegrowPerArea: 3.5,
     foodPatchCount: 2,
     foodPatchRadius: 100,
@@ -19,9 +17,8 @@ const AREA = {
 };
 
 describe('area food', () => {
-    it('is off by default with a rate of 0.06', () => {
-        const c = createConfig({ ...FEATURES_OFF });
-        expect([c.foodAreaCapacity, c.foodRegrowPerArea]).toEqual([false, 0.06]);
+    it('defaults to a rate of 0.06', () => {
+        expect(createConfig({ ...SIMPLE_WORLD }).foodRegrowPerArea).toBe(0.06);
     });
 
     it('spawns the area rate per tick whatever the population', () => {
@@ -52,7 +49,7 @@ describe('area food', () => {
     });
 
     it('places items through the patches by stock', () => {
-        const w = smallWorld({ ...AREA, maxFood: 1000, obstacleCount: 0 });
+        const w = smallWorld({ ...AREA, maxFood: 1000 });
         w.patchX.set([200, 800]);
         w.patchY.set([200, 800]);
         w.patchStock.set([1, 0.05]);
@@ -66,16 +63,6 @@ describe('area food', () => {
             }
         }
         expect(nearFirst / w.foodCount).toBeGreaterThan(0.85);
-    });
-
-    it('drops the per-agent target: the target keys change nothing', () => {
-        const plain = smallWorld({ ...AREA, maxFood: 1000 });
-        const target = smallWorld({ ...AREA, maxFood: 1000, foodTargetPerAgent: 500, foodTargetMin: 900 });
-        for (let t = 0; t < 30; t++) {
-            spawnFood(plain);
-            spawnFood(target);
-        }
-        expect(hashWorld(target)).toBe(hashWorld(plain));
     });
 
     it('spawns nothing at a rate of 0', () => {

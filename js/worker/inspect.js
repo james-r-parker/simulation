@@ -50,8 +50,6 @@ const BODY_INPUTS = Object.freeze([
     ['ready to mate', 'Body'],
     ['danger here', 'Senses'],
     ['attack here', 'Senses'],
-    ['season sine', 'Senses'],
-    ['season cosine', 'Senses'],
     ['ate recently', 'Senses'],
     ['bitten recently', 'Senses'],
     ['type', 'Senses'],
@@ -81,7 +79,7 @@ const BODY_INPUTS = Object.freeze([
 /**
  * The names the inspector labels its bars with.
  * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the nine ray
- *   channel names, the 35 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
+ *   channel names, the 33 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
  */
 export function inspectLabels() {
     const outputs = Object.entries(OUTPUT_INDEX)
@@ -148,7 +146,7 @@ function copyRow(f32, start, source, { from, count }) {
 function writeCounters(f32, start, { source, slot }) {
     const { world, observer, policy, generations } = source;
     f32[start] = world.ageTicks[slot];
-    f32[start + 1] = world.energy[slot] / world.config.maxEnergy;
+    f32[start + 1] = world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
     f32[start + 2] = world.temperature[slot];
     f32[start + 3] = generations.depth[slot];
     f32[start + 4] = observer.foodEnergy[slot];

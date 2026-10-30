@@ -13,7 +13,6 @@ import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { STEP_PHASES, step } from '../js/sim/step.js';
 import { feedPolicy } from './lib/feed-policy.mjs';
-import { FEATURES_OFF, FEATURES_ON } from './lib/features-on.mjs';
 import { createMetrics } from './lib/otel.mjs';
 
 const DEFAULT_SIZES = [100, 250, 500];
@@ -21,43 +20,19 @@ const WARMUP_TICKS = 500;
 const MEASURED_TICKS = 2000;
 
 /**
- * The tunables `bench/baseline.json` was recorded with (commit 282ffeb), frozen so `bench.step_ms@<n>` and `bench-check`
- * compare like with like when `createConfig` defaults are retuned. It lists only the keys whose defaults have changed
- * since; every other key follows the defaults. Every Phase 3 feature key is pinned off (`FEATURES_OFF`), so the switch-on
- * in world-balance T41 leaves this world as it was. The T15d defaults (`biteArc`, and the predator's `biteMultiplier`
- * that `FEATURES_OFF` does not pin) are restated at their pre-T15d values, so the tuned defaults leave this world as it was.
- */
-export const BENCH_CONFIG = Object.freeze({
-    ...FEATURES_OFF,
-    maxFood: 800,
-    foodTargetPerAgent: 8,
-    huntSizeRatio: 1.05,
-    alarmCost: 4,
-    huntCallCost: 4,
-    biteArc: Math.PI / 4,
-    specialisations: {
-        predator: { plantFoodValue: 1, passiveLossMultiplier: 1, splitMinEnergyMultiplier: 1, biteMultiplier: 4 },
-    },
-});
-
-/**
- * `FEATURES_ON` with merit on at representative settings (fitness-and-selection T25): the merit score, mate choice by
- * merit, birth energy by merit and the split gate, so the `merit` row records what the merit phase and its users cost.
+ * The defaults with merit at representative settings (fitness-and-selection T25): the merit score,
+ * birth energy by merit and a lower split gate, so the `merit` row records what the merit phase and its users
+ * cost.
  */
 export const MERIT_ON = Object.freeze({
-    ...FEATURES_ON,
-    meritEnabled: true,
-    meritMateWeight: 0.05,
     meritBirthBoost: 0.25,
     splitDeliberateMin: 200,
 });
 
 /**
- * Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults. The `defaults`
- * row runs every Phase 3 feature on (`FEATURES_ON`), so it records what the features cost.
+ * Extra rows at 500 agents, not gated by `bench-check`: a suffix and the overrides on today's defaults.
  */
 export const TRACKED_VARIANTS = Object.freeze([
-    { suffix: 'defaults', overrides: FEATURES_ON },
     { suffix: 'merit', overrides: MERIT_ON },
     { suffix: 'w7680', overrides: Object.freeze({ worldWidth: 7680, worldHeight: 4320 }) },
 ]);
@@ -204,11 +179,11 @@ export function createSubject(config, name) {
  * @param {number} size population size, held fixed by min = max = initial
  * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
  * @param {{suffix?: string, overrides?: Record<string, any>}} [variant] a tracked variant: the key suffix and the
- *   overrides on today's defaults; the frozen `BENCH_CONFIG` world when omitted
+ *   overrides on today's defaults; the defaults alone when omitted
  * @returns {Record<string, number>} the metrics for that size
  */
 export function benchSize(size, policyName, variant) {
-    const base = variant === undefined ? BENCH_CONFIG : (variant.overrides ?? {});
+    const base = variant?.overrides ?? {};
     const config = createConfig({ ...base, initialAgents: size, minAgents: size, maxAgents: size });
     const { brain, advance, observe } = createSubject(config, policyName);
     const world = createWorld(config, brain);

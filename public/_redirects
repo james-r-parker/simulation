@@ -4,9 +4,6 @@
 /css/* /css/:splat 200
 /assets/* /assets/:splat 200
 
-# Worker files must be served directly (not redirected to index.html)
-/database-worker.js /database-worker.js 200
-
 # Handle index.html variations (optional, but good for cleanliness)
 /index.html  /              200
 

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { createConfig, configHash } from '../../js/sim/config.js';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { validateConfig } from '../../js/sim/config-validate.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SPEC_FIELDS =
-    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier';
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier, kickMultiplier, maxEnergyMultiplier';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.
@@ -48,15 +48,15 @@ describe('DEFAULTS tables', () => {
             ['forager', 0, 300, false, 1, 1, 1],
             ['predator', 1, 350, true, 1, 1, 1],
             ['reproducer', 2, 250, false, 1, 1, 0.5],
-            ['scout', 3, 400, false, 0.7, 1, 1],
-            ['defender', 4, 350, false, 1, 0.5, 1],
+            ['scout', 3, 400, false, 1, 1.5, 1],
+            ['defender', 4, 350, false, 1.2, 0.5, 1],
         ]);
     });
 });
 
 describe('createConfig isolation', () => {
     it('copies the default seasons instead of sharing them', () => {
-        const config = createConfig({ ...FEATURES_OFF });
+        const config = createConfig({ ...SIMPLE_WORLD });
         expect(config.seasons).not.toBe(DEFAULTS.seasons);
         expect(config.seasons[0]).not.toBe(DEFAULTS.seasons[0]);
     });
@@ -64,14 +64,14 @@ describe('createConfig isolation', () => {
     it('copies an override array instead of freezing the caller own array', () => {
         const season = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
         const seasons = [season, season, season, season];
-        const config = createConfig({ ...FEATURES_OFF, seasons });
+        const config = createConfig({ ...SIMPLE_WORLD, seasons });
         expect(config.seasons).not.toBe(seasons);
         expect(Object.isFrozen(seasons)).toBe(false);
         expect(Array.isArray(config.seasons)).toBe(true);
     });
 
     it('reports a null override as a validation error, not a crash', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, specialisations: null })).toThrow(
+        expect(() => createConfig({ ...SIMPLE_WORLD, specialisations: null })).toThrow(
             'config.specialisations is null; expected an object',
         );
     });
@@ -109,44 +109,44 @@ describe('validateConfig error text', () => {
     });
 
     it('describes a bounded integer rule', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, seed: -1 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, seed: -1 }))).toBe(
             'config.seed is -1; expected an integer >= 0 and <= 4294967295',
         );
     });
 
     it('describes an unbounded integer rule without an upper bound', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, initialAgents: -1 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, initialAgents: -1 }))).toBe(
             'config.initialAgents is -1; expected an integer >= 0',
         );
     });
 
     it('describes an exclusive lower bound', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, foodEnergy: 0 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, foodEnergy: 0 }))).toBe(
             'config.foodEnergy is 0; expected a finite number > 0',
         );
     });
 
     it('describes an unbounded number rule without an upper bound', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, foodSpawnRate: -1 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, foodSpawnRate: -1 }))).toBe(
             'config.foodSpawnRate is -1; expected a finite number >= 0',
         );
     });
 
     it('describes a bounded number rule', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, damping: 2 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, damping: 2 }))).toBe(
             'config.damping is 2; expected a finite number >= 0 and <= 1',
         );
     });
 
     it('lists the known keys for an unknown top-level key', () => {
-        const text = message(() => createConfig({ ...FEATURES_OFF, bogus: 1 }));
+        const text = message(() => createConfig({ ...SIMPLE_WORLD, bogus: 1 }));
         expect(text.startsWith('config.bogus is 1; expected no such key (known: seed, worldWidth, worldHeight,')).toBe(
             true,
         );
     });
 
     it('lists the known fields for an unknown specialisation field', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, specialisations: { scout: { speed: 1 } } }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, specialisations: { scout: { speed: 1 } } }))).toBe(
             `config.specialisations.scout.speed is 1; expected no such key (known: ${SPEC_FIELDS})`,
         );
     });
@@ -174,38 +174,38 @@ describe('validateConfig error text', () => {
     });
 
     it('states the weight storage limit and the product', () => {
-        const wc = 128 * (64 * 9 + 35 + 128 + 1 + 11) + 11 + 4 + 128;
-        expect(message(() => createConfig({ ...FEATURES_OFF, maxAgents: 4096, rayCount: 64, brainHidden: 128 }))).toBe(
+        const wc = 128 * (48 + 33 + 128 + 1 + 10) + 10 + 48 * 10 + 4 + 128;
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 4096, rayCount: 64, brainHidden: 128 }))).toBe(
             `config.maxAgents is 4096; expected at most 16777216 / weightCount (maxAgents x weightCount is ${4096 * wc})`,
         );
     });
 
     it('accepts weight storage just under the limit', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, maxAgents: 174, rayCount: 64, brainHidden: 128 })).not.toThrow();
-        expect(() => createConfig({ ...FEATURES_OFF, maxAgents: 175, rayCount: 64, brainHidden: 128 })).toThrow(
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 582, rayCount: 64, brainHidden: 128 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 583, rayCount: 64, brainHidden: 128 })).toThrow(
             /maxAgents/,
         );
     });
 
     it('states the event capacity and the product', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, maxAgents: 500, eventCapacity: 2999 }))).toBe(
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 2999 }))).toBe(
             'eventCapacity: 2999 is below 6 x maxAgents (3000)',
         );
     });
 
     it('accepts an event capacity of exactly 6 x maxAgents', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, maxAgents: 500, eventCapacity: 3000 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 3000 })).not.toThrow();
     });
 
     it('checks the weight storage before the event capacity', () => {
         expect(() =>
-            createConfig({ ...FEATURES_OFF, maxAgents: 4096, rayCount: 64, brainHidden: 128, eventCapacity: 1 }),
+            createConfig({ ...SIMPLE_WORLD, maxAgents: 4096, rayCount: 64, brainHidden: 128, eventCapacity: 1 }),
         ).toThrow(/maxAgents.*weightCount/);
     });
 
     it('states the largest radius when the hash cell is too small', () => {
-        expect(message(() => createConfig({ ...FEATURES_OFF, hashCellSize: 125 }))).toBe(
-            'config.hashCellSize is 125; expected > the largest radius (125)',
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxEnergy: 25000, hashCellSize: 132 }))).toBe(
+            'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
     });
 });

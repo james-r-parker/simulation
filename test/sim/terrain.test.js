@@ -6,40 +6,22 @@ import {
     REFUGE_ROCKS,
     REFUGE_ROCK_RADIUS,
     coldFactor,
-    obstacleSlots,
     terrainProblem,
     terrainRockCount,
 } from '../../js/sim/terrain.js';
 import { smallWorld } from './helpers/small-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const BASINS = {
-    terrainLayout: 'basins',
-    obstacleCount: 0,
     worldWidth: 6000,
     worldHeight: 4000,
     wallGaps: 3,
     wallGapWidth: 300,
     refugeCount: 4,
+    refugeCluster: 1,
     refugeSizeMax: 30,
     coldMarginWidth: 600,
 };
-
-describe('open layout', () => {
-    it('adds no slots, no rocks and no cold margin', () => {
-        const config = createConfig({ ...FEATURES_OFF });
-        expect(terrainRockCount(config)).toBe(0);
-        expect(obstacleSlots(config)).toBe(config.obstacleCount);
-        expect(coldFactor(config, 1)).toBe(1);
-        expect(terrainProblem(config)).toBeNull();
-    });
-
-    it('ignores the other terrain keys, so the world is the same', () => {
-        const a = smallWorld({ obstacleCount: 2 });
-        const b = smallWorld({ obstacleCount: 2, terrainLayout: 'open', wallGaps: 5, refugeCount: 7 });
-        expect(hashWorld(a)).toBe(hashWorld(b));
-    });
-});
 
 describe('basins', () => {
     const world = smallWorld(BASINS);
@@ -100,7 +82,7 @@ describe('basins', () => {
         expect(solid.obsX.length).toBe(40 + REFUGE_ROCKS);
         expect(solid.obsX[0]).toBe(3000);
         expect(solid.obsX[40 + 1]).toBeLessThan(3000);
-        expect(terrainProblem({ ...createConfig({ ...FEATURES_OFF }), ...BASINS, wallGaps: 0 })).toBeNull();
+        expect(terrainProblem({ ...createConfig({ ...SIMPLE_WORLD }), ...BASINS, wallGaps: 0 })).toBeNull();
     });
 
     it('places food patches whole inside a basin, alternating sides', () => {
@@ -119,7 +101,6 @@ describe('basins', () => {
         const open = smallWorld({
             foodPatchCount: 3,
             foodPatchRadius: 200,
-            obstacleCount: 0,
             worldWidth: 6000,
             worldHeight: 4000,
         });
@@ -153,20 +134,17 @@ describe('terrainProblem', () => {
      * @param {Record<string, any>} over keys to change
      * @returns {Record<string, any>} a config shaped object
      */
-    const cfg = (over) => ({ ...createConfig({ ...FEATURES_OFF }), ...BASINS, ...over });
+    const cfg = (over) => ({ ...createConfig({ ...SIMPLE_WORLD }), ...BASINS, ...over });
 
-    it('rejects wandering obstacles, a crowded wall, refuges that do not fit and no room between margins', () => {
+    it('rejects a crowded wall, refuges that do not fit and no room between margins', () => {
         expect(terrainProblem(cfg({}))).toBeNull();
-        expect(terrainProblem(cfg({ obstacleCount: 5 }))).toMatch(/obstacleCount/);
         expect(terrainProblem(cfg({ wallGaps: 8, wallGapWidth: 2000 }))).toMatch(/wallGaps/);
         expect(terrainProblem(cfg({ worldWidth: 1000 }))).toMatch(/refuges/);
         expect(terrainProblem(cfg({ coldMarginWidth: 2000 }))).toMatch(/coldMargin/);
         expect(terrainProblem(cfg({ foodPatchCount: 1, foodPatchRadius: 2000, refugeCount: 0 }))).toMatch(/basin/);
     });
 
-    it('is enforced by createConfig, with the enum rule', () => {
-        expect(() => createConfig({ ...FEATURES_OFF, terrainLayout: 'basins' })).toThrow(/obstacleCount/);
-        expect(() => createConfig({ ...FEATURES_OFF, terrainLayout: 'maze' })).toThrow(/terrainLayout/);
-        expect(() => createConfig({ ...FEATURES_OFF, ...BASINS, wallGaps: 9 })).toThrow(/wallGaps/);
+    it('is enforced by createConfig', () => {
+        expect(() => createConfig({ ...SIMPLE_WORLD, ...BASINS, wallGaps: 9 })).toThrow(/wallGaps/);
     });
 });

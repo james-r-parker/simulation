@@ -6,14 +6,12 @@ import { EVENT_TYPE, readEvents } from '../../js/sim/events.js';
 import { regrowPatches } from '../../js/sim/food-patches.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const ERAS = {
-    erasEnabled: true,
     eraSeasonTicks: 100,
     foodPatchCount: 2,
     foodPatchRadius: 100,
-    obstacleCount: 0,
     foodPatchRegrow: 0.01,
     foodPatchCapacity: 1,
 };
@@ -53,36 +51,25 @@ function events(w) {
 }
 
 describe('eras config', () => {
-    it('is off by default with the doc values', () => {
-        const c = createConfig({ ...FEATURES_OFF });
-        expect([c.erasEnabled, c.eraSeasonTicks, c.winterRegrow, c.droughtChance]).toEqual([false, 36000, 0.2, 0.25]);
-        expect([c.invasionInterval, c.invasionSize]).toEqual([180000, 12]);
+    it('defaults to the doc values', () => {
+        const c = createConfig({ ...SIMPLE_WORLD });
+        expect([c.eraSeasonTicks, c.winterRegrow, c.droughtChance]).toEqual([36000, 0.2, 0.25]);
     });
 
     it.each([
-        ['erasEnabled', 1],
         ['eraSeasonTicks', 0],
         ['winterRegrow', -1],
         ['droughtChance', 1.5],
-        ['invasionInterval', -1],
-        ['invasionSize', 1.5],
     ])('rejects %s of %s', (key, value) => {
-        expect(() => createConfig({ ...FEATURES_OFF, [key]: value })).toThrow(new RegExp(`config\\.${key}`));
+        expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
 
-    it('makes a year of four eraSeasonTicks seasons only when on', () => {
-        expect(yearTicks(createConfig({ ...FEATURES_OFF }))).toBe(3600);
-        expect(yearTicks(createConfig({ ...FEATURES_OFF, erasEnabled: true }))).toBe(144000);
+    it('makes a year of four eraSeasonTicks seasons', () => {
+        expect(yearTicks(createConfig({ ...SIMPLE_WORLD }))).toBe(144000);
     });
 });
 
 describe('patchRegrowFactor', () => {
-    it('is 1 with eras off, whatever the season', () => {
-        const w = eraWorld({ erasEnabled: false });
-        w.season[0] = 3;
-        expect(patchRegrowFactor(w, 0)).toBe(1);
-    });
-
     it('is winterRegrow in winter, 1.5 in summer and 1 in spring and autumn', () => {
         const w = eraWorld();
         const factors = [0, 1, 2, 3].map((s) => {
@@ -153,22 +140,10 @@ describe('advanceEra', () => {
         expect(w.era[0]).toBe(-1);
     });
 
-    it('draws nothing from the food stream when eras are off', () => {
-        const w = eraWorld({ erasEnabled: false, eraSeasonTicks: 100 });
-        const before = Array.from(w.rng.food.s);
-        at(w, 100);
-        expect(Array.from(w.rng.food.s)).toEqual(before);
-        expect(readEvents(w.events)).toBe(0);
-    });
-
-    it('hashes the drought state only when eras are on', () => {
-        const on = eraWorld();
-        const h = hashWorld(on);
-        on.era[0] = 1;
-        expect(hashWorld(on)).not.toBe(h);
-        const off = eraWorld({ erasEnabled: false });
-        const hOff = hashWorld(off);
-        off.era[0] = 1;
-        expect(hashWorld(off)).toBe(hOff);
+    it('hashes the drought state', () => {
+        const w = eraWorld();
+        const h = hashWorld(w);
+        w.era[0] = 1;
+        expect(hashWorld(w)).not.toBe(h);
     });
 });

@@ -4,10 +4,11 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildReport, seedlessConfig, validateReport } from '../js/evo/report.js';
+import { buildReport, seedFields, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
 import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
+import { championsDirFor, writeChampionFiles } from './lib/champion-files.mjs';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
@@ -18,7 +19,7 @@ const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
 const WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 const CPU_PRINT_MS = 10_000;
 const USAGE =
-    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--policy-options <file.json>] [--out <path>] [--workers <n>] [--trace-interval <ticks>]';
+    'usage: eval [--seeds <n>] [--ticks <t>] [--policy <name>|live] [--seed-offset <k>] [--config <file.json>] [--policy-options <file.json>] [--out <path>] [--workers <n>] [--trace-interval <ticks>] [--save-champions <n>]';
 
 /**
  * @typedef {object} EvalArgs
@@ -31,6 +32,7 @@ const USAGE =
  * @property {string | null} out
  * @property {number | null} workers
  * @property {number | null} traceInterval
+ * @property {number} saveChampions how many of each seed's best genomes to write as champion files (0: none)
  */
 
 /** @type {Record<string, (value: string | undefined, flag: string) => [string, any]>} */
@@ -40,6 +42,7 @@ const VALUE_FLAGS = {
     '--seed-offset': (value, flag) => ['seedOffset', intValue(flag, value, 0, USAGE)],
     '--workers': (value, flag) => ['workers', intValue(flag, value, 1, USAGE)],
     '--trace-interval': (value, flag) => ['traceInterval', intValue(flag, value, 1, USAGE)],
+    '--save-champions': (value, flag) => ['saveChampions', intValue(flag, value, 1, USAGE)],
     '--policy': (value) => ['policy', parsePolicy(value)],
     '--config': (value) => ['config', String(value)],
     '--policy-options': (value) => ['policyOptions', String(value)],
@@ -79,6 +82,7 @@ export function parseArgs(argv) {
                 out: null,
                 workers: null,
                 traceInterval: null,
+                saveChampions: 0,
             },
         })
     );
@@ -182,6 +186,7 @@ function failureRecord(error) {
  * @property {string | null} [out] default `evals/results/<policy>-<sha>-<n>x<t>.json`
  * @property {number | null} [workers] default `os.availableParallelism()`, capped at the seed count
  * @property {number | null} [traceInterval] ticks between the trace's population samples, default 1000
+ * @property {number} [saveChampions] how many of each seed's best genomes to write as champion files, default 0 (none)
  * @property {string} [logDir] default `.sim/logs`
  * @property {string} [sha] default `git rev-parse --short HEAD`
  * @property {import('./lib/otel.mjs').Metrics} [metrics]
@@ -250,18 +255,34 @@ function buildAndWrite({ policyName, policyOptions, results, config, ticks, seed
     const report = buildReport({
         policy: policyName,
         policyOptions,
-        fitnessName: results[0].fitnessName,
+        ...seedFields(results),
         config,
         ticks,
         seeds,
         sha,
-        perSeed: results.map((r) => r.metrics),
-        traces: results.map((r) => r.trace),
     });
     validateReport(report);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
     return report;
+}
+
+/**
+ * @param {number[]} seeds the seeds
+ * @param {EvalOptions & {policy: string, overrides: Record<string, any>, policyOptions: Record<string, any>}} run the
+ *   resolved run
+ * @returns {Record<string, any>[]} one worker task per seed
+ */
+function seedTasks(seeds, { ticks, policy, overrides, policyOptions, traceInterval, saveChampions }) {
+    const shared = {
+        ticks,
+        policy,
+        overrides,
+        policyOptions,
+        traceInterval: traceInterval ?? undefined,
+        saveChampions: saveChampions ?? 0,
+    };
+    return seeds.map((seed) => ({ seed, ...shared }));
 }
 
 /**
@@ -294,13 +315,15 @@ export async function runEval(options) {
     const cpu = startCpuReport(print);
     const started = performance.now();
     try {
-        const traceInterval = options.traceInterval ?? undefined;
-        const shared = { ticks, policy: policyName, overrides, policyOptions, traceInterval };
-        const tasks = seeds.map((seed) => ({ seed, ...shared }));
+        const tasks = seedTasks(seeds, { ...options, policy: policyName, overrides, policyOptions });
         const onResult = seedLogger({ jsonl, metrics, policyName, print });
         const results = await runPool(tasks, { workerUrl: WORKER_URL, workers, onResult });
         const report = buildAndWrite({ policyName, policyOptions, results, config, ticks, seeds, sha, out });
         const wallMs = performance.now() - started;
+        if (tasks[0].saveChampions > 0) {
+            const dir = championsDirFor(out);
+            print(`wrote ${writeChampionFiles(results, dir)} champions to ${dir}`);
+        }
         jsonl.sink({ level: 'info', event: 'EvalFinished', out, wallMs });
         print(
             `wrote ${out} (${seeds.length} seeds x ${ticks} ticks, ${workers} workers, ${(wallMs / 1000).toFixed(1)}s)`,

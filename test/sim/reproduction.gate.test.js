@@ -4,7 +4,7 @@ import { buildHash } from '../../js/sim/spatial-hash.js';
 import { mate, splitAll, splitGateOpen } from '../../js/sim/reproduction.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const GATED = { meritEnabled: true, splitDeliberateMin: 100, meritSplitFloorPop: 0, splitMinEnergy: 200 };
+const GATED = { splitDeliberateMin: 100, splitMinEnergy: 200 };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -23,23 +23,9 @@ describe('splitGateOpen', () => {
         expect(splitGateOpen(w, slot)).toBe(false);
     });
 
-    it('opens when merit is off', () => {
-        const { w, slot } = gated({ meritEnabled: false }, 0);
-        expect(splitGateOpen(w, slot)).toBe(true);
-    });
-
     it('opens when splitDeliberateMin is 0', () => {
         const { w, slot } = gated({ splitDeliberateMin: 0 }, 0);
         expect(splitGateOpen(w, slot)).toBe(true);
-    });
-
-    it('opens when the population is below meritSplitFloorPop, and not at it', () => {
-        const { w, slot } = gated({ meritSplitFloorPop: 2 }, 0);
-        expect(w.population).toBe(1);
-        expect(splitGateOpen(w, slot)).toBe(true);
-        addBlob(w, { energy: 1000 });
-        expect(w.population).toBe(2);
-        expect(splitGateOpen(w, slot)).toBe(false);
     });
 
     it('opens at deliberateIntake exactly equal to the threshold', () => {
@@ -69,9 +55,9 @@ describe('split gate in splitAll', () => {
     });
 
     it('does not gate mating', () => {
-        const w = lifeWorld({ ...GATED, sexesEnabled: false });
+        const w = lifeWorld(GATED);
         const a = addBlob(w, { energy: 1000, mateOut: 1 });
-        const b = addBlob(w, { energy: 1000, mateOut: 1 });
+        const b = addBlob(w, { energy: 1000, mateOut: 1, sex: 1 });
         w.x[b] = w.x[a] + w.size[a] + w.size[b];
         buildHash(w.hash, w);
         mate(w, recordingPolicy([]));
@@ -80,9 +66,9 @@ describe('split gate in splitAll', () => {
     });
 
     it('with no deliberate forager, blocks every split, still mates and reads a gated share of 1', () => {
-        const w = lifeWorld({ ...GATED, sexesEnabled: false });
+        const w = lifeWorld(GATED);
         const a = addBlob(w, { energy: 1000, mateOut: 1 });
-        const b = addBlob(w, { energy: 1000, mateOut: 1 });
+        const b = addBlob(w, { energy: 1000, mateOut: 1, sex: 1 });
         w.x[b] = w.x[a] + w.size[a] + w.size[b];
         buildHash(w.hash, w);
         tallyReady(w);

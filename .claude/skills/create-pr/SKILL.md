@@ -29,7 +29,7 @@ scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or th
    test file, no size limit is dodged with `eslint-disable`, errors are loud, hot paths allocate nothing.
 4. **Measurements attached:** if the phase has `**Targets:**`, run the comparison for each target and keep the
    output for the PR body: `npm run bench` against `bench/baseline.json` for `bench.*`, `node
-scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`, on the dev machine's Chrome with `--cdp`) against the budgets in `bench/browser-baseline.json` for `browser.*` (`bench/legacy-baseline.json` is the legacy app's), and `npm run eval:compare` for
+scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`, on the dev machine's Chrome with `--cdp`) against the budgets in `bench/browser-baseline.json` for `browser.*` (`bench/legacy-baseline.json` is the deleted app's), and `npm run eval:compare` for
    `eval.*` (the `run-evolution-loop` skill, at least 16 seeds). A target that moved the wrong way blocks the PR.
    On any `perf(...)` commit, or a change to a function under `bench/micro/`, also attach `npm run bench:micro -- --compare origin/main` (per-function ops/s and change; a tool beside the whole-step `bench-compare`, which stays the gate).
    These commands arrive with `headless-sim-core.md`, `evolution-evals.md` and `dev-workflow-and-gate.md` Phase 2;
@@ -39,6 +39,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 6. **Design doc phase:** if the work delivers a phase of a design doc:
     - run a fresh conformance review agent over the design doc and the full diff (`git diff origin/main...HEAD`),
       checking every Delivery requirements row - **in parallel with** the final check, never instead of it
+    - the review also checks that the old path of every flag the PR switched on is deleted, or kept with a reason in
+      `scripts/flag-ledger.json`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`

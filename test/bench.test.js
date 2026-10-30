@@ -5,15 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { compareStep, main } from '../scripts/bench-check.mjs';
 import { createConfig } from '../js/sim/config.js';
 import { DEFAULTS } from '../js/sim/config-defaults.js';
-import {
-    BENCH_CONFIG,
-    TRACKED_VARIANTS,
-    formatLines,
-    formatMetrics,
-    median,
-    parseArgs,
-    recordMetrics,
-} from '../scripts/bench.mjs';
+import { TRACKED_VARIANTS, formatLines, formatMetrics, median, parseArgs, recordMetrics } from '../scripts/bench.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the three sizes, text output', () => {
@@ -25,7 +17,7 @@ describe('parseArgs', () => {
     });
 
     it('reads --policy as a separate or joined value', () => {
-        expect(parseArgs(['--policy', 'natural-v1'])).toMatchObject({ policy: 'natural-v1' });
+        expect(parseArgs(['--policy', 'baseline-v5'])).toMatchObject({ policy: 'baseline-v5' });
         expect(parseArgs(['--policy=baseline-v5']).policy).toBe('baseline-v5');
     });
 
@@ -126,34 +118,16 @@ describe('bench-check main', () => {
     });
 });
 
-describe('BENCH_CONFIG', () => {
-    it('is frozen on the values bench/baseline.json was recorded with', () => {
-        expect(Object.isFrozen(BENCH_CONFIG)).toBe(true);
-        expect(createConfig(BENCH_CONFIG)).toMatchObject({
-            maxFood: 800,
-            foodTargetPerAgent: 8,
-            huntSizeRatio: 1.05,
-            alarmCost: 4,
-            huntCallCost: 4,
-        });
-    });
-
-    it('does not follow the current defaults for the keys it pins', () => {
-        const retuned = Object.entries(BENCH_CONFIG).filter(([key, value]) => DEFAULTS[key] !== value);
-        expect(retuned.length).toBeGreaterThan(0);
-    });
-});
-
 describe('tracked variants', () => {
     it("suffix the size in every key and use today's defaults plus their own overrides", () => {
         expect(formatMetrics(500, 1, { brain: 2 }, 'w7680')).toEqual({
             'bench.step_ms@500w7680': 1,
             'bench.phase_ms.brain@500w7680': 2,
         });
-        expect(TRACKED_VARIANTS.map((v) => v.suffix)).toEqual(['defaults', 'merit', 'w7680']);
-        expect(createConfig(TRACKED_VARIANTS[2].overrides)).toMatchObject({ worldWidth: 7680, worldHeight: 4320 });
-        expect(createConfig(TRACKED_VARIANTS[1].overrides)).toMatchObject({
-            meritEnabled: true,
+        expect(TRACKED_VARIANTS.map((v) => v.suffix)).toEqual(['merit', 'w7680']);
+        expect(createConfig(TRACKED_VARIANTS[1].overrides)).toMatchObject({ worldWidth: 7680, worldHeight: 4320 });
+        expect(createConfig(TRACKED_VARIANTS[0].overrides)).toMatchObject({
+            meritBirthBoost: 0.25,
             capBirthsEnabled: true,
         });
         expect(createConfig(TRACKED_VARIANTS[0].overrides).maxFood).toBe(DEFAULTS.maxFood);

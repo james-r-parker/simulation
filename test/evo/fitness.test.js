@@ -6,9 +6,9 @@ import { createObserver, observe } from '../../js/evo/observer.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { nextTick, observed, pushBorn } from './helpers/observer-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
-const config = createConfig({ ...FEATURES_OFF, maxAgents: 8, initialAgents: 0, minAgents: 0 });
+const config = createConfig({ ...SIMPLE_WORLD, maxAgents: 8, initialAgents: 0, minAgents: 0 });
 const { specialisations } = config;
 
 /**

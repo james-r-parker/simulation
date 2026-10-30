@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { createWorld, spawnFoodItem } from '../../js/sim/spawn.js';
 import { testPolicy } from './helpers/test-policy.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const BASE = {
     worldWidth: 4000,
@@ -14,7 +14,6 @@ const BASE = {
     brainHidden: 3,
     maxFood: 1000,
     initialFood: 0,
-    obstacleCount: 0,
     fertileZoneMax: 3,
     foodPatchCount: 4,
     foodPatchRadius: 200,
@@ -25,7 +24,7 @@ const BASE = {
  * @returns {ReturnType<typeof createWorld>}
  */
 function build(over) {
-    return createWorld(createConfig({ ...FEATURES_OFF, ...BASE, ...over }), testPolicy);
+    return createWorld(createConfig({ ...SIMPLE_WORLD, ...BASE, ...over }), testPolicy);
 }
 
 /**
@@ -75,7 +74,7 @@ describe('spawnFoodItem with patches', () => {
     });
 
     it('keeps items inside the world and clear of obstacles', () => {
-        const w = build({ foodBackgroundShare: 0, obstacleCount: 6, obstacleMinRadius: 100, obstacleMaxRadius: 150 });
+        const w = build({ foodBackgroundShare: 0 });
         for (let i = 0; i < 200; i++) {
             const s = spawnFoodItem(w);
             expect(w.foodX[s]).toBeGreaterThanOrEqual(w.foodRadius[s]);

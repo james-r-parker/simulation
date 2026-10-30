@@ -1,14 +1,14 @@
 // Combat controllers for the anti-exploit suite and the predator-prey metrics: a hunter, a fleer, and two spammers
 // that hold one call output on every tick. Each zeroes the agent's output row, then writes all it needs.
 
-import { OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
+import { BODY_INPUT, OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
 import { CH_THREAT, CH_PREY, eachAlive, seekFood, setOutput, turnTowards, write } from './scripted-parts.js';
 
 /** Offsets within the body inputs (see predator-prey.md, Brain layout). */
-export const BODY_BITTEN = 12;
-const BODY_ATTACK_LEFT = 21;
-const BODY_ATTACK_RIGHT = 22;
+export const BODY_BITTEN = BODY_INPUT.BITTEN;
+const BODY_ATTACK_LEFT = BODY_INPUT.SCENT + 2;
+const BODY_ATTACK_RIGHT = BODY_INPUT.SCENT + 3;
 
 /**
  * @param {Record<string, any>} world the world
@@ -17,7 +17,7 @@ const BODY_ATTACK_RIGHT = 22;
  * @returns {number} the input's value
  */
 export function bodyInput(world, slot, offset) {
-    return world.inputs[slot * world.layout.inputCount + world.config.rayCount * RAY_CHANNELS + offset];
+    return world.inputs[slot * world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS + offset];
 }
 
 /**
@@ -85,7 +85,7 @@ function hunter({ world }) {
  * @param {number} rayCount rays per agent
  * @returns {number} the turn output
  */
-function turnAway(k, rayCount) {
+export function turnAway(k, rayCount) {
     if (k === 0) {
         return 1;
     }

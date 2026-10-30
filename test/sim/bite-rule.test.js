@@ -85,7 +85,7 @@ describe('canBite and feed', () => {
         const rng = createRng(3);
         let bitesSeen = 0;
         for (let trial = 0; trial < 200; trial++) {
-            const w = senseWorld({ huntSizeRatio: 1.01 });
+            const w = senseWorld({ huntSizeRatio: 1.01, biteCost: 0, recoilEnergy: 0 });
             const a = addAgent(w, 500, 500, 10 + nextFloat(rng) * 40);
             const b = addAgent(
                 w,

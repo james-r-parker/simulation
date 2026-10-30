@@ -1,7 +1,7 @@
 import { createConfig } from '../../../js/sim/config.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { testPolicy } from './test-policy.js';
-import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
 
 /**
  * Builds a small empty world for environment-style tests.
@@ -10,7 +10,7 @@ import { FEATURES_OFF } from '../../../scripts/lib/features-on.mjs';
  */
 export function smallWorld(over = {}) {
     const config = createConfig({
-        ...FEATURES_OFF,
+        ...SIMPLE_WORLD,
         worldWidth: 1000,
         worldHeight: 1000,
         maxAgents: 8,
@@ -20,11 +20,10 @@ export function smallWorld(over = {}) {
         brainHidden: 3,
         maxFood: 4,
         initialFood: 0,
-        obstacleCount: 2,
-        obstacleMinRadius: 20,
-        obstacleMaxRadius: 60,
         fertileZoneMax: 3,
         ...over,
     });
-    return createWorld(config, testPolicy);
+    const world = createWorld(config, testPolicy);
+    world.leakRate.fill(1); // hand-built agents take each new hidden value whole, the plain tanh rule
+    return world;
 }

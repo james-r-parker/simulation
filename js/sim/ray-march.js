@@ -162,7 +162,7 @@ export function castRays(world, hash, slot) {
     s[SIN_H] = detSin(world.angle[slot]);
     const count = gatherNear(world, hash, slot);
     const { rayCos, raySin } = world;
-    const rowBase = slot * world.layout.inputCount;
+    const rowBase = slot * world.layout.rawInputCount;
     for (let k = 0; k < world.config.rayCount; k++) {
         s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
         s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];

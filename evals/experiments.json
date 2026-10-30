@@ -1871,6 +1871,44 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "T48i economy screen, 8 arms x 8 seeds (offset 32) x 200000 ticks, map-elites-v6; a screen, not a verdict. ref: circling 0.441, saturation 0.481, alarm 8.13, spec_dominance 0.781, pop 314 (matches the diagnosis). max-2000: circling 0.354, saturation 0.334, alarm 7.35, dominance 0.633, pop 188, fed life -21%. max-1200: 0.310, 0.300, 6.86, 0.691, pop 166, floor episodes 60. max-2000-scout-move-1: 0.331, 0.305, 6.87, dominance 0.536, spec_effective 3.16, pop 146, floor episodes 92, fed life -34%. max-2000-alarm-5: 0.304, 0.312, 6.05, 0.621. regrow-0.045: little change (0.387, 0.438, 7.42, 0.783). combo: 0.300, 0.303, 5.78, 0.641, pop 158, fed life -40%. seedChecks: popAboveMin, catchRate, lineages, popBelowMax pass 8/8 in every arm; specShare passes 1-5 of 8 (ref 2, winner 5). Prediction check: direction held; the winner (max-2000-scout-move-1) brings dominance nearest 0.5 but not under it, so T48k stays open; populations fell more than predicted and circling never fell below 0.30 (fallback T48l). Winner for T48j: max-2000-scout-move-1, optionally with alarmCost 5. See sim-notes 2026-10-29 'Economy screen'."
+    },
+    {
+      "id": "E67",
+      "date": "2026-10-30",
+      "branch": "claude/big-bag-branch-status-730fab",
+      "hypothesis": "Survival screen of the big-bang world (natural-selection T5): a lower bite cost and hunt upkeep keep predators alive on random-brain genomes, so the world meets the merge gate (population above the floor at the end on every seed, eval.predator_presence >= 0.5, eval.spec_effective > 1.5).",
+      "prediction": "8 seeds x 200000 ticks, live policy, the big-bang defaults. biteCost and huntUpkeep arms (bite4-upkeep0.002, bite8-upkeep0.001, bite12-upkeep0.001) hold predator_presence near 0.5 to 0.6 with one arm best; spec_effective stays above 1.5; no seed under the floor. If no arm holds predators, the cause is not the cost and the next screen diagnoses it.",
+      "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/survival-diag/defaults.report.json",
+      "after": "evals/screens/results/survival/<arm>.report.json (table in evals/screens/results/survival-diag/table.md)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction wrong: the grid was stopped after 3 arms because no arm kept predators. predator_presence 0.053 (bite4-upkeep0.002), 0.134 (bite8-upkeep0.001), 0.035 (bite12-upkeep0.001); catch_rate 0.014, 0.058, 0.008; floor episodes per seed 2.75, 1.13, 2.13. The cost is not the lever. The diagnosis screen (survival-diag, 7 arms, same seeds) tried the old brain, energy 6k and 25k and no kick: defaults predators 0.06 and pop 142; no arm above 0.08 and none passes (pop > min 0 to 2 of 8 seeds). Cause found by replay: predators starved as random brains (never landed a bite; the movement cost of thrashing). Fix from biology, see E68. Merge gate unmet at this point."
+    },
+    {
+      "id": "E68",
+      "date": "2026-10-30",
+      "branch": "claude/big-bag-branch-status-730fab",
+      "hypothesis": "Predators survive when they are built like real ambush predators (principles: look to nature first): innate reflexes in random genomes (instinctWeight), a gorge-and-fast metabolism (low resting loss, a big fat store, a large meal per kill) and decisive bites (biteMultiplier 20).",
+      "prediction": "8 seeds x 200000 ticks, live policy, reference inst0 (the big-bang defaults). Instincts alone (inst1) lift predator_presence from 0.06 to 0.2 or more and the population above the floor on most seeds. Gorge-and-fast (passiveLossMultiplier 0.3, maxEnergyMultiplier 3, predatorKillEnergy 600) adds predator births. Decisive bites (biteMultiplier 20) turn catches into kills. The combination inst1-gorge-bite20 reaches presence 0.5 or more with spec_effective above 1.5; predators may boom and bust. Risk: bite20 raises the kill rate enough to starve the prey side.",
+      "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes", "eval.catch_rate"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/instinct/inst0.report.json",
+      "after": "evals/screens/results/instinct/inst1-gorge-bite20.report.json (all arms and table.md in evals/screens/results/{predator-metabolism,predator-gorge,instinct}/)",
+      "verdicts": {
+        "eval.predator_presence": "better",
+        "eval.spec_effective": "better",
+        "eval.floor_episodes": "better",
+        "eval.catch_rate": "better",
+        "eval.mating_share": "no-difference",
+        "eval.deliberate_food_share": "better",
+        "eval.alarm_precision": "-"
+      },
+      "effect": "better",
+      "note": "Screens: predator-metabolism (6 arms: fast-0.3 / fast-0.15 resting loss, meal-600), predator-gorge (7 arms: the 3x store, bite 20 and 40), instinct (8 arms: instinctWeight 0, 0.5, 1, 2 with fast-meal, gorge and bite20). Metabolism alone: best fast-0.3-meal-600 presence 0.24, pop 203, pop > min 4/8. Gorge with bite20 alone: presence 0.09 to 0.28, still 1 to 4 of 8 seeds above min. Instincts alone (inst0.5/1/2): pop above min 8/8, catch 8/8, pop mean 423-482, but predator_presence only 0.01 to 0.09. Only inst1-gorge-bite20 clears the gate: predator_presence 0.67 (0.09 to 1.0 by seed), spec_effective 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (seed 5 has 7; the other seven have 0 or 1), catch_rate 0.42, deliberate_food_share 0.53, alarm_precision 0.20 (only 2 of 8 seeds call), mating_share 0.54, pop mean 403, about 2972 predator births per run, spec_dominance 0.60. The screen table's own columns still read FAIL for it (popAboveMin fails on seed 5 at 0.55 of the samples, lineages >= 5 and spec <= 70% fail), judged on the plan's gate: final population above the floor on every seed (popBelowMax column 55 to 481, seed 5 lowest), presence, spec_effective. Known issue: predators boom and bust, alive at the end in 3 of 8 seeds; balancing follows. Prediction right on the gate and on instincts lifting survival, wrong on instincts alone lifting presence. Decision: adopt instinctWeight 1, predator passiveLossMultiplier 0.3, maxEnergyMultiplier 3, biteMultiplier 20 and predatorKillEnergy 600 as the defaults."
     }
   ]
 }

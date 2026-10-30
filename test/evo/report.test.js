@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { configHash, createConfig } from '../../js/sim/config.js';
-import { buildReport, validateReport } from '../../js/evo/report.js';
+import { buildReport, seedFields, validateReport } from '../../js/evo/report.js';
 
 const config = createConfig({ seed: 7, maxAgents: 600 });
 const perSeed = [
@@ -197,5 +197,44 @@ describe('report traces', () => {
 
     it('leaves traces out when none are given', () => {
         expect(buildReport(input)).not.toHaveProperty('traces');
+    });
+});
+
+describe('buildReport inputActivity', () => {
+    const input = { policy: 'p', fitnessName: 'v6', config, ticks: 1, seeds: [1, 2], sha: 's', perSeed: [{}, {}] };
+
+    it('stores one table per seed, null for a seed with no sample, and validates it', () => {
+        const report = buildReport({ ...input, inputActivity: [[0, 0.5, 1], null] });
+        expect(report.inputActivity).toEqual([[0, 0.5, 1], null]);
+        expect(() => validateReport(report)).not.toThrow();
+        expect(buildReport(input)).not.toHaveProperty('inputActivity');
+    });
+
+    it('rejects a table of the wrong length or with a share outside 0 to 1', () => {
+        const report = buildReport({ ...input, inputActivity: [[0.5], null] });
+        expect(() => validateReport({ ...report, inputActivity: [[0.5]] })).toThrow(/inputActivity/);
+        expect(() => validateReport({ ...report, inputActivity: [[1.5], null] })).toThrow(/inputActivity\[0\]/);
+        expect(() => validateReport({ ...report, inputActivity: [['x'], null] })).toThrow(/inputActivity\[0\]/);
+    });
+
+    it('accepts the eighteen brain metrics as ordinary metrics', () => {
+        const names = ['eval.leak_rate_mean', 'eval.sigma_mean', 'eval.hebb_drift'];
+        const metrics = [{}, {}].map(() => Object.fromEntries(names.map((n) => [n, { value: 0.5 }])));
+        expect(() => validateReport(buildReport({ ...input, perSeed: metrics }))).not.toThrow();
+    });
+});
+
+describe('seedFields', () => {
+    it('takes each seed result in order, with null for a missing input-activity table', () => {
+        const results = [
+            { fitnessName: 'fitnessV6', metrics: { a: 1 }, trace: { t: 1 }, inputActivity: { x: 1 } },
+            { fitnessName: 'fitnessV6', metrics: { a: 2 }, trace: { t: 2 } },
+        ];
+        expect(seedFields(results)).toEqual({
+            fitnessName: 'fitnessV6',
+            perSeed: [{ a: 1 }, { a: 2 }],
+            traces: [{ t: 1 }, { t: 2 }],
+            inputActivity: [{ x: 1 }, null],
+        });
     });
 });

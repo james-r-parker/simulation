@@ -1,4 +1,4 @@
-// The `MeritSummary` event: every `MERIT_LOG_TICKS` ticks while `meritEnabled`, the mean and 90th percentile of the
+// The `MeritSummary` event: every `MERIT_LOG_TICKS` ticks, the mean and 90th percentile of the
 // alive agents' decayed merit and the window's split-gate tally. One record per summary, never per agent. Reads merit
 // through `meritPeek`, so logging never changes stored state. Sorts the world's `capKeys` scratch (the birth cap
 // restamps it before every use), so a summary allocates one view and nothing per agent.

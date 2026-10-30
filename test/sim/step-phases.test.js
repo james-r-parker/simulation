@@ -21,8 +21,6 @@ vi.mock('../../js/sim/environment.js', () => ({
     updateSeason: rec('updateSeason'),
 }));
 vi.mock('../../js/sim/eras.js', () => ({ advanceEra: rec('advanceEra') }));
-vi.mock('../../js/sim/predator-rescue.js', () => ({ rescuePredators: rec('rescuePredators') }));
-vi.mock('../../js/sim/invasion.js', () => ({ invade: rec('invade') }));
 vi.mock('../../js/sim/feeding.js', () => ({ feed: rec('feed') }));
 vi.mock('../../js/sim/food.js', () => ({ ageFood: rec('ageFood'), spawnFood: rec('spawnFood') }));
 vi.mock('../../js/sim/food-patches.js', () => ({ regrowPatches: rec('regrowPatches') }));
@@ -66,7 +64,6 @@ describe('step phase bodies', () => {
             ['clearEvents', world.events],
             ['updateSeason', world],
             ['advanceEra', world],
-            ['moveObstacles', world],
             ['buildHash', hash, world],
             ['senseAll', world, hash],
             ['forwardAll', world],
@@ -79,11 +76,10 @@ describe('step phase bodies', () => {
             ['mate', world, policy],
             ['applyCosts', world],
             ['advancePregnancies', world, policy],
+            ['tallyReady', world],
             ['splitAll', world, policy],
             ['reap', world, policy],
             ['fillFloor', world, policy],
-            ['rescuePredators', world, policy],
-            ['invade', world, policy],
             ['regrowPatches', world],
             ['spawnFood', world],
             ['ageFood', world],
@@ -96,12 +92,8 @@ describe('step phase bodies', () => {
         expect(world.tick).toBe(4);
     });
 
-    it('tallies the ready agents just before splitAll only with merit on', () => {
+    it('tallies the ready agents just before splitAll', () => {
         const { world, policy } = sentinels(false);
-        calls.length = 0;
-        step(world, policy);
-        expect(calls.some((c) => c[0] === 'tallyReady')).toBe(false);
-        world.config.meritEnabled = true;
         calls.length = 0;
         step(world, policy);
         const names = calls.map((c) => c[0]);

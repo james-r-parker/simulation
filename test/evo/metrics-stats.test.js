@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { mean, none, ok, per1k, quantile, ranks, share, spearman, stddev } from '../../js/evo/metrics-stats.js';
+import {
+    mean,
+    none,
+    ok,
+    pearson,
+    per1k,
+    quantile,
+    ranks,
+    share,
+    spearman,
+    stddev,
+} from '../../js/evo/metrics-stats.js';
 
 describe('metrics-stats', () => {
     it('ranks with ties sharing the mean position, and correlates ranks', () => {
@@ -36,5 +47,18 @@ describe('metrics-stats', () => {
         expect(per1k(5, 2000)).toEqual({ value: 2.5 });
         expect(per1k(5, 0).value).toBeNull();
         expect(per1k(5, 0).reason).toBeTypeOf('string');
+    });
+});
+
+describe('pearson', () => {
+    it('is the linear correlation, unlike the rank correlation of a curve', () => {
+        expect(pearson([1, 2, 3, 4], [2, 4, 6, 8])).toBeCloseTo(1, 12);
+        expect(pearson([1, 2, 3, 4], [8, 6, 4, 2])).toBeCloseTo(-1, 12);
+        expect(pearson([1, 2, 3, 4], [1, 4, 9, 16])).toBeCloseTo(0.984, 3);
+        expect(spearman([1, 2, 3, 4], [1, 4, 9, 16])).toBeCloseTo(1, 12);
+    });
+
+    it('is NaN for a constant sample', () => {
+        expect(pearson([1, 2, 3], [5, 5, 5])).toBeNaN();
     });
 });

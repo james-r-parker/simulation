@@ -95,7 +95,7 @@ function visitCell(counters, world, slot) {
  * @returns {void}
  */
 function sampleCrowding(counters, world, slot) {
-    const stride = world.layout.inputCount;
+    const stride = world.layout.rawInputCount;
     let best = 0;
     for (let k = 0; k < world.config.rayCount; k++) {
         const base = slot * stride + k * RAY_CHANNELS;

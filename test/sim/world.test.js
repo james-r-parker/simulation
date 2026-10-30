@@ -2,9 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createConfig } from '../../js/sim/config.js';
+import { terrainRockCount } from '../../js/sim/terrain.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
 import { HEARD_STRIDE, TIMER_CAP, allocAgent, allocateWorld, freeAgent, removeFood } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 8,
@@ -14,7 +15,6 @@ const SMALL = {
     brainHidden: 3,
     maxFood: 10,
     initialFood: 0,
-    obstacleCount: 2,
     fertileZoneMax: 3,
 };
 
@@ -23,7 +23,7 @@ const SMALL = {
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function smallWorld(over = {}) {
-    return allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }));
+    return allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...over }));
 }
 
 /**
@@ -75,9 +75,10 @@ describe('allocateWorld', () => {
 
     it('sizes the agent arrays from the config', () => {
         const w = smallWorld();
-        const { inputCount, weightCount } = w.layout;
+        const { inputCount, rawInputCount, weightCount } = w.layout;
         expect(w.alive.length).toBe(8);
-        expect(w.inputs.length).toBe(8 * inputCount);
+        expect(w.inputs.length).toBe(8 * rawInputCount);
+        expect(w.pooled.length).toBe(8 * inputCount);
         expect(w.outputs.length).toBe(8 * OUTPUT_COUNT);
         expect(w.weights.length).toBe(8 * weightCount);
         expect(w.fatherWeights.length).toBe(8 * weightCount);
@@ -90,7 +91,7 @@ describe('allocateWorld', () => {
     it('sizes food, obstacle, zone and pheromone arrays', () => {
         const w = smallWorld();
         expect(w.foodValue.length).toBe(10);
-        expect(w.obsX.length).toBe(2);
+        expect(w.obsX.length).toBe(terrainRockCount(w.config));
         expect(w.zoneAlive.length).toBe(3);
         expect(w.danger.length).toBe(
             Math.ceil(w.config.worldWidth / w.config.pheromoneCellSize) *
@@ -214,7 +215,7 @@ describe('allocateWorld platform check', () => {
     });
 
     it('refuses a big-endian platform', () => {
-        const config = createConfig({ ...FEATURES_OFF, ...SMALL });
+        const config = createConfig({ ...SIMPLE_WORLD, ...SMALL });
         vi.stubGlobal(
             'Uint16Array',
             class {

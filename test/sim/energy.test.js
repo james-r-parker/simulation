@@ -1,3 +1,4 @@
+import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import {
     ENERGY_SOURCE,
@@ -10,8 +11,8 @@ import {
 } from '../../js/sim/energy.js';
 import { createConfig } from '../../js/sim/config.js';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
-import { TIMER_CAP, allocAgent, allocateWorld } from '../../js/sim/world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { TIMER_CAP, allocateWorld } from '../../js/sim/world.js';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SMALL = {
     maxAgents: 4,
@@ -37,9 +38,9 @@ const SMALL = {
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function worldWith(n = 2) {
-    const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL }));
+    const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
     for (let i = 0; i < n; i++) {
-        world.temperature[allocAgent(world)] = world.config.temperatureStart;
+        world.temperature[allocBody(world)] = world.config.temperatureStart;
     }
     return world;
 }
@@ -260,8 +261,10 @@ describe('applyCosts', () => {
         world.cooldown[0] = 5;
         world.ateTimer[0] = TIMER_CAP;
         const c = world.config;
+        const scout = c.specialisations.scout;
         const expected =
-            (c.passiveLoss + c.movementCost * 25 * 0.7 + c.turnCost * 0.2 * 0.7 + c.sizeEnergyLoss * 20) * 1;
+            (c.passiveLoss + c.sizeEnergyLoss * 20) * scout.passiveLossMultiplier +
+            (c.movementCost * 25 + c.turnCost * 0.2) * scout.moveCostMultiplier;
         applyCosts(world);
         expect(world.ageTicks[0]).toBe(1);
         expect(world.cooldown[0]).toBe(4);
@@ -302,8 +305,8 @@ describe('applyCosts temperature', () => {
      * @returns {ReturnType<typeof allocateWorld>} a world with one 100-energy sitter of size 20 at `t`
      */
     function sitter(t, over = {}) {
-        const world = allocateWorld(createConfig({ ...FEATURES_OFF, ...SMALL, ...over }));
-        const slot = allocAgent(world);
+        const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, ...over }));
+        const slot = allocBody(world);
         world.energy[slot] = 100;
         world.size[slot] = 20;
         world.temperature[slot] = t;

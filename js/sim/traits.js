@@ -5,9 +5,6 @@ import { TRAIT_INDEX } from './brain-layout.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
 
-/** The smallest leak rate: a unit with a very negative leak gene still moves 5% toward its target each tick. */
-export const LEAK_MIN = 0.05;
-
 /** A trait gene moves its trait by at most this fraction of the default: 0.7 to 1.3. */
 export const TRAIT_SPAN = 0.3;
 
@@ -24,50 +21,42 @@ export function traitValue(gene) {
 }
 
 /**
- * True when any biology feature that adds genes to the mutation step is on, which switches the trait and leak genes
- * from the weight sigma to `TRAIT_SIGMA`. Off, a mutation is the same as before the features existed.
- * @param {Readonly<Record<string, any>>} config the config
- * @returns {boolean} whether `leakEnabled`, `traitsEnabled` or `hebbianRate` is on
- */
-export function biologyOn(config) {
-    return config.leakEnabled || config.traitsEnabled || config.hebbianRate > 0;
-}
-
-/**
  * @param {Record<string, any>} world the world
  * @param {number} slot the alive slot
- * @returns {number} the slot's ray length: its specialisation's `visionRange` times its vision trait (1 when off)
+ * @returns {number} the slot's ray length: its specialisation's `visionRange` times its vision trait
  */
 export function visionOf(world, slot) {
     const base = world.visionBySpec[world.spec[slot]];
-    return world.config.traitsEnabled ? base * world.vision[slot] : base;
+    return base * world.vision[slot];
 }
 
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot
- * @returns {number} the slot's base size: `baseSize` times its size trait (the config value when traits are off)
+ * @returns {number} the slot's base size: `baseSize` times its size trait
  */
 export function baseSizeOf(world, slot) {
-    return world.config.traitsEnabled ? world.baseSize[slot] : world.config.baseSize;
+    return world.baseSize[slot];
 }
 
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the mother's slot
- * @returns {number} the share of its energy the mother gives a mating child (the config value when traits are off)
+ * @returns {number} the share of its energy the mother gives a mating child
  */
 export function childShareOf(world, slot) {
-    return world.config.traitsEnabled ? world.childShare[slot] : world.config.childEnergyShare;
+    return world.childShare[slot];
 }
 
 /**
  * The share of the new value a hidden unit takes each tick.
  * @param {number} gene the unit's leak gene
- * @returns {number} `LEAK_MIN + (1 - LEAK_MIN) x sigmoid(gene)`, in `[LEAK_MIN, 1]`
+ * @param {number} leakMin the smallest leak rate (`config.leakMin`): a unit with a very negative leak gene still moves
+ *   this share toward its target each tick
+ * @returns {number} `leakMin + (1 - leakMin) x sigmoid(gene)`, in `[leakMin, 1]`
  */
-export function leakRateOf(gene) {
-    return LEAK_MIN + (1 - LEAK_MIN) * detSigmoid(gene);
+export function leakRateOf(gene, leakMin) {
+    return leakMin + (1 - leakMin) * detSigmoid(gene);
 }
 
 /**
@@ -78,20 +67,16 @@ export function leakRateOf(gene) {
  */
 export function applyGenes(world, slot) {
     const { config, layout, weights } = world;
-    if (config.traitsEnabled) {
-        const genes = slot * layout.weightCount + layout.traitStart;
-        world.vision[slot] = traitValue(weights[genes + TRAIT_INDEX.VISION]);
-        world.baseSize[slot] = config.baseSize * traitValue(weights[genes + TRAIT_INDEX.SIZE]);
-        world.childShare[slot] = config.childEnergyShare * traitValue(weights[genes + TRAIT_INDEX.CHILD_SHARE]);
-    }
+    const genes = slot * layout.weightCount + layout.traitStart;
+    world.vision[slot] = traitValue(weights[genes + TRAIT_INDEX.VISION]);
+    world.baseSize[slot] = config.baseSize * traitValue(weights[genes + TRAIT_INDEX.SIZE]);
+    world.childShare[slot] = config.childEnergyShare * traitValue(weights[genes + TRAIT_INDEX.CHILD_SHARE]);
     if (config.hebbianRate > 0) {
         resetFastOut(world, slot);
     }
-    if (config.leakEnabled) {
-        const H = layout.hidden;
-        const genes = slot * layout.weightCount + layout.leakStart;
-        for (let j = 0; j < H; j++) {
-            world.leakRate[slot * H + j] = leakRateOf(weights[genes + j]);
-        }
+    const H = layout.hidden;
+    const leakGenes = slot * layout.weightCount + layout.leakStart;
+    for (let j = 0; j < H; j++) {
+        world.leakRate[slot * H + j] = leakRateOf(weights[leakGenes + j], config.leakMin);
     }
 }

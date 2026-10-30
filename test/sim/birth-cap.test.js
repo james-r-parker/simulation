@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advancePregnancies, splitAll } from '../../js/sim/reproduction.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const ON = { capBirthsEnabled: true, meritEnabled: true, meritHalf: 1000, childEnergyMin: 1 };
+const ON = { capBirthsEnabled: true, meritHalf: 1000, childEnergyMin: 1 };
 
 /**
  * A world with one pregnant mother due this tick per merit given, then `fillers` idle agents.
@@ -73,12 +73,6 @@ describe('merit at the cap: pregnancies', () => {
         expect(parents(w, 3)).toEqual([0, 1, 2]);
         expect(w.population).toBe(6);
     });
-
-    it('keeps slot order at the cap when merit is off', () => {
-        const w = pregnantWorld({ maxAgents: 5, meritEnabled: false }, [10, 900, 50], 1);
-        advancePregnancies(w, recordingPolicy([]));
-        expect(parents(w, 3)).toEqual([0]);
-    });
 });
 
 describe('merit at the cap: splits', () => {
@@ -119,11 +113,5 @@ describe('merit at the cap: splits', () => {
         const w = splitWorld({}, [1, 30, 20]);
         splitAll(w, recordingPolicy([]));
         expect(parents(w, 3)).toEqual([0, 1, 2]);
-    });
-
-    it('keeps slot order at the cap when merit is off', () => {
-        const w = splitWorld({ maxAgents: 5, meritEnabled: false }, [1, 30, 20]);
-        splitAll(w, recordingPolicy([]));
-        expect(parents(w, 3)).toEqual([0, 1]);
     });
 });

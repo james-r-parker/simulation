@@ -4,13 +4,16 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { createObserver, observe, observerPhases } from '../../js/evo/observer.js';
-import { createNaturalV1 } from '../../js/evo/policies/natural-v1.js';
+import { createRandomBrain } from '../../js/evo/policies/random-brain.js';
 import { SURVIVABLE_PREDATOR_EVERY, playPredatorWorld, survivableWorld } from '../evo/helpers/predator-world.js';
-import { FEATURES_OFF } from '../../scripts/lib/features-on.mjs';
+import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 3000;
 const TIMEOUT_MS = scaleTimeout(120_000);
+
+/** Two sums of the same bite and meal energies, added in a different order, differ by rounding (about 1e-16 relative). */
+const SAME = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(b));
 
 /**
  * Compares, per alive slot after each tick, the `merit` phase's raw deliberate intake with the observer's deliberate
@@ -24,7 +27,7 @@ function phaseHarness() {
             if (world.alive[slot] === 1 && world.ageTicks[slot] > 0) {
                 const expected = intent.deliberateFood[slot] + intent.deliberateBite[slot];
                 stats.checks += 1;
-                stats.mismatches += world.deliberateIntake[slot] === expected ? 0 : 1;
+                stats.mismatches += SAME(world.deliberateIntake[slot], expected) ? 0 : 1;
                 stats.deliberate += expected > 0 ? 1 : 0;
             }
         }
@@ -36,8 +39,8 @@ describe('the merit phase agrees with observer.intent', () => {
     it(
         'on the deliberate intake of every slot of the default world, seed 1, 3000 ticks, random brains',
         () => {
-            const config = createConfig({ ...FEATURES_OFF, meritEnabled: true, seed: 1 });
-            const policy = createNaturalV1({ config }).brain;
+            const config = createConfig({ ...SIMPLE_WORLD, seed: 1 });
+            const policy = createRandomBrain(config).brain;
             const world = createWorld(config, policy);
             const observer = createObserver(config, fork(createRng(1), 'eval'));
             observe(observer, world);
@@ -60,7 +63,7 @@ describe('the merit phase agrees with observer.intent', () => {
             const { onTick, stats } = phaseHarness();
             const { world } = playPredatorWorld(seed, TICKS, {
                 world: survivableWorld,
-                config: { meritEnabled: true },
+                config: {},
                 predatorEvery: SURVIVABLE_PREDATOR_EVERY,
                 onTick,
             });

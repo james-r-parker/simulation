@@ -7,10 +7,13 @@ import { sampleEnvironment } from './metrics-environment.js';
 import { sampleMerit } from './metrics-merit.js';
 import { samplePresence } from './metrics-watch.js';
 import { sampleWatchability } from './metrics-watchability.js';
+import { sampleBrainCheckpoint } from './metrics-brain.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
 export const DOMINANCE_MARGIN = 2;
+
+const EMPTY_SAMPLE = new Int32Array(0);
 
 /** Most agents compared for diversity. */
 export const DIVERSITY_SAMPLE = 64;
@@ -87,16 +90,19 @@ function sampleSlots(world, rng) {
 }
 
 /**
- * Mean pairwise L2 distance between the weight rows of a sample of alive agents over `sqrt(weightCount)`.
+ * Mean pairwise L2 distance between the weight rows of a sample of alive agents over `sqrt(weightCount)`. The sampled
+ * slots are left in `observer.sampled` for the brain samplers, which draw nothing of their own.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
  * @returns {number} the diversity, NaN when fewer than 2 agents are alive
  */
 export function diversity(observer, world) {
     if (world.population < 2) {
+        observer.sampled = EMPTY_SAMPLE;
         return NaN;
     }
     const slots = sampleSlots(world, observer.rng);
+    observer.sampled = slots;
     const n = world.layout.weightCount;
     const w = world.weights;
     let total = 0;
@@ -155,6 +161,7 @@ export function checkpoint(observer, world) {
     log.dominantLineage[row] = dominantLineage(observer, counts);
     log.predatorShare[row] = world.population > 0 ? predators / world.population : 0;
     log.diversity[row] = diversity(observer, world);
+    sampleBrainCheckpoint(observer, world);
     log.specMask[row] = specMask;
     log.archiveAgents[row] = archiveAgents;
     observer.checkpointCount = row + 1;

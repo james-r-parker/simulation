@@ -3,7 +3,7 @@ import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { MIN_CORRELATION_DEATHS, selectionMetrics } from '../../js/evo/metrics-selection.js';
-import { addCheckpoint, addDeath, bareObserver } from './helpers/metrics-observer.js';
+import { addCheckpoint, addDeath, bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 const NAMES = [
     'eval.offspring_per_life',
@@ -20,7 +20,8 @@ const LATE = { birthTick: BURN_IN_TICKS, ageTicks: 100 };
 describe('selectionMetrics', () => {
     it('is null with a reason for every metric on an empty observer', () => {
         const m = selectionMetrics(bareObserver());
-        expect(Object.keys(m)).toEqual(NAMES);
+        expect(Object.keys(m).slice(0, NAMES.length)).toEqual(NAMES);
+        expect(Object.keys(m).length).toBe(NAMES.length + 12);
         expect(m['eval.offspring_per_life']).toEqual({ value: null, reason: 'no completed life after burn-in' });
         expect(m['eval.archive_lineage_share']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.kin_within_call_radius']).toEqual({ value: null, reason: 'no alarm call' });
@@ -87,7 +88,7 @@ describe('selectionMetrics', () => {
     });
 
     it('is merged into computeMetrics and is watch-only', () => {
-        const m = computeMetrics(bareObserver(), {});
+        const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
             expect(m[name], name).toBeDefined();
             expect(metricDirection(name)).toBe('watch');

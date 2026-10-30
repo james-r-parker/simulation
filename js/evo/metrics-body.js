@@ -10,8 +10,6 @@ import { none, ok } from './metrics-stats.js';
 /** The body-plan grid is this many bins on each of the size and vision traits. */
 export const GRID_BINS = 5;
 
-const NO_TRAITS = 'traitsEnabled is off';
-const NO_SEXES = 'sexesEnabled is off';
 const NO_SPREAD = 'no checkpoint after burn-in with 2 alive agents';
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
 
@@ -72,9 +70,7 @@ export function sampleBody(pools, world) {
             q1 += vision[slot] * vision[slot];
             s2 += childShare[slot];
             q2 += childShare[slot] * childShare[slot];
-            if (config.traitsEnabled) {
-                pools.cells[binOf(baseSize[slot] / config.baseSize) * GRID_BINS + binOf(vision[slot])] = 1;
-            }
+            pools.cells[binOf(baseSize[slot] / config.baseSize) * GRID_BINS + binOf(vision[slot])] = 1;
         }
     }
     if (n === 0) {
@@ -95,7 +91,6 @@ export function sampleBody(pools, world) {
  */
 export function bodyMetrics(observer) {
     const { sampled, spreadSum, spreadCount, cells, sexSum } = observer.body;
-    const { traitsEnabled, sexesEnabled } = observer.config;
     let occupied = 0;
     for (let i = 0; i < cells.length; i++) {
         occupied += cells[i];
@@ -104,8 +99,8 @@ export function bodyMetrics(observer) {
     const coverage = sampled === 0 ? none(NO_SAMPLE) : ok(occupied / cells.length);
     const balance = sampled === 0 ? none(NO_SAMPLE) : ok(sexSum / sampled);
     return {
-        'eval.trait_spread': traitsEnabled ? spread : none(NO_TRAITS),
-        'eval.body_plan_coverage': traitsEnabled ? coverage : none(NO_TRAITS),
-        'eval.sex_balance': sexesEnabled ? balance : none(NO_SEXES),
+        'eval.trait_spread': spread,
+        'eval.body_plan_coverage': coverage,
+        'eval.sex_balance': balance,
     };
 }

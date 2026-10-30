@@ -399,9 +399,9 @@ describe('hearing', () => {
     });
 
     it('finds hearers across hash cells', () => {
-        const w = build({ hashCellSize: 128 });
-        const caller = agent(w, { x: 127, y: 127 });
-        const hearer = agent(w, { x: 129, y: 400 });
+        const w = build({ hashCellSize: 140 });
+        const caller = agent(w, { x: 139, y: 139 });
+        const hearer = agent(w, { x: 141, y: 400 });
         w.alarmTimer[caller] = 10;
         run(w);
         expect(heard(w, hearer)[0]).toBeGreaterThan(0);

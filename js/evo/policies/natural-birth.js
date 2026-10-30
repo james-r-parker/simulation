@@ -1,10 +1,12 @@
-// The birth half shared by `natural-v1` and `map-elites-v1`: per-slot `sigma`, per-mother `fatherSigma`, `onMate`
+// The birth half shared by the random brain and the MAP-Elites policies: per-slot `sigma`, per-mother `fatherSigma`, `onMate`
 // and `childBrain` (self-adaptive mutation, neuron-block crossover).
 
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { decaySilentInputs } from '../../evo/weight-decay.js';
+import { brainLayout } from '../../sim/brain-layout.js';
+import { resolveMutationRate } from '../../sim/mutation-rate.js';
 import { BORN_CAUSE } from '../../sim/events.js';
-import { biologyOn } from '../../sim/traits.js';
 
 /**
  * Row views are built once per slot and reused (a `subarray` allocates), so births allocate nothing after warm-up.
@@ -24,13 +26,29 @@ export function rowOf(cache, array, { slot, count }) {
 }
 
 /**
+ * Lets the eval observer see a birth half: the brain metrics read its step sizes (`observer.sigma`).
+ * @param {Record<string, any>} observer the eval observer
+ * @param {{sigma: Float32Array}} birth a `createBirth` result
+ * @returns {void}
+ */
+export function shareBirth(observer, birth) {
+    observer.sigma = birth.sigma;
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {{sigma: Float32Array, fatherSigma: Float32Array, onMate: Function, childBrain: Function}} the step sizes
- *   (per slot, and per mother for the coming child) and the two hooks that use them
+ * @returns {{sigma: Float32Array, fatherSigma: Float32Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
+ *   the step sizes (per slot, and per mother for the coming child),
+ *   `mutation` (the options every `mutateWeights` call takes) and the two hooks that use them
  */
 export function createBirth(config) {
     const sigma = new Float32Array(config.maxAgents);
     const fatherSigma = new Float32Array(config.maxAgents);
+    const layout0 = brainLayout(config);
+    const mutation = {
+        traitStart: layout0.traitStart,
+        rate: resolveMutationRate(config.mutationRate, layout0.weightCount),
+    };
     /** @type {(Float32Array | undefined)[]} */
     const motherRows = [];
     /** @type {(Float32Array | undefined)[]} */
@@ -66,9 +84,12 @@ export function createBirth(config) {
         } else {
             row.set(motherRow);
         }
-        mutateWeights(row, childSigma, rng, biologyOn(world.config) ? layout.traitStart : count);
+        mutateWeights(row, childSigma, rng, mutation);
+        if (config.weightDecay > 0) {
+            decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });
+        }
         sigma[child] = childSigma;
     }
 
-    return { sigma, fatherSigma, onMate, childBrain };
+    return { sigma, fatherSigma, mutation, onMate, childBrain };
 }

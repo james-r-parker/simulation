@@ -3,6 +3,7 @@ import { SNAPSHOT_FLAG, createSnapshotViews, snapshotLayout, writeSnapshot } fro
 import { spawnAgent } from '../../js/sim/spawn.js';
 import { OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
+import { terrainRockCount } from '../../js/sim/terrain.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { smallWorld } from './helpers/small-world.js';
 import { testPolicy } from './helpers/test-policy.js';
@@ -18,7 +19,7 @@ describe('snapshotLayout', () => {
             obstacleStride: 3,
             cloudStride: 3,
         });
-        expect(layout.bytes).toBe((6 + 8 * (12 + 4) + 4 * 4 + 2 * 3 + 32 * 3) * 4);
+        expect(layout.bytes).toBe((6 + 8 * (12 + 4) + 4 * 4 + terrainRockCount(smallWorld().config) * 3 + 32 * 3) * 4);
     });
 });
 
@@ -40,7 +41,7 @@ describe('writeSnapshot', () => {
         const { f32, u32 } = createSnapshotViews(buffer);
         writeSnapshot(world, { f32, u32 });
 
-        expect(Array.from(u32.subarray(0, 6))).toEqual([12, 2, 1, world.config.obstacleCount, 0, 0]);
+        expect(Array.from(u32.subarray(0, 6))).toEqual([12, 2, 1, world.obsX.length, 0, 0]);
         expect(u32[6 + 8]).toBe(0);
         expect(u32[6 + 12 + 8]).toBe(2);
         expect(f32[6 + 12]).toBe(world.x[2]);
@@ -58,7 +59,7 @@ describe('writeSnapshot', () => {
         world.cloudTtl.set([100, 50]);
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        const start = 6 + 2 * 3;
+        const start = 6 + world.obsX.length * 3;
         expect(views.u32[4]).toBe(2);
         expect(Array.from(views.f32.subarray(start, start + 9))).toEqual([10, 20, 0.5, 30, 40, 0.25, 0, 0, 0]);
     });
@@ -96,11 +97,11 @@ describe('writeSnapshot exact layout', () => {
         expect(Array.from(f32.subarray(6, 10))).toEqual([11, 12, 1.5, 13]);
         expect(f32[10]).toBe(0.25);
         expect(Array.from(u32.subarray(11, 15))).toEqual([4, 21, 22, 3]);
-        expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, 2, 0, 0]);
+        expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, world.obsX.length, 0, 0]);
         const obstacleStart = 6 + 12;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);
-        expect(f32[obstacleStart + 6]).toBe(0);
-        expect(Array.from(u32.subarray(obstacleStart + 6))).toEqual(new Array(u32.length - obstacleStart - 6).fill(0));
+        const after = obstacleStart + 3 * world.obsX.length;
+        expect(Array.from(u32.subarray(after))).toEqual(new Array(u32.length - after).fill(0));
     });
 
     it('accepts a buffer of exactly the layout size and rejects one word less', () => {
@@ -194,7 +195,7 @@ describe('writeSnapshot rays', () => {
      */
     function twoAgents() {
         const world = smallWorld();
-        const stride = world.layout.inputCount;
+        const stride = world.layout.rawInputCount;
         for (const slot of [1, 3]) {
             world.alive[slot] = 1;
             for (let k = 0; k < world.config.rayCount; k++) {
@@ -209,7 +210,7 @@ describe('writeSnapshot rays', () => {
         world.cloudCount = 1;
         writeSnapshot(world, views, true);
         const { rayCount } = world.config;
-        const start = 6 + 2 * 12 + 0 * 3 + world.config.obstacleCount * 3 + 3;
+        const start = 6 + 2 * 12 + 0 * 3 + world.obsX.length * 3 + 3;
         expect(views.u32[5]).toBe(rayCount);
         const expected = [1, 3].flatMap((slot) => Array.from({ length: rayCount }, (_, k) => slot / 10 + k / 100));
         expect(Array.from(views.f32.subarray(start, start + 2 * rayCount))).toEqual(expected.map(Math.fround));

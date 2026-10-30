@@ -1,6 +1,5 @@
-// Finds a mating partner for one agent among the agents within `mateRange` of it, using the tick's spatial hash.
+// Female choice: finds the male a ready female mates with among the agents within `mateRange`, using the tick's spatial hash.
 
-import { meritPeek } from './merit.js';
 import { canMatePair } from './mate-eligibility.js';
 import { nextFloat } from './rng.js';
 import { SEX } from './sex.js';
@@ -41,59 +40,6 @@ function isPartner(world, a, b) {
 }
 
 /**
- * Scans one cell's entries in order for a partner of `a` that is owned by the cell and wins the draw.
- * @param {World} world the world
- * @param {number} a the searching agent
- * @param {number} cell the cell index
- * @param {number} chance the probability that an eligible pair mates
- * @returns {number} the partner slot, or -1
- */
-function scanCell(world, a, cell, chance) {
-    const hash = world.hash;
-    const col = cell % hash.cols;
-    const row = (cell - col) / hash.cols;
-    for (let e = hash.cellStart[cell]; e < hash.cellStart[cell + 1]; e++) {
-        const b = hash.entries[e];
-        if (
-            b > a &&
-            b < hash.maxAgents &&
-            world.alive[b] === 1 &&
-            firstScannedCell(hash, e, col, row) &&
-            isPartner(world, a, b) &&
-            nextFloat(world.rng.lifecycle) < chance
-        ) {
-            return b;
-        }
-    }
-    return -1;
-}
-
-/**
- * Finds the first partner for `a` with a higher slot: scanning the cells that cover `a`'s body plus `mateRange` in
- * row-major order and each cell's entries in entry order, the first that passes `canMatePair` and the `chance` draw.
- * One `lifecycle` draw is made for each pair that passes everything but the draw. Allocates nothing.
- * @param {World} world the world, with the hash built this tick
- * @param {number} a the searching agent, alive
- * @param {number} chance the probability that an eligible pair mates
- * @returns {number} the partner slot, or -1
- */
-export function findMate(world, a, chance) {
-    const hash = world.hash;
-    const range = cellRange(hash, world.x[a], world.y[a], world.size[a] + world.config.mateRange);
-    const col0 = range[0];
-    const col1 = range[2];
-    for (let row = range[1]; row <= range[3]; row++) {
-        for (let col = col0; col <= col1; col++) {
-            const b = scanCell(world, a, row * hash.cols + col, chance);
-            if (b >= 0) {
-                return b;
-            }
-        }
-    }
-    return -1;
-}
-
-/**
  * Whether entry `e` of `cell` is a male the female `a` may mate with that the scan owns, and so is a choice.
  * @param {World} world the world
  * @param {number} a the searching female
@@ -116,29 +62,7 @@ function isChoice(world, a, e, cell) {
 }
 
 /**
- * Whether the mate score blends merit in (`meritEnabled` with a non-zero `meritMateWeight`).
- * @param {World} world the world
- * @returns {boolean}
- */
-function meritRanks(world) {
-    return world.config.meritEnabled && world.config.meritMateWeight > 0;
-}
-
-/**
- * The mate score of male `b`: `(1 - w) x energy / maxEnergy + w x m`, `m = merit / (merit + meritHalf)` of his merit
- * decayed to now. Reads merit without restamping it, so the order of the scan changes nothing in the world.
- * @param {World} world the world
- * @param {number} b the male
- * @returns {number}
- */
-function mateScore(world, b) {
-    const { meritMateWeight, maxEnergy, meritHalf } = world.config;
-    const merit = meritPeek(world, b);
-    return ((1 - meritMateWeight) * world.energy[b]) / maxEnergy + (meritMateWeight * merit) / (merit + meritHalf);
-}
-
-/**
- * Whether male `b` beats `pick` (a slot, or -1): more score, ties to the lower slot.
+ * Whether male `b` beats `pick` (a slot, or -1): a higher mate rank, ties to the lower slot.
  * @param {World} world the world
  * @param {number} b the candidate
  * @param {number} pick the best so far, or -1
@@ -148,17 +72,13 @@ function beats(world, b, pick) {
     if (pick < 0) {
         return true;
     }
-    if (meritRanks(world)) {
-        const sb = mateScore(world, b);
-        const sp = mateScore(world, pick);
-        return sb > sp || (sb === sp && b < pick);
-    }
-    return world.energy[b] > world.energy[pick] || (world.energy[b] === world.energy[pick] && b < pick);
+    const rb = world.mateRank[b];
+    const rp = world.mateRank[pick];
+    return rb > rp || (rb === rp && b < pick);
 }
 
 /**
- * Finds the candidate of one cell that beats `best`: the male with the best mate score (energy alone unless merit
- * ranks), ties to the lower slot.
+ * Finds the candidate of one cell that beats `best`: the male with the highest mate rank, ties to the lower slot.
  * @param {World} world the world
  * @param {number} a the searching female
  * @param {number} cell the cell index
@@ -178,8 +98,8 @@ function bestInCell(world, a, cell, best) {
 }
 
 /**
- * Female choice: the male with the best mate score (most energy unless merit ranks; ties to the lower slot) among those of her specialisation within
- * `mateRange` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
+ * Female choice: the male with the highest mate rank (`mate-rank.js`; ties to the lower slot) among those of her specialisation
+ * within `mateRange` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
  * @param {World} world the world, with the hash built this tick
  * @param {number} a the searching female, alive
  * @param {number} chance the probability that the chosen pair mates

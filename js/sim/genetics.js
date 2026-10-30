@@ -1,5 +1,7 @@
 // Genetic distance between two agents, read from a fixed sample of their weight rows.
 
+import { POOLED_VALUES } from './brain-layout.js';
+
 /** @typedef {import('./world.js').World} World */
 
 /** How many weight indices `geneticDistance` averages over. */
@@ -13,8 +15,21 @@ const SAMPLES = new WeakMap();
 
 /**
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
+ * @param {number} i an index in `0 .. traitStart`
+ * @returns {number} the inverse square of the random-init sd of `i`'s block
+ */
+function blockSdSquared(layout, i) {
+    if (i < layout.bHidden) {
+        return layout.inputCount + layout.hidden;
+    }
+    return i >= layout.wSkip ? POOLED_VALUES : layout.hidden;
+}
+
+/**
+ * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
  * @returns {{index: Int32Array, invSd: Float64Array}} the sampled indices `(k x 7919) mod traitStart` and the inverse
- *   random-init sd of each one's block: `sqrt(inputCount + hidden)` in `wIn` and `wRec`, `sqrt(hidden)` elsewhere
+ *   random-init sd of each one's block: `sqrt(inputCount + hidden)` in `wIn` and `wRec`, `sqrt(POOLED_VALUES)` in `wSkip`,
+ *   `sqrt(hidden)` elsewhere
  */
 function sampleOf(layout) {
     let sample = SAMPLES.get(layout);
@@ -23,7 +38,7 @@ function sampleOf(layout) {
         const invSd = new Float64Array(SIMILARITY_DIMS);
         for (let k = 0; k < SIMILARITY_DIMS; k++) {
             index[k] = (k * STRIDE) % layout.traitStart;
-            invSd[k] = Math.sqrt(index[k] < layout.bHidden ? layout.inputCount + layout.hidden : layout.hidden);
+            invSd[k] = Math.sqrt(blockSdSquared(layout, index[k]));
         }
         sample = { index, invSd };
         SAMPLES.set(layout, sample);
