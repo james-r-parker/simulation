@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { INFO_DIR as FIXTURE_INFO_DIR } from '../bench/micro/brain-fixture.js';
+import { PHASE_PARTS } from '../bench/micro/phase-parts.js';
+import { STEP_PHASES } from '../js/sim/step.js';
 import { INFO_DIR, benchAreas, benchFiles, readInfo, vitestFilter } from '../scripts/lib/micro-bench.mjs';
 
 const FILES = ['brain.bench.js', 'brain-parts.bench.js', 'brain-sweep.bench.js', 'sense-ray-march.bench.js'];
@@ -28,6 +30,23 @@ afterEach(() => {
 describe('benchAreas', () => {
     it('names each area once: the file name up to the first dash', () => {
         expect(benchAreas(FILES)).toEqual(['brain', 'sense']);
+    });
+});
+
+describe('the step phases', () => {
+    it('each have a bench area, so bench:parts can time any phase', () => {
+        const areas = benchAreas(benchFiles('.'));
+        for (const { name } of STEP_PHASES) {
+            expect(areas, name).toContain(name);
+        }
+    });
+
+    it('each have their parts listed, except the brain, which has its own parts suite', () => {
+        expect(Object.keys(PHASE_PARTS).sort()).toEqual(
+            STEP_PHASES.map((p) => p.name)
+                .filter((name) => name !== 'brain')
+                .sort(),
+        );
     });
 });
 

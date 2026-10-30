@@ -21,7 +21,7 @@
     "browser:hash": "node scripts/browser-hash.mjs",
     "bench": "node scripts/bench.mjs",
     "bench:micro": "node scripts/bench-micro.mjs",
-    "bench:brain": "node scripts/bench-micro.mjs --area brain",
+    "bench:parts": "node scripts/bench-micro.mjs",
     "bench:parallel": "node scripts/bench-parallel.mjs",
     "replay": "node scripts/replay.mjs",
     "eval": "node scripts/eval.mjs",
