@@ -6,6 +6,7 @@ import { coverage, qdScore } from './archive.js';
 import { combatMetrics } from './metrics-combat.js';
 import { bodyMetrics } from './metrics-body.js';
 import { brainMetrics } from './metrics-brain.js';
+import { instinctMetrics } from './metrics-instinct.js';
 import { dominanceMetrics } from './metrics-dominance.js';
 import { environmentMetrics } from './metrics-environment.js';
 import { fitnessMetrics } from './metrics-fitness.js';
@@ -143,6 +144,7 @@ export function computeMetrics(observer, world, options = {}) {
         ...watchabilityMetrics(observer),
         ...sceneMetrics(observer, world),
         ...brainMetrics(observer),
+        ...instinctMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
         'eval.coverage': archive === undefined ? none('no archive') : ok(coverage(archive)),

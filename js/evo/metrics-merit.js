@@ -14,6 +14,7 @@ import { createLog, ensureRoom } from './growable-log.js';
 import { DIET_DIRECTIONS } from './metrics-diet.js';
 import { none, ok, spearman } from './metrics-stats.js';
 import { BRAIN_DIRECTIONS } from './metrics-brain.js';
+import { INSTINCT_DIRECTIONS } from './metrics-instinct.js';
 import { RULE_DIRECTIONS } from './metrics-rules.js';
 import { SCENE_DIRECTIONS } from './metrics-scenes.js';
 import { WATCHABILITY_DIRECTIONS } from './metrics-watchability.js';
@@ -36,6 +37,7 @@ export const MERIT_DIRECTIONS = Object.freeze({
     ...SCENE_DIRECTIONS,
     ...RULE_DIRECTIONS,
     ...BRAIN_DIRECTIONS,
+    ...INSTINCT_DIRECTIONS,
 });
 
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';

@@ -8,6 +8,7 @@ import { sampleMerit } from './metrics-merit.js';
 import { samplePresence } from './metrics-watch.js';
 import { sampleWatchability } from './metrics-watchability.js';
 import { sampleBrainCheckpoint } from './metrics-brain.js';
+import { sampleInstinct } from './metrics-instinct.js';
 import { BURN_IN_TICKS } from './observer-events.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
@@ -162,6 +163,7 @@ export function checkpoint(observer, world) {
     log.predatorShare[row] = world.population > 0 ? predators / world.population : 0;
     log.diversity[row] = diversity(observer, world);
     sampleBrainCheckpoint(observer, world);
+    sampleInstinct(observer.instinct, observer, world);
     log.specMask[row] = specMask;
     log.archiveAgents[row] = archiveAgents;
     observer.checkpointCount = row + 1;

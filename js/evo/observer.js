@@ -6,6 +6,7 @@ import { createEnvironmentPools } from './metrics-environment.js';
 import { createWatchPools } from './metrics-watch.js';
 import { sampleVisits } from './watch-visits.js';
 import { createBrainPools, observeBrain } from './metrics-brain.js';
+import { createInstinctPools } from './metrics-instinct.js';
 import { createLineagePools } from './metrics-lineage.js';
 import { createDietPools } from './metrics-diet.js';
 import { createWatchabilityPools, trackCircling } from './metrics-watchability.js';
@@ -140,6 +141,7 @@ export function createObserver(config, rng, options = {}) {
         scenes: createScenes(config),
         windows: createWindows(options.runTicks ?? 0),
         ...createBrainPools(config, options),
+        instinct: createInstinctPools(config),
     };
     for (const [name, Type] of Object.entries(SLOT_TYPES)) {
         /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
