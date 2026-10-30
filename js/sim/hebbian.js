@@ -11,6 +11,12 @@ export const HEBB_DECAY = 0.01;
 export const HEBB_CLAMP = 4;
 
 /**
+ * The slot's gene outputs, read once per agent instead of through `GENE_OUTPUTS` in the inner loop. Float64 holds each
+ * float32 output exactly, so the products are the same.
+ */
+const geneOut = new Float64Array(GENE_OUTPUTS.length);
+
+/**
  * Starts a slot's plastic block equal to the genome's hidden-to-output block.
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot whose `weights` row was just written
@@ -43,13 +49,17 @@ export function hebbianStep(world, slot) {
         detSigmoid(weights[slot * layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN]);
     const genome = slot * layout.weightCount + layout.wOut;
     const plastic = slot * H * G;
+    const out = geneOut;
+    for (let g = 0; g < G; g++) {
+        out[g] = outputs[slot * OUT + GENE_OUTPUTS[g]];
+    }
     for (let j = 0; j < H; j++) {
         const h = hidden[slot * H + j];
+        const row = j * G;
         for (let g = 0; g < G; g++) {
-            const i = j * G + g;
-            const f = fastOut[plastic + i];
-            const next = f + eta * (h * outputs[slot * OUT + GENE_OUTPUTS[g]] - HEBB_DECAY * (f - weights[genome + i]));
-            fastOut[plastic + i] = Math.min(HEBB_CLAMP, Math.max(-HEBB_CLAMP, next));
+            const f = fastOut[plastic + row + g];
+            const next = f + eta * (h * out[g] - HEBB_DECAY * (f - weights[genome + row + g]));
+            fastOut[plastic + row + g] = next > HEBB_CLAMP ? HEBB_CLAMP : next < -HEBB_CLAMP ? -HEBB_CLAMP : next;
         }
     }
 }
