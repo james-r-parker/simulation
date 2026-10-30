@@ -35,13 +35,14 @@ function writeMemoryInputs(world, slot, o) {
  * @returns {void}
  */
 export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH = detSin(world.angle[slot])) {
-    const { maxEnergy, maxVelocity, maxTurn, baseSize, energyToSize, maxAgeTicks, rayCount } = world.config;
+    const { maxVelocity, maxTurn, baseSize, energyToSize, maxAgeTicks, rayCount } = world.config;
     const o = slot * world.layout.rawInputCount + rayCount * RAY_CHANNELS;
     const out = world.inputs;
     const vx = world.vx[slot];
     const vy = world.vy[slot];
     const x = world.x[slot];
     const y = world.y[slot];
+    const maxEnergy = world.maxEnergyBySpec[world.spec[slot]];
     out[o] = world.energy[slot] / maxEnergy;
     out[o + 1] = (vx * cH + vy * sH) / maxVelocity;
     out[o + 2] = (-vx * sH + vy * cH) / maxVelocity;

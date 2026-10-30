@@ -48,8 +48,8 @@ function tryEat(world, slot, food) {
  * @returns {boolean} whether the agent may eat this tick
  */
 export function canEatNow(world, slot) {
-    const { satiationShare, digestTicks, maxEnergy } = world.config;
-    if (satiationShare > 0 && world.energy[slot] >= satiationShare * maxEnergy) {
+    const { satiationShare, digestTicks } = world.config;
+    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.maxEnergyBySpec[world.spec[slot]]) {
         return false;
     }
     return digestTicks === 0 || world.ateTimer[slot] >= digestTicks;
@@ -105,7 +105,7 @@ function bites(world, biter, victim) {
 
 /**
  * The kick a landed bite costs the biter: `biteCost` x (victim size / biter size) x (0.5 + victim energy /
- * `maxEnergy`) x the victim's `kickMultiplier`. A big, fed or defender victim kicks hardest, a small, starving one
+ * its own store) x the victim's `kickMultiplier`. A big, fed or defender victim kicks hardest, a small, starving one
  * barely at all. Read before the bite moves energy.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
@@ -115,7 +115,7 @@ function bites(world, biter, victim) {
 function kickOf(world, biter, victim) {
     const { config } = world;
     const sizeRatio = world.size[victim] / world.size[biter];
-    const fullness = 0.5 + world.energy[victim] / config.maxEnergy;
+    const fullness = 0.5 + world.energy[victim] / world.maxEnergyBySpec[world.spec[victim]];
     return config.biteCost * sizeRatio * fullness * specParams(config, world.spec[victim]).kickMultiplier;
 }
 

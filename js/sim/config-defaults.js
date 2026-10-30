@@ -108,6 +108,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         predator: {
             index: 1,
@@ -124,6 +125,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales the standing (passive, size and vision) energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         reproducer: {
             index: 2,
@@ -140,6 +142,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         scout: {
             index: 3,
@@ -156,6 +159,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 1.3, // natural-selection: the scout pays 30% more to stand (was 1); new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         defender: {
             index: 4,
@@ -172,6 +176,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
             splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
             kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
+            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
     },
     checkInvariants: false, // new

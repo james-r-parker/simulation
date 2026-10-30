@@ -109,7 +109,8 @@ function agentFlags(world, slot) {
  */
 function writeAgents(world, { f32, u32 }) {
     const { alive, x, y, angle, size, energy, spec, lineageId, genomeId, temperature, vx, vy } = world;
-    const { maxEnergy, temperatureMax } = world.config;
+    const { temperatureMax } = world.config;
+    const { maxEnergyBySpec } = world;
     let w = HEADER_WORDS;
     let count = 0;
     for (let slot = 0; slot < alive.length; slot++) {
@@ -118,7 +119,7 @@ function writeAgents(world, { f32, u32 }) {
             f32[w + 1] = y[slot];
             f32[w + 2] = angle[slot];
             f32[w + 3] = size[slot];
-            f32[w + 4] = energy[slot] / maxEnergy;
+            f32[w + 4] = energy[slot] / maxEnergyBySpec[spec[slot]];
             u32[w + 5] = spec[slot];
             u32[w + 6] = lineageId[slot];
             u32[w + 7] = genomeId[slot];

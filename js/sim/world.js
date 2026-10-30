@@ -231,6 +231,37 @@ function splitMinTable(config) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Float64Array} `maxEnergy` times each specialisation's `maxEnergyMultiplier`, indexed by `index`: the energy
+ *   store of an agent of that specialisation
+ */
+function maxEnergyTable(config) {
+    const table = specTable(config, 'maxEnergyMultiplier');
+    for (let k = 0; k < table.length; k++) {
+        table[k] *= config.maxEnergy;
+    }
+    return table;
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {Record<string, Float64Array>} the per-specialisation lookup tables, each indexed by `index`
+ */
+function specTables(config) {
+    return {
+        visionBySpec: specTable(config, 'visionRange'),
+        biteBySpec: specTable(config, 'biteMultiplier'),
+        huntBySpec: specTable(config, 'canHunt'),
+        splitMinBySpec: splitMinTable(config),
+        maxEnergyBySpec: maxEnergyTable(config),
+        plantFoodBySpec: specTable(config, 'plantFoodValue'),
+        meatFoodBySpec: specTable(config, 'meatFoodValue'),
+        turnBySpec: specTable(config, 'turnMultiplier'),
+        sprintBySpec: specTable(config, 'sprintBoost'),
+    };
+}
+
+/**
  * @param {World} world the world being built
  * @returns {void}
  */
@@ -268,14 +299,7 @@ export function allocateWorld(config) {
         ...agentScratch(config.maxAgents),
         meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
-        visionBySpec: specTable(config, 'visionRange'),
-        biteBySpec: specTable(config, 'biteMultiplier'),
-        huntBySpec: specTable(config, 'canHunt'),
-        splitMinBySpec: splitMinTable(config),
-        plantFoodBySpec: specTable(config, 'plantFoodValue'),
-        meatFoodBySpec: specTable(config, 'meatFoodValue'),
-        turnBySpec: specTable(config, 'turnMultiplier'),
-        sprintBySpec: specTable(config, 'sprintBoost'),
+        ...specTables(config),
         biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),

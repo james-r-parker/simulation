@@ -157,13 +157,12 @@ export function trackCircling(pools, world, burnIn) {
 
 /**
  * Adds one checkpoint's alive agents: each one's share of outputs with magnitude above `SATURATED`, its energy over
- * `maxEnergy`, and its energy over its specialisation's split threshold.
+ * its store, and its energy over its specialisation's split threshold.
  * @param {Record<string, any>} pools the pools
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleWatchability(pools, world) {
-    const { maxEnergy } = world.config;
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] !== 1) {
             continue;
@@ -174,7 +173,7 @@ export function sampleWatchability(pools, world) {
         }
         pools.agents += 1;
         pools.saturationSum += saturated / OUTPUT_COUNT;
-        pools.energyShareSum += world.energy[slot] / maxEnergy;
+        pools.energyShareSum += world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
         pools.overSplitSum += world.energy[slot] / world.splitMinBySpec[world.spec[slot]];
     }
 }

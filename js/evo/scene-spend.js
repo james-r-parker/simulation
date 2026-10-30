@@ -1,13 +1,13 @@
 // Parent spends (natural-selection.md, Detectors), both read at mate births after burn-in.
 //
 // - `eval.mother_wait_by_condition`: every 10 ticks a female that `isReadyToMate`
-//   and `canBear` and has no sample open is noted, with her energy over `maxEnergy`. At her next mate birth the wait is
+//   and `canBear` and has no sample open is noted, with her energy over her store. At her next mate birth the wait is
 //   the birth tick less that sample less `pregnancyTicks`, so it is the search time and the cap delay. `canBear` is in
 //   the test, so a mother who cannot afford the gift is not counted as waiting by choice. The metric is the mean wait
 //   of the poorest third of the pairs minus that of the richest third (ticks; positive when poor mothers wait longer).
 // - `eval.childshare_by_condition`: `childShare` is a gene fixed at birth, so the question is whether selection has
 //   tied it to condition. Per lineage with `MIN_SLOPE_BIRTHS` births or more, the slope of the mother's `childShare` on
-//   her energy over `maxEnergy` just before the birth (her energy now plus the child's gift), with the lineage's means
+//   her energy over her store just before the birth (her energy now plus the child's gift), with the lineage's means
 //   taken out of both; the mean slope over lineages. Near 0 is expected; a clear positive value means richer mothers
 //   carry the larger share.
 //
@@ -61,12 +61,11 @@ export function resetSpendSlot(scene, slot) {
  * @returns {void}
  */
 export function sampleSpend(scene, world) {
-    const { maxEnergy } = world.config;
     for (let slot = 0; slot < world.alive.length; slot++) {
         const mother = world.alive[slot] === 1 && world.sex[slot] === SEX.FEMALE;
         if (mother && scene.readySince[slot] < 0 && isReadyToMate(world, slot) && canBear(world, slot)) {
             scene.readySince[slot] = world.tick;
-            scene.readyShare[slot] = world.energy[slot] / maxEnergy;
+            scene.readyShare[slot] = world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
         }
     }
 }
@@ -75,7 +74,7 @@ export function sampleSpend(scene, world) {
  * Adds a mate birth to the lineage's regression sums.
  * @param {Record<string, any>} scene the spend scene
  * @param {Record<string, any>} world the world
- * @param {{mother: number, x: number}} birth the mother's slot and her energy over `maxEnergy` before the birth
+ * @param {{mother: number, x: number}} birth the mother's slot and her energy over her store before the birth
  * @returns {void}
  */
 function addSlope(scene, world, { mother, x }) {
@@ -108,7 +107,8 @@ export function noteSpendBirth(scene, world, { child, motherId }) {
         scene.waits.wait[row] = world.tick - scene.readySince[mother] - world.config.pregnancyTicks;
         scene.readySince[mother] = -1;
     }
-    addSlope(scene, world, { mother, x: (world.energy[mother] + world.energy[child]) / world.config.maxEnergy });
+    const store = world.maxEnergyBySpec[world.spec[mother]];
+    addSlope(scene, world, { mother, x: (world.energy[mother] + world.energy[child]) / store });
 }
 
 /**

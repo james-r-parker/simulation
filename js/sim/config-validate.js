@@ -337,11 +337,13 @@ function checkCrossKey(config) {
         );
     }
     const baseSizeMax = config.baseSize * TRAIT_MAX;
-    const largest = Math.max(
-        baseSizeMax + config.maxEnergy / config.energyToSize,
-        config.foodRadius,
-        config.highFoodRadius,
-    );
+    const storeMultipliers = Object.values(config.specialisations).map((s) => s.maxEnergyMultiplier);
+    const storeMax = config.maxEnergy * Math.max(...storeMultipliers);
+    const storeMin = config.maxEnergy * Math.min(...storeMultipliers);
+    if (config.initialEnergy > storeMin) {
+        fail('initialEnergy', config.initialEnergy, `<= the smallest energy store (${storeMin})`);
+    }
+    const largest = Math.max(baseSizeMax + storeMax / config.energyToSize, config.foodRadius, config.highFoodRadius);
     const room = Math.min(config.worldWidth, config.worldHeight);
     if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
         fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);

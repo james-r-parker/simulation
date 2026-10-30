@@ -146,7 +146,7 @@ function copyRow(f32, start, source, { from, count }) {
 function writeCounters(f32, start, { source, slot }) {
     const { world, observer, policy, generations } = source;
     f32[start] = world.ageTicks[slot];
-    f32[start + 1] = world.energy[slot] / world.config.maxEnergy;
+    f32[start + 1] = world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
     f32[start + 2] = world.temperature[slot];
     f32[start + 3] = generations.depth[slot];
     f32[start + 4] = observer.foodEnergy[slot];
