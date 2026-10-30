@@ -63,6 +63,7 @@ export const FEATURE_RULES = {
     mutationRate: { type: 'mutationRate' },
     weightDecay: num(0, 0.1),
     leakGeneStart: num(-4, 4),
+    instinctWeight: num(0, 4),
     leakMin: { type: 'num', gt: 0, lt: 1 },
     visionCost: num(0),
     birthWindowTicks: int(1),

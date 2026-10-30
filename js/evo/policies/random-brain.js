@@ -2,7 +2,8 @@
 // genome for every `initBrain` call. It is the untrained baseline the ladder's random arm and the test worlds use; no
 // archive and no fitness, so it is not a registered policy. The core draws the specialisation.
 
-import { SIGMA_START, randomWeights } from '../../evo/mutation.js';
+import { randomGenome } from '../../evo/instinct.js';
+import { SIGMA_START } from '../../evo/mutation.js';
 import { createBirth, rowOf } from './natural-birth.js';
 
 /**
@@ -20,7 +21,7 @@ export function createRandomBrain(config) {
     /** Initial agents, floor spawns and immigrants: a random genome. Draws from `brain-init` only. */
     function initBrain(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
         const count = world.layout.weightCount;
-        randomWeights(rowOf(own, world.weights, { slot, count }), world.layout, rng, world.config.leakGeneStart);
+        randomGenome(world, slot, { row: rowOf(own, world.weights, { slot, count }), rng });
         sigma[slot] = SIGMA_START;
     }
 

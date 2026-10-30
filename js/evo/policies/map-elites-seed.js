@@ -3,7 +3,8 @@
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
-import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
+import { randomGenome } from '../../evo/instinct.js';
+import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
 import { countSpecs } from '../../sim/spec-rescue.js';
 import { rowOf } from './natural-birth.js';
@@ -177,7 +178,7 @@ export function createSeeder({
         const { source, ref } = draw(archive, world.spec[slot], rng, mix);
         markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
         if (ref === null) {
-            randomWeights(row, layout, rng, world.config.leakGeneStart);
+            randomGenome(world, slot, { row, rng });
             birth.sigma[slot] = SIGMA_START;
         } else if (source === 'archive') {
             checkRow(ref.row, layout, log);
