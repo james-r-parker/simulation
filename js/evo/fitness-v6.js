@@ -42,13 +42,28 @@ function pick(constants, overrides) {
  */
 
 /**
+ * @typedef {object} FitnessTerms every term as paid, so the terms other than `waste` sum to `fitness` plus `waste`
+ * @property {number} intake deliberate intake, ungated
+ * @property {number} survival the survival term times the gate
+ * @property {number} role the role term times the gate
+ * @property {number} escape the escape credit times the gate
+ * @property {number} kill the converged-kill credit times the gate
+ * @property {number} born `BORN` times the children born
+ * @property {number} lineage the lineage group times the gate
+ * @property {number} waste the waste charged, after its cap
+ * @property {number} fitness the fitness
+ */
+
+/**
  * Binds the life counters and the weights so `fitnessV6` fits the evals `fitness(observer, slot, config)` signature.
  * @param {Record<string, any>} counters the life counters
  * @param {Record<string, number>} [overrides] weights replacing `FITNESS_V6` entries (a screen arm varies a weight)
  * @returns {((observer: any, slot: number, config: any) => number) & {
  *   weights: Record<string, number>,
  *   parts: (observer: any, slot: number, config: any, out: FitnessParts) => FitnessParts,
- * }} the fitness, with `parts` filling `out` with what the last call paid, group by group (for diagnostics)
+ *   terms: (observer: any, slot: number, config: any, out: FitnessTerms) => FitnessTerms,
+ * }} the fitness, with `parts` filling `out` with what a call pays group by group and `terms` term by term (for
+ *   diagnostics)
  */
 export function createFitnessV6(counters, overrides = {}) {
     const unknown = Object.keys(overrides).filter((key) => !(key in FITNESS_V6));
@@ -75,5 +90,22 @@ export function createFitnessV6(counters, overrides = {}) {
         out.lineage = gate * lineage.lineage(observer, slot);
         return out;
     };
-    return Object.assign(fitness, { weights, parts });
+    const skillTerms = { survival: 0, role: 0, escape: 0, kill: 0 };
+    /** @type {(observer: any, slot: number, config: any, out: FitnessTerms) => FitnessTerms} */
+    const terms = (observer, slot, config, out) => {
+        const gate = skill.gate(observer, slot);
+        skill.terms(observer, slot, config, skillTerms);
+        out.intake = skill.intake(observer, slot);
+        out.survival = gate * skillTerms.survival;
+        out.role = gate * skillTerms.role;
+        out.escape = gate * skillTerms.escape;
+        out.kill = gate * skillTerms.kill;
+        out.born = born * observer.children[slot];
+        out.lineage = gate * lineage.lineage(observer, slot);
+        out.fitness = fitness(observer, slot, config);
+        const positive = out.intake + out.survival + out.role + out.escape + out.kill + out.born + out.lineage;
+        out.waste = positive - out.fitness;
+        return out;
+    };
+    return Object.assign(fitness, { weights, parts, terms });
 }

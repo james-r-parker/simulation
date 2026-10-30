@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { CLAMP_LEVEL, WEIGHT_DIRECTIONS, sampleWeights, weightMetrics } from '../../js/evo/metrics-weights.js';
 import { MIN_EVENTS } from '../../js/evo/rare-saturation.js';
+import { POOLED_CHANNELS, POOLED_STRIDE } from '../../js/sim/brain-layout.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
@@ -96,6 +97,22 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
         expect(weightMetrics(observer)['eval.input_active_share'].value).toBe(1 / observer.activity.inputCount);
     });
 
+    it('reports the threat and prey channels apart, from the same activity counts', () => {
+        const { observer } = setup(1);
+        expect(weightMetrics(observer)['eval.input_active_share.threat'].value).toBeNull();
+        const threat = POOLED_CHANNELS.indexOf('threat') * POOLED_STRIDE;
+        const prey = POOLED_CHANNELS.indexOf('prey') * POOLED_STRIDE;
+        observer.activity.samples = 10;
+        observer.activity.active[threat] = 10; // the strongest threat's strength, nonzero in every sample
+        observer.activity.active[threat + 1] = 5;
+        observer.activity.active[prey + POOLED_STRIDE] = 3; // a value next to the channel, which is not counted
+        const m = weightMetrics(observer);
+        expect(m['eval.input_active_share.threat'].value).toBeCloseTo(15 / (10 * POOLED_STRIDE), 12);
+        expect(m['eval.input_active_share.prey'].value).toBe(0);
+        expect(WEIGHT_DIRECTIONS['eval.input_active_share.threat']).toBe('watch');
+        expect(WEIGHT_DIRECTIONS['eval.input_active_share.prey']).toBe('watch');
+    });
+
     it('reports the mean jump over at least 100 first firings', () => {
         const { observer } = setup(1);
         observer.saturation.events = MIN_EVENTS - 1;
@@ -106,7 +123,7 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
     });
 
     it('is watch throughout', () => {
-        expect(Object.keys(WEIGHT_DIRECTIONS)).toHaveLength(5);
+        expect(Object.keys(WEIGHT_DIRECTIONS)).toHaveLength(7);
         expect(Object.values(WEIGHT_DIRECTIONS).every((d) => d === 'watch')).toBe(true);
     });
 });
