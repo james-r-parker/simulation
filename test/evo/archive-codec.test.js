@@ -118,8 +118,8 @@ describe('archive codec', () => {
         expect(() => decodeArchive(json, config)).toThrow(/wizard/);
     });
 
-    it('is version 3: the pooled-v2 genome layout made every earlier archive invalid', () => {
-        expect(ARCHIVE_VERSION).toBe(3);
+    it('is version 4: the skip block and the deleted SPLIT genes made every earlier archive invalid', () => {
+        expect(ARCHIVE_VERSION).toBe(4);
     });
 
     it('rejects a stored archive from before the layout change by its version, cleanly, whatever else it holds', () => {
@@ -143,11 +143,12 @@ describe('archive codec', () => {
         const records = [];
         const log = createSimLog((r) => records.push(r), { level: 'debug' });
         const stale = viaText(stored);
-        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 3, got 2/);
+        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 4, got 2/);
         expect(records.map((r) => [r.event, r.field, r.expected, r.actual])).toEqual([
-            ['GenomeRejected', 'archive.version', 3, 2],
+            ['GenomeRejected', 'archive.version', 4, 2],
         ]);
         expect(() => decodeArchive({ version: 2 }, config)).toThrow(/archive\.version/);
+        expect(() => decodeArchive({ version: 3 }, config)).toThrow(/archive\.version: expected 4, got 3/);
         expect(() => decodeArchive({}, config)).toThrow(/archive\.version/);
     });
 
