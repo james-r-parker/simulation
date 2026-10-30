@@ -3,6 +3,7 @@
 // Callers are the `merit` phase and `startMating`. See docs/designs/fitness-and-selection.md (In-world merit).
 
 import { detExp } from './det-math.js';
+import { noteProofMeal } from './proof.js';
 import { noteMeal } from './split-gate.js';
 
 /** Ticks between `MeritSummary` log events. */
@@ -76,6 +77,7 @@ export function creditIntake(world, slot, energy, deliberate) {
     } else {
         add(world, slot, world.config.meritChanceWeight * energy);
     }
+    noteProofMeal(world, slot);
 }
 
 /**

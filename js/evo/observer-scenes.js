@@ -16,6 +16,7 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
 import { createMateScene, resetMateSlot } from './scene-mate.js';
 import { createNicheScene } from './scene-niche.js';
+import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
 import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
@@ -40,6 +41,7 @@ export function createScenes(config) {
         heritage: createHeritageScene(config),
         niche: createNicheScene(),
         mate: createMateScene(config),
+        proof: createProofScene(config),
     };
 }
 
@@ -96,6 +98,8 @@ function noteEvents(scenes, observer, world) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
             noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
+            noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
+            noteProofKill(scenes.proof, { cause: d[o + 4], lineageId: d[o + 7] });
             resetSceneSlot(scenes, d[o + 2]);
         }
     }
@@ -125,6 +129,7 @@ export function observeScenes(observer, world) {
     if (world.tick === 0) {
         return;
     }
+    trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);

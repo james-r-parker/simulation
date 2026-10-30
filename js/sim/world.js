@@ -4,6 +4,7 @@ import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { proofSpecs } from './proof.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
@@ -103,7 +104,13 @@ function allocAgentArrays(world, layout) {
     const n = world.config.maxAgents;
     world.agentRows = allocRows(
         world,
-        [...agentSpecs(layout), birthRingSpec(world.config.maxBirthsPerWindow), ...meritSpecs(), ...splitGateSpecs()],
+        [
+            ...agentSpecs(layout),
+            birthRingSpec(world.config.maxBirthsPerWindow),
+            ...meritSpecs(),
+            ...splitGateSpecs(),
+            ...proofSpecs(),
+        ],
         n,
     );
     createMeritViews(world);

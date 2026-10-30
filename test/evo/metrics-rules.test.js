@@ -1,4 +1,4 @@
-// The rule metrics as a set: names, directions, the three that wait for the proof rule, and their place in the
+// The rule metrics as a set: names, directions, and their place in the
 // selection metrics and the compare table. Each detector's value is tested beside its `scene-*.js` module.
 
 import { describe, expect, it } from 'vitest';
@@ -20,12 +20,8 @@ describe('the rule metrics', () => {
         expect(names).toContain('eval.birth_source_share.immigrant');
     });
 
-    it('read null with the T6 reason for the proof-rule metrics, and have a reason everywhere on a fresh observer', () => {
+    it('read null with a reason everywhere on a fresh observer', () => {
         const metrics = ruleMetrics(observed().observer);
-        for (const name of ['lineage_persistence', 'proven_share', 'established_share']) {
-            expect(metrics[`eval.${name}`].value, name).toBeNull();
-            expect(metrics[`eval.${name}`].reason, name).toContain('T6');
-        }
         for (const [name, result] of Object.entries(metrics)) {
             expect(result.value, name).toBeNull();
             expect(result.reason, name).toBeTypeOf('string');

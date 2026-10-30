@@ -14,6 +14,7 @@ import { nextFloat } from './rng.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
+import { noteProofBirth, splitBraked } from './proof.js';
 import { noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
@@ -195,6 +196,7 @@ function giveBirth(world, policy, mother, cause) {
     world.parentB[child] = isMate ? world.fatherId[mother] : world.genomeId[mother];
     world.parentSlotA[child] = mother;
     world.parentSlotB[child] = isMate ? slotOfGenome(world, world.fatherId[mother]) : mother;
+    noteProofBirth(world, child);
     world.spec[child] = childSpec(world, mother);
     drawSex(world, child);
     recordBirth(world, mother);
@@ -285,8 +287,8 @@ export function advancePregnancies(world, policy) {
 }
 
 /**
- * The merit split gate: open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, and `splitKeysAllow` (the
- * share minimum, and the per-life cap). Reads only; a closed gate changes nothing, so the agent stays ready.
+ * The merit split gate: open when `splitDeliberateMin` is 0 or the agent's `deliberateIntake` has reached it, `splitKeysAllow`
+ * (the share minimum, and the per-life cap) lets it and the proof rule's split brake (`splitBraked`) does not hold it. Reads only; a closed gate changes nothing, so the agent stays ready.
  * @param {World} world the world
  * @param {number} slot an alive agent
  * @returns {boolean} true when the gate lets the agent split
@@ -294,7 +296,9 @@ export function advancePregnancies(world, policy) {
 export function splitGateOpen(world, slot) {
     const { splitDeliberateMin } = world.config;
     return (
-        (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) && splitKeysAllow(world, slot)
+        (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) &&
+        splitKeysAllow(world, slot) &&
+        !splitBraked(world, slot)
     );
 }
 

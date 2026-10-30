@@ -38,6 +38,8 @@ function die({ policy, world, observer }, { slot, genomeId, roleSkill, bodyPlan,
     world.genomeId[slot] = genomeId;
     world.ageTicks[slot] = world.config.maturityTicks + 10;
     world.spec[slot] = 0;
+    world.proven[slot] = 1;
+    world.established[slot] = 1;
     policy.brain.onDeath(world, slot, DEATH_CAUSE.STARVED);
     observer.spec[slot] = 0;
     observer.intent.deliberateFood[slot] = deliberate;

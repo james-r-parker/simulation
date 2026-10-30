@@ -316,6 +316,27 @@ describe('drainEvents', () => {
         expect(info.records).toEqual([]);
     });
 
+    it('logs LineProven at debug with the child and its parents', () => {
+        const world = build();
+        world.events.count = 0;
+        const o = pushEvent(world.events, EVENT_TYPE.LINE_PROVEN, 4000);
+        world.events.data.set([3, 77, 40, 41, 9], o + 2);
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            {
+                level: 'debug',
+                event: 'LineProven',
+                tick: 4000,
+                slot: 3,
+                genomeId: 77,
+                parentA: 40,
+                parentB: 41,
+                lineageId: 9,
+            },
+        ]);
+    });
+
     it('does not hand records below the log level to the log at all', () => {
         const world = build();
         world.events.count = 0;

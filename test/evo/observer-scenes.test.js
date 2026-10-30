@@ -95,6 +95,7 @@ describe('observeScenes', () => {
             'mate',
             'niche',
             'patch',
+            'proof',
             'season',
             'spend',
             'style',

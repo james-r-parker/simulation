@@ -235,6 +235,24 @@ function emitMeritSummary(log, d, o) {
     });
 }
 
+/**
+ * Emits one `LineProven` event: a child proved itself, so its parents' line is established.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitLineProven(log, d, o) {
+    log.log('debug', 'LineProven', {
+        tick: d[o + 1],
+        slot: d[o + 2],
+        genomeId: d[o + 3],
+        parentA: d[o + 4],
+        parentB: d[o + 5],
+        lineageId: d[o + 6],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -250,6 +268,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.SEASON_CHANGED]: { level: LOG_LEVEL.info, emit: emitSeason },
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
+    [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
 });
 
 /**
