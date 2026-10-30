@@ -22,7 +22,7 @@ const BITER_ENERGY = 500;
  *   the energy the biter lost beyond what it gained from the bite, and the formula's value from the state before it
  */
 function biteOnce({ victim: fields = {}, over = {}, bite = true, biterSpec = PREDATOR } = {}) {
-    const w = lifeWorld({ biteArc: Math.PI / 4, biteCost: 10, predatorKillEnergy: 0, ...over });
+    const w = lifeWorld({ biteArc: Math.PI / 4, biteCost: 10, recoilEnergy: 0, predatorKillEnergy: 0, ...over });
     const biter = addBlob(w, { spec: biterSpec, energy: BITER_ENERGY, x: 100, y: 100, angle: 0 });
     const victim = addBlob(w, { spec: FORAGER, energy: 100, x: 110, y: 100, angle: 0, ...fields });
     updateSize(w, biter);

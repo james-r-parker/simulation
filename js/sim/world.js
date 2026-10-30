@@ -81,7 +81,7 @@ function agentSpecs(layout) {
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
         ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
-        ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick']),
+        ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick', 'recoilStamp']),
         ...singles(Uint16Array, ['alarmTimer', 'huntTimer', 'smokeTimer']),
         [Float32Array, 'heard', HEARD_STRIDE],
         [Float32Array, 'inputs', layout.inputCount],

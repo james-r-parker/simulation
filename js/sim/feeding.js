@@ -1,6 +1,6 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
-import { canBite } from './bite-rule.js';
+import { canBite, couldBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
 import { depletePatchAt } from './food-patches.js';
@@ -153,6 +153,43 @@ function applyBite(world, biter, victim) {
 }
 
 /**
+ * Charges `recoilEnergy` to a hunter that tries to bite something the bite rule refuses (kin, or too large), once per
+ * tick however many it touches. The stamp (tick + 1, so a fresh slot's 0 never matches) is derived state outside
+ * `worldHash`, cleared by `freeAgent`. A refusal for the jaws alone is not a recoil: `couldBite` still holds.
+ * @param {Record<string, any>} world the world
+ * @param {number} hunter the slot that wants to bite
+ * @param {number} target the slot it touches
+ * @returns {void}
+ */
+function recoil(world, hunter, target) {
+    const { config, recoilStamp } = world;
+    const wants = world.outputs[hunter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
+    if (!wants || recoilStamp[hunter] === world.tick + 1 || !specParams(config, world.spec[hunter]).canHunt) {
+        return;
+    }
+    if (couldBite(world, hunter, target)) {
+        return;
+    }
+    recoilStamp[hunter] = world.tick + 1;
+    removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+}
+
+/**
+ * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the slot that may bite
+ * @param {number} other the slot it touches
+ * @returns {void}
+ */
+function lunge(world, biter, other) {
+    if (bites(world, biter, other)) {
+        applyBite(world, biter, other);
+    } else if (world.config.recoilEnergy > 0) {
+        recoil(world, biter, other);
+    }
+}
+
+/**
  * Runs the feed phase: every alive agent eats, then bites resolve over the contact list in order.
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
@@ -168,11 +205,7 @@ export function feed(world, hash) {
     for (let c = 0; c < contactCount; c++) {
         const a = contacts[2 * c];
         const b = contacts[2 * c + 1];
-        if (bites(world, a, b)) {
-            applyBite(world, a, b);
-        }
-        if (bites(world, b, a)) {
-            applyBite(world, b, a);
-        }
+        lunge(world, a, b);
+        lunge(world, b, a);
     }
 }
