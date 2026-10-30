@@ -88,6 +88,7 @@ describe('observeScenes', () => {
         const scenes = createScenes(observed().world.config);
         expect(Object.keys(scenes).sort()).toEqual([
             'approach',
+            'balance',
             'basin',
             'carcass',
             'condition',

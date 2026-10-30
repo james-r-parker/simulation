@@ -11,7 +11,8 @@ import { EMPTY_WORLD } from './helpers/metrics-observer.js';
 
 describe('the scene metrics', () => {
     it('are the Detectors table names, and computeMetrics carries every one', () => {
-        const names = Object.keys(sceneMetrics(observed().observer)).sort();
+        const { observer, world } = observed();
+        const names = Object.keys(sceneMetrics(observer, world)).sort();
         expect(names).toEqual(Object.keys(SCENE_DIRECTIONS).sort());
         const all = computeMetrics(observed().observer, EMPTY_WORLD);
         for (const name of names) {
@@ -28,10 +29,12 @@ describe('the scene metrics', () => {
         expect(metricDirection('eval.hunt_abort_rate')).toBe('watch');
     });
 
-    it('are null with a reason on a fresh observer, except the recolonisation count', () => {
-        const metrics = sceneMetrics(observed({ worldWidth: 4000, worldHeight: 2000, refugeCount: 2 }).observer);
+    it('are null with a reason on a fresh observer, except the counts read off the world', () => {
+        const { observer, world } = observed({ worldWidth: 4000, worldHeight: 2000, refugeCount: 2 });
+        const metrics = sceneMetrics(observer, world);
+        const counts = ['eval.basin_recolonisations', 'eval.predators_at_end', 'eval.prey_types_at_end'];
         for (const [name, result] of Object.entries(metrics)) {
-            if (name === 'eval.basin_recolonisations') {
+            if (counts.includes(name)) {
                 expect(result).toEqual({ value: 0 });
             } else {
                 expect(result.value, name).toBeNull();

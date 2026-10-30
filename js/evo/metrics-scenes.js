@@ -3,6 +3,7 @@
 // fed it. They change no sim state and cost no per-tick allocation.
 
 import { approachMetrics } from './scene-approach.js';
+import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
@@ -35,14 +36,19 @@ const WATCH = [
 /** The direction of each scene metric, as the Detectors table names them. */
 export const SCENE_DIRECTIONS = Object.freeze({
     ...PATCH_DIRECTIONS,
+    'eval.predators_at_end': 'higher',
+    'eval.prey_types_at_end': 'higher',
+    'eval.basin_lineages_alive': 'higher',
+    'eval.basin_lineage_effective': 'higher',
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
 });
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
+ * @param {Record<string, any>} world the world at the run's last tick
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the scene metrics
  */
-export function sceneMetrics(observer) {
+export function sceneMetrics(observer, world) {
     const s = observer.scenes;
     return {
         ...patchMetrics(s.patch),
@@ -50,6 +56,7 @@ export function sceneMetrics(observer) {
         ...terrainMetrics(s.terrain),
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
+        ...balanceMetrics(s.balance, world),
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),

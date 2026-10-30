@@ -141,7 +141,7 @@ export function computeMetrics(observer, world, options = {}) {
         ...meritMetrics(observer, world),
         ...dietMetrics(observer),
         ...watchabilityMetrics(observer),
-        ...sceneMetrics(observer),
+        ...sceneMetrics(observer, world),
         ...brainMetrics(observer),
         ...fitnessMetrics(observer, options.fitness),
         'eval.qd_score': archive === undefined ? none('no archive') : ok(qdScore(archive)),
