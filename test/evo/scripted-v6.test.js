@@ -10,7 +10,7 @@ import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
 const CH = { food: 1, threat: 2, prey: 3 };
 const O = OUTPUT_INDEX;
-const BODY_BITTEN = 12;
+const BODY_BITTEN = 10;
 const SEEK = Math.fround(SEEK_THRUST);
 
 /**

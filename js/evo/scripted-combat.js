@@ -1,14 +1,14 @@
 // Combat controllers for the anti-exploit suite and the predator-prey metrics: a hunter, a fleer, and two spammers
 // that hold one call output on every tick. Each zeroes the agent's output row, then writes all it needs.
 
-import { OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
+import { BODY_INPUT, OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
 import { CH_THREAT, CH_PREY, eachAlive, seekFood, setOutput, turnTowards, write } from './scripted-parts.js';
 
 /** Offsets within the body inputs (see predator-prey.md, Brain layout). */
-export const BODY_BITTEN = 12;
-const BODY_ATTACK_LEFT = 21;
-const BODY_ATTACK_RIGHT = 22;
+export const BODY_BITTEN = BODY_INPUT.BITTEN;
+const BODY_ATTACK_LEFT = BODY_INPUT.SCENT + 2;
+const BODY_ATTACK_RIGHT = BODY_INPUT.SCENT + 3;
 
 /**
  * @param {Record<string, any>} world the world

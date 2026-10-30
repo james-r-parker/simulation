@@ -1,4 +1,4 @@
-// Writes an agent's scent and call body inputs (offsets 19 to 31): antenna samples, hunt scent and heard calls.
+// Writes an agent's scent and call body inputs (offsets 17 to 29): antenna samples, hunt scent and heard calls.
 
 import { BODY_INPUT, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
@@ -7,14 +7,14 @@ import { HEARD_STRIDE } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
 
-/** The first scent input within the body inputs; offsets 0 to 18 belong to `writeBodyInputs`. */
+/** The first scent input within the body inputs; offsets 0 to 16 belong to `writeBodyInputs`. */
 const FIRST_SCENT_INPUT = BODY_INPUT.SCENT;
 
 /** Offset from the alarm half of a `heard` row to the hunt half. */
 const ALARM_TO_HUNT = 3;
 
 /**
- * Writes body inputs 19 to 31 of an agent: danger and attack at the left and right antennae, the hunt scent here and
+ * Writes body inputs 17 to 29 of an agent: danger and attack at the left and right antennae, the hunt scent here and
  * at both antennae, then the loudest heard alarm and hunt call as loudness, ahead and side.
  * @param {World} world the world
  * @param {number} slot the alive agent

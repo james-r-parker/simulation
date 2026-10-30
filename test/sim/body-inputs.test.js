@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { writeBodyInputs } from '../../js/sim/body-inputs.js';
-import { detCos, detSin } from '../../js/sim/det-math.js';
 import { depositPheromone } from '../../js/sim/pheromones.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
@@ -8,12 +7,12 @@ import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/s
 /**
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} slot
- * @returns {number[]} the nineteen body inputs
+ * @returns {number[]} the seventeen body inputs before the scent block
  */
 function body(w, slot) {
     writeBodyInputs(w, slot);
     const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
-    return Array.from(w.inputs.subarray(base, base + 19));
+    return Array.from(w.inputs.subarray(base, base + 17));
 }
 
 /** @returns {{w: ReturnType<typeof senseWorld>, slot: number}} a mature agent ready to mate */
@@ -34,7 +33,7 @@ describe('writeBodyInputs', () => {
         const v = body(w, slot);
         expect(v[0]).toBeCloseTo(0.5, 6);
         expect(v[4]).toBeCloseTo(25 / (c.baseSize + c.maxEnergy / c.energyToSize), 6);
-        expect(v[14]).toBeCloseTo(0.25, 6);
+        expect(v[12]).toBeCloseTo(0.25, 6);
     });
 
     it('writes forward and lateral velocity in the heading frame', () => {
@@ -96,13 +95,13 @@ describe('writeBodyInputs', () => {
         expect(body(w, slot)[8]).toBe(0);
     });
 
-    it('writes the season as sine and cosine of the phase', () => {
+    it('does not tell the agent the season: the body inputs ignore the year phase', () => {
         const { w, slot } = ready();
+        w.season[1] = 0;
+        const before = body(w, slot);
         w.season[1] = 0.125;
-        const v = body(w, slot);
-        expect(v[9]).toBe(Math.fround(detSin(2 * Math.PI * 0.125)));
-        expect(v[10]).toBe(Math.fround(detCos(2 * Math.PI * 0.125)));
-        expect(v[9]).toBeCloseTo(Math.SQRT1_2, 5);
+        expect(body(w, slot)).toEqual(before);
+        expect(before).toHaveLength(17);
     });
 
     it('writes the eat and bite timers as 1 minus their fraction of the cap', () => {
@@ -110,14 +109,14 @@ describe('writeBodyInputs', () => {
         w.ateTimer[slot] = 30;
         w.bittenTimer[slot] = 15;
         const v = body(w, slot);
-        expect(v[11]).toBe(0);
-        expect(v[12]).toBe(0.5);
+        expect(v[9]).toBe(0);
+        expect(v[BODY_INPUT.BITTEN]).toBe(0.5);
     });
 
     it('writes the specialisation index over four', () => {
         const { w, slot } = ready();
         w.spec[slot] = 3;
-        expect(body(w, slot)[13]).toBe(0.75);
+        expect(body(w, slot)[11]).toBe(0.75);
     });
 
     it('writes after the ray block and touches nothing before it', () => {
@@ -128,31 +127,31 @@ describe('writeBodyInputs', () => {
         expect(w.inputs[rays]).toBeGreaterThan(0);
     });
 
-    it('writes the four temperature inputs at offsets 15 to 18', () => {
+    it('writes the four temperature inputs at offsets 13 to 16', () => {
         const { w, slot } = ready();
         w.temperature[slot] = 35;
-        expect(body(w, slot).slice(15)).toEqual([0.35, 0.175 / 0.5, 0.5, 0].map(Math.fround));
+        expect(body(w, slot).slice(13)).toEqual([0.35, 0.175 / 0.5, 0.5, 0].map(Math.fround));
         w.temperature[slot] = 77.5;
-        expect(body(w, slot).slice(15)).toEqual([0.775, 0.25 / 0.5, 0, 0.5].map(Math.fround));
+        expect(body(w, slot).slice(13)).toEqual([0.775, 0.25 / 0.5, 0, 0.5].map(Math.fround));
         w.temperature[slot] = 100;
-        expect(body(w, slot).slice(15)).toEqual([1, 0.95, 0, 1].map(Math.fround));
+        expect(body(w, slot).slice(13)).toEqual([1, 0.95, 0, 1].map(Math.fround));
     });
 
-    it('feeds last tick MEMORY_A and MEMORY_B back as inputs 33 and 34', () => {
+    it('feeds last tick MEMORY_A and MEMORY_B back as inputs 31 and 32', () => {
         const { w, slot } = ready();
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A] = 0.5;
         w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B] = -0.25;
         writeBodyInputs(w, slot);
         const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
-        expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 35))).toEqual([0, 0.5, -0.25]);
+        expect(Array.from(w.inputs.subarray(base + BODY_INPUT.SEX, base + 33))).toEqual([0, 0.5, -0.25]);
     });
 
-    it('ends at offset 18 and leaves the scent inputs and the next slot row alone', () => {
+    it('ends at offset 16 and leaves the scent inputs and the next slot row alone', () => {
         const { w, slot } = ready();
         const next = addAgent(w, 700, 700, 25);
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
-        const end = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 19;
+        const end = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
         expect(end + 16).toBe((slot + 1) * w.layout.rawInputCount);
         expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(

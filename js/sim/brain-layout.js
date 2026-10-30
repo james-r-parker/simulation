@@ -30,21 +30,22 @@ export const POOLED_STRIDE = 3;
 /** Pooled values at the head of the brain's input row: `POOLED_CHANNELS.length x POOLED_STRIDE`. */
 export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE;
 
-/** Body inputs after the ray (or pooled) block: 19 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */
-export const EXTRA_INPUTS = 35;
+/** Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */
+export const EXTRA_INPUTS = 33;
 
 /**
  * Body input offsets, from the start of the body block: the scent block (antennae, hunt scent, heard calls), the sex
  * input and the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`).
  */
 export const BODY_INPUT = Object.freeze({
-    SCENT: 19,
-    HUNT_SCENT: 23,
-    HEARD_ALARM: 26,
-    HEARD_HUNT: 29,
-    SEX: 32,
-    MEMORY_A: 33,
-    MEMORY_B: 34,
+    BITTEN: 10,
+    SCENT: 17,
+    HUNT_SCENT: 21,
+    HEARD_ALARM: 24,
+    HEARD_HUNT: 27,
+    SEX: 30,
+    MEMORY_A: 31,
+    MEMORY_B: 32,
 });
 
 /** Trait genes after `bOut`: `sizeGene`, `visionGene`, `childShareGene`, `learnGene`. */

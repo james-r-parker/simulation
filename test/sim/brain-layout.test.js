@@ -23,24 +23,24 @@ function derive(inputs, H) {
 }
 
 describe('brainLayout', () => {
-    it('gives 59 inputs (24 pooled and 35 body), 179 raw values and 3343 weights at the defaults', () => {
+    it('gives 57 inputs (24 pooled and 33 body), 177 raw values and 3279 weights at the defaults', () => {
         const layout = brainLayout(createConfig());
-        expect(layout.inputCount).toBe(59);
-        expect(layout.rawInputCount).toBe(179);
-        expect(layout.weightCount).toBe(3343);
+        expect(layout.inputCount).toBe(57);
+        expect(layout.rawInputCount).toBe(177);
+        expect(layout.weightCount).toBe(3279);
         expect(layout.outputCount).toBe(OUTPUT_COUNT);
     });
 
     it.each([
-        [16, 1423],
-        [24, 2319],
-        [32, 3343],
-        [48, 5775],
-        [64, 8719],
+        [16, 1391],
+        [24, 2271],
+        [32, 3279],
+        [48, 5679],
+        [64, 8591],
     ])('pins the genome size at %i hidden to %i floats, equal to the per-block derivation', (hidden, floats) => {
         const layout = brainLayout(createConfig({ brainHidden: hidden }));
         expect(layout.weightCount).toBe(floats);
-        expect(derive(59, hidden)).toBe(floats);
+        expect(derive(57, hidden)).toBe(floats);
     });
 
     it('does not depend on the ray count except in the raw row', () => {
@@ -51,8 +51,8 @@ describe('brainLayout', () => {
         expect(b.rawInputCount - a.rawInputCount).toBe(24 * RAY_CHANNELS);
     });
 
-    it('counts 8 pooled channels of 3 values, 9 ray channels, 35 body inputs and 11 outputs', () => {
-        expect([POOLED_VALUES, RAY_CHANNELS, EXTRA_INPUTS, OUTPUT_COUNT]).toEqual([24, 9, 35, 11]);
+    it('counts 8 pooled channels of 3 values, 9 ray channels, 33 body inputs and 11 outputs', () => {
+        expect([POOLED_VALUES, RAY_CHANNELS, EXTRA_INPUTS, OUTPUT_COUNT]).toEqual([24, 9, 33, 11]);
     });
 
     it('names the outputs by index', () => {
@@ -91,17 +91,17 @@ describe('brainLayout', () => {
 });
 
 describe('inputOffsets', () => {
-    it('matches a naive offset table of the 24 pooled values then the 35 body inputs', () => {
+    it('matches a naive offset table of the 24 pooled values then the 33 body inputs', () => {
         const off = inputOffsets(createConfig({ rayCount: 16 }));
         const names = ['food', 'threat', 'prey', 'other', 'kin', 'wall', 'obstacle', 'smoke'];
         names.forEach((name, c) => expect(off.pooled[name]).toBe(3 * c));
         expect(off.bodyStart).toBe(24);
-        expect(off.scentStart).toBe(24 + 19);
-        expect(off.huntScent).toBe(24 + 23);
-        expect(off.heardAlarm).toBe(24 + 26);
-        expect(off.heardHunt).toBe(24 + 29);
-        expect(off.sex).toBe(24 + 32);
-        expect([off.memoryA, off.memoryB]).toEqual([24 + 33, 24 + 34]);
+        expect(off.scentStart).toBe(24 + 17);
+        expect(off.huntScent).toBe(24 + 21);
+        expect(off.heardAlarm).toBe(24 + 24);
+        expect(off.heardHunt).toBe(24 + 27);
+        expect(off.sex).toBe(24 + 30);
+        expect([off.memoryA, off.memoryB]).toEqual([24 + 31, 24 + 32]);
         expect(off.rawBodyStart).toBe(16 * 9);
     });
 

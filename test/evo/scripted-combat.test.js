@@ -10,7 +10,7 @@ import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 const RAYS = 16;
 const CH = { food: 1, threat: 2, prey: 3 };
 const O = OUTPUT_INDEX;
-const BODY = { bitten: 12, attackLeft: 21, attackRight: 22 };
+const BODY = { bitten: 10, attackLeft: 19, attackRight: 20 };
 
 /**
  * @param {keyof typeof COMBAT_CONTROLLERS} name the controller
