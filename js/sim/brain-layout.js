@@ -1,4 +1,4 @@
-// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v2 layout) from a config.
+// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v2 layout, top 2 hits per channel) from a config.
 
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
@@ -24,10 +24,16 @@ export const RAY_CHANNELS = 9;
 /** Pooled channels, in order: the ray channels 1 to 8 (food, threat, prey, other, kin, wall, obstacle, smoke). */
 export const POOLED_CHANNELS = Object.freeze(['food', 'threat', 'prey', 'other', 'kin', 'wall', 'obstacle', 'smoke']);
 
-/** Values per pooled channel: strength, then the cosine and sine of the strongest ray's angle in the agent's frame. */
-export const POOLED_STRIDE = 3;
+/** Hits kept per pooled channel: the two strongest rays. */
+export const POOLED_HITS = 2;
 
-/** Pooled values at the head of the brain's input row: `POOLED_CHANNELS.length x POOLED_STRIDE`. */
+/** Values per hit: strength, then the cosine and sine of the ray's angle in the agent's frame. */
+export const HIT_STRIDE = 3;
+
+/** Values per pooled channel: `POOLED_HITS x HIT_STRIDE`, the strongest hit first. */
+export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
+
+/** Pooled values at the head of the brain's input row: `POOLED_CHANNELS.length x POOLED_STRIDE` (48). */
 export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE;
 
 /** Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */
@@ -106,8 +112,8 @@ export function brainLayout(config) {
 
 /**
  * @typedef {object} InputOffsets
- * @property {Readonly<Record<string, number>>} pooled index of each pooled channel's strength in the brain's input
- *   row (its cosine and sine follow); `kin` is among them
+ * @property {Readonly<Record<string, number>>} pooled index of each pooled channel's strongest hit in the brain's
+ *   input row (its cosine and sine follow, then the second hit's three values); `kin` is among them
  * @property {number} bodyStart index of the body block in the brain's input row
  * @property {number} scentStart index of the first scent input (the danger antennae)
  * @property {number} huntScent index of the hunt scent here (the left and right antennae follow)

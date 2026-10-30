@@ -80,7 +80,7 @@ describe('encodeGenome and decodeGenome', () => {
         expect(decodeGenome(encoded).weights).toHaveLength(brainLayout({ rayCount: 0, brainHidden: 4 }).weightCount);
         encoded.layout.inputCount = 179;
         expect(() => decodeGenome(encoded)).toThrow(
-            /genome\.layout: expected 57 inputs and 11 outputs, got 179 and 11/,
+            /genome\.layout: expected 81 inputs and 11 outputs, got 179 and 11/,
         );
     });
 

@@ -154,6 +154,6 @@ describe('archive codec', () => {
     it('rejects a current-version archive stamped with the old 179-input layout by the layout field', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
         const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
-        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 57, got 179/);
+        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 81, got 179/);
     });
 });

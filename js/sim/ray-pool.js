@@ -1,6 +1,13 @@
-// Pools an agent's raw rays into the brain's input row: the strongest hit per channel, then the body block.
+// Pools an agent's raw rays into the brain's input row: the two strongest hits per channel, then the body block.
 
-import { EXTRA_INPUTS, POOLED_CHANNELS, POOLED_STRIDE, POOLED_VALUES, RAY_CHANNELS } from './brain-layout.js';
+import {
+    EXTRA_INPUTS,
+    HIT_STRIDE,
+    POOLED_CHANNELS,
+    POOLED_STRIDE,
+    POOLED_VALUES,
+    RAY_CHANNELS,
+} from './brain-layout.js';
 
 /**
  * @param {Float32Array} inputs the raw inputs
@@ -21,9 +28,9 @@ function channelOf(inputs, base) {
 
 /**
  * Writes the `pooled` row of an alive agent from its `inputs` row. For each of the eight ray channels (food, threat,
- * prey, other, kin, wall, obstacle, smoke) the strongest hit over the rays gives a strength (the ray's proximity, 0
- * when no ray hits the channel) and the cosine and sine of that ray's angle in the agent's own frame (both 0 when the
- * strength is 0). The first ray wins a tie. The body block follows unchanged. Every value lies in [-1, 1].
+ * prey, other, kin, wall, obstacle, smoke) the two strongest hits over the rays give, strongest first, a strength (the
+ * ray's proximity) and the cosine and sine of that ray's angle in the agent's own frame. An unused slot is 0 in all
+ * three values. The first ray wins a tie. The body block follows unchanged. Every value lies in [-1, 1].
  * @param {import('./world.js').World} world the world
  * @param {number} slot the alive agent
  * @returns {void}
@@ -39,11 +46,23 @@ export function poolRays(world, slot) {
     for (let k = 0; k < rayCount; k++) {
         const base = rawBase + k * RAY_CHANNELS;
         const c = channelOf(inputs, base);
-        const at = out + c * POOLED_STRIDE;
-        if (c >= 0 && inputs[base] > pooled[at]) {
-            pooled[at] = inputs[base];
-            pooled[at + 1] = rayCos[k];
-            pooled[at + 2] = raySin[k];
+        if (c < 0) {
+            continue;
+        }
+        const first = out + c * POOLED_STRIDE;
+        const second = first + HIT_STRIDE;
+        const proximity = inputs[base];
+        if (proximity > pooled[first]) {
+            pooled[second] = pooled[first];
+            pooled[second + 1] = pooled[first + 1];
+            pooled[second + 2] = pooled[first + 2];
+            pooled[first] = proximity;
+            pooled[first + 1] = rayCos[k];
+            pooled[first + 2] = raySin[k];
+        } else if (proximity > pooled[second]) {
+            pooled[second] = proximity;
+            pooled[second + 1] = rayCos[k];
+            pooled[second + 2] = raySin[k];
         }
     }
     const body = rawBase + rayCount * RAY_CHANNELS;

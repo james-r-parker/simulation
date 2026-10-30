@@ -1,7 +1,7 @@
 // The scripted controllers of the discrimination scenes. Each scene has two: one reads the raw rays and may use every
-// ray, the other reads only the pooled row (the strongest hit per channel). Both aim with the same `steer`.
+// ray, the other reads only the pooled row (the two strongest hits per channel). Both aim with the same `steer`.
 
-import { OUTPUT_INDEX, RAY_CHANNELS, inputOffsets } from '../sim/brain-layout.js';
+import { HIT_STRIDE, OUTPUT_INDEX, RAY_CHANNELS, inputOffsets } from '../sim/brain-layout.js';
 import { setOutput, write } from './scripted-parts.js';
 
 const CH_FOOD = 1;
@@ -86,14 +86,15 @@ function strongestRay(world, slot, channel) {
 const hit = { s: 0, cos: 0, sin: 0 };
 
 /**
- * Reads one pooled channel: its strength, cosine and sine.
+ * Reads one hit of a pooled channel: its strength, cosine and sine.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @param {string} name a pooled channel name
+ * @param {number} [which] 0 for the strongest hit, 1 for the second
  * @returns {{s: number, cos: number, sin: number}} the three values; a reused object
  */
-function pooledHit(world, slot, name) {
-    const at = slot * world.layout.inputCount + POOLED_AT[name];
+function pooledHit(world, slot, name, which = 0) {
+    const at = slot * world.layout.inputCount + POOLED_AT[name] + which * HIT_STRIDE;
     hit.s = world.pooled[at];
     hit.cos = world.pooled[at + 1];
     hit.sin = world.pooled[at + 2];
@@ -119,7 +120,7 @@ export function seekFood(world, slot, pooled) {
 
 /**
  * Flees at full thrust. The raw controller runs away from the proximity-weighted sum of every threat ray, so two
- * threats on different sides cancel into straight ahead; the pooled one runs away from the single strongest threat.
+ * threats on different sides cancel into straight ahead; the pooled one runs away from the same sum over its two strongest threat hits.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @param {boolean} pooled whether to read the pooled row
@@ -129,9 +130,12 @@ export function flee(world, slot, pooled) {
     let x;
     let y;
     if (pooled) {
-        const threat = pooledHit(world, slot, 'threat');
-        x = threat.s * threat.cos;
-        y = threat.s * threat.sin;
+        const first = pooledHit(world, slot, 'threat');
+        x = first.s * first.cos;
+        y = first.s * first.sin;
+        const second = pooledHit(world, slot, 'threat', 1);
+        x += second.s * second.cos;
+        y += second.s * second.sin;
     } else {
         const v = rayVector(world, slot, CH_THREAT);
         x = v.x;
@@ -144,7 +148,7 @@ export function flee(world, slot, pooled) {
 
 /**
  * Drives down a passage between two rows of rocks, away from the rocks. The raw controller balances the proximity of
- * every rock ray on each side; the pooled one turns away from the single strongest rock hit.
+ * every rock ray on each side; the pooled one does the same over its two strongest rock hits.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @param {boolean} pooled whether to read the pooled row
@@ -153,8 +157,10 @@ export function flee(world, slot, pooled) {
 export function followCorridor(world, slot, pooled) {
     let lateral;
     if (pooled) {
-        const rock = pooledHit(world, slot, 'obstacle');
-        lateral = rock.s * rock.sin;
+        const first = pooledHit(world, slot, 'obstacle');
+        const firstLateral = first.s * first.sin;
+        const second = pooledHit(world, slot, 'obstacle', 1);
+        lateral = (firstLateral + second.s * second.sin) / (second.s > 0 ? 2 : 1);
     } else {
         const v = rayVector(world, slot, CH_OBSTACLE);
         lateral = v.y / Math.max(1, v.n);

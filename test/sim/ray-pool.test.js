@@ -15,7 +15,7 @@ import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js
  * The naive per-channel reference: scan every ray for the channel, keep the largest proximity (the first ray on a tie).
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the slot
- * @returns {number[]} the 24 pooled values then the body block
+ * @returns {number[]} the 48 pooled values then the body block
  */
 function reference(w, slot) {
     const { rayCount } = w.config;
@@ -23,14 +23,17 @@ function reference(w, slot) {
     const proximity = (/** @type {number} */ k) => w.inputs[raw + k * RAY_CHANNELS];
     const out = [];
     for (let c = 1; c <= POOLED_CHANNELS.length; c++) {
-        let best = -1;
+        const hits = [];
         for (let k = 0; k < rayCount; k++) {
-            const hits = w.inputs[raw + k * RAY_CHANNELS + c] > 0 && proximity(k) > 0;
-            if (hits && (best < 0 || proximity(k) > proximity(best))) {
-                best = k;
+            if (w.inputs[raw + k * RAY_CHANNELS + c] > 0 && proximity(k) > 0) {
+                hits.push(k);
             }
         }
-        out.push(...(best < 0 ? [0, 0, 0] : [proximity(best), w.rayCos[best], w.raySin[best]]));
+        hits.sort((a, b) => proximity(b) - proximity(a) || a - b);
+        for (let i = 0; i < 2; i++) {
+            const k = hits[i];
+            out.push(...(k === undefined ? [0, 0, 0] : [proximity(k), w.rayCos[k], w.raySin[k]]));
+        }
     }
     const body = raw + rayCount * RAY_CHANNELS;
     out.push(...w.inputs.subarray(body, raw + w.layout.rawInputCount));
@@ -85,13 +88,13 @@ describe('poolRays', () => {
         expect(w.pooled[row + off.pooled.food]).toBeGreaterThan(0);
         expect(w.pooled[row + off.pooled.food + 1]).toBe(1);
         const threat = row + off.pooled.threat;
-        expect(Array.from(w.pooled.subarray(threat, threat + POOLED_STRIDE))).toEqual([0, 0, 0]);
+        expect(Array.from(w.pooled.subarray(threat, threat + POOLED_STRIDE))).toEqual([0, 0, 0, 0, 0, 0]);
         for (let i = 0; i < POOLED_VALUES; i++) {
             expect(Math.abs(w.pooled[row + i])).toBeLessThanOrEqual(1);
         }
     });
 
-    it('collapses two foods on opposite sides to the nearer one', () => {
+    it('puts two foods on opposite sides in the two hit slots, the nearer first', () => {
         const w = senseWorld({ rayCount: 8 });
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 600, 500, 20);
@@ -102,6 +105,9 @@ describe('poolRays', () => {
         const food = me * w.layout.inputCount + off.pooled.food;
         expect(w.pooled[food + 1]).toBe(1);
         expect(w.pooled[food]).toBeGreaterThan(0.5);
+        expect(w.pooled[food + 3]).toBeGreaterThan(0);
+        expect(w.pooled[food + 3]).toBeLessThan(w.pooled[food]);
+        expect(w.pooled[food + 4]).toBe(-1);
     });
 
     it('leaves the raw inputs row alone and copies the body block after the pooled values', () => {

@@ -18,7 +18,7 @@ describe('the discrimination scenes', () => {
         expect(result).toMatchObject({ pooled: 1, raw: 1, pass: true });
     });
 
-    it('corridor: the raw controller drives the passage and the pooled one, with one wall hit, does not', () => {
+    it('corridor: the raw controller drives the passage and the pooled one, with its two strongest rock hits, does not', () => {
         const result = runScene(SCENES[2], { trials: 8, seed: 1 });
         expect(result.raw).toBeGreaterThanOrEqual(0.75);
         expect(result.pooled).toBeLessThan(PASS_SHARE * result.raw);

@@ -1,4 +1,4 @@
-// The discrimination checks for the pooled-v2 inputs: three scenes where different situations need different actions,
+// The discrimination checks for the pooled-v2 inputs (top 2 hits per channel): three scenes where different situations need different actions,
 // each scored for a controller that reads the pooled row and one that reads the raw rays. A scene passes when the
 // pooled controller scores within 10% of the raw one. Run before the pooled layout is switched on.
 

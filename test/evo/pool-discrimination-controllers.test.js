@@ -66,7 +66,12 @@ describe('flee', () => {
         expect([raw.thrust, raw.sprint]).toEqual([1, 1]);
     });
 
-    it('runs from the single strongest threat when it reads the pooled row, which here means a turn', () => {
+    it('runs straight ahead from two equal threats on either side when it reads the pooled row, which keeps both', () => {
+        const world = sensed({ foods: [], rocks: [], agents: [SUBJECT, ...threats], seed: 1 });
+        expect(Math.abs(run(world, flee, true).turn)).toBeLessThan(0.05);
+    });
+
+    it('runs from the much nearer of two threats when it reads the pooled row, which here means a turn', () => {
         const near = [{ ...threats[0], x: 1500 - 100, y: 2000 + 100 }, threats[1]];
         const world = sensed({ foods: [], rocks: [], agents: [SUBJECT, ...near], seed: 1 });
         expect(Math.abs(run(world, flee, true).turn)).toBeGreaterThan(0.2);
