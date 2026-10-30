@@ -25,8 +25,8 @@ export default defineConfig(({ command, mode }) => {
       // Ensure proper asset handling for Cloudflare Pages
       rollupOptions: {
         output: {
-          // Use relative paths for assets
-          assetFileNames: 'assets/[name].[ext]',
+          // Content-hash every asset name (a fixed name stays cached across deploys)
+          assetFileNames: 'assets/[name]-[hash][extname]',
           // Split vendor libraries into separate chunks for better caching
           manualChunks(id) {
             if (id.includes('/node_modules/three/')) return 'vendor';
