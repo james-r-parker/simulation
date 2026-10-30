@@ -252,3 +252,8 @@ fitness and merit (K9), and the pack term paid standers-by (K11).
 - The app is checked by eye as well as by metrics: a phase that changes behaviour ends with a clip of the default
   world (`Shift+P`) for the user.
 - A gap marked "none yet" is planned as a metric before a change claims to fix it.
+- When something fails (a type dies out, a population collapses, a behaviour never emerges), first find how nature
+  meets the same problem and build the fix from that mechanism, before tuning a number or adding a rescue (user,
+  2026-10-30). The plan's Decisions row and the PR body name the biology. Example: predators that starve as beginners
+  get a gorge-and-fast metabolism (a low resting burn, a larger fat store, a big meal per kill), as real carnivores do,
+  not a restock.
