@@ -17,7 +17,7 @@ const BODY = { bitten: 12, attackLeft: 21, attackRight: 22 };
  * @returns {{world: any, run: (w: any) => void}}
  */
 function setup(name) {
-    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0 });
     const world = createWorld(config, createBaselineV5().brain);
     return { world, run: COMBAT_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') }) };
 }

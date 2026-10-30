@@ -5,7 +5,7 @@ import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from '../../evo/mutation.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
-import { countSpecs, pickEmptySpec } from '../../sim/spec-rescue.js';
+import { countSpecs } from '../../sim/spec-rescue.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -96,17 +96,13 @@ function checkRow(row, layout, log) {
 }
 
 /**
- * The specialisation for a new lineage, in order: a rescue of one with 0 alive (`floorRescueAtZero`), a random elite's
+ * The specialisation for a new lineage, in order: a random elite's
  * (`specMutationRate` above 0), the least populated.
  * @param {{world: Record<string, any>, slot: number, rng: any, archive: Record<string, any>, counts: Int32Array}} what
  *   the world, the slot being seeded, the `spawn` stream, the archive and scratch counts
  * @returns {number} the specialisation index
  */
 function chooseSpec({ world, slot, rng, archive, counts }) {
-    const rescue = world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
-    if (rescue >= 0) {
-        return rescue;
-    }
     if (world.config.specMutationRate > 0) {
         return randomEliteSpec(archive, rng);
     }

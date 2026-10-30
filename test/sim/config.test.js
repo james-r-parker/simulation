@@ -76,7 +76,6 @@ describe('rulesHash', () => {
             maxAgents: 400,
             initialAgents: 50,
             minAgents: 5,
-            immigrationInterval: 0,
             checkInvariants: true,
         });
         expect(rulesHash(changed)).toBe(rulesHash(createConfig()));

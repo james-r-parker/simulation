@@ -21,8 +21,8 @@ export const DEFAULTS = deepFreeze({
     worldHeight: 8100, // WORLD_HEIGHT
     maxAgents: 500, // new
     initialAgents: 100, // new
-    minAgents: 40, // the floor; 40 from the Phase 4 switch-on (world-balance T41), 100 before it
-    immigrationInterval: 600, // new
+    minAgents: 40, // the restart size: the floor guard refills the world to this
+    floorTrigger: 8, // the floor guard acts only when fewer than this many are alive (natural-selection T3); 0 turns it off
     maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
@@ -217,9 +217,6 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
-    floorRescueAtZero: false, // new: the floor and the seeder pick only a specialisation with 0 alive
-    predatorRescueMin: 3, // tuned, fitness-and-selection T15d (0 is off; every predatorRescueInterval ticks, one immigrant spawns as a predator while fewer are alive, T15b)
-    predatorRescueInterval: 450, // tuned, fitness-and-selection T15d (ticks between predator rescue checks)
     predatorKillEnergy: 150, // tuned, fitness-and-selection T15d (energy the biter gains on a fatal bite, T15f)
     alarmThreshold: 0.65, // tuned, fitness-and-selection T15d (the alarm output must exceed it, T15m)
     huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
@@ -233,8 +230,6 @@ export const DEFAULTS = deepFreeze({
     eraSeasonTicks: 36000, // new: ticks per season (a year is 4 x this)
     winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
-    invasionInterval: 180000, // new: ticks between invasion pulses; 0 is none
-    invasionSize: 12, // new: immigrants in a pulse
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
     meritChanceWeight: 0.25, // new: fitness-and-selection T16 (merit, off)
@@ -246,7 +241,6 @@ export const DEFAULTS = deepFreeze({
     meritMateWeight: 0, // new: fitness-and-selection T16 (merit, off)
     meritBirthBoost: 0, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
-    meritSplitFloorPop: 80, // new: fitness-and-selection T16 (merit, off)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
 });

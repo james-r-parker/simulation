@@ -317,15 +317,15 @@ describe('validateConfig food patches and the floor', () => {
         ['foodPatchDepletion', -0.1],
         ['foodPatchRegrow', 1.1],
         ['foodBackgroundShare', -0.1],
-        ['floorRescueAtZero', 1],
+        ['floorTrigger', 1.5],
         ['foodRegrowPerArea', -1],
     ])('rejects %s of %s', (key, value) => {
         expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });
 
-    it('has patches off in the simple world, the floor at 40 and no rescue by default', () => {
+    it('has patches off in the simple world, the floor at 40 and the guard at 8 by default', () => {
         const c = createConfig({ ...SIMPLE_WORLD });
-        expect([c.foodPatchCount, c.minAgents, c.floorRescueAtZero]).toEqual([0, 40, false]);
+        expect([c.foodPatchCount, c.minAgents, c.floorTrigger]).toEqual([0, 40, 8]);
     });
 
     it('rejects patches wider than the world', () => {

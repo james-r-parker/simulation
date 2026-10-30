@@ -20,8 +20,6 @@ export const SIMPLE_WORLD = Object.freeze({
     mateRange: 100,
     maxBirthsPerWindow: 0,
     predatorKillEnergy: 0,
-    predatorRescueInterval: 600,
-    predatorRescueMin: 0,
     refugeCount: 0,
     reproductionCooldown: 300,
     satiationShare: 0,

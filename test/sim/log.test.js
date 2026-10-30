@@ -133,18 +133,19 @@ describe('drainEvents', () => {
         ]);
     });
 
-    it('logs BirthBlocked at warn and PopulationFloor at info', () => {
+    it('logs BirthBlocked at warn, and PopulationFloor with FloorGuard at info', () => {
         const world = build();
         world.events.count = 0;
         const a = pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 3);
         world.events.data.set([6, BLOCKED_CAUSE.ENERGY], a + 2);
         const b = pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, 4);
-        world.events.data[b + 2] = 2;
+        world.events.data.set([2, 5], b + 2);
         const { records, log } = collect('info');
         drainEvents(world, log);
         expect(records).toEqual([
             { level: 'warn', event: 'BirthBlocked', tick: 3, slot: 6, cause: 'energy' },
             { level: 'info', event: 'PopulationFloor', tick: 4, added: 2 },
+            { level: 'info', event: 'FloorGuard', tick: 4, population: 5, spawned: 2 },
         ]);
     });
 
@@ -161,14 +162,11 @@ describe('drainEvents', () => {
         world.events.data.set([2, 0], season + 2);
         const drought = pushEvent(world.events, EVENT_TYPE.DROUGHT_STARTED, 100);
         world.events.data.set([1, 0], drought + 2);
-        const invasion = pushEvent(world.events, EVENT_TYPE.INVASION_ARRIVED, 200);
-        world.events.data.set([12, 7, 3, 2], invasion + 2);
         const { records, log } = collect('info');
         drainEvents(world, log);
-        expect(records.slice(-3)).toEqual([
+        expect(records.slice(-2)).toEqual([
             { level: 'info', event: 'SeasonChanged', tick: 100, season: 2, year: 0 },
             { level: 'info', event: 'DroughtStarted', tick: 100, basin: 1, year: 0 },
-            { level: 'info', event: 'InvasionArrived', tick: 200, count: 12, lineageId: 7, spec: 3, edge: 2 },
         ]);
     });
 

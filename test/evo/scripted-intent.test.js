@@ -16,7 +16,7 @@ const O = OUTPUT_INDEX;
  * @returns {{world: any, run: (w: any) => void}} a small world and the controller's brain phase
  */
 function setup(name, seed = 1) {
-    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0 });
     const world = createWorld(config, createBaselineV5().brain);
     return { world, run: INTENT_CONTROLLERS[name]({ world, rng: fork(createRng(seed), 'scripted') }) };
 }

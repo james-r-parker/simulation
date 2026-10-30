@@ -31,15 +31,13 @@ function run() {
             foodPatchRadius: 300,
             eraSeasonTicks: SEASON,
             droughtChance: 1,
-            invasionInterval: 600,
-            invasionSize: 6,
             checkInvariants: true,
             seed: 11,
         }),
         policy,
     );
     const types = [];
-    const wanted = [EVENT_TYPE.SEASON_CHANGED, EVENT_TYPE.DROUGHT_STARTED, EVENT_TYPE.INVASION_ARRIVED];
+    const wanted = [EVENT_TYPE.SEASON_CHANGED, EVENT_TYPE.DROUGHT_STARTED];
     for (let t = 0; t < TICKS; t++) {
         step(world, policy);
         for (let i = 0; i < readEvents(world.events); i++) {
@@ -54,7 +52,7 @@ function run() {
 
 describe('eras over a run', () => {
     it(
-        'turns the seasons, droughts one basin each summer and sends invasion pulses, with invariants holding',
+        'turns the seasons, droughts one basin each summer, with invariants holding',
         () => {
             const { types } = run();
             const seasons = types.filter((e) => e[0] === EVENT_TYPE.SEASON_CHANGED);
@@ -62,8 +60,6 @@ describe('eras over a run', () => {
             expect(seasons.map((e) => e[2]).slice(0, 4)).toEqual([1, 2, 3, 0]);
             const droughts = types.filter((e) => e[0] === EVENT_TYPE.DROUGHT_STARTED);
             expect(droughts.map((e) => e[1])).toEqual([300, 1500]);
-            const invasions = types.filter((e) => e[0] === EVENT_TYPE.INVASION_ARRIVED);
-            expect(invasions.map((e) => e[1])).toEqual([600, 1200, 1800]);
         },
         TIMEOUT_MS,
     );

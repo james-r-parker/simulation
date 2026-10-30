@@ -21,8 +21,6 @@ vi.mock('../../js/sim/environment.js', () => ({
     updateSeason: rec('updateSeason'),
 }));
 vi.mock('../../js/sim/eras.js', () => ({ advanceEra: rec('advanceEra') }));
-vi.mock('../../js/sim/predator-rescue.js', () => ({ rescuePredators: rec('rescuePredators') }));
-vi.mock('../../js/sim/invasion.js', () => ({ invade: rec('invade') }));
 vi.mock('../../js/sim/feeding.js', () => ({ feed: rec('feed') }));
 vi.mock('../../js/sim/food.js', () => ({ ageFood: rec('ageFood'), spawnFood: rec('spawnFood') }));
 vi.mock('../../js/sim/food-patches.js', () => ({ regrowPatches: rec('regrowPatches') }));
@@ -82,8 +80,6 @@ describe('step phase bodies', () => {
             ['splitAll', world, policy],
             ['reap', world, policy],
             ['fillFloor', world, policy],
-            ['rescuePredators', world, policy],
-            ['invade', world, policy],
             ['regrowPatches', world],
             ['spawnFood', world],
             ['ageFood', world],

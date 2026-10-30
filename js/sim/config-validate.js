@@ -29,7 +29,7 @@ const RULES = {
     maxAgents: int(1, 4096),
     initialAgents: int(0),
     minAgents: int(0),
-    immigrationInterval: int(0),
+    floorTrigger: int(0),
     maxFood: int(1, 20000),
     initialFood: int(0),
     foodSpawnRate: num(0),

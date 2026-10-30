@@ -7,7 +7,7 @@ import { createPatches, pickPatch } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain } from './terrain.js';
 import { drawSex } from './sex.js';
-import { SPEC_COUNT, pickEmptySpec } from './spec-rescue.js';
+import { SPEC_COUNT } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
@@ -227,17 +227,14 @@ export function spawnFoodItem(world) {
  * @param {World} world the world
  * @param {Policy} policy the brain policy
  * @param {number} slot the allocated slot
- * @param {number} cause the spawn cause
- * @returns {number} the policy's pick, else a floor spawn's pick among the empty specialisations when
- *   `floorRescueAtZero` is on and one is empty, else uniform
+ * @returns {number} the policy's pick, else uniform
  */
-function chooseSpec(world, policy, slot, cause) {
+function chooseSpec(world, policy, slot) {
     const rng = world.rng.spawn;
     if (policy.initSpec) {
         return policy.initSpec(world, slot, rng);
     }
-    const rescue = cause === BORN_CAUSE.FLOOR && world.config.floorRescueAtZero ? pickEmptySpec(world, slot, rng) : -1;
-    return rescue >= 0 ? rescue : nextInt(rng, SPEC_COUNT);
+    return nextInt(rng, SPEC_COUNT);
 }
 
 /**
@@ -245,12 +242,10 @@ function chooseSpec(world, policy, slot, cause) {
  * @param {World} world the world
  * @param {Policy} policy the brain policy
  * @param {number} cause a `BORN_CAUSE` of `INITIAL`, `FLOOR` or `IMMIGRANT`
- * @param {number} [forcedSpec] a specialisation index to use instead of the policy's pick (the predator rescue); -1 or
- *   omitted leaves the pick to the policy
  * @returns {number} the agent slot
  * @throws {Error} when the cause is not a spawn cause or the world is full
  */
-export function spawnAgent(world, policy, cause, forcedSpec = -1) {
+export function spawnAgent(world, policy, cause) {
     const source = SPAWN_SOURCE.get(cause);
     if (source === undefined) {
         throw new Error(`spawnAgent: cause must be initial, floor or immigrant, got ${cause}`);
@@ -260,7 +255,7 @@ export function spawnAgent(world, policy, cause, forcedSpec = -1) {
     const id = world.nextId++;
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
-    world.spec[slot] = forcedSpec >= 0 ? forcedSpec : chooseSpec(world, policy, slot, cause);
+    world.spec[slot] = chooseSpec(world, policy, slot);
     drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);

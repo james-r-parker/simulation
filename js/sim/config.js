@@ -4,14 +4,7 @@ import { validateConfig } from './config-validate.js';
 import { fnv64Hex, fnv64Init, fnv64String } from './fnv.js';
 
 /** Keys that change population size or checking, not the physics or brains. */
-const RULES_HASH_EXCLUDED = [
-    'seed',
-    'maxAgents',
-    'initialAgents',
-    'minAgents',
-    'immigrationInterval',
-    'checkInvariants',
-];
+const RULES_HASH_EXCLUDED = ['seed', 'maxAgents', 'initialAgents', 'minAgents', 'checkInvariants'];
 
 /**
  * @param {unknown} value any value

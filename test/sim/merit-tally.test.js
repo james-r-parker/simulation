@@ -3,7 +3,7 @@ import { TALLY } from '../../js/sim/merit-state.js';
 import { splitGatedShare, tallyReady } from '../../js/sim/merit-tally.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
-const ON = { splitDeliberateMin: 50, meritSplitFloorPop: 0, splitMinEnergy: 100 };
+const ON = { splitDeliberateMin: 50, splitMinEnergy: 100 };
 
 /**
  * @param {any} w the world
@@ -36,14 +36,6 @@ describe('tallyReady', () => {
         addBlob(w, { pregnancy: 5 });
         tallyReady(w);
         expect(totals(w)).toEqual([0, 0, 0]);
-    });
-
-    it('opens the gate below the population floor, so nothing is gated', () => {
-        const w = lifeWorld({ ...ON, meritSplitFloorPop: 5 });
-        addBlob(w);
-        addBlob(w);
-        tallyReady(w);
-        expect(totals(w)).toEqual([2, 0, 0]);
     });
 
     it('counts no gated agents when the gate is off (splitDeliberateMin 0)', () => {

@@ -38,11 +38,11 @@ export const RUNG_METRICS = Object.freeze([
 /**
  * Runs one rung on one seed in the default world with no floor and no immigrants, so only births refill it.
  * @param {{rung: import('./ladder.js').Rung, seed: number, ticks: number, overrides?: Record<string, any>}} task the
- *   rung, the seed, the tick count and config overrides (`minAgents`, `immigrationInterval` and `seed` are set here)
+ *   rung, the seed, the tick count and config overrides (`minAgents` and `seed` are set here)
  * @returns {RungRun} the rung's final population and metrics
  */
 export function runControllerSeed({ rung, seed, ticks, overrides = {} }) {
-    const config = createConfig({ ...overrides, minAgents: 0, immigrationInterval: 0, seed });
+    const config = createConfig({ ...overrides, minAgents: 0, seed });
     const arms = rung.arms;
     const random = typeof arms === 'string' ? arms === RANDOM_ARM : [arms.canHunt, arms.rest].includes(RANDOM_ARM);
     const policy = random ? createRandomBrain(config).brain : createBaselineV5().brain;

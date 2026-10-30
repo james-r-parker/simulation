@@ -16,7 +16,6 @@ const MERIT_OFF = {
     meritMateWeight: 0,
     meritBirthBoost: 0,
     splitDeliberateMin: 0,
-    meritSplitFloorPop: 80,
 };
 // The defaults from T48b: the E41 finalist split-300 (merit on, the split gate at 300), every other key unchanged.
 const MERIT_DEFAULTS = { ...MERIT_OFF, splitDeliberateMin: 300 };
@@ -64,7 +63,6 @@ describe('merit keys: defaults', () => {
             meritMateWeight: 0.5,
             meritBirthBoost: 0.1,
             splitDeliberateMin: 1,
-            meritSplitFloorPop: 81,
         };
         for (const key of Object.keys(MERIT_DEFAULTS)) {
             expect(rulesHash(off({ [key]: moved[key] }))).not.toBe(rulesHash(base));
@@ -98,20 +96,12 @@ describe('merit keys: accepted at the edges, rejected just outside', () => {
         ['meritBirthBoost', 0.51, false],
         ['splitDeliberateMin', 0, true],
         ['splitDeliberateMin', -1, false],
-        ['meritSplitFloorPop', 0, true],
-        ['meritSplitFloorPop', 500, true],
-        ['meritSplitFloorPop', -1, false],
     ])('%s = %s accepted: %s', (key, value, accepted) => {
         if (accepted) {
             expect(off({ [key]: value })[key]).toBe(value);
         } else {
             expect(() => off({ [key]: value })).toThrow(new RegExp(key));
         }
-    });
-
-    it('accepts meritSplitFloorPop above maxAgents, where the split gate stays open', () => {
-        expect(off({ maxAgents: 120, meritSplitFloorPop: 121 }).meritSplitFloorPop).toBe(121);
-        expect(off({ maxAgents: 120, meritSplitFloorPop: 500 }).meritSplitFloorPop).toBe(500);
     });
 });
 
@@ -123,10 +113,7 @@ describe('merit keys: type checks', () => {
         expect(() => off({ [key]: value })).toThrow(new RegExp(key));
     });
 
-    it.each([
-        ['meritHalfLife', 1.5],
-        ['meritSplitFloorPop', 80.5],
-    ])('rejects the fraction %s = %s', (key, value) => {
+    it.each([['meritHalfLife', 1.5]])('rejects the fraction %s = %s', (key, value) => {
         expect(() => off({ [key]: value })).toThrow(new RegExp(key));
     });
 });

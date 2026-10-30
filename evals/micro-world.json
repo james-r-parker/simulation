@@ -4,7 +4,6 @@
   "initialAgents": 40,
   "maxAgents": 80,
   "minAgents": 0,
-  "immigrationInterval": 0,
   "maxFood": 60,
   "initialFood": 60,
   "wallGaps": 1,

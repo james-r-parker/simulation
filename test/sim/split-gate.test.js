@@ -9,7 +9,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
-const BASE = { splitDeliberateMin: 0, meritSplitFloorPop: 0, splitMinEnergy: 200 };
+const BASE = { splitDeliberateMin: 0, splitMinEnergy: 200 };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -83,17 +83,6 @@ describe('splitMaxPerLife', () => {
         const { w, slot } = blobWorld({ splitMaxPerLife: 0 });
         w.splitsDone[slot] = 1000;
         expect(splitGateOpen(w, slot)).toBe(true);
-    });
-});
-
-describe('the near-extinction bypass', () => {
-    it('opens every key below meritSplitFloorPop, a floor near minAgents', () => {
-        const over = { splitDeliberateShareMin: 1, splitMaxPerLife: 1, meritSplitFloorPop: 2 };
-        const { w, slot } = blobWorld(over, { splitsDone: 5 });
-        expect(w.population).toBe(1);
-        expect(splitGateOpen(w, slot)).toBe(true);
-        addBlob(w, { energy: 1000 });
-        expect(splitGateOpen(w, slot)).toBe(false);
     });
 });
 

@@ -145,7 +145,7 @@ describe('checkFiles', () => {
             );
             const problems = checkFiles(path, pathToFileURL(`${dir}/`));
             expect(problems).toContain('capBirthsEnabled: plan docs/plan.md is built (Built) but the key still exists');
-            expect(problems.some((line) => line.startsWith('floorRescueAtZero: a boolean or enum rule'))).toBe(true);
+            expect(problems.some((line) => line.startsWith('checkInvariants: a boolean or enum rule'))).toBe(true);
         } finally {
             rmSync(dir, { recursive: true, force: true });
         }

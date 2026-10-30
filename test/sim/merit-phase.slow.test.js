@@ -14,7 +14,7 @@ import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 const TIMEOUT_MS = scaleTimeout(60_000);
 
 const TICKS = 3000;
-const MERIT = { splitDeliberateMin: 200, meritSplitFloorPop: 20 };
+const MERIT = { splitDeliberateMin: 200 };
 
 /**
  * Runs a seed-1 world with the reference policy, collecting the MeritSummary records.

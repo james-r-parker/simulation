@@ -2,7 +2,7 @@
 // credits its grandparents and its lineage's rare-niche account), the matings that start this tick, and the 1000-tick
 // niche checkpoint. Split from `observer-scenes.js`, which owns the scenes and their events.
 
-import { BURN_IN_TICKS } from './observer-events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { creditGrandparents, trackHeritage } from './scene-heritage.js';
 import { trackMatings } from './scene-mate.js';
 import { checkpointNiche, noteNicheMatured } from './scene-niche.js';

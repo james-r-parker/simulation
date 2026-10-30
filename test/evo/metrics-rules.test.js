@@ -13,11 +13,11 @@ describe('the rule metrics', () => {
     it('are the Detectors table names, all watch in the compare table', () => {
         const names = Object.keys(ruleMetrics(observed().observer)).sort();
         expect(names).toEqual(Object.keys(RULE_DIRECTIONS).sort());
-        expect(names).toHaveLength(14);
+        expect(names).toHaveLength(12);
         for (const name of names) {
             expect(metricDirection(name), name).toBe('watch');
         }
-        expect(names).toContain('eval.birth_source_share.invasion');
+        expect(names).toContain('eval.birth_source_share.immigrant');
     });
 
     it('read null with the T6 reason for the proof-rule metrics, and have a reason everywhere on a fresh observer', () => {

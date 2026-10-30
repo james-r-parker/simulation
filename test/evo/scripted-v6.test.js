@@ -24,7 +24,6 @@ function setup(name, extra = {}) {
         initialAgents: 3,
         maxAgents: 6,
         minAgents: 0,
-        immigrationInterval: 0,
         ...extra,
     });
     const world = createWorld(config, createBaselineV5().brain);

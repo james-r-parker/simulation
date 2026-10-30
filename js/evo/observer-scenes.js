@@ -12,8 +12,7 @@ import { createConditionScene, flushCondition, resetConditionSlot, sampleConditi
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
 import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
-import { BURN_IN_TICKS } from './observer-events.js';
-import { createBirthScene, noteBirthSource } from './scene-births.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
 import { createMateScene, resetMateSlot } from './scene-mate.js';
 import { createNicheScene } from './scene-niche.js';
@@ -38,7 +37,6 @@ export function createScenes(config) {
         condition: createConditionScene(config),
         spend: createSpendScene(config),
         season: createSeasonScene(),
-        births: createBirthScene(),
         heritage: createHeritageScene(config),
         niche: createNicheScene(),
         mate: createMateScene(config),
@@ -93,7 +91,6 @@ function noteEvents(scenes, observer, world) {
     const d = world.events.data;
     const end = world.events.count * EVENT_STRIDE;
     for (let o = 0; o < end; o += EVENT_STRIDE) {
-        noteBirthSource(scenes.births, d, o);
         if (d[o] === EVENT_TYPE.AGENT_DIED) {
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });

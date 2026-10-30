@@ -18,7 +18,7 @@ const COLD_TICKS = 3000;
  * @returns {number} the population at the end
  */
 function populationAfter(name) {
-    const config = createConfig({ ...SIMPLE_WORLD, seed: 1, minAgents: 0, immigrationInterval: 0 });
+    const config = createConfig({ ...SIMPLE_WORLD, seed: 1, minAgents: 0 });
     const brain = createBaselineV5().brain;
     const world = createWorld(config, brain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') });
@@ -69,7 +69,6 @@ describe('body temperature cold band', () => {
                 seed: 1,
                 initialAgents: 30,
                 minAgents: 0,
-                immigrationInterval: 0,
                 specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
             });
             const brain = createBaselineV5().brain;

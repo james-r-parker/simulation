@@ -54,15 +54,12 @@ describe('eras config', () => {
     it('defaults to the doc values', () => {
         const c = createConfig({ ...SIMPLE_WORLD });
         expect([c.eraSeasonTicks, c.winterRegrow, c.droughtChance]).toEqual([36000, 0.2, 0.25]);
-        expect([c.invasionInterval, c.invasionSize]).toEqual([180000, 12]);
     });
 
     it.each([
         ['eraSeasonTicks', 0],
         ['winterRegrow', -1],
         ['droughtChance', 1.5],
-        ['invasionInterval', -1],
-        ['invasionSize', 1.5],
     ])('rejects %s of %s', (key, value) => {
         expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(new RegExp(`config\\.${key}`));
     });

@@ -6,13 +6,11 @@ import { decayFertileZones, updateSeason } from './environment.js';
 import { feed } from './feeding.js';
 import { ageFood, spawnFood } from './food.js';
 import { advanceEra } from './eras.js';
-import { invade } from './invasion.js';
 import { regrowPatches } from './food-patches.js';
 import { assertInvariants } from './invariants.js';
 import { forwardAll } from './brain.js';
 import { actAll, integrate, resolveContacts } from './physics.js';
 import { fillFloor, reap } from './population.js';
-import { rescuePredators } from './predator-rescue.js';
 import { updatePheromones } from './pheromones.js';
 import { meritPhase } from './merit-phase.js';
 import { tallyReady } from './merit-tally.js';
@@ -90,8 +88,6 @@ function lifecycle(world, policy) {
     splitAll(world, policy);
     reap(world, policy);
     fillFloor(world, policy);
-    rescuePredators(world, policy);
-    invade(world, policy);
 }
 
 /**

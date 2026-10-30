@@ -26,8 +26,6 @@ describe('event codes', () => {
             FOOD_PATCHES_CREATED: 9,
             SEASON_CHANGED: 10,
             DROUGHT_STARTED: 11,
-            INVASION_ARRIVED: 12,
-            PREDATOR_RESCUE: 13,
             MERIT_SUMMARY: 14,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });

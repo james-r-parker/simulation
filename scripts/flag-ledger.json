@@ -6,12 +6,6 @@
     "reason": "Kept as the control arm of the birth-cap screen (capBirthsEnabled false against the default); T17d deletes the off path when the screen shows the cap is not what hides the crash, or the key when it is."
   },
   {
-    "key": "floorRescueAtZero",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "The floor guard (floorTrigger) replaces the floor and seeder rescue rule; stage 4 deletes this switch with the old floor."
-  },
-  {
     "key": "checkInvariants",
     "plan": null,
     "task": null,
@@ -24,46 +18,10 @@
     "reason": "Permanent: a specialisation's trait (it decides who may bite), not a switch between an old and a new rule."
   },
   {
-    "key": "immigrationInterval",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch sets it to 0 (no entrant on a timer); stage 4 deletes the timer path."
-  },
-  {
-    "key": "predatorRescueMin",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch sets it to 0 and predators must hold on their own; stage 4 deletes the rescue."
-  },
-  {
-    "key": "predatorRescueInterval",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: goes with predatorRescueMin when stage 4 deletes the rescue."
-  },
-  {
-    "key": "invasionInterval",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch sets it to 0 (no invasion pulse); stage 4 deletes the pulse."
-  },
-  {
-    "key": "invasionSize",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: goes with invasionInterval when stage 4 deletes the pulse."
-  },
-  {
     "key": "meritChanceWeight",
     "plan": "docs/designs/natural-selection.md",
     "task": "big bang stage 4",
     "reason": "Natural-selection switch key: the switch sets the chance credit to 0 so a lucky meal earns no merit; stage 4 deletes the chance path."
-  },
-  {
-    "key": "meritSplitFloorPop",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch sets it to 0 (the split bypass is never open); stage 4 deletes the bypass."
   },
   {
     "key": "alarmCost",
