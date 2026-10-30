@@ -173,6 +173,7 @@ export function createAgentsLayer({ info, flagBits }) {
                 dtMs: frame.dtMs,
                 zoom: frame.camera.zoom,
                 slots: frame.family,
+                maxVelocity: info.maxVelocity,
             });
             for (let i = 0; i < meshes.length; i++) {
                 upload(meshes[i], store.buckets[i]);

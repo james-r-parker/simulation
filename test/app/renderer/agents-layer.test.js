@@ -115,6 +115,21 @@ describe('setSmokeTexture', () => {
     });
 });
 
+describe('motion cues', () => {
+    it('scale the speed cue by the world maxVelocity, not a fixed number', () => {
+        const { info, layout, snapshot } = smallReady(20);
+        const frame = frameOf(info, snapshot);
+        for (let i = 0; i < frame.agents.count; i++) {
+            frame.agents.speed[i] = info.maxVelocity / 2;
+        }
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        layer.update?.(frame);
+        const bucket = layer.store.buckets.find((/** @type {any} */ b) => b.count > 0);
+        expect(bucket.motion[0]).toBeCloseTo(0.5, 5);
+        layer.dispose();
+    });
+});
+
 describe('setLook', () => {
     it('sets uMotion by quality tier (1 for 0, 0.5 for 1, 0 for off)', () => {
         const { info, layout } = smallReady();
