@@ -5,19 +5,11 @@ import { decodeWeights, encodeWeights } from './base64.js';
 import { GENOME_SPECS, rejectGenome } from './genome.js';
 import { descriptorV1 } from './descriptors.js';
 import { WELFORD_STRIDE } from './welford.js';
-import { brainLayout } from '../sim/brain-layout.js';
+import { brainLayout, layoutStamp } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
 
 /** The archive format version. */
 export const ARCHIVE_VERSION = 4;
-
-/**
- * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
- * @returns {{ inputCount: number, brainHidden: number, outputCount: number }} the layout stamp
- */
-function layoutStamp(layout) {
-    return { inputCount: layout.inputCount, brainHidden: layout.hidden, outputCount: layout.outputCount };
-}
 
 /**
  * @param {import('./archive.js').Archive} archive the archive

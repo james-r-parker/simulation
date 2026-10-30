@@ -22,10 +22,17 @@ describe('validateChampion', () => {
 
     it.each([
         ['version', { version: 2 }],
-        ['layout.inputCount', { layout: { inputCount: 1, brainHidden: 32, outputCount: 11 } }],
+        ['layout.inputCount', { layout: { name: 'pooled-v2', inputCount: 1, brainHidden: 32, outputCount: 11 } }],
         [
             'layout.brainHidden',
-            { layout: { inputCount: brainLayout(config).inputCount, brainHidden: 16, outputCount: 11 } },
+            {
+                layout: {
+                    name: 'pooled-v2',
+                    inputCount: brainLayout(config).inputCount,
+                    brainHidden: 16,
+                    outputCount: 11,
+                },
+            },
         ],
         ['rulesHash', { rulesHash: 'deadbeefdeadbeef' }],
         ['specialisation', { specialisation: 9 }],
@@ -39,6 +46,15 @@ describe('validateChampion', () => {
     it('rejects a layout that differs from the running config', () => {
         const file = makeChampionFile('a', 1);
         expect(() => validateChampion(file, createConfig({ brainHidden: 16 }))).toThrow(/layout\.brainHidden/);
+    });
+
+    it('rejects a layout of the same sizes but another name, and a file with no layout name', () => {
+        const file = makeChampionFile('a', 1);
+        expect(() => validateChampion({ ...file, layout: { ...file.layout, name: 'elman-v1' } }, config)).toThrow(
+            /champion\.layout\.name: expected pooled-v2, got elman-v1/,
+        );
+        const unnamed = { ...file.layout, name: undefined };
+        expect(() => validateChampion({ ...file, layout: unnamed }, config)).toThrow(/champion\.layout\.name/);
     });
 
     it('rejects a rules mismatch', () => {

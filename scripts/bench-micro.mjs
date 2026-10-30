@@ -8,17 +8,20 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import {
+    benchFiles,
     clearResults,
     compareRows,
     formatCompare,
     formatResults,
     medianResults,
+    readInfo,
     readResults,
+    vitestFilter,
 } from './lib/micro-bench.mjs';
 
 /** @typedef {import('./lib/micro-bench.mjs').MicroResult} MicroResult */
 
-const USAGE = 'usage: bench-micro [--compare <ref>] [--runs <n>] [--filter <text>]';
+const USAGE = 'usage: bench-micro [--area <name>] [--compare <ref>] [--runs <n>] [--filter <text>]';
 const DEFAULT_RUNS = 3;
 // Git exports GIT_DIR and friends to hooks; a child git that inherits them acts on the wrong repository.
 const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -27,7 +30,7 @@ const INSTALL_ARGS = ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--lo
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{compare: string | null, runs: number, filter: string | null}} parsed options
+ * @returns {{area: string | null, compare: string | null, runs: number, filter: string | null}} parsed options
  */
 export function parseArgs(argv) {
     /**
@@ -43,14 +46,15 @@ export function parseArgs(argv) {
     };
     const opts = parseFlags(argv, {
         valueFlags: {
+            '--area': text('--area', 'area'),
             '--compare': text('--compare', 'compare'),
             '--filter': text('--filter', 'filter'),
             '--runs': (value, flag) => ['runs', intValue(flag, value, 1, USAGE)],
         },
-        defaults: { compare: null, runs: DEFAULT_RUNS, filter: null },
+        defaults: { area: null, compare: null, runs: DEFAULT_RUNS, filter: null },
         usage: USAGE,
     });
-    return /** @type {{compare: string | null, runs: number, filter: string | null}} */ (opts);
+    return /** @type {{area: string | null, compare: string | null, runs: number, filter: string | null}} */ (opts);
 }
 
 /**
@@ -150,10 +154,15 @@ function compareWithRef(ref, { runs, filter }, head) {
 export function main(argv, cwd = process.cwd()) {
     return exitCodeOf(async () => {
         const options = parseArgs(argv);
+        const filter = vitestFilter(options.area, options.filter, benchFiles(cwd));
         const lines =
             options.compare === null
-                ? formatResults(runSuite(cwd, options.filter))
-                : compareWithRef(options.compare, options, cwd);
+                ? formatResults(runSuite(cwd, filter))
+                : compareWithRef(options.compare, { runs: options.runs, filter }, cwd);
+        const info = readInfo(cwd);
+        if (info.length > 0) {
+            lines.push('', 'fixture facts (this tree):', ...info);
+        }
         console.log(lines.join('\n'));
     });
 }

@@ -6,6 +6,12 @@ import { median } from '../bench.mjs';
 /** Where the bench files write their results, relative to the tree they ran in (`RESULT_DIR` in `bench/micro/fixture.js`). */
 export const RESULT_DIR = '.bench-micro';
 
+/** Where suites write facts a benchmark name cannot carry, relative to the tree (`INFO_DIR` in `bench/micro/brain-fixture.js`). */
+export const INFO_DIR = '.bench-micro-info';
+
+/** Where the bench files live, relative to a tree. */
+const BENCH_DIR = 'bench/micro';
+
 /**
  * @typedef {object} MicroResult
  * @property {number} ops operations per second (mean)
@@ -19,6 +25,65 @@ export const RESULT_DIR = '.bench-micro';
  */
 export function clearResults(tree) {
     rmSync(join(tree, RESULT_DIR), { recursive: true, force: true });
+    rmSync(join(tree, INFO_DIR), { recursive: true, force: true });
+}
+
+/**
+ * @param {string} tree the tree to look in
+ * @returns {string[]} the bench file names (`brain-parts.bench.js`), in name order
+ */
+export function benchFiles(tree) {
+    const dir = join(tree, BENCH_DIR);
+    return existsSync(dir)
+        ? readdirSync(dir)
+              .filter((f) => f.endsWith('.bench.js'))
+              .sort()
+        : [];
+}
+
+/**
+ * @param {string[]} files bench file names
+ * @returns {string[]} the areas: each file's name up to its first `-` or `.bench.js`, so `brain.bench.js` and
+ *   `brain-sweep.bench.js` are both the area `brain`; sorted, without repeats
+ */
+export function benchAreas(files) {
+    return [...new Set(files.map((f) => f.slice(0, f.indexOf('.bench.js')).split('-')[0]))].sort();
+}
+
+/**
+ * @param {string | null} area the area to run, null for every file
+ * @param {string | null} filter text the file name must contain; within an area, what follows `<area>-`
+ * @param {string[]} files the bench file names
+ * @returns {string | null} the filter to hand Vitest, null for no filter
+ * @throws {Error} when the area has no bench file
+ */
+export function vitestFilter(area, filter, files) {
+    if (area === null) {
+        return filter;
+    }
+    if (!benchAreas(files).includes(area)) {
+        throw new Error(`no bench area "${area}"; areas: ${benchAreas(files).join(', ')}`);
+    }
+    return `${BENCH_DIR}/${area}${filter === null ? '' : `-${filter}`}`;
+}
+
+/**
+ * @param {string} tree the tree a bench run wrote into
+ * @returns {string[]} one line per fixture fact the suites recorded (for example the nonzero inputs per agent), none
+ *   when no suite wrote any
+ */
+export function readInfo(tree) {
+    const root = join(tree, INFO_DIR);
+    if (!existsSync(root)) {
+        return [];
+    }
+    return readdirSync(root)
+        .sort()
+        .flatMap((file) =>
+            Object.entries(JSON.parse(readFileSync(join(root, file), 'utf8'))).map(
+                ([name, value]) => `${file.slice(0, -'.json'.length)}: ${name}: ${value}`,
+            ),
+        );
 }
 
 /**

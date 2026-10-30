@@ -3,6 +3,7 @@
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
+import { AUDIT_CONTROLLERS } from './scripted-audit.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 import { INTENT_CONTROLLERS } from './scripted-intent.js';
 import { V6_CONTROLLERS } from './scripted-v6.js';
@@ -143,4 +144,5 @@ export const SCRIPTED_CONTROLLERS = Object.freeze({
     ...COMBAT_CONTROLLERS,
     ...INTENT_CONTROLLERS,
     ...V6_CONTROLLERS,
+    ...AUDIT_CONTROLLERS,
 });

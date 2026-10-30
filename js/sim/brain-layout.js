@@ -1,5 +1,12 @@
 // Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v2 layout, top 2 hits per channel) from a config.
 
+/**
+ * The name of the brain layout this file defines. Stamped into every genome, archive and champion file and checked on
+ * load, so a file written under a layout of the same sizes but different meaning (another channel order, hit count or
+ * block order) is refused by name. Change it whenever a gene's meaning or position changes.
+ */
+export const BRAIN_LAYOUT_NAME = 'pooled-v2';
+
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
 
@@ -125,6 +132,20 @@ export function brainLayout(config) {
         leakStart,
         weightCount,
     });
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
+ * @returns {{ name: string, inputCount: number, brainHidden: number, outputCount: number }} the stamp saved files carry
+ *   and `assertLayoutStamp` checks: the layout name and the three sizes
+ */
+export function layoutStamp(layout) {
+    return {
+        name: BRAIN_LAYOUT_NAME,
+        inputCount: layout.inputCount,
+        brainHidden: layout.hidden,
+        outputCount: layout.outputCount,
+    };
 }
 
 /**
