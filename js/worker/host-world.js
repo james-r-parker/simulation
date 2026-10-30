@@ -9,7 +9,14 @@ import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG } from '../sim/snapshot.js';
-import { hasTerrain, obstacleSlots, REFUGE_ROCK_RADIUS, REFUGE_ROCKS, terrainRockCount } from '../sim/terrain.js';
+import {
+    hasTerrain,
+    obstacleSlots,
+    REFUGE_ROCK_RADIUS,
+    REFUGE_ROCKS,
+    ringRadius,
+    terrainRockCount,
+} from '../sim/terrain.js';
 import { step } from '../sim/step.js';
 import {
     collectEffects,
@@ -105,11 +112,6 @@ export function fieldBytes(run) {
 }
 
 /**
- * @param {Readonly<Record<string, any>>} config the config
- * @returns {Record<string, any>} the static terrain: the layout, the cold margin, the wall's x and the obstacle slots
- *   that hold its rocks (they are drawn from the snapshot's obstacles)
- */
-/**
  * @param {Record<string, any>} config the run's config
  * @param {import('../sim/world.js').World} [world] the world
  * @returns {Array<{x: number, y: number, radius: number}>} the refuge zones
@@ -120,7 +122,7 @@ function collectRefuges(config, world) {
     }
     const wallRockCount = terrainRockCount(config) - config.refugeCount * REFUGE_ROCKS;
     const start = config.obstacleCount + wallRockCount;
-    const ring = (REFUGE_ROCK_RADIUS + config.refugeSizeMax) / 0.3826834323650898;
+    const ring = ringRadius(config);
     const radius = ring + REFUGE_ROCK_RADIUS;
     const refuges = [];
     for (let i = 0; i < config.refugeCount; i++) {
