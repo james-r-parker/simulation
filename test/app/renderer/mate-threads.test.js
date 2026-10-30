@@ -5,9 +5,11 @@ import { createLineBuffer } from '../../../js/app/renderer/line-buffer.js';
 import {
     createMateThreadLayer,
     createMateThreadPool,
+    createThreadEnds,
     MATE_FADE_TICKS,
     MATE_POOL_CAPACITY,
     MATE_SEGMENTS,
+    MATE_SEGMENTS_LOW,
     MATE_TICKS,
     spawnMateThread,
     stepMateThreads,
@@ -44,35 +46,39 @@ describe('threadAt', () => {
 
 describe('threadCurve', () => {
     it('hits both endpoints exactly, bulges perpendicular, and is finite for two agents at one point', () => {
-        const ax = 10;
-        const ay = 20;
-        const bx = 110;
-        const by = 20;
+        const ends = { ax: 10, ay: 20, bx: 110, by: 20, sign: 1 };
         const out = [0, 0];
 
-        threadCurve(ax, ay, bx, by, 0, out);
-        expect(out[0]).toBeCloseTo(ax, 5);
-        expect(out[1]).toBeCloseTo(ay, 5);
+        threadCurve(ends, 0, out);
+        expect(out[0]).toBeCloseTo(10, 5);
+        expect(out[1]).toBeCloseTo(20, 5);
 
-        threadCurve(ax, ay, bx, by, 1, out);
-        expect(out[0]).toBeCloseTo(bx, 5);
-        expect(out[1]).toBeCloseTo(by, 5);
+        threadCurve(ends, 1, out);
+        expect(out[0]).toBeCloseTo(110, 5);
+        expect(out[1]).toBeCloseTo(20, 5);
 
-        threadCurve(ax, ay, bx, by, 0.5, out, 1);
-        const mx = (ax + bx) * 0.5;
-        const my = (ay + by) * 0.5;
-        const vx = out[0] - mx;
-        const vy = out[1] - my;
-        const dx = bx - ax;
-        const dy = by - ay;
-        expect(vx * dx + vy * dy).toBeCloseTo(0, 5);
+        threadCurve(ends, 0.5, out);
+        const vx = out[0] - 60;
+        const vy = out[1] - 20;
+        expect(vx * 100 + vy * 0).toBeCloseTo(0, 5);
         expect(Math.hypot(vx, vy)).toBeCloseTo(0.5 * 0.18 * 100, 5);
 
-        threadCurve(50, 50, 50, 50, 0.5, out);
+        ends.sign = -1;
+        threadCurve(ends, 0.5, out);
+        expect(out[1] - 20).toBeCloseTo(-vy, 5);
+
+        const same = { ax: 50, ay: 50, bx: 50, by: 50, sign: 1 };
+        threadCurve(same, 0.5, out);
         expect(out[0]).toBe(50);
         expect(out[1]).toBe(50);
-        expect(Number.isFinite(out[0])).toBe(true);
-        expect(Number.isFinite(out[1])).toBe(true);
+    });
+
+    it('returns the array it is given and writes it without allocating', () => {
+        const ends = createThreadEnds();
+        ends.bx = 5;
+        const out = [0, 0];
+        expect(threadCurve(ends, 0.3, out)).toBe(out);
+        expect(threadCurve(ends, 0.6, out)).toBe(out);
     });
 });
 
@@ -127,14 +133,51 @@ describe('stepMateThreads', () => {
     });
 });
 
+describe('stepMateThreads segments', () => {
+    it('draws the segment count it is given, 4 at level 1', () => {
+        const pool = createMateThreadPool(4);
+        spawnMateThread(pool, { x: 10, y: 10, tick: 100, a: 1, b: 2, d: 0 });
+        const agents = createInterpolated(4);
+        agents.count = 2;
+        agents.genomeId[0] = 1;
+        agents.genomeId[1] = 2;
+        agents.x[1] = 80;
+        const lines = createLineBuffer(4 * MATE_SEGMENTS);
+        const frame = { agents, tick: 100 + MATE_TICKS * 0.3, family: createFamilySlots() };
+        stepMateThreads(pool, frame, lines, MATE_SEGMENTS_LOW);
+        expect(lines.vertices).toBe(MATE_SEGMENTS_LOW * 2);
+    });
+
+    it('joins the segments end to end', () => {
+        const pool = createMateThreadPool(4);
+        spawnMateThread(pool, { x: 0, y: 0, tick: 0, a: 1, b: 2, d: 0 });
+        const agents = createInterpolated(4);
+        agents.count = 2;
+        agents.genomeId[0] = 1;
+        agents.genomeId[1] = 2;
+        agents.x[1] = 100;
+        const lines = createLineBuffer(4 * MATE_SEGMENTS);
+        stepMateThreads(pool, { agents, tick: 15, family: createFamilySlots() }, lines);
+        for (let s = 1; s < MATE_SEGMENTS; s++) {
+            expect(lines.position[s * 2 * 3]).toBeCloseTo(lines.position[(s * 2 - 1) * 3], 4);
+            expect(lines.position[s * 2 * 3 + 1]).toBeCloseTo(lines.position[(s * 2 - 1) * 3 + 1], 4);
+        }
+        expect(lines.position[(MATE_SEGMENTS * 2 - 1) * 3]).toBeCloseTo(100, 3);
+    });
+});
+
 describe('createMateThreadLayer', () => {
-    it('toggles visibility with setLook', () => {
+    it('draws at levels 0 and 1 and not when the level or the ?look= mask leaves threads off', () => {
         const pool = createMateThreadPool(4);
         const layer = createMateThreadLayer({ pool });
 
         expect(layer.object.visible).toBe(true);
         layer.setLook?.({ threads: 2 });
         expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ threads: -1 });
+        expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ threads: 1 });
+        expect(layer.object.visible).toBe(true);
         layer.setLook?.({ threads: 0 });
         expect(layer.object.visible).toBe(true);
         layer.dispose();

@@ -9,6 +9,7 @@ import { createLineMesh } from './line-mesh.js';
 export const MATE_TICKS = 45;
 export const MATE_FADE_TICKS = 6;
 export const MATE_SEGMENTS = 12;
+export const MATE_SEGMENTS_LOW = 4;
 export const MATE_POOL_CAPACITY = 32;
 
 /**
@@ -24,50 +25,39 @@ export function threadAt(age01) {
 }
 
 /**
- * Evaluates a quadratic curve offset from the midpoint by 0.18 * length perpendicular.
- * Can be called as (a, b, t, out) where a and b are [x, y], or as (ax, ay, bx, by, t, out, sign).
- * @param {...any} args arguments
- * @returns {number[]} out
+ * The endpoints of a thread and the side it bulges to, written into one scratch object so no frame allocates.
+ * @typedef {object} ThreadEnds
+ * @property {number} ax the mother's x
+ * @property {number} ay the mother's y
+ * @property {number} bx the father's x
+ * @property {number} by the father's y
+ * @property {number} sign 1 or -1: the side of the line the control point is on
  */
-export function threadCurve(...args) {
-    let ax;
-    let ay;
-    let bx;
-    let by;
-    let actualT;
-    let actualOut;
-    let actualSign;
-    if (typeof args[0] === 'number' && typeof args[1] === 'number') {
-        ax = args[0];
-        ay = args[1];
-        bx = args[2];
-        by = args[3];
-        actualT = args[4];
-        actualOut = args[5] || [0, 0];
-        actualSign = args[6] ?? 1;
-    } else {
-        ax = args[0][0];
-        ay = args[0][1];
-        bx = args[1][0];
-        by = args[1][1];
-        actualT = args[2];
-        actualOut = args[3] || [0, 0];
-        actualSign = args[4] ?? 1;
-    }
-    const mx = (ax + bx) * 0.5;
-    const my = (ay + by) * 0.5;
-    const dx = bx - ax;
-    const dy = by - ay;
-    const len = Math.hypot(dx, dy);
-    const px = len > 0 ? -dy / len : 0;
-    const py = len > 0 ? dx / len : 0;
-    const offset = 0.18 * len * actualSign;
-    const cx = mx + px * offset;
-    const cy = my + py * offset;
-    const t1 = 1 - actualT;
-    actualOut[0] = t1 * t1 * ax + 2 * t1 * actualT * cx + actualT * actualT * bx;
-    actualOut[1] = t1 * t1 * ay + 2 * t1 * actualT * cy + actualT * actualT * by;
-    return actualOut;
+
+/**
+ * @returns {ThreadEnds} an empty set of endpoints
+ */
+export function createThreadEnds() {
+    return { ax: 0, ay: 0, bx: 0, by: 0, sign: 1 };
+}
+
+/**
+ * Evaluates a quadratic curve through both endpoints whose control point is offset from the midpoint by 0.18 x the
+ * length, perpendicular to the line (the perpendicular `(-dy, dx)` is as long as the line, so no square root is needed).
+ * @param {ThreadEnds} ends the endpoints and the side
+ * @param {number} t 0 at the mother, 1 at the father
+ * @param {{0: number, 1: number}} out receives x and y
+ * @returns {{0: number, 1: number}} out
+ */
+export function threadCurve(ends, t, out) {
+    const { ax, ay, bx, by, sign } = ends;
+    const bulge = 0.18 * sign;
+    const cx = (ax + bx) * 0.5 - (by - ay) * bulge;
+    const cy = (ay + by) * 0.5 + (bx - ax) * bulge;
+    const u = 1 - t;
+    out[0] = u * u * ax + 2 * u * t * cx + t * t * bx;
+    out[1] = u * u * ay + 2 * u * t * cy + t * t * by;
+    return out;
 }
 
 /**
@@ -155,38 +145,32 @@ function findGenome(agents, genomeId) {
 const SCRATCH_P0 = [0, 0];
 const SCRATCH_P1 = [0, 0];
 const SCRATCH_RGB = [0, 0, 0];
+const SCRATCH_LINE = [0, 0, 0];
+const ENDS = createThreadEnds();
 
 /**
- * Resolves thread endpoints and current alpha.
+ * Resolves a thread's endpoints into `ENDS` and its alpha. While both agents live it follows them; once one is gone it
+ * holds the last positions and fades over `MATE_FADE_TICKS`.
  * @param {MateThreadPool} pool pool
  * @param {number} i thread index
  * @param {import('../interpolate.js').Interpolated} agents blended agents
  * @param {number} playheadTick current tick
- * @returns {{ax: number, ay: number, bx: number, by: number, alpha: number} | null}
+ * @returns {number} the thread's alpha, 0 when it draws nothing (and then it is also freed once it has ended)
  */
 function resolveEndpoints(pool, i, agents, playheadTick) {
     const age = (playheadTick - pool.startTick[i]) / MATE_TICKS;
     if (age < 0 || age >= 1) {
         pool.alive[i] = 0;
-        return null;
+        return 0;
     }
     const mIdx = findGenome(agents, pool.motherGenome[i]);
     const fIdx = findGenome(agents, pool.fatherGenome[i]);
-    let ax;
-    let ay;
-    let bx;
-    let by;
-    let fadeAlpha = 1;
-
+    let fade = 1;
     if (mIdx >= 0 && fIdx >= 0) {
-        ax = agents.x[mIdx];
-        ay = agents.y[mIdx];
-        bx = agents.x[fIdx];
-        by = agents.y[fIdx];
-        pool.lastMotherX[i] = ax;
-        pool.lastMotherY[i] = ay;
-        pool.lastFatherX[i] = bx;
-        pool.lastFatherY[i] = by;
+        pool.lastMotherX[i] = agents.x[mIdx];
+        pool.lastMotherY[i] = agents.y[mIdx];
+        pool.lastFatherX[i] = agents.x[fIdx];
+        pool.lastFatherY[i] = agents.y[fIdx];
         pool.goneAt[i] = -1;
     } else {
         if (pool.goneAt[i] < 0) {
@@ -195,16 +179,33 @@ function resolveEndpoints(pool, i, agents, playheadTick) {
         const goneAge = playheadTick - pool.goneAt[i];
         if (goneAge >= MATE_FADE_TICKS) {
             pool.alive[i] = 0;
-            return null;
+            return 0;
         }
-        fadeAlpha = 1 - goneAge / MATE_FADE_TICKS;
-        ax = pool.lastMotherX[i];
-        ay = pool.lastMotherY[i];
-        bx = pool.lastFatherX[i];
-        by = pool.lastFatherY[i];
+        fade = 1 - goneAge / MATE_FADE_TICKS;
     }
-    const alpha = threadAt(age) * fadeAlpha;
-    return alpha > 0.001 ? { ax, ay, bx, by, alpha } : null;
+    ENDS.ax = pool.lastMotherX[i];
+    ENDS.ay = pool.lastMotherY[i];
+    ENDS.bx = pool.lastFatherX[i];
+    ENDS.by = pool.lastFatherY[i];
+    ENDS.sign = pool.sign[i];
+    const alpha = threadAt(age) * fade;
+    return alpha > 0.001 ? alpha : 0;
+}
+
+/**
+ * Sets the line colour to the mother's family colour mixed 40% towards white at intensity 1.1, so the bloom lifts it.
+ * @param {import('./line-buffer.js').LineBuffer} lines the buffer
+ * @param {import('../family-slots.js').FamilySlots} family the family slots
+ * @param {number} lineageId the mother's lineage
+ * @param {number} alpha the thread's alpha
+ * @returns {void}
+ */
+function colorThread(lines, family, lineageId, alpha) {
+    familyColor(family, lineageId, 1.0, SCRATCH_RGB);
+    for (let c = 0; c < 3; c++) {
+        SCRATCH_LINE[c] = (SCRATCH_RGB[c] * 0.6 + 0.4) * 1.1;
+    }
+    setLineColor(lines, SCRATCH_LINE, alpha);
 }
 
 /**
@@ -212,28 +213,26 @@ function resolveEndpoints(pool, i, agents, playheadTick) {
  * @param {MateThreadPool} pool thread pool
  * @param {{agents: import('../interpolate.js').Interpolated, tick?: number, family: import('../family-slots.js').FamilySlots}} frame frame
  * @param {import('./line-buffer.js').LineBuffer} lines line buffer
+ * @param {number} [segments] segments per thread (`MATE_SEGMENTS` at level 0, `MATE_SEGMENTS_LOW` at level 1)
+ * @returns {void}
  */
-export function stepMateThreads(pool, frame, lines) {
+export function stepMateThreads(pool, frame, lines, segments = MATE_SEGMENTS) {
     clearLines(lines);
     const { agents, tick = 0, family } = frame;
     for (let i = 0; i < pool.capacity; i++) {
         if (pool.alive[i] === 0) {
             continue;
         }
-        const res = resolveEndpoints(pool, i, agents, tick);
-        if (res === null) {
+        const alpha = resolveEndpoints(pool, i, agents, tick);
+        if (alpha === 0) {
             continue;
         }
-        const baseRgb = familyColor(family, pool.motherLineage[i], 1.0, SCRATCH_RGB);
-        setLineColor(
-            lines,
-            [(baseRgb[0] * 0.6 + 0.4) * 1.1, (baseRgb[1] * 0.6 + 0.4) * 1.1, (baseRgb[2] * 0.6 + 0.4) * 1.1],
-            res.alpha,
-        );
-        const sgn = pool.sign[i];
-        for (let s = 0; s < MATE_SEGMENTS; s++) {
-            threadCurve(res.ax, res.ay, res.bx, res.by, s / MATE_SEGMENTS, SCRATCH_P0, sgn);
-            threadCurve(res.ax, res.ay, res.bx, res.by, (s + 1) / MATE_SEGMENTS, SCRATCH_P1, sgn);
+        colorThread(lines, family, pool.motherLineage[i], alpha);
+        threadCurve(ENDS, 0, SCRATCH_P1);
+        for (let s = 1; s <= segments; s++) {
+            SCRATCH_P0[0] = SCRATCH_P1[0];
+            SCRATCH_P0[1] = SCRATCH_P1[1];
+            threadCurve(ENDS, s / segments, SCRATCH_P1);
             pushVertex(lines, SCRATCH_P0[0], SCRATCH_P0[1]);
             pushVertex(lines, SCRATCH_P1[0], SCRATCH_P1[1]);
         }
@@ -248,17 +247,19 @@ export function stepMateThreads(pool, frame, lines) {
 export function createMateThreadLayer({ pool }) {
     const lines = createLineBuffer(MATE_POOL_CAPACITY * MATE_SEGMENTS);
     const mesh = createLineMesh(lines);
+    let segments = MATE_SEGMENTS;
     return {
         object: mesh.object,
         setLook(look) {
             const tier = look?.threads ?? 0;
-            mesh.object.visible = tier < 2;
+            segments = tier === 0 ? MATE_SEGMENTS : MATE_SEGMENTS_LOW;
+            mesh.object.visible = tier >= 0 && tier < 2;
         },
         update(frame) {
             if (!mesh.object.visible) {
                 return;
             }
-            stepMateThreads(pool, frame, lines);
+            stepMateThreads(pool, frame, lines, segments);
             mesh.upload();
         },
         dispose() {
