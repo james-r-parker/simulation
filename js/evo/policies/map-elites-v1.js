@@ -72,7 +72,7 @@ export function createMapElitesV1(options) {
     const archive = createArchive(brainLayout(config), { descriptor: scoring.descriptor });
     const clones = createClones(config.maxAgents);
     if (observer !== undefined) {
-        // The brain metrics read the step sizes, and the input-activity sample marks the silent inputs a birth decays.
+        // The brain metrics read the step sizes (the silent inputs a birth decays come from the world's input-activity sample).
         shareBirth(observer, birth);
         // An entrant is in the archive lineage when its genome came from the archive or a clone of one.
         observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;

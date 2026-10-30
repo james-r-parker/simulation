@@ -11,6 +11,7 @@ import {
     sampleBrainCheckpoint,
 } from '../../js/evo/metrics-brain.js';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { sampleInputActivity } from '../../js/sim/input-activity.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
@@ -65,17 +66,25 @@ describe('the observer hooks', () => {
         expect(observer.memoryOut.count[slot]).toBe(1);
         expect(observer.activity.samples).toBe(0);
         world.tick = BURN_IN_TICKS;
+        sampleInputActivity(world.inputActivity, world); // the step does this at the end of the brain phase
         observeBrain(observer, world);
         expect(observer.activity.samples).toBe(1);
         expect(observer.activity.active[0]).toBe(1);
     });
 
-    it('writes the rare mask into a policy silentTarget on the 16-tick grid', () => {
+    it('reads the world input-activity state, the one a birth decays the silent inputs from', () => {
         const { world, observer } = observed({ maxAgents: 8 });
-        observer.silentTarget = new Uint8Array(world.layout.inputCount).fill(1);
-        world.tick = BURN_IN_TICKS;
         observeBrain(observer, world);
-        expect(observer.silentTarget.every((/** @type {number} */ v) => v === 0)).toBe(true);
+        expect(observer.activity).toBe(world.inputActivity);
+    });
+
+    it('samples the input activity itself for a world without the state (a test double)', () => {
+        const { world, observer } = observed({ maxAgents: 8 });
+        const slot = addBlob(world);
+        world.pooled[slot * world.layout.inputCount + 1] = 1;
+        observeBrain(observer, { ...world, inputActivity: undefined, tick: BURN_IN_TICKS });
+        expect(observer.activity.samples).toBe(1);
+        expect(observer.activity.active[1]).toBe(1);
     });
 
     it('takes the checkpoint samples only at or after burn-in', () => {

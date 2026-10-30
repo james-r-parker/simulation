@@ -4,7 +4,7 @@
 
 import { brainLayout } from '../sim/brain-layout.js';
 import { BURN_IN_TICKS } from './burn-in.js';
-import { createInputActivity, sampleInputActivity } from './input-activity.js';
+import { createInputActivity, sampleInputActivity } from '../sim/input-activity.js';
 import { createHebbPools, HEBB_DIRECTIONS, hebbMetrics, sampleHebb } from './metrics-hebb.js';
 import {
     createLeakSkillPools,
@@ -54,6 +54,21 @@ export function createBrainPools(config, options = {}) {
 }
 
 /**
+ * Reads the world's input-activity sample (`world.inputActivity`, filled by the step), so the metric and the silent mask
+ * a birth decays come from one sample; a world without one (a test double) is sampled here.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function shareInputActivity(observer, world) {
+    if (world.inputActivity === undefined) {
+        sampleInputActivity(observer.activity, world);
+    } else {
+        observer.activity = world.inputActivity;
+    }
+}
+
+/**
  * The per-tick hooks. Call after every step but the first, with the world's new tick.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
@@ -62,11 +77,8 @@ export function createBrainPools(config, options = {}) {
 export function observeBrain(observer, world) {
     snapshotHidden(observer.memory, /** @type {any} */ (observer), world);
     sampleMemoryOut(observer.memoryOut, world);
-    sampleInputActivity(observer.activity, world);
+    shareInputActivity(observer, world);
     sampleSaturation(observer.saturation, { activity: observer.activity, world });
-    if (observer.silentTarget !== undefined && world.tick % 16 === 0) {
-        observer.silentTarget.set(observer.activity.rare);
-    }
 }
 
 /**

@@ -1,8 +1,10 @@
-// The input-activity sample: every `ACTIVITY_SAMPLE_TICKS` ticks from burn-in, for each alive agent, which values of the
+// The input-activity sample, world state (`world.inputActivity`, filled at the end of the brain phase): every
+// `ACTIVITY_SAMPLE_TICKS` ticks from burn-in, for each alive agent, which values of the
 // `pooled` row (the row the genome multiplies, `layout.inputCount` values) are nonzero. A pooled channel's strength,
 // cosine and sine go silent together because they are zero when no ray reports the channel. From the counts it keeps
 // the run-so-far active share of every input and the rare set: inputs under `RARE_SHARE` over at least
-// `RARE_MIN_SAMPLES` agent-samples (before that no input is rare). The raw `inputs` row is never sampled.
+// `RARE_MIN_SAMPLES` agent-samples (before that no input is rare). The rare mask is what `weightDecay` reads at a birth
+// (a silent input), so decay acts in the live app as in an eval. The raw `inputs` row is never sampled.
 
 import { BURN_IN_TICKS } from './burn-in.js';
 

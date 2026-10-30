@@ -92,7 +92,7 @@ describe('birth mutation keys', () => {
         const birth = createBirth(world.config);
         const { layout } = world;
         world.weights.fill(0.5, 0, layout.weightCount);
-        birth.silent[2] = 1;
+        world.inputActivity.rare[2] = 1; // the world's silent mask
         birth.sigma[0] = 0.05;
         birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(32) });
         const child = world.weights.slice(layout.weightCount, 2 * layout.weightCount);

@@ -2,7 +2,7 @@
 import { isMainThread } from 'node:worker_threads';
 import { computeMetrics } from '../js/evo/metrics.js';
 import { logMemorySummary } from '../js/evo/memory-summary.js';
-import { activityTable } from '../js/evo/input-activity.js';
+import { activityTable } from '../js/sim/input-activity.js';
 import { checkpoint, createObserver, observerPhases } from '../js/evo/observer.js';
 import { createTrace, finishTrace, observeTrace } from '../js/evo/trace.js';
 import { getPolicy } from '../js/evo/policies/index.js';

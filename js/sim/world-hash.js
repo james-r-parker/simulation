@@ -95,6 +95,10 @@ const scalars = new Uint32Array(5);
 const scalarBytes = new Uint8Array(scalars.buffer, scalars.byteOffset, scalars.byteLength);
 const digest = new Uint32Array(2);
 
+/** The input-activity sample count, hashed with the counts when `weightDecay` is on (the counts hold no total). */
+const sampleCount = new Float64Array(1);
+const sampleCountBytes = new Uint8Array(sampleCount.buffer, sampleCount.byteOffset, sampleCount.byteLength);
+
 /** Per-world cache of byte views, so a checkpoint allocates nothing after the first call. */
 const viewCache = new WeakMap();
 
@@ -126,7 +130,7 @@ function fieldNames(world) {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -137,6 +141,7 @@ function buildViews(world) {
         fields: fieldNames(world).map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
         fastOut: bytesOf(world, 'fastOut'),
+        inputActive: bytesOf(world.inputActivity, 'active'),
         vision: bytesOf(world, 'vision'),
         baseSize: bytesOf(world, 'baseSize'),
         sex: bytesOf(world, 'sex'),
@@ -181,7 +186,7 @@ function rngState(world, name) {
 }
 
 /**
- * Hashes the arrays that exist only with their feature on: `fastOut`, `vision` and `baseSize`, `birthRing` and `sex`.
+ * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing` and `sex`.
  * @param {Record<string, any>} world the world
  * @param {ReturnType<typeof buildViews>} views the cached byte views
  * @returns {void}
@@ -190,6 +195,11 @@ function hashOptionalArrays(world, views) {
     const { config } = world;
     if (config.hebbianRate > 0) {
         fnv64Bytes(digest, views.fastOut);
+    }
+    if (config.weightDecay > 0) {
+        sampleCount[0] = world.inputActivity.samples;
+        fnv64Bytes(digest, sampleCountBytes);
+        fnv64Bytes(digest, views.inputActive);
     }
     fnv64Bytes(digest, views.vision);
     fnv64Bytes(digest, views.baseSize);

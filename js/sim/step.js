@@ -9,6 +9,7 @@ import { advanceEra } from './eras.js';
 import { regrowPatches } from './food-patches.js';
 import { assertInvariants } from './invariants.js';
 import { forwardAll } from './brain.js';
+import { sampleInputActivity } from './input-activity.js';
 import { actAll, integrate, resolveContacts } from './physics.js';
 import { fillFloor, reap } from './population.js';
 import { updatePheromones } from './pheromones.js';
@@ -53,6 +54,7 @@ function sense(world) {
  */
 function brain(world) {
     forwardAll(world);
+    sampleInputActivity(world.inputActivity, world);
 }
 
 /**

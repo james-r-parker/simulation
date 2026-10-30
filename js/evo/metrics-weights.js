@@ -1,10 +1,10 @@
 // Weight and input diagnostics (brain-capacity-and-memory.md, Metrics). All are read on the row the genome multiplies,
-// the `pooled` row: how much of it is ever nonzero (`input-activity.js`), whether the weights of silent inputs drift to
+// the `pooled` row: how much of it is ever nonzero (`js/sim/input-activity.js`), whether the weights of silent inputs drift to
 // the clamp (`eval.weight_drift_silent`), how many weights sit at the clamp, how a first firing of a rare input moves the
 // hidden state (`rare-saturation.js`) and the mean mutation step size. The checkpoint figures read the sampled agents
 // (`observer.sampled`) at or after burn-in. All `watch`.
 
-import { meanActiveShare } from './input-activity.js';
+import { meanActiveShare } from '../sim/input-activity.js';
 import { MIN_EVENTS } from './rare-saturation.js';
 import { none, ok, share } from './metrics-stats.js';
 

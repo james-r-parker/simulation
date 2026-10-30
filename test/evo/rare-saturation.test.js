@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
-import { createInputActivity } from '../../js/evo/input-activity.js';
+import { createInputActivity } from '../../js/sim/input-activity.js';
 import {
     SATURATION_TICKS,
     createSaturation,

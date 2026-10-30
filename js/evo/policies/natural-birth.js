@@ -26,29 +26,25 @@ export function rowOf(cache, array, { slot, count }) {
 }
 
 /**
- * Lets the eval observer see a birth half: the brain metrics read its step sizes (`observer.sigma`), and the input-
- * activity sample fills its silent-input mask (`observer.silentTarget`).
+ * Lets the eval observer see a birth half: the brain metrics read its step sizes (`observer.sigma`).
  * @param {Record<string, any>} observer the eval observer
- * @param {{sigma: Float32Array, silent: Uint8Array}} birth a `createBirth` result
+ * @param {{sigma: Float32Array}} birth a `createBirth` result
  * @returns {void}
  */
 export function shareBirth(observer, birth) {
     observer.sigma = birth.sigma;
-    observer.silentTarget = birth.silent;
 }
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {{sigma: Float32Array, fatherSigma: Float32Array, silent: Uint8Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
- *   the step sizes (per slot, and per mother for the coming child), `silent` (one byte per input, nonzero is silent:
- *   the input-activity sampler writes it, and a birth decays those inputs' `wIn` rows by `config.weightDecay`),
+ * @returns {{sigma: Float32Array, fatherSigma: Float32Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
+ *   the step sizes (per slot, and per mother for the coming child),
  *   `mutation` (the options every `mutateWeights` call takes) and the two hooks that use them
  */
 export function createBirth(config) {
     const sigma = new Float32Array(config.maxAgents);
     const fatherSigma = new Float32Array(config.maxAgents);
     const layout0 = brainLayout(config);
-    const silent = new Uint8Array(layout0.inputCount);
     const mutation = {
         traitStart: layout0.traitStart,
         rate: resolveMutationRate(config.mutationRate, layout0.weightCount),
@@ -90,10 +86,10 @@ export function createBirth(config) {
         }
         mutateWeights(row, childSigma, rng, mutation);
         if (config.weightDecay > 0) {
-            decaySilentInputs(row, { layout, silent, decay: config.weightDecay });
+            decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });
         }
         sigma[child] = childSigma;
     }
 
-    return { sigma, fatherSigma, silent, mutation, onMate, childBrain };
+    return { sigma, fatherSigma, mutation, onMate, childBrain };
 }
