@@ -56,7 +56,6 @@ const SLOT_TYPES = {
     chaseTicks: Uint32Array,
     chainPrey: Uint32Array,
     chainTick: Float64Array,
-    packKills: Uint32Array,
     sizeTrait: Float32Array,
     visionTrait: Float32Array,
     niche: Uint8Array,

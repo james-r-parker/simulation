@@ -4,7 +4,7 @@
 //   deliberate meal share at the birth (the mean of both parents for a mate birth, the one that is still alive here)
 //   and the child's at its tenth meal. A child with fewer than ten meals is left out; its `bonus` terms are not read.
 //   The meal counters are the sim's `mealsTotal` and `mealsDeliberate`.
-// - `eval.social_return`: the matured grandchildren of agents that earned a social credit (a pack kill, an alarm or a
+// - `eval.social_return`: the matured grandchildren of agents that earned a social credit (a converged pack kill, an alarm or a
 //   hunt-call credit) minus those of agents that did not, over agents of equal age (buckets of `AGE_BUCKET_TICKS`,
 //   weighted by the smaller group of the two), over mature deaths after burn-in. A grandchild is credited to each
 //   living grandparent when it matures (`ageTicks` equals `maturityTicks`). A negative value is the cheater signal.
@@ -181,7 +181,9 @@ export function creditGrandparents(scene, observer, child) {
 export function noteHeritageDeath(scene, observer, { slot, age }) {
     const bucket = Math.min(BUCKETS - 1, Math.floor(age / AGE_BUCKET_TICKS));
     const social =
-        observer.packKills[slot] > 0 || observer.intent.alarmCredits[slot] > 0 || observer.intent.huntCredits[slot] > 0;
+        observer.intent.convergedKills[slot] > 0 ||
+        observer.intent.alarmCredits[slot] > 0 ||
+        observer.intent.huntCredits[slot] > 0;
     const sums = social ? scene.credited : scene.plain;
     const agents = social ? scene.creditedAgents : scene.plainAgents;
     sums[bucket] += scene.grand[slot];

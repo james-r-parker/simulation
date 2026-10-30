@@ -3,20 +3,19 @@ import { FITNESS_V6_WATCH, createWatchGroup } from '../../js/evo/fitness-v6-watc
 
 /**
  * A stand-in for the observer with the watch counters; slot 0 holds the given values.
- * @param {{chaseTicks?: number, packKills?: number, patches?: number}} fields
+ * @param {{chaseTicks?: number, patches?: number}} fields
  * @returns {any}
  */
-function observerWith({ chaseTicks = 0, packKills = 0, patches = 0 }) {
+function observerWith({ chaseTicks = 0, patches = 0 }) {
     return {
         chaseTicks: Uint32Array.of(chaseTicks),
-        packKills: Uint32Array.of(packKills),
         watch: { visited: Uint32Array.of(patches) },
     };
 }
 
 describe('FITNESS_V6_WATCH', () => {
     it('names the doc constants', () => {
-        expect(FITNESS_V6_WATCH).toEqual({ CHASE: 0.5, CHASE_CAP: 600, PACK: 30, MIGRATE: 40, MIGRATE_CAP: 8 });
+        expect(FITNESS_V6_WATCH).toEqual({ CHASE: 0.5, CHASE_CAP: 600, MIGRATE: 40, MIGRATE_CAP: 8 });
     });
 
     it('is frozen', () => {
@@ -28,7 +27,7 @@ describe('createWatchGroup', () => {
     it('scores 0 for zero counters', () => {
         const g = createWatchGroup();
         const o = observerWith({});
-        expect([g.chase(o, 0), g.pack(o, 0), g.migrate(o, 0), g.watch(o, 0)]).toEqual([0, 0, 0, 0]);
+        expect([g.chase(o, 0), g.migrate(o, 0), g.watch(o, 0)]).toEqual([0, 0, 0]);
     });
 
     it('pays CHASE per chase tick', () => {
@@ -42,12 +41,6 @@ describe('createWatchGroup', () => {
         expect(g.chase(observerWith({ chaseTicks: 100000 }), 0)).toBe(300);
     });
 
-    it('pays PACK per kill the pack stood around, with no cap', () => {
-        const g = createWatchGroup();
-        expect(g.pack(observerWith({ packKills: 3 }), 0)).toBe(90);
-        expect(g.pack(observerWith({ packKills: 1000 }), 0)).toBe(30000);
-    });
-
     it('pays MIGRATE per distinct patch visited', () => {
         expect(createWatchGroup().migrate(observerWith({ patches: 3 }), 0)).toBe(120);
     });
@@ -59,9 +52,9 @@ describe('createWatchGroup', () => {
         expect(g.migrate(observerWith({ patches: 500 }), 0)).toBe(320);
     });
 
-    it('sums the three terms into watch', () => {
-        const o = observerWith({ chaseTicks: 100, packKills: 2, patches: 2 });
-        expect(createWatchGroup().watch(o, 0)).toBe(50 + 60 + 80);
+    it('sums the two terms into watch', () => {
+        const o = observerWith({ chaseTicks: 100, patches: 2 });
+        expect(createWatchGroup().watch(o, 0)).toBe(50 + 80);
     });
 
     it('returns the ungated value, so the gate is applied by the composition', () => {
@@ -72,11 +65,10 @@ describe('createWatchGroup', () => {
         const g = createWatchGroup();
         const o = {
             chaseTicks: Uint32Array.of(0, 10),
-            packKills: Uint32Array.of(0, 1),
             watch: { visited: Uint32Array.of(0, 2) },
         };
         expect(g.watch(o, 0)).toBe(0);
-        expect(g.watch(o, 1)).toBe(5 + 30 + 80);
+        expect(g.watch(o, 1)).toBe(5 + 80);
     });
 
     it('merges overrides over the constants and exposes the weights', () => {

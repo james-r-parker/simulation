@@ -116,7 +116,7 @@ describe('map-elites-v6 placement and FitnessScored', () => {
     it('reports the lineage and watch values as paid, after the skill gate, and the niche factor', () => {
         const ctx = v6();
         ctx.observer.matings[2] = 1;
-        ctx.observer.packKills[2] = 1;
+        ctx.observer.chaseTicks[2] = 60;
         ctx.observer.niche[2] = 0;
         ctx.observer.nicheTally = { count: 15, shares: new Float64Array(15) };
         die(ctx, { slot: 2, genomeId: 601, roleSkill: 1, bodyPlan: 0.5, deliberate: 1000 });

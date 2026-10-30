@@ -46,7 +46,6 @@ function rareDeath(withTally) {
         maturedChildren: Uint32Array.of(0),
         descendantsAlive: Uint32Array.of(0),
         chaseTicks: Uint32Array.of(0),
-        packKills: Uint32Array.of(0),
         niche: Uint8Array.of(1),
         watch: { visited: Uint32Array.of(0) },
         nicheTally: withTally ? tally : undefined,

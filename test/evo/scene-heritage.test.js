@@ -88,7 +88,7 @@ describe('eval.skill_heritability', () => {
 describe('eval.social_return', () => {
     /** One mature death at `age` with `grand` matured grandchildren, credited or not. */
     function die(/** @type {any} */ r, /** @type {Record<string, number>} */ f) {
-        r.observer.packKills[0] = f.social;
+        r.observer.intent.convergedKills[0] = f.social;
         r.observer.scenes.heritage.grand[0] = f.grand;
         noteHeritageDeath(r.observer.scenes.heritage, r.observer, { slot: 0, age: f.age });
     }

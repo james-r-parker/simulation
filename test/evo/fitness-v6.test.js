@@ -32,7 +32,6 @@ function observerWith(fields) {
         maturedChildren: Uint32Array.of(0),
         descendantsAlive: Uint32Array.of(0),
         chaseTicks: Uint32Array.of(fields.chaseTicks ?? 0),
-        packKills: Uint32Array.of(fields.packKills ?? 0),
         niche: Uint8Array.of(fields.niche ?? 0),
         watch: { visited: Uint32Array.of(fields.patches ?? 0) },
     };
@@ -79,10 +78,9 @@ describe('createFitnessV6', () => {
         expect(score({ deliberateFood: 5000, matings: 1, chaseTicks: 100 })).toBe(5000 + 100 + 50);
     });
 
-    it('pays the pack term from the pack counter, ungated below the gate and not from convergedKills', () => {
-        expect(score({ deliberateFood: 500, packKills: 2 })).toBe(500 + 60);
-        expect(score({ deliberateFood: 250, packKills: 2 })).toBe(250 + 0.5 * 60);
+    it('pays a pack kill to its biters through convergedKills, in the skill group and under its cap', () => {
         expect(score({ deliberateFood: 500, convergedKills: 2 })).toBe(500 + 100);
+        expect(score({ deliberateFood: 500, convergedKills: 200 })).toBe(500 + 125);
     });
 
     it('caps each capped term', () => {
