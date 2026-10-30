@@ -117,4 +117,43 @@ describe('archive codec', () => {
         json.cells[0].specialisation = 'wizard';
         expect(() => decodeArchive(json, config)).toThrow(/wizard/);
     });
+
+    it('is version 3: the pooled-v2 genome layout made every earlier archive invalid', () => {
+        expect(ARCHIVE_VERSION).toBe(3);
+    });
+
+    it('rejects a stored archive from before the layout change by its version, cleanly, whatever else it holds', () => {
+        // The shape written at version 2: 179 inputs, descriptor v6, genomes of the old size.
+        const stored = {
+            version: 2,
+            descriptor: 'v6',
+            layout: { inputCount: 179, brainHidden: 4, outputCount: 11 },
+            rulesHash: 'deadbeefdeadbeef',
+            cursors: [0, 0, 0, 0, 0],
+            cells: [
+                {
+                    specialisation: 'forager',
+                    cell: 3,
+                    elite: { id: 1, sigma: 0.05, weights: 'AAAA' },
+                    challenger: null,
+                },
+            ],
+        };
+        /** @type {any[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        const stale = viaText(stored);
+        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 3, got 2/);
+        expect(records.map((r) => [r.event, r.field, r.expected, r.actual])).toEqual([
+            ['GenomeRejected', 'archive.version', 3, 2],
+        ]);
+        expect(() => decodeArchive({ version: 2 }, config)).toThrow(/archive\.version/);
+        expect(() => decodeArchive({}, config)).toThrow(/archive\.version/);
+    });
+
+    it('rejects a current-version archive stamped with the old 179-input layout by the layout field', () => {
+        const json = viaText(encodeArchive(makeArchive(), config));
+        const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
+        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 57, got 179/);
+    });
 });

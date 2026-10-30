@@ -75,6 +75,15 @@ describe('encodeGenome and decodeGenome', () => {
         );
     });
 
+    it('sizes the weights from brainLayout and refuses a genome of the old 179-input layout by name', () => {
+        const encoded = encodeGenome(makeGenome());
+        expect(decodeGenome(encoded).weights).toHaveLength(brainLayout({ rayCount: 0, brainHidden: 4 }).weightCount);
+        encoded.layout.inputCount = 179;
+        expect(() => decodeGenome(encoded)).toThrow(
+            /genome\.layout: expected 57 inputs and 11 outputs, got 179 and 11/,
+        );
+    });
+
     it('rejects weights of the wrong size', () => {
         const encoded = encodeGenome(makeGenome());
         encoded.layout.brainHidden = 5;
