@@ -18,6 +18,8 @@ import { createPrng } from '../prng.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 
+/** A food patch's glow reaches this many patch radii, so a fertile area reads as a place. */
+export const PATCH_GLOW_SCALE = 1.6;
 export const FROST_WIDTH = 256;
 export const FROST_HEIGHT = 32;
 
@@ -128,6 +130,7 @@ void main() {
 const REFUGE_FRAGMENT = /* glsl */ `
 uniform vec3 uGlowColor;
 uniform float uSceneryMax;
+uniform float uPeak;
 uniform float uTime;
 varying vec2 vLocal;
 void main() {
@@ -136,7 +139,7 @@ void main() {
         discard;
     }
     float breath = 0.5 + 0.5 * sin(uTime * 0.785398); // 8 s period
-    float intensity = 0.5 * uSceneryMax * (1.0 - d) * (0.8 + 0.2 * breath);
+    float intensity = uPeak * uSceneryMax * (1.0 - d) * (1.0 - d) * (0.8 + 0.2 * breath);
     gl_FragColor = vec4(uGlowColor * intensity, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -217,12 +220,12 @@ function createFrostMesh(info, seed, uniforms) {
 }
 
 /**
- * @param {Record<string, any>} info world info
+ * One soft radial glow per disc: the refuges (pearl) and the food patches (a faint fertility green).
+ * @param {{x: number, y: number, radius: number}[]} refuges the discs
  * @param {Record<string, {value: any}>} uniforms uniforms
- * @returns {any} refuge mesh
+ * @returns {any} glow mesh, null when there are no discs
  */
-function createRefugeMesh(info, uniforms) {
-    const refuges = info.terrain?.refuges ?? [];
+function createGlowMesh(refuges, uniforms) {
     if (refuges.length === 0) {
         return null;
     }
@@ -254,33 +257,66 @@ function createRefugeMesh(info, uniforms) {
  * @param {Record<string, any>} info world info
  * @param {number} seed seed
  * @param {Record<string, any>} uniforms uniforms
- * @returns {{frost: any, refuge: any}} terrain meshes
+ * @returns {{frost: any, refuge: any, patches: any}} terrain meshes
  */
 function buildTerrainMeshes(hasBasins, info, seed, uniforms) {
-    if (!hasBasins) {
-        return { frost: null, refuge: null };
-    }
     const s = seed ?? info.seed ?? 0;
     return {
-        frost: createFrostMesh(info, s, uniforms.frost),
-        refuge: createRefugeMesh(info, uniforms.refuge),
+        frost: hasBasins ? createFrostMesh(info, s, uniforms.frost) : null,
+        refuge: hasBasins ? createGlowMesh(info.terrain?.refuges ?? [], uniforms.refuge) : null,
+        patches: createGlowMesh(
+            (info.patches ?? []).map((/** @type {any} */ q) => ({
+                x: q.x,
+                y: q.y,
+                radius: q.radius * PATCH_GLOW_SCALE,
+            })),
+            uniforms.patches,
+        ),
     };
 }
 
 /**
  * @param {any} frost frost mesh info
  * @param {any} refuge refuge mesh info
+ * @param {any} patches food patch glow mesh info
  */
-function disposeTerrain(frost, refuge) {
+function disposeTerrain(frost, refuge, patches) {
+    for (const glow of [refuge, patches]) {
+        if (glow) {
+            glow.geom.dispose();
+            glow.mat.dispose();
+        }
+    }
     if (frost) {
         frost.geom.dispose();
         frost.mat.dispose();
         frost.tex.dispose();
     }
-    if (refuge) {
-        refuge.geom.dispose();
-        refuge.mat.dispose();
-    }
+}
+
+/**
+ * @param {Record<string, any>} info world info
+ * @returns {{frost: Record<string, {value: any}>, refuge: Record<string, {value: any}>, patches: Record<string, {value: any}>}}
+ *   the uniforms of the frost bands, the refuge glows and the food patch glows
+ */
+function terrainUniforms(info) {
+    const glow = (/** @type {readonly number[]} */ color, /** @type {number} */ peak) => ({
+        uGlowColor: { value: color },
+        uSceneryMax: { value: SCENERY_MAX_LUMINANCE },
+        uPeak: { value: peak },
+        uTime: { value: 0 },
+    });
+    return {
+        frost: {
+            uFrostTex: { value: null },
+            uFrostColor: { value: PALETTE.frost },
+            uColdMargin: { value: info.terrain?.coldMarginWidth ?? 0 },
+            uTime: { value: 0 },
+            uTier: { value: 0 },
+        },
+        refuge: glow(PALETTE.refugeGlow, 0.5),
+        patches: glow(PALETTE.patchGlow, 0.9),
+    };
 }
 
 /**
@@ -290,43 +326,29 @@ function disposeTerrain(frost, refuge) {
 export function createTerrainLayer({ info, seed = 0 }) {
     const hasBasins = info.terrain?.layout === 'basins';
     const group = new Group();
-    const frostUniforms = {
-        uFrostTex: { value: null },
-        uFrostColor: { value: PALETTE.frost },
-        uColdMargin: { value: info.terrain?.coldMarginWidth ?? 0 },
-        uTime: { value: 0 },
-        uTier: { value: 0 },
-    };
-    const refugeUniforms = {
-        uGlowColor: { value: PALETTE.refugeGlow },
-        uSceneryMax: { value: SCENERY_MAX_LUMINANCE },
-        uTime: { value: 0 },
-    };
+    const uniforms = terrainUniforms(info);
+    const { frost: frostUniforms, refuge: refugeUniforms, patches: patchUniforms } = uniforms;
 
-    const { frost, refuge } = buildTerrainMeshes(hasBasins, info, seed, {
-        frost: frostUniforms,
-        refuge: refugeUniforms,
-    });
-    if (frost) {
-        group.add(frost.mesh);
+    const { frost, refuge, patches } = buildTerrainMeshes(hasBasins, info, seed, uniforms);
+    for (const part of [frost, refuge, patches]) {
+        if (part) {
+            group.add(part.mesh);
+        }
     }
-    if (refuge) {
-        group.add(refuge.mesh);
-    }
-    group.visible = hasBasins;
 
     return {
         object: group,
         setLook(look) {
             const tier = look.terrain === 0 ? 0 : look.terrain === 1 ? 1 : 2;
-            group.visible = hasBasins && tier < 2;
+            group.visible = tier >= 0 && tier < 2;
             frostUniforms.uTier.value = tier;
         },
         update(frame) {
             const t = frame.nowMs * 0.001;
             frostUniforms.uTime.value = t;
             refugeUniforms.uTime.value = t;
+            patchUniforms.uTime.value = t;
         },
-        dispose: () => disposeTerrain(frost, refuge),
+        dispose: () => disposeTerrain(frost, refuge, patches),
     };
 }

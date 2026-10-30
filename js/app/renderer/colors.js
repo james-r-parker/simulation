@@ -23,6 +23,7 @@ export const PALETTE = Object.freeze({
     lichen: [0.006, 0.014, 0.006],
     frost: [0.006, 0.012, 0.024],
     refugeGlow: [0.011, 0.012, 0.013],
+    patchGlow: [0.004, 0.014, 0.011],
     eye: [0.85, 0.95, 1.0],
     huntScent: [1.0, 0.74, 0.2],
     dangerScent: [0.75, 0.03, 0.04],
@@ -85,7 +86,7 @@ export const FAMILY_PALETTES = Object.freeze({
  * @type {Readonly<Record<string, Rgb>>}
  */
 export const NEUTRAL_FAMILY = Object.freeze({
-    default: [0.1, 0.12, 0.16],
+    default: [0.2, 0.26, 0.38],
     'cvd-safe': [0.14, 0.14, 0.14],
     'high-contrast': [0.45, 0.45, 0.45],
 });

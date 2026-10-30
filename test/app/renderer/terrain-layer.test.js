@@ -47,10 +47,18 @@ describe('frostTexture', () => {
 });
 
 describe('createTerrainLayer', () => {
-    it('draws nothing on an open layout', () => {
-        const { info } = smallReady(); // layout is 'open'
+    it('draws no frost and no refuge glow on an open layout, only the food patch glows', () => {
+        const base = smallReady().info; // layout is 'open'
+        const info = {
+            ...base,
+            patches: [
+                { x: 100, y: 100, radius: 40 },
+                { x: 500, y: 300, radius: 60 },
+            ],
+        };
         const layer = createTerrainLayer({ info });
-        expect(layer.object.visible).toBe(false);
+        expect(layer.object.children).toHaveLength(1);
+        expect(layer.object.children[0].count).toBe(2);
         layer.dispose();
     });
 

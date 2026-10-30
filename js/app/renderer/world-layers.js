@@ -21,7 +21,7 @@ import { packRockShape, rockShape, SHAPE_FLOATS } from './rock-shape.js';
 import { FOOD_FRAGMENT, FOOD_VERTEX, OBSTACLE_FRAGMENT, OBSTACLE_VERTEX } from './world-layers-shader.js';
 
 /** The food dot's colour intensity, and its smallest radius in device pixels. */
-export const FOOD_INTENSITY = 0.7;
+export const FOOD_INTENSITY = 0.4;
 const FOOD_MIN_PX = 1.4;
 /** The obstacle's rim width in device pixels. */
 export const OBSTACLE_RIM_PX = 2;

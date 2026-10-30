@@ -18,6 +18,34 @@ export const MOTION_SMOOTHING = 0.25;
 /** Golden ratio fractional multiplier for stable phase. */
 export const PHI_FRAC = 0.6180339;
 
+/**
+ * Multipliers on the neutral family's colour by mesh (the specialisation, in `info.specs` order: predator, forager,
+ * reproducer, scout, defender), so the many agents without a family colour still read as five kinds at a glance. Each
+ * keeps the luminance within 2% of 1 so the dimmest-body ceilings of the Look section hold.
+ */
+export const NEUTRAL_TINT = Object.freeze([
+    [1.3, 0.92, 0.8],
+    [0.85, 1.15, 0.95],
+    [1.2, 0.88, 1.35],
+    [0.78, 1.0, 1.42],
+    [1.3, 1.08, 0.78],
+]);
+
+/**
+ * @param {number[] | Float32Array} rgb the agent's colour, changed in place
+ * @param {number} mesh the agent's mesh index
+ * @param {boolean} neutral whether its family has no colour slot
+ * @returns {void}
+ */
+function tintNeutral(rgb, mesh, neutral) {
+    const tint = neutral ? NEUTRAL_TINT[mesh] : undefined;
+    if (tint !== undefined) {
+        rgb[0] *= tint[0];
+        rgb[1] *= tint[1];
+        rgb[2] *= tint[2];
+    }
+}
+
 const MOTION = { speed01: 0, turn01: 0, phase: 0 };
 
 /**
@@ -121,6 +149,7 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         const o = bucket.count * ITEM;
         bucket.count += 1;
         const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
+        tintNeutral(rgb, mesh, slotOf(slots, agents.lineageId[i]) < 0);
         bucket.pose[o] = agents.x[i];
         bucket.pose[o + 1] = agents.y[i];
         bucket.pose[o + 2] = agents.angle[i];

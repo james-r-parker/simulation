@@ -40,6 +40,7 @@ describe('PALETTE', () => {
         expect(PALETTE.lichen).toEqual([0.006, 0.014, 0.006]);
         expect(PALETTE.frost).toEqual([0.006, 0.012, 0.024]);
         expect(PALETTE.refugeGlow).toEqual([0.011, 0.012, 0.013]);
+        expect(PALETTE.patchGlow).toEqual([0.004, 0.014, 0.011]);
     });
 
     it('AURORA_MAX_LUMINANCE is at most half the dimmest agent body, and scenery stays below it and bloom', () => {
@@ -48,7 +49,7 @@ describe('PALETTE', () => {
             return luminance(rgb);
         });
         const minBodyY = Math.min(...dimmestLuminances);
-        expect(minBodyY).toBeCloseTo(0.023, 2);
+        expect(minBodyY).toBeCloseTo(0.04, 2);
         expect(AURORA_MAX_LUMINANCE).toBeLessThanOrEqual(0.5 * minBodyY);
         expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(minBodyY);
         expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(BLOOM.threshold);
@@ -286,6 +287,7 @@ describe('scenery colours', () => {
         lichen: PALETTE.lichen,
         frost: PALETTE.frost,
         refugeGlow: PALETTE.refugeGlow,
+        patchGlow: PALETTE.patchGlow,
     };
 
     it('each scenery colour peaks at or below SCENERY_MAX_LUMINANCE', () => {

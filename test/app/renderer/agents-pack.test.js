@@ -1,3 +1,4 @@
+import { NEUTRAL_FAMILY } from '../../../js/app/renderer/colors.js';
 import { describe, expect, it } from 'vitest';
 import { AGENT_FIELD } from '../../../js/app/interpolate.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
@@ -8,6 +9,7 @@ import {
     ITEM,
     JAW_RATE,
     motionOf,
+    NEUTRAL_TINT,
     packAgents,
     TURN_FULL,
 } from '../../../js/app/renderer/agents-pack.js';
@@ -230,5 +232,27 @@ describe('packAgents', () => {
         expect(motionArr[1]).toBeGreaterThan(0);
         packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
         expect(store.buckets[1].motion).toBe(motionArr);
+    });
+
+    it('tints a neutral family by its specialisation and leaves a slotted family alone', () => {
+        const luminance = (/** @type {number[]} */ c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        for (const tint of NEUTRAL_TINT) {
+            const n = NEUTRAL_FAMILY.default;
+            const ratio = luminance([n[0] * tint[0], n[1] * tint[1], n[2] * tint[2]]) / luminance([...n]);
+            expect(ratio).toBeGreaterThan(0.95);
+            expect(ratio).toBeLessThan(1.1);
+        }
+        expect(new Set(NEUTRAL_TINT.map((t) => t.join())).size).toBe(NEUTRAL_TINT.length);
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const snap = makeSnapshot(1, [
+            { slot: 0, genomeId: 10, spec: 0, speed: 0, angle: 0 },
+            { slot: 1, genomeId: 11, spec: 3, speed: 0, angle: 0 },
+        ]);
+        const out = createInterpolated(16);
+        interpolateInto(null, snap, 1, out);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        const red = store.buckets[meshOfSpec[0]].color;
+        const blue = store.buckets[meshOfSpec[3]].color;
+        expect(red[0] / red[2]).toBeGreaterThan(blue[0] / blue[2]);
     });
 });

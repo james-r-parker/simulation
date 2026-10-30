@@ -2,9 +2,9 @@
 // rest and found with the pointer even when the world is fitted to a 4K or 1440p screen.
 
 /** The least a hunter (a specialisation with `canHunt`) is drawn across, in device px. */
-export const MIN_PX_HUNTER = 16;
+export const MIN_PX_HUNTER = 24;
 /** The least any other agent is drawn across, in device px. */
-export const MIN_PX_OTHER = 12;
+export const MIN_PX_OTHER = 20;
 
 /**
  * @param {number} size the agent's radius in world units

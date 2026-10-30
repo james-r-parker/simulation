@@ -7,7 +7,7 @@
 export const QUAD_HALF = 2.4;
 
 /** Body centre fill share at zero edge. */
-export const BODY_CENTRE_FILL = 0.34;
+export const BODY_CENTRE_FILL = 0.5;
 
 /** Brightness multiplier floor at zero energy. */
 export const BRIGHTNESS_FLOOR = 0.7;

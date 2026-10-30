@@ -21,7 +21,7 @@ void main() {
     float age01 = vMeat * uDecay * clamp(iAge, 0.0, 1.0);
     float scale = 1.0 - 0.4 * age01;
     vDim = 1.0 - 0.65 * smoothstep(0.1, 1.0, age01);
-    float radius = max(abs(iBody.z) * scale, uMinPx / uZoom);
+    float radius = max(abs(iBody.z) * scale * 0.75, uMinPx / uZoom);
     float halfSize = radius + uPad / uZoom;
     vLocal = corner * halfSize / radius;
     vPx = 1.0 / (uZoom * radius);
@@ -46,7 +46,7 @@ void main() {
     vec2 p = abs(vLocal) / 0.8;
     float star = sqrt(p.x) + sqrt(p.y);
     float core = 1.0 - smoothstep(0.8, 1.0, star);
-    float glow = exp(-dot(p, p) * 2.5) * 0.35;
+    float glow = exp(-dot(p, p) * 2.5) * 0.2;
     vec3 rgb = mix(uColor, uMeatColor, vMeat) * uIntensity * vDim * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>
@@ -123,7 +123,9 @@ void main() {
         float rimOuter = rockR + rimWidth;
         float rimEdge = 1.0 - smoothstep(rimOuter - vPx, rimOuter + vPx, d);
         if (d <= rimOuter) {
-            gl_FragColor = vec4(uRim, rimEdge);
+            // A lit upper-left edge: the rim is the union's outline only (bodies cover the rest), so it has no seam.
+            float lit = max(0.0, dot(normalize(vLocal + vec2(0.0001)), vec2(-0.6, 0.8)));
+            gl_FragColor = vec4(uRim * (0.9 + 1.7 * lit), rimEdge);
         } else if (uTier < 2.0) {
             float contactEnd = rockR * 1.08;
             float contactAlpha = (1.0 - smoothstep(rockR, contactEnd, d)) * 0.5;
@@ -145,15 +147,15 @@ void main() {
         // inside the ridge wherever one rock's body covers its neighbour's, and touching rocks must read as one mass.
         float shade = 1.0;
         if (uTier < 0.5) {
-            shade = 0.62 + 0.9 * fbm2(vWorld * 0.03);
+            shade = 0.45 + 1.3 * fbm2(vWorld * 0.03) * (0.7 + 0.6 * valueNoise(vWorld * 0.11));
         }
-        vec3 col = uBody * shade;
+        vec3 col = uBody * min(shade, 1.6);
 
         if (uTier < 0.5 && normD > 0.75) {
             vec2 cell = floor(vWorld * 0.4);
             float lichenSeed = vShape.w;
             float cellHash = hash21(cell + vec2(lichenSeed * 91.3, lichenSeed * 47.1));
-            if (cellHash < 0.04) {
+            if (cellHash < 0.07) {
                 float period = 6.0 + 6.0 * hash21(cell * 2.37);
                 float breath = 0.5 + 0.5 * sin(uTime * (6.2831853 / period) + cellHash * 6.2831853);
                 float bright = 0.5 + 0.5 * hash21(cell * 1.71);

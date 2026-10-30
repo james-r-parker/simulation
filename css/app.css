@@ -3,9 +3,9 @@
 
 :root {
     color-scheme: dark;
-    --bar-height: 2.25rem;
-    --text: rgb(172, 184, 196);
-    --text-dim: rgb(122, 134, 148);
+    --bar-height: 2.5rem;
+    --text: rgb(208, 218, 230);
+    --text-dim: rgb(152, 164, 178);
 }
 
 html {
@@ -22,7 +22,7 @@ body {
 }
 
 body {
-    font: 0.8125rem/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font: 0.9375rem/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 #canvas-container {
