@@ -108,7 +108,7 @@ describe('the world state', () => {
     });
 
     it('is in the world hash only when weightDecay is above 0', () => {
-        const off = stepped({});
+        const off = stepped({ weightDecay: 0 });
         const on = stepped({ weightDecay: 0.005 });
         const offHash = hashWorld(off);
         const onHash = hashWorld(on);

@@ -242,7 +242,7 @@ export const DEFAULTS = deepFreeze({
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
     mutationRate: 'invsqrt', // brain plan big bang (H1): a probability per gene, a number, 'invsqrt' (1 / sqrt(weightCount), about 67 genes per birth) or 'genes:<k>'; 1 mutates every gene
-    weightDecay: 0, // brain plan T2: per birth shrink of the wIn rows of silent inputs; 0 is off
+    weightDecay: 0.005, // brain plan big bang (H2): per birth shrink of the wIn rows of silent inputs (the world's input-activity mask); 0 is off
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)

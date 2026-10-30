@@ -74,8 +74,9 @@ describe('weightDecay and leakGeneStart config keys', () => {
         }
     });
 
-    it('default weightDecay to 0, today', () => {
-        expect(createConfig().weightDecay).toBe(0);
+    it('default weightDecay to 0.005, the big-bang value; 0 turns decay off', () => {
+        expect(createConfig().weightDecay).toBe(0.005);
+        expect(createConfig({ weightDecay: 0 }).weightDecay).toBe(0);
     });
 
     it('have bounds 0 to 0.1 and minus 4 to 4', () => {
