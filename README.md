@@ -110,18 +110,25 @@ One tick for one blob, `forwardAll` in `js/sim/brain.js`:
  body inputs (33) ------------------------------------------------------------------------+--> 81 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
                                                                                                          |
         last tick's MEMORY_A, MEMORY_B (inputs 31, 32) <---------+                                      v
-                                                          11 outputs = tanh( hidden x W_out + bias )
+                                                          11 outputs = tanh( hidden x W_out + pooled x W_skip + bias )
 ```
 
 - **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 8 x 2 x 3 + 33 = 81`,
-  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,047 floats**: `W_in` 81x32, `W_rec` 32x32, 32 hidden biases,
-  `W_out` 32x11, 11 output biases, 4 trait genes and 32 leak genes.
+  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,494 floats**: `W_in` 81x32, `W_rec` 32x32, 32 hidden biases,
+  `W_out` 32x10, 10 output biases, `W_skip` 48x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
+  11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
+- **Skip.** `W_skip` joins the 48 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
+  threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
 - **Activation.** `tanh` on hidden units and outputs, through `detTanhInto` (`js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
 - **Memory.** (1) The recurrent hidden row persists in `world.hidden`. (2) Each hidden unit is leaky:
-  `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.05 + 0.95 x sigmoid(leak gene)` per unit (`leakRateOf` in `js/sim/traits.js`),
+  `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.02 + 0.98 x sigmoid(leak gene)` per unit (`leakMin` 0.02: a half-life of 34 ticks for the slowest) (`leakRateOf` in `js/sim/traits.js`),
   so evolution can pick slow and fast units. (3) Two spare outputs, `MEMORY_A` and `MEMORY_B`, are fed back as inputs next
-  tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else.
+  tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else. A random genome starts every leak gene at 0
+  (`leakGeneStart`, `a` about 0.5), so memory is there from generation 0.
+- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 67 of
+  the 4,494 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
+  share is under 0.01 over at least 10,000 agent-samples; `world.inputActivity` in `js/sim/input-activity.js`).
 - **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (`hebbianStep` in
   `js/sim/hebbian.js`). Each blob has its own copy, `fastOut`, which drifts by `eta x (hidden x output - 0.01 x (fastOut - genome weight))`
   with `eta = hebbianRate x sigmoid(learn gene)`, clamped to plus or minus 4. A child inherits the genome, never what its
