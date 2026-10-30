@@ -119,4 +119,37 @@ describe('probeGroup', () => {
             ['group-hunt', 'solo'],
         ]);
     });
+
+    it('reads a hunter that never kills as a score of 0, with no ratio or gain to report, and logs the losses', () => {
+        const idle = {
+            name: 'idle',
+            id: 5,
+            spec: 1,
+            weights: null,
+            act: (/** @type {any} */ world) => world.outputs.fill(0),
+        };
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        // Wall damage is off so that the prey cannot die by running into a wall: only a hunter can kill it.
+        const result = probeGroup(idle, { trials: 1, log, config: { wallDamage: 0 } });
+        expect(result.scores).toEqual({ senses: 0, 'kin-blind': 0, solo: 0 });
+        expect(result).toMatchObject({ coordination: 0, ratio: null, gain: null, skipped: null });
+        expect(records.map((r) => r.score)).toEqual([0, 0, 0]);
+    });
+});
+
+describe('probeSubject defaults', () => {
+    it('runs every scenario and the group-hunt probe when none are named', () => {
+        const idle = {
+            name: 'idle',
+            id: 5,
+            spec: 1,
+            weights: null,
+            act: (/** @type {any} */ world) => world.outputs.fill(0),
+        };
+        const result = probeSubject(idle, { trials: 1 });
+        expect(result.scenarios.map((s) => s.scenario)).toEqual(SCENARIOS.map((s) => s.name));
+        expect(result.group).not.toBeNull();
+    });
 });

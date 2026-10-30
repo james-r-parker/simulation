@@ -55,4 +55,12 @@ describe('referenceSubject', () => {
         expect(outputsFor('memory-storing', {})[OUTPUT_INDEX.THRUST]).toBeLessThan(0);
         expect(outputsFor('memory-storing', {})[OUTPUT_INDEX.MEMORY_A]).toBe(0);
     });
+
+    it('keeps fleeing a threat that has left the senses, at full thrust and straight on, and keeps remembering it', () => {
+        const fled = outputsFor('memory-storing', { memory: -1 });
+        expect(fled[OUTPUT_INDEX.THRUST]).toBe(1);
+        expect(fled[OUTPUT_INDEX.TURN]).toBe(0);
+        expect(fled[OUTPUT_INDEX.MEMORY_A]).toBe(-1);
+        expect(outputsFor('memoryless', { memory: -1 })[OUTPUT_INDEX.THRUST]).toBeLessThan(0);
+    });
 });
