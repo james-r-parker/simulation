@@ -1,0 +1,63 @@
+name: deploy
+
+# Interim pipeline (docs/designs/sim-notes.md, "Deploy on merge to main"): every green push to main goes straight to
+# production on Cloudflare Pages. deployment-and-community.md Phase 1 replaces it.
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+    branches: [main]
+  # A manual redeploy of main's HEAD.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Deploys queue in order; a running deploy is never cancelled half-way.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only a successful check of a push to main (not of a pull request) deploys; a manual run always does.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://matrix.dotnethelp.co.uk
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The commit check ran on; main's HEAD for a manual run.
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # The repo's own pinned wrangler (package.json); the project and its production branch are in wrangler.toml.
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          npx wrangler pages deploy dist --project-name matrix --branch main --commit-hash "$sha" | tee deploy.log
+          url="$(grep -Eo 'https://[a-zA-Z0-9.-]+\.pages\.dev' deploy.log | tail -1 || true)"
+          {
+            echo "### Deployed to production"
+            echo "- Commit: \`$sha\`"
+            echo "- Site: https://matrix.dotnethelp.co.uk"
+            echo "- Deployment: ${url:-see the Cloudflare Pages dashboard}"
+          } >>"$GITHUB_STEP_SUMMARY"

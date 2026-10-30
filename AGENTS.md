@@ -66,7 +66,7 @@ headless sim core, an evolution archive, an eval system and a worker-driven rend
 | Telemetry dashboard (Aspire)                     | `bash -lic 'npm run aspire:dashboard'`, then run with `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`; UI at http://127.0.0.1:18888                                                                                                                                                                                                                                                                                                                       |
 | Tests                                            | `npm test`; one file: `npx vitest run <file>`; one test: `npx vitest run -t '<name>'`                                                                                                                                                                                                                                                                                                                                                                         |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Production build / deploy                        | `npm run build`; `npm run deploy` (Cloudflare Pages) - deploy only when the user asks                                                                                                                                                                                                                                                                                                                                                                         |
+| Production build / deploy                        | `npm run build`; a merge to `main` deploys to production (Cloudflare Pages) through `.github/workflows/deploy.yml`; `npm run deploy` stays for a manual deploy, only when the user asks                                                                                                                                                                                                                                                                       |
 
 Commands that arrive with planned design docs: `npm run train`. The doc
 that adds it says how it works.
@@ -138,7 +138,7 @@ When one agent hands tasks to others (user, 2026-10-22):
   (`docs/principles.md`) in its body, and the detector metric that shows it.
 - Never commit to `main`. Branch `<type>/<short-desc>` (`docs/<doc-name>` for design docs); conventional commit
   subjects; the "why" goes in commit and PR bodies.
-- Push and open PRs only when the user asks. Deploy only when the user asks.
+- Push and open PRs only when the user asks. A manual deploy needs the user's ask; merges to `main` deploy automatically.
 - A doc's `**Status:**` line moves in the same PR as the code it describes. Never hand-edit
   `docs/designs/README.md`.
 - Name code by symbol (`forwardAll` in `js/sim/brain.js`), never by line number, in anything committed.
