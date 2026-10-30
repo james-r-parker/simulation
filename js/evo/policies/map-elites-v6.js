@@ -21,7 +21,6 @@ const PART_COLUMNS = Object.freeze({
     skill: 'scoreSkill',
     waste: 'scoreWaste',
     lineage: 'scoreLineage',
-    watch: 'scoreWatch',
     diversityFactor: 'scoreDiversity',
 });
 
@@ -37,7 +36,7 @@ function recordParts(observer, base) {
     for (const column of Object.values(PART_COLUMNS)) {
         deaths[column] = new Float64Array(deaths.capacity);
     }
-    const parts = { skill: 0, waste: 0, lineage: 0, watch: 0, diversityFactor: 1 };
+    const parts = { skill: 0, waste: 0, lineage: 0, diversityFactor: 1 };
     const fitness = (/** @type {any} */ obs, /** @type {number} */ slot, /** @type {any} */ config) => {
         const value = base(obs, slot, config);
         ensureRoom(obs.deaths, obs.deathCount);

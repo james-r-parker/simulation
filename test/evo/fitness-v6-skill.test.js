@@ -50,8 +50,6 @@ describe('FITNESS_V6_SKILL', () => {
             CREDIT_CAP: 0.25,
             ESCAPE: 60,
             CONVERGED_KILL: 50,
-            ALARM: 40,
-            HUNT_CALL: 40,
             IDLE_SIGNAL: 20,
             UNDEFENDED: 40,
             WASTE_CAP: 0.5,
@@ -135,14 +133,18 @@ describe('skill role term', () => {
 });
 
 describe('skill credits', () => {
+    it('pays nothing for a call: an alarm or a hunt call earns no credit', () => {
+        expect(Object.keys(FITNESS_V6_SKILL)).not.toContain('ALARM');
+        expect(Object.keys(FITNESS_V6_SKILL)).not.toContain('HUNT_CALL');
+        expect(score({ deliberateFood: 1000, alarmCredits: 5, huntCredits: 5 })).toBe(1000);
+    });
+
     const base = { deliberateFood: 1000 };
-    const credits = ['respondedEscape', 'convergedKills', 'alarmCredits', 'huntCredits'];
+    const credits = ['respondedEscape', 'convergedKills'];
 
     it.each([
         ['respondedEscape', 60],
         ['convergedKills', 50],
-        ['alarmCredits', 40],
-        ['huntCredits', 40],
     ])('pays %s at %d each', (field, weight) => {
         expect(score({ ...base, [field]: 2 })).toBe(1000 + 2 * weight);
     });
@@ -152,7 +154,7 @@ describe('skill credits', () => {
     });
 
     it('pays no credit without deliberate intake', () => {
-        expect(score({ chanceFood: 4000, respondedEscape: 5, alarmCredits: 5 })).toBe(0);
+        expect(score({ chanceFood: 4000, respondedEscape: 5, convergedKills: 5 })).toBe(0);
     });
 
     it('caps credits on the deliberate intake, whatever the chance intake', () => {

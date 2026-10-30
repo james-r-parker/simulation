@@ -1,9 +1,9 @@
-// `fitnessV6` (fitness-and-selection.md "Fitness v6"): skill over luck, lineage success, watchability and diversity.
+// `fitnessV6` (fitness-and-selection.md "Fitness v6"): skill over luck, lineage success and diversity.
 //
-//   positive = skill + BORN x children + gate x (lineage + watch)
+//   positive = skill + BORN x children + gate x lineage
 //   fitness  = (positive - min(waste, WASTE_CAP x positive)) x diversityFactor
 //
-// This module only composes the four groups (`fitness-v6-skill.js`, `-lineage.js`, `-watch.js`, `-diversity.js`); each
+// This module only composes the three groups (`fitness-v6-skill.js`, `-lineage.js`, `-diversity.js`); each
 // owns its terms. Pure and allocation-free per call: the closures are built once in `createFitnessV6`.
 //
 // The diversity factor reads `observer.niche[slot]` (the dying agent's niche) and `observer.nicheTally` (the tally
@@ -12,14 +12,12 @@
 
 import { FITNESS_V6_SKILL, createSkillGroup } from './fitness-v6-skill.js';
 import { FITNESS_V6_LINEAGE, createLineageGroup } from './fitness-v6-lineage.js';
-import { FITNESS_V6_WATCH, createWatchGroup } from './fitness-v6-watch.js';
 import { FITNESS_V6_DIVERSITY, createDiversityGroup } from './fitness-v6-diversity.js';
 
 /** Every constant of the doc's table: the four groups' and `BORN`, the pay for a born child, ungated. */
 export const FITNESS_V6 = Object.freeze({
     ...FITNESS_V6_SKILL,
     ...FITNESS_V6_LINEAGE,
-    ...FITNESS_V6_WATCH,
     ...FITNESS_V6_DIVERSITY,
     BORN: 50,
 });
@@ -45,7 +43,6 @@ function pick(constants, overrides) {
  * @property {number} skill the skill group (intake, survival, role and credits), before waste
  * @property {number} waste the charge before its cap
  * @property {number} lineage the lineage group as paid (multiplied by the skill gate)
- * @property {number} watch the watch group as paid (multiplied by the skill gate)
  * @property {number} diversityFactor the multiplier of the niche, 1 without a tally
  */
 
@@ -65,10 +62,9 @@ export function createFitnessV6(counters, overrides = {}) {
     }
     const skill = createSkillGroup(counters, pick(FITNESS_V6_SKILL, overrides));
     const lineage = createLineageGroup(pick(FITNESS_V6_LINEAGE, overrides));
-    const watch = createWatchGroup(pick(FITNESS_V6_WATCH, overrides));
     const diversity = createDiversityGroup(pick(FITNESS_V6_DIVERSITY, overrides));
     const born = overrides.BORN ?? FITNESS_V6.BORN;
-    const weights = { ...skill.weights, ...lineage.weights, ...watch.weights, ...diversity.weights, BORN: born };
+    const weights = { ...skill.weights, ...lineage.weights, ...diversity.weights, BORN: born };
     /** @type {(observer: any, slot: number) => number} */
     const factorOf = (observer, slot) =>
         observer.nicheTally === undefined ? 1 : diversity.factor(observer.nicheTally, observer.niche[slot]);
@@ -77,7 +73,7 @@ export function createFitnessV6(counters, overrides = {}) {
         const positive =
             skill.skill(observer, slot, config) +
             born * observer.children[slot] +
-            skill.gate(observer, slot) * (lineage.lineage(observer, slot) + watch.watch(observer, slot));
+            skill.gate(observer, slot) * lineage.lineage(observer, slot);
         const net = skill.net(positive, skill.waste(observer, slot));
         return net * factorOf(observer, slot);
     };
@@ -87,7 +83,6 @@ export function createFitnessV6(counters, overrides = {}) {
         out.skill = skill.skill(observer, slot, config);
         out.waste = skill.waste(observer, slot);
         out.lineage = gate * lineage.lineage(observer, slot);
-        out.watch = gate * watch.watch(observer, slot);
         out.diversityFactor = factorOf(observer, slot);
         return out;
     };

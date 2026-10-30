@@ -66,11 +66,12 @@ describe('map-elites-v6 shape', () => {
         expect(policy.name).toBe('map-elites-v6');
         expect(policy.fitnessName).toBe('v6');
         expect(policy.archive.descriptor).toBe(descriptorV6);
-        expect(policy.fitness.weights).toMatchObject({ MATING: FITNESS_V6.MATING, BORN: FITNESS_V6.BORN });
+        expect(policy.fitness.weights).toMatchObject({ MATURED: FITNESS_V6.MATURED, BORN: FITNESS_V6.BORN });
     });
 
     it('passes fitness weight overrides to fitnessV6 and refuses an unknown one', () => {
-        expect(v6({ fitnessOverrides: { MATING: 7 } }).policy.fitness.weights.MATING).toBe(7);
+        expect(v6({ fitnessOverrides: { MATURED: 7 } }).policy.fitness.weights.MATURED).toBe(7);
+        expect(() => v6({ fitnessOverrides: { MATING: 7 } })).toThrow(/MATING/);
         expect(() => v6({ fitnessOverrides: { NOPE: 1 } })).toThrow(/NOPE/);
     });
 
@@ -106,22 +107,21 @@ describe('map-elites-v6 placement and FitnessScored', () => {
             fitness: ctx.observer.deaths.fitness[0],
             waste: 0,
             lineage: 0,
-            watch: 0,
             diversityFactor: 1,
         });
         expect(scored[0].skill).toBeGreaterThanOrEqual(1000);
         expect(scored[0].fitness).toBe(scored[0].skill);
     });
 
-    it('reports the lineage and watch values as paid, after the skill gate, and the niche factor', () => {
+    it('reports the lineage value as paid, after the skill gate, and the niche factor', () => {
         const ctx = v6();
-        ctx.observer.matings[2] = 1;
-        ctx.observer.chaseTicks[2] = 60;
+        ctx.observer.maturedChildren[2] = 1;
         ctx.observer.niche[2] = 0;
         ctx.observer.nicheTally = { count: 15, shares: new Float64Array(15) };
         die(ctx, { slot: 2, genomeId: 601, roleSkill: 1, bodyPlan: 0.5, deliberate: 1000 });
         const scored = ctx.records.find((r) => r.event === 'FitnessScored');
-        expect(scored).toMatchObject({ lineage: 100, watch: 30, diversityFactor: 1.5 });
+        expect(scored).toMatchObject({ lineage: 250, diversityFactor: 1.5 });
+        expect(scored).not.toHaveProperty('watch');
     });
 
     it('logs nothing and adds no columns below the debug level', () => {

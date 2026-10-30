@@ -67,7 +67,8 @@ describe('styleOf for a hunter', () => {
         }
         expect(r.observer.scenes.style.chains[hunter]).toBe(1);
         expect(styleOf(r.observer, hunter)).toBeCloseTo(40 / STYLE_CHAIN_CAP, 12);
-        expect(r.observer.chaseTicks[hunter]).toBe(40);
+        expect(r.observer.scenes.style.current[hunter]).toBe(40);
+        expect('chaseTicks' in r.observer).toBe(false);
     });
 });
 

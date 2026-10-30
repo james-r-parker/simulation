@@ -1,11 +1,11 @@
 // Social credit pays the actors only (natural-selection.md T9; principles rules 7 and 8): a convergent pack kill pays the
 // two agents that bit, once each, by the skill group's `convergedKills`, and nothing is paid to the kin who stood around.
 
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { DEATH_CAUSE } from '../../js/sim/events.js';
 import { createFitnessV6 } from '../../js/evo/fitness-v6.js';
-import { FITNESS_V6_WATCH, createWatchGroup } from '../../js/evo/fitness-v6-watch.js';
 import { createLifeCounters } from '../../js/evo/life-counters.js';
 import { observeCombat } from '../../js/evo/observer-combat.js';
 import { noteIntentEvents } from '../../js/evo/observer-intent-events.js';
@@ -133,12 +133,9 @@ describe('the fitness of the actors and the bystanders', () => {
             spec: Uint8Array.of(99),
             ageTicks: Float64Array.of(100),
             children: Uint32Array.of(0),
-            matings: Uint32Array.of(0),
             maturedChildren: Uint32Array.of(0),
             descendantsAlive: Uint32Array.of(0),
-            chaseTicks: Uint32Array.of(0),
             niche: Uint8Array.of(0),
-            watch: { visited: Uint32Array.of(0) },
         };
     }
     const config = createConfig({ ...SIMPLE_WORLD, maxAgents: 8, initialAgents: 0, minAgents: 0 });
@@ -151,9 +148,8 @@ describe('the fitness of the actors and the bystanders', () => {
         expect(biter - bystander).toBe(100);
     });
 
-    it('has no pack weight or term in the watch group', () => {
-        expect(Object.keys(FITNESS_V6_WATCH)).not.toContain('PACK');
-        expect('pack' in createWatchGroup()).toBe(false);
+    it('has no pack weight and no watch group to pay it in', () => {
         expect(() => createFitnessV6({}, { PACK: 30 })).toThrow(/PACK/);
+        expect(existsSync(new URL('../../js/evo/fitness-v6-watch.js', import.meta.url))).toBe(false);
     });
 });

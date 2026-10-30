@@ -18,7 +18,7 @@ const INTENT = [
 
 /**
  * A stand-in observer with slot 0 filled in; the spec is unknown, so there is no role term.
- * @param {Record<string, number>} fields intent counters or `ageTicks`, `children`, `matings`, `chaseTicks`, `patches`
+ * @param {Record<string, number>} fields intent counters or `ageTicks`, `children`, `maturedChildren`, `descendantsAlive`, and the act counters no term reads
  * @returns {any}
  */
 function observerWith(fields) {
@@ -28,12 +28,9 @@ function observerWith(fields) {
         spec: Uint8Array.of(99),
         ageTicks: Float64Array.of(fields.ageTicks ?? 0),
         children: Uint32Array.of(fields.children ?? 0),
-        matings: Uint32Array.of(fields.matings ?? 0),
-        maturedChildren: Uint32Array.of(0),
-        descendantsAlive: Uint32Array.of(0),
-        chaseTicks: Uint32Array.of(fields.chaseTicks ?? 0),
+        maturedChildren: Uint32Array.of(fields.maturedChildren ?? 0),
+        descendantsAlive: Uint32Array.of(fields.descendantsAlive ?? 0),
         niche: Uint8Array.of(fields.niche ?? 0),
-        watch: { visited: Uint32Array.of(fields.patches ?? 0) },
     };
 }
 
@@ -49,8 +46,7 @@ describe('FITNESS_V6', () => {
     it('holds every constant of the doc table, frozen', () => {
         expect(FITNESS_V6).toMatchObject({
             ...FITNESS_V6_SKILL,
-            MATING: 100,
-            CHASE_CAP: 600,
+            MATURED: 250,
             DIVERSITY: 0.5,
             BORN: 50,
         });
@@ -72,10 +68,18 @@ describe('createFitnessV6', () => {
         expect(score({ children: 3, matings: 5, chaseTicks: 100, patches: 3 })).toBe(150);
     });
 
-    it('ramps the lineage and watch groups with the gate', () => {
-        expect(score({ deliberateFood: 250, matings: 1, chaseTicks: 100 })).toBe(250 + 0.5 * (100 + 50));
-        expect(score({ deliberateFood: 500, matings: 1, chaseTicks: 100 })).toBe(500 + 100 + 50);
-        expect(score({ deliberateFood: 5000, matings: 1, chaseTicks: 100 })).toBe(5000 + 100 + 50);
+    it('ramps the lineage group with the gate', () => {
+        expect(score({ deliberateFood: 250, maturedChildren: 1 })).toBe(250 + 0.5 * 250);
+        expect(score({ deliberateFood: 500, maturedChildren: 1 })).toBe(500 + 250);
+        expect(score({ deliberateFood: 5000, maturedChildren: 1 })).toBe(5000 + 250);
+    });
+
+    it('pays no act terms: chasing, migrating, mating, calling and sounding an alarm earn nothing', () => {
+        const act = { matings: 5, chaseTicks: 100, patches: 3, alarmCredits: 4, huntCredits: 4, alarmCalls: 4 };
+        expect(score({ deliberateFood: 500, ...act })).toBe(score({ deliberateFood: 500 }));
+        for (const key of ['CHASE', 'CHASE_CAP', 'MIGRATE', 'MIGRATE_CAP', 'MATING', 'ALARM', 'HUNT_CALL']) {
+            expect(FITNESS_V6, key).not.toHaveProperty(key);
+        }
     });
 
     it('pays a pack kill to its biters through convergedKills, in the skill group and under its cap', () => {
@@ -83,10 +87,9 @@ describe('createFitnessV6', () => {
         expect(score({ deliberateFood: 500, convergedKills: 200 })).toBe(500 + 125);
     });
 
-    it('caps each capped term', () => {
+    it('caps the family term', () => {
         const base = { deliberateFood: 500 };
-        expect(score({ ...base, chaseTicks: 9999 })).toBe(500 + 300);
-        expect(score({ ...base, patches: 99 })).toBe(500 + 320);
+        expect(score({ ...base, descendantsAlive: 99 })).toBe(500 + 400);
     });
 
     it('subtracts waste, capped at WASTE_CAP of positive', () => {
@@ -99,11 +102,9 @@ describe('createFitnessV6', () => {
     });
 
     it('applies the overrides to the right group and exposes the merged weights', () => {
-        const f = createFitnessV6({}, { BORN: 10, CHASE: 1, MATING: 1 });
-        expect(f.weights).toMatchObject({ BORN: 10, CHASE: 1, MATING: 1, CHASE_CAP: 600 });
-        expect(f(observerWith({ deliberateFood: 500, children: 1, chaseTicks: 10, matings: 2 }), 0, config)).toBe(
-            500 + 10 + 10 + 2,
-        );
+        const f = createFitnessV6({}, { BORN: 10, MATURED: 1 });
+        expect(f.weights).toMatchObject({ BORN: 10, MATURED: 1, FAMILY_CAP: 10 });
+        expect(f(observerWith({ deliberateFood: 500, children: 1, maturedChildren: 2 }), 0, config)).toBe(500 + 10 + 2);
         expect(FITNESS_V6.BORN).toBe(50);
     });
 
@@ -133,15 +134,14 @@ describe('diversity in fitnessV6', () => {
 
 describe('fitnessV6 parts', () => {
     const f = createFitnessV6({});
-    const parts = () => ({ skill: 0, waste: 0, lineage: 0, watch: 0, diversityFactor: 0 });
+    const parts = () => ({ skill: 0, waste: 0, lineage: 0, diversityFactor: 0 });
 
-    it('reports each group as paid, the gated lineage and watch included', () => {
-        const o = observerWith({ deliberateFood: 250, matings: 1, chaseTicks: 100, idleSignal: 2 });
+    it('reports each group as paid, the gated lineage included', () => {
+        const o = observerWith({ deliberateFood: 250, maturedChildren: 1, idleSignal: 2 });
         expect(f.parts(o, 0, config, parts())).toEqual({
             skill: 250,
             waste: 40,
-            lineage: 50,
-            watch: 25,
+            lineage: 125,
             diversityFactor: 1,
         });
     });

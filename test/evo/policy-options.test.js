@@ -67,10 +67,10 @@ describe('canonicalOptions and mergeOptions', () => {
     it('lays arm options over the base, merging fitness weights one by one', () => {
         expect(
             mergeOptions(
-                { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATING: 2 } },
+                { archiveShare: 0.1, fitnessOverrides: { BORN: 1, MATURED: 2 } },
                 { cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3 } },
             ),
-        ).toEqual({ archiveShare: 0.1, cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3, MATING: 2 } });
+        ).toEqual({ archiveShare: 0.1, cloneShareEnd: 0.9, fitnessOverrides: { BORN: 3, MATURED: 2 } });
         expect(mergeOptions(undefined, undefined)).toEqual({});
     });
 });

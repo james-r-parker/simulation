@@ -1,6 +1,6 @@
 // The skill group of `fitnessV6` (fitness-and-selection.md "Fitness v6"): intake, the gate, survival, the role term,
-// the four credits and the waste charge. It carries the terms, constants and tests of `fitnessV2` (draft PR 120).
-// `fitness-v6.js` composes it with the lineage, watch and diversity groups. Pure: it reads the observer's per-slot
+// the two credits (escape and converged kill) and the waste charge. It carries the terms, constants and tests of `fitnessV2` (draft PR 120).
+// `fitness-v6.js` composes it with the lineage and diversity groups. Pure: it reads the observer's per-slot
 // intent counters and the life counters, and allocates nothing per call.
 
 import { FITNESS_V1, specTerm } from './fitness.js';
@@ -14,8 +14,6 @@ export const FITNESS_V6_SKILL = Object.freeze({
     CREDIT_CAP: 0.25,
     ESCAPE: 60,
     CONVERGED_KILL: 50,
-    ALARM: 40,
-    HUNT_CALL: 40,
     IDLE_SIGNAL: 20,
     UNDEFENDED: 40,
     WASTE_CAP: 0.5,
@@ -95,9 +93,7 @@ export function createSkillGroup(counters, overrides) {
         const cap = w.CREDIT_CAP * total;
         const credits =
             Math.min(cap, w.ESCAPE * intent.respondedEscape[slot]) +
-            Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]) +
-            Math.min(cap, w.ALARM * intent.alarmCredits[slot]) +
-            Math.min(cap, w.HUNT_CALL * intent.huntCredits[slot]);
+            Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]);
         return survival + role + credits;
     };
     return {

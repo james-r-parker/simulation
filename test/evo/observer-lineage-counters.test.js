@@ -65,33 +65,7 @@ function founders(h, ids) {
     h.see();
 }
 
-describe('observer lineage counters: matings', () => {
-    it('credits both parents once per mate birth, and a split nothing', () => {
-        const h = setup();
-        founders(h, [10, 11]);
-        h.next();
-        born(h.world, 2, 12, BORN_CAUSE.MATE, 10, 11);
-        h.see();
-        h.next();
-        born(h.world, 3, 13, BORN_CAUSE.MATE, 10, 11);
-        born(h.world, 4, 14, BORN_CAUSE.SPLIT, 10, 10);
-        h.see();
-        expect([h.observer.matings[0], h.observer.matings[1]]).toEqual([2, 2]);
-        expect(h.observer.matings[2]).toBe(0);
-    });
-
-    it('credits a parent that dies on the tick of the birth, and ignores an unknown parent', () => {
-        const h = setup();
-        founders(h, [10, 11]);
-        h.next();
-        born(h.world, 2, 12, BORN_CAUSE.MATE, 10, 99);
-        die(h.world, 0);
-        h.see();
-        expect(h.observer.deaths.genomeId[0]).toBe(10);
-        expect(h.observer.matings[0]).toBe(1);
-        expect(h.observer.matings[1]).toBe(0);
-    });
-
+describe('observer lineage counters: reused slots', () => {
     it('does not carry a count into a reused slot', () => {
         const h = setup();
         founders(h, [10, 11]);
@@ -104,9 +78,9 @@ describe('observer lineage counters: matings', () => {
         h.next();
         born(h.world, 0, 20, BORN_CAUSE.FLOOR);
         h.see();
-        expect(h.observer.matings[0]).toBe(0);
         expect(h.observer.maturedChildren[0]).toBe(0);
         expect(h.observer.descendantsAlive[0]).toBe(0);
+        expect('matings' in h.observer).toBe(false);
     });
 });
 

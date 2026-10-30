@@ -3,8 +3,7 @@
 //
 // - A `canHunt` agent: the mean length of its chase chains over `STYLE_CHAIN_CAP`. A chain is a run of deliberate
 //   bites on one prey, each within `packWindow` ticks of the last (the chain `noteChase` already follows); its length
-//   is the ticks from its first bite to its latest, capped at `STYLE_CHAIN_CAP`. `chaseTicks` is only a running total,
-//   so the chains are counted here: `chains`, the capped length of the finished ones (`done`) and the open one
+//   is the ticks from its first bite to its latest, capped at `STYLE_CHAIN_CAP`. The chains are counted here: `chains`, the capped length of the finished ones (`done`) and the open one
 //   (`current`).
 // - Any other agent: the share of its life ticks spent under `RING_SPEED` of `maxVelocity` inside a refuge ring while a
 //   "can bite me" ray hit at proximity `THREAT_PROXIMITY` or more is in view (the threatened test of

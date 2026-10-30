@@ -42,12 +42,9 @@ function rareDeath(withTally) {
         spec: Uint8Array.of(99),
         ageTicks: Float64Array.of(100),
         children: Uint32Array.of(0),
-        matings: Uint32Array.of(0),
         maturedChildren: Uint32Array.of(0),
         descendantsAlive: Uint32Array.of(0),
-        chaseTicks: Uint32Array.of(0),
         niche: Uint8Array.of(1),
-        watch: { visited: Uint32Array.of(0) },
         nicheTally: withTally ? tally : undefined,
     };
 }

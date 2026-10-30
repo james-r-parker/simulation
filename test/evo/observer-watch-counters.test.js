@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { noteChase, patchesVisitedOf } from '../../js/evo/observer-watch-counters.js';
+import { noteChase } from '../../js/evo/observer-watch-counters.js';
 import { observe } from '../../js/evo/observer.js';
+import { STYLE_CHAIN_CAP } from '../../js/evo/style.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushDied } from './helpers/observer-world.js';
 
@@ -41,13 +42,22 @@ function bite(r, tick, deliberate = true, victim = r.prey) {
     noteChase(observer, world);
 }
 
-describe('chaseTicks', () => {
+/**
+ * @param {Record<string, any>} r the run
+ * @returns {number} the ticks of the hunter's chains: the finished chains as style counts them, and the open one
+ */
+function chainTicks(r) {
+    const style = r.observer.scenes.style;
+    return style.done[r.hunter] + style.current[r.hunter];
+}
+
+describe('the deliberate-bite chain', () => {
     it('credits the ticks between two deliberate bites on the same prey', () => {
         const r = chase();
         bite(r, 10);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(0);
+        expect(chainTicks(r)).toBe(0);
         bite(r, 14);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(4);
+        expect(chainTicks(r)).toBe(4);
     });
 
     it('extends a chain bite by bite', () => {
@@ -55,16 +65,20 @@ describe('chaseTicks', () => {
         for (const t of [10, 20, 35, 40]) {
             bite(r, t);
         }
-        expect(r.observer.chaseTicks[r.hunter]).toBe(30);
+        expect(chainTicks(r)).toBe(30);
     });
 
-    it('credits a gap of exactly packWindow and nothing above it', () => {
+    it('continues the chain across a gap of exactly packWindow, and ends it above one', () => {
         const r = chase();
         bite(r, 10);
         bite(r, 10 + WINDOW);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(WINDOW);
+        expect(r.observer.scenes.style.current[r.hunter]).toBe(WINDOW);
+        expect(r.observer.scenes.style.chains[r.hunter]).toBe(1);
         bite(r, 10 + 2 * WINDOW + 1);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(WINDOW);
+        // The finished chain counts at most STYLE_CHAIN_CAP ticks; the new one starts at 0.
+        expect(r.observer.scenes.style.current[r.hunter]).toBe(0);
+        expect(r.observer.scenes.style.done[r.hunter]).toBe(STYLE_CHAIN_CAP);
+        expect(r.observer.scenes.style.chains[r.hunter]).toBe(2);
     });
 
     it('does not credit the broken stretch, and credits the resumed chain again', () => {
@@ -73,16 +87,16 @@ describe('chaseTicks', () => {
         bite(r, 15);
         bite(r, 15 + WINDOW + 50);
         bite(r, 15 + WINDOW + 53);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(5 + 3);
+        expect(chainTicks(r)).toBe(5 + 3);
     });
 
     it('does not credit a chance bite, and a chance bite does not extend the chain', () => {
         const r = chase();
         bite(r, 10);
         bite(r, 12, false);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(0);
+        expect(chainTicks(r)).toBe(0);
         bite(r, 14);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(4);
+        expect(chainTicks(r)).toBe(4);
     });
 
     it('starts a new chain on a different prey', () => {
@@ -90,9 +104,9 @@ describe('chaseTicks', () => {
         const other = addBlob(r.world, {});
         bite(r, 10);
         bite(r, 12, true, other);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(0);
+        expect(chainTicks(r)).toBe(0);
         bite(r, 15, true, other);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(3);
+        expect(chainTicks(r)).toBe(3);
     });
 
     it('ignores bites by an untracked biter', () => {
@@ -100,10 +114,10 @@ describe('chaseTicks', () => {
         r.world.bittenTimer[r.prey] = 1;
         r.world.lastBiter[r.prey] = 999;
         noteChase(r.observer, r.world);
-        expect(r.observer.chaseTicks.every((/** @type {number} */ v) => v === 0)).toBe(true);
+        expect(r.observer.scenes.style.chains.every((/** @type {number} */ v) => v === 0)).toBe(true);
     });
 
-    it('is still readable at death, and a new agent in the slot starts at 0', () => {
+    it('starts a new agent in a reused slot with no chain', () => {
         const r = chase();
         bite(r, 10);
         bite(r, 16);
@@ -112,18 +126,17 @@ describe('chaseTicks', () => {
         r.world.alive[r.hunter] = 0;
         r.world.genomeId[r.hunter] = 0;
         observe(r.observer, r.world);
-        expect(r.observer.chaseTicks[r.hunter]).toBe(6);
         expect(r.observer.deaths.genomeId[0]).toBe(1);
 
         nextTick(r.world, 18);
         const reborn = addBorn(r.world);
         expect(reborn).toBe(r.hunter);
         observe(r.observer, r.world);
-        expect(r.observer.chaseTicks[reborn]).toBe(0);
+        expect(chainTicks(r)).toBe(0);
         expect(r.observer.chainPrey[reborn]).toBe(0);
         // A bite right after rebirth does not continue the old agent's chain.
         bite(r, 19);
-        expect(r.observer.chaseTicks[reborn]).toBe(0);
+        expect(chainTicks(r)).toBe(0);
     });
 });
 
@@ -167,26 +180,26 @@ describe('patchesVisited', () => {
         const r = patched();
         visit(r, 100, [500, 500]);
         visit(r, 200, [500, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(1);
+        expect(r.observer.watch.visited[0]).toBe(1);
         visit(r, 300, [100, 100]);
         visit(r, 400, [500, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(2);
+        expect(r.observer.watch.visited[0]).toBe(2);
     });
 
     it('ignores positions between samples', () => {
         const r = patched();
         visit(r, 50, [900, 900]);
         visit(r, 100, [300, 300]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(0);
+        expect(r.observer.watch.visited[0]).toBe(0);
     });
 
     it('counts an agent born inside a patch at its first sample, and the boundary as outside', () => {
         const r = patched();
         // Born at (500, 500) in the patch; strictly inside only.
         visit(r, 100, [600, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(0);
+        expect(r.observer.watch.visited[0]).toBe(0);
         visit(r, 200, [599.9, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(1);
+        expect(r.observer.watch.visited[0]).toBe(1);
     });
 
     it('counts every patch holding the agent when discs overlap', () => {
@@ -194,7 +207,7 @@ describe('patchesVisited', () => {
         r.world.patchX[0] = 540;
         r.world.patchY[0] = 500;
         visit(r, 100, [520, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(2);
+        expect(r.observer.watch.visited[0]).toBe(2);
     });
 
     it('is readable at death and reset for the next agent in the slot', () => {
@@ -205,16 +218,16 @@ describe('patchesVisited', () => {
         r.world.alive[0] = 0;
         r.world.genomeId[0] = 0;
         observe(r.observer, r.world);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(1);
+        expect(r.observer.watch.visited[0]).toBe(1);
         nextTick(r.world, 151);
         expect(addBorn(r.world)).toBe(0);
         observe(r.observer, r.world);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(0);
+        expect(r.observer.watch.visited[0]).toBe(0);
     });
 
     it('is 0 with no patches', () => {
         const r = patched({ foodPatchCount: 0 });
         visit(r, 100, [500, 500]);
-        expect(patchesVisitedOf(r.observer, 0)).toBe(0);
+        expect(r.observer.watch.visited[0]).toBe(0);
     });
 });

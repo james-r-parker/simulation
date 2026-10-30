@@ -289,15 +289,14 @@ Its known weakness, and the reason for the next work: it rewards luck. In measur
 
 ### The candidate: `fitnessV6` and in-world merit (built, off)
 
-`fitnessV6` (`js/evo/fitness-v6.js`, with `fitness-v6-skill.js`, `-lineage.js`, `-watch.js`, `-diversity.js`) pays **skill over luck**. The observer classifies each meal or bite as
+`fitnessV6` (`js/evo/fitness-v6.js`, with `fitness-v6-skill.js`, `-lineage.js`, `-diversity.js`) pays **skill over luck**. The observer classifies each meal or bite as
 *deliberate* (the blob had the food or prey in view on a ray, closed on it and turned towards it, `isDeliberate` in `js/sim/merit-state.js`) or *chance*.
 
 | Group     | Pays for                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Skill     | Deliberate intake in full and chance intake at a quarter; survival and role terms and credits (escape, converged kill, alarm and hunt call) that only count once the blob has fed on purpose (the gate) |
+| Skill     | Deliberate intake in full and chance intake nothing; survival and role terms and credits (escape, converged kill) that only count once the blob has fed on purpose (the gate) |
 | Born      | Children that were born                                                                                                   |
-| Lineage   | Matings, children that reached maturity, descendants still alive at death (gated)                                         |
-| Watch     | Chases, pack kills, visits to distinct food patches - things worth watching (gated)                                        |
+| Lineage   | Children that reached maturity, descendants still alive at death (gated)                                                  |
 | Waste     | A charge for idle calls and smoke and for undefended bites, capped at half the positive score                              |
 | Diversity | A multiplier that favours rare niches (specialisation by size tercile)                                                     |
 
