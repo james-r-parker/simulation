@@ -34,6 +34,6 @@ describe('the economy defaults', () => {
             forager.passiveLossMultiplier,
             reproducer.passiveLossMultiplier,
             predator.passiveLossMultiplier,
-        ]).toEqual([1, 1, 0.6]);
+        ]).toEqual([1, 1, 0.3]);
     });
 });

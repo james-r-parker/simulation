@@ -17,7 +17,7 @@ const NEUTRAL = {
     huntSizeRatio: 1.01,
     biteCost: 0,
     maxEnergy: 25000,
-    specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
+    specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1, maxEnergyMultiplier: 1 } },
 };
 
 /**
@@ -244,7 +244,11 @@ describe('feed: biting', () => {
     });
 
     it('scales the bite by the biter specialisation biteMultiplier', () => {
-        const w = smallWorld({ biteCost: 0, maxEnergy: 25000, specialisations: { predator: { biteMultiplier: 4 } } });
+        const w = smallWorld({
+            biteCost: 0,
+            maxEnergy: 25000,
+            specialisations: { predator: { biteMultiplier: 4, maxEnergyMultiplier: 1 } },
+        });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50 });
         run(w, pair);
@@ -253,7 +257,11 @@ describe('feed: biting', () => {
     });
 
     it('applies biteMultiplier together with the victim biteTakenMultiplier', () => {
-        const w = smallWorld({ biteCost: 0, maxEnergy: 25000, specialisations: { predator: { biteMultiplier: 4 } } });
+        const w = smallWorld({
+            biteCost: 0,
+            maxEnergy: 25000,
+            specialisations: { predator: { biteMultiplier: 4, maxEnergyMultiplier: 1 } },
+        });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50, spec: DEFENDER });
         run(w, pair);

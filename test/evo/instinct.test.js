@@ -53,8 +53,9 @@ function subjectAt(weights, spec = FORAGER) {
 }
 
 describe('instinctWeight', () => {
-    it('defaults to 0 and is bounded 0 to 4', () => {
-        expect(config.instinctWeight).toBe(0);
+    it('defaults to 1 (the survival screen) and is bounded 0 to 4', () => {
+        expect(config.instinctWeight).toBe(1);
+        expect(createConfig({ instinctWeight: 0 }).instinctWeight).toBe(0);
         expect(createConfig({ instinctWeight: 4 }).instinctWeight).toBe(4);
         expect(() => createConfig({ instinctWeight: 4.5 })).toThrow(/instinctWeight/);
         expect(() => createConfig({ instinctWeight: -1 })).toThrow(/instinctWeight/);
@@ -71,7 +72,7 @@ describe('applyInstinct', () => {
             expect(row).toEqual(plain);
         }
         const rng = createRng(5);
-        const world = { config, layout, spec: new Uint8Array([PREDATOR]) };
+        const world = { config: createConfig({ instinctWeight: 0 }), layout, spec: new Uint8Array([PREDATOR]) };
         const row = new Float32Array(layout.weightCount);
         randomGenome(world, 0, { row, rng });
         expect(row).toEqual(plain);

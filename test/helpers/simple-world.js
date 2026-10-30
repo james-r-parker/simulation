@@ -24,7 +24,16 @@ export const SIMPLE_WORLD = Object.freeze({
     reproductionCooldown: 300,
     satiationShare: 0,
     specMutationRate: 0,
-    specialisations: { predator: { plantFoodValue: 1, passiveLossMultiplier: 1, splitMinEnergyMultiplier: 1 } },
+    instinctWeight: 0,
+    specialisations: {
+        predator: {
+            plantFoodValue: 1,
+            passiveLossMultiplier: 1,
+            splitMinEnergyMultiplier: 1,
+            maxEnergyMultiplier: 1,
+            biteMultiplier: 8,
+        },
+    },
     splitDeliberateMin: 0,
     splitDeliberateShareMin: 0,
     temperatureGainEat: 2,

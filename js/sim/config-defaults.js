@@ -117,15 +117,15 @@ export const DEFAULTS = deepFreeze({
             moveCostMultiplier: 1,
             biteTakenMultiplier: 1,
             cooldownMultiplier: 1,
-            biteMultiplier: 8, // tuned, fitness-and-selection T15o (E47)
+            biteMultiplier: 20, // survival screen (instinct, inst1-gorge-bite20): decisive bites, a predator lands a kill in few bites like a big cat's neck bite (was 8, tuned T15o E47)
             turnMultiplier: 0.7,
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
-            passiveLossMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales the standing (passive, size and vision) energy loss, T15f)
+            passiveLossMultiplier: 0.3, // survival screen (instinct, inst1-gorge-bite20): gorge and fast, a predator rests cheaply between meals like a python (was 0.6, T15d; scales the standing energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
+            maxEnergyMultiplier: 3, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store, so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         reproducer: {
             index: 2,
@@ -231,7 +231,7 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
-    predatorKillEnergy: 150, // tuned, fitness-and-selection T15d (energy the biter gains on a fatal bite, T15f)
+    predatorKillEnergy: 600, // survival screen (instinct, inst1-gorge-bite20): a 600-energy meal per kill, the gorge in gorge-and-fast (was 150, T15d; energy the biter gains on a fatal bite, T15f)
     alarmThreshold: 0.65, // tuned, fitness-and-selection T15d (the alarm output must exceed it, T15m)
     huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
@@ -248,7 +248,7 @@ export const DEFAULTS = deepFreeze({
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
     mutationRate: 'invsqrt', // brain plan big bang (H1): a probability per gene, a number, 'invsqrt' (1 / sqrt(weightCount), about 67 genes per birth) or 'genes:<k>'; 1 mutates every gene
     weightDecay: 0.005, // brain plan big bang (H2): per birth shrink of the wIn rows of silent inputs (the world's input-activity mask); 0 is off
-    instinctWeight: 0, // brain plan big bang: the innate reflex prior of a random genome (js/evo/instinct.js); 0 is today's random genomes
+    instinctWeight: 1, // brain plan big bang, survival screen (instinct): the innate reflex prior of a random genome (js/evo/instinct.js), as a newborn animal has reflexes before it learns; 0 is random genomes
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)
