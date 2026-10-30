@@ -12,6 +12,9 @@ import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 const TICKS = 3000;
 const TIMEOUT_MS = scaleTimeout(120_000);
 
+/** Two sums of the same bite and meal energies, added in a different order, differ by rounding (about 1e-16 relative). */
+const SAME = (/** @type {number} */ a, /** @type {number} */ b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(b));
+
 /**
  * Compares, per alive slot after each tick, the `merit` phase's raw deliberate intake with the observer's deliberate
  * food and bite energy. The phase classifies at its own tick stamp and the observer one tick later, each consistently.
@@ -24,7 +27,7 @@ function phaseHarness() {
             if (world.alive[slot] === 1 && world.ageTicks[slot] > 0) {
                 const expected = intent.deliberateFood[slot] + intent.deliberateBite[slot];
                 stats.checks += 1;
-                stats.mismatches += world.deliberateIntake[slot] === expected ? 0 : 1;
+                stats.mismatches += SAME(world.deliberateIntake[slot], expected) ? 0 : 1;
                 stats.deliberate += expected > 0 ? 1 : 0;
             }
         }
