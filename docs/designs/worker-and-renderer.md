@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phases 2 (renderer core) and 3 (interface) code merged and conformance-reviewed (T19, T27), awaiting their dev-machine budget measurements and manual walks; Phase 4 wake lock (T32), generative audio (T31), screenshot/clip capture (T55), director moments/captions (T28) and director shot planning/state machine (T29) built; Phase 6 (Look: tasks T57–T72, T74 and T75) built and reviewed in a browser: rock obstacles, aurora background, terrain frost and refuge glows, agent motion cues, courtship threads, carcass decay, finish layer and click opens inspector; T73's `--look` flag is built but its per-item cost table and `--look all` run on the dev machine's GPU are still to do.
 **Validated:** 1f2a4e7 (2026-10-29)
-**Priority:** 6 - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
+**Priority:** 7 - comes before the trainer so world tuning can be judged by watching it, not only by scorecards (user, 2026-10-16)
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 The browser app runs the simulation in a dedicated worker and only draws on the main thread. It runs unattended on a TV
