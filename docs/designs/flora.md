@@ -1,7 +1,7 @@
 # Flora
 
 **Status:** Proposed - plant species, fruiting seasons, toxicity, a hue sense and pollination, built in four phases on their own branches after the natural-selection big bang merges; Phase 1 (species and fruiting seasons) first.
-**Validated:** 9d63367 (2026-10-30)
+**Validated:** e2cd534 (2026-10-30)
 **Priority:** 2 - built next after the big bang (natural-selection.md, Priority 1) merges, in phases on their own branches (user, 2026-10-30)
 **Depends on:** [natural-selection.md](natural-selection.md), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
