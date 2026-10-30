@@ -220,6 +220,23 @@ describe('worldInfo and readyLayout', () => {
 });
 
 describe('worldInfo terrain', () => {
+    it('lists no refuges for a basins world with none', () => {
+        const run = buildRun({
+            seed: 3,
+            overrides: {
+                ...SMALL_CONFIG,
+                worldWidth: 6000,
+                worldHeight: 4000,
+                obstacleCount: 0,
+                terrainLayout: 'basins',
+                refugeCount: 0,
+            },
+            createPolicy: noisePolicy,
+            log: LOG,
+        });
+        expect(worldInfo(run).terrain.refuges).toEqual([]);
+    });
+
     it('is open with no rocks by default and describes the static rocks and refuges in basins', () => {
         expect(worldInfo(small()).terrain).toEqual({
             layout: 'open',

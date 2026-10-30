@@ -67,7 +67,7 @@ export function createGroundLayer({ info }) {
     return {
         object: mesh,
         setLook(look) {
-            const tier = look.terrain ?? 0;
+            const tier = /** @type {number} */ (look.terrain);
             mesh.visible = tier >= 0 && tier < 2;
             uniforms.uDetail.value = tier === 0 ? 1 : 0;
         },

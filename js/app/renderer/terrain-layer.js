@@ -260,9 +260,8 @@ function createGlowMesh(refuges, uniforms) {
  * @returns {{frost: any, refuge: any, patches: any}} terrain meshes
  */
 function buildTerrainMeshes(hasBasins, info, seed, uniforms) {
-    const s = seed ?? info.seed ?? 0;
     return {
-        frost: hasBasins ? createFrostMesh(info, s, uniforms.frost) : null,
+        frost: hasBasins ? createFrostMesh(info, seed, uniforms.frost) : null,
         refuge: hasBasins ? createGlowMesh(info.terrain?.refuges ?? [], uniforms.refuge) : null,
         patches: createGlowMesh(
             (info.patches ?? []).map((/** @type {any} */ q) => ({

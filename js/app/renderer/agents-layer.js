@@ -158,10 +158,7 @@ export function createAgentsLayer({ info, flagBits }) {
         object: group,
         store,
         setLook(look) {
-            if (!look) {
-                return;
-            }
-            const tier = look.motion ?? 0;
+            const tier = /** @type {number} */ (look.motion);
             shared.uMotion.value = tier === 0 ? 1.0 : tier === 1 ? 0.5 : 0.0;
         },
         setSmokeTexture(texture) {

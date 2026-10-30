@@ -251,7 +251,7 @@ export function createMateThreadLayer({ pool }) {
     return {
         object: mesh.object,
         setLook(look) {
-            const tier = look?.threads ?? 0;
+            const tier = /** @type {number} */ (look.threads);
             segments = tier === 0 ? MATE_SEGMENTS : MATE_SEGMENTS_LOW;
             mesh.object.visible = tier >= 0 && tier < 2;
         },

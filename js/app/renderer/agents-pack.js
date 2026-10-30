@@ -33,7 +33,7 @@ function colorUnslotted(rgb, { mesh, lineageId, neutral, energy01 }) {
         return;
     }
     lineageColor(lineageId, rgb);
-    const k = (ENERGY_FLOOR + (1 - ENERGY_FLOOR) * Math.min(Math.max(energy01, 0), 1)) * (MESH_GAIN[mesh] ?? 1);
+    const k = (ENERGY_FLOOR + (1 - ENERGY_FLOOR) * Math.min(Math.max(energy01, 0), 1)) * MESH_GAIN[mesh];
     rgb[0] *= k;
     rgb[1] *= k;
     rgb[2] *= k;

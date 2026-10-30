@@ -26,6 +26,5 @@ export function interleavedNoise(x, y, frame = 0) {
     const fy = y + frame * INTERLEAVED_FRAME_OFFSET;
     const magic = (INTERLEAVED_MAGIC1 * fx + INTERLEAVED_MAGIC2 * fy) % 1;
     const fract1 = magic < 0 ? magic + 1 : magic;
-    const val = (INTERLEAVED_MULT * fract1) % 1;
-    return val < 0 ? val + 1 : val;
+    return (INTERLEAVED_MULT * fract1) % 1;
 }

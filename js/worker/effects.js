@@ -304,7 +304,7 @@ function addBites(log, world, slotOf) {
  * @returns {void}
  */
 function addMatedPregnancies(log, world) {
-    if ((world.config.pregnancyTicks ?? 0) <= 1) {
+    if (world.config.pregnancyTicks <= 1) {
         return;
     }
     const { alive, pregnancy, fatherId, genomeId, lineageId, spec, x, y } = world;
@@ -342,7 +342,7 @@ function refreshCache(log, world) {
             log.cacheGenome[slot] = genomeId[slot];
             log.cacheLineage[slot] = lineageId[slot];
             log.cacheSpec[slot] = spec[slot];
-            log.cachePregnancy[slot] = pregnancy ? pregnancy[slot] : 0;
+            log.cachePregnancy[slot] = pregnancy[slot];
         } else {
             log.cacheGenome[slot] = 0;
             log.cachePregnancy[slot] = 0;

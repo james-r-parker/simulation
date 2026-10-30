@@ -135,7 +135,7 @@ export function createFoodLayer({ info }) {
     return {
         object: mesh,
         setLook(look) {
-            uniforms.uDecay.value = (look.decay ?? 0) === LOOK_OFF ? 0 : 1;
+            uniforms.uDecay.value = look.decay === LOOK_OFF ? 0 : 1;
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
@@ -242,7 +242,7 @@ function createObstacleMeshes(geometry, rimUniforms, bodyUniforms, count) {
 export function createObstacleLayer({ info, seed = 0 }) {
     const count = info.obstacleCount;
     const geometry = createQuadGeometry(count, ['iBody', 'iShape']);
-    geometry.getAttribute('iShape').copyArray(initObstacleShapes(count, seed ?? info.seed ?? 0));
+    geometry.getAttribute('iShape').copyArray(initObstacleShapes(count, seed));
     geometry.getAttribute('iShape').needsUpdate = true;
 
     const rimUniforms = obstacleUniforms(0);

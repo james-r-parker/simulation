@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { createInterpolated } from '../../../js/app/interpolate.js';
-import { createAgentsLayer } from '../../../js/app/renderer/agents-layer.js';
 import { createAuroraLayer } from '../../../js/app/renderer/aurora-layer.js';
 import { interleavedNoise } from '../../../js/app/renderer/finish-glsl.js';
 import {
@@ -108,7 +107,7 @@ describe('terrain layer without a cold margin', () => {
         };
         const layer = createTerrainLayer({ info });
         expect(layer.object.children).toHaveLength(2);
-        layer.update?.({ nowMs: 4000 });
+        layer.update?.(/** @type {any} */ ({ nowMs: 4000 }));
         expect(layer.object.children[0].material.uniforms.uTime.value).toBeCloseTo(4);
         layer.dispose();
     });
@@ -139,14 +138,6 @@ describe('obstacle layer', () => {
 });
 
 describe('small branches', () => {
-    it('ignores a missing look on the agents layer', () => {
-        const { info, layout } = smallReady();
-        const layer = createAgentsLayer({ info, flagBits: layout.flags });
-        layer.setLook?.(/** @type {any} */ (undefined));
-        expect(layer.object.children[0].material.uniforms.uMotion.value).toBe(1);
-        layer.dispose();
-    });
-
     it('interleavedNoise stays in [0, 1) for negative coordinates and later frames', () => {
         for (const [x, y, f] of [
             [-5, -9, 0],
@@ -161,5 +152,32 @@ describe('small branches', () => {
 
     it('rockShape makes the same rock for the same seed and slot and fills a default array', () => {
         expect(Array.from(rockShape(5, 2))).toEqual(Array.from(rockShape(5, 2)));
+    });
+});
+
+describe('layers on a minimal world', () => {
+    it('draws a terrain layer for a world with no terrain block and no patches', () => {
+        const layer = createTerrainLayer({ info: { worldWidth: 100, worldHeight: 100 } });
+        expect(layer.object.children).toHaveLength(0);
+        layer.dispose();
+    });
+
+    it('draws a basins world that lists no refuges', () => {
+        const info = { worldWidth: 3000, worldHeight: 2000, terrain: { layout: 'basins', coldMarginWidth: 300 } };
+        const layer = createTerrainLayer({ info });
+        expect(layer.object.children).toHaveLength(1);
+        layer.dispose();
+    });
+
+    it('fades out a thread whose alpha is below the visible floor', () => {
+        const pool = createMateThreadPool(2);
+        spawnMateThread(pool, { x: 0, y: 0, tick: 0, a: 1, b: 2, d: 0 });
+        const agents = createInterpolated(2);
+        agents.count = 2;
+        agents.genomeId[0] = 1;
+        agents.genomeId[1] = 2;
+        const lines = createLineBuffer(24);
+        stepMateThreads(pool, { agents, tick: 0.0001, family: createFamilySlots() }, lines);
+        expect(lines.vertices).toBe(0);
     });
 });

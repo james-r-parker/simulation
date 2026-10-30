@@ -24,7 +24,7 @@ export function rockShape(seed, slot, out = new Float32Array(SHAPE_FLOATS)) {
     const w1 = prng.next();
     const w2 = prng.next();
     const w3 = prng.next();
-    const sumW = w1 + w2 + w3 || 1;
+    const sumW = Math.max(w1 + w2 + w3, 1e-9);
     const totalScale = 0.5 + 0.5 * prng.next(); // Amplitudes sum to totalScale <= 1.0
 
     out[0] = (w1 / sumW) * totalScale;
