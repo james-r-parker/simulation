@@ -42,11 +42,14 @@ afterEach(() => {
 
 describe('parseArgs', () => {
     it('defaults to this tree alone, three runs and no filter', () => {
-        expect(parseArgs([])).toEqual({ compare: null, runs: 3, filter: null });
+        expect(parseArgs([])).toEqual({ area: null, compare: null, runs: 3, filter: null });
     });
 
-    it('reads --compare, --runs and --filter', () => {
-        expect(parseArgs(['--compare', 'origin/main', '--runs', '5', '--filter', 'hebbian'])).toEqual({
+    it('reads --area, --compare, --runs and --filter', () => {
+        expect(
+            parseArgs(['--area', 'brain', '--compare', 'origin/main', '--runs', '5', '--filter', 'hebbian']),
+        ).toEqual({
+            area: 'brain',
             compare: 'origin/main',
             runs: 5,
             filter: 'hebbian',
@@ -55,6 +58,7 @@ describe('parseArgs', () => {
 
     it('rejects a missing value, a bad run count and an unknown flag', () => {
         expect(() => parseArgs(['--compare'])).toThrow(/--compare needs a value/);
+        expect(() => parseArgs(['--area'])).toThrow(/--area needs a value/);
         expect(() => parseArgs(['--filter', ''])).toThrow(/--filter needs a value/);
         expect(() => parseArgs(['--runs', '0'])).toThrow(/--runs must be an integer >= 1/);
         expect(() => parseArgs(['--bogus'])).toThrow(/unknown argument: --bogus/);
