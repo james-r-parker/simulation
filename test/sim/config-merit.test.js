@@ -7,7 +7,6 @@ import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 // The merit keys of fitness-and-selection T16 (docs/designs/fitness-and-selection.md, "### Config") at their values
 // before the E41 finalist.
 const MERIT_OFF = {
-    meritChanceWeight: 0.25,
     meritMateBonus: 150,
     meritChildBonus: 300,
     meritEscapeBonus: 60,
@@ -54,7 +53,6 @@ describe('merit keys: defaults', () => {
         const base = off({});
         /** @type {Record<string, any>} */
         const moved = {
-            meritChanceWeight: 0.5,
             meritMateBonus: 151,
             meritChildBonus: 301,
             meritEscapeBonus: 61,
@@ -72,10 +70,6 @@ describe('merit keys: defaults', () => {
 
 describe('merit keys: accepted at the edges, rejected just outside', () => {
     it.each([
-        ['meritChanceWeight', 0, true],
-        ['meritChanceWeight', 1, true],
-        ['meritChanceWeight', -0.01, false],
-        ['meritChanceWeight', 1.01, false],
         ['meritMateBonus', 0, true],
         ['meritMateBonus', -1, false],
         ['meritChildBonus', 0, true],
@@ -106,10 +100,7 @@ describe('merit keys: accepted at the edges, rejected just outside', () => {
 });
 
 describe('merit keys: type checks', () => {
-    it.each([
-        ['meritChanceWeight', '0.25'],
-        ['meritHalf', NaN],
-    ])('rejects %s = %s', (key, value) => {
+    it.each([['meritHalf', NaN]])('rejects %s = %s', (key, value) => {
         expect(() => off({ [key]: value })).toThrow(new RegExp(key));
     });
 

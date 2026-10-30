@@ -5,7 +5,6 @@ import { meritPhase } from '../../js/sim/merit-phase.js';
 import { STEP_PHASES } from '../../js/sim/step.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
-const CHANCE = 0.25;
 const PREDATOR = 1;
 
 /**
@@ -37,14 +36,14 @@ describe('meritPhase', () => {
         expect(names.indexOf('merit')).toBe(names.indexOf('invariants') - 1);
     });
 
-    it('credits a chance meal at meritChanceWeight and a deliberate one in full', () => {
+    it('credits a chance meal nothing and a deliberate one in full', () => {
         const w = world();
         const chance = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
         const deliberate = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
         w.tick = 50;
         makeDeliberate(w, deliberate, 'meritFood');
         meritPhase(w);
-        expect(w.merit[chance]).toBe(CHANCE * 40);
+        expect(w.merit[chance]).toBe(0);
         expect(w.deliberateIntake[chance]).toBe(0);
         expect(w.merit[deliberate]).toBe(40);
         expect(w.deliberateIntake[deliberate]).toBe(40);
@@ -53,14 +52,16 @@ describe('meritPhase', () => {
     it('credits only the energy gained since the last tick', () => {
         const w = world();
         const slot = addBlob(w, { ageTicks: 5, foodEnergy: 40 });
+        w.tick = 50;
+        makeDeliberate(w, slot, 'meritFood');
         meritPhase(w);
         w.tick += 1;
         meritPhase(w);
-        expect(w.merit[slot]).toBe(CHANCE * 40);
+        expect(w.merit[slot]).toBe(40);
         w.foodEnergy[slot] = 60;
         w.tick += 1;
         meritPhase(w);
-        expect(w.merit[slot]).toBe(CHANCE * 60);
+        expect(w.merit[slot]).toBe(60);
     });
 
     it('credits bite energy by the prey tracker', () => {
@@ -70,7 +71,7 @@ describe('meritPhase', () => {
         w.tick = 50;
         makeDeliberate(w, deliberate, 'meritPrey');
         meritPhase(w);
-        expect(w.merit[chance]).toBe(CHANCE * 20);
+        expect(w.merit[chance]).toBe(0);
         expect(w.merit[deliberate]).toBe(20);
         expect(w.deliberateIntake[deliberate]).toBe(20);
     });

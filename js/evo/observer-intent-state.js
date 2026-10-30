@@ -52,6 +52,8 @@ const SLOT_FIELDS = {
     preyOff: [Float64Array, NEVER],
     foodStart: [Float64Array, NEVER],
     preyStart: [Float64Array, NEVER],
+    foodProx: [Float64Array, -1],
+    preyProx: [Float64Array, -1],
     threatSide: [Int8Array, 0],
     threatArc: [Uint8Array, 0],
     thrTicks: [Uint32Array, 0],
@@ -139,8 +141,10 @@ function targetView(intent, food) {
         turn: food ? intent.foodTurn : intent.preyTurn,
         off: food ? intent.foodOff : intent.preyOff,
         start: food ? intent.foodStart : intent.preyStart,
+        prox: food ? intent.foodProx : intent.preyProx,
         at: food ? SCAN.FOOD : SCAN.PREY,
         clears: food,
+        ambush: !food,
     };
 }
 

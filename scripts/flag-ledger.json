@@ -16,11 +16,5 @@
     "plan": null,
     "task": null,
     "reason": "Permanent: a specialisation's trait (it decides who may bite), not a switch between an old and a new rule."
-  },
-  {
-    "key": "meritChanceWeight",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "big bang stage 4",
-    "reason": "Natural-selection switch key: the switch sets the chance credit to 0 so a lucky meal earns no merit; stage 4 deletes the chance path."
   }
 ]

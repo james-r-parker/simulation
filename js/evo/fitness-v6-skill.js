@@ -7,7 +7,6 @@ import { FITNESS_V1, specTerm } from './fitness.js';
 
 /** The skill and waste constants of the doc's constants table, named so a change is one visible edit. */
 export const FITNESS_V6_SKILL = Object.freeze({
-    CHANCE_WEIGHT: 0.25,
     GATE: 500,
     SURVIVAL_RATE: 0.5,
     SURVIVAL_CAP: 30000,
@@ -82,8 +81,7 @@ export function chanceIntake(intent, slot) {
 export function createSkillGroup(counters, overrides) {
     const w = { ...FITNESS_V6_SKILL, ...overrides };
     /** @type {(observer: any, slot: number) => number} */
-    const intake = (observer, slot) =>
-        deliberateIntake(observer.intent, slot) + w.CHANCE_WEIGHT * chanceIntake(observer.intent, slot);
+    const intake = (observer, slot) => deliberateIntake(observer.intent, slot);
     /** @type {(observer: any, slot: number) => number} */
     const gate = (observer, slot) => Math.min(1, deliberateIntake(observer.intent, slot) / w.GATE);
     /** @type {(observer: any, slot: number, config: any) => number} */

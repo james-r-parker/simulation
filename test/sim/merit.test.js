@@ -33,12 +33,13 @@ describe('creditIntake', () => {
         expect(w.deliberateIntake[s]).toBe(40);
     });
 
-    it('adds chance energy at meritChanceWeight and leaves deliberateIntake alone', () => {
+    it('adds chance energy to nothing but the meal count', () => {
         const w = world();
         const s = addBlob(w);
         creditIntake(w, s, 40, false);
-        expect(w.merit[s]).toBe(w.config.meritChanceWeight * 40);
+        expect(w.merit[s]).toBe(0);
         expect(w.deliberateIntake[s]).toBe(0);
+        expect([w.mealsTotal[s], w.mealsDeliberate[s]]).toEqual([1, 0]);
     });
 
     it('does not decay deliberateIntake', () => {

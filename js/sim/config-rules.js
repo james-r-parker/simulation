@@ -65,7 +65,6 @@ export const FEATURE_RULES = {
     capBirthsEnabled: BOOL,
     splitCapMargin: int(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
-    meritChanceWeight: UNIT,
     meritMateBonus: num(0),
     meritChildBonus: num(0),
     meritEscapeBonus: num(0),

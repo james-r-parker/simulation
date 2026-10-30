@@ -43,7 +43,6 @@ function score(fields, spec, overrides) {
 describe('FITNESS_V6_SKILL', () => {
     it('names the doc constants', () => {
         expect(FITNESS_V6_SKILL).toEqual({
-            CHANCE_WEIGHT: 0.25,
             GATE: 500,
             SURVIVAL_RATE: 0.5,
             SURVIVAL_CAP: 30000,
@@ -66,9 +65,10 @@ describe('skill intake', () => {
         expect(score({})).toBe(0);
     });
 
-    it('pays deliberate food and bite energy in full and chance intake at 0.25', () => {
+    it('pays deliberate food and bite energy in full and chance intake nothing', () => {
         expect(score({ deliberateFood: 100, deliberateBite: 50 })).toBe(150);
-        expect(score({ chanceFood: 100, chanceBite: 60 })).toBe(40);
+        expect(score({ chanceFood: 100, chanceBite: 60 })).toBe(0);
+        expect(score({ deliberateFood: 100, chanceFood: 100, chanceBite: 60 })).toBe(score({ deliberateFood: 100 }));
     });
 
     it('reads the two intakes from the intent counters', () => {
@@ -90,7 +90,7 @@ describe('skill gate and survival', () => {
     });
 
     it('does not count chance intake toward the gate', () => {
-        expect(score({ chanceFood: 4000, ageTicks: 10000 })).toBe(1000);
+        expect(score({ chanceFood: 4000, ageTicks: 10000 })).toBe(0);
     });
 
     it('caps survival by age, by the survival cap and by one per deliberate energy', () => {
@@ -152,11 +152,11 @@ describe('skill credits', () => {
     });
 
     it('pays no credit without deliberate intake', () => {
-        expect(score({ chanceFood: 4000, respondedEscape: 5, alarmCredits: 5 })).toBe(1000);
+        expect(score({ chanceFood: 4000, respondedEscape: 5, alarmCredits: 5 })).toBe(0);
     });
 
-    it('caps credits on the chance-discounted intake', () => {
-        expect(score({ ...base, chanceFood: 1000, respondedEscape: 1000 })).toBe(1250 + 0.25 * 1250);
+    it('caps credits on the deliberate intake, whatever the chance intake', () => {
+        expect(score({ ...base, chanceFood: 1000, respondedEscape: 1000 })).toBe(1250);
     });
 });
 
@@ -183,9 +183,8 @@ describe('skill waste', () => {
 describe('createSkillGroup overrides', () => {
     it('merges overrides over the defaults and keeps the rest', () => {
         const { counters } = slotWith({});
-        const g = createSkillGroup(counters, { CHANCE_WEIGHT: 0.5 });
-        expect(g.weights).toEqual({ ...FITNESS_V6_SKILL, CHANCE_WEIGHT: 0.5 });
-        expect(score({ chanceFood: 100 }, undefined, { CHANCE_WEIGHT: 0.5 })).toBe(50);
+        const g = createSkillGroup(counters, { GATE: 250 });
+        expect(g.weights).toEqual({ ...FITNESS_V6_SKILL, GATE: 250 });
         expect(score({ deliberateFood: 1000, idleSignal: 1 }, undefined, { IDLE_SIGNAL: 100 })).toBe(900);
     });
 

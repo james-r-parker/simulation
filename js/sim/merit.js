@@ -62,7 +62,8 @@ export function meritNow(world, slot) {
 
 /**
  * Credits the energy of a meal or bite. A deliberate one adds its full energy to merit and to `deliberateIntake`
- * (which is not decayed: the split gate reads the raw total); a chance one adds `meritChanceWeight` x energy to merit.
+ * (which is not decayed: the split gate reads the raw total); a chance one adds nothing (principles rule 2: a lucky
+ * meal moves no mate score, birth gift or archive rank), though it still counts as a meal.
  * @param {Record<string, any>} world the world
  * @param {number} slot the eater
  * @param {number} energy energy gained, at least 0
@@ -74,8 +75,6 @@ export function creditIntake(world, slot, energy, deliberate) {
     if (deliberate) {
         world.deliberateIntake[slot] += energy;
         add(world, slot, energy);
-    } else {
-        add(world, slot, world.config.meritChanceWeight * energy);
     }
     noteProofMeal(world, slot);
 }
