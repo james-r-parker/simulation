@@ -18,7 +18,7 @@ import { createMateScene, resetMateSlot } from './scene-mate.js';
 import { createNicheScene } from './scene-niche.js';
 import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
 import { trackSlots } from './observer-scenes-slots.js';
-import { createStyle, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
+import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
@@ -97,6 +97,7 @@ function noteEvents(scenes, observer, world) {
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
+            noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
             noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
             noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
             noteProofKill(scenes.proof, { cause: d[o + 4], lineageId: d[o + 7] });

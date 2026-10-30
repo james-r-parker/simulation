@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ELITE, placeOf } from '../../../js/evo/archive.js';
-import { descriptorV1, descriptorV6 } from '../../../js/evo/descriptors.js';
+import { descriptorV1, descriptorV7 } from '../../../js/evo/descriptors.js';
 import { FITNESS_V6 } from '../../../js/evo/fitness-v6.js';
 import { ensureRoom } from '../../../js/evo/growable-log.js';
 import { createObserver } from '../../../js/evo/observer.js';
@@ -30,10 +30,10 @@ function v6(options = {}, level = 'debug') {
  * Kills a mature agent in `slot` the way the host does: the death hook, the observer's scoring (the policy's fitness
  * into the next death-log row), the event record, then the policy's `onEvent`.
  * @param {{policy: any, world: any, observer: any}} ctx the run
- * @param {{slot: number, genomeId: number, roleSkill: number, bodyPlan: number, deliberate?: number}} agent the death
+ * @param {{slot: number, genomeId: number, roleSkill: number, style: number, deliberate?: number}} agent the death
  * @returns {void}
  */
-function die({ policy, world, observer }, { slot, genomeId, roleSkill, bodyPlan, deliberate = 0 }) {
+function die({ policy, world, observer }, { slot, genomeId, roleSkill, style, deliberate = 0 }) {
     world.alive[slot] = 1;
     world.genomeId[slot] = genomeId;
     world.ageTicks[slot] = world.config.maturityTicks + 10;
@@ -49,7 +49,7 @@ function die({ policy, world, observer }, { slot, genomeId, roleSkill, bodyPlan,
     observer.deaths.genomeId[row] = genomeId;
     observer.deaths.fitness[row] = fitness;
     observer.deaths.roleSkill[row] = roleSkill;
-    observer.deaths.bodyPlan[row] = bodyPlan;
+    observer.deaths.style[row] = style;
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_DIED, 900);
     const d = world.events.data;
     d[o + 2] = slot;
@@ -60,12 +60,12 @@ function die({ policy, world, observer }, { slot, genomeId, roleSkill, bodyPlan,
 }
 
 describe('map-elites-v6 shape', () => {
-    it('is registered and scored by fitnessV6 with descriptorV6', () => {
+    it('is registered and scored by fitnessV6 with descriptorV7', () => {
         const { policy } = v6();
         expect(POLICIES['map-elites-v6'].create).toBe(createMapElitesV6);
         expect(policy.name).toBe('map-elites-v6');
         expect(policy.fitnessName).toBe('v6');
-        expect(policy.archive.descriptor).toBe(descriptorV6);
+        expect(policy.archive.descriptor).toBe(descriptorV7);
         expect(policy.fitness.weights).toMatchObject({ MATURED: FITNESS_V6.MATURED, BORN: FITNESS_V6.BORN });
     });
 
@@ -77,8 +77,8 @@ describe('map-elites-v6 shape', () => {
 
     it('places by a descriptor named in the options, and refuses an unregistered name', () => {
         expect(v6({ descriptor: 'v1' }).policy.archive.descriptor).toBe(descriptorV1);
-        expect(v6({ descriptor: 'v6' }).policy.archive.descriptor).toBe(descriptorV6);
-        expect(() => v6({ descriptor: 'v7' })).toThrow(/unknown descriptor "v7"; known: v1, v6/);
+        expect(v6({ descriptor: 'v7' }).policy.archive.descriptor).toBe(descriptorV7);
+        expect(() => v6({ descriptor: 'v6' })).toThrow(/unknown descriptor "v6"; known: v1, v7/);
     });
 
     it('takes the immigrant mix options', () => {
@@ -87,15 +87,15 @@ describe('map-elites-v6 shape', () => {
 });
 
 describe('map-elites-v6 placement and FitnessScored', () => {
-    it('places a death at its role skill (x) and body plan (y)', () => {
+    it('places a death at its role skill (x) and style (y)', () => {
         const ctx = v6();
-        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, bodyPlan: 0.35 });
+        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, style: 0.35 });
         expect(ctx.policy.archive.ids[placeOf(0, 3 * 10 + 8, ELITE)]).toBe(600);
     });
 
-    it('logs FitnessScored for an offered death with the group values and the diversity factor', () => {
+    it('logs FitnessScored for an offered death with the group values', () => {
         const ctx = v6();
-        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, bodyPlan: 0.35, deliberate: 1000 });
+        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, style: 0.35, deliberate: 1000 });
         const scored = ctx.records.filter((r) => r.event === 'FitnessScored');
         expect(scored).toHaveLength(1);
         expect(scored[0]).toMatchObject({
@@ -107,26 +107,23 @@ describe('map-elites-v6 placement and FitnessScored', () => {
             fitness: ctx.observer.deaths.fitness[0],
             waste: 0,
             lineage: 0,
-            diversityFactor: 1,
         });
         expect(scored[0].skill).toBeGreaterThanOrEqual(1000);
         expect(scored[0].fitness).toBe(scored[0].skill);
     });
 
-    it('reports the lineage value as paid, after the skill gate, and the niche factor', () => {
+    it('reports the lineage value as paid, after the skill gate, ', () => {
         const ctx = v6();
         ctx.observer.maturedChildren[2] = 1;
-        ctx.observer.niche[2] = 0;
-        ctx.observer.nicheTally = { count: 15, shares: new Float64Array(15) };
-        die(ctx, { slot: 2, genomeId: 601, roleSkill: 1, bodyPlan: 0.5, deliberate: 1000 });
+        die(ctx, { slot: 2, genomeId: 601, roleSkill: 1, style: 0.5, deliberate: 1000 });
         const scored = ctx.records.find((r) => r.event === 'FitnessScored');
-        expect(scored).toMatchObject({ lineage: 250, diversityFactor: 1.5 });
+        expect(scored).toMatchObject({ lineage: 250 });
         expect(scored).not.toHaveProperty('watch');
     });
 
     it('logs nothing and adds no columns below the debug level', () => {
         const ctx = v6({}, 'info');
-        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, bodyPlan: 0.35, deliberate: 1000 });
+        die(ctx, { slot: 3, genomeId: 600, roleSkill: 0.85, style: 0.35, deliberate: 1000 });
         expect(ctx.records.some((r) => r.event === 'FitnessScored')).toBe(false);
         expect(ctx.observer.deaths.scoreSkill).toBeUndefined();
         expect(ctx.policy.archive.ids[placeOf(0, 38, ELITE)]).toBe(600);

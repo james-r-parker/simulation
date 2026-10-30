@@ -39,6 +39,7 @@ export function createStyle(config) {
         done: new Float64Array(n),
         current: new Float64Array(n),
         ringTicks: new Uint32Array(n),
+        atDeath: new Float64Array(config.eventCapacity),
         deaths: createKeyed(['sum', 'n']),
     };
 }
@@ -109,6 +110,19 @@ export function styleOf(observer, slot) {
     }
     const life = observer.intent.aliveTicks[slot];
     return life === 0 ? 0 : style.ringTicks[slot] / life;
+}
+
+/**
+ * Remembers the style a dying agent had, under the index of its `AgentDied` event: the scenes reset the slot's style
+ * before `applyEvents` logs the death, and the descriptor reads the logged value. An agent the observer does not track
+ * under this genome (born and died in one tick) has style 0. Call before the slot is reset.
+ * @param {Record<string, any>} observer the observer
+ * @param {number} index the event's index in the tick's ring
+ * @param {{slot: number, genomeId: number}} death the dying agent
+ * @returns {void}
+ */
+export function noteStyleAtDeath(observer, index, { slot, genomeId }) {
+    observer.scenes.style.atDeath[index] = observer.genomeId[slot] === genomeId ? styleOf(observer, slot) : 0;
 }
 
 /**

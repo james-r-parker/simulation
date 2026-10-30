@@ -30,7 +30,6 @@ function observerWith(fields) {
         children: Uint32Array.of(fields.children ?? 0),
         maturedChildren: Uint32Array.of(fields.maturedChildren ?? 0),
         descendantsAlive: Uint32Array.of(fields.descendantsAlive ?? 0),
-        niche: Uint8Array.of(fields.niche ?? 0),
     };
 }
 
@@ -47,7 +46,6 @@ describe('FITNESS_V6', () => {
         expect(FITNESS_V6).toMatchObject({
             ...FITNESS_V6_SKILL,
             MATURED: 250,
-            DIVERSITY: 0.5,
             BORN: 50,
         });
         expect(Object.isFrozen(FITNESS_V6)).toBe(true);
@@ -113,28 +111,26 @@ describe('createFitnessV6', () => {
     });
 });
 
-describe('diversity in fitnessV6', () => {
-    const f = createFitnessV6({});
-    const withTally = (/** @type {number} */ share, count = 15) => ({
-        ...observerWith({ deliberateFood: 1000 }),
-        niche: Uint8Array.of(2),
-        nicheTally: { count, shares: Float64Array.of(0, 0, share) },
+describe('no diversity factor in fitnessV6', () => {
+    it('does not pay a rare niche: a niche tally on the observer changes nothing', () => {
+        const f = createFitnessV6({});
+        const o = {
+            ...observerWith({ deliberateFood: 1000 }),
+            niche: Uint8Array.of(2),
+            nicheTally: { count: 15, shares: Float64Array.of(0, 0, 0) },
+        };
+        expect(f(o, 0, config)).toBe(1000);
     });
 
-    it('multiplies by the niche factor', () => {
-        expect(f(withTally(0), 0, config)).toBe(1000 * 1.5);
-        expect(f(withTally(1 / 15), 0, config)).toBeCloseTo(1000, 9);
-        expect(f(withTally(2 / 15), 0, config)).toBeCloseTo(1000 * 0.75, 9);
-    });
-
-    it('is 1 without a tally', () => {
-        expect(f(observerWith({ deliberateFood: 1000 }), 0, config)).toBe(1000);
+    it('has no DIVERSITY weight to vary: a screen that names it is refused', () => {
+        expect(FITNESS_V6).not.toHaveProperty('DIVERSITY');
+        expect(() => createFitnessV6({}, { DIVERSITY: 0 })).toThrow(/unknown weight DIVERSITY/);
     });
 });
 
 describe('fitnessV6 parts', () => {
     const f = createFitnessV6({});
-    const parts = () => ({ skill: 0, waste: 0, lineage: 0, diversityFactor: 0 });
+    const parts = () => ({ skill: 0, waste: 0, lineage: 0 });
 
     it('reports each group as paid, the gated lineage included', () => {
         const o = observerWith({ deliberateFood: 250, maturedChildren: 1, idleSignal: 2 });
@@ -142,14 +138,6 @@ describe('fitnessV6 parts', () => {
             skill: 250,
             waste: 40,
             lineage: 125,
-            diversityFactor: 1,
         });
-    });
-
-    it('reports the niche factor when there is a tally', () => {
-        const o = { ...observerWith({}), nicheTally: { count: 5, shares: Float64Array.of(0.2) } };
-        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1);
-        o.nicheTally.shares[0] = 0;
-        expect(f.parts(o, 0, config, parts()).diversityFactor).toBe(1.5);
     });
 });

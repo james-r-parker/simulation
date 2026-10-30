@@ -32,8 +32,8 @@ describe('validatePolicyOptions', () => {
     });
 
     it('names a descriptor that is not registered', () => {
-        expect(() => validatePolicyOptions('map-elites-v6', { descriptor: 'v7' })).toThrow(
-            /descriptor "v7" is not registered; known: v1, v6/,
+        expect(() => validatePolicyOptions('map-elites-v6', { descriptor: 'v6' })).toThrow(
+            /descriptor "v6" is not registered; known: v1, v7/,
         );
     });
 

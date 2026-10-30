@@ -9,7 +9,7 @@ import { isEligibleChild, noteChild, noteChildDeath, noteLineages } from './metr
 import { ensureRoom } from './growable-log.js';
 import { noteBirthBody, noteBody } from './observer-body.js';
 import { deliberateIntake, chanceIntake } from './fitness-v6-skill.js';
-import { bodyPlanOf, roleSkillOf } from './descriptors.js';
+import { roleSkillOf } from './descriptors.js';
 import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from './observer-lineage-counters.js';
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
@@ -68,11 +68,11 @@ function creditRelations(observer, d, count) {
 /**
  * Appends a death-log row from the slot's counters.
  * @param {Record<string, any>} observer the observer
- * @param {number} slot the slot
+ * @param {{slot: number, eventIndex: number}} death the slot and the index of its `AgentDied` event
  * @param {number} fitness the agent's fitness, or NaN
  * @returns {void}
  */
-function logDeath(observer, slot, fitness) {
+function logDeath(observer, { slot, eventIndex }, fitness) {
     const log = observer.deaths;
     const row = observer.deathCount;
     ensureRoom(log, row);
@@ -81,7 +81,7 @@ function logDeath(observer, slot, fitness) {
     }
     log.fitness[row] = fitness;
     log.roleSkill[row] = roleSkillOf(deliberateIntake(observer.intent, slot), chanceIntake(observer.intent, slot));
-    log.bodyPlan[row] = bodyPlanOf(observer.sizeTrait[slot], observer.visionTrait[slot]);
+    log.style[row] = observer.scenes.style.atDeath[eventIndex];
     observer.deathCount = row + 1;
 }
 
@@ -112,7 +112,11 @@ function finishDeath(observer, d, o, fitness) {
     }
     observer.foodEnergy[slot] = d[o + 9];
     observer.biteEnergy[slot] = d[o + 10];
-    logDeath(observer, slot, fitness ? fitness(observer, slot, observer.config) : NaN);
+    logDeath(
+        observer,
+        { slot, eventIndex: o / EVENT_STRIDE },
+        fitness ? fitness(observer, slot, observer.config) : NaN,
+    );
     observer.deathsByCause[d[o + 4]] += 1;
     if (d[o + 1] >= BURN_IN_TICKS) {
         noteDeath(observer.environment, d[o + 4]);

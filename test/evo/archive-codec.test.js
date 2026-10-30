@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createArchive, nextClone, offer, selectParent } from '../../js/evo/archive.js';
 import { ARCHIVE_VERSION, decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
-import { descriptorV1, descriptorV6 } from '../../js/evo/descriptors.js';
+import { descriptorV1, descriptorV7 } from '../../js/evo/descriptors.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createSimLog } from '../../js/sim/log.js';
@@ -84,11 +84,11 @@ describe('archive codec', () => {
     });
 
     it('rejects an archive built under another descriptor, naming the field', () => {
-        const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV6 }), config));
-        expect(json.descriptor).toBe('v6');
+        const json = viaText(encodeArchive(createArchive(layout, { descriptor: descriptorV7 }), config));
+        expect(json.descriptor).toBe('v7');
         expect(() => decodeArchive(json, config)).toThrow(/archive\.descriptor/);
         expect(() => decodeArchive(json, config, undefined, descriptorV1)).toThrow(/archive\.descriptor/);
-        expect(decodeArchive(json, config, undefined, descriptorV6).descriptor).toBe(descriptorV6);
+        expect(decodeArchive(json, config, undefined, descriptorV7).descriptor).toBe(descriptorV7);
     });
 
     it('rejects an archive with no descriptor field', () => {
