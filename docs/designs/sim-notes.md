@@ -1435,3 +1435,27 @@ Prediction check (recorded before the run in `evals/experiments.json` as E41): d
 - **Terms.** `applyInstinct` in `js/evo/instinct.js` adds to the first hit slot of the pooled skip rows, never to literal offsets: food strength to thrust +w, food sine to turn +w; a forager also threat strength to thrust +w and threat sine to turn -w; a `canHunt` body also prey strength to thrust +w and to bite +2w, prey sine to turn +w. The alarm, hunt-call and smoke output biases start at -2w. Sums are clamped to `WEIGHT_CLAMP`. It draws nothing, so the stream and the genome at `instinctWeight` 0 are those of `randomWeights`.
 - **Where it applies.** `randomGenome` (random-brain and the map-elites seeder's random branch) calls it with the agent's spec, which `spawnAgent` sets before `initBrain`. `baseline-v5` and the test policies keep their own init.
 - **Staging range.** A forager sees 300 and a predator 350, so a staged scene must put its target inside that (the first test run put food at 400 and read nothing). The threat test judges the first tick only (the subject's pooled row was empty from tick 2 in the hand-built world; not diagnosed).
+
+### 2026-10-30 - The survival screens and the defaults they set (natural-selection T5, E67 and E68)
+
+- **What ran.** Five screens of 8 seeds x 200000 ticks on the live policy and the big-bang defaults, reports in `evals/screens/results/{survival,survival-diag,predator-metabolism,predator-gorge,instinct}/`. The cost grid (`biteCost`, `huntUpkeep`) was stopped after 3 arms: predator presence 0.035 to 0.134, so the cost is not the lever. The diagnosis (old brain, energy 6k and 25k, no kick) moved nothing past 0.08. Cause, by replay: random-brain predators never landed a bite and starved from the movement cost of thrashing (`movementCost x speed^2`).
+- **The fix is from biology** (principles.md, look to nature first): innate instincts (`instinctWeight`), a gorge-and-fast predator and decisive bites. The merge gate (population above the floor at the end on every seed, `eval.predator_presence` at least 0.5, `eval.spec_effective` above 1.5) is met by one arm only.
+- **Table** (means over 8 seeds; pop > min is the screen's seed count; ref is the first row of each screen):
+
+| Screen / arm                            | pop > min | predator presence | pop mean | predator births | catch > 0 |
+| --------------------------------------- | --------- | ----------------- | -------- | --------------- | --------- |
+| survival-diag / defaults (ref)          | 2/8       | 0.06              | 142      | 2.6             | 6/8       |
+| predator-metabolism / fast-0.3-meal-600 | 4/8       | 0.24              | 203      | 3.3             | 7/8       |
+| predator-gorge / gorge-bite20           | 1/8       | 0.09              | 98       | 1.4             | 7/8       |
+| predator-gorge / gorge-bite40           | 1/8       | 0.28              | 127      | 2.3             | 8/8       |
+| predator-gorge / deepfast-gorge-bite20  | 4/8       | 0.18              | 220      | 3.4             | 7/8       |
+| instinct / inst1 (instincts alone)      | 8/8       | 0.06              | 480      | 3.0             | 8/8       |
+| instinct / inst1-gorge                  | 8/8       | 0.16              | 477      | 32              | 8/8       |
+| instinct / **inst1-gorge-bite20**       | 7/8       | **0.67**          | 403      | 2972            | 8/8       |
+| instinct / inst0.5-gorge                | 8/8       | 0.25              | 431      | 742             | 8/8       |
+
+- **The winning arm** `inst1-gorge-bite20`: predator presence 0.67 (0.09 to 1.0 by seed), `eval.spec_effective` 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (7 on seed 5, 0 or 1 elsewhere), catch rate 0.42, deliberate food share 0.53, alarm precision 0.20 (only 2 of 8 seeds call at all), mating share 0.54. It became the defaults: `instinctWeight` 1, predator `passiveLossMultiplier` 0.3, `maxEnergyMultiplier` 3, `biteMultiplier` 20, `predatorKillEnergy` 600.
+- **The screen table still prints FAIL for it** on its own columns: `popAboveMin` is the share of samples above the minimum and seed 5 reads 0.55, `lineages >= 5` fails on all 8 (1 to 3 per basin) and `spec <= 70%` on 7. The plan's gate is the one above, which it meets; the other columns are the balancing work.
+- **Known issue left for balancing.** Predators boom and bust (about 2972 predator births per run, alive at the end in 3 of 8 seeds), and the lineage count per basin is low. Instincts alone fix the population but not the predators; only the three predator changes together hold them.
+- **Goldens moved by the defaults** (`test/sim/golden.json`): `cases` default `bc61370b43a2df99` to `8401c064ae9cbceb`; `cases` busy `d72f837a149dd80f` to `15f01d86733caf36`; `shortCases` default `e1e3ef13b277b1d5` to `007d5a41d009aa58`; `shortCases` busy `eee2d99decb6f926` to `87c57d4fa9d0a18c`; the busy effect stream `999b8f474640dcac` (2567 records) to `27108f937e31a6e4` (2359 records). An override with the five old values reproduces both old long hashes, so nothing else moved. Chromium 156 matches (`npm run browser:hash` reads `golden.json`; there is no separate pin).
+- **Fixtures that assumed the old values.** `test/helpers/simple-world.js` now pins `instinctWeight` 0, the predator `maxEnergyMultiplier` 1 and `biteMultiplier` 8, so tests that raise `maxEnergy` to 25000 do not trip the `hashCellSize` radius check with a 3x store (a 25000 x 3 body is 332 px). The same pin sits on the neutral predator of `feeding.test.js`.
