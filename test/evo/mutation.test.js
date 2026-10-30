@@ -172,9 +172,18 @@ describe('randomWeights', () => {
         expect(sd / expected).toBeLessThan(1.15);
     });
 
+    it('draws skip weights with sd 1 / sqrt(48), under the output weights', () => {
+        const expected = 1 / Math.sqrt(48);
+        const { mean, sd } = stats(row.subarray(layout.wSkip, layout.traitStart));
+        expect(Math.abs(mean)).toBeLessThan(expected * 0.15);
+        expect(sd / expected).toBeGreaterThan(0.9);
+        expect(sd / expected).toBeLessThan(1.1);
+        expect(expected).toBeLessThan(1 / Math.sqrt(32)); // under wOut's scale at the default 32 hidden
+    });
+
     it('starts biases at 0', () => {
         expect(row.subarray(layout.bHidden, layout.wOut).every((w) => w === 0)).toBe(true);
-        expect(row.subarray(layout.bOut, layout.traitStart).every((w) => w === 0)).toBe(true);
+        expect(row.subarray(layout.bOut, layout.wSkip).every((w) => w === 0)).toBe(true);
     });
 
     it('starts leak genes at the leakGeneStart it is given', () => {

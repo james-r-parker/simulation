@@ -72,6 +72,7 @@ export const TRAIT_INDEX = Object.freeze({ SIZE: 0, VISION: 1, CHILD_SHARE: 2, L
  * @property {number} bHidden offset of the hidden biases
  * @property {number} wOut offset of the hidden-to-output block (`hidden x outputCount`)
  * @property {number} bOut offset of the output biases
+ * @property {number} wSkip offset of the pooled-to-output skip block (`POOLED_VALUES x outputCount`, input-major)
  * @property {number} traitStart offset of the trait genes (`TRAIT_GENES`)
  * @property {number} leakStart offset of the leak genes (one per hidden unit)
  * @property {number} weightCount floats in one weight row
@@ -79,7 +80,7 @@ export const TRAIT_INDEX = Object.freeze({ SIZE: 0, VISION: 1, CHILD_SHARE: 2, L
 
 /**
  * The layout of one agent's weight row, blocks in the order wIn, wRec, bHidden, wOut, bOut,
- * trait genes, leak genes.
+ * wSkip, trait genes, leak genes.
  * @param {Readonly<Record<string, any>>} config the config
  * @returns {Readonly<BrainLayout>}
  */
@@ -91,7 +92,8 @@ export function brainLayout(config) {
     const bHidden = wRec + hidden * hidden;
     const wOut = bHidden + hidden;
     const bOut = wOut + hidden * OUTPUT_COUNT;
-    const traitStart = bOut + OUTPUT_COUNT;
+    const wSkip = bOut + OUTPUT_COUNT;
+    const traitStart = wSkip + POOLED_VALUES * OUTPUT_COUNT;
     const leakStart = traitStart + TRAIT_GENES;
     const weightCount = leakStart + hidden;
     return Object.freeze({
@@ -104,6 +106,7 @@ export function brainLayout(config) {
         bHidden,
         wOut,
         bOut,
+        wSkip,
         traitStart,
         leakStart,
         weightCount,

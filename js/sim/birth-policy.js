@@ -1,5 +1,6 @@
 // The reference brain policy: Gaussian-initialised weights, and a child that is its mother plus Gaussian noise.
 
+import { POOLED_VALUES } from './brain-layout.js';
 import { nextGaussian } from './rng.js';
 
 /** Default scale of the initial weights. */
@@ -21,6 +22,9 @@ function initWeight(layout, i, rng, initScale) {
     }
     if (i >= layout.wOut && i < layout.bOut) {
         return (nextGaussian(rng) * initScale) / Math.sqrt(layout.hidden);
+    }
+    if (i >= layout.wSkip && i < layout.traitStart) {
+        return (nextGaussian(rng) * initScale) / Math.sqrt(POOLED_VALUES);
     }
     return 0;
 }

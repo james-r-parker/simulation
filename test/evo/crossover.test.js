@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crossNeurons } from '../../js/evo/crossover.js';
-import { TRAIT_GENES, brainLayout } from '../../js/sim/brain-layout.js';
+import { POOLED_VALUES, TRAIT_GENES, brainLayout } from '../../js/sim/brain-layout.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 
 const layout = brainLayout({ rayCount: 2, brainHidden: 12 });
@@ -56,7 +56,7 @@ describe('crossNeurons', () => {
         for (let seed = 1; seed <= 5; seed++) {
             expect(
                 cross(seed)
-                    .subarray(layout.bOut, layout.traitStart)
+                    .subarray(layout.bOut, layout.wSkip)
                     .every((w) => w === 1),
             ).toBe(true);
         }
@@ -73,6 +73,25 @@ describe('crossNeurons', () => {
             for (let t = 0; t < TRAIT_GENES; t++) {
                 const expected = nextFloat(rng) < 0.5 ? 1 : -1;
                 expect(child[layout.traitStart + t]).toBe(expected);
+                seen.add(expected);
+            }
+        }
+        expect([...seen].sort()).toEqual([-1, 1]);
+    });
+
+    it("takes each output's skip column whole from one parent, one draw per output, after the trait genes", () => {
+        const seen = new Set();
+        for (let seed = 1; seed <= 8; seed++) {
+            const child = cross(seed);
+            const rng = createRng(seed);
+            for (let n = 0; n < H + TRAIT_GENES; n++) {
+                nextFloat(rng);
+            }
+            for (let o = 0; o < OUT; o++) {
+                const expected = nextFloat(rng) < 0.5 ? 1 : -1;
+                for (let i = 0; i < POOLED_VALUES; i++) {
+                    expect(child[layout.wSkip + i * OUT + o]).toBe(expected);
+                }
                 seen.add(expected);
             }
         }

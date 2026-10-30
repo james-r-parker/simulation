@@ -1,7 +1,27 @@
 // Neuron-block uniform crossover for mating.
 
-import { TRAIT_GENES } from '../sim/brain-layout.js';
+import { POOLED_VALUES, TRAIT_GENES } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
+
+/**
+ * Writes the skip block's columns, one `nextFloat` per output: the whole column comes from the mother (below 0.5) or the
+ * father.
+ * @param {Float32Array} child the child row
+ * @param {Float32Array} mother the mother's row
+ * @param {Float32Array} father the father's row
+ * @param {{ layout: Readonly<Record<string, any>>, rng: import('../sim/rng.js').Rng }} context the layout and stream
+ * @returns {void}
+ */
+function crossSkip(child, mother, father, context) {
+    const { layout, rng } = context;
+    const { outputCount } = layout;
+    for (let o = 0; o < outputCount; o++) {
+        const src = nextFloat(rng) < 0.5 ? mother : father;
+        for (let i = 0; i < POOLED_VALUES; i++) {
+            child[layout.wSkip + i * outputCount + o] = src[layout.wSkip + i * outputCount + o];
+        }
+    }
+}
 
 /**
  * Writes the child row from two parent rows. Each hidden neuron h, in index order, draws one `nextFloat`; below 0.5
@@ -9,7 +29,8 @@ import { nextFloat } from '../sim/rng.js';
  * h; `wIn` is input-major, so `wIn + i * hidden + h`), column h of `wRec` (`wRec + k * hidden + h`), `bHidden[h]`
  * row h of `wOut` (h's weights to every output, `wOut + h * outputCount + o`) and leak gene h. `bOut` comes from the
  * mother. After the neurons, each trait gene in order draws one `nextFloat` and is taken whole from the mother (below
- * 0.5) or the father.
+ * 0.5) or the father. Last, each output's skip column (`wSkip + i * outputCount + o` for every pooled value `i`) draws
+ * one `nextFloat` and comes whole from one parent, so a reflex (food ahead to thrust) is inherited as a unit.
  * @param {Float32Array} child the child row, written in full
  * @param {Float32Array} mother the mother's row
  * @param {Float32Array} father the father's row
@@ -40,4 +61,5 @@ export function crossNeurons(child, mother, father, context) {
     for (let t = 0; t < TRAIT_GENES; t++) {
         child[layout.traitStart + t] = (nextFloat(rng) < 0.5 ? mother : father)[layout.traitStart + t];
     }
+    crossSkip(child, mother, father, context);
 }

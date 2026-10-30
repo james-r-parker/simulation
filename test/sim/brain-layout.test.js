@@ -13,30 +13,30 @@ import {
 import { createConfig } from '../../js/sim/config.js';
 
 /**
- * The per-block derivation of the genome row: wIn, wRec, bHidden, wOut, bOut, trait genes, leak genes.
+ * The per-block derivation of the genome row: wIn, wRec, bHidden, wOut, bOut, wSkip, trait genes, leak genes.
  * @param {number} inputs the inputs the brain multiplies
  * @param {number} H hidden units
  * @returns {number} floats in a row
  */
 function derive(inputs, H) {
-    return inputs * H + H * H + H + H * 11 + 11 + 4 + H;
+    return inputs * H + H * H + H + H * 11 + 11 + 48 * 11 + 4 + H;
 }
 
 describe('brainLayout', () => {
-    it('gives 81 inputs (48 pooled and 33 body), 177 raw values and 4047 weights at the defaults', () => {
+    it('gives 81 inputs (48 pooled and 33 body), 177 raw values and 4575 weights at the defaults', () => {
         const layout = brainLayout(createConfig());
         expect(layout.inputCount).toBe(81);
         expect(layout.rawInputCount).toBe(177);
-        expect(layout.weightCount).toBe(4047);
+        expect(layout.weightCount).toBe(4575);
         expect(layout.outputCount).toBe(OUTPUT_COUNT);
     });
 
     it.each([
-        [16, 1775],
-        [24, 2847],
-        [32, 4047],
-        [48, 6831],
-        [64, 10127],
+        [16, 2303],
+        [24, 3375],
+        [32, 4575],
+        [48, 7359],
+        [64, 10655],
     ])('pins the genome size at %i hidden to %i floats, equal to the per-block derivation', (hidden, floats) => {
         const layout = brainLayout(createConfig({ brainHidden: hidden }));
         expect(layout.weightCount).toBe(floats);
@@ -80,7 +80,7 @@ describe('brainLayout', () => {
         expect(l.bHidden).toBe(l.wRec + 9);
         expect(l.wOut).toBe(l.bHidden + 3);
         expect(l.bOut).toBe(l.wOut + 3 * OUTPUT_COUNT);
-        expect(l.traitStart).toBe(l.bOut + OUTPUT_COUNT);
+        expect(l.traitStart).toBe(l.wSkip + 48 * OUTPUT_COUNT);
         expect(l.leakStart).toBe(l.traitStart + TRAIT_GENES);
         expect(l.weightCount).toBe(l.leakStart + 3);
     });
@@ -88,7 +88,16 @@ describe('brainLayout', () => {
     it.each([16, 24, 32, 48, 64])('puts every block offset at its derived size at %i hidden', (H) => {
         /** @type {Record<string, number>} */
         const l = { ...brainLayout(createConfig({ brainHidden: H })) };
-        const sizes = { wIn: 81 * H, wRec: H * H, bHidden: H, wOut: H * 11, bOut: 11, traitStart: 4, leakStart: H };
+        const sizes = {
+            wIn: 81 * H,
+            wRec: H * H,
+            bHidden: H,
+            wOut: H * 11,
+            bOut: 11,
+            wSkip: 48 * 11,
+            traitStart: 4,
+            leakStart: H,
+        };
         let at = 0;
         for (const [block, size] of Object.entries(sizes)) {
             expect(l[block]).toBe(at);

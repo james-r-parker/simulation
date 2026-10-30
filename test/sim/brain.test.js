@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
 import { detTanh } from '../../js/sim/det-math.js';
+import { POOLED_VALUES } from '../../js/sim/brain-layout.js';
 import { poolRays } from '../../js/sim/ray-pool.js';
 import { createRng, nextGaussian, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -37,7 +38,18 @@ function randomise(world, seed, slots) {
  * @returns {{outputs: number[], hidden: number[]}}
  */
 function reference(world, slot) {
-    const { weightCount, inputCount, hidden: H, outputCount: OUT, wIn, wRec, bHidden, wOut, bOut } = world.layout;
+    const {
+        weightCount,
+        inputCount,
+        hidden: H,
+        outputCount: OUT,
+        wIn,
+        wRec,
+        bHidden,
+        wOut,
+        bOut,
+        wSkip,
+    } = world.layout;
     const w = (/** @type {number} */ i) => world.weights[slot * weightCount + i];
     poolRays(world, slot);
     const next = [];
@@ -59,6 +71,9 @@ function reference(world, slot) {
         let sum = w(bOut + o);
         for (let j = 0; j < H; j++) {
             sum += w(wOut + j * OUT + o) * next[j];
+        }
+        for (let i = 0; i < POOLED_VALUES; i++) {
+            sum += w(wSkip + i * OUT + o) * world.pooled[slot * inputCount + i];
         }
         outputs.push(Math.fround(detTanh(sum)));
     }
@@ -92,6 +107,26 @@ describe('forwardAll', () => {
                 expect(Array.from(world.outputs.subarray(slot * OUT, (slot + 1) * OUT))).toEqual(expected[n].outputs);
             });
         }
+    });
+
+    it('lets a pooled value reach an output through the skip block with every hidden weight zero', () => {
+        const world = smallWorld();
+        randomise(world, 11, [1]);
+        const { weightCount, wIn, wRec, wOut, bOut, wSkip, bHidden, outputCount: OUT, inputCount } = world.layout;
+        const base = weightCount;
+        world.weights.fill(0, base + wIn, base + bHidden);
+        world.weights.fill(0, base + wOut, base + bOut + OUT);
+        world.weights.fill(0, base + wSkip, base + wSkip + POOLED_VALUES * OUT);
+        world.weights[base + wRec] = 0;
+        world.fastOut.fill(0);
+        const food = 2; // a pooled value index with a known weight
+        world.weights[base + wSkip + food * OUT + 0] = 1.5;
+        forwardAll(world);
+        const x = world.pooled[inputCount + food];
+        expect(world.outputs[OUT + 0]).toBe(Math.fround(detTanh(Math.fround(1.5) * x)));
+        expect(world.outputs[OUT + 1]).toBe(0);
+        // the skip does not see the body inputs: a weight past the 48 pooled values is not read
+        expect(world.layout.wSkip + POOLED_VALUES * OUT).toBe(world.layout.traitStart);
     });
 
     it('lets the old hidden state change the outputs', () => {

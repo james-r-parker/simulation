@@ -2,6 +2,7 @@
 
 import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
+import { POOLED_VALUES } from './brain-layout.js';
 import { poolRays } from './ray-pool.js';
 
 /**
@@ -103,6 +104,31 @@ function hiddenStep(world, slot) {
 }
 
 /**
+ * Adds the skip block to the output sums: each nonzero pooled value times its row of `wSkip`, pooled values in index
+ * order, after the hidden terms of every output (so a reflex needs no hidden unit). The block is genome only; it is
+ * not plastic.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the alive slot
+ * @returns {void}
+ */
+function addSkip(world, slot) {
+    const { weights, pooled, layout, brainScratch: sums } = world;
+    const OUT = layout.outputCount;
+    const inBase = slot * layout.inputCount;
+    const skip = slot * layout.weightCount + layout.wSkip;
+    for (let i = 0; i < POOLED_VALUES; i++) {
+        const x = pooled[inBase + i];
+        if (x === 0) {
+            continue;
+        }
+        const row = skip + i * OUT;
+        for (let o = 0; o < OUT; o++) {
+            sums[o] += weights[row + o] * x;
+        }
+    }
+}
+
+/**
  * Computes one agent's outputs from the new hidden row in the scratch row, then commits that row to the slot.
  * @param {Record<string, any>} world the world
  * @param {number} slot the alive slot
@@ -128,6 +154,7 @@ function outputStep(world, slot) {
         }
         sums[o] = sum;
     }
+    addSkip(world, slot);
     detTanhInto(sums, outputs, slot * OUT, OUT);
     for (let j = 0; j < H; j++) {
         hidden[hBase + j] = hidden[scratchBase + j];

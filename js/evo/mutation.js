@@ -1,6 +1,7 @@
 // Mutation: the self-adaptive step size, per-weight Gaussian steps and the random initial row.
 // Every draw is one `nextGaussian` from the stream the caller passes (the core's `mutation` or `brain-init`).
 
+import { POOLED_VALUES } from '../sim/brain-layout.js';
 import { detExp } from '../sim/det-math.js';
 import { nextFloat, nextGaussian } from '../sim/rng.js';
 
@@ -69,10 +70,11 @@ export function mutateWeights(row, sigma, rng, options = {}) {
 }
 
 /**
- * Fills a row with a random brain in place. Draw order: wIn, wRec, then wOut, each index 0 up; biases draw nothing.
- * Weights into hidden units have standard deviation `1 / sqrt(inputCount + hidden)`, weights into outputs
- * `1 / sqrt(hidden)`, biases, trait genes are 0 and leak
- * genes are `leakGeneStart`.
+ * Fills a row with a random brain in place. Draw order: wIn, wRec, wOut, then wSkip, each index 0 up; biases draw
+ * nothing. Weights into hidden units have standard deviation `1 / sqrt(inputCount + hidden)`, weights into outputs
+ * `1 / sqrt(hidden)`, skip weights `1 / sqrt(POOLED_VALUES)` (0.144, under `wOut`'s 0.177 at 32 hidden: a skip input
+ * is one of 48 pooled values, most of them 0 on any tick, so a birth reflex is a nudge on the output and the hidden
+ * layer still decides), biases and trait genes are 0 and leak genes are `leakGeneStart`.
  * @param {Float32Array} row the weight row, `layout.weightCount` floats
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {import('../sim/rng.js').Rng} rng the brain-init stream
@@ -89,6 +91,11 @@ export function randomWeights(row, layout, rng, leakGeneStart) {
     for (let i = layout.wOut; i < layout.bOut; i++) {
         row[i] = outSd * nextGaussian(rng);
     }
-    row.fill(0, layout.bOut, layout.leakStart);
+    row.fill(0, layout.bOut, layout.wSkip);
+    const skipSd = 1 / Math.sqrt(POOLED_VALUES);
+    for (let i = layout.wSkip; i < layout.traitStart; i++) {
+        row[i] = skipSd * nextGaussian(rng);
+    }
+    row.fill(0, layout.traitStart, layout.leakStart);
     row.fill(leakGeneStart, layout.leakStart, layout.weightCount);
 }

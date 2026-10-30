@@ -16,7 +16,12 @@ function naive(w, a, b) {
     let sum = 0;
     for (let k = 0; k < 64; k++) {
         const i = (k * 7919) % l.traitStart;
-        const sd = i < l.bHidden ? 1 / Math.sqrt(l.inputCount + l.hidden) : 1 / Math.sqrt(l.hidden);
+        let sd = 1 / Math.sqrt(l.hidden);
+        if (i < l.bHidden) {
+            sd = 1 / Math.sqrt(l.inputCount + l.hidden);
+        } else if (i >= l.wSkip) {
+            sd = 1 / Math.sqrt(48);
+        }
         sum += Math.abs(w.weights[a * l.weightCount + i] - w.weights[b * l.weightCount + i]) / sd;
     }
     return sum / 64;
