@@ -135,7 +135,7 @@ export function brainLayout(config) {
 }
 
 /**
- * @param {Readonly<{inputCount: number, hidden: number, outputCount: number}>} layout a `brainLayout` result
+ * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
  * @returns {{ name: string, inputCount: number, brainHidden: number, outputCount: number }} the stamp saved files carry
  *   and `assertLayoutStamp` checks: the layout name and the three sizes
  */
