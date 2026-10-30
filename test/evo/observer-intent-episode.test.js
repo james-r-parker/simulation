@@ -119,4 +119,14 @@ describe('noteEscape', () => {
             0, 0, 0,
         ]);
     });
+
+    it('counts each escaped episode of the life, responded or not, once', () => {
+        const { world, intent, slot } = scene({ seenFrom: FROM, sprint: (t) => t >= FROM, until: DUE });
+        noteEscape(intent, slot, world);
+        noteEscape(intent, slot, world);
+        expect([intent.escapedLife[slot], intent.respondedEscape[slot]]).toEqual([1, 1]);
+        const quiet = scene({ seenFrom: FROM, until: DUE });
+        noteEscape(quiet.intent, quiet.slot, quiet.world);
+        expect([quiet.intent.escapedLife[quiet.slot], quiet.intent.respondedEscape[quiet.slot]]).toEqual([1, 0]);
+    });
 });

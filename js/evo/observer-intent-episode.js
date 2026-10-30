@@ -95,6 +95,7 @@ export function noteEscape(intent, slot, world) {
     if (intent.episodeOpen[slot] === 0) {
         return;
     }
+    intent.escapedLife[slot] += 1;
     if (intent.responded[slot] === 1) {
         intent.respondedEscape[slot] += 1;
         intent.run.escapedResponded += 1;

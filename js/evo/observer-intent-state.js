@@ -82,6 +82,7 @@ const SLOT_FIELDS = {
     deliberateBite: [Float64Array, 0],
     chanceBite: [Float64Array, 0],
     respondedEscape: [Uint32Array, 0],
+    escapedLife: [Uint32Array, 0],
     preciseSignal: [Uint32Array, 0],
     idleSignal: [Uint32Array, 0],
     undefendedBite: [Uint32Array, 0],
