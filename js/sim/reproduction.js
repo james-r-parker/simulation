@@ -261,9 +261,10 @@ function advanceRanked(world, policy) {
 }
 
 /**
- * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` a pregnancy that
- * falls due in a full world is not attempted: it stays at 1 and tries again next tick (no event, no energy change; the
- * cooldown keeps counting down). It waits until a slot frees, the mother dies, or the energy gate fails the birth.
+ * Counts every pregnancy down and attempts the birth of each that reaches 0. With `capBirthsEnabled` the ranked path
+ * (`advanceRanked`) runs instead: a pregnancy that falls due in a full world is not attempted, it stays at 1 and tries
+ * again next tick (no event, no energy change; the cooldown keeps counting down). Without it, a due pregnancy in a
+ * full world is lost with a blocked-birth event.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
@@ -274,18 +275,13 @@ export function advancePregnancies(world, policy) {
         return;
     }
     const { alive, pregnancy } = world;
-    const { capBirthsEnabled, maxAgents } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && pregnancy[slot] > 0) {
             pregnancy[slot] -= 1;
             if (pregnancy[slot] > 0) {
                 continue;
             }
-            if (capBirthsEnabled && world.population >= maxAgents) {
-                pregnancy[slot] = 1;
-            } else {
-                giveBirth(world, policy, slot, BORN_CAUSE.MATE);
-            }
+            giveBirth(world, policy, slot, BORN_CAUSE.MATE);
         }
     }
 }
@@ -362,8 +358,8 @@ function splitRanked(world, policy) {
 }
 
 /**
- * Splits every agent that `readyToSplit` in two, whatever its sex. With `capBirthsEnabled` splitting stops for the
- * tick once the population is within `splitCapMargin` of `maxAgents`, leaving those slots to pregnancies.
+ * Splits every agent that `readyToSplit` in two, whatever its sex, in slot order. With `capBirthsEnabled` the ranked
+ * path (`splitRanked`) runs instead and keeps `splitCapMargin` slots below `maxAgents` for pregnancies.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @returns {void}
@@ -374,12 +370,8 @@ export function splitAll(world, policy) {
         return;
     }
     const { alive } = world;
-    const { splitCooldownMultiplier, maxAgents, capBirthsEnabled, splitCapMargin } = world.config;
-    const splitCeiling = capBirthsEnabled ? maxAgents - splitCapMargin : Infinity;
+    const { splitCooldownMultiplier } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
-        if (world.population >= splitCeiling) {
-            break;
-        }
         if (alive[slot] === 1 && readyToSplit(world, slot) && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
             world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
         }
