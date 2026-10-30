@@ -30,7 +30,7 @@ describe('birth mutation of the trait and leak genes', () => {
      * @returns {number[]} the child's trait genes after a split from a mother whose genes are all 0
      */
     function childGenes() {
-        const { policy, world } = setup();
+        const { policy, world } = setup({}, { mutationRate: 1 }); // every gene mutates: the test is about the step size
         const { layout } = world;
         world.alive[0] = 1;
         world.weights.fill(0, 0, layout.weightCount);
@@ -63,7 +63,7 @@ describe('birth mutation keys', () => {
     }
 
     it('mutationRate 1 draws exactly as the unkeyed rule: sigma, then one Gaussian per gene', () => {
-        const { row, rng, world } = born({});
+        const { row, rng, world } = born({ mutationRate: 1 });
         const ref = createRng(31);
         const sigma = mutateSigma(Math.fround(0.05), world.layout.weightCount, ref);
         const expected = new Float32Array(world.layout.weightCount).fill(0.5);
@@ -72,8 +72,8 @@ describe('birth mutation keys', () => {
         expect(rng.s).toEqual(ref.s);
     });
 
-    it('mutationRate invsqrt moves about sqrt(weightCount) genes', () => {
-        const { row, world } = born({ mutationRate: 'invsqrt' });
+    it('mutationRate invsqrt, the default, moves about sqrt(weightCount) genes', () => {
+        const { row, world } = born({});
         const hit = row.filter((w) => w !== 0.5).length;
         const expected = Math.sqrt(world.layout.weightCount);
         expect(hit).toBeGreaterThan(expected / 3);

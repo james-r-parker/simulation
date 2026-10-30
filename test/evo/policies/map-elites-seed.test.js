@@ -248,7 +248,7 @@ describe('initBrain sources', () => {
  * @returns {{brainMove: number, traitMove: number}} the largest change of a brain weight / of a trait or leak gene
  */
 function mutatedParts() {
-    const { policy, world, records } = setup({}, { hashCellSize: 256 });
+    const { policy, world, records } = setup({}, { hashCellSize: 256, mutationRate: 1 }); // every gene mutates: the test is about the two step sizes
     fill(policy, { spec: 0, count: 12, sigma: SIGMA_MIN });
     const row = world.weights.subarray(0, world.layout.weightCount);
     const rng = createRng(3);
