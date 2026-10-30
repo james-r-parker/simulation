@@ -46,8 +46,8 @@ export function createThreadEnds() {
  * length, perpendicular to the line (the perpendicular `(-dy, dx)` is as long as the line, so no square root is needed).
  * @param {ThreadEnds} ends the endpoints and the side
  * @param {number} t 0 at the mother, 1 at the father
- * @param {{0: number, 1: number}} out receives x and y
- * @returns {{0: number, 1: number}} out
+ * @param {number[]} out receives x and y
+ * @returns {number[]} out
  */
 export function threadCurve(ends, t, out) {
     const { ax, ay, bx, by, sign } = ends;

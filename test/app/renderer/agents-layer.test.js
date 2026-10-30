@@ -125,6 +125,9 @@ describe('motion cues', () => {
         const layer = createAgentsLayer({ info, flagBits: layout.flags });
         layer.update?.(frame);
         const bucket = layer.store.buckets.find((/** @type {any} */ b) => b.count > 0);
+        if (!bucket) {
+            throw new Error('no agents were packed');
+        }
         expect(bucket.motion[0]).toBeCloseTo(0.5, 5);
         layer.dispose();
     });
