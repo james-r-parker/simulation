@@ -12,7 +12,7 @@ microSuite('traits', [
         () => {
             let sum = 0;
             for (let i = 0; i < COUNT; i++) {
-                sum += leakRateOf(genes[i]);
+                sum += leakRateOf(genes[i], 0.05);
             }
             return sum;
         },

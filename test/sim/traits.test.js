@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { freeAgent } from '../../js/sim/world.js';
 import { detSigmoid, detTanh } from '../../js/sim/det-math.js';
-import { LEAK_MIN, applyGenes, leakRateOf } from '../../js/sim/traits.js';
+import { applyGenes, leakRateOf } from '../../js/sim/traits.js';
 import { splitAll } from '../../js/sim/reproduction.js';
 import { createWorld, spawnAgent } from '../../js/sim/spawn.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
@@ -10,17 +10,42 @@ import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 import { smallWorld } from './helpers/small-world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
+const LEAK_MIN = createConfig().leakMin;
+
 describe('leakRateOf', () => {
     it('runs from LEAK_MIN for a very negative gene to 1 for a very positive one', () => {
-        expect(leakRateOf(-60)).toBeCloseTo(LEAK_MIN, 12);
-        expect(leakRateOf(60)).toBe(1);
-        expect(leakRateOf(0)).toBeCloseTo(LEAK_MIN + (1 - LEAK_MIN) / 2, 12);
+        expect(leakRateOf(-60, LEAK_MIN)).toBeCloseTo(LEAK_MIN, 12);
+        expect(leakRateOf(60, LEAK_MIN)).toBe(1);
+        expect(leakRateOf(0, LEAK_MIN)).toBeCloseTo(LEAK_MIN + (1 - LEAK_MIN) / 2, 12);
     });
 
     it('is about 0.95 at the starting leak gene 3 and increases with the gene', () => {
-        expect(leakRateOf(3)).toBeGreaterThan(0.94);
-        expect(leakRateOf(3)).toBeLessThan(0.96);
-        expect(leakRateOf(1)).toBeLessThan(leakRateOf(2));
+        expect(leakRateOf(3, LEAK_MIN)).toBeGreaterThan(0.94);
+        expect(leakRateOf(3, LEAK_MIN)).toBeLessThan(0.96);
+        expect(leakRateOf(1, LEAK_MIN)).toBeLessThan(leakRateOf(2, LEAK_MIN));
+    });
+});
+
+describe('leakMin', () => {
+    it('defaults to 0.05, the floor before the key', () => {
+        expect(createConfig().leakMin).toBe(0.05);
+    });
+
+    it('lowers the floor of the leak rate', () => {
+        expect(leakRateOf(-60, 0.02)).toBeCloseTo(0.02, 12);
+        expect(leakRateOf(0, 0.02)).toBeCloseTo(0.02 + 0.98 / 2, 12);
+    });
+
+    it('reaches applyGenes through the config', () => {
+        const world = smallWorld({ leakMin: 0.2 });
+        const { layout } = world;
+        world.weights.fill(-60, layout.leakStart, layout.weightCount);
+        applyGenes(world, 0);
+        expect(world.leakRate[0]).toBeCloseTo(0.2, 6);
+    });
+
+    it.each([0, 1, -0.1, 1.5, NaN])('rejects %s', (value) => {
+        expect(() => createConfig({ leakMin: value })).toThrow(/leakMin/);
     });
 });
 
@@ -44,7 +69,7 @@ describe('applyGenes', () => {
         world.weights.set(genes, 2 * layout.weightCount + layout.leakStart);
         applyGenes(world, 2);
         const rates = Array.from(world.leakRate.subarray(2 * layout.hidden, 3 * layout.hidden));
-        expect(rates).toEqual(genes.map((g) => Math.fround(leakRateOf(g))));
+        expect(rates).toEqual(genes.map((g) => Math.fround(leakRateOf(g, LEAK_MIN))));
     });
 });
 

@@ -60,6 +60,7 @@ export const FEATURE_RULES = {
     winterRegrow: num(0),
     droughtChance: UNIT,
     hebbianRate: num(0, 1),
+    leakMin: { type: 'num', gt: 0, lt: 1 },
     visionCost: num(0),
     birthWindowTicks: int(1),
     maxBirthsPerWindow: int(0, 16),

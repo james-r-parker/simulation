@@ -241,6 +241,7 @@ export const DEFAULTS = deepFreeze({
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer
     visionCost: 0.5, // new: extra passive loss per unit of vision trait above 1, as a share of passiveLoss
     hebbianRate: 0.0001, // new: lifetime learning rate of the hidden-to-output block; 0 is off (world-balance T32, 0.0001 from T41)
+    leakMin: 0.05, // brain plan T1: the smallest leak rate (was LEAK_MIN); a unit with a very negative leak gene still moves 5% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)
     meritChildBonus: 300, // new: fitness-and-selection T16 (merit, off)
     meritEscapeBonus: 60, // new: fitness-and-selection T16 (merit, off)

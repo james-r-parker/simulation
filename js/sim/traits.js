@@ -5,9 +5,6 @@ import { TRAIT_INDEX } from './brain-layout.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
 
-/** The smallest leak rate: a unit with a very negative leak gene still moves 5% toward its target each tick. */
-export const LEAK_MIN = 0.05;
-
 /** A trait gene moves its trait by at most this fraction of the default: 0.7 to 1.3. */
 export const TRAIT_SPAN = 0.3;
 
@@ -54,10 +51,12 @@ export function childShareOf(world, slot) {
 /**
  * The share of the new value a hidden unit takes each tick.
  * @param {number} gene the unit's leak gene
- * @returns {number} `LEAK_MIN + (1 - LEAK_MIN) x sigmoid(gene)`, in `[LEAK_MIN, 1]`
+ * @param {number} leakMin the smallest leak rate (`config.leakMin`): a unit with a very negative leak gene still moves
+ *   this share toward its target each tick
+ * @returns {number} `leakMin + (1 - leakMin) x sigmoid(gene)`, in `[leakMin, 1]`
  */
-export function leakRateOf(gene) {
-    return LEAK_MIN + (1 - LEAK_MIN) * detSigmoid(gene);
+export function leakRateOf(gene, leakMin) {
+    return leakMin + (1 - leakMin) * detSigmoid(gene);
 }
 
 /**
@@ -78,6 +77,6 @@ export function applyGenes(world, slot) {
     const H = layout.hidden;
     const leakGenes = slot * layout.weightCount + layout.leakStart;
     for (let j = 0; j < H; j++) {
-        world.leakRate[slot * H + j] = leakRateOf(weights[leakGenes + j]);
+        world.leakRate[slot * H + j] = leakRateOf(weights[leakGenes + j], config.leakMin);
     }
 }
