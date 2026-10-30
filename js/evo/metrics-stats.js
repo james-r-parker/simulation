@@ -99,10 +99,35 @@ export function ranks(values) {
     return out;
 }
 
+/** Relative spread below which a sample counts as constant: the rounding of a mean that is not representable. */
+const CONSTANT_SPREAD = 1e-12;
+
+/**
+ * @param {ArrayLike<number>} x the sample
+ * @returns {number} the largest magnitude in the sample
+ */
+function maxAbs(x) {
+    let m = 0;
+    for (let i = 0; i < x.length; i++) {
+        m = Math.max(m, Math.abs(x[i]));
+    }
+    return m;
+}
+
+/**
+ * @param {number} sumSquares the sum of squared deviations from the mean
+ * @param {ArrayLike<number>} x the sample
+ * @returns {boolean} whether the deviations are no more than rounding of the mean
+ */
+function isConstant(sumSquares, x) {
+    const bound = CONSTANT_SPREAD * maxAbs(x);
+    return sumSquares <= x.length * bound * bound;
+}
+
 /**
  * @param {ArrayLike<number>} x the first sample
  * @param {ArrayLike<number>} y the second sample, as long as the first
- * @returns {number} Pearson's correlation, NaN when either sample is constant
+ * @returns {number} Pearson's correlation, NaN when either sample is constant to within rounding
  */
 export function pearson(x, y) {
     const mx = mean(x);
@@ -114,6 +139,9 @@ export function pearson(x, y) {
         cov += (x[i] - mx) * (y[i] - my);
         vx += (x[i] - mx) * (x[i] - mx);
         vy += (y[i] - my) * (y[i] - my);
+    }
+    if (isConstant(vx, x) || isConstant(vy, y)) {
+        return NaN;
     }
     return cov / Math.sqrt(vx * vy);
 }
