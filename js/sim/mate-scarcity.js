@@ -1,8 +1,8 @@
 // The shark rule (natural-selection Phase 4): facultative parthenogenesis. A Komodo dragon or a shark breeds alone
-// only when no mate can be found, so with `splitMateScarceTicks` above 0 an agent may split only after that many
-// ticks without a possible mate in view: an agent of its own specialisation, of the other sex and mature, among the
+// only when no mate can be found, so an agent may split only after `splitMateScarceTicks`
+// ticks without a possible mate in view (600 by default): an agent of its own specialisation, of the other sex and mature, among the
 // circles its rays gather this tick. A forager in a crowd of foragers never splits; a lone hunter may. The check reads
-// the rows `gatherNear` already wrote, so it costs one pass over them and nothing when the rule is off. `mateSeenAt` is
+// the rows `gatherNear` already wrote, so it costs one pass over them. `mateSeenAt` is
 // derived state beside the split-gate counters: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation.
 
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE } from './ray-gather.js';
@@ -34,9 +34,6 @@ function isPossibleMate(world, slot, other) {
  * @returns {void}
  */
 export function noteMatesSeen(world, slot, count) {
-    if (world.config.splitMateScarceTicks === 0) {
-        return;
-    }
     const local = world.rayLocal;
     for (let at = 3, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
         const other = local[at] - AGENT_KEY;
@@ -60,9 +57,8 @@ export function noteMateScarcityBirth(world, child) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when the rule is off, or the agent has seen no possible mate for `splitMateScarceTicks`
+ * @returns {boolean} true when the agent has seen no possible mate for `splitMateScarceTicks` (always at 0)
  */
 export function mateScarce(world, slot) {
-    const wait = world.config.splitMateScarceTicks;
-    return wait === 0 || world.tick - world.mateSeenAt[slot] >= wait;
+    return world.tick - world.mateSeenAt[slot] >= world.config.splitMateScarceTicks;
 }

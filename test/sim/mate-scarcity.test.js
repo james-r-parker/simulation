@@ -74,7 +74,7 @@ describe('mateScarce', () => {
         expect(mateScarce(w, slot)).toBe(true);
     });
 
-    it('starts a newborn waiting from its birth, and is always open at 0', () => {
+    it('starts a newborn waiting from its birth, and a wait of 0 is always open', () => {
         const { w, slot } = sharkWorld();
         senseAt(w, SCARCE);
         splitAll(w, recordingPolicy([]));
@@ -88,9 +88,9 @@ describe('mateScarce', () => {
         expect(w.mateSeenAt[child]).toBe(0);
     });
 
-    it('rejects a negative or fractional window, and is off by default', () => {
+    it('rejects a negative or fractional wait, and waits 600 ticks by default', () => {
         expect(() => createConfig({ splitMateScarceTicks: -1 })).toThrow(/splitMateScarceTicks/);
         expect(() => createConfig({ splitMateScarceTicks: 1.5 })).toThrow(/splitMateScarceTicks/);
-        expect(createConfig({}).splitMateScarceTicks).toBe(0);
+        expect(createConfig({}).splitMateScarceTicks).toBe(600);
     });
 });

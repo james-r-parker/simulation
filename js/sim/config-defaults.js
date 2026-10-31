@@ -261,6 +261,6 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
-    splitMateScarceTicks: 0, // new: natural-selection Phase 4; ticks without a possible mate in view before an agent may split (sharks, Komodo dragons), 0 is off
-    splitClonalMax: 0, // new: natural-selection Phase 4; split generations in a row before the line must mate (aphids), 0 is unlimited
+    splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
+    splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

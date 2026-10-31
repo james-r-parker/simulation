@@ -66,7 +66,7 @@ export function splitKeysAllow(world, slot) {
     if (splitMaxPerLife > 0 && world.splitsDone[slot] >= splitMaxPerLife) {
         return false;
     }
-    if (splitClonalMax > 0 && world.clonalDepth[slot] >= splitClonalMax) {
+    if (world.clonalDepth[slot] >= splitClonalMax) {
         return false;
     }
     if (!mateScarce(world, slot)) {

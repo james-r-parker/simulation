@@ -106,7 +106,7 @@ describe('splitClonalMax', () => {
     }
 
     it("gives a split child its parent's clonal depth plus one, and a founder depth 0", () => {
-        const { w, slot } = blobWorld({ splitClonalMax: 0, maturityTicks: MATURE });
+        const { w, slot } = blobWorld({ splitClonalMax: 1000, maturityTicks: MATURE });
         expect(w.clonalDepth[slot]).toBe(0);
         const child = split(w, slot);
         expect(w.clonalDepth[child]).toBe(1);
@@ -140,10 +140,10 @@ describe('splitClonalMax', () => {
         expect(splitGateOpen(w, child)).toBe(true);
     });
 
-    it('is unlimited at 0, and a reused slot starts at depth 0', () => {
-        const { w, slot } = blobWorld({ splitClonalMax: 0 });
+    it('a reused slot starts at depth 0', () => {
+        const { w, slot } = blobWorld({ splitClonalMax: 3 });
         w.clonalDepth[slot] = 200;
-        expect(splitGateOpen(w, slot)).toBe(true);
+        expect(splitGateOpen(w, slot)).toBe(false);
         freeAgent(w, slot);
         expect(w.clonalDepth[slot]).toBe(0);
     });
@@ -184,9 +184,9 @@ describe('determinism', () => {
 });
 
 describe('config', () => {
-    it('defaults splitDeliberateShareMin to 0.2 and the other keys to no-ops', () => {
+    it('defaults splitDeliberateShareMin to 0.2, splitMaxPerLife to unlimited and splitClonalMax to 3', () => {
         const config = createConfig({});
-        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.splitClonalMax]).toEqual([0.2, 0, 0]);
+        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.splitClonalMax]).toEqual([0.2, 0, 3]);
     });
 
     it.each([
@@ -197,7 +197,7 @@ describe('config', () => {
         ['splitMaxPerLife', -1, false],
         ['splitMaxPerLife', 1.5, false],
         ['splitClonalMax', 2, true],
-        ['splitClonalMax', -1, false],
+        ['splitClonalMax', 0, false],
         ['splitClonalMax', 0.5, false],
     ])('%s = %s accepted: %s', (key, value, accepted) => {
         if (accepted) {
