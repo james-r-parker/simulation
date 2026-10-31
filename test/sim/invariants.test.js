@@ -114,6 +114,8 @@ describe('assertInvariants', () => {
     it('accepts finite alive food and ignores dead food', () => {
         const world = validWorld();
         world.foodAlive[0] = 1;
+        world.foodLife[0] = 6000;
+        world.foodPatch[0] = -1;
         world.foodX[1] = Number.NaN;
         expect(() => assertInvariants(world)).not.toThrow();
     });

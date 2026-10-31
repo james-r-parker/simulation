@@ -219,6 +219,10 @@ export function spawnFoodItem(world) {
     world.foodRadius[slot] = radius;
     world.foodValue[slot] = base + (2 * nextFloat(rng) - 1) * variance;
     world.foodAge[slot] = 0;
+    world.foodSpecies[slot] = 0;
+    world.foodHue[slot] = row.hue;
+    world.foodLife[slot] = row.life;
+    world.foodPatch[slot] = -1;
     world.foodCount += 1;
     return slot;
 }

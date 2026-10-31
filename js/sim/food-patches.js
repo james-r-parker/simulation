@@ -1,6 +1,7 @@
 // Permanent food patches: placed at world creation, drawn from by food spawns in proportion to their stock, drained
 // by the food eaten inside them and regrown logistically. The arrays are empty when `foodPatchCount` is 0.
 
+import { assignFlora } from './flora-state.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
@@ -27,6 +28,7 @@ export function createPatches(world) {
         world.patchY[i] = foodPatchRadius + nextFloat(rng) * (worldHeight - 2 * foodPatchRadius);
         world.patchStock[i] = foodPatchCapacity;
     }
+    assignFlora(world);
     if (foodPatchCount > 0) {
         const o = pushEvent(world.events, EVENT_TYPE.FOOD_PATCHES_CREATED, world.tick);
         world.events.data[o + 2] = foodPatchCount;
