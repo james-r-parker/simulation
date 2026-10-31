@@ -1,7 +1,7 @@
 # Flora
 
 **Status:** In progress - Phases 1 (species and fruiting seasons) and 2 (hue sense and toxicity) built. E69 to E71, detector power, survival and standalone performance measurements remain owed while the CPU is reserved. Phase 3 (pollination and plant evolution) next.
-**Validated:** 4b8ef51 (2026-10-31)
+**Validated:** 0d1c416 (2026-10-31)
 **Priority:** 2 - flora phases in order, ahead of the paused natural-selection balancing work (user, 2026-10-31)
 **Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 

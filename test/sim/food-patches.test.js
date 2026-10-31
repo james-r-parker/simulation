@@ -15,7 +15,7 @@ import { createRng } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100 };
+const PATCHES = { floraPatchMax: 3, foodPatchCount: 3, foodPatchRadius: 100 };
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -39,7 +39,7 @@ function patched(over = {}) {
 
 describe('createPatches', () => {
     it('places the configured patches inside the world, inset by the radius, at full stock', () => {
-        const w = smallWorld({ ...PATCHES, foodPatchCount: 16, foodPatchCapacity: 2 });
+        const w = smallWorld({ ...PATCHES, floraPatchMax: 16, foodPatchCount: 16, foodPatchCapacity: 2 });
         expect(w.patchX.length).toBe(16);
         for (let i = 0; i < 16; i++) {
             expect(w.patchX[i]).toBeGreaterThanOrEqual(100);
@@ -70,10 +70,11 @@ describe('createPatches', () => {
         ]);
     });
 
-    it('is the off state at foodPatchCount 0: empty arrays, no event, no draw from the food stream', () => {
+    it('keeps a free pool with no event or food-stream draw at zero initial patches', () => {
         const off = smallWorld();
-        expect(off.patchX.length).toBe(0);
-        expect(off.patchStock.length).toBe(0);
+        expect(off.patchX.length).toBe(32);
+        expect(off.patchAlive.every((/** @type {number} */ alive) => alive === 0)).toBe(true);
+        expect(off.patchStock.every((/** @type {number} */ stock) => stock === 0)).toBe(true);
         expect(off.events.count).toBe(0);
         const before = Array.from(off.rng.food.s);
         createPatches(off);
@@ -100,6 +101,20 @@ describe('pickPatch', () => {
         [0.5, 0.3, 0.2].forEach((share, i) => {
             expect(hits[i] / draws).toBeCloseTo(share, 1);
         });
+    });
+
+    it('ignores dead weights and can select a newly occupied pool slot', () => {
+        const w = patched({ floraPatchMax: 5 });
+        w.patchAlive[0] = w.patchAlive[1] = w.patchAlive[2] = 0;
+        w.patchWeight.fill(100);
+        w.patchAlive[4] = 1;
+        expect(pickPatch(w, createRng(2))).toBe(4);
+        w.patchAlive[4] = 0;
+        expect(pickPatch(w, createRng(2))).toBe(-1);
+        const before = Array.from(w.patchStock);
+        depletePatchAt(w, 200, 200);
+        regrowPatches(w);
+        expect(Array.from(w.patchStock)).toEqual(before);
     });
 
     it('never picks a patch with no weight', () => {

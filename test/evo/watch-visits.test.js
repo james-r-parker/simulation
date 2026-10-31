@@ -8,9 +8,10 @@ import { createVisitPools, noteVisitDeath, resetVisits, sampleVisits } from '../
  * @returns {{pools: any, world: any}} pools for 3 slots and a world whose patch p is at (1000 p, 0), radius 100
  */
 function setup(patches) {
-    const pools = createVisitPools({ foodPatchCount: patches, maxAgents: 3, maturityTicks: 10 });
+    const pools = createVisitPools({ floraPatchMax: patches, maxAgents: 3, maturityTicks: 10 });
     const world = {
         config: { foodPatchRadius: 100 },
+        patchAlive: new Uint8Array(patches).fill(1),
         patchX: Float32Array.from({ length: patches }, (_, p) => 1000 * p),
         patchY: new Float32Array(patches),
         alive: Uint8Array.from([1, 1, 0]),
@@ -36,6 +37,28 @@ describe('watch-visits', () => {
         world.x[0] = 32000; // patch 32: the second word
         sampleVisits(pools, world);
         expect(Array.from(pools.visited)).toEqual([2, 1, 0]);
+    });
+
+    it('does not visit a dead patch until that pool slot is occupied', () => {
+        const { pools, world } = setup(2);
+        world.patchAlive[0] = 0;
+        sampleVisits(pools, world);
+        expect(pools.visited[0]).toBe(0);
+        world.patchAlive[0] = 1;
+        sampleVisits(pools, world);
+        expect(pools.visited[0]).toBe(1);
+    });
+
+    it('tracks a later seedling after the pool starts without live patches', () => {
+        const { pools, world } = setup(4);
+        world.patchAlive.fill(0);
+        sampleVisits(pools, world);
+        expect(pools.hadPatches).toBe(false);
+        world.patchAlive[3] = 1;
+        world.x[0] = 3000;
+        sampleVisits(pools, world);
+        expect(pools.hadPatches).toBe(true);
+        expect(pools.visited[0]).toBe(1);
     });
 
     it('resets one slot only', () => {

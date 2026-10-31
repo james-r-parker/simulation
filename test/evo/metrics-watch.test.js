@@ -10,7 +10,7 @@ import { drainObserverLogs } from '../../js/worker/observer-drain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
-const PATCHES = { foodPatchCount: 3, foodPatchRadius: 100, maturityTicks: 50 };
+const PATCHES = { floraPatchMax: 3, foodPatchCount: 3, foodPatchRadius: 100, maturityTicks: 50 };
 const CENTRES = [
     [100, 100],
     [500, 500],
@@ -113,14 +113,14 @@ describe('eval.migration_index', () => {
         expect(index(r)).toEqual({ value: 1 / 3 });
     });
 
-    it('is null with a reason when foodPatchCount is 0, and costs nothing', () => {
+    it('is null when no live patch has ever been observed, despite reserved pool slots', () => {
         const r = observed({ foodPatchCount: 0, maturityTicks: 50 });
         const a = addBorn(r.world, { x: 500, y: 500 });
         observe(r.observer, r.world);
         visit(r, 100, a, [500, 500]);
         die(r, 10001, a, 400);
-        expect(index(r)).toEqual({ value: null, reason: 'foodPatchCount is 0' });
-        expect(r.observer.watch.bits).toHaveLength(0);
+        expect(index(r)).toEqual({ value: null, reason: 'no live patch observed' });
+        expect(r.observer.watch.bits).toHaveLength(r.world.config.maxAgents);
     });
 
     it('forgets a slot on reuse: a newborn in a freed slot starts at 0 visits', () => {

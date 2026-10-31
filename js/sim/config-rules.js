@@ -56,6 +56,7 @@ export const FEATURE_RULES = {
     predatorKillEnergy: num(0, 1000),
     alarmThreshold: num(0, 0.95),
     huntCallThreshold: num(0, 0.95),
+    floraPatchMax: int(1, 256),
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),

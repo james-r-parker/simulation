@@ -170,9 +170,9 @@ function allocZonesAndPheromones(world) {
  * @returns {void}
  */
 function allocPatches(world) {
-    const { foodPatchCount } = world.config;
-    allocRows(world, singles(Float32Array, ['patchX', 'patchY']), foodPatchCount);
-    allocRows(world, singles(Float64Array, ['patchStock']), foodPatchCount);
+    const { floraPatchMax } = world.config;
+    allocRows(world, singles(Float32Array, ['patchX', 'patchY']), floraPatchMax);
+    allocRows(world, singles(Float64Array, ['patchStock']), floraPatchMax);
     allocateFlora(world);
 }
 

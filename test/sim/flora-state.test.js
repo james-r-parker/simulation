@@ -6,7 +6,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { spawnFoodItem } from '../../js/sim/spawn.js';
 import { removeFood } from '../../js/sim/world.js';
 
-const PATCHES = { foodPatchCount: 16, foodPatchRadius: 100 };
+const PATCHES = { floraPatchMax: 16, foodPatchCount: 16, foodPatchRadius: 100 };
 
 describe('flora state', () => {
     it('assigns the starting patch mix without fungus patches', () => {
@@ -21,6 +21,7 @@ describe('flora state', () => {
 
     it('breaks remainder ties in table order', () => {
         const w = smallWorld({
+            floraPatchMax: 2,
             foodPatchCount: 2,
             foodPatchRadius: 100,
             flora: {
@@ -32,6 +33,14 @@ describe('flora state', () => {
             },
         });
         expect(Array.from(w.patchSpecies)).toEqual([0, 1]);
+    });
+
+    it('allocates the full patch pool with only initial slots alive', () => {
+        const w = smallWorld({ foodPatchCount: 2, floraPatchMax: 5, foodPatchRadius: 100 });
+        expect(Array.from(w.patchAlive)).toEqual([1, 1, 0, 0, 0]);
+        expect(Array.from(w.patchSerial)).toEqual([1, 1, 0, 0, 0]);
+        expect(w.patchStock[4]).toBe(0);
+        expect(() => smallWorld({ foodPatchCount: 3, floraPatchMax: 2 })).toThrow('floraPatchMax');
     });
 
     it('hashes every persistent species and trait array', () => {
@@ -80,7 +89,7 @@ describe('flora state', () => {
     it('accepts no initial patch shares only when there are no patches', () => {
         const flora = Object.fromEntries(FLORA_NAMES.map((name) => [name, { share: 0 }]));
         const w = smallWorld({ flora });
-        expect(w.patchSpecies).toHaveLength(0);
+        expect(w.patchAlive.every((/** @type {number} */ alive) => alive === 0)).toBe(true);
         expect(() => assertFlora(w)).not.toThrow();
         expect(() => smallWorld({ ...PATCHES, flora })).toThrow('positive share');
     });

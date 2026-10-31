@@ -19,6 +19,7 @@ function deepFreeze(value) {
 /** @type {Readonly<Record<string, any>>} */
 export const DEFAULTS = deepFreeze({
     flora: FLORA_DEFAULTS,
+    floraPatchMax: 32,
     myceliumLife: 144000,
     myceliumMax: 200,
     myceliumRadius: 150,

@@ -4,6 +4,10 @@ import { FLORA_NAMES } from './config-flora.js';
 
 /** Flora fields included in every world checkpoint. */
 export const FLORA_ARRAYS = [
+    'patchAlive',
+    'patchSerial',
+    'patchLowTicks',
+    'patchBank',
     'patchSpecies',
     'patchHue',
     'patchEnergy',
@@ -27,16 +31,20 @@ const PATCH_FIELDS = ['Hue', 'Energy', 'Regrow', 'Life', 'Start', 'Span', 'Yield
  * @returns {void}
  */
 export function allocateFlora(world) {
-    const { foodPatchCount, maxFood, myceliumMax } = world.config;
+    const { floraPatchMax, maxFood, myceliumMax } = world.config;
     world.floraDisc = { cx: 0, cy: 0, discRadius: 0, localOnly: false };
     world.floraIntake = new Float64Array(24);
     world.floraMeals = new Float64Array(2);
     for (const name of MYCELIUM_ARRAYS) {
         world[name] = name === 'myceliumTicks' ? new Int32Array(myceliumMax) : new Float32Array(myceliumMax);
     }
-    world.patchSpecies = new Uint8Array(foodPatchCount);
+    world.patchAlive = new Uint8Array(floraPatchMax);
+    world.patchSerial = new Uint32Array(floraPatchMax);
+    world.patchLowTicks = new Int32Array(floraPatchMax);
+    world.patchBank = new Int32Array(floraPatchMax);
+    world.patchSpecies = new Uint8Array(floraPatchMax);
     for (const field of PATCH_FIELDS) {
-        world[`patch${field}`] = new Float32Array(foodPatchCount);
+        world[`patch${field}`] = new Float32Array(floraPatchMax);
     }
     for (const name of ['foodSpecies', 'foodHue', 'foodTox', 'foodLife', 'foodPatch']) {
         const Type = name === 'foodPatch' ? Int32Array : Float32Array;

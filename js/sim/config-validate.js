@@ -133,6 +133,7 @@ export { RULES as CONFIG_RULES };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
 const AT_MOST = [
+    ['foodPatchCount', 'floraPatchMax'],
     ['initialAgents', 'maxAgents'],
     ['minAgents', 'maxAgents'],
     ['initialFood', 'maxFood'],

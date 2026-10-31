@@ -199,7 +199,7 @@ export function worldInfo({ config, world }) {
         rows,
         cellSize: config.pheromoneCellSize,
         pheromoneMax: config.pheromoneMax,
-        patches: Array.from(world.patchX, (x, i) => ({
+        patches: Array.from(world.patchX.subarray(0, config.foodPatchCount), (x, i) => ({
             x,
             y: world.patchY[i],
             radius: config.foodPatchRadius,
