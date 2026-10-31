@@ -231,14 +231,14 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Ids and codes
 
-| Code set      | Values                                                                                                                                                                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                                     |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3, `poisoned` 4                                                                                                                                                                                                   |
-| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                                           |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                                          |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15, `AgentSickened` 16 |
-| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                                           |
+| Code set      | Values                                                                                                                                                                                                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                                                     |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3, `poisoned` 4                                                                                                                                                                                                                   |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                                                           |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                                                          |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15, `AgentSickened` 16, `PatchDied` 18 |
+| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                                                           |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -270,7 +270,7 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 | `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                   |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
-ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents`
+ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents + 2 x floraPatchMax`
 (the per-slot budget includes calls, sickness, death and birth events).
 
 ## Energy - `energy.js`
@@ -728,3 +728,5 @@ ray part. A snapshot is not part of `worldHash`.
   header's counts say where each section ends.
 
 The `flora` RNG stream is forked by name after `lifecycle` and hashed with the other six streams. Patch coordinates and stocks are hashed for the full pool even when no patch is initially alive. The migration visit bitset is sized by `floraPatchMax`; distinct visited slot count is normalised by this capacity, so later seedlings can participate without reallocating observer state. The migration metric is null when no living patch has ever been observed; unvisited living patches produce a zero index once mature deaths provide its denominator.
+
+`stepPatchLife` runs in ascending slot order before each patch regrows. Consecutive stock samples at most 1.01 times the five-percent floor reach `patchDieTicks` and produce `PatchDied` (field 2 patch, field 3 species), zero stock/weight and a `seedBankTicks` bank. Each banked slot draws one `flora` float per tick, including its final bank tick; sprouting resets stock to `seedStock` times capacity and increments serial, while an expired bank cannot restore itself. Banked/live traits must be finite and in bounds; a dead slot holds no stock or spawn weight.

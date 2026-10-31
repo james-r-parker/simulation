@@ -134,7 +134,7 @@ gives every key's type and range. The merit keys (`meritEnabled` and ten more) a
 | `fertileZoneMax`, `fertileZoneSpawnChance`, `fertileZoneDecay` | `100`, `0.4`, `0.001`             | `FERTILE_ZONE_MAX_COUNT`, `FERTILE_ZONE_SPAWN_CHANCE`, `FERTILE_ZONE_DECAY_RATE`                                  |
 | `pheromoneCellSize`, `pheromoneDecay`                          | `100`, `0.00167`                  | new, `PHEROMONE_FADE_RATE`                                                                                        |
 | `pheromoneDiffusion`, `pheromoneDeposit`, `pheromoneMax`       | `0.05`, `1`, `5`                  | new                                                                                                               |
-| `hashCellSize`, `maxContacts`, `eventCapacity`                 | `128`, `2000`, `4096`             | new; `eventCapacity >= 8 x maxAgents`                                                                             |
+| `hashCellSize`, `maxContacts`, `eventCapacity`                 | `128`, `2000`, `4096`             | new; `eventCapacity >= 8 x maxAgents + 2 x floraPatchMax`                                                         |
 | `specialisations`                                              | The Specialisations table         | `AGENT_CONFIGS`, `DEFENDER_DAMAGE_REDUCTION`, `SCOUT_ENERGY_COST_MULTIPLIER`; new                                 |
 | `checkInvariants`                                              | `false`                           | new                                                                                                               |
 

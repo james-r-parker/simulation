@@ -263,6 +263,16 @@ function emitSickened(log, d, o) {
     log.log('debug', 'AgentSickened', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], dose: d[o + 4] });
 }
 
+/**
+ * @param {SimLog} log the log
+ * @param {Float64Array} d event data
+ * @param {number} o event offset
+ * @returns {void}
+ */
+function emitPatchDied(log, d, o) {
+    log.log('debug', 'PatchDied', { tick: d[o + 1], patch: d[o + 2], species: d[o + 3] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -279,6 +289,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
     [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
+    [EVENT_TYPE.PATCH_DIED]: { level: LOG_LEVEL.debug, emit: emitPatchDied },
     [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
 });
 

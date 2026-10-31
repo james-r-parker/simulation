@@ -1,5 +1,6 @@
 // Manages the living patch pool, seasonal source selection and plant stock.
 
+import { PATCH_FLOOR_SHARE, stepPatchLife } from './patch-life.js';
 import { assignFlora } from './flora-state.js';
 import { refreshFruiting } from './fruiting.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
@@ -7,8 +8,7 @@ import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
 import { nextFloat } from './rng.js';
 
-/** The share of `foodPatchCapacity` a patch's stock never falls below, so a patch never dies. */
-export const PATCH_FLOOR_SHARE = 0.05;
+export { PATCH_FLOOR_SHARE } from './patch-life.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./rng.js').Rng} Rng */
@@ -108,7 +108,7 @@ export function regrowPatches(world) {
     const { foodPatchRegrow, foodPatchCapacity } = world.config;
     const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
     for (let i = 0; i < patchStock.length; i++) {
-        if (world.patchAlive[i] !== 1) {
+        if (!stepPatchLife(world, i)) {
             continue;
         }
         const stock = Math.min(foodPatchCapacity, Math.max(floor, patchStock[i]));

@@ -24,6 +24,13 @@ export const FLORA_ARRAYS = [
     'foodPatch',
 ];
 
+const PATCH_POSITIVE = ['patchEnergy', 'patchLife', 'patchSpan'];
+const PATCH_NONNEGATIVE = ['patchRegrow', 'patchYield', 'patchWeight', 'patchStock'];
+const PATCH_COUNTERS = [
+    ['patchBank', 'seedBankTicks'],
+    ['patchLowTicks', 'patchDieTicks'],
+];
+
 const PATCH_FIELDS = ['Hue', 'Energy', 'Regrow', 'Life', 'Start', 'Span', 'Yield', 'Weight'];
 
 /**
@@ -98,6 +105,7 @@ export function assertFlora(world) {
         }
     }
     for (let i = 0; i < world.patchSpecies.length; i++) {
+        assertPatchState(world, i);
         if (!validSpecies(world.patchSpecies[i]) || Math.abs(world.patchHue[i]) > 1) {
             throw new Error('flora invariant: invalid patch species or hue');
         }
@@ -106,6 +114,66 @@ export function assertFlora(world) {
         if (world.foodAlive[i] === 1) {
             assertItem(world, i);
         }
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} patch patch slot
+ * @returns {void}
+ */
+function assertPatchState(world, patch) {
+    const alive = world.patchAlive[patch];
+    const bank = world.patchBank[patch];
+    assertPatchCounters(world, patch);
+    if (alive > 1) {
+        throw new Error('flora invariant: invalid patch state');
+    }
+    if (alive === 1 && (bank !== 0 || world.patchSerial[patch] === 0)) {
+        throw new Error('flora invariant: live patch holds a bank or no serial');
+    }
+    if (alive === 0 && (world.patchStock[patch] !== 0 || world.patchWeight[patch] !== 0)) {
+        throw new Error('flora invariant: dead patch holds stock or weight');
+    }
+    if (alive === 1 || bank > 0) {
+        assertPatchTraits(world, patch);
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} patch patch slot
+ * @returns {void}
+ */
+function assertPatchCounters(world, patch) {
+    for (const [field, limit] of PATCH_COUNTERS) {
+        if (world[field][patch] < 0 || world[field][patch] > world.config[limit]) {
+            throw new Error('flora invariant: invalid patch timer');
+        }
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} patch occupied patch slot
+ * @returns {void}
+ */
+function assertPatchTraits(world, patch) {
+    for (const field of PATCH_POSITIVE) {
+        if (!(world[field][patch] > 0)) {
+            throw new Error(`flora invariant: invalid ${field}`);
+        }
+    }
+    for (const field of PATCH_NONNEGATIVE) {
+        if (world[field][patch] < 0) {
+            throw new Error(`flora invariant: invalid ${field}`);
+        }
+    }
+    if (world.patchStart[patch] < 0 || world.patchStart[patch] >= 1 || world.patchSpan[patch] > 1) {
+        throw new Error('flora invariant: invalid patch fruiting range');
+    }
+    if (world.patchStock[patch] > world.config.foodPatchCapacity) {
+        throw new Error('flora invariant: patch stock exceeds capacity');
     }
 }
 
