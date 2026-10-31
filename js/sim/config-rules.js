@@ -3,7 +3,7 @@
 
 /**
  * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'enum' | 'mutationRate' | 'seasons' | 'specialisations'} type the value type
+ * @property {'int' | 'num' | 'bool' | 'enum' | 'mutationRate' | 'seasons' | 'specialisations' | 'flora'} type the value type
  * @property {readonly string[]} [values] the allowed strings of an `enum`
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound

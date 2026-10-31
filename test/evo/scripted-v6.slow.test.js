@@ -12,7 +12,9 @@ const PATCHES = 8;
  */
 function run(arm, extra) {
     const mateChildren = new Set();
-    const { observer } = playMicroWorld(1, TICKS, arm, extra, (world) => {
+    // Isolate the controllers from the seasonal food economy while preserving the same energy scale.
+    const food = { flora: { grass: { energy: 1, radius: 1, life: 10000 } } };
+    const { observer } = playMicroWorld(1, TICKS, arm, { ...food, ...extra }, (world) => {
         for (let slot = 0; slot < world.alive.length; slot++) {
             if (world.alive[slot] === 1 && world.parentA[slot] !== world.parentB[slot]) {
                 mateChildren.add(world.genomeId[slot]);
@@ -30,8 +32,10 @@ describe('v6 exploit controllers in the micro-world', () => {
     it(
         'mateHopper mates (the MATING term has something to pay) and foodSeeker does not',
         () => {
-            expect(run('mateHopper', {}).mateBirths).toBeGreaterThan(0);
-            expect(run('foodSeeker', {}).mateBirths).toBe(0);
+            // Give both arms an adult breeding window inside this short controller test.
+            const breeding = { maturityTicks: 100, pregnancyTicks: 200 };
+            expect(run('mateHopper', breeding).mateBirths).toBeGreaterThan(0);
+            expect(run('foodSeeker', breeding).mateBirths).toBe(0);
         },
         scaleTimeout(60_000),
     );

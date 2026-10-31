@@ -70,13 +70,12 @@ describe('createWorld', () => {
 
 describe('spawnFoodItem', () => {
     it('keeps food clear of obstacles with energy within the variance', () => {
-        const w = build({ initialFood: 0, maxFood: 400, highFoodChance: 0.5 });
+        const w = build({ initialFood: 0, maxFood: 400 });
         const c = w.config;
         for (let i = 0; i < 400; i++) {
             const s = spawnFoodItem(w);
-            const high = w.foodRadius[s] === c.highFoodRadius;
-            const base = high ? c.highFoodEnergy : c.foodEnergy;
-            const variance = high ? c.highFoodEnergyVariance : c.foodEnergyVariance;
+            const base = c.flora.grass.energy * c.foodEnergy;
+            const variance = c.flora.grass.energySpread * c.foodEnergy;
             expect(clearOfObstacles(w, w.foodX[s], w.foodY[s], w.foodRadius[s])).toBe(true);
             expect(Math.abs(w.foodValue[s] - base)).toBeLessThanOrEqual(variance);
             expect(w.foodAge[s]).toBe(0);

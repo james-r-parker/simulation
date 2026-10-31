@@ -1,5 +1,7 @@
 // The default simulation config: every tunable with its legacy source constant named in a trailing comment.
 
+import { FLORA_DEFAULTS } from './config-flora.js';
+
 /**
  * Freezes an object tree in place.
  * @param {object} value the object or array to freeze
@@ -16,6 +18,7 @@ function deepFreeze(value) {
 
 /** @type {Readonly<Record<string, any>>} */
 export const DEFAULTS = deepFreeze({
+    flora: FLORA_DEFAULTS,
     seed: 1, // new
     worldWidth: 14400, // WORLD_WIDTH
     worldHeight: 8100, // WORLD_HEIGHT
@@ -27,13 +30,7 @@ export const DEFAULTS = deepFreeze({
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
     foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
-    foodEnergyVariance: 20, // FOOD_ENERGY_NORMAL_VARIANCE
-    highFoodChance: 0.1, // HIGH_VALUE_FOOD_CHANCE
-    highFoodEnergy: 140, // FOOD_ENERGY_HIGH_BASE
-    highFoodEnergyVariance: 50, // FOOD_ENERGY_HIGH_VARIANCE
     foodRadius: 20, // FOOD_SIZE_NORMAL
-    highFoodRadius: 30, // FOOD_SIZE_HIGH
-    foodMaxAge: 10000, // FOOD_MAX_AGE_BASE
     obstacleDamage: 50, // OBSTACLE_COLLISION_PENALTY
     wallDamage: 50, // WALL_COLLISION_DAMAGE
     rayCount: 16, // new

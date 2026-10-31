@@ -208,11 +208,11 @@ export function spawnFoodItem(world) {
     const c = world.config;
     const slot = freeFoodSlot(world);
     const rng = world.rng.food;
-    const high = nextFloat(rng) < c.highFoodChance;
-    const radius = high ? c.highFoodRadius : c.foodRadius;
+    const row = c.flora.grass;
+    const radius = row.radius * c.foodRadius;
     placeFood(world, radius);
-    const base = high ? c.highFoodEnergy : c.foodEnergy;
-    const variance = high ? c.highFoodEnergyVariance : c.foodEnergyVariance;
+    const base = row.energy * c.foodEnergy;
+    const variance = row.energySpread * c.foodEnergy;
     world.foodAlive[slot] = 1;
     world.foodX[slot] = world.point[0];
     world.foodY[slot] = world.point[1];

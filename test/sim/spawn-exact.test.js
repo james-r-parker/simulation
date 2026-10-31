@@ -27,6 +27,7 @@ function empty(over = {}) {
             brainHidden: 3,
             maxFood: 10,
             foodEnergy: 70,
+            flora: { grass: { energy: 1, energySpread: 20 / 70, radius: 1 } },
             initialFood: 0,
             fertileZoneMax: 4,
             fertileZoneRadius: 50,
@@ -153,32 +154,25 @@ describe('placeClear sampling', () => {
 });
 
 describe('spawnFoodItem draws', () => {
-    it('with no fertile zone draws chance, position and variance without a zone roll', () => {
+    it('with no fertile zone draws position and variance without a zone roll', () => {
         const w = empty({ fertileZoneSpawnChance: 1 });
-        const [hi, px, py, v] = peek('food', 4);
+        const [px, py, v] = peek('food', 3);
         const s = spawnFoodItem(w);
-        expect(hi).toBeGreaterThan(0.1);
         expect(w.foodRadius[s]).toBe(20);
         expect(w.foodX[s]).toBeCloseTo(20 + px * 960, 3);
         expect(w.foodY[s]).toBeCloseTo(20 + py * 960, 3);
         expect(w.foodValue[s]).toBeCloseTo(70 + (2 * v - 1) * 20, 9);
     });
 
-    it('takes the high branch when the roll is below highFoodChance and not when it equals it', () => {
-        const [hi, , px, py, v] = peek('food', 5);
-        const high = empty({ highFoodChance: 1, fertileZoneSpawnChance: 0 });
-        setZone(high, 0, 500, 500, 1);
-        const s = spawnFoodItem(high);
-        expect(high.foodRadius[s]).toBe(30);
-        expect(high.foodX[s]).toBeCloseTo(30 + px * 940, 3);
-        expect(high.foodY[s]).toBeCloseTo(30 + py * 940, 3);
-        expect(high.foodValue[s]).toBeCloseTo(140 + (2 * v - 1) * 50, 9);
-        const edge = empty({ highFoodChance: hi, fertileZoneSpawnChance: 0 });
-        expect(edge.foodRadius[spawnFoodItem(edge)]).toBe(20);
+    it('takes radius and energy from the grass archetype', () => {
+        const w = empty({ flora: { grass: { radius: 1.5, energy: 2, energySpread: 0 } } });
+        const slot = spawnFoodItem(w);
+        expect(w.foodRadius[slot]).toBe(30);
+        expect(w.foodValue[slot]).toBe(140);
     });
 
     it('skips the zone when the roll is not below fertileZoneSpawnChance', () => {
-        const [, roll, px, py] = peek('food', 4);
+        const [roll, px, py] = peek('food', 3);
         const w = empty({ fertileZoneSpawnChance: roll });
         setZone(w, 0, 900, 900, 1);
         const s = spawnFoodItem(w);
@@ -187,7 +181,7 @@ describe('spawnFoodItem draws', () => {
     });
 
     it('picks the zone by roulette over alive zones and places inside it', () => {
-        const [, , target, ru, tu, v] = peek('food', 6);
+        const [, target, ru, tu, v] = peek('food', 5);
         expect(target).toBeGreaterThan(0);
         expect(target).toBeLessThan(0.8);
         const w = empty({ fertileZoneSpawnChance: 1 });
@@ -211,9 +205,9 @@ describe('spawnFoodItem draws', () => {
         w.obsRadius[0] = 400;
         setZone(w, 0, 500, 500, 1);
         const s = spawnFoodItem(w);
-        // 3 draws (kind, chance, zone) and 5 zone attempts of 2 draws, then uniform samples until one is clear
+        // 2 draws (chance, zone) and 5 zone attempts of 2 draws, then uniform samples until one is clear
         const after = fork(createRng(SEED), 'food');
-        for (let i = 0; i < 13; i++) {
+        for (let i = 0; i < 12; i++) {
             nextFloat(after);
         }
         let x;

@@ -42,17 +42,17 @@ export function spawnFood(world) {
 }
 
 /**
- * Ages every alive food item by one tick and removes those older than `foodMaxAge` (a carcass: `carcassTicks`).
+ * Ages every alive food item by one tick and removes those older than `flora.grass.life` (a carcass: `carcassTicks`).
  * @param {World} world the world
  * @returns {void}
  */
 export function ageFood(world) {
     const { foodAlive, foodAge, foodKind } = world;
-    const { foodMaxAge, carcassTicks } = world.config;
+    const { flora, carcassTicks } = world.config;
     for (let i = 0; i < foodAlive.length; i++) {
         if (foodAlive[i] === 1) {
             foodAge[i] += 1;
-            if (foodAge[i] > (foodKind[i] === FOOD_KIND.MEAT ? carcassTicks : foodMaxAge)) {
+            if (foodAge[i] > (foodKind[i] === FOOD_KIND.MEAT ? carcassTicks : flora.grass.life)) {
                 removeFood(world, i);
             }
         }

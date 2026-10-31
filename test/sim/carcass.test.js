@@ -119,8 +119,8 @@ describe('leaveCarcass', () => {
 });
 
 describe('carcass expiry', () => {
-    it('lasts carcassTicks ticks while plant food keeps lasting foodMaxAge', () => {
-        const w = lifeWorld({ ...ON, foodMaxAge: 100 });
+    it('lasts carcassTicks ticks while plant food keeps lasting the species lifetime', () => {
+        const w = lifeWorld({ ...ON, flora: { grass: { life: 100 } } });
         const meat = killOld(w, 80);
         const plant = w.foodAlive.indexOf(0);
         w.foodAlive[plant] = 1;

@@ -140,9 +140,9 @@ describe('validateConfig error text', () => {
 
     it('lists the known keys for an unknown top-level key', () => {
         const text = message(() => createConfig({ ...SIMPLE_WORLD, bogus: 1 }));
-        expect(text.startsWith('config.bogus is 1; expected no such key (known: seed, worldWidth, worldHeight,')).toBe(
-            true,
-        );
+        expect(
+            text.startsWith('config.bogus is 1; expected no such key (known: flora, seed, worldWidth, worldHeight,'),
+        ).toBe(true);
     });
 
     it('lists the known fields for an unknown specialisation field', () => {

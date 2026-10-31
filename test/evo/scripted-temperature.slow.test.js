@@ -19,7 +19,11 @@ const COLD_TICKS = 3000;
  * 0.003 is scarce enough here, and the cases hold across 0.002 to 0.005 (the rusher at 0, 17 and 51 alive, the gentle
  * forager at 81, 136 and 180).
  */
-const SCARCE_FOOD = Object.freeze({ foodRegrowPerArea: 0.003 });
+// Keep this temperature comparison on a flat caloric supply, independent of the seasonal species mix.
+const SCARCE_FOOD = Object.freeze({
+    foodRegrowPerArea: 0.003,
+    flora: { grass: { energy: 1, radius: 1, life: 10000 } },
+});
 
 /**
  * Runs one constant-thrust controller on the default world with scarce food, no floor and no immigrants.
