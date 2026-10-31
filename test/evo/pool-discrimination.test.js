@@ -2,8 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { PASS_SHARE, SCENES, runPoolDiscrimination, runScene } from '../../js/evo/pool-discrimination.js';
 
 describe('the discrimination scenes', () => {
-    it('are the three of the brain plan, in order', () => {
-        expect(SCENES.map((s) => s.name)).toEqual(['two-food-opposite', 'two-threats-apart', 'corridor']);
+    it('include the three brain scenes and the food-hue choice', () => {
+        expect(SCENES.map((s) => s.name)).toEqual([
+            'two-food-opposite',
+            'two-threats-apart',
+            'corridor',
+            'food-hue-choice',
+        ]);
+    });
+
+    it('food-hue-choice: raw and pooled controllers choose the requested hue in the first decision', () => {
+        expect(runScene(SCENES[3], { trials: 8, seed: 1 })).toMatchObject({ pooled: 1, raw: 1, pass: true });
     });
 
     it('stage the same trial for both controllers and are deterministic', () => {
@@ -38,7 +47,7 @@ describe('the discrimination scenes', () => {
 });
 
 describe('runPoolDiscrimination', () => {
-    it('reports every scene, and passes only when all three pass', () => {
+    it('reports every scene, and passes only when every scene passes', () => {
         const report = runPoolDiscrimination({ trials: 4, seed: 1 });
         expect(report.scenes.map((s) => s.scene)).toEqual(SCENES.map((s) => s.name));
         expect(report.pass).toBe(report.scenes.every((s) => s.pass));

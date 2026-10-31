@@ -22,6 +22,7 @@ function reference(w, slot) {
     const raw = slot * w.layout.rawInputCount;
     const proximity = (/** @type {number} */ k) => w.inputs[raw + k * RAY_CHANNELS];
     const out = [];
+    const hues = [0, 0];
     for (let c = 1; c <= POOLED_CHANNELS.length; c++) {
         const hits = [];
         for (let k = 0; k < rayCount; k++) {
@@ -32,10 +33,13 @@ function reference(w, slot) {
         hits.sort((a, b) => proximity(b) - proximity(a) || a - b);
         for (let i = 0; i < 2; i++) {
             const k = hits[i];
+            if (c === 1 && k !== undefined) {
+                hues[i] = w.rayHue[slot * rayCount + k];
+            }
             out.push(...(k === undefined ? [0, 0, 0] : [proximity(k), w.rayCos[k], w.raySin[k]]));
         }
     }
-    out.push(0, 0);
+    out.push(...hues);
     const body = raw + rayCount * RAY_CHANNELS;
     out.push(...w.inputs.subarray(body, raw + w.layout.rawInputCount));
     return out.map(Math.fround);
@@ -58,6 +62,9 @@ function randomRow(w, slot, rng) {
             w.inputs[row + k * RAY_CHANNELS] = prox;
             w.inputs[row + k * RAY_CHANNELS + 1 + Math.floor(nextFloat(rng) * 8)] = prox;
         }
+    }
+    for (let k = 0; k < rayCount; k++) {
+        w.rayHue[slot * rayCount + k] = w.inputs[row + k * RAY_CHANNELS + 1] > 0 ? 2 * nextFloat(rng) - 1 : 0;
     }
     for (let i = rayCount * RAY_CHANNELS; i < w.layout.rawInputCount; i++) {
         w.inputs[row + i] = nextFloat(rng) - 0.5;
@@ -121,5 +128,42 @@ describe('poolRays', () => {
         expect(Array.from(w.inputs)).toEqual(before);
         const off = inputOffsets(w.config);
         expect(w.pooled[me * w.layout.inputCount + off.bodyStart]).toBeCloseTo(0.5, 6);
+    });
+    it('keeps opposite food hues attached to their directions with first-ray ties', () => {
+        const w = senseWorld({ rayCount: 8 });
+        const me = addAgent(w, 500, 500, 20);
+        const a = addFood(w, 600, 500, 20);
+        const b = addFood(w, 400, 500, 20);
+        w.foodHue[a] = -0.75;
+        w.foodHue[b] = 0.5;
+        senseAll(w, rebuild(w));
+        poolRays(w, me);
+        const at = me * w.layout.inputCount;
+        expect(Array.from(w.pooled.subarray(at + 48, at + 50))).toEqual([-0.75, 0.5]);
+        expect(w.pooled[at + 1]).toBe(1);
+        expect(w.pooled[at + 4]).toBe(-1);
+    });
+
+    it('clears derived hues when food disappears and distinguishes real hue zero by strength', () => {
+        const w = senseWorld({ rayCount: 8 });
+        const me = addAgent(w, 500, 500, 20);
+        const food = addFood(w, 600, 500, 20);
+        w.foodHue[food] = 0;
+        senseAll(w, rebuild(w));
+        poolRays(w, me);
+        const at = me * w.layout.inputCount;
+        expect(w.pooled[at]).toBeGreaterThan(0);
+        expect(w.pooled[at + 48]).toBe(0);
+        w.foodHue[food] = 0.75;
+        senseAll(w, rebuild(w));
+        expect(w.rayHue[me * 8]).toBe(0.75);
+        w.foodAlive[food] = 0;
+        w.foodCount--;
+        senseAll(w, rebuild(w));
+        poolRays(w, me);
+        expect(Array.from(w.rayHue.subarray(me * 8, (me + 1) * 8))).toEqual(new Array(8).fill(0));
+        expect(w.pooled[at]).toBe(0);
+        expect(w.pooled[at + 48]).toBe(0);
+        expect(w.pooled[at + 49]).toBe(0);
     });
 });

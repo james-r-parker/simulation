@@ -3,7 +3,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { poolRays } from '../../js/sim/ray-pool.js';
 import { senseAll } from '../../js/sim/sensors.js';
 import { rebuild } from '../sim/helpers/sense-world.js';
-import { flee, followCorridor, seekFood, steer } from '../../js/evo/pool-discrimination-controllers.js';
+import { flee, followCorridor, seekFood, seekFoodHue, steer } from '../../js/evo/pool-discrimination-controllers.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 
 const SUBJECT = { x: 1500, y: 2000, angle: 0, spec: 0, energy: 800 };
@@ -50,6 +50,30 @@ describe('seekFood', () => {
         const pooled = run(world, seekFood, true);
         expect(raw.turn).toBeGreaterThan(0);
         expect(pooled).toEqual(raw);
+    });
+});
+
+describe('seekFoodHue', () => {
+    it('uses hue to choose a food on the other side from a nearer positive-hue item', () => {
+        const world = sensed({
+            foods: [
+                { x: 1500, y: 1800, hue: -0.75 },
+                { x: 1500, y: 2150, hue: 0.75 },
+            ],
+            rocks: [],
+            agents: [SUBJECT],
+            seed: 1,
+        });
+        for (const pooled of [false, true]) {
+            expect(run(world, seekFoodHue, pooled).turn).toBeLessThan(0);
+        }
+    });
+
+    it('searches without forward thrust when no preferred hue is sensed', () => {
+        const world = sensed({ foods: [{ x: 1500, y: 2200, hue: 0.75 }], rocks: [], agents: [SUBJECT], seed: 1 });
+        for (const pooled of [false, true]) {
+            expect(run(world, seekFoodHue, pooled)).toMatchObject({ thrust: 0, turn: 1 });
+        }
     });
 });
 

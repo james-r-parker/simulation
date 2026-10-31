@@ -54,7 +54,7 @@ const STAGE_CONFIG = Object.freeze({
 
 /**
  * @typedef {object} Stage
- * @property {{x: number, y: number}[]} foods food centres
+ * @property {{x: number, y: number, hue?: number}[]} foods food centres and optional hue
  * @property {{x: number, y: number, r: number}[]} rocks rock centres and radii
  * @property {StagedAgent[]} agents agents by slot; slot 0 is the one the scene scores
  * @property {number} seed the world seed
@@ -105,6 +105,9 @@ export function stageWorld({ foods, rocks, agents, seed, config = {} }) {
         world.foodY[slot] = food.y;
         world.foodRadius[slot] = FOOD_RADIUS;
         world.foodValue[slot] = FOOD_VALUE;
+        if (food.hue !== undefined) {
+            world.foodHue[slot] = food.hue;
+        }
     }
     for (const agent of agents) {
         const slot = spawnAgent(world, policy, BORN_CAUSE.INITIAL);

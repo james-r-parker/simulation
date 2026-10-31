@@ -306,6 +306,7 @@ export function allocateWorld(config) {
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
+        rayHue: new Float32Array(config.maxAgents * config.rayCount),
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
