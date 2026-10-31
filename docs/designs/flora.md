@@ -49,7 +49,7 @@ A species is an archetype: a row of the `flora` config table. Every plant item a
 
 Each row has `energySpread` 0.2, a share of `foodEnergy`.
 
-Starting rows, in the order the table is written (the flora screens tune them; year phase 0 is the start of spring). `toxiccap` has `share` 0 until T14 raises it to 3; the patch mix over `foodPatchCount` 16 is then 5, 3, 2, 3 and 3 (grass, berry, nut, flower, toxic cap):
+Starting rows, in the order the table is written (the flora screens tune them; year phase 0 is the start of spring). `toxiccap` has `share` 3 from T14; the patch mix over `foodPatchCount` 16 is 5, 3, 2, 3 and 3 (grass, berry, nut, flower, toxic cap):
 
 | Species    | `share` | `energy` | `radius` | `yield` | `regrow` | `life` | `start` | `span` | `hue` | `toxicity` | `pollenChance` | `range` |
 | ---------- | ------- | -------- | -------- | ------- | -------- | ------ | ------- | ------ | ----- | ---------- | -------------- | ------- |
@@ -58,7 +58,7 @@ Starting rows, in the order the table is written (the flora screens tune them; y
 | `nut`      | 2       | 1.8      | 1.3      | 0.5     | 0.7      | 60000  | 0.50    | 0.30   | -0.45 | 0          | 0              | 0.2     |
 | `flower`   | 3       | 0.5      | 0.7      | 1.2     | 1.2      | 4000   | 0.10    | 0.40   | 0.90  | 0          | 1.0            | 0.4     |
 | `fungus`   | 0       | 1.0      | 0.9      | 0       | 0        | 24000  | 0.62    | 0.35   | -0.20 | 0          | 0              | 0       |
-| `toxiccap` | 0       | 1.2      | 1.0      | 0.7     | 0.8      | 24000  | 0.50    | 0.35   | 0.30  | 0.8        | 0              | 0.15    |
+| `toxiccap` | 3       | 1.2      | 1.0      | 0.7     | 0.8      | 24000  | 0.50    | 0.35   | 0.30  | 0.8        | 0              | 0.15    |
 
 - **Grass** fruits all year and fast, and is the background food: the `foodBackgroundShare` of spawns are grass items. Background spawns are grass only, so grass is the one species that cannot go extinct; every other species exists only through its patches and the seed bank, and no other path recreates it.
 - **Berry** fruits from early summer to early autumn, and its items last about a tenth of a year.

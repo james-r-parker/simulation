@@ -9,14 +9,14 @@ import { removeFood } from '../../js/sim/world.js';
 const PATCHES = { foodPatchCount: 16, foodPatchRadius: 100 };
 
 describe('flora state', () => {
-    it('assigns largest remainders in species order without introducing cap or fungus patches', () => {
+    it('assigns the starting patch mix without fungus patches', () => {
         const w = smallWorld(PATCHES);
         const counts = [0, 0, 0, 0, 0, 0];
         for (const species of w.patchSpecies) {
             counts[species]++;
         }
-        expect(counts).toEqual([6, 4, 2, 4, 0, 0]);
-        expect(w.patchLife[10]).toBe(60000);
+        expect(counts).toEqual([5, 3, 2, 3, 0, 3]);
+        expect(w.patchLife[8]).toBe(60000);
     });
 
     it('breaks remainder ties in table order', () => {
@@ -28,6 +28,7 @@ describe('flora state', () => {
                 berry: { share: 1 },
                 nut: { share: 1 },
                 flower: { share: 1 },
+                toxiccap: { share: 0 },
             },
         });
         expect(Array.from(w.patchSpecies)).toEqual([0, 1]);

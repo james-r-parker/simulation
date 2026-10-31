@@ -19,10 +19,10 @@ const invalid = {
 };
 
 describe('flora config', () => {
-    it('uses the species table and keeps toxic cap patches absent', () => {
+    it('uses the species table with toxic cap patches', () => {
         const c = createConfig();
         expect(Object.keys(c.flora)).toEqual(FLORA_NAMES);
-        expect(c.flora.toxiccap.share).toBe(0);
+        expect(c.flora.toxiccap.share).toBe(3);
         expect(c).not.toHaveProperty('highFoodChance');
         expect(Object.isFrozen(c.flora.grass)).toBe(true);
     });

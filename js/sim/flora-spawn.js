@@ -76,7 +76,7 @@ function writeItem(world, slot, species, patch) {
     world.foodValue[slot] = c.foodEnergy * (energy + (2 * nextFloat(world.rng.food) - 1) * row.energySpread);
     world.foodSpecies[slot] = species;
     world.foodHue[slot] = patch >= 0 ? world.patchHue[patch] : row.hue;
-    world.foodTox[slot] = 0;
+    world.foodTox[slot] = row.toxicity;
     world.foodLife[slot] = patch >= 0 ? world.patchLife[patch] : row.life;
     world.foodPatch[slot] = patch;
     world.foodAge[slot] = 0;
