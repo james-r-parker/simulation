@@ -30,6 +30,7 @@ export function allocateFlora(world) {
     const { foodPatchCount, maxFood, myceliumMax } = world.config;
     world.floraDisc = { cx: 0, cy: 0, discRadius: 0, localOnly: false };
     world.floraIntake = new Float64Array(24);
+    world.floraMeals = new Float64Array(2);
     for (const name of MYCELIUM_ARRAYS) {
         world[name] = name === 'myceliumTicks' ? new Int32Array(myceliumMax) : new Float32Array(myceliumMax);
     }

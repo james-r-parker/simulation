@@ -5,6 +5,9 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { feed } from '../../js/sim/feeding.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { allocBody } from '../sim/helpers/body.js';
+import { hashWorld } from '../../js/sim/world-hash.js';
+import { FOOD_KIND } from '../../js/sim/carcass.js';
+import { DEATH_CAUSE, EVENT_TYPE, clearEvents, pushEvent } from '../../js/sim/events.js';
 import { createScenes, observeScenes } from '../../js/evo/observer-scenes.js';
 
 describe('flora diet detectors', () => {
@@ -76,5 +79,99 @@ describe('flora diet detectors', () => {
         w.floraIntake[0] = 100;
         observeScenes({ scenes }, w);
         expect(scenes.flora.mark[0]).toBe(100);
+    });
+    it('reports exact poison death and sick agent-tick shares once per observed tick', () => {
+        const scene = createFloraScene();
+        const w = smallWorld();
+        w.alive[0] = w.alive[1] = 1;
+        w.dose[0] = 0.36;
+        w.tick = BURN_IN_TICKS + 1;
+        const at = pushEvent(w.events, EVENT_TYPE.AGENT_DIED, BURN_IN_TICKS);
+        w.events.data[at + 4] = DEATH_CAUSE.POISONED;
+        pushEvent(w.events, EVENT_TYPE.AGENT_DIED, BURN_IN_TICKS);
+        // A stale pre-burn-in event and an unrelated event do not enter the denominator.
+        pushEvent(w.events, EVENT_TYPE.AGENT_DIED, BURN_IN_TICKS - 1);
+        pushEvent(w.events, EVENT_TYPE.AGENT_SICKENED, BURN_IN_TICKS);
+        trackFlora(scene, w);
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.toxic_death_share'].value).toBe(0.5);
+        expect(floraMetrics(scene)['eval.sick_share'].value).toBe(0.5);
+        clearEvents(w.events);
+        w.tick++;
+        w.dose[0] = 0;
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.sick_share'].value).toBe(0.25);
+        expect(scene.deaths).toBe(2);
+    });
+
+    it('measures minus electivity from plant item counts and checkpoint availability', () => {
+        const scene = createFloraScene();
+        const w = smallWorld();
+        w.tick = BURN_IN_TICKS;
+        w.floraMeals.set([100, 50]);
+        trackFlora(scene, w);
+        w.tick = BURN_IN_TICKS + 1000;
+        w.floraMeals.set([110, 52]);
+        w.foodAlive.fill(1);
+        w.foodKind.fill(FOOD_KIND.MEAT);
+        w.foodKind[0] = w.foodKind[1] = FOOD_KIND.PLANT;
+        w.foodTox[1] = 0.8;
+        // Dead plants and meat are excluded from the availability denominator.
+        w.foodKind[2] = FOOD_KIND.PLANT;
+        w.foodAlive[2] = 0;
+        w.foodTox[2] = 0.8;
+        const before = hashWorld(w);
+        trackFlora(scene, w);
+        expect(hashWorld(w)).toBe(before);
+        expect(scene.available[0]).toBe(2);
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBeCloseTo(3 / 7);
+        w.tick++;
+        trackFlora(scene, w);
+        expect(scene.available[0]).toBe(2);
+        scene.meals[1] = 0;
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(1);
+        scene.meals[1] = 5;
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(0);
+        scene.available[1] = 0;
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(-1);
+        scene.meals[1] = 0;
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].reason).toContain('no toxic');
+    });
+
+    it('has null toxin metrics without their denominators', () => {
+        const scene = createFloraScene();
+        const metrics = floraMetrics(scene);
+        for (const name of ['toxic_death_share', 'sick_share', 'toxic_avoidance']) {
+            expect(metrics[`eval.${name}`].value).toBeNull();
+            expect(metrics[`eval.${name}`].reason).toBeTypeOf('string');
+        }
+        scene.meals[0] = 10;
+        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBeNull();
+    });
+
+    it('counts a zero-net toxic plant meal before clearing it and excludes meat', () => {
+        const w = smallWorld({ toxinCost: 2 });
+        const slot = allocBody(w);
+        w.x[slot] = w.y[slot] = 500;
+        w.energy[slot] = 100;
+        w.foodAlive[0] = 1;
+        w.foodX[0] = w.foodY[0] = 500;
+        w.foodValue[0] = 50;
+        w.foodRadius[0] = 10;
+        w.foodTox[0] = 0.8;
+        w.foodCount = 1;
+        buildHash(w.hash, w);
+        feed(w, w.hash);
+        expect(Array.from(w.floraMeals)).toEqual([1, 1]);
+        expect(w.floraIntake[0]).toBe(0);
+        expect(w.foodAlive[0]).toBe(0);
+        w.dose[slot] = 0;
+        w.foodAlive[0] = 1;
+        w.foodKind[0] = FOOD_KIND.MEAT;
+        w.foodCount = 1;
+        w.foodValue[0] = 50;
+        buildHash(w.hash, w);
+        feed(w, w.hash);
+        expect(Array.from(w.floraMeals)).toEqual([1, 1]);
     });
 });

@@ -225,6 +225,8 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 `floraIntake` is a derived `Float64Array(24)`, excluded from `hashWorld`. Its index is `season x 6 + species`. `tryEat` adds the stored plant energy returned by `addEnergy`, before `removeFood` clears the item. Meat adds nothing. The counters start at zero at allocation, accumulate for the world's lifetime and are never reset per tick or per observer. `trackFlora` keeps its own last-observed copy, reads differences once after each step, and excludes ticks through `BURN_IN_TICKS`. Counter reads change no simulation state.
 
+`floraMeals` is a derived `Float64Array(2)`, also excluded from `hashWorld`: all plant items eaten and toxic plant items eaten (`foodTox > 0`). It counts items even when their net stored energy is zero, before clearing the food slot; meat adds nothing. Its lifetime/reset rules match `floraIntake`. The flora scene consumes counter differences once per observed tick strictly after `BURN_IN_TICKS`, counts poison/all deaths whose event tick is at least burn-in, and sick/all alive agent-ticks from the observed post-step state. At ticks divisible by 1000 strictly after burn-in it sums toxic/all live plant availability. Minus Ivlev electivity uses these pooled item shares, `(p - r) / (p + r)`; missing meals, missing plant checkpoints or zero combined toxic share return null with a reason. No death or alive agent-tick denominator likewise returns null.
+
 `floraDisc` is reusable placement scratch, excluded from the hash. A fungal disc is local-only: exhausted rejection sampling refuses the fungus source and redraws as patch/background. Patches retain the uniform clear-placement fallback.
 
 ### Ids and codes

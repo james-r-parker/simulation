@@ -40,6 +40,9 @@ const WATCH = [
 export const SCENE_DIRECTIONS = Object.freeze({
     ...PATCH_DIRECTIONS,
     'eval.seasonal_diet_shift': 'watch',
+    'eval.toxic_avoidance': 'watch',
+    'eval.toxic_death_share': 'watch',
+    'eval.sick_share': 'watch',
     ...Object.fromEntries(FLORA_NAMES.map((name) => [`eval.food_species_share.${name}`, 'watch'])),
     'eval.predators_at_end': 'higher',
     'eval.prey_types_at_end': 'higher',
