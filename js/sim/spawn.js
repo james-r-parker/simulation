@@ -3,7 +3,8 @@
 import { detCos, detSin } from './det-math.js';
 import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
-import { createPatches, pickPatch } from './food-patches.js';
+import { spawnFloraItem } from './flora-spawn.js';
+import { createPatches } from './food-patches.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain } from './terrain.js';
 import { drawSex } from './sex.js';
@@ -87,63 +88,15 @@ export function placeClear(world, rng, radius) {
 }
 
 /**
- * @param {World} world the world
- * @returns {number} the summed fertility of the alive zones
- */
-function totalFertility(world) {
-    let total = 0;
-    for (let i = 0; i < world.zoneAlive.length; i++) {
-        if (world.zoneAlive[i] === 1) {
-            total += world.zoneFertility[i];
-        }
-    }
-    return total;
-}
-
-/**
- * Roulette over alive zones in ascending index; falls back to the last alive zone on rounding.
- * @param {World} world the world
- * @param {number} target a point in `[0, total fertility)`
- * @returns {number} the zone index
- */
-function pickZone(world, target) {
-    let remaining = target;
-    let picked = -1;
-    for (let i = 0; i < world.zoneAlive.length && remaining >= 0; i++) {
-        if (world.zoneAlive[i] === 1) {
-            picked = i;
-            remaining -= world.zoneFertility[i];
-        }
-    }
-    return picked;
-}
-
-/** The disc `placeInDisc` places in, reused by every call so food placement allocates nothing. */
-const DISC = { cx: 0, cy: 0, discRadius: 0 };
-
-/**
- * @param {number} cx the disc's centre x
- * @param {number} cy the disc's centre y
- * @param {number} discRadius the disc's radius
- * @returns {{cx: number, cy: number, discRadius: number}} the shared disc, set
- */
-function setDisc(cx, cy, discRadius) {
-    DISC.cx = cx;
-    DISC.cy = cy;
-    DISC.discRadius = discRadius;
-    return DISC;
-}
-
-/**
  * Draws a point in the disc of radius `discRadius` around (`cx`, `cy`), redrawing while it lies in an obstacle, and
  * writes it to `world.point`. A disc an obstacle has drifted over leaves no clear point, so after `placementTries` it
  * places uniformly instead. Fertile zones and food patches both place through it.
  * @param {World} world the world
- * @param {{cx: number, cy: number, discRadius: number}} disc the disc's centre and radius
+ * @param {{cx: number, cy: number, discRadius: number, localOnly?: boolean}} disc the disc's centre and radius
  * @param {number} radius the food radius
- * @returns {void}
+ * @returns {boolean} whether local placement succeeded (uniform fallback for patches)
  */
-function placeInDisc(world, { cx, cy, discRadius }, radius) {
+function placeInDisc(world, { cx, cy, discRadius, localOnly = false }, radius) {
     const { worldWidth, worldHeight, placementTries } = world.config;
     const rng = world.rng.food;
     for (let attempt = 0; attempt < placementTries; attempt++) {
@@ -151,35 +104,22 @@ function placeInDisc(world, { cx, cy, discRadius }, radius) {
         const theta = nextFloat(rng) * TWO_PI;
         const x = Math.min(worldWidth - radius, Math.max(radius, cx + r * detCos(theta)));
         const y = Math.min(worldHeight - radius, Math.max(radius, cy + r * detSin(theta)));
+        const dx = x - cx;
+        const dy = y - cy;
+        if (localOnly && dx * dx + dy * dy > discRadius * discRadius) {
+            continue;
+        }
         if (clearOfObstacles(world, x, y, radius)) {
             world.point[0] = x;
             world.point[1] = y;
-            return;
+            return true;
         }
     }
-    placeClear(world, rng, radius);
-}
-
-/**
- * Chooses where a food item goes and writes the point to `world.point`: a fertile zone as ever, else (when there are
- * patches) a patch by stock with probability `1 - foodBackgroundShare`, else anywhere. No patch draws without patches.
- * @param {World} world the world
- * @param {number} radius the food radius
- * @returns {void}
- */
-function placeFood(world, radius) {
-    const c = world.config;
-    const rng = world.rng.food;
-    const total = totalFertility(world);
-    if (total > 0 && nextFloat(rng) < c.fertileZoneSpawnChance) {
-        const zone = pickZone(world, nextFloat(rng) * total);
-        placeInDisc(world, setDisc(world.zoneX[zone], world.zoneY[zone], c.fertileZoneRadius), radius);
-    } else if (c.foodPatchCount > 0 && nextFloat(rng) >= c.foodBackgroundShare) {
-        const patch = pickPatch(world, rng);
-        placeInDisc(world, setDisc(world.patchX[patch], world.patchY[patch], c.foodPatchRadius), radius);
-    } else {
-        placeClear(world, rng, radius);
+    if (localOnly) {
+        return false;
     }
+    placeClear(world, rng, radius);
+    return true;
 }
 
 /**
@@ -205,26 +145,8 @@ function freeFoodSlot(world) {
  * @throws {Error} when `maxFood` items are alive
  */
 export function spawnFoodItem(world) {
-    const c = world.config;
     const slot = freeFoodSlot(world);
-    const rng = world.rng.food;
-    const row = c.flora.grass;
-    const radius = row.radius * c.foodRadius;
-    placeFood(world, radius);
-    const base = row.energy * c.foodEnergy;
-    const variance = row.energySpread * c.foodEnergy;
-    world.foodAlive[slot] = 1;
-    world.foodX[slot] = world.point[0];
-    world.foodY[slot] = world.point[1];
-    world.foodRadius[slot] = radius;
-    world.foodValue[slot] = base + (2 * nextFloat(rng) - 1) * variance;
-    world.foodAge[slot] = 0;
-    world.foodSpecies[slot] = 0;
-    world.foodHue[slot] = row.hue;
-    world.foodLife[slot] = row.life;
-    world.foodPatch[slot] = -1;
-    world.foodCount += 1;
-    return slot;
+    return spawnFloraItem(world, slot, placeClear, placeInDisc);
 }
 
 /**

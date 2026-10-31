@@ -31,6 +31,8 @@ function patched(over = {}) {
         w.patchX[i] = x;
         w.patchY[i] = y;
         w.patchStock[i] = stock;
+        w.patchWeight[i] = stock;
+        w.patchRegrow[i] = 1;
     });
     return w;
 }
@@ -87,7 +89,7 @@ describe('createPatches', () => {
 });
 
 describe('pickPatch', () => {
-    it('chooses patches in proportion to their stock', () => {
+    it('chooses patches in proportion to their seasonal weight', () => {
         const w = patched();
         const rng = createRng(9);
         const hits = [0, 0, 0];
@@ -100,9 +102,10 @@ describe('pickPatch', () => {
         });
     });
 
-    it('never picks a patch with no stock', () => {
+    it('never picks a patch with no weight', () => {
         const w = patched();
         w.patchStock[0] = 0;
+        w.patchWeight[0] = 0;
         const rng = createRng(2);
         for (let i = 0; i < 500; i++) {
             expect(pickPatch(w, rng)).not.toBe(0);

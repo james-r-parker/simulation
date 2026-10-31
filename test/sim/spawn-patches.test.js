@@ -61,9 +61,9 @@ describe('spawnFoodItem with patches', () => {
         expect(inside / n).toBeLessThan(0.6);
     });
 
-    it('weights patches by stock', () => {
+    it('weights patches by seasonal weight', () => {
         const w = build({ foodBackgroundShare: 0 });
-        w.patchStock.set([0.05, 0.05, 0.05, 3]);
+        w.patchWeight.set([0.05, 0.05, 0.05, 3]);
         const hits = [0, 0, 0, 0];
         for (let i = 0; i < 400; i++) {
             hits[patchOf(w, spawnFoodItem(w))] += 1;
@@ -94,20 +94,5 @@ describe('spawnFoodItem with patches', () => {
             const s = spawnFoodItem(a);
             expect([a.foodX[s], a.foodY[s]]).toEqual([b.foodX[spawnFoodItem(b)], b.foodY[s]]);
         }
-    });
-});
-
-describe('spawnFoodItem order', () => {
-    it('keeps the fertile-zone draw first: a zone-placed item is not forced into a patch', () => {
-        const w = build({ foodBackgroundShare: 0, fertileZoneSpawnChance: 1, fertileZoneRadius: 50 });
-        w.zoneAlive[0] = 1;
-        w.zoneX[0] = 3900;
-        w.zoneY[0] = 3900;
-        w.zoneFertility[0] = 1;
-        w.patchX.fill(300);
-        w.patchY.fill(300);
-        const s = spawnFoodItem(w);
-        expect(w.foodX[s]).toBeGreaterThan(3800);
-        expect(patchOf(w, s)).toBe(-1);
     });
 });

@@ -91,7 +91,7 @@ describe('patchRegrowFactor', () => {
         w.patchStock.fill(0.5);
         w.season[0] = 3;
         regrowPatches(w);
-        expect(w.patchStock[0]).toBeCloseTo(0.5 + 0.01 * 0.2 * 0.25, 12);
+        expect(w.patchStock[0]).toBeCloseTo(0.5 + w.patchRegrow[0] * 0.01 * 0.2 * 0.25, 12);
         w.era[0] = 0;
         const before = w.patchStock[0];
         regrowPatches(w);
