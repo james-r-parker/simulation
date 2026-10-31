@@ -213,6 +213,16 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
   `world.js`) zeroes every food array at the slot and decrements `foodCount`; a freed zone slot has every zone array
   zeroed.
 
+### Flora state and intake
+
+`flora-state.js` allocates the Phase 1 arrays. Patch records have `foodPatchCount` entries: `patchSpecies` (`Uint8`) and `patchHue`, `patchEnergy`, `patchRegrow`, `patchLife`, `patchStart`, `patchSpan`, `patchYield`, `patchWeight` (`Float32`). Item records have `maxFood` entries: `foodSpecies`, `foodHue`, `foodTox`, `foodLife` (`Float32`) and `foodPatch` (`Int32`, source patch or -1 for background, fungus and meat). All are hashed. `removeFood` zeroes the item records. Species indices follow `FLORA_NAMES`.
+
+`myceliumX`, `myceliumY`, `myceliumSize` (`Float32`) and `myceliumTicks` (`Int32`) have `myceliumMax` entries, all hashed. A free mark is zero in every array. Death adds a mark for `myceliumLife` ticks; a full pool replaces the fewest ticks left, lowest slot on ties.
+
+`floraIntake` is a derived `Float64Array(24)`, excluded from `hashWorld`. Its index is `season x 6 + species`. `tryEat` adds the stored plant energy returned by `addEnergy`, before `removeFood` clears the item. Meat adds nothing. The counters start at zero at allocation, accumulate for the world's lifetime and are never reset per tick or per observer. `trackFlora` keeps its own last-observed copy, reads differences once after each step, and excludes ticks through `BURN_IN_TICKS`. Counter reads change no simulation state.
+
+`floraDisc` is reusable placement scratch, excluded from the hash. A fungal disc is local-only: exhausted rejection sampling refuses the fungus source and redraws as patch/background. Patches retain the uniform clear-placement fallback.
+
 ### Ids and codes
 
 | Code set      | Values                                                                                                                                                                                                                                         |
@@ -292,15 +302,7 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
   one for y, x inside the patch's basin (`basinPatchX`: even patches west, odd east, discs clear of the wall) under
   `basins` and anywhere inside `[foodPatchRadius, worldWidth - foodPatchRadius]` otherwise, y in the same margin; stock
   starts at `foodPatchCapacity`. It pushes `FoodPatchesCreated` when `foodPatchCount` is above 0.
-- `spawnFoodItem(world, config)` uses the `food` stream in this order: `high = nextFloat < highFoodChance`; then
-  `placeFood`: when any zone is alive, `fromZone = nextFloat < fertileZoneSpawnChance`, and a zone is picked by a
-  roulette over alive zones in ascending index with `nextFloat x total fertility`; else, when `foodPatchCount` is above
-  0, one draw `nextFloat >= foodBackgroundShare` decides a patch, picked by `pickPatch` with one draw
-  `nextFloat x total stock` (roulette in ascending index, the last patch on rounding); else `placeClear`. A zone or
-  patch position goes through `placeInDisc`: `r = discRadius x Math.sqrt(nextFloat)`,
-  `theta = nextFloat x 2 PI` around the centre, clamped to `[radius, size - radius]`, and redrawn the same way while
-  it lies in an obstacle, up to `placementTries`, after which it places uniformly with `placeClear`. Last,
-  `energy = base + (2 nextFloat - 1) x variance`. It takes the lowest free food slot, with age 0 and `foodKind` plant.
+- `spawnFoodItem(world)` takes the lowest free food slot and calls `spawnFloraItem`. With live mycelium marks it draws the fungus chance (`fertileZoneSpawnChance x fruitWeight`), then a size-weighted mark on success. A refused mark is drawn again as patch/background. Otherwise a patch/background draw uses `foodBackgroundShare`, then `pickPatch` draws over `patchWeight` in slot order. Zero total weight gives background grass. Placement draws distance then angle inside a disc, or x then y uniformly. Last, energy is `foodEnergy x (source energy + (2 nextFloat - 1) x energySpread)`. The item copies the source's species, hue, life and patch, with age 0 and `foodKind` plant. Phase 1 sets `foodTox` 0.
 - `spawnAgent(world, policy, cause)` uses the `spawn` stream: allocates the slot; sets `genomeId = nextId++`,
   `lineageId = genomeId`, `parentA = parentB = 0`; spec from `policy.initSpec`, else `nextInt(spawn, 5)`; then `drawSex` (one `lifecycle` draw); then
   `policy.initBrain` with the `brain-init` stream; then `applyGenes`; then the position by `placeClear` with the radius for
@@ -331,7 +333,7 @@ ticks before the death, else 0. The four call events are debug level; `FoodPatch
   cause mapped from `lastLoss` (none or `cost` to `starved`, `bite` to `eaten`, `collision` to `collision`). `by` is
   `lastBiter` for `eaten`, else 0. After the event, the death hook and the ledger entry, `leaveCarcass` fills the
   lowest free food slot with a meat item when the agent took in energy (below), then the fertile
-  zone is added and the slot freed.
+  zone and mycelium mark are added and the slot freed.
 - `fillFloor` (the floor as a total-extinction guard, natural-selection T3): returns while `population >= min(floorTrigger,
 minAgents)`. Below it, it spawns `FLOOR` agents until `population === minAgents` and pushes `PopulationFloor` once, with
   `added` (the agents added) and the population before the refill. Between `floorTrigger` and `minAgents` nothing is
@@ -389,10 +391,12 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   `floor(tick / (4 x eraSeasonTicks))`) and updates `world.era[0]`: outside summer it becomes -1; at the start of summer
   one `food` draw `< droughtChance` starts a drought, and a second `food` draw (`< 0.5` west) picks the basin, pushing
   `DroughtStarted` (basin, year). A basin is the half of the world on one side of `worldWidth / 2` (0 west, 1 east).
-  `regrowPatches` multiplies each patch's `foodPatchRegrow` by `patchRegrowFactor`: 0 for a patch in the drought basin,
+  `regrowPatches` multiplies each patch's `foodPatchRegrow` by `patchRegrow` and `patchRegrowFactor`: 0 for a patch in the drought basin,
   else `winterRegrow` in winter, 1.5 in summer, 1 otherwise.
 
 ### Feeding
+
+Plant item expiry uses its copied `foodLife`; meat expiry uses `carcassTicks`. The field phase ages mycelium, regrows patches, refreshes fruiting weights, then spawns and ages food.
 
 - `feed` visits alive agents in ascending slot. Each eats every alive food it overlaps, found through `cellRange`
   of its circle, cells ascending and entries in cell order. Food is removed when eaten even if the eater stored

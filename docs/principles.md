@@ -190,6 +190,8 @@ The selection rules have their own detectors, built in `natural-selection.md` T2
 drought and predation (rules 1 and 4), heritability of the skill without the bonus (rules 2 and 9), and the share of
 births by source (floor, split, mate; `immigrant` reads 0 since the timed entrants were deleted).
 
+Flora's **Season changes the map** detectors are `eval.food_species_share.<species>` and `eval.seasonal_diet_shift`: stored plant energy shares after burn-in, and the mean pairwise seasonal diet distance. Neither adds a fitness reward.
+
 ## What the user flagged
 
 The earlier version of this page (v1) held these two lists. They stay as the measured side of the traits above, each

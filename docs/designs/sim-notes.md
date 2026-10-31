@@ -1530,3 +1530,10 @@ Both 8 seeds x 200000 ticks on the seeds of E82; predators alive at the last tic
 ### 2026-10-31 - The split defaults adopted without a screen
 
 `splitMateScarceTicks` 600 and `splitClonalMax` 3 are on by default (user, 2026-10-31). With both relaxed every old golden hash reproduces, so they alone moved the hashes; the busy golden's effect stream fell from 2400 to 1506 records. Their effect on the gate is unmeasured: E85 showed a clonal cap of 3 lowers hunters at the end (3 to 1 of 8) while cutting splits from 52% to 11% of births, and the shark rule was to be measured by E88.
+
+### 2026-10-31 - Flora Phase 1 in draft
+
+- Mycelium persists for 144000 ticks; fertile zones expire too early to carry summer deaths into the fungal window.
+- Plant intake counters record stored energy before food slots are cleared. The observer differences these counters after burn-in; same-tick slot reuse cannot hide a meal.
+- A blocked mycelium disc refuses its fungus source and redraws patch/background rather than moving fungus away from the death site.
+- E69-E74, metric power and performance measurements remain owed while balancing uses the CPU. The draft is rebased on balancing PR #223 (`f649cd8`) with goldens re-pinned.
