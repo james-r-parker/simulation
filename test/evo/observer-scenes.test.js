@@ -92,6 +92,7 @@ describe('observeScenes', () => {
             'basin',
             'carcass',
             'condition',
+            'families',
             'heritage',
             'mate',
             'niche',

@@ -1909,6 +1909,128 @@
       },
       "effect": "better",
       "note": "Screens: predator-metabolism (6 arms: fast-0.3 / fast-0.15 resting loss, meal-600), predator-gorge (7 arms: the 3x store, bite 20 and 40), instinct (8 arms: instinctWeight 0, 0.5, 1, 2 with fast-meal, gorge and bite20). Metabolism alone: best fast-0.3-meal-600 presence 0.24, pop 203, pop > min 4/8. Gorge with bite20 alone: presence 0.09 to 0.28, still 1 to 4 of 8 seeds above min. Instincts alone (inst0.5/1/2): pop above min 8/8, catch 8/8, pop mean 423-482, but predator_presence only 0.01 to 0.09. Only inst1-gorge-bite20 clears the gate: predator_presence 0.67 (0.09 to 1.0 by seed), spec_effective 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (seed 5 has 7; the other seven have 0 or 1), catch_rate 0.42, deliberate_food_share 0.53, alarm_precision 0.20 (only 2 of 8 seeds call), mating_share 0.54, pop mean 403, about 2972 predator births per run, spec_dominance 0.60. The screen table's own columns still read FAIL for it (popAboveMin fails on seed 5 at 0.55 of the samples, lineages >= 5 and spec <= 70% fail), judged on the plan's gate: final population above the floor on every seed (popBelowMax column 55 to 481, seed 5 lowest), presence, spec_effective. Known issue: predators boom and bust, alive at the end in 3 of 8 seeds; balancing follows. Prediction right on the gate and on instincts lifting survival, wrong on instincts alone lifting presence. Decision: adopt instinctWeight 1, predator passiveLossMultiplier 0.3, maxEnergyMultiplier 3, biteMultiplier 20 and predatorKillEnergy 600 as the defaults."
+    },
+    {
+      "id": "E81",
+      "date": "2026-10-30",
+      "branch": "evals/balance-screen",
+      "hypothesis": "The big-bang defaults pass the Phase 4 gate: predators and a prey type alive at the last tick on at least 14 of 16 seeds, and basin_lineage_effective at least 3 on at least 12 (natural-selection.md Phase 4).",
+      "prediction": "Predators alive at the end on 11 to 14 of 16, a prey type on all 16, basin effective at least 3 on at least 12; instinct_drift 0.9 to 1.3, circling about 0.08, saturation about 0.28 (commit b6f9c67).",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.instinct_drift",
+        "eval.circling_share",
+        "eval.output_saturation"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e81-defaults.json (16 seeds x 200000 ticks, the defaults)",
+      "after": "evals/results/e81-defaults.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A reference run, not a comparison. The gate misses on both rows: predators alive at the end on 3 of 16, basin effective at least 3 on 0 of 16 (mean 1.04; whole-run lineage_effective 3.96). Prey alive on 16 of 16. Circling 0.079, saturation 0.289, instinct drift 1.01. Splits are 40% of births (8 to 78% per seed), surging where hunters boomed. Prediction wrong on both gate rows. sim-notes 2026-10-30 E81."
+    },
+    {
+      "id": "E82",
+      "date": "2026-10-30",
+      "branch": "evals/balance-screen",
+      "hypothesis": "A bite and meal pair below the adopted corner (biteMultiplier 20, predatorKillEnergy 600) keeps predators and a prey type alive at the end with families in each basin.",
+      "prediction": "Weak bites with small meals lose predators on 2 or more of 8 seeds; the defaults keep them on at least 7; the adopted arm is bite16 or bite12 with kill600 or kill300; risk: no arm passes the 7-of-8 row.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.predator_presence"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/balance/bite20-kill600.report.json",
+      "after": "evals/screens/results/balance/ (table.md, 12 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen, not a verdict. No arm passes: predators alive at the end on 0 to 4 of 8 (best bite20-kill300 at 4, the defaults 3), basin effective at least 3 on 0 of 8 in every arm, a prey type on 8 of 8 everywhere. Presence rises with the bite (0.10 at bite8-kill150 to 0.67 at the defaults) and so does the split share of births (11.6% to 52.2%). Nothing adopted; reported to the user (no rescue), and the clonal limits (E85) were planned from it."
+    },
+    {
+      "id": "E85",
+      "date": "2026-10-31",
+      "branch": "evals/balance-screen",
+      "hypothesis": "Capping asexual lines (splitClonalMax, splitMaxPerLife, the predator split above one meal) lowers the split share and keeps hunters and families to the end.",
+      "prediction": "Clonal 2 and 3 cut the split share from about 40% to 15-25% and keep predators to the end on more seeds; clonal 1 cuts most but risks hunters; per-life caps do less; families stay near 1.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/clonal/defaults.report.json",
+      "after": "evals/screens/results/clonal/ (8 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen, not a verdict. Every limit cuts the split share (52.2% to 11.1-42.7%) but predators at the end fall from 3/8 to 0-1/8: hunters breed by splitting because they are too few to find mates. Per-life 1 and combined crash the population to about 140 and refill from the floor. The clonal cap at 3 was later adopted on the user's call."
+    },
+    {
+      "id": "E86",
+      "date": "2026-10-31",
+      "branch": "evals/balance-screen",
+      "hypothesis": "A slower predator life history (slow breeding, long handling, carrion) damps the hunter boom and bust and keeps hunters to the end.",
+      "prediction": "Slow breeding lifts predators at the end from 3/8 to 5/8 or more; handling 30 lowers presence but steadies it; carrion helps a little.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/predator-life/defaults.report.json",
+      "after": "evals/screens/results/predator-life/ (6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen. No arm beats the defaults: predators at the end 0-3/8; handling 30 cuts presence to 0.20. Prediction wrong."
+    },
+    {
+      "id": "E87",
+      "date": "2026-10-31",
+      "branch": "evals/balance-screen",
+      "hypothesis": "Patchy space with dispersal (more or wider wall gaps, spread refuges) keeps hunters by recolonisation and raises families per basin by gene flow.",
+      "prediction": "More or wider gaps raise basin_lineage_effective though under 3, and keep predators; spread refuges keep prey but may starve hunters.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/space/defaults.report.json",
+      "after": "evals/screens/results/space/ (5 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen. No arm beats the defaults: predators at the end 0-3/8, maternal lines 1.0-1.2 effective everywhere, one seed lost every prey type with spread refuges. Prediction wrong."
+    },
+    {
+      "id": "E88",
+      "date": "2026-10-31",
+      "branch": "evals/balance-screen",
+      "hypothesis": "The shark rule (split only after splitMateScarceTicks with no mate in view) cuts splits without losing hunters, and a hunter edge in the chase (sprint, sight, agility) lifts catches.",
+      "prediction": "The shark rule cuts the split share to 15-30% with predators at the end 3/8 or more; a faster sprint lifts catches and presence; the pair does best.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "eval.mating_share"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/shark-hunter.grid.json",
+      "after": "not run",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Stopped by the user before any arm finished (2026-10-31); owed when balancing reopens (natural-selection T50). The shark rule at 600 was adopted without it."
     }
   ]
 }

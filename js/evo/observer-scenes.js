@@ -8,6 +8,7 @@ import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events
 import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproaches } from './scene-approach.js';
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
+import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -35,6 +36,7 @@ export function createScenes(config) {
         terrain: createTerrainScene(config),
         basin: createBasinScene(),
         balance: createBalanceScene(),
+        families: createFamilyScene(config),
         carcass: createCarcassScene(config),
         style: createStyle(config),
         condition: createConditionScene(config),
@@ -149,5 +151,6 @@ export function observeScenes(observer, world) {
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
         sampleSeason(scenes.season, scenes.terrain, world);
         sampleBalance(scenes.balance, world);
+        sampleFamilies(scenes.families, world);
     }
 }

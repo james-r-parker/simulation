@@ -42,7 +42,7 @@ describe('huntScore', () => {
         for (const control of Object.values(GROUP_CONTROL)) {
             expect(huntScore(control, idle, { config: {}, view: 350, seed: 1, trials: 16 })).toBe(0);
         }
-    });
+    }, 30000); // 48 full 600-tick trials: under a second alone, several under a busy machine
 
     it('stages a trio and a prey, or one hunter and a prey for the solo control', () => {
         expect(notesFor(GROUP_CONTROL.SENSES).map((n) => n.alive)).toEqual([TRIO + 1, TRIO + 1]);
