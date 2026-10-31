@@ -25,6 +25,26 @@ function types(w) {
 }
 
 describe('reap', () => {
+    it('kills a lethally poisoned body with energy and leaves its remains', () => {
+        const w = lifeWorld();
+        const slot = addBlob(w, { energy: 100, dose: 1, foodEnergy: 200 });
+        reap(w, recordingPolicy([]));
+        expect(w.alive[slot]).toBe(0);
+        expect(event(w, 0)[4]).toBe(DEATH_CAUSE.POISONED);
+        expect(w.dose[slot]).toBe(0);
+        expect(w.foodCount).toBe(1);
+        expect(w.myceliumX[0]).toBe(500);
+        expect(w.myceliumTicks[0]).toBe(w.config.myceliumLife);
+        expect(imbalance(w)).toBeCloseTo(0, 9);
+    });
+
+    it('checks old age before a lethal dose', () => {
+        const w = lifeWorld();
+        addBlob(w, { energy: 100, dose: 2, ageTicks: w.config.maxAgeTicks });
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0)[4]).toBe(DEATH_CAUSE.OLD_AGE);
+    });
+
     it.each([
         ['cost', LOSS_CAUSE.COST, DEATH_CAUSE.STARVED, 0],
         ['no loss', LOSS_CAUSE.NONE, DEATH_CAUSE.STARVED, 0],

@@ -293,7 +293,7 @@ describe('the effect log', () => {
      *   collect of that many events
      */
     function collectBirths(births) {
-        const world = smallWorld({ eventCapacity: 6 * 8 });
+        const world = smallWorld({ eventCapacity: 8 * 8 });
         const log = createEffectLog(world.config.maxAgents);
         let genome = 1;
         for (let n = 0; n < births; n++) {

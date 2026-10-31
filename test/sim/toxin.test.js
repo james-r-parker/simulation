@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EVENT_TYPE } from '../../js/sim/events.js';
 import { createConfig } from '../../js/sim/config.js';
 import { ingestToxin, isSick, stepToxin } from '../../js/sim/toxin.js';
 import { canEatNow, feed } from '../../js/sim/feeding.js';
@@ -59,6 +60,24 @@ describe('toxin config', () => {
 });
 
 describe('toxin dose and meals', () => {
+    it('emits one sickness event on a threshold crossing and can emit again after recovery', () => {
+        const { world, slot } = body({ doseDecay: 1 });
+        world.tick = 37;
+        ingestToxin(world, slot, 100, 0.8);
+        ingestToxin(world, slot, 100, 0.1);
+        expect(world.events.count).toBe(1);
+        expect(Array.from(world.events.data.subarray(0, 4))).toEqual([
+            EVENT_TYPE.AGENT_SICKENED,
+            37,
+            slot,
+            world.genomeId[slot],
+        ]);
+        expect(world.events.data[4]).toBeCloseTo(0.36, 6);
+        stepToxin(world);
+        ingestToxin(world, slot, 100, 0.8);
+        expect(world.events.count).toBe(2);
+    });
+
     it('reduces plant energy, adds dose and keeps the energy ledger balanced', () => {
         const { world, slot } = body();
         meal(world, 0.8);

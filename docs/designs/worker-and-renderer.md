@@ -282,7 +282,7 @@ Phase 4 adds the signals [world-balance.md](world-balance.md) Phase 1 builds in 
 
 The inspect counters are, in order: `ageTicks`, `energy / maxEnergy`, `temperature`, generation, food energy eaten,
 bite energy taken, kills, children, fitness so far, `lastLoss`, `bittenTimer`, `ateTimer`, and the slot's `vision`,
-`baseSize` and `childShare` trait values (0 when `traitsEnabled` is false). `INSPECT_COUNTERS` in `inspect.js` lists the 15. Fitness so far is
+`baseSize` and `childShare` trait values (0 when `traitsEnabled` is false). `INSPECT_COUNTERS` in `inspect.js` lists the 16, including toxin dose. Fitness so far is
 `policy.fitness(observer, slot, config)`.
 
 **Effect records** (8 words: `kind` and `tick` as `Uint32`, `x` and `y` as `Float32`, then `a`, `b`, `c` and `d` as `Uint32`):

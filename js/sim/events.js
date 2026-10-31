@@ -18,6 +18,7 @@ export const EVENT_TYPE = Object.freeze({
     DROUGHT_STARTED: 11,
     MERIT_SUMMARY: 14,
     LINE_PROVEN: 15,
+    AGENT_SICKENED: 16,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */
@@ -35,6 +36,7 @@ export const DEATH_CAUSE = Object.freeze({
     EATEN: 1,
     COLLISION: 2,
     OLD_AGE: 3,
+    POISONED: 4,
 });
 
 /** Why a birth was blocked, stored in the `cause` field of `BIRTH_BLOCKED`. */

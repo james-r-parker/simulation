@@ -25,6 +25,7 @@ export const INSPECT_COUNTERS = Object.freeze([
     'vision',
     'baseSize',
     'childShare',
+    'dose',
 ]);
 
 const RAY_CHANNEL_NAMES = Object.freeze([
@@ -160,6 +161,7 @@ function writeCounters(f32, start, { source, slot }) {
     f32[start + 12] = world.vision[slot];
     f32[start + 13] = world.baseSize[slot];
     f32[start + 14] = world.childShare[slot];
+    f32[start + 15] = world.dose[slot];
 }
 
 /**

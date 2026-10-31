@@ -13,7 +13,7 @@ import { TRAIT_MAX } from './traits.js';
 const MAX_SEED = 4294967295; // 2^32 - 1
 const PI = 3.141592653589793;
 const MAX_U16 = 65535;
-const MAX_EVENTS_PER_SLOT = 6; // up to 3 call, release or refuse events, 1 death and 1 birth
+const MAX_EVENTS_PER_SLOT = 8; // calls, sickness, death and birth events share the tick ring
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
 const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];

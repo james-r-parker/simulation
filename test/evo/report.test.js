@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { configHash, createConfig } from '../../js/sim/config.js';
 import { buildReport, seedFields, validateReport } from '../../js/evo/report.js';
 
-const config = createConfig({ seed: 7, maxAgents: 600 });
+const config = createConfig({ seed: 7, maxAgents: 600, eventCapacity: 8192 });
 const perSeed = [
     { 'eval.a': { value: 1 }, 'eval.b': { value: null, reason: 'no archive' } },
     { 'eval.a': { value: 3 }, 'eval.b': { value: null, reason: 'no archive' } },

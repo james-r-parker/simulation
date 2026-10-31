@@ -229,14 +229,14 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Ids and codes
 
-| Code set      | Values                                                                                                                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                 |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                                                                                                                             |
-| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                       |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                      |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15 |
-| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                       |
+| Code set      | Values                                                                                                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                                     |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3, `poisoned` 4                                                                                                                                                                                                   |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                                           |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                                          |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15, `AgentSickened` 16 |
+| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                                           |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -265,10 +265,11 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 | `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                 |
 | `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                       |
 | `LineProven`         | `slot` (the child), `genomeId`, `parentA`, `parentB`, `lineageId`; debug level in `drainEvents` (`proof.js`)           |
+| `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                   |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
-ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 6 x maxAgents`
-(a slot adds at most 3 call, release or refuse events, 1 death and 1 birth per tick).
+ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents`
+(the per-slot budget includes calls, sickness, death and birth events).
 
 ## Energy - `energy.js`
 

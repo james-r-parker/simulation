@@ -192,13 +192,13 @@ describe('validateConfig error text', () => {
     });
 
     it('states the event capacity and the product', () => {
-        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 2999 }))).toBe(
-            'eventCapacity: 2999 is below 6 x maxAgents (3000)',
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 3999 }))).toBe(
+            'eventCapacity: 3999 is below 8 x maxAgents (4000)',
         );
     });
 
-    it('accepts an event capacity of exactly 6 x maxAgents', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 3000 })).not.toThrow();
+    it('accepts an event capacity of exactly 8 x maxAgents', () => {
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4000 })).not.toThrow();
     });
 
     it('checks the weight storage before the event capacity', () => {
