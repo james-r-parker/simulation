@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
 import { creditIntake } from '../../js/sim/merit.js';
-import { splitAll, splitGateOpen } from '../../js/sim/reproduction.js';
+import { advancePregnancies, splitAll, splitGateOpen } from '../../js/sim/reproduction.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
@@ -86,6 +86,69 @@ describe('splitMaxPerLife', () => {
     });
 });
 
+describe('splitClonalMax', () => {
+    /** The tests' maturity age, so a newborn cannot split again in the pass that made it. */
+    const MATURE = 10;
+
+    /**
+     * Splits the slot once, ready again first.
+     * @param {any} w the world
+     * @param {number} slot the splitter
+     * @returns {number} the child slot, or -1 when it did not split
+     */
+    function split(w, slot) {
+        w.ageTicks[slot] = MATURE;
+        w.cooldown[slot] = 0;
+        w.energy[slot] = 1000;
+        const before = w.population;
+        splitAll(w, recordingPolicy([]));
+        return w.population > before ? w.genomeId.indexOf(w.nextId - 1) : -1;
+    }
+
+    it("gives a split child its parent's clonal depth plus one, and a founder depth 0", () => {
+        const { w, slot } = blobWorld({ splitClonalMax: 0, maturityTicks: MATURE });
+        expect(w.clonalDepth[slot]).toBe(0);
+        const child = split(w, slot);
+        expect(w.clonalDepth[child]).toBe(1);
+        const grandchild = split(w, child);
+        expect(w.clonalDepth[grandchild]).toBe(2);
+    });
+
+    it('closes the gate at the cap: two asexual generations in a row, then the line must mate', () => {
+        const { w, slot } = blobWorld({ splitClonalMax: 2, maturityTicks: MATURE });
+        const child = split(w, slot);
+        expect(splitGateOpen(w, child)).toBe(true);
+        const grandchild = split(w, child);
+        expect(grandchild).toBeGreaterThanOrEqual(0);
+        w.ageTicks[grandchild] = MATURE;
+        w.cooldown[grandchild] = 0;
+        w.energy[grandchild] = 1000;
+        expect(splitGateOpen(w, grandchild)).toBe(false);
+        w.ageTicks[slot] = MATURE;
+        expect(splitGateOpen(w, slot)).toBe(true);
+    });
+
+    it('starts a mated child at depth 0, even from a mother at the cap', () => {
+        const { w, slot: mother } = blobWorld({ splitClonalMax: 2 }, { clonalDepth: 2 });
+        const father = addBlob(w, { energy: 1000, clonalDepth: 1 });
+        w.fatherId[mother] = w.genomeId[father];
+        w.pregnancy[mother] = 1;
+        advancePregnancies(w, recordingPolicy([]));
+        const child = w.alive.indexOf(1, father + 1);
+        expect(child).toBeGreaterThan(father);
+        expect(w.clonalDepth[child]).toBe(0);
+        expect(splitGateOpen(w, child)).toBe(true);
+    });
+
+    it('is unlimited at 0, and a reused slot starts at depth 0', () => {
+        const { w, slot } = blobWorld({ splitClonalMax: 0 });
+        w.clonalDepth[slot] = 200;
+        expect(splitGateOpen(w, slot)).toBe(true);
+        freeAgent(w, slot);
+        expect(w.clonalDepth[slot]).toBe(0);
+    });
+});
+
 describe('counters at birth', () => {
     it('start at 0 in a child and in a reused slot', () => {
         const { w, slot } = blobWorld({ splitMinEnergy: 600 });
@@ -123,7 +186,7 @@ describe('determinism', () => {
 describe('config', () => {
     it('defaults splitDeliberateShareMin to 0.2 and the other keys to no-ops', () => {
         const config = createConfig({});
-        expect([config.splitDeliberateShareMin, config.splitMaxPerLife]).toEqual([0.2, 0]);
+        expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.splitClonalMax]).toEqual([0.2, 0, 0]);
     });
 
     it.each([
@@ -133,6 +196,9 @@ describe('config', () => {
         ['splitMaxPerLife', 3, true],
         ['splitMaxPerLife', -1, false],
         ['splitMaxPerLife', 1.5, false],
+        ['splitClonalMax', 2, true],
+        ['splitClonalMax', -1, false],
+        ['splitClonalMax', 0.5, false],
     ])('%s = %s accepted: %s', (key, value, accepted) => {
         if (accepted) {
             expect(createConfig({ [key]: value })[key]).toBe(value);
