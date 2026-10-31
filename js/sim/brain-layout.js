@@ -1,11 +1,11 @@
-// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v2 layout, top 2 hits per channel) from a config.
+// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v3 layout, top 2 hits per channel) from a config.
 
 /**
  * The name of the brain layout this file defines. Stamped into every genome, archive and champion file and checked on
  * load, so a file written under a layout of the same sizes but different meaning (another channel order, hit count or
  * block order) is refused by name. Change it whenever a gene's meaning or position changes.
  */
-export const BRAIN_LAYOUT_NAME = 'pooled-v2';
+export const BRAIN_LAYOUT_NAME = 'pooled-v3';
 
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
@@ -52,8 +52,11 @@ export const HIT_STRIDE = 3;
 /** Values per pooled channel: `POOLED_HITS x HIT_STRIDE`, the strongest hit first. */
 export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
 
-/** Pooled values at the head of the brain's input row: `POOLED_CHANNELS.length x POOLED_STRIDE` (48). */
-export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE;
+/** Hue values of the two pooled food hits. */
+export const FOOD_HUE_VALUES = 2;
+
+/** Pooled values at the head of the brain's input row: 48 ray values and two food hues (50). */
+export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE + FOOD_HUE_VALUES;
 
 /** Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */
 export const EXTRA_INPUTS = 33;
@@ -152,6 +155,7 @@ export function layoutStamp(layout) {
  * @typedef {object} InputOffsets
  * @property {Readonly<Record<string, number>>} pooled index of each pooled channel's strongest hit in the brain's
  *   input row (its cosine and sine follow, then the second hit's three values); `kin` is among them
+ * @property {number} foodHueStart index of the two food hues after the ray values
  * @property {number} bodyStart index of the body block in the brain's input row
  * @property {number} scentStart index of the first scent input (the danger antennae)
  * @property {number} huntScent index of the hunt scent here (the left and right antennae follow)
@@ -177,6 +181,7 @@ export function inputOffsets(config) {
     const at = (/** @type {number} */ offset) => POOLED_VALUES + offset;
     return Object.freeze({
         pooled: Object.freeze(pooled),
+        foodHueStart: POOLED_VALUES - FOOD_HUE_VALUES,
         bodyStart: POOLED_VALUES,
         scentStart: at(BODY_INPUT.SCENT),
         huntScent: at(BODY_INPUT.HUNT_SCENT),

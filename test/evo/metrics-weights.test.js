@@ -97,6 +97,14 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
         expect(weightMetrics(observer)['eval.input_active_share'].value).toBe(1 / observer.activity.inputCount);
     });
 
+    it('includes hue activity in the 83-input denominator', () => {
+        const { observer } = setup(1);
+        observer.activity.samples = 2;
+        observer.activity.active[48] = 2;
+        observer.activity.active[49] = 1;
+        expect(weightMetrics(observer)['eval.input_active_share'].value).toBe(3 / (2 * 83));
+    });
+
     it('reports the threat and prey channels apart, from the same activity counts', () => {
         const { observer } = setup(1);
         expect(weightMetrics(observer)['eval.input_active_share.threat'].value).toBeNull();

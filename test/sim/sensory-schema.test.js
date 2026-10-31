@@ -22,7 +22,7 @@ import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sens
 /**
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the slot
- * @returns {number[]} the slot's 81 brain inputs
+ * @returns {number[]} the slot's 83 brain inputs
  */
 function pooledRow(w, slot) {
     const at = slot * w.layout.inputCount;
@@ -30,11 +30,11 @@ function pooledRow(w, slot) {
 }
 
 describe('the sensory schema', () => {
-    it('names the layout and counts 81 brain inputs: 48 pooled values then 33 body inputs', () => {
-        expect(BRAIN_LAYOUT_NAME).toBe('pooled-v2');
-        expect([POOLED_HITS, HIT_STRIDE, POOLED_STRIDE, POOLED_VALUES, EXTRA_INPUTS]).toEqual([2, 3, 6, 48, 33]);
-        expect(brainLayout(createConfig()).inputCount).toBe(81);
-        expect(brainLayout(createConfig({ rayCount: 8 })).inputCount).toBe(81);
+    it('names the layout and counts 83 brain inputs: 50 pooled values then 33 body inputs', () => {
+        expect(BRAIN_LAYOUT_NAME).toBe('pooled-v3');
+        expect([POOLED_HITS, HIT_STRIDE, POOLED_STRIDE, POOLED_VALUES, EXTRA_INPUTS]).toEqual([2, 3, 6, 50, 33]);
+        expect(brainLayout(createConfig()).inputCount).toBe(83);
+        expect(brainLayout(createConfig({ rayCount: 8 })).inputCount).toBe(83);
     });
 
     it('orders the pooled channels as ray channels 1 to 8, each at channel x 6 (strength, cos, sin, then the second hit)', () => {
@@ -44,17 +44,18 @@ describe('the sensory schema', () => {
         expect(pooled).toEqual({ food: 0, threat: 6, prey: 12, other: 18, kin: 24, wall: 30, obstacle: 36, smoke: 42 });
     });
 
-    it('puts the body block at 48 and the scent, call, sex and memory inputs at fixed offsets', () => {
+    it('puts the body block at 50 and the scent, call, sex and memory inputs at fixed offsets', () => {
         const off = inputOffsets(createConfig());
         expect(off).toMatchObject({
-            bodyStart: 48,
-            scentStart: 65,
-            huntScent: 69,
-            heardAlarm: 72,
-            heardHunt: 75,
-            sex: 78,
-            memoryA: 79,
-            memoryB: 80,
+            foodHueStart: 48,
+            bodyStart: 50,
+            scentStart: 67,
+            huntScent: 71,
+            heardAlarm: 74,
+            heardHunt: 77,
+            sex: 80,
+            memoryA: 81,
+            memoryB: 82,
             rawBodyStart: 16 * RAY_CHANNELS,
         });
         expect(BODY_INPUT).toMatchObject({ SCENT: 17, HUNT_SCENT: 21, HEARD_ALARM: 24, HEARD_HUNT: 27, SEX: 30 });

@@ -15,7 +15,7 @@ import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js
  * The naive per-channel reference: scan every ray for the channel, keep the largest proximity (the first ray on a tie).
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the slot
- * @returns {number[]} the 48 pooled values then the body block
+ * @returns {number[]} the 50 pooled values then the body block
  */
 function reference(w, slot) {
     const { rayCount } = w.config;
@@ -35,6 +35,7 @@ function reference(w, slot) {
             out.push(...(k === undefined ? [0, 0, 0] : [proximity(k), w.rayCos[k], w.raySin[k]]));
         }
     }
+    out.push(0, 0);
     const body = raw + rayCount * RAY_CHANNELS;
     out.push(...w.inputs.subarray(body, raw + w.layout.rawInputCount));
     return out.map(Math.fround);

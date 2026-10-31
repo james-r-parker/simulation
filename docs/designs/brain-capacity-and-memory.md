@@ -123,10 +123,14 @@ ray wins a tie), each as 3 values, so 6 values per channel and a channel's offse
 A missing detection is 0 in all three values; a channel with one hit leaves its second slot at 0. The brain tells a
 real hit from a missing one by `strength`. Every pooled input lies in [-1, 1].
 
+### Food hues
+
+The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 48 and 49. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 50.
+
 ### Body inputs
 
 33 inputs after the pooled block, written by `writeBodyInputs` and `scent-inputs.js`. The absolute input offset is the
-pooled value count (48 now) plus the body offset.
+pooled value count (50 now) plus the body offset.
 
 | Group             | Body offset | Count | Meaning                                                                                 |
 | ----------------- | ----------- | ----- | --------------------------------------------------------------------------------------- |
@@ -148,11 +152,10 @@ pooled value count (48 now) plus the body offset.
 Each extension changes this schema, the test and `ARCHIVE_VERSION` in one task. The flora hue value of one food hit is
 a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 
-| Step                   | Change                                                                                                                                | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
-| Built                  | Eight channels, 2 hits, 33 body inputs                                                                                                | 81     | 48            | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
-| Flora Phase 2 (+2)     | One hue value for each of the two strongest food hits, at pooled indices 48 and 49, after the 48 ray values and before the body block | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
-| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55                                 | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| Step                   | Change                                                                                                | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
+| Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                   | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
 
 ## Hypotheses
 
