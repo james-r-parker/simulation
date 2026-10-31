@@ -16,6 +16,7 @@ import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
 import { noteProofBirth, splitBraked } from './proof.js';
+import { noteMateScarcityBirth } from './mate-scarcity.js';
 import { noteClonalBirth, noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
@@ -208,6 +209,7 @@ function giveBirth(world, policy, mother, cause) {
         noteSplit(world, mother);
     }
     noteClonalBirth(world, { child, mother, isMate });
+    noteMateScarcityBirth(world, child);
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;
     policy.childBrain(world, child, mother, world.birthOptions);

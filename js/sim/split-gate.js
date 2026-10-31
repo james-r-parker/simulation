@@ -2,12 +2,15 @@
 // cap (natural-selection Phase 4): a line may split `splitClonalMax` generations in a row, then it must mate. The counters are per-slot typed arrays that `freeAgent` zeroes, so a
 // birth starts at 0; they are derived state and are not in `worldHash`. No RNG, no clock, no allocation.
 
+import { mateScarce } from './mate-scarcity.js';
+
 /** @typedef {import('./world.js').World} World */
 
 /**
  * @returns {[Uint32ArrayConstructor, string, number][]} the allocation specs for `allocateWorld`, one element per slot:
  *   `mealsTotal` and `mealsDeliberate` (meal and bite credits), `splitsDone` (splits this life) and `clonalDepth`
- *   (split births since the line last mated: 0 for a founder or a mated child)
+ *   (split births since the line last mated: 0 for a founder or a mated child), and `mateSeenAt` (the last tick a
+ *   possible mate was in view, `mate-scarcity.js`)
  */
 export function splitGateSpecs() {
     return [
@@ -15,6 +18,7 @@ export function splitGateSpecs() {
         [Uint32Array, 'mealsDeliberate', 1],
         [Uint32Array, 'splitsDone', 1],
         [Uint32Array, 'clonalDepth', 1],
+        [Uint32Array, 'mateSeenAt', 1],
     ];
 }
 
@@ -63,6 +67,9 @@ export function splitKeysAllow(world, slot) {
         return false;
     }
     if (splitClonalMax > 0 && world.clonalDepth[slot] >= splitClonalMax) {
+        return false;
+    }
+    if (!mateScarce(world, slot)) {
         return false;
     }
     return (

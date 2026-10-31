@@ -8,6 +8,8 @@ import { isKin } from './kin.js';
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
 import { visionOf } from './traits.js';
 
+import { noteMatesSeen } from './mate-scarcity.js';
+
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
@@ -161,6 +163,7 @@ export function castRays(world, hash, slot) {
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
     const count = gatherNear(world, hash, slot);
+    noteMatesSeen(world, slot, count);
     const { rayCos, raySin } = world;
     const rowBase = slot * world.layout.rawInputCount;
     for (let k = 0; k < world.config.rayCount; k++) {

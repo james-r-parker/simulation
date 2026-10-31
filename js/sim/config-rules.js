@@ -82,4 +82,5 @@ export const FEATURE_RULES = {
     splitDeliberateShareMin: UNIT,
     splitMaxPerLife: int(0),
     splitClonalMax: int(0),
+    splitMateScarceTicks: int(0),
 };
