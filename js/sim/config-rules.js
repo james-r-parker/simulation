@@ -61,6 +61,7 @@ export const FEATURE_RULES = {
     seedBankTicks: int(1, 2147483647),
     sproutRate: UNIT,
     seedStock: UNIT,
+    floraMutation: num(0),
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),

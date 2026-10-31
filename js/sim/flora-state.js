@@ -42,6 +42,7 @@ export function allocateFlora(world) {
     world.floraDisc = { cx: 0, cy: 0, discRadius: 0, localOnly: false };
     world.floraIntake = new Float64Array(24);
     world.floraMeals = new Float64Array(2);
+    world.floraTraits = new Float64Array(5);
     for (const name of MYCELIUM_ARRAYS) {
         world[name] = name === 'myceliumTicks' ? new Int32Array(myceliumMax) : new Float32Array(myceliumMax);
     }
@@ -85,6 +86,9 @@ export function assignFlora(world) {
             world.patchSpecies[patch] = species;
             for (const field of PATCH_FIELDS.slice(0, -1)) {
                 world[`patch${field}`][patch] = row[field.toLowerCase()];
+            }
+            if (world.patchStart[patch] >= 1) {
+                world.patchStart[patch] = 0;
             }
             patch++;
         }

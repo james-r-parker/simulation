@@ -24,6 +24,7 @@ export const DEFAULTS = deepFreeze({
     seedBankTicks: 432000,
     sproutRate: 0.000005,
     seedStock: 0.3,
+    floraMutation: 0.08,
     myceliumLife: 144000,
     myceliumMax: 200,
     myceliumRadius: 150,
