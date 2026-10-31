@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EVENT_TYPE } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { createConfig } from '../../js/sim/config.js';
 import { ingestToxin, isSick, stepToxin } from '../../js/sim/toxin.js';
 import { canEatNow, feed } from '../../js/sim/feeding.js';
@@ -10,7 +10,8 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { spawnFoodItem } from '../../js/sim/spawn.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { allocAgent, freeAgent } from '../../js/sim/world.js';
-import { addBlob, imbalance, lifeWorld } from './helpers/life-world.js';
+import { STEP_PHASES } from '../../js/sim/step.js';
+import { addBlob, imbalance, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -161,5 +162,35 @@ describe('sickness and recovery', () => {
         expect(() => assertInvariants(world)).toThrow('dose');
         world.dose[slot] = NaN;
         expect(() => assertInvariants(world)).toThrow('dose');
+    });
+    it('reaps a newly lethal meal before any later decay can erase its cause', () => {
+        const { world, slot } = body({ toxinDose: 2, doseDecay: 10 });
+        world.dose[slot] = 0.1;
+        meal(world, 1);
+        buildHash(world.hash, world);
+        const lifecycle = STEP_PHASES.find((phase) => phase.name === 'lifecycle');
+        expect(lifecycle).toBeDefined();
+        lifecycle?.run(world, recordingPolicy([]));
+        expect(world.alive[slot]).toBe(0);
+        const causes = [];
+        for (let at = 0; at < world.events.count * EVENT_STRIDE; at += EVENT_STRIDE) {
+            if (world.events.data[at] === EVENT_TYPE.AGENT_DIED) {
+                causes.push(world.events.data[at + 4]);
+            }
+        }
+        expect(causes).toEqual([DEATH_CAUSE.POISONED]);
+    });
+
+    it('cannot accumulate a lethal default dose while sickness blocks further meals', () => {
+        const { world, slot } = body();
+        const c = world.config;
+        expect(c.sickDose + c.flora.toxiccap.toxicity * c.toxinDose).toBeLessThan(c.lethalDose);
+        for (let bite = 0; bite < 5; bite++) {
+            while (!canEatNow(world, slot)) {
+                stepToxin(world);
+            }
+            ingestToxin(world, slot, 100, c.flora.toxiccap.toxicity);
+            expect(world.dose[slot]).toBeLessThan(c.lethalDose);
+        }
     });
 });

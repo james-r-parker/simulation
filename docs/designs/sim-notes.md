@@ -1537,3 +1537,11 @@ Both 8 seeds x 200000 ticks on the seeds of E82; predators alive at the last tic
 - Plant intake counters record stored energy before food slots are cleared. The observer differences these counters after burn-in; same-tick slot reuse cannot hide a meal.
 - A blocked mycelium disc refuses its fungus source and redraws patch/background rather than moving fungus away from the death site.
 - E69-E74, metric power and performance measurements remain owed while balancing uses the CPU. The draft is rebased on balancing PR #223 (`f649cd8`) with goldens re-pinned.
+
+### 2026-10-31 - Flora Phase 2 hue and toxin instruments
+
+`pooled-v3` has 83 inputs and 50 skip rows: the two food hues follow the 48 pooled ray values, before the 33 body inputs. This changes gene meanings and the archive codec version; a v2 row must not be imported as v3. A pooled food pair can be two rays hitting the same item, so the hue discrimination fixture tests an aligned first decision with random target side, not sustained navigation or evolved avoidance.
+
+The starting cap gives dose 0.36, but sick agents cannot eat until below 0.3. The next cap meal stays below 0.66: the default lethal threshold 1.0 and all E71 lethal arms (0.8 to 1.4) are unreachable through these meals. The code preserves the approved starting values; E71 and world-balance H4 owe a reachable exposure specification/power check before claiming poison deaths. A fresh lethal meal in a deliberately reachable fixture dies in the same lifecycle, before a later decay can erase its cause.
+
+The toxin metrics use exact plant item counts even when net stored energy is zero, 1000-tick plant availability, poison/all death events and sick/all alive agent-ticks. All have denominator fixtures and null reasons. E71, metric power, survival and standalone performance comparisons were not run while the CPU was reserved; no screen value was adopted. Node and Chromium agree on both long goldens after the layout, dose state and cap mix change. The worker's busy effect stream is 1410 records with hash `be9383a3e0039426`, without dropped records.

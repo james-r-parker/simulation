@@ -389,7 +389,7 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
 - Body inputs 31 to 33 (offsets 30 to 32 from the start of the body block, `BODY_INPUT`): `sex` (0 female, 1 male)
   and last tick's `MEMORY_A` and `MEMORY_B` outputs. There are no season inputs: the body block is 33 inputs.
   `writeBodyInputs` writes offsets 0 to 16 and 30 to 32. The block sits at `rawBodyStart` in the raw `inputs` row and at
-  `POOLED_VALUES` (48) in the pooled row.
+  `POOLED_VALUES` (50) in the pooled row.
 - The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `4 x eraSeasonTicks`, so every rule keyed by season index or
   phase - `foodScarcity`, `energyDrain`, `reproductionBonus` and `temperatureModifier` - stretches with it.
@@ -523,8 +523,8 @@ Row layout, all row-major:
 | leak genes  | `leakStart + j`, one per hidden unit                                                              |
 
 `OUTPUT_COUNT` is 11 (`OUTPUT_INDEX`: thrust 0, turn 1, sprint 2, mate 3, bite 4, alarm 5, smoke 6, hunt 7, `SPLIT` 8,
-`MEMORY_A` 9, `MEMORY_B` 10), `EXTRA_INPUTS` 33, `POOLED_VALUES` 48 and `TRAIT_GENES` 4, so `weightCount = inputCount x H + H x H + H + H x G + G + POOLED_VALUES x G + TRAIT_GENES + H` with `G = geneOutputs` = 10 (`OUTPUT_COUNT` less `SPLIT`, which has no genes and reads 0):
-81 inputs (`inputCount = POOLED_VALUES + EXTRA_INPUTS`: the 48 pooled values then the 33 body inputs) and 4494 weights at the defaults; the raw `inputs` row of `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = 177 values is what `poolRays` (`ray-pool.js`) reads. For each of the eight ray channels, `poolRays` keeps the two rays with the largest proximity (the first ray wins a tie) as (strength, cosine, sine of the ray's angle in the agent's frame), strongest first; an unused slot is 0. It allocates nothing. The genes after `bOut` never enter the sums below. The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
+`MEMORY_A` 9, `MEMORY_B` 10), `EXTRA_INPUTS` 33, `POOLED_VALUES` 50 and `TRAIT_GENES` 4, so `weightCount = inputCount x H + H x H + H + H x G + G + POOLED_VALUES x G + TRAIT_GENES + H` with `G = geneOutputs` = 10 (`OUTPUT_COUNT` less `SPLIT`, which has no genes and reads 0):
+83 inputs (`inputCount = POOLED_VALUES + EXTRA_INPUTS`: 48 ray values, two food hues then the 33 body inputs) and 4578 weights at the defaults; the raw `inputs` row of `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = 177 values is what `poolRays` (`ray-pool.js`) reads. For each of the eight ray channels, `poolRays` keeps the two rays with the largest proximity (the first ray wins a tie) as (strength, cosine, sine of the ray's angle in the agent's frame), strongest first; an unused slot is 0. The two matching food hues follow the 48 ray values. It allocates nothing. The genes after `bOut` never enter the sums below. The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
 `bHidden[j]`, then adds `wIn[i, j] x x_i` for `i` ascending, **skipping every `i` whose input is exactly 0**, then
 `wRec[k, j] x h_k` for `k` ascending. `h'_j = Math.fround(detTanh(sum))`. Outputs sum `bOut[o]` then
 `wOut[j, g] x h'_j` for `j` ascending, then (the skip block, genome only) `wSkip[i, g] x pooled_i` for the nonzero pooled values `i` ascending, then `detTanh`; the `SPLIT` output's sum is 0.

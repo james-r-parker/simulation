@@ -231,9 +231,11 @@ The bench times each phase by calling its `run` directly.
   The event ring holds `eventCapacity` records per tick and throws the same way when a tick overflows it.
 - Obstacles are not in the hash. `castRays` and `integrate` test all `obstacleCount` obstacles directly.
 
+The toxin keys are numeric and always active: `toxinDose` 0.45, `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008 and `lethalDose` 1.0. [flora.md](flora.md) defines dose, cost, sickness and recovery; `sickDose` must be below `lethalDose`.
+
 ### Sensing
 
-`brainLayout(config).inputCount` is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 9 + 35` (179 at 16 rays). Rays are evenly spaced over 360 degrees
+`brainLayout(config).inputCount` is `POOLED_VALUES + EXTRA_INPUTS` = 83: 48 pooled ray values, two matching food hues and 33 body values. The raw row is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 9 + 33` (177 at 16 rays); `rayHue` carries the food hue separately. Rays are evenly spaced over 360 degrees
 from the heading. A ray walks the cells it crosses (DDA), tests every circle in a cell, and stops at the first cell
 whose nearest hit lies inside that cell's stretch of the ray; the obstacles and the walls are tested directly.
 
