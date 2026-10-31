@@ -1,3 +1,4 @@
+import { ageMycelium } from './mycelium.js';
 // One simulation tick: the phases in order, per-phase overrides, and the tick and phase added to any failure.
 import { signalAll } from './calls.js';
 import { applyCosts } from './energy.js';
@@ -97,6 +98,7 @@ function lifecycle(world, policy) {
  * @returns {void}
  */
 function field(world) {
+    ageMycelium(world);
     regrowPatches(world);
     spawnFood(world);
     ageFood(world);

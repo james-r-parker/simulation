@@ -1,6 +1,6 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
-import { checkFlora } from './config-flora.js';
+import { checkFlora, MYCELIUM_RULES } from './config-flora.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
@@ -26,6 +26,7 @@ const EFFICIENCY = { type: 'num', gt: 0, max: 1 };
 /** @type {Record<string, Rule>} */
 const RULES = {
     flora: { type: 'flora' },
+    ...MYCELIUM_RULES,
     seed: int(0, MAX_SEED),
     worldWidth: num(1000, 100000),
     worldHeight: num(1000, 100000),

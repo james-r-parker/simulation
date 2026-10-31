@@ -141,7 +141,9 @@ describe('validateConfig error text', () => {
     it('lists the known keys for an unknown top-level key', () => {
         const text = message(() => createConfig({ ...SIMPLE_WORLD, bogus: 1 }));
         expect(
-            text.startsWith('config.bogus is 1; expected no such key (known: flora, seed, worldWidth, worldHeight,'),
+            text.startsWith(
+                'config.bogus is 1; expected no such key (known: flora, myceliumLife, myceliumMax, myceliumRadius, seed, worldWidth, worldHeight,',
+            ),
         ).toBe(true);
     });
 

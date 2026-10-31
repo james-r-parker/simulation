@@ -1,4 +1,5 @@
 // Allocates and checks the patch and item trait records for flora.
+import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_NAMES } from './config-flora.js';
 
 /** Flora fields included in every world checkpoint. */
@@ -29,6 +30,9 @@ export function allocateFlora(world) {
     const { foodPatchCount, maxFood, myceliumMax } = world.config;
     world.floraDisc = { cx: 0, cy: 0, discRadius: 0, localOnly: false };
     world.floraIntake = new Float64Array(24);
+    for (const name of MYCELIUM_ARRAYS) {
+        world[name] = name === 'myceliumTicks' ? new Int32Array(myceliumMax) : new Float32Array(myceliumMax);
+    }
     world.patchSpecies = new Uint8Array(foodPatchCount);
     for (const field of PATCH_FIELDS) {
         world[`patch${field}`] = new Float32Array(foodPatchCount);

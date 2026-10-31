@@ -1,5 +1,14 @@
 // Validates the six flora archetypes used by the species system.
 
+import { int, positive } from './config-rules.js';
+
+/** Validation rules for the mycelium pool. */
+export const MYCELIUM_RULES = {
+    myceliumLife: int(1, 2147483647),
+    myceliumMax: int(1, 1000),
+    myceliumRadius: positive(),
+};
+
 /** Stable species indices, shared by patch and food records. */
 export const FLORA_NAMES = ['grass', 'berry', 'nut', 'flower', 'fungus', 'toxiccap'];
 
