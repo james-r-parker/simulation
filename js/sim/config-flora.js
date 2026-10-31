@@ -90,7 +90,7 @@ export const FLORA_DEFAULTS = {
         range: 0,
     },
     toxiccap: {
-        share: 0,
+        share: 3,
         energy: 1.2,
         energySpread: 0.2,
         radius: 1,

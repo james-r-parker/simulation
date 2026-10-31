@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { brainLayout } from '../js/sim/brain-layout.js';
+import { BRAIN_LAYOUT_NAME, brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { validateChampion } from '../js/evo/league.js';
@@ -14,8 +14,8 @@ import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { describeSubject, setScores } from './lib/probe-report.mjs';
 
-/** The only brain layout there is; a champion file names its sizes, not a layout. */
-const LAYOUT_NAME = 'pooled-v2';
+/** The current stamped layout accepted by probe champions. */
+const LAYOUT_NAME = BRAIN_LAYOUT_NAME;
 const KNOWN = [...SCENARIOS.map((s) => s.name), GROUP_SCENARIO];
 const USAGE =
     'usage: probe:memory [--champions <dir>] [--scenarios <name,...>] [--seed <n>] [--trials <n>] [--config <file.json>] [--no-references]';

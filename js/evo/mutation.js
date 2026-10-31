@@ -72,8 +72,8 @@ export function mutateWeights(row, sigma, rng, options = {}) {
 /**
  * Fills a row with a random brain in place. Draw order: wIn, wRec, wOut, then wSkip, each index 0 up; biases draw
  * nothing. Weights into hidden units have standard deviation `1 / sqrt(inputCount + hidden)`, weights into outputs
- * `1 / sqrt(hidden)`, skip weights `1 / sqrt(POOLED_VALUES)` (0.144, under `wOut`'s 0.177 at 32 hidden: a skip input
- * is one of 48 pooled values, most of them 0 on any tick, so a birth reflex is a nudge on the output and the hidden
+ * `1 / sqrt(hidden)`, skip weights `1 / sqrt(POOLED_VALUES)` (0.141, under `wOut`'s 0.177 at 32 hidden: a skip input
+ * is one of 50 pooled values, most of them 0 on any tick, so a birth reflex is a nudge on the output and the hidden
  * layer still decides), biases and trait genes are 0 and leak genes are `leakGeneStart`.
  * @param {Float32Array} row the weight row, `layout.weightCount` floats
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result

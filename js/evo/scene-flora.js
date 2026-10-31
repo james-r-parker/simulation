@@ -1,4 +1,6 @@
 // Measures plant diet composition and the change of diet between seasons.
+import { FOOD_KIND } from '../sim/carcass.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { FLORA_NAMES } from '../sim/config-flora.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok } from './metrics-stats.js';
@@ -6,12 +8,20 @@ import { none, ok } from './metrics-stats.js';
 const SEASONS = 4;
 
 /**
- * @returns {{energy: Float64Array, mark: Float64Array}} empty after-burn-in intake and the last observed counters
+ * @returns {Record<string, any>} empty after-burn-in diet and toxin observations
  */
 export function createFloraScene() {
     return {
         energy: new Float64Array(SEASONS * FLORA_NAMES.length),
         mark: new Float64Array(SEASONS * FLORA_NAMES.length),
+        meals: new Float64Array(2),
+        mealMark: new Float64Array(2),
+        available: new Float64Array(2),
+        deaths: 0,
+        poisoned: 0,
+        agentTicks: 0,
+        sickTicks: 0,
+        lastTick: -1,
     };
 }
 
@@ -22,12 +32,94 @@ export function createFloraScene() {
  * @returns {void}
  */
 export function trackFlora(scene, world) {
+    if (scene.lastTick === world.tick) {
+        return;
+    }
+    scene.lastTick = world.tick;
+    trackMeals(scene, world);
+    if (world.tick > BURN_IN_TICKS) {
+        trackCondition(scene, world);
+        trackDeaths(scene, world);
+        if (world.tick % 1000 === 0) {
+            sampleAvailability(scene, world);
+        }
+    }
     for (let i = 0; i < scene.energy.length; i++) {
         if (world.tick > BURN_IN_TICKS) {
             scene.energy[i] += world.floraIntake[i] - scene.mark[i];
         }
         scene.mark[i] = world.floraIntake[i];
     }
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function trackMeals(scene, world) {
+    for (let i = 0; i < 2; i++) {
+        if (world.tick > BURN_IN_TICKS) {
+            scene.meals[i] += world.floraMeals[i] - scene.mealMark[i];
+        }
+        scene.mealMark[i] = world.floraMeals[i];
+    }
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function trackCondition(scene, world) {
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1) {
+            scene.agentTicks++;
+            scene.sickTicks += Number(world.dose[slot] >= world.config.sickDose);
+        }
+    }
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function trackDeaths(scene, world) {
+    const { data, count } = world.events;
+    for (let at = 0; at < count * EVENT_STRIDE; at += EVENT_STRIDE) {
+        if (data[at] === EVENT_TYPE.AGENT_DIED && data[at + 1] >= BURN_IN_TICKS) {
+            scene.deaths++;
+            scene.poisoned += Number(data[at + 4] === DEATH_CAUSE.POISONED);
+        }
+    }
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function sampleAvailability(scene, world) {
+    for (let food = 0; food < world.foodAlive.length; food++) {
+        if (world.foodAlive[food] === 1 && world.foodKind[food] === FOOD_KIND.PLANT) {
+            scene.available[0]++;
+            scene.available[1] += Number(world.foodTox[food] > 0);
+        }
+    }
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @returns {import('./metrics-stats.js').MetricResult} minus Ivlev electivity for toxic plant items
+ */
+function avoidance(scene) {
+    if (scene.meals[0] === 0 || scene.available[0] === 0) {
+        return none('no plant meals or plant availability checkpoints after burn-in');
+    }
+    const r = scene.meals[1] / scene.meals[0];
+    const p = scene.available[1] / scene.available[0];
+    return p + r > 0 ? ok((p - r) / (p + r)) : none('no toxic plant meals or availability after burn-in');
 }
 
 /**
@@ -75,7 +167,14 @@ export function floraMetrics(scene) {
     const sums = totals(scene);
     const total = sums.reduce((sum, n) => sum + n, 0);
     /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
-    const result = { 'eval.seasonal_diet_shift': dietShift(scene, sums) };
+    const result = {
+        'eval.seasonal_diet_shift': dietShift(scene, sums),
+        'eval.toxic_avoidance': avoidance(scene),
+        'eval.toxic_death_share':
+            scene.deaths > 0 ? ok(scene.poisoned / scene.deaths) : none('no deaths after burn-in'),
+        'eval.sick_share':
+            scene.agentTicks > 0 ? ok(scene.sickTicks / scene.agentTicks) : none('no alive agent-ticks after burn-in'),
+    };
     for (let species = 0; species < FLORA_NAMES.length; species++) {
         let energy = 0;
         for (let season = 0; season < SEASONS; season++) {

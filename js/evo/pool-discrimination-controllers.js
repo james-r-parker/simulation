@@ -13,7 +13,8 @@ const CORRIDOR_THRUST = 0.5;
 const CORRIDOR_GAIN = 1.5;
 const EPSILON = 1e-9;
 /** The pooled indices only; the ray count does not move them. */
-const POOLED_AT = inputOffsets({ rayCount: 0 }).pooled;
+const INPUT_AT = inputOffsets({ rayCount: 0 });
+const POOLED_AT = INPUT_AT.pooled;
 
 /**
  * @param {number} value a number
@@ -166,4 +167,63 @@ export function followCorridor(world, slot, pooled) {
         lateral = v.y / Math.max(1, v.n);
     }
     write(world, slot, CORRIDOR_THRUST, clamp1(-CORRIDOR_GAIN * lateral));
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot subject slot
+ * @returns {void}
+ */
+function pooledHueVector(world, slot) {
+    const row = slot * world.layout.inputCount;
+    const hue = INPUT_AT.foodHueStart;
+    let best = 0;
+    for (let rank = 0; rank < 2; rank++) {
+        const at = row + rank * HIT_STRIDE;
+        if (world.pooled[at] > best && world.pooled[row + hue + rank] < 0) {
+            best = world.pooled[at];
+            sum.x = world.pooled[at + 1];
+            sum.y = world.pooled[at + 2];
+            sum.n = 1;
+        }
+    }
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot subject slot
+ * @returns {void}
+ */
+function rawHueVector(world, slot) {
+    const row = slot * world.layout.rawInputCount;
+    let best = 0;
+    for (let ray = 0; ray < world.config.rayCount; ray++) {
+        const at = row + ray * RAY_CHANNELS;
+        const hue = world.rayHue[slot * world.config.rayCount + ray];
+        if (world.inputs[at + CH_FOOD] > 0 && world.inputs[at] > best && hue < 0) {
+            best = world.inputs[at];
+            sum.x = world.rayCos[ray];
+            sum.y = world.raySin[ray];
+            sum.n = 1;
+        }
+    }
+}
+
+/**
+ * A diagnostic controller that chooses a negative-hue food before a positive-hue one.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot subject slot
+ * @param {boolean} pooled whether the controller reads the pooled senses
+ * @returns {void}
+ */
+export function seekFoodHue(world, slot, pooled) {
+    sum.x = 0;
+    sum.y = 0;
+    sum.n = 0;
+    if (pooled) {
+        pooledHueVector(world, slot);
+    } else {
+        rawHueVector(world, slot);
+    }
+    write(world, slot, sum.n > 0 ? SEEK_THRUST : 0, sum.n > 0 ? steer(sum.x, sum.y) : 1);
 }

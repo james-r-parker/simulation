@@ -88,6 +88,15 @@ describe('inspectorView on a real selected agent', () => {
         expect(firingThreshold('thrust', info)).toBe(0);
     });
 
+    it('shows toxin dose from the appended worker counter', () => {
+        const state = selectedWorld();
+        const l = state.ready.layout;
+        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 15;
+        state.snapshot.f32[at] = 0.36;
+        const result = inspectorView({ ...state, slots: createFamilySlots() });
+        expect(result.counters.find((c) => c.label === 'toxin dose')?.text).toBe('0.36');
+    });
+
     it('lists the counters as text', () => {
         expect(view.counters.map((c) => c.label)).toEqual([
             'type',
@@ -96,6 +105,7 @@ describe('inspectorView on a real selected agent', () => {
             'age',
             'energy',
             'temperature',
+            'toxin dose',
             'food eaten',
             'bite energy taken',
             'kills',

@@ -33,7 +33,7 @@ describe('createObserver', () => {
         expect(observer.agentTicks).toBe(0);
         expect(observer.rng).toBeDefined();
         expect(observer.births).toHaveLength(5);
-        expect(observer.deathsByCause).toHaveLength(4);
+        expect(observer.deathsByCause).toHaveLength(5);
     });
 
     it('sizes the cell bitset for 200 px cells: 72 x 41 on the default world', () => {

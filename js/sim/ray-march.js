@@ -5,7 +5,7 @@ import { RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
-import { AGENT, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { AGENT, FOOD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
 import { visionOf } from './traits.js';
 
 import { noteMatesSeen } from './mate-scarcity.js';
@@ -127,10 +127,13 @@ function agentChannel(world, slot, other) {
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} base index of the ray's first value in `world.inputs`
+ * @param {number} ray the ray index
  * @returns {void}
  */
-function writeRay(world, slot, base) {
-    const { inputs, rayScratch: s } = world;
+function writeRay(world, slot, base, ray) {
+    const { inputs, rayScratch: s, rayHue } = world;
+    const hue = slot * world.config.rayCount + ray;
+    rayHue[hue] = 0;
     for (let ch = 0; ch < RAY_CHANNELS; ch++) {
         inputs[base + ch] = 0;
     }
@@ -141,6 +144,9 @@ function writeRay(world, slot, base) {
     inputs[base] = proximity;
     const key = s[BEST_KEY];
     const kind = Math.floor(key / KIND_STRIDE);
+    if (kind === FOOD) {
+        rayHue[hue] = world.foodHue[key];
+    }
     if (kind === AGENT) {
         inputs[base + agentChannel(world, slot, key - kind * KIND_STRIDE)] = proximity;
     } else {
@@ -170,6 +176,6 @@ export function castRays(world, hash, slot) {
         s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
         s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
         nearestHit(world, count);
-        writeRay(world, slot, rowBase + k * RAY_CHANNELS);
+        writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
     }
 }

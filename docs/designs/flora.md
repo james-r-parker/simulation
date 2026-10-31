@@ -1,7 +1,7 @@
 # Flora
 
-**Status:** In progress - Phase 1 (species and fruiting seasons) built in draft; E69, E70, power and performance measurements owed. Rebased on balancing PR #223 with goldens re-pinned; measurements remain owed before marking ready. Phase 2 (hue sense and toxicity) next.
-**Validated:** f649cd8 (2026-10-31)
+**Status:** In progress - Phases 1 (species and fruiting seasons) and 2 (hue sense and toxicity) built. E69 to E71, detector power, survival and standalone performance measurements remain owed while the CPU is reserved. Phase 3 (pollination and plant evolution) next.
+**Validated:** 4b8ef51 (2026-10-31)
 **Priority:** 2 - flora phases in order, ahead of the paused natural-selection balancing work (user, 2026-10-31)
 **Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
@@ -49,7 +49,7 @@ A species is an archetype: a row of the `flora` config table. Every plant item a
 
 Each row has `energySpread` 0.2, a share of `foodEnergy`.
 
-Starting rows, in the order the table is written (the flora screens tune them; year phase 0 is the start of spring). `toxiccap` has `share` 0 until T14 raises it to 3; the patch mix over `foodPatchCount` 16 is then 5, 3, 2, 3 and 3 (grass, berry, nut, flower, toxic cap):
+Starting rows, in the order the table is written (the flora screens tune them; year phase 0 is the start of spring). `toxiccap` has `share` 3 from T14; the patch mix over `foodPatchCount` 16 is 5, 3, 2, 3 and 3 (grass, berry, nut, flower, toxic cap):
 
 | Species    | `share` | `energy` | `radius` | `yield` | `regrow` | `life` | `start` | `span` | `hue` | `toxicity` | `pollenChance` | `range` |
 | ---------- | ------- | -------- | -------- | ------- | -------- | ------ | ------- | ------ | ----- | ---------- | -------------- | ------- |
@@ -58,7 +58,7 @@ Starting rows, in the order the table is written (the flora screens tune them; y
 | `nut`      | 2       | 1.8      | 1.3      | 0.5     | 0.7      | 60000  | 0.50    | 0.30   | -0.45 | 0          | 0              | 0.2     |
 | `flower`   | 3       | 0.5      | 0.7      | 1.2     | 1.2      | 4000   | 0.10    | 0.40   | 0.90  | 0          | 1.0            | 0.4     |
 | `fungus`   | 0       | 1.0      | 0.9      | 0       | 0        | 24000  | 0.62    | 0.35   | -0.20 | 0          | 0              | 0       |
-| `toxiccap` | 0       | 1.2      | 1.0      | 0.7     | 0.8      | 24000  | 0.50    | 0.35   | 0.30  | 0.8        | 0              | 0.15    |
+| `toxiccap` | 3       | 1.2      | 1.0      | 0.7     | 0.8      | 24000  | 0.50    | 0.35   | 0.30  | 0.8        | 0              | 0.15    |
 
 - **Grass** fruits all year and fast, and is the background food: the `foodBackgroundShare` of spawns are grass items. Background spawns are grass only, so grass is the one species that cannot go extinct; every other species exists only through its patches and the seed bank, and no other path recreates it.
 - **Berry** fruits from early summer to early autumn, and its items last about a tenth of a year.
@@ -108,7 +108,7 @@ A toxic item (`foodTox` above 0) makes a dose. Per-agent `dose` (Float32, zero a
 | Death        | `deathCause` in `../../js/sim/population.js` returns the new `DEATH_CAUSE.POISONED` (4) when `dose >= lethalDose`, checked after old age and before the energy test. The body leaves a carcass, a fertile zone and a mycelium mark as any death |
 | Learnability | The warning is the hue; nothing pays avoiding it                                                                                                                                                                                                |
 
-Defaults: `toxinDose` 0.45, `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008, `lethalDose` 1.0. One bite of a toxic cap (`tox` 0.8) gives a dose of 0.36 and costs 0.96 of the item's energy; a second within about 1100 ticks gives 0.72 less the decay; the third kills.
+Defaults: `toxinDose` 0.45, `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008, `lethalDose` 1.0. One bite of a toxic cap (`tox` 0.8) gives a dose of 0.36 and costs 0.96 of the item's energy. Sickness blocks another meal until the dose is below 0.3, so the next accepted cap meal remains below 0.66, never the default lethal threshold 1.0. Direct poison death is unreachable from the starting caps under these defaults, including the E71 lethal thresholds 0.8 to 1.4; sickness can still cause other losses. This is an unresolved E71 specification/power question, also recorded in the world-balance H4 handoff, not a measured scene or an adopted tuning value.
 
 ## Pollination and plant evolution
 
@@ -173,7 +173,7 @@ The `flora` table, the fruiting windows, per-item species traits, the mycelium m
 | Runs       | T0, T8        | The reference run on main before T1, then the species screen and the survival gate (no code commits)                |
 | Close      | T9            | The conformance review and the Status move                                                                          |
 
-### Phase 2 - The hue sense and toxicity
+### Phase 2 - The hue sense and toxicity (built)
 
 **Targets:** eval.toxic_death_share, eval.toxic_avoidance, eval.sick_share, eval.deliberate_food_share, eval.spec_effective, bench.step_ms@500
 
@@ -313,7 +313,7 @@ Each phase's screen also states which scene its arms serve and which detector re
 | T8  | Run `E70`; apply the survival gate to its best arm; set the table defaults to that arm; record it in `evals/experiments.json`                                                                                                                                                                                                                                                                         | [judgement]  | T0, T6, T7 |
 | T9  | Conformance review: a fresh review agent checks every Delivery requirements row for this phase, in parallel with the final `scripts/check.sh`; move the Status line, mark Phase 1 `(built)`, regenerate the index                                                                                                                                                                                     | [judgement]  | T8         |
 
-### Phase 2 - The hue sense and toxicity
+### Phase 2 - The hue sense and toxicity (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

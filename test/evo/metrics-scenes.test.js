@@ -47,5 +47,8 @@ describe('the scene metrics', () => {
         expect(intendedDirection('eval.chase_giveup_share')).toBe('lower');
         expect(intendedDirection('eval.gap_never_share')).toBe('lower');
         expect(intendedDirection('eval.chase_catch_share')).toBe('higher');
+        expect(intendedDirection('eval.toxic_death_share')).toBe('lower');
+        expect(intendedDirection('eval.sick_share')).toBe('lower');
+        expect(intendedDirection('eval.toxic_avoidance')).toBe('higher');
     });
 });

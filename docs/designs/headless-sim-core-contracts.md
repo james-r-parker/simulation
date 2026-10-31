@@ -215,24 +215,30 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Flora state and intake
 
+`dose` is per-agent `Float32`, finite and nonnegative for alive slots, zero at birth and after freeing a slot, and included in `hashWorld`. It is not a brain input. `stepToxin` drains sick bodies and decays existing doses at the start of `lifecycle`, before meals. A fresh dose therefore reaches the same tick's `reap` without first decaying. Sickness scales thrust and blocks eating; `ingestToxin` books a negative net meal as a cost and returns nonnegative energy for normal storage.
+
+`rayHue` is derived `Float32Array(maxAgents x rayCount)`, excluded from `hashWorld`. `castRays` writes each alive slot's whole row before pooling: the hit food's hue, zero for every other hit or no hit. `poolRays` and the diagnostic raw-hue controller read that row until the next cast. Dead slots need no valid row. The two slots may contain rays from the same food item; pooling does not deduplicate targets. The two selected food hues occupy pooled indices 48 and 49; the body block begins at 50 in `pooled-v3`.
+
 `flora-state.js` allocates the Phase 1 arrays. Patch records have `foodPatchCount` entries: `patchSpecies` (`Uint8`) and `patchHue`, `patchEnergy`, `patchRegrow`, `patchLife`, `patchStart`, `patchSpan`, `patchYield`, `patchWeight` (`Float32`). Item records have `maxFood` entries: `foodSpecies`, `foodHue`, `foodTox`, `foodLife` (`Float32`) and `foodPatch` (`Int32`, source patch or -1 for background, fungus and meat). All are hashed. `removeFood` zeroes the item records. Species indices follow `FLORA_NAMES`.
 
 `myceliumX`, `myceliumY`, `myceliumSize` (`Float32`) and `myceliumTicks` (`Int32`) have `myceliumMax` entries, all hashed. A free mark is zero in every array. Death adds a mark for `myceliumLife` ticks; a full pool replaces the fewest ticks left, lowest slot on ties.
 
 `floraIntake` is a derived `Float64Array(24)`, excluded from `hashWorld`. Its index is `season x 6 + species`. `tryEat` adds the stored plant energy returned by `addEnergy`, before `removeFood` clears the item. Meat adds nothing. The counters start at zero at allocation, accumulate for the world's lifetime and are never reset per tick or per observer. `trackFlora` keeps its own last-observed copy, reads differences once after each step, and excludes ticks through `BURN_IN_TICKS`. Counter reads change no simulation state.
 
+`floraMeals` is a derived `Float64Array(2)`, also excluded from `hashWorld`: all plant items eaten and toxic plant items eaten (`foodTox > 0`). It counts items even when their net stored energy is zero, before clearing the food slot; meat adds nothing. Its lifetime/reset rules match `floraIntake`. The flora scene consumes counter differences once per observed tick strictly after `BURN_IN_TICKS`, counts poison/all deaths whose event tick is at least burn-in, and sick/all alive agent-ticks from the observed post-step state. At ticks divisible by 1000 strictly after burn-in it sums toxic/all live plant availability. Minus Ivlev electivity uses these pooled item shares, `(p - r) / (p + r)`; missing meals, missing plant checkpoints or zero combined toxic share return null with a reason. No death or alive agent-tick denominator likewise returns null.
+
 `floraDisc` is reusable placement scratch, excluded from the hash. A fungal disc is local-only: exhausted rejection sampling refuses the fungus source and redraws as patch/background. Patches retain the uniform clear-placement fallback.
 
 ### Ids and codes
 
-| Code set      | Values                                                                                                                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                 |
-| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3                                                                                                                                                                                             |
-| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                       |
-| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                      |
-| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15 |
-| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                       |
+| Code set      | Values                                                                                                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Born cause    | `initial` 0, `mate` 1, `split` 2, `floor` 3, `immigrant` 4 (never spawned now)                                                                                                                                                                                     |
+| Death cause   | `starved` 0, `eaten` 1, `collision` 2, `old-age` 3, `poisoned` 4                                                                                                                                                                                                   |
+| Blocked cause | `capacity` 0, `energy` 1                                                                                                                                                                                                                                           |
+| `lastLoss`    | none 0, `cost` 1, `bite` 2, `collision` 3                                                                                                                                                                                                                          |
+| Event type    | `AgentBorn` 1, `AgentDied` 2, `BirthBlocked` 3, `PopulationFloor` 4, `AlarmCalled` 5, `SmokeReleased` 6, `PackCalled` 7, `SmokeRefused` 8, `FoodPatchesCreated` 9, `SeasonChanged` 10, `DroughtStarted` 11, `MeritSummary` 14, `LineProven` 15, `AgentSickened` 16 |
+| Sex           | `female` 0, `male` 1 (`SEX` in `sex.js`)                                                                                                                                                                                                                           |
 
 Each set is exported as a frozen object of named constants from the module that owns it (`events.js` for the event
 types and causes, `energy.js` for `lastLoss`).
@@ -261,10 +267,11 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 | `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                 |
 | `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                       |
 | `LineProven`         | `slot` (the child), `genomeId`, `parentA`, `parentB`, `lineageId`; debug level in `drainEvents` (`proof.js`)           |
+| `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                   |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
-ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 6 x maxAgents`
-(a slot adds at most 3 call, release or refuse events, 1 death and 1 birth per tick).
+ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents`
+(the per-slot budget includes calls, sickness, death and birth events).
 
 ## Energy - `energy.js`
 
@@ -382,7 +389,7 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
 - Body inputs 31 to 33 (offsets 30 to 32 from the start of the body block, `BODY_INPUT`): `sex` (0 female, 1 male)
   and last tick's `MEMORY_A` and `MEMORY_B` outputs. There are no season inputs: the body block is 33 inputs.
   `writeBodyInputs` writes offsets 0 to 16 and 30 to 32. The block sits at `rawBodyStart` in the raw `inputs` row and at
-  `POOLED_VALUES` (48) in the pooled row.
+  `POOLED_VALUES` (50) in the pooled row.
 - The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `4 x eraSeasonTicks`, so every rule keyed by season index or
   phase - `foodScarcity`, `energyDrain`, `reproductionBonus` and `temperatureModifier` - stretches with it.
@@ -516,8 +523,8 @@ Row layout, all row-major:
 | leak genes  | `leakStart + j`, one per hidden unit                                                              |
 
 `OUTPUT_COUNT` is 11 (`OUTPUT_INDEX`: thrust 0, turn 1, sprint 2, mate 3, bite 4, alarm 5, smoke 6, hunt 7, `SPLIT` 8,
-`MEMORY_A` 9, `MEMORY_B` 10), `EXTRA_INPUTS` 33, `POOLED_VALUES` 48 and `TRAIT_GENES` 4, so `weightCount = inputCount x H + H x H + H + H x G + G + POOLED_VALUES x G + TRAIT_GENES + H` with `G = geneOutputs` = 10 (`OUTPUT_COUNT` less `SPLIT`, which has no genes and reads 0):
-81 inputs (`inputCount = POOLED_VALUES + EXTRA_INPUTS`: the 48 pooled values then the 33 body inputs) and 4494 weights at the defaults; the raw `inputs` row of `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = 177 values is what `poolRays` (`ray-pool.js`) reads. For each of the eight ray channels, `poolRays` keeps the two rays with the largest proximity (the first ray wins a tie) as (strength, cosine, sine of the ray's angle in the agent's frame), strongest first; an unused slot is 0. It allocates nothing. The genes after `bOut` never enter the sums below. The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
+`MEMORY_A` 9, `MEMORY_B` 10), `EXTRA_INPUTS` 33, `POOLED_VALUES` 50 and `TRAIT_GENES` 4, so `weightCount = inputCount x H + H x H + H + H x G + G + POOLED_VALUES x G + TRAIT_GENES + H` with `G = geneOutputs` = 10 (`OUTPUT_COUNT` less `SPLIT`, which has no genes and reads 0):
+83 inputs (`inputCount = POOLED_VALUES + EXTRA_INPUTS`: 48 ray values, two food hues then the 33 body inputs) and 4578 weights at the defaults; the raw `inputs` row of `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = 177 values is what `poolRays` (`ray-pool.js`) reads. For each of the eight ray channels, `poolRays` keeps the two rays with the largest proximity (the first ray wins a tie) as (strength, cosine, sine of the ray's angle in the agent's frame), strongest first; an unused slot is 0. The two matching food hues follow the 48 ray values. It allocates nothing. The genes after `bOut` never enter the sums below. The blocks follow each other in that order. For each hidden unit `j`, the sum is a float64 that starts at
 `bHidden[j]`, then adds `wIn[i, j] x x_i` for `i` ascending, **skipping every `i` whose input is exactly 0**, then
 `wRec[k, j] x h_k` for `k` ascending. `h'_j = Math.fround(detTanh(sum))`. Outputs sum `bOut[o]` then
 `wOut[j, g] x h'_j` for `j` ascending, then (the skip block, genome only) `wSkip[i, g] x pooled_i` for the nonzero pooled values `i` ascending, then `detTanh`; the `SPLIT` output's sum is 0.

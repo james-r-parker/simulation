@@ -1,5 +1,6 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
+import { ingestToxin, isSick } from './toxin.js';
 import { canBite, couldBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
@@ -28,7 +29,8 @@ function tryEat(world, slot, food) {
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        const value = share === 1 ? world.foodValue[food] : world.foodValue[food] * share;
+        const raw = share === 1 ? world.foodValue[food] : world.foodValue[food] * share;
+        const value = isMeat ? raw : ingestToxin(world, slot, raw, world.foodTox[food]);
         const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
         world.foodEnergy[slot] += stored;
         const { temperatureGainEat, foodEnergy } = world.config;
@@ -37,6 +39,8 @@ function tryEat(world, slot, food) {
         if (!isMeat) {
             depletePatchAt(world, world.foodX[food], world.foodY[food]);
             world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
+            world.floraMeals[0]++;
+            world.floraMeals[1] += Number(world.foodTox[food] > 0);
         }
         removeFood(world, food);
     }
@@ -49,6 +53,9 @@ function tryEat(world, slot, food) {
  * @returns {boolean} whether the agent may eat this tick
  */
 export function canEatNow(world, slot) {
+    if (isSick(world, slot)) {
+        return false;
+    }
     const { satiationShare, digestTicks } = world.config;
     if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.maxEnergyBySpec[world.spec[slot]]) {
         return false;

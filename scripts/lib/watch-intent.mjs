@@ -6,6 +6,8 @@
 /** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a more even sex ratio, a smaller energy bank, fewer given-up chases, fewer lineages that never cross the wall). */
 export const WATCH_INTENDED_LOWER = new Set([
     'eval.heat_stress_share',
+    'eval.toxic_death_share',
+    'eval.sick_share',
     'eval.unseen_bite_share',
     'eval.sex_balance',
     'eval.chance_food_per_1k',

@@ -16,6 +16,7 @@ function berries() {
             berry: { share: 1 },
             nut: { share: 0 },
             flower: { share: 0 },
+            toxiccap: { share: 0 },
         },
     });
     w.season[1] = 0.4;
@@ -38,6 +39,20 @@ describe('species spawning', () => {
         w.patchLife[0] = 1;
         expect(w.foodHue[slot]).toBeCloseTo(0.65);
         expect(w.foodLife[slot]).toBe(12000);
+    });
+
+    it('fruits toxic caps with their configured dose and warning hue', () => {
+        const w = berries();
+        w.patchSpecies[0] = 5;
+        w.patchHue[0] = w.config.flora.toxiccap.hue;
+        w.patchStart[0] = 0.5;
+        w.patchSpan[0] = 0.35;
+        w.season[1] = 0.65;
+        refreshFruiting(w);
+        const slot = spawnFoodItem(w);
+        expect(w.foodSpecies[slot]).toBe(5);
+        expect(w.foodTox[slot]).toBeCloseTo(0.8);
+        expect(w.foodHue[slot]).toBeCloseTo(0.3);
     });
 
     it('falls back to grass when every patch is out of season', () => {

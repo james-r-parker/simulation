@@ -32,6 +32,13 @@ export const BOOL = { type: 'bool' };
 export const UNIT = num(0, 1);
 /** @type {Record<string, Rule>} the world-balance feature keys */
 export const FEATURE_RULES = {
+    toxinDose: num(0),
+    toxinCost: num(0),
+    sickDose: positive(),
+    sickThrust: UNIT,
+    sickDrain: num(0),
+    doseDecay: num(0),
+    lethalDose: positive(),
     satiationShare: num(0, 1),
     digestTicks: int(0, 30),
     handlingTicks: int(0, 30),

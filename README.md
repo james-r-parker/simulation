@@ -106,18 +106,18 @@ Every blob has an Elman recurrent network: its hidden layer feeds back into itse
 One tick for one blob, `forwardAll` in `js/sim/brain.js`:
 
 ```
- rays (16 x 9 = 144) -> pool: 8 channels x 2 strongest hits x (strength, cos, sin) = 48 --+
- body inputs (33) ------------------------------------------------------------------------+--> 81 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
+ rays (16 x 9 = 144) -> pool: 8 channels x 2 strongest hits x (strength, cos, sin) = 48 + 2 food hues --+
+ body inputs (33) ------------------------------------------------------------------------+--> 83 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
                                                                                                          |
         last tick's MEMORY_A, MEMORY_B (inputs 31, 32) <---------+                                      v
                                                           11 outputs = tanh( hidden x W_out + pooled x W_skip + bias )
 ```
 
-- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 8 x 2 x 3 + 33 = 81`,
-  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,494 floats**: `W_in` 81x32, `W_rec` 32x32, 32 hidden biases,
-  `W_out` 32x10, 10 output biases, `W_skip` 48x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
+- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 8 x 2 x 3 + 2 + 33 = 83`,
+  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,578 floats**: `W_in` 83x32, `W_rec` 32x32, 32 hidden biases,
+  `W_out` 32x10, 10 output biases, `W_skip` 50x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
   11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
-- **Skip.** `W_skip` joins the 48 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
+- **Skip.** `W_skip` joins the 50 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
   threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
 - **Activation.** `tanh` on hidden units and outputs, through `detTanhInto` (`js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
@@ -134,11 +134,12 @@ One tick for one blob, `forwardAll` in `js/sim/brain.js`:
   with `eta = hebbianRate x sigmoid(learn gene)`, clamped to plus or minus 4. A child inherits the genome, never what its
   parent learned.
 
-### Inputs (81)
+### Inputs (83)
 
 | Group                | Count | What it is                                                                                                                                                                                       |
 | -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Pooled rays          | 48    | The 16 raw rays (below) are pooled by `poolRays` in `js/sim/ray-pool.js`: for each of the eight ray channels (food, threat, prey, other, kin, wall, obstacle, smoke) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
+| Food hues            | 2     | Hue of the two pooled food hits, in matching order; absent hits are zero. Strength distinguishes an absent hit from a real hue of zero. |
 | Body (offsets 0-16)  | 17    | Energy; forward and sideways velocity; turn rate; size; pregnant; ready to mate; danger and attack scent here; just ate and just bitten (fade over 30 ticks); specialisation; age; four temperature inputs (level, distance from the optimal band, cold stress, heat stress). `writeBodyInputs` |
 | Scent and calls (17-29) | 13 | Danger and attack scent at a left and a right antenna (0.8 rad either side, 150 px out); hunt scent here and at both antennae; the loudest heard alarm and the loudest heard hunt call, each as loudness, ahead and side. `writeScentInputs` |
 | Sex and memory (30-32) | 3   | Sex (0 female, 1 male), and last tick's `MEMORY_A` and `MEMORY_B`.                                                                  |

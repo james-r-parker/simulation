@@ -1,12 +1,13 @@
-// The discrimination checks for the pooled-v2 inputs (top 2 hits per channel): three scenes where different situations need different actions,
+// The discrimination checks for pooled-v3: position, threats, a corridor and food-hue choice.
 // each scored for a controller that reads the pooled row and one that reads the raw rays. A scene passes when the
-// pooled controller scores within 10% of the raw one. Run before the pooled layout is switched on.
+// pooled controller scores within 10% of the raw one. These diagnostic controllers do not change the evolved brain or its instinct.
 
+import { OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { createRng, fork, nextFloat } from '../sim/rng.js';
 import { step } from '../sim/step.js';
 import { poolRays } from '../sim/ray-pool.js';
-import { followCorridor, flee, seekFood } from './pool-discrimination-controllers.js';
+import { followCorridor, flee, seekFood, seekFoodHue } from './pool-discrimination-controllers.js';
 import { stageWorld } from './pool-discrimination-stage.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
 
@@ -127,8 +128,37 @@ const CORRIDOR = {
     won: (world) => world.foodAlive[0] === 0,
 };
 
-/** The three scenes, in the order the brain plan lists them. */
-export const SCENES = Object.freeze([TWO_FOOD_OPPOSITE, TWO_THREATS_APART, CORRIDOR]);
+/** @type {Scene} */
+const FOOD_HUE_CHOICE = {
+    name: 'food-hue-choice',
+    ticks: 1,
+    holds: true,
+    build(rng) {
+        const theta = heading(rng);
+        const direction = nextFloat(rng) < 0.5 ? -1 : 1;
+        const dx = direction * 100 * detCos(theta);
+        const dy = direction * 100 * detSin(theta);
+        return {
+            foods: [
+                { x: CENTRE_X + dx, y: CENTRE_Y + dy, hue: -0.75 },
+                { x: CENTRE_X - dx, y: CENTRE_Y - dy, hue: 0.75 },
+            ],
+            rocks: [],
+            agents: [{ x: CENTRE_X, y: CENTRE_Y, angle: theta, spec: FORAGER, energy: SUBJECT_ENERGY }],
+        };
+    },
+    act: seekFoodHue,
+    won(world) {
+        const dx = world.foodX[0] - world.x[0];
+        const dy = world.foodY[0] - world.y[0];
+        const ahead = dx * detCos(world.angle[0]) + dy * detSin(world.angle[0]) > 0;
+        const turning = Math.abs(world.outputs[OUTPUT_INDEX.TURN]) > 0.5;
+        return world.outputs[OUTPUT_INDEX.THRUST] > 0 && turning !== ahead;
+    },
+};
+
+/** The three brain-plan scenes followed by the first-decision hue discrimination. */
+export const SCENES = Object.freeze([TWO_FOOD_OPPOSITE, TWO_THREATS_APART, CORRIDOR, FOOD_HUE_CHOICE]);
 
 /**
  * Runs one trial.
@@ -188,7 +218,7 @@ export function runScene(scene, { trials, seed }) {
 }
 
 /**
- * Runs the three scenes.
+ * Runs the discrimination scenes.
  * @param {{trials?: number, seed?: number}} [options] trials per controller (default 16) and the base seed (default 1)
  * @returns {{scenes: SceneResult[], pass: boolean}} each scene's result, and whether all three pass; any failure makes
  *   the top-2-per-channel variant the fallback to consider

@@ -3,7 +3,7 @@ import { applyInstinct, randomGenome } from '../../js/evo/instinct.js';
 import { randomWeights } from '../../js/evo/mutation.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 import { createConfig } from '../../js/sim/config.js';
-import { GENE_OUTPUTS, OUTPUT_COUNT, OUTPUT_INDEX, brainLayout } from '../../js/sim/brain-layout.js';
+import { GENE_OUTPUTS, OUTPUT_COUNT, OUTPUT_INDEX, brainLayout, inputOffsets } from '../../js/sim/brain-layout.js';
 import { createRng } from '../../js/sim/rng.js';
 import { step } from '../../js/sim/step.js';
 
@@ -63,6 +63,18 @@ describe('instinctWeight', () => {
 });
 
 describe('applyInstinct', () => {
+    it('leaves both food hue skip rows unchanged for hunters and other agents', () => {
+        const hue = inputOffsets(config).foodHueStart;
+        const plain = rowOf(5, 0, false);
+        for (const canHunt of [false, true]) {
+            const row = plain.slice();
+            applyInstinct(row, layout, { weight: 1, canHunt });
+            const start = layout.wSkip + hue * layout.geneOutputs;
+            const end = start + 2 * layout.geneOutputs;
+            expect(row.subarray(start, end)).toEqual(plain.subarray(start, end));
+        }
+    });
+
     it('at weight 0 leaves the genome bit-identical and randomGenome draws the same stream', () => {
         const plain = new Float32Array(layout.weightCount);
         randomWeights(plain, layout, createRng(5), config.leakGeneStart);

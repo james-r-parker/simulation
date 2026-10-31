@@ -123,7 +123,7 @@ describe('cloneWithNoisePolicy exact values', () => {
             } else if (i >= layout.wOut && i < layout.bOut) {
                 expected = (nextGaussian(ref) * 2.5) / Math.sqrt(layout.hidden);
             } else if (i >= layout.wSkip && i < layout.traitStart) {
-                expected = (nextGaussian(ref) * 2.5) / Math.sqrt(48);
+                expected = (nextGaussian(ref) * 2.5) / Math.sqrt(50);
             }
             expect(w.weights[n + i]).toBe(Math.fround(expected));
         }

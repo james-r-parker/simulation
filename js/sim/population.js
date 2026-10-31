@@ -23,6 +23,9 @@ function deathCause(world, slot) {
     if (world.ageTicks[slot] >= world.config.maxAgeTicks) {
         return DEATH_CAUSE.OLD_AGE;
     }
+    if (world.dose[slot] >= world.config.lethalDose) {
+        return DEATH_CAUSE.POISONED;
+    }
     if (world.energy[slot] > 0) {
         return -1;
     }

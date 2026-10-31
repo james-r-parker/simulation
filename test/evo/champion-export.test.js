@@ -47,7 +47,7 @@ describe('exportChampions', () => {
 
     it('stamps the layout name with the sizes', () => {
         const [file] = exportChampions(archive, config, { count: 1, label: 'x' });
-        expect(file.layout).toEqual({ name: 'pooled-v2', inputCount: 81, brainHidden: 32, outputCount: 11 });
+        expect(file.layout).toEqual({ name: 'pooled-v3', inputCount: 83, brainHidden: 32, outputCount: 11 });
     });
 
     it('reads the same elites the archive holds', () => {

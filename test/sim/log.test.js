@@ -268,6 +268,18 @@ describe('drainEvents', () => {
         });
     });
 
+    it('logs AgentSickened with its agent identity and dose', () => {
+        const world = build();
+        world.events.count = 0;
+        const at = pushEvent(world.events, EVENT_TYPE.AGENT_SICKENED, 37);
+        world.events.data.set([2, 99, 0.36], at + 2);
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            { level: 'debug', event: 'AgentSickened', tick: 37, slot: 2, genomeId: 99, dose: 0.36 },
+        ]);
+    });
+
     it('names every death cause', () => {
         const world = build();
         world.events.count = 0;
@@ -277,7 +289,7 @@ describe('drainEvents', () => {
         }
         const { records, log } = collect('debug');
         drainEvents(world, log);
-        expect(records.map((r) => r.cause)).toEqual(['starved', 'eaten', 'collision', 'old-age']);
+        expect(records.map((r) => r.cause)).toEqual(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
     });
 
     it('names every blocked cause', () => {

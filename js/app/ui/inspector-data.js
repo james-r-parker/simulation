@@ -43,6 +43,7 @@ const COUNTER_AT = Object.freeze({
     vision: 12,
     baseSize: 13,
     childShare: 14,
+    dose: 15,
 });
 
 /**
@@ -179,6 +180,7 @@ function countersOf(c, { specName, family, info, male }) {
             label: 'temperature',
             text: `${c[COUNTER_AT.temperature].toFixed(1)} (${temperatureBand(c[COUNTER_AT.temperature], info)})`,
         },
+        { label: 'toxin dose', text: c[COUNTER_AT.dose].toFixed(2) },
         { label: 'food eaten', text: c[COUNTER_AT.foodEnergyEaten].toFixed(1) },
         { label: 'bite energy taken', text: c[COUNTER_AT.biteEnergyTaken].toFixed(1) },
         { label: 'kills', text: grouped(c[COUNTER_AT.kills]) },

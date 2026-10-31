@@ -32,7 +32,7 @@ describe('runSeed (direct)', () => {
         expect(result.trace.pop).toHaveLength(3);
         expect(result.trace).toMatchObject({ interval: 700, deaths: expect.any(Array), lineages: expect.any(Number) });
         expect(result.trace.mate).toHaveLength(4);
-        expect(result.trace.deaths).toHaveLength(4);
+        expect(result.trace.deaths).toHaveLength(5);
     });
 
     it('is deterministic for the same task', { timeout: scaleTimeout(30_000) }, () => {

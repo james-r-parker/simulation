@@ -88,7 +88,7 @@ const SERIES_FIELDS = [
 ];
 
 const BORN_CAUSES = 5;
-const DEATH_CAUSES = 4;
+const DEATH_CAUSES = 5;
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config

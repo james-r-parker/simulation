@@ -6,7 +6,7 @@ import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
-const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age']);
+const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
 const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
 
 /**
@@ -253,6 +253,16 @@ function emitLineProven(log, d, o) {
     });
 }
 
+/**
+ * @param {SimLog} log the log
+ * @param {Float64Array} d event data
+ * @param {number} o event offset
+ * @returns {void}
+ */
+function emitSickened(log, d, o) {
+    log.log('debug', 'AgentSickened', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], dose: d[o + 4] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -269,6 +279,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
     [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
+    [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
 });
 
 /**

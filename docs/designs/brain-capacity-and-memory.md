@@ -77,7 +77,7 @@ computed (no `genomeSize` function is added). T1a pins every cell below in `../.
 a per-block derivation, so this table and the test change in one commit. Blocks, in row order: `wIn` (inputs x H),
 `wRec` (H x H), `bHidden` (H), `wOut` (H x outputs with genes), `bOut`, `wSkip` (skip source values x outputs with
 genes), trait genes 4, leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
-inputs (48 pooled and 33 body; the season inputs are deleted). The built layout is the last row.
+inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 adds two food hues in `pooled-v3`; the built layout is the last row.
 
 | Layout and options                                                                                                                     | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
 | -------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | --------- | --------- |
@@ -85,7 +85,8 @@ inputs (48 pooled and 33 body; the season inputs are deleted). The built layout 
 | `pooled-v2` top 2, 81 inputs, `SPLIT` genes kept, no skip (built until B3)                                                             | 1,775     | 2,847     | 4,047     | 6,831     | 10,127    |
 | `pooled-v2` top 2, `SPLIT` genes kept, `brainSkip` (48 x 11)                                                                           | 2,303     | 3,375     | 4,575     | 7,359     | 10,655    |
 | `pooled-v2` top 2, no `SPLIT` genes, no skip                                                                                           | 1,758     | 2,822     | 4,014     | 6,782     | 10,062    |
-| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (the layout built)                                                          | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
+| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (built before flora Phase 2)                                                | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
+| `pooled-v3` top 2, two food hues, no `SPLIT` genes, `brainSkip` (50 x 10) (the built layout)                                           | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
 | (the earlier 57-input strongest-hit variant, never built, had 1,391 / 2,271 / 3,279 / 5,679 / 8,591 for the `SPLIT`-kept, no-skip row) |           |           |           |           |           |
 
 ## Sensory schema
@@ -123,10 +124,14 @@ ray wins a tie), each as 3 values, so 6 values per channel and a channel's offse
 A missing detection is 0 in all three values; a channel with one hit leaves its second slot at 0. The brain tells a
 real hit from a missing one by `strength`. Every pooled input lies in [-1, 1].
 
+### Food hues
+
+The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 48 and 49. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 50.
+
 ### Body inputs
 
 33 inputs after the pooled block, written by `writeBodyInputs` and `scent-inputs.js`. The absolute input offset is the
-pooled value count (48 now) plus the body offset.
+pooled value count (50 now) plus the body offset.
 
 | Group             | Body offset | Count | Meaning                                                                                 |
 | ----------------- | ----------- | ----- | --------------------------------------------------------------------------------------- |
@@ -148,11 +153,10 @@ pooled value count (48 now) plus the body offset.
 Each extension changes this schema, the test and `ARCHIVE_VERSION` in one task. The flora hue value of one food hit is
 a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 
-| Step                   | Change                                                                                                                                | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
-| Built                  | Eight channels, 2 hits, 33 body inputs                                                                                                | 81     | 48            | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
-| Flora Phase 2 (+2)     | One hue value for each of the two strongest food hits, at pooled indices 48 and 49, after the 48 ray values and before the body block | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
-| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55                                 | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| Step                   | Change                                                                                                | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
+| Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                   | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
 
 ## Hypotheses
 
@@ -216,20 +220,20 @@ layout as built before B3: 81 inputs, the `SPLIT` column kept and no skip; B3 ad
   now. The top 2 are what lets two targets of one channel on opposite sides, or the two walls of a passage, reach the
   brain at all; the discrimination checks (below) measure how far that goes. The sensory audit (T14) may amend this list,
   the channel set or the ranges; an amendment is a layout revision screened in `E53` beside the skip arms.
-- **Skip** (built, no key). A `wSkip` block from the 48 pooled values to the outputs that have genes (10 without `SPLIT` genes, 11 with), added
+- **Skip** (built, no key). A `wSkip` block from the 50 pooled values (including the two food hues) to the outputs that have genes (10 without `SPLIT` genes, 11 with), added
   to the output sums before `tanh`, so reflexes (food ahead to thrust, threat to turn away, prey in reach to bite) need
   no hidden unit. The skip sees only the pooled rays, not energy or mate-ready; those stay among the 33 body inputs
-  (33 of the 81 inputs).
+  (33 of the 83 inputs).
 - **No season inputs.** The sine and cosine of the year phase are deleted (`seasonInputs` never shipped as a key). The
   blob is not told the calendar; it feels the season through its temperature inputs and the food on its rays
   (principles.md, "senses are local"). The body block is 33 inputs; the observer, the inspector labels and
   `inputActivity` follow.
 - **No `SPLIT` genes** (built, no key). The `SPLIT` output column keeps its slot in the 11-wide
   output row (indices unchanged) and has no weight, bias or Hebbian update; it reads 0.
-- **Genome length** is the Genome sizes table: `brainLayout(config).weightCount` for the hidden width (4,494 at 32). The
+- **Genome length** is the Genome sizes table: `brainLayout(config).weightCount` for the hidden width (4,578 at 32). The
   output blocks `wOut`, `bOut` and `wSkip` have `geneOutputs` (10) columns, gene column `g` driving output
   `GENE_OUTPUTS[g]` (`js/sim/brain-layout.js`: every output but `SPLIT`). Random skip weights have standard deviation
-  `1 / sqrt(48)`, crossover takes each output's skip column whole from one parent, and the skip block is genome only
+  `1 / sqrt(50)`, crossover takes each output's skip column whole from one parent, and the skip block is genome only
   (no Hebbian update).
 - `brainLayout(config)` returns the offsets; the genome, champion and archive `layout` field carries the input and output
   counts, and `assertGenomeFits` and `validateChampion` reject a mismatch naming it.
