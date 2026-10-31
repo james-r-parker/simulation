@@ -40,6 +40,8 @@ const WATCH = [
 export const SCENE_DIRECTIONS = Object.freeze({
     ...PATCH_DIRECTIONS,
     'eval.seasonal_diet_shift': 'watch',
+    'eval.pollination_rate': 'watch',
+    'eval.flora_hue_spread': 'watch',
     'eval.toxic_avoidance': 'watch',
     'eval.toxic_death_share': 'watch',
     'eval.sick_share': 'watch',

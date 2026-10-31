@@ -22,6 +22,10 @@ export function createFloraScene() {
         agentTicks: 0,
         sickTicks: 0,
         lastTick: -1,
+        ticks: 0,
+        pollinations: 0,
+        hueSum: 0,
+        hueCheckpoints: 0,
     };
 }
 
@@ -38,10 +42,12 @@ export function trackFlora(scene, world) {
     scene.lastTick = world.tick;
     trackMeals(scene, world);
     if (world.tick > BURN_IN_TICKS) {
+        scene.ticks++;
         trackCondition(scene, world);
-        trackDeaths(scene, world);
+        trackEvents(scene, world);
         if (world.tick % 1000 === 0) {
             sampleAvailability(scene, world);
+            sampleHues(scene, world);
         }
     }
     for (let i = 0; i < scene.energy.length; i++) {
@@ -85,12 +91,17 @@ function trackCondition(scene, world) {
  * @param {import('../sim/world.js').World} world the world
  * @returns {void}
  */
-function trackDeaths(scene, world) {
+function trackEvents(scene, world) {
     const { data, count } = world.events;
     for (let at = 0; at < count * EVENT_STRIDE; at += EVENT_STRIDE) {
-        if (data[at] === EVENT_TYPE.AGENT_DIED && data[at + 1] >= BURN_IN_TICKS) {
+        if (data[at + 1] < BURN_IN_TICKS) {
+            continue;
+        }
+        if (data[at] === EVENT_TYPE.AGENT_DIED) {
             scene.deaths++;
             scene.poisoned += Number(data[at + 4] === DEATH_CAUSE.POISONED);
+        } else if (data[at] === EVENT_TYPE.PATCH_SEEDED) {
+            scene.pollinations++;
         }
     }
 }
@@ -120,6 +131,58 @@ function avoidance(scene) {
     const r = scene.meals[1] / scene.meals[0];
     const p = scene.available[1] / scene.available[0];
     return p + r > 0 ? ok((p - r) / (p + r)) : none('no toxic plant meals or availability after burn-in');
+}
+
+/**
+ * @param {import('../sim/world.js').World} world the world
+ * @param {number} species pollinated species
+ * @returns {number} population hue deviation, or -1 without a living patch
+ */
+function hueDeviation(world, species) {
+    let sum = 0;
+    let count = 0;
+    for (let patch = 0; patch < world.patchAlive.length; patch++) {
+        if (world.patchAlive[patch] === 1 && world.patchSpecies[patch] === species) {
+            sum += world.patchHue[patch];
+            count++;
+        }
+    }
+    if (count === 0) {
+        return -1;
+    }
+    const mean = sum / count;
+    let squares = 0;
+    for (let patch = 0; patch < world.patchAlive.length; patch++) {
+        if (world.patchAlive[patch] === 1 && world.patchSpecies[patch] === species) {
+            const delta = world.patchHue[patch] - mean;
+            squares += delta * delta;
+        }
+    }
+    return Math.sqrt(squares / count);
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function sampleHues(scene, world) {
+    let sum = 0;
+    let species = 0;
+    for (let i = 0; i < FLORA_NAMES.length; i++) {
+        if (world.config.flora[FLORA_NAMES[i]].pollenChance === 0) {
+            continue;
+        }
+        const deviation = hueDeviation(world, i);
+        if (deviation >= 0) {
+            sum += deviation;
+            species++;
+        }
+    }
+    if (species > 0) {
+        scene.hueSum += sum / species;
+        scene.hueCheckpoints++;
+    }
 }
 
 /**
@@ -169,6 +232,12 @@ export function floraMetrics(scene) {
     /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
     const result = {
         'eval.seasonal_diet_shift': dietShift(scene, sums),
+        'eval.pollination_rate':
+            scene.ticks > 0 ? ok((1000 * scene.pollinations) / scene.ticks) : none('no observed ticks after burn-in'),
+        'eval.flora_hue_spread':
+            scene.hueCheckpoints > 0
+                ? ok(scene.hueSum / scene.hueCheckpoints)
+                : none('no live pollinated species at checkpoints after burn-in'),
         'eval.toxic_avoidance': avoidance(scene),
         'eval.toxic_death_share':
             scene.deaths > 0 ? ok(scene.poisoned / scene.deaths) : none('no deaths after burn-in'),
