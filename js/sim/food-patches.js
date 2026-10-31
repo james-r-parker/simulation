@@ -39,7 +39,7 @@ export function createPatches(world) {
 }
 
 /**
- * Roulette over the patches by stock, in ascending index; draws one float from `rng`.
+ * Roulette over seasonal patch weights, in ascending index; draws one float from `rng`.
  * @param {World} world the world; needs at least one patch
  * @param {Rng} rng the stream to draw from
  * @returns {number} the patch index
@@ -54,7 +54,7 @@ export function pickPatch(world, rng) {
     if (total === 0) {
         return -1;
     }
-    for (let i = 0; i < patchStock.length; i++) {
+    for (let i = 0; i < patchStock.length - 1; i++) {
         remaining -= patchStock[i];
         if (remaining < 0) {
             return i;

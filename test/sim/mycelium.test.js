@@ -78,14 +78,18 @@ describe('mycelium', () => {
         expect(w.foodSpecies[slot]).toBe(0);
     });
 
-    it('picks marks by size and returns -1 for an empty pool', () => {
-        const w = smallWorld({ myceliumMax: 2 });
+    it('picks live marks by size across gaps and returns -1 for an empty pool', () => {
+        const w = smallWorld({ myceliumMax: 3 });
         expect(pickMark(w)).toBe(-1);
         addMyceliumMark(w, { ...BODY, size: 1 });
+        addMyceliumMark(w, { ...BODY, size: 100 });
         addMyceliumMark(w, { ...BODY, size: 3 });
+        for (const name of MYCELIUM_ARRAYS) {
+            w[name][1] = 0;
+        }
         let second = 0;
         for (let i = 0; i < 1000; i++) {
-            second += pickMark(w) === 1 ? 1 : 0;
+            second += pickMark(w) === 2 ? 1 : 0;
         }
         expect(second / 1000).toBeCloseTo(0.75, 1);
     });
