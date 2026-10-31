@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FLORA_NAMES } from '../../js/sim/config-flora.js';
 import { FLORA_ARRAYS, assertFlora } from '../../js/sim/flora-state.js';
 import { smallWorld } from './helpers/small-world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
@@ -75,4 +76,29 @@ describe('flora state', () => {
             expect(() => assertFlora(w)).toThrow(name);
         });
     }
+    it('accepts no initial patch shares only when there are no patches', () => {
+        const flora = Object.fromEntries(FLORA_NAMES.map((name) => [name, { share: 0 }]));
+        const w = smallWorld({ flora });
+        expect(w.patchSpecies).toHaveLength(0);
+        expect(() => assertFlora(w)).not.toThrow();
+        expect(() => smallWorld({ ...PATCHES, flora })).toThrow('positive share');
+    });
+
+    for (const [field, value] of [
+        ['patchSpecies', 255],
+        ['patchHue', 2],
+    ]) {
+        it(`rejects an invalid ${field} before a spawn`, () => {
+            const w = smallWorld(PATCHES);
+            w[field][0] = value;
+            expect(() => assertFlora(w)).toThrow('patch species or hue');
+        });
+    }
+
+    it('rejects source patch values below the background sentinel', () => {
+        const w = smallWorld();
+        const slot = spawnFoodItem(w);
+        w.foodPatch[slot] = -2;
+        expect(() => assertFlora(w)).toThrow('foodPatch');
+    });
 });

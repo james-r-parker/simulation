@@ -81,4 +81,15 @@ describe('species spawning', () => {
         regrowPatches(b);
         expect(b.patchStock[0] - 0.5).toBeCloseTo(2 * (a.patchStock[0] - 0.5), 12);
     });
+    it('falls back to clear background placement when an entire patch disc is blocked', () => {
+        const w = smallWorld({ foodPatchCount: 1, foodPatchRadius: 1, foodBackgroundShare: 0, placementTries: 5 });
+        w.patchX[0] = w.patchY[0] = 500;
+        w.obsX.fill(1e6);
+        w.obsY.fill(1e6);
+        w.obsX[0] = w.obsY[0] = 500;
+        w.obsRadius[0] = 100;
+        const slot = spawnFoodItem(w);
+        expect(w.foodPatch[slot]).toBe(0);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeGreaterThanOrEqual(100 + w.foodRadius[slot]);
+    });
 });

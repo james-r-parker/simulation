@@ -114,6 +114,19 @@ describe('the proof ledger', () => {
         };
     }
 
+    it('releases both parents when an unproven mating child dies', () => {
+        const { ledger, world } = build(4);
+        world.parentB[2] = 101;
+        ledger.died(world, { slot: 0, mature: true });
+        ledger.died(world, { slot: 1, mature: true });
+        ledger.died(world, { slot: 2, mature: false });
+        ledger.settle(0, { tick: 50, item: offerOf(100, 1) });
+        ledger.settle(1, { tick: 50, item: offerOf(101, 1) });
+        expect(ledger.table.has(100)).toBe(true);
+        expect(ledger.table.has(101)).toBe(false);
+        expect(ledger.table.childDied(100)).toBe(100);
+    });
+
     it('keeps a held parent waiting for the other child when one dies in the tick the parent dies', () => {
         const { ledger, world, records } = build(4);
         ledger.died(world, { slot: 0, mature: true });

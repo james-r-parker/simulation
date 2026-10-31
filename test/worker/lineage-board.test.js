@@ -80,6 +80,7 @@ describe('updateBoard extinction', () => {
     it('announces a lineage that reached 10 agents and then has none', () => {
         const board = createLineageBoard();
         updateBoard(board, setCounts(board, { 1: EXTINCT_PEAK, 2: 3 }), 100);
+        expect(updateBoard(board, setCounts(board, { 1: 2, 2: 3 }), 150).extinct).toEqual([]);
         expect(updateBoard(board, setCounts(board, { 2: 3 }), 200).extinct).toEqual([1]);
         expect(updateBoard(board, setCounts(board, { 2: 3 }), 300).extinct).toEqual([]);
     });

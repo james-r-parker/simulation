@@ -80,4 +80,13 @@ describe('eval.instinct_drift', () => {
         expect(metric.value).toBeNull();
         expect(metric.reason).toBeTypeOf('string');
     });
+    it('leaves the founder reference unset when the checkpoint has no sampled agents', () => {
+        const pools = createInstinctPools(CONFIG);
+        const { world, observer } = handWorld(pools, { offset: 0.1, tick: BURN_IN_TICKS });
+        observer.sampled = new Int32Array(0);
+        expect(priorDistance(pools, world, observer.sampled)).toBeNaN();
+        sampleInstinct(pools, observer, world);
+        expect(pools.founders).toBeNaN();
+        expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeNull();
+    });
 });

@@ -58,7 +58,7 @@ export function pickMark(world) {
     if (total === 0) {
         return -1;
     }
-    for (let i = 0; i < world.myceliumTicks.length; i++) {
+    for (let i = 0; i < last; i++) {
         if (world.myceliumTicks[i] > 0) {
             target -= world.myceliumSize[i];
             if (target < 0) {
