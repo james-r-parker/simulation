@@ -93,6 +93,7 @@ describe('observeScenes', () => {
             'carcass',
             'condition',
             'families',
+            'flora',
             'heritage',
             'mate',
             'niche',

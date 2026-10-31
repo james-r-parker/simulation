@@ -119,11 +119,12 @@ describe('leaveCarcass', () => {
 });
 
 describe('carcass expiry', () => {
-    it('lasts carcassTicks ticks while plant food keeps lasting foodMaxAge', () => {
-        const w = lifeWorld({ ...ON, foodMaxAge: 100 });
+    it('lasts carcassTicks ticks while plant food keeps lasting the species lifetime', () => {
+        const w = lifeWorld({ ...ON, flora: { grass: { life: 100 } } });
         const meat = killOld(w, 80);
         const plant = w.foodAlive.indexOf(0);
         w.foodAlive[plant] = 1;
+        w.foodLife[plant] = 100;
         w.foodCount += 1;
         for (let i = 0; i < 5; i++) {
             ageFood(w);
@@ -229,6 +230,7 @@ describe('carcass snapshot and hash', () => {
         const meat = killOld(w, 80);
         const plant = w.foodAlive.indexOf(0);
         w.foodAlive[plant] = 1;
+        w.foodLife[plant] = 100;
         w.foodRadius[plant] = 7;
         w.foodCount += 1;
         const buffer = new ArrayBuffer(snapshotLayout(w.config).bytes);

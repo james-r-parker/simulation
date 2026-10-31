@@ -1,3 +1,4 @@
+import { addMyceliumMark } from './mycelium.js';
 // Deaths and the population floor guard.
 
 import { addFertileZone } from './environment.js';
@@ -89,6 +90,7 @@ export function reap(world, policy) {
         world.ledger[1] += world.energy[slot];
         leaveCarcass(world, slot);
         addFertileZone(world, world.x[slot], world.y[slot], world.size[slot]);
+        addMyceliumMark(world, { x: world.x[slot], y: world.y[slot], size: world.size[slot] });
         freeAgent(world, slot);
     }
 }

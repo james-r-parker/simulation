@@ -1,3 +1,4 @@
+// Flora's species shares and seasonal diet shift use the default higher direction.
 // The direction a `watch` metric would count as better if it earned one. `eval:power --include-watch` uses it to plant
 // the change in the right direction when it measures a `watch` metric's detectable change. It is not a verdict
 // direction: `DIRECTIONS` in `js/evo/compare.js` is. A `watch` metric not listed here is treated as `higher`.

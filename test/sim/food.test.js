@@ -95,8 +95,8 @@ describe('spawnFood', () => {
 });
 
 describe('ageFood', () => {
-    it('removes only food older than foodMaxAge and keeps the count', () => {
-        const w = smallWorld({ ...BASE, foodMaxAge: 3 });
+    it('removes only food older than the species lifetime and keeps the count', () => {
+        const w = smallWorld({ ...BASE, flora: { grass: { life: 3 } } });
         fill(w, 3);
         w.foodAge[0] = 3;
         w.foodAge[1] = 1;
@@ -109,8 +109,8 @@ describe('ageFood', () => {
         expect(w.foodCount).toBe(2);
     });
 
-    it('keeps food that reaches exactly foodMaxAge', () => {
-        const w = smallWorld({ ...BASE, foodMaxAge: 3 });
+    it('keeps food that reaches exactly the species lifetime', () => {
+        const w = smallWorld({ ...BASE, flora: { grass: { life: 3 } } });
         fill(w, 1);
         w.foodAge[0] = 2;
         ageFood(w);
@@ -140,7 +140,7 @@ describe('spawnFood exact rules', () => {
 
 describe('ageFood on dead slots', () => {
     it('does not age or remove food slots that are not alive', () => {
-        const w = smallWorld({ ...BASE, foodMaxAge: 3 });
+        const w = smallWorld({ ...BASE, flora: { grass: { life: 3 } } });
         fill(w, 2);
         w.foodAlive[0] = 0;
         w.foodAge[0] = 9;

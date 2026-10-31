@@ -1,6 +1,8 @@
 // Permanent food patches: placed at world creation, drawn from by food spawns in proportion to their stock, drained
 // by the food eaten inside them and regrown logistically. The arrays are empty when `foodPatchCount` is 0.
 
+import { assignFlora } from './flora-state.js';
+import { refreshFruiting } from './fruiting.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
@@ -27,6 +29,8 @@ export function createPatches(world) {
         world.patchY[i] = foodPatchRadius + nextFloat(rng) * (worldHeight - 2 * foodPatchRadius);
         world.patchStock[i] = foodPatchCapacity;
     }
+    assignFlora(world);
+    refreshFruiting(world);
     if (foodPatchCount > 0) {
         const o = pushEvent(world.events, EVENT_TYPE.FOOD_PATCHES_CREATED, world.tick);
         world.events.data[o + 2] = foodPatchCount;
@@ -41,12 +45,15 @@ export function createPatches(world) {
  * @returns {number} the patch index
  */
 export function pickPatch(world, rng) {
-    const { patchStock } = world;
+    const patchStock = world.patchWeight;
     let total = 0;
     for (let i = 0; i < patchStock.length; i++) {
         total += patchStock[i];
     }
     let remaining = nextFloat(rng) * total;
+    if (total === 0) {
+        return -1;
+    }
     for (let i = 0; i < patchStock.length; i++) {
         remaining -= patchStock[i];
         if (remaining < 0) {
@@ -95,7 +102,13 @@ export function regrowPatches(world) {
     const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
     for (let i = 0; i < patchStock.length; i++) {
         const stock = Math.min(foodPatchCapacity, Math.max(floor, patchStock[i]));
-        const grown = stock + foodPatchRegrow * patchRegrowFactor(world, i) * stock * (1 - stock / foodPatchCapacity);
+        const grown =
+            stock +
+            world.patchRegrow[i] *
+                foodPatchRegrow *
+                patchRegrowFactor(world, i) *
+                stock *
+                (1 - stock / foodPatchCapacity);
         patchStock[i] = Math.min(foodPatchCapacity, grown);
     }
 }

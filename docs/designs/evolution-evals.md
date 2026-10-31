@@ -154,6 +154,8 @@ The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; 
 | Life   | Bite share of energy gained: `biteEnergy / (foodEnergy + biteEnergy)`, 0 when both are 0 | Children per 10000 ticks alive, over 0..5, the top bin open-ended |
 | Motion | Mean speed over `maxVelocity`, clamped to 1                                              | Mean absolute `turnRate` over `maxTurn`                           |
 
+Flora Phase 1 adds `eval.food_species_share.<species>` (six names) and `eval.seasonal_diet_shift`, all `watch`. `scene-flora.js` measures exact stored plant energy after burn-in; [flora.md](flora.md) defines the species shares and pairwise seasonal distance. Absent meals produce `null` with a reason.
+
 ## Eval runner
 
 `npm run eval -- --seeds <n> --ticks <t> --policy <name> [--seed-offset <k>] [--config <file.json>] [--out <path>]`

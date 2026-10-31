@@ -36,6 +36,7 @@ function tryEat(world, slot, food) {
         world.ateTimer[slot] = 0;
         if (!isMeat) {
             depletePatchAt(world, world.foodX[food], world.foodY[food]);
+            world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
         }
         removeFood(world, food);
     }

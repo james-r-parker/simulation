@@ -1,4 +1,6 @@
+import { MYCELIUM_ARRAYS } from './mycelium.js';
 // Hashes a world's state bytes at a checkpoint, in the fixed order of the design doc's hashWorld section.
+import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
 import { meritSpecs } from './merit-state.js';
 
@@ -122,7 +124,7 @@ function bytesOf(world, name) {
 function fieldNames(world) {
     const { foodPatchCount } = world.config;
     const names = FIELD_ARRAYS.filter((name) => foodPatchCount > 0 || !PATCH_ARRAYS.includes(name));
-    names.push(ERA_FIELD);
+    names.push(ERA_FIELD, ...FLORA_ARRAYS, ...MYCELIUM_ARRAYS);
     const at = names.indexOf('foodAge') + 1;
     return [...names.slice(0, at), FOOD_KIND_FIELD, ...names.slice(at)];
 }

@@ -31,6 +31,10 @@ export function leaveCarcass(world, slot) {
             world.foodRadius[food] = world.size[slot];
             world.foodValue[food] = value;
             world.foodAge[food] = 0;
+            world.foodHue[food] = 0;
+            world.foodTox[food] = 0;
+            world.foodLife[food] = world.config.carcassTicks;
+            world.foodPatch[food] = -1;
             world.foodCount += 1;
             return;
         }

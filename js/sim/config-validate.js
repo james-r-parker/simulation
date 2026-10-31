@@ -1,5 +1,6 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
+import { checkFlora, MYCELIUM_RULES } from './config-flora.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
@@ -24,6 +25,8 @@ const EFFICIENCY = { type: 'num', gt: 0, max: 1 };
 
 /** @type {Record<string, Rule>} */
 const RULES = {
+    flora: { type: 'flora' },
+    ...MYCELIUM_RULES,
     seed: int(0, MAX_SEED),
     worldWidth: num(1000, 100000),
     worldHeight: num(1000, 100000),
@@ -35,13 +38,7 @@ const RULES = {
     initialFood: int(0),
     foodSpawnRate: num(0),
     foodEnergy: positive(),
-    foodEnergyVariance: num(0),
-    highFoodChance: UNIT,
-    highFoodEnergy: positive(),
-    highFoodEnergyVariance: num(0),
     foodRadius: positive(),
-    highFoodRadius: positive(),
-    foodMaxAge: int(1),
     obstacleDamage: num(0),
     wallDamage: num(0),
     rayCount: int(1, 64),
@@ -343,7 +340,8 @@ function checkCrossKey(config) {
     if (config.initialEnergy > storeMin) {
         fail('initialEnergy', config.initialEnergy, `<= the smallest energy store (${storeMin})`);
     }
-    const largest = Math.max(baseSizeMax + storeMax / config.energyToSize, config.foodRadius, config.highFoodRadius);
+    const foodMax = config.foodRadius * Math.max(...Object.values(config.flora).map((row) => row.radius));
+    const largest = Math.max(baseSizeMax + storeMax / config.energyToSize, foodMax);
     const room = Math.min(config.worldWidth, config.worldHeight);
     if (config.foodPatchCount > 0 && 2 * config.foodPatchRadius > room) {
         fail('foodPatchRadius', config.foodPatchRadius, `<= half the shorter world side (${room / 2})`);
@@ -366,7 +364,9 @@ function checkCrossKey(config) {
 export function validateConfig(config) {
     checkExactKeys('', config, Object.keys(RULES));
     for (const [key, rule] of Object.entries(RULES)) {
-        if (rule.type === 'seasons') {
+        if (rule.type === 'flora') {
+            checkFlora(config[key]);
+        } else if (rule.type === 'seasons') {
             checkSeasons(config[key]);
         } else if (rule.type === 'specialisations') {
             checkSpecialisations(config[key]);

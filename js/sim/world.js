@@ -1,5 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
+import { allocateFlora } from './flora-state.js';
 import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createInputActivity } from './input-activity.js';
@@ -172,6 +173,7 @@ function allocPatches(world) {
     const { foodPatchCount } = world.config;
     allocRows(world, singles(Float32Array, ['patchX', 'patchY']), foodPatchCount);
     allocRows(world, singles(Float64Array, ['patchStock']), foodPatchCount);
+    allocateFlora(world);
 }
 
 /**

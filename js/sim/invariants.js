@@ -1,3 +1,5 @@
+import { assertMycelium } from './mycelium.js';
+import { assertFlora } from './flora-state.js';
 // Debug-only world checks that throw on the first broken invariant, run when `config.checkInvariants` is set.
 
 import { HEARD_STRIDE } from './world.js';
@@ -262,4 +264,6 @@ export function assertInvariants(world) {
     checkTemperature(world);
     checkCalls(world);
     checkMerit(world);
+    assertFlora(world);
+    assertMycelium(world);
 }

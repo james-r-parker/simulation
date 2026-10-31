@@ -12,6 +12,8 @@ const rec = vi.hoisted(() => (/** @type {string} */ name) => (/** @type {any[]} 
     calls.push([name, ...args]);
 });
 
+vi.mock('../../js/sim/mycelium.js', () => ({ ageMycelium: rec('ageMycelium') }));
+vi.mock('../../js/sim/fruiting.js', () => ({ refreshFruiting: rec('refreshFruiting') }));
 vi.mock('../../js/sim/calls.js', () => ({ signalAll: rec('signalAll') }));
 vi.mock('../../js/sim/energy.js', () => ({ applyCosts: rec('applyCosts') }));
 vi.mock('../../js/sim/events.js', () => ({ clearEvents: rec('clearEvents') }));
@@ -80,7 +82,9 @@ describe('step phase bodies', () => {
             ['splitAll', world, policy],
             ['reap', world, policy],
             ['fillFloor', world, policy],
+            ['ageMycelium', world],
             ['regrowPatches', world],
+            ['refreshFruiting', world],
             ['spawnFood', world],
             ['ageFood', world],
             ['decayFertileZones', world],

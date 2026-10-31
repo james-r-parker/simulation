@@ -248,7 +248,7 @@ describe('validateConfig cross-key rules', () => {
     });
 
     it('counts the food radius in the largest radius', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, highFoodRadius: 200 })).toThrow(/hashCellSize/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, flora: { grass: { radius: 10 } } })).toThrow(/hashCellSize/);
     });
 });
 
