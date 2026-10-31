@@ -12,8 +12,7 @@
 import { basinOf } from '../sim/eras.js';
 import { geneticDistance } from '../sim/genetics.js';
 import { createLog, ensureRoom } from './growable-log.js';
-import { none, ok } from './metrics-stats.js';
-import { BASIN_MIN_ALIVE, LAST_SHARE } from './scene-balance.js';
+import { lastQuarterBasinMean } from './scene-balance.js';
 
 /** Genomes closer than this share a family: under half the distance between two unrelated genomes. */
 export const FAMILY_DISTANCE = 0.5;
@@ -96,36 +95,13 @@ export function sampleFamilies(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the family scene
- * @param {'families' | 'effective'} column the per-basin column
- * @param {number} lastTick the run's last tick
- * @returns {import('./metrics-stats.js').MetricResult} the smaller basin mean over the last quarter's checkpoints
- */
-function basinMean(scene, column, lastTick) {
-    const from = lastTick * (1 - LAST_SHARE);
-    let smallest = Infinity;
-    for (let basin = 0; basin < 2; basin++) {
-        let sum = 0;
-        let n = 0;
-        for (let row = 0; row < scene.rows; row++) {
-            if (scene.log.tick[row] >= from && scene.log[`alive${basin}`][row] >= BASIN_MIN_ALIVE) {
-                sum += scene.log[`${column}${basin}`][row];
-                n += 1;
-            }
-        }
-        smallest = n > 0 ? Math.min(smallest, sum / n) : smallest;
-    }
-    return smallest === Infinity ? none(`no basin held ${BASIN_MIN_ALIVE} agents in the last quarter`) : ok(smallest);
-}
-
-/**
- * @param {Record<string, any>} scene the family scene
  * @param {Record<string, any>} world the world at the run's last tick
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two family metrics
  */
 export function familyMetrics(scene, world) {
     const lastTick = world.tick ?? 0;
     return {
-        'eval.basin_families': basinMean(scene, 'families', lastTick),
-        'eval.basin_family_effective': basinMean(scene, 'effective', lastTick),
+        'eval.basin_families': lastQuarterBasinMean(scene, 'families', lastTick),
+        'eval.basin_family_effective': lastQuarterBasinMean(scene, 'effective', lastTick),
     };
 }

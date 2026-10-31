@@ -78,12 +78,13 @@ export function sampleBalance(scene, world) {
 }
 
 /**
- * @param {ReturnType<typeof createBalanceScene>} scene the balance scene
- * @param {'lineages' | 'effective'} column the per-basin column
+ * @param {Record<string, any>} scene a scene (`log`, `rows`) whose log has `tick`, `alive<basin>` and
+ *   `<column><basin>` columns (this one and `scene-families.js`)
+ * @param {string} column the per-basin column
  * @param {number} lastTick the run's last tick
  * @returns {import('./metrics-stats.js').MetricResult} the smaller basin mean over the last quarter's checkpoints
  */
-function basinFamilies(scene, column, lastTick) {
+export function lastQuarterBasinMean(scene, column, lastTick) {
     const from = lastTick * (1 - LAST_SHARE);
     let smallest = Infinity;
     for (let basin = 0; basin < 2; basin++) {
@@ -130,8 +131,8 @@ function endState(world) {
 export function balanceMetrics(scene, world) {
     const lastTick = world.tick ?? 0;
     const families = {
-        'eval.basin_lineages_alive': basinFamilies(scene, 'lineages', lastTick),
-        'eval.basin_lineage_effective': basinFamilies(scene, 'effective', lastTick),
+        'eval.basin_lineages_alive': lastQuarterBasinMean(scene, 'lineages', lastTick),
+        'eval.basin_lineage_effective': lastQuarterBasinMean(scene, 'effective', lastTick),
     };
     if (world.alive === undefined) {
         const reason = none('no world at the last tick');
