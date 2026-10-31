@@ -5,6 +5,7 @@
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
+import { familyMetrics } from './scene-families.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { conditionMetrics } from './scene-condition.js';
@@ -40,6 +41,8 @@ export const SCENE_DIRECTIONS = Object.freeze({
     'eval.prey_types_at_end': 'higher',
     'eval.basin_lineages_alive': 'higher',
     'eval.basin_lineage_effective': 'higher',
+    'eval.basin_families': 'higher',
+    'eval.basin_family_effective': 'higher',
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
 });
 
@@ -57,6 +60,7 @@ export function sceneMetrics(observer, world) {
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
         ...balanceMetrics(s.balance, world),
+        ...familyMetrics(s.families, world),
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),
