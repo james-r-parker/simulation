@@ -46,7 +46,7 @@ function recordParts(observer, base) {
         return value;
     };
     return {
-        fitness: Object.assign(fitness, { weights: base.weights, parts: base.parts }),
+        fitness: Object.assign(fitness, { weights: base.weights, parts: base.parts, terms: base.terms }),
         scoreFields: (row) => Object.fromEntries(names.map((name) => [name, deaths[PART_COLUMNS[name]][row]])),
     };
 }

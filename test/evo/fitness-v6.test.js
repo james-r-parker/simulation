@@ -141,3 +141,31 @@ describe('fitnessV6 parts', () => {
         });
     });
 });
+
+describe('fitnessV6 terms', () => {
+    const f = createFitnessV6({});
+    const terms = () => ({
+        intake: 0,
+        survival: 0,
+        role: 0,
+        escape: 0,
+        kill: 0,
+        born: 0,
+        lineage: 0,
+        waste: 0,
+        fitness: 0,
+    });
+
+    it('pays each term as the fitness does, and the terms less the waste sum to the fitness', () => {
+        const o = observerWith({ deliberateFood: 250, maturedChildren: 1, idleSignal: 2 });
+        const t = f.terms(o, 0, config, terms());
+        const p = f.parts(o, 0, config, { skill: 0, waste: 0, lineage: 0 });
+        expect(t.fitness).toBe(f(o, 0, config));
+        expect(t.intake).toBe(250);
+        expect(t.intake + t.survival + t.role + t.escape + t.kill).toBeCloseTo(p.skill, 9);
+        expect(t.lineage).toBe(p.lineage);
+        expect(t.waste).toBeCloseTo(40, 9);
+        const sum = t.intake + t.survival + t.role + t.escape + t.kill + t.born + t.lineage - t.waste;
+        expect(sum).toBeCloseTo(t.fitness, 9);
+    });
+});

@@ -261,4 +261,5 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
+    splitClonalMax: 0, // new: natural-selection Phase 4; split generations in a row before the line must mate (aphids), 0 is unlimited
 });

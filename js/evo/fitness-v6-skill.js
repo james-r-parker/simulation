@@ -41,6 +41,14 @@ function roleTerm(observer, counters, slot, config) {
 }
 
 /**
+ * @typedef {object} SkillTerms the gated terms of the skill group, before the gate
+ * @property {number} survival the survival term
+ * @property {number} role the role term, capped at the intake
+ * @property {number} escape the escape credit, capped at the credit share of the intake
+ * @property {number} kill the converged-kill credit, capped the same way
+ */
+
+/**
  * Deliberate food plus deliberate bite energy.
  * @param {Record<string, any>} intent the intent counters
  * @param {number} slot the slot
@@ -71,6 +79,7 @@ export function chanceIntake(intent, slot) {
  *   intake: (observer: any, slot: number) => number,
  *   gate: (observer: any, slot: number) => number,
  *   gated: (observer: any, slot: number, config: any) => number,
+ *   terms: (observer: any, slot: number, config: any, out: SkillTerms) => SkillTerms,
  *   skill: (observer: any, slot: number, config: any) => number,
  *   waste: (observer: any, slot: number) => number,
  *   net: (positive: number, waste: number) => number,
@@ -82,25 +91,31 @@ export function createSkillGroup(counters, overrides) {
     const intake = (observer, slot) => deliberateIntake(observer.intent, slot);
     /** @type {(observer: any, slot: number) => number} */
     const gate = (observer, slot) => Math.min(1, deliberateIntake(observer.intent, slot) / w.GATE);
-    /** @type {(observer: any, slot: number, config: any) => number} */
-    const gated = (observer, slot, config) => {
+    /** @type {(observer: any, slot: number, config: any, out: SkillTerms) => SkillTerms} */
+    const terms = (observer, slot, config, out) => {
         const { intent } = observer;
         const deliberate = deliberateIntake(intent, slot);
         const total = intake(observer, slot);
-        const survival =
+        out.survival =
             w.SURVIVAL_RATE * Math.min(observer.ageTicks[slot], w.SURVIVAL_CAP, w.SURVIVAL_PER_DELIBERATE * deliberate);
-        const role = Math.min(roleTerm(observer, counters, slot, config), total);
+        out.role = Math.min(roleTerm(observer, counters, slot, config), total);
         const cap = w.CREDIT_CAP * total;
-        const credits =
-            Math.min(cap, w.ESCAPE * intent.respondedEscape[slot]) +
-            Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]);
-        return survival + role + credits;
+        out.escape = Math.min(cap, w.ESCAPE * intent.respondedEscape[slot]);
+        out.kill = Math.min(cap, w.CONVERGED_KILL * intent.convergedKills[slot]);
+        return out;
+    };
+    const scratch = { survival: 0, role: 0, escape: 0, kill: 0 };
+    /** @type {(observer: any, slot: number, config: any) => number} */
+    const gated = (observer, slot, config) => {
+        const t = terms(observer, slot, config, scratch);
+        return t.survival + t.role + (t.escape + t.kill);
     };
     return {
         weights: w,
         intake,
         gate,
         gated,
+        terms,
         skill: (observer, slot, config) =>
             intake(observer, slot) + gate(observer, slot) * gated(observer, slot, config),
         waste: (observer, slot) =>

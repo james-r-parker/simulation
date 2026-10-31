@@ -56,29 +56,65 @@ function commit(world, count) {
 }
 
 /**
- * Appends the obstacles and smoke clouds near the origin.
+ * The distance test of `commit`, before anything is written: a fixture row is filled only when it is kept.
+ * @param {Float64Array} s the ray scratch (`RANGE`)
+ * @param {number} ox the circle's origin-relative x
+ * @param {number} oy the circle's origin-relative y
+ * @param {number} r the circle's radius
+ * @returns {number} the row's `c` (squared distance less squared radius), NaN when the circle is out of reach
+ */
+function fixtureC(s, ox, oy, r) {
+    const reach = s[RANGE] + r;
+    const d2 = ox * ox + oy * oy;
+    return d2 > reach * reach * REACH_SLACK ? NaN : d2 - r * r;
+}
+
+/**
+ * Writes one kept fixture row.
+ * @param {Float64Array} local the gathered rows
+ * @param {number} count rows used so far
+ * @param {Float64Array} row a scratch of the four values: origin-relative x and y, `c`, packed key
+ * @returns {number} the new row count
+ */
+function writeFixture(local, count, row) {
+    const at = count * LOCAL_STRIDE;
+    local[at] = row[0];
+    local[at + 1] = row[1];
+    local[at + 2] = row[2];
+    local[at + 3] = row[3];
+    return count + 1;
+}
+
+/** One fixture row before it is written, so the far ones cost no stores into `rayLocal`. */
+const fixtureRow = new Float64Array(LOCAL_STRIDE);
+
+/**
+ * Appends the obstacles and smoke clouds near the origin, in the order and with the values `commit` would keep.
  * @param {World} world the world
  * @returns {number} the row count
  */
 function appendFixtures(world) {
     const { rayLocal: local, rayScratch: s, obsX, obsY, obsRadius, cloudX, cloudY } = world;
+    const row = fixtureRow;
     let count = 0;
     for (let i = 0; i < obsX.length; i++) {
-        const at = count * LOCAL_STRIDE;
-        local[at] = s[OX] - obsX[i];
-        local[at + 1] = s[OY] - obsY[i];
-        local[at + 2] = obsRadius[i];
-        local[at + 3] = OBSTACLE * KIND_STRIDE + i;
-        count = commit(world, count);
+        row[0] = s[OX] - obsX[i];
+        row[1] = s[OY] - obsY[i];
+        row[2] = fixtureC(s, row[0], row[1], obsRadius[i]);
+        if (row[2] === row[2]) {
+            row[3] = OBSTACLE * KIND_STRIDE + i;
+            count = writeFixture(local, count, row);
+        }
     }
     const radius = world.config.smokeRadius;
     for (let i = 0; i < world.cloudCount; i++) {
-        const at = count * LOCAL_STRIDE;
-        local[at] = s[OX] - cloudX[i];
-        local[at + 1] = s[OY] - cloudY[i];
-        local[at + 2] = radius;
-        local[at + 3] = SMOKE * KIND_STRIDE + i;
-        count = commit(world, count);
+        row[0] = s[OX] - cloudX[i];
+        row[1] = s[OY] - cloudY[i];
+        row[2] = fixtureC(s, row[0], row[1], radius);
+        if (row[2] === row[2]) {
+            row[3] = SMOKE * KIND_STRIDE + i;
+            count = writeFixture(local, count, row);
+        }
     }
     return count;
 }

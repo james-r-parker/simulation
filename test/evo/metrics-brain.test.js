@@ -30,6 +30,8 @@ const NAMES = [
     'eval.hebb_drift',
     'eval.hebb_drift_clamped_share',
     'eval.input_active_share',
+    'eval.input_active_share.threat',
+    'eval.input_active_share.prey',
     'eval.weight_drift_silent',
     'eval.weight_clamp_share',
     'eval.rare_input_saturation_jump',
@@ -37,7 +39,7 @@ const NAMES = [
 ];
 
 describe('the registered metrics', () => {
-    it('are the eighteen of the Metrics table, all watch to eval:compare', () => {
+    it('are the eighteen of the Metrics table and the two channel shares, all watch to eval:compare', () => {
         expect(Object.keys(BRAIN_DIRECTIONS).sort()).toEqual([...NAMES].sort());
         for (const name of NAMES) {
             expect(metricDirection(name)).toBe('watch');

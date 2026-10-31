@@ -1,0 +1,41 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "clonal1": {
+      "splitClonalMax": 1
+    },
+    "clonal2": {
+      "splitClonalMax": 2
+    },
+    "clonal3": {
+      "splitClonalMax": 3
+    },
+    "perlife1": {
+      "splitMaxPerLife": 1
+    },
+    "perlife2": {
+      "splitMaxPerLife": 2
+    },
+    "predsplit1": {
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 1
+        }
+      }
+    },
+    "combined": {
+      "splitClonalMax": 2,
+      "splitMaxPerLife": 2,
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 1
+        }
+      }
+    }
+  }
+}
