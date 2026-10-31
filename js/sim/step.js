@@ -1,3 +1,4 @@
+import { stepToxin } from './toxin.js';
 import { ageMycelium } from './mycelium.js';
 // One simulation tick: the phases in order, per-phase overrides, and the tick and phase added to any failure.
 import { refreshFruiting } from './fruiting.js';
@@ -84,6 +85,7 @@ function physics(world) {
  * @returns {void}
  */
 function lifecycle(world, policy) {
+    stepToxin(world);
     feed(world, world.hash);
     mate(world, policy);
     applyCosts(world);

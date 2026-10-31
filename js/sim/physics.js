@@ -1,5 +1,6 @@
 // Moves agents: steering and thrust, damping, wall and obstacle bounces, and agent-agent contact impulses.
 
+import { isSick } from './toxin.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
@@ -33,6 +34,9 @@ export function actAll(world) {
             }
             if (world.ateTimer[i] < config.handlingTicks) {
                 thrust *= config.handlingThrust;
+            }
+            if (isSick(world, i)) {
+                thrust *= config.sickThrust;
             }
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);

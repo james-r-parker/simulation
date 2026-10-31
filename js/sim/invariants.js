@@ -13,12 +13,13 @@ export const INVARIANT = Object.freeze({
     TEMPERATURE: 'temperature',
     CALLS: 'calls',
     MERIT: 'merit',
+    DOSE: 'dose',
 });
 
 /** Relative tolerance on the ledger comparison. */
 const LEDGER_TOLERANCE = 1e-6;
 
-const AGENT_SCALARS = ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'energy', 'foodEnergy', 'biteEnergy'];
+const AGENT_SCALARS = ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'energy', 'foodEnergy', 'biteEnergy', 'dose'];
 const FOOD_SCALARS = ['foodX', 'foodY', 'foodValue', 'foodRadius'];
 
 /**
@@ -252,6 +253,18 @@ function checkMerit(world) {
 }
 
 /**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkDose(world) {
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1 && world.dose[slot] < 0) {
+            throw violation(INVARIANT.DOSE, world, { slot, value: world.dose[slot] }, 'dose must be nonnegative');
+        }
+    }
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -264,6 +277,7 @@ export function assertInvariants(world) {
     checkTemperature(world);
     checkCalls(world);
     checkMerit(world);
+    checkDose(world);
     assertFlora(world);
     assertMycelium(world);
 }

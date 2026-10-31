@@ -215,6 +215,8 @@ The design doc's World state table (the `temperature` array is `Float32`), plus:
 
 ### Flora state and intake
 
+`dose` is per-agent `Float32`, finite and nonnegative for alive slots, zero at birth and after freeing a slot, and included in `hashWorld`. It is not a brain input. `stepToxin` drains sick bodies and decays existing doses at the start of `lifecycle`, before meals. A fresh dose therefore reaches the same tick's `reap` without first decaying. Sickness scales thrust and blocks eating; `ingestToxin` books a negative net meal as a cost and returns nonnegative energy for normal storage.
+
 `rayHue` is derived `Float32Array(maxAgents x rayCount)`, excluded from `hashWorld`. `castRays` writes each alive slot's whole row before pooling: the hit food's hue, zero for every other hit or no hit. `poolRays` and the diagnostic raw-hue controller read that row until the next cast. Dead slots need no valid row. The two slots may contain rays from the same food item; pooling does not deduplicate targets. The two selected food hues occupy pooled indices 48 and 49; the body block begins at 50 in `pooled-v3`.
 
 `flora-state.js` allocates the Phase 1 arrays. Patch records have `foodPatchCount` entries: `patchSpecies` (`Uint8`) and `patchHue`, `patchEnergy`, `patchRegrow`, `patchLife`, `patchStart`, `patchSpan`, `patchYield`, `patchWeight` (`Float32`). Item records have `maxFood` entries: `foodSpecies`, `foodHue`, `foodTox`, `foodLife` (`Float32`) and `foodPatch` (`Int32`, source patch or -1 for background, fungus and meat). All are hashed. `removeFood` zeroes the item records. Species indices follow `FLORA_NAMES`.

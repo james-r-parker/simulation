@@ -146,6 +146,7 @@ const AT_MOST = [
 
 /** Pairs `[smaller, larger]`: the first key's value must be below the second's. */
 const BELOW = [
+    ['sickDose', 'lethalDose'],
     ['temperatureColdStress', 'temperatureColdModerate'],
     ['temperatureColdStress', 'temperatureOptimalMin'],
     ['temperatureOptimalMax', 'temperatureHeatModerate'],

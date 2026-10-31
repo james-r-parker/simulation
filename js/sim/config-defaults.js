@@ -22,6 +22,13 @@ export const DEFAULTS = deepFreeze({
     myceliumLife: 144000,
     myceliumMax: 200,
     myceliumRadius: 150,
+    toxinDose: 0.45,
+    toxinCost: 1.2,
+    sickDose: 0.3,
+    sickThrust: 0.4,
+    sickDrain: 0.02,
+    doseDecay: 0.0008,
+    lethalDose: 1,
     seed: 1, // new
     worldWidth: 14400, // WORLD_WIDTH
     worldHeight: 8100, // WORLD_HEIGHT

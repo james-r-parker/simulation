@@ -81,7 +81,7 @@ function singles(Type, names) {
 function agentSpecs(layout) {
     return [
         ...singles(Uint8Array, ['alive', 'spec', 'sex', 'ateTimer', 'bittenTimer', 'lastLoss']),
-        ...singles(Float32Array, ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'temperature']),
+        ...singles(Float32Array, ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'temperature', 'dose']),
         ...singles(Float64Array, ['energy', 'foodEnergy', 'biteEnergy']),
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
         ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),

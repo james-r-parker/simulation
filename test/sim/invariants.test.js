@@ -239,7 +239,7 @@ describe('assertInvariants', () => {
         });
     });
 
-    it('names the seven invariants', () => {
+    it('names the eight invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
@@ -248,6 +248,7 @@ describe('assertInvariants', () => {
             TEMPERATURE: 'temperature',
             CALLS: 'calls',
             MERIT: 'merit',
+            DOSE: 'dose',
         });
     });
 
