@@ -179,6 +179,18 @@ describe('collectEffects', () => {
         ]);
     });
 
+    it("keeps a dead caller's cached lineage and uses zero for an unknown caller", () => {
+        const world = smallWorld();
+        place(world, 1, { genomeId: 21, lineageId: 6, spec: 1 });
+        const log = createEffectLog(world.config.maxAgents);
+        primeEffects(log, world);
+        world.alive[1] = 0;
+        event(world, EVENT_TYPE.ALARM_CALLED, [1, 21, 1, 100, 200]);
+        event(world, EVENT_TYPE.ALARM_CALLED, [1, 99, 1, 100, 200]);
+        collectEffects(log, world, NO_SLOTS);
+        expect(drain(log).records.map((r) => r[7])).toEqual([6, 0]);
+    });
+
     it('ignores the event types that have no effect', () => {
         const world = smallWorld();
         event(world, EVENT_TYPE.BIRTH_BLOCKED, [0, 0]);
