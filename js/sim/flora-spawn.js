@@ -1,7 +1,30 @@
 // Chooses a flora source and copies its traits to a new food item.
 import { FLORA_NAMES } from './config-flora.js';
+import { fruitWeight } from './fruiting.js';
 import { pickPatch } from './food-patches.js';
+import { pickMark } from './mycelium.js';
 import { nextFloat } from './rng.js';
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @returns {number} a live mark, or -1 for the patch/background draw
+ */
+function fungusMark(world) {
+    let alive = false;
+    for (let i = 0; i < world.myceliumTicks.length; i++) {
+        if (world.myceliumTicks[i] > 0) {
+            alive = true;
+            break;
+        }
+    }
+    if (!alive) {
+        return -1;
+    }
+    const c = world.config;
+    const fungus = c.flora.fungus;
+    const chance = c.fertileZoneSpawnChance * fruitWeight(world.season[1], fungus.start, fungus.span);
+    return nextFloat(world.rng.food) < chance ? pickMark(world) : -1;
+}
 
 /**
  * @param {import('./world.js').World} world the world
@@ -70,6 +93,13 @@ function writeItem(world, slot, species, patch) {
  */
 export function spawnFloraItem(world, slot, placeClear, placeInDisc) {
     const c = world.config;
+    const mark = fungusMark(world);
+    if (mark >= 0) {
+        sourceDisc(world, -1, mark);
+        if (placeInDisc(world, world.floraDisc, c.flora.fungus.radius * c.foodRadius)) {
+            return writeItem(world, slot, FLORA_NAMES.indexOf('fungus'), -1);
+        }
+    }
     const patch = patchSource(world);
     const species = patch >= 0 ? world.patchSpecies[patch] : 0;
     const radius = c.flora[FLORA_NAMES[species]].radius * c.foodRadius;

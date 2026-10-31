@@ -175,6 +175,58 @@ describe('spawnFoodItem draws', () => {
         expect(w.foodValue[slot]).toBe(140);
     });
 
+    it('skips the zone when the roll is not below fertileZoneSpawnChance', () => {
+        const [roll, px, py] = peek('food', 3);
+        const w = empty({ fertileZoneSpawnChance: roll });
+        setZone(w, 0, 900, 900, 1);
+        const s = spawnFoodItem(w);
+        expect(w.foodX[s]).toBeCloseTo(20 + px * 960, 3);
+        expect(w.foodY[s]).toBeCloseTo(20 + py * 960, 3);
+    });
+
+    it('picks the zone by roulette over alive zones and places inside it', () => {
+        const [, target, ru, tu, v] = peek('food', 5);
+        expect(target).toBeGreaterThan(0);
+        expect(target).toBeLessThan(0.8);
+        const w = empty({ fertileZoneSpawnChance: 1 });
+        const rest = 1 - target;
+        setZone(w, 0, 100, 100, 5, 0);
+        setZone(w, 1, 200, 200, 2 * target);
+        setZone(w, 2, 800, 400, rest);
+        setZone(w, 3, 800, 800, rest);
+        const s = spawnFoodItem(w);
+        const r = 50 * Math.sqrt(ru);
+        const theta = tu * TWO_PI;
+        expect(w.foodX[s]).toBeCloseTo(800 + r * detCos(theta), 3);
+        expect(w.foodY[s]).toBeCloseTo(400 + r * detSin(theta), 3);
+        expect(w.foodValue[s]).toBeCloseTo(70 + (2 * v - 1) * 20, 9);
+    });
+
+    it('refuses a blocked fungal source after placementTries attempts and draws background grass', () => {
+        const w = empty({ fertileZoneSpawnChance: 1, placementTries: 5 });
+        w.obsX[0] = 500;
+        w.obsY[0] = 500;
+        w.obsRadius[0] = 400;
+        setZone(w, 0, 500, 500, 1);
+        const s = spawnFoodItem(w);
+        expect(w.foodSpecies[s]).toBe(0);
+        // 2 draws (chance, zone) and 5 zone attempts of 2 draws, then uniform samples until one is clear
+        const after = fork(createRng(SEED), 'food');
+        for (let i = 0; i < 12; i++) {
+            nextFloat(after);
+        }
+        let x;
+        let y;
+        do {
+            x = 20 + nextFloat(after) * 960;
+            y = 20 + nextFloat(after) * 960;
+        } while (Math.hypot(x - 500, y - 500) < 420);
+        expect(w.foodX[s]).toBeCloseTo(x, 3);
+        expect(w.foodY[s]).toBeCloseTo(y, 3);
+        nextFloat(after);
+        expect(Array.from(w.rng.food.s)).toEqual(Array.from(after.s));
+    });
+
     it('names the tick and maxFood when no slot is free', () => {
         const w = empty({ maxFood: 2, initialFood: 2 });
         expect(() => spawnFoodItem(w)).toThrow(

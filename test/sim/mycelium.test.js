@@ -57,6 +57,27 @@ describe('mycelium', () => {
         expect(w.myceliumTicks[0]).toBe(w.config.myceliumLife - wait);
     });
 
+    it('only fruits on a live mark in season and stays within its radius', () => {
+        const w = smallWorld({ maxFood: 10, fertileZoneSpawnChance: 1, myceliumRadius: 50 });
+        w.season[1] = 0.795;
+        expect(w.foodSpecies[spawnFoodItem(w)]).toBe(0);
+        addMyceliumMark(w, BODY);
+        const slot = spawnFoodItem(w);
+        expect(w.foodSpecies[slot]).toBe(4);
+        expect(w.foodPatch[slot]).toBe(-1);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeLessThanOrEqual(50.001);
+        w.season[1] = 0.3;
+        expect(w.foodSpecies[spawnFoodItem(w)]).toBe(0);
+    });
+
+    it('refuses fungus when clamping at an edge would leave the mark disc', () => {
+        const w = smallWorld({ fertileZoneSpawnChance: 1, myceliumRadius: 1, flora: { fungus: { radius: 1.5 } } });
+        w.season[1] = 0.795;
+        addMyceliumMark(w, { x: 20, y: 500, size: 20 });
+        const slot = spawnFoodItem(w);
+        expect(w.foodSpecies[slot]).toBe(0);
+    });
+
     it('picks marks by size and returns -1 for an empty pool', () => {
         const w = smallWorld({ myceliumMax: 2 });
         expect(pickMark(w)).toBe(-1);

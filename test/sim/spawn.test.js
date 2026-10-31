@@ -90,6 +90,72 @@ describe('spawnFoodItem', () => {
         expect(spawnFoodItem(w)).toBe(1);
         expect(spawnFoodItem(w)).toBe(3);
     });
+
+    it('lands inside the mycelium mark when the chance is 1', () => {
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, myceliumRadius: 50 });
+        w.season[1] = 0.795;
+        w.myceliumTicks[1] = 1;
+        w.myceliumX[1] = 500;
+        w.myceliumY[1] = 500;
+        w.myceliumSize[1] = 1;
+        w.season[1] = 0.795;
+        w.myceliumTicks[2] = 1;
+        w.myceliumX[2] = 500;
+        w.myceliumY[2] = 500;
+        w.myceliumSize[2] = 1;
+        for (let i = 0; i < 15; i++) {
+            const s = spawnFoodItem(w);
+            expect(Math.hypot(w.foodX[s] - 500, w.foodY[s] - 500)).toBeLessThanOrEqual(50 + 1e-3);
+        }
+    });
+
+    it('clamps fungus food into the world', () => {
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, myceliumRadius: 200 });
+        w.season[1] = 0.795;
+        w.myceliumTicks[0] = 1;
+        w.myceliumSize[0] = 1;
+        for (let i = 0; i < 15; i++) {
+            const s = spawnFoodItem(w);
+            expect(w.foodX[s]).toBeGreaterThanOrEqual(w.foodRadius[s]);
+            expect(w.foodY[s]).toBeGreaterThanOrEqual(w.foodRadius[s]);
+        }
+        w.myceliumX[0] = 1000;
+        w.myceliumY[0] = 1000;
+        for (let i = 0; i < 5; i++) {
+            const s = spawnFoodItem(w);
+            expect(w.foodX[s]).toBeLessThanOrEqual(1000 - w.foodRadius[s]);
+            expect(w.foodY[s]).toBeLessThanOrEqual(1000 - w.foodRadius[s]);
+        }
+    });
+
+    it('skips the mark roll when it is not chosen', () => {
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 0 });
+        w.season[1] = 0.795;
+        w.myceliumTicks[0] = 1;
+        w.myceliumSize[0] = 1;
+        w.myceliumX[0] = 10;
+        w.myceliumY[0] = 10;
+        expect(() => spawnFoodItem(w)).not.toThrow();
+    });
+
+    it('falls back to a uniform clear point when an obstacle covers the whole mark', () => {
+        const w = build({ initialFood: 0, fertileZoneSpawnChance: 1, myceliumRadius: 10 });
+        w.obsX[0] = 500;
+        w.obsY[0] = 500;
+        w.obsRadius[0] = 400;
+        w.season[1] = 0.795;
+        w.myceliumTicks[0] = 1;
+        w.myceliumSize[0] = 1;
+        w.myceliumX[0] = 500;
+        w.myceliumY[0] = 500;
+        const slot = spawnFoodItem(w);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeGreaterThanOrEqual(400 + w.foodRadius[slot]);
+    });
+
+    it('throws when maxFood is reached', () => {
+        const w = build({ initialFood: 20 });
+        expect(() => spawnFoodItem(w)).toThrow(/maxFood/);
+    });
 });
 
 describe('spawnAgent', () => {

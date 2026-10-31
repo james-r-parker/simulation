@@ -96,3 +96,19 @@ describe('spawnFoodItem with patches', () => {
         }
     });
 });
+
+describe('spawnFoodItem order', () => {
+    it('keeps the mycelium draw first: fungus is not forced into a patch', () => {
+        const w = build({ foodBackgroundShare: 0, fertileZoneSpawnChance: 1, myceliumRadius: 50 });
+        w.season[1] = 0.795;
+        w.myceliumTicks[0] = 1;
+        w.myceliumX[0] = 3900;
+        w.myceliumY[0] = 3900;
+        w.myceliumSize[0] = 1;
+        w.patchX.fill(300);
+        w.patchY.fill(300);
+        const s = spawnFoodItem(w);
+        expect(w.foodX[s]).toBeGreaterThan(3800);
+        expect(patchOf(w, s)).toBe(-1);
+    });
+});
