@@ -8,6 +8,7 @@ export const FLORA_ARRAYS = [
     'patchSerial',
     'patchLowTicks',
     'patchBank',
+    'patchSeedTick',
     'patchSpecies',
     'patchHue',
     'patchEnergy',
@@ -22,6 +23,7 @@ export const FLORA_ARRAYS = [
     'foodTox',
     'foodLife',
     'foodPatch',
+    'foodPatchSerial',
 ];
 
 const PATCH_POSITIVE = ['patchEnergy', 'patchLife', 'patchSpan'];
@@ -50,12 +52,13 @@ export function allocateFlora(world) {
     world.patchSerial = new Uint32Array(floraPatchMax);
     world.patchLowTicks = new Int32Array(floraPatchMax);
     world.patchBank = new Int32Array(floraPatchMax);
+    world.patchSeedTick = new Float64Array(floraPatchMax).fill(-world.config.seedCooldownTicks);
     world.patchSpecies = new Uint8Array(floraPatchMax);
     for (const field of PATCH_FIELDS) {
         world[`patch${field}`] = new Float32Array(floraPatchMax);
     }
-    for (const name of ['foodSpecies', 'foodHue', 'foodTox', 'foodLife', 'foodPatch']) {
-        const Type = name === 'foodPatch' ? Int32Array : Float32Array;
+    for (const name of ['foodSpecies', 'foodHue', 'foodTox', 'foodLife', 'foodPatch', 'foodPatchSerial']) {
+        const Type = name === 'foodPatchSerial' ? Uint32Array : name === 'foodPatch' ? Int32Array : Float32Array;
         world[name] = new Type(maxFood);
         world.foodRows.push({ array: world[name], stride: 1 });
     }
@@ -207,6 +210,9 @@ function assertItem(world, i) {
     }
     if (!(patch >= -1 && patch < world.patchSpecies.length)) {
         throw new Error('flora invariant: invalid foodPatch');
+    }
+    if (patch >= 0 ? world.foodPatchSerial[i] === 0 : world.foodPatchSerial[i] !== 0) {
+        throw new Error('flora invariant: invalid foodPatchSerial');
     }
     if (!(world.foodTox[i] >= 0 && world.foodTox[i] <= 1)) {
         throw new Error('flora invariant: invalid foodTox');

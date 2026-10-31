@@ -61,4 +61,25 @@ describe('flora config', () => {
     it('checks the largest species radius', () => {
         expect(() => createConfig({ flora: { grass: { radius: 100 } } })).toThrow('hashCellSize');
     });
+    it('keeps inherited energy and life positive and every item energy nonnegative', () => {
+        expect(() => createConfig({ flora: { grass: { range: 1 } } })).toThrow('range');
+        expect(() => createConfig({ flora: { flower: { range: 0.8 } } })).toThrow('energySpread');
+        expect(() => createConfig({ flora: { grass: { energy: 0.4, range: 0.2, energySpread: 0.32 } } })).toThrow(
+            'smallest stored',
+        );
+        expect(() => createConfig({ flora: { flower: { range: 0.6, energySpread: 0.19 } } })).not.toThrow();
+    });
+    for (const [field, value] of [
+        ['energy', 1e-60],
+        ['energy', 1e39],
+        ['life', 1e-60],
+        ['life', 1e39],
+        ['regrow', 1e39],
+        ['yield', 1e39],
+        ['span', 1e-60],
+    ]) {
+        it(`rejects an unrepresentable stored ${field}=${value}`, () => {
+            expect(() => createConfig({ flora: { grass: { [field]: value, energySpread: 0 } } })).toThrow('Float32');
+        });
+    }
 });

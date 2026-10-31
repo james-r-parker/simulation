@@ -1,3 +1,4 @@
+import { assertPollen } from './pollination.js';
 import { assertMycelium } from './mycelium.js';
 import { assertFlora } from './flora-state.js';
 // Debug-only world checks that throw on the first broken invariant, run when `config.checkInvariants` is set.
@@ -279,5 +280,6 @@ export function assertInvariants(world) {
     checkMerit(world);
     checkDose(world);
     assertFlora(world);
+    assertPollen(world);
     assertMycelium(world);
 }

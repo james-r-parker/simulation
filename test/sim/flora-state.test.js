@@ -111,4 +111,16 @@ describe('flora state', () => {
         w.foodPatch[slot] = -2;
         expect(() => assertFlora(w)).toThrow('foodPatch');
     });
+    it('bounds item source serials without rejecting food from an older source generation', () => {
+        const w = smallWorld(PATCHES);
+        const food = spawnFoodItem(w);
+        w.foodPatch[food] = 0;
+        w.foodPatchSerial[food] = 0;
+        expect(() => assertFlora(w)).toThrow('foodPatchSerial');
+        w.foodPatchSerial[food] = 1;
+        w.patchSerial[0] = 2;
+        expect(() => assertFlora(w)).not.toThrow();
+        w.foodPatch[food] = -1;
+        expect(() => assertFlora(w)).toThrow('foodPatchSerial');
+    });
 });

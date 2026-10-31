@@ -99,4 +99,11 @@ describe('flora traits', () => {
     it('rejects a negative mutation scale', () => {
         expect(() => createConfig({ floraMutation: -1 })).toThrow('floraMutation');
     });
+    it('keeps the lowest inherited item energy above its variation floor', () => {
+        const w = garden({ floraMutation: 0 });
+        blendTraits(w, 0, 1);
+        w.floraTraits[0] = -100;
+        mutateTraits(w, 2);
+        expect(w.patchEnergy[2] - w.config.flora.berry.energySpread).toBeGreaterThanOrEqual(0);
+    });
 });

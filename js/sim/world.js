@@ -31,7 +31,7 @@ const BYTE_PAIR = 0x0102;
 
 /**
  * @typedef {object} Rows
- * @property {Float64Array | Float32Array | Uint32Array | Uint8Array} array the backing array
+ * @property {Float64Array | Float32Array | Uint32Array | Uint16Array | Uint8Array | Int32Array} array the backing array
  * @property {number} stride elements per slot
  */
 
@@ -82,12 +82,14 @@ function agentSpecs(layout) {
     return [
         ...singles(Uint8Array, ['alive', 'spec', 'sex', 'ateTimer', 'bittenTimer', 'lastLoss']),
         ...singles(Float32Array, ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'temperature', 'dose']),
-        ...singles(Float64Array, ['energy', 'foodEnergy', 'biteEnergy']),
+        ...singles(Float64Array, ['energy', 'foodEnergy', 'biteEnergy', 'pollenRefusalTick']),
+        ...singles(Uint32Array, ['pollenSerial']),
+        ...singles(Int32Array, ['pollenTicks']),
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
         ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
         ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick', 'recoilStamp']),
-        ...singles(Uint16Array, ['alarmTimer', 'huntTimer', 'smokeTimer']),
+        ...singles(Uint16Array, ['pollenPatch', 'alarmTimer', 'huntTimer', 'smokeTimer']),
         [Float32Array, 'heard', HEARD_STRIDE],
         [Float32Array, 'inputs', layout.rawInputCount],
         [Float32Array, 'pooled', layout.inputCount],

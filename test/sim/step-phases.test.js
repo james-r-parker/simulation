@@ -14,6 +14,7 @@ const rec = vi.hoisted(() => (/** @type {string} */ name) => (/** @type {any[]} 
 
 vi.mock('../../js/sim/mycelium.js', () => ({ ageMycelium: rec('ageMycelium') }));
 vi.mock('../../js/sim/fruiting.js', () => ({ refreshFruiting: rec('refreshFruiting') }));
+vi.mock('../../js/sim/pollination.js', () => ({ agePollen: rec('agePollen') }));
 vi.mock('../../js/sim/toxin.js', () => ({ stepToxin: rec('stepToxin') }));
 vi.mock('../../js/sim/calls.js', () => ({ signalAll: rec('signalAll') }));
 vi.mock('../../js/sim/energy.js', () => ({ applyCosts: rec('applyCosts') }));
@@ -75,6 +76,7 @@ describe('step phase bodies', () => {
             ['integrate', world],
             ['buildHash', hash, world],
             ['resolveContacts', world, hash],
+            ['agePollen', world],
             ['stepToxin', world],
             ['feed', world, hash],
             ['mate', world, policy],

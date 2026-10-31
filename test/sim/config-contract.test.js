@@ -212,4 +212,9 @@ describe('validateConfig error text', () => {
             'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
     });
+    it('reserves both patch-sized event bursts at the maximum pool with one agent', () => {
+        const config = { ...SIMPLE_WORLD, maxAgents: 1, initialAgents: 0, minAgents: 0, floraPatchMax: 256 };
+        expect(() => createConfig({ ...config, eventCapacity: 519 })).toThrow('520');
+        expect(() => createConfig({ ...config, eventCapacity: 520 })).not.toThrow();
+    });
 });

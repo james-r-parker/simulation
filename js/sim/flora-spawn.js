@@ -92,6 +92,7 @@ function writeItem(world, slot, species, patch) {
     world.foodTox[slot] = row.toxicity;
     world.foodLife[slot] = patch >= 0 ? world.patchLife[patch] : row.life;
     world.foodPatch[slot] = patch;
+    world.foodPatchSerial[slot] = patch >= 0 ? world.patchSerial[patch] : 0;
     world.foodAge[slot] = 0;
     world.foodCount++;
     return slot;

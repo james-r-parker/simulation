@@ -71,18 +71,23 @@ describe('patch life', () => {
         expect(() => assertFlora(w)).not.toThrow();
     });
 
-    it('replays bank draws in ascending slot order', () => {
-        const a = garden({ sproutRate: 0.4 });
-        const b = garden({ sproutRate: 0.4 });
-        for (const w of [a, b]) {
-            w.patchAlive[0] = 0;
-            w.patchStock[0] = w.patchWeight[0] = 0;
-            w.patchBank[0] = 4;
-            for (let i = 0; i < 3; i++) {
-                regrowPatches(w);
-            }
-        }
-        expect(hashWorld(a)).toBe(hashWorld(b));
+    it('assigns independent bank draws in ascending slot order', () => {
+        const w = garden({ foodPatchCount: 2 });
+        w.patchAlive.fill(0);
+        w.patchStock.fill(0);
+        w.patchWeight.fill(0);
+        w.patchBank.set([4, 4]);
+        const expected = { seed: w.rng.flora.seed, s: w.rng.flora.s.slice() };
+        const draws = [nextFloat(expected), nextFloat(expected)];
+        expect(draws[0]).not.toBe(draws[1]);
+        const threshold = (draws[0] + draws[1]) / 2;
+        w.config = createConfig({ ...w.config, sproutRate: threshold });
+        const alive = draws.map((draw) => Number(draw < threshold));
+        regrowPatches(w);
+        expect(Array.from(w.patchAlive.slice(0, 2))).toEqual(alive);
+        expect(Array.from(w.patchBank.slice(0, 2))).toEqual(alive.map((sprout) => (sprout ? 0 : 3)));
+        expect(Array.from(w.patchSerial.slice(0, 2))).toEqual(alive.map((sprout) => 1 + sprout));
+        expect(w.rng.flora.s).toEqual(expected.s);
     });
 
     for (const [key, value] of [
