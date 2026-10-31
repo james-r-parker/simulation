@@ -1,3 +1,5 @@
+import { floraMetrics } from './scene-flora.js';
+import { FLORA_NAMES } from '../sim/config-flora.js';
 // The scene metrics (natural-selection.md, Detectors): instruments for the scenes the world should show, read from
 // `observer.scenes`. Each is `watch` unless its direction is set below, and each is `null` with a reason when nothing
 // fed it. They change no sim state and cost no per-tick allocation.
@@ -37,6 +39,8 @@ const WATCH = [
 /** The direction of each scene metric, as the Detectors table names them. */
 export const SCENE_DIRECTIONS = Object.freeze({
     ...PATCH_DIRECTIONS,
+    'eval.seasonal_diet_shift': 'watch',
+    ...Object.fromEntries(FLORA_NAMES.map((name) => [`eval.food_species_share.${name}`, 'watch'])),
     'eval.predators_at_end': 'higher',
     'eval.prey_types_at_end': 'higher',
     'eval.basin_lineages_alive': 'higher',
@@ -54,6 +58,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
 export function sceneMetrics(observer, world) {
     const s = observer.scenes;
     return {
+        ...floraMetrics(s.flora),
         ...patchMetrics(s.patch),
         ...approachMetrics(s.approach),
         ...terrainMetrics(s.terrain),

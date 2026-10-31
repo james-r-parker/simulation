@@ -1,3 +1,4 @@
+import { createFloraScene, trackFlora } from './scene-flora.js';
 // The scene detectors' state and per-tick feed (natural-selection.md, Detectors). `observeScenes` runs inside
 // `observe`, after the intent state is current for the tick and before `applyEvents` reassigns slots, so a dying
 // agent's slot still holds its counters. It reads the world and the observer and writes only `observer.scenes`; the
@@ -31,6 +32,7 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
  */
 export function createScenes(config) {
     return {
+        flora: createFloraScene(),
         patch: createPatchScene(config),
         approach: createApproachScene(config),
         terrain: createTerrainScene(config),
@@ -131,6 +133,7 @@ function noteEvents(scenes, observer, world) {
 export function observeScenes(observer, world) {
     const scenes = observer.scenes;
     noteEvents(scenes, observer, world);
+    trackFlora(scenes.flora, world);
     if (world.tick === 0) {
         return;
     }
