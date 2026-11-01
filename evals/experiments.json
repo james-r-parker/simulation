@@ -2428,10 +2428,10 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "E76 historical 64-seed report, used only for preliminary detector diagnostics; it has herdCount 6 and toxinDose 0.45",
-      "after": "Pending: evals/screens/results/flora/E91-current-default.report.json and its eval:power output",
+      "after": "Recorded: evals/screens/results/flora/E91-current-default.report.json (64 seeds x 200000 ticks) and evals/screens/results/flora/E91-detector-power.json",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Pre-registered 2026-11-01. Run only after E77 releases the CPU lock. This is a single current-default report for detector power, not a candidate comparison; no new screen arms or default changes."
+      "note": "Pre-registered 2026-11-01 and run after E77 released the CPU lock. Current defaults (toxinDose 1.2, herdCount 6), live policy, 30 workers, 64 fixed seeds x 200000 ticks. The report includes all 15 requested Flora metrics with no nulls. `eval:power` used 1000 A/A and 200 planted-effect splits at 16-v-16 and 32-v-32. Patch-death and seed-bank occupancy are sparse with elevated A/A false positives and no detectable change through 100%; this is detector diagnostics only, not a candidate comparison or a pass of the E72 ecological thresholds. No default changes. E76 power results remain historical because they used toxinDose 0.45."
     },
     {
       "id": "E92",

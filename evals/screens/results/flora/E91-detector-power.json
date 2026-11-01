@@ -1,0 +1,265 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [16, 32],
+  "metrics": [
+    "eval.seasonal_diet_shift",
+    "eval.food_species_share.grass",
+    "eval.food_species_share.berry",
+    "eval.food_species_share.nut",
+    "eval.food_species_share.flower",
+    "eval.food_species_share.fungus",
+    "eval.food_species_share.toxiccap",
+    "eval.toxic_death_share",
+    "eval.toxic_avoidance",
+    "eval.sick_share",
+    "eval.pollination_rate",
+    "eval.flora_hue_spread",
+    "eval.flora_patch_pool_full_share",
+    "eval.flora_patch_death_rate",
+    "eval.flora_seed_bank_occupancy_share"
+  ],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.seasonal_diet_shift",
+      "size": 16,
+      "falsePositive": 0.081,
+      "detectable": 0.2,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.seasonal_diet_shift",
+      "size": 32,
+      "falsePositive": 0.058,
+      "detectable": 0.15,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.grass",
+      "size": 16,
+      "falsePositive": 0.083,
+      "detectable": 0.15,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.grass",
+      "size": 32,
+      "falsePositive": 0.053,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.berry",
+      "size": 16,
+      "falsePositive": 0.117,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.berry",
+      "size": 32,
+      "falsePositive": 0.065,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.nut",
+      "size": 16,
+      "falsePositive": 0.061,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.nut",
+      "size": 32,
+      "falsePositive": 0.056,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.flower",
+      "size": 16,
+      "falsePositive": 0.083,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.flower",
+      "size": 32,
+      "falsePositive": 0.053,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.fungus",
+      "size": 16,
+      "falsePositive": 0.082,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.fungus",
+      "size": 32,
+      "falsePositive": 0.052,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.toxiccap",
+      "size": 16,
+      "falsePositive": 0.088,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_species_share.toxiccap",
+      "size": 32,
+      "falsePositive": 0.059,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.toxic_death_share",
+      "size": 16,
+      "falsePositive": 0.1,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.toxic_death_share",
+      "size": 32,
+      "falsePositive": 0.06,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.toxic_avoidance",
+      "size": 16,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.toxic_avoidance",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.sick_share",
+      "size": 16,
+      "falsePositive": 0.087,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.sick_share",
+      "size": 32,
+      "falsePositive": 0.084,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.pollination_rate",
+      "size": 16,
+      "falsePositive": 0.08,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.pollination_rate",
+      "size": 32,
+      "falsePositive": 0.06,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.flora_hue_spread",
+      "size": 16,
+      "falsePositive": 0.07,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.flora_hue_spread",
+      "size": 32,
+      "falsePositive": 0.059,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.flora_patch_pool_full_share",
+      "size": 16,
+      "falsePositive": 0.064,
+      "detectable": 1,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.flora_patch_pool_full_share",
+      "size": 32,
+      "falsePositive": 0.058,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.flora_patch_death_rate",
+      "size": 16,
+      "falsePositive": 0.215,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.flora_patch_death_rate",
+      "size": 32,
+      "falsePositive": 0.197,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.flora_seed_bank_occupancy_share",
+      "size": 16,
+      "falsePositive": 0.235,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.flora_seed_bank_occupancy_share",
+      "size": 32,
+      "falsePositive": 0.214,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "lower"
+    }
+  ]
+}
