@@ -122,4 +122,57 @@ describe('stepHerds', () => {
         expect(() => stepHerds(world)).not.toThrow();
         expect(world.events.count).toBe(0);
     });
+
+    it('does not choose a richer patch through a closed basin wall', () => {
+        const world = build();
+        world.wallGapY = new Float64Array(0);
+        world.herdX[0] = 300;
+        world.herdY[0] = 600;
+        world.herdAlive[1] = 0;
+        world.patchAlive.fill(1);
+        world.patchX[0] = 300;
+        world.patchX[1] = 1700;
+        world.patchWeight[0] = 10;
+        world.patchWeight[1] = 100;
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(0);
+    });
+
+    it('skips empty groups without routing or sensing', () => {
+        const world = build();
+        world.herdAlive.fill(0);
+        clearEvents(world.events);
+        stepHerds(world);
+        expect(world.groupAnimalCount[0]).toBe(0);
+        expect(world.events.count).toBe(0);
+    });
+
+    it('chooses a new patch when the stay timer expires', () => {
+        const world = build();
+        world.herdAlive[1] = 0;
+        world.patchAlive.fill(1);
+        world.patchWeight[0] = 50;
+        world.patchWeight[1] = 100;
+        world.patchX[0] = world.herdX[0];
+        world.patchY[0] = world.herdY[0];
+        world.patchX[1] = 600;
+        world.patchY[1] = 600;
+        world.groupPatch[0] = 0;
+        world.groupPatchWeight[0] = 100;
+        world.groupStay[0] = 1;
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(1);
+    });
+
+    it('stays without a route when the stay timer expires and no patch is available', () => {
+        const world = build();
+        world.herdAlive[1] = 0;
+        world.patchAlive.fill(0);
+        world.groupPatch[0] = 0;
+        world.groupStay[0] = 1;
+        world.groupPatchWeight[0] = 0;
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(-1);
+        expect(world.groupStay[0]).toBe(0);
+    });
 });

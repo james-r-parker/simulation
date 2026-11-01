@@ -85,6 +85,16 @@ describe('reap', () => {
         expect(event(w, 0).slice(4, 6)).toEqual([DEATH_CAUSE.TRAMPLED, 91]);
     });
 
+    it('marks a trampled death as pinned when the blob overlaps a rock', () => {
+        const w = lifeWorld();
+        addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.TRAMPLE, lastHerdId: 91, x: 500, y: 500 });
+        w.obsRadius[0] = 50;
+        w.obsX[0] = 500;
+        w.obsY[0] = 500;
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0)[11]).toBe(1);
+    });
+
     it('lets old age win over starvation', () => {
         const w = lifeWorld({ maxAgeTicks: 10 });
         addBlob(w, { energy: 0, ageTicks: 10, lastLoss: LOSS_CAUSE.BITE, lastBiter: 4 });

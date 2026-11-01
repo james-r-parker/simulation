@@ -87,4 +87,23 @@ describe('stepHerds startle response', () => {
         stepHerds(world);
         expect(world.groupAlarm[1]).toBeGreaterThan(0);
     });
+
+    it('chooses a deterministic fallback direction when the hunter is at the herd centroid', () => {
+        const even = build();
+        addHunter(even, { x: 410, y: 600 });
+        stepHerds(even);
+        expect(even.groupFleeX[0]).toBe(1);
+        expect(even.groupFleeY[0]).toBe(0);
+
+        const odd = build({ herdCount: 2 });
+        odd.herdX[2] = 1400;
+        odd.herdY[2] = 600;
+        odd.herdX[3] = 1420;
+        odd.herdY[3] = 600;
+        addHunter(odd, { x: 1410, y: 600 });
+        odd.tick = 7;
+        stepHerds(odd);
+        expect(odd.groupFleeX[1]).toBe(-1);
+        expect(odd.groupFleeY[1]).toBe(0);
+    });
 });

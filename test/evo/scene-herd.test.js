@@ -93,6 +93,86 @@ describe('scene-herd detectors', () => {
         expect(emptyMetrics(scene)['eval.trampled_share'].value).toBe(1);
     });
 
+    it('closes a matching dodge episode when that blob is trampled', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        trackHerd(scene, world);
+        noteHerdDeath(scene, {
+            tick: BURN_IN_TICKS + 1,
+            slot: 0,
+            genomeId: 11,
+            cause: DEATH_CAUSE.TRAMPLED,
+            herdId: 51,
+        });
+        expect(scene.episodesHit).toBe(1);
+        expect(scene.episodeOpen[0]).toBe(0);
+    });
+
+    it('clears stale episodes and only opens them for a moving herd in the blob lane', () => {
+        const stoppedScene = createHerdScene(sceneWorld().config);
+        const stopped = sceneWorld();
+        stopped.herdVx[0] = 0;
+        trackHerd(stoppedScene, stopped);
+        expect(stoppedScene.episodeOpen[0]).toBe(0);
+
+        const behindScene = createHerdScene(sceneWorld().config);
+        const behind = sceneWorld();
+        behind.x[0] = 50;
+        trackHerd(behindScene, behind);
+        expect(behindScene.episodeOpen[0]).toBe(0);
+
+        const staleScene = createHerdScene(sceneWorld().config);
+        const stale = sceneWorld();
+        trackHerd(staleScene, stale);
+        stale.herdAlive[0] = 0;
+        stale.tick++;
+        trackHerd(staleScene, stale);
+        expect(staleScene.episodesClear).toBe(1);
+        expect(staleScene.episodeOpen[0]).toBe(0);
+    });
+
+    it('expires a persistent near-miss, resets changed genomes, and samples empty groups', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        trackHerd(scene, world);
+        scene.episodeGenome[0] = 12;
+        world.tick++;
+        trackHerd(scene, world);
+        expect(scene.episodeOpen[0]).toBe(1);
+        scene.episodeAge[0] = 119;
+        world.tick++;
+        trackHerd(scene, world);
+        expect(scene.episodesClear).toBe(1);
+
+        world.tick = Math.ceil(world.tick / 1000) * 1000;
+        world.herdAlive[0] = 0;
+        trackHerd(scene, world);
+        expect(scene.animalSamples).toBe(1);
+        expect(scene.lastGroupSide[0]).toBe(0);
+    });
+
+    it('expires a still-valid lane episode at its age limit', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        scene.episodeOpen[0] = 1;
+        scene.episodeGenome[0] = world.genomeId[0];
+        scene.episodeHerd[0] = world.herdId[0];
+        scene.episodeAge[0] = 119;
+        trackHerd(scene, world);
+        expect(scene.episodesClear).toBe(1);
+        expect(scene.episodeOpen[0]).toBe(0);
+    });
+
+    it('keeps tracking a lane episode while the herd is still approaching', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        trackHerd(scene, world);
+        world.tick++;
+        trackHerd(scene, world);
+        expect(scene.episodeOpen[0]).toBe(1);
+        expect(scene.episodeAge[0]).toBe(1);
+    });
+
     it('computes grazing share from counter deltas and returns null without meals', () => {
         const scene = createHerdScene(sceneWorld().config);
         const world = sceneWorld();

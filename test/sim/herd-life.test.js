@@ -3,7 +3,7 @@ import { FOOD_KIND, FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { createConfig } from '../../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { createWorld } from '../../js/sim/spawn.js';
-import { ageAndReproduceHerds } from '../../js/sim/herd-life.js';
+import { ageAndReproduceHerds, leaveHerdCarcass } from '../../js/sim/herd-life.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
@@ -76,6 +76,13 @@ describe('ageAndReproduceHerds', () => {
         expect(world.foodCount).toBe(1);
     });
 
+    it('returns cleanly when a carcass has no store value', () => {
+        const world = build();
+        world.herdStore[0] = 0;
+        expect(leaveHerdCarcass(world, 0)).toBe(true);
+        expect(world.foodCount).toBe(0);
+    });
+
     it('births a calf only when an eligible mother has paid and a clear slot exists', () => {
         const world = build({ herdBirthTicks: 10, herdBirthEnergy: 200, herdCalfEnergy: 80 });
         world.herdX[0] = 500;
@@ -96,5 +103,44 @@ describe('ageAndReproduceHerds', () => {
         expect(world.groupAnimalCount[0]).toBe(2);
         expect(world.groupBirthTimer[0]).toBe(10);
         expect(world.events.data[0]).toBe(EVENT_TYPE.HERD_ANIMAL_BORN);
+    });
+
+    it('does not birth when the group has no free calf slot', () => {
+        const world = build({ herdBirthTicks: 10, herdBirthEnergy: 200, herdCalfEnergy: 80 });
+        world.herdAge.fill(0);
+        world.herdLife.fill(1000);
+        world.herdAge[0] = 10;
+        world.herdStore[0] = 300;
+        world.herdAlive[1] = 1;
+        world.groupAnimalCount[0] = 1;
+        world.groupBirthTimer[0] = 0;
+        ageAndReproduceHerds(world);
+        expect(world.herdAlive[1]).toBe(1);
+        expect(world.herdStore[0]).toBe(300);
+        expect(world.events.count).toBe(0);
+    });
+
+    it('abandons calf placement at world boundaries or when every point overlaps a rock', () => {
+        const boundary = build({ herdBirthTicks: 10, herdBirthEnergy: 200, herdCalfEnergy: 80 });
+        boundary.herdAge[0] = 10;
+        boundary.herdLife[0] = 1000;
+        boundary.herdStore[0] = 300;
+        boundary.herdX[0] = -100;
+        boundary.herdAlive[1] = 0;
+        boundary.groupAnimalCount[0] = 1;
+        boundary.groupBirthTimer[0] = 0;
+        ageAndReproduceHerds(boundary);
+        expect(boundary.herdAlive[1]).toBe(0);
+
+        const blocked = build({ herdBirthTicks: 10, herdBirthEnergy: 200, herdCalfEnergy: 80 });
+        blocked.herdAge[0] = 10;
+        blocked.herdLife[0] = 1000;
+        blocked.herdStore[0] = 300;
+        blocked.herdAlive[1] = 0;
+        blocked.groupAnimalCount[0] = 1;
+        blocked.groupBirthTimer[0] = 0;
+        blocked.obsRadius.fill(10000);
+        ageAndReproduceHerds(blocked);
+        expect(blocked.herdAlive[1]).toBe(0);
     });
 });
