@@ -1,11 +1,11 @@
-// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v3 layout, top 2 hits per channel) from a config.
+// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v4 layout, top 2 hits per channel) from a config.
 
 /**
  * The name of the brain layout this file defines. Stamped into every genome, archive and champion file and checked on
  * load, so a file written under a layout of the same sizes but different meaning (another channel order, hit count or
  * block order) is refused by name. Change it whenever a gene's meaning or position changes.
  */
-export const BRAIN_LAYOUT_NAME = 'pooled-v3';
+export const BRAIN_LAYOUT_NAME = 'pooled-v4';
 
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
@@ -37,11 +37,23 @@ export const GENE_OUTPUTS = Object.freeze(
 /** Outputs with genes: `OUTPUT_COUNT` less the `SPLIT` output (10). */
 export const GENE_OUTPUT_COUNT = GENE_OUTPUTS.length;
 
-/** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke. */
-export const RAY_CHANNELS = 9;
+/** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke, megafauna. */
+export const RAY_CHANNELS = 10;
+/** Raw ray channel for herd bodies, appended after the Phase 1 smoke channel. */
+export const CH_MEGAFAUNA = 9;
 
-/** Pooled channels, in order: the ray channels 1 to 8 (food, threat, prey, other, kin, wall, obstacle, smoke). */
-export const POOLED_CHANNELS = Object.freeze(['food', 'threat', 'prey', 'other', 'kin', 'wall', 'obstacle', 'smoke']);
+/** Pooled channels, in order: the ray channels 1 to 9 (food, threat, prey, other, kin, wall, obstacle, smoke, megafauna). */
+export const POOLED_CHANNELS = Object.freeze([
+    'food',
+    'threat',
+    'prey',
+    'other',
+    'kin',
+    'wall',
+    'obstacle',
+    'smoke',
+    'megafauna',
+]);
 
 /** Hits kept per pooled channel: the two strongest rays. */
 export const POOLED_HITS = 2;
@@ -55,7 +67,7 @@ export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
 /** Hue values of the two pooled food hits. */
 export const FOOD_HUE_VALUES = 2;
 
-/** Pooled values at the head of the brain's input row: 48 ray values and two food hues (50). */
+/** Pooled values at the head of the brain's input row: 54 ray values and two food hues (56). */
 export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE + FOOD_HUE_VALUES;
 
 /** Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */

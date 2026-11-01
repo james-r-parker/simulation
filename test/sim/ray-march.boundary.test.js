@@ -45,13 +45,13 @@ describe('castRays obstacles at the range edge', () => {
         obstacle(at, 0, 500 + VISION + 40, 500, 40);
         obstacle(at, 1, 5000, 5000, 10);
         cast(at, me);
-        expect(rayValues(at, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 1, 0]);
+        expect(rayValues(at, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
         const beyond = senseWorld();
         const you = addAgent(beyond, 500, 500, 20);
         obstacle(beyond, 0, 500 + VISION + 41, 500, 40);
         obstacle(beyond, 1, 5000, 5000, 10);
         cast(beyond, you);
-        expect(rayValues(beyond, you, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(beyond, you, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('sees the nearer of two listed obstacles and an obstacle the agent stands inside', () => {
@@ -66,7 +66,7 @@ describe('castRays obstacles at the range edge', () => {
         obstacle(inside, 0, 510, 500, 100);
         obstacle(inside, 1, 5000, 5000, 10);
         cast(inside, you);
-        expect(rayValues(inside, you, 0)).toEqual([1, 0, 0, 0, 0, 0, 0, 1, 0]);
+        expect(rayValues(inside, you, 0)).toEqual([1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
     });
 });
 
@@ -76,7 +76,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 500 + VISION + 20, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('ignores a hit just beyond the vision range', () => {
@@ -84,7 +84,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 500 + VISION + 21, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('reaches a hit at exactly the range that lies in the next hash cell', () => {
@@ -92,7 +92,7 @@ describe('castRays range boundary', () => {
         const me = addAgent(w, 468, 500, 20);
         addFood(w, 768 + 20, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 });
 
@@ -148,7 +148,7 @@ describe('castRays geometry edges', () => {
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 480, 500, 20);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('finds the wall along an axis the ray does not move on when the origin is on that edge', () => {

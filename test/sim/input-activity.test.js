@@ -27,16 +27,16 @@ function setup(alive) {
 }
 
 describe('sampleInputActivity', () => {
-    it('keeps the two hue values in the 83-input mask and marks an absent hue rare', () => {
+    it('keeps the two hue values in the 89-input mask and marks an absent hue rare', () => {
         const { world, activity, n } = setup(1);
-        expect(n).toBe(83);
-        expect(activity.rare).toHaveLength(83);
+        expect(n).toBe(89);
+        expect(activity.rare).toHaveLength(89);
         activity.samples = RARE_MIN_SAMPLES;
-        activity.active[48] = RARE_MIN_SAMPLES;
-        world.pooled[48] = 0.5;
+        activity.active[54] = RARE_MIN_SAMPLES;
+        world.pooled[54] = 0.5;
         sampleInputActivity(activity, world);
-        expect(activity.rare[48]).toBe(0);
-        expect(activity.rare[49]).toBe(1);
+        expect(activity.rare[54]).toBe(0);
+        expect(activity.rare[55]).toBe(1);
     });
 
     it('counts the nonzero values of each alive agent pooled row, and the samples', () => {

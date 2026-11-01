@@ -24,7 +24,7 @@ export function makeChampionFile(name, seed, { specialisation = 0, sigma = 0.3 }
         name,
         rulesHash: rulesHash(config),
         layout: {
-            name: 'pooled-v3',
+            name: 'pooled-v4',
             inputCount: layout.inputCount,
             brainHidden: layout.hidden,
             outputCount: layout.outputCount,

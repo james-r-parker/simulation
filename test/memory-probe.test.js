@@ -111,8 +111,8 @@ describe('loadChampions', () => {
                 level: 'error',
                 event: 'probe.layout',
                 file: 'c0.json',
-                expected: { layout: 'pooled-v3', brainHidden: 32, inputCount: 83 },
-                actual: { layout: 'pooled-v3', brainHidden: 48, inputCount: 83 },
+                expected: { layout: 'pooled-v4', brainHidden: 32, inputCount: 89 },
+                actual: { layout: 'pooled-v4', brainHidden: 48, inputCount: 89 },
             },
         ]);
     });

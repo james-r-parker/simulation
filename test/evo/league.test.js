@@ -22,12 +22,12 @@ describe('validateChampion', () => {
 
     it.each([
         ['version', { version: 2 }],
-        ['layout.inputCount', { layout: { name: 'pooled-v3', inputCount: 1, brainHidden: 32, outputCount: 11 } }],
+        ['layout.inputCount', { layout: { name: 'pooled-v4', inputCount: 1, brainHidden: 32, outputCount: 11 } }],
         [
             'layout.brainHidden',
             {
                 layout: {
-                    name: 'pooled-v3',
+                    name: 'pooled-v4',
                     inputCount: brainLayout(config).inputCount,
                     brainHidden: 16,
                     outputCount: 11,
@@ -51,7 +51,7 @@ describe('validateChampion', () => {
     it('rejects a layout of the same sizes but another name, and a file with no layout name', () => {
         const file = makeChampionFile('a', 1);
         expect(() => validateChampion({ ...file, layout: { ...file.layout, name: 'elman-v1' } }, config)).toThrow(
-            /champion\.layout\.name: expected pooled-v3, got elman-v1/,
+            /champion\.layout\.name: expected pooled-v4, got elman-v1/,
         );
         const unnamed = { ...file.layout, name: undefined };
         expect(() => validateChampion({ ...file, layout: unnamed }, config)).toThrow(/champion\.layout\.name/);

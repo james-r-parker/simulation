@@ -6,9 +6,9 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
 import { familyCss } from './css-color.js';
 import { nowLine } from './hover-peek.js';
+import { RAY_CHANNELS } from '../../sim/brain-layout.js';
 
-/** Values per ray in the inputs row: proximity, then the eight class channels. */
-export const RAY_CHANNELS = 9;
+export { RAY_CHANNELS };
 /** The hidden grid's width in cells. */
 export const HEATMAP_COLUMNS = 8;
 /** The class channels a spoke is coloured by, after the proximity channel. */
@@ -21,6 +21,7 @@ export const CLASS_CHANNELS = Object.freeze([
     'wall',
     'obstacle',
     'smoke',
+    'megafauna',
 ]);
 
 /** Output names as shown, where the worker's name is short. */

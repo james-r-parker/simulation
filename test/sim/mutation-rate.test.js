@@ -45,10 +45,10 @@ describe('resolveMutationRate', () => {
 });
 
 describe('the mutationRate config key', () => {
-    it('defaults to invsqrt, the big-bang rule (about 68 of the 4578 genes per birth)', () => {
+    it('defaults to invsqrt, the big-bang rule (about 69 of the 4830 genes per birth)', () => {
         const config = createConfig();
         expect(config.mutationRate).toBe('invsqrt');
-        expect(resolveMutationRate(config.mutationRate, brainLayout(config).weightCount) * 4578).toBeCloseTo(67.66, 1);
+        expect(resolveMutationRate(config.mutationRate, brainLayout(config).weightCount) * 4830).toBeCloseTo(69.5, 1);
     });
 
     it('accepts the three forms and rejects the rest naming the key', () => {

@@ -47,7 +47,7 @@ describe('castRays classes', () => {
         cast(w, me);
         const r = rayValues(w, me, 0);
         expect(r[CH.prox]).toBeCloseTo(1 - 80 / VISION, 6);
-        expect(r.slice(1)).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+        expect(r.slice(1)).toEqual([1, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it.each([
@@ -136,7 +136,7 @@ describe('castRays classes', () => {
         const me = addAgent(w, 100, 500, 20);
         cast(w, me);
         expect(rayValues(w, me, 2)[CH.prox]).toBeCloseTo(1 - 100 / VISION, 6);
-        expect(rayValues(w, me, 1)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect(rayValues(w, me, 1)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     });
 
     it('sees an obstacle', () => {
@@ -157,7 +157,7 @@ describe('castRays classes', () => {
         w.inputs.fill(9);
         cast(w, me);
         for (let k = 0; k < 4; k++) {
-            expect(rayValues(w, me, k)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            expect(rayValues(w, me, k)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         }
     });
 
@@ -279,7 +279,7 @@ describe('castRays smoke', () => {
         const me = addAgent(w, 100, 500, 20);
         addCloud(w, 100 + VISION + w.config.smokeRadius + 10, 500);
         cast(w, me);
-        expect(rayValues(w, me, 0)).toEqual(new Array(9).fill(0));
+        expect(rayValues(w, me, 0)).toEqual(new Array(10).fill(0));
     });
 
     it('ranks smoke after the wall at an equal distance', () => {
