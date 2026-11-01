@@ -239,14 +239,14 @@ The always-active flora pool and pollen keys are defined in [flora.md](flora.md)
 
 ### Sensing
 
-`brainLayout(config).inputCount` is `POOLED_VALUES + EXTRA_INPUTS` = 83: 48 pooled ray values, two matching food hues and 33 body values. The raw row is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 9 + 33` (177 at 16 rays); `rayHue` carries the food hue separately. Rays are evenly spaced over 360 degrees
+`brainLayout(config).inputCount` is `POOLED_VALUES + EXTRA_INPUTS` = 89: 54 pooled ray values, two matching food hues and 33 body values. The raw row is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 10 + 33` (193 at 16 rays); `rayHue` carries the food hue separately. Rays are evenly spaced over 360 degrees
 from the heading. A ray walks the cells it crosses (DDA), tests every circle in a cell, and stops at the first cell
 whose nearest hit lies inside that cell's stretch of the ray; the obstacles and the walls are tested directly.
 
-| Per ray | Value                                                                                                                                                                                                                             |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1       | Proximity: `1 - distance / visionRange`, 0 for no hit                                                                                                                                                                             |
-| 2-9     | One-hot class: food, "can bite me" agent (`couldBite` the caster), "I can bite it" agent (the caster `couldBite` it), other non-kin agent, kin (see Kin, checked first), wall, obstacle, smoke; agent classes carry the proximity |
+| Per ray | Value                                                                                                                                                                                                                                        |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | Proximity: `1 - distance / visionRange`, 0 for no hit                                                                                                                                                                                        |
+| 2-10    | One-hot class: food, "can bite me" agent (`couldBite` the caster), "I can bite it" agent (the caster `couldBite` it), other non-kin agent, kin (see Kin, checked first), wall, obstacle, smoke, megafauna; agent classes carry the proximity |
 
 | Body input | Value                                                                                                                                                      |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -273,7 +273,7 @@ whose nearest hit lies inside that cell's stretch of the ray; the obstacles and 
 `brainLayout(config)` returns `inputCount` and the offsets into one agent's weight row: `wIn`
 (`inputCount x brainHidden`), `wRec` (`brainHidden x brainHidden`), `bHidden`, `wOut` (`brainHidden x OUTPUT_COUNT`),
 `bOut`, `traitStart` (`TRAIT_GENES` 4 trait genes), `leakStart` (one leak gene per hidden unit) and
-`weightCount` (7183 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
+`weightCount` (4830 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
 copies it over the slot's `hidden` row:
 
 - `h' = detTanh(wIn x + wRec h + bHidden)`;
