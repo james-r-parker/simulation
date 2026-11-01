@@ -51,7 +51,7 @@ Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [Megafauna](megafauna.md) - wandering megafauna herds (large, slow, scripted bodies that graze, trample by speed, stampede from hunters, age, breed and leave huge carcasses; later dung and... _(validated fffdabc, 2026-10-30)_ _(depends on [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md))_
+- [Megafauna](megafauna.md) - wandering megafauna herds (large, slow, scripted bodies that graze, trample by speed, stampede from hunters, age, breed and leave huge carcasses; later dung and... _(validated d7f552d, 2026-11-01)_ _(depends on [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md))_
 
 ## Reference (3)
 

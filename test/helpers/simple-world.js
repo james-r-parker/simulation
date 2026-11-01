@@ -21,6 +21,7 @@ export const SIMPLE_WORLD = Object.freeze({
     maxBirthsPerWindow: 0,
     predatorKillEnergy: 0,
     refugeCount: 0,
+    herdCount: 0,
     reproductionCooldown: 300,
     satiationShare: 0,
     specMutationRate: 0,

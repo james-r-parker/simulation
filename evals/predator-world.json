@@ -9,6 +9,7 @@
   "initialEnergy": 3000,
   "maxEnergy": 25000,
   "wallGaps": 1,
+  "herdCount": 0,
   "refugeCount": 0,
   "coldMarginWidth": 0
 }

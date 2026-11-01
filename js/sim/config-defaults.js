@@ -1,6 +1,7 @@
 // The default simulation config: every tunable with its legacy source constant named in a trailing comment.
 
 import { FLORA_DEFAULTS } from './config-flora.js';
+import { HERD_DEFAULTS } from './config-herds.js';
 
 /**
  * Freezes an object tree in place.
@@ -19,6 +20,7 @@ function deepFreeze(value) {
 /** @type {Readonly<Record<string, any>>} */
 export const DEFAULTS = deepFreeze({
     flora: FLORA_DEFAULTS,
+    ...HERD_DEFAULTS,
     floraPatchMax: 32,
     patchDieTicks: 36000,
     seedBankTicks: 432000,
@@ -106,7 +108,7 @@ export const DEFAULTS = deepFreeze({
     pheromoneMax: 5, // new
     hashCellSize: 140, // new
     maxContacts: 2000, // new
-    eventCapacity: 4096, // new
+    eventCapacity: 8192, // megafauna T1: includes four events per herd animal and two per herd
     specialisations: {
         // AGENT_CONFIGS maxRayDist; modifiers: SCOUT_ENERGY_COST_MULTIPLIER, DEFENDER_DAMAGE_REDUCTION, new
         forager: {

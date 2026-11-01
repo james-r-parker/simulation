@@ -127,8 +127,10 @@ function placeWall(world, first) {
     const band = wallGaps > 0 ? Math.floor(count / wallGaps) : count;
     const rng = world.rng.obstacles;
     const gapStart = new Int32Array(wallGaps);
+    world.wallGapY = new Float32Array(wallGaps);
     for (let g = 0; g < wallGaps; g++) {
         gapStart[g] = g * band + Math.floor(nextFloat(rng) * (band - gapRocks + 1));
+        world.wallGapY[g] = (gapStart[g] + gapRocks / 2) * step;
     }
     let slot = first;
     for (let j = 0; j < count; j++) {

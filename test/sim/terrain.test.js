@@ -57,6 +57,13 @@ describe('basins', () => {
         for (const gap of gaps) {
             expect(gap).toBeGreaterThanOrEqual(300 - 0.001);
         }
+        const centres = [];
+        for (let i = 0; i < edges.length; i += 2) {
+            if (edges[i + 1] - edges[i] > 0.001) {
+                centres.push((edges[i] + edges[i + 1]) / 2);
+            }
+        }
+        expect(Array.from(world.wallGapY).sort((a, b) => a - b)).toEqual(centres);
     });
 
     it('rings each refuge so a neighbour gap just fits refugeSizeMax and clear of the wall', () => {
