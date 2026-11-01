@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** In progress - Phase 1 chunk 1 (walking, seasonal routes, grazing, trampling and rendering) built; chunk 2 (stampede, life cycle, detectors and deferred screens) remains.
+**Status:** In progress - Phase 1 chunk 1 (walking, seasonal routes, grazing, trampling and rendering) and chunk 2 (stampede, life cycle, detectors, E75/E76 definitions) built; E75-E80 runs, adoption and final conformance remain owed until the balancing CPU work is released.
 **Validated:** a188a3f (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
