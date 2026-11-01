@@ -65,7 +65,7 @@ If a proposed change makes any of these impossible, reject it. If the sim never 
 | Boom and bust               | A local population swells, strips a patch, crashes, and is recolonized                                                             | Caps and immigration must not smooth this into a flat line                                                        |
 | Something unnamed           | A tactic no metric asked for, still obvious on screen                                                                              | Do not add a reward for every scene above. Leave room for a strategy the score does not know                      |
 
-Flora adds the `watch` detectors `eval.food_species_share.*` and `eval.seasonal_diet_shift` for **Season changes the map**, `eval.toxic_avoidance` for **Signals cost, and they can be false**, `eval.toxic_death_share` for **Death stays in the world**, `eval.sick_share` for **Condition changes the walk**, and `eval.pollination_rate` plus `eval.flora_hue_spread` for **Other blobs are the climate**. Their arithmetic is tested; power measurements and scene verdicts are owed.
+Flora adds the `watch` detectors `eval.food_species_share.*` and `eval.seasonal_diet_shift` for **Season changes the map**, `eval.toxic_avoidance` for **Signals cost, and they can be false**, `eval.toxic_death_share` for **Death stays in the world**, `eval.sick_share` for **Condition changes the walk**, and `eval.pollination_rate`, `eval.flora_hue_spread` and `eval.flora_patch_pool_full_share` for **Other blobs are the climate**. Their arithmetic is tested; power measurements and scene verdicts are owed.
 
 ## What to refuse
 

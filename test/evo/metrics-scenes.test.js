@@ -52,5 +52,6 @@ describe('the scene metrics', () => {
         expect(intendedDirection('eval.toxic_avoidance')).toBe('higher');
         expect(intendedDirection('eval.pollination_rate')).toBe('higher');
         expect(intendedDirection('eval.flora_hue_spread')).toBe('higher');
+        expect(intendedDirection('eval.flora_patch_pool_full_share')).toBe('lower');
     });
 });
