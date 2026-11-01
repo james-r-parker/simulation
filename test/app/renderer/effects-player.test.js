@@ -7,7 +7,7 @@ import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = {
-    effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6, ESCAPED: 7, MATED: 8 },
+    effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6, ESCAPED: 7, MATED: 8, POLLINATED: 9 },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
 };
 const info = { callRadius: 300, callTicks: 40 };
@@ -74,6 +74,17 @@ describe('playEffects', () => {
         expect(seen).toEqual([4]);
         expect(liveRings(rings, 105)).toBe(1);
         expect(rings.radius[0]).toBe(300);
+    });
+
+    it('draws seeded patch effects as dim flora rings only when the flora look is on', () => {
+        const { player, rings } = build();
+        playEffects(player, queueOf([[9, 10, 20, 30, 4095, 0, 0, 0]]), alive([]), 10);
+        expect(liveRings(rings, 10)).toBe(1);
+        expect(rings.x[0]).toBe(20);
+        expect(rings.y[0]).toBe(30);
+        player.floraEnabled = false;
+        playEffects(player, queueOf([[9, 11, 1, 2, 0, 0, 0, 0]]), alive([]), 11);
+        expect(liveRings(rings, 11)).toBe(1);
     });
 
     it('keeps order, stopping at the first effect still ahead of the playhead', () => {

@@ -14,6 +14,8 @@ import {
     ShaderMaterial,
     UnsignedByteType,
 } from 'three';
+import { createFloraGlow, disposeFloraGlow, setFloraVisibility } from './flora-glow.js';
+import { LOOK_OFF } from './quality.js';
 import { createPrng } from '../prng.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
@@ -329,17 +331,26 @@ export function createTerrainLayer({ info, seed = 0 }) {
     const { frost: frostUniforms, refuge: refugeUniforms, patches: patchUniforms } = uniforms;
 
     const { frost, refuge, patches } = buildTerrainMeshes(hasBasins, info, seed, uniforms);
+    const flora = (info.floraPatchMax ?? info.patches?.length ?? 0) > 0 ? createFloraGlow(info) : null;
+    let floraOn = true;
+    const parts = { group, frost, refuge, patches, flora };
     for (const part of [frost, refuge, patches]) {
         if (part) {
             group.add(part.mesh);
         }
     }
 
+    if (flora) {
+        group.add(flora.mesh);
+    }
+
     return {
         object: group,
         setLook(look) {
             const tier = look.terrain === 0 ? 0 : look.terrain === 1 ? 1 : 2;
-            group.visible = tier >= 0 && tier < 2;
+            floraOn = look.flora !== LOOK_OFF;
+            const terrainOn = tier >= 0 && tier < 2;
+            setFloraVisibility(parts, terrainOn, floraOn);
             frostUniforms.uTier.value = tier;
         },
         update(frame) {
@@ -347,7 +358,13 @@ export function createTerrainLayer({ info, seed = 0 }) {
             frostUniforms.uTime.value = t;
             refugeUniforms.uTime.value = t;
             patchUniforms.uTime.value = t;
+            if (floraOn && flora) {
+                flora.update(frame.snapshot ?? null);
+            }
         },
-        dispose: () => disposeTerrain(frost, refuge, patches),
+        dispose() {
+            disposeTerrain(frost, refuge, patches);
+            disposeFloraGlow(flora);
+        },
     };
 }

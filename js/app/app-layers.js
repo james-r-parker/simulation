@@ -10,6 +10,7 @@ import { createGroundLayer } from './renderer/ground-layer.js';
 import { createFinishLayer } from './renderer/finish-layer.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
 import { createOverlays } from './renderer/overlays.js';
+import { createPollenLayer } from './renderer/pollen-layer.js';
 import { createParticles } from './renderer/particles.js';
 import { createMateThreadLayer, createMateThreadPool } from './renderer/mate-threads.js';
 import { createRingLayer, createRingPool } from './renderer/rings.js';
@@ -70,6 +71,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createTerritoryLayer({ info }),
             haze,
             createFoodLayer({ info }),
+            createPollenLayer({ info, seed, flags: layout.flags, player: refs.player }),
             createObstacleLayer({ info, seed }),
             agents,
             createVisionLayer({ info }),

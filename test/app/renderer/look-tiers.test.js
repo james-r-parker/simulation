@@ -106,7 +106,7 @@ describe('terrain layer without a cold margin', () => {
             terrain: { layout: 'basins', coldMarginWidth: 0, refuges: [{ x: 500, y: 500, radius: 100 }] },
         };
         const layer = createTerrainLayer({ info });
-        expect(layer.object.children).toHaveLength(2);
+        expect(layer.object.children).toHaveLength(3);
         layer.update?.(/** @type {any} */ ({ nowMs: 4000 }));
         expect(layer.object.children[0].material.uniforms.uTime.value).toBeCloseTo(4);
         layer.dispose();
