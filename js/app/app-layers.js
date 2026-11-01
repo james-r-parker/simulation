@@ -9,6 +9,7 @@ import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createGroundLayer } from './renderer/ground-layer.js';
 import { createFinishLayer } from './renderer/finish-layer.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
+import { createHerdLayer } from './renderer/herd-layer.js';
 import { createOverlays } from './renderer/overlays.js';
 import { createPollenLayer } from './renderer/pollen-layer.js';
 import { createParticles } from './renderer/particles.js';
@@ -73,6 +74,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createFoodLayer({ info }),
             createPollenLayer({ info, seed, flags: layout.flags, player: refs.player }),
             createObstacleLayer({ info, seed }),
+            createHerdLayer({ info }),
             agents,
             createVisionLayer({ info }),
             smoke,

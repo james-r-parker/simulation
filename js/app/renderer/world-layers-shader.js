@@ -227,3 +227,32 @@ void main() {
     #include <colorspace_fragment>
 }
 `;
+
+export const HERD_VERTEX = /* glsl */ `
+attribute vec2 corner;
+attribute vec4 iBody; // x, y, radius, normalized speed
+uniform float uZoom;
+uniform float uMinPx;
+varying vec2 vLocal;
+varying float vPx;
+void main() {
+    float radius = max(iBody.z, uMinPx / uZoom);
+    float halfSize = radius + 1.0 / uZoom;
+    vLocal = corner * halfSize / radius;
+    vPx = 1.0 / (uZoom * radius);
+    gl_Position = projectionMatrix * viewMatrix * vec4(iBody.xy + corner * halfSize, 0.0, 1.0);
+}
+`;
+
+export const HERD_FRAGMENT = /* glsl */ `
+uniform vec3 uColor;
+uniform float uIntensity;
+varying vec2 vLocal;
+varying float vPx;
+void main() {
+    float edge = 1.0 - smoothstep(1.0 - vPx, 1.0 + vPx, length(vLocal));
+    gl_FragColor = vec4(uColor * uIntensity, edge);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+}
+`;

@@ -652,18 +652,19 @@ hash, and changes `inputs` and expects the same one.
 
 ## `snapshot.js`
 
-`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride, patchStride, rayStride }`.
+`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride, patchStride, herdStride, rayStride }`.
 `bytes` covers every part at its maximum, rays included. The buffer is one `ArrayBuffer` read through a `Float32Array` and
 a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it and allocates nothing:
 
 | Words                                                     | Contents                                                                                                                                                                                                  |
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Header, 7 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`), live patch count                                                                                       |
+| Header, 8 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`), live patch count, live herd animal count                                                               |
 | Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
 | Food, `foodStride` 6 each, alive only                     | `x`, `y`, `radius`, `age01`, `species`, `hue` (`Float32`); meat has negative radius and uses `foodAge / carcassTicks`; plants use `foodAge / foodLife`                                                    |
 | Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `terrainRockCount(config)` of them: the static rocks                                                                                                                      |
 | Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                             |
 | Patches, `patchStride` 5 each, alive only                 | `x`, `y`, `species`, `hue`, normalized fruiting weight (`Float32`)                                                                                                                                        |
+| Herds, `herdStride` 5 each, alive only                    | `x`, `y`, radius, speed normalized to `herdRunSpeed`, heading in radians (`Float32`)                                                                                                                      |
 | Rays, `rayCount` per agent, only when `withRays`          | Ray `k`'s proximity (channel 0 of the agent's inputs row, `1 - distance / visionRange`, 0 for a miss), in agent order                                                                                     |
 
 `speed` is `sqrt(vx x vx + vy x vy)` in world units per tick. `SNAPSHOT_FLAG` names the `flags` bits: the `ate` and
@@ -671,7 +672,7 @@ a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it 
 specialisation has `canHunt` and the `BITE` output is above 0), `ALARMING` (11, `alarmTimer` above 0), `HUNT_CALLING` (12,
 `huntTimer` above 0), `PREGNANT` (13, `pregnancy` above 0) and `MALE` (14, `sex` is male; clear for a female).
 
-Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `terrainRockCount(config)`, `maxClouds`, `floraPatchMax` and the ray part. A snapshot is not part of `worldHash`.
+Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `terrainRockCount(config)`, `maxClouds`, `floraPatchMax`, `herdCount * herdSize` and the ray part. Herd records follow patches and precede rays. A snapshot is not part of `worldHash`.
 
 ## Decisions
 

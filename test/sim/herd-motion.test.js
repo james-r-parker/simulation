@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { EVENT_TYPE, clearEvents } from '../../js/sim/events.js';
+import { refreshFruiting } from '../../js/sim/fruiting.js';
 import { stepHerds } from '../../js/sim/herd-motion.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
@@ -84,6 +85,33 @@ describe('stepHerds', () => {
         expect(world.groupStay[0]).toBeGreaterThan(0);
         world.groupStay[0] = 0;
         world.patchWeight[0] = world.groupPatchWeight[0] * world.config.herdLeaveShare - 1;
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(1);
+    });
+
+    it('changes its route as seasonal fruiting moves between patches', () => {
+        const world = build();
+        world.herdAlive[1] = 0;
+        world.herdStore[1] = 0;
+        world.patchAlive.fill(1);
+        world.patchStock.fill(100);
+        world.patchYield.fill(1);
+        world.patchStart[0] = 0;
+        world.patchStart[1] = 0.5;
+        world.patchSpan.fill(0.25);
+        world.patchX[0] = world.herdX[0];
+        world.patchY[0] = world.herdY[0];
+        world.patchX[1] = world.herdX[0] + 300;
+        world.patchY[1] = world.herdY[0];
+
+        world.season[1] = 0.125;
+        refreshFruiting(world);
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(0);
+
+        world.groupStay[0] = 0;
+        world.season[1] = 0.625;
+        refreshFruiting(world);
         stepHerds(world);
         expect(world.groupPatch[0]).toBe(1);
     });
