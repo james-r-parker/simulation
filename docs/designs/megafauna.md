@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** Proposed - wandering megafauna herds (large, slow, scripted bodies that graze, trample by speed, stampede from hunters, age, breed and leave huge carcasses; later dung and seeds), built in four phases on their own branches after flora; Phase 1 (herds that walk, graze, nudge, stampede and die) first.
+**Status:** In progress - Phase 1 chunk 1 (walking, seasonal routes, grazing, trampling and rendering) built; chunk 2 (stampede, life cycle, detectors and deferred screens) remains.
 **Validated:** d7f552d (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
@@ -148,13 +148,13 @@ Scripted herds with routes from the patch weights, grazing and an energy store, 
 
 **The Phase 1 gate** is that the herds walk, graze and leave a carcass: `eval.herd_animals`, `eval.herd_grazed_share` and `eval.herd_carcass_meal_share` above 0 on at least 12 of 16 seeds. The survival gate (the end state and families per basin of [natural-selection.md](natural-selection.md) Phase 4) applies from Phase 2, after the sense and the wary reflex. Phase 1 does not tune `trampleDamage` (it stays 400) to pass a survival gate.
 
-| Chunk                 | Tasks     | Goal                                                                                             |
-| --------------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| 1, walking herds      | T1 to T7  | The keys, arrays, placement, motion, contact with the rays, grazing, snapshot, the re-pin        |
-| 2, stampede and death | T8 to T13 | The stampede, ageing, births, carcass, the detectors, the re-pin, the screen file                |
-| Runs                  | T14       | The reference run, the herd screen, `eval:power`, `bench` and the Phase 1 gate (no code commits) |
-| Adopt                 | T15       | The Phase 1 defaults                                                                             |
-| Close                 | T16       | The conformance review and the Status move                                                       |
+| Chunk                    | Tasks     | Goal                                                                                               |
+| ------------------------ | --------- | -------------------------------------------------------------------------------------------------- |
+| 1, walking herds (built) | T1 to T7  | The keys, arrays, placement, seasonal motion, contact with the rays, grazing, snapshot, the re-pin |
+| 2, stampede and death    | T8 to T13 | The stampede, ageing, births, carcass, the detectors, the re-pin, the screen file                  |
+| Runs                     | T14       | The reference run, the herd screen, `eval:power`, `bench` and the Phase 1 gate (no code commits)   |
+| Adopt                    | T15       | The Phase 1 defaults                                                                               |
+| Close                    | T16       | The conformance review and the Status move                                                         |
 
 ### Phase 2 - The megafauna sense and the wary reflex
 
