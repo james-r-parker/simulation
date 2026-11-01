@@ -31,7 +31,7 @@ const BURST = {
     eaten: false,
 };
 const RING = {
-    kind: /** @type {'alarm' | 'hunt' | 'birth'} */ ('birth'),
+    kind: /** @type {'alarm' | 'hunt' | 'birth' | 'pollen'} */ ('birth'),
     x: 0,
     y: 0,
     tick: 0,
@@ -107,11 +107,11 @@ function playPollinated(player) {
     const e = player.effect;
     floraColor((e.a / 4095) * 2 - 1, player.rgb);
     const y = 0.2126729 * player.rgb[0] + 0.7151522 * player.rgb[1] + 0.072175 * player.rgb[2];
-    const scale = y > 0 ? SCENERY_MAX_LUMINANCE / y : 0;
+    const scale = SCENERY_MAX_LUMINANCE / y;
     player.rgb[0] *= scale;
     player.rgb[1] *= scale;
     player.rgb[2] *= scale;
-    setRing('birth', e, 70, BIRTH_TICKS);
+    setRing('pollen', e, 70, BIRTH_TICKS);
     RING.rgb = player.rgb;
     spawnRing(player.rings, RING);
 }
@@ -149,7 +149,7 @@ function setBurst(kind, e, rgb) {
 
 /**
  * Fills the shared ring scratch at the effect, leaving the colour to the caller.
- * @param {'birth' | 'alarm' | 'hunt'} kind which ring
+ * @param {'birth' | 'alarm' | 'hunt' | 'pollen'} kind which ring
  * @param {Effect} e the effect
  * @param {number} radius its radius
  * @param {number} life its length in ticks

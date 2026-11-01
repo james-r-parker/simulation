@@ -259,8 +259,8 @@ function writeRays(world, f32, start) {
 }
 
 /**
- * Writes the world into the buffer: header, alive agents by ascending slot, alive food, obstacles, live clouds and,
- * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count written.
+ * Writes the world into the buffer: header, alive agents, alive food, obstacles, clouds, live patches and,
+ * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count written; word 6 is the patch count.
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views views from `createSnapshotViews`
  * @param {boolean} [withRays] write the ray part

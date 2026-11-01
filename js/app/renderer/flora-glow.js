@@ -45,7 +45,7 @@ export function packFloraGlows(snapshot, section, out) {
         out.pose[at + 3] = 0;
         floraColor(snapshot[from + 3], out.rgb);
         const y = 0.2126729 * out.rgb[0] + 0.7151522 * out.rgb[1] + 0.072175 * out.rgb[2];
-        const scale = y > 0 ? SCENERY_MAX_LUMINANCE / y : 0;
+        const scale = SCENERY_MAX_LUMINANCE / y;
         out.tint[at] = out.rgb[0] * scale;
         out.tint[at + 1] = out.rgb[1] * scale;
         out.tint[at + 2] = out.rgb[2] * scale;

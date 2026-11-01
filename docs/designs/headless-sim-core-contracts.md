@@ -658,7 +658,7 @@ a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it 
 
 | Words                                                     | Contents                                                                                                                                                                                                  |
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Header, 6 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                         |
+| Header, 7 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`), live patch count                                                                                       |
 | Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
 | Food, `foodStride` 6 each, alive only                     | `x`, `y`, `radius`, `age01`, `species`, `hue` (`Float32`); meat has negative radius and uses `foodAge / carcassTicks`; plants use `foodAge / foodLife`                                                    |
 | Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `terrainRockCount(config)` of them: the static rocks                                                                                                                      |
@@ -671,8 +671,7 @@ a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it 
 specialisation has `canHunt` and the `BITE` output is above 0), `ALARMING` (11, `alarmTimer` above 0), `HUNT_CALLING` (12,
 `huntTimer` above 0), `PREGNANT` (13, `pregnancy` above 0) and `MALE` (14, `sex` is male; clear for a female).
 
-Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `terrainRockCount(config)`, `maxClouds` and the
-ray part. A snapshot is not part of `worldHash`.
+Sections follow each other with no padding and are sized for `maxAgents`, `maxFood`, `terrainRockCount(config)`, `maxClouds`, `floraPatchMax` and the ray part. A snapshot is not part of `worldHash`.
 
 ## Decisions
 

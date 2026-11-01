@@ -88,6 +88,19 @@ describe('ring pool', () => {
 });
 
 describe('createRingLayer', () => {
+    it('clears pollen rings when flora is disabled without touching other rings', () => {
+        const pool = createRingPool();
+        spawnRing(pool, ring(0, { kind: 'pollen' }));
+        spawnRing(pool, ring(0, { kind: 'birth' }));
+        const layer = createRingLayer({ pool });
+        layer.setLook?.({ flora: 0 });
+        expect(pool.startTick[0]).toBe(0);
+        layer.setLook?.({ flora: -1 });
+        expect(pool.startTick[0]).toBe(-Infinity);
+        expect(pool.startTick[1]).toBe(0);
+        layer.dispose();
+    });
+
     it('uploads the live rings each frame', () => {
         const pool = createRingPool();
         spawnRing(pool, ring(0));
@@ -98,6 +111,7 @@ describe('createRingLayer', () => {
         });
         layer.update?.(/** @type {any} */ ({ tick: 10, camera, lenses: { calls: false } }));
         expect(layer.object.count).toBe(1);
+        layer.update?.(/** @type {any} */ ({ tick: 10, camera, lenses: { calls: true } }));
         layer.update?.(/** @type {any} */ ({ tick: 100, camera, lenses: { calls: false } }));
         expect(layer.object.count).toBe(0);
         layer.dispose();

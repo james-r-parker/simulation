@@ -124,7 +124,7 @@ export function packPollen(pool, tick) {
         pool.pose[at + 1] = pool.y[i] + Math.sin(pool.angle[i]) * 12 * age;
         floraColor(pool.hue[i], pool.rgb);
         const y = 0.2126729 * pool.rgb[0] + 0.7151522 * pool.rgb[1] + 0.072175 * pool.rgb[2];
-        const scale = y > 0 ? SCENERY_MAX_LUMINANCE / y : 0;
+        const scale = SCENERY_MAX_LUMINANCE / y;
         pool.color[at] = pool.rgb[0] * scale;
         pool.color[at + 1] = pool.rgb[1] * scale;
         pool.color[at + 2] = pool.rgb[2] * scale;
@@ -156,7 +156,13 @@ export function createPollenLayer({ info, seed, flags, player }) {
     return {
         object: mesh,
         setLook(look) {
-            enabled = look.flora !== LOOK_OFF;
+            const next = look.flora !== LOOK_OFF;
+            if (next !== enabled) {
+                pool.lastBucket.fill(-1);
+                pool.genome.fill(0);
+                pool.born.fill(-Infinity);
+            }
+            enabled = next;
             player.floraEnabled = enabled;
             if (!enabled) {
                 mesh.visible = false;

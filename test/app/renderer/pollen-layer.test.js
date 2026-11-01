@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
-import { createPollenPool, emitPollen, packPollen } from '../../../js/app/renderer/pollen-layer.js';
+import { createPollenLayer, createPollenPool, emitPollen, packPollen } from '../../../js/app/renderer/pollen-layer.js';
 import { SNAPSHOT_FLAG } from '../../../js/sim/snapshot.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
@@ -22,6 +22,26 @@ describe('seeded pollen particles', () => {
         emitPollen(pool, agents, 20);
         expect(pool.next).toBe(2);
         expect(packPollen(pool, 20)).toBe(1);
+    });
+
+    it('clears particles while disabled and resumes without replaying missed intervals', () => {
+        const agents = createInterpolated(1);
+        interpolateInto(null, makeSnapshot(1, [{ slot: 0, genomeId: 42, flags: FLAG }]), 1, agents);
+        const player = { floraEnabled: true };
+        const layer = createPollenLayer({ info: { maxAgents: 1 }, seed: 123, flags: SNAPSHOT_FLAG, player });
+        const frame = { agents, tick: 0, camera: { zoom: 1 } };
+        layer.setLook?.({ flora: 0 });
+        layer.update?.(/** @type {any} */ (frame));
+        expect(layer.object.count).toBe(1);
+        layer.setLook?.({ flora: -1 });
+        expect(player.floraEnabled).toBe(false);
+        expect(layer.object.visible).toBe(false);
+        frame.tick = 500;
+        layer.update?.(/** @type {any} */ (frame));
+        layer.setLook?.({ flora: 0 });
+        layer.update?.(/** @type {any} */ (frame));
+        expect(layer.object.count).toBe(1);
+        layer.dispose();
     });
 
     it('replays the same visual trajectory from a seed and changes direction with a different seed', () => {

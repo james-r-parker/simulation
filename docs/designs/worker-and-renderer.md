@@ -252,33 +252,37 @@ and `outputs` (the eleven names of `OUTPUT_INDEX`), built by `inspectLabels`.
 One `ArrayBuffer` per snapshot, read through a `Float32Array` and a `Uint32Array`. `writeSnapshot` writes the sim
 parts; the worker parts follow them and their offsets are in `ready.layout`.
 
-| Part                                        | Words                                                                                                                                                                                                                     |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Header, 6 (`Uint32`)                        | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                                         |
-| Agents, 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size` (radius), `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`)                         |
-| Food, 4 each (3 before Phase 6)             | `x`, `y`, `radius`, `age01`; the radius is negative for a carcass (meat), so a reader takes `abs` for the size and the sign for the kind; `age01` is `foodAge / carcassTicks` for a carcass (0 to 1) and 0 for plant food |
-| Obstacles, 3 each                           | `x`, `y`, `radius`, one per obstacle slot: the wandering obstacles, then the static rocks                                                                                                                                 |
-| Clouds, 3 each                              | `x`, `y`, `cloudTtl / smokeTicks` ([predator-prey.md](predator-prey.md))                                                                                                                                                  |
-| Rays, `rayCount` per agent when written     | Ray `k`'s proximity (`1 - distance / visionRange`, 0 for a miss) from the agent's inputs row, in agent order                                                                                                              |
-| Effects (worker)                            | A header of 2 words (`count`, `dropped`) and up to `EFFECT_CAPACITY` (512) records of 8 words                                                                                                                             |
-| Inspect (worker)                            | A header of 3 words (`genomeId`, `slot`, `valid`), then the inputs row, the hidden row, the outputs row and 15 counter floats                                                                                             |
+| Part                                        | Words                                                                                                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header, 7 (`Uint32`)                        | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`), live patch count                                                                               |
+| Agents, 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size` (radius), `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`) |
+| Food, 6 each                                | `x`, `y`, `radius`, `age01`, `species`, `hue`; radius is negative for meat. Plant age is `foodAge / foodLife`, meat age is `foodAge / carcassTicks`.                                              |
+| Obstacles, 3 each                           | `x`, `y`, `radius`, one per obstacle slot: the wandering obstacles, then the static rocks                                                                                                         |
+| Clouds, 3 each                              | `x`, `y`, `cloudTtl / smokeTicks` ([predator-prey.md](predator-prey.md))                                                                                                                          |
+| Live patches, 5 each                        | `x`, `y`, `species`, `hue`, normalized fruiting weight, in patch-slot order.                                                                                                                      |
+| Rays, `rayCount` per agent when written     | Ray `k`'s proximity (`1 - distance / visionRange`, 0 for a miss) from the agent's inputs row, in agent order                                                                                      |
+| Effects (worker)                            | A header of 2 words (`count`, `dropped`) and up to `EFFECT_CAPACITY` (512) records of 8 words                                                                                                     |
+| Inspect (worker)                            | A header of 3 words (`genomeId`, `slot`, `valid`), then the inputs row, the hidden row, the outputs row and 16 counter floats                                                                     |
 
 Phase 4 adds the signals [world-balance.md](world-balance.md) Phase 1 builds in the observer. The `deliberate` bit of `BITE` and `DIED` is the victim's `lastBiteDeliberate` after the tick's bite is classified. `ESCAPED` is written when a bite episode ends `escaped` (`noteEscape`): `responded` is the episode latch's `responded`, and `in smoke` is set when the victim sat inside smoke at that tick. `js/worker/effects.js` reads these from the observer and never changes it.
 
 `speed` is `sqrt(vx x vx + vy x vy)` in world units per tick. `flags`:
 
-| Bits | Name          | Meaning                                                                                                                                                                |
-| ---- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0-4  | `ate`         | `ateTimer`, 0 to `TIMER_CAP`; 1 on the tick the agent ate                                                                                                              |
-| 5-9  | `bitten`      | `bittenTimer`, 0 to `TIMER_CAP`; 1 on the tick the agent was bitten                                                                                                    |
-| 10   | `jawOpen`     | The specialisation has `canHunt` and the `BITE` output is above 0                                                                                                      |
-| 11   | `alarming`    | `alarmTimer` above 0                                                                                                                                                   |
-| 12   | `huntCalling` | `huntTimer` above 0                                                                                                                                                    |
-| 13   | `pregnant`    | `pregnancy` above 0                                                                                                                                                    |
-| 14   | `male`        | `sex` is male (`SNAPSHOT_FLAG.MALE`); clear for a female and for every agent when `sexesEnabled` is false                                                              |
-| 15   | -             | Reserved for the infected flag of [world-balance.md](world-balance.md) Phase 6                                                                                         |
-| 16   | `hunting`     | Phase 4: the agent's prey-closing history meets the deliberate rule (`CLOSING_MIN` of the last `CLOSING_BITS` bits set with prey on an arc ray within `INTENT_WINDOW`) |
-| 17   | `fleeing`     | Phase 4: a threat is on the agent's rays and its last response is within `INTENT_WINDOW` ticks                                                                         |
+| Bits  | Name          | Meaning                                                                                                                                                                |
+| ----- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0-4   | `ate`         | `ateTimer`, 0 to `TIMER_CAP`; 1 on the tick the agent ate                                                                                                              |
+| 5-9   | `bitten`      | `bittenTimer`, 0 to `TIMER_CAP`; 1 on the tick the agent was bitten                                                                                                    |
+| 10    | `jawOpen`     | The specialisation has `canHunt` and the `BITE` output is above 0                                                                                                      |
+| 11    | `alarming`    | `alarmTimer` above 0                                                                                                                                                   |
+| 12    | `huntCalling` | `huntTimer` above 0                                                                                                                                                    |
+| 13    | `pregnant`    | `pregnancy` above 0                                                                                                                                                    |
+| 14    | `male`        | `sex` is male (`SNAPSHOT_FLAG.MALE`); clear for a female and for every agent when `sexesEnabled` is false                                                              |
+| 15    | -             | Reserved for the infected flag of [world-balance.md](world-balance.md) Phase 6                                                                                         |
+| 16    | `hunting`     | Phase 4: the agent's prey-closing history meets the deliberate rule (`CLOSING_MIN` of the last `CLOSING_BITS` bits set with prey on an arc ray within `INTENT_WINDOW`) |
+| 17    | `fleeing`     | Phase 4: a threat is on the agent's rays and its last response is within `INTENT_WINDOW` ticks                                                                         |
+| 18    | `sick`        | Dose meets the sickness threshold.                                                                                                                                     |
+| 19    | `pollen`      | The carried pollen source is alive and has the same serial.                                                                                                            |
+| 20-31 | `pollenHue`   | Carried hue quantized to 12 unsigned bits over [-1, 1].                                                                                                                |
 
 The inspect counters are, in order: `ageTicks`, `energy / maxEnergy`, `temperature`, generation, food energy eaten,
 bite energy taken, kills, children, fitness so far, `lastLoss`, `bittenTimer`, `ateTimer`, and the slot's `vision`,
