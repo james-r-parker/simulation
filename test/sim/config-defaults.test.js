@@ -11,6 +11,11 @@ describe('DEFAULTS', () => {
         expect([DEFAULTS.mateRange, DEFAULTS.childEnergyShare, DEFAULTS.childEnergyMin]).toEqual([200, 0.5, 100]);
     });
 
+    it('uses the measured Flora toxin dose and retains the patch-pool capacity', () => {
+        expect(DEFAULTS.toxinDose).toBe(1.2);
+        expect(DEFAULTS.floraPatchMax).toBe(32);
+    });
+
     it('is frozen at every level', () => {
         expect(Object.isFrozen(DEFAULTS)).toBe(true);
         expect(Object.isFrozen(DEFAULTS.seasons)).toBe(true);

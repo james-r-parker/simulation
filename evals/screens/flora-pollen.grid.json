@@ -1,0 +1,43 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "pollenTicks-1500": {
+      "pollenTicks": 1500
+    },
+    "pollenTicks-6000": {
+      "pollenTicks": 6000
+    },
+    "seedCooldownTicks-3000": {
+      "seedCooldownTicks": 3000
+    },
+    "floraMutation-0.04": {
+      "floraMutation": 0.04
+    },
+    "floraMutation-0.16": {
+      "floraMutation": 0.16
+    },
+    "patchDieTicks-18000": {
+      "patchDieTicks": 18000
+    },
+    "seedBankTicks-144000": {
+      "seedBankTicks": 144000
+    },
+    "sproutRate-2e-06": {
+      "sproutRate": 0.000002
+    },
+    "floraPatchMax-24": {
+      "floraPatchMax": 24
+    },
+    "floraPatchMax-48": {
+      "floraPatchMax": 48
+    }
+  },
+  "base": {
+    "toxinDose": 0.45
+  }
+}

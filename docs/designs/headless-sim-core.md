@@ -233,7 +233,7 @@ The bench times each phase by calling its `run` directly.
   The event ring holds `eventCapacity` records per tick and throws the same way when a tick overflows it.
 - Obstacles are not in the hash. `castRays` and `integrate` test all `obstacleCount` obstacles directly.
 
-The toxin keys are numeric and always active: `toxinDose` 0.45, `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008 and `lethalDose` 1.0. [flora.md](flora.md) defines dose, cost, sickness and recovery; `sickDose` must be below `lethalDose`.
+The toxin keys are numeric and always active: `toxinDose` 1.2 (measured by Flora E73/E74), `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008 and `lethalDose` 1.0. [flora.md](flora.md) defines dose, cost, sickness and recovery; `sickDose` must be below `lethalDose`.
 
 The always-active flora pool and pollen keys are defined in [flora.md](flora.md), Config and persistence. `foodPatchCount` is the initial live count, `floraPatchMax` the fixed capacity; living patches may die, bank, sprout or seed descendants.
 
