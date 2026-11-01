@@ -4,12 +4,12 @@ import { int, num, positive, UNIT } from './config-rules.js';
 import { MAX_EVENTS_PER_SLOT } from './events.js';
 
 export const HERD_DEFAULTS = {
-    herdCount: 4,
+    herdCount: 6,
     herdSize: 8,
     herdRadius: 80,
     herdWalkSpeed: 1.5,
     herdRunSpeed: 6.5,
-    herdStartleRadius: 700,
+    herdStartleRadius: 200,
     herdStampedeTicks: 360,
     herdLifeTicks: 144000,
     herdBirthTicks: 12000,
@@ -19,7 +19,7 @@ export const HERD_DEFAULTS = {
     herdGrazeTicks: 30,
     herdAssimilation: 0.3,
     herdLeaveShare: 0.4,
-    herdCarcassTicks: 6000,
+    herdCarcassTicks: 12000,
     herdStayTicks: 6000,
     trampleDamage: 400,
 };
