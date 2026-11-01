@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { CH_MEGAFAUNA, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS, inputOffsets } from '../../js/sim/brain-layout.js';
 import { poolRays } from '../../js/sim/ray-pool.js';
 import { senseAll } from '../../js/sim/sensors.js';
-import { rebuild } from '../sim/helpers/sense-world.js';
+import { addAgent, rebuild, senseWorld } from '../sim/helpers/sense-world.js';
 import { flee, followCorridor, seekFood, seekFoodHue, steer } from '../../js/evo/pool-discrimination-controllers.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 
@@ -40,6 +40,27 @@ describe('steer', () => {
         expect(steer(0, 1)).toBe(1);
         expect(steer(-1, -0.01)).toBe(-1);
         expect(steer(-1, 0.01)).toBe(1);
+    });
+});
+
+describe('megafauna channel discrimination', () => {
+    it('keeps herd hits distinct from obstacles in both raw rays and pooled inputs', () => {
+        const world = senseWorld({ herdCount: 1, herdSize: 1 });
+        const slot = addAgent(world, 500, 500, 20);
+        world.herdAlive[0] = 1;
+        world.herdX[0] = 650;
+        world.herdY[0] = 500;
+        senseAll(world, rebuild(world));
+        poolRays(world, slot);
+
+        const raw = slot * world.layout.rawInputCount;
+        const ray = world.inputs.subarray(raw, raw + RAY_CHANNELS);
+        const pooled = slot * world.layout.inputCount;
+        const { megafauna, obstacle } = inputOffsets(world.config).pooled;
+        expect(ray[CH_MEGAFAUNA]).toBe(1);
+        expect(ray[7]).toBe(0);
+        expect(world.pooled[pooled + megafauna]).toBeGreaterThan(0);
+        expect(world.pooled[pooled + obstacle]).toBe(0);
     });
 });
 

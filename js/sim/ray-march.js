@@ -1,7 +1,7 @@
 // Casts each agent's rays against the circles near it, writing proximity and the hit's class to its inputs row.
-// An agent class channel holds the hit's proximity; the food, wall, obstacle and smoke channels hold 1.
+// An agent class channel holds the hit's proximity; fixture channels hold 1.
 
-import { RAY_CHANNELS } from './brain-layout.js';
+import { CH_MEGAFAUNA, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
@@ -103,7 +103,7 @@ function nearestHit(world, count) {
 }
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
-const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_OBSTACLE]);
+const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_MEGAFAUNA]);
 
 /**
  * @param {World} world the world

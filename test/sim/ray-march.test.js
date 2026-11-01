@@ -5,7 +5,7 @@ import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sens
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { describe, expect, it } from 'vitest';
 
-const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
+const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8, megafauna: 9 };
 const VISION = 300;
 
 /**
@@ -28,7 +28,7 @@ function cast(w, slot) {
 }
 
 describe('castRays classes', () => {
-    it('reports a herd body in the obstacle channel', () => {
+    it('reports a herd body in its dedicated channel', () => {
         const w = senseWorld({ herdCount: 1, herdSize: 1 });
         const me = addAgent(w, 500, 500, 20);
         w.herdAlive[0] = 1;
@@ -36,7 +36,7 @@ describe('castRays classes', () => {
         w.herdY[0] = 500;
         cast(w, me);
         const ray = rayValues(w, me, 0);
-        expect(ray[CH.obstacle]).toBe(1);
+        expect(ray[CH.megafauna]).toBe(1);
         expect(ray.slice(1).filter((value) => value !== 0)).toHaveLength(1);
     });
 
@@ -226,7 +226,7 @@ describe('castRays smoke', () => {
         const r = rayValues(w, me, 0);
         expect(r[CH.prox]).toBeCloseTo(1 - (400 - w.config.smokeRadius - 200) / VISION, 6);
         expect(r[CH.smoke]).toBe(1);
-        expect(r.slice(1, 8)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+        expect(r.slice(1, 9)).toEqual([0, 0, 0, 0, 0, 0, 0, 1]);
     });
 
     it('sees nothing behind a cloud', () => {

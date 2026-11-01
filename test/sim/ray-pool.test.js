@@ -15,7 +15,7 @@ import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js
  * The naive per-channel reference: scan every ray for the channel, keep the largest proximity (the first ray on a tie).
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the slot
- * @returns {number[]} the 50 pooled values then the body block
+ * @returns {number[]} the 56 pooled values then the body block
  */
 function reference(w, slot) {
     const { rayCount } = w.config;
@@ -60,7 +60,7 @@ function randomRow(w, slot, rng) {
         if (nextFloat(rng) < 0.6) {
             const prox = Math.round(nextFloat(rng) * 8) / 8;
             w.inputs[row + k * RAY_CHANNELS] = prox;
-            w.inputs[row + k * RAY_CHANNELS + 1 + Math.floor(nextFloat(rng) * 8)] = prox;
+            w.inputs[row + k * RAY_CHANNELS + 1 + Math.floor(nextFloat(rng) * 9)] = prox;
         }
     }
     for (let k = 0; k < rayCount; k++) {
@@ -139,7 +139,7 @@ describe('poolRays', () => {
         senseAll(w, rebuild(w));
         poolRays(w, me);
         const at = me * w.layout.inputCount;
-        expect(Array.from(w.pooled.subarray(at + 48, at + 50))).toEqual([-0.75, 0.5]);
+        expect(Array.from(w.pooled.subarray(at + 54, at + 56))).toEqual([-0.75, 0.5]);
         expect(w.pooled[at + 1]).toBe(1);
         expect(w.pooled[at + 4]).toBe(-1);
     });
@@ -153,7 +153,7 @@ describe('poolRays', () => {
         poolRays(w, me);
         const at = me * w.layout.inputCount;
         expect(w.pooled[at]).toBeGreaterThan(0);
-        expect(w.pooled[at + 48]).toBe(0);
+        expect(w.pooled[at + 54]).toBe(0);
         w.foodHue[food] = 0.75;
         senseAll(w, rebuild(w));
         expect(w.rayHue[me * 8]).toBe(0.75);
@@ -163,7 +163,7 @@ describe('poolRays', () => {
         poolRays(w, me);
         expect(Array.from(w.rayHue.subarray(me * 8, (me + 1) * 8))).toEqual(new Array(8).fill(0));
         expect(w.pooled[at]).toBe(0);
-        expect(w.pooled[at + 48]).toBe(0);
-        expect(w.pooled[at + 49]).toBe(0);
+        expect(w.pooled[at + 54]).toBe(0);
+        expect(w.pooled[at + 55]).toBe(0);
     });
 });

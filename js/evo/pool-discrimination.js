@@ -1,4 +1,4 @@
-// The discrimination checks for pooled-v3: position, threats, a corridor and food-hue choice.
+// The discrimination checks for pooled-v4: position, threats, a corridor, food-hue choice and distinct megafauna hits.
 // each scored for a controller that reads the pooled row and one that reads the raw rays. A scene passes when the
 // pooled controller scores within 10% of the raw one. These diagnostic controllers do not change the evolved brain or its instinct.
 
