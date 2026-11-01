@@ -44,6 +44,7 @@ export const DEATH_CAUSE = Object.freeze({
     COLLISION: 2,
     OLD_AGE: 3,
     POISONED: 4,
+    TRAMPLED: 5,
 });
 
 /** Why a birth was blocked, stored in the `cause` field of `BIRTH_BLOCKED`. */

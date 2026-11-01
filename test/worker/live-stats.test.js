@@ -213,7 +213,7 @@ describe('collectStats', () => {
         );
         expect(first).toMatchObject({ births: 5, deaths: 2 });
         expect(first.birthsByCause).toEqual([0, 4, 0, 1, 0]);
-        expect(first.deathsByCause).toEqual([0, 2, 0, 0, 0]);
+        expect(first.deathsByCause).toEqual([0, 2, 0, 0, 0, 0]);
         observer.births[BORN_CAUSE.SPLIT] = 3;
         const second = collectStats(
             live,

@@ -103,7 +103,7 @@ function nearestHit(world, count) {
 }
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
-const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE]);
+const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_OBSTACLE]);
 
 /**
  * @param {World} world the world

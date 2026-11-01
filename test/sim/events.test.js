@@ -35,7 +35,7 @@ describe('event codes', () => {
             HERD_ROUTE_CHANGED: 20,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
-        expect(DEATH_CAUSE).toEqual({ STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3, POISONED: 4 });
+        expect(DEATH_CAUSE).toEqual({ STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3, POISONED: 4, TRAMPLED: 5 });
         expect(BLOCKED_CAUSE).toEqual({ CAPACITY: 0, ENERGY: 1 });
         for (const codes of [EVENT_TYPE, BORN_CAUSE, DEATH_CAUSE, BLOCKED_CAUSE]) {
             expect(Object.isFrozen(codes)).toBe(true);

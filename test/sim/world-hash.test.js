@@ -42,6 +42,7 @@ const COVERED = [
     'parentA',
     'parentB',
     'lastBiter',
+    'lastHerdId',
     'weights',
     'fatherWeights',
     'fatherId',

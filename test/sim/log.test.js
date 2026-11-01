@@ -289,7 +289,14 @@ describe('drainEvents', () => {
         }
         const { records, log } = collect('debug');
         drainEvents(world, log);
-        expect(records.map((r) => r.cause)).toEqual(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
+        expect(records.map((r) => r.cause)).toEqual([
+            'starved',
+            'eaten',
+            'collision',
+            'old-age',
+            'poisoned',
+            'trampled',
+        ]);
     });
 
     it('names every blocked cause', () => {

@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import { castRays } from '../../js/sim/ray-march.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { describe, expect, it } from 'vitest';
 
 const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8 };
 const VISION = 300;
@@ -28,6 +28,18 @@ function cast(w, slot) {
 }
 
 describe('castRays classes', () => {
+    it('reports a herd body in the obstacle channel', () => {
+        const w = senseWorld({ herdCount: 1, herdSize: 1 });
+        const me = addAgent(w, 500, 500, 20);
+        w.herdAlive[0] = 1;
+        w.herdX[0] = 650;
+        w.herdY[0] = 500;
+        cast(w, me);
+        const ray = rayValues(w, me, 0);
+        expect(ray[CH.obstacle]).toBe(1);
+        expect(ray.slice(1).filter((value) => value !== 0)).toHaveLength(1);
+    });
+
     it('sees food', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);

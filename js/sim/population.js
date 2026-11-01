@@ -30,6 +30,9 @@ function deathCause(world, slot) {
         return -1;
     }
     const loss = world.lastLoss[slot];
+    if (loss === LOSS_CAUSE.TRAMPLE) {
+        return DEATH_CAUSE.TRAMPLED;
+    }
     const bittenThisTick = world.lastBiter[slot] !== 0 && world.lastBiteTick[slot] === world.tick;
     if (loss === LOSS_CAUSE.BITE || bittenThisTick) {
         return DEATH_CAUSE.EATEN;
@@ -60,7 +63,12 @@ function pushDied(world, slot, cause) {
     d[o + 2] = slot;
     d[o + 3] = world.genomeId[slot];
     d[o + 4] = cause;
-    d[o + 5] = cause === DEATH_CAUSE.EATEN ? world.lastBiter[slot] : 0;
+    d[o + 5] =
+        cause === DEATH_CAUSE.EATEN
+            ? world.lastBiter[slot]
+            : cause === DEATH_CAUSE.TRAMPLED
+              ? world.lastHerdId[slot]
+              : 0;
     d[o + 6] = world.spec[slot];
     d[o + 7] = world.lineageId[slot];
     d[o + 8] = world.ageTicks[slot];

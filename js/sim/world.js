@@ -86,7 +86,7 @@ function agentSpecs(layout) {
         ...singles(Uint32Array, ['pollenSerial']),
         ...singles(Int32Array, ['pollenTicks']),
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
-        ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
+        ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter', 'lastHerdId']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
         ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick', 'recoilStamp']),
         ...singles(Uint16Array, ['pollenPatch', 'alarmTimer', 'huntTimer', 'smokeTimer']),
@@ -335,7 +335,12 @@ export function allocateWorld(config) {
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
-            LOCAL_STRIDE * (config.maxAgents + config.maxFood + terrainRockCount(config) + config.maxClouds),
+            LOCAL_STRIDE *
+                (config.maxAgents +
+                    config.maxFood +
+                    terrainRockCount(config) +
+                    config.maxClouds +
+                    config.herdCount * config.herdSize),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),

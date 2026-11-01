@@ -50,6 +50,7 @@ describe('reap', () => {
         ['no loss', LOSS_CAUSE.NONE, DEATH_CAUSE.STARVED, 0],
         ['bite', LOSS_CAUSE.BITE, DEATH_CAUSE.EATEN, 77],
         ['collision', LOSS_CAUSE.COLLISION, DEATH_CAUSE.COLLISION, 0],
+        ['trample', LOSS_CAUSE.TRAMPLE, DEATH_CAUSE.TRAMPLED, 77],
     ])('kills an agent at 0 energy after a %s loss', (_n, loss, cause, by) => {
         const w = lifeWorld();
         const s = addBlob(w, {
@@ -61,6 +62,9 @@ describe('reap', () => {
             foodEnergy: 5,
             biteEnergy: 6,
         });
+        if (loss === LOSS_CAUSE.TRAMPLE) {
+            w.lastHerdId[s] = 77;
+        }
         const id = w.genomeId[s];
         /** @type {string[]} */
         const log = [];
@@ -70,6 +74,15 @@ describe('reap', () => {
         expect(w.alive[s]).toBe(0);
         expect(event(w, 0)).toEqual([EVENT_TYPE.AGENT_DIED, 8, s, id, cause, by, 3, id, 42, 5, 6, 0]);
         expect(log).toEqual([`death ${s} ${cause} 1 0`]);
+    });
+
+    it('uses the last trample loss when a blob was also bitten that tick', () => {
+        const w = lifeWorld();
+        const s = addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.TRAMPLE, lastBiter: 77, lastHerdId: 91 });
+        w.tick = 8;
+        w.lastBiteTick[s] = w.tick;
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0).slice(4, 6)).toEqual([DEATH_CAUSE.TRAMPLED, 91]);
     });
 
     it('lets old age win over starvation', () => {

@@ -34,6 +34,7 @@ const AGENT_ARRAYS = [
     'parentA',
     'parentB',
     'lastBiter',
+    'lastHerdId',
     'weights',
     'fatherWeights',
     'fatherId',

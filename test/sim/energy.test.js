@@ -61,7 +61,7 @@ function aliveEnergy(world) {
 
 describe('energy codes', () => {
     it('exports the frozen loss-cause and energy-source sets', () => {
-        expect(LOSS_CAUSE).toEqual({ NONE: 0, COST: 1, BITE: 2, COLLISION: 3 });
+        expect(LOSS_CAUSE).toEqual({ NONE: 0, COST: 1, BITE: 2, COLLISION: 3, TRAMPLE: 4 });
         expect(ENERGY_SOURCE).toEqual({ FOOD: 0, INITIAL: 1, FLOOR: 2, IMMIGRANT: 3, KILL: 4 });
         expect(Object.isFrozen(LOSS_CAUSE)).toBe(true);
         expect(Object.isFrozen(ENERGY_SOURCE)).toBe(true);

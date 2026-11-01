@@ -6,6 +6,7 @@ import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { cellOf } from './spatial-hash.js';
 import { thrustEfficiency } from './temperature.js';
+import { trampleHerds } from './trample.js';
 
 const PI = 3.141592653589793;
 
@@ -158,6 +159,7 @@ export function integrate(world) {
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             moveAgent(world, i);
+            trampleHerds(world, i);
             const hitX = wallAxis(world, i, true);
             const hitY = wallAxis(world, i, false);
             if (hitX || hitY) {

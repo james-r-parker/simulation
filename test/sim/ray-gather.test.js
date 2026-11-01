@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, gatherNear } from '../../js/sim/ray-gather.js';
+import { HERD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, gatherNear } from '../../js/sim/ray-gather.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -27,6 +27,15 @@ describe('gatherNear', () => {
         const food = addFood(w, 500, 650, 10);
         const cloud = addCloud(w, 400, 500);
         expect(gather(w, me).sort()).toEqual([food, KIND_STRIDE + other, 4 * KIND_STRIDE + cloud].sort());
+    });
+
+    it('lists a live herd body as an obstacle-channel hit kind', () => {
+        const w = senseWorld({ herdCount: 1, herdSize: 1 });
+        const me = addAgent(w, 500, 500, 20);
+        w.herdAlive[0] = 1;
+        w.herdX[0] = 650;
+        w.herdY[0] = 500;
+        expect(gather(w, me)).toEqual([HERD * KIND_STRIDE]);
     });
 
     it('leaves out a circle whose surface is beyond the range', () => {

@@ -6,7 +6,7 @@ import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
-const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
+const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled']);
 const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'placement']);
 const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
 
