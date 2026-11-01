@@ -131,7 +131,8 @@ function calfPosition(world, mother) {
 function eligibleMother(world, group) {
     const start = group * world.config.herdSize;
     const end = start + world.config.herdSize;
-    for (let animal = start; animal < end; animal++) {
+    let animal = start;
+    while (animal < end) {
         if (
             world.herdAlive[animal] === 1 &&
             world.herdAge[animal] >= world.config.herdBirthTicks &&
@@ -139,6 +140,7 @@ function eligibleMother(world, group) {
         ) {
             return animal;
         }
+        animal++;
     }
     return -1;
 }
@@ -190,22 +192,25 @@ function tryBirth(world, group) {
     world.events.data[offset + 3] = calf;
 }
 
+/** Advances one live animal's age and removes it at its lifespan. @param {World} world @param {number} group @param {number} animal @returns {void} */
+function ageAnimal(world, group, animal) {
+    if (world.herdAlive[animal] !== 1) {
+        return;
+    }
+    world.herdAge[animal]++;
+    if (world.herdAge[animal] >= world.herdLife[animal]) {
+        die(world, group, animal);
+    }
+}
+
 /** Advances lifespan and store-gated births once per field tick. @param {World} world @returns {void} */
 export function ageAndReproduceHerds(world) {
     for (let group = 0; group < world.config.herdCount; group++) {
         if (world.groupBirthTimer[group] > 0) {
             world.groupBirthTimer[group]--;
         }
-        const start = group * world.config.herdSize;
-        const end = start + world.config.herdSize;
-        for (let animal = start; animal < end; animal++) {
-            if (world.herdAlive[animal] !== 1) {
-                continue;
-            }
-            world.herdAge[animal]++;
-            if (world.herdAge[animal] >= world.herdLife[animal]) {
-                die(world, group, animal);
-            }
+        for (let animal = group * world.config.herdSize; animal < (group + 1) * world.config.herdSize; animal++) {
+            ageAnimal(world, group, animal);
         }
         tryBirth(world, group);
     }

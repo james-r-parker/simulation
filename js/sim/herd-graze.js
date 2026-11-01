@@ -50,9 +50,7 @@ export function grazeHerds(world) {
             world.groupAlarm[group]--;
             continue;
         }
-        const start = group * world.config.herdSize;
-        const end = start + world.config.herdSize;
-        for (let animal = start; animal < end; animal++) {
+        for (let animal = group * world.config.herdSize; animal < (group + 1) * world.config.herdSize; animal++) {
             if (world.herdAlive[animal] !== 1) {
                 continue;
             }

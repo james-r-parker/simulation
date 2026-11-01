@@ -11,9 +11,7 @@ const EPSILON = 1e-9;
 /** @param {World} world @param {number} group @param {number} hunter @returns {boolean} */
 function threatensGroup(world, group, hunter) {
     const rangeSq = world.config.herdStartleRadius * world.config.herdStartleRadius;
-    const start = group * world.config.herdSize;
-    const end = start + world.config.herdSize;
-    for (let animal = start; animal < end; animal++) {
+    for (let animal = group * world.config.herdSize; animal < (group + 1) * world.config.herdSize; animal++) {
         if (world.herdAlive[animal] !== 1) {
             continue;
         }
