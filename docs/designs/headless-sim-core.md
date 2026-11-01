@@ -155,6 +155,8 @@ The season phase is `(tick % seasonLength) / seasonLength`: one `seasonLength` i
 | `scout`        | 400                                          | no        | movement and turn costs x 0.7 (`SCOUT_ENERGY_COST_MULTIPLIER`) |
 | `defender`     | 350                                          | no        | energy lost to a bite x 0.5 (`DEFENDER_DAMAGE_REDUCTION`)      |
 
+The adopted Phase 1 herd defaults are `herdCount: 6`, `herdStartleRadius: 200`, and `herdCarcassTicks: 12000`; the remaining herd configuration is listed in [megafauna.md](megafauna.md). The carcass meal result remains 11/16 against the 12/16 target and is a balancing follow-up, not a pass.
+
 ## World state
 
 `createWorld(config, policy)` forks the RNG streams onto `world.rng`, allocates every array once, places
