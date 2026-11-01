@@ -2408,7 +2408,7 @@
       "note": "Stopped by the user before any arm finished (2026-10-31); owed when balancing reopens (natural-selection T50). The shark rule at 600 was adopted without it."
     },
     {
-      "id": "E89",
+      "id": "E91",
       "date": "2026-11-01",
       "branch": "docs/flora-closeout",
       "hypothesis": "A 64-seed current-default Flora report supports power estimates for the Flora detectors, including the T24 pollination, pool saturation, patch death and seed-bank metrics.",
@@ -2428,7 +2428,7 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "E76 historical 64-seed report, used only for preliminary detector diagnostics; it has herdCount 6 and toxinDose 0.45",
-      "after": "Pending: evals/screens/results/flora/E89-current-default.report.json and its eval:power output",
+      "after": "Pending: evals/screens/results/flora/E91-current-default.report.json and its eval:power output",
       "verdicts": {},
       "effect": "no-difference",
       "note": "Pre-registered 2026-11-01. Run only after E77 releases the CPU lock. This is a single current-default report for detector power, not a candidate comparison; no new screen arms or default changes."
