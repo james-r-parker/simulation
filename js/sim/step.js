@@ -23,6 +23,7 @@ import { advancePregnancies, mate, splitAll } from './reproduction.js';
 import { senseAll } from './sensors.js';
 import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
+import { stepHerds } from './herd-motion.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {(world: World, policy: any) => void} PhaseRun */
@@ -34,6 +35,7 @@ import { buildHash } from './spatial-hash.js';
 function environment(world) {
     updateSeason(world);
     advanceEra(world);
+    stepHerds(world);
 }
 
 /**

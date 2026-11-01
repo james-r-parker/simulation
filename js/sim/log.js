@@ -307,6 +307,11 @@ function emitSeedingRefused(log, d, o) {
     });
 }
 
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdRouteChanged(log, d, o) {
+    log.log('debug', 'HerdRouteChanged', { tick: d[o + 1], group: d[o + 2], patch: d[o + 3] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -327,6 +332,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.SEEDING_REFUSED]: { level: LOG_LEVEL.debug, emit: emitSeedingRefused },
     [EVENT_TYPE.PATCH_DIED]: { level: LOG_LEVEL.debug, emit: emitPatchDied },
     [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
+    [EVENT_TYPE.HERD_ROUTE_CHANGED]: { level: LOG_LEVEL.debug, emit: emitHerdRouteChanged },
 });
 
 /**

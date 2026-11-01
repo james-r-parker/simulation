@@ -361,6 +361,17 @@ describe('drainEvents', () => {
         expect(seen).toEqual(['BirthBlocked']);
     });
 
+    it('logs a herd route change with its group and patch', () => {
+        const world = build();
+        world.events.count = 0;
+        const offset = pushEvent(world.events, EVENT_TYPE.HERD_ROUTE_CHANGED, 12);
+        world.events.data[offset + 2] = 3;
+        world.events.data[offset + 3] = 7;
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([{ level: 'debug', event: 'HerdRouteChanged', tick: 12, group: 3, patch: 7 }]);
+    });
+
     it.each([
         ['AgentBorn', EVENT_TYPE.AGENT_BORN, 8],
         ['AgentDied', EVENT_TYPE.AGENT_DIED, 4],

@@ -160,6 +160,7 @@ function allocHerdState(world) {
     world.herdMax = herdMax;
     world.herdNextId = 1;
     world.herdTotals = new Float64Array(2);
+    world.herdDesired = new Float32Array(4);
     allocRows(world, singles(Uint8Array, ['herdAlive', 'herdGroup']), herdMax);
     allocRows(world, singles(Float32Array, ['herdX', 'herdY', 'herdVx', 'herdVy']), herdMax);
     allocRows(world, singles(Uint32Array, ['herdAge', 'herdLife', 'herdGraze', 'herdId']), herdMax);
