@@ -86,7 +86,7 @@ function agentSpecs(layout) {
         ...singles(Uint32Array, ['pollenSerial']),
         ...singles(Int32Array, ['pollenTicks']),
         ...singles(Uint32Array, ['ageTicks', 'cooldown', 'pregnancy']),
-        ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter']),
+        ...singles(Uint32Array, ['genomeId', 'lineageId', 'parentA', 'parentB', 'lastBiter', 'lastHerdId']),
         ...singles(Uint32Array, ['fatherId', 'fatherLineage']),
         ...singles(Uint32Array, ['lastBiteTick', 'prevBiter', 'prevBiteTick', 'recoilStamp']),
         ...singles(Uint16Array, ['pollenPatch', 'alarmTimer', 'huntTimer', 'smokeTimer']),
@@ -139,15 +139,38 @@ function allocFoodAndObstacles(world) {
     world.foodRows = allocRows(
         world,
         [
-            ...singles(Uint8Array, ['foodAlive', 'foodKind']),
+            ...singles(Uint8Array, ['foodAlive', 'foodKind', 'foodOrigin']),
             ...singles(Float32Array, ['foodX', 'foodY', 'foodRadius']),
             ...singles(Float64Array, ['foodValue']),
             ...singles(Uint32Array, ['foodAge']),
         ],
         maxFood,
     );
-    // obsVx and obsVy are always 0 now that no obstacle moves; they stay allocated and hashed so the world hash holds
-    allocRows(world, singles(Float32Array, ['obsX', 'obsY', 'obsVx', 'obsVy', 'obsRadius']), obstacleCount);
+    allocRows(world, singles(Float32Array, ['obsX', 'obsY', 'obsRadius']), obstacleCount);
+}
+
+/**
+ * Allocates the persistent herd and group state; centroids, counts and observer totals are derived scratch.
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+function allocHerdState(world) {
+    const { herdCount, herdSize } = world.config;
+    const herdMax = herdCount * herdSize;
+    world.herdMax = herdMax;
+    world.herdNextId = 1;
+    world.herdTotals = new Float64Array(2);
+    world.herdDesired = new Float32Array(4);
+    allocRows(world, singles(Uint8Array, ['herdAlive', 'herdGroup']), herdMax);
+    allocRows(world, singles(Float32Array, ['herdX', 'herdY', 'herdVx', 'herdVy']), herdMax);
+    allocRows(world, singles(Uint32Array, ['herdAge', 'herdLife', 'herdGraze', 'herdId']), herdMax);
+    allocRows(world, singles(Float64Array, ['herdStore']), herdMax);
+    allocRows(world, singles(Uint32Array, ['groupAlarm', 'groupStay', 'groupBirthTimer']), herdCount);
+    allocRows(world, singles(Float32Array, ['groupFleeX', 'groupFleeY']), herdCount);
+    allocRows(world, singles(Float64Array, ['groupPatchWeight', 'groupCentroidX', 'groupCentroidY']), herdCount);
+    allocRows(world, singles(Int32Array, ['groupPatch']), herdCount);
+    world.groupAnimalCount = new Uint16Array(herdCount);
+    world.groupPatch.fill(-1);
 }
 
 /**
@@ -312,7 +335,12 @@ export function allocateWorld(config) {
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(
-            LOCAL_STRIDE * (config.maxAgents + config.maxFood + terrainRockCount(config) + config.maxClouds),
+            LOCAL_STRIDE *
+                (config.maxAgents +
+                    config.maxFood +
+                    terrainRockCount(config) +
+                    config.maxClouds +
+                    config.herdCount * config.herdSize),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
@@ -322,6 +350,7 @@ export function allocateWorld(config) {
     allocZonesAndPheromones(world);
     allocClouds(world);
     allocPatches(world);
+    allocHerdState(world);
     world.events = createEventRing(config.eventCapacity);
     return { ...world };
 }

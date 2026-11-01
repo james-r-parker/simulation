@@ -34,6 +34,7 @@ const AGENT_ARRAYS = [
     'parentA',
     'parentB',
     'lastBiter',
+    'lastHerdId',
     'weights',
     'fatherWeights',
     'fatherId',
@@ -54,7 +55,7 @@ const AGENT_ARRAYS = [
  */
 const MERIT_ARRAYS = meritSpecs().map(([, name]) => name);
 
-/** Arrays hashed after the merit arrays: food, obstacles, fertile zones, pheromones, then the ledger. */
+/** Arrays hashed after the merit arrays: food, obstacles, herds, fertile zones, pheromones, then the ledger. */
 const FIELD_ARRAYS = [
     'foodAlive',
     'foodX',
@@ -62,11 +63,28 @@ const FIELD_ARRAYS = [
     'foodRadius',
     'foodValue',
     'foodAge',
+    'foodOrigin',
     'obsX',
     'obsY',
-    'obsVx',
-    'obsVy',
     'obsRadius',
+    'herdAlive',
+    'herdGroup',
+    'herdX',
+    'herdY',
+    'herdVx',
+    'herdVy',
+    'herdAge',
+    'herdLife',
+    'herdGraze',
+    'herdId',
+    'herdStore',
+    'groupAlarm',
+    'groupStay',
+    'groupBirthTimer',
+    'groupFleeX',
+    'groupFleeY',
+    'groupPatchWeight',
+    'groupPatch',
     'zoneAlive',
     'zoneX',
     'zoneY',
@@ -91,10 +109,10 @@ const FOOD_KIND_FIELD = 'foodKind';
 const ERA_FIELD = 'era';
 
 /** RNG streams hashed by their `s` state, in the design doc's Determinism table order. */
-const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora'];
+const RNG_STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora', 'herds'];
 
-/** Scalars hashed first, as one `Uint32Array(5)`: tick, nextId, population, foodCount, cloudCount. */
-const scalars = new Uint32Array(5);
+/** Scalars hashed first, as one `Uint32Array(6)`: tick, nextId, population, foodCount, cloudCount, herdNextId. */
+const scalars = new Uint32Array(6);
 const scalarBytes = new Uint8Array(scalars.buffer, scalars.byteOffset, scalars.byteLength);
 const digest = new Uint32Array(2);
 
@@ -181,7 +199,7 @@ function viewsFor(world) {
 function rngState(world, name) {
     const stream = world.rng[name];
     if (stream === undefined || stream === null || !(stream.s instanceof Uint32Array)) {
-        throw new Error(`hashWorld: world.rng.${name} is missing; expected the seven named RNG streams`);
+        throw new Error(`hashWorld: world.rng.${name} is missing; expected the eight named RNG streams`);
     }
     return stream.s;
 }
@@ -212,9 +230,9 @@ function hashOptionalArrays(world, views) {
 
 /**
  * Hashes a world's checkpoint state: scalars, agent arrays (without `inputs`, `outputs` and the scratch hidden row),
- * the merit arrays (`MERIT_ARRAYS`, without the scratch and counters), food, obstacles, zones, pheromones, the ledger
- * and the RNG streams.
- * @param {Record<string, any>} world the world; `world.rng` must hold the seven named streams
+ * the merit arrays (`MERIT_ARRAYS`, without the scratch and counters), food, obstacles, herds, zones, pheromones, the
+ * ledger and the RNG streams.
+ * @param {Record<string, any>} world the world; `world.rng` must hold the eight named streams
  * @returns {string} 16 lowercase hex characters
  * @throws {Error} when `world.rng` is null or a stream is missing
  */
@@ -228,6 +246,7 @@ export function hashWorld(world) {
     scalars[2] = world.population;
     scalars[3] = world.foodCount;
     scalars[4] = world.cloudCount;
+    scalars[5] = world.herdNextId;
     fnv64Init(digest);
     fnv64Bytes(digest, scalarBytes);
     for (const bytes of views.agents) {

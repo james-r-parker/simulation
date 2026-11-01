@@ -174,6 +174,7 @@ export function worldInfo({ config, world }) {
         maxAgents: config.maxAgents,
         maxFood: config.maxFood,
         floraPatchMax: config.floraPatchMax,
+        herdMax: config.herdCount * config.herdSize,
         foodPatchRadius: config.foodPatchRadius,
         obstacleCount: terrainRockCount(config),
         maxClouds: config.maxClouds,

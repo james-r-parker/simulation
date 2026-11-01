@@ -11,6 +11,7 @@ export const AGENT = 1;
 export const OBSTACLE = 2;
 export const WALL = 3;
 export const SMOKE = 4;
+export const HERD = 5;
 
 // Indices into `world.rayScratch`, set by `castRays` before it gathers.
 export const OX = 0;
@@ -89,7 +90,7 @@ function writeFixture(local, count, row) {
 const fixtureRow = new Float64Array(LOCAL_STRIDE);
 
 /**
- * Appends the obstacles and smoke clouds near the origin, in the order and with the values `commit` would keep.
+ * Appends obstacles, live herd bodies and smoke clouds near the origin, in the order and with the values `commit` would keep.
  * @param {World} world the world
  * @returns {number} the row count
  */
@@ -103,6 +104,18 @@ function appendFixtures(world) {
         row[2] = fixtureC(s, row[0], row[1], obsRadius[i]);
         if (row[2] === row[2]) {
             row[3] = OBSTACLE * KIND_STRIDE + i;
+            count = writeFixture(local, count, row);
+        }
+    }
+    for (let i = 0; i < world.herdMax; i++) {
+        if (world.herdAlive[i] !== 1) {
+            continue;
+        }
+        row[0] = s[OX] - world.herdX[i];
+        row[1] = s[OY] - world.herdY[i];
+        row[2] = fixtureC(s, row[0], row[1], world.config.herdRadius);
+        if (row[2] === row[2]) {
+            row[3] = HERD * KIND_STRIDE + i;
             count = writeFixture(local, count, row);
         }
     }

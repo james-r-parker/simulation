@@ -1,6 +1,7 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
 import { checkFlora, MYCELIUM_RULES } from './config-flora.js';
+import { checkHerds, HERD_RULES } from './config-herds.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
@@ -13,7 +14,6 @@ import { TRAIT_MAX } from './traits.js';
 const MAX_SEED = 4294967295; // 2^32 - 1
 const PI = 3.141592653589793;
 const MAX_U16 = 65535;
-const MAX_EVENTS_PER_SLOT = 8; // calls, sickness, death and birth events share the tick ring
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
 const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];
@@ -126,6 +126,7 @@ const RULES = {
     packWindow: int(1),
     maxClouds: int(0, 256),
     ...FEATURE_RULES,
+    ...HERD_RULES,
 };
 
 /** The rule of every top-level config key, which scripts/check-flag-ledger.mjs reads for the boolean and enum ones. */
@@ -329,12 +330,6 @@ function checkCrossKey(config) {
             `at most ${MAX_WEIGHT_FLOATS} / weightCount (maxAgents x weightCount is ${floats})`,
         );
     }
-    const events = MAX_EVENTS_PER_SLOT * config.maxAgents + 2 * config.floraPatchMax;
-    if (config.eventCapacity < events) {
-        throw new Error(
-            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax (${events})`,
-        );
-    }
     const baseSizeMax = config.baseSize * TRAIT_MAX;
     const storeMultipliers = Object.values(config.specialisations).map((s) => s.maxEnergyMultiplier);
     const storeMax = config.maxEnergy * Math.max(...storeMultipliers);
@@ -378,4 +373,5 @@ export function validateConfig(config) {
     }
     checkRelations(config);
     checkCrossKey(config);
+    checkHerds(config);
 }

@@ -7,6 +7,7 @@
   "maxFood": 60,
   "initialFood": 60,
   "wallGaps": 1,
+  "herdCount": 0,
   "refugeCount": 0,
   "coldMarginWidth": 0
 }

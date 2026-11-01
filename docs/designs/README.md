@@ -31,7 +31,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (9)
+## In progress (10)
 
 Partly built - the note says which phases are real.
 
@@ -39,19 +39,19 @@ Partly built - the note says which phases are real.
 - [Evolution rework](evolution-rework.md) - Phases 1 and 2 are built and judged: the genome, mutation, crossover, `fitnessV1`, `natural-v1`, the MAP-Elites archive and the live policy `map-elites-v1q`. Ph... _(validated 23eaea3, 2026-10-17)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md))_
 - [Fitness and selection](fitness-and-selection.md) - Phases 1 to 3 built: the metric audit and new metrics (E35), the predator fix (E36, E47), in-world merit (off by default), `fitnessV6`, `descriptorV6`, `map-eli... _(validated d8a8561, 2026-10-29)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Flora](flora.md) - Phases 1 to 4 code built, including the flora look. E69 to E74, detector power, survival, the 4K clip and standalone performance measurements remain owed while... _(validated 014195c, 2026-11-01)_ _(depends on [natural-selection.md](natural-selection.md), [brain-capacity-and-memory.md](brain-capacity-and-memory.md))_
+- [Megafauna](megafauna.md) - Phase 1 chunk 1 (walking, seasonal routes, grazing, trampling and rendering) built; chunk 2 (stampede, life cycle, detectors and deferred screens) remains _(validated d7f552d, 2026-11-01)_ _(depends on [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md))_
 - [Natural selection](natural-selection.md) - the big bang is merged (PR #217) and Phase 4's instruments, checks and speed chunks are merged (#220, #221, #222). Its screens (E81, E82, E85 to E87) found no p... _(validated fffdabc, 2026-10-30)_ _(depends on [fitness-and-selection.md](fitness-and-selection.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phases 2 (renderer core) and 3 (interface) code merged... _(validated 1f2a4e7, 2026-10-29)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1 to 4 and Phase 5 round 1 built; the next Phase 5 round waits for flora and megafauna, then tests predator persistence and genetic families through the... _(validated d7f552d, 2026-11-01)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (3)
+## Proposed (2)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [Megafauna](megafauna.md) - wandering megafauna herds (large, slow, scripted bodies that graze, trample by speed, stampede from hunters, age, breed and leave huge carcasses; later dung and... _(validated fffdabc, 2026-10-30)_ _(depends on [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md))_
 
 ## Reference (3)
 

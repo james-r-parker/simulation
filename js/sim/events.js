@@ -3,6 +3,9 @@
 /** Number of Float64 fields per event record. */
 export const EVENT_STRIDE = 12;
 
+/** Worst-case number of events an agent can emit in one tick. */
+export const MAX_EVENTS_PER_SLOT = 8;
+
 /** Event type codes, stored in field 0 of each record. */
 export const EVENT_TYPE = Object.freeze({
     AGENT_BORN: 1,
@@ -22,6 +25,7 @@ export const EVENT_TYPE = Object.freeze({
     PATCH_SEEDED: 17,
     PATCH_DIED: 18,
     SEEDING_REFUSED: 19,
+    HERD_ROUTE_CHANGED: 20,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */
@@ -40,6 +44,7 @@ export const DEATH_CAUSE = Object.freeze({
     COLLISION: 2,
     OLD_AGE: 3,
     POISONED: 4,
+    TRAMPLED: 5,
 });
 
 /** Why a birth was blocked, stored in the `cause` field of `BIRTH_BLOCKED`. */

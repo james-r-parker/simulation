@@ -289,7 +289,14 @@ describe('drainEvents', () => {
         }
         const { records, log } = collect('debug');
         drainEvents(world, log);
-        expect(records.map((r) => r.cause)).toEqual(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
+        expect(records.map((r) => r.cause)).toEqual([
+            'starved',
+            'eaten',
+            'collision',
+            'old-age',
+            'poisoned',
+            'trampled',
+        ]);
     });
 
     it('names every blocked cause', () => {
@@ -359,6 +366,17 @@ describe('drainEvents', () => {
         const seen = [];
         drainEvents(world, { level: 'warn', log: (_level, event) => seen.push(event) });
         expect(seen).toEqual(['BirthBlocked']);
+    });
+
+    it('logs a herd route change with its group and patch', () => {
+        const world = build();
+        world.events.count = 0;
+        const offset = pushEvent(world.events, EVENT_TYPE.HERD_ROUTE_CHANGED, 12);
+        world.events.data[offset + 2] = 3;
+        world.events.data[offset + 3] = 7;
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([{ level: 'debug', event: 'HerdRouteChanged', tick: 12, group: 3, patch: 7 }]);
     });
 
     it.each([

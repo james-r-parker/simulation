@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { SNAPSHOT_FLAG, createSnapshotViews, snapshotLayout, writeSnapshot } from '../../js/sim/snapshot.js';
+import {
+    HEADER_WORDS,
+    HERD_STRIDE,
+    SNAPSHOT_FLAG,
+    createSnapshotViews,
+    snapshotLayout,
+    writeSnapshot,
+} from '../../js/sim/snapshot.js';
 import { spawnAgent } from '../../js/sim/spawn.js';
 import { OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
@@ -12,27 +19,51 @@ describe('snapshotLayout', () => {
     it('sizes the buffer for the config maxima', () => {
         const layout = snapshotLayout(smallWorld().config);
         expect(layout).toMatchObject({
-            headerWords: 7,
+            headerWords: 8,
             agentStride: 12,
             rayStride: 4,
             foodStride: 6,
             obstacleStride: 3,
             cloudStride: 3,
             patchStride: 5,
+            herdStride: 5,
         });
         expect(layout.bytes).toBe(
-            (7 +
+            (8 +
                 8 * (12 + 4) +
                 4 * 6 +
                 terrainRockCount(smallWorld().config) * 3 +
                 32 * 3 +
-                smallWorld().config.floraPatchMax * 5) *
+                smallWorld().config.floraPatchMax * 5 +
+                smallWorld().config.herdCount * smallWorld().config.herdSize * HERD_STRIDE) *
                 4,
         );
     });
 });
 
 describe('writeSnapshot', () => {
+    it('writes live herd discs after patches and before optional rays', () => {
+        const world = smallWorld({ herdCount: 1, herdSize: 2 });
+        world.herdAlive[1] = 1;
+        world.herdAlive[0] = 0;
+        world.herdStore[0] = 0;
+        world.herdX[1] = 123;
+        world.herdY[1] = 456;
+        world.herdVx[1] = 3;
+        world.herdVy[1] = 4;
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const start = HEADER_WORDS + world.obsX.length * 3;
+        expect(views.u32[7]).toBe(1);
+        expect(Array.from(views.f32.subarray(start, start + HERD_STRIDE))).toEqual([
+            123,
+            456,
+            world.config.herdRadius,
+            Math.fround(5 / world.config.herdRunSpeed),
+            expect.closeTo(0.9273, 3),
+        ]);
+    });
+
     it('writes the header, alive agents by ascending slot, alive food and the obstacles', () => {
         const world = smallWorld({ initialEnergy: 50, maxEnergy: 100 });
         spawnAgent(world, testPolicy, BORN_CAUSE.INITIAL);
@@ -51,13 +82,13 @@ describe('writeSnapshot', () => {
         writeSnapshot(world, { f32, u32 });
 
         expect(Array.from(u32.subarray(0, 6))).toEqual([12, 2, 1, world.obsX.length, 0, 0]);
-        expect(u32[7 + 8]).toBe(0);
-        expect(u32[7 + 12 + 8]).toBe(2);
-        expect(f32[7 + 12]).toBe(world.x[2]);
-        expect(f32[7 + 12 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(31, 35))).toEqual([5, 6, 7, 0]);
-        expect(f32[37]).toBe(world.obsX[0]);
-        expect(f32[39]).toBe(world.obsRadius[0]);
+        expect(u32[HEADER_WORDS + 8]).toBe(0);
+        expect(u32[HEADER_WORDS + 12 + 8]).toBe(2);
+        expect(f32[HEADER_WORDS + 12]).toBe(world.x[2]);
+        expect(f32[HEADER_WORDS + 12 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
+        expect(Array.from(f32.subarray(32, 36))).toEqual([5, 6, 7, 0]);
+        expect(f32[38]).toBe(world.obsX[0]);
+        expect(f32[40]).toBe(world.obsRadius[0]);
     });
 
     it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
@@ -68,7 +99,7 @@ describe('writeSnapshot', () => {
         world.cloudTtl.set([100, 50]);
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        const start = 7 + world.obsX.length * 3;
+        const start = HEADER_WORDS + world.obsX.length * 3;
         expect(views.u32[4]).toBe(2);
         expect(Array.from(views.f32.subarray(start, start + 9))).toEqual([10, 20, 0.5, 30, 40, 0.25, 0, 0, 0]);
     });
@@ -84,14 +115,14 @@ describe('writeSnapshot', () => {
         world.patchWeight[0] = world.config.foodPatchCapacity * world.patchYield[0] * 0.25;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views, true);
-        const flags = views.u32[7 + 11];
+        const flags = views.u32[HEADER_WORDS + 11];
         expect(flags & SNAPSHOT_FLAG.SICK).not.toBe(0);
         expect(flags & SNAPSHOT_FLAG.POLLEN).not.toBe(0);
         expect(((flags >>> SNAPSHOT_FLAG.POLLEN_HUE_SHIFT) / SNAPSHOT_FLAG.POLLEN_HUE_MASK) * 2 - 1).toBeCloseTo(
             0.5,
             3,
         );
-        const start = 7 + 12 + world.obsX.length * 3;
+        const start = HEADER_WORDS + 12 + world.obsX.length * 3;
         expect(views.u32[6]).toBe(1);
         expect(Array.from(views.f32.subarray(start, start + 5))).toEqual([
             world.patchX[0],
@@ -102,7 +133,7 @@ describe('writeSnapshot', () => {
         ]);
         world.patchSerial[0]++;
         writeSnapshot(world, views);
-        expect(views.u32[7 + 11] & SNAPSHOT_FLAG.POLLEN).toBe(0);
+        expect(views.u32[HEADER_WORDS + 11] & SNAPSHOT_FLAG.POLLEN).toBe(0);
     });
 
     it('writes plant age, species and hue from the item record', () => {
@@ -114,7 +145,7 @@ describe('writeSnapshot', () => {
         world.foodHue[0] = 0.5;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        expect(Array.from(views.f32.subarray(10, 13))).toEqual([0.25, 3, 0.5]);
+        expect(Array.from(views.f32.subarray(11, 14))).toEqual([0.25, 3, 0.5]);
     });
 
     it('throws when the buffer is too small', () => {
@@ -147,11 +178,11 @@ describe('writeSnapshot exact layout', () => {
         const views = freshViews(world);
         writeSnapshot(world, views);
         const { f32, u32 } = views;
-        expect(Array.from(f32.subarray(7, 11))).toEqual([11, 12, 1.5, 13]);
-        expect(f32[11]).toBe(0.25);
-        expect(Array.from(u32.subarray(12, 16))).toEqual([4, 21, 22, 3]);
+        expect(Array.from(f32.subarray(HEADER_WORDS, HEADER_WORDS + 4))).toEqual([11, 12, 1.5, 13]);
+        expect(f32[12]).toBe(0.25);
+        expect(Array.from(u32.subarray(13, 17))).toEqual([4, 21, 22, 3]);
         expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, world.obsX.length, 0, 0]);
-        const obstacleStart = 7 + 12;
+        const obstacleStart = HEADER_WORDS + 12;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);
         const after = obstacleStart + 3 * world.obsX.length;
         expect(Array.from(u32.subarray(after))).toEqual(new Array(u32.length - after).fill(0));
@@ -179,7 +210,7 @@ describe('writeSnapshot agent extras', () => {
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         return { world, views };
     }
-    const FLAGS = 7 + 11;
+    const FLAGS = HEADER_WORDS + 11;
 
     it('writes the temperature as a share of temperatureMax and the speed as the length of the velocity', () => {
         const { world, views } = oneAgent({ temperatureMax: 100 });
@@ -187,8 +218,8 @@ describe('writeSnapshot agent extras', () => {
         world.vx[0] = 3;
         world.vy[0] = 4;
         writeSnapshot(world, views);
-        expect(views.f32[7 + 9]).toBe(0.25);
-        expect(views.f32[7 + 10]).toBe(5);
+        expect(views.f32[HEADER_WORDS + 9]).toBe(0.25);
+        expect(views.f32[HEADER_WORDS + 10]).toBe(5);
     });
 
     it('packs the ate and bitten timers into their fields', () => {
@@ -263,7 +294,7 @@ describe('writeSnapshot rays', () => {
         world.cloudCount = 1;
         writeSnapshot(world, views, true);
         const { rayCount } = world.config;
-        const start = 7 + 2 * 12 + 0 * 3 + world.obsX.length * 3 + 3;
+        const start = HEADER_WORDS + 2 * 12 + 0 * 3 + world.obsX.length * 3 + 3;
         expect(views.u32[5]).toBe(rayCount);
         const expected = [1, 3].flatMap((slot) => Array.from({ length: rayCount }, (_, k) => slot / 10 + k / 100));
         expect(Array.from(views.f32.subarray(start, start + 2 * rayCount))).toEqual(expected.map(Math.fround));
@@ -296,7 +327,7 @@ describe('writeSnapshot rays', () => {
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
 
-        const foodStart = 7;
+        const foodStart = HEADER_WORDS;
         expect(views.f32[foodStart + 2]).toBe(5);
         expect(views.f32[foodStart + 3]).toBe(0);
         expect(views.f32[foodStart + 8]).toBe(-8);

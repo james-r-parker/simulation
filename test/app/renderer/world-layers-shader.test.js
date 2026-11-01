@@ -10,6 +10,13 @@ describe('world layer shaders', () => {
         expect(shaders.OBSTACLE_VERTEX).not.toMatch(/float half\b/);
     });
 
+    it('draws herd bodies as instanced circles', () => {
+        expect(shaders.HERD_VERTEX).toContain('attribute vec4 iBody');
+        expect(shaders.HERD_VERTEX).toContain('max(iBody.z, uMinPx / uZoom)');
+        expect(shaders.HERD_FRAGMENT).toContain('length(vLocal)');
+        expect(shaders.HERD_FRAGMENT).not.toContain('plantShape');
+    });
+
     it('declares two-pass obstacle uniforms and controls', () => {
         for (const u of ['uBody', 'uRim', 'uContact', 'uLichen', 'uSceneryMax', 'uRimPx', 'uTime', 'uTier', 'uPass']) {
             expect(shaders.OBSTACLE_FRAGMENT).toContain(u);
