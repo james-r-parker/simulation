@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** In progress - Phase 1 chunk 1 (walking, seasonal routes, grazing, trampling and rendering) and chunk 2 (stampede, life cycle, detectors, E75/E76 definitions) built; E75-E80 runs, adoption and final conformance remain owed until the balancing CPU work is released.
+**Status:** In progress - Phase 1 chunks 1 and 2 are built; T14 runs and reports are recorded. The best tested candidate is herdStartleRadius 200 plus herdCount 6, but its 16-seed confirmation misses the carcass-meal gate (10/16, required 12/16). T15 default adoption is next; Phase 1 remains incomplete until the gate and T16 conformance pass.
 **Validated:** a188a3f (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
@@ -148,13 +148,15 @@ Scripted herds with routes from the patch weights, grazing and an energy store, 
 
 **The Phase 1 gate** is that the herds walk, graze and leave a carcass: `eval.herd_animals`, `eval.herd_grazed_share` and `eval.herd_carcass_meal_share` above 0 on at least 12 of 16 seeds. The survival gate (the end state and families per basin of [natural-selection.md](natural-selection.md) Phase 4) applies from Phase 2, after the sense and the wary reflex. Phase 1 does not tune `trampleDamage` (it stays 400) to pass a survival gate.
 
-| Chunk                    | Tasks     | Goal                                                                                               |
-| ------------------------ | --------- | -------------------------------------------------------------------------------------------------- |
-| 1, walking herds (built) | T1 to T7  | The keys, arrays, placement, seasonal motion, contact with the rays, grazing, snapshot, the re-pin |
-| 2, stampede and death    | T8 to T13 | The stampede, ageing, births, carcass, the detectors, the re-pin, the screen file                  |
-| Runs                     | T14       | The reference run, the herd screen, `eval:power`, `bench` and the Phase 1 gate (no code commits)   |
-| Adopt                    | T15       | The Phase 1 defaults                                                                               |
-| Close                    | T16       | The conformance review and the Status move                                                         |
+| Chunk                    | Tasks     | Goal                                                                                                            |
+| ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------- |
+| 1, walking herds (built) | T1 to T7  | The keys, arrays, placement, seasonal motion, contact with the rays, grazing, snapshot, the re-pin              |
+| 2, stampede and death    | T8 to T13 | The stampede, ageing, births, carcass, the detectors, the re-pin, the screen file                               |
+| Runs (recorded)          | T14       | E75, E76, metric power, 500-agent benchmark and Phase 1 gate evidence recorded; carcass-meal gate remains short |
+| Adopt                    | T15       | The Phase 1 defaults                                                                                            |
+| Close                    | T16       | The conformance review and the Status move                                                                      |
+
+**T14 results (2026-11-01):** E75 recorded the 16-seed, 200000-tick flora-final reference with herds off. E76 Stage 1 and Stage 2 reports are recorded with the experiment. The candidate `herdStartleRadius: 200, herdCount: 6` raised mean grazing share to 0.11255 (from 0.08142 on defaults) and lowered mean stampedes to 1.99; the 16-seed confirmation had carcass meals on 10/16 seeds, below the 12/16 gate. Per-arm counts are in `evals/screens/results/herds/phase1-gate.md`. The power report shows herd presence and grazing share are useful detectors, while carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse at 16/32 seeds. The 500-agent benchmark measured 3.2442 ms/step against 3.3237 ms in the pre-herd `d9c9c98` baseline; recorded comparison details are in `evals/experiments/E76-bench.json`. The `bench-compare` wrapper returned an empty-JSON parse error from its temporary worktree; the paired direct benchmark runs were used and this limitation is recorded. E75-E80 were run only after the user released the CPU.
 
 ### Phase 2 - The megafauna sense and the wary reflex
 
