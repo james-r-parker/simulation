@@ -91,6 +91,26 @@ function carcassShareBySpec(scene) {
     return metrics;
 }
 
+/** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricResult} */
+function herdFollowingShare(scene) {
+    let ratios = 0;
+    let patches = 0;
+    for (let patch = 0; patch < scene.followHerdedTicks.length; patch++) {
+        const herdedTicks = scene.followHerdedTicks[patch];
+        const bareTicks = scene.followBareTicks[patch];
+        if (herdedTicks < 3 || bareTicks < 3) {
+            continue;
+        }
+        const bareMean = scene.followBareBlobs[patch] / bareTicks;
+        if (bareMean === 0) {
+            continue;
+        }
+        ratios += scene.followHerdedBlobs[patch] / herdedTicks / bareMean;
+        patches++;
+    }
+    return patches > 0 ? ok(ratios / patches) : none('no patch had 3 herded and bare checkpoints with blobs present');
+}
+
 /** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
 export function herdMetrics(scene, carcassScene, observer) {
     return {
@@ -98,5 +118,11 @@ export function herdMetrics(scene, carcassScene, observer) {
         ...populationMetrics(scene),
         ...carcassMetrics(scene, carcassScene, observer),
         ...carcassShareBySpec(scene),
+        'eval.herd_follow_share': herdFollowingShare(scene),
+        'eval.dung_food_share': share(scene.dungFoodEaten, scene.plantFoodEaten, 'no plant energy eaten after burn-in'),
+        'eval.herd_seeded_patches':
+            scene.elapsedTicks > 0
+                ? ok((scene.herdSeededPatches / scene.elapsedTicks) * 1000)
+                : none('no ticks after burn-in'),
     };
 }

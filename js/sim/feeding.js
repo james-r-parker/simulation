@@ -53,6 +53,9 @@ function consumeFood(world, slot, food, share) {
         carryPollen(world, slot, food);
         depletePatchAt(world, world.foodX[food], world.foodY[food]);
         world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
+        if (world.foodOrigin[food] === FOOD_ORIGIN.DUNG_ZONE) {
+            world.dungFoodIntake += stored;
+        }
         world.floraMeals[0]++;
         world.floraMeals[1] += Number(world.foodTox[food] > 0);
     }

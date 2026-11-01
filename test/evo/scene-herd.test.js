@@ -15,6 +15,8 @@ function sceneWorld() {
             herdRadius: 20,
             herdCount: 1,
             maxAgents: 1,
+            floraPatchMax: 1,
+            foodPatchRadius: 100,
             worldWidth: 1000,
             specialisations: { forager: 0, predator: 1, reproducer: 2, scout: 3, defender: 4 },
         },
@@ -32,6 +34,11 @@ function sceneWorld() {
         herdGroup: Uint8Array.of(0),
         herdTotals: Float64Array.of(30, 0),
         floraIntake: Float64Array.of(70),
+        dungFoodIntake: 0,
+        patchAlive: Uint8Array.of(1),
+        patchSerial: Uint32Array.of(1),
+        patchX: Float64Array.of(200),
+        patchY: Float64Array.of(100),
         foodEatenBySpec: Float64Array.of(70, 0, 0, 0, 0),
         herdCarcassEatenBySpec: new Float64Array(5),
         events: { data: new Float64Array(EVENT_STRIDE), count: 0 },
@@ -60,6 +67,12 @@ describe('scene-herd detectors', () => {
         expect(intendedDirection('eval.trampled_share')).toBe('lower');
         expect(intendedDirection('eval.trample_unavoidable_share')).toBe('lower');
         expect(intendedDirection('eval.herd_carcass_share.predator')).toBe('lower');
+        expect(names).toContain('eval.herd_follow_share');
+        expect(names).toContain('eval.dung_food_share');
+        expect(names).toContain('eval.herd_seeded_patches');
+        expect(intendedDirection('eval.herd_follow_share')).toBe('higher');
+        expect(intendedDirection('eval.dung_food_share')).toBe('higher');
+        expect(intendedDirection('eval.herd_seeded_patches')).toBe('higher');
     });
 
     it('counts a lane approach as clear when the blob leaves before contact', () => {
@@ -212,5 +225,40 @@ describe('scene-herd detectors', () => {
         const metrics = emptyMetrics(scene);
         expect(metrics['eval.herd_carcass_share.predator'].value).toBeCloseTo(0.25);
         expect(metrics['eval.herd_carcass_meal_share'].value).toBe(1);
+    });
+
+    it('holds herd-follow comparisons per patch across herded and bare checkpoints', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        world.tick = BURN_IN_TICKS + 1;
+        trackHerd(scene, world);
+        for (let checkpoint = 1; checkpoint <= 3; checkpoint++) {
+            world.tick = BURN_IN_TICKS + checkpoint * 1000;
+            world.herdX[0] = 100;
+            trackHerd(scene, world);
+        }
+        for (let checkpoint = 4; checkpoint <= 6; checkpoint++) {
+            world.tick = BURN_IN_TICKS + checkpoint * 1000;
+            world.herdX[0] = 900;
+            trackHerd(scene, world);
+        }
+        expect(scene.followHerdedTicks[0]).toBe(3);
+        expect(scene.followBareTicks[0]).toBe(3);
+        expect(emptyMetrics(scene)['eval.herd_follow_share'].value).toBe(1);
+    });
+
+    it('counts dung-zone plant energy and herd-seeded patches after burn-in', () => {
+        const scene = createHerdScene(sceneWorld().config);
+        const world = sceneWorld();
+        world.floraIntake[0] = 70;
+        world.dungFoodIntake = 14;
+        world.tick = BURN_IN_TICKS + 1;
+        world.events.data[0] = EVENT_TYPE.HERD_SEEDED;
+        world.events.data[1] = world.tick;
+        world.events.count = 1;
+        trackHerd(scene, world);
+        const metrics = emptyMetrics(scene);
+        expect(metrics['eval.dung_food_share'].value).toBeCloseTo(0.2);
+        expect(metrics['eval.herd_seeded_patches'].value).toBe(1000);
     });
 });
