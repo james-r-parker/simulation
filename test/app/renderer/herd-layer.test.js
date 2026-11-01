@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
+import { PALETTE, SCENERY_MAX_LUMINANCE } from '../../../js/app/renderer/colors.js';
 import { createHerdLayer, packHerdBodies } from '../../../js/app/renderer/herd-layer.js';
+import { HERD_FRAGMENT } from '../../../js/app/renderer/world-layers-shader.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('packHerdBodies', () => {
@@ -27,6 +29,12 @@ describe('createHerdLayer', () => {
         expect(layer.object.visible).toBe(true);
         expect(Array.from(layer.object.geometry.getAttribute('iBody').array.slice(0, 4))).toEqual([100, 200, 80, 0.5]);
         expect(layer.object.material.uniforms.uZoom.value).toBe(3);
+        expect(layer.object.material.uniforms.uMinPx.value).toBe(8);
+        expect(layer.object.material.uniforms.uColor.value).toEqual(PALETTE.coolWhite);
+        const { uColor, uIntensity } = layer.object.material.uniforms;
+        const luminance = 0.2126729 * uColor.value[0] + 0.7151522 * uColor.value[1] + 0.072175 * uColor.value[2];
+        expect(luminance * uIntensity.value).toBeCloseTo(SCENERY_MAX_LUMINANCE, 6);
+        expect(HERD_FRAGMENT).toContain('mix(0.22, 1.0, rim)');
         camera.zoom = 1;
         layer.update?.(/** @type {any} */ ({ snapshot: null, camera }));
         expect(layer.object.count).toBe(0);

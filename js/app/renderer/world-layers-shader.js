@@ -250,8 +250,11 @@ uniform float uIntensity;
 varying vec2 vLocal;
 varying float vPx;
 void main() {
-    float edge = 1.0 - smoothstep(1.0 - vPx, 1.0 + vPx, length(vLocal));
-    gl_FragColor = vec4(uColor * uIntensity, edge);
+    float distanceFromCentre = length(vLocal);
+    float edge = 1.0 - smoothstep(1.0 - vPx, 1.0 + vPx, distanceFromCentre);
+    float rim = smoothstep(0.62, 0.72, distanceFromCentre) * (1.0 - smoothstep(0.92, 0.99, distanceFromCentre));
+    vec3 body = uColor * uIntensity * mix(0.22, 1.0, rim);
+    gl_FragColor = vec4(body, edge);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
 }
