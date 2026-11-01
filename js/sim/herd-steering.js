@@ -136,35 +136,61 @@ function moveAnimal(world, slot) {
     world.herdY[slot] += vy;
 }
 
-/** @param {World} world @param {number} slot @returns {void} */
-function resolveBody(world, slot) {
+/** @param {World} world @param {number} slot @param {number} safeX @param {number} safeY @returns {void} */
+function resolveBody(world, slot, safeX, safeY) {
     const radius = world.config.herdRadius;
     world.herdX[slot] = Math.max(radius, Math.min(world.config.worldWidth - radius, world.herdX[slot]));
     world.herdY[slot] = Math.max(radius, Math.min(world.config.worldHeight - radius, world.herdY[slot]));
-    for (let rock = 0; rock < world.obsRadius.length; rock++) {
-        let dx = world.herdX[slot] - world.obsX[rock];
-        let dy = world.herdY[slot] - world.obsY[rock];
-        const reach = radius + world.obsRadius[rock];
-        const sq = dx * dx + dy * dy;
-        if (sq >= reach * reach) {
-            continue;
+    // Resolving a later rock can push the body back into an earlier one, so sweep the obstacles more than once.
+    // The starting point is known clear; if dense rock clusters still block the projection, stay there safely.
+    for (let pass = 0; pass < 4; pass++) {
+        let overlap = false;
+        for (let rock = 0; rock < world.obsRadius.length; rock++) {
+            overlap = projectOutsideRock(world, slot, rock) || overlap;
         }
-        const distance = sq > EPSILON ? Math.sqrt(sq) : reach;
-        if (sq <= EPSILON) {
-            dx = world.herdX[slot] < world.config.worldWidth / 2 ? -1 : 1;
-            dy = 0;
-        } else {
-            dx /= distance;
-            dy /= distance;
-        }
-        world.herdX[slot] = world.obsX[rock] + dx * reach;
-        world.herdY[slot] = world.obsY[rock] + dy * reach;
-        const normal = world.herdVx[slot] * dx + world.herdVy[slot] * dy;
-        if (normal < 0) {
-            world.herdVx[slot] -= normal * dx;
-            world.herdVy[slot] -= normal * dy;
+        if (!overlap) {
+            return;
         }
     }
+    for (let rock = 0; rock < world.obsRadius.length; rock++) {
+        const dx = world.herdX[slot] - world.obsX[rock];
+        const dy = world.herdY[slot] - world.obsY[rock];
+        const reach = radius + world.obsRadius[rock];
+        if (dx * dx + dy * dy < reach * reach) {
+            world.herdX[slot] = safeX;
+            world.herdY[slot] = safeY;
+            world.herdVx[slot] = 0;
+            world.herdVy[slot] = 0;
+            return;
+        }
+    }
+}
+
+/** @param {World} world @param {number} slot @param {number} rock @returns {boolean} whether projection occurred */
+function projectOutsideRock(world, slot, rock) {
+    let dx = world.herdX[slot] - world.obsX[rock];
+    let dy = world.herdY[slot] - world.obsY[rock];
+    const reach = world.config.herdRadius + world.obsRadius[rock];
+    const sq = dx * dx + dy * dy;
+    if (sq >= reach * reach) {
+        return false;
+    }
+    const distance = sq > EPSILON ? Math.sqrt(sq) : reach;
+    if (sq <= EPSILON) {
+        dx = world.herdX[slot] < world.config.worldWidth / 2 ? -1 : 1;
+        dy = 0;
+    } else {
+        dx /= distance;
+        dy /= distance;
+    }
+    world.herdX[slot] = world.obsX[rock] + dx * reach;
+    world.herdY[slot] = world.obsY[rock] + dy * reach;
+    const normal = world.herdVx[slot] * dx + world.herdVy[slot] * dy;
+    if (normal < 0) {
+        world.herdVx[slot] -= normal * dx;
+        world.herdVy[slot] -= normal * dy;
+    }
+    return true;
 }
 
 /** @param {World} world @param {number} group @param {number} targetX @param {number} targetY @returns {void} */
@@ -185,7 +211,9 @@ export function steerGroup(world, group, targetX, targetY) {
             world.herdDesired[0] = 0;
             world.herdDesired[1] = 0;
         }
+        const safeX = world.herdX[slot];
+        const safeY = world.herdY[slot];
         moveAnimal(world, slot);
-        resolveBody(world, slot);
+        resolveBody(world, slot, safeX, safeY);
     }
 }
