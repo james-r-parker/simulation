@@ -34,7 +34,7 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 export function createScenes(config) {
     return {
         flora: createFloraScene(),
-        herd: createHerdScene(config.maxAgents),
+        herd: createHerdScene(config),
         patch: createPatchScene(config),
         approach: createApproachScene(config),
         terrain: createTerrainScene(config),
@@ -109,6 +109,7 @@ function noteEvents(scenes, observer, world) {
                 genomeId: d[o + 3],
                 cause: d[o + 4],
                 herdId: d[o + 5],
+                pinned: d[o + 11] === 1,
             });
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
@@ -144,7 +145,7 @@ export function observeScenes(observer, world) {
     const scenes = observer.scenes;
     noteEvents(scenes, observer, world);
     trackFlora(scenes.flora, world);
-    trackHerd(scenes.herd, world);
+    trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
         return;
     }

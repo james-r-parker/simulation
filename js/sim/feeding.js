@@ -45,6 +45,7 @@ function consumeFood(world, slot, food, share) {
     const value = isMeat ? raw : ingestToxin(world, slot, raw, world.foodTox[food]);
     const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
     world.foodEnergy[slot] += stored;
+    world.foodEatenBySpec[world.spec[slot]] += stored;
     const { temperatureGainEat, foodEnergy } = world.config;
     gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
     world.ateTimer[slot] = 0;
@@ -58,6 +59,7 @@ function consumeFood(world, slot, food, share) {
     if (herdCarcass) {
         world.foodValue[food] -= stored / share;
         world.herdTotals[1] += stored;
+        world.herdCarcassEatenBySpec[world.spec[slot]] += stored;
         if (world.foodValue[food] < 1) {
             removeFood(world, food);
         }

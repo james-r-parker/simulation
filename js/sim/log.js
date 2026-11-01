@@ -89,18 +89,20 @@ function emitBorn(log, d, o) {
  * @returns {void}
  */
 function emitDied(log, d, o) {
+    const cause = causeName(DIED_NAMES, d[o + 4], 'AgentDied');
     log.log('debug', 'AgentDied', {
         tick: d[o + 1],
         slot: d[o + 2],
         genomeId: d[o + 3],
-        cause: causeName(DIED_NAMES, d[o + 4], 'AgentDied'),
+        cause,
         by: d[o + 5],
         spec: d[o + 6],
         lineageId: d[o + 7],
         ageTicks: d[o + 8],
         foodEnergy: d[o + 9],
         biteEnergy: d[o + 10],
-        prevBiter: d[o + 11],
+        prevBiter: cause === 'eaten' ? d[o + 11] : 0,
+        ...(cause === 'trampled' ? { pinned: d[o + 11] === 1 } : {}),
     });
 }
 

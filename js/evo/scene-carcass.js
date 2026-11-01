@@ -11,8 +11,9 @@
 // Counts run over the whole run, as the intent state's bite totals do.
 // Preallocated arrays only.
 
-import { FOOD_KIND } from '../sim/carcass.js';
+import { FOOD_KIND, FOOD_ORIGIN } from '../sim/carcass.js';
 import { none, ok } from './metrics-stats.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -68,6 +69,24 @@ function creditEaten(scene, observer, world, food) {
     scene.eatenByHunters += observer.intent.hunterSpec[world.spec[eater]] === 1 ? energy : 0;
 }
 
+/** @param {Record<string, any>} world @param {number} food @returns {boolean} */
+function trackableMeat(world, food) {
+    return (
+        world.foodAlive[food] === 1 &&
+        world.foodKind[food] === FOOD_KIND.MEAT &&
+        world.foodOrigin[food] !== FOOD_ORIGIN.HERD_CARCASS
+    );
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} food @param {number} carcassTicks @returns {boolean} */
+function eatenSinceLastTick(scene, world, food, carcassTicks) {
+    const same =
+        trackableMeat(world, food) &&
+        world.foodValue[food] === scene.value[food] &&
+        world.foodX[food] === scene.x[food];
+    return scene.value[food] > 0 && !same && world.foodAge[food] <= carcassTicks;
+}
+
 /**
  * Compares the meat items of the last tick with now, credits the eaten ones, and stores this tick's meat. Run once a
  * tick after the step.
@@ -77,12 +96,11 @@ function creditEaten(scene, observer, world, food) {
  * @returns {void}
  */
 export function trackCarcasses(scene, observer, world) {
-    const { foodAlive, foodKind, foodValue, foodX, foodY, foodAge } = world;
+    const { foodValue, foodX, foodY } = world;
     const { carcassTicks } = world.config;
-    for (let food = 0; food < foodAlive.length; food++) {
-        const meat = foodAlive[food] === 1 && foodKind[food] === FOOD_KIND.MEAT;
-        const same = meat && foodValue[food] === scene.value[food] && foodX[food] === scene.x[food];
-        if (scene.value[food] > 0 && !same && foodAge[food] <= carcassTicks) {
+    for (let food = 0; food < world.foodAlive.length; food++) {
+        const meat = trackableMeat(world, food);
+        if (world.tick > BURN_IN_TICKS && eatenSinceLastTick(scene, world, food, carcassTicks)) {
             creditEaten(scene, observer, world, food);
         }
         scene.value[food] = meat ? foodValue[food] : 0;

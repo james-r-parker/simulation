@@ -50,6 +50,19 @@ function packPartner(world, slot) {
     return recent ? world.prevBiter[slot] : 0;
 }
 
+/** @param {World} world @param {number} slot @returns {boolean} */
+function pinnedAgainstObstacle(world, slot) {
+    for (let obstacle = 0; obstacle < world.obsRadius.length; obstacle++) {
+        const dx = world.x[slot] - world.obsX[obstacle];
+        const dy = world.y[slot] - world.obsY[obstacle];
+        const reach = world.size[slot] + world.obsRadius[obstacle];
+        if (dx * dx + dy * dy <= reach * reach) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * Pushes `AgentDied` for a slot.
  * @param {World} world the world
@@ -74,7 +87,12 @@ function pushDied(world, slot, cause) {
     d[o + 8] = world.ageTicks[slot];
     d[o + 9] = world.foodEnergy[slot];
     d[o + 10] = world.biteEnergy[slot];
-    d[o + 11] = cause === DEATH_CAUSE.EATEN ? packPartner(world, slot) : 0;
+    d[o + 11] =
+        cause === DEATH_CAUSE.EATEN
+            ? packPartner(world, slot)
+            : cause === DEATH_CAUSE.TRAMPLED && pinnedAgainstObstacle(world, slot)
+              ? 1
+              : 0;
 }
 
 /**
