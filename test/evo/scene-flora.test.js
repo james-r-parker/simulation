@@ -219,6 +219,32 @@ describe('flora diet detectors', () => {
         expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.25);
     });
 
+    it('measures the patch pool full share at post-burn-in checkpoints', () => {
+        const w = smallWorld({ floraPatchMax: 4 });
+        const scene = createFloraScene();
+        const firstCheckpoint = Math.ceil((BURN_IN_TICKS + 1) / 1000) * 1000;
+        for (let checkpoint = 0; checkpoint < 4; checkpoint++) {
+            w.tick = firstCheckpoint + checkpoint * 1000;
+            w.patchAlive.fill(checkpoint < 2 ? 1 : 0);
+            trackFlora(scene, w);
+        }
+        expect(scene.patchPoolCheckpoints).toBe(4);
+        expect(floraMetrics(scene)['eval.flora_patch_pool_full_share'].value).toBe(0.5);
+    });
+
+    it('reports zero when the patch pool never fills and null before the first checkpoint', () => {
+        const w = smallWorld({ floraPatchMax: 4 });
+        const scene = createFloraScene();
+        const metric = () => floraMetrics(scene)['eval.flora_patch_pool_full_share'];
+        expect(metric().value).toBeNull();
+        expect(metric().reason).toContain('no patch-pool checkpoints');
+        const firstCheckpoint = Math.ceil((BURN_IN_TICKS + 1) / 1000) * 1000;
+        w.patchAlive.fill(0);
+        w.tick = firstCheckpoint;
+        trackFlora(scene, w);
+        expect(metric().value).toBe(0);
+    });
+
     it('reports zero deviation for a single live pollinated patch and null with none', () => {
         const w = smallWorld();
         const scene = createFloraScene();

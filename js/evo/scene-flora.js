@@ -26,6 +26,8 @@ export function createFloraScene() {
         pollinations: 0,
         hueSum: 0,
         hueCheckpoints: 0,
+        fullPoolCheckpoints: 0,
+        patchPoolCheckpoints: 0,
     };
 }
 
@@ -48,6 +50,7 @@ export function trackFlora(scene, world) {
         if (world.tick % 1000 === 0) {
             sampleAvailability(scene, world);
             sampleHues(scene, world);
+            samplePatchPool(scene, world);
         }
     }
     for (let i = 0; i < scene.energy.length; i++) {
@@ -118,6 +121,20 @@ function sampleAvailability(scene, world) {
             scene.available[1] += Number(world.foodTox[food] > 0);
         }
     }
+}
+
+/**
+ * @param {ReturnType<typeof createFloraScene>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function samplePatchPool(scene, world) {
+    let alive = 0;
+    for (let patch = 0; patch < world.patchAlive.length; patch++) {
+        alive += world.patchAlive[patch];
+    }
+    scene.patchPoolCheckpoints++;
+    scene.fullPoolCheckpoints += Number(alive === world.config.floraPatchMax);
 }
 
 /**
@@ -238,6 +255,10 @@ export function floraMetrics(scene) {
             scene.hueCheckpoints > 0
                 ? ok(scene.hueSum / scene.hueCheckpoints)
                 : none('no live pollinated species at checkpoints after burn-in'),
+        'eval.flora_patch_pool_full_share':
+            scene.patchPoolCheckpoints > 0
+                ? ok(scene.fullPoolCheckpoints / scene.patchPoolCheckpoints)
+                : none('no patch-pool checkpoints after burn-in'),
         'eval.toxic_avoidance': avoidance(scene),
         'eval.toxic_death_share':
             scene.deaths > 0 ? ok(scene.poisoned / scene.deaths) : none('no deaths after burn-in'),
