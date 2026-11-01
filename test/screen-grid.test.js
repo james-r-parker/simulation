@@ -104,4 +104,16 @@ describe('expandGrid', () => {
         expect(plan).toMatchObject({ seeds: 4, seedOffset: 28, ticks: 200000, reference: 'defaults' });
         expect(plan.arms).toHaveLength(29);
     });
+
+    it('expands the preregistered Megafauna E78 ecology screen', async () => {
+        const { default: grid } = await import('../evals/screens/herd-ecology.grid.json', { with: { type: 'json' } });
+        const plan = expandGrid(/** @type {any} */ (grid));
+        expect(plan).toMatchObject({ seeds: 16, seedOffset: 0, ticks: 200000, reference: 'phase3-defaults' });
+        expect(plan.arms).toHaveLength(11);
+        expect(plan.arms[0]).toMatchObject({ name: 'phase3-defaults', overrides: {} });
+        expect(plan.arms.at(-1)).toMatchObject({
+            name: 'herdSeedMinDistance-1600',
+            overrides: { herdSeedMinDistance: 1600 },
+        });
+    });
 });
