@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** In progress - Phase 1 chunks 1 and 2 are built, T14 runs and reports are recorded, and T15 adopts the measured improvement under the user's direction to carry remaining balance gaps forward. Matched carcass meals improved from 10/16 to 11/16 (mean share 0.002719 to 0.005702), but the documented 12/16 target remains unmet; the miss is a balancing follow-up, not a pass. Predator presence fell from 2/16 to 0/16 and remains a balancing risk. T16 conformance remains open; the locked total-step comparison passes the Phase 1 budget, while the isolated default-adoption comparison and per-phase deltas are recorded as balancing performance concerns.
+**Status:** In progress - Phase 1 is built; Phases 2 to 4 remain in progress. Under the user-directed partial acceptance, T15 adopts the measured improvement while carrying unresolved balance results forward: carcass meals are positive on 11/16 seeds against the documented 12/16 target, predator presence is 0/16 against 2/16 on the matched reference, and the isolated parent-to-adoption step-time delta is +13.6%. These are balancing diagnostics, never claimed passes. The Phase 1-start total-step comparison is within its 15% budget.
 **Validated:** a188a3f (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
@@ -140,7 +140,7 @@ Phase 1 draws the animals as plain discs in a `createHerdLayer` (new) that reuse
 
 Megafauna is built after flora is `Implemented`, in four phases, each on its own branch from the latest `origin/main`. Phase 1 has two chunks (AGENTS.md, "Build in chunks"), each its own branch and PR; the other phases have one. A task that moves `worldHash` pins the short goldens in its own commit; each chunk re-pins the long goldens once at its end (Node, then `npm run browser:hash` in Chromium). Every `npm run bench`, `bench-compare`, `eval`, `eval:power` and `screen` run is in a Runs row, never in a code commit. After the runs, an Adopt task sets the defaults to the best arm in a commit of its own that pins the goldens it moves. The conformance review closes each phase and runs in parallel with the final `scripts/check.sh`. A numeric value is a config key; a boolean with one chosen value is not a key.
 
-### Phase 1 - Herds that move, graze, trample and die
+### Phase 1 - Herds that move, graze, trample and die (built)
 
 **Targets:** eval.trampled_share, eval.dodge_skill, eval.herd_carcass_meal_share, eval.herd_grazed_share, eval.herd_animals, bench.step_ms@500
 
