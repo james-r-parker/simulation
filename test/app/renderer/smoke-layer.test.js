@@ -42,7 +42,7 @@ describe('packClouds', () => {
             ],
         });
         const out = new Float32Array(2 * 4);
-        const n = packClouds(snap.f32, { start: 6, count: 3 }, { smokeRadius: 80, out });
+        const n = packClouds(snap.f32, { start: 7, count: 3 }, { smokeRadius: 80, out });
         expect(n).toBe(2);
         expect(Array.from(out.slice(0, 4))).toEqual([100, 200, 40, Math.fround(0.55)]);
         expect(out[6]).toBeGreaterThan(40);

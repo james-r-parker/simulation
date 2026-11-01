@@ -6,7 +6,8 @@ import { NOISE_GLSL } from './noise-glsl.js';
 export const FOOD_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iBody;   // x, y, radius, phase
-attribute float iAge;   // carcass normalized age (0 to 1)
+attribute float iAge;   // normalized item age
+attribute vec2 iLook;   // species and hue
 uniform float uZoom;    // device pixels per world unit
 uniform float uPad;     // extra quad half-size in device pixels (the rim, the soft edge)
 uniform float uMinPx;   // smallest radius in device pixels
@@ -16,7 +17,11 @@ varying float vPx;      // one device pixel in radii
 varying float vPhase;
 varying float vMeat;    // 1 for a carcass: the snapshot marks meat with a negative radius
 varying float vDim;     // carcass dimming factor
+varying vec2 vLook;
+varying float vAge;
 void main() {
+    vLook = iLook;
+    vAge = clamp(iAge, 0.0, 1.0);
     vMeat = iBody.z < 0.0 ? 1.0 : 0.0;
     float age01 = vMeat * uDecay * clamp(iAge, 0.0, 1.0);
     float scale = 1.0 - 0.4 * age01;
@@ -35,11 +40,54 @@ uniform vec3 uColor;
 uniform vec3 uMeatColor;
 uniform float uIntensity;
 uniform float uTime;
+uniform float uFlora;
+varying vec2 vLook;
+varying float vAge;
 varying vec2 vLocal;
 varying float vPx;
 varying float vPhase;
 varying float vMeat;
 varying float vDim;
+float dotShape(vec2 p, vec2 centre, float radius) {
+    return 1.0 - smoothstep(radius - vPx, radius + vPx, length(p - centre));
+}
+float blade(vec2 p, vec2 a, vec2 b, float width) {
+    vec2 ab = b - a;
+    float t = clamp(dot(p - a, ab) / dot(ab, ab), 0.0, 1.0);
+    return 1.0 - smoothstep(width - vPx, width + vPx, length(p - a - t * ab));
+}
+float plantShape(vec2 p, float species) {
+    if (species < 0.5) {
+        return max(blade(p, vec2(0.0, -0.55), vec2(-0.55, 0.5), 0.09),
+            max(blade(p, vec2(0.0, -0.55), vec2(0.0, 0.7), 0.09),
+                blade(p, vec2(0.0, -0.55), vec2(0.55, 0.5), 0.09)));
+    }
+    if (species < 1.5) {
+        return max(dotShape(p, vec2(-0.3, 0.1), 0.35),
+            max(dotShape(p, vec2(0.3, 0.1), 0.35), dotShape(p, vec2(0.0, -0.35), 0.35)));
+    }
+    if (species < 2.5) {
+        float d = length(p);
+        return dotShape(p, vec2(0.0), 0.62) * mix(1.0, 0.55, smoothstep(0.42, 0.5, d));
+    }
+    if (species < 3.5) {
+        float edge = 0.42 + 0.18 * cos(5.0 * atan(p.y, p.x));
+        return 1.0 - smoothstep(edge - vPx, edge + vPx, length(p));
+    }
+    float cap = dotShape(vec2(p.x, (p.y - 0.12) * 1.8), vec2(0.0), 0.65) * step(-0.04, p.y);
+    float stalk = (1.0 - smoothstep(0.16 - vPx, 0.16 + vPx, abs(p.x))) * step(-0.65, p.y) * step(p.y, 0.08);
+    float rim = species > 4.5 ? dotShape(vec2(p.x, (p.y + 0.02) * 5.0), vec2(0.0), 0.62) : 0.0;
+    return max(max(cap, stalk), rim);
+}
+vec3 plantColor(float hue) {
+    float h = mod(120.0 - 90.0 * (clamp(hue, -1.0, 1.0) + 1.0) + 360.0, 360.0) / 60.0;
+    float x = 1.0 - abs(mod(h, 2.0) - 1.0);
+    vec3 rgb = h < 1.0 ? vec3(1.0, x, 0.0) : h < 2.0 ? vec3(x, 1.0, 0.0) :
+        h < 3.0 ? vec3(0.0, 1.0, x) : vec3(1.0, 0.0, x);
+    float y = dot(rgb, vec3(0.2126729, 0.7151522, 0.072175));
+    float ceiling = uIntensity * dot(uColor, vec3(0.2126729, 0.7151522, 0.072175));
+    return rgb * min(1.0, ceiling / y);
+}
 void main() {
     float d = length(vLocal);
     float twinkle = 1.0 + 0.15 * sin(uTime * 2.0943951 + vPhase);
@@ -48,6 +96,11 @@ void main() {
     float core = 1.0 - smoothstep(0.8, 1.0, star);
     float glow = exp(-dot(p, p) * 2.5) * 0.2;
     vec3 rgb = mix(uColor, uMeatColor, vMeat) * uIntensity * vDim * twinkle * (core + glow) * (1.0 - smoothstep(1.0, 2.2, d));
+    if (uFlora > 0.5 && vMeat < 0.5) {
+        float rim = 1.0 - smoothstep(0.05, 0.12, abs(vLocal.y));
+        float capShade = vLook.x > 4.5 ? mix(0.65, 1.0, rim) : 1.0;
+        rgb = plantColor(vLook.y) * plantShape(vLocal, vLook.x) * capShade * smoothstep(0.0, 0.05, vAge);
+    }
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

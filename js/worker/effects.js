@@ -14,6 +14,7 @@ export const EFFECT_KIND = Object.freeze({
     SMOKE: 6,
     ESCAPED: 7,
     MATED: 8,
+    POLLINATED: 9,
 });
 
 /** Records the log holds; when full the oldest are dropped. */
@@ -244,6 +245,19 @@ function addCall(log, world, o) {
 }
 
 /**
+ * @param {EffectLog} log effect log
+ * @param {Float64Array} events source event data
+ * @param {number} at source event offset
+ * @returns {void}
+ */
+function addPollinated(log, events, at) {
+    const w = begin(log, EFFECT_KIND.POLLINATED, events[at + 1]);
+    place(log, w, events[at + 7], events[at + 8]);
+    log.u32[w + 4] = Math.round((events[at + 6] + 1) * 0.5 * 4095);
+    log.u32[w + 5] = log.u32[w + 6] = log.u32[w + 7] = 0;
+}
+
+/**
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world just stepped
  * @param {Map<number, number> | undefined} slotOf genome to slot map
@@ -254,6 +268,9 @@ function addEventEffects(log, world, slotOf) {
     for (let i = 0; i < world.events.count; i++) {
         const o = i * EVENT_STRIDE;
         switch (d[o]) {
+            case EVENT_TYPE.PATCH_SEEDED:
+                addPollinated(log, d, o);
+                break;
             case EVENT_TYPE.AGENT_BORN:
                 addBorn(log, world, o, slotOf);
                 break;

@@ -7,9 +7,10 @@ import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
 import { terrainRockCount } from './terrain.js';
 
-const HEADER_WORDS = 6;
+const HEADER_WORDS = 7;
 const AGENT_STRIDE = 12;
-const FOOD_STRIDE = 4;
+const FOOD_STRIDE = 6;
+const PATCH_STRIDE = 5;
 const OBSTACLE_STRIDE = 3;
 const CLOUD_STRIDE = 3;
 const WORD_BYTES = 4;
@@ -30,6 +31,10 @@ export const SNAPSHOT_FLAG = Object.freeze({
     HUNT_CALLING: 1 << 12,
     PREGNANT: 1 << 13,
     MALE: 1 << 14,
+    SICK: 1 << 18,
+    POLLEN: 1 << 19,
+    POLLEN_HUE_SHIFT: 20,
+    POLLEN_HUE_MASK: 0xfff,
 });
 
 /**
@@ -42,14 +47,15 @@ function maxWords(config) {
         config.maxAgents * (AGENT_STRIDE + config.rayCount) +
         config.maxFood * FOOD_STRIDE +
         terrainRockCount(config) * OBSTACLE_STRIDE +
-        config.maxClouds * CLOUD_STRIDE
+        config.maxClouds * CLOUD_STRIDE +
+        config.floraPatchMax * PATCH_STRIDE
     );
 }
 
 /**
  * Sizes the snapshot buffer for a config.
  * @param {Readonly<Record<string, any>>} config the validated config
- * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number, cloudStride: number, rayStride: number}}
+ * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number, cloudStride: number, patchStride: number, rayStride: number}}
  *   `bytes` covers every part at its maximum, rays included; `rayStride` is the words per agent in the ray part
  */
 export function snapshotLayout(config) {
@@ -60,6 +66,7 @@ export function snapshotLayout(config) {
         foodStride: FOOD_STRIDE,
         obstacleStride: OBSTACLE_STRIDE,
         cloudStride: CLOUD_STRIDE,
+        patchStride: PATCH_STRIDE,
         rayStride: config.rayCount,
     };
 }
@@ -99,6 +106,26 @@ function agentFlags(world, slot) {
     if (sex[slot] === SEX.MALE) {
         flags |= SNAPSHOT_FLAG.MALE;
     }
+    return flags | floraFlags(world, slot);
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot alive agent
+ * @returns {number} sickness and carried-pollen render bits
+ */
+function floraFlags(world, slot) {
+    let flags = world.dose[slot] >= world.config.sickDose ? SNAPSHOT_FLAG.SICK : 0;
+    const patch = world.pollenPatch[slot] - 1;
+    if (
+        world.pollenTicks[slot] > 0 &&
+        patch >= 0 &&
+        world.patchAlive[patch] === 1 &&
+        world.pollenSerial[slot] === world.patchSerial[patch]
+    ) {
+        const hue = Math.round((world.patchHue[patch] + 1) * 0.5 * SNAPSHOT_FLAG.POLLEN_HUE_MASK);
+        flags |= SNAPSHOT_FLAG.POLLEN | (hue << SNAPSHOT_FLAG.POLLEN_HUE_SHIFT);
+    }
     return flags;
 }
 
@@ -137,7 +164,7 @@ function writeAgents(world, { f32, u32 }) {
 
 /**
  * Writes the alive food as `x`, `y`, radius, `age01`. A carcass has its radius written negative, so the layout is the same
- * with carcasses off. Meat has `age01 = foodAge / carcassTicks`, plant food has 0.
+ * with carcasses off. Meat uses carcassTicks and plants use their own foodLife for age01.
  * @param {import('./world.js').World} world the world
  * @param {Float32Array} f32 the float view
  * @param {number} start the first word of the section
@@ -153,7 +180,10 @@ function writeFood(world, f32, start) {
             f32[w] = foodX[slot];
             f32[w + 1] = foodY[slot];
             f32[w + 2] = isMeat ? -foodRadius[slot] : foodRadius[slot];
-            f32[w + 3] = isMeat && carcassTicks > 0 ? foodAge[slot] / carcassTicks : 0;
+            const life = isMeat ? carcassTicks : world.foodLife[slot];
+            f32[w + 3] = life > 0 ? foodAge[slot] / life : 0;
+            f32[w + 4] = world.foodSpecies[slot];
+            f32[w + 5] = world.foodHue[slot];
             w += FOOD_STRIDE;
         }
     }
@@ -177,6 +207,32 @@ function writeClouds(world, f32, start) {
         f32[w + 2] = cloudTtl[i] / smokeTicks;
         w += CLOUD_STRIDE;
     }
+}
+
+/** Writes active patch render records and returns the first ray word.
+ * @param {import('./world.js').World} world the world
+ * @param {{f32: Float32Array, u32: Uint32Array}} views snapshot views
+ * @param {number} start first patch word
+ * @returns {number} next free word
+ */
+function writePatches(world, { f32, u32 }, start) {
+    let w = start;
+    let count = 0;
+    for (let patch = 0; patch < world.patchAlive.length; patch++) {
+        if (world.patchAlive[patch] !== 1) {
+            continue;
+        }
+        f32[w] = world.patchX[patch];
+        f32[w + 1] = world.patchY[patch];
+        f32[w + 2] = world.patchSpecies[patch];
+        f32[w + 3] = world.patchHue[patch];
+        const maximum = world.config.foodPatchCapacity * world.patchYield[patch];
+        f32[w + 4] = maximum > 0 ? Math.min(1, world.patchWeight[patch] / maximum) : 0;
+        w += PATCH_STRIDE;
+        count++;
+    }
+    u32[6] = count;
+    return w;
 }
 
 /**
@@ -203,8 +259,8 @@ function writeRays(world, f32, start) {
 }
 
 /**
- * Writes the world into the buffer: header, alive agents by ascending slot, alive food, obstacles, live clouds and,
- * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count written.
+ * Writes the world into the buffer: header, alive agents, alive food, obstacles, clouds, live patches and,
+ * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count written; word 6 is the patch count.
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views views from `createSnapshotViews`
  * @param {boolean} [withRays] write the ray part
@@ -233,7 +289,8 @@ export function writeSnapshot(world, views, withRays = false) {
     u32[4] = world.cloudCount;
     writeClouds(world, f32, w);
     u32[RAY_COUNT_WORD] = withRays ? rayCount : 0;
+    const rayStart = writePatches(world, views, w + world.cloudCount * CLOUD_STRIDE);
     if (withRays) {
-        writeRays(world, f32, w + world.cloudCount * CLOUD_STRIDE);
+        writeRays(world, f32, rayStart);
     }
 }

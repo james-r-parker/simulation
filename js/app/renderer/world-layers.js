@@ -79,6 +79,23 @@ export function packFoodAges(f32, part, out) {
 }
 
 /**
+ * Packs species and hue from each food snapshot record.
+ * @param {Float32Array} f32 snapshot floats
+ * @param {{start: number, count: number}} part food section
+ * @param {Float32Array} out target pairs
+ * @returns {number} pairs written
+ */
+export function packFoodLook(f32, part, out) {
+    const count = Math.min(part.count, out.length / 2);
+    for (let i = 0; i < count; i++) {
+        const at = part.start + i * FOOD_STRIDE;
+        out[i * 2] = f32[at + 4];
+        out[i * 2 + 1] = f32[at + 5];
+    }
+    return count;
+}
+
+/**
  * Returns dimming and scale factors for carcass decay.
  * @param {number} age01 normalized age 0..1
  * @returns {{dim: number, scale: number}}
@@ -105,6 +122,21 @@ function material(options) {
 }
 
 /**
+ * @param {number} capacity maximum food records
+ * @returns {ReturnType<typeof createQuadGeometry>} food quad geometry
+ */
+function foodGeometry(capacity) {
+    const geometry = createQuadGeometry(capacity, ['iBody']);
+    const ageAttr = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    ageAttr.setUsage(DynamicDrawUsage);
+    geometry.setAttribute('iAge', ageAttr);
+    const lookAttr = new InstancedBufferAttribute(new Float32Array(capacity * 2), 2);
+    lookAttr.setUsage(DynamicDrawUsage);
+    geometry.setAttribute('iLook', lookAttr);
+    return geometry;
+}
+
+/**
  * @param {{info: Record<string, any>}} context `ready.info`
  * @returns {import('./scene.js').Layer} the food dots: four-point sparkles in plant teal or meat amber
  */
@@ -118,11 +150,9 @@ export function createFoodLayer({ info }) {
         uIntensity: { value: FOOD_INTENSITY },
         uTime: { value: 0 },
         uDecay: { value: 1 },
+        uFlora: { value: 1 },
     };
-    const geometry = createQuadGeometry(info.maxFood, ['iBody']);
-    const ageAttr = new InstancedBufferAttribute(new Float32Array(info.maxFood), 1);
-    ageAttr.setUsage(DynamicDrawUsage);
-    geometry.setAttribute('iAge', ageAttr);
+    const geometry = foodGeometry(info.maxFood);
     const mat = material({
         vertexShader: FOOD_VERTEX,
         fragmentShader: FOOD_FRAGMENT,
@@ -132,10 +162,12 @@ export function createFoodLayer({ info }) {
     const mesh = createQuadMesh(geometry, mat, info.maxFood);
     const packed = new Float32Array(info.maxFood * VEC4);
     const packedAges = new Float32Array(info.maxFood);
+    const packedLook = new Float32Array(info.maxFood * 2);
     return {
         object: mesh,
         setLook(look) {
             uniforms.uDecay.value = look.decay === LOOK_OFF ? 0 : 1;
+            uniforms.uFlora.value = look.flora === LOOK_OFF ? 0 : 1;
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
@@ -147,7 +179,8 @@ export function createFoodLayer({ info }) {
             const s = readSections(frame.snapshot.u32, SECTIONS);
             const count = packBodies(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packed, FOOD_STRIDE);
             packFoodAges(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packedAges);
-            uploadInstances(mesh, { iBody: packed, iAge: packedAges }, count);
+            packFoodLook(frame.snapshot.f32, bodyPart(s.foodStart, s.foodCount), packedLook);
+            uploadInstances(mesh, { iBody: packed, iAge: packedAges, iLook: packedLook }, count);
         },
         dispose() {
             geometry.dispose();

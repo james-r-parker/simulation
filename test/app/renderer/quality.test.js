@@ -190,6 +190,7 @@ const TIERS = {
     threads: [0, 1, LOOK_OFF],
     decay: [0, 1, 2],
     finish: [0, 1, LOOK_OFF],
+    flora: [0, 1, LOOK_OFF],
 };
 
 describe('lookFor', () => {
@@ -247,6 +248,7 @@ describe('parseLook', () => {
     });
 
     it('rejects an unknown or empty name', () => {
+        expect(parseLook('flora')).toBe(1 << LOOK_ITEMS.indexOf('flora'));
         expect(parseLook('aurora,glitter')).toBeNull();
         expect(parseLook('')).toBeNull();
         expect(parseLook('rocks,')).toBeNull();

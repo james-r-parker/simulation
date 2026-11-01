@@ -9,6 +9,7 @@ import {
     createObstacleLayer,
     packBodies,
     packFoodAges,
+    packFoodLook,
 } from '../../../js/app/renderer/world-layers.js';
 import { smallReady } from '../helpers/ready.js';
 
@@ -172,11 +173,20 @@ describe('carcassLook', () => {
 
 describe('packFoodAges', () => {
     it('packs the fourth word of each food record into the age array', () => {
-        const f32 = Float32Array.from([10, 20, 3, 0.25, 30, 40, -4, 0.75]);
+        const f32 = Float32Array.from([10, 20, 3, 0.25, 0, 0, 30, 40, -4, 0.75, 0, 0]);
         const out = new Float32Array(2);
         expect(packFoodAges(f32, { start: 0, count: 2 }, out)).toBe(2);
         expect(out[0]).toBeCloseTo(0.25, 4);
         expect(out[1]).toBeCloseTo(0.75, 4);
+    });
+});
+
+describe('packFoodLook', () => {
+    it('copies independent species and signed hue records without allocating', () => {
+        const records = Float32Array.from([1, 2, 3, 0.2, 4, -0.5, 4, 5, 6, 0.3, 5, 0.75]);
+        const out = new Float32Array(4);
+        expect(packFoodLook(records, { start: 0, count: 2 }, out)).toBe(2);
+        expect(Array.from(out)).toEqual([4, -0.5, 5, 0.75]);
     });
 });
 

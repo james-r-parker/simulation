@@ -1,7 +1,7 @@
 # Flora
 
-**Status:** In progress - Phases 1 (species and fruiting seasons), 2 (hue sense and toxicity) and 3 (pollination and plant evolution) built. E69 to E72, detector power, survival and standalone performance measurements remain owed while the CPU is reserved. Phase 4 (the look) next.
-**Validated:** 0d1c416 (2026-10-31)
+**Status:** In progress - Phases 1 to 4 code built, including the flora look. E69 to E74, detector power, survival, the 4K clip and standalone performance measurements remain owed while the CPU is reserved.
+**Validated:** 014195c (2026-11-01)
 **Priority:** 2 - flora phases in order, ahead of the paused natural-selection balancing work (user, 2026-10-31)
 **Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
@@ -137,7 +137,7 @@ Within the luminance ceilings of [worker-and-renderer.md](worker-and-renderer.md
 | Sickness | A sick blob (`SNAPSHOT_FLAG.SICK`) takes a green-grey tint on its body and a slow wobble in its outline                                                                                                                                                                                                                                       |
 | Tiers    | A new `flora` item of `lookFor` in [quality.js](../../js/app/renderer/quality.js) (`?look=`) switches the shapes, the glow tint, the pollen and the sick look; off, food is the teal sparkle and the patch glow is today's                                                                                                                    |
 
-The snapshot food record is `x`, `y`, radius, `age01`, `species`, `hue` (`FOOD_STRIDE` 6); a patch part (new `PATCH_STRIDE` 5: `x`, `y`, `species`, `hue`, `weight01`) follows the clouds, its count in header word 6 (`HEADER_WORDS` 7). The sick flag is the new `SNAPSHOT_FLAG.SICK`.
+The snapshot food record is `x`, `y`, radius, `age01`, `species`, `hue` (`FOOD_STRIDE` 6); a patch part (new `PATCH_STRIDE` 5: `x`, `y`, `species`, `hue`, `weight01`) follows the clouds, its count in header word 6 (`HEADER_WORDS` 7). The sick flag is `SNAPSHOT_FLAG.SICK` at bit 18. A valid carried pollen flag occupies bit 19; bits 20 to 31 hold its hue quantized over [-1, 1] for visual particles, with bits 15 to 17 reserved for disease and intent.
 
 ## Detectors
 
@@ -197,7 +197,7 @@ The `flora` RNG stream, the patch pool, patch death and the seed bank, pollen, s
 | Runs           | T25        | The pollination screen and the survival gate                                                          |
 | Close          | T26        | The conformance review and the Status move                                                            |
 
-### Phase 4 - The look
+### Phase 4 - The look (built)
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms, eval.seasonal_diet_shift, eval.toxic_death_share, eval.pollination_rate, eval.flora_hue_spread
 
@@ -340,7 +340,7 @@ Each phase's screen also states which scene its arms serve and which detector re
 | T25 | Run `E72`; apply the survival gate to its best arm; set the pollination defaults; record it                                                                                                                                                                                                                                                    | [judgement]  | T23, T24   |
 | T26 | Conformance review as T9 for Phase 3; move the Status line, mark Phase 3 `(built)`, regenerate the index                                                                                                                                                                                                                                       | [judgement]  | T25        |
 
-### Phase 4 - The look
+### Phase 4 - The look (built)
 
 | #   | Task                                                                                                                                                                                                                                             | Nature       | Depends on    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------- |

@@ -38,3 +38,11 @@ describe('agent shader', () => {
         expect(AGENT_FRAGMENT).toContain('1.0 / (1.0 + 0.12 * turn01)');
     });
 });
+
+describe('flora sickness', () => {
+    it('uses the sickness bit and simulation tick for its tint and outline wobble', () => {
+        expect(AGENT_VERTEX).toContain('vSick = iExtra.z');
+        expect(AGENT_FRAGMENT).toContain('uSimTick * 0.05');
+        expect(AGENT_FRAGMENT).toContain('vSick * uFlora');
+    });
+});

@@ -3,7 +3,8 @@
 // dropped unplayed.
 
 import { createFamilySlots } from '../family-slots.js';
-import { familyColor, PALETTE } from './colors.js';
+import { floraColor } from './flora-colors.js';
+import { familyColor, PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
 import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
 import { spawnBurst } from './sparks.js';
@@ -30,7 +31,7 @@ const BURST = {
     eaten: false,
 };
 const RING = {
-    kind: /** @type {'alarm' | 'hunt' | 'birth'} */ ('birth'),
+    kind: /** @type {'alarm' | 'hunt' | 'birth' | 'pollen'} */ ('birth'),
     x: 0,
     y: 0,
     tick: 0,
@@ -62,6 +63,7 @@ const RING = {
  * @property {import('../family-slots.js').FamilySlots} slots the family colour slots
  * @property {((effect: Effect) => void) | null} sink told of every effect that plays (the audio cues)
  * @property {Effect} effect the record being played, reused
+ * @property {boolean} floraEnabled whether flora effects draw
  * @property {number[]} rgb scratch colour
  */
 
@@ -87,6 +89,7 @@ export function createEffectsPlayer({
         sparks,
         threads,
         kinds: layout.effectKinds,
+        floraEnabled: true,
         eatenCause: layout.deathCauses.EATEN,
         info: { callRadius: info.callRadius, callTicks: info.callTicks },
         slots,
@@ -94,6 +97,23 @@ export function createEffectsPlayer({
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },
         rgb: [0, 0, 0],
     };
+}
+
+/**
+ * @param {EffectsPlayer} player effect player
+ * @returns {void}
+ */
+function playPollinated(player) {
+    const e = player.effect;
+    floraColor((e.a / 4095) * 2 - 1, player.rgb);
+    const y = 0.2126729 * player.rgb[0] + 0.7151522 * player.rgb[1] + 0.072175 * player.rgb[2];
+    const scale = SCENERY_MAX_LUMINANCE / y;
+    player.rgb[0] *= scale;
+    player.rgb[1] *= scale;
+    player.rgb[2] *= scale;
+    setRing('pollen', e, 70, BIRTH_TICKS);
+    RING.rgb = player.rgb;
+    spawnRing(player.rings, RING);
 }
 
 /**
@@ -129,7 +149,7 @@ function setBurst(kind, e, rgb) {
 
 /**
  * Fills the shared ring scratch at the effect, leaving the colour to the caller.
- * @param {'birth' | 'alarm' | 'hunt'} kind which ring
+ * @param {'birth' | 'alarm' | 'hunt' | 'pollen'} kind which ring
  * @param {Effect} e the effect
  * @param {number} radius its radius
  * @param {number} life its length in ticks
@@ -227,6 +247,8 @@ function dispatch(player, agents) {
         playCall(player, 'alarm');
     } else if (e.kind === kinds.PACK_CALL) {
         playCall(player, 'hunt');
+    } else if (e.kind === kinds.POLLINATED && player.floraEnabled) {
+        playPollinated(player);
     } else if (e.kind === kinds.MATED && player.threads) {
         spawnMateThread(player.threads, e);
     }

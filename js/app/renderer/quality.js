@@ -5,7 +5,16 @@
 // (`stepQuality` sets `changed`), so frames drawn at the old level do not decide the new one.
 
 /** The Phase 6 look items, in the order of their bits in a look mask. */
-export const LOOK_ITEMS = Object.freeze(['rocks', 'aurora', 'terrain', 'motion', 'threads', 'decay', 'finish']);
+export const LOOK_ITEMS = Object.freeze([
+    'rocks',
+    'aurora',
+    'terrain',
+    'motion',
+    'threads',
+    'decay',
+    'finish',
+    'flora',
+]);
 
 /** The mask with every look item on (`?look=all`, the default). */
 export const LOOK_ALL = (1 << LOOK_ITEMS.length) - 1;
@@ -17,7 +26,7 @@ export const LOOK_OFF = -1;
  * Which column of the Phase 6 quality-tier table an item draws with: 0 full, 1 reduced, 2 the level-2 form,
  * `LOOK_OFF` not drawn.
  * @typedef {{rocks?: number, aurora?: number, terrain?: number, motion?: number, threads?: number, decay?: number,
- *   finish?: number}} Look
+ *   finish?: number, flora?: number}} Look
  */
 
 /**
@@ -45,7 +54,7 @@ export const QUALITY_LEVELS = Object.freeze([
         bloom: false,
         bloomScale: 0,
         motes: 0,
-        look: lookLevel(2, ['aurora', 'terrain', 'motion', 'threads', 'finish']),
+        look: lookLevel(2, ['aurora', 'terrain', 'motion', 'threads', 'finish', 'flora']),
     }),
 ]);
 

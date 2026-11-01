@@ -17,7 +17,7 @@ attribute vec2 corner;
 attribute vec4 iPose;   // x, y, angle, radius
 attribute vec4 iColor;  // r, g, b, energy01
 attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
-attribute vec4 iExtra;  // pregnant, neutral family, reserved
+attribute vec4 iExtra;  // pregnant, neutral family, sick, reserved
 attribute vec4 iMotion; // speed01, turn01, phase, 0
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;
@@ -26,6 +26,7 @@ varying vec4 vState;
 varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
+varying float vSick;
 varying vec2 vWorld;
 varying float vPx;
 void main() {
@@ -42,6 +43,7 @@ void main() {
     vMotion = iMotion;
     vPregnant = iExtra.x;
     vNeutral = iExtra.y;
+    vSick = iExtra.z;
     gl_Position = projectionMatrix * viewMatrix * vec4(world, 0.0, 1.0);
 }
 `;
@@ -54,6 +56,8 @@ uniform float uBiteArc;    // the jaw wedge's half-angle when fully open, radian
 uniform float uTempLens;   // 1 replaces the lineage colour with the temperature ramp
 uniform float uDim;        // 0.55 under the scent lens
 uniform float uPalette;    // 2 for the high-contrast palette: a rim twice as wide, neutral families faint with no halo
+uniform float uFlora;
+uniform float uSimTick;
 uniform float uMotion;     // 1 level 0 (wobble + squash), 0.5 level 1 (squash), 0 level 2
 uniform sampler2D uRamp;
 uniform sampler2D uSmoke;  // smoke alpha over the view, quarter resolution
@@ -64,6 +68,7 @@ varying vec4 vState;
 varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
+varying float vSick;
 varying vec2 vWorld;
 varying float vPx;
 
@@ -132,6 +137,7 @@ float body(vec2 p, float open, out float noseX) {
 
 void main() {
     vec2 p = vP;
+    p.y += 0.04 * vSick * uFlora * sin(uSimTick * 0.05 + vMotion.z * 6.2831853 + p.x * 4.0);
     if (uMotion > 0.0) {
         float speed01 = vMotion.x;
         float turn01 = vMotion.y;
@@ -153,6 +159,7 @@ void main() {
     float faint = contrast * vNeutral;                // a neutral family in the high-contrast palette
     float bright = (${BRIGHTNESS_FLOOR.toFixed(1)} + 1.5 * vColor.a) * (1.0 - 0.65 * faint);
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
+    base = mix(base, vec3(0.32, 0.4, 0.28) * length(base), 0.55 * vSick * uFlora);
     // The halo and the rim are sized in screen pixels (capped in radii for small agents), so zooming in never lets the
     // glow swallow the silhouette: a luminous membrane around a darker body with a glowing core.
     float across = 2.0 / vPx;                        // the agent's width in device px

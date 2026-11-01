@@ -57,7 +57,7 @@ describe('createTerrainLayer', () => {
             ],
         };
         const layer = createTerrainLayer({ info });
-        expect(layer.object.children).toHaveLength(1);
+        expect(layer.object.children).toHaveLength(2);
         expect(layer.object.children[0].count).toBe(2);
         layer.dispose();
     });
@@ -88,8 +88,10 @@ describe('createTerrainLayer', () => {
         layer.setLook?.({ terrain: 1 });
         expect(layer.object.visible).toBe(true);
 
-        layer.setLook?.({ terrain: -1 });
+        layer.setLook?.({ terrain: -1, flora: -1 });
         expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ terrain: -1, flora: 0 });
+        expect(layer.object.visible).toBe(true);
 
         layer.dispose();
     });

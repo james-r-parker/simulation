@@ -2,6 +2,7 @@
 // age is the playhead's tick over its life, so rings freeze with a paused sim.
 
 import { AdditiveBlending, ShaderMaterial } from 'three';
+import { LOOK_OFF } from './quality.js';
 import { PALETTE } from './colors.js';
 import { easeOut } from './curves.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
@@ -14,7 +15,7 @@ export const CALL_STRENGTH = 0.35;
 /** How long a birth ring lasts, in ticks. */
 export const BIRTH_TICKS = 30;
 
-/** @typedef {'alarm' | 'hunt' | 'birth'} RingKind */
+/** @typedef {'alarm' | 'hunt' | 'birth' | 'pollen'} RingKind */
 
 /**
  * The radius, alpha and width of a ring at an age.
@@ -55,7 +56,8 @@ export function ringAt(kind, age, radius, out = { radius: 0, alpha: 0, width: 0 
  */
 
 const BIRTH = 2;
-const KINDS = /** @type {RingKind[]} */ (['alarm', 'hunt', 'birth']);
+const POLLEN = 3;
+const KINDS = /** @type {RingKind[]} */ (['alarm', 'hunt', 'birth', 'pollen']);
 
 /**
  * @returns {RingPool} an empty pool of `RING_CAPACITY` rings
@@ -120,7 +122,7 @@ export function packRings(pool, tick, out, callBoost = 1) {
         out.color[o] = pool.rgb[i * 3];
         out.color[o + 1] = pool.rgb[i * 3 + 1];
         out.color[o + 2] = pool.rgb[i * 3 + 2];
-        out.color[o + 3] = SHAPE.alpha * (pool.kind[i] === BIRTH ? 1 : callBoost);
+        out.color[o + 3] = SHAPE.alpha * (pool.kind[i] === BIRTH || pool.kind[i] === POLLEN ? 1 : callBoost);
         n += 1;
     }
     return n;
@@ -146,6 +148,15 @@ export function createRingLayer({ pool }) {
     const out = { ring: new Float32Array(RING_CAPACITY * VEC4), color: new Float32Array(RING_CAPACITY * VEC4) };
     return {
         object: mesh,
+        setLook(look) {
+            if (look.flora === LOOK_OFF) {
+                for (let i = 0; i < RING_CAPACITY; i++) {
+                    if (pool.kind[i] === POLLEN) {
+                        pool.startTick[i] = -Infinity;
+                    }
+                }
+            }
+        },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
             const boost = frame.lenses.calls ? 1 / CALL_STRENGTH : 1;

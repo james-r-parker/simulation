@@ -191,6 +191,18 @@ describe('collectEffects', () => {
         expect(drain(log).records.map((r) => r[7])).toEqual([6, 0]);
     });
 
+    it('emits a pollinated ring at the seeded patch with quantized hue', () => {
+        const world = smallWorld();
+        event(world, EVENT_TYPE.PATCH_SEEDED, [3, 4, 1, 2, 0.5, 123, 456]);
+        const log = createEffectLog(world.config.maxAgents);
+        collectEffects(log, world, NO_SLOTS);
+        const { records, floats } = drain(log);
+        expect(records).toHaveLength(1);
+        expect(records[0][0]).toBe(EFFECT_KIND.POLLINATED);
+        expect(records[0][4]).toBe(Math.round(0.75 * 4095));
+        expect(floats[0].slice(2, 4)).toEqual([123, 456]);
+    });
+
     it('ignores the event types that have no effect', () => {
         const world = smallWorld();
         event(world, EVENT_TYPE.BIRTH_BLOCKED, [0, 0]);

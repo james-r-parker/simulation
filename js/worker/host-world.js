@@ -173,6 +173,8 @@ export function worldInfo({ config, world }) {
         worldHeight: config.worldHeight,
         maxAgents: config.maxAgents,
         maxFood: config.maxFood,
+        floraPatchMax: config.floraPatchMax,
+        foodPatchRadius: config.foodPatchRadius,
         obstacleCount: terrainRockCount(config),
         maxClouds: config.maxClouds,
         maxVelocity: config.maxVelocity,
