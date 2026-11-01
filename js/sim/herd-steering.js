@@ -8,18 +8,24 @@ const EPSILON = 1e-9;
 
 /** @param {World} world @param {number} group @param {number} slot @returns {void} */
 function setDesiredVelocity(world, group, slot) {
-    const { herdRadius, herdWalkSpeed } = world.config;
+    const { herdRadius, herdWalkSpeed, herdRunSpeed } = world.config;
+    const speed = world.groupAlarm[group] > 0 ? herdRunSpeed : herdWalkSpeed;
     let dx = world.herdDesired[2] - world.herdX[slot];
     let dy = world.herdDesired[3] - world.herdY[slot];
     let distance = Math.sqrt(dx * dx + dy * dy);
-    world.herdDesired[0] = distance > EPSILON ? (dx / distance) * herdWalkSpeed : 0;
-    world.herdDesired[1] = distance > EPSILON ? (dy / distance) * herdWalkSpeed : 0;
+    if (world.groupAlarm[group] > 0) {
+        world.herdDesired[0] = world.groupFleeX[group] * speed;
+        world.herdDesired[1] = world.groupFleeY[group] * speed;
+    } else {
+        world.herdDesired[0] = distance > EPSILON ? (dx / distance) * speed : 0;
+        world.herdDesired[1] = distance > EPSILON ? (dy / distance) * speed : 0;
+    }
     dx = world.groupCentroidX[group] - world.herdX[slot];
     dy = world.groupCentroidY[group] - world.herdY[slot];
     distance = Math.sqrt(dx * dx + dy * dy);
     if (distance > 4 * herdRadius) {
-        world.herdDesired[0] += (dx / distance) * herdWalkSpeed;
-        world.herdDesired[1] += (dy / distance) * herdWalkSpeed;
+        world.herdDesired[0] += (dx / distance) * speed;
+        world.herdDesired[1] += (dy / distance) * speed;
     }
     world.herdDesired[0] += world.groupFleeX[group] * 0.25;
     world.herdDesired[1] += world.groupFleeY[group] * 0.25;
@@ -126,9 +132,11 @@ function moveAnimal(world, slot) {
     let vx = world.herdVx[slot] + (world.herdDesired[0] - world.herdVx[slot]) * HERD_TURN;
     let vy = world.herdVy[slot] + (world.herdDesired[1] - world.herdVy[slot]) * HERD_TURN;
     const speed = Math.sqrt(vx * vx + vy * vy);
-    if (speed > world.config.herdWalkSpeed) {
-        vx *= world.config.herdWalkSpeed / speed;
-        vy *= world.config.herdWalkSpeed / speed;
+    const maxSpeed =
+        world.groupAlarm[world.herdGroup[slot]] > 0 ? world.config.herdRunSpeed : world.config.herdWalkSpeed;
+    if (speed > maxSpeed) {
+        vx *= maxSpeed / speed;
+        vy *= maxSpeed / speed;
     }
     world.herdVx[slot] = vx;
     world.herdVy[slot] = vy;

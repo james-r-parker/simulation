@@ -33,6 +33,7 @@ describe('event codes', () => {
             PATCH_DIED: 18,
             SEEDING_REFUSED: 19,
             HERD_ROUTE_CHANGED: 20,
+            HERD_STAMPEDE: 21,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({ STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3, POISONED: 4, TRAMPLED: 5 });

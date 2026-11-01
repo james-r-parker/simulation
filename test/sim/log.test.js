@@ -379,6 +379,18 @@ describe('drainEvents', () => {
         expect(records).toEqual([{ level: 'debug', event: 'HerdRouteChanged', tick: 12, group: 3, patch: 7 }]);
     });
 
+    it('logs a herd stampede with its hunter and group size', () => {
+        const world = build();
+        world.events.count = 0;
+        const offset = pushEvent(world.events, EVENT_TYPE.HERD_STAMPEDE, 16);
+        world.events.data[offset + 2] = 2;
+        world.events.data[offset + 3] = 5;
+        world.events.data[offset + 4] = 7;
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([{ level: 'debug', event: 'HerdStampede', tick: 16, group: 2, hunter: 5, animals: 7 }]);
+    });
+
     it.each([
         ['AgentBorn', EVENT_TYPE.AGENT_BORN, 8],
         ['AgentDied', EVENT_TYPE.AGENT_DIED, 4],
