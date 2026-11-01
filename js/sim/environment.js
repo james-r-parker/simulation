@@ -6,6 +6,9 @@ import { yearTicks } from './eras.js';
 
 const SEASONS_PER_YEAR = 4;
 
+/** Origin markers for fertile zones. */
+export const ZONE_ORIGIN = Object.freeze({ DEATH: 0, DUNG: 1 });
+
 /**
  * Writes the season index and phase for a tick into `world.season`.
  * @param {World} world the world
@@ -32,7 +35,7 @@ export function updateSeason(world) {
  * @param {World} world the world
  * @returns {number} the lowest free zone slot, or the alive zone with the lowest fertility ratio when all are alive
  */
-function zoneSlot(world) {
+export function fertileZoneSlot(world) {
     const { zoneAlive, zoneFertility, zoneInitial } = world;
     let worst = 0;
     for (let i = 0; i < zoneAlive.length; i++) {
@@ -43,7 +46,22 @@ function zoneSlot(world) {
             worst = i;
         }
     }
-    return worst;
+    return zoneAlive.length === 0 ? -1 : worst;
+}
+
+/** @param {World} world @param {{slot:number,x:number,y:number,size:number,origin:number}} zone @returns {number} */
+export function writeFertileZone(world, { slot, x, y, size, origin }) {
+    if (slot < 0) {
+        return -1;
+    }
+    const fertility = size * world.config.fertileZoneFertility;
+    world.zoneAlive[slot] = 1;
+    world.zoneOrigin[slot] = origin;
+    world.zoneX[slot] = x;
+    world.zoneY[slot] = y;
+    world.zoneInitial[slot] = fertility;
+    world.zoneFertility[slot] = fertility;
+    return slot;
 }
 
 /**
@@ -55,14 +73,7 @@ function zoneSlot(world) {
  * @returns {number} the slot used
  */
 export function addFertileZone(world, x, y, size) {
-    const slot = zoneSlot(world);
-    const fertility = size * world.config.fertileZoneFertility;
-    world.zoneAlive[slot] = 1;
-    world.zoneX[slot] = x;
-    world.zoneY[slot] = y;
-    world.zoneInitial[slot] = fertility;
-    world.zoneFertility[slot] = fertility;
-    return slot;
+    return writeFertileZone(world, { slot: fertileZoneSlot(world), x, y, size, origin: ZONE_ORIGIN.DEATH });
 }
 
 /**
@@ -71,7 +82,7 @@ export function addFertileZone(world, x, y, size) {
  * @returns {void}
  */
 export function decayFertileZones(world) {
-    const { zoneAlive, zoneX, zoneY, zoneFertility, zoneInitial } = world;
+    const { zoneAlive, zoneX, zoneY, zoneFertility, zoneInitial, zoneOrigin } = world;
     const { fertileZoneDecay } = world.config;
     for (let i = 0; i < zoneAlive.length; i++) {
         if (zoneAlive[i] === 0) {
@@ -82,6 +93,7 @@ export function decayFertileZones(world) {
             zoneAlive[i] = 0;
             zoneX[i] = 0;
             zoneY[i] = 0;
+            zoneOrigin[i] = ZONE_ORIGIN.DEATH;
             zoneFertility[i] = 0;
             zoneInitial[i] = 0;
         }

@@ -1,5 +1,7 @@
 // Chooses a flora source and copies its traits to a new food item.
 import { FLORA_NAMES } from './config-flora.js';
+import { FOOD_ORIGIN } from './carcass.js';
+import { ZONE_ORIGIN } from './environment.js';
 import { fruitWeight } from './fruiting.js';
 import { pickPatch } from './food-patches.js';
 import { pickMark } from './mycelium.js';
@@ -51,6 +53,46 @@ function hasPatches(world) {
 }
 
 /**
+ * Selects a live dung zone in proportion to its remaining fertility after the spawn chance succeeds.
+ * @param {import('./world.js').World} world the world
+ * @returns {number} a zone slot, or -1 when no dung source was selected
+ */
+function dungFertility(world) {
+    let total = 0;
+    for (let slot = 0; slot < world.zoneAlive.length; slot++) {
+        if (world.zoneAlive[slot] === 1 && world.zoneOrigin[slot] === ZONE_ORIGIN.DUNG) {
+            total += world.zoneFertility[slot];
+        }
+    }
+    return total;
+}
+
+/** @param {import('./world.js').World} world @param {number} total @returns {number} */
+function pickDungZone(world, total) {
+    let last = -1;
+    let target = nextFloat(world.rng.food) * total;
+    for (let slot = 0; slot < world.zoneAlive.length; slot++) {
+        if (world.zoneAlive[slot] === 1 && world.zoneOrigin[slot] === ZONE_ORIGIN.DUNG) {
+            last = slot;
+            target -= world.zoneFertility[slot];
+            if (target < 0) {
+                return slot;
+            }
+        }
+    }
+    return last;
+}
+
+/** @param {import('./world.js').World} world @returns {number} dung zone slot, or -1 */
+function dungSource(world) {
+    const total = dungFertility(world);
+    if (total <= 0 || nextFloat(world.rng.food) >= world.config.fertileZoneSpawnChance) {
+        return -1;
+    }
+    return pickDungZone(world, total);
+}
+
+/**
  * @param {import('./world.js').World} world the world
  * @param {number} patch patch slot or -1
  * @param {number} mark mark slot or -1
@@ -82,6 +124,7 @@ function writeItem(world, slot, species, patch) {
     const row = c.flora[FLORA_NAMES[species]];
     world.foodAlive[slot] = 1;
     world.foodKind[slot] = 0;
+    world.foodOrigin[slot] = FOOD_ORIGIN.NONE;
     world.foodX[slot] = world.point[0];
     world.foodY[slot] = world.point[1];
     world.foodRadius[slot] = row.radius * c.foodRadius;
@@ -112,6 +155,23 @@ export function spawnFloraItem(world, slot, placeClear, placeInDisc) {
         sourceDisc(world, -1, mark);
         if (placeInDisc(world, world.floraDisc, c.flora.fungus.radius * c.foodRadius)) {
             return writeItem(world, slot, FLORA_NAMES.indexOf('fungus'), -1);
+        }
+    }
+    const dungZone = dungSource(world);
+    if (dungZone >= 0) {
+        const fungus = c.flora.fungus;
+        const fungusWeight = fruitWeight(world.season[1], fungus.start, fungus.span);
+        const species =
+            fungusWeight > 0 && nextFloat(world.rng.food) < fungusWeight ? FLORA_NAMES.indexOf('fungus') : 0;
+        const radius = c.flora[FLORA_NAMES[species]].radius * c.foodRadius;
+        world.floraDisc.localOnly = true;
+        world.floraDisc.cx = world.zoneX[dungZone];
+        world.floraDisc.cy = world.zoneY[dungZone];
+        world.floraDisc.discRadius = c.fertileZoneRadius;
+        if (placeInDisc(world, world.floraDisc, radius)) {
+            const item = writeItem(world, slot, species, -1);
+            world.foodOrigin[item] = FOOD_ORIGIN.DUNG_ZONE;
+            return item;
         }
     }
     const patch = patchSource(world);

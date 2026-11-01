@@ -25,6 +25,9 @@ describe('herd config', () => {
             herdCarcassTicks: 12000,
             herdStayTicks: 6000,
             herdWary: 1,
+            herdDungTicks: 900,
+            herdDungSize: 60,
+            herdDungZoneMax: 30,
             trampleDamage: 400,
         });
         expect(() => createConfig()).not.toThrow();
@@ -60,5 +63,12 @@ describe('herd config', () => {
         expect(createConfig({ herdWary: 4 }).herdWary).toBe(4);
         expect(() => createConfig({ herdWary: -0.1 })).toThrow(/herdWary/);
         expect(() => createConfig({ herdWary: 4.1 })).toThrow(/herdWary/);
+    });
+
+    it('bounds dung zones by the fertile-zone pool for active herds', () => {
+        expect(() => createConfig({ herdDungZoneMax: 101 })).toThrow(/herdDungZoneMax.*fertileZoneMax/);
+        expect(() => createConfig({ herdCount: 0, fertileZoneMax: 0 })).not.toThrow();
+        expect(() => createConfig({ herdCount: 0, herdDungZoneMax: 101 })).not.toThrow();
+        expect(() => createConfig({ herdDungZoneMax: 0 })).not.toThrow();
     });
 });

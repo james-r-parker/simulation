@@ -28,6 +28,7 @@ vi.mock('../../js/sim/eras.js', () => ({ advanceEra: rec('advanceEra') }));
 vi.mock('../../js/sim/feeding.js', () => ({ feed: rec('feed') }));
 vi.mock('../../js/sim/food.js', () => ({ ageFood: rec('ageFood'), spawnFood: rec('spawnFood') }));
 vi.mock('../../js/sim/food-patches.js', () => ({ regrowPatches: rec('regrowPatches') }));
+vi.mock('../../js/sim/herd-dung.js', () => ({ dropHerdDung: rec('dropHerdDung') }));
 vi.mock('../../js/sim/invariants.js', () => ({ assertInvariants: rec('assertInvariants') }));
 vi.mock('../../js/sim/brain.js', () => ({ forwardAll: rec('forwardAll') }));
 vi.mock('../../js/sim/physics.js', () => ({
@@ -90,6 +91,7 @@ describe('step phase bodies', () => {
             ['regrowPatches', world],
             ['refreshFruiting', world],
             ['spawnFood', world],
+            ['dropHerdDung', world],
             ['ageFood', world],
             ['decayFertileZones', world],
             ['updatePheromones', world],

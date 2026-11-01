@@ -84,6 +84,7 @@ const COVERED = [
     'groupPatchWeight',
     'groupPatch',
     'zoneAlive',
+    'zoneOrigin',
     'zoneX',
     'zoneY',
     'zoneFertility',

@@ -86,6 +86,7 @@ const FIELD_ARRAYS = [
     'groupPatchWeight',
     'groupPatch',
     'zoneAlive',
+    'zoneOrigin',
     'zoneX',
     'zoneY',
     'zoneFertility',

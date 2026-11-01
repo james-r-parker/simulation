@@ -22,6 +22,9 @@ export const HERD_DEFAULTS = {
     herdCarcassTicks: 12000,
     herdStayTicks: 6000,
     herdWary: 1,
+    herdDungTicks: 900,
+    herdDungSize: 60,
+    herdDungZoneMax: 30,
     trampleDamage: 400,
 };
 
@@ -45,6 +48,9 @@ export const HERD_RULES = {
     herdCarcassTicks: int(1),
     herdStayTicks: int(1),
     herdWary: num(0, 4),
+    herdDungTicks: int(1),
+    herdDungSize: positive(),
+    herdDungZoneMax: int(0),
     trampleDamage: num(0),
 };
 
@@ -97,4 +103,7 @@ export function checkHerds(config) {
     checkHerdEnergy(config);
     checkEventCapacity(config);
     checkPhysicalFits(config);
+    if (config.herdCount > 0 && config.herdDungZoneMax > config.fertileZoneMax) {
+        throw new Error('config.herdDungZoneMax must be at most fertileZoneMax when herds are enabled');
+    }
 }

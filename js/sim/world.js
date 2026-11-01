@@ -182,7 +182,7 @@ function allocHerdState(world) {
  */
 function allocZonesAndPheromones(world) {
     const { fertileZoneMax, worldWidth, worldHeight, pheromoneCellSize } = world.config;
-    allocRows(world, singles(Uint8Array, ['zoneAlive']), fertileZoneMax);
+    allocRows(world, singles(Uint8Array, ['zoneAlive', 'zoneOrigin']), fertileZoneMax);
     allocRows(world, singles(Float32Array, ['zoneX', 'zoneY']), fertileZoneMax);
     allocRows(world, singles(Float64Array, ['zoneFertility', 'zoneInitial']), fertileZoneMax);
     world.pheromoneGrid = Object.freeze({
