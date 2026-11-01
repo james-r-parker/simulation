@@ -2,11 +2,12 @@
 import { FLORA_NAMES } from './config-flora.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { placeSeed } from './flora-placement.js';
-import { blendTraits, mutateTraits } from './flora-traits.js';
+import { blendTraits, copyTraits, mutateTraits } from './flora-traits.js';
 import { nextFloat } from './rng.js';
 
 /** Reasons attached to a refused seed attempt. */
-export const SEED_REFUSED = Object.freeze({ POOL: 0, COOLDOWN: 1, PLACEMENT: 2 });
+export const SEED_REFUSED = Object.freeze({ POOL: 0, COOLDOWN: 1, NEAR: 2 });
+export const SEED_SOURCE = Object.freeze({ POLLEN: 0, HERD: 1 });
 
 /**
  * @param {import('./world.js').World} world the world
@@ -51,20 +52,21 @@ function sourcePatch(world, food) {
 
 /**
  * @param {import('./world.js').World} world the world
- * @param {number} slot carrier
- * @param {number} patch visited patch
- * @param {number} reason refusal code
+ * @param {{patch:number,reason:number,source:number,slot?:number}} refusal context
  * @returns {void}
  */
-function refuse(world, slot, patch, reason) {
+export function reportSeedingRefused(world, { patch, reason, source, slot = -1 }) {
     const stamp = world.tick + 1;
-    if (world.pollenRefusalTick[slot] === stamp) {
-        return;
+    if (source === SEED_SOURCE.POLLEN) {
+        if (world.pollenRefusalTick[slot] === stamp) {
+            return;
+        }
+        world.pollenRefusalTick[slot] = stamp;
     }
-    world.pollenRefusalTick[slot] = stamp;
     const at = pushEvent(world.events, EVENT_TYPE.SEEDING_REFUSED, world.tick);
     world.events.data[at + 2] = world.patchSpecies[patch];
     world.events.data[at + 3] = reason;
+    world.events.data[at + 4] = source;
 }
 
 /**
@@ -81,36 +83,36 @@ function freePatch(world) {
 }
 
 /**
+ * Plants a seedling from a source patch, optionally blending a second pollen parent first.
  * @param {import('./world.js').World} world the world
- * @param {number} patch free slot
- * @param {number} parentA pollen source
- * @param {number} parentB visited patch
- * @returns {void}
+ * @param {{x:number,y:number,parent:number,otherParent?:number}} seedling location and source patches
+ * @returns {number} the new patch slot or -1 when the pool has no free slot
  */
-function writeSeed(world, patch, parentA, parentB) {
-    const species = world.patchSpecies[parentB];
+export function plantSeedling(world, { x, y, parent, otherParent }) {
+    const patch = freePatch(world);
+    if (patch < 0) {
+        return -1;
+    }
+    const species = world.patchSpecies[parent];
     const row = world.config.flora[FLORA_NAMES[species]];
     world.patchSpecies[patch] = species;
     world.patchAlive[patch] = 1;
     world.patchSerial[patch]++;
     world.patchLowTicks[patch] = 0;
-    world.patchX[patch] = world.point[0];
-    world.patchY[patch] = world.point[1];
+    world.patchX[patch] = x;
+    world.patchY[patch] = y;
     world.patchStock[patch] = world.config.seedStock * world.config.foodPatchCapacity;
+    world.patchSeedTick[patch] = world.tick - world.config.seedCooldownTicks;
     world.patchYield[patch] = row.yield;
     world.patchSpan[patch] = row.span;
     world.patchWeight[patch] = 0;
-    world.patchSeedTick[patch] = world.tick - world.config.seedCooldownTicks;
-    blendTraits(world, parentA, parentB);
+    if (otherParent === undefined) {
+        copyTraits(world, parent);
+    } else {
+        blendTraits(world, otherParent, parent);
+    }
     mutateTraits(world, patch);
-    const at = pushEvent(world.events, EVENT_TYPE.PATCH_SEEDED, world.tick);
-    world.events.data[at + 2] = species;
-    world.events.data[at + 3] = patch;
-    world.events.data[at + 4] = parentA;
-    world.events.data[at + 5] = parentB;
-    world.events.data[at + 6] = world.patchHue[patch];
-    world.events.data[at + 7] = world.patchX[patch];
-    world.events.data[at + 8] = world.patchY[patch];
+    return patch;
 }
 
 /**
@@ -123,22 +125,45 @@ function writeSeed(world, patch, parentA, parentB) {
  */
 export function seedPatch(world, slot, parentA, parentB) {
     if (world.tick - world.patchSeedTick[parentB] < world.config.seedCooldownTicks) {
-        refuse(world, slot, parentB, SEED_REFUSED.COOLDOWN);
+        reportSeedingRefused(world, {
+            patch: parentB,
+            reason: SEED_REFUSED.COOLDOWN,
+            source: SEED_SOURCE.POLLEN,
+            slot,
+        });
         return -1;
     }
     world.patchSeedTick[parentB] = world.tick;
     clearPollen(world, slot);
     const patch = freePatch(world);
     if (patch < 0) {
-        refuse(world, slot, parentB, SEED_REFUSED.POOL);
+        reportSeedingRefused(world, { patch: parentB, reason: SEED_REFUSED.POOL, source: SEED_SOURCE.POLLEN, slot });
         return -1;
     }
     if (!placeSeed(world, parentB)) {
-        refuse(world, slot, parentB, SEED_REFUSED.PLACEMENT);
+        reportSeedingRefused(world, { patch: parentB, reason: SEED_REFUSED.NEAR, source: SEED_SOURCE.POLLEN, slot });
         return -1;
     }
-    writeSeed(world, patch, parentA, parentB);
-    return patch;
+    const seedling = plantSeedling(world, {
+        x: world.point[0],
+        y: world.point[1],
+        parent: parentB,
+        otherParent: parentA,
+    });
+    if (seedling < 0) {
+        reportSeedingRefused(world, { patch: parentB, reason: SEED_REFUSED.POOL, source: SEED_SOURCE.POLLEN, slot });
+        return -1;
+    }
+    const species = world.patchSpecies[parentB];
+    const at = pushEvent(world.events, EVENT_TYPE.PATCH_SEEDED, world.tick);
+    world.events.data[at + 2] = species;
+    world.events.data[at + 3] = seedling;
+    world.events.data[at + 4] = parentA;
+    world.events.data[at + 5] = parentB;
+    world.events.data[at + 6] = world.patchHue[seedling];
+    world.events.data[at + 7] = world.patchX[seedling];
+    world.events.data[at + 8] = world.patchY[seedling];
+    return seedling;
 }
 
 /**

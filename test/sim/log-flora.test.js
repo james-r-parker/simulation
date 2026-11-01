@@ -39,7 +39,11 @@ describe('flora events', () => {
             x: 500,
             y: 600,
         });
-        expect(records.slice(1).map((record) => record.reason)).toEqual(['pool', 'cooldown', 'placement']);
+        expect(records.slice(1).map((record) => [record.reason, record.source])).toEqual([
+            ['pool', 'pollen'],
+            ['cooldown', 'pollen'],
+            ['near', 'pollen'],
+        ]);
     });
 
     it('rejects an unknown seed refusal code', () => {
@@ -48,5 +52,29 @@ describe('flora events', () => {
         const at = pushEvent(world.events, EVENT_TYPE.SEEDING_REFUSED, 0);
         world.events.data[at + 3] = 3;
         expect(() => drainEvents(world, log)).toThrow('unknown cause');
+    });
+
+    it('logs a herd-carried seedling with its source patch', () => {
+        const world = smallWorld();
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        const log = createSimLog((record) => records.push(record), { level: 'debug' });
+        const at = pushEvent(world.events, EVENT_TYPE.HERD_SEEDED, 39);
+        world.events.data.set([2, 5, 1, 3, 4, 800, 900], at + 2);
+        drainEvents(world, log);
+        expect(records).toEqual([
+            {
+                level: 'debug',
+                event: 'HerdSeeded',
+                tick: 39,
+                herd: 2,
+                animal: 5,
+                source: 1,
+                patch: 3,
+                species: 4,
+                x: 800,
+                y: 900,
+            },
+        ]);
     });
 });

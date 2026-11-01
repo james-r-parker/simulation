@@ -30,6 +30,7 @@ export const EVENT_TYPE = Object.freeze({
     HERD_ANIMAL_DIED: 22,
     HERD_ANIMAL_BORN: 23,
     HERD_CARCASS_LOST: 24,
+    HERD_SEEDED: 25,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

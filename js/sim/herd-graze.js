@@ -3,6 +3,7 @@
 import { FOOD_KIND } from './carcass.js';
 import { depletePatchAt } from './food-patches.js';
 import { removeFood } from './world.js';
+import { loadHerdSeed } from './herd-dung.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -33,6 +34,7 @@ function eatPlant(world, animal, food) {
     const x = foodX[food];
     const y = foodY[food];
     const value = foodValue[food];
+    loadHerdSeed(world, animal, food);
     removeFood(world, food);
     depletePatchAt(world, x, y);
     world.herdStore[animal] = Math.min(

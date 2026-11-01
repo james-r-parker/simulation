@@ -25,6 +25,9 @@ export const HERD_DEFAULTS = {
     herdDungTicks: 900,
     herdDungSize: 60,
     herdDungZoneMax: 30,
+    herdSeedChance: 0.5,
+    herdSeedTicks: 24000,
+    herdSeedMinDistance: 800,
     trampleDamage: 400,
 };
 
@@ -51,6 +54,9 @@ export const HERD_RULES = {
     herdDungTicks: int(1),
     herdDungSize: positive(),
     herdDungZoneMax: int(0),
+    herdSeedChance: UNIT,
+    herdSeedTicks: int(1),
+    herdSeedMinDistance: positive(),
     trampleDamage: num(0),
 };
 
@@ -65,10 +71,10 @@ function checkHerdEnergy(config) {
 function checkEventCapacity(config) {
     const herdMax = config.herdCount * config.herdSize;
     const events =
-        MAX_EVENTS_PER_SLOT * config.maxAgents + 2 * config.floraPatchMax + 4 * herdMax + 2 * config.herdCount;
+        MAX_EVENTS_PER_SLOT * config.maxAgents + 2 * config.floraPatchMax + 5 * herdMax + 2 * config.herdCount;
     if (config.eventCapacity < events) {
         throw new Error(
-            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax + 4 x herdMax + 2 x herdCount (${events})`,
+            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount (${events})`,
         );
     }
 }

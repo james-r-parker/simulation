@@ -166,7 +166,19 @@ function allocHerdState(world) {
     world.herdDesired = new Float32Array(4);
     allocRows(world, singles(Uint8Array, ['herdAlive', 'herdGroup']), herdMax);
     allocRows(world, singles(Float32Array, ['herdX', 'herdY', 'herdVx', 'herdVy']), herdMax);
-    allocRows(world, singles(Uint32Array, ['herdAge', 'herdLife', 'herdGraze', 'herdId']), herdMax);
+    allocRows(
+        world,
+        singles(Uint32Array, [
+            'herdAge',
+            'herdLife',
+            'herdGraze',
+            'herdId',
+            'herdSeedPatch',
+            'herdSeedSerial',
+            'herdSeedTicks',
+        ]),
+        herdMax,
+    );
     allocRows(world, singles(Float64Array, ['herdStore']), herdMax);
     allocRows(world, singles(Uint32Array, ['groupAlarm', 'groupStay', 'groupBirthTimer']), herdCount);
     allocRows(world, singles(Float32Array, ['groupFleeX', 'groupFleeY']), herdCount);

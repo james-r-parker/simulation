@@ -7,7 +7,8 @@ export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 4
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
 const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled']);
-const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'placement']);
+const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'near']);
+const SEED_SOURCE_NAMES = Object.freeze(['pollen', 'herd']);
 const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
 
 /**
@@ -306,6 +307,7 @@ function emitSeedingRefused(log, d, o) {
         tick: d[o + 1],
         species: d[o + 2],
         reason: causeName(SEED_REFUSED_NAMES, d[o + 3], 'SeedingRefused'),
+        source: causeName(SEED_SOURCE_NAMES, d[o + 4], 'SeedingRefused source'),
     });
 }
 
@@ -341,6 +343,20 @@ function emitHerdCarcassLost(log, d, o) {
     log.log('warn', 'HerdCarcassLost', { tick: d[o + 1], herd: d[o + 2] });
 }
 
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdSeeded(log, d, o) {
+    log.log('debug', 'HerdSeeded', {
+        tick: d[o + 1],
+        herd: d[o + 2],
+        animal: d[o + 3],
+        source: d[o + 4],
+        patch: d[o + 5],
+        species: d[o + 6],
+        x: d[o + 7],
+        y: d[o + 8],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -366,6 +382,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HERD_ANIMAL_DIED]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalDied },
     [EVENT_TYPE.HERD_ANIMAL_BORN]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalBorn },
     [EVENT_TYPE.HERD_CARCASS_LOST]: { level: LOG_LEVEL.warn, emit: emitHerdCarcassLost },
+    [EVENT_TYPE.HERD_SEEDED]: { level: LOG_LEVEL.debug, emit: emitHerdSeeded },
 });
 
 /**

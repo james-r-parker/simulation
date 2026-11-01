@@ -26,7 +26,7 @@ import { buildHash } from './spatial-hash.js';
 import { stepHerds } from './herd-motion.js';
 import { grazeHerds } from './herd-graze.js';
 import { ageAndReproduceHerds } from './herd-life.js';
-import { dropHerdDung } from './herd-dung.js';
+import { ageHerdSeeds, dropHerdDung } from './herd-dung.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {(world: World, policy: any) => void} PhaseRun */
@@ -112,8 +112,9 @@ function field(world) {
     regrowPatches(world);
     refreshFruiting(world);
     spawnFood(world);
-    grazeHerds(world);
+    ageHerdSeeds(world);
     dropHerdDung(world);
+    grazeHerds(world);
     ageAndReproduceHerds(world);
     ageFood(world);
     decayFertileZones(world);

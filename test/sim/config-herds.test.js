@@ -28,6 +28,9 @@ describe('herd config', () => {
             herdDungTicks: 900,
             herdDungSize: 60,
             herdDungZoneMax: 30,
+            herdSeedChance: 0.5,
+            herdSeedTicks: 24000,
+            herdSeedMinDistance: 800,
             trampleDamage: 400,
         });
         expect(() => createConfig()).not.toThrow();
@@ -41,8 +44,8 @@ describe('herd config', () => {
             maxAgents: 500,
             floraPatchMax: 256,
         };
-        expect(() => createConfig({ ...config, eventCapacity: 5551 })).toThrow(/eventCapacity.*5552/);
-        expect(() => createConfig({ ...config, eventCapacity: 5552 })).not.toThrow();
+        expect(() => createConfig({ ...config, eventCapacity: 5807 })).toThrow(/eventCapacity.*5808/);
+        expect(() => createConfig({ ...config, eventCapacity: 5808 })).not.toThrow();
     });
 
     it('requires active herds to fit the wall, refuge, speed and hash limits', () => {
