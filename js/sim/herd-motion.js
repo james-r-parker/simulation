@@ -157,6 +157,7 @@ function updateRoute(world, group) {
     const current = world.groupPatch[group];
     if (current >= 0) {
         if (atPatch(world, group)) {
+            world.groupPatchWeight[group] = world.patchWeight[current];
             world.groupStay[group] = Math.max(
                 1,
                 Math.floor(world.config.herdStayTicks * (1 + STAY_SPREAD * nextFloat(world.rng.herds))),

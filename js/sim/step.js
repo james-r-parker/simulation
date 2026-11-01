@@ -24,6 +24,7 @@ import { senseAll } from './sensors.js';
 import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
 import { stepHerds } from './herd-motion.js';
+import { grazeHerds } from './herd-graze.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {(world: World, policy: any) => void} PhaseRun */
@@ -109,6 +110,7 @@ function field(world) {
     regrowPatches(world);
     refreshFruiting(world);
     spawnFood(world);
+    grazeHerds(world);
     ageFood(world);
     decayFertileZones(world);
     updatePheromones(world);

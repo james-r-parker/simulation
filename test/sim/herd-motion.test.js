@@ -66,6 +66,28 @@ describe('stepHerds', () => {
         expect(world.rng.herds.s).toEqual(rngBefore);
     });
 
+    it('captures the patch value on arrival and leaves when it falls below its share', () => {
+        const world = build();
+        world.herdAlive[1] = 0;
+        world.herdStore[1] = 0;
+        world.patchAlive.fill(1);
+        world.patchWeight[0] = 50;
+        world.patchWeight[1] = 80;
+        world.patchX[0] = world.herdX[0];
+        world.patchY[0] = world.herdY[0];
+        world.patchX[1] = 600;
+        world.patchY[1] = 600;
+        world.groupPatch[0] = 0;
+        world.groupPatchWeight[0] = 100;
+        stepHerds(world);
+        expect(world.groupPatchWeight[0]).toBe(50);
+        expect(world.groupStay[0]).toBeGreaterThan(0);
+        world.groupStay[0] = 0;
+        world.patchWeight[0] = world.groupPatchWeight[0] * world.config.herdLeaveShare - 1;
+        stepHerds(world);
+        expect(world.groupPatch[0]).toBe(1);
+    });
+
     it('keeps idle when there are no herd slots', () => {
         const world = createWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, herdCount: 0 }), testPolicy);
         clearEvents(world.events);
