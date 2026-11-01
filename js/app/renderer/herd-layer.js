@@ -2,13 +2,14 @@
 
 import { AdditiveBlending, ShaderMaterial } from 'three';
 import { createSections, readSections } from '../snapshot-view.js';
-import { PALETTE } from './colors.js';
+import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 import { HERD_FRAGMENT, HERD_VERTEX } from './world-layers-shader.js';
 
 const SECTIONS = createSections();
-const MIN_PX = 2;
-const INTENSITY = 0.015;
+const MIN_PX = 4;
+const MOTE_LUMINANCE = 0.2126729 * PALETTE.mote[0] + 0.7151522 * PALETTE.mote[1] + 0.072175 * PALETTE.mote[2];
+const INTENSITY = SCENERY_MAX_LUMINANCE / MOTE_LUMINANCE;
 
 /** @param {Float32Array} f32 snapshot floats @param {{herdStart: number, herdCount: number}} section herd records @param {Float32Array} out packed bodies @returns {number} rows written */
 export function packHerdBodies(f32, section, out) {
