@@ -14,7 +14,7 @@ const SMALL = {
     initialFood: 0,
 };
 
-const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora'];
+const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora', 'herds'];
 
 /** Arrays whose every element the hash must cover; `hidden` is limited to its agent rows. */
 const COVERED = [
@@ -60,11 +60,28 @@ const COVERED = [
     'foodRadius',
     'foodValue',
     'foodAge',
+    'foodOrigin',
     'obsX',
     'obsY',
-    'obsVx',
-    'obsVy',
     'obsRadius',
+    'herdAlive',
+    'herdGroup',
+    'herdX',
+    'herdY',
+    'herdVx',
+    'herdVy',
+    'herdAge',
+    'herdLife',
+    'herdGraze',
+    'herdId',
+    'herdStore',
+    'groupAlarm',
+    'groupStay',
+    'groupBirthTimer',
+    'groupFleeX',
+    'groupFleeY',
+    'groupPatchWeight',
+    'groupPatch',
     'zoneAlive',
     'zoneX',
     'zoneY',
@@ -80,11 +97,11 @@ const COVERED = [
 ];
 
 /**
- * Builds a small world with all six RNG streams attached, as `createWorld` would.
+ * Builds a small world with all eight RNG streams attached, as `createWorld` would.
  * @returns {ReturnType<typeof allocateWorld>}
  */
 function makeWorld() {
-    const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
+    const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, herdCount: 2, herdSize: 2 }));
     const root = createRng(1);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     return world;
@@ -125,7 +142,7 @@ describe('hashWorld', () => {
         expect(hashWorld(world)).not.toBe(before);
     });
 
-    it.each(['tick', 'nextId', 'population', 'foodCount', 'cloudCount'])(
+    it.each(['tick', 'nextId', 'population', 'foodCount', 'cloudCount', 'herdNextId'])(
         'changes when the scalar %s changes',
         (name) => {
             const world = makeWorld();

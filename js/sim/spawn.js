@@ -5,6 +5,7 @@ import { ENERGY_SOURCE, addEnergy } from './energy.js';
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { spawnFloraItem } from './flora-spawn.js';
 import { createPatches } from './food-patches.js';
+import { createHerds } from './herds.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain } from './terrain.js';
 import { drawSex } from './sex.js';
@@ -15,7 +16,7 @@ import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
-const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora'];
+const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora', 'herds'];
 /** Energy source for each cause an agent can be spawned with by this module. */
 /** @type {Map<number, number>} */
 const SPAWN_SOURCE = new Map([
@@ -228,6 +229,7 @@ export function createWorld(config, policy) {
     world.hash = createSpatialHash(config);
     placeTerrain(world);
     createPatches(world);
+    createHerds(world);
     for (let i = 0; i < config.initialFood; i++) {
         spawnFoodItem(world);
     }

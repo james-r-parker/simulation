@@ -239,7 +239,7 @@ describe('assertInvariants', () => {
         });
     });
 
-    it('names the eight invariants', () => {
+    it('names the nine invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
@@ -249,6 +249,7 @@ describe('assertInvariants', () => {
             CALLS: 'calls',
             MERIT: 'merit',
             DOSE: 'dose',
+            HERDS: 'herds',
         });
     });
 

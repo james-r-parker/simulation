@@ -3,6 +3,9 @@
 /** The `foodKind` codes: ordinary plant food is 0, a carcass is 1. */
 export const FOOD_KIND = Object.freeze({ PLANT: 0, MEAT: 1 });
 
+/** The origin of a food item; `NONE` is the existing plant and carcass baseline. */
+export const FOOD_ORIGIN = Object.freeze({ NONE: 0, HERD_CARCASS: 1, DUNG_ZONE: 2 });
+
 /** @typedef {import('./world.js').World} World */
 
 /**

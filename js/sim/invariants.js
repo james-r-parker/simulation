@@ -15,6 +15,7 @@ export const INVARIANT = Object.freeze({
     CALLS: 'calls',
     MERIT: 'merit',
     DOSE: 'dose',
+    HERDS: 'herds',
 });
 
 /** Relative tolerance on the ledger comparison. */
@@ -266,6 +267,76 @@ function checkDose(world) {
 }
 
 /**
+ * Checks live herd state, rock clearance and per-group capacity without allocating scratch memory.
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkHerdState(world) {
+    const counts = world.groupAnimalCount;
+    counts.fill(0);
+    for (let slot = 0; slot < world.herdAlive.length; slot++) {
+        if (world.herdAlive[slot] !== 1) {
+            if (world.herdStore[slot] !== 0) {
+                throw violation(
+                    INVARIANT.HERDS,
+                    world,
+                    { slot, value: world.herdStore[slot] },
+                    'a dead herd slot holds store',
+                );
+            }
+            continue;
+        }
+        checkHerdAnimal(world, slot, counts);
+    }
+    for (let group = 0; group < counts.length; group++) {
+        if (counts[group] > world.config.herdSize) {
+            throw violation(INVARIANT.HERDS, world, { slot: group, value: counts[group] }, 'a group exceeds herdSize');
+        }
+    }
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the herd slot
+ * @param {Uint16Array} counts scratch counts by group
+ * @returns {void}
+ */
+function checkHerdAnimal(world, slot, counts) {
+    for (const name of ['herdX', 'herdY', 'herdVx', 'herdVy', 'herdStore']) {
+        if (!Number.isFinite(world[name][slot])) {
+            throw violation(INVARIANT.HERDS, world, { slot, value: world[name][slot] }, `${name} is not finite`);
+        }
+    }
+    const x = world.herdX[slot];
+    const y = world.herdY[slot];
+    const { worldWidth, worldHeight, herdRadius, herdStoreMax } = world.config;
+    if (!(x >= herdRadius && x <= worldWidth - herdRadius && y >= herdRadius && y <= worldHeight - herdRadius)) {
+        throw violation(INVARIANT.HERDS, world, { slot, value: x }, 'animal circle is outside the world');
+    }
+    if (world.herdStore[slot] < 0 || world.herdStore[slot] > herdStoreMax) {
+        throw violation(INVARIANT.HERDS, world, { slot, value: world.herdStore[slot] }, 'store is outside its bounds');
+    }
+    const group = world.herdGroup[slot];
+    if (group >= counts.length) {
+        throw violation(INVARIANT.HERDS, world, { slot, value: group }, 'group index is out of bounds');
+    }
+    counts[group] += 1;
+    checkHerdClearance(world, slot);
+}
+
+/** @param {import('./world.js').World} world the world @param {number} slot the herd slot @returns {void} */
+function checkHerdClearance(world, slot) {
+    for (let rock = 0; rock < world.obsRadius.length; rock++) {
+        const reach = world.config.herdRadius + world.obsRadius[rock];
+        const dx = world.herdX[slot] - world.obsX[rock];
+        const dy = world.herdY[slot] - world.obsY[rock];
+        if (dx * dx + dy * dy < reach * reach) {
+            throw violation(INVARIANT.HERDS, world, { slot, value: rock }, 'animal overlaps a rock');
+        }
+    }
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -279,6 +350,7 @@ export function assertInvariants(world) {
     checkCalls(world);
     checkMerit(world);
     checkDose(world);
+    checkHerdState(world);
     assertFlora(world);
     assertPollen(world);
     assertMycelium(world);
