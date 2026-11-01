@@ -37,6 +37,14 @@ describe('world layer shaders', () => {
         expect(shaders.FOOD_FRAGMENT).toContain('mix(uColor, uMeatColor, vMeat)');
     });
 
+    it('selects plant shapes and hue separately from the carcass sparkle', () => {
+        expect(shaders.FOOD_VERTEX).toContain('attribute vec2 iLook');
+        expect(shaders.FOOD_FRAGMENT).toContain('plantShape(vLocal, vLook.x)');
+        expect(shaders.FOOD_FRAGMENT).toContain('plantColor(vLook.y)');
+        expect(shaders.FOOD_FRAGMENT).toContain('smoothstep(0.0, 0.05, vAge)');
+        expect(shaders.FOOD_FRAGMENT).toContain('vMeat < 0.5');
+    });
+
     it('shades the rock body from world position only, so touching rocks leave no arc inside the ridge', () => {
         expect(shaders.OBSTACLE_FRAGMENT).toContain('vWorld * 0.045');
         expect(shaders.OBSTACLE_FRAGMENT).not.toMatch(/radialLit|d \/ max\(bodyRadius[^;]*\) *\*/);

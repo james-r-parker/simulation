@@ -17,7 +17,7 @@ export const LOOK_OFF = -1;
  * Which column of the Phase 6 quality-tier table an item draws with: 0 full, 1 reduced, 2 the level-2 form,
  * `LOOK_OFF` not drawn.
  * @typedef {{rocks?: number, aurora?: number, terrain?: number, motion?: number, threads?: number, decay?: number,
- *   finish?: number}} Look
+ *   finish?: number, flora?: number}} Look
  */
 
 /**
