@@ -1,7 +1,7 @@
 # Flora
 
 **Status:** In progress - Phases 1 to 4 code are built, E69-E74 calibration is recorded, and `toxinDose: 1.2` is the measured default; `floraPatchMax` remains 32. T7, T16 and T24 detector-power checks, T33's 4K GPU performance measurement and default-world clip, and T35 conformance remain owed. Pollination and hue targets, plus global predator/family criteria, were not met and remain explicit balancing follow-ups, not passes.
-**Validated:** e5bb5cb (2026-11-01)
+**Validated:** b3f11c6 (2026-11-01)
 **Priority:** 2 - flora phases in order, ahead of the paused natural-selection balancing work (user, 2026-10-31)
 **Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
@@ -249,7 +249,7 @@ Each phase's screen also states which scene its arms serve and which detector re
 
 **Done criteria.** Compare E73 candidates with current Flora defaults on the same 16 seeds and apply the default `eval:compare` minimum effect to the named Flora signals and local-economy targets. E69 and inherited global survival/family differences are reported for balancing and are not blockers. E74 repeats the retained default or selected candidate for 600000 ticks; report its feature/economy metrics and balancing diagnostics, without claiming an unmeasured temporal trend.
 
-**Recorded outcome.** E73/E74 support `toxinDose: 1.2`, now the config default; `floraPatchMax: 48` was rejected and the default remains 32. The local toxin and economy criteria were met. The required pollination and hue thresholds remain unmet, and the global predator/family thresholds also remain unmet; those outcomes are carried to balancing without being marked as passes. This plan's implementation is complete, while those ecological targets, detector power, the performance measurements and the 4K clip remain visible follow-up work.
+**Recorded outcome.** E73/E74 support `toxinDose: 1.2`, now the config default; `floraPatchMax: 48` was rejected and the default remains 32. The local toxin and economy criteria were met. The required pollination and hue thresholds remain unmet, and the global predator/family thresholds also remain unmet; those outcomes are carried to balancing without being marked as passes. Feature code is built; plan closeout remains in progress until current-default detector power, the 4K GPU measurement and clip, and T35 conformance are complete.
 
 | Criterion                                                                                                                                                                                                                                                                                                                                                                   | Measured by                             |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
