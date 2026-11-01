@@ -45,6 +45,8 @@ export const SCENE_DIRECTIONS = Object.freeze({
     'eval.pollination_rate': 'watch',
     'eval.flora_hue_spread': 'watch',
     'eval.flora_patch_pool_full_share': 'watch',
+    'eval.flora_patch_death_rate': 'watch',
+    'eval.flora_seed_bank_occupancy_share': 'watch',
     'eval.toxic_avoidance': 'watch',
     'eval.toxic_death_share': 'watch',
     'eval.sick_share': 'watch',

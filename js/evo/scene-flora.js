@@ -28,6 +28,9 @@ export function createFloraScene() {
         hueCheckpoints: 0,
         fullPoolCheckpoints: 0,
         patchPoolCheckpoints: 0,
+        patchDeaths: 0,
+        seedBankOccupancySum: 0,
+        seedBankCheckpoints: 0,
     };
 }
 
@@ -51,6 +54,7 @@ export function trackFlora(scene, world) {
             sampleAvailability(scene, world);
             sampleHues(scene, world);
             samplePatchPool(scene, world);
+            sampleSeedBankOccupancy(scene, world);
         }
     }
     for (let i = 0; i < scene.energy.length; i++) {
@@ -105,6 +109,8 @@ function trackEvents(scene, world) {
             scene.poisoned += Number(data[at + 4] === DEATH_CAUSE.POISONED);
         } else if (data[at] === EVENT_TYPE.PATCH_SEEDED) {
             scene.pollinations++;
+        } else if (data[at] === EVENT_TYPE.PATCH_DIED && data[at + 1] > BURN_IN_TICKS) {
+            scene.patchDeaths++;
         }
     }
 }
@@ -135,6 +141,35 @@ function samplePatchPool(scene, world) {
     }
     scene.patchPoolCheckpoints++;
     scene.fullPoolCheckpoints += Number(alive === world.config.floraPatchMax);
+}
+
+/**
+ * @param {ReturnType<typeof createFloraScene>} scene the scene
+ * @param {import('../sim/world.js').World} world the world
+ * @returns {void}
+ */
+function sampleSeedBankOccupancy(scene, world) {
+    let occupied = 0;
+    for (let patch = 0; patch < world.patchBank.length; patch++) {
+        occupied += Number(world.patchBank[patch] > 0);
+    }
+    scene.seedBankOccupancySum += occupied / world.patchBank.length;
+    scene.seedBankCheckpoints++;
+}
+
+/**
+ * @param {ReturnType<typeof createFloraScene>} scene the scene
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} patch turnover and seed-bank persistence
+ */
+function patchPersistenceMetrics(scene) {
+    return {
+        'eval.flora_patch_death_rate':
+            scene.ticks > 0 ? ok((1000 * scene.patchDeaths) / scene.ticks) : none('no observed ticks after burn-in'),
+        'eval.flora_seed_bank_occupancy_share':
+            scene.seedBankCheckpoints > 0
+                ? ok(scene.seedBankOccupancySum / scene.seedBankCheckpoints)
+                : none('no seed-bank checkpoints after burn-in'),
+    };
 }
 
 /**
@@ -264,6 +299,7 @@ export function floraMetrics(scene) {
             scene.deaths > 0 ? ok(scene.poisoned / scene.deaths) : none('no deaths after burn-in'),
         'eval.sick_share':
             scene.agentTicks > 0 ? ok(scene.sickTicks / scene.agentTicks) : none('no alive agent-ticks after burn-in'),
+        ...patchPersistenceMetrics(scene),
     };
     for (let species = 0; species < FLORA_NAMES.length; species++) {
         let energy = 0;

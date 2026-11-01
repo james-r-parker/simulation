@@ -53,5 +53,7 @@ describe('the scene metrics', () => {
         expect(intendedDirection('eval.pollination_rate')).toBe('higher');
         expect(intendedDirection('eval.flora_hue_spread')).toBe('higher');
         expect(intendedDirection('eval.flora_patch_pool_full_share')).toBe('lower');
+        expect(intendedDirection('eval.flora_patch_death_rate')).toBe('lower');
+        expect(intendedDirection('eval.flora_seed_bank_occupancy_share')).toBe('lower');
     });
 });
