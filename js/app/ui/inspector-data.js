@@ -6,9 +6,6 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
 import { familyCss } from './css-color.js';
 import { nowLine } from './hover-peek.js';
-import { RAY_CHANNELS } from '../../sim/brain-layout.js';
-
-export { RAY_CHANNELS };
 /** The hidden grid's width in cells. */
 export const HEATMAP_COLUMNS = 8;
 /** The class channels a spoke is coloured by, after the proximity channel. */
@@ -23,6 +20,8 @@ export const CLASS_CHANNELS = Object.freeze([
     'smoke',
     'megafauna',
 ]);
+/** Raw values per spoke: proximity followed by each displayed class channel. */
+const RAY_INPUT_STRIDE = CLASS_CHANNELS.length + 1;
 
 /** Output names as shown, where the worker's name is short. */
 const OUTPUT_TITLES = Object.freeze({
@@ -134,7 +133,7 @@ function radarOf(row, rayCount) {
     const lengths = new Float32Array(rayCount);
     const channels = new Int8Array(rayCount).fill(-1);
     for (let k = 0; k < rayCount; k++) {
-        const at = k * RAY_CHANNELS;
+        const at = k * RAY_INPUT_STRIDE;
         lengths[k] = Math.min(Math.max(row[at], 0), 1);
         let best = 0;
         for (let c = 0; c < CLASS_CHANNELS.length; c++) {
@@ -157,7 +156,7 @@ function groupsOf(row, { rayCount, labels }) {
     const groups = new Map();
     labels.forEach((label, i) => {
         const bars = groups.get(label.group) ?? [];
-        bars.push({ label: label.name, value: clamp1(row[rayCount * RAY_CHANNELS + i]) });
+        bars.push({ label: label.name, value: clamp1(row[rayCount * RAY_INPUT_STRIDE + i]) });
         groups.set(label.group, bars);
     });
     return [...groups].map(([name, bars]) => ({ name, bars }));
