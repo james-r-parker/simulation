@@ -7,12 +7,12 @@ describe('herd config', () => {
     it('uses the plan defaults and raises event storage for herd events', () => {
         expect(DEFAULTS).toMatchObject({
             eventCapacity: 8192,
-            herdCount: 4,
+            herdCount: 6,
             herdSize: 8,
             herdRadius: 80,
             herdWalkSpeed: 1.5,
             herdRunSpeed: 6.5,
-            herdStartleRadius: 700,
+            herdStartleRadius: 200,
             herdStampedeTicks: 360,
             herdLifeTicks: 144000,
             herdBirthTicks: 12000,
@@ -22,7 +22,7 @@ describe('herd config', () => {
             herdGrazeTicks: 30,
             herdAssimilation: 0.3,
             herdLeaveShare: 0.4,
-            herdCarcassTicks: 6000,
+            herdCarcassTicks: 12000,
             herdStayTicks: 6000,
             trampleDamage: 400,
         });
