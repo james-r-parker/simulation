@@ -1911,6 +1911,31 @@
       "note": "Screens: predator-metabolism (6 arms: fast-0.3 / fast-0.15 resting loss, meal-600), predator-gorge (7 arms: the 3x store, bite 20 and 40), instinct (8 arms: instinctWeight 0, 0.5, 1, 2 with fast-meal, gorge and bite20). Metabolism alone: best fast-0.3-meal-600 presence 0.24, pop 203, pop > min 4/8. Gorge with bite20 alone: presence 0.09 to 0.28, still 1 to 4 of 8 seeds above min. Instincts alone (inst0.5/1/2): pop above min 8/8, catch 8/8, pop mean 423-482, but predator_presence only 0.01 to 0.09. Only inst1-gorge-bite20 clears the gate: predator_presence 0.67 (0.09 to 1.0 by seed), spec_effective 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (seed 5 has 7; the other seven have 0 or 1), catch_rate 0.42, deliberate_food_share 0.53, alarm_precision 0.20 (only 2 of 8 seeds call), mating_share 0.54, pop mean 403, about 2972 predator births per run, spec_dominance 0.60. The screen table's own columns still read FAIL for it (popAboveMin fails on seed 5 at 0.55 of the samples, lineages >= 5 and spec <= 70% fail), judged on the plan's gate: final population above the floor on every seed (popBelowMax column 55 to 481, seed 5 lowest), presence, spec_effective. Known issue: predators boom and bust, alive at the end in 3 of 8 seeds; balancing follows. Prediction right on the gate and on instincts lifting survival, wrong on instincts alone lifting presence. Decision: adopt instinctWeight 1, predator passiveLossMultiplier 0.3, maxEnergyMultiplier 3, biteMultiplier 20 and predatorKillEnergy 600 as the defaults."
     },
     {
+      "id": "E69",
+      "date": "2026-11-01",
+      "branch": "main",
+      "hypothesis": "The balanced Phase 4 defaults before Flora provide the reference for measuring Flora effects on survival, genetic families, seasonal food access and the food economy.",
+      "prediction": "Reference only (16 seeds x 200000 ticks, policy map-elites-v6, source commit f649cd8); no comparison verdicts. Records the baseline for E70-E74. Flora-specific metrics are not present in this pre-Flora report.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_family_effective",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan",
+        "eval.deliberate_food_share",
+        "eval.patch_leave_depleted",
+        "eval.carcass_meal_share",
+        "eval.winter_basin_density"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "Phase 4 balanced defaults at main commit f649cd8 (before Flora T1)",
+      "after": "evals/screens/results/flora/E69-reference.report.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Recorded reference-only run from f649cd8; 16 seeds x 200000 ticks; configHash ce9f2df038b71536; report SHA256 04123cfc642c4d2bad10ec2b57e47de26ed87cec9eee26a9c54d77a14a230132. Predators at end: 0/16 seeds; at least one prey type: 16/16; basin_family_effective >= 3: 0/16 (mean 1.0208459). Means: food_energy_per_1k 420.5615653, fed_median_lifespan 7007, deliberate_food_share 0.5281707, patch_leave_depleted 0.3242030, carcass_meal_share 0.8990197, winter_basin_density 0.9458033. Flora-specific metrics are absent from this pre-T1 report. E69 is recorded; E70-E74 remain owed."
+    },
+    {
       "id": "E75",
       "date": "2026-11-01",
       "branch": "feat/megafauna-p1-stampede",

@@ -15,3 +15,5 @@ manifest.json
 wrangler.toml
 vite.config.js
 start-server.*
+# Native eval output carries long numeric traces; preserve the report bytes.
+evals/screens/results/**/*.report.json
