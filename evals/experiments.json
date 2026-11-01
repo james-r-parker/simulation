@@ -1911,6 +1911,49 @@
       "note": "Screens: predator-metabolism (6 arms: fast-0.3 / fast-0.15 resting loss, meal-600), predator-gorge (7 arms: the 3x store, bite 20 and 40), instinct (8 arms: instinctWeight 0, 0.5, 1, 2 with fast-meal, gorge and bite20). Metabolism alone: best fast-0.3-meal-600 presence 0.24, pop 203, pop > min 4/8. Gorge with bite20 alone: presence 0.09 to 0.28, still 1 to 4 of 8 seeds above min. Instincts alone (inst0.5/1/2): pop above min 8/8, catch 8/8, pop mean 423-482, but predator_presence only 0.01 to 0.09. Only inst1-gorge-bite20 clears the gate: predator_presence 0.67 (0.09 to 1.0 by seed), spec_effective 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (seed 5 has 7; the other seven have 0 or 1), catch_rate 0.42, deliberate_food_share 0.53, alarm_precision 0.20 (only 2 of 8 seeds call), mating_share 0.54, pop mean 403, about 2972 predator births per run, spec_dominance 0.60. The screen table's own columns still read FAIL for it (popAboveMin fails on seed 5 at 0.55 of the samples, lineages >= 5 and spec <= 70% fail), judged on the plan's gate: final population above the floor on every seed (popBelowMax column 55 to 481, seed 5 lowest), presence, spec_effective. Known issue: predators boom and bust, alive at the end in 3 of 8 seeds; balancing follows. Prediction right on the gate and on instincts lifting survival, wrong on instincts alone lifting presence. Decision: adopt instinctWeight 1, predator passiveLossMultiplier 0.3, maxEnergyMultiplier 3, biteMultiplier 20 and predatorKillEnergy 600 as the defaults."
     },
     {
+      "id": "E75",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p1-stampede",
+      "hypothesis": "The Phase 1 reference with herds disabled records the flora-final world before herds compete for food or add carcasses.",
+      "prediction": "Reference only (16 seeds x 200000 ticks, policy live, herdCount 0); no comparison verdicts. Records the baseline for E76 and later Phase 1 comparisons. Not run yet: E75 is owed while the balancing screens hold the CPU lock.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan",
+        "eval.patch_leave_depleted",
+        "eval.gap_crossers"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "flora-final defaults with herdCount 0 (reference configuration)",
+      "after": "not run",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Owed per megafauna Phase 1 T14. Do not run until the user says the machine is free; E75-E80 were deferred because the CPU was busy."
+    },
+    {
+      "id": "E76",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p1-stampede",
+      "hypothesis": "Screen the startle radius against current hunter density before tuning herd stores; then, at the selected radius, screen herd count, size, radius, speed, grazing duration and assimilation.",
+      "prediction": "Stage 1 (16 seeds x 200000 ticks, policy live): compare startle radii 200, 400, 700 and 1000 with defaults using eval.herd_grazed_share, eval.herd_stampede_rate and eval.predators_at_end. Expect 200 to produce fewer stampedes and more grazing than 1000; the chosen radius is the one that permits grazing without losing the stampede scene. Stage 2 is conditional on Stage 1 and uses the chosen radius: herdCount 2/4/6, herdSize 6/10, herdRadius 60/90, herdRunSpeed 5/7.5, herdGrazeTicks 15/60 and herdAssimilation 0.15/0.5. Compare eval.dodge_skill and eval.trampled_share for Luck is not skill, and eval.herd_animals and eval.herd_grazed_share for Boom and bust. Predictions are qualitative until the owed runs exist; no screen values have been adopted.",
+      "targets": [
+        "eval.herd_grazed_share",
+        "eval.herd_stampede_rate",
+        "eval.predators_at_end",
+        "eval.dodge_skill",
+        "eval.trampled_share",
+        "eval.herd_animals"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E75 reference (not run)",
+      "after": "evals/screens/herds.grid.json (Stage 1; Stage 2 arms are conditional on its result)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Owed per megafauna Phase 1 T14. Grid defines Stage 1 only so the conditional Stage 2 sweep cannot accidentally run before Stage 1 is interpreted. E75-E80 were deferred because the CPU was busy; run only when the user says the machine is free."
+    },
+    {
       "id": "E81",
       "date": "2026-10-30",
       "branch": "evals/balance-screen",

@@ -8,10 +8,12 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } fr
 import { depletePatchAt } from './food-patches.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
-import { FOOD_KIND } from './carcass.js';
+import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
+
+const HERD_CARCASS_BITE = 400;
 
 /**
  * Eats one food if the agent's circle overlaps it.
@@ -30,20 +32,38 @@ function tryEat(world, slot, food) {
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        const raw = share === 1 ? world.foodValue[food] : world.foodValue[food] * share;
-        const value = isMeat ? raw : ingestToxin(world, slot, raw, world.foodTox[food]);
-        const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
-        world.foodEnergy[slot] += stored;
-        const { temperatureGainEat, foodEnergy } = world.config;
-        gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
-        world.ateTimer[slot] = 0;
-        if (!isMeat) {
-            carryPollen(world, slot, food);
-            depletePatchAt(world, world.foodX[food], world.foodY[food]);
-            world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
-            world.floraMeals[0]++;
-            world.floraMeals[1] += Number(world.foodTox[food] > 0);
+        consumeFood(world, slot, food, share);
+    }
+}
+
+/** @param {Record<string, any>} world @param {number} slot @param {number} food @param {number} share */
+function consumeFood(world, slot, food, share) {
+    const isMeat = world.foodKind[food] === FOOD_KIND.MEAT;
+    const herdCarcass = world.foodOrigin[food] === FOOD_ORIGIN.HERD_CARCASS;
+    const available = herdCarcass ? Math.min(HERD_CARCASS_BITE, world.foodValue[food]) : world.foodValue[food];
+    const raw = share === 1 ? available : available * share;
+    const value = isMeat ? raw : ingestToxin(world, slot, raw, world.foodTox[food]);
+    const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
+    world.foodEnergy[slot] += stored;
+    world.foodEatenBySpec[world.spec[slot]] += stored;
+    const { temperatureGainEat, foodEnergy } = world.config;
+    gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
+    world.ateTimer[slot] = 0;
+    if (!isMeat) {
+        carryPollen(world, slot, food);
+        depletePatchAt(world, world.foodX[food], world.foodY[food]);
+        world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
+        world.floraMeals[0]++;
+        world.floraMeals[1] += Number(world.foodTox[food] > 0);
+    }
+    if (herdCarcass) {
+        world.foodValue[food] -= stored / share;
+        world.herdTotals[1] += stored;
+        world.herdCarcassEatenBySpec[world.spec[slot]] += stored;
+        if (world.foodValue[food] < 1) {
+            removeFood(world, food);
         }
+    } else {
         removeFood(world, food);
     }
 }

@@ -3,6 +3,7 @@
 import { nextFloat } from './rng.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { steerGroup } from './herd-steering.js';
+import { senseHunters } from './herd-startle.js';
 
 const STAY_SPREAD = 0.25;
 
@@ -104,7 +105,7 @@ function summarizeGroup(world, group) {
         vy += world.herdVy[slot];
     }
     world.groupAnimalCount[group] = count;
-    if (count > 0) {
+    if (count > 0 && world.groupAlarm[group] === 0) {
         world.groupCentroidX[group] = x / count;
         world.groupCentroidY[group] = y / count;
         world.groupFleeX[group] = vx / count;
@@ -189,6 +190,15 @@ function nearestGap(world, group) {
 function routeTarget(world, group) {
     const patch = world.groupPatch[group];
     if (patch < 0) {
+        if (world.groupAlarm[group] === 0) {
+            return;
+        }
+        steerGroup(
+            world,
+            group,
+            world.groupCentroidX[group] + world.groupFleeX[group] * world.config.worldWidth,
+            world.groupCentroidY[group] + world.groupFleeY[group] * world.config.worldHeight,
+        );
         return;
     }
     const px = world.patchX[patch];
@@ -215,6 +225,7 @@ export function stepHerds(world) {
         if (world.groupAnimalCount[group] === 0) {
             continue;
         }
+        senseHunters(world, group);
         updateRoute(world, group);
         routeTarget(world, group);
     }

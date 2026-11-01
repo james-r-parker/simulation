@@ -94,6 +94,7 @@ describe('observeScenes', () => {
             'condition',
             'families',
             'flora',
+            'herd',
             'heritage',
             'mate',
             'niche',

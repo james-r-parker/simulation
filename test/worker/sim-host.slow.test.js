@@ -10,8 +10,8 @@ const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c
 const TIMEOUT_MS = scaleTimeout(300_000);
 
 /** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin. */
-const BUSY_EFFECT_HASH = 'be9383a3e0039426';
-const BUSY_EFFECT_RECORDS = 1410;
+const BUSY_EFFECT_HASH = '04521582ae6d9db6';
+const BUSY_EFFECT_RECORDS = 963;
 
 describe('the golden world through the host', () => {
     it(

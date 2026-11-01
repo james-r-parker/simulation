@@ -4,7 +4,9 @@ import { createConfig } from '../../js/sim/config.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { INVARIANT, assertInvariants } from '../../js/sim/invariants.js';
 import { allocateWorld } from '../../js/sim/world.js';
+import { createWorld } from '../../js/sim/spawn.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { testPolicy } from './helpers/test-policy.js';
 
 const SMALL = {
     maxAgents: 4,
@@ -31,6 +33,11 @@ function validWorld() {
         addEnergy(world, slot, 10, ENERGY_SOURCE.INITIAL);
     }
     return world;
+}
+
+/** @returns {ReturnType<typeof allocateWorld>} */
+function validHerdWorld() {
+    return createWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, herdCount: 1, herdSize: 2, seed: 71 }), testPolicy);
 }
 
 /**
@@ -75,6 +82,41 @@ describe('assertInvariants', () => {
         world.deliberateIntake[2] = 3;
         world.merit[3] = -4;
         expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it('rejects a negative dose on a live agent', () => {
+        const world = validWorld();
+        world.dose[0] = -1;
+        expect(violationOf(world)).toMatchObject({ invariant: INVARIANT.DOSE, slot: 0, value: -1 });
+    });
+
+    it('accepts live herds and clean empty herd slots', () => {
+        const world = validHerdWorld();
+        world.herdAlive[1] = 0;
+        world.herdStore[1] = 0;
+        expect(() => assertInvariants(world)).not.toThrow();
+    });
+
+    it.each([
+        ['non-finite position', (/** @type {any} */ world) => (world.herdX[0] = Number.NaN)],
+        ['world bounds', (/** @type {any} */ world) => (world.herdX[0] = 0)],
+        ['store bounds', (/** @type {any} */ world) => (world.herdStore[0] = world.config.herdStoreMax + 1)],
+        ['group index', (/** @type {any} */ world) => (world.herdGroup[0] = world.config.herdCount)],
+    ])('rejects herd state outside %s', (_name, corrupt) => {
+        const world = validHerdWorld();
+        corrupt(world);
+        expect(violationOf(world).invariant).toBe(INVARIANT.HERDS);
+    });
+
+    it('rejects herd clearance and an impossible group capacity', () => {
+        const overlap = validHerdWorld();
+        overlap.obsX[0] = overlap.herdX[0];
+        overlap.obsY[0] = overlap.herdY[0];
+        expect(violationOf(overlap).message).toContain('animal overlaps a rock');
+
+        const overCapacity = validHerdWorld();
+        overCapacity.config = { ...overCapacity.config, herdSize: 1 };
+        expect(violationOf(overCapacity).message).toContain('a group exceeds herdSize');
     });
 
     it('ignores dead slots holding junk', () => {

@@ -6,7 +6,8 @@ import { grazeHerds } from '../../js/sim/herd-graze.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
-function build() {
+/** @param {Record<string, unknown>} [overrides] */
+function build(overrides = {}) {
     const world = createWorld(
         createConfig({
             ...SIMPLE_WORLD,
@@ -21,6 +22,7 @@ function build() {
             floraPatchMax: 4,
             herdCount: 1,
             herdSize: 1,
+            ...overrides,
             seed: 11,
         }),
         testPolicy,
@@ -75,5 +77,23 @@ describe('grazeHerds', () => {
         grazeHerds(world);
         expect(world.foodAlive[0]).toBe(1);
         expect(world.herdTotals[0]).toBe(0);
+    });
+
+    it('skips every animal in a stampede and decrements its alarm once per group tick', () => {
+        const world = build({ herdSize: 2 });
+        world.herdAlive[1] = 1;
+        world.herdGroup[1] = 0;
+        world.herdX[1] = 400;
+        world.herdY[1] = 500;
+        addFood(world, 0, FOOD_KIND.PLANT, 400, 500, 100);
+        world.groupAlarm[0] = 2;
+        grazeHerds(world);
+        expect(world.groupAlarm[0]).toBe(1);
+        expect(world.foodAlive[0]).toBe(1);
+        grazeHerds(world);
+        expect(world.groupAlarm[0]).toBe(0);
+        expect(world.foodAlive[0]).toBe(1);
+        grazeHerds(world);
+        expect(world.foodAlive[0]).toBe(0);
     });
 });

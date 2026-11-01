@@ -160,6 +160,9 @@ function allocHerdState(world) {
     world.herdMax = herdMax;
     world.herdNextId = 1;
     world.herdTotals = new Float64Array(2);
+    const specCount = Object.keys(world.config.specialisations).length;
+    world.foodEatenBySpec = new Float64Array(specCount);
+    world.herdCarcassEatenBySpec = new Float64Array(specCount);
     world.herdDesired = new Float32Array(4);
     allocRows(world, singles(Uint8Array, ['herdAlive', 'herdGroup']), herdMax);
     allocRows(world, singles(Float32Array, ['herdX', 'herdY', 'herdVx', 'herdVy']), herdMax);

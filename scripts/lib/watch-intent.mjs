@@ -15,6 +15,9 @@ export const WATCH_INTENDED_LOWER = new Set([
     'eval.energy_over_split',
     'eval.chase_giveup_share',
     'eval.gap_never_share',
+    'eval.trampled_share',
+    'eval.trample_unavoidable_share',
+    ...['forager', 'predator', 'reproducer', 'scout', 'defender'].map((name) => `eval.herd_carcass_share.${name}`),
 ]);
 
 /**

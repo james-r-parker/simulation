@@ -1,4 +1,5 @@
 import { createFloraScene, trackFlora } from './scene-flora.js';
+import { createHerdScene, noteHerdDeath, resetHerdSlot, trackHerd } from './scene-herd.js';
 // The scene detectors' state and per-tick feed (natural-selection.md, Detectors). `observeScenes` runs inside
 // `observe`, after the intent state is current for the tick and before `applyEvents` reassigns slots, so a dying
 // agent's slot still holds its counters. It reads the world and the observer and writes only `observer.scenes`; the
@@ -33,6 +34,7 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 export function createScenes(config) {
     return {
         flora: createFloraScene(),
+        herd: createHerdScene(config),
         patch: createPatchScene(config),
         approach: createApproachScene(config),
         terrain: createTerrainScene(config),
@@ -65,6 +67,7 @@ export function resetSceneSlot(scenes, slot) {
     resetSpendSlot(scenes.spend, slot);
     resetHeritageSlot(scenes.heritage, slot);
     resetMateSlot(scenes.mate, slot);
+    resetHerdSlot(scenes.herd, slot);
 }
 
 /**
@@ -100,6 +103,14 @@ function noteEvents(scenes, observer, world) {
     const end = world.events.count * EVENT_STRIDE;
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         if (d[o] === EVENT_TYPE.AGENT_DIED) {
+            noteHerdDeath(scenes.herd, {
+                tick: d[o + 1],
+                slot: d[o + 2],
+                genomeId: d[o + 3],
+                cause: d[o + 4],
+                herdId: d[o + 5],
+                pinned: d[o + 11] === 1,
+            });
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
@@ -134,6 +145,7 @@ export function observeScenes(observer, world) {
     const scenes = observer.scenes;
     noteEvents(scenes, observer, world);
     trackFlora(scenes.flora, world);
+    trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
         return;
     }

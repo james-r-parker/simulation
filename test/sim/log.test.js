@@ -379,6 +379,41 @@ describe('drainEvents', () => {
         expect(records).toEqual([{ level: 'debug', event: 'HerdRouteChanged', tick: 12, group: 3, patch: 7 }]);
     });
 
+    it('logs a herd stampede with its hunter and group size', () => {
+        const world = build();
+        world.events.count = 0;
+        const offset = pushEvent(world.events, EVENT_TYPE.HERD_STAMPEDE, 16);
+        world.events.data[offset + 2] = 2;
+        world.events.data[offset + 3] = 5;
+        world.events.data[offset + 4] = 7;
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([{ level: 'debug', event: 'HerdStampede', tick: 16, group: 2, hunter: 5, animals: 7 }]);
+    });
+
+    it('logs herd death, birth and lost carcass records', () => {
+        const world = build();
+        world.events.count = 0;
+        let offset = pushEvent(world.events, EVENT_TYPE.HERD_ANIMAL_DIED, 20);
+        world.events.data[offset + 2] = 1;
+        world.events.data[offset + 3] = 4;
+        world.events.data[offset + 4] = 90;
+        world.events.data[offset + 5] = 12;
+        world.events.data[offset + 6] = 1;
+        offset = pushEvent(world.events, EVENT_TYPE.HERD_ANIMAL_BORN, 21);
+        world.events.data[offset + 2] = 1;
+        world.events.data[offset + 3] = 5;
+        offset = pushEvent(world.events, EVENT_TYPE.HERD_CARCASS_LOST, 22);
+        world.events.data[offset + 2] = 1;
+        const { records, log } = collect('debug');
+        drainEvents(world, log);
+        expect(records).toEqual([
+            { level: 'debug', event: 'HerdAnimalDied', tick: 20, herd: 1, animal: 4, age: 90, store: 12, old: true },
+            { level: 'debug', event: 'HerdAnimalBorn', tick: 21, herd: 1, animal: 5 },
+            { level: 'warn', event: 'HerdCarcassLost', tick: 22, herd: 1 },
+        ]);
+    });
+
     it.each([
         ['AgentBorn', EVENT_TYPE.AGENT_BORN, 8],
         ['AgentDied', EVENT_TYPE.AGENT_DIED, 4],

@@ -45,17 +45,23 @@ function eatPlant(world, animal, food) {
 
 /** Grazes one tick for each eligible animal. @param {World} world @returns {void} */
 export function grazeHerds(world) {
-    for (let animal = 0; animal < world.herdMax; animal++) {
-        if (world.herdAlive[animal] !== 1) {
+    for (let group = 0; group < world.config.herdCount; group++) {
+        if (world.groupAlarm[group] > 0) {
+            world.groupAlarm[group]--;
             continue;
         }
-        if (world.herdGraze[animal] > 0) {
-            world.herdGraze[animal]--;
-            continue;
-        }
-        const food = nearestPlant(world, animal);
-        if (food >= 0) {
-            eatPlant(world, animal, food);
+        for (let animal = group * world.config.herdSize; animal < (group + 1) * world.config.herdSize; animal++) {
+            if (world.herdAlive[animal] !== 1) {
+                continue;
+            }
+            if (world.herdGraze[animal] > 0) {
+                world.herdGraze[animal]--;
+                continue;
+            }
+            const food = nearestPlant(world, animal);
+            if (food >= 0) {
+                eatPlant(world, animal, food);
+            }
         }
     }
 }

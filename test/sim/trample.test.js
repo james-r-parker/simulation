@@ -89,4 +89,22 @@ describe('trampleHerds', () => {
         expect(world.events.data[4]).toBe(DEATH_CAUSE.TRAMPLED);
         expect(world.events.data[5]).toBe(91);
     });
+
+    it('skips dead and distant herd slots and handles coincident zero-energy contact', () => {
+        const world = build();
+        const slot = addBlob(world, 0);
+        overlap(world, slot);
+        world.herdX[0] = world.x[slot];
+        world.herdY[0] = world.y[slot];
+        world.vx[slot] = -1;
+        trampleHerds(world, slot);
+        expect(world.energy[slot]).toBe(0);
+        expect(world.lastHerdId[slot]).toBe(0);
+
+        world.herdX[0] = world.x[slot] + 1000;
+        trampleHerds(world, slot);
+        world.herdAlive[0] = 0;
+        trampleHerds(world, slot);
+        expect(world.energy[slot]).toBe(0);
+    });
 });

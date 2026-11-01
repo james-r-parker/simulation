@@ -15,6 +15,7 @@ import { seasonMetrics } from './scene-season.js';
 import { spendMetrics } from './scene-spend.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
+import { herdMetrics, HERD_SPEC_NAMES } from './scene-herd-metrics.js';
 
 const WATCH = [
     'eval.hunt_abort_rate',
@@ -34,6 +35,7 @@ const WATCH = [
     'eval.winter_basin_density',
     'eval.winter_shelter_distance',
     'eval.style_separation',
+    'eval.dodge_skill',
 ];
 
 /** The direction of each scene metric, as the Detectors table names them. */
@@ -45,6 +47,15 @@ export const SCENE_DIRECTIONS = Object.freeze({
     'eval.toxic_avoidance': 'watch',
     'eval.toxic_death_share': 'watch',
     'eval.sick_share': 'watch',
+    'eval.trampled_share': 'watch',
+    'eval.herd_grazed_share': 'watch',
+    'eval.trample_unavoidable_share': 'watch',
+    'eval.herd_carcass_meal_share': 'watch',
+    'eval.herd_stampede_rate': 'watch',
+    'eval.herd_animals': 'watch',
+    'eval.herd_gap_crossings': 'watch',
+    'eval.herd_recolonisations': 'watch',
+    ...Object.fromEntries(HERD_SPEC_NAMES.map((name) => [`eval.herd_carcass_share.${name}`, 'watch'])),
     ...Object.fromEntries(FLORA_NAMES.map((name) => [`eval.food_species_share.${name}`, 'watch'])),
     'eval.predators_at_end': 'higher',
     'eval.prey_types_at_end': 'higher',
@@ -75,5 +86,6 @@ export function sceneMetrics(observer, world) {
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),
         ...styleMetrics(s.style),
+        ...herdMetrics(s.herd, s.carcass, observer),
     };
 }

@@ -64,6 +64,38 @@ describe('writeSnapshot', () => {
         ]);
     });
 
+    it('encodes stationary and signed herd headings and handles a zero run-speed scale', () => {
+        const world = smallWorld({ herdCount: 1, herdSize: 5 });
+        world.herdAlive.fill(1);
+        world.herdVx.set([0, 0, 0, -1, -1]);
+        world.herdVy.set([0, 1, -1, 1, -1]);
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const start = HEADER_WORDS + world.obsX.length * 3;
+        expect(views.f32[start + 4]).toBe(0);
+        expect(
+            Array.from({ length: 5 }, (_value, animal) => views.f32[start + animal * HERD_STRIDE + 4]).every(
+                Number.isFinite,
+            ),
+        ).toBe(true);
+
+        world.config = { ...world.config, herdRunSpeed: 0 };
+        writeSnapshot(world, views);
+        expect(Array.from({ length: 5 }, (_value, animal) => views.f32[start + animal * HERD_STRIDE + 3])).toEqual([
+            0, 0, 0, 0, 0,
+        ]);
+    });
+
+    it('writes a zero patch fill share when patch capacity is zero', () => {
+        const world = smallWorld({ foodPatchCount: 1, floraPatchMax: 1, foodPatchRadius: 100 });
+        world.patchAlive[0] = 1;
+        world.config = { ...world.config, foodPatchCapacity: 0 };
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const start = HEADER_WORDS + 12 + world.obsX.length * 3;
+        expect(views.f32[start + 4]).toBe(0);
+    });
+
     it('writes the header, alive agents by ascending slot, alive food and the obstacles', () => {
         const world = smallWorld({ initialEnergy: 50, maxEnergy: 100 });
         spawnAgent(world, testPolicy, BORN_CAUSE.INITIAL);

@@ -3,7 +3,7 @@
 import { nextFloat } from './rng.js';
 import { spawnFoodItem } from './spawn.js';
 import { removeFood } from './world.js';
-import { FOOD_KIND } from './carcass.js';
+import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 
 /** @typedef {import('./world.js').World} World */
 
@@ -47,12 +47,18 @@ export function spawnFood(world) {
  * @returns {void}
  */
 export function ageFood(world) {
-    const { foodAlive, foodAge, foodKind } = world;
+    const { foodAlive, foodAge, foodKind, foodOrigin, foodLife } = world;
     const { carcassTicks } = world.config;
     for (let i = 0; i < foodAlive.length; i++) {
         if (foodAlive[i] === 1) {
             foodAge[i] += 1;
-            if (foodAge[i] > (foodKind[i] === FOOD_KIND.MEAT ? carcassTicks : world.foodLife[i])) {
+            const life =
+                foodKind[i] !== FOOD_KIND.MEAT
+                    ? foodLife[i]
+                    : foodOrigin[i] === FOOD_ORIGIN.HERD_CARCASS && foodLife[i] > 0
+                      ? foodLife[i]
+                      : carcassTicks;
+            if (foodAge[i] > life) {
                 removeFood(world, i);
             }
         }

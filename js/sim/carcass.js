@@ -29,6 +29,7 @@ export function leaveCarcass(world, slot) {
         if (foodAlive[food] === 0) {
             foodAlive[food] = 1;
             world.foodKind[food] = FOOD_KIND.MEAT;
+            world.foodOrigin[food] = FOOD_ORIGIN.NONE;
             world.foodX[food] = world.x[slot];
             world.foodY[food] = world.y[slot];
             world.foodRadius[food] = world.size[slot];

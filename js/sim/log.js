@@ -89,18 +89,20 @@ function emitBorn(log, d, o) {
  * @returns {void}
  */
 function emitDied(log, d, o) {
+    const cause = causeName(DIED_NAMES, d[o + 4], 'AgentDied');
     log.log('debug', 'AgentDied', {
         tick: d[o + 1],
         slot: d[o + 2],
         genomeId: d[o + 3],
-        cause: causeName(DIED_NAMES, d[o + 4], 'AgentDied'),
+        cause,
         by: d[o + 5],
         spec: d[o + 6],
         lineageId: d[o + 7],
         ageTicks: d[o + 8],
         foodEnergy: d[o + 9],
         biteEnergy: d[o + 10],
-        prevBiter: d[o + 11],
+        prevBiter: cause === 'eaten' ? d[o + 11] : 0,
+        ...(cause === 'trampled' ? { pinned: d[o + 11] === 1 } : {}),
     });
 }
 
@@ -312,6 +314,33 @@ function emitHerdRouteChanged(log, d, o) {
     log.log('debug', 'HerdRouteChanged', { tick: d[o + 1], group: d[o + 2], patch: d[o + 3] });
 }
 
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdStampede(log, d, o) {
+    log.log('debug', 'HerdStampede', { tick: d[o + 1], group: d[o + 2], hunter: d[o + 3], animals: d[o + 4] });
+}
+
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdAnimalDied(log, d, o) {
+    log.log('debug', 'HerdAnimalDied', {
+        tick: d[o + 1],
+        herd: d[o + 2],
+        animal: d[o + 3],
+        age: d[o + 4],
+        store: d[o + 5],
+        old: d[o + 6] === 1,
+    });
+}
+
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdAnimalBorn(log, d, o) {
+    log.log('debug', 'HerdAnimalBorn', { tick: d[o + 1], herd: d[o + 2], animal: d[o + 3] });
+}
+
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitHerdCarcassLost(log, d, o) {
+    log.log('warn', 'HerdCarcassLost', { tick: d[o + 1], herd: d[o + 2] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -333,6 +362,10 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.PATCH_DIED]: { level: LOG_LEVEL.debug, emit: emitPatchDied },
     [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
     [EVENT_TYPE.HERD_ROUTE_CHANGED]: { level: LOG_LEVEL.debug, emit: emitHerdRouteChanged },
+    [EVENT_TYPE.HERD_STAMPEDE]: { level: LOG_LEVEL.debug, emit: emitHerdStampede },
+    [EVENT_TYPE.HERD_ANIMAL_DIED]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalDied },
+    [EVENT_TYPE.HERD_ANIMAL_BORN]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalBorn },
+    [EVENT_TYPE.HERD_CARCASS_LOST]: { level: LOG_LEVEL.warn, emit: emitHerdCarcassLost },
 });
 
 /**

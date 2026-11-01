@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { assertInvariants, INVARIANT } from '../../js/sim/invariants.js';
+import { createHerds } from '../../js/sim/herds.js';
+import { fork, createRng } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
+import { allocateWorld } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { testPolicy } from './helpers/test-policy.js';
@@ -65,5 +68,14 @@ describe('createHerds', () => {
         world.herdAlive[0] = 0;
         world.herdStore[0] = 1;
         expect(() => assertInvariants(world)).toThrow(expect.objectContaining({ invariant: INVARIANT.HERDS, slot: 0 }));
+    });
+
+    it('fails loudly when every seeded centre placement overlaps a rock', () => {
+        const world = allocateWorld(
+            createConfig({ ...SIMPLE_WORLD, ...SMALL, herdCount: 1, placementTries: 1, seed: 71 }),
+        );
+        world.rng = { herds: fork(createRng(71), 'herds') };
+        world.obsRadius.fill(100000);
+        expect(() => createHerds(world)).toThrow(/herd placement failed at tick 0/);
     });
 });
