@@ -2129,10 +2129,10 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "Megafauna Phase 1 adopted defaults (herdCount 6, herdStartleRadius 200, herdCarcassTicks 12000)",
-      "after": "Pending E77 runs from evals/screens/herd-sense.grid.json; no results recorded yet",
+      "after": "11-arm E77 reports and table in evals/screens/results/herd-sense/ (8 seeds x 200000 ticks, policy live)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered only. E77 has not been run; its results are deferred to Megafauna Phase 2 T23. No arm has been evaluated or adopted."
+      "note": "E77 completed all 11 arms with no runner errors. Important baseline caveat: this branch ran against the pre-Flora toxinDose 0.45 defaults (config hash e2cf27dfd276b012), not current main's toxinDose 1.2, so these are exploratory results only and no arm is adopted. Wary=1 is the best local behavior arm: mean dodge_skill 0.9907, trampled_share 0.0143, spec_effective 3.190, input_active_share 0.2761; all six megafauna input values exceed 0.02. Reference Wary=0.5 has 0.9744, 0.0400, 2.944, and 0.2745 respectively. All arms fail the generic population gate (0/8); Wary=1 has predators at end 1/8, prey types 8/8, and basin_lineage_effective >=3 on 1/8. These survival/family misses are not claimed as passes and remain balancing follow-ups. The full per-arm table and reports are in evals/screens/results/herd-sense/. E92 is preregistered separately on current main's toxinDose 1.2 before any adoption."
     },
     {
       "id": "E81",
@@ -2255,6 +2255,29 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Stopped by the user before any arm finished (2026-10-31); owed when balancing reopens (natural-selection T50). The shark rule at 600 was adopted without it."
+    },
+    {
+      "id": "E92",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p2-sense",
+      "hypothesis": "On current main's toxinDose 1.2 baseline, herdWary 1 preserves the sensory-channel activity and behavioral benefit suggested by E77 relative to herdWary 0.5.",
+      "prediction": "On 16 matched seeds x 200000 ticks with live policy and current defaults, herdWary 1 will increase eval.dodge_skill and lower eval.trampled_share versus the herdWary 0.5 reference, with all six megafauna input values above 0.02. Population, predator, prey-type and per-basin family outcomes are recorded as balancing diagnostics; they are not adoption blockers under the user's explicit partial-acceptance direction.",
+      "targets": [
+        "eval.dodge_skill",
+        "eval.trampled_share",
+        "eval.spec_effective",
+        "eval.input_active_share",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "Current main reference: herdWary 0.5, toxinDose 1.2",
+      "after": "Pending matched E92 screen from evals/screens/herd-sense-current.grid.json (16 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered before the current-main confirmation. E77 is exploratory only because it used toxinDose 0.45. No E92 result exists and no Phase 2 default is adopted until this matched screen confirms the behavioral benefit. The 20,000-tick six-input activity check and T23 benchmark remain separately required."
     }
   ]
 }

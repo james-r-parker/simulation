@@ -1,7 +1,7 @@
 # Megafauna
 
 **Status:** In progress - Phase 1 is built; Phases 2 to 4 remain in progress. Under the user-directed partial acceptance, T15 adopts the measured improvement while carrying unresolved balance results forward: carcass meals are positive on 11/16 seeds against the documented 12/16 target, predator presence is 0/16 against 2/16 on the matched reference, and the isolated parent-to-adoption step-time delta is +13.6%. These are balancing diagnostics, never claimed passes. The Phase 1-start total-step comparison is within its 15% budget.
-**Validated:** e5bb5cb (2026-11-01)
+**Validated:** b3f11c6 (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
 
