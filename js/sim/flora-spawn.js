@@ -32,9 +32,22 @@ function fungusMark(world) {
  */
 function patchSource(world) {
     const c = world.config;
-    return c.foodPatchCount > 0 && nextFloat(world.rng.food) >= c.foodBackgroundShare
+    return hasPatches(world) && nextFloat(world.rng.food) >= c.foodBackgroundShare
         ? pickPatch(world, world.rng.food)
         : -1;
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @returns {boolean} whether any living patch can be a source
+ */
+function hasPatches(world) {
+    for (let i = 0; i < world.patchAlive.length; i++) {
+        if (world.patchAlive[i] === 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -79,6 +92,7 @@ function writeItem(world, slot, species, patch) {
     world.foodTox[slot] = row.toxicity;
     world.foodLife[slot] = patch >= 0 ? world.patchLife[patch] : row.life;
     world.foodPatch[slot] = patch;
+    world.foodPatchSerial[slot] = patch >= 0 ? world.patchSerial[patch] : 0;
     world.foodAge[slot] = 0;
     world.foodCount++;
     return slot;

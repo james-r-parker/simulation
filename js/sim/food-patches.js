@@ -1,6 +1,6 @@
-// Permanent food patches: placed at world creation, drawn from by food spawns in proportion to their stock, drained
-// by the food eaten inside them and regrown logistically. The arrays are empty when `foodPatchCount` is 0.
+// Manages the living patch pool, seasonal source selection and plant stock.
 
+import { PATCH_FLOOR_SHARE, stepPatchLife } from './patch-life.js';
 import { assignFlora } from './flora-state.js';
 import { refreshFruiting } from './fruiting.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
@@ -8,8 +8,7 @@ import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
 import { nextFloat } from './rng.js';
 
-/** The share of `foodPatchCapacity` a patch's stock never falls below, so a patch never dies. */
-export const PATCH_FLOOR_SHARE = 0.05;
+export { PATCH_FLOOR_SHARE } from './patch-life.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./rng.js').Rng} Rng */
@@ -28,6 +27,8 @@ export function createPatches(world) {
         world.patchX[i] = basinPatchX(world.config, i, unit);
         world.patchY[i] = foodPatchRadius + nextFloat(rng) * (worldHeight - 2 * foodPatchRadius);
         world.patchStock[i] = foodPatchCapacity;
+        world.patchAlive[i] = 1;
+        world.patchSerial[i] = 1;
     }
     assignFlora(world);
     refreshFruiting(world);
@@ -45,22 +46,25 @@ export function createPatches(world) {
  * @returns {number} the patch index
  */
 export function pickPatch(world, rng) {
-    const patchStock = world.patchWeight;
     let total = 0;
-    for (let i = 0; i < patchStock.length; i++) {
-        total += patchStock[i];
+    let last = -1;
+    for (let i = 0; i < world.patchWeight.length; i++) {
+        if (world.patchAlive[i] === 1 && world.patchWeight[i] > 0) {
+            total += world.patchWeight[i];
+            last = i;
+        }
     }
     let remaining = nextFloat(rng) * total;
-    if (total === 0) {
+    if (last < 0) {
         return -1;
     }
-    for (let i = 0; i < patchStock.length - 1; i++) {
-        remaining -= patchStock[i];
+    for (let i = 0; i < last; i++) {
+        remaining -= world.patchAlive[i] === 1 ? world.patchWeight[i] : 0;
         if (remaining < 0) {
             return i;
         }
     }
-    return patchStock.length - 1;
+    return last;
 }
 
 /**
@@ -77,6 +81,9 @@ export function depletePatchAt(world, x, y) {
     let best = -1;
     let bestSq = foodPatchRadius * foodPatchRadius;
     for (let i = 0; i < patchStock.length; i++) {
+        if (world.patchAlive[i] !== 1) {
+            continue;
+        }
         const dx = x - patchX[i];
         const dy = y - patchY[i];
         const sq = dx * dx + dy * dy;
@@ -101,6 +108,9 @@ export function regrowPatches(world) {
     const { foodPatchRegrow, foodPatchCapacity } = world.config;
     const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
     for (let i = 0; i < patchStock.length; i++) {
+        if (!stepPatchLife(world, i)) {
+            continue;
+        }
         const stock = Math.min(foodPatchCapacity, Math.max(floor, patchStock[i]));
         const grown =
             stock +

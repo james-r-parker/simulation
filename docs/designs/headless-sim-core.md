@@ -134,7 +134,7 @@ gives every key's type and range. The merit keys (`meritEnabled` and ten more) a
 | `fertileZoneMax`, `fertileZoneSpawnChance`, `fertileZoneDecay` | `100`, `0.4`, `0.001`             | `FERTILE_ZONE_MAX_COUNT`, `FERTILE_ZONE_SPAWN_CHANCE`, `FERTILE_ZONE_DECAY_RATE`                                  |
 | `pheromoneCellSize`, `pheromoneDecay`                          | `100`, `0.00167`                  | new, `PHEROMONE_FADE_RATE`                                                                                        |
 | `pheromoneDiffusion`, `pheromoneDeposit`, `pheromoneMax`       | `0.05`, `1`, `5`                  | new                                                                                                               |
-| `hashCellSize`, `maxContacts`, `eventCapacity`                 | `128`, `2000`, `4096`             | new; `eventCapacity >= 8 x maxAgents`                                                                             |
+| `hashCellSize`, `maxContacts`, `eventCapacity`                 | `128`, `2000`, `4096`             | new; `eventCapacity >= 8 x maxAgents + 2 x floraPatchMax`                                                         |
 | `specialisations`                                              | The Specialisations table         | `AGENT_CONFIGS`, `DEFENDER_DAMAGE_REDUCTION`, `SCOUT_ENERGY_COST_MULTIPLIER`; new                                 |
 | `checkInvariants`                                              | `false`                           | new                                                                                                               |
 
@@ -203,18 +203,18 @@ brain hook runs, then the agent is placed and `AgentBorn` is pushed. `js/evo/` s
 order, then increments `tick`. `overrides` maps a phase name to a replacement `run` (the anti-exploit suite replaces
 `brain`). Agents are visited in ascending slot order.
 
-| #   | Phase         | Functions                                                                                                        | Does                                                                                                                       |
-| --- | ------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `environment` | `updateSeason`, `moveObstacles`                                                                                  | Season modifiers from `tick`; obstacles move and bounce off walls                                                          |
-| 2   | `hash`        | `buildHash`                                                                                                      | Agents and food into the spatial hash                                                                                      |
-| 3   | `sense`       | `senseAll`                                                                                                       | Rays, body state and scent into `inputs`                                                                                   |
-| 4   | `brain`       | `forwardAll`                                                                                                     | `inputs` and `hidden` to `outputs` and the new `hidden`                                                                    |
-| 5   | `signal`      | `signalAll`                                                                                                      | Alarm, hunt and smoke actions; timers; hearing                                                                             |
-| 6   | `physics`     | `actAll`, `integrate`, `buildHash`, `resolveContacts`                                                            | Thrust and turn; movement; walls and obstacles; the hash rebuilt; agent pairs resolved and recorded as contacts            |
-| 7   | `lifecycle`   | `feed`, `mate`, `applyCosts`, `advancePregnancies`, `splitAll`, `reap`, `fillFloor`, `rescuePredators`, `invade` | Contacts become eating and bites, the hash finds mates; costs; births; deaths; the floor; predator rescue; invasion pulses |
-| 8   | `field`       | `spawnFood`, `ageFood`, `decayFertileZones`, `updatePheromones`, `ageSmoke`                                      | Food, zones, pheromones and smoke advance; deposits from phase 6 decay and diffuse                                         |
-| 9   | `merit`       | `meritPhase`                                                                                                     | Trackers and credits for each alive agent, then `MeritSummary` when due; nothing when `meritEnabled` is off                |
-| 10  | `invariants`  | `assertInvariants`                                                                                               | Only when `config.checkInvariants`                                                                                         |
+| #   | Phase         | Functions                                                                                                                      | Does                                                                                                            |
+| --- | ------------- | ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| 1   | `environment` | `updateSeason`, `moveObstacles`                                                                                                | Season modifiers from `tick`; obstacles move and bounce off walls                                               |
+| 2   | `hash`        | `buildHash`                                                                                                                    | Agents and food into the spatial hash                                                                           |
+| 3   | `sense`       | `senseAll`                                                                                                                     | Rays, body state and scent into `inputs`                                                                        |
+| 4   | `brain`       | `forwardAll`                                                                                                                   | `inputs` and `hidden` to `outputs` and the new `hidden`                                                         |
+| 5   | `signal`      | `signalAll`                                                                                                                    | Alarm, hunt and smoke actions; timers; hearing                                                                  |
+| 6   | `physics`     | `actAll`, `integrate`, `buildHash`, `resolveContacts`                                                                          | Thrust and turn; movement; walls and obstacles; the hash rebuilt; agent pairs resolved and recorded as contacts |
+| 7   | `lifecycle`   | `agePollen`, `stepToxin`, `feed`, `mate`, `applyCosts`, `advancePregnancies`, `tallyReady`, `splitAll`, `reap`, `fillFloor`    | Pollen and toxin recovery; eating, pollination and bites; mates; costs; births; deaths; extinction guard        |
+| 8   | `field`       | `ageMycelium`, `regrowPatches`, `refreshFruiting`, `spawnFood`, `ageFood`, `decayFertileZones`, `updatePheromones`, `ageSmoke` | Food, zones, pheromones and smoke advance; deposits from phase 6 decay and diffuse                              |
+| 9   | `merit`       | `meritPhase`                                                                                                                   | Trackers and credits for each alive agent, then `MeritSummary` when due; nothing when `meritEnabled` is off     |
+| 10  | `invariants`  | `assertInvariants`                                                                                                             | Only when `config.checkInvariants`                                                                              |
 
 The `merit` phase (`meritPhase`) runs after `field` and does nothing unless `meritEnabled`. With `meritEnabled`, `lifecycle` also runs `tallyReady` between `advancePregnancies` and `splitAll`.
 
@@ -232,6 +232,8 @@ The bench times each phase by calling its `run` directly.
 - Obstacles are not in the hash. `castRays` and `integrate` test all `obstacleCount` obstacles directly.
 
 The toxin keys are numeric and always active: `toxinDose` 0.45, `toxinCost` 1.2, `sickDose` 0.3, `sickThrust` 0.4, `sickDrain` 0.02, `doseDecay` 0.0008 and `lethalDose` 1.0. [flora.md](flora.md) defines dose, cost, sickness and recovery; `sickDose` must be below `lethalDose`.
+
+The always-active flora pool and pollen keys are defined in [flora.md](flora.md), Config and persistence. `foodPatchCount` is the initial live count, `floraPatchMax` the fixed capacity; living patches may die, bank, sprout or seed descendants.
 
 ### Sensing
 
@@ -379,14 +381,15 @@ agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive co
 
 ### Determinism
 
-| RNG stream   | Draws                                              |
-| ------------ | -------------------------------------------------- |
-| `obstacles`  | Obstacle placement and velocity                    |
-| `spawn`      | Initial and floor positions, specialisation        |
-| `brain-init` | `policy.initBrain`                                 |
-| `mutation`   | `policy.childBrain`                                |
-| `food`       | Food count fraction, position, energy, zone choice |
-| `lifecycle`  | Mating draws, child placement angle                |
+| RNG stream   | Draws                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------- |
+| `obstacles`  | Obstacle placement and velocity                                                       |
+| `spawn`      | Initial and floor positions, specialisation                                           |
+| `brain-init` | `policy.initBrain`                                                                    |
+| `mutation`   | `policy.childBrain`                                                                   |
+| `food`       | Food count fraction, position, energy, zone choice                                    |
+| `lifecycle`  | Mating draws, child placement angle                                                   |
+| `flora`      | Pollen loads, local seed placement, inherited trait mutations and soil-bank sprouting |
 
 Each stream is `fork(createRng(config.seed), name)`, so draws on one stream never shift another. Merit draws no random number. `hashWorld` covers
 `tick`, `nextId`, `population`, every agent array of every slot (`temperature` follows `lastLoss`), the merit arrays of every slot, food, obstacles, fertile zones, all three pheromone grids, the smoke clouds

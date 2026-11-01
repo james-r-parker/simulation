@@ -48,6 +48,9 @@ export function patchAt(world, slot) {
     let best = NONE;
     let bestSq = radius * radius;
     for (let p = 0; p < patchX.length; p++) {
+        if (world.patchAlive[p] !== 1) {
+            continue;
+        }
         const dx = world.x[slot] - patchX[p];
         const dy = world.y[slot] - patchY[p];
         const sq = dx * dx + dy * dy;

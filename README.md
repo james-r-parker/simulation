@@ -209,13 +209,17 @@ so every feature listed below as "on" is on in the app.
 
 ### Food
 
-- Plant food: 100 energy (variance 20); 10% of items are "high" food (140, radius 30). At most `maxFood` 1,600 items, 300 at the start; items rot after 10,000 ticks.
-- **Food patches.** `foodPatchCount` = 16 permanent patches of radius 400, split between the two basins (`js/sim/food-patches.js`). Each holds a stock that
+- Plant items use species energy, radius and lifetime traits. `foodEnergy`100 and `foodRadius`20 are reference scales. At most `maxFood`1,600 items, `initialFood`300 at the start.
+- **Food patches.** `foodPatchCount` = 16 initial live patches in a `floraPatchMax` = 32 slot pool, of radius 400, split between the two basins (`js/sim/food-patches.js`). Each holds a stock that
   each meal eaten inside depletes by 0.02 and that regrows logistically (0.0005 a tick); 20% of spawns ignore the patches. Food
   regrows per world area (`foodRegrowPerArea`) through the patches, not toward a per-blob target, so food does not scale with the population.
 - **Carcasses.** A dead blob leaves a meat item worth half the energy it took in during its life (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
+
+Plants have species and fruiting seasons: background grass, berries, nuts, flowers, toxic caps and mark-based fungi. A plant item keeps its source traits; the brain receives the two seen food hues. Toxic meals add a dose that slows thrust, blocks eating and drains energy until recovery. Direct poison death is unreachable from the starting cap dose under the current no-eating-while-sick rule; that balancing question remains open.
+
+Eating a pollinated flower or berry can load pollen. A later meal from another living patch of the same species can seed a local descendant with blended traits, using only seeded random draws. Depleted patches die into temporary soil banks; an expired bank cannot restore the species. Sources carry generation serials so old items and pollen cannot silently attach to a reused slot. [Flora](docs/designs/flora.md) records the rules, detectors and owed experiments; the species rendering arrives in Phase 4.
 
 ### Time, seasons and eras
 
@@ -268,6 +272,7 @@ bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size,
 | `STARVED`    | Energy reached 0 through ordinary costs. Heat and cold act through these costs.            |
 | `EATEN`      | Energy reached 0 through a bite (or was bitten that tick)                                   |
 | `COLLISION`  | Energy reached 0 through a wall or rock impact                                              |
+| `POISONED` | Dose reached `lethalDose`; checked after old age and before energy depletion. The starting cap cannot reach this threshold while sickness blocks eating. |
 | `OLD_AGE`    | `ageTicks` reached `maxAgeTicks` (72,000: two seasons)                                                   |
 
 ## Evolution

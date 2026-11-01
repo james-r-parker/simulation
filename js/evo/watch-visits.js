@@ -1,5 +1,5 @@
-// The patch-visit sample behind `eval.migration_index`: a bitset of `ceil(foodPatchCount / 32)` words per slot (at most
-// 8, as `foodPatchCount` is at most 256) plus a distinct-patch counter, both allocated once. `sampleVisits` runs every
+// The patch-visit sample behind `eval.migration_index`: a bitset of `ceil(floraPatchMax / 32)` words per slot (at most
+// 8, as `floraPatchMax` is at most 256) plus a distinct-patch counter, both allocated once. `sampleVisits` runs every
 // `MOTION_SAMPLE_TICKS` and costs alive agents x patches distance checks; it allocates nothing. A patch is visited
 // when the agent is strictly inside its disc (as `depletePatchAt` decides); overlapping discs mark every patch that
 // contains the agent. Kept apart from `metrics-watch.js` because the event handling imports it.
@@ -10,9 +10,10 @@
  *   burn-in with their summed visits
  */
 export function createVisitPools(config) {
-    const words = Math.ceil(config.foodPatchCount / 32);
+    const words = Math.ceil(config.floraPatchMax / 32);
     return {
-        patchCount: config.foodPatchCount,
+        patchCount: config.floraPatchMax,
+        hadPatches: config.foodPatchCount > 0,
         words,
         maturityTicks: config.maturityTicks,
         bits: new Uint32Array(config.maxAgents * words),
@@ -41,7 +42,13 @@ export function resetVisits(pools, slot) {
  */
 export function sampleVisits(pools, world) {
     const { patchCount, words, bits, visited } = pools;
-    if (patchCount === 0) {
+    for (let p = 0; p < patchCount; p++) {
+        if (world.patchAlive[p] === 1) {
+            pools.hadPatches = true;
+            break;
+        }
+    }
+    if (!pools.hadPatches) {
         return;
     }
     const { patchX, patchY, alive, x, y } = world;
@@ -52,6 +59,9 @@ export function sampleVisits(pools, world) {
             continue;
         }
         for (let p = 0; p < patchCount; p++) {
+            if (world.patchAlive[p] !== 1) {
+                continue;
+            }
             const dx = x[slot] - patchX[p];
             const dy = y[slot] - patchY[p];
             const word = slot * words + (p >> 5);

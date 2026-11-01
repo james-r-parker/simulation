@@ -19,6 +19,9 @@ export const EVENT_TYPE = Object.freeze({
     MERIT_SUMMARY: 14,
     LINE_PROVEN: 15,
     AGENT_SICKENED: 16,
+    PATCH_SEEDED: 17,
+    PATCH_DIED: 18,
+    SEEDING_REFUSED: 19,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

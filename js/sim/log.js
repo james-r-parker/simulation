@@ -7,6 +7,7 @@ export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 4
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
 const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned']);
+const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'placement']);
 const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
 
 /**
@@ -263,6 +264,49 @@ function emitSickened(log, d, o) {
     log.log('debug', 'AgentSickened', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], dose: d[o + 4] });
 }
 
+/**
+ * @param {SimLog} log the log
+ * @param {Float64Array} d event data
+ * @param {number} o event offset
+ * @returns {void}
+ */
+function emitPatchDied(log, d, o) {
+    log.log('debug', 'PatchDied', { tick: d[o + 1], patch: d[o + 2], species: d[o + 3] });
+}
+
+/**
+ * @param {SimLog} log the log
+ * @param {Float64Array} d event data
+ * @param {number} o event offset
+ * @returns {void}
+ */
+function emitPatchSeeded(log, d, o) {
+    log.log('debug', 'PatchSeeded', {
+        tick: d[o + 1],
+        species: d[o + 2],
+        patch: d[o + 3],
+        parentA: d[o + 4],
+        parentB: d[o + 5],
+        hue: d[o + 6],
+        x: d[o + 7],
+        y: d[o + 8],
+    });
+}
+
+/**
+ * @param {SimLog} log the log
+ * @param {Float64Array} d event data
+ * @param {number} o event offset
+ * @returns {void}
+ */
+function emitSeedingRefused(log, d, o) {
+    log.log('debug', 'SeedingRefused', {
+        tick: d[o + 1],
+        species: d[o + 2],
+        reason: causeName(SEED_REFUSED_NAMES, d[o + 3], 'SeedingRefused'),
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -279,6 +323,9 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
     [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
     [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
+    [EVENT_TYPE.PATCH_SEEDED]: { level: LOG_LEVEL.debug, emit: emitPatchSeeded },
+    [EVENT_TYPE.SEEDING_REFUSED]: { level: LOG_LEVEL.debug, emit: emitSeedingRefused },
+    [EVENT_TYPE.PATCH_DIED]: { level: LOG_LEVEL.debug, emit: emitPatchDied },
     [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
 });
 

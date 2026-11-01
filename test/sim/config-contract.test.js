@@ -192,13 +192,13 @@ describe('validateConfig error text', () => {
     });
 
     it('states the event capacity and the product', () => {
-        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 3999 }))).toBe(
-            'eventCapacity: 3999 is below 8 x maxAgents (4000)',
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4063 }))).toBe(
+            'eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax (4064)',
         );
     });
 
     it('accepts an event capacity of exactly 8 x maxAgents', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4000 })).not.toThrow();
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4064 })).not.toThrow();
     });
 
     it('checks the weight storage before the event capacity', () => {
@@ -211,5 +211,10 @@ describe('validateConfig error text', () => {
         expect(message(() => createConfig({ ...SIMPLE_WORLD, maxEnergy: 25000, hashCellSize: 132 }))).toBe(
             'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
+    });
+    it('reserves both patch-sized event bursts at the maximum pool with one agent', () => {
+        const config = { ...SIMPLE_WORLD, maxAgents: 1, initialAgents: 0, minAgents: 0, floraPatchMax: 256 };
+        expect(() => createConfig({ ...config, eventCapacity: 519 })).toThrow('520');
+        expect(() => createConfig({ ...config, eventCapacity: 520 })).not.toThrow();
     });
 });

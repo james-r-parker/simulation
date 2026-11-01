@@ -104,8 +104,8 @@ function lagCorr(windows) {
 export function watchMetrics(observer) {
     const p = observer.watch;
     let migration = none('no mature death after burn-in');
-    if (p.patchCount === 0) {
-        migration = none('foodPatchCount is 0');
+    if (!p.hadPatches) {
+        migration = none('no live patch observed');
     } else if (p.deaths > 0) {
         migration = ok(p.visitSum / p.deaths / p.patchCount);
     }

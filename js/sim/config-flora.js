@@ -149,6 +149,50 @@ function validTrait(field, value) {
 }
 
 /**
+ * @param {Record<string, number>} row archetype
+ * @param {string} name species name
+ * @returns {void}
+ */
+function checkStoredTraits(row, name) {
+    if (
+        !Number.isFinite(Math.fround(row.regrow * (1 + row.range))) ||
+        !Number.isFinite(Math.fround(row.yield)) ||
+        Math.fround(row.span) === 0
+    ) {
+        throw new Error(`config.flora.${name}: stored regrow, yield and span must fit Float32`);
+    }
+    for (const field of ['energy', 'life']) {
+        if (
+            !(Math.fround(row[field] * (1 - row.range)) > 0) ||
+            !Number.isFinite(Math.fround(row[field] * (1 + row.range)))
+        ) {
+            throw new Error(`config.flora.${name}.${field}: inherited range must fit positive Float32`);
+        }
+    }
+}
+
+/**
+ * @param {Record<string, number>} row archetype
+ * @param {string} name species name
+ * @returns {void}
+ */
+function checkRowBounds(row, name) {
+    if (row.share > 0 && (row.yield === 0 || row.regrow === 0)) {
+        throw new Error(`config.flora.${name}: positive share needs positive yield and regrow`);
+    }
+    if (row.range >= 1) {
+        throw new Error(`config.flora.${name}.range: expected below 1`);
+    }
+    if (row.energySpread > row.energy) {
+        throw new Error(`config.flora.${name}.energySpread: exceeds energy`);
+    }
+    checkStoredTraits(row, name);
+    if (row.energySpread > Math.fround(row.energy * (1 - row.range))) {
+        throw new Error(`config.flora.${name}.energySpread: exceeds the smallest stored inherited energy`);
+    }
+}
+
+/**
  * Checks every archetype, including rows that have no patches.
  * @param {unknown} value the flora table
  * @returns {void}
@@ -162,12 +206,7 @@ export function checkFlora(value) {
                 throw new Error(`config.flora.${name}.${field}: invalid trait`);
             }
         }
-        if (row.share > 0 && (row.yield === 0 || row.regrow === 0)) {
-            throw new Error(`config.flora.${name}: positive share needs positive yield and regrow`);
-        }
-        if (row.energySpread > row.energy) {
-            throw new Error(`config.flora.${name}.energySpread: exceeds energy`);
-        }
+        checkRowBounds(row, name);
     }
     for (const field of ['share', 'yield', 'regrow', 'range']) {
         if (table.fungus[field] !== 0) {

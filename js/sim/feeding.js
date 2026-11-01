@@ -1,5 +1,6 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
+import { carryPollen } from './pollination.js';
 import { ingestToxin, isSick } from './toxin.js';
 import { canBite, couldBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -37,6 +38,7 @@ function tryEat(world, slot, food) {
         gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
         world.ateTimer[slot] = 0;
         if (!isMeat) {
+            carryPollen(world, slot, food);
             depletePatchAt(world, world.foodX[food], world.foodY[food]);
             world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
             world.floraMeals[0]++;

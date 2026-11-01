@@ -133,6 +133,7 @@ export { RULES as CONFIG_RULES };
 
 /** Pairs `[smaller, larger]`: the first key's value must not exceed the second's. */
 const AT_MOST = [
+    ['foodPatchCount', 'floraPatchMax'],
     ['initialAgents', 'maxAgents'],
     ['minAgents', 'maxAgents'],
     ['initialFood', 'maxFood'],
@@ -328,10 +329,10 @@ function checkCrossKey(config) {
             `at most ${MAX_WEIGHT_FLOATS} / weightCount (maxAgents x weightCount is ${floats})`,
         );
     }
-    const events = MAX_EVENTS_PER_SLOT * config.maxAgents;
+    const events = MAX_EVENTS_PER_SLOT * config.maxAgents + 2 * config.floraPatchMax;
     if (config.eventCapacity < events) {
         throw new Error(
-            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents (${events})`,
+            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax (${events})`,
         );
     }
     const baseSizeMax = config.baseSize * TRAIT_MAX;

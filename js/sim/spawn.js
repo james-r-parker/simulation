@@ -15,7 +15,7 @@ import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
 const PI = 3.141592653589793;
-const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle'];
+const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora'];
 /** Energy source for each cause an agent can be spawned with by this module. */
 /** @type {Map<number, number>} */
 const SPAWN_SOURCE = new Map([

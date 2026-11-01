@@ -30,6 +30,10 @@ export function fruitWeight(phase, start, span) {
  */
 export function refreshFruiting(world) {
     for (let i = 0; i < world.patchStock.length; i++) {
+        if (world.patchAlive[i] !== 1) {
+            world.patchWeight[i] = 0;
+            continue;
+        }
         world.patchWeight[i] =
             world.patchStock[i] *
             world.patchYield[i] *

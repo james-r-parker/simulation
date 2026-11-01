@@ -174,4 +174,63 @@ describe('flora diet detectors', () => {
         feed(w, w.hash);
         expect(Array.from(w.floraMeals)).toEqual([1, 1]);
     });
+    it('reports seeded patches per1000 observed ticks after burn-in without counting duplicate observations', () => {
+        const w = smallWorld();
+        const scene = createFloraScene();
+        w.tick = BURN_IN_TICKS;
+        pushEvent(w.events, EVENT_TYPE.PATCH_SEEDED, BURN_IN_TICKS - 1);
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBeNull();
+        for (let tick = 1; tick <= 1000; tick++) {
+            clearEvents(w.events);
+            w.tick = BURN_IN_TICKS + tick;
+            if (tick === 1 || tick === 500) {
+                pushEvent(w.events, EVENT_TYPE.PATCH_SEEDED, w.tick - 1);
+            }
+            trackFlora(scene, w);
+            trackFlora(scene, w);
+        }
+        expect(scene.pollinations).toBe(2);
+        expect(scene.ticks).toBe(1000);
+        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBe(2);
+    });
+
+    it('averages population hue deviations across live pollinated species and checkpoints', () => {
+        const w = smallWorld({ floraPatchMax: 8 });
+        const scene = createFloraScene();
+        w.patchAlive.set([1, 1, 1, 1, 1, 1, 0, 0]);
+        w.patchSpecies.set([1, 1, 3, 3, 0, 5, 1, 4]);
+        w.patchHue.set([-0.5, 0.5, 0, 1, -1, 1, -1, 0]);
+        w.tick = BURN_IN_TICKS + 999;
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBeNull();
+        w.tick++;
+        trackFlora(scene, w);
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.5);
+        w.tick += 1000;
+        w.patchHue.fill(0);
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.25);
+        w.patchAlive.fill(0);
+        w.tick += 1000;
+        trackFlora(scene, w);
+        expect(scene.hueCheckpoints).toBe(2);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.25);
+    });
+
+    it('reports zero deviation for a single live pollinated patch and null with none', () => {
+        const w = smallWorld();
+        const scene = createFloraScene();
+        w.tick = BURN_IN_TICKS + 1000;
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].reason).toContain('no live pollinated');
+        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBe(0);
+        w.patchAlive[0] = 1;
+        w.patchSpecies[0] = 3;
+        w.patchHue[0] = 0.9;
+        w.tick += 1000;
+        trackFlora(scene, w);
+        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0);
+    });
 });
