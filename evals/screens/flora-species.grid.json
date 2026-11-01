@@ -1,0 +1,69 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "grass-energy-0.8x": {
+      "flora": {
+        "grass": {
+          "energy": 0.48
+        }
+      }
+    },
+    "grass-energy-1.2x": {
+      "flora": {
+        "grass": {
+          "energy": 0.72
+        }
+      }
+    },
+    "berry-energy-0.8x": {
+      "flora": {
+        "berry": {
+          "energy": 1.2
+        }
+      }
+    },
+    "berry-energy-1.2x": {
+      "flora": {
+        "berry": {
+          "energy": 1.8
+        }
+      }
+    },
+    "nut-energy-0.8x": {
+      "flora": {
+        "nut": {
+          "energy": 1.44
+        }
+      }
+    },
+    "nut-energy-1.2x": {
+      "flora": {
+        "nut": {
+          "energy": 2.16
+        }
+      }
+    },
+    "berry-span-0.6x": {
+      "flora": {
+        "berry": {
+          "span": 0.18
+        }
+      }
+    },
+    "nut-span-0.6x": {
+      "flora": {
+        "nut": {
+          "span": 0.18
+        }
+      }
+    },
+    "background-0.4": {
+      "foodBackgroundShare": 0.4
+    }
+  }
+}

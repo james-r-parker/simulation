@@ -1,0 +1,59 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "toxinCost-0.8": {
+      "toxinCost": 0.8
+    },
+    "toxinCost-1.6": {
+      "toxinCost": 1.6
+    },
+    "lethalDose-0.8": {
+      "lethalDose": 0.8
+    },
+    "lethalDose-1.4": {
+      "lethalDose": 1.4
+    },
+    "sickThrust-0.2": {
+      "sickThrust": 0.2
+    },
+    "toxinDose-0.8": {
+      "toxinDose": 0.8
+    },
+    "toxinDose-1.2": {
+      "toxinDose": 1.2
+    },
+    "toxiccap-share-0": {
+      "flora": {
+        "toxiccap": {
+          "share": 0
+        }
+      }
+    },
+    "toxiccap-share-1": {
+      "flora": {
+        "toxiccap": {
+          "share": 1
+        }
+      }
+    },
+    "toxiccap-share-2": {
+      "flora": {
+        "toxiccap": {
+          "share": 2
+        }
+      }
+    },
+    "toxiccap-share-5": {
+      "flora": {
+        "toxiccap": {
+          "share": 5
+        }
+      }
+    }
+  }
+}

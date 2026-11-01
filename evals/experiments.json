@@ -1936,6 +1936,72 @@
       "note": "Recorded reference-only run from f649cd8; 16 seeds x 200000 ticks; configHash ce9f2df038b71536; report SHA256 04123cfc642c4d2bad10ec2b57e47de26ed87cec9eee26a9c54d77a14a230132. Predators at end: 0/16 seeds; at least one prey type: 16/16; basin_family_effective >= 3: 0/16 (mean 1.0208459). Means: food_energy_per_1k 420.5615653, fed_median_lifespan 7007, deliberate_food_share 0.5281707, patch_leave_depleted 0.3242030, carcass_meal_share 0.8990197, winter_basin_density 0.9458033. Flora-specific metrics are absent from this pre-T1 report. E69 is recorded; E70-E74 remain owed."
     },
     {
+      "id": "E70",
+      "date": "2026-11-01",
+      "branch": "docs/flora-calibration-contract",
+      "hypothesis": "Screen the Flora species energy, fruiting span and background share one lever at a time against defaults.",
+      "prediction": "8 seeds x 200000 ticks, live policy; exactly one defaults arm and no factorial combinations. Retain each default unless a one-factor arm improves the named seasonal diet/survival signal while passing the screen survival and economy constraints. Qualitative plan predictions only; no numeric outcome is assumed.",
+      "targets": [
+        "eval.seasonal_diet_shift",
+        "eval.food_energy_per_1k",
+        "eval.winter_basin_density",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_family_effective"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults (E69 reference configuration)",
+      "after": "evals/screens/flora-species.grid.json (pre-registered; not run)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "OAT only. Arm values are direct multipliers of documented defaults. Advancement requires improvement in the named seasonal/diet/seed/hue signal and passing the Phase 4 screen survival gate plus economy constraints; otherwise keep that lever at its default. Not run; screens are owed."
+    },
+    {
+      "id": "E71",
+      "date": "2026-11-01",
+      "branch": "docs/flora-calibration-contract",
+      "hypothesis": "Screen toxin cost, lethal threshold, sickness thrust, toxin dose and toxiccap share independently against defaults.",
+      "prediction": "8 seeds x 200000 ticks, live policy; exactly one defaults arm and no factorial combinations. toxinDose 0.8 and 1.2 are included separately: at cap toxicity 0.8, a 1.2 dose gives 0.96 per bite and permits a subsequent accepted bite after recovery to exceed lethalDose 1.0. Toxicity stays fixed at 0.8. Retain defaults unless an OAT arm improves the named toxin avoidance/death signal while passing survival and economy constraints.",
+      "targets": [
+        "eval.toxic_avoidance",
+        "eval.toxic_death_share",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_family_effective",
+        "eval.food_energy_per_1k"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults (E69 reference configuration)",
+      "after": "evals/screens/flora-toxin.grid.json (pre-registered; not run)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "OAT only; the original dose/cap settings could not reach lethal dose within a single-factor sweep, so toxinDose 0.8 and 1.2 were added to make poison death testable without a factorial interaction or weakening cap toxicity. Toxiccap share rule remains: if share 3 fails survival and share 0 passes, choose highest passing 1/2/3, using 0 only if none pass. Not run; screens are owed."
+    },
+    {
+      "id": "E72",
+      "date": "2026-11-01",
+      "branch": "docs/flora-calibration-contract",
+      "hypothesis": "Screen pollination and patch persistence levers independently against defaults.",
+      "prediction": "8 seeds x 200000 ticks, live policy; exactly one defaults arm and no factorial combinations. Retain each default unless an OAT value improves the named seed/hue signal while passing survival and economy constraints. Patch-pool saturation is not yet emitted by existing detectors/events; the plan proposes a post-burn-in checkpoint metric and fixture contract, not an assumed result.",
+      "targets": [
+        "eval.pollination_rate",
+        "eval.flora_hue_spread",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_family_effective",
+        "eval.food_energy_per_1k"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults (E69 reference configuration)",
+      "after": "evals/screens/flora-pollen.grid.json (pre-registered; not run)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "OAT only. Existing PATCH_SEEDED and PATCH_DIED events do not measure live-pool saturation. Proposed contract: eval.flora_patch_pool_full_share is the fraction of post-burn-in 1000-tick checkpoints where alive patch count equals floraPatchMax, null if there are no checkpoints; test full at half checkpoints => 0.5, never full => 0, no checkpoints => null. Runtime metric/test is separate work. Not run; screens are owed."
+    },
+    {
       "id": "E75",
       "date": "2026-11-01",
       "branch": "feat/megafauna-p1-stampede",
