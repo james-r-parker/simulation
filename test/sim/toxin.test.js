@@ -39,7 +39,7 @@ function meal(world, toxicity) {
 describe('toxin config', () => {
     it('starts with the planned dose, sickness and recovery values', () => {
         expect(createConfig()).toMatchObject({
-            toxinDose: 0.45,
+            toxinDose: 1.2,
             toxinCost: 1.2,
             sickDose: 0.3,
             sickThrust: 0.4,
@@ -73,7 +73,7 @@ describe('toxin dose and meals', () => {
             slot,
             world.genomeId[slot],
         ]);
-        expect(world.events.data[4]).toBeCloseTo(0.36, 6);
+        expect(world.events.data[4]).toBeCloseTo(0.96, 6);
         stepToxin(world);
         ingestToxin(world, slot, 100, 0.8);
         expect(world.events.count).toBe(2);
@@ -85,7 +85,7 @@ describe('toxin dose and meals', () => {
         feed(world, world.hash);
         expect(world.energy[slot]).toBeCloseTo(104, 5);
         expect(world.foodEnergy[slot]).toBeCloseTo(4, 5);
-        expect(world.dose[slot]).toBeCloseTo(0.36, 6);
+        expect(world.dose[slot]).toBeCloseTo(0.96, 6);
         expect(isSick(world, slot)).toBe(true);
         expect(imbalance(world)).toBeCloseTo(0, 9);
     });
@@ -106,7 +106,9 @@ describe('toxin dose and meals', () => {
         expect(world.energy[slot]).toBe(before);
         expect(world.foodAlive[food]).toBe(1);
         expect(canEatNow(world, slot)).toBe(false);
-        stepToxin(world);
+        while (isSick(world, slot)) {
+            stepToxin(world);
+        }
         expect(isSick(world, slot)).toBe(false);
         feed(world, world.hash);
         expect(world.foodAlive[food]).toBe(0);
@@ -181,16 +183,17 @@ describe('sickness and recovery', () => {
         expect(causes).toEqual([DEATH_CAUSE.POISONED]);
     });
 
-    it('cannot accumulate a lethal default dose while sickness blocks further meals', () => {
+    it('can accumulate a lethal default dose after sickness recovery', () => {
         const { world, slot } = body();
         const c = world.config;
-        expect(c.sickDose + c.flora.toxiccap.toxicity * c.toxinDose).toBeLessThan(c.lethalDose);
-        for (let bite = 0; bite < 5; bite++) {
-            while (!canEatNow(world, slot)) {
-                stepToxin(world);
-            }
-            ingestToxin(world, slot, 100, c.flora.toxiccap.toxicity);
-            expect(world.dose[slot]).toBeLessThan(c.lethalDose);
+        expect(c.flora.toxiccap.toxicity * c.toxinDose).toBeLessThan(c.lethalDose);
+        ingestToxin(world, slot, 100, c.flora.toxiccap.toxicity);
+        expect(isSick(world, slot)).toBe(true);
+        expect(world.dose[slot]).toBeLessThan(c.lethalDose);
+        while (!canEatNow(world, slot)) {
+            stepToxin(world);
         }
+        ingestToxin(world, slot, 100, c.flora.toxiccap.toxicity);
+        expect(world.dose[slot]).toBeGreaterThanOrEqual(c.lethalDose);
     });
 });

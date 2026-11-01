@@ -13,5 +13,8 @@
       "toxinDose": 1.2,
       "floraPatchMax": 48
     }
+  },
+  "base": {
+    "toxinDose": 0.45
   }
 }

@@ -28,7 +28,7 @@
       "seedBankTicks": 144000
     },
     "sproutRate-2e-06": {
-      "sproutRate": 2e-6
+      "sproutRate": 0.000002
     },
     "floraPatchMax-24": {
       "floraPatchMax": 24
@@ -36,5 +36,8 @@
     "floraPatchMax-48": {
       "floraPatchMax": 48
     }
+  },
+  "base": {
+    "toxinDose": 0.45
   }
 }

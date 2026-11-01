@@ -65,5 +65,8 @@
     "background-0.4": {
       "foodBackgroundShare": 0.4
     }
+  },
+  "base": {
+    "toxinDose": 0.45
   }
 }

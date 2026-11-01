@@ -33,7 +33,7 @@ export const DEFAULTS = deepFreeze({
     myceliumLife: 144000,
     myceliumMax: 200,
     myceliumRadius: 150,
-    toxinDose: 0.45,
+    toxinDose: 1.2,
     toxinCost: 1.2,
     sickDose: 0.3,
     sickThrust: 0.4,

@@ -1,0 +1,16 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 600000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "C1-toxinDose-1.2": {
+      "toxinDose": 1.2
+    }
+  },
+  "base": {
+    "toxinDose": 0.45
+  }
+}
