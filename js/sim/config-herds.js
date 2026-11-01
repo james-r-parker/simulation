@@ -21,6 +21,7 @@ export const HERD_DEFAULTS = {
     herdLeaveShare: 0.4,
     herdCarcassTicks: 12000,
     herdStayTicks: 6000,
+    herdWary: 0.5,
     trampleDamage: 400,
 };
 
@@ -43,6 +44,7 @@ export const HERD_RULES = {
     herdLeaveShare: UNIT,
     herdCarcassTicks: int(1),
     herdStayTicks: int(1),
+    herdWary: num(0, 4),
     trampleDamage: num(0),
 };
 
