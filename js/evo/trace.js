@@ -86,7 +86,7 @@ function endState(world) {
  * @property {number[]} mate mating births in each equal window of the run
  * @property {number[]} split split births in each equal window
  * @property {number[]} spec alive agents per specialisation index at the last tick
- * @property {number[]} deaths deaths by cause (`DEATH_CAUSE` order: starved, eaten, collision, old age)
+ * @property {number[]} deaths deaths by cause (`DEATH_CAUSE` order: starved, eaten, collision, old age, poisoned)
  * @property {number} lineages distinct lineages alive at the last tick
  */
 

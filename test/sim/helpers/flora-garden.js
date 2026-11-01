@@ -4,6 +4,16 @@ import { spawnFoodItem } from '../../../js/sim/spawn.js';
 
 /** @param {Record<string, any>} [over] config overrides @returns {any} a clear two-flower garden and one carrier */
 export function floraGarden(over = {}) {
+    const baseFlora = {
+        grass: { share: 0 },
+        berry: { share: 0 },
+        nut: { share: 0 },
+        flower: { share: 1, start: 0, span: 1 },
+        toxiccap: { share: 0 },
+    };
+    const flora = Object.fromEntries(
+        Object.entries(baseFlora).map(([name, row]) => [name, { ...row, ...over.flora?.[name] }]),
+    );
     const w = smallWorld({
         worldWidth: 2000,
         foodPatchCount: 2,
@@ -11,14 +21,9 @@ export function floraGarden(over = {}) {
         foodPatchRadius: 100,
         foodBackgroundShare: 0,
         floraMutation: 0,
-        flora: {
-            grass: { share: 0 },
-            berry: { share: 0 },
-            nut: { share: 0 },
-            flower: { share: 1, start: 0, span: 1 },
-            toxiccap: { share: 0 },
-        },
+
         ...over,
+        flora,
     });
     w.obsX.fill(1e6);
     w.obsY.fill(1e6);
