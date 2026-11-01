@@ -262,11 +262,12 @@ function heading(vx, vy) {
 
 /** Writes alive animals in slot order as x, y, radius, speed01 and heading.
  * @param {import('./world.js').World} world the world
- * @param {Float32Array} f32 the float view
+ * @param {{f32: Float32Array, u32: Uint32Array}} views snapshot views
  * @param {number} start first herd word
  * @returns {number} the next free word
  */
-function writeHerds(world, { f32, u32 }, start) {
+function writeHerds(world, views, start) {
+    const { f32, u32 } = views;
     let w = start;
     let count = 0;
     for (let animal = 0; animal < world.herdMax; animal++) {

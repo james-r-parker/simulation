@@ -30,6 +30,7 @@ function build(over = {}) {
     );
 }
 
+/** @param {import('../../js/sim/world.js').World} world @param {number} [energy] @returns {number} */
 function addBlob(world, energy = 100) {
     const slot = allocBody(world);
     world.x[slot] = 400;
@@ -38,6 +39,7 @@ function addBlob(world, energy = 100) {
     return slot;
 }
 
+/** @param {import('../../js/sim/world.js').World} world @param {number} slot */
 function overlap(world, slot) {
     world.herdAlive[0] = 1;
     world.herdId[0] = 91;
@@ -82,7 +84,7 @@ describe('trampleHerds', () => {
         overlap(world, slot);
         world.vx[slot] = 1;
         trampleHerds(world, slot);
-        reap(world, {});
+        reap(world, testPolicy);
         expect(world.events.data[0]).toBe(EVENT_TYPE.AGENT_DIED);
         expect(world.events.data[4]).toBe(DEATH_CAUSE.TRAMPLED);
         expect(world.events.data[5]).toBe(91);

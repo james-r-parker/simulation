@@ -6,7 +6,7 @@ const EPSILON = 1e-9;
 
 /** @typedef {import('./world.js').World} World */
 
-/** @param {World} world @param {number} group @param {number} slot @param {number} targetX @param {number} targetY @returns {void} */
+/** @param {World} world @param {number} group @param {number} slot @returns {void} */
 function setDesiredVelocity(world, group, slot) {
     const { herdRadius, herdWalkSpeed } = world.config;
     let dx = world.herdDesired[2] - world.herdX[slot];
@@ -63,7 +63,7 @@ function addRockAvoidance(world, slot) {
     }
 }
 
-/** @param {World} world @param {number} slot @param {number} start @param {number} end @param {number} targetX @returns {boolean} */
+/** @param {World} world @param {number} slot @returns {boolean} */
 function isCrossing(world, slot) {
     const targetX = world.herdDesired[2];
     const middle = world.config.worldWidth / 2;

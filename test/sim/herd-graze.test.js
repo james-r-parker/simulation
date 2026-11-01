@@ -30,6 +30,7 @@ function build() {
     return world;
 }
 
+/** @param {import('../../js/sim/world.js').World} world @param {number} slot @param {number} kind @param {number} x @param {number} y @param {number} value */
 function addFood(world, slot, kind, x, y, value) {
     world.foodAlive[slot] = 1;
     world.foodKind[slot] = kind;
