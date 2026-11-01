@@ -7,9 +7,10 @@ import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './ins
 import { HERD_FRAGMENT, HERD_VERTEX } from './world-layers-shader.js';
 
 const SECTIONS = createSections();
-const MIN_PX = 4;
-const MOTE_LUMINANCE = 0.2126729 * PALETTE.mote[0] + 0.7151522 * PALETTE.mote[1] + 0.072175 * PALETTE.mote[2];
-const INTENSITY = SCENERY_MAX_LUMINANCE / MOTE_LUMINANCE;
+const MIN_PX = 8;
+const HERD_LUMINANCE =
+    0.2126729 * PALETTE.coolWhite[0] + 0.7151522 * PALETTE.coolWhite[1] + 0.072175 * PALETTE.coolWhite[2];
+const INTENSITY = SCENERY_MAX_LUMINANCE / HERD_LUMINANCE;
 
 /** @param {Float32Array} f32 snapshot floats @param {{herdStart: number, herdCount: number}} section herd records @param {Float32Array} out packed bodies @returns {number} rows written */
 export function packHerdBodies(f32, section, out) {
@@ -32,7 +33,7 @@ export function createHerdLayer({ info }) {
     const uniforms = {
         uZoom: { value: 1 },
         uMinPx: { value: MIN_PX },
-        uColor: { value: PALETTE.mote },
+        uColor: { value: PALETTE.coolWhite },
         uIntensity: { value: INTENSITY },
     };
     const mat = new ShaderMaterial({
