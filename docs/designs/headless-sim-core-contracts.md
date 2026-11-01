@@ -652,18 +652,19 @@ hash, and changes `inputs` and expects the same one.
 
 ## `snapshot.js`
 
-`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride, rayStride }`.
+`snapshotLayout(config)` returns `{ bytes, headerWords, agentStride, foodStride, obstacleStride, cloudStride, patchStride, rayStride }`.
 `bytes` covers every part at its maximum, rays included. The buffer is one `ArrayBuffer` read through a `Float32Array` and
 a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it and allocates nothing:
 
-| Words                                                     | Contents                                                                                                                                                                                                                                           |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Header, 6 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                                                                  |
-| Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`)                                          |
-| Food, `foodStride` 4 each, alive only                     | `x`, `y`, `radius`, `age01` (`Float32`); the radius is negative for a meat item (`FOOD_KIND.MEAT`), so the layout does not depend on the carcass rule; `age01` is `foodAge / carcassTicks` for meat (0 when `carcassTicks` is 0), 0 for plant food |
-| Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `terrainRockCount(config)` of them: the static rocks                                                                                                                                                               |
-| Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                                                                      |
-| Rays, `rayCount` per agent, only when `withRays`          | Ray `k`'s proximity (channel 0 of the agent's inputs row, `1 - distance / visionRange`, 0 for a miss), in agent order                                                                                                                              |
+| Words                                                     | Contents                                                                                                                                                                                                  |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header, 6 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`)                                                                                                         |
+| Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
+| Food, `foodStride` 6 each, alive only                     | `x`, `y`, `radius`, `age01`, `species`, `hue` (`Float32`); meat has negative radius and uses `foodAge / carcassTicks`; plants use `foodAge / foodLife`                                                    |
+| Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `terrainRockCount(config)` of them: the static rocks                                                                                                                      |
+| Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                             |
+| Patches, `patchStride` 5 each, alive only                 | `x`, `y`, `species`, `hue`, normalized fruiting weight (`Float32`)                                                                                                                                        |
+| Rays, `rayCount` per agent, only when `withRays`          | Ray `k`'s proximity (channel 0 of the agent's inputs row, `1 - distance / visionRange`, 0 for a miss), in agent order                                                                                     |
 
 `speed` is `sqrt(vx x vx + vy x vy)` in world units per tick. `SNAPSHOT_FLAG` names the `flags` bits: the `ate` and
 `bitten` timers (`ateTimer`, `bittenTimer`, 0 to `TIMER_CAP`) in 5-bit fields at bits 0 and 5, then `JAW_OPEN` (bit 10: the
@@ -743,3 +744,5 @@ ray part. A snapshot is not part of `worldHash`.
 - Snapshot sections are packed back to back: food starts right after the last alive agent and obstacles right after
   the last food. The buffer from `snapshotLayout` is sized for `maxAgents`, `maxFood` and the terrain's rocks; the
   header's counts say where each section ends.
+
+Flora snapshots use seven header words (word 6 is live patch count). The agent flags use bit 18 for sickness, bit 19 for valid carried pollen and bits 20 to 31 for its hue quantized over [-1, 1]. A dead or reused pollen source is not rendered as carried. These fields are render-only and do not change the world hash.

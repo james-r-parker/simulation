@@ -2,7 +2,7 @@
 // factor. Nothing here allocates per frame.
 
 /** Words in a snapshot's header and per agent (`js/sim/snapshot.js`; a test keeps the two in step). */
-export const HEADER_WORDS = 6;
+export const HEADER_WORDS = 7;
 export const AGENT_STRIDE = 12;
 
 /** Offsets of an agent's fields within its record. */

@@ -172,7 +172,7 @@ describe('carcassLook', () => {
 
 describe('packFoodAges', () => {
     it('packs the fourth word of each food record into the age array', () => {
-        const f32 = Float32Array.from([10, 20, 3, 0.25, 30, 40, -4, 0.75]);
+        const f32 = Float32Array.from([10, 20, 3, 0.25, 0, 0, 30, 40, -4, 0.75, 0, 0]);
         const out = new Float32Array(2);
         expect(packFoodAges(f32, { start: 0, count: 2 }, out)).toBe(2);
         expect(out[0]).toBeCloseTo(0.25, 4);

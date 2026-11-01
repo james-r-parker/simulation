@@ -2,7 +2,8 @@
 
 import { AGENT_STRIDE, HEADER_WORDS } from './interpolate.js';
 
-export const FOOD_STRIDE = 4;
+export const FOOD_STRIDE = 6;
+export const PATCH_STRIDE = 5;
 export const OBSTACLE_STRIDE = 3;
 export const CLOUD_STRIDE = 3;
 
@@ -15,6 +16,8 @@ export const CLOUD_STRIDE = 3;
  * @property {number} obstacleCount
  * @property {number} cloudStart
  * @property {number} cloudCount
+ * @property {number} patchStart
+ * @property {number} patchCount
  * @property {number} rayStart word offset of the ray part
  * @property {number} rayCount rays written per agent, 0 when the part is absent
  */
@@ -31,6 +34,8 @@ export function createSections() {
         obstacleCount: 0,
         cloudStart: 0,
         cloudCount: 0,
+        patchStart: 0,
+        patchCount: 0,
         rayStart: 0,
         rayCount: 0,
     };
@@ -51,6 +56,8 @@ export function readSections(u32, out) {
     out.foodStart = HEADER_WORDS + out.agentCount * AGENT_STRIDE;
     out.obstacleStart = out.foodStart + out.foodCount * FOOD_STRIDE;
     out.cloudStart = out.obstacleStart + out.obstacleCount * OBSTACLE_STRIDE;
-    out.rayStart = out.cloudStart + out.cloudCount * CLOUD_STRIDE;
+    out.patchStart = out.cloudStart + out.cloudCount * CLOUD_STRIDE;
+    out.patchCount = u32[6];
+    out.rayStart = out.patchStart + out.patchCount * PATCH_STRIDE;
     return out;
 }
