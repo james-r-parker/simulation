@@ -114,6 +114,8 @@ function sharedUniforms(info, ramp, blank) {
         uRamp: { value: ramp },
         uSmoke: { value: blank },
         uMotion: { value: 1.0 },
+        uFlora: { value: 1.0 },
+        uSimTick: { value: 0 },
         uView: { value: new Vector4(0, 0, 1, 1) },
     };
 }
@@ -129,6 +131,7 @@ function updateUniforms(shared, frame) {
     const { camera, lenses } = frame;
     const v = viewBounds(camera, VIEW);
     shared.uZoom.value = camera.zoom;
+    shared.uSimTick.value = frame.tick;
     shared.uTime.value = frame.nowMs / 1000;
     shared.uTempLens.value = lenses.temperature ? 1 : 0;
     shared.uDim.value = lenses.scent ? SCENT_DIM : 1;
@@ -160,6 +163,7 @@ export function createAgentsLayer({ info, flagBits }) {
         setLook(look) {
             const tier = /** @type {number} */ (look.motion);
             shared.uMotion.value = tier === 0 ? 1.0 : tier === 1 ? 0.5 : 0.0;
+            shared.uFlora.value = look.flora === -1 ? 0 : 1;
         },
         setSmokeTexture(texture) {
             shared.uSmoke.value = texture;

@@ -65,7 +65,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} pose x, y, angle, radius
  * @property {Float32Array} color linear r, g, b and energy01
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
- * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), then 2 reserved
+ * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, then 1 reserved
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {number} count agents packed this frame
  */
@@ -162,6 +162,7 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         bucket.state[o + 3] = store.jaw[slot];
         bucket.extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
         bucket.extra[o + 1] = slotOf(slots, agents.lineageId[i]) < 0 ? 1 : 0;
+        bucket.extra[o + 2] = (flags & bits.SICK) !== 0 ? 1 : 0;
 
         const m = motionOf(agents.speed[i] / maxVelocity, agents.turn[i], store.smoothedTurn[slot], agents.genomeId[i]);
         store.smoothedTurn[slot] = m.turn01;
