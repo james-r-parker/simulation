@@ -1,0 +1,244 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [16, 32],
+  "metrics": [
+    "eval.dodge_skill",
+    "eval.herd_animals",
+    "eval.herd_carcass_meal_share",
+    "eval.herd_carcass_share.defender",
+    "eval.herd_carcass_share.forager",
+    "eval.herd_carcass_share.predator",
+    "eval.herd_carcass_share.reproducer",
+    "eval.herd_carcass_share.scout",
+    "eval.herd_gap_crossings",
+    "eval.herd_grazed_share",
+    "eval.herd_recolonisations",
+    "eval.herd_stampede_rate",
+    "eval.trample_unavoidable_share",
+    "eval.trampled_share"
+  ],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.dodge_skill",
+      "size": 16,
+      "falsePositive": 0.115,
+      "detectable": 0.15,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.dodge_skill",
+      "size": 32,
+      "falsePositive": 0.041,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_animals",
+      "size": 16,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_animals",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_carcass_meal_share",
+      "size": 16,
+      "falsePositive": 0.148,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_carcass_meal_share",
+      "size": 32,
+      "falsePositive": 0.101,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_carcass_share.defender",
+      "size": 16,
+      "falsePositive": 0.27734375,
+      "detectable": null,
+      "validShare": 0.256,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.herd_carcass_share.defender",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_carcass_share.forager",
+      "size": 16,
+      "falsePositive": 0.1608695652173913,
+      "detectable": null,
+      "validShare": 0.23,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.herd_carcass_share.forager",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_carcass_share.predator",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_carcass_share.predator",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_carcass_share.reproducer",
+      "size": 16,
+      "falsePositive": 0.23613963039014374,
+      "detectable": null,
+      "validShare": 0.487,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.herd_carcass_share.reproducer",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_carcass_share.scout",
+      "size": 16,
+      "falsePositive": 0.2247191011235955,
+      "detectable": null,
+      "validShare": 0.267,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.herd_carcass_share.scout",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.herd_gap_crossings",
+      "size": 16,
+      "falsePositive": 0.156,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_gap_crossings",
+      "size": 32,
+      "falsePositive": 0.189,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_grazed_share",
+      "size": 16,
+      "falsePositive": 0.063,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_grazed_share",
+      "size": 32,
+      "falsePositive": 0.063,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_recolonisations",
+      "size": 16,
+      "falsePositive": 0,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher",
+      "note": "mean is 0"
+    },
+    {
+      "metric": "eval.herd_recolonisations",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher",
+      "note": "mean is 0"
+    },
+    {
+      "metric": "eval.herd_stampede_rate",
+      "size": 16,
+      "falsePositive": 0.192,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_stampede_rate",
+      "size": 32,
+      "falsePositive": 0.144,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.trample_unavoidable_share",
+      "size": 16,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.trample_unavoidable_share",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.trampled_share",
+      "size": 16,
+      "falsePositive": 0.128,
+      "detectable": 0.75,
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.trampled_share",
+      "size": 32,
+      "falsePositive": 0.077,
+      "detectable": 0.5,
+      "validShare": 1,
+      "direction": "lower"
+    }
+  ]
+}
