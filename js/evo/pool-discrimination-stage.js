@@ -20,6 +20,7 @@ const STAGE_CONFIG = Object.freeze({
     worldWidth: 3000,
     worldHeight: 4000,
     maxAgents: 8,
+    herdCount: 0,
     initialAgents: 0,
     minAgents: 0,
     initialFood: 0,

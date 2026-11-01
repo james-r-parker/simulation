@@ -31,7 +31,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 300,
-      "worldHash": "6d7bb5c988648791"
+      "worldHash": "a522d288ccddb3dd"
     },
     {
       "name": "busy",
@@ -50,7 +50,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "c7c08a18158b8053"
+      "worldHash": "684c25e690a91e2c"
     }
   ]
 }
