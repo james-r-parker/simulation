@@ -15,6 +15,7 @@ export const WATCH_INTENDED_LOWER = new Set([
     'eval.energy_over_split',
     'eval.chase_giveup_share',
     'eval.gap_never_share',
+    'eval.trampled_share',
 ]);
 
 /**
