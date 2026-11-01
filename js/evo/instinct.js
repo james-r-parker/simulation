@@ -32,14 +32,15 @@ const SINE = HIT_STRIDE - 1;
 
 /**
  * Adds the reflexes to a random row in place, scaled by `weight`. Every body: thrust and turn towards food, and (a
- * non-hunter) thrust and turn away from a threat. A hunter: thrust, turn towards and bite prey. Every body: the alarm,
- * hunt-call and smoke biases start at -2 x weight.
+ * non-hunter) thrust and turn away from a threat; every body thrusts and turns away from megafauna at `herdWary` x
+ * weight. A hunter: thrust, turn towards and bite prey. Every body: the alarm, hunt-call and smoke biases start at -2 x weight.
  * @param {Float32Array} row the weight row (a random genome)
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean}} options `weight` is `config.instinctWeight`; 0 changes nothing
+ * @param {{weight: number, canHunt: boolean, herdWary: number}} options `weight` is `config.instinctWeight`; 0 or
+ *   `herdWary` 0 leaves its corresponding terms unchanged
  * @returns {void}
  */
-export function applyInstinct(row, layout, { weight, canHunt }) {
+export function applyInstinct(row, layout, { weight, canHunt, herdWary }) {
     if (weight === 0) {
         return;
     }
@@ -55,6 +56,8 @@ export function applyInstinct(row, layout, { weight, canHunt }) {
         addSkip(row, layout, { channel: 'threat', part: STRENGTH, output: THRUST, amount: w });
         addSkip(row, layout, { channel: 'threat', part: SINE, output: TURN, amount: -w });
     }
+    addSkip(row, layout, { channel: 'megafauna', part: STRENGTH, output: THRUST, amount: herdWary * w });
+    addSkip(row, layout, { channel: 'megafauna', part: SINE, output: TURN, amount: -herdWary * w });
     for (const output of [ALARM, HUNT, SMOKE]) {
         const i = layout.bOut + GENE_OUTPUTS.indexOf(output);
         row[i] = Math.max(-WEIGHT_CLAMP, SILENT_BIAS * w);
@@ -73,6 +76,7 @@ export function randomGenome(world, slot, { row, rng }) {
     randomWeights(row, layout, rng, config.leakGeneStart);
     applyInstinct(row, layout, {
         weight: config.instinctWeight,
+        herdWary: config.herdWary,
         canHunt: specParams(config, world.spec[slot]).canHunt,
     });
 }

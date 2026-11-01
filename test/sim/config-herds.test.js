@@ -24,6 +24,7 @@ describe('herd config', () => {
             herdLeaveShare: 0.4,
             herdCarcassTicks: 12000,
             herdStayTicks: 6000,
+            herdWary: 1,
             trampleDamage: 400,
         });
         expect(() => createConfig()).not.toThrow();
@@ -52,5 +53,12 @@ describe('herd config', () => {
     it('keeps calf and birth stores within the herd energy budget', () => {
         expect(() => createConfig({ herdCalfEnergy: 1600 })).toThrow(/herdBirthEnergy/);
         expect(() => createConfig({ herdBirthEnergy: 3001 })).toThrow(/herdBirthEnergy/);
+    });
+
+    it('bounds the wary instinct weight', () => {
+        expect(createConfig({ herdWary: 0 }).herdWary).toBe(0);
+        expect(createConfig({ herdWary: 4 }).herdWary).toBe(4);
+        expect(() => createConfig({ herdWary: -0.1 })).toThrow(/herdWary/);
+        expect(() => createConfig({ herdWary: 4.1 })).toThrow(/herdWary/);
     });
 });

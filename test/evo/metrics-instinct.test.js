@@ -35,12 +35,12 @@ function handWorld(pools, { offset, tick }) {
 
 describe('instinctCells', () => {
     it('lists the cells applyInstinct writes, with their prior on a zero row', () => {
-        const hunter = instinctCells(LAYOUT, { weight: 1, canHunt: true });
-        const other = instinctCells(LAYOUT, { weight: 1, canHunt: false });
-        expect(hunter.cells).toHaveLength(8); // thrust, turn and bite on prey; thrust and turn on food; three biases
-        expect(other.cells).toHaveLength(7); // thrust and turn on food and on threat; three biases
-        expect([...hunter.prior].sort()).toEqual([-2, -2, -2, 1, 1, 1, 1, 2]);
-        expect([...other.prior].sort()).toEqual([-1, -2, -2, -2, 1, 1, 1]);
+        const hunter = instinctCells(LAYOUT, { weight: 1, canHunt: true, herdWary: 0.5 });
+        const other = instinctCells(LAYOUT, { weight: 1, canHunt: false, herdWary: 0.5 });
+        expect(hunter.cells).toHaveLength(10); // food, prey and wary terms; bite; three biases
+        expect(other.cells).toHaveLength(9); // food, threat and wary terms; three biases
+        expect([...hunter.prior].sort((a, b) => a - b)).toEqual([-2, -2, -2, -0.5, 0.5, 1, 1, 1, 1, 2]);
+        expect([...other.prior].sort((a, b) => a - b)).toEqual([-2, -2, -2, -1, -0.5, 0.5, 1, 1, 1]);
     });
 });
 

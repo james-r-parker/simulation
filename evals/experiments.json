@@ -2114,6 +2114,27 @@
       "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan’s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen’s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
     },
     {
+      "id": "E77",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p2-sense",
+      "hypothesis": "For the scenes A real chase and Luck is not skill, giving herds a dedicated input and adding a wary reflex lets blobs detect and avoid megafauna, reducing trample exposure while retaining enough sensory activity to learn from the new channel.",
+      "prediction": "Preregistered before the screen: compare the Phase 1 adopted defaults against one-key arms for herdWary 0, 0.5 and 1, trampleDamage 200, 400 and 800, herdCount 4 and 6, and herdSize 8 and 12 (8 seeds x 200000 ticks, policy live). For Luck is not skill, expect the wary reflex to lower eval.trampled_share and improve eval.dodge_skill relative to herdWary 0; watch eval.input_active_share for the six values in the megafauna channel against the 0.02 target. Record eval.spec_effective, predator presence, and the survival gate as diagnostics. No arm is adopted before the registered runs and subsequent review.",
+      "targets": [
+        "eval.dodge_skill",
+        "eval.trampled_share",
+        "eval.spec_effective",
+        "eval.input_active_share",
+        "bench.step_ms@500"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "Megafauna Phase 1 adopted defaults (herdCount 6, herdStartleRadius 200, herdCarcassTicks 12000)",
+      "after": "11-arm E77 reports and table in evals/screens/results/herd-sense/ (8 seeds x 200000 ticks, policy live)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "E77 completed all 11 arms with no runner errors. Important baseline caveat: this branch ran against the pre-Flora toxinDose 0.45 defaults (config hash e2cf27dfd276b012), not current main's toxinDose 1.2, so these are exploratory results only and no arm is adopted. Wary=1 is the best local behavior arm: mean dodge_skill 0.9907, trampled_share 0.0143, spec_effective 3.190, input_active_share 0.2761; all six megafauna input values exceed 0.02. Reference Wary=0.5 has 0.9744, 0.0400, 2.944, and 0.2745 respectively. All arms fail the generic population gate (0/8); Wary=1 has predators at end 1/8, prey types 8/8, and basin_lineage_effective >=3 on 1/8. These survival/family misses are not claimed as passes and remain balancing follow-ups. The full per-arm table and reports are in evals/screens/results/herd-sense/. E92 is preregistered separately on current main's toxinDose 1.2 before any adoption."
+    },
+    {
       "id": "E81",
       "date": "2026-10-30",
       "branch": "evals/balance-screen",
@@ -2234,6 +2255,29 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Stopped by the user before any arm finished (2026-10-31); owed when balancing reopens (natural-selection T50). The shark rule at 600 was adopted without it."
+    },
+    {
+      "id": "E92",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p2-sense",
+      "hypothesis": "On current main's toxinDose 1.2 baseline, herdWary 1 preserves the sensory-channel activity and behavioral benefit suggested by E77 relative to herdWary 0.5.",
+      "prediction": "On 16 matched seeds x 200000 ticks with live policy and current defaults, herdWary 1 will increase eval.dodge_skill and lower eval.trampled_share versus the herdWary 0.5 reference, with all six megafauna input values above 0.02. Population, predator, prey-type and per-basin family outcomes are recorded as balancing diagnostics; they are not adoption blockers under the user's explicit partial-acceptance direction.",
+      "targets": [
+        "eval.dodge_skill",
+        "eval.trampled_share",
+        "eval.spec_effective",
+        "eval.input_active_share",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "Current main reference: herdWary 0.5, toxinDose 1.2",
+      "after": "Matched E92 reports, table and verdicts in evals/screens/results/herd-sense-current/ (16 seeds x 200000 ticks, policy live)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Completed after preregistration on current main defaults (toxinDose 1.2): matched Wary 0.5 versus 1 on 16 seeds x 200000 ticks. Wary 1 improves mean dodge_skill 0.98826 to 0.99225 and lowers trampled_share 0.02846 to 0.01398; spec_effective rises 3.0057 to 3.2288 and input_active_share stays 0.27271 to 0.27319. The six Wary 1 input-activity means are 0.05110, 0.05110, 0.04955, 0.02962, 0.02962 and 0.02902, all above 0.02. Predators at end are positive 1/16 versus 3/16; prey 16/16 both; basin_lineage_effective >=3 on 1/16 versus 3/16. Generic population gate is 0/16 both arms. T24 adopts herdWary 1 based on the confirmed behavioral benefit; herdCount 6 and herdSize 8 remain unchanged. None of the survival, family or population gates is claimed passed; these remain balancing follow-ups. The separate 20,000-tick input check and T23 benchmark are recorded in docs/designs/sim-notes.md."
     }
   ]
 }

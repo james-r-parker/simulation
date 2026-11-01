@@ -1,0 +1,40 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "phase1-defaults",
+  "arms": {
+    "phase1-defaults": {},
+    "herdWary-0": {
+      "herdWary": 0
+    },
+    "herdWary-0p5": {
+      "herdWary": 0.5
+    },
+    "herdWary-1": {
+      "herdWary": 1
+    },
+    "trampleDamage-200": {
+      "trampleDamage": 200
+    },
+    "trampleDamage-400": {
+      "trampleDamage": 400
+    },
+    "trampleDamage-800": {
+      "trampleDamage": 800
+    },
+    "herdCount-4": {
+      "herdCount": 4
+    },
+    "herdCount-6": {
+      "herdCount": 6
+    },
+    "herdSize-8": {
+      "herdSize": 8
+    },
+    "herdSize-12": {
+      "herdSize": 12
+    }
+  }
+}

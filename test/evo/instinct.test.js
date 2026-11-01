@@ -3,7 +3,14 @@ import { applyInstinct, randomGenome } from '../../js/evo/instinct.js';
 import { randomWeights } from '../../js/evo/mutation.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 import { createConfig } from '../../js/sim/config.js';
-import { GENE_OUTPUTS, OUTPUT_COUNT, OUTPUT_INDEX, brainLayout, inputOffsets } from '../../js/sim/brain-layout.js';
+import {
+    GENE_OUTPUTS,
+    OUTPUT_COUNT,
+    OUTPUT_INDEX,
+    POOLED_STRIDE,
+    brainLayout,
+    inputOffsets,
+} from '../../js/sim/brain-layout.js';
 import { createRng } from '../../js/sim/rng.js';
 import { step } from '../../js/sim/step.js';
 
@@ -24,7 +31,7 @@ function rowOf(seed, weight, canHunt, pure = false) {
     if (!pure) {
         randomWeights(row, layout, createRng(seed), config.leakGeneStart);
     }
-    applyInstinct(row, layout, { weight, canHunt });
+    applyInstinct(row, layout, { weight, canHunt, herdWary: config.herdWary });
     return row;
 }
 
@@ -68,7 +75,7 @@ describe('applyInstinct', () => {
         const plain = rowOf(5, 0, false);
         for (const canHunt of [false, true]) {
             const row = plain.slice();
-            applyInstinct(row, layout, { weight: 1, canHunt });
+            applyInstinct(row, layout, { weight: 1, canHunt, herdWary: config.herdWary });
             const start = layout.wSkip + hue * layout.geneOutputs;
             const end = start + 2 * layout.geneOutputs;
             expect(row.subarray(start, end)).toEqual(plain.subarray(start, end));
@@ -80,7 +87,7 @@ describe('applyInstinct', () => {
         randomWeights(plain, layout, createRng(5), config.leakGeneStart);
         for (const canHunt of [false, true]) {
             const row = plain.slice();
-            applyInstinct(row, layout, { weight: 0, canHunt });
+            applyInstinct(row, layout, { weight: 0, canHunt, herdWary: config.herdWary });
             expect(row).toEqual(plain);
         }
         const rng = createRng(5);
@@ -97,7 +104,7 @@ describe('applyInstinct', () => {
         const plain = new Float32Array(layout.weightCount);
         randomWeights(plain, layout, createRng(5), config.leakGeneStart);
         const row = plain.slice();
-        applyInstinct(row, layout, { weight: 1, canHunt: false });
+        applyInstinct(row, layout, { weight: 1, canHunt: false, herdWary: config.herdWary });
         /** @type {number[]} */
         const changed = [];
         row.forEach((v, i) => v !== plain[i] && changed.push(i));
@@ -109,6 +116,37 @@ describe('applyInstinct', () => {
         for (const o of [OUTPUT_INDEX.ALARM, OUTPUT_INDEX.HUNT, OUTPUT_INDEX.SMOKE]) {
             expect(row[layout.bOut + GENE_OUTPUTS.indexOf(o)]).toBe(-2);
         }
+    });
+
+    it('adds the wary thrust and turn terms on the megafauna channel for hunters and foragers', () => {
+        const channel = inputOffsets(config).pooled.megafauna;
+        for (const canHunt of [false, true]) {
+            const row = new Float32Array(layout.weightCount);
+            applyInstinct(row, layout, { weight: 1, canHunt, herdWary: 0.5 });
+            const thrust =
+                layout.wSkip + (channel + 0) * layout.geneOutputs + GENE_OUTPUTS.indexOf(OUTPUT_INDEX.THRUST);
+            const turn = layout.wSkip + (channel + 2) * layout.geneOutputs + GENE_OUTPUTS.indexOf(OUTPUT_INDEX.TURN);
+            expect(row[thrust]).toBe(0.5);
+            expect(row[turn]).toBe(-0.5);
+        }
+    });
+
+    it('leaves the wary terms unchanged at herdWary 0 and consumes no random draws at its default', () => {
+        const plain = new Float32Array(layout.weightCount);
+        randomWeights(plain, layout, createRng(9), config.leakGeneStart);
+        const row = plain.slice();
+        applyInstinct(row, layout, { weight: 1, canHunt: false, herdWary: 0 });
+        const channel = inputOffsets(config).pooled.megafauna;
+        const waryStart = layout.wSkip + channel * layout.geneOutputs;
+        const waryEnd = waryStart + POOLED_STRIDE * layout.geneOutputs;
+        expect(row.subarray(waryStart, waryEnd)).toEqual(plain.subarray(waryStart, waryEnd));
+
+        const rng = createRng(9);
+        const world = { config, layout, spec: new Uint8Array([FORAGER]) };
+        randomGenome(world, 0, { row: new Float32Array(layout.weightCount), rng });
+        const ref = createRng(9);
+        randomWeights(new Float32Array(layout.weightCount), layout, ref, config.leakGeneStart);
+        expect(rng.s).toEqual(ref.s);
     });
 
     it('turns towards food on its left and on its right (sign checked by the heading change)', () => {

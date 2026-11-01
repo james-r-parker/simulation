@@ -77,7 +77,7 @@ computed (no `genomeSize` function is added). T1a pins every cell below in `../.
 a per-block derivation, so this table and the test change in one commit. Blocks, in row order: `wIn` (inputs x H),
 `wRec` (H x H), `bHidden` (H), `wOut` (H x outputs with genes), `bOut`, `wSkip` (skip source values x outputs with
 genes), trait genes 4, leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
-inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 adds two food hues in `pooled-v3`; the built layout is the last row.
+inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 added two food hues in `pooled-v3`; Megafauna Phase 2 adds the ninth pooled channel in `pooled-v4`, now the built layout.
 
 | Layout and options                                                                                                                     | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
 | -------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | --------- | --------- |
@@ -87,6 +87,7 @@ inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 add
 | `pooled-v2` top 2, no `SPLIT` genes, no skip                                                                                           | 1,758     | 2,822     | 4,014     | 6,782     | 10,062    |
 | `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (built before flora Phase 2)                                                | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
 | `pooled-v3` top 2, two food hues, no `SPLIT` genes, `brainSkip` (50 x 10) (the built layout)                                           | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| `pooled-v4` top 2, nine channels and two food hues, no `SPLIT` genes, `brainSkip` (56 x 10) (Megafauna Phase 2)                        | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
 | (the earlier 57-input strongest-hit variant, never built, had 1,391 / 2,271 / 3,279 / 5,679 / 8,591 for the `SPLIT`-kept, no-skip row) |           |           |           |           |           |
 
 ## Sensory schema
@@ -102,16 +103,17 @@ code and doc change in one commit.
 The brain's input row starts with the pooled block: per channel, the two strongest ray hits, strongest first (the first
 ray wins a tie), each as 3 values, so 6 values per channel and a channel's offset is its index x 6.
 
-| Channel    | Offset | Meaning                                             |
-| ---------- | ------ | --------------------------------------------------- |
-| `food`     | 0      | A food item: a plant item or a carcass              |
-| `threat`   | 6      | An agent that can bite me (`couldBite` of it at me) |
-| `prey`     | 12     | An agent I can bite                                 |
-| `other`    | 18     | An agent that is neither                            |
-| `kin`      | 24     | An agent of my lineage                              |
-| `wall`     | 30     | A `WALL` hit of `ray-gather.js`                     |
-| `obstacle` | 36     | A rock or a refuge ring                             |
-| `smoke`    | 42     | A smoke cloud                                       |
+| Channel     | Offset | Meaning                                             |
+| ----------- | ------ | --------------------------------------------------- |
+| `food`      | 0      | A food item: a plant item or a carcass              |
+| `threat`    | 6      | An agent that can bite me (`couldBite` of it at me) |
+| `prey`      | 12     | An agent I can bite                                 |
+| `other`     | 18     | An agent that is neither                            |
+| `kin`       | 24     | An agent of my lineage                              |
+| `wall`      | 30     | A `WALL` hit of `ray-gather.js`                     |
+| `obstacle`  | 36     | A rock or a refuge ring                             |
+| `smoke`     | 42     | A smoke cloud                                       |
+| `megafauna` | 48     | A moving herd animal                                |
 
 ### Values of one hit
 
@@ -126,12 +128,12 @@ real hit from a missing one by `strength`. Every pooled input lies in [-1, 1].
 
 ### Food hues
 
-The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 48 and 49. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 50.
+The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 54 and 55. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 56.
 
 ### Body inputs
 
 33 inputs after the pooled block, written by `writeBodyInputs` and `scent-inputs.js`. The absolute input offset is the
-pooled value count (50 now) plus the body offset.
+pooled value count (56 now) plus the body offset.
 
 | Group             | Body offset | Count | Meaning                                                                                 |
 | ----------------- | ----------- | ----- | --------------------------------------------------------------------------------------- |
@@ -153,10 +155,10 @@ pooled value count (50 now) plus the body offset.
 Each extension changes this schema, the test and `ARCHIVE_VERSION` in one task. The flora hue value of one food hit is
 a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 
-| Step                   | Change                                                                                                | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
-| ---------------------- | ----------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
-| Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                   | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
-| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| Step                   | Change                                                                                                              | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
+| Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                                 | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 (`pooled-v4`) | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
 
 ## Hypotheses
 
@@ -220,20 +222,20 @@ layout as built before B3: 81 inputs, the `SPLIT` column kept and no skip; B3 ad
   now. The top 2 are what lets two targets of one channel on opposite sides, or the two walls of a passage, reach the
   brain at all; the discrimination checks (below) measure how far that goes. The sensory audit (T14) may amend this list,
   the channel set or the ranges; an amendment is a layout revision screened in `E53` beside the skip arms.
-- **Skip** (built, no key). A `wSkip` block from the 50 pooled values (including the two food hues) to the outputs that have genes (10 without `SPLIT` genes, 11 with), added
+- **Skip** (built, no key). A `wSkip` block from the 56 pooled values (including the two food hues) to the outputs that have genes (10 without `SPLIT` genes, 11 with), added
   to the output sums before `tanh`, so reflexes (food ahead to thrust, threat to turn away, prey in reach to bite) need
   no hidden unit. The skip sees only the pooled rays, not energy or mate-ready; those stay among the 33 body inputs
-  (33 of the 83 inputs).
+  (33 of the 89 inputs).
 - **No season inputs.** The sine and cosine of the year phase are deleted (`seasonInputs` never shipped as a key). The
   blob is not told the calendar; it feels the season through its temperature inputs and the food on its rays
   (principles.md, "senses are local"). The body block is 33 inputs; the observer, the inspector labels and
   `inputActivity` follow.
 - **No `SPLIT` genes** (built, no key). The `SPLIT` output column keeps its slot in the 11-wide
   output row (indices unchanged) and has no weight, bias or Hebbian update; it reads 0.
-- **Genome length** is the Genome sizes table: `brainLayout(config).weightCount` for the hidden width (4,578 at 32). The
+- **Genome length** is the Genome sizes table: `brainLayout(config).weightCount` for the hidden width (4,830 at 32). The
   output blocks `wOut`, `bOut` and `wSkip` have `geneOutputs` (10) columns, gene column `g` driving output
   `GENE_OUTPUTS[g]` (`js/sim/brain-layout.js`: every output but `SPLIT`). Random skip weights have standard deviation
-  `1 / sqrt(50)`, crossover takes each output's skip column whole from one parent, and the skip block is genome only
+  `1 / sqrt(56)`, crossover takes each output's skip column whole from one parent, and the skip block is genome only
   (no Hebbian update).
 - `brainLayout(config)` returns the offsets; the genome, champion and archive `layout` field carries the input and output
   counts, and `assertGenomeFits` and `validateChampion` reject a mismatch naming it.
@@ -286,7 +288,7 @@ fitness-and-selection.md (0.25 ms).
 | `eval.leak_flee_corr`             | watch  | The same with the life's evasion skill (`eval.evasion_skill`, per life)                                                                                                                                                                                                                                                                                                                                                                                               | fewer than 100 lives with an episode                |
 | `eval.hebb_drift`                 | watch  | Mean over checkpoint-sampled agents aged at least 600 ticks of the norm of `fastOut - wOut` over the norm of `wOut`                                                                                                                                                                                                                                                                                                                                                   | `hebbianRate` 0, or no sampled agent                |
 | `eval.hebb_drift_clamped_share`   | watch  | Share of those agents' `fastOut` entries at plus or minus `HEBB_CLAMP`                                                                                                                                                                                                                                                                                                                                                                                                | as above                                            |
-| `eval.input_active_share`         | watch  | Mean share of nonzero values in the row the genome multiplies, for an alive agent, sampled every 16 ticks after burn-in: the `pooled` row (81 values). The raw 177-value `inputs` row is not sampled                                                                                                                                                                                                                                                                  | no samples                                          |
+| `eval.input_active_share`         | watch  | Mean share of nonzero values in the row the genome multiplies, for an alive agent, sampled every 16 ticks after burn-in: the current `pooled` row (89 values). The raw 193-value `inputs` row at 16 rays is not sampled                                                                                                                                                                                                                                               | no samples                                          |
 | `eval.weight_drift_silent`        | watch  | Mean absolute `wIn` weight of the checkpoint-sampled agents on rare inputs (active share under 0.01 after burn-in, over at least 10,000 agent-samples), divided by the same mean on the other inputs. Initial value about 1 (`randomWeights` is the same on both)                                                                                                                                                                                                     | no input under 0.01, or no input at or above 0.01   |
 | `eval.weight_clamp_share`         | watch  | Share of the sampled agents' `wIn`, `wRec` and `wOut` weights with absolute value at least 3.9                                                                                                                                                                                                                                                                                                                                                                        | no sampled agent                                    |
 | `eval.rare_input_saturation_jump` | watch  | For each first firing in an agent's life, at or after burn-in (tick 10000), of a rare input (run-so-far active share under 0.01 over at least 10,000 agent-samples of the 16-tick input-activity sample; before that no input is rare) (the firing check and the hidden-unit share read at the 4-tick sample, the rarity test at the 16-tick sample): the share of hidden units with absolute value above 0.95 at the next sample minus the share at the previous one | fewer than 100 events                               |

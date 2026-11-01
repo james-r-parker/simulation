@@ -91,6 +91,10 @@ function reference(world, slot) {
  * @returns {number} the first nonzero pooled value's index in slot 1
  */
 function firstPooled(world) {
+    const raw = world.layout.rawInputCount;
+    world.inputs[raw] = 0.5;
+    world.inputs[raw + 1] = 0.5;
+    poolRays(world, 1);
     const at = world.layout.inputCount;
     const found = Array.from(world.pooled.subarray(at, at + POOLED_VALUES)).findIndex((x) => x !== 0);
     expect(found).toBeGreaterThanOrEqual(0);
@@ -154,7 +158,7 @@ describe('forwardAll', () => {
         const x = world.pooled[inputCount + food];
         expect(world.outputs[OUT + 0]).toBe(Math.fround(detTanh(Math.fround(1.5) * x)));
         expect(world.outputs[OUT + 1]).toBe(0);
-        // the skip does not see the body inputs: a weight past the 48 pooled values is not read
+        // the skip does not see the body inputs: a weight past the 56 pooled values is not read
         expect(world.layout.wSkip + POOLED_VALUES * G).toBe(world.layout.traitStart);
     });
 

@@ -44,7 +44,7 @@ const sum = { x: 0, y: 0, n: 0 };
  * Sums, over the rays that hit a channel, proximity times the ray's cosine and sine.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
- * @param {number} channel a ray channel (1 to 8)
+ * @param {number} channel a ray channel (1 to 9)
  * @returns {{x: number, y: number, n: number}} the weighted sums and the hits counted; a reused object
  */
 function rayVector(world, slot, channel) {
@@ -66,7 +66,7 @@ function rayVector(world, slot, channel) {
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
- * @param {number} channel a ray channel (1 to 8)
+ * @param {number} channel a ray channel (1 to 9)
  * @returns {number} the ray index of the strongest hit of the channel, or -1
  */
 function strongestRay(world, slot, channel) {

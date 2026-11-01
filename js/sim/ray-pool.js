@@ -13,7 +13,7 @@ import {
 /**
  * @param {Float32Array} inputs the raw inputs
  * @param {number} base the index of a ray's proximity
- * @returns {number} the pooled channel the ray hit (0 to 7), or -1 when it hit nothing
+ * @returns {number} the pooled channel the ray hit (0 to 8), or -1 when it hit nothing
  */
 function channelOf(inputs, base) {
     if (inputs[base] <= 0) {
@@ -56,8 +56,8 @@ function copyBody(world, slot) {
 }
 
 /**
- * Writes the `pooled` row of an alive agent from its `inputs` row. For each of the eight ray channels (food, threat,
- * prey, other, kin, wall, obstacle, smoke) the two strongest hits over the rays give, strongest first, a strength (the
+ * Writes the `pooled` row of an alive agent from its `inputs` row. For each of the nine ray channels (food, threat,
+ * prey, other, kin, wall, obstacle, smoke, megafauna) the two strongest hits over the rays give, strongest first, a strength (the
  * ray's proximity) and the cosine and sine of that ray's angle in the agent's own frame. An unused slot is 0 in all
  * three values. The first ray wins a tie. Two food hues follow the ray values, then the unchanged body values. Every value lies in [-1, 1].
  * @param {import('./world.js').World} world the world

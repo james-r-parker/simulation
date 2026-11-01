@@ -29,11 +29,12 @@ describe('inspectorView on a real selected agent', () => {
             'Memory',
         ]);
         const bars = view.groups.flatMap((g) => g.bars);
-        expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 9);
+        expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 10);
         expect(bars.every((b) => b.value >= -1 && b.value <= 1 && b.label !== '')).toBe(true);
     });
 
     it('draws one spoke per ray, with a class channel only where the ray saw something', () => {
+        expect(CLASS_CHANNELS.at(-1)).toBe('megafauna');
         expect(view.radar.lengths).toHaveLength(ready.info.rayCount);
         for (let k = 0; k < view.radar.lengths.length; k++) {
             expect(view.radar.channels[k]).toBeGreaterThanOrEqual(-1);
