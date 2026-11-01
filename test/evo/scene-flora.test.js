@@ -245,6 +245,52 @@ describe('flora diet detectors', () => {
         expect(metric().value).toBe(0);
     });
 
+    it('measures patch deaths per 1000 post-burn-in ticks without double counting', () => {
+        const emptyWorld = smallWorld();
+        const emptyScene = createFloraScene();
+        emptyWorld.tick = BURN_IN_TICKS + 1;
+        trackFlora(emptyScene, emptyWorld);
+        expect(floraMetrics(emptyScene)['eval.flora_patch_death_rate'].value).toBe(0);
+
+        const w = smallWorld();
+        const scene = createFloraScene();
+        const metric = () => floraMetrics(scene)['eval.flora_patch_death_rate'];
+        expect(metric().value).toBeNull();
+        expect(metric().reason).toContain('no observed ticks');
+        w.tick = BURN_IN_TICKS + 1;
+        pushEvent(w.events, EVENT_TYPE.PATCH_DIED, BURN_IN_TICKS);
+        pushEvent(w.events, EVENT_TYPE.PATCH_DIED, BURN_IN_TICKS + 1);
+        trackFlora(scene, w);
+        trackFlora(scene, w);
+        expect(metric().value).toBe(1000);
+        clearEvents(w.events);
+        w.tick++;
+        trackFlora(scene, w);
+        expect(metric().value).toBe(500);
+    });
+
+    it('measures mean seed-bank slot occupancy at 1000-tick checkpoints', () => {
+        const w = smallWorld({ floraPatchMax: 4 });
+        const scene = createFloraScene();
+        const metric = () => floraMetrics(scene)['eval.flora_seed_bank_occupancy_share'];
+        expect(metric().value).toBeNull();
+        expect(metric().reason).toContain('no seed-bank checkpoints');
+        const firstCheckpoint = Math.ceil((BURN_IN_TICKS + 1) / 1000) * 1000;
+        w.patchBank.fill(0);
+        w.tick = firstCheckpoint;
+        trackFlora(scene, w);
+        expect(metric().value).toBe(0);
+        w.patchBank.fill(0);
+        w.patchBank[0] = w.patchBank[1] = 1;
+        w.tick = firstCheckpoint + 1000;
+        trackFlora(scene, w);
+        w.patchBank.fill(1);
+        w.tick = firstCheckpoint + 2000;
+        trackFlora(scene, w);
+        expect(scene.seedBankCheckpoints).toBe(3);
+        expect(metric().value).toBe(0.5);
+    });
+
     it('reports zero deviation for a single live pollinated patch and null with none', () => {
         const w = smallWorld();
         const scene = createFloraScene();
