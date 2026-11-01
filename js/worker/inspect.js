@@ -38,6 +38,7 @@ const RAY_CHANNEL_NAMES = Object.freeze([
     'wall',
     'obstacle',
     'smoke',
+    'megafauna',
 ]);
 
 /** @type {readonly [string, string][]} body input names with their group, in input order */
@@ -79,7 +80,7 @@ const BODY_INPUTS = Object.freeze([
 
 /**
  * The names the inspector labels its bars with.
- * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the nine ray
+ * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the ten ray
  *   channel names, the 33 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
  */
 export function inspectLabels() {

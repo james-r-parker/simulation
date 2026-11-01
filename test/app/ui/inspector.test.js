@@ -46,7 +46,7 @@ describe('smoothHidden', () => {
 describe('drawRadar', () => {
     it('draws one spoke per ray in its channel colour, longest where the proximity is highest', () => {
         const ctx = recorder();
-        const radar = { lengths: Float32Array.of(1, 0.5, 0), channels: Int8Array.of(0, -1, 3) };
+        const radar = { lengths: Float32Array.of(1, 0.5, 0), channels: Int8Array.of(0, -1, 8) };
         drawRadar(ctx, radar, 100);
         const lineTos = ctx.calls.filter((/** @type {any[]} */ c) => c[0] === 'lineTo');
         expect(lineTos).toHaveLength(3);
@@ -56,6 +56,7 @@ describe('drawRadar', () => {
         const strokes = ctx.calls.filter((/** @type {any[]} */ c) => c[0] === 'set' && c[1] === 'strokeStyle');
         expect(strokes[1][2]).toBe('#5ee6a8');
         expect(strokes[2][2]).toMatch(/^rgba/);
+        expect(strokes[3][2]).toBe('#e3c565');
     });
 });
 

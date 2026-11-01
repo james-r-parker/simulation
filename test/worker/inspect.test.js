@@ -18,9 +18,10 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
 
 describe('inspectLabels', () => {
-    it('names the 9 ray channels, the 33 body inputs and the 11 outputs', () => {
+    it('names the 10 ray channels, the 33 body inputs and the 11 outputs', () => {
         const labels = inspectLabels();
         expect(labels.rayChannels).toHaveLength(RAY_CHANNELS);
+        expect(labels.rayChannels.at(-1)).toBe('megafauna');
         expect(labels.bodyInputs).toHaveLength(EXTRA_INPUTS);
         expect(labels.outputs).toEqual([
             'thrust',
@@ -73,7 +74,7 @@ describe('workerLayout', () => {
 
     it('keeps the sim layout fields for the reader', () => {
         const layout = workerLayout(smallWorld().config);
-        expect(layout).toMatchObject({ headerWords: 8, agentStride: 12, rayStride: 4, inputCount: 4 * 9 + 33 });
+        expect(layout).toMatchObject({ headerWords: 8, agentStride: 12, rayStride: 4, inputCount: 4 * 10 + 33 });
     });
 });
 

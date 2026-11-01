@@ -11,7 +11,7 @@ export const CANVAS_SIZE = 150;
 /** The share of the way each displayed heatmap cell moves towards its activation per update. */
 export const HEAT_SMOOTHING = 0.25;
 
-/** Spoke colours by class channel: food, can bite me, I can bite it, other, kin, wall, obstacle, smoke. */
+/** Spoke colours by class channel: food, can bite me, I can bite it, other, kin, wall, obstacle, smoke, megafauna. */
 const CHANNEL_CSS = Object.freeze([
     '#5ee6a8',
     '#ff5d73',
@@ -21,6 +21,7 @@ const CHANNEL_CSS = Object.freeze([
     '#e6edf5',
     '#7f8da0',
     '#b48cff',
+    '#e3c565',
 ]);
 const NO_HIT_CSS = 'rgba(255,255,255,0.12)';
 
