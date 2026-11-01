@@ -1,6 +1,8 @@
 # Flora
 
-**Status:** Implemented - Phases 1 to 4 are built, E69-E74 calibration is recorded, and `toxinDose: 1.2` is the measured default; `floraPatchMax` remains 32. The local pollination-rate and hue-spread criteria were not met and global predator/family criteria were not met; both are explicit balancing follow-ups, not passes. `eval:power`, the 4K clip and standalone performance measurements remain owed.
+**Status:** In progress - Phases 1 to 4 code are built, E69-E74 calibration is recorded, and `toxinDose: 1.2` is the measured default; `floraPatchMax` remains 32. T7, T16 and T24 detector-power checks, T33's 4K GPU performance measurement and default-world clip, and T35 conformance remain owed. Pollination and hue targets, plus global predator/family criteria, were not met and remain explicit balancing follow-ups, not passes.
+**Validated:** e5bb5cb (2026-11-01)
+**Priority:** 2 - flora phases in order, ahead of the paused natural-selection balancing work (user, 2026-10-31)
 **Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
 Today the world has one plant food: a 100 energy item with a 10% variant at 140, spawned by 16 regrowing patches (80% of spawns) and a background (20%), scaled by a season factor that changes only the amount, plus carcasses. Every food item looks the same, tastes the same and is there all year. This doc replaces it with plant species whose traits evolve through pollination, each fruiting in its own window of the year, some of them toxic, and gives the blob one new fact about each food it sees: its hue.
