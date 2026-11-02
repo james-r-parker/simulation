@@ -6,7 +6,8 @@ export const FOOD_STRIDE = 6;
 export const PATCH_STRIDE = 5;
 export const OBSTACLE_STRIDE = 3;
 export const CLOUD_STRIDE = 3;
-export const HERD_STRIDE = 5;
+export const HERD_STRIDE = 6;
+export const ZONE_STRIDE = 4;
 
 /**
  * @typedef {object} Sections
@@ -21,6 +22,8 @@ export const HERD_STRIDE = 5;
  * @property {number} patchCount
  * @property {number} herdStart
  * @property {number} herdCount
+ * @property {number} zoneStart
+ * @property {number} zoneCount
  * @property {number} rayStart word offset of the ray part
  * @property {number} rayCount rays written per agent, 0 when the part is absent
  */
@@ -41,6 +44,8 @@ export function createSections() {
         patchCount: 0,
         herdStart: 0,
         herdCount: 0,
+        zoneStart: 0,
+        zoneCount: 0,
         rayStart: 0,
         rayCount: 0,
     };
@@ -65,6 +70,8 @@ export function readSections(u32, out) {
     out.patchCount = u32[6];
     out.herdStart = out.patchStart + out.patchCount * PATCH_STRIDE;
     out.herdCount = u32[7];
-    out.rayStart = out.herdStart + out.herdCount * HERD_STRIDE;
+    out.zoneStart = out.herdStart + out.herdCount * HERD_STRIDE;
+    out.zoneCount = u32[8];
+    out.rayStart = out.zoneStart + out.zoneCount * ZONE_STRIDE;
     return out;
 }

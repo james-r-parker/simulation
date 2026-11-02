@@ -4,6 +4,7 @@ import { createSmokeLayer, packClouds, smokeShape, TARGET_DIVISOR } from '../../
 import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { smallReady } from '../helpers/ready.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
+import { createSections, readSections } from '../../../js/app/snapshot-view.js';
 
 describe('smokeShape', () => {
     it('is a half-size, full-alpha puff when new', () => {
@@ -42,7 +43,12 @@ describe('packClouds', () => {
             ],
         });
         const out = new Float32Array(2 * 4);
-        const n = packClouds(snap.f32, { start: 8, count: 3 }, { smokeRadius: 80, out });
+        const sections = readSections(snap.u32, createSections());
+        const n = packClouds(
+            snap.f32,
+            { start: sections.cloudStart, count: sections.cloudCount },
+            { smokeRadius: 80, out },
+        );
         expect(n).toBe(2);
         expect(Array.from(out.slice(0, 4))).toEqual([100, 200, 40, Math.fround(0.55)]);
         expect(out[6]).toBeGreaterThan(40);

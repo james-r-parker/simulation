@@ -1,7 +1,7 @@
 // Draws Phase 1 megafauna as plain, seeded snapshot discs.
 
 import { AdditiveBlending, ShaderMaterial } from 'three';
-import { createSections, readSections } from '../snapshot-view.js';
+import { createSections, HERD_STRIDE, readSections } from '../snapshot-view.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 import { HERD_FRAGMENT, HERD_VERTEX } from './world-layers-shader.js';
@@ -16,7 +16,7 @@ const INTENSITY = SCENERY_MAX_LUMINANCE / HERD_LUMINANCE;
 export function packHerdBodies(f32, section, out) {
     const count = Math.min(section.herdCount, out.length / VEC4);
     for (let i = 0; i < count; i++) {
-        const source = section.herdStart + i * 5;
+        const source = section.herdStart + i * HERD_STRIDE;
         const target = i * VEC4;
         out[target] = f32[source];
         out[target + 1] = f32[source + 1];

@@ -7,17 +7,26 @@ import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('packHerdBodies', () => {
     it('packs the visible disc fields and caps at the output capacity', () => {
-        const f32 = Float32Array.from([10, 20, 80, 0.3, -1, 30, 40, 90, 0.8, 2]);
+        const f32 = Float32Array.from([10, 20, 80, 0.3, -1, 7, 30, 40, 90, 0.8, 2, 8]);
         const out = new Float32Array(4);
         expect(packHerdBodies(f32, { herdStart: 0, herdCount: 2 }, out)).toBe(1);
         expect(Array.from(out.slice(0, 3))).toEqual([10, 20, 80]);
         expect(out[3]).toBeCloseTo(0.3);
     });
+
+    it('uses the group-extended stride to pack later animals', () => {
+        const f32 = Float32Array.from([10, 20, 80, 0.3, -1, 7, 30, 40, 90, 0.8, 2, 8]);
+        const out = new Float32Array(8);
+        expect(packHerdBodies(f32, { herdStart: 0, herdCount: 2 }, out)).toBe(2);
+        expect(Array.from(out.filter((_value, index) => index % 4 !== 3))).toEqual([10, 20, 80, 30, 40, 90]);
+        expect(out[3]).toBeCloseTo(0.3);
+        expect(out[7]).toBeCloseTo(0.8);
+    });
 });
 
 describe('createHerdLayer', () => {
     it('draws only snapshot herds as discs, tracks zoom and clears when the snapshot is absent', () => {
-        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 80, 0.5, 1.2]] });
+        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 80, 0.5, 1.2, 0]] });
         const layer = createHerdLayer({ info: { herdMax: 4 } });
         const camera = createCameraController({
             canvas: { width: 400, height: 400 },

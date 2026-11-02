@@ -1,7 +1,7 @@
 # Megafauna
 
 **Status:** In progress - Phases 1, 2 and 3 are built; Phase 4 remains in progress. Under the user-directed partial acceptance, Phase 1 carries the 11/16 carcass result against the 12/16 target, predator presence 0/16 versus 2/16 on its matched reference, and the +13.6% parent-to-adoption step-time delta into balancing. Phase 2 E92 has population gate 0/16 on both arms, predator presence 3/16 versus 1/16, and `basin_lineage_effective >= 3` on 3/16 versus 1/16; its total-step comparison is -1.4%, but the ≤5% per-phase comparison fails. Phase 3 meets dung-food but misses seed-rate, grazing and population/family targets; the 1800-tick candidate is not adopted. These are balancing diagnostics, never claimed passes. Phase 1's total-step comparison remains within its 15% budget.
-**Validated:** 828d638 (2026-11-01)
+**Validated:** 9f3d3c5 (2026-11-02)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
 

@@ -4,6 +4,7 @@
 import { feedPolicy } from '../evo/feed-policy.js';
 import { createObserver, observerPhases } from '../evo/observer.js';
 import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
+import { ZONE_ORIGIN } from '../sim/environment.js';
 import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
 import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
@@ -161,6 +162,11 @@ function callThresholds(config) {
     };
 }
 
+/** @param {Record<string, any>} config the run's config @returns {{maxFood: number, fertileZoneMax: number}} the render capacities */
+function foodAndZoneCapacities(config) {
+    return { maxFood: config.maxFood, fertileZoneMax: config.fertileZoneMax };
+}
+
 /**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
@@ -172,7 +178,7 @@ export function worldInfo({ config, world }) {
         worldWidth: config.worldWidth,
         worldHeight: config.worldHeight,
         maxAgents: config.maxAgents,
-        maxFood: config.maxFood,
+        ...foodAndZoneCapacities(config),
         floraPatchMax: config.floraPatchMax,
         herdMax: config.herdCount * config.herdSize,
         foodPatchRadius: config.foodPatchRadius,
@@ -229,6 +235,7 @@ export function readyLayout(run) {
         effectCapacity: EFFECT_CAPACITY,
         effectWords: EFFECT_WORDS,
         effectKinds: { ...EFFECT_KIND },
+        zoneOrigins: { ...ZONE_ORIGIN },
         flags: { ...SNAPSHOT_FLAG },
         deathCauses: { ...DEATH_CAUSE },
         bornCauses: { ...BORN_CAUSE },

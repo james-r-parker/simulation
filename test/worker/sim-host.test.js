@@ -34,9 +34,23 @@ describe('init', () => {
         expect(ready).toMatchObject({ epoch: 1, policy: 'noise', seed: 5 });
         expect(ready.configHash).toMatch(/^[0-9a-f]{16}$/);
         expect(ready.rulesHash).toMatch(/^[0-9a-f]{16}$/);
-        expect(ready.info).toMatchObject({ worldWidth: 1600, worldHeight: 1000, maxAgents: 40, ticksPerSecond: 60 });
+        expect(ready.info).toMatchObject({
+            worldWidth: 1600,
+            worldHeight: 1000,
+            maxAgents: 40,
+            fertileZoneMax: 4,
+            ticksPerSecond: 60,
+        });
         expect(ready.info.specs).toHaveLength(5);
-        expect(ready.layout).toMatchObject({ agentStride: 12, effectKinds: { BORN: 1 }, flags: { JAW_OPEN: 1024 } });
+        expect(ready.layout).toMatchObject({
+            headerWords: 9,
+            agentStride: 12,
+            herdStride: 6,
+            zoneStride: 4,
+            zoneOrigins: { DEATH: 0, DUNG: 1 },
+            effectKinds: { BORN: 1 },
+            flags: { JAW_OPEN: 1024 },
+        });
         expect(ready.labels.outputs).toHaveLength(11);
         expect(h.of('log').map((m) => m.record.event)).toContain('WorkerStarted');
     });

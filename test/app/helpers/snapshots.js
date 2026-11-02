@@ -1,6 +1,7 @@
-// Hand-built snapshots for the app tests: the header and agent records of the layout in js/sim/snapshot.js.
+// Hand-built app-test snapshots that follow the serialized protocol in js/sim/snapshot.js.
 
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
+import { HERD_STRIDE, ZONE_STRIDE } from '../../../js/app/snapshot-view.js';
 
 /**
  * @typedef {object} AgentSpec
@@ -21,17 +22,18 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpo
 /**
  * @param {number} tick the tick
  * @param {AgentSpec[]} agents the agents, ascending by slot
- * @param {{foods?: number[][], clouds?: number[][], obstacles?: number[][], herds?: number[][]}} [extra] snapshot records
+ * @param {{foods?: number[][], clouds?: number[][], obstacles?: number[][], herds?: number[][], zones?: number[][]}} [extra] snapshot records
  * @returns {{tick: number, buffer: ArrayBuffer, u32: Uint32Array, f32: Float32Array}} a snapshot
  */
 export function makeSnapshot(tick, agents, extra = {}) {
-    const { foods = [], clouds = [], obstacles = [], herds = [] } = extra;
+    const { foods = [], clouds = [], obstacles = [], herds = [], zones = [] } = extra;
     const words =
         HEADER_WORDS +
         agents.length * AGENT_STRIDE +
         foods.length * 6 +
         (clouds.length + obstacles.length) * 3 +
-        herds.length * 5;
+        herds.length * HERD_STRIDE +
+        zones.length * ZONE_STRIDE;
     const buffer = new ArrayBuffer(words * 4);
     const u32 = new Uint32Array(buffer);
     const f32 = new Float32Array(buffer);
@@ -41,6 +43,7 @@ export function makeSnapshot(tick, agents, extra = {}) {
     u32[3] = obstacles.length;
     u32[4] = clouds.length;
     u32[7] = herds.length;
+    u32[8] = zones.length;
     agents.forEach((a, i) => {
         const w = HEADER_WORDS + i * AGENT_STRIDE;
         f32[w + AGENT_FIELD.X] = a.x ?? 0;
@@ -66,8 +69,14 @@ export function makeSnapshot(tick, agents, extra = {}) {
         w += 3;
     }
     for (const row of herds) {
-        f32.set(row, w);
-        w += 5;
+        f32.set(row.slice(0, 5), w);
+        u32[w + 5] = row[5] ?? 0;
+        w += HERD_STRIDE;
+    }
+    for (const row of zones) {
+        f32.set(row.slice(0, 3), w);
+        u32[w + 3] = row[3] ?? 0;
+        w += ZONE_STRIDE;
     }
     return { tick, buffer, u32, f32 };
 }

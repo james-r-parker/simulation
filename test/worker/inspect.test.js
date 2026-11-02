@@ -74,7 +74,14 @@ describe('workerLayout', () => {
 
     it('keeps the sim layout fields for the reader', () => {
         const layout = workerLayout(smallWorld().config);
-        expect(layout).toMatchObject({ headerWords: 8, agentStride: 12, rayStride: 4, inputCount: 4 * 10 + 33 });
+        expect(layout).toMatchObject({
+            headerWords: 9,
+            agentStride: 12,
+            herdStride: 6,
+            zoneStride: 4,
+            rayStride: 4,
+            inputCount: 4 * 10 + 33,
+        });
     });
 });
 
