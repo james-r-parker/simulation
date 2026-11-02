@@ -5,6 +5,7 @@ import { createSections, HERD_STRIDE, readSections } from '../snapshot-view.js';
 import { herdColor } from './herd-colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
 import { HERD_FRAGMENT, HERD_VERTEX } from './herd-layer-shader.js';
+import { LOOK_OFF } from './quality.js';
 
 const SECTIONS = createSections();
 const MIN_PX = 8;
@@ -36,6 +37,26 @@ export function packHerdBodies(f32, u32, section, out) {
     return count;
 }
 
+/** @param {any} state reusable layer state @param {any} frame the current render frame @returns {void} */
+function updateHerdLayer(state, frame) {
+    const { mesh, uniforms, packedBody, packedMotion, packedColor } = state;
+    uniforms.uZoom.value = frame.camera.zoom;
+    uniforms.uTime.value = Number.isFinite(frame.nowMs) ? frame.nowMs / 1000 : 0;
+    if (frame.snapshot === null) {
+        mesh.count = 0;
+        mesh.visible = false;
+        return;
+    }
+    const section = readSections(frame.snapshot.u32, SECTIONS);
+    const count = packHerdBodies(frame.snapshot.f32, frame.snapshot.u32, section, {
+        body: packedBody,
+        motion: packedMotion,
+        colors: packedColor,
+    });
+    uploadInstances(mesh, { iBody: packedBody, iMotion: packedMotion, iColor: packedColor }, count);
+    mesh.visible = state.enabled && count > 0;
+}
+
 /** @param {{info: Record<string, any>}} context ready.info @returns {import('./scene.js').Layer} herd discs */
 export function createHerdLayer({ info }) {
     const capacity = info.herdMax;
@@ -44,6 +65,7 @@ export function createHerdLayer({ info }) {
         uZoom: { value: 1 },
         uMinPx: { value: MIN_PX },
         uTime: { value: 0 },
+        uDetail: { value: 0 },
     };
     const mat = new ShaderMaterial({
         vertexShader: HERD_VERTEX,
@@ -55,25 +77,23 @@ export function createHerdLayer({ info }) {
         blending: NormalBlending,
     });
     const mesh = createQuadMesh(geometry, mat, capacity);
-    const packedBody = new Float32Array(capacity * VEC4);
-    const packedMotion = new Float32Array(capacity * VEC4);
-    const packedColor = new Float32Array(capacity * VEC4);
+    const state = {
+        mesh,
+        uniforms,
+        packedBody: new Float32Array(capacity * VEC4),
+        packedMotion: new Float32Array(capacity * VEC4),
+        packedColor: new Float32Array(capacity * VEC4),
+        enabled: true,
+    };
     return {
         object: mesh,
+        setLook(look) {
+            state.enabled = look.herds !== LOOK_OFF;
+            uniforms.uDetail.value = look.herds === 0 ? 0 : 1;
+            mesh.visible = state.enabled && mesh.count > 0;
+        },
         update(frame) {
-            uniforms.uZoom.value = frame.camera.zoom;
-            uniforms.uTime.value = Number.isFinite(frame.nowMs) ? frame.nowMs / 1000 : 0;
-            if (frame.snapshot === null) {
-                mesh.count = 0;
-                return;
-            }
-            const section = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packHerdBodies(frame.snapshot.f32, frame.snapshot.u32, section, {
-                body: packedBody,
-                motion: packedMotion,
-                colors: packedColor,
-            });
-            uploadInstances(mesh, { iBody: packedBody, iMotion: packedMotion, iColor: packedColor }, count);
+            updateHerdLayer(state, frame);
         },
         dispose() {
             geometry.dispose();

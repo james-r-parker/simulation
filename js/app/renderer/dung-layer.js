@@ -4,6 +4,7 @@ import { NormalBlending, ShaderMaterial } from 'three';
 import { createSections, ZONE_STRIDE, readSections } from '../snapshot-view.js';
 import { SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
+import { LOOK_OFF } from './quality.js';
 
 const MARK_RADIUS = 46;
 const DUNG_LUMINANCE = 0.5 * SCENERY_MAX_LUMINANCE;
@@ -17,14 +18,17 @@ attribute vec2 corner;
 attribute vec4 iBody; // x, y, radius, remaining fertility
 attribute vec4 iTint; // RGB at half the scenery ceiling
 uniform float uZoom;
+uniform float uDetail;
 varying vec2 vLocal;
 varying float vFertility;
 varying vec3 vTint;
+varying float vDetail;
 void main() {
     float radius = max(iBody.z, 2.0 / uZoom);
     vLocal = corner;
     vFertility = clamp(iBody.w, 0.0, 1.0);
     vTint = iTint.rgb;
+    vDetail = uDetail;
     gl_Position = projectionMatrix * viewMatrix * vec4(iBody.xy + corner * radius, 0.0, 1.0);
 }
 `;
@@ -42,9 +46,11 @@ ${DUNG_NOISE}
 varying vec2 vLocal;
 varying float vFertility;
 varying vec3 vTint;
+varying float vDetail;
 void main() {
     float edge = 1.0 - smoothstep(0.35, 1.0, length(vLocal));
-    float speckle = step(0.64, hash21(floor(vLocal * vec2(8.0, 6.0))));
+    vec2 cells = vDetail < 0.5 ? vec2(8.0, 6.0) : vec2(4.0, 3.0);
+    float speckle = step(0.64, hash21(floor(vLocal * cells)));
     float alpha = edge * speckle * vFertility * 0.75;
     if (alpha < 0.004) discard;
     gl_FragColor = vec4(vTint * alpha, alpha);
@@ -90,7 +96,7 @@ export function createDungLayer({ info, layout }) {
     const material = new ShaderMaterial({
         vertexShader: VERTEX,
         fragmentShader: FRAGMENT,
-        uniforms: { uZoom: { value: 1 } },
+        uniforms: { uZoom: { value: 1 }, uDetail: { value: 0 } },
         transparent: true,
         depthTest: false,
         depthWrite: false,
@@ -102,12 +108,19 @@ export function createDungLayer({ info, layout }) {
         body: new Float32Array(capacity * VEC4),
         tint: new Float32Array(capacity * VEC4),
     };
+    let enabled = true;
     return {
         object: mesh,
+        setLook(look) {
+            enabled = look.herds !== LOOK_OFF;
+            material.uniforms.uDetail.value = look.herds === 0 ? 0 : 1;
+            mesh.visible = enabled && mesh.count > 0;
+        },
         update(frame) {
             material.uniforms.uZoom.value = frame.camera.zoom;
             if (frame.snapshot === null || capacity === 0) {
                 mesh.count = 0;
+                mesh.visible = false;
                 return;
             }
             const section = readSections(frame.snapshot.u32, SECTIONS);
@@ -116,6 +129,7 @@ export function createDungLayer({ info, layout }) {
                 { iBody: out.body, iTint: out.tint },
                 packDungMarks(frame.snapshot.f32, frame.snapshot.u32, section, out),
             );
+            mesh.visible = enabled && mesh.count > 0;
         },
         dispose() {
             geometry.dispose();

@@ -47,6 +47,15 @@ describe('createHerdLayer', () => {
         expect(layer.object.material.uniforms.uZoom.value).toBe(3);
         expect(layer.object.material.uniforms.uMinPx.value).toBe(8);
         expect(layer.object.material.uniforms.uTime.value).toBe(2.5);
+        layer.setLook?.({ herds: 1 });
+        expect(layer.object.material.uniforms.uDetail.value).toBe(1);
+        layer.setLook?.({ herds: -1 });
+        layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
+        expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ herds: 0 });
+        layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
+        expect(layer.object.visible).toBe(true);
+        expect(layer.object.material.uniforms.uDetail.value).toBe(0);
         layer.update?.(/** @type {any} */ ({ snapshot: null, camera }));
         expect(layer.object.count).toBe(0);
         layer.dispose();

@@ -724,9 +724,9 @@ budget; lint, typecheck and Prettier cover all of `js/`.
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms, browser.gpu_frame_p95_ms, browser.gc_pause_ms, browser.main_long_tasks
 
-Seven look items in the Look table's style, then the click-opens-inspector rule. Every item holds the Phase 2 budgets together (canvas 3840x2160 at ratio 1, quality 0, 500 agents, bloom on, 60 s): `browser.frame_p95_ms` at most 8.4, `browser.draw_cpu_p95_ms` at most 2.0 (3.0 with the lenses and the charts drawer), `browser.gc_pause_ms` under 30 and `browser.main_long_tasks` 0 after 5 s. All look items together add at most 0.5 ms to `browser.gpu_frame_p95_ms` (reported; the limit stays 4.0) and at most 0.15 ms to `browser.draw_cpu_p95_ms`. Nothing allocates per frame: every buffer, target and pool is built in the layer's constructor, and each pure packer takes its output array (a test calls it twice and asserts the same array comes back).
+Eight look items in the Look table's style, then the click-opens-inspector rule. Every item holds the Phase 2 budgets together (canvas 3840x2160 at ratio 1, quality 0, 500 agents, bloom on, 60 s): `browser.frame_p95_ms` at most 8.4, `browser.draw_cpu_p95_ms` at most 2.0 (3.0 with the lenses and the charts drawer), `browser.gc_pause_ms` under 30 and `browser.main_long_tasks` 0 after 5 s. All look items together add at most 0.5 ms to `browser.gpu_frame_p95_ms` (reported; the limit stays 4.0) and at most 0.15 ms to `browser.draw_cpu_p95_ms`. Nothing allocates per frame: every buffer, target and pool is built in the layer's constructor, and each pure packer takes its output array (a test calls it twice and asserts the same array comes back).
 
-**Measuring.** `?look=<list>` (and `--look <list>` on `npm run perf:browser`) names the items that draw: a comma list of `rocks`, `aurora`, `terrain`, `motion`, `threads`, `decay`, `finish`, `flora`, or `all` (the default) or `none`. Each item's cost is `browser.gpu_frame_p95_ms` and `browser.draw_cpu_p95_ms` of `--look <item>` minus `--look none`, over the same 60 s, 500 agents, 3840x2160 setup, with the three runs alternating. The item is accepted when its delta is at or under its budget in the table below. Then `--look all` is run against the Phase 2 budgets.
+**Measuring.** `?look=<list>` (and `--look <list>` on `npm run perf:browser`) names the items that draw: a comma list of `rocks`, `aurora`, `terrain`, `motion`, `threads`, `decay`, `finish`, `flora`, `herds`, or `all` (the default) or `none`. Each item's cost is `browser.gpu_frame_p95_ms` and `browser.draw_cpu_p95_ms` of `--look <item>` minus `--look none`, over the same 60 s, 500 agents, 3840x2160 setup, with the three runs alternating. The item is accepted when its delta is at or under its budget in the table below. Then `--look all` is run against the Phase 2 budgets.
 
 | Item (`look` name)  | GPU budget (ms) | Where the cost is                                                                                                                |
 | ------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -737,18 +737,20 @@ Seven look items in the Look table's style, then the click-opens-inspector rule.
 | Threads (`threads`) | 0.03            | At most 32 threads x 12 segments of thin lines                                                                                   |
 | Decay (`decay`)     | 0.01            | A multiply per carcass vertex, one float attribute                                                                               |
 | Finish (`finish`)   | 0.12            | One full-canvas quad with blending, 8.3 MP at 4K                                                                                 |
+| Herds (`herds`)     | 0.05            | One instanced draw for up to `herdMax` bodies and one for `fertileZoneMax` dung marks, including the simplified quality tier     |
 
 **Quality tiers.** `QUALITY_LEVELS` in `quality.js` gains a `look` entry per level and `lookFor(level, mask)` returns what draws (the `?look=` mask only removes items). A level never adds an item.
 
-| Item    | Level 0                                | Level 1                                                | Level 2                          |
-| ------- | -------------------------------------- | ------------------------------------------------------ | -------------------------------- |
-| Rocks   | Outline, shading, lichen, contact ring | Outline and contact ring (no shading noise, no lichen) | Plain disc and rim in two passes |
-| Aurora  | 1/4 resolution, redrawn every frame    | 1/8 resolution, redrawn every second frame             | Off (`#000`)                     |
-| Terrain | Frost with shimmer, refuge glow        | Frost without shimmer, refuge glow                     | Off                              |
-| Motion  | Wobble and squash                      | Squash only                                            | Off                              |
-| Threads | 12 segments per thread                 | 4 segments per thread                                  | Off                              |
-| Decay   | On                                     | On                                                     | On                               |
-| Finish  | Vignette and grain                     | Vignette only                                          | Off                              |
+| Item    | Level 0                                      | Level 1                                                | Level 2                          |
+| ------- | -------------------------------------------- | ------------------------------------------------------ | -------------------------------- |
+| Rocks   | Outline, shading, lichen, contact ring       | Outline and contact ring (no shading noise, no lichen) | Plain disc and rim in two passes |
+| Aurora  | 1/4 resolution, redrawn every frame          | 1/8 resolution, redrawn every second frame             | Off (`#000`)                     |
+| Terrain | Frost with shimmer, refuge glow              | Frost without shimmer, refuge glow                     | Off                              |
+| Motion  | Wobble and squash                            | Squash only                                            | Off                              |
+| Threads | 12 segments per thread                       | 4 segments per thread                                  | Off                              |
+| Decay   | On                                           | On                                                     | On                               |
+| Finish  | Vignette and grain                           | Vignette only                                          | Off                              |
+| Herds   | Shaped body, gait, shading and dung speckles | Shaped body and simplified dung speckles               | Off                              |
 
 **1. Rock obstacles** (`rocks`).
 

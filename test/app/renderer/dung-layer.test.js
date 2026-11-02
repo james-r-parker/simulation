@@ -43,6 +43,12 @@ describe('createDungLayer', () => {
         layer.update?.(/** @type {any} */ ({ snapshot, camera }));
         expect(layer.object.count).toBe(1);
         expect(Array.from(layer.object.geometry.getAttribute('iBody').array.slice(0, 3))).toEqual([100, 200, 46]);
+        layer.setLook?.({ herds: 1 });
+        expect(layer.object.material.uniforms.uDetail.value).toBe(1);
+        layer.setLook?.({ herds: -1 });
+        expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ herds: 0 });
+        expect(layer.object.visible).toBe(true);
         layer.update?.(/** @type {any} */ ({ snapshot: null, camera }));
         expect(layer.object.count).toBe(0);
         layer.dispose();
