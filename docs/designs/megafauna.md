@@ -179,12 +179,14 @@ The ninth channel, the 89-input layout and the instinct. The layout and archive 
 
 Dung zones with their cap and origin marker, seed carrying through `plantSeedling` and the ecology detectors.
 
-| Chunk      | Tasks      | Goal                                                            |
-| ---------- | ---------- | --------------------------------------------------------------- |
-| 1, ecology | T26 to T30 | Dung, seeds, the detectors, the re-pin, the screen file         |
-| Runs       | T31        | The ecology screen, `eval:power`, `bench` and the survival gate |
-| Adopt      | T32        | The Phase 3 defaults                                            |
-| Close      | T33        | The conformance review and the Status move                      |
+| Chunk            | Tasks      | Goal                                                            |
+| ---------------- | ---------- | --------------------------------------------------------------- |
+| 1, ecology       | T26 to T30 | Dung, seeds, the detectors, the re-pin, the screen file         |
+| Runs             | T31        | The ecology screen, `eval:power`, `bench` and the survival gate |
+| Adopt (recorded) | T32        | Retain Phase 3 defaults; E78 did not support a change           |
+| Close            | T33        | The conformance review and the Status move                      |
+
+**T32 disposition (2026-11-02):** Keep the Phase 3 defaults, including `herdDungTicks: 900`. The 32-seed matched confirmation did not establish a detector improvement for 1800 ticks, and its family-effective result was worse than the reference. No configuration changed, so T32 moves no golden hashes. The seed-rate and grazing-share targets, population/family survival, and small phase-cost outliers remain balancing follow-ups; none is reported as a pass.
 
 ### Phase 4 - The look
 
