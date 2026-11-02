@@ -1,0 +1,33 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [16],
+  "metrics": ["eval.herd_follow_share", "eval.dung_food_share", "eval.herd_seeded_patches"],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.herd_follow_share",
+      "size": 16,
+      "falsePositive": 0.183,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.dung_food_share",
+      "size": 16,
+      "falsePositive": 0.084,
+      "detectable": 0.3,
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_seeded_patches",
+      "size": 16,
+      "falsePositive": 0.089,
+      "detectable": null,
+      "validShare": 1,
+      "direction": "higher"
+    }
+  ]
+}
