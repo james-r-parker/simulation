@@ -2158,7 +2158,7 @@
       "after": "11-arm E78 reports and table in evals/screens/results/herd-ecology/ (16 seeds x 200000 ticks, policy live)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered before E78 on current main 828d638. No values are adopted until the registered screen completes and the Phase 3 adoption review records behavioral and global balancing outcomes."
+      "note": "Completed on the preregistered current-main 828d638 config: all 11 arms, 16 seeds x 200000 ticks, policy live, with reports and table in evals/screens/results/herd-ecology/. Dung-food share >=0.03 passes in all arms and seeds (means 0.1121 to 0.1304). Seeded patches per 1000 ticks miss the 0.1 target in every seed and arm; means are 0.0095 to 0.0178, with positive-seed counts 9/16 to 12/16. Grazed share means are 0.4326 to 0.4811, above the 0.25 ceiling in all arms. The highest herd-follow watch mean is 4.193 at herdDungTicks 1800; that arm has predators at end on 0/16 versus 2/16 on the reference and basin_lineage_effective >=3 on 2/16 versus 5/16. Generic population gate is 0/16 in every arm; prey are present 16/16. These global deficits and the seed/grazing target misses are follow-ups, never claimed passes or adoption blockers under user direction. Because eval:power requires 32 seeds for its 16-v-16 analysis, a matched 32-seed extension was preregistered before execution in evals/screens/herd-ecology-power.grid.json: the current Phase 3 reference and herdDungTicks 1800 candidate, with power measured on the reference report for all three new metrics. No default is adopted in this result record."
     },
     {
       "id": "E81",

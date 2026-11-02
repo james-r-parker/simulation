@@ -116,4 +116,23 @@ describe('expandGrid', () => {
             overrides: { herdSeedMinDistance: 1600 },
         });
     });
+
+    it('expands the preregistered E78 metric-power extension', async () => {
+        const { default: grid } = await import('../evals/screens/herd-ecology-power.grid.json', {
+            with: { type: 'json' },
+        });
+        const plan = expandGrid(/** @type {any} */ (grid));
+        expect(plan).toMatchObject({
+            seeds: 32,
+            seedOffset: 0,
+            ticks: 200000,
+            policy: 'live',
+            reference: 'phase3-defaults-power',
+        });
+        expect(plan.arms).toHaveLength(2);
+        expect(plan.arms[1]).toMatchObject({
+            name: 'herdDungTicks-1800-confirmation',
+            overrides: { herdDungTicks: 1800 },
+        });
+    });
 });
