@@ -54,6 +54,8 @@ describe('stepHerds startle response', () => {
         expect(world.events.data[2]).toBe(0);
         expect(world.events.data[3]).toBe(0);
         expect(world.events.data[4]).toBe(2);
+        expect(world.events.data[5]).toBe(world.groupCentroidX[0]);
+        expect(world.events.data[6]).toBe(world.groupCentroidY[0]);
     });
 
     it('ignores non-hunters and hunters outside the individual-animal range', () => {

@@ -219,6 +219,7 @@ describe('worldInfo and readyLayout', () => {
             zoneOrigins: { DEATH: 0, DUNG: 1 },
         });
         expect(layout.effectKinds.SMOKE).toBe(6);
+        expect(layout.effectKinds.STAMPEDE).toBe(10);
         expect(layout.flags.PREGNANT).toBe(1 << 13);
         expect(layout.flags.MALE).toBe(1 << 14);
         expect(layout.deathCauses.EATEN).toBe(1);

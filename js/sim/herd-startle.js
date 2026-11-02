@@ -55,6 +55,8 @@ function startStampede(world, group, hunter) {
     world.events.data[offset + 2] = group;
     world.events.data[offset + 3] = hunter;
     world.events.data[offset + 4] = world.groupAnimalCount[group];
+    world.events.data[offset + 5] = world.groupCentroidX[group];
+    world.events.data[offset + 6] = world.groupCentroidY[group];
 }
 
 /** @param {World} world @param {number} group @returns {void} */

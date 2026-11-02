@@ -15,6 +15,7 @@ export const EFFECT_KIND = Object.freeze({
     ESCAPED: 7,
     MATED: 8,
     POLLINATED: 9,
+    STAMPEDE: 10,
 });
 
 /** Records the log holds; when full the oldest are dropped. */
@@ -257,6 +258,18 @@ function addPollinated(log, events, at) {
     log.u32[w + 5] = log.u32[w + 6] = log.u32[w + 7] = 0;
 }
 
+/** A herd stampede yields one dust effect at the group's current centre. @param {EffectLog} log @param {Record<string, any>} world @param {number} o event offset @returns {void} */
+function addStampede(log, world, o) {
+    const d = world.events.data;
+    const group = d[o + 2];
+    const w = begin(log, EFFECT_KIND.STAMPEDE, d[o + 1]);
+    place(log, w, d[o + 5], d[o + 6]);
+    log.u32[w + 4] = group;
+    log.u32[w + 5] = d[o + 4];
+    log.u32[w + 6] = 0;
+    log.u32[w + 7] = 0;
+}
+
 /**
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world just stepped
@@ -281,6 +294,9 @@ function addEventEffects(log, world, slotOf) {
             case EVENT_TYPE.PACK_CALLED:
             case EVENT_TYPE.SMOKE_RELEASED:
                 addCall(log, world, o);
+                break;
+            case EVENT_TYPE.HERD_STAMPEDE:
+                addStampede(log, world, o);
                 break;
             default:
                 break;

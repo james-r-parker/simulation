@@ -30,6 +30,7 @@ export const PALETTE = Object.freeze({
     attackScent: [0.5, 0.18, 1.0],
     smoke: [0.03, 0.04, 0.06],
     smokeNoise: [0.06, 0.08, 0.11],
+    stampedeDust: [0.012, 0.009, 0.006],
     alarmRing: [1.0, 0.55, 0.62],
     huntRing: [1.0, 0.62, 0.12],
     biteFlash: [1.0, 0.82, 0.78],

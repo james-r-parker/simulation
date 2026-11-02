@@ -11,6 +11,7 @@ import {
     EATEN_FLASH_TICKS,
     packSparks,
     spawnBurst,
+    spawnStampedeDust,
     SPARK_CAPACITY,
 } from '../../../js/app/renderer/sparks.js';
 
@@ -91,6 +92,22 @@ describe('spawnBurst', () => {
         }
         expect(pool.next).toBe((70 * 8) % SPARK_CAPACITY);
         expect(pool.startTick[(pool.next + 5) % SPARK_CAPACITY]).toBeLessThan(pool.startTick[pool.next - 1]);
+    });
+});
+
+describe('spawnStampedeDust', () => {
+    it('makes deterministic dust motes around a stampede that live for 48 ticks', () => {
+        const effect = { x: 100, y: 200, tick: 10, group: 2, animals: 6 };
+        const a = createSparkPool(1);
+        const b = createSparkPool(99);
+        expect(spawnStampedeDust(a, effect)).toBe(12);
+        expect(spawnStampedeDust(b, effect)).toBe(12);
+        expect(Array.from(a.angle.slice(0, 12))).toEqual(Array.from(b.angle.slice(0, 12)));
+        const packed = out();
+        expect(packSparks(a, 10, packed)).toBe(12);
+        expect(packSparks(a, 58, packed)).toBe(0);
+        expect(packed.pose[0]).toBe(100);
+        expect(packed.pose[1]).toBe(200);
     });
 });
 

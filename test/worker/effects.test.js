@@ -65,6 +65,19 @@ function drain(log) {
 const NO_SLOTS = new Map();
 
 describe('collectEffects', () => {
+    it('yields STAMPEDE at the herd group centre with its group and animal count', () => {
+        const world = smallWorld();
+        world.tick = 28;
+        world.groupCentroidX = Float32Array.from([0, 140]);
+        world.groupCentroidY = Float32Array.from([0, 260]);
+        event(world, EVENT_TYPE.HERD_STAMPEDE, [1, 3, 6, 140, 260]);
+        const log = createEffectLog(world.config.maxAgents);
+        collectEffects(log, world, NO_SLOTS);
+        const { records, floats } = drain(log);
+        expect(records).toEqual([[EFFECT_KIND.STAMPEDE, 28, expect.anything(), expect.anything(), 1, 6, 0, 0]]);
+        expect(floats[0].slice(2, 4)).toEqual([140, 260]);
+    });
+
     it('yields BORN at the newborn with its genome, lineage, spec and cause', () => {
         const world = smallWorld();
         world.tick = 8;
