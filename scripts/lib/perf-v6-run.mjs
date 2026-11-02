@@ -30,6 +30,40 @@ function webglRenderer(page) {
 }
 
 /**
+ * Forces the requested CSS viewport and device scale on local or remote Chromium.
+ * @param {import('@playwright/test').Page} page the page being measured
+ * @param {{width: number, height: number}} viewport the requested CSS viewport
+ * @returns {Promise<void>}
+ * @throws {Error} when Chromium does not apply the requested viewport and 1x device scale
+ */
+export async function setMeasurementViewport(page, viewport) {
+    await page.setViewportSize(viewport);
+    // `connectOverCDP` can ignore browser.newPage's viewport and deviceScaleFactor options, leaving remote Windows
+    // Chrome at the host window's size and scale. Apply both through CDP so the rendered canvas matches the request.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setDeviceMetricsOverride', {
+        width: viewport.width,
+        height: viewport.height,
+        deviceScaleFactor: 1,
+        mobile: false,
+    });
+    const actualViewport = await page.evaluate(() => ({
+        width: globalThis.innerWidth,
+        height: globalThis.innerHeight,
+        scale: globalThis.devicePixelRatio,
+    }));
+    if (
+        actualViewport.width !== viewport.width ||
+        actualViewport.height !== viewport.height ||
+        Math.abs(actualViewport.scale - 1) > 0.01
+    ) {
+        throw new Error(
+            `browser viewport did not apply: requested ${viewport.width}x${viewport.height} at scale 1, got ${actualViewport.width}x${actualViewport.height} at scale ${actualViewport.scale}`,
+        );
+    }
+}
+
+/**
  * @param {import('@playwright/test').Browser} browser the browser
  * @param {{viewport: {width: number, height: number}, agents: number, look?: string}} options the canvas size, agent count and look
  * @param {string} url the app URL
@@ -37,6 +71,7 @@ function webglRenderer(page) {
  */
 async function openApp(browser, { viewport, agents, look }, url) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+    await setMeasurementViewport(page, viewport);
     await page.addInitScript(LONG_TASK_SCRIPT);
     const lookQuery = look ? `&look=${encodeURIComponent(look)}` : '';
     await page.goto(`${url}?agents=${agents}&quality=0&seed=${SEED}${lookQuery}`);

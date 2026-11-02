@@ -1,0 +1,42 @@
+{
+  "browser": "156.0.8078.76",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "viewport": [3840, 2160],
+  "deviceScaleFactor": 1,
+  "canvas": [3840, 2160],
+  "startPerf": {
+    "app": "v6",
+    "refreshHz": 243.9,
+    "frameMs": {
+      "p50": 4.2,
+      "p95": 4.3,
+      "p99": 4.3
+    },
+    "drawMs": {
+      "p50": 0.5,
+      "p95": 0.7,
+      "p99": 1.1
+    },
+    "gpuMs": {
+      "p50": 1.22,
+      "p95": 1.82,
+      "p99": 2.41
+    },
+    "frames": 3111,
+    "agents": 389,
+    "ticksPerSecond": 119.98500188012872,
+    "droppedTicks": 0,
+    "heapMb": 25,
+    "gpu": {
+      "geometries": 22,
+      "textures": 18,
+      "programs": 25
+    }
+  },
+  "titleCardHidden": true,
+  "durationSeconds": 15,
+  "videoBitrate": 2000000,
+  "clipBytes": 3966381,
+  "mimeType": "video/webm;codecs=vp9",
+  "url": "http://127.0.0.1:45949/?agents=500&quality=0&seed=1"
+}

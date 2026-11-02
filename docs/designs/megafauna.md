@@ -1,8 +1,6 @@
 # Megafauna
 
-**Status:** In progress - Phases 1, 2 and 3 are built; Phase 4 rendering code and E79/E80 runs are complete, but T40 hardware measurement and the default-world clip remain blocked because this environment denies GPU access and Chromium falls back to SwiftShader. E79/E80 do not meet several local thresholds: trample-unavoidable share at most 0.5 (0/16), grazing share 0.05–0.25 (0/16), carcass meal share at least 0.05 (4/16 and 2/16), seed rate at least 0.1/1000 ticks (0/16), and E80 dodge higher than E79. These misses are recorded, not claimed as passes. Under the user-directed partial acceptance, Phase 1 carries the 11/16 carcass result against the 12/16 target, predator presence 0/16 versus 2/16 on its matched reference, and the +13.6% parent-to-adoption step-time delta into balancing. Phase 2 E92 has population gate 0/16 on both arms, predator presence 3/16 versus 1/16, and `basin_lineage_effective >= 3` on 3/16 versus 1/16; its total-step comparison is -1.4%, but the ≤5% per-phase comparison fails. Phase 3 meets dung-food but misses seed-rate, grazing and population/family targets; the 1800-tick candidate is not adopted. Population, predator and family misses remain balancing diagnostics, never claimed passes. Phase 1's total-step comparison remains within its 15% budget.
-**Validated:** 9f3d3c5 (2026-11-02)
-**Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
+**Status:** Implemented - Phases 1–4 are built and enabled by default. T40's matched RTX 4090 run found no observed frame-time regression from the herd look; its GC-pause budget was exceeded in both arms. E79/E80 missed the trample, grazing, carcass-meal, seed-rate and E80 dodge targets. Those measured gaps remain balancing work under the user's direction; they are not reported as passed criteria. Earlier population, predator, family and benchmark misses are also recorded for balancing.
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
 
 Large moving bodies return to the world as herds of megafauna: slow animals that move in loose groups between food patches, flee hunters, graze, age, breed and die, and later leave dung and carry seeds. A blob cannot bite them and they have no brains. A blob that does not track where a stampede is heading is trampled, a blob that eats where a herd has been finds the food its dung grows, and a dead animal is a feast.
@@ -188,17 +186,17 @@ Dung zones with their cap and origin marker, seed carrying through `plantSeedlin
 
 **T32 disposition (2026-11-02):** Keep the Phase 3 defaults, including `herdDungTicks: 900`. The 32-seed matched confirmation did not establish a detector improvement for 1800 ticks, and its family-effective result was worse than the reference. No configuration changed, so T32 moves no golden hashes. The seed-rate and grazing-share targets, population/family survival, and small phase-cost outliers remain balancing follow-ups; none is reported as a pass.
 
-### Phase 4 - The look
+### Phase 4 - The look (built)
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms
 
 The widened snapshot herd part and the zone part, the herd colours, body and gait, dust, dung marks and the `herds` look item. It changes no sim state, so the goldens hold.
 
-| Chunk   | Tasks      | Goal                                                                                            |
-| ------- | ---------- | ----------------------------------------------------------------------------------------------- |
-| 1, look | T34 to T39 | The snapshot, the colours, the body, the dust, the dung marks, the look item                    |
-| Runs    | T40, T41   | 4K hardware frame measurement and clip (blocked here); E79 comparison and E80 long run recorded |
-| Close   | T42        | Conformance review; status remains in progress until T40 can be verified                        |
+| Chunk   | Tasks      | Goal                                                                                              |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| 1, look | T34 to T39 | The snapshot, the colours, the body, the dust, the dung marks, the look item                      |
+| Runs    | T40, T41   | RTX 4090 4K frame comparison and default-world clip recorded; E79/E80 misses carried to balancing |
+| Close   | T42        | Conformance review; mark implemented and preserve measured gaps for balancing                     |
 
 ## Feature evaluation
 
@@ -359,6 +357,6 @@ Each screen states which scene its arms serve and which detector reads it: `E76`
 3. `npm run replay -- --seed 3 --ticks 200000 --level debug --policy map-elites-v6 --check-invariants` logs `HerdStampede`, `HerdAnimalDied`, `HerdAnimalBorn`, `HerdSeeded` and a `TRAMPLED` death, and no error.
 4. `npm run eval -- --seeds 16 --ticks 20000 --policy map-elites-v6` prints every new metric or a `null` with its reason; `npm run eval:power -- <E75 report>` prints a false-positive rate and detectable change for each.
 5. `npm run eval:compare -- <E75 report> <E79 report>` meets the Done criteria table.
-6. `npm run bench` shows `bench.step_ms@500` within the budget and `node scripts/bench-compare.mjs` the herds' own cost at most 5%; `npm run perf:browser` holds the frame rate at 4K.
+6. `npm run bench` shows `bench.step_ms@500` within the budget and `node scripts/bench-compare.mjs` the herds' own cost at most 5%; the T40 4K report records frame, draw, GPU and GC budgets (frame criteria passed; GC budget missed in both matched arms).
 7. Loading an archive written before Phase 2 stops with a version, `rulesHash` or length mismatch naming the field.
 8. Manual browser walk after Phase 4: `npm run dev`, open http://localhost:5173, start the live policy at 500 agents and watch for 15 minutes across a year. Name aloud: a herd walking from a bare patch to one in fruit, a hunter near a herd and the stampede that follows, a blob that cut across the heading and a blob that was trampled, a herd filing through a wall gap, dung marks with food on them, a new patch where a herd stopped, and a blob eating a fallen animal with others. The console is free of errors.

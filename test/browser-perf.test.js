@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseArgs } from '../scripts/browser-perf.mjs';
+import { setMeasurementViewport } from '../scripts/lib/perf-v6-run.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the v6 app, 60 seconds, 500 agents, 4K and headless', () => {
@@ -62,5 +63,57 @@ describe('parseArgs', () => {
         expect(() => parseArgs(['--agents=1.5'])).toThrow('--agents');
         expect(() => parseArgs(['--viewport=wide'])).toThrow('--viewport');
         expect(() => parseArgs(['--bogus'])).toThrow('--bogus');
+    });
+});
+
+describe('setMeasurementViewport', () => {
+    it('sets and verifies the CSS viewport and 1x device scale through CDP', async () => {
+        const calls = /** @type {Array<[string, unknown]>} */ ([]);
+        const page = /** @type {any} */ ({
+            async setViewportSize(/** @type {{width: number, height: number}} */ viewport) {
+                calls.push(['setViewportSize', viewport]);
+            },
+            context() {
+                return {
+                    async newCDPSession() {
+                        return {
+                            async send(/** @type {string} */ method, /** @type {unknown} */ params) {
+                                calls.push([method, params]);
+                            },
+                        };
+                    },
+                };
+            },
+            async evaluate() {
+                return { width: 3840, height: 2160, scale: 1 };
+            },
+        });
+
+        await setMeasurementViewport(page, { width: 3840, height: 2160 });
+
+        expect(calls).toEqual([
+            ['setViewportSize', { width: 3840, height: 2160 }],
+            ['Emulation.setDeviceMetricsOverride', { width: 3840, height: 2160, deviceScaleFactor: 1, mobile: false }],
+        ]);
+    });
+
+    it('refuses a viewport that CDP did not apply', async () => {
+        const page = /** @type {any} */ ({
+            async setViewportSize() {},
+            context() {
+                return {
+                    async newCDPSession() {
+                        return { async send() {} };
+                    },
+                };
+            },
+            async evaluate() {
+                return { width: 1508, height: 1567, scale: 1.25 };
+            },
+        });
+
+        await expect(setMeasurementViewport(page, { width: 3840, height: 2160 })).rejects.toThrow(
+            'requested 3840x2160 at scale 1, got 1508x1567 at scale 1.25',
+        );
     });
 });
