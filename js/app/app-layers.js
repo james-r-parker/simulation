@@ -10,6 +10,7 @@ import { createGroundLayer } from './renderer/ground-layer.js';
 import { createFinishLayer } from './renderer/finish-layer.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
 import { createHerdLayer } from './renderer/herd-layer.js';
+import { createDungLayer } from './renderer/dung-layer.js';
 import { createOverlays } from './renderer/overlays.js';
 import { createPollenLayer } from './renderer/pollen-layer.js';
 import { createParticles } from './renderer/particles.js';
@@ -69,6 +70,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createAuroraLayer({ info }),
             createGroundLayer({ info }),
             createTerrainLayer({ info, seed }),
+            createDungLayer({ info, layout }),
             createTerritoryLayer({ info }),
             haze,
             createFoodLayer({ info }),
