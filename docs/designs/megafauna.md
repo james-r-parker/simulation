@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** In progress - Phases 1 and 2 are built; Phases 3 and 4 remain in progress. Under the user-directed partial acceptance, Phase 1 carries the 11/16 carcass result against the 12/16 target, predator presence 0/16 versus 2/16 on its matched reference, and the +13.6% parent-to-adoption step-time delta into balancing. Phase 2 E92 has population gate 0/16 on both arms, predator presence 3/16 versus 1/16, and `basin_lineage_effective >= 3` on 3/16 versus 1/16; its total-step comparison is -1.4%, but the ≤5% per-phase comparison fails. These are balancing diagnostics, never claimed passes. Phase 1's total-step comparison remains within its 15% budget.
+**Status:** In progress - Phases 1, 2 and 3 are built; Phase 4 remains in progress. Under the user-directed partial acceptance, Phase 1 carries the 11/16 carcass result against the 12/16 target, predator presence 0/16 versus 2/16 on its matched reference, and the +13.6% parent-to-adoption step-time delta into balancing. Phase 2 E92 has population gate 0/16 on both arms, predator presence 3/16 versus 1/16, and `basin_lineage_effective >= 3` on 3/16 versus 1/16; its total-step comparison is -1.4%, but the ≤5% per-phase comparison fails. Phase 3 meets dung-food but misses seed-rate, grazing and population/family targets; the 1800-tick candidate is not adopted. These are balancing diagnostics, never claimed passes. Phase 1's total-step comparison remains within its 15% budget.
 **Validated:** 828d638 (2026-11-01)
 **Priority:** 3 - built after flora (Priority 2), which it extends: it reads flora's patch weights, per-item lifetimes, fertile-zone fungus and seeding path (user, 2026-10-30)
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
@@ -173,7 +173,7 @@ The ninth channel, the 89-input layout and the instinct. The layout and archive 
 | Adopt           | T24        | Adopt E92-confirmed `herdWary: 1`; keep `herdCount: 6` and `herdSize: 8`; short and long goldens unchanged, Node and Chromium verified                           |
 | Close           | T25        | Cross-doc conformance review complete; Phase 2 marked built and index regenerated                                                                                |
 
-### Phase 3 - Dung and seeds
+### Phase 3 - Dung and seeds (built)
 
 **Targets:** eval.herd_follow_share, eval.dung_food_share, eval.herd_seeded_patches, eval.food_energy_per_1k, bench.step_ms@500
 

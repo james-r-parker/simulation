@@ -392,10 +392,10 @@ agent whose centre is outside `[0, worldWidth] x [0, worldHeight]`; the alive co
 | `food`       | Food count fraction, position, energy, zone choice                                    |
 | `lifecycle`  | Mating draws, child placement angle                                                   |
 | `flora`      | Pollen loads, local seed placement, inherited trait mutations and soil-bank sprouting |
+| `herds`      | Herd placement, route-stay jitter, birth, dung placement and seed-carrier decisions   |
 
 Each stream is `fork(createRng(config.seed), name)`, so draws on one stream never shift another. Merit draws no random number. `hashWorld` covers
-`tick`, `nextId`, `population`, every agent array of every slot (`temperature` follows `lastLoss`), the merit arrays of every slot, food, obstacles, fertile zones, all three pheromone grids, the smoke clouds
-and the ledger. `writeSnapshot` packs per agent `x, y, angle, size, energy / maxEnergy` as float32 and `spec`, `lineageId`, `genomeId` and the slot through a `Uint32Array` view of the same buffer, then per food `x, y, radius` per obstacle `x, y, radius` and per live smoke cloud `x, y, cloudTtl / smokeTicks`, at the offsets
+`tick`, `nextId`, `population`, every agent array of every slot (`temperature` follows `lastLoss`), the merit arrays of every slot, food, obstacles, fertile zones, all three pheromone grids, smoke clouds, herd state and the ledger. `writeSnapshot` packs per agent `x, y, angle, size, energy / maxEnergy` as float32 and `spec`, `lineageId`, `genomeId` and the slot through a `Uint32Array` view of the same buffer, then per food `x, y, radius` per obstacle `x, y, radius` and per live smoke cloud `x, y, cloudTtl / smokeTicks`, at the offsets
 `snapshotLayout(config)` gives.
 
 ## Diagnostics (Phase 3)
