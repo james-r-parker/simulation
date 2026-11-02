@@ -54,10 +54,7 @@
       "branch": "feat/evolution-rework-phase-1",
       "hypothesis": "natural-v1 (versioned genome, self-adaptive mutation, neuron crossover, fitnessV1) evolves agents that eat more and live longer than baseline-v5.",
       "prediction": "better on eval.food_energy_per_1k and eval.median_lifespan; worse on no directional metric.",
-      "targets": [
-        "eval.food_energy_per_1k",
-        "eval.median_lifespan"
-      ],
+      "targets": ["eval.food_energy_per_1k", "eval.median_lifespan"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "natural-v1",
       "before": "evals/experiments/E0-baseline-v5-floor20.json",
@@ -147,10 +144,7 @@
       "branch": "feat/evolution-rework-phase-2",
       "hypothesis": "map-elites-v1 (the archive seeding floor agents and immigrants) evolves agents that eat more and live longer than baseline-v5.",
       "prediction": "better on eval.food_energy_per_1k and eval.median_lifespan; worse on no directional metric.",
-      "targets": [
-        "eval.food_energy_per_1k",
-        "eval.median_lifespan"
-      ],
+      "targets": ["eval.food_energy_per_1k", "eval.median_lifespan"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "map-elites-v1",
       "before": "evals/experiments/E2-baseline-v5-floor100.json",
@@ -192,11 +186,7 @@
       "branch": "feat/evolution-rework-phase-2",
       "hypothesis": "The archive raises diversity and lineage turnover over natural-v1.",
       "prediction": "better on eval.diversity, eval.lineage_turnover and eval.lineages_alive.",
-      "targets": [
-        "eval.diversity",
-        "eval.lineage_turnover",
-        "eval.lineages_alive"
-      ],
+      "targets": ["eval.diversity", "eval.lineage_turnover", "eval.lineages_alive"],
       "beforePolicy": "natural-v1",
       "afterPolicy": "map-elites-v1",
       "before": "evals/experiments/E4-natural-v1.json",
@@ -290,10 +280,7 @@
       "branch": "feat/reachable-births",
       "hypothesis": "Mating within a range, child energy as a share, a lower split threshold and a richer, cheaper economy let map-elites-v1 breed.",
       "prediction": "better on eval.births_per_1k and lower eval.floor_episodes than E3.",
-      "targets": [
-        "eval.births_per_1k",
-        "eval.floor_episodes"
-      ],
+      "targets": ["eval.births_per_1k", "eval.floor_episodes"],
       "beforePolicy": "map-elites-v1",
       "afterPolicy": "map-elites-v1",
       "before": "evals/experiments/E3-map-elites-v1.json",
@@ -323,10 +310,7 @@
       "branch": "feat/evolution-rework-phase-2-verdict",
       "hypothesis": "On the reachable-births world, map-elites-v1 eats more than baseline-v5 without shortening the lives of agents that eat.",
       "prediction": "better on eval.food_energy_per_1k; not worse on eval.fed_median_lifespan.",
-      "targets": [
-        "eval.food_energy_per_1k",
-        "eval.fed_median_lifespan"
-      ],
+      "targets": ["eval.food_energy_per_1k", "eval.fed_median_lifespan"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "map-elites-v1",
       "before": "evals/baselines/baseline-v5.json",
@@ -370,10 +354,7 @@
       "branch": "feat/evolution-rework-phase-2-verdict",
       "hypothesis": "The archive raises diversity and lineage turnover over natural-v1 on the reachable-births world.",
       "prediction": "better on eval.diversity and eval.lineage_turnover.",
-      "targets": [
-        "eval.diversity",
-        "eval.lineage_turnover"
-      ],
+      "targets": ["eval.diversity", "eval.lineage_turnover"],
       "beforePolicy": "natural-v1",
       "afterPolicy": "map-elites-v1",
       "before": "evals/experiments/E8-natural-v1.json",
@@ -417,10 +398,7 @@
       "branch": "feat/evolution-rework-phase-2-verdict",
       "hypothesis": "Quality-weighted parents (map-elites-v1q) with fitnessV1 survival 0.5 per tick capped at food eaten lengthen the lives of eaters without paying agents that do not eat.",
       "prediction": "food better; fed_median_lifespan not worse.",
-      "targets": [
-        "eval.food_energy_per_1k",
-        "eval.fed_median_lifespan"
-      ],
+      "targets": ["eval.food_energy_per_1k", "eval.fed_median_lifespan"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/baselines/baseline-v5.json",
@@ -464,9 +442,7 @@
       "branch": "feat/evolution-rework-phase-2-verdict",
       "hypothesis": "map-elites-v1q with fitnessV1 survival 0.5 per tick paid only after 500 food energy eats more than baseline-v5 and stays exploit-safe.",
       "prediction": "food better; fed_median_lifespan recorded (not blocking, by the user).",
-      "targets": [
-        "eval.food_energy_per_1k"
-      ],
+      "targets": ["eval.food_energy_per_1k"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/baselines/baseline-v5.json",
@@ -510,11 +486,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "Under the body-temperature rules, two 16-seed samples of baseline-v5 are not told apart.",
       "prediction": "No better or worse verdict on any Target metric.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "baseline-v5",
       "before": "evals/baselines/baseline-v5.json",
@@ -558,11 +530,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "Body temperature (cold and heat multiply passive cost, extremes cut thrust and block mating) does not make the live policy worse on fed lifespan, food or births.",
       "prediction": "no worse on eval.fed_median_lifespan, eval.food_energy_per_1k and eval.births_per_1k.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E10-map-elites-v1q.json",
@@ -606,11 +574,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "With body temperature making sitters die young, fitnessV1 can pay survival without the 500-food gate, lengthening the lives of agents that eat without reopening the FIT-8 exploits.",
       "prediction": "anti-exploit bound passes for sitter, spinner and bumper; then fed_median_lifespan better than E12.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E12-map-elites-v1q.json",
@@ -625,11 +589,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "At the halved temperature rates, two 16-seed samples of baseline-v5 are not told apart.",
       "prediction": "No better or worse verdict on any Target metric.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "baseline-v5",
       "before": "evals/baselines/baseline-v5.json",
@@ -673,11 +633,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "At half the legacy heating and cooling rates (temperatureGainMove 0.0125, temperatureLossPassive 0.0075), body temperature does not make the live policy worse on fed lifespan, food or births.",
       "prediction": "no worse on the three Targets (the 4-seed sweep on seeds 29-32 was within 5%).",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E10-map-elites-v1q.json",
@@ -721,11 +677,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "Softer temperature extremes recover the fed lifespan that the halved rates (E15) left 5.4% down: temperaturePassiveLossFactor 4 to 2, temperatureEfficiencyHeatModerate 0.8 to 0.9 and temperatureEfficiencyHeatSevere 0.4 to 0.6, with the E15 heating rate temperatureGainMove 0.0125 kept (candidate C).",
       "prediction": "no worse on the three Targets against E10 (the 4-seed screen on seeds 29-32 was within 5%).",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E10-map-elites-v1q.json",
@@ -769,11 +721,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "Candidate C with the heating rate lowered as well, temperatureGainMove 0.0125 to 0.01 (candidate H), passes the body-temperature rule against E10 and keeps a sitter and a rusher dying.",
       "prediction": "no worse on the three Targets against E10; the scripted sitter and full-thrust agent still die and a thrust-20 forager still grows.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E10-map-elites-v1q.json",
@@ -817,11 +765,7 @@
       "branch": "feat/body-temperature",
       "hypothesis": "At the tuned temperature defaults, two 16-seed samples of baseline-v5 are not told apart.",
       "prediction": "No better or worse verdict on any Target metric.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "baseline-v5",
       "before": "evals/baselines/baseline-v5.json",
@@ -865,11 +809,7 @@
       "branch": "feat/predator-prey-phase-1",
       "hypothesis": "At the final predator-prey Phase 1 defaults, two 16-seed samples of baseline-v5 are not told apart on the Targets.",
       "prediction": "No better or worse verdict on any Target metric.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "baseline-v5",
       "afterPolicy": "baseline-v5",
       "before": "evals/baselines/baseline-v5.json",
@@ -913,11 +853,7 @@
       "branch": "feat/predator-prey-phase-1",
       "hypothesis": "The predator-prey rules at the final Phase 1 defaults (alarmCost and huntCallCost 0.5, maxFood 1600, foodTargetPerAgent 12, huntSizeRatio 1.01, biteArc PI/4) leave the live policy no worse on the three Targets than E17.",
       "prediction": "no worse on the three Targets against E17.",
-      "targets": [
-        "eval.fed_median_lifespan",
-        "eval.food_energy_per_1k",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.fed_median_lifespan", "eval.food_energy_per_1k", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E17-map-elites-v1q.json",
@@ -1034,11 +970,7 @@
       "branch": "feat/world-balance-phase-2",
       "hypothesis": "Honest ray classes (couldBite: can bite me, I can bite it, other, kin, with proximity) and mateSizeRatio 1.3 leave the live policy no worse on food, fed lifespan and births than E25 live arm.",
       "prediction": "no worse on eval.food_energy_per_1k, eval.fed_median_lifespan and eval.births_per_1k; alarm precision and escape rate may move.",
-      "targets": [
-        "eval.food_energy_per_1k",
-        "eval.fed_median_lifespan",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.food_energy_per_1k", "eval.fed_median_lifespan", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/experiments/E25-map-elites-v1q.json",
@@ -1257,9 +1189,7 @@
       "branch": "feat/wb-t39-controllers",
       "hypothesis": "The hunter's fitnessV5 share of the foodSeeker's (FIT-5: a flat score per kill) stays above its allowed share max(0.5, hunter food / foodSeeker food + 0.1) in the anti-exploit micro-world with sexes on as with sexes off.",
       "prediction": "over the allowed share in both modes; sexes on may be narrower because half the agents are male and only females split.",
-      "targets": [
-        "fitnessV5 hunter / foodSeeker fitness ratio versus the allowed share"
-      ],
+      "targets": ["fitnessV5 hunter / foodSeeker fitness ratio versus the allowed share"],
       "beforePolicy": "sexesEnabled false",
       "afterPolicy": "sexesEnabled true",
       "before": "anti-exploit micro-world (evals/micro-world.json), scripted hunter vs foodSeeker, fitnessV5, 5000 ticks, seeds 1-8, sexesEnabled false",
@@ -1295,11 +1225,7 @@
       "branch": "eval/wb-t59-screens",
       "hypothesis": "A lower hebbianRate, a lower splitCost with sexes, or a minAgents above 40 frees the arms that E31 found pinned at the floor, and the all-on world then survives.",
       "prediction": "hebbianRate 0.0001 or lower escapes the floor (born_share above 0.5) on 4 of 4 seeds; sexes with splitCost 25 or 10 does not change the floor-bound result; minAgents 80 or less stays floor-bound.",
-      "targets": [
-        "eval.born_share",
-        "eval.mating_share",
-        "eval.births_per_1k"
-      ],
+      "targets": ["eval.born_share", "eval.mating_share", "eval.births_per_1k"],
       "beforePolicy": "map-elites-v1q",
       "afterPolicy": "map-elites-v1q",
       "before": "evals/screens/results/hebbian.report.json",
@@ -1715,12 +1641,7 @@
       "branch": "eval/fs-t49-e42",
       "hypothesis": "Long run (fitness-and-selection T49): the live defaults (map-elites-v6 with splitDeliberateShareMin 0.2 and temperatureGainEat 1.5, the T48g adoption) keep improving over 600000 ticks, so eval.skill_trend stays positive over 16 seeds.",
       "prediction": "16 seeds (1-16, the default seed list), 600000 ticks, map-elites-v6, no config or policy options (the live defaults). Predicted means: eval.skill_trend positive (above 0) and positive on at least 10 of 16 seeds; eval.deliberate_food_share about 0.17 (the E63 candidate gave 0.173 at 200000 ticks); eval.mating_share about 0.2 (E63 gave 0.204); eval.split_bumper_share about 0.10 to 0.15; eval.heat_stress_share about 0.30 (E63 gave 0.304); population mean below the 200000-tick figure of about 256 with the lowest seed mean above minAgents on every seed.",
-      "targets": [
-        "eval.skill_trend",
-        "eval.deliberate_food_share",
-        "eval.mating_share",
-        "eval.heat_stress_share"
-      ],
+      "targets": ["eval.skill_trend", "eval.deliberate_food_share", "eval.mating_share", "eval.heat_stress_share"],
       "beforePolicy": "map-elites-v6",
       "afterPolicy": "map-elites-v6",
       "before": "evals/experiments/E63-cand-report.json",
@@ -1735,11 +1656,7 @@
       "branch": "eval/fs-t15g-predator-economy",
       "hypothesis": "With the predator rescue on (predatorRescueMin 3, predatorRescueInterval 450), a combination of predatorKillEnergy, predator passiveLossMultiplier and splitMinEnergyMultiplier lifts eval.predator_births to about 30 per seed without a population collapse.",
       "prediction": "base fixes presence but births stay under 10; no single lever reaches 30; kill-300 is the strongest single lever; kill300-passive0.6-split0.6 is the first to reach about 30; the wide carcass arm is the plague risk.",
-      "targets": [
-        "eval.predator_births",
-        "eval.catch_rate",
-        "eval.predator_presence"
-      ],
+      "targets": ["eval.predator_births", "eval.catch_rate", "eval.predator_presence"],
       "before": "evals/screens/results/predator-economy/defaults.report.json",
       "after": "evals/screens/results/predator-economy/<arm>.report.json (one per arm; table in evals/screens/results/predator-economy/table.md)",
       "verdicts": {},
@@ -1752,12 +1669,7 @@
       "branch": "eval/fs-t15l-hunting-screen",
       "hypothesis": "On the rescue and the T15g economy, wider bite arc, bigger predator bites and a lower huntSizeRatio give clumsy predators first bites and kills, lifting eval.catch_rate and the pursuit shares without a predator plague.",
       "prediction": "The size gate levers are the strongest singles, arc 1.571 second; bite-12 and sprint-2.0 move catch_rate little alone; catch_rate stays under 0.03 on singles and reaches 0.03-0.1 on arc1.571-bite12-size0.8; pursuit_kill_share stays near 0 everywhere; size-0.8 and the wide combination are the plague risk.",
-      "targets": [
-        "eval.catch_rate",
-        "eval.predator_births",
-        "eval.pursuit_kill_share",
-        "eval.pursuit_bite_share"
-      ],
+      "targets": ["eval.catch_rate", "eval.predator_births", "eval.pursuit_kill_share", "eval.pursuit_bite_share"],
       "before": "evals/screens/results/predator-hunting/defaults.report.json",
       "after": "evals/screens/results/predator-hunting/<arm>.report.json (one per arm; table in evals/screens/results/predator-hunting/table.md)",
       "verdicts": {},
@@ -1770,11 +1682,7 @@
       "branch": "eval/fs-t15h-call-cost",
       "hypothesis": "On the T15l predator package, raising alarmCost, huntCallCost and smokeCost makes blobs that call at nothing die out, so eval.idle_signals_per_1k falls with eval.alarm_precision and eval.hunt_call_precision not lower.",
       "prediction": "Idle signals roughly halve at cost 5 and fall 80% or more at 20; likelier outcome at 10 and above is silence with null precisions; smokeCost moves little; the predator package is not hurt.",
-      "targets": [
-        "eval.idle_signals_per_1k",
-        "eval.alarm_precision",
-        "eval.hunt_call_precision"
-      ],
+      "targets": ["eval.idle_signals_per_1k", "eval.alarm_precision", "eval.hunt_call_precision"],
       "before": "evals/screens/results/call-cost/defaults.report.json",
       "after": "evals/screens/results/call-cost/<arm>.report.json (one per arm; table in evals/screens/results/call-cost/table.md)",
       "verdicts": {},
@@ -1787,11 +1695,7 @@
       "branch": "eval/fs-t15n-call-threshold",
       "hypothesis": "On the T15l predator package with huntCallCost 10, an alarmThreshold and huntCallThreshold of 0.5 to 0.8 cut eval.idle_signals_per_1k and raise eval.alarm_precision and eval.hunt_call_precision without losing the predator gains.",
       "prediction": "Idle signals fall about 30% at 0.5 and 60% or more at 0.8; precisions rise; population and mating stay near base; hunt at 0.8 may cut catch rate a little; both-0.5 or both-0.65 best.",
-      "targets": [
-        "eval.idle_signals_per_1k",
-        "eval.alarm_precision",
-        "eval.hunt_call_precision"
-      ],
+      "targets": ["eval.idle_signals_per_1k", "eval.alarm_precision", "eval.hunt_call_precision"],
       "before": "evals/screens/results/call-threshold/base.report.json",
       "after": "evals/screens/results/call-threshold/<arm>.report.json (one per arm; table in evals/screens/results/call-threshold/table.md)",
       "verdicts": {},
@@ -1804,11 +1708,7 @@
       "branch": "feat/fs-t15o-bite8",
       "hypothesis": "Predator bite size (fitness-and-selection T15o): the T15d predator biteMultiplier 12 makes a kill need many bites, so catches and predator births are lower than they could be; softer bites (10 and 8) should keep the gain in catch rate and predator presence while recovering fed median lifespan, which the E36 partial pass left at no-difference on seeds 1-16 and worse (-9.4%) on seeds 17-32.",
       "prediction": "T15o: predator biteMultiplier 8 and 10 against the T15d default 12, on main f047245, seeds 1-32, 200000 ticks, policy live; each compared with E36's reference per seed set.\n- catch_rate falls roughly in proportion to bite size (more bites per kill): bite 10 ~0.08, bite 8 ~0.06, both still `better` than the reference (~0.005).\n- predator_births fall: bite 10 ~60, bite 8 ~45 per seed, both `better`.\n- fed_median_lifespan on seeds 17-32: bite 10 recovers to about -5% (no-difference likely), bite 8 to about -3% (no-difference).\n- Expected pick: bite 10 if it clears fed lifespan on both sets, else bite 8.",
-      "targets": [
-        "eval.catch_rate",
-        "eval.predator_births",
-        "eval.fed_median_lifespan"
-      ],
+      "targets": ["eval.catch_rate", "eval.predator_births", "eval.fed_median_lifespan"],
       "before": "evals/experiments/E36-ref.json",
       "after": "evals/experiments/E47-bite8-report.json",
       "verdicts": {
@@ -1836,11 +1736,7 @@
       "branch": "eval/fs-t48f-split-heat",
       "hypothesis": "Split screen (fitness-and-selection T48f): on the live default (map-elites-v6, meritEnabled, splitDeliberateMin 300), gating splits on a deliberate-meal share, limiting splits per life, or barring prey from splitting cuts the clone bumper births (eval.split_bumper_share) and raises the share of births that are matings, without a population collapse.",
       "prediction": "8 seeds (seed offset 32, seeds 33-40, fresh against E37/E41 on seeds 1-32), 200000 ticks, ref = the live default.\n- ref: split_bumper_share about 0.4 to 0.5, mating_share about 0.11 to 0.15, deliberate_food_share about 0.13.\n- share-0.2 filters little (typical share 0.13 is under it, so it closes the gate for most blobs and leans on the meritSplitFloorPop 80 bypass): mating_share rises most of the share arms, population falls, floor episodes rise.\n- share-0.3 and share-0.4 are close to a split ban: births fall toward the floor bypass; pop near 100 to 200, floor_episodes high; share-0.4 the likeliest near-collapse.\n- share-0.3-once and prey-no-split are the gentlest: split_bumper_share falls 20 to 40%, mating_share up to 0.15 to 0.25, population within 20% of ref.\n- share-0.3-strict (floor 45) is the harshest: population dips toward minAgents 40, floor_episodes the highest.\n- Pick: prey-no-split or share-0.2 if the population stays above 150 on every seed and skill_trend stays at or above ref; otherwise keep the defaults.",
-      "targets": [
-        "eval.split_bumper_share",
-        "eval.mating_share",
-        "eval.split_parent_delib_share"
-      ],
+      "targets": ["eval.split_bumper_share", "eval.mating_share", "eval.split_parent_delib_share"],
       "before": "evals/screens/results/split/ref.report.json",
       "after": "evals/screens/results/split/<arm>.report.json (one per arm; table in evals/screens/results/split/table.md)",
       "verdicts": {},
@@ -1853,10 +1749,7 @@
       "branch": "eval/fs-t48f-split-heat",
       "hypothesis": "Heat screen (fitness-and-selection T48f): lowering temperatureGainEat to 1.5 and raising temperatureLossPassive to 0.009 on the live default brings eval.heat_stress_share near 0.3 and keeps eval.cold_stress_share under 0.1 without a collapse.",
       "prediction": "16 seeds (offset 32), 200000 ticks, map-elites-v6. ref: heat about 0.44, cold about 0.06 (T42a, replays). eat-1.5 alone: eating is 61% of the heat gain, so heat about 0.35 to 0.38. loss-0.009 alone (+20% loss): heat about 0.36 to 0.40, cold up to about 0.08. both: heat about 0.28 to 0.33, cold 0.08 to 0.12 (the cold edge is the risk). Mating share rises a little (less heat blocking), fed lifespan within 5%, no collapse. Pick both if cold stays under 0.1, else eat-1.5.",
-      "targets": [
-        "eval.heat_stress_share",
-        "eval.cold_stress_share"
-      ],
+      "targets": ["eval.heat_stress_share", "eval.cold_stress_share"],
       "before": "evals/screens/results/heat/ref.report.json",
       "after": "evals/screens/results/heat/<arm>.report.json (one per arm; table in evals/screens/results/heat/table.md)",
       "verdicts": {},
@@ -1869,11 +1762,7 @@
       "branch": "eval/fs-t48g-adopt",
       "hypothesis": "Confirm (fitness-and-selection T48g): splitDeliberateShareMin 0.2 and temperatureGainEat 1.5 together on map-elites-v6 cut clone-bumper births and heat stress while the world holds.",
       "prediction": "16 seeds (offset 32), 200000 ticks, map-elites-v6, candidate vs the live default. split_bumper_share 0.29 to about 0.10-0.15; mating_share 0.13 to 0.15-0.20; deliberate_food_share up to about 0.16; skill_trend from -0.02 to near or above 0. heat_stress 0.50 to about 0.38-0.42, cold stress 0.08 to 0.10-0.12 (the two levers together may push cold over 0.1). Population 350 to about 250-280 with a lowest seed near 100. fed_median_lifespan -15 to -28% (likely a worse verdict); food_energy_per_1k, lineages_alive and floor_episodes no-difference or floor_episodes better. Expected: fed_median_lifespan is the only failure; seedChecks pass.",
-      "targets": [
-        "eval.split_bumper_share",
-        "eval.mating_share",
-        "eval.heat_stress_share"
-      ],
+      "targets": ["eval.split_bumper_share", "eval.mating_share", "eval.heat_stress_share"],
       "beforePolicy": "map-elites-v6",
       "afterPolicy": "map-elites-v6",
       "before": "evals/experiments/E63-ref-report.json",
@@ -1974,12 +1863,7 @@
       "branch": "eval/fs-t48i-economy",
       "hypothesis": "Economy screen (fitness-and-selection T48i): bounding the energy bank (maxEnergy 25000 down to 4000, 2000 or 1200), with food supply, the scout move discount and alarmCost as secondary levers, cuts circling, output saturation and alarm spam and lowers spec_dominance, because hoarded energy (3000-8000 against a split threshold near 900) lets wasteful behaviour survive.",
       "prediction": "8 seeds (offset 32), 200000 ticks, map-elites-v6, T48g defaults; a screen, not a verdict. ref: circling_share about 0.25-0.65, output_saturation about 0.3-0.5, alarm_rate high, spec_dominance about 0.75-0.97 (97% scouts in the diagnosed world), mean_energy_share low (energy far under 25000) but energy_over_split above 3. max-4000: little change from ref (bank still above 4 splits), circling down by under a quarter, spec_dominance 0.7-0.9. max-2000: circling down by a third to a half, output_saturation down about 20-30%, alarm_rate down 20-40%, spec_dominance 0.6-0.85, population 15-30% lower, fed lifespan -10 to -30%. max-1200: strongest waste cut (circling halved or better, alarm_rate down 40-60%), spec_dominance 0.5-0.8, population down 30-50% with floor episodes up, one or more seeds failing popAboveMin. max-2000-scout-move-1: like max-2000 on waste; spec_dominance 0.05-0.15 lower than max-2000 but the monoculture moves to another role (spec_effective rises by under 0.5). max-2000-alarm-5: like max-2000 with alarm_rate a further 30-50% lower; circling and saturation as max-2000. regrow-0.045 alone: bank unchanged, circling and saturation within 10% of ref, more population (+10-20%); not a waste fix. combo: best on waste (circling down 50%+, alarm_rate down 60%+), spec_dominance 0.45-0.75, population 20-40% under ref. spec_dominance reaches 0.5 in no arm or only in combo/max-1200; T48k is then likely needed. seedChecks: all hold on ref, max-4000, max-2000 variants and regrow; max-1200 and combo risk specShare and popAboveMin failures on 1-3 seeds (specShare already fails on most seeds in the ref).",
-      "targets": [
-        "eval.circling_share",
-        "eval.output_saturation",
-        "eval.alarm_rate",
-        "eval.spec_dominance"
-      ],
+      "targets": ["eval.circling_share", "eval.output_saturation", "eval.alarm_rate", "eval.spec_dominance"],
       "beforePolicy": "map-elites-v6",
       "afterPolicy": "map-elites-v6",
       "before": "evals/screens/results/economy/ref.report.json",
@@ -1994,11 +1878,7 @@
       "branch": "claude/big-bag-branch-status-730fab",
       "hypothesis": "Survival screen of the big-bang world (natural-selection T5): a lower bite cost and hunt upkeep keep predators alive on random-brain genomes, so the world meets the merge gate (population above the floor at the end on every seed, eval.predator_presence >= 0.5, eval.spec_effective > 1.5).",
       "prediction": "8 seeds x 200000 ticks, live policy, the big-bang defaults. biteCost and huntUpkeep arms (bite4-upkeep0.002, bite8-upkeep0.001, bite12-upkeep0.001) hold predator_presence near 0.5 to 0.6 with one arm best; spec_effective stays above 1.5; no seed under the floor. If no arm holds predators, the cause is not the cost and the next screen diagnoses it.",
-      "targets": [
-        "eval.predator_presence",
-        "eval.spec_effective",
-        "eval.floor_episodes"
-      ],
+      "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes"],
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "evals/screens/results/survival-diag/defaults.report.json",
@@ -2013,12 +1893,7 @@
       "branch": "claude/big-bag-branch-status-730fab",
       "hypothesis": "Predators survive when they are built like real ambush predators (principles: look to nature first): innate reflexes in random genomes (instinctWeight), a gorge-and-fast metabolism (low resting loss, a big fat store, a large meal per kill) and decisive bites (biteMultiplier 20).",
       "prediction": "8 seeds x 200000 ticks, live policy, reference inst0 (the big-bang defaults). Instincts alone (inst1) lift predator_presence from 0.06 to 0.2 or more and the population above the floor on most seeds. Gorge-and-fast (passiveLossMultiplier 0.3, maxEnergyMultiplier 3, predatorKillEnergy 600) adds predator births. Decisive bites (biteMultiplier 20) turn catches into kills. The combination inst1-gorge-bite20 reaches presence 0.5 or more with spec_effective above 1.5; predators may boom and bust. Risk: bite20 raises the kill rate enough to starve the prey side.",
-      "targets": [
-        "eval.predator_presence",
-        "eval.spec_effective",
-        "eval.floor_episodes",
-        "eval.catch_rate"
-      ],
+      "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes", "eval.catch_rate"],
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "evals/screens/results/instinct/inst0.report.json",
