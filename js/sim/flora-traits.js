@@ -33,6 +33,15 @@ export function blendTraits(world, parentA, parentB) {
     }
 }
 
+/** Writes one parent's archetype-relative traits to reusable mutation scratch. @param {import('./world.js').World} world @param {number} parent @returns {void} */
+export function copyTraits(world, parent) {
+    const row = world.config.flora[FLORA_NAMES[world.patchSpecies[parent]]];
+    for (let i = 0; i < FIELDS.length; i++) {
+        const value = world[FIELDS[i]][parent];
+        world.floraTraits[i] = i === START ? offset(value, row.start) : value;
+    }
+}
+
 /**
  * @param {Record<string, number>} row archetype
  * @param {number} trait index in FIELDS

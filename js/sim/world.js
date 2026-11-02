@@ -162,11 +162,24 @@ function allocHerdState(world) {
     world.herdTotals = new Float64Array(2);
     const specCount = Object.keys(world.config.specialisations).length;
     world.foodEatenBySpec = new Float64Array(specCount);
+    world.dungFoodIntake = 0;
     world.herdCarcassEatenBySpec = new Float64Array(specCount);
     world.herdDesired = new Float32Array(4);
     allocRows(world, singles(Uint8Array, ['herdAlive', 'herdGroup']), herdMax);
     allocRows(world, singles(Float32Array, ['herdX', 'herdY', 'herdVx', 'herdVy']), herdMax);
-    allocRows(world, singles(Uint32Array, ['herdAge', 'herdLife', 'herdGraze', 'herdId']), herdMax);
+    allocRows(
+        world,
+        singles(Uint32Array, [
+            'herdAge',
+            'herdLife',
+            'herdGraze',
+            'herdId',
+            'herdSeedPatch',
+            'herdSeedSerial',
+            'herdSeedTicks',
+        ]),
+        herdMax,
+    );
     allocRows(world, singles(Float64Array, ['herdStore']), herdMax);
     allocRows(world, singles(Uint32Array, ['groupAlarm', 'groupStay', 'groupBirthTimer']), herdCount);
     allocRows(world, singles(Float32Array, ['groupFleeX', 'groupFleeY']), herdCount);
@@ -182,7 +195,7 @@ function allocHerdState(world) {
  */
 function allocZonesAndPheromones(world) {
     const { fertileZoneMax, worldWidth, worldHeight, pheromoneCellSize } = world.config;
-    allocRows(world, singles(Uint8Array, ['zoneAlive']), fertileZoneMax);
+    allocRows(world, singles(Uint8Array, ['zoneAlive', 'zoneOrigin']), fertileZoneMax);
     allocRows(world, singles(Float32Array, ['zoneX', 'zoneY']), fertileZoneMax);
     allocRows(world, singles(Float64Array, ['zoneFertility', 'zoneInitial']), fertileZoneMax);
     world.pheromoneGrid = Object.freeze({

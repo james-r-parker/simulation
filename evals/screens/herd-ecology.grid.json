@@ -1,0 +1,40 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "phase3-defaults",
+  "arms": {
+    "phase3-defaults": {},
+    "herdDungTicks-450": {
+      "herdDungTicks": 450
+    },
+    "herdDungTicks-1800": {
+      "herdDungTicks": 1800
+    },
+    "herdDungSize-40": {
+      "herdDungSize": 40
+    },
+    "herdDungSize-100": {
+      "herdDungSize": 100
+    },
+    "herdDungZoneMax-15": {
+      "herdDungZoneMax": 15
+    },
+    "herdDungZoneMax-45": {
+      "herdDungZoneMax": 45
+    },
+    "herdSeedChance-0p25": {
+      "herdSeedChance": 0.25
+    },
+    "herdSeedChance-1": {
+      "herdSeedChance": 1
+    },
+    "herdSeedMinDistance-400": {
+      "herdSeedMinDistance": 400
+    },
+    "herdSeedMinDistance-1600": {
+      "herdSeedMinDistance": 1600
+    }
+  }
+}

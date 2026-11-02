@@ -104,4 +104,35 @@ describe('expandGrid', () => {
         expect(plan).toMatchObject({ seeds: 4, seedOffset: 28, ticks: 200000, reference: 'defaults' });
         expect(plan.arms).toHaveLength(29);
     });
+
+    it('expands the preregistered Megafauna E78 ecology screen', async () => {
+        const { default: grid } = await import('../evals/screens/herd-ecology.grid.json', { with: { type: 'json' } });
+        const plan = expandGrid(/** @type {any} */ (grid));
+        expect(plan).toMatchObject({ seeds: 16, seedOffset: 0, ticks: 200000, reference: 'phase3-defaults' });
+        expect(plan.arms).toHaveLength(11);
+        expect(plan.arms[0]).toMatchObject({ name: 'phase3-defaults', overrides: {} });
+        expect(plan.arms.at(-1)).toMatchObject({
+            name: 'herdSeedMinDistance-1600',
+            overrides: { herdSeedMinDistance: 1600 },
+        });
+    });
+
+    it('expands the preregistered E78 metric-power extension', async () => {
+        const { default: grid } = await import('../evals/screens/herd-ecology-power.grid.json', {
+            with: { type: 'json' },
+        });
+        const plan = expandGrid(/** @type {any} */ (grid));
+        expect(plan).toMatchObject({
+            seeds: 32,
+            seedOffset: 0,
+            ticks: 200000,
+            policy: 'live',
+            reference: 'phase3-defaults-power',
+        });
+        expect(plan.arms).toHaveLength(2);
+        expect(plan.arms[1]).toMatchObject({
+            name: 'herdDungTicks-1800-confirmation',
+            overrides: { herdDungTicks: 1800 },
+        });
+    });
 });

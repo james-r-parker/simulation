@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { agePollen, carryPollen, seedPatch, assertPollen, SEED_REFUSED } from '../../js/sim/pollination.js';
+import {
+    agePollen,
+    carryPollen,
+    seedPatch,
+    assertPollen,
+    SEED_REFUSED,
+    plantSeedling,
+} from '../../js/sim/pollination.js';
 import { EVENT_STRIDE, EVENT_TYPE, clearEvents } from '../../js/sim/events.js';
 import { nextFloat, nextGaussian } from '../../js/sim/rng.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
@@ -29,6 +36,19 @@ function visit(w, patch) {
 }
 
 describe('pollen carriage and seeding', () => {
+    it('plants a one-parent seedling through the shared trait mutation path', () => {
+        const w = floraGarden();
+        w.patchHue[0] = 0.6;
+        w.patchEnergy[0] = 0.6;
+        const patch = plantSeedling(w, { x: 900, y: 700, parent: 0 });
+        expect(patch).toBe(2);
+        expect([w.patchAlive[patch], w.patchSerial[patch], w.patchX[patch], w.patchY[patch]]).toEqual([1, 1, 900, 700]);
+        expect(w.patchStock[patch]).toBe(w.config.seedStock * w.config.foodPatchCapacity);
+        expect(w.patchHue[patch]).toBe(w.patchHue[0]);
+        expect(w.patchEnergy[patch]).toBe(w.patchEnergy[0]);
+        expect(events(w, EVENT_TYPE.PATCH_SEEDED)).toHaveLength(0);
+    });
+
     it('loads one source identity and delivers a blended local seedling to a different patch', () => {
         const w = floraGarden();
         clearEvents(w.events);
@@ -129,7 +149,7 @@ describe('pollen carriage and seeding', () => {
         carryPollen(w, 0, food);
         expect(w.patchAlive[2]).toBe(0);
         expect(w.pollenPatch[0]).toBe(0);
-        expect(events(w, EVENT_TYPE.SEEDING_REFUSED)[0][3]).toBe(SEED_REFUSED.PLACEMENT);
+        expect(events(w, EVENT_TYPE.SEEDING_REFUSED)[0][3]).toBe(SEED_REFUSED.NEAR);
     });
 
     it('keeps the first refusal reason per agent/tick without suppressing a later seeding decision', () => {

@@ -108,7 +108,7 @@ export const DEFAULTS = deepFreeze({
     pheromoneMax: 5, // new
     hashCellSize: 140, // new
     maxContacts: 2000, // new
-    eventCapacity: 8192, // megafauna T1: includes four events per herd animal and two per herd
+    eventCapacity: 8192, // megafauna: includes five events per herd animal and two per herd
     specialisations: {
         // AGENT_CONFIGS maxRayDist; modifiers: SCOUT_ENERGY_COST_MULTIPLIER, DEFENDER_DAMAGE_REDUCTION, new
         forager: {

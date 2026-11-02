@@ -2135,6 +2135,32 @@
       "note": "E77 completed all 11 arms with no runner errors. Important baseline caveat: this branch ran against the pre-Flora toxinDose 0.45 defaults (config hash e2cf27dfd276b012), not current main's toxinDose 1.2, so these are exploratory results only and no arm is adopted. Wary=1 is the best local behavior arm: mean dodge_skill 0.9907, trampled_share 0.0143, spec_effective 3.190, input_active_share 0.2761; all six megafauna input values exceed 0.02. Reference Wary=0.5 has 0.9744, 0.0400, 2.944, and 0.2745 respectively. All arms fail the generic population gate (0/8); Wary=1 has predators at end 1/8, prey types 8/8, and basin_lineage_effective >=3 on 1/8. These survival/family misses are not claimed as passes and remain balancing follow-ups. The full per-arm table and reports are in evals/screens/results/herd-sense/. E92 is preregistered separately on current main's toxinDose 1.2 before any adoption."
     },
     {
+      "id": "E78",
+      "date": "2026-11-01",
+      "branch": "feat/megafauna-p3-ecology",
+      "hypothesis": "For Other blobs are the climate, more frequent or larger dung patches and more permissive seed transport will increase plant energy eaten from dung and successful herd dispersal while preserving enough grazing and patch-level presence to show the ecological interaction.",
+      "prediction": "Preregistered on current main: compare the Phase 3 defaults with one-key arms for herdDungTicks 450/1800, herdDungSize 40/100, herdDungZoneMax 15/45, herdSeedChance 0.25/1 and herdSeedMinDistance 400/1600 (16 seeds x 200000 ticks, policy live). Expect larger dung areas and higher seed chance to increase eval.dung_food_share and eval.herd_seeded_patches, while size/cap changes may alter patch-following; eval.herd_follow_share is watched as a held-patch comparison. Report grazing, population, predators, prey, families and food energy as balancing diagnostics. The Phase 3 target is dung food share at least 0.03 and seed rate at least 0.1 per 1000 ticks, positive on at least 12/16 seeds; misses remain follow-ups under the user's partial-acceptance direction.",
+      "targets": [
+        "eval.dung_food_share",
+        "eval.herd_seeded_patches",
+        "eval.herd_follow_share",
+        "eval.herd_grazed_share",
+        "eval.herd_animals",
+        "eval.food_energy_per_1k",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_lineage_effective",
+        "bench.step_ms@500"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "Current main Phase 3 defaults (herdWary 1, dung ticks 900, size 60, zone cap 30, seed chance 0.5, seed lifetime 24000, minimum distance 800)",
+      "after": "11-arm E78 reports and table in evals/screens/results/herd-ecology/ (16 seeds x 200000 ticks, policy live)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Completed on the preregistered current-main 828d638 config: all 11 arms, 16 seeds x 200000 ticks, policy live, with reports and table in evals/screens/results/herd-ecology/. Dung-food share >=0.03 passes in all arms and seeds (means 0.1121 to 0.1304). Seeded patches per 1000 ticks miss the 0.1 target in every seed and arm; means are 0.0095 to 0.0178, with positive-seed counts 9/16 to 12/16. Grazed share means are 0.4326 to 0.4811, above the 0.25 ceiling in all arms. The highest herd-follow watch mean is 4.193 at herdDungTicks 1800; that arm has predators at end on 0/16 versus 2/16 on the reference and basin_lineage_effective >=3 on 2/16 versus 5/16. Generic population gate is 0/16 in every arm; prey are present 16/16. These global deficits and the seed/grazing target misses are follow-ups, never claimed passes or adoption blockers under user direction. Preregistered matched 32-seed extension and reports are in evals/screens/herd-ecology-power.grid.json and evals/screens/results/herd-ecology-power/. At n=16, eval:power false-positive rates are 0.183 for eval.herd_follow_share (no detectable effect), 0.084 for eval.dung_food_share (80% power at a 30% relative change), and 0.089 for eval.herd_seeded_patches (no detectable effect). On 32 matched seeds, herdDungTicks 1800 moves follow-share 2.465 to 3.353 (95% CI -0.368 to +2.760), dung-food share 0.12393 to 0.12591 (CI -0.00883 to +0.01375), and seeded-patch rate 0.01266 to 0.01086 (CI -0.00724 to +0.00428); no new detector shows a supported improvement. Generic population gate remains 0/32 and basin_lineage_effective >=5 is 12/32 on the reference vs 4/32 at 1800. Keep the existing herdDungTicks 900 default; the evidence does not support adoption. The single 500-agent benchmark is 3.5667 ms/step. The locked five-run comparison to Phase 3 start 828d638 is 3.5415 to 3.5677 ms (+0.7%) at 500 agents; total-step budget passes, but environment@500w7680 (+28.4%) and merit@500w7680 (+7.6%) exceed the 5% phase threshold. All survival/population/family deficits and seed/grazing misses remain balancing follow-ups, never claimed passes."
+    },
+    {
       "id": "E81",
       "date": "2026-10-30",
       "branch": "evals/balance-screen",

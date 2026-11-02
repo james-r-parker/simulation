@@ -2,6 +2,7 @@
 
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { countSeedlings, samplePatchHerdFollowing } from './scene-herd-ecology.js';
 
 const EPISODE_LIMIT = 120;
 const APPROACH_DISTANCE = 300;
@@ -16,6 +17,10 @@ export function createHerdScene(config) {
         plantEaten: 0,
         herdGrazed: 0,
         herdCarcassEaten: 0,
+        dungFoodEaten: 0,
+        plantFoodEaten: 0,
+        dungFoodMark: 0,
+        herdSeededPatches: 0,
         herdCarcassMark: 0,
         unavoidableTramples: 0,
         trampleDeaths: 0,
@@ -26,6 +31,11 @@ export function createHerdScene(config) {
         gapCrossings: 0,
         recolonisations: 0,
         floraMark: new Float64Array(24),
+        followPatchSerial: new Uint32Array(config.floraPatchMax ?? 0).fill(0xffffffff),
+        followHerdedBlobs: new Float64Array(config.floraPatchMax ?? 0),
+        followBareBlobs: new Float64Array(config.floraPatchMax ?? 0),
+        followHerdedTicks: new Uint32Array(config.floraPatchMax ?? 0),
+        followBareTicks: new Uint32Array(config.floraPatchMax ?? 0),
         herdGrazeMark: 0,
         episodesClear: 0,
         episodesHit: 0,
@@ -168,6 +178,7 @@ export function trackHerd(scene, world, observer = null) {
     if (world.tick > BURN_IN_TICKS) {
         trackAfterBurn(scene, world, observer);
     }
+    scene.dungFoodMark = world.dungFoodIntake ?? 0;
     scene.herdGrazeMark = world.herdTotals[0];
     scene.herdCarcassMark = world.herdTotals[1];
     for (let i = 0; i < world.foodEatenBySpec.length; i++) {
@@ -189,8 +200,11 @@ function trackAfterBurn(scene, world, observer) {
     scene.herdGrazed += world.herdTotals[0] - scene.herdGrazeMark;
     scene.herdCarcassEaten += world.herdTotals[1] - scene.herdCarcassMark;
     for (let i = 0; i < world.floraIntake.length; i++) {
-        scene.plantEaten += world.floraIntake[i] - scene.floraMark[i];
+        const eaten = world.floraIntake[i] - scene.floraMark[i];
+        scene.plantEaten += eaten;
+        scene.plantFoodEaten += eaten;
     }
+    scene.dungFoodEaten += (world.dungFoodIntake ?? 0) - scene.dungFoodMark;
     for (let i = 0; i < world.foodEatenBySpec.length; i++) {
         scene.foodEatenBySpec[i] += world.foodEatenBySpec[i] - scene.foodMark[i];
         scene.carcassEatenBySpec[i] += world.herdCarcassEatenBySpec[i] - scene.carcassMark[i];
@@ -201,8 +215,12 @@ function trackAfterBurn(scene, world, observer) {
         scene.hunterBites += deliberate - scene.hunterBiteMark[0] + chance - scene.hunterBiteMark[1];
     }
     countStampedes(scene, world);
+    countSeedlings(scene, world);
     trackGroupCrossings(scene, world);
     sampleHerds(scene, world);
+    if ((world.tick - BURN_IN_TICKS) % 1000 === 0) {
+        samplePatchHerdFollowing(scene, world);
+    }
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
             updateEpisode(scene, world, slot);

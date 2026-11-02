@@ -12,6 +12,13 @@ function build() {
         unavoidableTramples: 0,
         trampleDeaths: 0,
         elapsedTicks: 10000,
+        dungFoodEaten: 20,
+        plantFoodEaten: 100,
+        herdSeededPatches: 5,
+        followHerdedBlobs: Float64Array.of(8, 3),
+        followBareBlobs: Float64Array.of(4, 6),
+        followHerdedTicks: Uint32Array.of(4, 3),
+        followBareTicks: Uint32Array.of(4, 3),
         stampedes: 5,
         animalSamples: 1,
         aliveSamples: 4,
@@ -40,5 +47,12 @@ describe('herd scene metrics', () => {
         const result = build()['eval.herd_carcass_share.reproducer'];
         expect(result.value).toBeNull();
         expect(result.reason).toContain('no meals for reproducer');
+    });
+
+    it('reports patch-held herd-follow comparisons and ecology rates', () => {
+        const metrics = build();
+        expect(metrics['eval.herd_follow_share'].value).toBeCloseTo(1.25);
+        expect(metrics['eval.dung_food_share'].value).toBeCloseTo(0.2);
+        expect(metrics['eval.herd_seeded_patches'].value).toBeCloseTo(0.5);
     });
 });

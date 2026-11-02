@@ -1,0 +1,13 @@
+{
+  "seeds": 32,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "phase3-defaults-power",
+  "arms": {
+    "phase3-defaults-power": {},
+    "herdDungTicks-1800-confirmation": {
+      "herdDungTicks": 1800
+    }
+  }
+}

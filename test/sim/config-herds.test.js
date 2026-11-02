@@ -25,6 +25,12 @@ describe('herd config', () => {
             herdCarcassTicks: 12000,
             herdStayTicks: 6000,
             herdWary: 1,
+            herdDungTicks: 900,
+            herdDungSize: 60,
+            herdDungZoneMax: 30,
+            herdSeedChance: 0.5,
+            herdSeedTicks: 24000,
+            herdSeedMinDistance: 800,
             trampleDamage: 400,
         });
         expect(() => createConfig()).not.toThrow();
@@ -38,8 +44,8 @@ describe('herd config', () => {
             maxAgents: 500,
             floraPatchMax: 256,
         };
-        expect(() => createConfig({ ...config, eventCapacity: 5551 })).toThrow(/eventCapacity.*5552/);
-        expect(() => createConfig({ ...config, eventCapacity: 5552 })).not.toThrow();
+        expect(() => createConfig({ ...config, eventCapacity: 5807 })).toThrow(/eventCapacity.*5808/);
+        expect(() => createConfig({ ...config, eventCapacity: 5808 })).not.toThrow();
     });
 
     it('requires active herds to fit the wall, refuge, speed and hash limits', () => {
@@ -60,5 +66,12 @@ describe('herd config', () => {
         expect(createConfig({ herdWary: 4 }).herdWary).toBe(4);
         expect(() => createConfig({ herdWary: -0.1 })).toThrow(/herdWary/);
         expect(() => createConfig({ herdWary: 4.1 })).toThrow(/herdWary/);
+    });
+
+    it('bounds dung zones by the fertile-zone pool for active herds', () => {
+        expect(() => createConfig({ herdDungZoneMax: 101 })).toThrow(/herdDungZoneMax.*fertileZoneMax/);
+        expect(() => createConfig({ herdCount: 0, fertileZoneMax: 0 })).not.toThrow();
+        expect(() => createConfig({ herdCount: 0, herdDungZoneMax: 101 })).not.toThrow();
+        expect(() => createConfig({ herdDungZoneMax: 0 })).not.toThrow();
     });
 });

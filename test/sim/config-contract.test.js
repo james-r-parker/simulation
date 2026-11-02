@@ -193,7 +193,7 @@ describe('validateConfig error text', () => {
 
     it('states the event capacity and the product', () => {
         expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4063 }))).toBe(
-            'eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax + 4 x herdMax + 2 x herdCount (4064)',
+            'eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount (4064)',
         );
     });
 

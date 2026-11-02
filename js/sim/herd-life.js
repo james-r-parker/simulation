@@ -64,6 +64,9 @@ function die(world, group, animal) {
     world.herdAge[animal] = 0;
     world.herdLife[animal] = 0;
     world.herdGraze[animal] = 0;
+    world.herdSeedPatch[animal] = 0;
+    world.herdSeedSerial[animal] = 0;
+    world.herdSeedTicks[animal] = 0;
     world.herdX[animal] = 0;
     world.herdY[animal] = 0;
     world.herdVx[animal] = 0;
@@ -184,6 +187,9 @@ function tryBirth(world, group) {
     );
     world.herdStore[calf] = world.config.herdCalfEnergy;
     world.herdGraze[calf] = 0;
+    world.herdSeedPatch[calf] = 0;
+    world.herdSeedSerial[calf] = 0;
+    world.herdSeedTicks[calf] = 0;
     world.herdId[calf] = world.herdNextId++;
     world.groupAnimalCount[group]++;
     world.groupBirthTimer[group] = world.config.herdBirthTicks;

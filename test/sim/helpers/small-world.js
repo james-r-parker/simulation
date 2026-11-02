@@ -21,6 +21,7 @@ export function smallWorld(over = {}) {
         maxFood: 4,
         initialFood: 0,
         fertileZoneMax: 3,
+        herdDungZoneMax: 3,
         ...over,
     });
     const world = createWorld(config, testPolicy);

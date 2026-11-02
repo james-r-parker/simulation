@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addFertileZone, decayFertileZones, seasonAt, updateSeason } from '../../js/sim/environment.js';
+import { addFertileZone, decayFertileZones, seasonAt, updateSeason, ZONE_ORIGIN } from '../../js/sim/environment.js';
 import { smallWorld } from './helpers/small-world.js';
 
 describe('seasonAt', () => {
@@ -36,6 +36,7 @@ describe('fertile zones', () => {
         w.zoneAlive[0] = 0;
         expect(addFertileZone(w, 50, 60, 20)).toBe(0);
         expect([w.zoneX[0], w.zoneY[0], w.zoneInitial[0], w.zoneFertility[0]]).toEqual([50, 60, 1, 1]);
+        expect(w.zoneOrigin[0]).toBe(ZONE_ORIGIN.DEATH);
         expect(w.zoneInitial[1]).toBe(10);
     });
 
@@ -63,6 +64,7 @@ describe('fertile zones', () => {
         decayFertileZones(w);
         expect(w.zoneAlive[0]).toBe(0);
         expect([w.zoneX[0], w.zoneY[0], w.zoneFertility[0], w.zoneInitial[0]]).toEqual([0, 0, 0, 0]);
+        expect(w.zoneOrigin[0]).toBe(ZONE_ORIGIN.DEATH);
         decayFertileZones(w);
         expect(w.zoneFertility[0]).toBe(0);
     });
