@@ -7,7 +7,18 @@ import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = {
-    effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6, ESCAPED: 7, MATED: 8, POLLINATED: 9 },
+    effectKinds: {
+        BORN: 1,
+        DIED: 2,
+        BITE: 3,
+        ALARM: 4,
+        PACK_CALL: 5,
+        SMOKE: 6,
+        ESCAPED: 7,
+        MATED: 8,
+        POLLINATED: 9,
+        STAMPEDE: 10,
+    },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
 };
 const info = { callRadius: 300, callTicks: 40 };
@@ -64,6 +75,16 @@ const liveRings = live;
 const liveSparks = live;
 
 describe('playEffects', () => {
+    it('plays a stampede as dust particles at the herd centre', () => {
+        const { player, sparks, seen } = build();
+        const q = queueOf([[10, 12, 80, 90, 3, 5, 0, 0]]);
+        expect(playEffects(player, q, alive([]), 12)).toBe(1);
+        expect(seen).toEqual([10]);
+        expect(liveSparks(sparks, 12)).toBe(10);
+        expect(sparks.x[0]).toBe(80);
+        expect(sparks.y[0]).toBe(90);
+    });
+
     it('plays an effect once, when the playhead reaches its tick, and not before', () => {
         const { player, rings, seen } = build();
         const q = queueOf([[4, 100, 10, 20, 1, 0, 0, 1]]);

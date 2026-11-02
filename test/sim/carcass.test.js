@@ -5,7 +5,7 @@ import { ageFood } from '../../js/sim/food.js';
 import { assertInvariants } from '../../js/sim/invariants.js';
 import { reap } from '../../js/sim/population.js';
 import { freeAgent } from '../../js/sim/world.js';
-import { createSnapshotViews, snapshotLayout, writeSnapshot } from '../../js/sim/snapshot.js';
+import { createSnapshotViews, HEADER_WORDS, snapshotLayout, writeSnapshot } from '../../js/sim/snapshot.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
@@ -236,7 +236,7 @@ describe('carcass snapshot and hash', () => {
         const buffer = new ArrayBuffer(snapshotLayout(w.config).bytes);
         const views = createSnapshotViews(buffer);
         writeSnapshot(w, views);
-        const start = 8;
+        const start = HEADER_WORDS;
         const radii = [views.f32[start + 2], views.f32[start + 8]];
         expect(views.u32[2]).toBe(2);
         expect(radii[plant < meat ? 0 : 1]).toBe(7);

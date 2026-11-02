@@ -1,40 +1,71 @@
 // Draws Phase 1 megafauna as plain, seeded snapshot discs.
 
-import { AdditiveBlending, ShaderMaterial } from 'three';
-import { createSections, readSections } from '../snapshot-view.js';
-import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
+import { NormalBlending, ShaderMaterial } from 'three';
+import { createSections, HERD_STRIDE, readSections } from '../snapshot-view.js';
+import { herdColor } from './herd-colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
-import { HERD_FRAGMENT, HERD_VERTEX } from './world-layers-shader.js';
+import { HERD_FRAGMENT, HERD_VERTEX } from './herd-layer-shader.js';
+import { LOOK_OFF } from './quality.js';
 
 const SECTIONS = createSections();
 const MIN_PX = 8;
-const HERD_LUMINANCE =
-    0.2126729 * PALETTE.coolWhite[0] + 0.7151522 * PALETTE.coolWhite[1] + 0.072175 * PALETTE.coolWhite[2];
-const INTENSITY = SCENERY_MAX_LUMINANCE / HERD_LUMINANCE;
+const COLOR = [0, 0, 0];
+const PHASE_STEP = 2.399963229728653;
 
-/** @param {Float32Array} f32 snapshot floats @param {{herdStart: number, herdCount: number}} section herd records @param {Float32Array} out packed bodies @returns {number} rows written */
-export function packHerdBodies(f32, section, out) {
-    const count = Math.min(section.herdCount, out.length / VEC4);
+/** @param {Float32Array} f32 snapshot floats @param {Uint32Array} u32 snapshot words @param {{herdStart: number, herdCount: number}} section herd records @param {{body: Float32Array, motion: Float32Array, colors: Float32Array}} out packed instance attributes @returns {number} rows written */
+export function packHerdBodies(f32, u32, section, out) {
+    const { body, motion, colors } = out;
+    const count = Math.min(section.herdCount, body.length / VEC4, motion.length / VEC4, colors.length / VEC4);
     for (let i = 0; i < count; i++) {
-        const source = section.herdStart + i * 5;
+        const source = section.herdStart + i * HERD_STRIDE;
         const target = i * VEC4;
-        out[target] = f32[source];
-        out[target + 1] = f32[source + 1];
-        out[target + 2] = f32[source + 2];
-        out[target + 3] = f32[source + 3];
+        const group = u32[source + 5];
+        body[target] = f32[source];
+        body[target + 1] = f32[source + 1];
+        body[target + 2] = f32[source + 2];
+        body[target + 3] = f32[source + 3];
+        motion[target] = f32[source + 4];
+        motion[target + 1] = (group * 7 + i) * PHASE_STEP;
+        motion[target + 2] = group;
+        motion[target + 3] = 0;
+        herdColor(group, COLOR);
+        colors[target] = COLOR[0];
+        colors[target + 1] = COLOR[1];
+        colors[target + 2] = COLOR[2];
+        colors[target + 3] = 1;
     }
     return count;
+}
+
+/** @param {any} state reusable layer state @param {any} frame the current render frame @returns {void} */
+function updateHerdLayer(state, frame) {
+    const { mesh, uniforms, packedBody, packedMotion, packedColor } = state;
+    uniforms.uZoom.value = frame.camera.zoom;
+    uniforms.uTime.value = Number.isFinite(frame.nowMs) ? frame.nowMs / 1000 : 0;
+    if (frame.snapshot === null) {
+        mesh.count = 0;
+        mesh.visible = false;
+        return;
+    }
+    const section = readSections(frame.snapshot.u32, SECTIONS);
+    const count = packHerdBodies(frame.snapshot.f32, frame.snapshot.u32, section, {
+        body: packedBody,
+        motion: packedMotion,
+        colors: packedColor,
+    });
+    uploadInstances(mesh, { iBody: packedBody, iMotion: packedMotion, iColor: packedColor }, count);
+    mesh.visible = state.enabled && count > 0;
 }
 
 /** @param {{info: Record<string, any>}} context ready.info @returns {import('./scene.js').Layer} herd discs */
 export function createHerdLayer({ info }) {
     const capacity = info.herdMax;
-    const geometry = createQuadGeometry(capacity, ['iBody']);
+    const geometry = createQuadGeometry(capacity, ['iBody', 'iMotion', 'iColor']);
     const uniforms = {
         uZoom: { value: 1 },
         uMinPx: { value: MIN_PX },
-        uColor: { value: PALETTE.coolWhite },
-        uIntensity: { value: INTENSITY },
+        uTime: { value: 0 },
+        uDetail: { value: 0 },
     };
     const mat = new ShaderMaterial({
         vertexShader: HERD_VERTEX,
@@ -43,21 +74,26 @@ export function createHerdLayer({ info }) {
         transparent: true,
         depthTest: false,
         depthWrite: false,
-        blending: AdditiveBlending,
+        blending: NormalBlending,
     });
     const mesh = createQuadMesh(geometry, mat, capacity);
-    const packed = new Float32Array(capacity * VEC4);
+    const state = {
+        mesh,
+        uniforms,
+        packedBody: new Float32Array(capacity * VEC4),
+        packedMotion: new Float32Array(capacity * VEC4),
+        packedColor: new Float32Array(capacity * VEC4),
+        enabled: true,
+    };
     return {
         object: mesh,
+        setLook(look) {
+            state.enabled = look.herds !== LOOK_OFF;
+            uniforms.uDetail.value = look.herds === 0 ? 0 : 1;
+            mesh.visible = state.enabled && mesh.count > 0;
+        },
         update(frame) {
-            uniforms.uZoom.value = frame.camera.zoom;
-            if (frame.snapshot === null) {
-                mesh.count = 0;
-                return;
-            }
-            const section = readSections(frame.snapshot.u32, SECTIONS);
-            const count = packHerdBodies(frame.snapshot.f32, section, packed);
-            uploadInstances(mesh, { iBody: packed }, count);
+            updateHerdLayer(state, frame);
         },
         dispose() {
             geometry.dispose();

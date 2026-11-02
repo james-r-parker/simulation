@@ -14,6 +14,7 @@ export const LOOK_ITEMS = Object.freeze([
     'decay',
     'finish',
     'flora',
+    'herds',
 ]);
 
 /** The mask with every look item on (`?look=all`, the default). */
@@ -26,7 +27,7 @@ export const LOOK_OFF = -1;
  * Which column of the Phase 6 quality-tier table an item draws with: 0 full, 1 reduced, 2 the level-2 form,
  * `LOOK_OFF` not drawn.
  * @typedef {{rocks?: number, aurora?: number, terrain?: number, motion?: number, threads?: number, decay?: number,
- *   finish?: number, flora?: number}} Look
+ *   finish?: number, flora?: number, herds?: number}} Look
  */
 
 /**
@@ -54,7 +55,7 @@ export const QUALITY_LEVELS = Object.freeze([
         bloom: false,
         bloomScale: 0,
         motes: 0,
-        look: lookLevel(2, ['aurora', 'terrain', 'motion', 'threads', 'finish', 'flora']),
+        look: lookLevel(2, ['aurora', 'terrain', 'motion', 'threads', 'finish', 'flora', 'herds']),
     }),
 ]);
 

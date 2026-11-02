@@ -22,6 +22,7 @@ export const EATEN_FLASH_TICKS = 6;
 const STREAK = 0;
 const MOTE = 1;
 const FLASH = 2;
+const DUST = 3;
 
 /**
  * @typedef {object} SparkPool
@@ -137,6 +138,29 @@ export function spawnBurst(pool, burst) {
         SHAPE.life = EATEN_FLASH_TICKS;
         add(pool, WHERE, SHAPE, PALETTE.eatenFlash);
         return count + 1;
+    }
+    return count;
+}
+
+/**
+ * Kicks a deterministic cloud of dust from a stampeding group's centre.
+ * @param {SparkPool} pool the pool
+ * @param {{x: number, y: number, tick: number, group: number, animals: number}} effect the stampede
+ * @returns {number} particles added
+ */
+export function spawnStampedeDust(pool, effect) {
+    const count = Math.min(18, Math.max(8, effect.animals * 2));
+    const turn = effect.group * 2.399963229728653 + effect.tick * 0.17;
+    WHERE.x = effect.x;
+    WHERE.y = effect.y;
+    WHERE.kind = DUST;
+    SHAPE.tick = effect.tick;
+    SHAPE.life = 48;
+    SHAPE.size = 4 + Math.min(10, effect.animals * 0.5);
+    for (let k = 0; k < count; k++) {
+        SHAPE.angle = turn + (k * 2 * Math.PI) / count;
+        SHAPE.reach = 24 + ((k * 17 + effect.group * 13) % 17);
+        add(pool, WHERE, SHAPE, PALETTE.stampedeDust);
     }
     return count;
 }

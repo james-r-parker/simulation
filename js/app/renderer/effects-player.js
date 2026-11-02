@@ -7,7 +7,7 @@ import { floraColor } from './flora-colors.js';
 import { familyColor, PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
 import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
-import { spawnBurst } from './sparks.js';
+import { spawnBurst, spawnStampedeDust } from './sparks.js';
 
 /** An effect this many ticks behind the playhead is stale and skipped. */
 export const STALE_TICKS = 180;
@@ -230,6 +230,12 @@ function playCall(player, kind) {
     spawnRing(player.rings, RING);
 }
 
+/** @param {EffectsPlayer} player the player @returns {void} */
+function playStampede(player) {
+    const e = player.effect;
+    spawnStampedeDust(player.sparks, { x: e.x, y: e.y, tick: e.tick, group: e.a, animals: e.b });
+}
+
 /**
  * @param {EffectsPlayer} player the player, `player.effect` holding the record
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
@@ -285,7 +291,11 @@ export function playEffects(player, queue, agents, tick) {
             continue;
         }
         played += 1;
-        dispatch(player, agents);
+        if (e.kind === player.kinds.STAMPEDE) {
+            playStampede(player);
+        } else {
+            dispatch(player, agents);
+        }
         player.sink?.(e);
     }
     return played;

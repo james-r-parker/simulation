@@ -3,6 +3,7 @@ import {
     HEADER_WORDS,
     HERD_STRIDE,
     SNAPSHOT_FLAG,
+    ZONE_STRIDE,
     createSnapshotViews,
     snapshotLayout,
     writeSnapshot,
@@ -19,30 +20,32 @@ describe('snapshotLayout', () => {
     it('sizes the buffer for the config maxima', () => {
         const layout = snapshotLayout(smallWorld().config);
         expect(layout).toMatchObject({
-            headerWords: 8,
+            headerWords: 9,
             agentStride: 12,
             rayStride: 4,
             foodStride: 6,
             obstacleStride: 3,
             cloudStride: 3,
             patchStride: 5,
-            herdStride: 5,
+            herdStride: 6,
+            zoneStride: 4,
         });
         expect(layout.bytes).toBe(
-            (8 +
+            (9 +
                 8 * (12 + 4) +
                 4 * 6 +
                 terrainRockCount(smallWorld().config) * 3 +
                 32 * 3 +
                 smallWorld().config.floraPatchMax * 5 +
-                smallWorld().config.herdCount * smallWorld().config.herdSize * HERD_STRIDE) *
+                smallWorld().config.herdCount * smallWorld().config.herdSize * HERD_STRIDE +
+                smallWorld().config.fertileZoneMax * ZONE_STRIDE) *
                 4,
         );
     });
 });
 
 describe('writeSnapshot', () => {
-    it('writes live herd discs after patches and before optional rays', () => {
+    it('writes live herd records after patches with group indices', () => {
         const world = smallWorld({ herdCount: 1, herdSize: 2 });
         world.herdAlive[1] = 1;
         world.herdAlive[0] = 0;
@@ -61,7 +64,31 @@ describe('writeSnapshot', () => {
             world.config.herdRadius,
             Math.fround(5 / world.config.herdRunSpeed),
             expect.closeTo(0.9273, 3),
+            world.herdGroup[1],
         ]);
+    });
+
+    it('writes live zones after herds with a fertility share and origin code', () => {
+        const world = smallWorld({ fertileZoneMax: 2 });
+        world.zoneAlive[1] = 1;
+        world.zoneX[1] = 123;
+        world.zoneY[1] = 456;
+        world.zoneInitial[1] = 10;
+        world.zoneFertility[1] = 5;
+        world.zoneOrigin[1] = 1;
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const zoneStart =
+            HEADER_WORDS +
+            views.u32[1] * 12 +
+            views.u32[2] * 6 +
+            views.u32[3] * 3 +
+            views.u32[4] * 3 +
+            views.u32[6] * 5 +
+            views.u32[7] * HERD_STRIDE;
+        expect(views.u32[8]).toBe(1);
+        expect(Array.from(views.f32.subarray(zoneStart, zoneStart + 3))).toEqual([123, 456, 0.5]);
+        expect(views.u32[zoneStart + 3]).toBe(1);
     });
 
     it('encodes stationary and signed herd headings and handles a zero run-speed scale', () => {
@@ -118,9 +145,9 @@ describe('writeSnapshot', () => {
         expect(u32[HEADER_WORDS + 12 + 8]).toBe(2);
         expect(f32[HEADER_WORDS + 12]).toBe(world.x[2]);
         expect(f32[HEADER_WORDS + 12 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(32, 36))).toEqual([5, 6, 7, 0]);
-        expect(f32[38]).toBe(world.obsX[0]);
-        expect(f32[40]).toBe(world.obsRadius[0]);
+        expect(Array.from(f32.subarray(33, 37))).toEqual([5, 6, 7, 0]);
+        expect(f32[39]).toBe(world.obsX[0]);
+        expect(f32[41]).toBe(world.obsRadius[0]);
     });
 
     it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
@@ -177,7 +204,7 @@ describe('writeSnapshot', () => {
         world.foodHue[0] = 0.5;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        expect(Array.from(views.f32.subarray(11, 14))).toEqual([0.25, 3, 0.5]);
+        expect(Array.from(views.f32.subarray(12, 15))).toEqual([0.25, 3, 0.5]);
     });
 
     it('throws when the buffer is too small', () => {
@@ -211,8 +238,8 @@ describe('writeSnapshot exact layout', () => {
         writeSnapshot(world, views);
         const { f32, u32 } = views;
         expect(Array.from(f32.subarray(HEADER_WORDS, HEADER_WORDS + 4))).toEqual([11, 12, 1.5, 13]);
-        expect(f32[12]).toBe(0.25);
-        expect(Array.from(u32.subarray(13, 17))).toEqual([4, 21, 22, 3]);
+        expect(f32[13]).toBe(0.25);
+        expect(Array.from(u32.subarray(14, 18))).toEqual([4, 21, 22, 3]);
         expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, world.obsX.length, 0, 0]);
         const obstacleStart = HEADER_WORDS + 12;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);

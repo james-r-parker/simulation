@@ -28,13 +28,16 @@ describe('readSections', () => {
         expect(s.rayStart).toBe(s.cloudStart + 3);
     });
 
-    it('places herd records after patches and before rays', () => {
-        const snap = makeSnapshot(6, [], { herds: [[40, 50, 80, 0.5, 1.2]] });
+    it('places herd and zone records after patches and before rays', () => {
+        const snap = makeSnapshot(6, [], { herds: [[40, 50, 80, 0.5, 1.2, 3]], zones: [[10, 20, 0.75, 1]] });
         const s = readSections(snap.u32, createSections());
-        expect(s.herdCount).toBe(1);
+        expect(s).toMatchObject({ herdCount: 1, zoneCount: 1 });
         expect(Array.from(snap.f32.slice(s.herdStart, s.herdStart + 4))).toEqual([40, 50, 80, 0.5]);
         expect(snap.f32[s.herdStart + 4]).toBeCloseTo(1.2);
-        expect(s.rayStart).toBe(s.herdStart + 5);
+        expect(snap.u32[s.herdStart + 5]).toBe(3);
+        expect(Array.from(snap.f32.slice(s.zoneStart, s.zoneStart + 3))).toEqual([10, 20, 0.75]);
+        expect(snap.u32[s.zoneStart + 3]).toBe(1);
+        expect(s.rayStart).toBe(s.zoneStart + 4);
     });
 
     it('agrees with what the sim wrote for a real world', () => {

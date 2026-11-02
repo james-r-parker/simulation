@@ -1,0 +1,24 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 600000,
+  "policy": "live",
+  "reference": "herd-free",
+  "arms": {
+    "herd-free": { "herdCount": 0 },
+    "final-defaults": {
+      "herdStartleRadius": 200,
+      "herdCount": 6,
+      "herdSize": 8,
+      "herdCarcassTicks": 12000,
+      "herdWary": 1,
+      "herdDungTicks": 900,
+      "herdDungSize": 60,
+      "herdDungZoneMax": 30,
+      "herdSeedChance": 0.5,
+      "herdSeedTicks": 24000,
+      "herdSeedMinDistance": 800,
+      "trampleDamage": 400
+    }
+  }
+}

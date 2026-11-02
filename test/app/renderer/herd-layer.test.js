@@ -1,41 +1,61 @@
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
-import { PALETTE, SCENERY_MAX_LUMINANCE } from '../../../js/app/renderer/colors.js';
+import { herdColor } from '../../../js/app/renderer/herd-colors.js';
 import { createHerdLayer, packHerdBodies } from '../../../js/app/renderer/herd-layer.js';
-import { HERD_FRAGMENT } from '../../../js/app/renderer/world-layers-shader.js';
+import { createSections, readSections } from '../../../js/app/snapshot-view.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('packHerdBodies', () => {
-    it('packs the visible disc fields and caps at the output capacity', () => {
-        const f32 = Float32Array.from([10, 20, 80, 0.3, -1, 30, 40, 90, 0.8, 2]);
-        const out = new Float32Array(4);
-        expect(packHerdBodies(f32, { herdStart: 0, herdCount: 2 }, out)).toBe(1);
-        expect(Array.from(out.slice(0, 3))).toEqual([10, 20, 80]);
-        expect(out[3]).toBeCloseTo(0.3);
+    it('packs heading, speed and group colour, capped at capacity', () => {
+        const snapshot = makeSnapshot(1, [], {
+            herds: [
+                [10, 20, 80, 0.3, -1, 2],
+                [30, 40, 90, 0.8, 2, 3],
+            ],
+        });
+        const section = readSections(snapshot.u32, createSections());
+        const body = new Float32Array(4);
+        const motion = new Float32Array(4);
+        const colors = new Float32Array(4);
+        expect(packHerdBodies(snapshot.f32, snapshot.u32, section, { body, motion, colors })).toBe(1);
+        expect(Array.from(body.slice(0, 3))).toEqual([10, 20, 80]);
+        expect(body[3]).toBeCloseTo(0.3);
+        expect(motion[0]).toBe(-1);
+        expect(motion[1]).toBeCloseTo(2 * 7 * 2.399963229728653);
+        colors.slice(0, 3).forEach((value, index) => expect(value).toBeCloseTo(herdColor(2)[index]));
     });
 });
 
 describe('createHerdLayer', () => {
-    it('draws only snapshot herds as discs, tracks zoom and clears when the snapshot is absent', () => {
-        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 80, 0.5, 1.2]] });
+    it('draws shaped snapshot herds, tracks time and zoom, and clears on a missing snapshot', () => {
+        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 80, 0.5, 1.2, 0]] });
         const layer = createHerdLayer({ info: { herdMax: 4 } });
         const camera = createCameraController({
             canvas: { width: 400, height: 400 },
             world: { width: 400, height: 400 },
         });
         camera.zoom = 3;
-        layer.update?.(/** @type {any} */ ({ snapshot, camera }));
+        layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
         expect(layer.object.count).toBe(1);
         expect(layer.object.visible).toBe(true);
-        expect(Array.from(layer.object.geometry.getAttribute('iBody').array.slice(0, 4))).toEqual([100, 200, 80, 0.5]);
+        expect(Array.from(layer.object.geometry.getAttribute('iBody').array.slice(0, 3))).toEqual([100, 200, 80]);
+        expect(layer.object.geometry.getAttribute('iBody').array[3]).toBeCloseTo(0.5);
+        expect(layer.object.geometry.getAttribute('iMotion').array[0]).toBeCloseTo(1.2);
+        expect(layer.object.geometry.getAttribute('iMotion').array[1]).toBe(0);
+        const packedColor = /** @type {Float32Array} */ (layer.object.geometry.getAttribute('iColor').array);
+        packedColor.slice(0, 3).forEach((value, index) => expect(value).toBeCloseTo(herdColor(0)[index]));
         expect(layer.object.material.uniforms.uZoom.value).toBe(3);
         expect(layer.object.material.uniforms.uMinPx.value).toBe(8);
-        expect(layer.object.material.uniforms.uColor.value).toEqual(PALETTE.coolWhite);
-        const { uColor, uIntensity } = layer.object.material.uniforms;
-        const luminance = 0.2126729 * uColor.value[0] + 0.7151522 * uColor.value[1] + 0.072175 * uColor.value[2];
-        expect(luminance * uIntensity.value).toBeCloseTo(SCENERY_MAX_LUMINANCE, 6);
-        expect(HERD_FRAGMENT).toContain('mix(0.22, 1.0, rim)');
-        camera.zoom = 1;
+        expect(layer.object.material.uniforms.uTime.value).toBe(2.5);
+        layer.setLook?.({ herds: 1 });
+        expect(layer.object.material.uniforms.uDetail.value).toBe(1);
+        layer.setLook?.({ herds: -1 });
+        layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
+        expect(layer.object.visible).toBe(false);
+        layer.setLook?.({ herds: 0 });
+        layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
+        expect(layer.object.visible).toBe(true);
+        expect(layer.object.material.uniforms.uDetail.value).toBe(0);
         layer.update?.(/** @type {any} */ ({ snapshot: null, camera }));
         expect(layer.object.count).toBe(0);
         layer.dispose();

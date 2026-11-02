@@ -182,6 +182,7 @@ describe('worldInfo and readyLayout', () => {
             worldWidth: 1600,
             worldHeight: 1000,
             maxAgents: 40,
+            fertileZoneMax: 4,
             rayCount: 8,
             ticksPerSecond: BASE_TICKS_PER_SECOND,
             seasonNames: [...SEASON_NAMES],
@@ -208,8 +209,17 @@ describe('worldInfo and readyLayout', () => {
     it('carries the buffer offsets, the effect kinds, the flag bits and the cause codes', () => {
         const run = small();
         const layout = readyLayout(run);
-        expect(layout).toMatchObject({ effectCapacity: 512, effectWords: 8, bytes: run.layout.bytes });
+        expect(layout).toMatchObject({
+            effectCapacity: 512,
+            effectWords: 8,
+            bytes: run.layout.bytes,
+            headerWords: 9,
+            herdStride: 6,
+            zoneStride: 4,
+            zoneOrigins: { DEATH: 0, DUNG: 1 },
+        });
         expect(layout.effectKinds.SMOKE).toBe(6);
+        expect(layout.effectKinds.STAMPEDE).toBe(10);
         expect(layout.flags.PREGNANT).toBe(1 << 13);
         expect(layout.flags.MALE).toBe(1 << 14);
         expect(layout.deathCauses.EATEN).toBe(1);

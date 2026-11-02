@@ -1,5 +1,5 @@
-// Packs the renderable part of a world (alive agents, alive food, obstacles, smoke clouds and, when asked, each
-// agent's ray proximities) into one ArrayBuffer.
+// Packs the renderable part of a world (alive agents and food, obstacles, clouds, flora patches, herds and zones, plus
+// each agent's ray proximities when asked) into one ArrayBuffer.
 
 import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { FOOD_KIND } from './carcass.js';
@@ -7,13 +7,14 @@ import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
 import { terrainRockCount } from './terrain.js';
 
-export const HEADER_WORDS = 8;
+export const HEADER_WORDS = 9;
 const AGENT_STRIDE = 12;
 const FOOD_STRIDE = 6;
 const PATCH_STRIDE = 5;
 const OBSTACLE_STRIDE = 3;
 const CLOUD_STRIDE = 3;
-export const HERD_STRIDE = 5;
+export const HERD_STRIDE = 6;
+export const ZONE_STRIDE = 4;
 const WORD_BYTES = 4;
 const HALF_PI = 1.5707963267948966;
 const PI = 3.141592653589793;
@@ -52,14 +53,15 @@ function maxWords(config) {
         terrainRockCount(config) * OBSTACLE_STRIDE +
         config.maxClouds * CLOUD_STRIDE +
         config.floraPatchMax * PATCH_STRIDE +
-        config.herdCount * config.herdSize * HERD_STRIDE
+        config.herdCount * config.herdSize * HERD_STRIDE +
+        config.fertileZoneMax * ZONE_STRIDE
     );
 }
 
 /**
  * Sizes the snapshot buffer for a config.
  * @param {Readonly<Record<string, any>>} config the validated config
- * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number, cloudStride: number, patchStride: number, herdStride: number, rayStride: number}}
+ * @returns {{bytes: number, headerWords: number, agentStride: number, foodStride: number, obstacleStride: number, cloudStride: number, patchStride: number, herdStride: number, zoneStride: number, rayStride: number}}
  *   `bytes` covers every part at its maximum, rays included; `rayStride` is the words per agent in the ray part
  */
 export function snapshotLayout(config) {
@@ -72,6 +74,7 @@ export function snapshotLayout(config) {
         cloudStride: CLOUD_STRIDE,
         patchStride: PATCH_STRIDE,
         herdStride: HERD_STRIDE,
+        zoneStride: ZONE_STRIDE,
         rayStride: config.rayCount,
     };
 }
@@ -260,7 +263,7 @@ function heading(vx, vy) {
     return vy < 0 ? -angle : angle;
 }
 
-/** Writes alive animals in slot order as x, y, radius, speed01 and heading.
+/** Writes alive animals in slot order as x, y, radius, speed01, heading and group index.
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views snapshot views
  * @param {number} start first herd word
@@ -282,10 +285,37 @@ function writeHerds(world, views, start) {
         const speed = Math.sqrt(vx * vx + vy * vy);
         f32[w + 3] = world.config.herdRunSpeed > 0 ? Math.min(1, speed / world.config.herdRunSpeed) : 0;
         f32[w + 4] = heading(vx, vy);
+        u32[w + 5] = world.herdGroup[animal];
         w += HERD_STRIDE;
         count++;
     }
     u32[7] = count;
+    return w;
+}
+
+/** Writes live zones in slot order as x, y, remaining fertility share and origin.
+ * @param {import('./world.js').World} world the world
+ * @param {{f32: Float32Array, u32: Uint32Array}} views snapshot views
+ * @param {number} start first zone word
+ * @returns {number} the next free word
+ */
+function writeZones(world, views, start) {
+    const { f32, u32 } = views;
+    let w = start;
+    let count = 0;
+    for (let slot = 0; slot < world.zoneAlive.length; slot++) {
+        if (world.zoneAlive[slot] !== 1) {
+            continue;
+        }
+        f32[w] = world.zoneX[slot];
+        f32[w + 1] = world.zoneY[slot];
+        const initial = world.zoneInitial[slot];
+        f32[w + 2] = initial > 0 ? Math.max(0, Math.min(1, world.zoneFertility[slot] / initial)) : 0;
+        u32[w + 3] = world.zoneOrigin[slot];
+        w += ZONE_STRIDE;
+        count++;
+    }
+    u32[8] = count;
     return w;
 }
 
@@ -315,7 +345,7 @@ function writeRays(world, f32, start) {
 /**
  * Writes the world into the buffer: header, alive agents, alive food, obstacles, clouds, live patches, herds and,
  * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count, word 6
- * the patch count and word 7 the herd count.
+ * the patch count, word 7 the herd count and word 8 the zone count.
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views views from `createSnapshotViews`
  * @param {boolean} [withRays] write the ray part
@@ -345,7 +375,8 @@ export function writeSnapshot(world, views, withRays = false) {
     writeClouds(world, f32, w);
     u32[RAY_COUNT_WORD] = withRays ? rayCount : 0;
     const patchStart = writePatches(world, views, w + world.cloudCount * CLOUD_STRIDE);
-    const rayStart = writeHerds(world, views, patchStart);
+    const herdStart = writeHerds(world, views, patchStart);
+    const rayStart = writeZones(world, views, herdStart);
     if (withRays) {
         writeRays(world, f32, rayStart);
     }
