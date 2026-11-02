@@ -1,0 +1,268 @@
+{
+  "reference": "herd-free",
+  "arms": [
+    {
+      "arm": "herd-free",
+      "seeds": 16,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.13089005235602094, 0.6858638743455497, 0.031413612565445025, 0.16753926701570682, 0.15706806282722513,
+            0.7539267015706806, 0.6387434554973822, 0.49214659685863876, 0.5602094240837696, 0.18324607329842932,
+            0.19895287958115182, 0.3769633507853403, 0.13612565445026178, 0.42408376963350786, 0.06806282722513089,
+            0.6178010471204188
+          ],
+          "pass": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0.024595059906538774, 0.09030223463299088, 0.05347307630607989, 0.10226903871550087, 0.04160522191763091,
+            0.04020989565532078, 0.9927867835259443, 0.10962544639149573, 0.05031547804735693, 0.08802119550387733,
+            0.06208836607300637, 0.0353045013239188, 0.11806996672223655, 0.1063048436352391, 0.07207918087701395,
+            0.2901368958895797
+          ],
+          "pass": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+        },
+        "lineages": {
+          "value": [5, 2, 3, 1, 2, 2, 5, 2, 5, 3, 4, 5, 17, 4, 4, 2],
+          "pass": [
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            false,
+            false,
+            true,
+            true,
+            false,
+            false,
+            false
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.5882352941176471, 0.874, 0.625, 1, 0.9302325581395349, 0.7978021978021979, 0.5384615384615384,
+            0.9333333333333333, 0.5223880597014925, 0.8, 0.6585365853658537, 0.4698275862068966, 0.3333333333333333,
+            0.7787234042553192, 0.7777777777777778, 0.4666666666666667
+          ],
+          "pass": [
+            true,
+            false,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            true
+          ]
+        },
+        "popBelowMax": {
+          "value": [17, 500, 8, 17, 43, 455, 26, 15, 67, 30, 41, 464, 48, 235, 9, 255],
+          "pass": [true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.4254506968528498,
+          "pass": true
+        },
+        "bornShare": {
+          "value": 0.723916278742957,
+          "pass": true
+        }
+      },
+      "popMean": 93.110625,
+      "pass": false,
+      "deltas": null,
+      "watch": {
+        "eval.skill_trend": -0.010160456855943512,
+        "eval.deliberate_food_per_1k": 205.94517439320194,
+        "eval.chance_food_per_1k": 171.55212072523133,
+        "eval.spec_dominance": 0.5195793277814886,
+        "eval.lineage_effective": 40.0308568463704,
+        "eval.trait_spread": 0.005478921657438213,
+        "eval.child_survival": 0.953463733833698,
+        "eval.lineage_lifespan_p50": 1170.1875,
+        "eval.predator_presence": 0.2840314136125654,
+        "eval.predator_births": 4.3125,
+        "eval.migration_index": 0.0541011819041633
+      }
+    },
+    {
+      "arm": "final-defaults",
+      "seeds": 16,
+      "minAgents": 40,
+      "maxAgents": 500,
+      "criteria": {
+        "popAboveMin": {
+          "value": [
+            0.31413612565445026, 0.675392670157068, 0.11518324607329843, 0.28272251308900526, 0.13089005235602094,
+            0.42408376963350786, 0.4031413612565445, 0.7120418848167539, 0.2670157068062827, 0, 0.1256544502617801,
+            0.39790575916230364, 0.015706806282722512, 0.11518324607329843, 0.13089005235602094, 0.47643979057591623
+          ],
+          "pass": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "catchRate": {
+          "value": [
+            0.04594954739695814, 0.33303234533737547, 0.07197203372403867, 0.0710375828278483, 0.07063685006739934,
+            0.13754111601446817, 0.03703932341502562, 0.06289492773372804, 0.03534026787923053, 0.08256134943350213,
+            0.1117138695003262, 0.12781995836403792, 0.09944956825915692, 0.04794795375798397, 0.02129953806626819,
+            0.057168855360413905
+          ],
+          "pass": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+        },
+        "lineages": {
+          "value": [2, 1, 3, 6, 4, 4, 2, 3, 5, 2, 1, 2, 8, 3, 6, 5],
+          "pass": [
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            true
+          ]
+        },
+        "specShare": {
+          "value": [
+            0.9230769230769231, 1, 1, 0.7777777777777778, 0.5, 0.6923076923076923, 0.7, 0.9845132743362832,
+            0.9016393442622951, 0.8461538461538461, 1, 0.9444444444444444, 0.6896551724137931, 0.9310344827586207,
+            0.5285714285714286, 0.7272727272727273
+          ],
+          "pass": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            true,
+            false
+          ]
+        },
+        "popBelowMax": {
+          "value": [208, 10, 10, 54, 14, 312, 10, 452, 61, 13, 9, 18, 29, 29, 70, 22],
+          "pass": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true]
+        }
+      },
+      "means": {
+        "matingShare": {
+          "value": 0.3895121623476511,
+          "pass": true
+        },
+        "bornShare": {
+          "value": 0.6742937492890401,
+          "pass": true
+        }
+      },
+      "popMean": 65.28343749999999,
+      "pass": false,
+      "deltas": {
+        "eval.mating_share": {
+          "mean": 0.3895121623476511,
+          "delta": -0.03593853450519868,
+          "rel": -0.08447167855416325
+        },
+        "eval.lineages_alive": {
+          "mean": 7.838023560209424,
+          "delta": -0.21793193717277237,
+          "rel": -0.027052276696859848
+        },
+        "eval.births_per_1k": {
+          "mean": 0.16298125239662473,
+          "delta": 0.01219159287319102,
+          "rel": 0.08085165064847412
+        },
+        "eval.food_energy_per_1k": {
+          "mean": 371.47966580706975,
+          "delta": -6.0301711083161535,
+          "rel": -0.015973546961288165
+        },
+        "eval.fed_median_lifespan": {
+          "mean": 3973.3125,
+          "delta": -393.3125,
+          "rel": -0.09007242435519423
+        }
+      },
+      "watch": {
+        "eval.skill_trend": -0.006912426980781237,
+        "eval.deliberate_food_per_1k": 187.83677212002104,
+        "eval.chance_food_per_1k": 183.62825157840913,
+        "eval.spec_dominance": 0.5494611780034939,
+        "eval.lineage_effective": 44.860858136861694,
+        "eval.trait_spread": 0.004285518223350227,
+        "eval.child_survival": 0.9371487634621617,
+        "eval.lineage_lifespan_p50": 1112.8125,
+        "eval.predator_presence": 0.32460732984293195,
+        "eval.predator_births": 11.0625,
+        "eval.migration_index": 0.057087093241175425
+      }
+    }
+  ]
+}
