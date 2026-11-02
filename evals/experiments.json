@@ -2283,6 +2283,32 @@
       "note": "Stopped by the user before any arm finished (2026-10-31); owed when balancing reopens (natural-selection T50). The shark rule at 600 was adopted without it."
     },
     {
+      "id": "E91",
+      "date": "2026-11-01",
+      "branch": "docs/flora-closeout",
+      "hypothesis": "A 64-seed current-default Flora report supports power estimates for the Flora detectors, including the T24 pollination, pool saturation, patch death and seed-bank metrics.",
+      "prediction": "Run the live policy for 64 fixed seeds x 200000 ticks with current defaults; run eval:power at 16-v-16 and 32-v-32. Sparse pollination, hue, patch death and seed-bank signals may remain difficult to detect. This is a detector diagnostic only and changes no defaults.",
+      "targets": [
+        "eval.food_species_share.*",
+        "eval.seasonal_diet_shift",
+        "eval.toxic_death_share",
+        "eval.toxic_avoidance",
+        "eval.sick_share",
+        "eval.pollination_rate",
+        "eval.flora_hue_spread",
+        "eval.flora_patch_pool_full_share",
+        "eval.flora_patch_death_rate",
+        "eval.flora_seed_bank_occupancy_share"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E76 historical 64-seed report, used only for preliminary detector diagnostics; it has herdCount 6 and toxinDose 0.45",
+      "after": "Recorded: evals/screens/results/flora/E91-current-default.report.json (64 seeds x 200000 ticks) and evals/screens/results/flora/E91-detector-power.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Pre-registered 2026-11-01 and run after E77 released the CPU lock. Current defaults (toxinDose 1.2, herdCount 6), live policy, 30 workers, 64 fixed seeds x 200000 ticks. The report includes all 15 requested Flora metrics with no nulls. `eval:power` used 1000 A/A and 200 planted-effect splits at 16-v-16 and 32-v-32. Patch-death and seed-bank occupancy are sparse with elevated A/A false positives and no detectable change through 100%; this is detector diagnostics only, not a candidate comparison or a pass of the E72 ecological thresholds. No default changes. E76 power results remain historical because they used toxinDose 0.45."
+    },
+    {
       "id": "E92",
       "date": "2026-11-01",
       "branch": "feat/megafauna-p2-sense",
