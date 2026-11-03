@@ -1,4 +1,13 @@
+// The herd shader. An animal is drawn in the agents' visual language - a lit membrane line around a darker body - but
+// with no halo, core or bloom and in a muted earth tone, so it reads as a large living body that is not a blob. The
+// body fills the sim's `herdRadius` (the trample reach) with a head lobe along the heading. See The look in
+// docs/designs/megafauna.md.
+
+import { HERD_FILL_SHARE } from './colors.js';
 import { NOISE_GLSL } from './noise-glsl.js';
+
+/** Half the quad, in radii, along and across the heading: room for the body, the head lobe and the outline. */
+export const HERD_QUAD = Object.freeze({ along: 1.5, across: 1.05 });
 
 export const HERD_VERTEX = /* glsl */ `
 attribute vec2 corner;
@@ -22,7 +31,7 @@ void main() {
     vec2 side = vec2(-forward.y, forward.x);
     float speed = clamp(iBody.w, 0.0, 1.0);
     float gait = uDetail < 0.5 ? sin(uTime * (1.2 + speed * 3.8) + iMotion.y) * speed : 0.0;
-    vec2 local = corner * vec2(1.42, 0.92);
+    vec2 local = corner * vec2(${HERD_QUAD.along.toFixed(2)}, ${HERD_QUAD.across.toFixed(2)});
     local.y += gait * 0.045;
     vec2 offset = forward * local.x + side * local.y;
     vec2 world = iBody.xy + offset * radius;
@@ -46,23 +55,28 @@ varying float vPhase;
 varying vec3 vColor;
 uniform float uDetail;
 void main() {
-    vec2 bodyPoint = vec2(vLocal.x / 0.86, vLocal.y / 0.59);
-    float bodyDistance = length(bodyPoint) - 1.0;
+    bool plain = uDetail > 1.5;
+    // Signed distance in radii, negative inside: an ellipse body that fills the trample radius, and a head lobe.
+    vec2 axes = vec2(1.0, 0.8);
+    float bodyDistance = (length(vLocal / axes) - 1.0) * axes.y;
     float headNod = uDetail < 0.5 ? sin(vPhase + vSpeed * 2.0) * vSpeed * 0.045 : 0.0;
-    float headDistance = length(vLocal - vec2(0.68, headNod)) / 0.34 - 1.0;
-    float distanceFromBody = min(bodyDistance, headDistance);
-    float alpha = 1.0 - smoothstep(-vPx, vPx, distanceFromBody);
-    if (alpha <= 0.002) {
+    float headDistance = length(vLocal - vec2(1.0, headNod)) - 0.34;
+    float d = plain ? length(vLocal) - 1.0 : min(bodyDistance, headDistance);
+    // The outline is sized in screen pixels (capped in radii), like the agents' membrane.
+    float rimWidth = min(1.8 * vPx, 0.08);
+    float cover = 1.0 - smoothstep(-vPx, vPx, d);
+    float rim = exp(-abs(d) / rimWidth);
+    float alpha = max(cover, rim);
+    if (alpha <= 0.004) {
         discard;
     }
-    float backShade = mix(0.58, 1.0, smoothstep(-0.74, -0.06, vLocal.x));
-    float relief = 1.0;
-    if (uDetail < 0.5) {
-        relief = 0.82 + 0.18 * fbm2(vWorld * 0.045);
-    }
-    float rim = smoothstep(0.68, 0.96, distanceFromBody + 1.0);
-    vec3 body = vColor * backShade * relief * mix(0.82, 1.0, rim);
-    gl_FragColor = vec4(body, alpha);
+    // The interior: a darker back, a slightly lighter flank towards the outline, and the rock layer's relief at full detail.
+    float backShade = plain ? 1.0 : mix(0.7, 1.0, smoothstep(-0.9, 0.1, vLocal.x));
+    float flank = 0.75 + 0.25 * smoothstep(-0.45, 0.0, d);
+    float relief = uDetail < 0.5 ? 0.85 + 0.15 * fbm2(vWorld * 0.045) : 1.0;
+    float fill = ${HERD_FILL_SHARE.toFixed(2)} * backShade * flank * relief;
+    vec3 rgb = vColor * (cover * fill + rim);
+    gl_FragColor = vec4(rgb / alpha, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
 }

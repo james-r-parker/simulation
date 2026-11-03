@@ -12,6 +12,9 @@ export const BODY_CENTRE_FILL = 0.5;
 /** Brightness multiplier floor at zero energy. */
 export const BRIGHTNESS_FLOOR = 0.7;
 
+/** The membrane line's gain over the body colour. */
+export const RIM_GAIN = 0.85;
+
 export const AGENT_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iPose;   // x, y, angle, radius
@@ -172,7 +175,7 @@ void main() {
     float nucleus = exp(-dot(p, p) * 3.2) * 0.45 * (1.0 - small);
     float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
     vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
-    rgb += base * bright * rim * 0.85;
+    rgb += base * bright * rim * ${RIM_GAIN.toFixed(2)};
     rgb += mix(base, vec3(1.0), 0.4) * bright * nucleus * cover;
     if (uShape > 3.5) {
         rgb += base * bright * 0.9 * smoothstep(-0.2, -0.08, d) * (1.0 - smoothstep(-0.08, 0.0, d));
