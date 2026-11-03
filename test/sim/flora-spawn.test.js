@@ -5,6 +5,7 @@ import { pickPatch, regrowPatches } from '../../js/sim/food-patches.js';
 import { ageFood } from '../../js/sim/food.js';
 import { smallWorld } from './helpers/small-world.js';
 import { ZONE_ORIGIN } from '../../js/sim/environment.js';
+import { FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { FLORA_NAMES } from '../../js/sim/config-flora.js';
 
 /** @returns {ReturnType<typeof smallWorld>} one berry patch, no background */
@@ -122,5 +123,27 @@ describe('species spawning', () => {
         expect(w.foodSpecies[slot]).toBe(FLORA_NAMES.indexOf('fungus'));
         expect(w.foodPatch[slot]).toBe(-1);
         expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 400)).toBeLessThanOrEqual(w.config.fertileZoneRadius);
+    });
+
+    it('falls back to background placement when a dung zone disc is blocked', () => {
+        const w = smallWorld({
+            foodPatchCount: 0,
+            fertileZoneSpawnChance: 1,
+            fertileZoneRadius: 20,
+            placementTries: 5,
+        });
+        w.zoneAlive[0] = 1;
+        w.zoneOrigin[0] = ZONE_ORIGIN.DUNG;
+        w.zoneX[0] = w.zoneY[0] = 500;
+        w.zoneFertility[0] = 2;
+        w.zoneInitial[0] = 3;
+        w.obsX.fill(1e6);
+        w.obsY.fill(1e6);
+        w.obsX[0] = w.obsY[0] = 500;
+        w.obsRadius[0] = 100;
+        const slot = spawnFoodItem(w);
+        expect(w.foodOrigin[slot]).toBe(FOOD_ORIGIN.NONE);
+        expect(w.foodSpecies[slot]).toBe(0);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeGreaterThanOrEqual(100 + w.foodRadius[slot]);
     });
 });
