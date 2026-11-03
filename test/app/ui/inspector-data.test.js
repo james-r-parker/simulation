@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CLASS_CHANNELS, firingThreshold, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
+import {
+    CLASS_CHANNELS,
+    diseaseText,
+    firingThreshold,
+    inspectorView,
+    temperatureBand,
+} from '../../../js/app/ui/inspector-data.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
@@ -96,6 +102,13 @@ describe('inspectorView on a real selected agent', () => {
         state.snapshot.f32[at] = 0.36;
         const result = inspectorView({ ...state, slots: createFamilySlots() });
         expect(result.counters.find((c) => c.label === 'toxin dose')?.text).toBe('0.36');
+    });
+
+    it('reads a missing infection counter as healthy and says one strain in the singular', () => {
+        expect(diseaseText(new Float32Array(16))).toBe('healthy');
+        const c = new Float32Array(18);
+        c[17] = 1;
+        expect(diseaseText(c)).toBe('immune to 1 strain');
     });
 
     it('shows the infection, or the strains the agent is immune to, from the appended worker counters', () => {

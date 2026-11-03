@@ -88,7 +88,30 @@ describe('diseaseMetrics', () => {
     });
 });
 
+describe('the scene while the contagion is off', () => {
+    it('reads no events and samples no families', () => {
+        const w = world({ diseaseSeedRate: 0 });
+        addBlob(w);
+        const scene = createDiseaseScene(w.config);
+        push(w, EVENT_TYPE.STRAIN_EMERGED, [0, 0, 1, 1]);
+        noteDiseaseEvents(scene, w);
+        sampleDiseaseFamilies(scene, w);
+        expect(scene.strains).toBe(0);
+        expect(scene.alive).toBe(0);
+    });
+});
+
 describe('eval.disease_frequency_slope', () => {
+    it('is null with few-points when every family has the same share, so x has no spread', () => {
+        const w = world();
+        addBlob(w);
+        const scene = createDiseaseScene(w.config);
+        for (let window = 0; window <= MIN_SLOPE_POINTS; window++) {
+            sampleDiseaseFamilies(scene, w);
+        }
+        expect(diseaseMetrics(scene)['eval.disease_frequency_slope']).toEqual({ value: null, reason: 'few-points' });
+    });
+
     /**
      * Builds 5 agents in two families (4 clones, 1 stranger), checkpoints, infects `common` members of the big family
      * and `rare` of the small one, and repeats for `windows` windows.

@@ -227,3 +227,35 @@ describe('hashWorld sex', () => {
         expect(hashWorld(on)).not.toBe(base);
     });
 });
+
+describe('hashWorld disease', () => {
+    /** @param {number} rate the seed rate @returns {ReturnType<typeof allocateWorld>} a world with its streams */
+    function diseaseWorld(rate) {
+        const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, diseaseSeedRate: rate }));
+        const root = createRng(1);
+        world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
+        return world;
+    }
+
+    it('covers the infection arrays and the disease stream only while the contagion is on', () => {
+        const off = diseaseWorld(0);
+        const offBase = hashWorld(off);
+        off.infection[0] = 1;
+        expect(hashWorld(off)).toBe(offBase);
+        const on = diseaseWorld(0.001);
+        const onBase = hashWorld(on);
+        on.infection[0] = 1;
+        expect(hashWorld(on)).not.toBe(onBase);
+        on.infection[0] = 0;
+        expect(hashWorld(on)).toBe(onBase);
+        nextFloat(on.rng.disease);
+        expect(hashWorld(on)).not.toBe(onBase);
+    });
+
+    it('follows a disease stream whose state array was replaced', () => {
+        const on = diseaseWorld(0.001);
+        const base = hashWorld(on);
+        on.rng.disease = fork(createRng(99), 'disease');
+        expect(hashWorld(on)).not.toBe(base);
+    });
+});

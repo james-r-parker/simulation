@@ -88,33 +88,19 @@ export function releaseInfection(world, slot) {
 }
 
 /**
+ * Lists the alive agents carrying no infection, in slot order, into `world.healthySlots`.
  * @param {World} world the world
- * @returns {number} the alive agents carrying no infection
+ * @returns {number} how many there are
  */
-function healthyCount(world) {
+function listHealthy(world) {
     let count = 0;
     for (let slot = 0; slot < world.alive.length; slot++) {
-        count += world.alive[slot] === 1 && world.infection[slot] === 0 ? 1 : 0;
-    }
-    return count;
-}
-
-/**
- * @param {World} world the world
- * @param {number} n an index in `0 .. healthyCount - 1`
- * @returns {number} the slot of the `n`-th healthy alive agent in slot order
- */
-function nthHealthy(world, n) {
-    let seen = 0;
-    for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1 && world.infection[slot] === 0) {
-            if (seen === n) {
-                return slot;
-            }
-            seen += 1;
+            world.healthySlots[count] = slot;
+            count += 1;
         }
     }
-    throw new Error(`nthHealthy: no healthy agent at index ${n}`);
+    return count;
 }
 
 /**
@@ -132,11 +118,11 @@ export function emergeStrain(world) {
     if (nextFloat(world.rng.disease) >= config.diseaseSeedRate) {
         return -1;
     }
-    const healthy = healthyCount(world);
+    const healthy = listHealthy(world);
     if (healthy === 0) {
         return -1;
     }
-    const host = nthHealthy(world, nextInt(world.rng.disease, healthy));
+    const host = world.healthySlots[nextInt(world.rng.disease, healthy)];
     world.strainAlive[strain] = 1;
     world.strainFounderLineage[strain] = world.lineageId[host];
     world.strainBornTick[strain] = world.tick;

@@ -29,7 +29,7 @@ export function diseaseSpecs() {
 }
 
 /**
- * Allocates the strain pool.
+ * Allocates the strain pool and the scratch list of healthy slots an emergence draws its host from.
  * @param {World} world the world being built
  * @returns {void}
  */
@@ -40,4 +40,5 @@ export function allocDiseaseState(world) {
     world.strainTotal = new Int32Array(DISEASE_MAX_STRAINS);
     world.strainFounderLineage = new Uint32Array(DISEASE_MAX_STRAINS);
     world.strainBornTick = new Uint32Array(DISEASE_MAX_STRAINS);
+    world.healthySlots = new Int32Array(world.config.maxAgents);
 }

@@ -17,12 +17,13 @@ describe('disease state', () => {
 
     it('allocates the strain pool zeroed, one entry per strain slot', () => {
         /** @type {Record<string, any>} */
-        const world = {};
+        const world = { config: { maxAgents: 12 } };
         allocDiseaseState(world);
         for (const name of DISEASE_STRAIN_ARRAYS) {
             const per = name === 'strainGenotype' ? SIMILARITY_DIMS : 1;
             expect(world[name].length, name).toBe(DISEASE_MAX_STRAINS * per);
             expect(world[name].every((/** @type {number} */ v) => v === 0)).toBe(true);
         }
+        expect(world.healthySlots).toHaveLength(12);
     });
 });
