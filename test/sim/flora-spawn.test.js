@@ -4,6 +4,8 @@ import { refreshFruiting } from '../../js/sim/fruiting.js';
 import { pickPatch, regrowPatches } from '../../js/sim/food-patches.js';
 import { ageFood } from '../../js/sim/food.js';
 import { smallWorld } from './helpers/small-world.js';
+import { ZONE_ORIGIN } from '../../js/sim/environment.js';
+import { FLORA_NAMES } from '../../js/sim/config-flora.js';
 
 /** @returns {ReturnType<typeof smallWorld>} one berry patch, no background */
 function berries() {
@@ -106,5 +108,19 @@ describe('species spawning', () => {
         const slot = spawnFoodItem(w);
         expect(w.foodPatch[slot]).toBe(0);
         expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 500)).toBeGreaterThanOrEqual(100 + w.foodRadius[slot]);
+    });
+
+    it('grows fungus rather than grass in a dung zone while fungus is in season', () => {
+        const w = smallWorld({ foodPatchCount: 0, fertileZoneSpawnChance: 1, flora: { fungus: { span: 1 } } });
+        w.zoneAlive[0] = 1;
+        w.zoneOrigin[0] = ZONE_ORIGIN.DUNG;
+        w.zoneX[0] = 500;
+        w.zoneY[0] = 400;
+        w.zoneFertility[0] = 2;
+        w.zoneInitial[0] = 3;
+        const slot = spawnFoodItem(w);
+        expect(w.foodSpecies[slot]).toBe(FLORA_NAMES.indexOf('fungus'));
+        expect(w.foodPatch[slot]).toBe(-1);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 400)).toBeLessThanOrEqual(w.config.fertileZoneRadius);
     });
 });
