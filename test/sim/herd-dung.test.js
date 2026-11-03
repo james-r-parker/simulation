@@ -164,11 +164,14 @@ describe('herd dung zones', () => {
         expect(Array.from(world.zoneAlive)).toEqual([0, 0, 0]);
     });
 
-    it('refuses a far drop that lands beside another living patch', () => {
-        const world = carrying({ herdSeedMinDistance: 600, herdDungTicks: 1 });
+    it('refuses a far drop that lands beside another living patch, ignoring distant ones', () => {
+        const world = carrying({ herdSeedMinDistance: 600, herdDungTicks: 1, floraPatchMax: 3 });
         world.patchAlive[1] = 1;
-        world.patchX[1] = 820;
-        world.patchY[1] = 100;
+        world.patchX[1] = 1800;
+        world.patchY[1] = 1000;
+        world.patchAlive[2] = 1;
+        world.patchX[2] = 820;
+        world.patchY[2] = 100;
         dropHerdDung(world);
         expect(world.herdSeedPatch[0]).toBe(0);
         expect(world.events.data[0]).toBe(EVENT_TYPE.SEEDING_REFUSED);
