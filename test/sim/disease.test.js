@@ -7,8 +7,9 @@ import {
     stepDisease,
     transmit,
 } from '../../js/sim/disease.js';
-import { DEATH_CAUSE, EVENT_TYPE, readEvents } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_TYPE, pushEvent, readEvents } from '../../js/sim/events.js';
 import { SIMILARITY_DIMS } from '../../js/sim/genetics.js';
+import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { reap } from '../../js/sim/population.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
@@ -254,5 +255,32 @@ describe('assertDisease', () => {
         emergeStrain(both);
         both.immuneMask[b] = 1;
         expect(() => assertDisease(both)).toThrow(/infected with and immune/);
+    });
+});
+
+describe('drainEvents for the contagion', () => {
+    it('logs StrainEmerged and StrainExtinct at info and AgentInfected at debug, with their fields', () => {
+        const w = lifeWorld({ maxAgents: 8 });
+        w.events.count = 0;
+        w.events.data.set([3, 7, 41, 9], pushEvent(w.events, EVENT_TYPE.STRAIN_EMERGED, 50) + 2);
+        w.events.data.set([7, 41, 3, 0.25], pushEvent(w.events, EVENT_TYPE.AGENT_INFECTED, 51) + 2);
+        w.events.data.set([3, 12, 600], pushEvent(w.events, EVENT_TYPE.STRAIN_EXTINCT, 52) + 2);
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        drainEvents(w, log);
+        expect(records).toEqual([
+            {
+                level: 'info',
+                event: 'StrainEmerged',
+                tick: 50,
+                strain: 3,
+                hostSlot: 7,
+                hostGenomeId: 41,
+                hostLineageId: 9,
+            },
+            { level: 'debug', event: 'AgentInfected', tick: 51, slot: 7, genomeId: 41, strain: 3, distance: 0.25 },
+            { level: 'info', event: 'StrainExtinct', tick: 52, strain: 3, infectedTotal: 12, ticksAlive: 600 },
+        ]);
     });
 });

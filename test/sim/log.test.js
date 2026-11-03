@@ -429,28 +429,3 @@ describe('drainEvents', () => {
         );
     });
 });
-
-describe('drainEvents for the contagion', () => {
-    it('logs StrainEmerged and StrainExtinct at info and AgentInfected at debug, with their fields', () => {
-        const world = build();
-        world.events.count = 0;
-        world.events.data.set([3, 7, 41, 9], pushEvent(world.events, EVENT_TYPE.STRAIN_EMERGED, 50) + 2);
-        world.events.data.set([7, 41, 3, 0.25], pushEvent(world.events, EVENT_TYPE.AGENT_INFECTED, 51) + 2);
-        world.events.data.set([3, 12, 600], pushEvent(world.events, EVENT_TYPE.STRAIN_EXTINCT, 52) + 2);
-        const { records, log } = collect('debug');
-        drainEvents(world, log);
-        expect(records).toEqual([
-            {
-                level: 'info',
-                event: 'StrainEmerged',
-                tick: 50,
-                strain: 3,
-                hostSlot: 7,
-                hostGenomeId: 41,
-                hostLineageId: 9,
-            },
-            { level: 'debug', event: 'AgentInfected', tick: 51, slot: 7, genomeId: 41, strain: 3, distance: 0.25 },
-            { level: 'info', event: 'StrainExtinct', tick: 52, strain: 3, infectedTotal: 12, ticksAlive: 600 },
-        ]);
-    });
-});
