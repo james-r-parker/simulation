@@ -113,6 +113,8 @@ number and writes no hashed state where this file says so.
 | `alarmThreshold`, `huntCallThreshold`                                         | `0.65`, `0.65`                      | `0 .. 0.95` each; 0 fires on any output above 0          |
 | `predatorKillEnergy`                                                          | `150`                               | `0 .. 1000`; 0 is off                                    |
 | `floorTrigger`, `entrantEnergy`                                               | `8`, `200`                          | Integer `>= 0`; `>= 0` (0 means `initialEnergy`)         |
+| `diseaseSeedRate`, `diseaseMinHosts`, `diseaseRadius`                         | `0`, `30`, `60`                     | `0 .. 1` (0 is off); integer `>= 0`; `> 0`               |
+| `diseaseTransmission`, `diseaseSpecificity`, `diseaseDrain`, `diseaseTicks`   | `0.05`, `0.8`, `0.3`, `600`         | `0 .. 1`; `> 0`; `>= 0`; integer `>= 1`                  |
 | `biteCost`, `recoilEnergy`                                                    | `8`, `20`                           | `>= 0` each; 0 is off                                    |
 | `specialisations.<s>.passiveLossMultiplier`, `.splitMinEnergyMultiplier`      | per type                            | `> 0 .. 2`; `0.25 .. 2`                                  |
 | `specialisations.<s>.kickMultiplier`                                          | `1` (defender `2`)                  | `> 0`                                                    |
@@ -285,6 +287,9 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 | `PatchDied`          | `patch`, `species`; debug level                                                                                        |
 | `SeedingRefused`     | `species`, `reason` (`pool`, `cooldown`, `placement`); first refusal per carrier/tick, debug level                     |
 | `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                   |
+| `StrainEmerged`      | `strain`, `hostSlot`, `hostGenomeId`, `hostLineageId`; info level ([disease.md](disease.md))                           |
+| `AgentInfected`      | `slot`, `genomeId`, `strain`, `distance` (to the strain's genotype); debug level                                       |
+| `StrainExtinct`      | `strain`, `infectedTotal`, `ticksAlive`; info level                                                                    |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
 ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents + 2 x floraPatchMax`
@@ -746,4 +751,4 @@ Sections follow each other with no padding and are sized for `maxAgents`, `maxFo
   the last food. The buffer from `snapshotLayout` is sized for `maxAgents`, `maxFood` and the terrain's rocks; the
   header's counts say where each section ends.
 
-Flora snapshots use seven header words (word 6 is live patch count). The agent flags use bit 18 for sickness, bit 19 for valid carried pollen and bits 20 to 31 for its hue quantized over [-1, 1]. A dead or reused pollen source is not rendered as carried. These fields are render-only and do not change the world hash.
+Flora snapshots use seven header words (word 6 is live patch count). The agent flags use bit 15 for an infection ([disease.md](disease.md)), bit 18 for sickness, bit 19 for valid carried pollen and bits 20 to 31 for its hue quantized over [-1, 1]. A dead or reused pollen source is not rendered as carried. These fields are render-only and do not change the world hash.

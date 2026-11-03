@@ -128,17 +128,18 @@ The grid file is `evals/screens/disease-p3.grid.json` (shape of `evals/screens/t
 - `eval.disease_deaths_share` is at most 0.25: disease is one cause of death, not the main one.
 - Seeds 17 to 32 agree in direction on the two family targets.
 
-With a winner, its values become the defaults. With none, the defaults stay off, the experiment records the result and the next theory, and the user decides the next step.
+The contagion ships on (user, 2026-11-03). With a winner, its values become the defaults. With none, the on arm that meets the most of the win rule's criteria becomes the default, ties to the lower `eval.disease_deaths_share`, and the experiment and [sim-notes.md](sim-notes.md) record each criterion it misses; no miss is reported as a pass.
 
 ## Decisions
 
-| Decision                                                                                            | Why                                                                                                                                            | Who                         |
-| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| The strain targets a genotype sampled from one random host; nothing reads which family is commonest | A rule that picks the top family would be a global fact no blob senses; contact and relatedness make the cull frequency-dependent on their own | Planner, from principles.md |
-| Immunity lasts for the strain's life                                                                | Simpler than timed immunity, and a strain that is gone frees its bit                                                                           | Planner                     |
-| No new sensor for a neighbour's infection in this doc                                               | principles.md refuses sensors as a substitute for a scene; avoidance of the sick is added only if a later detector shows it impossible         | Planner, from principles.md |
-| Off is `diseaseSeedRate` 0, not a boolean                                                           | No flag to delete later; the off arm stays a valid value                                                                                       | Planner                     |
-| Disease lands before the balance round's runs (world-balance.md T84 onwards)                        | Balancing a world that the contagion then changes would be repeated                                                                            | User, 2026-11-03            |
+| Decision                                                                                                  | Why                                                                                                                                            | Who                         |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| The strain targets a genotype sampled from one random host; nothing reads which family is commonest       | A rule that picks the top family would be a global fact no blob senses; contact and relatedness make the cull frequency-dependent on their own | Planner, from principles.md |
+| Immunity lasts for the strain's life                                                                      | Simpler than timed immunity, and a strain that is gone frees its bit                                                                           | Planner                     |
+| No new sensor for a neighbour's infection in this doc                                                     | principles.md refuses sensors as a substitute for a scene; avoidance of the sick is added only if a later detector shows it impossible         | Planner, from principles.md |
+| Off is `diseaseSeedRate` 0, not a boolean                                                                 | No flag to delete later; the off arm stays a valid value                                                                                       | Planner                     |
+| The contagion ships on by default at the end of Phase 3, whether or not an arm passes every win criterion | The balance round tunes the world with the contagion in it                                                                                     | User, 2026-11-03            |
+| Disease lands before the balance round's runs (world-balance.md T84 onwards)                              | Balancing a world that the contagion then changes would be repeated                                                                            | User, 2026-11-03            |
 
 ## Delivery requirements
 
