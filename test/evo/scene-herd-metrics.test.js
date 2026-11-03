@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 
-function build() {
+/** @param {Record<string, any>} [over] scene fields to replace @returns {ReturnType<typeof herdMetrics>} */
+function build(over = {}) {
     const scene = {
         trampled: 0,
         deaths: 0,
@@ -27,6 +28,7 @@ function build() {
         hunterBites: 10,
         carcassEatenBySpec: Float64Array.of(0, 40, 0, 0, 0),
         foodEatenBySpec: Float64Array.of(80, 100, 0, 0, 0),
+        ...over,
     };
     const carcassScene = { eaten: 30, eatenByHunters: 20 };
     const observer = { intent: { hunterSpec: Uint8Array.of(0, 1, 0, 0, 0) } };
@@ -54,5 +56,13 @@ describe('herd scene metrics', () => {
         expect(metrics['eval.herd_follow_share'].value).toBeCloseTo(1.25);
         expect(metrics['eval.dung_food_share'].value).toBeCloseTo(0.2);
         expect(metrics['eval.herd_seeded_patches'].value).toBeCloseTo(0.5);
+    });
+
+    it('leaves out a patch whose bare checkpoints saw no blobs from the herd-follow ratio', () => {
+        const metrics = build({ followBareBlobs: Float64Array.of(4, 0) });
+        expect(metrics['eval.herd_follow_share'].value).toBeCloseTo(2);
+        const none = build({ followBareBlobs: Float64Array.of(0, 0) })['eval.herd_follow_share'];
+        expect(none.value).toBeNull();
+        expect(none.reason).toContain('no patch had 3 herded and bare checkpoints');
     });
 });
