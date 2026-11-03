@@ -8,6 +8,7 @@ import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
 import { familyMetrics } from './scene-families.js';
+import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { conditionMetrics } from './scene-condition.js';
@@ -36,6 +37,10 @@ const WATCH = [
     'eval.winter_shelter_distance',
     'eval.style_separation',
     'eval.dodge_skill',
+    'eval.disease_deaths_share',
+    'eval.strains_per_100k',
+    'eval.strain_family_focus',
+    'eval.disease_frequency_slope',
 ];
 
 /** The direction of each scene metric, as the Detectors table names them. */
@@ -93,5 +98,6 @@ export function sceneMetrics(observer, world) {
         ...seasonMetrics(s.season),
         ...styleMetrics(s.style),
         ...herdMetrics(s.herd, s.carcass, observer),
+        ...diseaseMetrics(s.disease),
     };
 }

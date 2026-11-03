@@ -11,6 +11,7 @@ import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproach
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
+import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -50,6 +51,7 @@ export function createScenes(config) {
         niche: createNicheScene(),
         mate: createMateScene(config),
         proof: createProofScene(config),
+        disease: createDiseaseScene(config),
     };
 }
 
@@ -144,6 +146,7 @@ function noteEvents(scenes, observer, world) {
 export function observeScenes(observer, world) {
     const scenes = observer.scenes;
     noteEvents(scenes, observer, world);
+    noteDiseaseEvents(scenes.disease, world);
     trackFlora(scenes.flora, world);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
@@ -167,5 +170,6 @@ export function observeScenes(observer, world) {
         sampleSeason(scenes.season, scenes.terrain, world);
         sampleBalance(scenes.balance, world);
         sampleFamilies(scenes.families, world);
+        sampleDiseaseFamilies(scenes.disease, world);
     }
 }
