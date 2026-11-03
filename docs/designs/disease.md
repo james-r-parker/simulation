@@ -5,6 +5,8 @@
 
 A contagion spreads by contact between blobs. Each strain is born on one host and copies a sample of that host's genome as its genotype. It infects a neighbour easily when the neighbour's genome is close to that genotype and hardly at all when it is far. A strain therefore runs through one family and stalls at strangers, and the most crowded, most uniform family is where outbreaks start and spread. Survivors are immune to that strain for life. Nothing in the rule knows which family is commonest: the cull comes from contact, density and relatedness, the way specialist pathogens hold back a dominant host in nature (negative frequency-dependent selection, the Janzen-Connell effect).
 
+**Purpose (user, 2026-11-03).** The contagion acts as nature does: it favours certain hosts, those whose genes are similar to the strain's first host, so it presses hardest on a large uniform family and barely touches strangers. Any tuning keeps that targeting: `eval.strain_family_focus` stays at 0.8 or above, and no rule picks a host by family size, lineage rank or any fact a blob cannot sense.
+
 Scenes served ([principles.md](../principles.md)): **Boom and bust** (a crowded family swells and is cut back by an outbreak, and a neighbour family takes the ground), **Kin is not a stranger** (staying near kin now has a cost as well as a benefit), and the refusal **One niche allowed to win the whole map**. Selection rules 4 and 5 hold: the virus removes bodies, and the living recolonise; nothing is restocked.
 
 ## The contagion
