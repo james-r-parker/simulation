@@ -6,6 +6,7 @@ import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createInputActivity } from './input-activity.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
+import { allocDiseaseState, diseaseSpecs } from './disease.js';
 import { killSpecs } from './kills.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { proofSpecs } from './proof.js';
@@ -118,11 +119,13 @@ function allocAgentArrays(world, layout) {
             ...splitGateSpecs(),
             ...proofSpecs(),
             ...killSpecs(),
+            ...diseaseSpecs(),
             ...mateRankSpecs(),
         ],
         n,
     );
     createMeritViews(world);
+    allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
     // The last hidden row is the scratch row, which is not an agent row.

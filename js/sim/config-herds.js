@@ -1,6 +1,7 @@
 // The scripted herd config and constraints, kept separate from the shared validator.
 
 import { int, num, positive, UNIT } from './config-rules.js';
+import { diseaseEventDemand } from './config-disease.js';
 import { MAX_EVENTS_PER_SLOT } from './events.js';
 
 export const HERD_DEFAULTS = {
@@ -70,11 +71,17 @@ function checkHerdEnergy(config) {
 /** @param {Record<string, any>} config the merged simulation config @returns {void} */
 function checkEventCapacity(config) {
     const herdMax = config.herdCount * config.herdSize;
+    const disease = diseaseEventDemand(config);
     const events =
-        MAX_EVENTS_PER_SLOT * config.maxAgents + 2 * config.floraPatchMax + 5 * herdMax + 2 * config.herdCount;
+        MAX_EVENTS_PER_SLOT * config.maxAgents +
+        2 * config.floraPatchMax +
+        5 * herdMax +
+        2 * config.herdCount +
+        disease;
     if (config.eventCapacity < events) {
+        const contagion = disease > 0 ? ' + maxAgents + 2 x DISEASE_MAX_STRAINS' : '';
         throw new Error(
-            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount (${events})`,
+            `eventCapacity: ${config.eventCapacity} is below ${MAX_EVENTS_PER_SLOT} x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount${contagion} (${events})`,
         );
     }
 }

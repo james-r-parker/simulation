@@ -296,6 +296,7 @@ describe('drainEvents', () => {
             'old-age',
             'poisoned',
             'trampled',
+            'disease',
         ]);
     });
 

@@ -5,6 +5,7 @@ import { addFertileZone } from './environment.js';
 import { LOSS_CAUSE } from './energy.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { leaveCarcass } from './carcass.js';
+import { releaseInfection } from './disease.js';
 import { noteKill } from './kills.js';
 import { releaseProofAtDeath } from './proof.js';
 import { spawnAgent } from './spawn.js';
@@ -26,9 +27,16 @@ function deathCause(world, slot) {
     if (world.dose[slot] >= world.config.lethalDose) {
         return DEATH_CAUSE.POISONED;
     }
-    if (world.energy[slot] > 0) {
-        return -1;
-    }
+    return world.energy[slot] > 0 ? -1 : drainedCause(world, slot);
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot an agent at 0 energy
+ * @returns {number} the `DEATH_CAUSE` of the loss that emptied it: an infected agent emptied by the drain or its costs
+ *   died of disease
+ */
+function drainedCause(world, slot) {
     const loss = world.lastLoss[slot];
     if (loss === LOSS_CAUSE.TRAMPLE) {
         return DEATH_CAUSE.TRAMPLED;
@@ -36,6 +44,9 @@ function deathCause(world, slot) {
     const bittenThisTick = world.lastBiter[slot] !== 0 && world.lastBiteTick[slot] === world.tick;
     if (loss === LOSS_CAUSE.BITE || bittenThisTick) {
         return DEATH_CAUSE.EATEN;
+    }
+    if (world.infection[slot] !== 0 && (loss === LOSS_CAUSE.DISEASE || loss === LOSS_CAUSE.COST)) {
+        return DEATH_CAUSE.DISEASE;
     }
     return loss === LOSS_CAUSE.COLLISION ? DEATH_CAUSE.COLLISION : DEATH_CAUSE.STARVED;
 }
@@ -116,6 +127,7 @@ export function reap(world, policy) {
             policy.onDeath(world, slot, cause);
         }
         releaseProofAtDeath(world, slot);
+        releaseInfection(world, slot);
         world.ledger[1] += world.energy[slot];
         leaveCarcass(world, slot);
         addFertileZone(world, world.x[slot], world.y[slot], world.size[slot]);
