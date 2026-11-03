@@ -65,3 +65,37 @@ export function geneticDistance(world, a, b) {
     }
     return sum / SIMILARITY_DIMS;
 }
+
+/**
+ * Copies a slot's `SIMILARITY_DIMS` sampled weights, the genotype a strain records from its first host.
+ * @param {World} world the world
+ * @param {number} slot an agent slot
+ * @param {Float32Array} out receives the sample
+ * @param {number} offset where in `out` the sample starts
+ * @returns {void}
+ */
+export function sampleGenotype(world, slot, out, offset) {
+    const { index } = sampleOf(world.layout);
+    const row = slot * world.layout.weightCount;
+    for (let k = 0; k < SIMILARITY_DIMS; k++) {
+        out[offset + k] = world.weights[row + index[k]];
+    }
+}
+
+/**
+ * @param {World} world the world
+ * @param {Float32Array} genotypes the stored samples, `SIMILARITY_DIMS` per entry
+ * @param {number} offset where the sample starts
+ * @param {number} slot an agent slot
+ * @returns {number} the distance from the slot to the sample on `geneticDistance`'s scale: equal to `geneticDistance`
+ *   from the sampled agent while its weights are unchanged
+ */
+export function distanceToGenotype(world, genotypes, offset, slot) {
+    const { index, invSd } = sampleOf(world.layout);
+    const row = slot * world.layout.weightCount;
+    let sum = 0;
+    for (let k = 0; k < SIMILARITY_DIMS; k++) {
+        sum += Math.abs(world.weights[row + index[k]] - genotypes[offset + k]) * invSd[k];
+    }
+    return sum / SIMILARITY_DIMS;
+}

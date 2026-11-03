@@ -18,6 +18,7 @@ const layout = {
         MATED: 8,
         POLLINATED: 9,
         STAMPEDE: 10,
+        STRAIN_EMERGED: 11,
     },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
 };
@@ -75,6 +76,16 @@ const liveRings = live;
 const liveSparks = live;
 
 describe('playEffects', () => {
+    it('plays a strain emergence as one ring at the first host', () => {
+        const { player, rings, seen } = build();
+        const q = queueOf([[11, 12, 140, 260, 2, 77, 0, 0]]);
+        expect(playEffects(player, q, alive([]), 12)).toBe(1);
+        expect(seen).toEqual([11]);
+        expect(liveRings(rings, 12)).toBe(1);
+        expect(rings.x[0]).toBe(140);
+        expect(rings.y[0]).toBe(260);
+    });
+
     it('plays a stampede as dust particles at the herd centre', () => {
         const { player, sparks, seen } = build();
         const q = queueOf([[10, 12, 80, 90, 3, 5, 0, 0]]);

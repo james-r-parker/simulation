@@ -2111,7 +2111,7 @@
       "after": "Stage 1 and 2 reports in evals/screens/results/herds/ and herds-stage2/; candidate confirmation in herds/candidate-count6-startle200.report.json; matched carcass-duration extension reports/table in evals/screens/results/herds-carcass-duration/",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan’s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen’s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
+      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan\u2019s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen\u2019s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
     },
     {
       "id": "E77",
@@ -2165,7 +2165,7 @@
       "date": "2026-11-02",
       "branch": "feat/megafauna-p4-rendering",
       "hypothesis": "The complete Megafauna defaults preserve the behavioral and local ecology signals against the herd-free flora baseline while making trample avoidable and supporting scavenging.",
-      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005–0.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
+      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005\u20130.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
       "targets": [
         "eval.predators_at_end",
         "eval.prey_types_at_end",
@@ -2398,6 +2398,32 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Completed after preregistration on current main defaults (toxinDose 1.2): matched Wary 0.5 versus 1 on 16 seeds x 200000 ticks. Wary 1 improves mean dodge_skill 0.98826 to 0.99225 and lowers trampled_share 0.02846 to 0.01398; spec_effective rises 3.0057 to 3.2288 and input_active_share stays 0.27271 to 0.27319. The six Wary 1 input-activity means are 0.05110, 0.05110, 0.04955, 0.02962, 0.02962 and 0.02902, all above 0.02. Predators at end are positive 1/16 versus 3/16; prey 16/16 both; basin_lineage_effective >=3 on 1/16 versus 3/16. Generic population gate is 0/16 both arms. T24 adopts herdWary 1 based on the confirmed behavioral benefit; herdCount 6 and herdSize 8 remain unchanged. None of the survival, family or population gates is claimed passed; these remain balancing follow-ups. The separate 20,000-tick input check and T23 benchmark are recorded in docs/designs/sim-notes.md."
+    },
+    {
+      "id": "E93",
+      "date": "2026-11-03",
+      "branch": "feat/disease",
+      "hypothesis": "For Boom and bust, Kin is not a stranger and the refusal One niche allowed to win the whole map, a contact contagion whose strains spread by genetic similarity to their founding host cuts back the commonest family, raising family diversity per basin without more floor restarts or fewer predators (disease.md Phase 3).",
+      "prediction": "Preregistered before running: screen off, rate-1 (diseaseSeedRate 0.0005), rate-2 (0.001), rate-4 (0.002), rate-2-tx-hi (0.001, diseaseTransmission 0.1) and rate-2-drain-lo (0.001, diseaseDrain 0.15) on seeds 1 to 8 x 200000 ticks with the live policy. Expect eval.lineage_dominance lower and eval.basin_family_effective higher than off in rate-2 and rate-4 (direction on at least 6/8 seeds), eval.disease_frequency_slope above 0 in the mean of every on arm, eval.strain_family_focus above 0.8, eval.disease_deaths_share between 0.02 and 0.25, and eval.floor_episodes and eval.predators_at_end not lower in count of good seeds than off. rate-4 and rate-2-tx-hi may overshoot (deaths share above 0.25 or more floor episodes). The 4-seed x 50000-tick smoke at rate 0.001 gave deaths share 0.015 to 0.11, strains 36 to 126 per 100k ticks, family focus 0.99 to 1 and slope -0.013 to 0.037.",
+      "targets": [
+        "eval.lineage_dominance",
+        "eval.basin_family_effective",
+        "eval.disease_frequency_slope",
+        "eval.floor_episodes",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.disease_deaths_share",
+        "eval.strain_family_focus",
+        "eval.strains_per_100k"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "off arm of evals/screens/disease-p3.grid.json (seeds 1-8 x 200000 ticks)",
+      "after": "the five on arms of evals/screens/disease-p3.grid.json; results in evals/screens/results/disease-p3/",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Registered before the run. The screen was stopped before any arm finished (user, 2026-11-03): the contagion merged on at diseaseSeedRate 0.001 from the T5 smoke run, and this screen moved to world-balance.md T95 with the prediction unchanged. No result yet."
     }
   ]
 }

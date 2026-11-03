@@ -16,6 +16,7 @@ export const EFFECT_KIND = Object.freeze({
     MATED: 8,
     POLLINATED: 9,
     STAMPEDE: 10,
+    STRAIN_EMERGED: 11,
 });
 
 /** Records the log holds; when full the oldest are dropped. */
@@ -270,6 +271,18 @@ function addStampede(log, world, o) {
     log.u32[w + 7] = 0;
 }
 
+/** A strain's emergence yields one ring at its first host. @param {EffectLog} log @param {Record<string, any>} world @param {number} o event offset @returns {void} */
+function addStrainEmerged(log, world, o) {
+    const d = world.events.data;
+    const host = d[o + 3];
+    const w = begin(log, EFFECT_KIND.STRAIN_EMERGED, d[o + 1]);
+    place(log, w, world.x[host], world.y[host]);
+    log.u32[w + 4] = d[o + 2];
+    log.u32[w + 5] = d[o + 4];
+    log.u32[w + 6] = 0;
+    log.u32[w + 7] = 0;
+}
+
 /**
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world just stepped
@@ -297,6 +310,9 @@ function addEventEffects(log, world, slotOf) {
                 break;
             case EVENT_TYPE.HERD_STAMPEDE:
                 addStampede(log, world, o);
+                break;
+            case EVENT_TYPE.STRAIN_EMERGED:
+                addStrainEmerged(log, world, o);
                 break;
             default:
                 break;

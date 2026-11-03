@@ -25,7 +25,15 @@ const MIN_PX = [16, 12, 12, 12, 12];
 /** Family slots where lineage 7 holds the first colour. */
 const SLOTS = createFamilySlots();
 assignSlots(SLOTS, [{ id: 7 }]);
-const BITS = { ATE_SHIFT: 0, BITTEN_SHIFT: 5, TIMER_MASK: 31, JAW_OPEN: 1 << 10, PREGNANT: 1 << 13, SICK: 1 << 18 };
+const BITS = {
+    ATE_SHIFT: 0,
+    BITTEN_SHIFT: 5,
+    TIMER_MASK: 31,
+    JAW_OPEN: 1 << 10,
+    PREGNANT: 1 << 13,
+    INFECTED: 1 << 15,
+    SICK: 1 << 18,
+};
 
 /**
  * @param {import('../helpers/snapshots.js').AgentSpec[]} agents agents
@@ -48,6 +56,17 @@ describe('flashOf', () => {
 
 describe('packAgents', () => {
     const meshOfSpec = [0, 1, 2, 3, 4];
+
+    it('packs the infection flag into extra.w', () => {
+        const agents = interp([{ slot: 0, genomeId: 1, spec: 0, flags: BITS.INFECTED }]);
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        packAgents(agents, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        expect(store.buckets[0].extra[3]).toBe(1);
+        expect(store.buckets[0].extra[2]).toBe(0);
+        agents.flags[0] = 0;
+        packAgents(agents, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS });
+        expect(store.buckets[0].extra[3]).toBe(0);
+    });
 
     it('packs the sickness flag independently of other status bits', () => {
         const agents = interp([{ slot: 0, genomeId: 1, spec: 0, flags: BITS.SICK | BITS.PREGNANT }]);

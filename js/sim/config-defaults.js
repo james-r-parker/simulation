@@ -1,5 +1,6 @@
 // The default simulation config: every tunable with its legacy source constant named in a trailing comment.
 
+import { DISEASE_DEFAULTS } from './config-disease.js';
 import { FLORA_DEFAULTS } from './config-flora.js';
 import { HERD_DEFAULTS } from './config-herds.js';
 
@@ -21,6 +22,7 @@ function deepFreeze(value) {
 export const DEFAULTS = deepFreeze({
     flora: FLORA_DEFAULTS,
     ...HERD_DEFAULTS,
+    ...DISEASE_DEFAULTS,
     floraPatchMax: 32,
     patchDieTicks: 36000,
     seedBankTicks: 432000,

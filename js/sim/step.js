@@ -1,4 +1,5 @@
 import { agePollen } from './pollination.js';
+import { stepDisease } from './disease.js';
 import { stepToxin } from './toxin.js';
 import { ageMycelium } from './mycelium.js';
 // One simulation tick: the phases in order, per-phase overrides, and the tick and phase added to any failure.
@@ -93,6 +94,7 @@ function physics(world) {
 function lifecycle(world, policy) {
     agePollen(world);
     stepToxin(world);
+    stepDisease(world);
     feed(world, world.hash);
     mate(world, policy);
     applyCosts(world);

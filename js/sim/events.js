@@ -31,6 +31,9 @@ export const EVENT_TYPE = Object.freeze({
     HERD_ANIMAL_BORN: 23,
     HERD_CARCASS_LOST: 24,
     HERD_SEEDED: 25,
+    STRAIN_EMERGED: 26,
+    AGENT_INFECTED: 27,
+    STRAIN_EXTINCT: 28,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */
@@ -50,6 +53,7 @@ export const DEATH_CAUSE = Object.freeze({
     OLD_AGE: 3,
     POISONED: 4,
     TRAMPLED: 5,
+    DISEASE: 6,
 });
 
 /** Why a birth was blocked, stored in the `cause` field of `BIRTH_BLOCKED`. */

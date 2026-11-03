@@ -6,7 +6,7 @@ import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
-const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled']);
+const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled', 'disease']);
 const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'near']);
 const SEED_SOURCE_NAMES = Object.freeze(['pollen', 'herd']);
 const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
@@ -357,6 +357,38 @@ function emitHerdSeeded(log, d, o) {
     });
 }
 
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitStrainEmerged(log, d, o) {
+    log.log('info', 'StrainEmerged', {
+        tick: d[o + 1],
+        strain: d[o + 2],
+        hostSlot: d[o + 3],
+        hostGenomeId: d[o + 4],
+        hostLineageId: d[o + 5],
+    });
+}
+
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitAgentInfected(log, d, o) {
+    log.log('debug', 'AgentInfected', {
+        tick: d[o + 1],
+        slot: d[o + 2],
+        genomeId: d[o + 3],
+        strain: d[o + 4],
+        distance: d[o + 5],
+    });
+}
+
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitStrainExtinct(log, d, o) {
+    log.log('info', 'StrainExtinct', {
+        tick: d[o + 1],
+        strain: d[o + 2],
+        infectedTotal: d[o + 3],
+        ticksAlive: d[o + 4],
+    });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -383,6 +415,9 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HERD_ANIMAL_BORN]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalBorn },
     [EVENT_TYPE.HERD_CARCASS_LOST]: { level: LOG_LEVEL.warn, emit: emitHerdCarcassLost },
     [EVENT_TYPE.HERD_SEEDED]: { level: LOG_LEVEL.debug, emit: emitHerdSeeded },
+    [EVENT_TYPE.STRAIN_EMERGED]: { level: LOG_LEVEL.info, emit: emitStrainEmerged },
+    [EVENT_TYPE.AGENT_INFECTED]: { level: LOG_LEVEL.debug, emit: emitAgentInfected },
+    [EVENT_TYPE.STRAIN_EXTINCT]: { level: LOG_LEVEL.info, emit: emitStrainExtinct },
 });
 
 /**

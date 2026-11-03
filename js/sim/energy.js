@@ -13,6 +13,7 @@ export const LOSS_CAUSE = Object.freeze({
     BITE: 2,
     COLLISION: 3,
     TRAMPLE: 4,
+    DISEASE: 5,
 });
 
 /** Where energy entered the world from outside, for `addEnergy`. Each one is booked in `ledger[0]`. */
@@ -27,7 +28,7 @@ export const ENERGY_SOURCE = Object.freeze({
 /** @type {number[]} */
 const SOURCES = Object.values(ENERGY_SOURCE);
 /** @type {number[]} */
-const LOSS_CAUSES = [LOSS_CAUSE.COST, LOSS_CAUSE.BITE, LOSS_CAUSE.COLLISION, LOSS_CAUSE.TRAMPLE];
+const LOSS_CAUSES = [LOSS_CAUSE.COST, LOSS_CAUSE.BITE, LOSS_CAUSE.COLLISION, LOSS_CAUSE.TRAMPLE, LOSS_CAUSE.DISEASE];
 
 /**
  * Throws unless `amount` is a finite, non-negative number.

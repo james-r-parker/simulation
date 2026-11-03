@@ -3,6 +3,7 @@ import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
 import { meritSpecs } from './merit-state.js';
+import { DISEASE_AGENT_ARRAYS, DISEASE_STRAIN_ARRAYS } from './disease-state.js';
 
 /** Agent arrays hashed whole, in the World state table order; `hidden` is handled separately. */
 const AGENT_ARRAYS = [
@@ -153,7 +154,7 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -169,6 +170,9 @@ function buildViews(world) {
         baseSize: bytesOf(world, 'baseSize'),
         sex: bytesOf(world, 'sex'),
         birthRing: bytesOf(world, 'birthRing'),
+        disease: [...DISEASE_AGENT_ARRAYS, ...DISEASE_STRAIN_ARRAYS].map((name) => bytesOf(world, name)),
+        diseaseRngSource: null,
+        diseaseRng: null,
         rngSources: [],
         rngViews: [],
     };
@@ -230,6 +234,19 @@ function hashOptionalArrays(world, views) {
         fnv64Bytes(digest, views.birthRing);
     }
     fnv64Bytes(digest, views.sex);
+    if (config.diseaseSeedRate > 0) {
+        for (const bytes of views.disease) {
+            fnv64Bytes(digest, bytes);
+        }
+        const state = rngState(world, 'disease');
+        let bytes = views.diseaseRng;
+        if (views.diseaseRngSource !== state || bytes === null) {
+            bytes = new Uint8Array(state.buffer, state.byteOffset, state.byteLength);
+            views.diseaseRngSource = state;
+            views.diseaseRng = bytes;
+        }
+        fnv64Bytes(digest, bytes);
+    }
 }
 
 /**

@@ -44,6 +44,8 @@ const COUNTER_AT = Object.freeze({
     baseSize: 13,
     childShare: 14,
     dose: 15,
+    infection: 16,
+    immuneStrains: 17,
 });
 
 /**
@@ -181,6 +183,7 @@ function countersOf(c, { specName, family, info, male }) {
             text: `${c[COUNTER_AT.temperature].toFixed(1)} (${temperatureBand(c[COUNTER_AT.temperature], info)})`,
         },
         { label: 'toxin dose', text: c[COUNTER_AT.dose].toFixed(2) },
+        { label: 'disease', text: diseaseText(c) },
         { label: 'food eaten', text: c[COUNTER_AT.foodEnergyEaten].toFixed(1) },
         { label: 'bite energy taken', text: c[COUNTER_AT.biteEnergyTaken].toFixed(1) },
         { label: 'kills', text: grouped(c[COUNTER_AT.kills]) },
@@ -188,6 +191,19 @@ function countersOf(c, { specName, family, info, male }) {
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
     ];
     return [...rows, { label: 'sex', text: male ? 'male' : 'female' }, ...traitRows(c)];
+}
+
+/**
+ * @param {Float32Array} c the counters
+ * @returns {string} the agent's infection, or the strains it is immune to
+ */
+export function diseaseText(c) {
+    const infection = c[COUNTER_AT.infection] ?? 0;
+    const immune = c[COUNTER_AT.immuneStrains] ?? 0;
+    if (infection > 0) {
+        return `infected, strain ${infection - 1}`;
+    }
+    return immune > 0 ? `immune to ${immune} strain${immune === 1 ? '' : 's'}` : 'healthy';
 }
 
 /**

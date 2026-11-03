@@ -23,7 +23,7 @@ export function titleCardView(specs) {
         sentence: 'Tiny-brained blobs eat, hunt, flee and breed, and their genes evolve.',
         legend: specs.map((spec) => ({ name: spec.name })),
         caption: 'shape = role, colour = family, brightness = energy',
-        watch: 'watch for: chases, bites, smoke',
+        watch: 'watch for: chases, bites, smoke, speckled (infected) blobs',
     };
 }
 
