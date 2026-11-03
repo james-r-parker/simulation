@@ -31,11 +31,11 @@ export function createHerdScene(config) {
         gapCrossings: 0,
         recolonisations: 0,
         floraMark: new Float64Array(24),
-        followPatchSerial: new Uint32Array(config.floraPatchMax ?? 0).fill(0xffffffff),
-        followHerdedBlobs: new Float64Array(config.floraPatchMax ?? 0),
-        followBareBlobs: new Float64Array(config.floraPatchMax ?? 0),
-        followHerdedTicks: new Uint32Array(config.floraPatchMax ?? 0),
-        followBareTicks: new Uint32Array(config.floraPatchMax ?? 0),
+        followPatchSerial: new Uint32Array(config.floraPatchMax).fill(0xffffffff),
+        followHerdedBlobs: new Float64Array(config.floraPatchMax),
+        followBareBlobs: new Float64Array(config.floraPatchMax),
+        followHerdedTicks: new Uint32Array(config.floraPatchMax),
+        followBareTicks: new Uint32Array(config.floraPatchMax),
         herdGrazeMark: 0,
         episodesClear: 0,
         episodesHit: 0,
@@ -178,7 +178,7 @@ export function trackHerd(scene, world, observer = null) {
     if (world.tick > BURN_IN_TICKS) {
         trackAfterBurn(scene, world, observer);
     }
-    scene.dungFoodMark = world.dungFoodIntake ?? 0;
+    scene.dungFoodMark = world.dungFoodIntake;
     scene.herdGrazeMark = world.herdTotals[0];
     scene.herdCarcassMark = world.herdTotals[1];
     for (let i = 0; i < world.foodEatenBySpec.length; i++) {
@@ -204,7 +204,7 @@ function trackAfterBurn(scene, world, observer) {
         scene.plantEaten += eaten;
         scene.plantFoodEaten += eaten;
     }
-    scene.dungFoodEaten += (world.dungFoodIntake ?? 0) - scene.dungFoodMark;
+    scene.dungFoodEaten += world.dungFoodIntake - scene.dungFoodMark;
     for (let i = 0; i < world.foodEatenBySpec.length; i++) {
         scene.foodEatenBySpec[i] += world.foodEatenBySpec[i] - scene.foodMark[i];
         scene.carcassEatenBySpec[i] += world.herdCarcassEatenBySpec[i] - scene.carcassMark[i];

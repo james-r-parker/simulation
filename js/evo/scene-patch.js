@@ -115,9 +115,6 @@ function open(scene, world, slot) {
  * @returns {void}
  */
 export function samplePatches(scene, world) {
-    if (world.patchX.length === 0) {
-        return;
-    }
     for (let slot = 0; slot < world.alive.length; slot++) {
         const alive = world.alive[slot] === 1;
         if (scene.patch[slot] !== NONE && (!alive || world.genomeId[slot] !== scene.genome[slot])) {

@@ -9,6 +9,7 @@ import {
     writeSnapshot,
 } from '../../js/sim/snapshot.js';
 import { spawnAgent } from '../../js/sim/spawn.js';
+import { addFertileZone } from '../../js/sim/environment.js';
 import { OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { terrainRockCount } from '../../js/sim/terrain.js';
@@ -78,17 +79,21 @@ describe('writeSnapshot', () => {
         world.zoneOrigin[1] = 1;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        const zoneStart =
-            HEADER_WORDS +
-            views.u32[1] * 12 +
-            views.u32[2] * 6 +
-            views.u32[3] * 3 +
-            views.u32[4] * 3 +
-            views.u32[6] * 5 +
-            views.u32[7] * HERD_STRIDE;
+        const zoneStart = zoneWords(views);
         expect(views.u32[8]).toBe(1);
         expect(Array.from(views.f32.subarray(zoneStart, zoneStart + 3))).toEqual([123, 456, 0.5]);
         expect(views.u32[zoneStart + 3]).toBe(1);
+    });
+
+    it('writes a zero fertility share for a live zone made with zero fertility', () => {
+        const world = smallWorld({ fertileZoneMax: 2, fertileZoneFertility: 0 });
+        const slot = addFertileZone(world, 123, 456, 10);
+        expect([world.zoneAlive[slot], world.zoneInitial[slot]]).toEqual([1, 0]);
+        const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
+        writeSnapshot(world, views);
+        const zoneStart = zoneWords(views);
+        expect(views.u32[8]).toBe(1);
+        expect(Array.from(views.f32.subarray(zoneStart, zoneStart + 3))).toEqual([123, 456, 0]);
     });
 
     it('encodes stationary and signed herd headings and handles a zero run-speed scale', () => {
@@ -395,3 +400,16 @@ describe('writeSnapshot rays', () => {
         expect(views.f32[foodStart + 9]).toBeCloseTo(0.25, 4);
     });
 });
+
+/** @param {ReturnType<typeof createSnapshotViews>} views @returns {number} the first zone word, after every earlier section */
+function zoneWords(views) {
+    return (
+        HEADER_WORDS +
+        views.u32[1] * 12 +
+        views.u32[2] * 6 +
+        views.u32[3] * 3 +
+        views.u32[4] * 3 +
+        views.u32[6] * 5 +
+        views.u32[7] * HERD_STRIDE
+    );
+}
