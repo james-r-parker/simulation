@@ -230,6 +230,17 @@ function playCall(player, kind) {
     spawnRing(player.rings, RING);
 }
 
+/** The ring that marks a strain's first host: wide and slow, in `PALETTE.infected`. */
+const STRAIN_RING_RADIUS = 140;
+const STRAIN_RING_TICKS = 90;
+
+/** @param {EffectsPlayer} player the player @returns {void} */
+function playStrain(player) {
+    setRing('birth', player.effect, STRAIN_RING_RADIUS, STRAIN_RING_TICKS);
+    RING.rgb = PALETTE.infected;
+    spawnRing(player.rings, RING);
+}
+
 /** @param {EffectsPlayer} player the player @returns {void} */
 function playStampede(player) {
     const e = player.effect;
@@ -293,6 +304,8 @@ export function playEffects(player, queue, agents, tick) {
         played += 1;
         if (e.kind === player.kinds.STAMPEDE) {
             playStampede(player);
+        } else if (e.kind === player.kinds.STRAIN_EMERGED) {
+            playStrain(player);
         } else {
             dispatch(player, agents);
         }

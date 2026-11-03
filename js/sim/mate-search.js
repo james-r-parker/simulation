@@ -16,7 +16,7 @@ import { cellOf, cellRange } from './spatial-hash.js';
  * @param {number} row the cell row being scanned
  * @returns {boolean}
  */
-function firstScannedCell(hash, e, col, row) {
+export function firstScannedCell(hash, e, col, row) {
     const { range, cellSize } = hash;
     return (
         col === Math.max(cellOf(hash.boxX[e], cellSize, hash.cols - 1), range[0]) &&

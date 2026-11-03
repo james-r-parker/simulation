@@ -1,6 +1,7 @@
 // Eval observer: reads each tick's events and the world arrays into per-slot counters, run totals, a death log and
 // a checkpoint series. It runs outside `step` and allocates only when a log doubles or a birth is tracked.
 
+import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { createBodyPools } from './metrics-body.js';
 import { createEnvironmentPools } from './metrics-environment.js';
 import { createWatchPools } from './metrics-watch.js';
@@ -87,8 +88,8 @@ const SERIES_FIELDS = [
     'archiveAgents',
 ];
 
-const BORN_CAUSES = 5;
-const DEATH_CAUSES = 6;
+const BORN_CAUSES = Object.keys(BORN_CAUSE).length;
+const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config

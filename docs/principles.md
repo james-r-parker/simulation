@@ -70,6 +70,8 @@ Flora adds the `watch` detectors `eval.food_species_share.*` and `eval.seasonal_
 
 Megafauna adds `eval.herd_carcass_meal_share` for **Scavenge**, `eval.herd_grazed_share` and `eval.herd_animals` for **Boom and bust**, `eval.herd_stampede_rate` and `eval.dodge_skill` for **A real chase**, and `eval.herd_gap_crossings`, `eval.herd_recolonisations` and `eval.herd_seeded_patches` for **Cross or stay**. Phase 3 adds `eval.herd_follow_share` and `eval.dung_food_share` for **Other blobs are the climate**. E78 met the dung-food threshold (mean 0.1239 on reference), but seeded-patch rate (0.0127 per 1,000 ticks) and herd grazing share (0.4485) miss their targets. The Phase 1 carcass target remains 12/16; T15 measured 11/16 and carries that miss plus the predator-presence decline into balancing without claiming a pass. E78's population/family deficits and ecology misses are also balancing follow-ups, not claimed passes.
 
+Disease ([disease.md](designs/disease.md)) adds `eval.disease_deaths_share` and `eval.strains_per_100k` for **Boom and bust**, `eval.strain_family_focus` for **Kin is not a stranger**, and `eval.disease_frequency_slope` for the refusal **One niche allowed to win the whole map**. Their arithmetic is tested; power measurements and scene verdicts come from disease.md Phase 3.
+
 ## What to refuse
 
 - **A global reward for a fact the blob cannot sense.** Selection can keep it, but it will not look like knowledge.

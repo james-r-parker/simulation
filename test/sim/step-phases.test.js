@@ -16,6 +16,7 @@ vi.mock('../../js/sim/mycelium.js', () => ({ ageMycelium: rec('ageMycelium') }))
 vi.mock('../../js/sim/fruiting.js', () => ({ refreshFruiting: rec('refreshFruiting') }));
 vi.mock('../../js/sim/pollination.js', () => ({ agePollen: rec('agePollen') }));
 vi.mock('../../js/sim/toxin.js', () => ({ stepToxin: rec('stepToxin') }));
+vi.mock('../../js/sim/disease.js', () => ({ stepDisease: rec('stepDisease') }));
 vi.mock('../../js/sim/calls.js', () => ({ signalAll: rec('signalAll') }));
 vi.mock('../../js/sim/energy.js', () => ({ applyCosts: rec('applyCosts') }));
 vi.mock('../../js/sim/events.js', () => ({ clearEvents: rec('clearEvents') }));
@@ -82,6 +83,7 @@ describe('step phase bodies', () => {
             ['resolveContacts', world, hash],
             ['agePollen', world],
             ['stepToxin', world],
+            ['stepDisease', world],
             ['feed', world, hash],
             ['mate', world, policy],
             ['applyCosts', world],

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CLASS_CHANNELS, firingThreshold, inspectorView, temperatureBand } from '../../../js/app/ui/inspector-data.js';
+import {
+    CLASS_CHANNELS,
+    diseaseText,
+    firingThreshold,
+    inspectorView,
+    temperatureBand,
+} from '../../../js/app/ui/inspector-data.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { selectedWorld } from '../helpers/inspect-world.js';
@@ -98,6 +104,26 @@ describe('inspectorView on a real selected agent', () => {
         expect(result.counters.find((c) => c.label === 'toxin dose')?.text).toBe('0.36');
     });
 
+    it('reads a missing infection counter as healthy and says one strain in the singular', () => {
+        expect(diseaseText(new Float32Array(16))).toBe('healthy');
+        const c = new Float32Array(18);
+        c[17] = 1;
+        expect(diseaseText(c)).toBe('immune to 1 strain');
+    });
+
+    it('shows the infection, or the strains the agent is immune to, from the appended worker counters', () => {
+        const state = selectedWorld();
+        const l = state.ready.layout;
+        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 16;
+        const text = () =>
+            inspectorView({ ...state, slots: createFamilySlots() }).counters.find((c) => c.label === 'disease')?.text;
+        expect(text()).toBe('healthy');
+        state.snapshot.f32[at + 1] = 2;
+        expect(text()).toBe('immune to 2 strains');
+        state.snapshot.f32[at] = 4;
+        expect(text()).toBe('infected, strain 3');
+    });
+
     it('lists the counters as text', () => {
         expect(view.counters.map((c) => c.label)).toEqual([
             'type',
@@ -107,6 +133,7 @@ describe('inspectorView on a real selected agent', () => {
             'energy',
             'temperature',
             'toxin dose',
+            'disease',
             'food eaten',
             'bite energy taken',
             'kills',

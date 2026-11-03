@@ -35,6 +35,7 @@ export const SNAPSHOT_FLAG = Object.freeze({
     HUNT_CALLING: 1 << 12,
     PREGNANT: 1 << 13,
     MALE: 1 << 14,
+    INFECTED: 1 << 15,
     SICK: 1 << 18,
     POLLEN: 1 << 19,
     POLLEN_HUE_SHIFT: 20,
@@ -120,10 +121,11 @@ function agentFlags(world, slot) {
 /**
  * @param {import('./world.js').World} world the world
  * @param {number} slot alive agent
- * @returns {number} sickness and carried-pollen render bits
+ * @returns {number} sickness, infection and carried-pollen render bits
  */
 function floraFlags(world, slot) {
     let flags = world.dose[slot] >= world.config.sickDose ? SNAPSHOT_FLAG.SICK : 0;
+    flags |= world.infection[slot] !== 0 ? SNAPSHOT_FLAG.INFECTED : 0;
     const patch = world.pollenPatch[slot] - 1;
     if (
         world.pollenTicks[slot] > 0 &&

@@ -22,8 +22,8 @@ export const FLOOR_AFTER_TICK = 10000;
 
 const SPEC_COUNT = 5;
 const SEASONS = 4;
-const BORN_CAUSES = 5;
-const DEATH_CAUSES = 6;
+const BORN_CAUSES = Object.keys(BORN_CAUSE).length;
+const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
 
 /**
  * @typedef {object} TickerItem

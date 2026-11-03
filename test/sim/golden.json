@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "cf9bd60d69c4bd9a"
+      "worldHash": "4201939fb928fcd6"
     },
     {
       "name": "busy",
@@ -23,7 +23,27 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "cb0e357ccee19f12"
+      "worldHash": "c007168abbdb8ec4"
+    },
+    {
+      "name": "disease",
+      "overrides": {
+        "worldWidth": 2400,
+        "worldHeight": 1600,
+        "maxAgents": 150,
+        "minAgents": 30,
+        "maturityTicks": 200,
+        "reproductionCooldown": 150,
+        "pregnancyTicks": 200,
+        "mateMinEnergy": 100,
+        "splitMinEnergy": 900,
+        "wallGaps": 2,
+        "refugeCount": 0,
+        "coldMarginWidth": 0,
+        "diseaseSeedRate": 0.01
+      },
+      "ticks": 5000,
+      "worldHash": "b5b0ee5ae332f780"
     }
   ],
   "shortCases": [
@@ -31,7 +51,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 300,
-      "worldHash": "87c514d93826b6f0"
+      "worldHash": "56998c0db348a4b1"
     },
     {
       "name": "busy",
@@ -50,7 +70,27 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "9c8a6afa42db3f2e"
+      "worldHash": "0125fc6d48c8f637"
+    },
+    {
+      "name": "disease",
+      "overrides": {
+        "worldWidth": 2400,
+        "worldHeight": 1600,
+        "maxAgents": 150,
+        "minAgents": 30,
+        "maturityTicks": 200,
+        "reproductionCooldown": 150,
+        "pregnancyTicks": 200,
+        "mateMinEnergy": 100,
+        "splitMinEnergy": 900,
+        "wallGaps": 2,
+        "refugeCount": 0,
+        "coldMarginWidth": 0,
+        "diseaseSeedRate": 0.01
+      },
+      "ticks": 300,
+      "worldHash": "077e38c3ede69e9c"
     }
   ]
 }

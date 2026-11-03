@@ -3,6 +3,16 @@
 // that falls to 0 at the quad edge. Colours are linear; the bloom lifts what is above 1. See Look in
 // docs/designs/worker-and-renderer.md.
 
+import { PALETTE } from './colors.js';
+
+/**
+ * @param {readonly number[]} rgb a linear RGB triple
+ * @returns {string} the triple as a GLSL `vec3` literal
+ */
+function glsl(rgb) {
+    return `vec3(${rgb.map((c) => c.toFixed(3)).join(', ')})`;
+}
+
 /** Half the quad side in radii. */
 export const QUAD_HALF = 2.4;
 
@@ -12,12 +22,15 @@ export const BODY_CENTRE_FILL = 0.5;
 /** Brightness multiplier floor at zero energy. */
 export const BRIGHTNESS_FLOOR = 0.7;
 
+/** The membrane line's gain over the body colour. */
+export const RIM_GAIN = 0.85;
+
 export const AGENT_VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iPose;   // x, y, angle, radius
 attribute vec4 iColor;  // r, g, b, energy01
 attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
-attribute vec4 iExtra;  // pregnant, neutral family, sick, reserved
+attribute vec4 iExtra;  // pregnant, neutral family, sick, infected
 attribute vec4 iMotion; // speed01, turn01, phase, 0
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;
@@ -27,6 +40,7 @@ varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
+varying float vInfected;
 varying vec2 vWorld;
 varying float vPx;
 void main() {
@@ -44,6 +58,7 @@ void main() {
     vPregnant = iExtra.x;
     vNeutral = iExtra.y;
     vSick = iExtra.z;
+    vInfected = iExtra.w;
     gl_Position = projectionMatrix * viewMatrix * vec4(world, 0.0, 1.0);
 }
 `;
@@ -69,6 +84,7 @@ varying vec4 vMotion;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
+varying float vInfected;
 varying vec2 vWorld;
 varying float vPx;
 
@@ -172,7 +188,7 @@ void main() {
     float nucleus = exp(-dot(p, p) * 3.2) * 0.45 * (1.0 - small);
     float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
     vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
-    rgb += base * bright * rim * 0.85;
+    rgb += base * bright * rim * ${RIM_GAIN.toFixed(2)};
     rgb += mix(base, vec3(1.0), 0.4) * bright * nucleus * cover;
     if (uShape > 3.5) {
         rgb += base * bright * 0.9 * smoothstep(-0.2, -0.08, d) * (1.0 - smoothstep(-0.08, 0.0, d));
@@ -189,6 +205,13 @@ void main() {
     float tailW = 0.12 + 0.4 * (1.0 - tailT);
     float tail = exp(-vP.y * vP.y / (tailW * tailW)) * (1.0 - tailT) * (1.0 - tailT) * step(0.0, -vP.x - 0.5) * speed01;
     rgb += base * bright * 0.55 * tail * (1.0 - cover);
+    // An infected body carries three pale spots that pulse on a 2 s sine (docs/designs/disease.md, The look).
+    float spots = 0.0;
+    spots = max(spots, 1.0 - smoothstep(0.15, 0.22, length(p - vec2(-0.3, 0.28))));
+    spots = max(spots, 1.0 - smoothstep(0.15, 0.22, length(p - vec2(0.08, -0.3))));
+    spots = max(spots, 1.0 - smoothstep(0.12, 0.19, length(p - vec2(-0.48, -0.15))));
+    float pulse = 0.8 + 0.2 * sin(uTime * 3.14159);
+    rgb = mix(rgb, ${glsl(PALETTE.infected)} * (0.6 + 0.6 * bright) * pulse, 0.9 * spots * vInfected * cover);
     rgb += vec3(0.35, 0.9, 0.7) * vState.y * 0.9 * (cover + halo * 0.5);
     rgb += vec3(1.0, 0.18, 0.15) * vState.z * 1.3 * (cover + halo * 0.5);
     float window = 1.0 - smoothstep(0.3, 1.0, length(vP) / ${QUAD_HALF.toFixed(1)});

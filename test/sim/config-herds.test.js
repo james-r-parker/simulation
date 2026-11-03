@@ -43,6 +43,7 @@ describe('herd config', () => {
             herdSize: 32,
             maxAgents: 500,
             floraPatchMax: 256,
+            diseaseSeedRate: 0,
         };
         expect(() => createConfig({ ...config, eventCapacity: 5807 })).toThrow(/eventCapacity.*5808/);
         expect(() => createConfig({ ...config, eventCapacity: 5808 })).not.toThrow();

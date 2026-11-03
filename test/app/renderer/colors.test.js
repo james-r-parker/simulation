@@ -67,6 +67,17 @@ const SEMANTIC = {
     eaten: PALETTE.eatenFlash,
 };
 
+describe('infected', () => {
+    it('clears every semantic colour by 15, and by 10 under each colour-vision simulation', () => {
+        for (const [what, semantic] of Object.entries(SEMANTIC)) {
+            expect(colorDistance(PALETTE.infected, semantic), what).toBeGreaterThanOrEqual(15);
+            for (const [name, matrix] of Object.entries(MACHADO)) {
+                expect(colorDistance(PALETTE.infected, semantic, matrix), `${what} ${name}`).toBeGreaterThanOrEqual(10);
+            }
+        }
+    });
+});
+
 describe('meat', () => {
     it('is told from plant food by at least 30, and by 15 under each colour-vision simulation', () => {
         expect(colorDistance(PALETTE.meat, PALETTE.food)).toBeGreaterThanOrEqual(30);

@@ -16,7 +16,7 @@ describe('titleCardView', () => {
         expect(view.sentence).toBe('Tiny-brained blobs eat, hunt, flee and breed, and their genes evolve.');
         expect(view.legend.map((l) => l.name)).toEqual(SPECS.map((s) => s.name));
         expect(view.caption).toBe('shape = role, colour = family, brightness = energy');
-        expect(view.watch).toBe('watch for: chases, bites, smoke');
+        expect(view.watch).toBe('watch for: chases, bites, smoke, speckled (infected) blobs');
     });
 });
 

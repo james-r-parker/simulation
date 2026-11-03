@@ -39,6 +39,7 @@ export const PALETTE = Object.freeze({
     coldWater: [0.03, 0.12, 0.9],
     coolWhite: [0.8, 0.92, 1.0],
     heat: [1.0, 0.35, 0.04],
+    infected: [0.6, 0.6, 1.0],
 });
 
 /**
@@ -112,6 +113,17 @@ export const AURORA_MAX_LUMINANCE = 0.01;
 
 /** The maximum luminance (linear Y) of any scenery colour (lichen, frost, refuge glow). */
 export const SCENERY_MAX_LUMINANCE = 0.012;
+
+/**
+ * The luminance (linear Y) of a megafauna outline. A herd animal is a body that tramples and is eaten, not scenery: it is
+ * drawn like an agent, a lit membrane around a darker body, but with no halo or core and in muted earth tones. Its
+ * brightest pixel (the outline plus half the fill, see `HERD_FILL_SHARE`) stays below the brightest pixel of the dimmest
+ * agent's membrane, so a blob stays the brightest thing on the screen (`herd-colors.test.js` asserts it).
+ */
+export const HERD_RIM_LUMINANCE = 0.09;
+
+/** The share of the herd colour a herd body's interior is filled with. */
+export const HERD_FILL_SHARE = 0.3;
 
 /** The hues (degrees) an unslotted lineage may take: blue to indigo and pink to magenta, clear of the semantic reds, ambers, teals and the attack violet. */
 export const LINEAGE_HUES = Object.freeze({ blueFrom: 190, blueSpan: 40, pinkFrom: 322, pinkSpan: 26, blueShare: 0.6 });
