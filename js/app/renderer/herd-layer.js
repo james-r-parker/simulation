@@ -1,4 +1,5 @@
-// Draws Phase 1 megafauna as plain, seeded snapshot discs.
+// Draws the megafauna from the snapshot: shaped, group-coloured bodies, or plain discs when the `herds` look item is
+// off. The animals are always drawn, because they trample blobs at every quality level.
 
 import { NormalBlending, ShaderMaterial } from 'three';
 import { createSections, HERD_STRIDE, readSections } from '../snapshot-view.js';
@@ -11,6 +12,8 @@ const SECTIONS = createSections();
 const MIN_PX = 8;
 const COLOR = [0, 0, 0];
 const PHASE_STEP = 2.399963229728653;
+/** `uDetail` values: 0 full (gait, nod, relief), 1 reduced (static shape), 2 the plain disc. */
+const DETAIL_PLAIN = 2;
 
 /** @param {Float32Array} f32 snapshot floats @param {Uint32Array} u32 snapshot words @param {{herdStart: number, herdCount: number}} section herd records @param {{body: Float32Array, motion: Float32Array, colors: Float32Array}} out packed instance attributes @returns {number} rows written */
 export function packHerdBodies(f32, u32, section, out) {
@@ -54,10 +57,10 @@ function updateHerdLayer(state, frame) {
         colors: packedColor,
     });
     uploadInstances(mesh, { iBody: packedBody, iMotion: packedMotion, iColor: packedColor }, count);
-    mesh.visible = state.enabled && count > 0;
+    mesh.visible = count > 0;
 }
 
-/** @param {{info: Record<string, any>}} context ready.info @returns {import('./scene.js').Layer} herd discs */
+/** @param {{info: Record<string, any>}} context ready.info @returns {import('./scene.js').Layer} the herd bodies */
 export function createHerdLayer({ info }) {
     const capacity = info.herdMax;
     const geometry = createQuadGeometry(capacity, ['iBody', 'iMotion', 'iColor']);
@@ -83,14 +86,11 @@ export function createHerdLayer({ info }) {
         packedBody: new Float32Array(capacity * VEC4),
         packedMotion: new Float32Array(capacity * VEC4),
         packedColor: new Float32Array(capacity * VEC4),
-        enabled: true,
     };
     return {
         object: mesh,
         setLook(look) {
-            state.enabled = look.herds !== LOOK_OFF;
-            uniforms.uDetail.value = look.herds === 0 ? 0 : 1;
-            mesh.visible = state.enabled && mesh.count > 0;
+            uniforms.uDetail.value = look.herds === LOOK_OFF ? DETAIL_PLAIN : Math.min(look.herds ?? 0, 1);
         },
         update(frame) {
             updateHerdLayer(state, frame);
