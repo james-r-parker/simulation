@@ -2398,6 +2398,32 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Completed after preregistration on current main defaults (toxinDose 1.2): matched Wary 0.5 versus 1 on 16 seeds x 200000 ticks. Wary 1 improves mean dodge_skill 0.98826 to 0.99225 and lowers trampled_share 0.02846 to 0.01398; spec_effective rises 3.0057 to 3.2288 and input_active_share stays 0.27271 to 0.27319. The six Wary 1 input-activity means are 0.05110, 0.05110, 0.04955, 0.02962, 0.02962 and 0.02902, all above 0.02. Predators at end are positive 1/16 versus 3/16; prey 16/16 both; basin_lineage_effective >=3 on 1/16 versus 3/16. Generic population gate is 0/16 both arms. T24 adopts herdWary 1 based on the confirmed behavioral benefit; herdCount 6 and herdSize 8 remain unchanged. None of the survival, family or population gates is claimed passed; these remain balancing follow-ups. The separate 20,000-tick input check and T23 benchmark are recorded in docs/designs/sim-notes.md."
+    },
+    {
+      "id": "E93",
+      "date": "2026-11-03",
+      "branch": "feat/disease",
+      "hypothesis": "For Boom and bust, Kin is not a stranger and the refusal One niche allowed to win the whole map, a contact contagion whose strains spread by genetic similarity to their founding host cuts back the commonest family, raising family diversity per basin without more floor restarts or fewer predators (disease.md Phase 3).",
+      "prediction": "Preregistered before running: screen off, rate-1 (diseaseSeedRate 0.0005), rate-2 (0.001), rate-4 (0.002), rate-2-tx-hi (0.001, diseaseTransmission 0.1) and rate-2-drain-lo (0.001, diseaseDrain 0.15) on seeds 1 to 8 x 200000 ticks with the live policy. Expect eval.lineage_dominance lower and eval.basin_family_effective higher than off in rate-2 and rate-4 (direction on at least 6/8 seeds), eval.disease_frequency_slope above 0 in the mean of every on arm, eval.strain_family_focus above 0.8, eval.disease_deaths_share between 0.02 and 0.25, and eval.floor_episodes and eval.predators_at_end not lower in count of good seeds than off. rate-4 and rate-2-tx-hi may overshoot (deaths share above 0.25 or more floor episodes). The 4-seed x 50000-tick smoke at rate 0.001 gave deaths share 0.015 to 0.11, strains 36 to 126 per 100k ticks, family focus 0.99 to 1 and slope -0.013 to 0.037.",
+      "targets": [
+        "eval.lineage_dominance",
+        "eval.basin_family_effective",
+        "eval.disease_frequency_slope",
+        "eval.floor_episodes",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.disease_deaths_share",
+        "eval.strain_family_focus",
+        "eval.strains_per_100k"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "off arm of evals/screens/disease-p3.grid.json (seeds 1-8 x 200000 ticks)",
+      "after": "the five on arms of evals/screens/disease-p3.grid.json; results in evals/screens/results/disease-p3/",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Registered before the run; the result and finalists are written here when the screen finishes."
     }
   ]
 }
