@@ -7,6 +7,7 @@ import {
     pinchAt,
     resizeCamera,
     updateCamera,
+    ZOOM_IN,
     zoomAt,
 } from '../../js/app/camera.js';
 
@@ -38,6 +39,13 @@ describe('the camera on a phone', () => {
         expect(c.zoom).toBe(homeZoom(PHONE_UP, WORLD));
         zoomAt(c, 1e-9, { x: 0, y: 0 });
         expect(c.targetZoom).toBeLessThan(fitZoom(PHONE_UP, WORLD));
+    });
+
+    it('zooms in as far from home in portrait as a desktop does from its fit', () => {
+        const c = createCameraController({ canvas: PHONE_UP, world: WORLD });
+        expect(c.maxZoom / homeZoom(PHONE_UP, WORLD)).toBe(ZOOM_IN);
+        const desk = createCameraController({ canvas: { width: 3840, height: 2160 }, world: WORLD });
+        expect(desk.maxZoom / fitZoom(desk.canvas, WORLD)).toBe(ZOOM_IN);
     });
 
     it('stays at home and keeps its centre when the phone turns, both ways', () => {

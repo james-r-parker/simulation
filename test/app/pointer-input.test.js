@@ -138,6 +138,26 @@ describe('createPointerInput with two pointers', () => {
     });
 });
 
+describe('createPointerInput stale pointers', () => {
+    it('treats a second press from the same pointer as a fresh press, so the tap still picks', () => {
+        const { input, picks } = setup();
+        input.down(100, 50, 1);
+        input.down(100, 50, 1);
+        input.up(100, 50, 1);
+        expect(picks).toEqual([77]);
+    });
+
+    it('ignores a cancel for a pointer already released, so a later tap is not marked a drag', () => {
+        const { input, picks } = setup();
+        input.down(100, 50, 1);
+        input.up(100, 50, 1);
+        input.cancel(1);
+        input.down(100, 50, 2);
+        input.up(100, 50, 2);
+        expect(picks).toEqual([77, 77]);
+    });
+});
+
 describe('createPointerInput touch picking', () => {
     /**
      * @param {number} touchMinPx the touch floor in device px

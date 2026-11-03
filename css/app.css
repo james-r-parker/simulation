@@ -441,6 +441,11 @@ html.cursor-hidden * {
     bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
 }
 
+.toasts {
+    left: max(0.875rem, env(safe-area-inset-left, 0));
+    top: calc(var(--bar-height) + 0.625rem + env(safe-area-inset-top, 0));
+}
+
 .drawer {
     top: calc(var(--bar-height) + env(safe-area-inset-top, 0));
     padding-right: max(0.75rem, env(safe-area-inset-right, 0));

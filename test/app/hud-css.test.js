@@ -39,6 +39,7 @@ describe('css/app.css', () => {
     it('keeps the HUD clear of the safe-area insets', () => {
         expect(css).toMatch(/#top-bar \{[^}]*top: env\(safe-area-inset-top/);
         expect(css).toMatch(/#ticker \{[^}]*bottom: max\(0\.75rem, env\(safe-area-inset-bottom/);
+        expect(css).toMatch(/\.toasts \{[^}]*top: calc\(var\(--bar-height\) \+ 0\.625rem \+ env\(safe-area-inset-top/);
         expect(css).toMatch(/\.drawer \{[^}]*padding-bottom: max\(0\.75rem, env\(safe-area-inset-bottom/);
     });
 

@@ -21,13 +21,17 @@ screen and keeps clear of a notch and a home bar.
 - A release with no pointers left and no drag picks the agent under it.
 - A gesture that ever had two pointers is a drag: lifting the fingers never picks.
 - When one of two fingers lifts, the other carries on panning.
-- `cancel(id)` drops the pointer and marks the gesture a drag, so a cancelled press never picks.
+- `cancel(id)` drops a pointer that is down and marks the gesture a drag, so a cancelled press never picks; a cancel
+  for a pointer already released does nothing.
+- A press from a pointer id that is the only one down starts a fresh gesture, so a lost release never blocks a tap.
 - `pinchAt` works on the target pose (`targetX`, `targetY`, `targetZoom`), the same as `zoomAt`, and releases a
   follow.
 - The wheel zooms about the cursor as before.
 
 `listenPointers` in [pointer-events.js](../../js/app/pointer-events.js) turns DOM events into these calls:
-`pointerdown` on the canvas (which captures the pointer), `pointermove`, `pointerup` and `pointercancel` on the window.
+`pointerdown` and `lostpointercapture` on the canvas (which captures the pointer), `pointermove`, `pointerup` and
+`pointercancel` on the window. The top bar takes touches on a narrow screen so it can scroll, so a touch on it never
+reaches the canvas.
 A `pointerType` of `touch` marks the gesture a touch.
 
 A touch picks with each specialisation's drawn minimum raised to `MIN_CSS_PX_TOUCH` (44 CSS px, in
@@ -44,13 +48,14 @@ at the drawn minimum. The drawn size does not change.
 | Portrait          | `max(fitZoom, canvas.height / world.height)`: fills the height; a sideways pan shows the rest |
 
 - `minZoom` stays `fitZoom x ZOOM_OUT`, so a pinch out shows the whole world in portrait too.
+- `maxZoom` is `homeZoom x ZOOM_IN`, so a phone held upright zooms in as far from home as a desktop does from its fit.
 - `resizeCamera` keeps the zoom's ratio to `homeZoom` and leaves the centre where it was. A view at home stays at home
   when the phone turns; a view zoomed in 3x on home stays 3x on the new home.
 - `moveCameraTo` with zoom 0 goes to `homeZoom`.
 
 `canvasPixelSize` in [canvas-size.js](../../js/app/renderer/canvas-size.js) caps the drawing buffer at
 `MAX_PIXEL_RATIO` (2) device pixels per CSS pixel on every path. A `devicePixelContentBoxSize` whose ratio to the
-client width is above 2 gives the client size times 2. A phone at ratio 3 draws 4/9 of the pixels it would uncapped.
+client width is above 2 gives the client size times 2.
 
 `manifest.json` sets `"orientation": "any"`.
 
@@ -60,7 +65,7 @@ client width is above 2 gives the client size times 2. A phone at ratio 3 draws 
 
 | Where                                          | Rule                                                                                                                                                                    |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Everywhere                                     | The top bar, ticker and drawers keep clear of `env(safe-area-inset-*)`                                                                                                  |
+| Everywhere                                     | The top bar, ticker, toasts and drawers keep clear of `env(safe-area-inset-*)`                                                                                          |
 | `max-width: 760px`                             | The top bar scrolls sideways (`overflow-x: auto`, `touch-action: pan-x`); the ticker is at most the width less 1.75rem; the title card spans the width less 1rem a side |
 | `orientation: portrait` and `max-width: 760px` | A drawer is a bottom sheet: full width, `55dvh` tall, rounded top corners, sliding up from the bottom                                                                   |
 | `pointer: coarse`                              | Every `.control` is at least 2.75rem (44 CSS px) square; `--bar-height` is 3.25rem                                                                                      |
@@ -71,6 +76,10 @@ client width is above 2 gives the client size times 2. A phone at ratio 3 draws 
 
 Pinch and two-finger pan, `pointercancel`, the touch tap floor, `homeZoom` and the turn, the pixel-ratio cap, and the
 HUD rules above.
+
+| Chunk | Tasks                  | Built by |
+| ----- | ---------------------- | -------- |
+| C1    | T1, T2, T3, T4, T5, T6 | Sonnet   |
 
 ### Phase 2 - Gestures, phone budget and portrait shots
 
@@ -85,6 +94,11 @@ HUD rules above.
   `browser.frame_p95_ms` and `browser.draw_cpu_p95_ms` at or under it on a mid-range Android phone over `--cdp`.
 - The director's wide shots (`director/shots.js`) frame by `homeZoom` in portrait, so a shot never shows the world as
   a band.
+
+| Chunk | Tasks                       | Built by |
+| ----- | --------------------------- | -------- |
+| C2    | T7, T8, T9, T10, T12, T13   | Sonnet   |
+| C3    | T11 (quiet machine, own PR) | Haiku    |
 
 ## Decisions
 

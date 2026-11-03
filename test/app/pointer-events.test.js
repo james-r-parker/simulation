@@ -54,9 +54,13 @@ describe('listenPointers', () => {
         ]);
     });
 
-    it('turns a pointercancel into a cancel of that pointer', () => {
+    it('turns a pointercancel or a lost capture into a cancel of that pointer', () => {
         const { calls, fire } = setup();
         fire('target', 'pointercancel', { pointerId: 9, clientX: 0, clientY: 0 });
-        expect(calls).toEqual([['cancel', 9]]);
+        fire('canvas', 'lostpointercapture', { pointerId: 4, clientX: 0, clientY: 0 });
+        expect(calls).toEqual([
+            ['cancel', 9],
+            ['cancel', 4],
+        ]);
     });
 });

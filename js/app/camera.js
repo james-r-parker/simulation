@@ -6,7 +6,7 @@
 export const POSITION_RATE = 3.08;
 /** Zoom easing rate per second: `-ln(1 - 0.1) x 60`. */
 export const ZOOM_RATE = 6.32;
-/** How far the view may zoom out past the fit, and in from it, as multiples of the fit zoom. */
+/** How far the view may zoom out past the fit (a multiple of `fitZoom`) and in from home (a multiple of `homeZoom`). */
 export const ZOOM_OUT = 0.8;
 export const ZOOM_IN = 24;
 /** Wheel pixels to a zoom factor: `exp(-deltaY x WHEEL_RATE)`. */
@@ -82,7 +82,7 @@ export function springStep(current, target, rate, dtMs) {
 function limits(c) {
     const fit = fitZoom(c.canvas, c.world);
     c.minZoom = fit * ZOOM_OUT;
-    c.maxZoom = fit * ZOOM_IN;
+    c.maxZoom = homeZoom(c.canvas, c.world) * ZOOM_IN;
     c.targetZoom = Math.min(Math.max(c.targetZoom, c.minZoom), c.maxZoom);
     c.targetX = Math.min(Math.max(c.targetX, 0), c.world.width);
     c.targetY = Math.min(Math.max(c.targetY, 0), c.world.height);

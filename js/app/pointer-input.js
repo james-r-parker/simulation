@@ -132,7 +132,7 @@ export function createPointerInput({ camera, getAgents, getMinPx, onPick, getTou
     const minPxFor = pickMinimums(getMinPx, getTouchMinPx);
     return {
         down(x, y, id = 0, touch = false) {
-            if (g.points.size === 0) {
+            if (g.points.size === 0 || (g.points.size === 1 && g.points.has(id))) {
                 Object.assign(g, { startX: x, startY: y, dragged: false, touch });
             } else {
                 g.dragged = true;
@@ -162,8 +162,9 @@ export function createPointerInput({ camera, getAgents, getMinPx, onPick, getTou
             }
         },
         cancel(id = 0) {
-            g.points.delete(id);
-            g.dragged = true;
+            if (g.points.delete(id)) {
+                g.dragged = true;
+            }
         },
         wheel(deltaY, x, y) {
             zoomAt(camera, wheelFactor(deltaY), { x, y });

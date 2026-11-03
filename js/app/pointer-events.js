@@ -1,6 +1,6 @@
 // Turns the canvas and window pointer events into `createPointerInput` calls: each pointer by its `pointerId`, a touch
 // marked as one, the canvas capturing a pointer it saw go down, and `pointercancel` (a phone taking the gesture for
-// itself) dropping the pointer instead of leaving it pressed.
+// itself) or a lost capture dropping the pointer instead of leaving it pressed.
 
 /**
  * @typedef {{pointerId: number, pointerType?: string, clientX: number, clientY: number}} PointerLike
@@ -33,4 +33,5 @@ export function listenPointers({ canvas, target, input, iface, toDevice }) {
         input.up(at.x, at.y, e.pointerId);
     });
     target.addEventListener('pointercancel', (/** @type {PointerLike} */ e) => input.cancel(e.pointerId));
+    canvas.addEventListener('lostpointercapture', (/** @type {PointerLike} */ e) => input.cancel(e.pointerId));
 }
