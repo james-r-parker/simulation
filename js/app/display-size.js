@@ -5,6 +5,8 @@
 export const MIN_PX_HUNTER = 24;
 /** The least any other agent is drawn across, in device px. */
 export const MIN_PX_OTHER = 20;
+/** The least any agent is hit-tested across for a tap, in CSS px: a fingertip, not a cursor. */
+export const MIN_CSS_PX_TOUCH = 44;
 
 /**
  * @param {number} size the agent's radius in world units

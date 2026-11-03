@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawnRadius, MIN_PX_HUNTER, MIN_PX_OTHER, minPxTable } from '../../js/app/display-size.js';
+import { drawnRadius, MIN_CSS_PX_TOUCH, MIN_PX_HUNTER, MIN_PX_OTHER, minPxTable } from '../../js/app/display-size.js';
 
 describe('drawnRadius', () => {
     it('keeps a big agent at its size and widens a small one to the minimum across', () => {
@@ -20,5 +20,12 @@ describe('minPxTable', () => {
         const info = { specs: [{ canHunt: true }, { canHunt: false }, { canHunt: false }] };
         expect(minPxTable(info)).toEqual([MIN_PX_HUNTER, MIN_PX_OTHER, MIN_PX_OTHER]);
         expect([MIN_PX_HUNTER, MIN_PX_OTHER]).toEqual([24, 20]);
+    });
+});
+
+describe('MIN_CSS_PX_TOUCH', () => {
+    it('is a 44 CSS px fingertip, wider than any drawn minimum at ratio 1', () => {
+        expect(MIN_CSS_PX_TOUCH).toBe(44);
+        expect(MIN_CSS_PX_TOUCH).toBeGreaterThan(Math.max(MIN_PX_HUNTER, MIN_PX_OTHER));
     });
 });
