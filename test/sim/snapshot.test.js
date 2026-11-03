@@ -176,6 +176,7 @@ describe('writeSnapshot', () => {
         writeSnapshot(world, views, true);
         const flags = views.u32[HEADER_WORDS + 11];
         expect(flags & SNAPSHOT_FLAG.SICK).not.toBe(0);
+        expect(flags & SNAPSHOT_FLAG.INFECTED).toBe(0);
         expect(flags & SNAPSHOT_FLAG.POLLEN).not.toBe(0);
         expect(((flags >>> SNAPSHOT_FLAG.POLLEN_HUE_SHIFT) / SNAPSHOT_FLAG.POLLEN_HUE_MASK) * 2 - 1).toBeCloseTo(
             0.5,

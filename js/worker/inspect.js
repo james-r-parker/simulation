@@ -26,6 +26,8 @@ export const INSPECT_COUNTERS = Object.freeze([
     'baseSize',
     'childShare',
     'dose',
+    'infection',
+    'immuneStrains',
 ]);
 
 const RAY_CHANNEL_NAMES = Object.freeze([
@@ -163,6 +165,20 @@ function writeCounters(f32, start, { source, slot }) {
     f32[start + 13] = world.baseSize[slot];
     f32[start + 14] = world.childShare[slot];
     f32[start + 15] = world.dose[slot];
+    f32[start + 16] = world.infection[slot];
+    f32[start + 17] = bitCount(world.immuneMask[slot]);
+}
+
+/**
+ * @param {number} mask an 8-bit mask
+ * @returns {number} the bits set
+ */
+function bitCount(mask) {
+    let count = 0;
+    for (let bits = mask; bits > 0; bits >>= 1) {
+        count += bits & 1;
+    }
+    return count;
 }
 
 /**

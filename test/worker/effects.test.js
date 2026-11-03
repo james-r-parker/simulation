@@ -65,6 +65,19 @@ function drain(log) {
 const NO_SLOTS = new Map();
 
 describe('collectEffects', () => {
+    it('yields STRAIN_EMERGED at the first host with the strain and the host genome', () => {
+        const world = smallWorld();
+        world.tick = 12;
+        world.x[2] = 310;
+        world.y[2] = 420;
+        event(world, EVENT_TYPE.STRAIN_EMERGED, [4, 2, 77, 9]);
+        const log = createEffectLog(world.config.maxAgents);
+        collectEffects(log, world, NO_SLOTS);
+        const { records, floats } = drain(log);
+        expect(records).toEqual([[EFFECT_KIND.STRAIN_EMERGED, 12, expect.anything(), expect.anything(), 4, 77, 0, 0]]);
+        expect(floats[0].slice(2, 4)).toEqual([310, 420]);
+    });
+
     it('yields STAMPEDE at the herd group centre with its group and animal count', () => {
         const world = smallWorld();
         world.tick = 28;

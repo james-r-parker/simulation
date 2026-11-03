@@ -39,6 +39,7 @@ export const PALETTE = Object.freeze({
     coldWater: [0.03, 0.12, 0.9],
     coolWhite: [0.8, 0.92, 1.0],
     heat: [1.0, 0.35, 0.04],
+    infected: [0.6, 0.6, 1.0],
 });
 
 /**

@@ -98,6 +98,19 @@ describe('inspectorView on a real selected agent', () => {
         expect(result.counters.find((c) => c.label === 'toxin dose')?.text).toBe('0.36');
     });
 
+    it('shows the infection, or the strains the agent is immune to, from the appended worker counters', () => {
+        const state = selectedWorld();
+        const l = state.ready.layout;
+        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 16;
+        const text = () =>
+            inspectorView({ ...state, slots: createFamilySlots() }).counters.find((c) => c.label === 'disease')?.text;
+        expect(text()).toBe('healthy');
+        state.snapshot.f32[at + 1] = 2;
+        expect(text()).toBe('immune to 2 strains');
+        state.snapshot.f32[at] = 4;
+        expect(text()).toBe('infected, strain 3');
+    });
+
     it('lists the counters as text', () => {
         expect(view.counters.map((c) => c.label)).toEqual([
             'type',
@@ -107,6 +120,7 @@ describe('inspectorView on a real selected agent', () => {
             'energy',
             'temperature',
             'toxin dose',
+            'disease',
             'food eaten',
             'bite energy taken',
             'kills',

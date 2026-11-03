@@ -65,7 +65,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} pose x, y, angle, radius
  * @property {Float32Array} color linear r, g, b and energy01
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
- * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, then 1 reserved
+ * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, infected
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {number} count agents packed this frame
  */
@@ -118,6 +118,21 @@ export function flashOf(timer) {
 }
 
 /**
+ * Writes the pregnant, sick and infected status bits into an agent's `extra` row (the neutral-family word is the
+ * caller's).
+ * @param {Float32Array} extra the bucket's extra attribute
+ * @param {number} o the row's offset
+ * @param {number} flags the agent's snapshot flags
+ * @param {Record<string, number>} bits `ready.layout.flags`
+ * @returns {void}
+ */
+function packStatus(extra, o, flags, bits) {
+    extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
+    extra[o + 2] = (flags & bits.SICK) !== 0 ? 1 : 0;
+    extra[o + 3] = (flags & bits.INFECTED) !== 0 ? 1 : 0;
+}
+
+/**
  * Writes every agent into its mesh's bucket and smooths the jaws.
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {AgentStore} store the store
@@ -160,9 +175,8 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         bucket.state[o + 1] = flashOf((flags >> bits.ATE_SHIFT) & bits.TIMER_MASK);
         bucket.state[o + 2] = flashOf((flags >> bits.BITTEN_SHIFT) & bits.TIMER_MASK);
         bucket.state[o + 3] = store.jaw[slot];
-        bucket.extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
+        packStatus(bucket.extra, o, flags, bits);
         bucket.extra[o + 1] = slotOf(slots, agents.lineageId[i]) < 0 ? 1 : 0;
-        bucket.extra[o + 2] = (flags & bits.SICK) !== 0 ? 1 : 0;
 
         const m = motionOf(agents.speed[i] / maxVelocity, agents.turn[i], store.smoothedTurn[slot], agents.genomeId[i]);
         store.smoothedTurn[slot] = m.turn01;
