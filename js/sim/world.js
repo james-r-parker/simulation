@@ -6,7 +6,7 @@ import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createInputActivity } from './input-activity.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
-import { allocDiseaseState, diseaseSpecs } from './disease.js';
+import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { killSpecs } from './kills.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { proofSpecs } from './proof.js';

@@ -3,7 +3,7 @@ import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
 import { meritSpecs } from './merit-state.js';
-import { DISEASE_AGENT_ARRAYS, DISEASE_STRAIN_ARRAYS } from './disease.js';
+import { DISEASE_AGENT_ARRAYS, DISEASE_STRAIN_ARRAYS } from './disease-state.js';
 
 /** Agent arrays hashed whole, in the World state table order; `hidden` is handled separately. */
 const AGENT_ARRAYS = [
