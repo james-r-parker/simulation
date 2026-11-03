@@ -207,11 +207,11 @@ void main() {
     rgb += base * bright * 0.55 * tail * (1.0 - cover);
     // An infected body carries three pale spots that pulse on a 2 s sine (docs/designs/disease.md, The look).
     float spots = 0.0;
-    spots = max(spots, 1.0 - smoothstep(0.1, 0.17, length(p - vec2(-0.3, 0.25))));
-    spots = max(spots, 1.0 - smoothstep(0.1, 0.17, length(p - vec2(0.05, -0.3))));
-    spots = max(spots, 1.0 - smoothstep(0.08, 0.15, length(p - vec2(-0.45, -0.12))));
-    float pulse = 0.75 + 0.25 * sin(uTime * 3.14159);
-    rgb = mix(rgb, mix(base, ${glsl(PALETTE.infected)}, 0.6) * bright * pulse, 0.7 * spots * vInfected * cover);
+    spots = max(spots, 1.0 - smoothstep(0.15, 0.22, length(p - vec2(-0.3, 0.28))));
+    spots = max(spots, 1.0 - smoothstep(0.15, 0.22, length(p - vec2(0.08, -0.3))));
+    spots = max(spots, 1.0 - smoothstep(0.12, 0.19, length(p - vec2(-0.48, -0.15))));
+    float pulse = 0.8 + 0.2 * sin(uTime * 3.14159);
+    rgb = mix(rgb, ${glsl(PALETTE.infected)} * (0.6 + 0.6 * bright) * pulse, 0.9 * spots * vInfected * cover);
     rgb += vec3(0.35, 0.9, 0.7) * vState.y * 0.9 * (cover + halo * 0.5);
     rgb += vec3(1.0, 0.18, 0.15) * vState.z * 1.3 * (cover + halo * 0.5);
     float window = 1.0 - smoothstep(0.3, 1.0, length(vP) / ${QUAD_HALF.toFixed(1)});
