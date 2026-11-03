@@ -5,6 +5,7 @@ import { addDungZone, ageHerdSeeds, dropHerdDung, loadHerdSeed } from '../../js/
 import { createConfig } from '../../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, clearEvents } from '../../js/sim/events.js';
 import { createWorld, spawnFoodItem } from '../../js/sim/spawn.js';
+import { SEED_REFUSED, SEED_SOURCE } from '../../js/sim/pollination.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { testPolicy } from './helpers/test-policy.js';
 
@@ -155,4 +156,53 @@ describe('herd dung zones', () => {
         expect(world.events.data[3]).toBe(2);
         expect(world.events.data[4]).toBe(1);
     });
+
+    it('drops no dung while dung zones are disabled', () => {
+        const world = build({ herdDungZoneMax: 0, herdDungTicks: 1 });
+        world.herdStore[0] = world.config.herdStoreMax;
+        dropHerdDung(world);
+        expect(Array.from(world.zoneAlive)).toEqual([0, 0, 0]);
+    });
+
+    it('refuses a far drop that lands beside another living patch', () => {
+        const world = carrying({ herdSeedMinDistance: 600, herdDungTicks: 1 });
+        world.patchAlive[1] = 1;
+        world.patchX[1] = 820;
+        world.patchY[1] = 100;
+        dropHerdDung(world);
+        expect(world.herdSeedPatch[0]).toBe(0);
+        expect(world.events.data[0]).toBe(EVENT_TYPE.SEEDING_REFUSED);
+        expect(world.events.data[3]).toBe(SEED_REFUSED.NEAR);
+        expect(world.events.data[4]).toBe(SEED_SOURCE.HERD);
+    });
+
+    it('refuses a valid drop when the patch pool has no free slot', () => {
+        const world = carrying({ herdSeedMinDistance: 600, herdDungTicks: 1 });
+        world.patchBank[1] = 1;
+        dropHerdDung(world);
+        expect(world.patchAlive[1]).toBe(0);
+        expect(world.herdSeedPatch[0]).toBe(0);
+        expect(world.events.data[0]).toBe(EVENT_TYPE.SEEDING_REFUSED);
+        expect(world.events.data[3]).toBe(SEED_REFUSED.POOL);
+        expect(world.events.data[4]).toBe(SEED_SOURCE.HERD);
+    });
 });
+
+/** @param {Record<string, unknown>} overrides @returns {ReturnType<typeof createWorld>} a herd animal due to drop a seed from patch 0 */
+function carrying(overrides) {
+    const world = build(overrides);
+    world.patchAlive[0] = 1;
+    world.patchSerial[0] = 1;
+    world.patchSpecies[0] = 3;
+    world.patchX[0] = 100;
+    world.patchY[0] = 100;
+    world.herdAge[0] = 0;
+    world.herdStore[0] = world.config.herdStoreMax;
+    world.herdX[0] = 800;
+    world.herdY[0] = 100;
+    world.herdSeedPatch[0] = 1;
+    world.herdSeedSerial[0] = 1;
+    world.herdSeedTicks[0] = 20;
+    clearEvents(world.events);
+    return world;
+}
