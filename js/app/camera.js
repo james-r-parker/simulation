@@ -6,7 +6,7 @@
 export const POSITION_RATE = 3.08;
 /** Zoom easing rate per second: `-ln(1 - 0.1) x 60`. */
 export const ZOOM_RATE = 6.32;
-/** How far the view may zoom out past the fit, and in from it, as multiples of the fit zoom. */
+/** How far the view may zoom out past the fit (a multiple of `fitZoom`) and in from home (a multiple of `homeZoom`). */
 export const ZOOM_OUT = 0.8;
 export const ZOOM_IN = 24;
 /** Wheel pixels to a zoom factor: `exp(-deltaY x WHEEL_RATE)`. */
@@ -21,6 +21,18 @@ const SNAP_SHARE = 0.02;
  */
 export function fitZoom(canvas, world) {
     return Math.min(canvas.width / world.width, canvas.height / world.height);
+}
+
+/**
+ * @param {{width: number, height: number}} canvas the canvas in device pixels
+ * @param {{width: number, height: number}} world the world in world units
+ * @returns {number} the zoom the view starts at and `Home` returns to: `fitZoom` on a landscape or square canvas; on a
+ *   portrait canvas (a phone held upright) the zoom that fills its height, so the world is not a thin band across the
+ *   middle and a sideways pan shows the rest
+ */
+export function homeZoom(canvas, world) {
+    const fit = fitZoom(canvas, world);
+    return canvas.height > canvas.width ? Math.max(fit, canvas.height / world.height) : fit;
 }
 
 /**
@@ -70,7 +82,7 @@ export function springStep(current, target, rate, dtMs) {
 function limits(c) {
     const fit = fitZoom(c.canvas, c.world);
     c.minZoom = fit * ZOOM_OUT;
-    c.maxZoom = fit * ZOOM_IN;
+    c.maxZoom = homeZoom(c.canvas, c.world) * ZOOM_IN;
     c.targetZoom = Math.min(Math.max(c.targetZoom, c.minZoom), c.maxZoom);
     c.targetX = Math.min(Math.max(c.targetX, 0), c.world.width);
     c.targetY = Math.min(Math.max(c.targetY, 0), c.world.height);
@@ -82,7 +94,7 @@ function limits(c) {
  * @returns {CameraController} a controller showing the whole world
  */
 export function createCameraController({ canvas, world }) {
-    const zoom = fitZoom(canvas, world);
+    const zoom = homeZoom(canvas, world);
     /** @type {CameraController} */
     const c = {
         x: world.width / 2,
@@ -163,6 +175,26 @@ export function zoomAt(c, factor, anchorPx) {
 }
 
 /**
+ * A pinch step: zooms by a factor and moves so the world point under `fromPx` (at the target pose) ends under `toPx`.
+ * Releases a follow.
+ * @param {CameraController} c the controller
+ * @param {number} factor above 1 zooms in
+ * @param {{x: number, y: number}} fromPx the fingers' midpoint before, in device pixels from the canvas top left
+ * @param {{x: number, y: number}} toPx the midpoint after
+ * @returns {void}
+ */
+export function pinchAt(c, factor, fromPx, toPx) {
+    c.following = false;
+    const wx = c.targetX + (fromPx.x - c.canvas.width / 2) / c.targetZoom;
+    const wy = c.targetY - (fromPx.y - c.canvas.height / 2) / c.targetZoom;
+    c.targetZoom = c.targetZoom * factor;
+    limits(c);
+    c.targetX = wx - (toPx.x - c.canvas.width / 2) / c.targetZoom;
+    c.targetY = wy + (toPx.y - c.canvas.height / 2) / c.targetZoom;
+    limits(c);
+}
+
+/**
  * @param {number} deltaY a wheel event's `deltaY`
  * @returns {number} the zoom factor it stands for; scrolling up zooms in
  */
@@ -171,17 +203,18 @@ export function wheelFactor(deltaY) {
 }
 
 /**
- * Tells the controller the canvas changed size. The zoom keeps its ratio to the fit.
+ * Tells the controller the canvas changed size, e.g. a phone turned. The zoom keeps its ratio to `homeZoom`, so a view
+ * at home stays at home in the new orientation, and the centre stays where it was.
  * @param {CameraController} c the controller
  * @param {{width: number, height: number}} canvas the new size in device pixels
  * @returns {void}
  */
 export function resizeCamera(c, canvas) {
-    const before = fitZoom(c.canvas, c.world);
+    const before = homeZoom(c.canvas, c.world);
     const ratio = c.zoom / before;
     const targetRatio = c.targetZoom / before;
     c.canvas = { ...canvas };
-    const after = fitZoom(c.canvas, c.world);
+    const after = homeZoom(c.canvas, c.world);
     c.zoom = after * ratio;
     c.targetZoom = after * targetRatio;
     limits(c);
@@ -190,7 +223,7 @@ export function resizeCamera(c, canvas) {
 /**
  * Sets the view straight to a pose, e.g. `Home` or a director move.
  * @param {CameraController} c the controller
- * @param {{x: number, y: number, zoom: number}} pose the target; a zoom of 0 means the fit
+ * @param {{x: number, y: number, zoom: number}} pose the target; a zoom of 0 means `homeZoom`
  * @param {boolean} [instant] jump instead of easing
  * @returns {void}
  */
@@ -198,7 +231,7 @@ export function moveCameraTo(c, pose, instant = false) {
     c.following = false;
     c.targetX = pose.x;
     c.targetY = pose.y;
-    c.targetZoom = pose.zoom > 0 ? pose.zoom : fitZoom(c.canvas, c.world);
+    c.targetZoom = pose.zoom > 0 ? pose.zoom : homeZoom(c.canvas, c.world);
     limits(c);
     if (instant) {
         c.x = c.targetX;

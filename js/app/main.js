@@ -11,12 +11,13 @@ import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
-import { minPxTable } from './display-size.js';
+import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { agentAt } from './hover-pick.js';
 import { largestOfLineage } from './picking.js';
 import { createGpuTimer } from './gpu-timer.js';
 import { createInterface } from './interface.js';
 import { installPerf } from './perf.js';
+import { listenPointers } from './pointer-events.js';
 import { createPointerInput } from './pointer-input.js';
 import { canvasPixelSize } from './renderer/canvas-size.js';
 import { createScene } from './renderer/scene.js';
@@ -43,7 +44,7 @@ function showMessage(container, text) {
 /**
  * Wires the keys and the pointer.
  * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
- *   iface: ReturnType<typeof createInterface>, toDevice: (e: MouseEvent) => {x: number, y: number}}} wiring the canvas,
+ *   iface: ReturnType<typeof createInterface>, toDevice: (e: {clientX: number, clientY: number}) => {x: number, y: number}}} wiring the canvas,
  *   the action runner, the pointer handlers, the interface that hears every input and the client-to-device mapper
  * @returns {void}
  */
@@ -56,16 +57,7 @@ function listen({ canvas, perform, input, iface, toDevice }) {
             perform(action);
         }
     });
-    canvas.addEventListener('pointerdown', (e) => {
-        iface.noteInput({ type: 'pointerdown' });
-        input.down(toDevice(e).x, toDevice(e).y);
-    });
-    window.addEventListener('pointermove', (e) => {
-        iface.noteInput({ type: 'pointermove', x: e.clientX, y: e.clientY });
-        iface.pointer(e.clientX, e.clientY);
-        input.move(toDevice(e).x, toDevice(e).y);
-    });
-    window.addEventListener('pointerup', (e) => input.up(toDevice(e).x, toDevice(e).y));
+    listenPointers({ canvas, target: window, input, iface, toDevice });
     canvas.addEventListener(
         'wheel',
         (e) => {
@@ -173,6 +165,7 @@ function pointerOptions(app) {
         camera: app.camera,
         getAgents: app.loop.agents,
         getMinPx: () => app.minPx,
+        getTouchMinPx: () => MIN_CSS_PX_TOUCH * devicePerCss(app),
         onPick(id) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
@@ -239,6 +232,15 @@ function clientToDevice(app, client) {
         x: ((client.x - r.left) * app.size.width) / r.width,
         y: ((client.y - r.top) * app.size.height) / r.height,
     };
+}
+
+/**
+ * @param {App} app the page
+ * @returns {number} device pixels per CSS pixel on the canvas, 1 before the scene exists
+ */
+function devicePerCss(app) {
+    const width = app.deps.scene?.canvas?.getBoundingClientRect().width ?? 0;
+    return width > 0 ? app.size.width / width : 1;
 }
 
 /**

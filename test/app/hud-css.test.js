@@ -35,4 +35,27 @@ describe('css/app.css', () => {
             c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4;
         expect(0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)).toBeLessThanOrEqual(0.7);
     });
+
+    it('keeps the HUD clear of the safe-area insets', () => {
+        expect(css).toMatch(/#top-bar \{[^}]*top: env\(safe-area-inset-top/);
+        expect(css).toMatch(/#ticker \{[^}]*bottom: max\(0\.75rem, env\(safe-area-inset-bottom/);
+        expect(css).toMatch(/\.toasts \{[^}]*top: calc\(var\(--bar-height\) \+ 0\.625rem \+ env\(safe-area-inset-top/);
+        expect(css).toMatch(/\.drawer \{[^}]*padding-bottom: max\(0\.75rem, env\(safe-area-inset-bottom/);
+    });
+
+    it('makes a drawer a bottom sheet on a phone held upright', () => {
+        const at = css.indexOf('@media (orientation: portrait) and (max-width: 760px)');
+        expect(at).toBeGreaterThan(0);
+        const block = css.slice(at, css.indexOf('\n}\n', at));
+        expect(block).toMatch(/top: auto/);
+        expect(block).toMatch(/transform: translateY\(100%\)/);
+        expect(rule('.drawer.open')).toMatch(/transform: none/);
+    });
+
+    it('scrolls the top bar sideways on a narrow screen and gives a coarse pointer 2.75rem buttons', () => {
+        const narrow = css.slice(css.indexOf('@media (max-width: 760px)'));
+        expect(narrow).toMatch(/#top-bar \{[^}]*overflow-x: auto/);
+        const coarse = css.slice(css.indexOf('@media (pointer: coarse)'));
+        expect(coarse).toMatch(/min-height: 2\.75rem/);
+    });
 });

@@ -24,6 +24,12 @@ describe('canvasPixelSize', () => {
         expect(canvasPixelSize({}, element, 0)).toEqual({ width: 1920, height: 1080 });
     });
 
+    it('caps a device pixel content box above ratio 2 at twice the client size', () => {
+        const phone = { clientWidth: 390, clientHeight: 844 };
+        const entry = { devicePixelContentBoxSize: [{ inlineSize: 1170, blockSize: 2532 }] };
+        expect(canvasPixelSize(entry, phone, 3)).toEqual({ width: 780, height: 1688 });
+    });
+
     it('never returns a zero size, and ignores an empty box', () => {
         expect(canvasPixelSize({}, { clientWidth: 0, clientHeight: 0 }, 1)).toEqual({ width: 1, height: 1 });
         const entry = { devicePixelContentBoxSize: [{ inlineSize: 0, blockSize: 0 }] };

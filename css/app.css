@@ -425,3 +425,81 @@ html.cursor-hidden * {
     margin: 0 0 0.5rem;
     color: var(--text-dim);
 }
+
+/* Phones and tablets. The page reaches under a notch or a home bar (`viewport-fit=cover`), so the HUD keeps clear of
+   the safe-area insets; on a narrow screen the top bar scrolls sideways instead of overflowing; held upright, a
+   drawer is a bottom sheet; and a coarse pointer gets buttons a fingertip can hit. */
+
+#top-bar {
+    top: env(safe-area-inset-top, 0);
+    padding-left: max(0.875rem, env(safe-area-inset-left, 0));
+    padding-right: max(0.875rem, env(safe-area-inset-right, 0));
+}
+
+#ticker {
+    left: max(0.875rem, env(safe-area-inset-left, 0));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+}
+
+.toasts {
+    left: max(0.875rem, env(safe-area-inset-left, 0));
+    top: calc(var(--bar-height) + 0.625rem + env(safe-area-inset-top, 0));
+}
+
+.drawer {
+    top: calc(var(--bar-height) + env(safe-area-inset-top, 0));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0));
+}
+
+@media (max-width: 760px) {
+    #top-bar {
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        pointer-events: auto;
+        touch-action: pan-x;
+    }
+
+    #top-bar > .top-bar-status {
+        flex: none;
+    }
+
+    #ticker {
+        max-width: calc(100vw - 1.75rem);
+    }
+
+    .title-card {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+        transform: translateY(-50%);
+        padding: 1rem 1.25rem;
+    }
+}
+
+@media (orientation: portrait) and (max-width: 760px) {
+    .drawer {
+        top: auto;
+        left: 0;
+        width: auto;
+        min-width: 0;
+        height: 55dvh;
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem 0.75rem 0 0;
+        padding-left: max(0.75rem, env(safe-area-inset-left, 0));
+        transform: translateY(100%);
+    }
+}
+
+@media (pointer: coarse) {
+    .control {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+
+    :root {
+        --bar-height: 3.25rem;
+    }
+}
