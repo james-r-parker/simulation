@@ -6,7 +6,7 @@ import { int, num, positive, UNIT } from './config-rules.js';
 export const DISEASE_MAX_STRAINS = 8;
 
 export const DISEASE_DEFAULTS = {
-    diseaseSeedRate: 0,
+    diseaseSeedRate: 0.001,
     diseaseMinHosts: 30,
     diseaseRadius: 60,
     diseaseTransmission: 0.05,
@@ -34,17 +34,4 @@ export const DISEASE_RULES = {
  */
 export function diseaseEventDemand(config) {
     return config.diseaseSeedRate > 0 ? config.maxAgents + 2 * DISEASE_MAX_STRAINS : 0;
-}
-
-/**
- * @param {Record<string, any>} config the merged simulation config
- * @returns {void}
- * @throws {Error} when the contagion is on and its minimum host count exceeds `maxAgents`, so no strain could emerge
- */
-export function checkDisease(config) {
-    if (config.diseaseSeedRate > 0 && config.diseaseMinHosts > config.maxAgents) {
-        throw new Error(
-            `config.diseaseMinHosts ${config.diseaseMinHosts} must be at most maxAgents ${config.maxAgents}`,
-        );
-    }
 }

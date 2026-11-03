@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import {
-    checkDisease,
     DISEASE_DEFAULTS,
     DISEASE_MAX_STRAINS,
     DISEASE_RULES,
@@ -10,10 +9,10 @@ import {
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 describe('disease config', () => {
-    it('ships the contagion off, with a rule for every default', () => {
-        expect(DISEASE_DEFAULTS.diseaseSeedRate).toBe(0);
+    it('ships the contagion on, with a rule for every default', () => {
+        expect(DISEASE_DEFAULTS.diseaseSeedRate).toBe(0.001);
         expect(Object.keys(DISEASE_RULES).sort()).toEqual(Object.keys(DISEASE_DEFAULTS).sort());
-        expect(createConfig(SIMPLE_WORLD).diseaseSeedRate).toBe(0);
+        expect(createConfig(SIMPLE_WORLD).diseaseSeedRate).toBe(0.001);
     });
 
     it('needs no event room while off and an infection per agent plus two per strain while on', () => {
@@ -21,11 +20,10 @@ describe('disease config', () => {
         expect(diseaseEventDemand({ diseaseSeedRate: 0.001, maxAgents: 100 })).toBe(100 + 2 * DISEASE_MAX_STRAINS);
     });
 
-    it('refuses a minimum host count above maxAgents only while the contagion is on', () => {
-        expect(() => checkDisease({ diseaseSeedRate: 0, diseaseMinHosts: 50, maxAgents: 10 })).not.toThrow();
-        expect(() => checkDisease({ diseaseSeedRate: 0.1, diseaseMinHosts: 50, maxAgents: 10 })).toThrow(
-            /diseaseMinHosts 50 must be at most maxAgents 10/,
-        );
+    it('accepts a minimum host count above maxAgents: such a world never sees a strain', () => {
+        expect(() =>
+            createConfig({ ...SIMPLE_WORLD, maxAgents: 10, initialAgents: 5, minAgents: 5, diseaseMinHosts: 50 }),
+        ).not.toThrow();
     });
 
     it('rejects out-of-range values through createConfig', () => {

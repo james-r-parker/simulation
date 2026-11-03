@@ -14,7 +14,7 @@ const SMALL = {
     initialFood: 0,
 };
 
-const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora', 'herds'];
+const STREAMS = ['obstacles', 'spawn', 'brain-init', 'mutation', 'food', 'lifecycle', 'flora', 'herds', 'disease'];
 
 /** Arrays whose every element the hash must cover; `hidden` is limited to its agent rows. */
 const COVERED = [

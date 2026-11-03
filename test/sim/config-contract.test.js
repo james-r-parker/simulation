@@ -192,13 +192,15 @@ describe('validateConfig error text', () => {
     });
 
     it('states the event capacity and the product', () => {
-        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4063 }))).toBe(
-            'eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount (4064)',
-        );
+        expect(
+            message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, diseaseSeedRate: 0, eventCapacity: 4063 })),
+        ).toBe('eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount (4064)');
     });
 
     it('accepts an event capacity of exactly 8 x maxAgents', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4064 })).not.toThrow();
+        expect(() =>
+            createConfig({ ...SIMPLE_WORLD, maxAgents: 500, diseaseSeedRate: 0, eventCapacity: 4064 }),
+        ).not.toThrow();
     });
 
     it('checks the weight storage before the event capacity', () => {
@@ -212,8 +214,22 @@ describe('validateConfig error text', () => {
             'config.hashCellSize is 132; expected > the largest radius (132.5)',
         );
     });
+    it('adds an infection per agent and an emergence and extinction per strain while the contagion is on', () => {
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4063 }))).toBe(
+            'eventCapacity: 4063 is below 8 x maxAgents + 2 x floraPatchMax + 5 x herdMax + 2 x herdCount + maxAgents + 2 x DISEASE_MAX_STRAINS (4580)',
+        );
+        expect(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 500, eventCapacity: 4580 })).not.toThrow();
+    });
+
     it('reserves both patch-sized event bursts at the maximum pool with one agent', () => {
-        const config = { ...SIMPLE_WORLD, maxAgents: 1, initialAgents: 0, minAgents: 0, floraPatchMax: 256 };
+        const config = {
+            ...SIMPLE_WORLD,
+            maxAgents: 1,
+            initialAgents: 0,
+            minAgents: 0,
+            floraPatchMax: 256,
+            diseaseSeedRate: 0,
+        };
         expect(() => createConfig({ ...config, eventCapacity: 519 })).toThrow('520');
         expect(() => createConfig({ ...config, eventCapacity: 520 })).not.toThrow();
     });

@@ -1,7 +1,7 @@
 // Validates a merged config against a table of per-key rules and the cross-key rules; throws on the first violation.
 
 import { checkFlora, MYCELIUM_RULES } from './config-flora.js';
-import { checkDisease, DISEASE_RULES } from './config-disease.js';
+import { DISEASE_RULES } from './config-disease.js';
 import { checkHerds, HERD_RULES } from './config-herds.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
@@ -376,5 +376,4 @@ export function validateConfig(config) {
     checkRelations(config);
     checkCrossKey(config);
     checkHerds(config);
-    checkDisease(config);
 }
