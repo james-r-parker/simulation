@@ -9,9 +9,6 @@
     "shark300": {
       "splitMateScarceTicks": 300
     },
-    "shark600": {
-      "splitMateScarceTicks": 600
-    },
     "shark1200": {
       "splitMateScarceTicks": 1200
     },
@@ -36,8 +33,8 @@
         }
       }
     },
-    "shark600-sprint22": {
-      "splitMateScarceTicks": 600,
+    "shark300-sprint22": {
+      "splitMateScarceTicks": 300,
       "specialisations": {
         "predator": {
           "sprintBoost": 2.2
