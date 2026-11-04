@@ -2532,6 +2532,27 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "A screen, not a verdict. Predators at the end (seeds with a hunter, total): defaults 1/8 (2), sprint22 2/8 (6), every other arm 0/8. Catch rate: defaults 0.069, agile 0.188, vision500 0.164, shark300 0.144, shark300-sprint22 0.142, shark1200 0.094, sprint22 0.088. Population mean: defaults 126, shark300 145, vision500 146, shark300-sprint22 146, sprint22 134, agile 109, shark1200 92; seeds under a mean of 80: 1 at defaults, 5 at shark1200 and agile, 2 at sprint22 and the pair. Fed median life 4.1-5.1k, floor episodes 5.9-9.5 (defaults 9.0), families effective 1.1-1.5, mating share 0.45-0.56, lineage dominance 0.31-0.35 (shark1200 0.25), prey types at end 1-4 per seed, same range as defaults. Every arm fails the screen verdict. Prediction: defaults 1/8 hit; sprint22 predators 2/8 hit but catch rate +28% against a predicted +30-60% of 0.10 (miss on size); vision500 predators 0/8 missed (2-3), catch rate hit up; shark300 predators 0/8 missed (2/8); shark1200 0-1/8 hit; agile predators 0/8 missed (1-2), catch rate up 170% against 10-30%; shark300-sprint22 0/8 missed (3/8); population above 80 on the mean in every arm hit, but not on every seed. Failure gate met (no arm reaches 4/8). No candidate: sprint22 has 2/8 against 1/8 on 6 hunters in total, below the 3/8 bar, and its population falls under 80 on 2 seeds. A better chase (catch rate doubled in four arms) with plentiful prey still does not keep hunters: the bottleneck is hunter replacement. Next: E100 (hunter life history)."
+    },
+    {
+      "id": "E100",
+      "date": "2026-11-05",
+      "branch": "eval/e98-hunters-fed",
+      "hypothesis": "E98 doubled the catch rate in four arms and hunters still died out, so replacement is the bottleneck (world-balance.md H7): a hunter that eats well must reach a split or a mating birth before it dies. One-factor arms on hunter life history: split at a lower energy, lower upkeep, more hunter children from mutation, a bigger fat store, a cheaper rest, faster maturity.",
+      "prediction": "Same seeds and defaults as E98 (evals/screens/hunter-life.grid.json, 7 arms x 8 seeds x 200000 ticks). Defaults: predators at end 1/8 (E98: 1/8), predator_births about 5. split-low (predator splitMinEnergyMultiplier 0.3, from 0.6): predator_births up 50% or more (7 or more) and predators 2/8 to 3/8. upkeep-low (huntUpkeep 0.0005, from 0.002): predators 1/8 to 2/8. specmut-high (specMutationRate 0.02, from 0.002): predator_births up 100% or more and predators 2/8 to 4/8, the best arm if the cause is replacement. store-big (predator maxEnergyMultiplier 5, from 3): predators 1/8 to 2/8. rest-cheap (predator passiveLossMultiplier 0.15, from 0.3): predators 1/8 to 2/8. mature-fast (maturityTicks 300, from 600): predator_births up 30% or more, predators 1/8 to 3/8, population mean within 15% of defaults. Every arm keeps the population mean above 80 and every prey type on every seed. Failure gate: no arm reaches 3/8 predators at end and none lifts predator_births by 50% or more, then hunter life history is not the bottleneck and the next round looks at the hunter genome supply (archive and seeder rules for the predator role, floor re-seeds) and at the prey side (refuge, E87, H9). An arm that drops the population mean below 80 or loses a prey type on any seed fails regardless.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.predator_births",
+        "eval.catch_rate",
+        "eval.population_mean",
+        "eval.prey_types_at_end"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/hunter-life/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/hunter-life/ (table.md, 7 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/hunter-life.grid.json."
     }
   ]
 }
