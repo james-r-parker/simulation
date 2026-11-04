@@ -2517,6 +2517,15 @@
       "verdicts": {},
       "effect": "worse",
       "note": "16 seeds x 200000 ticks, compare in evals/experiments/E97-compare.json. Trampled share 0.040 to 0.008. Population 113 to 129 (interval -15 to 51) and seeded patches 0.008 to 0.013 (interval -0.001 to 0.016) do not exclude 0; predators at the end 0.44 to 0.06, seeds above 40 16/16 to 14/16, carcass meals 0.016 to 0.012; worse with intervals excluding 0: food_energy_per_1k 447 to 411 and defender fitness. The 8-seed screen gains were noise. Not adopted. Next: the separate herdBodyRadius code lever (sim-notes, E96)."
+    },
+    {
+      "id": "E98",
+      "date": "2026-11-05",
+      "branch": "eval/e98-hunters-fed",
+      "hypothesis": "E88 ran the hunter levers on a thin world (mean population 67). With the raised food cap (#254, population about 113, 16/16 seeds above the floor) prey are plentiful, so a hunter edge in the chase or a shorter shark wait may now keep hunters to the end.",
+      "prediction": "Same 7 arms and seeds as E88 (evals/screens/hunter-fed.grid.json) on the post-#254 defaults. Defaults: predators at end 1/8 (E95 0.44 per seed). sprint22 and vision500: catch_rate up 30-60% over defaults (0.10) and predators 2/8 to 3/8. shark300: predators 2/8. shark1200: predators 0/8 to 1/8. agile: catch_rate up 10-30%, predators 1/8 to 2/8. shark300-sprint22: best, predators 3/8. Every arm keeps population above 80. Failure gate: no arm reaches 4/8 predators at end, then the chase and the shark wait are not the bottleneck even with prey plentiful, and the next round looks at the hunter life history and replacement (birth funnel, H7). An arm that drops population below 80 or loses a prey type on any seed fails regardless.",
+      "targets": ["eval.predators_at_end", "eval.catch_rate", "eval.population_mean", "eval.basin_family_effective"],
+      "status": "preregistered"
     }
   ]
 }
