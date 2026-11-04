@@ -2490,10 +2490,10 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "evals/screens/results/herd-behaviour/defaults.report.json (the defaults arm of this screen)",
-      "after": "not run",
+      "after": "evals/screens/results/herd-behaviour/ (table.md, 7 arms x 8 seeds x 200000 ticks)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered 2026-11-04 (user direction: keep the herds roles, cut their cost to blobs); not run. Screen of 7 arms x 8 seeds x 200000 ticks on the E95 food defaults. radius50 changes graze reach and exclusion together; a separate body radius is the follow-up code lever."
+      "note": "A screen, not a verdict. Population mean: defaults 126, stay3000 111, stay1500 111, leave70 82, trample200 158, trample100 162, radius50 134. Seeded patches per 1000 ticks: 0.006, 0.008, 0.007, 0.005, 0.004, 0.012, 0.013. Carcass meal share: 0.015, 0.024, 0.021, 0.017, 0.015, 0.013, 0.011. Pollination: 0.058, 0.051, 0.061, 0.050, 0.061, 0.057, 0.072. Lineage dominance: 0.345, 0.367, 0.296, 0.322, 0.324, 0.380, 0.332. Predators at end 1/8, 1/8, 0/8, 0/8, 0/8, 1/8, 0/8. Predictions mostly missed: the stay and leave arms did not lift seeded patches (0.005-0.008, predicted 0.009-0.020) and lowered the population (82-111, predicted 105-140); trample200 held seeded patches at 0.004 (predicted 0.006-0.010) and trample100 doubled them to 0.012 (predicted 0.006-0.010) with population 162 (predicted 115-140); radius50 hit its seeded patches only above range (0.013 against 0.004-0.008) and failed the gate on carcass meals (0.011) and predators (0/8). Candidate: trample100 (evals/trample100-config.json), passing the gate (seeded 0.012, carcass 0.013, pollination 0.057, population above defaults, predators 1/8), needing a 16-seed eval:compare; watch lineage dominance (0.38) and one seed under 40. Nothing adopted. If it fails, build the separate herdBodyRadius (sim-notes). radius50 changes graze reach and exclusion together; a separate body radius is the follow-up code lever."
     }
   ]
 }
