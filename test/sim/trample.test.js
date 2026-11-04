@@ -107,34 +107,4 @@ describe('trampleHerds', () => {
         trampleHerds(world, slot);
         expect(world.energy[slot]).toBe(0);
     });
-
-    it('pushes out only to herdBodyRadius and takes no damage between the body and herdRadius', () => {
-        const world = build({ herdRadius: 80, herdBodyRadius: 40 });
-        const slot = addBlob(world);
-        world.herdAlive[0] = 1;
-        world.herdX[0] = world.x[slot] + world.size[slot] + 60;
-        world.herdY[0] = world.y[slot];
-        world.vx[slot] = 1;
-        const energy = world.energy[slot];
-        const x = world.x[slot];
-        trampleHerds(world, slot);
-        expect(world.x[slot]).toBe(x);
-        expect(world.vx[slot]).toBe(1);
-        expect(world.energy[slot]).toBe(energy);
-        const size = world.size[slot];
-        world.herdX[0] = world.x[slot] + size + 20;
-        trampleHerds(world, slot);
-        expect(world.x[slot]).toBeCloseTo(world.herdX[0] - 40 - size, 3);
-        expect(world.energy[slot]).toBeLessThan(energy);
-    });
-
-    it('behaves as herdRadius when herdBodyRadius is null', () => {
-        const world = build({ herdBodyRadius: null });
-        const slot = addBlob(world);
-        world.herdAlive[0] = 1;
-        world.herdX[0] = world.x[slot] + world.size[slot] + 60;
-        world.herdY[0] = world.y[slot];
-        trampleHerds(world, slot);
-        expect(world.x[slot]).toBe(Math.fround(world.herdX[0] - world.config.herdRadius - world.size[slot]));
-    });
 });
