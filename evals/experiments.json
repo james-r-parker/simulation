@@ -2425,6 +2425,28 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Registered before the run. The screen was stopped before any arm finished (user, 2026-11-03): the contagion merged on at diseaseSeedRate 0.001 from the T5 smoke run, and this screen moved to world-balance.md T95 with the prediction unchanged. No result yet."
+    },
+    {
+      "id": "E94",
+      "date": "2026-11-04",
+      "branch": "eval/herd-food",
+      "hypothesis": "Herds compete with blobs for the food budget (world-balance H5): they graze the plant items blobs eat and their bodies (radius 80, rigid contact) keep blobs off the items and patch ground beneath them, so the post-feature population of about 67 (E88 defaults, against about 400 in E85) is held down partly by herds and partly by a thin food supply.",
+      "prediction": "Scene served: Other blobs are the climate (herds graze patches; blobs respond to the food landscape), with Boom and bust. Seeds 1-8 x 200000 ticks, live policy, as E88; means over 8 seeds. Defaults (the E88 defaults arm): population mean 67, pop > min 0/8, food energy per 1k 370, fed median lifespan about 4300, floor episodes about 13, predators at end 0/8, prey types 1.75. herds0: population mean 90-110 (E79: 93 herd-free), pop > min 0-2/8, food energy/1k 405-460, fed life +0-5%, floor episodes 10-13, predators 0-1/8, prey types 2.0-2.5. food15 (foodRegrowPerArea 0.09, the cleanest single supply lever: items per tick per area, spawned through the patches, with maxFood only a cap): population mean 85-110, pop > min 0-2/8, food energy/1k 445-520, fed life +3-8%, floor episodes 10-13, predators 0-1/8, prey types 2.0-2.5. herds0-food15: population mean 120-170, pop > min 2-5/8, food energy/1k 500-590, fed life +5-10%, floor episodes 6-11, predators 0-2/8, prey types 2.3-3.0. food20 (0.12): population mean 110-150, pop > min 1-4/8, food energy/1k 520-630, floor episodes 8-12, predators 0-1/8, prey types 2.0-2.8. Interaction: if the herd effect (herds0 minus defaults) is smaller under more food (herds0-food15 minus food15 is below herds0 minus defaults), it is food competition; if it is unchanged or larger it is blocking or trampling. Expected: about half the effect, so competition is the larger part with a trampling and blocking residue. Failure gate: no arm lifts the population mean above 150 or pop > min to 4/8, so neither herds nor food supply explains the thin world and the cause is elsewhere (births, disease, floor); a food arm whose food energy/1k does not rise at least 10% means maxFood or patch stock caps the supply and the lever is invalid.",
+      "targets": [
+        "eval.population_mean",
+        "eval.food_energy_per_1k",
+        "eval.fed_median_lifespan",
+        "eval.floor_episodes",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/herd-food/defaults.report.json (the defaults arm of this screen)",
+      "after": "not run",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered 2026-11-04 (world-balance H5, a 2 x 2 of herds x food supply plus one dose); not run. Screen of 5 arms x 8 seeds x 200000 ticks."
     }
   ]
 }
