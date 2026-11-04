@@ -2565,7 +2565,14 @@
         "eval.trampled_share",
         "eval.herd_seeded_patches",
         "eval.herd_carcass_meal_share"
-      ]
+      ],
+      "before": "evals/screens/results/herd-body/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/herd-body/ (table.md, 4 arms x 8 seeds x 200000 ticks)",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen, not a verdict. Population mean: defaults 126, body60 153, body45 130, body30 184 (not monotonic; sd across seeds about 60, so se about 22). Seeds under 80: 1, 2, 2, 1. Fed median lifespan 4622, 4588, 4545, 5328. Floor episodes 72, 47, 57, 40. Predators at end 1/8, 0/8, 1/8, 0/8. Trampled share 0.040, 0.047, 0.034, 0.032. Seeded patches 0.006, 0.007, 0.007, 0.003. Pollination 0.058, 0.070, 0.066, 0.063. Carcass meal share 0.015, 0.018, 0.016, 0.013. Grazed share 0.363, 0.347, 0.344, 0.322. Dominance 0.345, 0.342, 0.310, 0.313. Prey types at end (mean) 2.25, 2.0, 2.25, 2.25 (min 1 on every arm, defaults included). Predictions: trampled share fell far less than predicted (body60 +18% against -25%, body45 -15% against -50%, body30 -20% against -70%): miss, so the body is not where trampling cost comes from. Population: body60 +21% (predicted +5-10%, miss high), body45 +3% (predicted +10-20%, miss low), body30 +46% (predicted +15-25%, miss high). Herd roles: body45 hit (within 20%); body30 missed (seeded patches -50%); body60 above defaults on all roles. Predators 0-1/8: hit. Gate: body60 clears it (population +21%, no role down, no prey type lost) and is the only candidate (evals/body60-config.json), needing a 16-seed eval:compare; body30 fails on seeded patches -50%; body45 fails on population +3%. Caution: the population effect is not monotonic in the radius and the trampled share did not move, so no mechanism is visible; E96 trample100 showed the same +25% screen gain was noise at 16 seeds. If the 16-seed compare shows no population gain with the interval excluding 0, delete herdBodyRadius and its tests (AGENTS.md: delete what a switch replaces). Nothing adopted."
     }
   ]
 }
