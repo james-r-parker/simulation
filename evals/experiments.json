@@ -2472,6 +2472,28 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "16 seeds x 200000 ticks, compare in evals/experiments/E95-compare.json. Better: population mean 51 to 113, fed life 4071 to 4599, food energy/1k 364 to 447, catch rate 0.070 to 0.100; floor episodes 15.8 to 8.3; predators, prey types and families no difference. Worse (intervals exclude 0): lineage_dominance 0.21 to 0.30, terrain_death_share, deliberate_food_share, output_saturation; herd grazed share 0.47 to 0.37, seeded patches 0.017 to 0.008 and carcass meals 0.030 to 0.016 fell past the 20% bound. The population part of the prediction holds, the herd-roles part fails. Not adopted; the user decides."
+    },
+    {
+      "id": "E96",
+      "date": "2026-11-04",
+      "branch": "eval/herd-behaviour",
+      "hypothesis": "After E95 the herds seed fewer patches (0.017 to 0.008 per 1000 ticks, a rate with no denominator, so a real fall) and feed hunters a smaller share of the meat (0.030 to 0.016, partly diluted: its denominator is all meat eaten), while lineage dominance rose (0.21 to 0.30). Herds that graze a patch briefly and move on (herdStayTicks, herdLeaveShare), gentler trampling (trampleDamage) or a smaller exclusion disc (herdRadius) keep the herds roles and cut their cost to blobs. Design note for the code lever, not in this screen: herdRadius couples the rigid exclusion in trample.js (size + herdRadius) with the plant reach in herd-graze.js (herdRadius + food radius). A separate herdBodyRadius (default equal to herdRadius so nothing moves, int the same range) used only by trample.js and the ray occlusion in ray-gather.js would let the body shrink while grazing keeps its reach. It needs a config key with a rule in config-herds.js, goldens unchanged at the default, failing tests first (a blob at herdRadius from a herd animal with herdBodyRadius 40 is not pushed; graze reach unchanged), and is built only if radius50 shows the disc is the cost.",
+      "prediction": "Scene: Other blobs are the climate (herds graze patches, seed and leave carcasses and dung; blobs respond to the landscape), with Boom and bust (a herd grazes patches then moves on). Seeds 1-8 x 200000 ticks, live policy, as E94, against the new food defaults (E95 numbers, 16 seeds: population 113, seeded patches 0.008, carcass meal share 0.016, pollination 0.065, lineage dominance 0.30, predators at end 0.44 per seed). Defaults arm: population 100-125, seeded 0.006-0.010, carcass 0.012-0.020, pollination 0.06-0.07, dominance 0.25-0.35, predators 1-3/8. stay3000: population 105-135, seeded 0.010-0.016 (more patches visited), carcass 0.012-0.020, pollination 0.065-0.08, dominance 0.22-0.32, predators 1-3/8. stay1500: population 110-140, seeded 0.012-0.020, carcass 0.010-0.020, pollination 0.065-0.085, dominance 0.20-0.30, predators 1-3/8. leave70: population 105-135, seeded 0.009-0.015, carcass 0.012-0.020, pollination 0.06-0.075, dominance 0.22-0.32, predators 1-3/8. trample200: population 110-135, seeded 0.006-0.010, carcass 0.012-0.020 (trampling feeds hunters only through deaths, so a little less carrion), pollination 0.06-0.07, dominance 0.25-0.35, predators 1-3/8. trample100: population 115-140, seeded 0.006-0.010, carcass 0.010-0.018, pollination 0.06-0.07, dominance 0.25-0.35, predators 1-3/8. radius50: population 120-160, seeded 0.004-0.008 (the graze reach shrinks with the disc, so fewer plants eaten and seeds loaded), carcass 0.010-0.018, pollination 0.055-0.07, dominance 0.22-0.32, predators 1-3/8. Failure gate: an arm is no candidate if seeded patches fall below 0.006, carcass meal share below 0.012, pollination below 0.055, predators at end fall to 0/8 on 8 seeds, or population is below the defaults arm; no arm that lifts seeded patches to 0.012 or more with the population at the defaults or above means the herd cost is not in how long they stay, and the next lever is the separate body radius. Screens only: a finalist needs a 16-seed eval:compare.",
+      "targets": [
+        "eval.population_mean",
+        "eval.herd_seeded_patches",
+        "eval.herd_carcass_meal_share",
+        "eval.pollination_rate",
+        "eval.lineage_dominance",
+        "eval.predators_at_end"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/herd-behaviour/defaults.report.json (the defaults arm of this screen)",
+      "after": "not run",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered 2026-11-04 (user direction: keep the herds roles, cut their cost to blobs); not run. Screen of 7 arms x 8 seeds x 200000 ticks on the E95 food defaults. radius50 changes graze reach and exclusion together; a separate body radius is the follow-up code lever."
     }
   ]
 }
