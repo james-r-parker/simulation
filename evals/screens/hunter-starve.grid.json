@@ -1,0 +1,16 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "omnivore": { "specialisations": { "predator": { "plantFoodValue": 0.3 } } },
+    "move-cheap": { "specialisations": { "predator": { "moveCostMultiplier": 0.7 } } },
+    "bite-fast": { "specialisations": { "predator": { "cooldownMultiplier": 0.5 } } },
+    "rocks-soft": { "obstacleDamage": 25, "wallDamage": 25 },
+    "child-rich": { "childEnergyShare": 0.7 },
+    "store-specmut": { "specMutationRate": 0.02, "specialisations": { "predator": { "maxEnergyMultiplier": 5 } } }
+  }
+}
