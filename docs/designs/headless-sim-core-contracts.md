@@ -122,7 +122,7 @@ number and writes no hashed state where this file says so.
 | `specialisations.<s>.plantFoodValue`, `.meatFoodValue`                        | `1` (meat `0.3`, predator plants 0) | `0 .. 1`                                                 |
 | `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                      | `16`, `400`, `1`                    | Integer `0 .. 256`; `> 0`; `> 0`                         |
 | `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`                | `0.02`, `0.0005`, `0.2`             | `>= 0`; `0 .. 1`; `0 .. 1`                               |
-| `foodRegrowPerArea`                                                           | `0.06`                              | `>= 0`                                                   |
+| `foodRegrowPerArea`                                                           | `0.09`                              | `>= 0`                                                   |
 | `wallGaps`, `wallGapWidth`                                                    | `3`, `200`                          | Integer `0 .. 8`; `> 0`                                  |
 | `refugeCount`, `refugeCluster`, `refugeSizeMax`, `coldMarginWidth`            | `8`, `2`, `30`, `600`               | Integer `0 .. 8`; integer `1 .. 4`; `> 0`; `>= 0`        |
 | `eraSeasonTicks`, `winterRegrow`, `droughtChance`                             | `36000`, `0.2`, `0.25`              | Integer `>= 1`; `>= 0`; `0 .. 1`                         |

@@ -17,8 +17,8 @@ const AREA = {
 };
 
 describe('area food', () => {
-    it('defaults to a rate of 0.06', () => {
-        expect(createConfig({ ...SIMPLE_WORLD }).foodRegrowPerArea).toBe(0.06);
+    it('defaults to a rate of 0.09', () => {
+        expect(createConfig({ ...SIMPLE_WORLD }).foodRegrowPerArea).toBe(0.09);
     });
 
     it('spawns the area rate per tick whatever the population', () => {
