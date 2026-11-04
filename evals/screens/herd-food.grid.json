@@ -6,9 +6,22 @@
   "reference": "defaults",
   "arms": {
     "defaults": {},
-    "herds0": { "herdCount": 0 },
-    "food15": { "foodRegrowPerArea": 0.09 },
-    "herds0-food15": { "herdCount": 0, "foodRegrowPerArea": 0.09 },
-    "food20": { "foodRegrowPerArea": 0.12 }
+    "herds0": {
+      "herdCount": 0
+    },
+    "food15": {
+      "foodRegrowPerArea": 0.09
+    },
+    "herds0-food15": {
+      "herdCount": 0,
+      "foodRegrowPerArea": 0.09
+    },
+    "food20": {
+      "foodRegrowPerArea": 0.12
+    },
+    "food15-cap": {
+      "foodRegrowPerArea": 0.09,
+      "maxFood": 2400
+    }
   }
 }
