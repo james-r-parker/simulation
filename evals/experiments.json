@@ -2534,6 +2534,26 @@
       "note": "A screen, not a verdict. Predators at the end (seeds with a hunter, total): defaults 1/8 (2), sprint22 2/8 (6), every other arm 0/8. Catch rate: defaults 0.069, agile 0.188, vision500 0.164, shark300 0.144, shark300-sprint22 0.142, shark1200 0.094, sprint22 0.088. Population mean: defaults 126, shark300 145, vision500 146, shark300-sprint22 146, sprint22 134, agile 109, shark1200 92; seeds under a mean of 80: 1 at defaults, 5 at shark1200 and agile, 2 at sprint22 and the pair. Fed median life 4.1-5.1k, floor episodes 5.9-9.5 (defaults 9.0), families effective 1.1-1.5, mating share 0.45-0.56, lineage dominance 0.31-0.35 (shark1200 0.25), prey types at end 1-4 per seed, same range as defaults. Every arm fails the screen verdict. Prediction: defaults 1/8 hit; sprint22 predators 2/8 hit but catch rate +28% against a predicted +30-60% of 0.10 (miss on size); vision500 predators 0/8 missed (2-3), catch rate hit up; shark300 predators 0/8 missed (2/8); shark1200 0-1/8 hit; agile predators 0/8 missed (1-2), catch rate up 170% against 10-30%; shark300-sprint22 0/8 missed (3/8); population above 80 on the mean in every arm hit, but not on every seed. Failure gate met (no arm reaches 4/8). No candidate: sprint22 has 2/8 against 1/8 on 6 hunters in total, below the 3/8 bar, and its population falls under 80 on 2 seeds. A better chase (catch rate doubled in four arms) with plentiful prey still does not keep hunters: the bottleneck is hunter replacement. Next: E100 (hunter life history)."
     },
     {
+      "id": "E99",
+      "date": "2026-11-05",
+      "branch": "feat/herd-body-radius",
+      "hypothesis": "Herds cost blobs mostly by their body, not their grazing: blobs are pushed out to size + herdRadius (80) and rays stop at the herd disc. In nature small animals move among large grazers. A smaller body (herdBodyRadius) with the same graze reach (herdRadius 80) lets blobs reach food and see past herds while herds still crop, seed, pollinate and die as carrion.",
+      "prediction": "8 seeds x 200000 ticks, post-#254 defaults (E96 defaults arm: population 126, seeded patches 0.006/1k, pollination 0.058, carcass meals 0.015, trampled share about 0.04). body60: population +5-10%, trampled share -25%. body45: population +10-20%, trampled share -50%, seeded patches and pollination within 20% of defaults (graze reach unchanged), carcass meals unchanged. body30: population +15-25%, trampled share -70%, herd roles within 20%. Predators at end unchanged (0-1/8). Failure gate: if no arm lifts population by 10% or more, the body is not the cost and herd grazing competition is; an arm that drops seeded patches, pollination or carcass meals by more than 30%, or loses a prey type on any seed, fails regardless (herds keep their roles, user 2026-11-04).",
+      "targets": [
+        "eval.population_mean",
+        "eval.trampled_share",
+        "eval.herd_seeded_patches",
+        "eval.herd_carcass_meal_share"
+      ],
+      "before": "evals/screens/results/herd-body/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/herd-body/ (table.md, 4 arms x 8 seeds x 200000 ticks)",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "A screen, not a verdict. Population mean: defaults 126, body60 153, body45 130, body30 184 (not monotonic; sd across seeds about 60, so se about 22). Seeds under 80: 1, 2, 2, 1. Fed median lifespan 4622, 4588, 4545, 5328. Floor episodes 72, 47, 57, 40. Predators at end 1/8, 0/8, 1/8, 0/8. Trampled share 0.040, 0.047, 0.034, 0.032. Seeded patches 0.006, 0.007, 0.007, 0.003. Pollination 0.058, 0.070, 0.066, 0.063. Carcass meal share 0.015, 0.018, 0.016, 0.013. Grazed share 0.363, 0.347, 0.344, 0.322. Dominance 0.345, 0.342, 0.310, 0.313. Prey types at end (mean) 2.25, 2.0, 2.25, 2.25 (min 1 on every arm, defaults included). Predictions: trampled share fell far less than predicted (body60 +18% against -25%, body45 -15% against -50%, body30 -20% against -70%): miss, so the body is not where trampling cost comes from. Population: body60 +21% (predicted +5-10%, miss high), body45 +3% (predicted +10-20%, miss low), body30 +46% (predicted +15-25%, miss high). Herd roles: body45 hit (within 20%); body30 missed (seeded patches -50%); body60 above defaults on all roles. Predators 0-1/8: hit. Gate: body60 clears it (population +21%, no role down, no prey type lost) and is the only candidate (evals/body60-config.json), needing a 16-seed eval:compare; body30 fails on seeded patches -50%; body45 fails on population +3%. Caution: the population effect is not monotonic in the radius and the trampled share did not move, so no mechanism is visible; E96 trample100 showed the same +25% screen gain was noise at 16 seeds. If the 16-seed compare shows no population gain with the interval excluding 0, delete herdBodyRadius and its tests (AGENTS.md: delete what a switch replaces). Nothing adopted."
+    },
+    {
       "id": "E100",
       "date": "2026-11-05",
       "branch": "eval/e98-hunters-fed",
@@ -2555,24 +2575,25 @@
       "note": "Preregistered, not run. Grid evals/screens/hunter-life.grid.json."
     },
     {
-      "id": "E99",
+      "id": "E101",
       "date": "2026-11-05",
       "branch": "feat/herd-body-radius",
-      "hypothesis": "Herds cost blobs mostly by their body, not their grazing: blobs are pushed out to size + herdRadius (80) and rays stop at the herd disc. In nature small animals move among large grazers. A smaller body (herdBodyRadius) with the same graze reach (herdRadius 80) lets blobs reach food and see past herds while herds still crop, seed, pollinate and die as carrion.",
-      "prediction": "8 seeds x 200000 ticks, post-#254 defaults (E96 defaults arm: population 126, seeded patches 0.006/1k, pollination 0.058, carcass meals 0.015, trampled share about 0.04). body60: population +5-10%, trampled share -25%. body45: population +10-20%, trampled share -50%, seeded patches and pollination within 20% of defaults (graze reach unchanged), carcass meals unchanged. body30: population +15-25%, trampled share -70%, herd roles within 20%. Predators at end unchanged (0-1/8). Failure gate: if no arm lifts population by 10% or more, the body is not the cost and herd grazing competition is; an arm that drops seeded patches, pollination or carcass meals by more than 30%, or loses a prey type on any seed, fails regardless (herds keep their roles, user 2026-11-04).",
+      "hypothesis": "E99's body60 arm (+21% population on 8 seeds) holds on 16 seeds",
+      "prediction": "population +10% or more with the interval excluding 0 and herd roles within 30%",
       "targets": [
         "eval.population_mean",
         "eval.trampled_share",
         "eval.herd_seeded_patches",
-        "eval.herd_carcass_meal_share"
+        "eval.herd_carcass_meal_share",
+        "eval.predators_at_end"
       ],
-      "before": "evals/screens/results/herd-body/defaults.report.json (the defaults arm of this screen)",
-      "after": "evals/screens/results/herd-body/ (table.md, 4 arms x 8 seeds x 200000 ticks)",
-      "beforePolicy": "live",
-      "afterPolicy": "live",
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/experiments/E95-food15-cap.json",
+      "after": "evals/experiments/E101-body60.json",
       "verdicts": {},
-      "effect": "no-difference",
-      "note": "A screen, not a verdict. Population mean: defaults 126, body60 153, body45 130, body30 184 (not monotonic; sd across seeds about 60, so se about 22). Seeds under 80: 1, 2, 2, 1. Fed median lifespan 4622, 4588, 4545, 5328. Floor episodes 72, 47, 57, 40. Predators at end 1/8, 0/8, 1/8, 0/8. Trampled share 0.040, 0.047, 0.034, 0.032. Seeded patches 0.006, 0.007, 0.007, 0.003. Pollination 0.058, 0.070, 0.066, 0.063. Carcass meal share 0.015, 0.018, 0.016, 0.013. Grazed share 0.363, 0.347, 0.344, 0.322. Dominance 0.345, 0.342, 0.310, 0.313. Prey types at end (mean) 2.25, 2.0, 2.25, 2.25 (min 1 on every arm, defaults included). Predictions: trampled share fell far less than predicted (body60 +18% against -25%, body45 -15% against -50%, body30 -20% against -70%): miss, so the body is not where trampling cost comes from. Population: body60 +21% (predicted +5-10%, miss high), body45 +3% (predicted +10-20%, miss low), body30 +46% (predicted +15-25%, miss high). Herd roles: body45 hit (within 20%); body30 missed (seeded patches -50%); body60 above defaults on all roles. Predators 0-1/8: hit. Gate: body60 clears it (population +21%, no role down, no prey type lost) and is the only candidate (evals/body60-config.json), needing a 16-seed eval:compare; body30 fails on seeded patches -50%; body45 fails on population +3%. Caution: the population effect is not monotonic in the radius and the trampled share did not move, so no mechanism is visible; E96 trample100 showed the same +25% screen gain was noise at 16 seeds. If the 16-seed compare shows no population gain with the interval excluding 0, delete herdBodyRadius and its tests (AGENTS.md: delete what a switch replaces). Nothing adopted."
+      "effect": "worse",
+      "note": "16 seeds x 200000 ticks. Population 112.5 to 131.5 (+16.9%, interval -16.97 to 52.93, no verdict). Predators at the end 0.4375 to 0 (interval -2 to -0.125, worse). Trampled share 0.0400 to 0.0389 (no change). Herd seeded patches 0.00757 to 0.00625 (n.s.). Herd carcass meal share 0.0162 to 0.0188 (n.s.). Fed median lifespan 4599 to 4647 (no difference). Group cohesion under threat worse. Verdict: not adopted; herdBodyRadius deleted."
     }
   ]
 }
