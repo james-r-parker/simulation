@@ -1628,3 +1628,24 @@ E80 ran final defaults against a same-config herd-free control on 16 matched see
 | shark300-sprint22 | 0/8       | 0.094      | 1.74          | 0.43   | 2.63       | 84         | 4119     | 16.1           |
 
 Every arm fails the screen verdict (`pop > min` 0/8 everywhere, including the defaults): on these defaults the population mean is 41-88 against about 400 in the E85 screen, so the world is thin before any arm acts. Predators survive on 0-1 of 8 seeds in every arm (the one survivor of `shark300` is a single seed with 5); a faster sprint lifts the catch rate (0.05 to 0.14) and `shark300` more than doubles it, yet neither keeps hunters. Families reach 3 on 0 seeds at defaults, 2 of 8 at `agile` and 1 of 8 at `shark300-sprint22`. No arm is a candidate. The chase is not the only bottleneck: hunter numbers and the thin population are the next questions for the predator balance (natural-selection T50).
+
+### 2026-11-04 - E94 herds and food supply: `maxFood` 1600 caps the food, not the herds
+
+`E94` (`evals/screens/results/herd-food/`): 6 arms x 8 seeds x 200000 ticks, `map-elites-v6`, seeds 1-8, against the defaults. Means over 8 seeds; predators is seeds with a hunter alive at the last tick. Herds block blobs by eating plant items (`grazeHerds`) and by rigid bodies of radius 80 with trample damage (`trampleHerds`).
+
+| Arm           | population | pop > min | food energy/1k | fed life | floor episodes | predators | prey types | families eff. |
+| ------------- | ---------- | --------- | -------------- | -------- | -------------- | --------- | ---------- | ------------- |
+| defaults      | 67         | 0/8       | 370            | 4296     | 12.8           | 0/8       | 1.8        | 1.3           |
+| herds0        | 88         | 0/8       | 362            | 4641     | 14.6           | 1/8       | 1.9        | 1.4           |
+| food15        | 67         | 0/8       | 396            | 4121     | 15.0           | 0/8       | 1.8        | 1.4           |
+| herds0-food15 | 75         | 0/8       | 331            | 4386     | 16.4           | 1/8       | 2.3        | 1.6           |
+| food20        | 65         | 0/8       | 391            | 3955     | 15.6           | 1/8       | 2.0        | 1.3           |
+| food15-cap    | 126        | 1/8       | 420            | 4551     | 9.0            | 1/8       | 2.3        | 1.4           |
+
+More regrowth does nothing while `maxFood` stays 1600: food15 and food20 sit at the defaults' population, so the world is at the item cap and the extra spawns have no slot. Raising the cap with 0.09 (`food15-cap`, `maxFood` 2400) nearly doubles the population (67 to 126), cuts floor episodes from 12.8 to 9.0 and lifts fed life and food energy/1k. Herds cost about 21 blobs at normal food (88 against 67), a smaller 8 under food15; the capped arms cannot say whether more food shrinks that penalty, because food15 did not add food. A `herds0-food15-cap` arm is owed to answer the 2 x 2.
+
+`herds0` and `herds0-food15` are diagnostic controls only and never adoption candidates: the herds exist on purpose, to spread seeds, pollinate and feed hunters, as large grazers do. The herds' roles work at the defaults: `eval.herd_grazed_share` 0.45 (0 without herds), `eval.dung_food_share` 0.13, `eval.herd_seeded_patches` 0.020, `eval.herd_carcass_meal_share` 0.035, and `eval.pollination_rate` 0.064 against 0.053 without herds. They stay in the world and the cost to blobs is what to cut. Next, three levers that keep those roles:
+
+- **Migratory grazing.** A residence time per patch: a herd grazes a patch briefly, then moves on (`herdStayTicks` 6000 and `herdLeaveShare` 0.4 exist; the screen is whether a shorter stay or a lower leave share lets patches recover). Config keys only, if the existing pair is enough; otherwise a per-patch cooldown in `herd-motion.js`.
+- **A body radius apart from the graze reach.** `herdRadius` couples the 80 px exclusion in `trample.js` with the plant reach in `herd-graze.js`. A separate `herdBodyRadius` (smaller, a body is not its whole mouth reach) keeps the grazing and frees the ground and the items beside the animal.
+- **Gentler contact for small, slow blobs.** In `resolveContact`, scale the push-out and `trampleDamage` by closing speed, so a slow blob slips along a herd animal without losing energy or being moved; the damage already scales with the closing speed squared, so the change is the exclusion.
