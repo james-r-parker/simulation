@@ -2494,6 +2494,29 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "A screen, not a verdict. Population mean: defaults 126, stay3000 111, stay1500 111, leave70 82, trample200 158, trample100 162, radius50 134. Seeded patches per 1000 ticks: 0.006, 0.008, 0.007, 0.005, 0.004, 0.012, 0.013. Carcass meal share: 0.015, 0.024, 0.021, 0.017, 0.015, 0.013, 0.011. Pollination: 0.058, 0.051, 0.061, 0.050, 0.061, 0.057, 0.072. Lineage dominance: 0.345, 0.367, 0.296, 0.322, 0.324, 0.380, 0.332. Predators at end 1/8, 1/8, 0/8, 0/8, 0/8, 1/8, 0/8. Predictions mostly missed: the stay and leave arms did not lift seeded patches (0.005-0.008, predicted 0.009-0.020) and lowered the population (82-111, predicted 105-140); trample200 held seeded patches at 0.004 (predicted 0.006-0.010) and trample100 doubled them to 0.012 (predicted 0.006-0.010) with population 162 (predicted 115-140); radius50 hit its seeded patches only above range (0.013 against 0.004-0.008) and failed the gate on carcass meals (0.011) and predators (0/8). Candidate: trample100 (evals/trample100-config.json), passing the gate (seeded 0.012, carcass 0.013, pollination 0.057, population above defaults, predators 1/8), needing a 16-seed eval:compare; watch lineage dominance (0.38) and one seed under 40. Nothing adopted. If it fails, build the separate herdBodyRadius (sim-notes). radius50 changes graze reach and exclusion together; a separate body radius is the follow-up code lever."
+    },
+    {
+      "id": "E97",
+      "date": "2026-11-04",
+      "branch": "eval/herd-behaviour",
+      "hypothesis": "The E96 screen result for trampleDamage 100 holds on 16 seeds: gentler trampling lifts the population and the herds seeded patches without losing carcass meals, pollination or hunters.",
+      "prediction": "Against the E95 defaults on the same 16 seeds and code: population mean up 15% or more with the interval excluding 0, seeded patches up to 0.010 or more, carcass meal share and pollination within 20% of the defaults, predators at the end no lower, trampled share down by half or more, lineage dominance not worse.",
+      "targets": [
+        "eval.population_mean",
+        "eval.herd_seeded_patches",
+        "eval.herd_carcass_meal_share",
+        "eval.pollination_rate",
+        "eval.lineage_dominance",
+        "eval.predators_at_end",
+        "eval.trampled_share"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/experiments/E95-food15-cap.json",
+      "after": "evals/experiments/E97-trample100.json",
+      "verdicts": {},
+      "effect": "worse",
+      "note": "16 seeds x 200000 ticks, compare in evals/experiments/E97-compare.json. Trampled share 0.040 to 0.008. Population 113 to 129 (interval -15 to 51) and seeded patches 0.008 to 0.013 (interval -0.001 to 0.016) do not exclude 0; predators at the end 0.44 to 0.06, seeds above 40 16/16 to 14/16, carcass meals 0.016 to 0.012; worse with intervals excluding 0: food_energy_per_1k 447 to 411 and defender fitness. The 8-seed screen gains were noise. Not adopted. Next: the separate herdBodyRadius code lever (sim-notes, E96)."
     }
   ]
 }
