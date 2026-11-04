@@ -96,4 +96,12 @@ describe('grazeHerds', () => {
         grazeHerds(world);
         expect(world.foodAlive[0]).toBe(0);
     });
+
+    it('grazes out to herdRadius whatever herdBodyRadius is', () => {
+        const world = build({ herdRadius: 80, herdBodyRadius: 30 });
+        addFood(world, 0, FOOD_KIND.PLANT, 400 + 60, 500, 100);
+        grazeHerds(world);
+        expect(world.foodAlive[0]).toBe(0);
+        expect(world.herdTotals[0]).toBe(100);
+    });
 });

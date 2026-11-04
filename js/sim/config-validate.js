@@ -222,6 +222,9 @@ function kindViolation(value, rule) {
  * @returns {string | null} what the value should have been when it breaks the rule, else null
  */
 function violation(value, rule) {
+    if (value === null && rule.nullable === true) {
+        return null;
+    }
     if (rule.type === 'enum' || rule.type === 'bool' || rule.type === 'mutationRate') {
         return kindViolation(value, rule);
     }

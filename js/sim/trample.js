@@ -1,5 +1,6 @@
 // Resolves blob contacts with scripted herd bodies before the existing wall and rock response.
 
+import { herdBodyRadiusOf } from './config-herds.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -8,7 +9,7 @@ import { LOSS_CAUSE, removeEnergy } from './energy.js';
 function resolveContact(world, slot, animal) {
     const dx = world.x[slot] - world.herdX[animal];
     const dy = world.y[slot] - world.herdY[animal];
-    const reach = world.size[slot] + world.config.herdRadius;
+    const reach = world.size[slot] + herdBodyRadiusOf(world.config);
     const distanceSq = dx * dx + dy * dy;
     if (distanceSq >= reach * reach) {
         return;

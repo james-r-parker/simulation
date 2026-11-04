@@ -10,6 +10,7 @@
  * @property {number} [max] inclusive upper bound
  * @property {number} [lt] exclusive upper bound
  * @property {boolean} [infinite] true when `Infinity` is also a valid value
+ * @property {boolean} [nullable] true when `null` is also a valid value (the key's documented "use the other key")
  */
 
 /**
@@ -24,6 +25,11 @@ export const int = (min, max = Infinity) => ({ type: 'int', min, max });
  * @returns {Rule}
  */
 export const num = (min, max = Infinity) => ({ type: 'num', min, max });
+/**
+ * @param {Rule} rule a numeric rule
+ * @returns {Rule} the same rule that also accepts `null`
+ */
+export const orNull = (rule) => ({ ...rule, nullable: true });
 /** @returns {Rule} a finite number above zero */
 export const positive = () => ({ type: 'num', gt: 0 });
 /** @type {Rule} */

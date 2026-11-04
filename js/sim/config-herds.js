@@ -1,6 +1,6 @@
 // The scripted herd config and constraints, kept separate from the shared validator.
 
-import { int, num, positive, UNIT } from './config-rules.js';
+import { int, num, orNull, positive, UNIT } from './config-rules.js';
 import { diseaseEventDemand } from './config-disease.js';
 import { MAX_EVENTS_PER_SLOT } from './events.js';
 
@@ -8,6 +8,7 @@ export const HERD_DEFAULTS = {
     herdCount: 6,
     herdSize: 8,
     herdRadius: 80,
+    herdBodyRadius: null,
     herdWalkSpeed: 1.5,
     herdRunSpeed: 6.5,
     herdStartleRadius: 200,
@@ -37,6 +38,7 @@ export const HERD_RULES = {
     herdCount: int(0, 8),
     herdSize: int(1, 32),
     herdRadius: positive(),
+    herdBodyRadius: orNull(positive()),
     herdWalkSpeed: num(0),
     herdRunSpeed: num(0),
     herdStartleRadius: positive(),
@@ -60,6 +62,15 @@ export const HERD_RULES = {
     herdSeedMinDistance: positive(),
     trampleDamage: num(0),
 };
+
+/**
+ * The radius of a herd animal's body: what blobs are pushed out of and rays hit. Graze reach stays `herdRadius`.
+ * @param {Record<string, any>} config the simulation config
+ * @returns {number} `herdBodyRadius`, or `herdRadius` when it is null
+ */
+export function herdBodyRadiusOf(config) {
+    return config.herdBodyRadius ?? config.herdRadius;
+}
 
 /** @param {Record<string, any>} config the merged simulation config @returns {void} */
 function checkHerdEnergy(config) {
@@ -101,6 +112,11 @@ function checkPhysicalFits(config) {
     }
     if (config.herdWalkSpeed > config.herdRunSpeed || config.herdRunSpeed > config.maxVelocity) {
         throw new Error('config.herd speeds must satisfy herdWalkSpeed <= herdRunSpeed <= maxVelocity');
+    }
+    if (config.herdBodyRadius !== null && config.herdBodyRadius > config.herdRadius) {
+        throw new Error(
+            `config.herdBodyRadius ${config.herdBodyRadius} must be at most herdRadius ${config.herdRadius}`,
+        );
     }
     if (config.herdRadius >= config.hashCellSize) {
         throw new Error(`config.hashCellSize ${config.hashCellSize} must exceed herdRadius ${config.herdRadius}`);

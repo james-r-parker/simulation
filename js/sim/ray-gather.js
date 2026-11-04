@@ -1,5 +1,6 @@
 // Collects, once per casting agent, every circle one of its rays could hit, into `world.rayLocal` rows.
 
+import { herdBodyRadiusOf } from './config-herds.js';
 import { cellOf } from './spatial-hash.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -107,13 +108,14 @@ function appendFixtures(world) {
             count = writeFixture(local, count, row);
         }
     }
+    const bodyRadius = herdBodyRadiusOf(world.config);
     for (let i = 0; i < world.herdMax; i++) {
         if (world.herdAlive[i] !== 1) {
             continue;
         }
         row[0] = s[OX] - world.herdX[i];
         row[1] = s[OY] - world.herdY[i];
-        row[2] = fixtureC(s, row[0], row[1], world.config.herdRadius);
+        row[2] = fixtureC(s, row[0], row[1], bodyRadius);
         if (row[2] === row[2]) {
             row[3] = HERD * KIND_STRIDE + i;
             count = writeFixture(local, count, row);

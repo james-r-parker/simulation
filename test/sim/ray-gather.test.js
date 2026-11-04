@@ -38,6 +38,22 @@ describe('gatherNear', () => {
         expect(gather(w, me)).toEqual([HERD * KIND_STRIDE]);
     });
 
+    it('uses herdBodyRadius, not herdRadius, for a herd circle in range', () => {
+        const place = (w) => {
+            const me = addAgent(w, 500, 500, 20);
+            w.herdAlive[0] = 1;
+            w.herdX[0] = 500 + VISION + 60;
+            w.herdY[0] = 500;
+            return me;
+        };
+        const wide = senseWorld({ herdCount: 1, herdSize: 1, herdRadius: 80 });
+        expect(gather(wide, place(wide))).toEqual([HERD * KIND_STRIDE]);
+        const same = senseWorld({ herdCount: 1, herdSize: 1, herdRadius: 80, herdBodyRadius: null });
+        expect(gather(same, place(same))).toEqual([HERD * KIND_STRIDE]);
+        const narrow = senseWorld({ herdCount: 1, herdSize: 1, herdRadius: 80, herdBodyRadius: 40 });
+        expect(gather(narrow, place(narrow))).toEqual([]);
+    });
+
     it('leaves out a circle whose surface is beyond the range', () => {
         const w = senseWorld();
         const me = addAgent(w, 100, 100, 20);

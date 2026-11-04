@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { herdBodyRadiusOf } from '../../js/sim/config-herds.js';
 import { createConfig } from '../../js/sim/config.js';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
@@ -74,5 +75,14 @@ describe('herd config', () => {
         expect(() => createConfig({ herdCount: 0, fertileZoneMax: 0 })).not.toThrow();
         expect(() => createConfig({ herdCount: 0, herdDungZoneMax: 101 })).not.toThrow();
         expect(() => createConfig({ herdDungZoneMax: 0 })).not.toThrow();
+    });
+
+    it('defaults herdBodyRadius to null (use herdRadius) and bounds it', () => {
+        expect(createConfig().herdBodyRadius).toBeNull();
+        expect(herdBodyRadiusOf(createConfig())).toBe(80);
+        expect(herdBodyRadiusOf(createConfig({ herdBodyRadius: 40 }))).toBe(40);
+        expect(() => createConfig({ herdBodyRadius: 0 })).toThrow(/herdBodyRadius/);
+        expect(() => createConfig({ herdBodyRadius: -5 })).toThrow(/herdBodyRadius/);
+        expect(() => createConfig({ herdBodyRadius: 81 })).toThrow(/herdBodyRadius.*herdRadius/);
     });
 });
