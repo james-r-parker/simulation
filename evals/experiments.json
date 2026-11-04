@@ -2553,6 +2553,19 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Preregistered, not run. Grid evals/screens/hunter-life.grid.json."
+    },
+    {
+      "id": "E99",
+      "date": "2026-11-05",
+      "branch": "feat/herd-body-radius",
+      "hypothesis": "Herds cost blobs mostly by their body, not their grazing: blobs are pushed out to size + herdRadius (80) and rays stop at the herd disc. In nature small animals move among large grazers. A smaller body (herdBodyRadius) with the same graze reach (herdRadius 80) lets blobs reach food and see past herds while herds still crop, seed, pollinate and die as carrion.",
+      "prediction": "8 seeds x 200000 ticks, post-#254 defaults (E96 defaults arm: population 126, seeded patches 0.006/1k, pollination 0.058, carcass meals 0.015, trampled share about 0.04). body60: population +5-10%, trampled share -25%. body45: population +10-20%, trampled share -50%, seeded patches and pollination within 20% of defaults (graze reach unchanged), carcass meals unchanged. body30: population +15-25%, trampled share -70%, herd roles within 20%. Predators at end unchanged (0-1/8). Failure gate: if no arm lifts population by 10% or more, the body is not the cost and herd grazing competition is; an arm that drops seeded patches, pollination or carcass meals by more than 30%, or loses a prey type on any seed, fails regardless (herds keep their roles, user 2026-11-04).",
+      "targets": [
+        "eval.population_mean",
+        "eval.trampled_share",
+        "eval.herd_seeded_patches",
+        "eval.herd_carcass_meal_share"
+      ]
     }
   ]
 }
