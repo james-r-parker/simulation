@@ -2447,6 +2447,31 @@
       "verdicts": {},
       "effect": "better",
       "note": "A screen, not a verdict. Population mean: defaults 67, herds0 88, food15 67, herds0-food15 75, food20 65, food15-cap 126 (pop > min 1/8, floor episodes 9.0 against 12.8, food energy/1k 420 against 370, fed life 4551 against 4296, predators 1/8, prey types 2.3). Predictions: defaults hit; herds0 88 just under the 90-110 range; food15, herds0-food15 and food20 missed (population 65-75, food energy/1k not up 10% for food15 at +7%, so the failure gate on a capped lever fired: maxFood 1600 binds). The uncapped arm food15-cap is the only one that moves the world. Herds cost about 21 blobs at normal food and 8 under food15, but food15 added no food, so the 2 x 2 is not answered. Candidate: food15-cap, needing a 16-seed eval:compare; nothing adopted. Owed: herds0-food15-cap to answer the 2 x 2. herds0 and herds0-food15 are diagnostic controls only, never adoption candidates (the herds seed, pollinate and feed hunters on purpose); herd roles at defaults: grazed share 0.45, dung food 0.13, seeded patches 0.020, carcass meals 0.035, pollination 0.064 (0.053 without herds). Next: migratory grazing, a body radius apart from the graze reach, gentler contact for small slow blobs (sim-notes)."
+    },
+    {
+      "id": "E95",
+      "date": "2026-11-04",
+      "branch": "eval/herd-food",
+      "hypothesis": "The E94 effect of raising the food cap with the regrowth (foodRegrowPerArea 0.09, maxFood 2400) holds on 16 seeds: a larger population and fewer floor episodes without losing hunters, prey types, families or the herds roles.",
+      "prediction": "Population mean about doubles (about 55 to 110) with the interval excluding 0, floor episodes fall by a third or more, fed life and food energy/1k rise, predators at the end and prey types do not fall, families do not fall, herd grazed share, seeded patches and carcass meal share stay within 20% of the defaults.",
+      "targets": [
+        "eval.population_mean",
+        "eval.floor_episodes",
+        "eval.fed_median_lifespan",
+        "eval.food_energy_per_1k",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.basin_family_effective",
+        "eval.herd_seeded_patches",
+        "eval.herd_carcass_meal_share"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/experiments/E95-defaults.json",
+      "after": "evals/experiments/E95-food15-cap.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "16 seeds x 200000 ticks, compare in evals/experiments/E95-compare.json. Better: population mean 51 to 113, fed life 4071 to 4599, food energy/1k 364 to 447, catch rate 0.070 to 0.100; floor episodes 15.8 to 8.3; predators, prey types and families no difference. Worse (intervals exclude 0): lineage_dominance 0.21 to 0.30, terrain_death_share, deliberate_food_share, output_saturation; herd grazed share 0.47 to 0.37, seeded patches 0.017 to 0.008 and carcass meals 0.030 to 0.016 fell past the 20% bound. The population part of the prediction holds, the herd-roles part fails. Not adopted; the user decides."
     }
   ]
 }
