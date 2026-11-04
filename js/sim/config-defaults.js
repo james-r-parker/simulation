@@ -49,7 +49,7 @@ export const DEFAULTS = deepFreeze({
     initialAgents: 100, // new
     minAgents: 40, // the restart size: the floor guard refills the world to this
     floorTrigger: 8, // the floor guard acts only when fewer than this many are alive (natural-selection T3); 0 turns it off
-    maxFood: 1600, // tuned, E20 (legacy FOOD_SPAWN_CAP 800)
+    maxFood: 2400, // E95 (was 1600, E20; legacy FOOD_SPAWN_CAP 800)
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
     foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
@@ -260,7 +260,7 @@ export const DEFAULTS = deepFreeze({
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
-    foodRegrowPerArea: 0.06, // new: items per tick per 1,000,000 px2 of world, through the patches
+    foodRegrowPerArea: 0.09, // E95 (was 0.06): items per tick per 1,000,000 px2 of world, through the patches
     eraSeasonTicks: 36000, // new: ticks per season (a year is 4 x this)
     winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)
     droughtChance: 0.25, // new: chance per year that one basin's patches stop regrowing for the summer

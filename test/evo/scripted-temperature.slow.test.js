@@ -13,7 +13,7 @@ const COLD_START = 20;
 const COLD_TICKS = 3000;
 
 /**
- * The food supply the sweet-spot cases run on. The default world regrows 0.06 items per 1,000,000 px2 per tick through
+ * The food supply the sweet-spot cases run on. The default world regrows 0.09 items per 1,000,000 px2 per tick through
  * the patches, which feeds a rusher as well as a forager (500 alive at 10000 ticks, the rusher's body at 95 degrees).
  * The case was written on the old per-agent food target, which was scarce enough that heat cost the rusher its life;
  * 0.003 is scarce enough here, and the cases hold across 0.002 to 0.005 (the rusher at 0, 17 and 51 alive, the gentle
