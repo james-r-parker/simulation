@@ -2,7 +2,7 @@ import { assertPollen } from './pollination.js';
 import { assertMycelium } from './mycelium.js';
 import { assertFlora } from './flora-state.js';
 import { assertDisease } from './disease.js';
-import { assertProvision } from './provision.js';
+import { assertProvision } from './provision-state.js';
 // Debug-only world checks that throw on the first broken invariant, run when `config.checkInvariants` is set.
 
 import { HEARD_STRIDE } from './world.js';

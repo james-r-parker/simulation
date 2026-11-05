@@ -7,7 +7,7 @@
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { basinOf } from './eras.js';
 import { slotOfGenome } from './merit-state.js';
-import { isDependentKiller, provisionSpecs } from './provision.js';
+import { isDependentKiller, provisionSpecs } from './provision-state.js';
 
 /**
  * How an agent came to be, stored in `birthSource`. A hunter child of a hunter is `MATE_HUNTER` or `SPLIT_HUNTER`; a hunter

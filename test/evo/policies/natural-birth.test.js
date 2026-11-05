@@ -169,10 +169,12 @@ describe('the hunter reflexes at birth', () => {
             .sort((x, y) => x - y);
     }
 
-    for (const [name, cause] of [
+    /** @type {[string, number][]} */
+    const causes = [
         ['a split', BORN_CAUSE.SPLIT],
         ['a mating', BORN_CAUSE.MATE],
-    ]) {
+    ];
+    for (const [name, cause] of causes) {
         it(`gives a flip child of a non-hunter the prey terms by ${name}, and draws the same stream`, () => {
             const off = born({ mother: FORAGER, child: PREDATOR, cause });
             const on = born({ over: { flipReflex: true }, mother: FORAGER, child: PREDATOR, cause });
