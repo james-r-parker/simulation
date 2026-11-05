@@ -86,6 +86,7 @@ export const FEATURE_RULES = {
     maxBirthsPerWindow: int(0, 16),
     capBirthsEnabled: BOOL,
     mealHeatCap: BOOL,
+    huntSprintInstinct: BOOL,
     splitCapMargin: int(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
     meritMateBonus: num(0),

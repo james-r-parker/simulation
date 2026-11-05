@@ -28,5 +28,11 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T52",
     "reason": "Kept as the one-factor candidate E108 supported (eating cannot raise temperature above temperatureOptimalMax); T52 adopts it and deletes the key, or deletes the cap path, after its screen against defaults."
+  },
+  {
+    "key": "huntSprintInstinct",
+    "plan": "docs/designs/natural-selection.md",
+    "task": "T57",
+    "reason": "Kept as the one-factor arm of the hunter-energy screen (hunters walk until prey is close); T57 adopts it and deletes the key, or deletes the sprint-instinct path, after the screen."
   }
 ]

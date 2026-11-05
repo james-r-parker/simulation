@@ -15,7 +15,7 @@ export const INSTINCT_DIRECTIONS = Object.freeze({ 'eval.instinct_drift': 'watch
 
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean, herdWary: number}} options the instinct weight and whether the body hunts
+ * @param {{weight: number, canHunt: boolean, herdWary: number, sprintInstinct?: boolean}} options the instinct weight and whether the body hunts
  * @returns {{cells: Int32Array, prior: Float32Array}} the cells `applyInstinct` writes and their value on a zero row
  */
 export function instinctCells(layout, options) {
@@ -40,9 +40,10 @@ export function createInstinctPools(config) {
     const layout = brainLayout(config);
     const weight = config.instinctWeight;
     const herdWary = config.herdWary;
+    const sprintInstinct = config.huntSprintInstinct;
     return {
         weight,
-        hunter: instinctCells(layout, { weight, canHunt: true, herdWary }),
+        hunter: instinctCells(layout, { weight, canHunt: true, herdWary, sprintInstinct }),
         other: instinctCells(layout, { weight, canHunt: false, herdWary }),
         founders: NaN,
         ratioSum: 0,
