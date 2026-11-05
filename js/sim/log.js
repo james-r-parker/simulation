@@ -1,6 +1,7 @@
 // Level-filtered sim log: records go to an injected sink, and event-ring records become named log events.
 
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
+import { emitHunterKill, emitProvisioned } from './log-hunter.js';
 
 /** Log levels by severity; a record is kept when its value is at least the log's level. */
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
@@ -140,22 +141,6 @@ function emitHunterLedger(log, d, o) {
         killEnergy: d[o + 9],
         biteGainEnergy: d[o + 10],
         biteCostEnergy: d[o + 11],
-    });
-}
-
-/**
- * Emits one `HunterKill` event: a hunter's deliberate kill, with its age and its kills so far.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitHunterKill(log, d, o) {
-    log.log('debug', 'HunterKill', {
-        tick: d[o + 1],
-        genomeId: d[o + 2],
-        ageTicks: d[o + 3],
-        kills: d[o + 4],
     });
 }
 
@@ -490,6 +475,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
     [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
     [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
+    [EVENT_TYPE.PROVISIONED]: { level: LOG_LEVEL.debug, emit: emitProvisioned },
 });
 
 /**

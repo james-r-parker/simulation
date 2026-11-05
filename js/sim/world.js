@@ -11,6 +11,7 @@ import { killSpecs } from './kills.js';
 import { INCOME_KINDS, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { proofSpecs } from './proof.js';
+import { allocProvision } from './provision.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
@@ -138,6 +139,7 @@ function allocAgentArrays(world, layout) {
     );
     createMeritViews(world);
     allocLedgerState(world);
+    allocProvision(world);
     allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);

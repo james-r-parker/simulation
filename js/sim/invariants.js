@@ -2,6 +2,7 @@ import { assertPollen } from './pollination.js';
 import { assertMycelium } from './mycelium.js';
 import { assertFlora } from './flora-state.js';
 import { assertDisease } from './disease.js';
+import { assertProvision } from './provision.js';
 // Debug-only world checks that throw on the first broken invariant, run when `config.checkInvariants` is set.
 
 import { HEARD_STRIDE } from './world.js';
@@ -17,6 +18,7 @@ export const INVARIANT = Object.freeze({
     MERIT: 'merit',
     DOSE: 'dose',
     HERDS: 'herds',
+    PROVISION: 'provision',
 });
 
 /** Relative tolerance on the ledger comparison. */
@@ -338,6 +340,14 @@ function checkHerdClearance(world, slot) {
 }
 
 /**
+ * @param {import('./world.js').World} world the world
+ * @returns {void}
+ */
+function checkProvision(world) {
+    assertProvision(world, (slot, value, detail) => violation(INVARIANT.PROVISION, world, { slot, value }, detail));
+}
+
+/**
  * Throws an `Error` (properties `invariant`, `tick`, `slot`, `value`) on the first broken invariant.
  * @param {import('./world.js').World} world the world to check
  * @returns {void}
@@ -352,6 +362,7 @@ export function assertInvariants(world) {
     checkMerit(world);
     checkDose(world);
     checkHerdState(world);
+    checkProvision(world);
     assertFlora(world);
     assertPollen(world);
     assertMycelium(world);
