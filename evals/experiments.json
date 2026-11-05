@@ -2747,6 +2747,33 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Preregistered; cancelled before running on 2026-11-05 because the hunter readings are being fixed (T53, T60); it re-runs after them."
+    },
+    {
+      "id": "E110",
+      "date": "2026-11-05",
+      "branch": "eval/e110-ledger-floor",
+      "hypothesis": "T54 (user direction 2026-11-05): the presence gains of E103 (fat store, role switching) and E105 (carcassShare 0.8) may be the floor guard restocking hunters rather than hunters living. The T53 ledger splits hunter deaths into lives with no meal (the store never filled) and lives that ate and still starved (burned between meals), and counts hunter births by source.",
+      "prediction": "16 seeds x 200000 ticks, defaults vs floorTrigger 0 (evals/floor-off-config.json). Defaults: eval.hunter_birth_source_share.floor about 0.3 or more (E100 replays had 81 floor re-seeds against 9 mating births); eval.hunter_zero_kill_share above 0.8; most hunter deaths starvation with no meal. Floor-off: eval.predators_at_end median falls to 0 and hunter_ticks_last_quarter falls by more than half; if so the E103/E105 presence gains are restock and the next screens are judged with the floor off. Spec-flip hunters (birth source spec mutation) kill at a lower rate than hunter-parent ones.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.hunter_ticks_last_quarter",
+        "eval.hunter_kills_per_life",
+        "eval.population_mean",
+        "eval.floor_episodes"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/results/e110-defaults.json",
+      "after": "evals/results/e110-floor-off.json",
+      "verdicts": {
+        "eval.predators_at_end": "worse",
+        "eval.hunter_ticks_last_quarter": "-",
+        "eval.hunter_kills_per_life": "-",
+        "eval.population_mean": "-",
+        "eval.floor_episodes": "-"
+      },
+      "effect": "worse",
+      "note": "Ran 2026-11-05 at 17c639c. Floor-off is worse on every hunter and world target: eval.predators_at_end 0.69 -> 0 (interval [-2.19, -0.13], worse), eval.hunter_ticks_last_quarter 49590 -> 0 on all 16 seeds, eval.predator_presence 0.50 -> 0.32 (worse), eval.prey_types_at_end 3.25 -> 0 (worse), eval.population_mean 149 -> 90. The cause is not hunters: with floorTrigger 0 every world goes fully extinct, prey included, between 41k and 149k ticks; worlds that sat at the 500 cap from 20k fall to 0 within about 30k ticks of 80k (seed 888035: 458 at 79k, 39 at 88k, 0 at 110k). The defaults show the same crash and the floor holds a remnant of 20 to 40, which is where eval.hunter_birth_source_share.floor 0.37 comes from (the prediction's 'about a third' held). Deaths are starvation (old age 6 of about 85,000, so the age-cohort idea was wrong). Ledger (4 replays with --policy map-elites-v6, 417 hunter deaths): 73% starved; of those 65% never ate (median age 956) and 35% ate and still starved (median age 3500). Spend is movement (0.69-0.74 of energy out), not standing (0.08-0.09); bite cost is 0.18 of spend for hunters that ate. Kill rate per 1,000 ticks by birth source: split from a hunter 0.177 (31% make a kill), mated from a hunter 0.337 (n 9), spec-flip 0.060 (1.4% kill), floor 0.011, initial 0.016. Spec-flip and floor hunters are the zero-kill mass. Prey at the last hunter death: median of the poorer basin 15 to 30 per replay, so hunters die with prey present. Verdict: the E103 and E105 presence gains were measured on floor-held worlds and are partly restock; no hunter lever can be judged on floor-off until the world-wide starvation crash is fixed, so that crash is the next work (diagnosis running), and E109 waits for it."
     }
   ]
 }
