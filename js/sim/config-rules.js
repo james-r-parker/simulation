@@ -45,7 +45,6 @@ export const FEATURE_RULES = {
     handlingThrust: num(0, 1),
     carcassTicks: int(1),
     carcassShare: num(0, 1),
-    carcassScent: BOOL,
     wallGaps: int(0, 8),
     wallGapWidth: positive(),
     refugeCount: int(0, 8),

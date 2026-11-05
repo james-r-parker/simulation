@@ -1,7 +1,5 @@
 // Carcasses (world-balance.md T54): a dead agent leaves a `meat` food item holding a share of its energy.
 
-import { depositPheromone } from './pheromones.js';
-
 /** The `foodKind` codes: ordinary plant food is 0, a carcass is 1. */
 export const FOOD_KIND = Object.freeze({ PLANT: 0, MEAT: 1 });
 
@@ -43,25 +41,6 @@ export function leaveCarcass(world, slot) {
             world.foodPatch[food] = -1;
             world.foodCount += 1;
             return;
-        }
-    }
-}
-
-/**
- * With `carcassScent` on, every alive meat item deposits into the hunt scent field at its place, so hunters that
- * follow hunt scent are led to carcasses; the field's own decay and diffusion spread and fade it. Allocates nothing,
- * draws nothing, and does nothing while the switch is off.
- * @param {World} world the world
- * @returns {void}
- */
-export function scentCarcasses(world) {
-    if (!world.config.carcassScent) {
-        return;
-    }
-    const { foodAlive, foodKind, foodX, foodY, hunt } = world;
-    for (let i = 0; i < foodAlive.length; i++) {
-        if (foodAlive[i] === 1 && foodKind[i] === FOOD_KIND.MEAT) {
-            depositPheromone(world, hunt, foodX[i], foodY[i]);
         }
     }
 }

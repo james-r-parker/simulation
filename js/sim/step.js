@@ -9,7 +9,6 @@ import { applyCosts } from './energy.js';
 import { clearEvents } from './events.js';
 import { decayFertileZones, updateSeason } from './environment.js';
 import { feed } from './feeding.js';
-import { scentCarcasses } from './carcass.js';
 import { ageFood, spawnFood } from './food.js';
 import { advanceEra } from './eras.js';
 import { regrowPatches } from './food-patches.js';
@@ -121,7 +120,6 @@ function field(world) {
     ageAndReproduceHerds(world);
     ageFood(world);
     decayFertileZones(world);
-    scentCarcasses(world);
     updatePheromones(world);
     ageSmoke(world);
 }
