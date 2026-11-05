@@ -2706,6 +2706,26 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "E107 (7 arms x 8 seeds x 200000 ticks, post-E105 defaults): no arm qualified, no seed reached 3 families per basin in any arm. basin_family_effective (mean) defaults 1.29, genes-100 1.31, genes-134 1.50 (+0.21), genes-268 1.30, decay-0.001 1.36, decay-0 1.53 (+0.24, best), genes-134-decay-0.001 1.45; none reached the +0.4 bar. Population mean 145, 127, 124, 124, 114, 105, 131; seeds under 80: 3, 4, 3, 3, 4, 5, 1; floor episodes 8.8, 6.8, 6.6, 6.9, 6.6, 7.4, 6.9; fed life 4739, 4640, 4733, 4597, 4943, 4788, 4741; predator presence 0.51, 0.39, 0.42, 0.28, 0.49, 0.41, 0.42; seeds with predators at end 3, 3, 1, 2, 3, 2, 2; prey types at end 3.88, 3.38, 3.12, 2.75, 2.75, 2.88, 2.75; lineage_dominance 0.29, 0.30, 0.29, 0.31, 0.34, 0.29, 0.35; mating share 0.45, 0.47, 0.47, 0.50, 0.40, 0.40, 0.45; merit_mate_gain 0.02, 0.05, -0.01, 0.05, 0.09, 0.15, -0.05. Predictions: genes-134 (1.5) and decay-0 (1.6 vs 1.53) hit; genes-100 (1.4 vs 1.31), genes-268 (1.8 vs 1.30), decay-0.001 (1.5 vs 1.36) and the combination (1.8 vs 1.45) missed, and more genes did not scale (268 genes gave no gain over 134). Population was predicted unchanged for the decay arms and fell 21% (0.001) and 28% (0) instead; every arm lost prey types (3.88 to 2.75-3.38). genes-134 reproduces the E106 mutation-2x row. Failure gate applies: more mutation and no silent-input decay add at most +0.24 families and cost population, prey types and presence, so variation alone is not the limit at this population size. The genetic-families gate (3 per basin) is recorded as unmet for this balance round with the evidence of E106 and E107; no candidate config written and no further tuning."
+    },
+    {
+      "id": "E108",
+      "date": "2026-11-05",
+      "branch": "eval/e108-temperature",
+      "hypothesis": "natural-selection.md T51 (planned there as E89): attribute overheating (E91 heat-stress share 0.26) to meals or movement by subtraction, since no metric partitions heat by source. stepTemperature (js/sim/temperature.js) adds min(speed/maxVelocity,1) x temperatureGainMove (0.01) each tick against passive loss 0.0075; there is no separate sprint heat, sprint only raises speed; meal heat (temperatureGainEat x stored/foodEnergy, feeding.js) caps at temperatureMax 100, not the optimum 65.",
+      "prediction": "8 seeds x 200000 ticks on the post-E105 defaults (evals/screens/temperature.grid.json). Reference heat share 0.20-0.26, cold 0.09. no-meal-heat: heat 0.20-0.24 (a drop above 0.05 says meals matter). no-move-heat: heat under 0.05, cold 0.2-0.4, population 110-130, fed lifespan 4200-4500. half-move-heat: heat 0.10-0.15, cold 0.12-0.18. cooling-x2: heat 0.08-0.14, cold 0.2-0.3. cooling-x2-cold-cost-off: shares as cooling-x2, fed lifespan up 5-10%. Viability band: population 135-155, fed median lifespan 4500-4900, predator presence 0.45-0.55, prey types 3.3-3.9, floor episodes 8-10. The arms are diagnostic; one becomes an adoption candidate only if it stays in that band and worsens none of population, fed lifespan, floor episodes, predator presence or prey types by 5% or more, confirmed on 16 seeds. Missing instrument (T80, for a later phase): heat-source shares, meal overshoot and rest-cooling detectors, sketched in the sim-notes entry when this is recorded.",
+      "targets": [
+        "eval.heat_stress_share",
+        "eval.cold_stress_share",
+        "eval.population_mean",
+        "eval.fed_median_lifespan"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/temperature/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/temperature/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/temperature.grid.json."
     }
   ]
 }
