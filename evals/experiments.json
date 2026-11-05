@@ -2793,6 +2793,27 @@
       "before": "evals/screens/results/toxic-cap/defaults.report.json (floor off)",
       "after": "evals/screens/results/toxic-cap/ (table.md, 9 arms x 8 seeds x 200000 ticks)",
       "verdicts": {},
+      "effect": "better",
+      "note": "Ran 2026-11-05 at 4b380e8, floor off on every arm. Survived to 200k (of 8): defaults 0, recover 0, cap-tox-0.3 3, cap-share-1 4, cap-share-1-yield 4, cap-share-1-recover 4, cap-off 7, cap-short 7, floor-on 8 (held by the floor, 8.75 floor episodes). cap-short (toxiccap life 4000, yield 0.2, maxFood 3600) is the only arm that keeps the toxic cap and passes the keep rule: population mean 358 (defaults 72, floor-on 145), prey types at the end 3.38, hunters alive at the last tick on 5/8 seeds with 12.1 at the end on average and a median 274638 last-quarter hunter-ticks (floor-on 1.38 and 24957), eval.toxic_avoidance 0.97. Prediction misses: cap-short was predicted at most 4/8 and reached 7/8; the share and toxicity arms were predicted at least 5/8 and reached 3 to 4; recover was correctly no help. Fewer caps (share 1) do not stop the crash: the slots they take are held 24000 ticks, so the lifetime, not the spawn share, sets how much of the stock is inedible once maxFood has room. Next: E112 confirms cap-short on 16 seeds with the floor on and off, and splits its three changes."
+    },
+    {
+      "id": "E112",
+      "date": "2026-11-05",
+      "branch": "eval/e111-toxic-cap",
+      "hypothesis": "E111's cap-short arm (toxiccap life 24000 -> 4000, yield 0.7 -> 0.2, maxFood 2400 -> 3600) stops the autumn toxic-cap crash. Short-lived caps free their slots for edible regrowth, as a fruiting body rots in days in nature, and the larger cap gives edible plants room while caps fruit.",
+      "prediction": "16 seeds x 200000 ticks. Floor on (shipped) against evals/results/e110-defaults.json: eval.population_mean and eval.prey_types_at_end better, eval.floor_episodes down by more than half, eval.predators_at_end better. Floor off against evals/results/e110-floor-off.json: the world survives to 200k on at least 12/16 seeds (0/16 before). Parts screen (8 seeds, floor off, evals/screens/cap-short-parts.grid.json): maxFood 3600 alone does not survive on most seeds (the diagnosis showed maxFood 4800 alone only slowed the crash); life 4000 with maxFood 3600 survives about as well as cap-short. Adopt cap-short if the floor-on confirmation has no worse verdict on population_mean, prey_types_at_end or predators_at_end; if a smaller part matches it, adopt the smaller part.",
+      "targets": [
+        "eval.population_mean",
+        "eval.prey_types_at_end",
+        "eval.predators_at_end",
+        "eval.floor_episodes",
+        "eval.hunter_ticks_last_quarter"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/results/e110-defaults.json and evals/results/e110-floor-off.json",
+      "after": "evals/results/e112-cap-short.json, evals/results/e112-cap-short-floor-off.json, evals/screens/results/cap-short-parts/",
+      "verdicts": {},
       "effect": "no-difference",
       "note": "Preregistered; running."
     }
