@@ -6,6 +6,7 @@ import { canBite, couldBite } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
 import { depletePatchAt } from './food-patches.js';
+import { INCOME, noteBiteLedger, noteIncome } from './hunter-ledger.js';
 import { depositPheromone } from './pheromones.js';
 import { removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
@@ -45,6 +46,10 @@ function consumeFood(world, slot, food, share) {
     const value = isMeat ? raw : ingestToxin(world, slot, raw, world.foodTox[food]);
     const stored = addEnergy(world, slot, value, ENERGY_SOURCE.FOOD);
     world.foodEnergy[slot] += stored;
+    if (isMeat) {
+        world.ledgerCarcass[slot] += stored;
+        noteIncome(world, slot, { kind: herdCarcass ? INCOME.HERD : INCOME.CARCASS, stored });
+    }
     world.foodEatenBySpec[world.spec[slot]] += stored;
     const { temperatureGainEat, foodEnergy } = world.config;
     gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
@@ -167,11 +172,14 @@ function applyBite(world, biter, victim) {
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
-    if (wasAlive && world.energy[victim] <= 0 && config.predatorKillEnergy > 0) {
-        addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
+    const fatal = wasAlive && world.energy[victim] <= 0;
+    let gained = world.transferGained;
+    if (fatal && config.predatorKillEnergy > 0) {
+        gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
     }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
-    removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
+    const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
+    noteBiteLedger(world, biter, { gained, fatal, kick: paid });
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (world.lastBiter[victim] !== biterId) {
@@ -204,7 +212,7 @@ function recoil(world, hunter, target) {
         return;
     }
     recoilStamp[hunter] = world.tick + 1;
-    removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+    world.ledgerBiteCost[hunter] += removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
 }
 
 /**

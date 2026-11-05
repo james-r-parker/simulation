@@ -8,6 +8,7 @@ import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { killSpecs } from './kills.js';
+import { INCOME_KINDS, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { proofSpecs } from './proof.js';
 import { splitGateSpecs } from './split-gate.js';
@@ -104,6 +105,16 @@ function agentSpecs(layout) {
 }
 
 /**
+ * Allocates the hunter ledger's world-level state (hunter-ledger.js): the death tally and the energy income by spec.
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+function allocLedgerState(world) {
+    world.hunterTally = new Float64Array(3);
+    world.hunterIncomeBySpec = new Float64Array(Object.keys(world.config.specialisations).length * INCOME_KINDS);
+}
+
+/**
  * @param {World} world the world being built
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
  * @returns {void}
@@ -119,12 +130,14 @@ function allocAgentArrays(world, layout) {
             ...splitGateSpecs(),
             ...proofSpecs(),
             ...killSpecs(),
+            ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
         ],
         n,
     );
     createMeritViews(world);
+    allocLedgerState(world);
     allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);

@@ -8,6 +8,7 @@ import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
 import { mateRankDue, refreshMateRanks } from './mate-rank.js';
 import { childSpec } from './heritable-spec.js';
+import { noteChildSource } from './hunter-ledger.js';
 import { findMale } from './mate-search.js';
 import { creditMating, meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
@@ -203,6 +204,7 @@ function giveBirth(world, policy, mother, cause) {
     world.parentSlotB[child] = isMate ? slotOfGenome(world, world.fatherId[mother]) : mother;
     noteProofBirth(world, child);
     world.spec[child] = childSpec(world, mother);
+    noteChildSource(world, { child, mother, cause });
     drawSex(world, child);
     recordBirth(world, mother);
     if (!isMate) {

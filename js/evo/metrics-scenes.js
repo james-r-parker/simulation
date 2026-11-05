@@ -10,6 +10,7 @@ import { basinMetrics } from './scene-basin.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
+import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
@@ -41,6 +42,7 @@ const WATCH = [
     'eval.strains_per_100k',
     'eval.strain_family_focus',
     'eval.disease_frequency_slope',
+    ...HUNTER_METRIC_NAMES,
 ];
 
 /** The direction of each scene metric, as the Detectors table names them. */
@@ -99,5 +101,6 @@ export function sceneMetrics(observer, world) {
         ...styleMetrics(s.style),
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
+        ...hunterMetrics(s.hunters, world),
     };
 }

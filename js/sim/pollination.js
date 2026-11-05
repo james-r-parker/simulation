@@ -135,6 +135,7 @@ export function seedPatch(world, slot, parentA, parentB) {
     }
     world.patchSeedTick[parentB] = world.tick;
     clearPollen(world, slot);
+    // plantSeedling below cannot find the pool full: this check is the only place a full pool is refused.
     const patch = freePatch(world);
     if (patch < 0) {
         reportSeedingRefused(world, { patch: parentB, reason: SEED_REFUSED.POOL, source: SEED_SOURCE.POLLEN, slot });
@@ -150,10 +151,6 @@ export function seedPatch(world, slot, parentA, parentB) {
         parent: parentB,
         otherParent: parentA,
     });
-    if (seedling < 0) {
-        reportSeedingRefused(world, { patch: parentB, reason: SEED_REFUSED.POOL, source: SEED_SOURCE.POLLEN, slot });
-        return -1;
-    }
     const species = world.patchSpecies[parentB];
     const at = pushEvent(world.events, EVENT_TYPE.PATCH_SEEDED, world.tick);
     world.events.data[at + 2] = species;

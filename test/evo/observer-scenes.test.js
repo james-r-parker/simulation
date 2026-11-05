@@ -97,6 +97,7 @@ describe('observeScenes', () => {
             'flora',
             'herd',
             'heritage',
+            'hunters',
             'mate',
             'niche',
             'patch',
