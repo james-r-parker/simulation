@@ -2840,9 +2840,15 @@
       "afterPolicy": "live",
       "before": "evals/screens/results/hunter-round/defaults.report.json",
       "after": "evals/screens/results/hunter-round/ (table.md, 20 arms x 8 seeds x 200000 ticks)",
-      "verdicts": {},
+      "verdicts": {
+        "eval.predators_at_end": "no-difference",
+        "eval.hunter_ticks_last_quarter": "no-difference",
+        "eval.hunter_zero_kill_share": "no-difference",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.population_mean": "no-difference"
+      },
       "effect": "no-difference",
-      "note": "Preregistered; running."
+      "note": "Screen read (8 seeds, so a direction, not a verdict). No arm passes hunterGate: the defaults themselves sit at the keep line (hunters alive 6/8, 1 seed under 80, median predators_at_end 6, last-quarter hunter-ticks 238069), and per-seed predators_at_end runs 0 to 59 inside the defaults, so 8 seeds cannot separate arms by a seed or two. Hunters alive / median predators_at_end / median last-quarter ticks: sprint-instinct 6/8, 10.5, 168917 (best end count, 0 seeds low); herb-meat-0.1 5/8, 4, 406256 (best hunter-ticks, carcass_hunter_share 0.149->0.260, hunter median lifespan 1849->2460); rest-60 6/8, 4, 229799; refuge-40 6/8, 3.5, 294087; meal-heat-cap 7/8, 2.5, 203381 but population 414->471 and pop < max on 1/8 (overshoot). Harmful: patches-8 (2/8, 6 seeds low), bite-15/30, graze-90, no-scatter (population roughly halves). On every arm hunter_kills_per_life has median 0 and hunter_zero_kill_share stays 0.80-0.92: no lever made hunters hunt; they live on carcass, herd and bite income. floor-off gives the same predators_at_end as defaults on every seed, so the floor no longer decides any world after E112. Decision (autonomy rule): confirm sprint-instinct and herb-meat-0.1 on 16 seeds against evals/results/e112-cap-short.json (the adopted defaults); rest-60 waits on those. herb-meat-0.1 raising carcass_hunter_share passes T58's first gate condition, but its end hunter count did not rise, so T58 carcass scent stays gated pending the 16-seed read."
     }
   ]
 }
