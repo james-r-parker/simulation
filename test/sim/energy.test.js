@@ -289,6 +289,26 @@ describe('applyCosts', () => {
         expect(world.cooldown[0]).toBe(0);
     });
 
+    it('charges a juvenile hunter juvenileBurn of the standing, movement and turn formula under juvenileDependency', () => {
+        const world = allocateWorld(
+            createConfig({ ...SIMPLE_WORLD, ...SMALL, juvenileDependency: true, juvenileBurn: 0.4 }),
+        );
+        world.temperature[allocBody(world)] = world.config.temperatureStart;
+        world.energy[0] = 100;
+        world.spec[0] = 1;
+        world.vx[0] = 3;
+        world.vy[0] = 4;
+        world.turnRate[0] = -0.2;
+        world.size[0] = 20;
+        const c = world.config;
+        const predator = c.specialisations.predator;
+        const plain =
+            (c.passiveLoss + c.sizeEnergyLoss * 20) * predator.passiveLossMultiplier +
+            (c.movementCost * 25 + c.turnCost * 0.2) * predator.moveCostMultiplier;
+        applyCosts(world);
+        expect(world.energy[0]).toBeCloseTo(100 - 0.4 * plain, 4);
+    });
+
     it('skips free slots and never drives energy below 0', () => {
         const world = worldWith(1);
         world.energy[0] = 0.001;

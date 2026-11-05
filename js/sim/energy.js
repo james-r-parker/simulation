@@ -1,6 +1,7 @@
 // Moves energy between agents and the world ledger, keeps each agent's size in step with its energy, and charges per-tick costs.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { juvenileBurnOf } from './juvenile.js';
 import { specParams } from './spec-params.js';
 import { baseSizeOf } from './traits.js';
 import { passiveMultiplier, stepTemperature } from './temperature.js';
@@ -157,17 +158,20 @@ function tickCost(world, slot) {
         (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
         sp.passiveLossMultiplier *
         passiveMultiplier(c, world.temperature[slot]);
+    const burn = juvenileBurnOf(world, slot);
     const base =
-        (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
+        (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) *
+        drain *
+        burn;
     let cost = base;
-    const sprint = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0 ? c.sprintCost : 0;
+    const sprint = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0 ? c.sprintCost * burn : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;
     cost += upkeep;
     if (sp.canHunt) {
         // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.
-        nominal[0] = standing * drain + upkeep;
-        nominal[1] = base - standing * drain;
+        nominal[0] = standing * drain * burn + upkeep;
+        nominal[1] = base - standing * drain * burn;
         nominal[2] = sprint;
     }
     return cost;
