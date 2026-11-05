@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import {
     blocksMating,
+    gainMealTemperature,
     gainTemperature,
     passiveMultiplier,
     stepTemperature,
@@ -254,5 +255,33 @@ describe('against a naive reference', () => {
             temperatureInputs(config, t, out, 0);
             ref.inputs.forEach((value, k) => expect(out[k], `input ${k} at ${t}`).toBeCloseTo(value, 5));
         }
+    });
+});
+
+describe('gainMealTemperature', () => {
+    const capped = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, mealHeatCap: true });
+
+    it('behaves like gainTemperature while mealHeatCap is off', () => {
+        const world = fakeWorld(64, 0, 0);
+        gainMealTemperature(world, 0, 10);
+        expect(world.temperature[0]).toBe(74);
+    });
+
+    it('stops a meal at temperatureOptimalMax when mealHeatCap is on', () => {
+        const world = { ...fakeWorld(64, 0, 0), config: capped };
+        gainMealTemperature(world, 0, 10);
+        expect(world.temperature[0]).toBe(65);
+    });
+
+    it('still warms a cold agent in full', () => {
+        const world = { ...fakeWorld(40, 0, 0), config: capped };
+        gainMealTemperature(world, 0, 10);
+        expect(world.temperature[0]).toBe(50);
+    });
+
+    it('never cools an agent already over the cap', () => {
+        const world = { ...fakeWorld(80, 0, 0), config: capped };
+        gainMealTemperature(world, 0, 10);
+        expect(world.temperature[0]).toBe(80);
     });
 });
