@@ -99,4 +99,12 @@ export const FEATURE_RULES = {
     splitMaxPerLife: int(0),
     splitClonalMax: int(1),
     splitMateScarceTicks: int(0),
+    provisionEnabled: BOOL,
+    provisionShare: UNIT,
+    provisionRange: positive(),
+    juvenileTicks: int(1),
+    juvenileDependency: BOOL,
+    juvenileBurn: UNIT,
+    kinPullWeight: num(0, 4),
+    flipReflex: BOOL,
 };
