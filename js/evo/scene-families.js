@@ -15,7 +15,7 @@
 import { basinOf } from '../sim/eras.js';
 import { geneticDistance } from '../sim/genetics.js';
 import { createLog, ensureRoom } from './growable-log.js';
-import { BASIN_MIN_ALIVE, LAST_SHARE, lastQuarterBasinMean } from './scene-balance.js';
+import { BASIN_MIN_ALIVE, basinMean, LAST_SHARE, lastQuarterBasinMean } from './scene-balance.js';
 import { none } from './metrics-stats.js';
 
 /** Genomes closer than this share a family: under half the distance between two unrelated genomes. */
@@ -106,17 +106,10 @@ export function sampleFamilies(scene, world) {
 function thinBasin(scene, lastTick) {
     const from = lastTick * (1 - LAST_SHARE);
     for (let basin = 0; basin < 2; basin++) {
-        let sum = 0;
-        let n = 0;
-        for (let row = 0; row < scene.rows; row++) {
-            if (scene.log.tick[row] >= from) {
-                sum += scene.log[`alive${basin}`][row];
-                n += 1;
-            }
-        }
-        if (n > 0 && sum / n < BASIN_MIN_ALIVE) {
+        const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
+        if (alive < BASIN_MIN_ALIVE) {
             return none(
-                `basin ${basin} held ${Math.round((sum / n) * 10) / 10} agents (under ${BASIN_MIN_ALIVE}) in the last quarter`,
+                `basin ${basin} held ${Math.round(alive * 10) / 10} agents (under ${BASIN_MIN_ALIVE}) in the last quarter`,
             );
         }
     }

@@ -78,6 +78,26 @@ export function sampleBalance(scene, world) {
 }
 
 /**
+ * @param {Record<string, any>} scene a scene (`log`, `rows`) with `tick` and `alive<basin>` columns
+ * @param {string} name the log column to average
+ * @param {number} basin 0 or 1
+ * @param {{from: number, floor: number}} where the first tick counted, and the alive count the basin needs at a
+ *   checkpoint (a floor of 0 or less counts every checkpoint)
+ * @returns {number} the column's mean over the counted checkpoints, NaN with none
+ */
+export function basinMean(scene, name, basin, { from, floor }) {
+    let sum = 0;
+    let n = 0;
+    for (let row = 0; row < scene.rows; row++) {
+        if (scene.log.tick[row] >= from && scene.log[`alive${basin}`][row] >= floor) {
+            sum += scene.log[name][row];
+            n += 1;
+        }
+    }
+    return n > 0 ? sum / n : NaN;
+}
+
+/**
  * @param {Record<string, any>} scene a scene (`log`, `rows`) whose log has `tick`, `alive<basin>` and
  *   `<column><basin>` columns (this one and `scene-families.js`)
  * @param {string} column the per-basin column
@@ -88,15 +108,8 @@ export function lastQuarterBasinMean(scene, column, lastTick) {
     const from = lastTick * (1 - LAST_SHARE);
     let smallest = Infinity;
     for (let basin = 0; basin < 2; basin++) {
-        let sum = 0;
-        let n = 0;
-        for (let row = 0; row < scene.rows; row++) {
-            if (scene.log.tick[row] >= from && scene.log[`alive${basin}`][row] >= BASIN_MIN_ALIVE) {
-                sum += scene.log[`${column}${basin}`][row];
-                n += 1;
-            }
-        }
-        smallest = n > 0 ? Math.min(smallest, sum / n) : smallest;
+        const mean = basinMean(scene, `${column}${basin}`, basin, { from, floor: BASIN_MIN_ALIVE });
+        smallest = Number.isNaN(mean) ? smallest : Math.min(smallest, mean);
     }
     return smallest === Infinity ? none(`no basin held ${BASIN_MIN_ALIVE} agents in the last quarter`) : ok(smallest);
 }

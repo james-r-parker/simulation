@@ -106,6 +106,8 @@ export function createObserver(config, rng, options = {}) {
         config,
         rng,
         slotArrays: Object.keys(SLOT_TYPES),
+        // Spread, not keyed stores, so the observer stays in V8's fast-properties mode (test/sim/world-shape.test.js).
+        ...Object.fromEntries(Object.entries(SLOT_TYPES).map(([name, Type]) => [name, new Type(n)])),
         ...createCellGrid(config, CELL_SIZE, n),
         slotOf: new Map(),
         ghosts: new Set(),
@@ -145,9 +147,6 @@ export function createObserver(config, rng, options = {}) {
         ...createBrainPools(config, options),
         instinct: createInstinctPools(config),
     };
-    for (const [name, Type] of Object.entries(SLOT_TYPES)) {
-        /** @type {Record<string, any>} */ (observer)[name] = new Type(n);
-    }
     return observer;
 }
 
