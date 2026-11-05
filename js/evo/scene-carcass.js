@@ -1,8 +1,8 @@
 // Scavenge (natural-selection.md, Detectors). No event carries the food kind, so the observer reads it from the food
 // arrays: a meat item that was alive at the end of the last observed tick and is gone now, before its age ran out
-// (`carcassTicks`), was eaten. The eater is the lowest alive slot that overlaps the item's last place and gained food
-// energy this tick (`feed` walks the slots in order, so the lowest slot eats first). The energy counted is the item's
-// value times the eater's `meatFoodValue` share, as `tryEat` credits it.
+// (`carcassTicks`), was eaten (`foodGone`, set by `removeFood`; a rotted item is not a meal). The eater is the lowest alive slot that overlaps the item's last place and gained food
+// energy this tick (`feed` walks the slots in order, so the lowest slot eats first). The energy counted is what `addEnergy` stored
+// (`foodTaken`, set by `removeFood`).
 //
 // - `eval.carcass_meal_share`: carcass energy eaten over all meat energy, that is carcass energy plus the bite energy
 //   of the hunters (the intent state's hunter bite totals).
@@ -11,6 +11,7 @@
 // Counts run over the whole run, as the intent state's bite totals do.
 // Preallocated arrays only.
 
+import { FOOD_GONE } from '../sim/world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from '../sim/carcass.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
@@ -64,7 +65,7 @@ function creditEaten(scene, observer, world, food) {
     if (eater < 0) {
         return;
     }
-    const energy = scene.value[food] * world.meatFoodBySpec[world.spec[eater]];
+    const energy = world.foodTaken[food];
     scene.eaten += energy;
     scene.eatenByHunters += observer.intent.hunterSpec[world.spec[eater]] === 1 ? energy : 0;
 }
@@ -78,13 +79,13 @@ function trackableMeat(world, food) {
     );
 }
 
-/** @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} food @param {number} carcassTicks @returns {boolean} */
-function eatenSinceLastTick(scene, world, food, carcassTicks) {
+/** @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} food @returns {boolean} */
+function eatenSinceLastTick(scene, world, food) {
     const same =
         trackableMeat(world, food) &&
         world.foodValue[food] === scene.value[food] &&
         world.foodX[food] === scene.x[food];
-    return scene.value[food] > 0 && !same && world.foodAge[food] <= carcassTicks;
+    return scene.value[food] > 0 && !same && world.foodGone[food] === FOOD_GONE.EATEN;
 }
 
 /**
@@ -97,10 +98,9 @@ function eatenSinceLastTick(scene, world, food, carcassTicks) {
  */
 export function trackCarcasses(scene, observer, world) {
     const { foodValue, foodX, foodY } = world;
-    const { carcassTicks } = world.config;
     for (let food = 0; food < world.foodAlive.length; food++) {
         const meat = trackableMeat(world, food);
-        if (world.tick > BURN_IN_TICKS && eatenSinceLastTick(scene, world, food, carcassTicks)) {
+        if (world.tick > BURN_IN_TICKS && eatenSinceLastTick(scene, world, food)) {
             creditEaten(scene, observer, world, food);
         }
         scene.value[food] = meat ? foodValue[food] : 0;
