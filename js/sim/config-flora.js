@@ -94,9 +94,9 @@ export const FLORA_DEFAULTS = {
         energy: 1.2,
         energySpread: 0.2,
         radius: 1,
-        yield: 0.7,
+        yield: 0.2, // E112 (was 0.7): long-lived caps took the grazed-out food slots in autumn
         regrow: 0.8,
-        life: 24000,
+        life: 4000, // E112 (was 24000): short-lived, so caps free their slots; without the floor every world starved
         start: 0.5,
         span: 0.35,
         hue: 0.3,

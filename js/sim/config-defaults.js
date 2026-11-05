@@ -49,7 +49,7 @@ export const DEFAULTS = deepFreeze({
     initialAgents: 100, // new
     minAgents: 40, // the restart size: the floor guard refills the world to this
     floorTrigger: 8, // the floor guard acts only when fewer than this many are alive (natural-selection T3); 0 turns it off
-    maxFood: 2400, // E95 (was 1600, E20; legacy FOOD_SPAWN_CAP 800)
+    maxFood: 3600, // E112 (was 2400, E95; 1600, E20; legacy FOOD_SPAWN_CAP 800): room for the short-lived caps
     initialFood: 300, // new
     foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
     foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
