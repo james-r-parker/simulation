@@ -30,7 +30,10 @@ function handWorld(pools, { offset, tick }) {
         });
     });
     const world = { config: CONFIG, layout: LAYOUT, tick, spec: Uint8Array.of(PREDATOR, FORAGER), weights };
-    return { world, observer: { sampled: Int32Array.of(0, 1), instinct: pools } };
+    return {
+        world,
+        observer: { sampled: Int32Array.of(0, 1), instinct: pools, priorSpec: Uint8Array.of(PREDATOR, FORAGER) },
+    };
 }
 
 describe('instinctCells', () => {
@@ -60,12 +63,15 @@ describe('eval.instinct_drift', () => {
         expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeCloseTo(3, 5);
     });
 
-    it('reads each genome against the prior of its own specialisation', () => {
+    it('reads each genome against the prior of the specialisation it was born with, not its current one', () => {
         const pools = createInstinctPools(CONFIG);
         const { world, observer } = handWorld(pools, { offset: 0, tick: 1000 });
-        expect(priorDistance(pools, world, observer.sampled)).toBeCloseTo(0, 6);
+        expect(priorDistance(pools, world, observer.sampled, observer.priorSpec)).toBeCloseTo(0, 6);
+        // A specialisation mutation changes the child's spec, not the genome it inherited.
         world.spec.reverse();
-        expect(priorDistance(pools, world, observer.sampled)).toBeGreaterThan(0.1);
+        expect(priorDistance(pools, world, observer.sampled, observer.priorSpec)).toBeCloseTo(0, 6);
+        observer.priorSpec.reverse();
+        expect(priorDistance(pools, world, observer.sampled, observer.priorSpec)).toBeGreaterThan(0.1);
     });
 
     it('is null without a prior, and without a sample after burn-in', () => {
@@ -84,7 +90,7 @@ describe('eval.instinct_drift', () => {
         const pools = createInstinctPools(CONFIG);
         const { world, observer } = handWorld(pools, { offset: 0.1, tick: BURN_IN_TICKS });
         observer.sampled = new Int32Array(0);
-        expect(priorDistance(pools, world, observer.sampled)).toBeNaN();
+        expect(priorDistance(pools, world, observer.sampled, observer.priorSpec)).toBeNaN();
         sampleInstinct(pools, observer, world);
         expect(pools.founders).toBeNaN();
         expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeNull();

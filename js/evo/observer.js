@@ -33,6 +33,7 @@ const SLOT_TYPES = {
     genomeId: Uint32Array,
     lineageId: Uint32Array,
     spec: Uint8Array,
+    priorSpec: Uint8Array,
     birthTick: Float64Array,
     ageTicks: Float64Array,
     foodEnergy: Float64Array,
