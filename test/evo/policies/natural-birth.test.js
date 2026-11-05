@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, inputOffsets } from '../../../js/sim/brain-layout.js';
 import { createRng } from '../../../js/sim/rng.js';
 import { mutateSigma, mutateWeights } from '../../../js/evo/mutation.js';
 import { createBirth } from '../../../js/evo/policies/natural-birth.js';
@@ -117,5 +118,112 @@ describe('birth mutation keys', () => {
         };
         expect(Math.abs(child(0) - 0.5)).toBeLessThan(0.01);
         expect(child(0.1)).toBeLessThan(0.46);
+    });
+});
+
+describe('the hunter reflexes at birth', () => {
+    const FORAGER = 0;
+    const PREDATOR = 1;
+    const { THRUST, TURN, BITE } = OUTPUT_INDEX;
+
+    /**
+     * @param {{over?: Record<string, any>, mother: number, child: number, cause?: number}} birth config overrides, the mother's
+     *   and child's specialisation and the cause
+     * @returns {{row: Float32Array, rng: any, world: any}} the child row after a birth from a zero row, and the stream
+     */
+    function born({ over = {}, mother, child, cause = BORN_CAUSE.SPLIT }) {
+        const world = smallWorld({ brainHidden: 4, maxAgents: 8, instinctWeight: 1, ...over });
+        const birth = createBirth(world.config);
+        const { weightCount } = world.layout;
+        world.weights.fill(0, 0, 2 * weightCount);
+        world.fatherWeights.fill(0);
+        world.spec[0] = mother;
+        world.spec[1] = child;
+        birth.sigma[0] = 0.05;
+        birth.fatherSigma[0] = 0.05;
+        const rng = createRng(31);
+        birth.childBrain(world, 1, 0, { cause, rng });
+        return { row: world.weights.slice(weightCount, 2 * weightCount), rng, world };
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {string} channel a pooled channel
+     * @param {number} part 0 strength, 2 sine
+     * @param {number} output an `OUTPUT_INDEX` value
+     * @returns {number} the index of that skip weight
+     */
+    function cell(world, channel, part, output) {
+        const base = inputOffsets(world.config).pooled[channel];
+        return world.layout.wSkip + (base + part) * world.layout.geneOutputs + GENE_OUTPUTS.indexOf(output);
+    }
+
+    /**
+     * @param {Float32Array} a a row
+     * @param {Float32Array} b a row
+     * @returns {number[]} the sorted indices where they differ
+     */
+    function differing(a, b) {
+        return Array.from(a, (v, i) => (v === b[i] ? -1 : i))
+            .filter((i) => i >= 0)
+            .sort((x, y) => x - y);
+    }
+
+    for (const [name, cause] of [
+        ['a split', BORN_CAUSE.SPLIT],
+        ['a mating', BORN_CAUSE.MATE],
+    ]) {
+        it(`gives a flip child of a non-hunter the prey terms by ${name}, and draws the same stream`, () => {
+            const off = born({ mother: FORAGER, child: PREDATOR, cause });
+            const on = born({ over: { flipReflex: true }, mother: FORAGER, child: PREDATOR, cause });
+            const { world } = on;
+            const thrust = cell(world, 'prey', 0, THRUST);
+            const turn = cell(world, 'prey', 2, TURN);
+            const bite = cell(world, 'prey', 0, BITE);
+            expect(differing(on.row, off.row)).toEqual([thrust, turn, bite].sort((x, y) => x - y));
+            expect(on.row[thrust] - off.row[thrust]).toBeCloseTo(1, 5);
+            expect(on.row[turn] - off.row[turn]).toBeCloseTo(1, 5);
+            expect(on.row[bite] - off.row[bite]).toBeCloseTo(2, 5);
+            expect(on.rng.s).toEqual(off.rng.s);
+        });
+    }
+
+    it('gives no prey terms to a hunter child of a hunter, a non-hunter child, or with flipReflex off', () => {
+        const over = { flipReflex: true };
+        expect(born({ over, mother: PREDATOR, child: PREDATOR }).row).toEqual(
+            born({ mother: PREDATOR, child: PREDATOR }).row,
+        );
+        expect(born({ over, mother: FORAGER, child: FORAGER }).row).toEqual(
+            born({ mother: FORAGER, child: FORAGER }).row,
+        );
+        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
+            born({ mother: PREDATOR, child: FORAGER }).row,
+        );
+        expect(born({ mother: FORAGER, child: PREDATOR }).row).toEqual(
+            born({ over: { flipReflex: false }, mother: FORAGER, child: PREDATOR }).row,
+        );
+    });
+
+    it('raises the kin cells of every hunter child under juvenileDependency, and no other', () => {
+        const over = { juvenileDependency: true, kinPullWeight: 0.5 };
+        for (const mother of [FORAGER, PREDATOR]) {
+            const off = born({ mother, child: PREDATOR });
+            const on = born({ over, mother, child: PREDATOR });
+            const { world } = on;
+            const cells = [cell(world, 'kin', 0, THRUST), cell(world, 'kin', 2, TURN)].sort((x, y) => x - y);
+            expect(differing(on.row, off.row)).toEqual(cells);
+            expect(on.row[cells[0]]).toBeGreaterThanOrEqual(0.5 - 1e-6);
+            expect(on.rng.s).toEqual(off.rng.s);
+        }
+        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
+            born({ mother: PREDATOR, child: FORAGER }).row,
+        );
+    });
+
+    it('changes nothing at instinctWeight 0', () => {
+        const over = { flipReflex: true, juvenileDependency: true, instinctWeight: 0 };
+        expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
+            born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR }).row,
+        );
     });
 });

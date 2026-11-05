@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applyInstinct, randomGenome } from '../../js/evo/instinct.js';
-import { randomWeights } from '../../js/evo/mutation.js';
+import { applyHunterReflex, applyInstinct, randomGenome } from '../../js/evo/instinct.js';
+import { WEIGHT_CLAMP, randomWeights } from '../../js/evo/mutation.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 import { createConfig } from '../../js/sim/config.js';
 import {
@@ -176,6 +176,113 @@ describe('applyInstinct', () => {
             }
             expect(world.outputs[OUTPUT_COUNT - 1]).toBeDefined();
         }
+    });
+});
+
+/**
+ * @param {string} channel a pooled channel
+ * @param {number} part 0 strength, 2 sine
+ * @param {number} output an `OUTPUT_INDEX` value
+ * @returns {number} the index of that skip weight in a row
+ */
+function cell(channel, part, output) {
+    const base = inputOffsets(config).pooled[/** @type {keyof ReturnType<typeof inputOffsets>['pooled']} */ (channel)];
+    return layout.wSkip + (base + part) * layout.geneOutputs + GENE_OUTPUTS.indexOf(output);
+}
+
+describe('applyHunterReflex', () => {
+    const { THRUST, TURN, BITE } = OUTPUT_INDEX;
+
+    it('adds the prey terms: thrust and turn at the weight, bite at twice the weight', () => {
+        for (const weight of [1, 0.5]) {
+            const row = new Float32Array(layout.weightCount);
+            applyHunterReflex(row, layout, { weight, prey: true, kinPull: 0 });
+            expect(row[cell('prey', 0, THRUST)]).toBe(weight);
+            expect(row[cell('prey', 2, TURN)]).toBe(weight);
+            expect(row[cell('prey', 0, BITE)]).toBe(2 * weight);
+            expect(row.filter((v) => v !== 0)).toHaveLength(3);
+        }
+    });
+
+    it('equals the hunter branch of applyInstinct on the prey cells, which a non-hunter does not carry', () => {
+        const hunter = new Float32Array(layout.weightCount);
+        applyInstinct(hunter, layout, { weight: 1, canHunt: true, herdWary: config.herdWary });
+        const reflex = new Float32Array(layout.weightCount);
+        applyHunterReflex(reflex, layout, { weight: 1, prey: true, kinPull: 0 });
+        for (const i of [cell('prey', 0, THRUST), cell('prey', 2, TURN), cell('prey', 0, BITE)]) {
+            expect(hunter[i]).toBe(reflex[i]);
+        }
+        expect(hunter[cell('threat', 0, THRUST)]).toBe(0);
+    });
+
+    it('clamps the prey terms at WEIGHT_CLAMP', () => {
+        const row = new Float32Array(layout.weightCount).fill(WEIGHT_CLAMP - 0.25);
+        applyHunterReflex(row, layout, { weight: 1, prey: true, kinPull: 0 });
+        expect(row[cell('prey', 0, BITE)]).toBe(WEIGHT_CLAMP);
+        expect(row[cell('prey', 0, THRUST)]).toBe(WEIGHT_CLAMP);
+    });
+
+    it('raises only the kin thrust and turn cells to kinPull x weight, as a floor that does not accumulate', () => {
+        const row = new Float32Array(layout.weightCount);
+        applyHunterReflex(row, layout, { weight: 2, prey: false, kinPull: 0.5 });
+        expect(row[cell('kin', 0, THRUST)]).toBe(1);
+        expect(row[cell('kin', 2, TURN)]).toBe(1);
+        expect(row.filter((v) => v !== 0)).toHaveLength(2);
+        const again = row.slice();
+        applyHunterReflex(again, layout, { weight: 2, prey: false, kinPull: 0.5 });
+        expect(again).toEqual(row);
+    });
+
+    it('leaves a kin cell that is already above the floor, and raises one below it', () => {
+        const row = new Float32Array(layout.weightCount);
+        row[cell('kin', 0, THRUST)] = 3;
+        row[cell('kin', 2, TURN)] = -3;
+        applyHunterReflex(row, layout, { weight: 1, prey: false, kinPull: 0.5 });
+        expect(row[cell('kin', 0, THRUST)]).toBe(3);
+        expect(row[cell('kin', 2, TURN)]).toBe(0.5);
+    });
+
+    it('clamps the floor at WEIGHT_CLAMP and writes no floor at kinPull 0 or weight 0', () => {
+        const high = new Float32Array(layout.weightCount);
+        applyHunterReflex(high, layout, { weight: 4, prey: false, kinPull: 4 });
+        expect(high[cell('kin', 0, THRUST)]).toBe(WEIGHT_CLAMP);
+        for (const options of [
+            { weight: 1, prey: false, kinPull: 0 },
+            { weight: 0, prey: false, kinPull: 0.5 },
+        ]) {
+            const none = new Float32Array(layout.weightCount);
+            applyHunterReflex(none, layout, options);
+            expect(none.every((v) => v === 0)).toBe(true);
+        }
+    });
+
+    it('is in applyInstinct for a hunter with a kinPull, and not for a non-hunter', () => {
+        const row = (/** @type {boolean} */ canHunt, /** @type {number} */ kinPull) => {
+            const r = new Float32Array(layout.weightCount);
+            applyInstinct(r, layout, { weight: 1, canHunt, herdWary: config.herdWary, kinPull });
+            return r[cell('kin', 0, THRUST)];
+        };
+        expect(row(true, 0.5)).toBe(0.5);
+        expect(row(true, 0)).toBe(0);
+        expect(row(false, 0.5)).toBe(0);
+    });
+
+    it('randomGenome takes the kin pull from juvenileDependency and kinPullWeight', () => {
+        const genome = (/** @type {Record<string, any>} */ over) => {
+            const row = new Float32Array(layout.weightCount);
+            const world = {
+                config: createConfig({ instinctWeight: 1, ...over }),
+                layout,
+                spec: new Uint8Array([PREDATOR]),
+            };
+            randomGenome(world, 0, { row, rng: createRng(5) });
+            return row;
+        };
+        const off = genome({ juvenileDependency: false });
+        const on = genome({ juvenileDependency: true, kinPullWeight: 0.5 });
+        expect(off[cell('kin', 0, THRUST)]).not.toBe(on[cell('kin', 0, THRUST)]);
+        expect(on[cell('kin', 0, THRUST)]).toBeGreaterThanOrEqual(0.5);
+        expect(on[cell('kin', 2, TURN)]).toBeGreaterThanOrEqual(0.5);
     });
 });
 
