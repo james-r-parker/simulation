@@ -34,5 +34,11 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T57",
     "reason": "Kept as the one-factor arm of the hunter-energy screen (hunters walk until prey is close); T57 adopts it and deletes the key, or deletes the sprint-instinct path, after the screen."
+  },
+  {
+    "key": "predatorRestTicks",
+    "plan": "docs/designs/natural-selection.md",
+    "task": "T57",
+    "reason": "Kept as the one-factor arm of the hunter-energy screen (a hunter rests after a kill); T57 adopts a value and deletes the key's off path, or deletes the key, after the screen."
   }
 ]

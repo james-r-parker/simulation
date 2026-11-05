@@ -87,6 +87,7 @@ export const FEATURE_RULES = {
     capBirthsEnabled: BOOL,
     mealHeatCap: BOOL,
     huntSprintInstinct: BOOL,
+    predatorRestTicks: int(0, 65535),
     splitCapMargin: int(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
     meritMateBonus: num(0),
