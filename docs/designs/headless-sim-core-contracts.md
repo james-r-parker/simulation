@@ -118,7 +118,7 @@ number and writes no hashed state where this file says so.
 | `biteCost`, `recoilEnergy`                                                    | `8`, `20`                           | `>= 0` each; 0 is off                                    |
 | `specialisations.<s>.passiveLossMultiplier`, `.splitMinEnergyMultiplier`      | per type                            | `> 0 .. 2`; `0.25 .. 2`                                  |
 | `specialisations.<s>.kickMultiplier`                                          | `1` (defender `2`)                  | `> 0`                                                    |
-| `carcassTicks`, `carcassShare`                                                | `300`, `0.5`                        | Integer `>= 1`; `0 .. 1`                                 |
+| `carcassTicks`, `carcassShare`                                                | `300`, `0.8`                        | Integer `>= 1`; `0 .. 1`                                 |
 | `specialisations.<s>.plantFoodValue`, `.meatFoodValue`                        | `1` (meat `0.3`, predator plants 0) | `0 .. 1`                                                 |
 | `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                      | `16`, `400`, `1`                    | Integer `0 .. 256`; `> 0`; `> 0`                         |
 | `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`                | `0.02`, `0.0005`, `0.2`             | `>= 0`; `0 .. 1`; `0 .. 1`                               |
