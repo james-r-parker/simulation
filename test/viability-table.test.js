@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FAMILY_FLOOR, formatViability, viabilityTable } from '../scripts/lib/viability-table.mjs';
+import { formatViability, viabilityTable } from '../scripts/lib/viability-table.mjs';
 import { main } from '../scripts/viability-table.mjs';
 
 /**
@@ -32,15 +32,14 @@ describe('viabilityTable', () => {
         expect(rows[1].slice(-3)).toEqual(['60', '0', '60']);
     });
 
-    it('counts the gate: predators and a prey type alive, and families at or over the floor', () => {
+    it('counts the gate: predators and a prey type alive', () => {
         const { gate } = viabilityTable(
             report({
                 'eval.predators_at_end': [5, 0],
                 'eval.prey_types_at_end': [2, 1],
-                'eval.basin_lineage_effective': [FAMILY_FLOOR, FAMILY_FLOOR - 0.1],
             }),
         );
-        expect(gate).toEqual({ seeds: 2, alive: 1, families: 1 });
+        expect(gate).toEqual({ seeds: 2, alive: 1 });
     });
 
     it('prints a dash for a report without traces or a metric', () => {
