@@ -1849,3 +1849,9 @@ The world-wide starvation crash of E110 is the toxic cap. It fruits from year ph
 - **What happened (8 seeds).** Hunters alive at the end fell from 6/8 to 4/8, median last-quarter hunter-ticks from 238069 to 44295, population mean from 414 to 315, and hunters' carcass share did not rise (0.149 to 0.135). With herb-meat 0.1 it was also worse than herb-meat alone.
 - **Likely cause.** The hunt scent field is the pack's call channel and every agent reads it; carcasses that lie for `carcassTicks` flood it, so the call no longer points at live prey and prey learn to avoid it. A carcass cue needs its own channel (a new input), which changes the brain layout, so it is not retried inside balancing.
 - **Also learned (E113).** Median kills per hunter life is 0 on every one of 20 levers; 80 to 92% of hunters never kill. Budget, rest, sprint and placement levers do not teach hunting.
+
+### 2026-11-05 - Basin divergence cannot gate an arm (T59 eval:power)
+
+- **What was measured.** `npm run eval:power` on 32 default seeds (`evals/results/t59-defaults-32.json`, splits of 16).
+- **Result.** No verdict for `eval.basin_divergence`, `eval.basin_spec_divergence` or `eval.basin_cluster_divergence`: 7 of 32 seeds have a basin under 20 agents in the last quarter, so the reading is null there, and nearly every 16-seed split holds one of those seeds. `predator_end_local_share` is null on 11 of 32.
+- **How to use it.** The divergence readings are watch metrics, read as means beside the others, never an arm's gate. A null means a collapsed basin, which is itself the finding.
