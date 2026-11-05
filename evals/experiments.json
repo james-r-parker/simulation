@@ -2813,9 +2813,15 @@
       "afterPolicy": "map-elites-v6",
       "before": "evals/results/e110-defaults.json and evals/results/e110-floor-off.json",
       "after": "evals/results/e112-cap-short.json, evals/results/e112-cap-short-floor-off.json, evals/screens/results/cap-short-parts/",
-      "verdicts": {},
-      "effect": "no-difference",
-      "note": "Preregistered; running."
+      "verdicts": {
+        "eval.population_mean": "-",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.predators_at_end": "better",
+        "eval.floor_episodes": "-",
+        "eval.hunter_ticks_last_quarter": "-"
+      },
+      "effect": "better",
+      "note": "Ran 2026-11-05 at 76440f9. Floor on, 16 seeds, against e110-defaults (the new switch keys are off and allowed as config diffs): eval.predators_at_end 0.69 -> 8.06 (better), hunters alive at the last tick on 10/16 seeds (3/16), eval.predator_presence 0.50 -> 0.65 (better), eval.population_mean 149 -> 320 (+114%, interval [127, 222]), eval.prey_types_at_end 3.25 -> 3.44 (no-difference), eval.fed_median_lifespan better, eval.hunter_ticks_last_quarter 49590 -> 217800, floor share of hunter births 0.37 -> 0.03, floor episodes 8.75 -> 0.69, seeds ending under 80 agents 8 -> 5. Worse: eval.births_per_1k -9.8% (a per-capita rate at twice the population) and eval.spec_effective 3.48 -> 3.20 (-8%); eval.lineages_alive 7.0 -> 5.4 needs 32 seeds; all three are watch items. Floor off, 16 seeds, against e110-floor-off: the world survives to 200k on 13/16 seeds (0/16), hunters at the end on 9/16, eval.prey_types_at_end 0 -> 2.81 (better), eval.predators_at_end better, eval.food_energy_per_1k better. Parts (8 seeds, floor off; survived, population): cap-short 7/8, 358; life 4000 + maxFood 3600 6/8, 291; life 4000 + yield 0.2 4/8, 181; yield 0.2 + maxFood 3600 1/8, 194; maxFood 3600 alone 0/8, 162. No smaller part matches, so all three are adopted. Prediction held for the floor-on verdicts, the floor-off survival (13/16 against at least 12) and maxFood alone failing. It missed on life with maxFood matching cap-short (6/8 and 291 against 7/8 and 358). Adopted: flora.toxiccap.life 4000, flora.toxiccap.yield 0.2, maxFood 3600. hunter_kills_per_life is a per-seed median and reads 0 because most hunters never kill; use hunter_zero_kill_share (0.90 -> 0.83) beside it."
     }
   ]
 }
