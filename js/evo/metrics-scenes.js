@@ -7,6 +7,7 @@ import { FLORA_NAMES } from '../sim/config-flora.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
+import { DIVERGENCE_METRICS, divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
@@ -43,6 +44,7 @@ const WATCH = [
     'eval.strain_family_focus',
     'eval.disease_frequency_slope',
     ...HUNTER_METRIC_NAMES,
+    ...DIVERGENCE_METRICS,
 ];
 
 /** The direction of each scene metric, as the Detectors table names them. */
@@ -95,6 +97,7 @@ export function sceneMetrics(observer, world) {
         ...basinMetrics(s.basin),
         ...balanceMetrics(s.balance, world),
         ...familyMetrics(s.families, world),
+        ...divergenceMetrics(s.divergence, world),
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),

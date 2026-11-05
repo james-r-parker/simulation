@@ -10,6 +10,7 @@ import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events
 import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproaches } from './scene-approach.js';
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
+import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
@@ -44,6 +45,7 @@ export function createScenes(config, runTicks = 0) {
         basin: createBasinScene(),
         balance: createBalanceScene(),
         families: createFamilyScene(config),
+        divergence: createDivergenceScene(config),
         carcass: createCarcassScene(config),
         style: createStyle(config),
         condition: createConditionScene(config),
@@ -178,6 +180,7 @@ export function observeScenes(observer, world) {
         sampleSeason(scenes.season, scenes.terrain, world);
         sampleBalance(scenes.balance, world);
         sampleFamilies(scenes.families, world);
+        sampleDivergence(scenes.divergence, world);
         sampleDiseaseFamilies(scenes.disease, world);
     }
 }
