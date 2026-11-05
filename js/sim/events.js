@@ -34,6 +34,8 @@ export const EVENT_TYPE = Object.freeze({
     STRAIN_EMERGED: 26,
     AGENT_INFECTED: 27,
     STRAIN_EXTINCT: 28,
+    HUNTER_LEDGER: 29,
+    LAST_HUNTER_DIED: 30,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

@@ -154,13 +154,18 @@ function tickCost(world, slot) {
         (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
         sp.passiveLossMultiplier *
         passiveMultiplier(c, world.temperature[slot]);
-    let cost =
+    const base =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) * drain;
-    if (world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0) {
-        cost += c.sprintCost;
-    }
-    if (c.specMutationRate > 0 && sp.canHunt) {
-        cost += c.huntUpkeep;
+    let cost = base;
+    const sprint = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0 ? c.sprintCost : 0;
+    cost += sprint;
+    const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;
+    cost += upkeep;
+    if (sp.canHunt) {
+        // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.
+        world.ledgerStanding[slot] += standing * drain + upkeep;
+        world.ledgerMove[slot] += base - standing * drain;
+        world.ledgerSprint[slot] += sprint;
     }
     return cost;
 }

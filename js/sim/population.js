@@ -7,6 +7,7 @@ import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { leaveCarcass } from './carcass.js';
 import { releaseInfection } from './disease.js';
 import { noteKill } from './kills.js';
+import { closeHunterTally, noteHunterDeath, noteLedgerKill, openHunterTally } from './hunter-ledger.js';
 import { releaseProofAtDeath } from './proof.js';
 import { spawnAgent } from './spawn.js';
 import { freeAgent } from './world.js';
@@ -114,6 +115,7 @@ function pushDied(world, slot, cause) {
  */
 export function reap(world, policy) {
     const { alive } = world;
+    openHunterTally(world);
     for (let slot = 0; slot < alive.length; slot++) {
         const cause = alive[slot] === 1 ? deathCause(world, slot) : -1;
         if (cause < 0) {
@@ -122,6 +124,10 @@ export function reap(world, policy) {
         pushDied(world, slot, cause);
         if (cause === DEATH_CAUSE.EATEN) {
             noteKill(world, slot);
+            noteLedgerKill(world, slot);
+        }
+        if (world.huntBySpec[world.spec[slot]]) {
+            noteHunterDeath(world, slot, cause);
         }
         if (policy.onDeath) {
             policy.onDeath(world, slot, cause);
@@ -134,6 +140,7 @@ export function reap(world, policy) {
         addMyceliumMark(world, { x: world.x[slot], y: world.y[slot], size: world.size[slot] });
         freeAgent(world, slot);
     }
+    closeHunterTally(world);
 }
 
 /**

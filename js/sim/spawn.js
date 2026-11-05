@@ -12,6 +12,7 @@ import { drawSex } from './sex.js';
 import { SPEC_COUNT } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
+import { sourceOfSpawn } from './hunter-ledger.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
 
 const TWO_PI = 6.283185307179586;
@@ -193,6 +194,7 @@ export function spawnAgent(world, policy, cause) {
     world.genomeId[slot] = id;
     world.lineageId[slot] = id;
     world.spec[slot] = chooseSpec(world, policy, slot);
+    world.birthSource[slot] = sourceOfSpawn(cause);
     drawSex(world, slot);
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);

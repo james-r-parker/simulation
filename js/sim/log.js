@@ -6,6 +6,16 @@ import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
 
 const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
+const SOURCE_NAMES = Object.freeze([
+    'initial',
+    'mate',
+    'split',
+    'floor',
+    'immigrant',
+    'spec-flip',
+    'mate-hunter-parent',
+    'split-hunter-parent',
+]);
 const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled', 'disease']);
 const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'near']);
 const SEED_SOURCE_NAMES = Object.freeze(['pollen', 'herd']);
@@ -104,6 +114,49 @@ function emitDied(log, d, o) {
         biteEnergy: d[o + 10],
         prevBiter: cause === 'eaten' ? d[o + 11] : 0,
         ...(cause === 'trampled' ? { pinned: d[o + 11] === 1 } : {}),
+    });
+}
+
+/**
+ * Emits one `HunterLedger` event: a hunter's life account at its death (field 4 packs kills, death cause and birth source).
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitHunterLedger(log, d, o) {
+    const packed = d[o + 4];
+    log.log('debug', 'HunterLedger', {
+        tick: d[o + 1],
+        genomeId: d[o + 2],
+        ageTicks: d[o + 3],
+        cause: causeName(DIED_NAMES, Math.floor(packed / 8) % 8, 'HunterLedger'),
+        birth: causeName(SOURCE_NAMES, packed % 8, 'HunterLedger'),
+        kills: Math.floor(packed / 64),
+        carcassEnergy: d[o + 5],
+        standingEnergy: d[o + 6],
+        moveEnergy: d[o + 7],
+        sprintEnergy: d[o + 8],
+        killEnergy: d[o + 9],
+        biteGainEnergy: d[o + 10],
+        biteCostEnergy: d[o + 11],
+    });
+}
+
+/**
+ * Emits one `LastHunterDied` event: the last hunter died, in a basin, with the non-hunters alive in each.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitLastHunterDied(log, d, o) {
+    log.log('debug', 'LastHunterDied', {
+        tick: d[o + 1],
+        genomeId: d[o + 2],
+        basin: d[o + 3] === 0 ? 'west' : 'east',
+        nonPredatorsWest: d[o + 4],
+        nonPredatorsEast: d[o + 5],
     });
 }
 
@@ -418,6 +471,8 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.STRAIN_EMERGED]: { level: LOG_LEVEL.info, emit: emitStrainEmerged },
     [EVENT_TYPE.AGENT_INFECTED]: { level: LOG_LEVEL.debug, emit: emitAgentInfected },
     [EVENT_TYPE.STRAIN_EXTINCT]: { level: LOG_LEVEL.info, emit: emitStrainExtinct },
+    [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
+    [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
 });
 
 /**
