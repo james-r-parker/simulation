@@ -85,6 +85,9 @@ describe('renderTable', () => {
             'life p50',
             'delib food/1k',
             'chance food/1k',
+            'conv 1k-2k',
+            'first kill RMST',
+            'boom-bust',
         ]) {
             expect(head).toContain(h);
         }
@@ -92,7 +95,7 @@ describe('renderTable', () => {
         expect(row).toContain('0.44');
         expect(row).toContain('12346');
         expect(row).toContain('3.25');
-        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(8);
+        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(21);
     });
 });
 

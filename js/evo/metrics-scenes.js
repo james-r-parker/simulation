@@ -12,6 +12,7 @@ import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
+import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
@@ -83,6 +84,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
     ...AGE_DIRECTIONS,
     ...COMPETENCE_DIRECTIONS,
+    ...GUARD_DIRECTIONS,
 });
 
 /**
@@ -110,5 +112,6 @@ export function sceneMetrics(observer, world) {
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
         ...competenceMetrics(s.competence, world),
+        ...guardMetrics(s.guards),
     };
 }

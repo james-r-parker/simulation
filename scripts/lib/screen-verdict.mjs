@@ -48,6 +48,19 @@ export const WATCH_METRICS = [
     'eval.predator_presence',
     'eval.predator_births',
     'eval.migration_index',
+    'eval.hunter_kill_conversion_by_age.under1k',
+    'eval.hunter_kill_conversion_by_age.1k-2k',
+    'eval.hunter_kill_conversion_by_age.over2k',
+    'eval.hunter_chases_by_age.under1k',
+    'eval.hunter_chases_by_age.1k-2k',
+    'eval.hunter_chases_by_age.over2k',
+    'eval.hunter_first_kill_km_median',
+    'eval.hunter_first_kill_rmst',
+    'eval.prey_extinctions',
+    'eval.boom_bust_count',
+    'eval.predator_share_cv',
+    'eval.basin_pop_cv',
+    'eval.pred_prey_lag_corr',
 ];
 
 /** Per-seed criteria in table order: key and what it checks. */

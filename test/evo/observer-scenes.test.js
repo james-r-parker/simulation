@@ -84,6 +84,18 @@ describe('observeScenes', () => {
         expect(r.observer.scenes.competence.log.time[0]).toBe(400);
     });
 
+    it('samples the guards at the 1000-tick checkpoint after burn-in and not at other ticks', () => {
+        const r = observed(BASINS);
+        addBlob(r.world, { spec: r.world.config.specialisations.predator.index });
+        nextTick(r.world, T0 + 500);
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.guards.rows).toBe(0);
+        nextTick(r.world, T0 + 1000);
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.guards.rows).toBe(1);
+        expect(r.observer.scenes.guards.log.hunters[0]).toBe(1);
+    });
+
     it('runs the terrain and basin samples every 10 ticks and the patch sample every 100', () => {
         const r = observed({ ...BASINS, foodPatchCount: 1, foodPatchRadius: 100, foodPatchCapacity: 1000 });
         r.world.patchX.set([200]);
@@ -130,6 +142,7 @@ describe('observeScenes', () => {
             'divergence',
             'families',
             'flora',
+            'guards',
             'herd',
             'heritage',
             'hunters',
