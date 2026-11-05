@@ -14,6 +14,7 @@ import { carcassMetrics } from './scene-carcass.js';
 import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
 import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
+import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { conditionMetrics } from './scene-condition.js';
@@ -85,6 +86,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...AGE_DIRECTIONS,
     ...COMPETENCE_DIRECTIONS,
     ...GUARD_DIRECTIONS,
+    ...KIN_DIRECTIONS,
 });
 
 /**
@@ -113,5 +115,6 @@ export function sceneMetrics(observer, world) {
         ...hunterMetrics(s.hunters, world),
         ...competenceMetrics(s.competence, world),
         ...guardMetrics(s.guards),
+        ...kinProximityMetrics(s.kin),
     };
 }

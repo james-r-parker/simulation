@@ -16,6 +16,7 @@ import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
+import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -62,6 +63,7 @@ export function createScenes(config, runTicks = 0) {
         disease: createDiseaseScene(config),
         hunters: createHunterScene(runTicks, config),
         guards: createGuardScene(config),
+        kin: createKinProximityScene(config),
     };
 }
 
@@ -188,5 +190,6 @@ export function observeScenes(observer, world) {
         sampleDivergence(scenes.divergence, world);
         sampleDiseaseFamilies(scenes.disease, world);
         sampleGuards(scenes.guards, world);
+        sampleKinProximity(scenes.kin, world);
     }
 }
