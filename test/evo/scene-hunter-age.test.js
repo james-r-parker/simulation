@@ -162,3 +162,14 @@ describe('the hunter age metrics', () => {
         expect(AGE_DIRECTIONS['eval.hunter_first_kill_age']).toBe('watch');
     });
 });
+
+describe('an alive hunter whose birth source has no name', () => {
+    it('counts its age in the bands but not in a source', () => {
+        const scene = createAgeScene(J);
+        const m = ageMetrics(scene, worldWith([{ age: 500, kills: 3, source: BIRTH_SOURCE.IMMIGRANT }]));
+        expect(m['eval.hunter_kill_rate_by_age.juvenile'].value).toBe(0);
+        for (const name of HUNTER_BIRTH_NAMES) {
+            expect(m[`eval.hunter_kill_rate_by_source.${name}`].value).toBeNull();
+        }
+    });
+});

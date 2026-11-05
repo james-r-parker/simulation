@@ -121,6 +121,21 @@ describe('the kin-proximity metrics', () => {
         expect(kinProximityMetrics(scene)['eval.juvenile_parent_distance']).toEqual({ value: 50 });
     });
 
+    it('uses the second parent when only it is alive, and reads no pull when the juveniles stand on their parent', () => {
+        const w = world([
+            { id: 1, x: 0 },
+            { id: 2, x: 0, parents: 1 },
+            { id: 3, x: 0, parents: 1 },
+        ]);
+        w.parentA.set([0, 77, 77]);
+        w.parentB.set([0, 1, 1]);
+        const scene = createKinProximityScene(CONFIG);
+        sampleKinProximity(scene, w);
+        const m = kinProximityMetrics(scene);
+        expect(m['eval.juvenile_parent_distance']).toEqual({ value: 0 });
+        expect(m['eval.juvenile_parent_pull']).toEqual({ value: null, reason: 'the juveniles stand on their parents' });
+    });
+
     it('skips a juvenile with no living parent, no sibling, a grown hunter and a non-hunter', () => {
         const m = measure([
             { id: 1, x: 0 },
