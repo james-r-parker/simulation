@@ -1,0 +1,8 @@
+{
+  "specialisations": {
+    "forager": { "meatFoodValue": 0.1 },
+    "reproducer": { "meatFoodValue": 0.1 },
+    "scout": { "meatFoodValue": 0.1 },
+    "defender": { "meatFoodValue": 0.1 }
+  }
+}

@@ -2746,7 +2746,7 @@
       "after": "evals/screens/results/untouched/ (table.md, 16 arms x 8 seeds x 200000 ticks)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered; cancelled before running on 2026-11-05 because the hunter readings are being fixed (T53, T60); it re-runs after them."
+      "note": "Preregistered; cancelled before running on 2026-11-05 because the hunter readings were being fixed (T53, T60). Superseded by E113, which runs these arms on the post-E112 defaults."
     },
     {
       "id": "E110",
@@ -2822,6 +2822,33 @@
       },
       "effect": "better",
       "note": "Ran 2026-11-05 at 76440f9. Floor on, 16 seeds, against e110-defaults (the new switch keys are off and allowed as config diffs): eval.predators_at_end 0.69 -> 8.06 (better), hunters alive at the last tick on 10/16 seeds (3/16), eval.predator_presence 0.50 -> 0.65 (better), eval.population_mean 149 -> 320 (+114%, interval [127, 222]), eval.prey_types_at_end 3.25 -> 3.44 (no-difference), eval.fed_median_lifespan better, eval.hunter_ticks_last_quarter 49590 -> 217800, floor share of hunter births 0.37 -> 0.03, floor episodes 8.75 -> 0.69, seeds ending under 80 agents 8 -> 5. Worse: eval.births_per_1k -9.8% (a per-capita rate at twice the population) and eval.spec_effective 3.48 -> 3.20 (-8%); eval.lineages_alive 7.0 -> 5.4 needs 32 seeds; all three are watch items. Floor off, 16 seeds, against e110-floor-off: the world survives to 200k on 13/16 seeds (0/16), hunters at the end on 9/16, eval.prey_types_at_end 0 -> 2.81 (better), eval.predators_at_end better, eval.food_energy_per_1k better. Parts (8 seeds, floor off; survived, population): cap-short 7/8, 358; life 4000 + maxFood 3600 6/8, 291; life 4000 + yield 0.2 4/8, 181; yield 0.2 + maxFood 3600 1/8, 194; maxFood 3600 alone 0/8, 162. No smaller part matches, so all three are adopted. Prediction held for the floor-on verdicts, the floor-off survival (13/16 against at least 12) and maxFood alone failing. It missed on life with maxFood matching cap-short (6/8 and 291 against 7/8 and 358). Adopted: flora.toxiccap.life 4000, flora.toxiccap.yield 0.2, maxFood 3600. hunter_kills_per_life is a per-seed median and reads 0 because most hunters never kill; use hunter_zero_kill_share (0.90 -> 0.83) beside it."
+    },
+    {
+      "id": "E113",
+      "date": "2026-11-05",
+      "branch": "eval/e113-hunter-round",
+      "hypothesis": "With the autumn toxic-cap crash fixed (E112), the world sustains itself and the floor makes only 0.03 of hunter births, so hunter levers can now be judged. Two groups on the post-E112 defaults. The untouched levers of E109 (user direction 2026-11-05): prey base (disease-off, graze-60/90, winter-mild), hunter budget (turn-0.02/0.05, bite-15/30, no-lunge-tax, refuge-40), meal placement (patches-8/24, no-scatter). The T57 switches (T52, T55, T56): sprint-instinct (hunters walk until prey is close), rest-60/rest-240 (a hunter rests after a kill), herb-meat-0.1 (herbivores gain little from carcasses, leaving them to hunters), meal-heat-cap. floor-off is the self-sustaining check. E110's ledger: 65% of starved hunters never ate, movement is about 0.7 of their spend, spec-flip and floor hunters are the zero-kill mass.",
+      "prediction": "8 seeds x 200000 ticks (evals/screens/hunter-round.grid.json). Defaults: hunters alive at the last tick on about 5/8 seeds, about 2 seeds under 80 agents at the end. floor-off: survives on at least 6/8. Most arms stay within one seed of the defaults on hunters alive. Most likely to raise hunters alive and the median last-quarter hunter-ticks: herb-meat-0.1 (more carcass energy left for hunters; eval.carcass_hunter_share up) and rest-60 (less movement spend after a meal); sprint-instinct helps less, since it shapes only founder and floor genomes. bite-15/30 and no-lunge-tax raise hunter income but may cost prey types. meal-heat-cap moves eval.heat_stress_share down without changing hunters. Keep rule (user, screen verdict hunterGate): hunters alive at the last tick on at least 6/8 seeds, no more seeds under 80 agents than the defaults, and medians of predators_at_end and hunter_ticks_last_quarter not below the defaults; also judged on the median age of hunters with a kill and the hunter zero-kill share, not catch rate. A kept arm is confirmed on 16 seeds with the floor on and with it off before adoption; losing T57 switches are deleted with their keys.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.hunter_ticks_last_quarter",
+        "eval.hunter_zero_kill_share",
+        "eval.prey_types_at_end",
+        "eval.population_mean"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/hunter-round/defaults.report.json",
+      "after": "evals/screens/results/hunter-round/ (table.md, 20 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.predators_at_end": "no-difference",
+        "eval.hunter_ticks_last_quarter": "no-difference",
+        "eval.hunter_zero_kill_share": "no-difference",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.population_mean": "no-difference"
+      },
+      "effect": "no-difference",
+      "note": "Screen read (8 seeds, so a direction, not a verdict). No arm passes hunterGate: the defaults themselves sit at the keep line (hunters alive 6/8, 1 seed under 80, median predators_at_end 6, last-quarter hunter-ticks 238069), and per-seed predators_at_end runs 0 to 59 inside the defaults, so 8 seeds cannot separate arms by a seed or two. Hunters alive / median predators_at_end / median last-quarter ticks: sprint-instinct 6/8, 10.5, 168917 (best end count, 0 seeds low); herb-meat-0.1 5/8, 4, 406256 (best hunter-ticks, carcass_hunter_share 0.149->0.260, hunter median lifespan 1849->2460); rest-60 6/8, 4, 229799; refuge-40 6/8, 3.5, 294087; meal-heat-cap 7/8, 2.5, 203381 but population 414->471 and pop < max on 1/8 (overshoot). Harmful: patches-8 (2/8, 6 seeds low), bite-15/30, graze-90, no-scatter (population roughly halves). On every arm hunter_kills_per_life has median 0 and hunter_zero_kill_share stays 0.80-0.92: no lever made hunters hunt; they live on carcass, herd and bite income. floor-off gives the same predators_at_end as defaults on every seed, so the floor no longer decides any world after E112. Decision (autonomy rule): confirm sprint-instinct and herb-meat-0.1 on 16 seeds against evals/results/e112-cap-short.json (the adopted defaults); rest-60 waits on those. herb-meat-0.1 raising carcass_hunter_share passes T58's first gate condition, but its end hunter count did not rise, so T58 carcass scent stays gated pending the 16-seed read. 16-seed confirmation (200000 ticks, against evals/results/e112-cap-short.json, the adopted defaults; reports evals/results/e113-sprint.json and e113-herb-meat.json): hunters alive at the end 10/16 on all three; seeds with population mean under 80: defaults 1, sprint 2, herb-meat 2. sprint-instinct: predators_at_end 8.06->7.50 no-difference, median last-quarter hunter-ticks 173320->73876, population_mean -10.8%, body_plan_coverage worse; rejected, switch deleted. herb-meat-0.1: predators_at_end 8.06->11.06 no-difference ([-9.5, 13.4]), median hunter-ticks 173320->284419, carcass_hunter_share 0.126->0.245 (interval [0.020, 0.208] excludes 0), births_per_1k +8.4% better, basin_families and basin_lineages_alive better, body_plan_coverage worse; not adopted (fails the keep rule on seeds under 80 by one and the end count does not move). rest-60/rest-240 and meal-heat-cap showed no hunter gain on 8 seeds (meal-heat-cap overshoots the population cap), so predatorRestTicks and mealHeatCap are deleted with huntSprintInstinct (T57, T52). T58 gate met: herbivore meatFoodValue 0.1 raises carcass_hunter_share while the end hunter count does not move, so carcass scent for hunters is built next."
     }
   ]
 }
