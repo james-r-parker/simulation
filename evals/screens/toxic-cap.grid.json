@@ -1,0 +1,23 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": { "floorTrigger": 0 },
+  "arms": {
+    "defaults": {},
+    "floor-on": { "floorTrigger": 8 },
+    "cap-off": { "flora": { "toxiccap": { "share": 0 } } },
+    "cap-share-1": { "flora": { "toxiccap": { "share": 1 } } },
+    "cap-share-1-yield": { "flora": { "toxiccap": { "share": 1, "yield": 0.2 } } },
+    "cap-tox-0.3": { "flora": { "toxiccap": { "toxicity": 0.3 } } },
+    "cap-short": { "flora": { "toxiccap": { "life": 4000, "yield": 0.2 } }, "maxFood": 3600 },
+    "recover": { "sproutRate": 0.00005, "patchDieTicks": 72000 },
+    "cap-share-1-recover": {
+      "flora": { "toxiccap": { "share": 1, "yield": 0.2 } },
+      "sproutRate": 0.00005,
+      "patchDieTicks": 72000
+    }
+  }
+}

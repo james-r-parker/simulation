@@ -2774,6 +2774,27 @@
       },
       "effect": "worse",
       "note": "Ran 2026-11-05 at 17c639c. Floor-off is worse on every hunter and world target: eval.predators_at_end 0.69 -> 0 (interval [-2.19, -0.13], worse), eval.hunter_ticks_last_quarter 49590 -> 0 on all 16 seeds, eval.predator_presence 0.50 -> 0.32 (worse), eval.prey_types_at_end 3.25 -> 0 (worse), eval.population_mean 149 -> 90. The cause is not hunters: with floorTrigger 0 every world goes fully extinct, prey included, between 41k and 149k ticks; worlds that sat at the 500 cap from 20k fall to 0 within about 30k ticks of 80k (seed 888035: 458 at 79k, 39 at 88k, 0 at 110k). The defaults show the same crash and the floor holds a remnant of 20 to 40, which is where eval.hunter_birth_source_share.floor 0.37 comes from (the prediction's 'about a third' held). Deaths are starvation (old age 6 of about 85,000, so the age-cohort idea was wrong). Ledger (4 replays with --policy map-elites-v6, 417 hunter deaths): 73% starved; of those 65% never ate (median age 956) and 35% ate and still starved (median age 3500). Spend is movement (0.69-0.74 of energy out), not standing (0.08-0.09); bite cost is 0.18 of spend for hunters that ate. Kill rate per 1,000 ticks by birth source: split from a hunter 0.177 (31% make a kill), mated from a hunter 0.337 (n 9), spec-flip 0.060 (1.4% kill), floor 0.011, initial 0.016. Spec-flip and floor hunters are the zero-kill mass. Prey at the last hunter death: median of the poorer basin 15 to 30 per replay, so hunters die with prey present. Verdict: the E103 and E105 presence gains were measured on floor-held worlds and are partly restock; no hunter lever can be judged on floor-off until the world-wide starvation crash is fixed, so that crash is the next work (diagnosis running), and E109 waits for it."
+    },
+    {
+      "id": "E111",
+      "date": "2026-11-05",
+      "branch": "eval/e111-toxic-cap",
+      "hypothesis": "E110 showed every world goes extinct without the floor. A diagnosis (seed 888035, controlled reruns; 2026-11-05) traced it to the toxic cap: it fruits from year phase 0.5 (tick 72000), edible patches are grazed to their stock floor, so new spawns into freed food slots are mostly toxic caps; nothing eats them, they live 24000 ticks and hold up to 1700 of 2400 slots, and edible inflow falls from 471k to 178k energy per 1k ticks while demand stays flat. flora.toxiccap.share 0 removed the crash on 888035 and toxicity 0 on 224570; life 4000 alone, maxFood 4800 alone and yield 0.05 alone did not. Overshoot, patch death, the season table, herds and disease were ruled out as causes. In nature an unpalatable plant spreads under heavy grazing but does not take every gap, because edible plants re-establish too; the levers make the cap take fewer gaps or hold them for less time.",
+      "prediction": "8 seeds x 200000 ticks, all arms on floorTrigger 0 (evals/screens/toxic-cap.grid.json). Defaults: extinct on 8/8 seeds. cap-off: survives to 200k on at least 6/8 seeds (the control showing the mechanism). cap-share-1-yield and cap-share-1-recover: survive on at least 5/8. cap-share-1 alone: delays the crash but survives on at most 4/8. cap-tox-0.3: survives on at least 5/8 if a mildly toxic cap gets eaten enough to free its slots. cap-short: survives on at most 4/8. recover alone: still extinct on most seeds (it acts after the crash). Keep rule: the arm survives (population above 0 at 200k) on at least 6/8 seeds with the floor off and holds at least 3 prey types at the end; among keepers prefer the one that keeps the toxic cap (prey types, eval.toxic_avoidance), not cap-off. A kept arm is confirmed on 16 seeds with the floor on (the shipped default) against the defaults before adoption.",
+      "targets": [
+        "eval.population_mean",
+        "eval.prey_types_at_end",
+        "eval.predators_at_end",
+        "eval.floor_episodes",
+        "eval.toxic_avoidance"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/toxic-cap/defaults.report.json (floor off)",
+      "after": "evals/screens/results/toxic-cap/ (table.md, 9 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered; running."
     }
   ]
 }
