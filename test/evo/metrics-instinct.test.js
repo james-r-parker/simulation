@@ -43,8 +43,8 @@ describe('huntSprintInstinct pools', () => {
         expect(on.hunter.cells.length).toBe(off.hunter.cells.length + 2);
         expect(on.other.cells.length).toBe(off.other.cells.length);
         expect(on.hunter.prior).toContain(-2);
-        expect(on.hunter.prior.filter((v) => v === -2).length).toBe(
-            off.hunter.prior.filter((v) => v === -2).length + 1,
+        expect(on.hunter.prior.filter((/** @type {number} */ v) => v === -2).length).toBe(
+            off.hunter.prior.filter((/** @type {number} */ v) => v === -2).length + 1,
         );
     });
 });
