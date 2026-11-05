@@ -1629,6 +1629,38 @@ E80 ran final defaults against a same-config herd-free control on 16 matched see
 
 Every arm fails the screen verdict (`pop > min` 0/8 everywhere, including the defaults): on these defaults the population mean is 41-88 against about 400 in the E85 screen, so the world is thin before any arm acts. Predators survive on 0-1 of 8 seeds in every arm (the one survivor of `shark300` is a single seed with 5); a faster sprint lifts the catch rate (0.05 to 0.14) and `shark300` more than doubles it, yet neither keeps hunters. Families reach 3 on 0 seeds at defaults, 2 of 8 at `agile` and 1 of 8 at `shark300-sprint22`. No arm is a candidate. The chase is not the only bottleneck: hunter numbers and the thin population are the next questions for the predator balance (natural-selection T50).
 
+### 2026-11-05 - E98 hunter levers on the fed world: the chase is not the bottleneck, replacement is
+
+`E98` (`evals/screens/results/hunter-fed/`): the E88 arms again, 7 arms x 8 seeds x 200000 ticks, `live` policy, on the defaults after #254 raised the food cap. Means over 8 seeds; predators is seeds with a hunter alive at the last tick (total hunters).
+
+| Arm               | predators | catch rate | population | fed life | floor episodes | families eff. | mating | dominance |
+| ----------------- | --------- | ---------- | ---------- | -------- | -------------- | ------------- | ------ | --------- |
+| defaults          | 1/8 (2)   | 0.069      | 126        | 4622     | 9.0            | 1.43          | 0.56   | 0.35      |
+| shark300          | 0/8       | 0.144      | 145        | 4724     | 7.9            | 1.38          | 0.56   | 0.35      |
+| shark1200         | 0/8       | 0.094      | 92         | 5090     | 6.1            | 1.21          | 0.47   | 0.25      |
+| sprint22          | 2/8 (6)   | 0.088      | 134        | 4165     | 9.5            | 1.45          | 0.51   | 0.28      |
+| vision500         | 0/8       | 0.164      | 146        | 4867     | 6.8            | 1.32          | 0.54   | 0.35      |
+| agile             | 0/8       | 0.188      | 109        | 4486     | 8.0            | 1.46          | 0.45   | 0.30      |
+| shark300-sprint22 | 0/8       | 0.142      | 146        | 4130     | 5.9            | 1.12          | 0.54   | 0.32      |
+
+Every arm fails the screen verdict. Four arms double the catch rate and none keeps hunters: the failure gate (no arm at 4/8) is met, and no arm is a candidate (`sprint22` is 2/8 on 6 hunters, under the 3/8 bar, with two seeds under a mean of 80). With prey plentiful the population is 92-146 instead of 41-88 (E88), floor episodes fell from 13-17 to 6-10, and hunters still go extinct, so the cause is how a hunter gets replaced, not how it catches. In `js/sim/` a hunter pays `huntUpkeep` (0.002 a tick) on top of its standing loss (0.3x), holds a 3x store (6000), splits at 0.6 x `splitMinEnergy` (540) only after `splitMateScarceTicks` (600) without a mate in view and at most `splitClonalMax` (3) times in a row, and a mating child waits `maturityTicks` (600) and `pregnancyTicks` (480). A rare role has few mates in view, so it relies on splits that the clonal cap then limits, and a child is a hunter only by inheritance or by `specMutationRate` (0.002). Next: E100 (`evals/screens/hunter-life.grid.json`), one hunter life-history lever per arm (H7).
+
+### 2026-11-05 - E100 hunter life history: births rise 3 to 8 times, hunters at the end do not, and they starve
+
+`E100` (`evals/screens/results/hunter-life/`): 7 arms x 8 seeds x 200000 ticks, `live` policy, E98's seeds and defaults. Means over 8 seeds; hunters is seeds with one or more alive at the last tick (total); births are predator births per run.
+
+| Arm          | hunters | births | catch rate | population | seeds < 80 | fed life | floor episodes | families eff. | mating | dominance |
+| ------------ | ------- | ------ | ---------- | ---------- | ---------- | -------- | -------------- | ------------- | ------ | --------- |
+| defaults     | 1/8 (2) | 5.0    | 0.069      | 126        | 1          | 4622     | 9.0            | 1.43          | 0.56   | 0.35      |
+| split-low    | 1/8 (1) | 12.3   | 0.096      | 106        | 3          | 4501     | 9.8            | 1.44          | 0.49   | 0.36      |
+| upkeep-low   | 0/8     | 2.1    | 0.061      | 115        | 4          | 4442     | 7.0            | 1.36          | 0.47   | 0.32      |
+| specmut-high | 2/8 (3) | 28.5   | 0.077      | 99         | 3          | 4511     | 9.8            | 1.17          | 0.44   | 0.31      |
+| store-big    | 2/8 (2) | 15.0   | 0.146      | 131        | 2          | 4345     | 8.6            | 1.50          | 0.53   | 0.29      |
+| rest-cheap   | 1/8 (2) | 38.9   | 0.123      | 114        | 3          | 5062     | 7.8            | 1.17          | 0.48   | 0.34      |
+| mature-fast  | 0/8     | 5.5    | 0.094      | 101        | 5          | 3983     | 8.6            | 1.47          | 0.53   | 0.31      |
+
+No arm reaches 3/8, so there is no candidate for a 16-seed run. Four arms lift births by 50% or more, yet hunters at the end stay at 0-2 of 8: a born hunter does not live to be counted. The reports carry no death cause per role (`eval.disease_deaths_share`, `eval.terrain_death_share`, `eval.toxic_death_share` and `eval.trampled_share` cover all agents), so four defaults replays (`npm run replay -- --seed <n> --ticks 200000 --level debug --policy map-elites-v6`, seeds 313056, 612370, 446985, 639124) were read for `AgentDied` events with `spec` 1: of 251 hunter deaths, 188 starved (75%, median age 1859 ticks, about three maturity spans), 45 hit a rock or wall (18%, `obstacleDamage` and `wallDamage` 50), 10 were eaten, 5 trampled, 3 died of disease; none of old age or poison. Hunters were born by split (93), floor re-seed (81), the initial seed (68) and mating (9). Hunters therefore starve soon after they mature, whatever their birth route. A note on the replays: `replay` defaults to `baseline-v5`, which is a different world; the screens use `map-elites-v6`. Next: E102 (`evals/screens/hunter-starve.grid.json`), one factor against starvation and rock damage per arm; `evals/hunter-store-specmut-config.json` holds the `specmut-high` plus `store-big` combination (each 2/8 against 1/8, within noise) for E102's last arm.
+
 ### 2026-11-04 - E94 herds and food supply: `maxFood` 1600 caps the food, not the herds
 
 `E94` (`evals/screens/results/herd-food/`): 6 arms x 8 seeds x 200000 ticks, `map-elites-v6`, seeds 1-8, against the defaults. Means over 8 seeds; predators is seeds with a hunter alive at the last tick. Herds block blobs by eating plant items (`grazeHerds`) and by rigid bodies of radius 80 with trample damage (`trampleHerds`).
@@ -1671,3 +1703,36 @@ Staying a shorter time or leaving a patch sooner does not help: seeded patches s
 If the candidate fails, the next lever is a separate body radius: a `herdBodyRadius` key in `config-herds.js` (rule as `herdRadius`), default `null` meaning `herdRadius` so the config hash only changes when it is set, read by `resolveContact` in `trample.js` and the herd rows in `ray-gather.js`, with `herd-graze.js` keeping `herdRadius`. Tests first: a blob at `herdRadius` from an animal with `herdBodyRadius` 40 is not pushed and the graze reach is unchanged; goldens unmoved at the default.
 
 `E97` confirms `trample100` (`evals/trample100-config.json`) on 16 seeds x 200000 ticks against the E95 defaults (`evals/experiments/E95-food15-cap.json`, `E97-trample100.json`, compare in `E97-compare.json`; `js/` identical to the E95 adoption). Trampled share 0.040 to 0.008, but the other gains do not hold: population 113 to 129 (interval -15 to 51), seeded patches 0.008 to 0.013 (interval -0.001 to 0.016), predators at the end 0.44 to 0.06 per seed, seeds above 40 16/16 to 14/16, carcass meals 0.016 to 0.012, and worse (intervals exclude 0) food energy/1k 447 to 411 and defender fitness (mean 2273 to 1952). Not adopted: the 8-seed screen's population and seeded-patch gains were noise, and less trampling costs hunters. The next lever is the separate `herdBodyRadius` of the E96 note.
+
+### 2026-11-05 - E102 hunter hunger: store-specmut keeps a hunter on 4 of 8 seeds, but hunters still starve
+
+`E102` (`evals/screens/results/hunter-starve/`): 7 arms x 8 seeds x 200000 ticks, `live` policy, E98's seeds and defaults. Means over 8 seeds; hunters is seeds with one or more alive at the last tick (total).
+
+| Arm           | hunters | births | catch rate | population | seeds < 80 | fed life | floor episodes | prey types (min) | families eff. | dominance |
+| ------------- | ------- | ------ | ---------- | ---------- | ---------- | -------- | -------------- | ---------------- | ------------- | --------- |
+| defaults      | 1/8 (2) | 5.0    | 0.069      | 126        | 1          | 4551     | 9.0            | 2.3 (1)          | 1.4           | 0.35      |
+| omnivore      | 3/8 (7) | 128.5  | 0.098      | 68         | 7          | 4197     | 10.3           | 2.1 (1)          | 1.7           | 0.22      |
+| move-cheap    | 1/8 (6) | 8.3    | 0.068      | 132        | 2          | 4697     | 8.8            | 2.4 (1)          | 1.4           | 0.29      |
+| bite-fast     | 0/8     | 7.3    | 0.071      | 149        | 2          | 4788     | 6.6            | 2.1 (1)          | 1.4           | 0.31      |
+| rocks-soft    | 0/8     | 9.8    | 0.085      | 117        | 3          | 5049     | 6.6            | 2.5 (1)          | 1.7           | 0.39      |
+| child-rich    | 0/8     | 12.0   | 0.064      | 114        | 3          | 4720     | 7.9            | 2.3 (1)          | 1.5           | 0.32      |
+| store-specmut | 4/8 (4) | 39.4   | 0.067      | 140        | 3          | 4773     | 5.8            | 3.6 (3)          | 1.4           | 0.29      |
+
+No arm qualifies for a 16-seed run (3/8 hunters, no more seeds under 80 than defaults, no prey type lost). `omnivore` (predators eat plants at 0.3) reaches 3/8 with the most hunters (7) and 128 births, but the population falls to 68 and 7 seeds sit under 80: hunters that graze compete with prey and the world thins. `store-specmut` (the E100 `specmut-high` plus `store-big` pair) reaches 4/8 with one hunter per seed, holds 3 to 4 prey types on every seed and floor episodes of 5.8, but 3 seeds sit under 80 against 1 at defaults; `evals/hunter-store-specmut-config.json` stays the closest candidate. Softer rocks and walls (`rocks-soft`), a cheaper gait, a faster bite and a richer child each leave 0-1 of 8 seeds with a hunter, so neither collision damage nor move cost nor bite rate ends hunters. Softer rocks would also change every blob, not only hunters. Herd metrics did not move (seeded patches 0.002-0.016, carcass meal share 0.012-0.019 in every arm).
+
+Replays of `store-specmut` on seeds 612370 and 275725 (`npm run replay -- --seed <n> --ticks 200000 --level debug --policy map-elites-v6 --config evals/hunter-store-specmut-config.json`): of 119 hunter deaths, 92 starved (77%, median starving age about 1.7-1.8k ticks), 18 hit a rock or wall (15%), 7 were trampled, 1 eaten, 1 died of disease. This matches the defaults replays (75% starved, median 1859): the 5x store and the extra births add hunters but a hunter still starves about three maturity spans after birth. Hunters fail on income, and the carcass meal share of 1.5% says herd kills are almost not eaten by them. Next lever from nature: scavenging. Lions and hyenas take a large share of their meat from carcasses they did not kill, and a failed hunt then costs less; a longer-lasting carcass (`herdCarcassTicks`) or a carcass cue the predator senses would let a hunter live between kills.
+
+### 2026-11-05 - E99 herd body radius: the trampled share barely moves, one arm clears the gate
+
+`E99` (`evals/screens/results/herd-body/`): `herdBodyRadius` 60, 45, 30 with `herdRadius` 80 (graze reach) unchanged, 4 arms x 8 seeds x 200000 ticks, `live` policy, seeds 1-8. Means over 8 seeds; predators is seeds with a hunter alive at the last tick; floor is episodes summed over seeds.
+
+| Arm      | population | under 80 | fed life | floor | predators | trampled | seeded | pollination | carcass | grazed | dominance | prey types |
+| -------- | ---------- | -------- | -------- | ----- | --------- | -------- | ------ | ----------- | ------- | ------ | --------- | ---------- |
+| defaults | 126        | 1/8      | 4622     | 72    | 1/8       | 0.040    | 0.006  | 0.058       | 0.015   | 0.363  | 0.345     | 2.25       |
+| body60   | 153        | 2/8      | 4588     | 47    | 0/8       | 0.047    | 0.007  | 0.070       | 0.018   | 0.347  | 0.342     | 2.00       |
+| body45   | 130        | 2/8      | 4545     | 57    | 1/8       | 0.034    | 0.007  | 0.066       | 0.016   | 0.344  | 0.310     | 2.25       |
+| body30   | 184        | 1/8      | 5328     | 40    | 0/8       | 0.032    | 0.003  | 0.063       | 0.013   | 0.322  | 0.313     | 2.25       |
+
+Predictions mostly missed. The trampled share fell far less than predicted (-25%, -50%, -70% predicted; +18%, -15%, -20% measured), so a smaller exclusion disc is not what cuts trampling. Population rose in two arms but not in order of radius (+21%, +3%, +46%), with a seed sd of about 60 (se about 22), so the gains look like seed noise as in E96/E97. Predators stayed at 0-1/8 as predicted. Gate (population +10% or more, no herd role down over 30%, no prey type lost; every arm including defaults has a seed with one prey type at the end): `body60` passes and is the candidate (`evals/body60-config.json`); `body30` fails on seeded patches (-50%); `body45` fails on population (+3%). A 16-seed `eval:compare` of `body60` decides it. The mechanism is not visible, so the bar is a population gain with the interval excluding 0; without it `herdBodyRadius` is deleted with its tests (AGENTS.md "Delete what a switch replaces").
+
+E101 (16 seeds) did not confirm body60: population +17% with the interval including 0, hunters at end 0.44 to 0 per seed (worse). The body is not the herds' cost; herdBodyRadius is deleted.
