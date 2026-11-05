@@ -69,16 +69,17 @@ function chaseCell(hunters) {
 }
 
 /**
- * @param {{ predators: number | null, ticks: number | null, kills: number | null, pass: boolean } | undefined} hunters
- *   an arm's hunter gate
- * @returns {string} the three medians as predators/ticks/kills, then `ok` or `FAIL`, or `n/a` without a gate
+ * @param {{ predators: number | null, ticks: number | null, kills: number | null, aliveShare: number, lowSeeds: number,
+ *   pass: boolean } | undefined} hunters an arm's hunter gate
+ * @returns {string} the three medians as predators/ticks/kills, the share of seeds with a hunter at the end, the
+ *   seeds ending under 80 agents, then `ok` or `FAIL`; `n/a` without a gate
  */
 function huntersCell(hunters) {
     if (hunters === undefined) {
         return 'n/a';
     }
     const part = (/** @type {number | null} */ v) => (v === null ? '-' : String(Math.round(v * 10) / 10));
-    return `${part(hunters.predators)}/${part(hunters.ticks)}/${part(hunters.kills)} ${hunters.pass ? 'ok' : 'FAIL'}`;
+    return `${part(hunters.predators)}/${part(hunters.ticks)}/${part(hunters.kills)} alive ${part(hunters.aliveShare)} low ${hunters.lowSeeds} ${hunters.pass ? 'ok' : 'FAIL'}`;
 }
 
 /**
@@ -117,7 +118,7 @@ export function renderTable({ reference, arms }) {
         'pop > min',
         'catch/1k > 0 (speed)',
         'chase catch share',
-        'hunters p50 (pred/ticks/kills)',
+        'hunters p50 (pred/ticks/kills), alive share, seeds <80',
         'mating mean >= 0.2',
         'born mean >= 0.5',
         'lineages >= 5',
