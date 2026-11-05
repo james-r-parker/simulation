@@ -36,19 +36,6 @@ function handWorld(pools, { offset, tick }) {
     };
 }
 
-describe('huntSprintInstinct pools', () => {
-    it('add the sprint cells to the hunter pool only when the key is on', () => {
-        const off = createInstinctPools(CONFIG);
-        const on = createInstinctPools(createConfig({ instinctWeight: 1, huntSprintInstinct: true }));
-        expect(on.hunter.cells.length).toBe(off.hunter.cells.length + 2);
-        expect(on.other.cells.length).toBe(off.other.cells.length);
-        expect(on.hunter.prior).toContain(-2);
-        expect(on.hunter.prior.filter((/** @type {number} */ v) => v === -2).length).toBe(
-            off.hunter.prior.filter((/** @type {number} */ v) => v === -2).length + 1,
-        );
-    });
-});
-
 describe('instinctCells', () => {
     it('lists the cells applyInstinct writes, with their prior on a zero row', () => {
         const hunter = instinctCells(LAYOUT, { weight: 1, canHunt: true, herdWary: 0.5 });

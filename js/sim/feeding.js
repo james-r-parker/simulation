@@ -12,7 +12,7 @@ import { FOOD_GONE, removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
-import { gainMealTemperature } from './temperature.js';
+import { gainTemperature } from './temperature.js';
 
 const HERD_CARCASS_BITE = 400;
 
@@ -52,7 +52,7 @@ function consumeFood(world, slot, food, share) {
     }
     world.foodEatenBySpec[world.spec[slot]] += stored;
     const { temperatureGainEat, foodEnergy } = world.config;
-    gainMealTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
+    gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
     world.ateTimer[slot] = 0;
     if (!isMeat) {
         carryPollen(world, slot, food);
@@ -177,10 +177,7 @@ function applyBite(world, biter, victim) {
     if (fatal && config.predatorKillEnergy > 0) {
         gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
     }
-    if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
-        world.restTimer[biter] = config.predatorRestTicks;
-    }
-    gainMealTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
+    gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteBiteLedger(world, biter, { gained, fatal, kick: paid });
     world.lastLoss[victim] = LOSS_CAUSE.BITE;

@@ -36,13 +36,11 @@ const SINE = HIT_STRIDE - 1;
  * weight. A hunter: thrust, turn towards and bite prey. Every body: the alarm, hunt-call and smoke biases start at -2 x weight.
  * @param {Float32Array} row the weight row (a random genome)
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean, herdWary: number, sprintInstinct?: boolean}} options `weight` is
- *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged; `sprintInstinct`
- *   (`config.huntSprintInstinct`) makes a hunter's sprint bias start at -2 x weight and adds a skip from prey strength
- *   to sprint, so a hunt is a walk until prey is close
+ * @param {{weight: number, canHunt: boolean, herdWary: number}} options `weight` is
+ *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged
  * @returns {void}
  */
-export function applyInstinct(row, layout, { weight, canHunt, herdWary, sprintInstinct = false }) {
+export function applyInstinct(row, layout, { weight, canHunt, herdWary }) {
     if (weight === 0) {
         return;
     }
@@ -54,17 +52,13 @@ export function applyInstinct(row, layout, { weight, canHunt, herdWary, sprintIn
         addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: THRUST, amount: w });
         addSkip(row, layout, { channel: 'prey', part: SINE, output: TURN, amount: w });
         addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: BITE, amount: BITE_SHARE * w });
-        if (sprintInstinct) {
-            addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: OUTPUT_INDEX.SPRINT, amount: w });
-        }
     } else {
         addSkip(row, layout, { channel: 'threat', part: STRENGTH, output: THRUST, amount: w });
         addSkip(row, layout, { channel: 'threat', part: SINE, output: TURN, amount: -w });
     }
     addSkip(row, layout, { channel: 'megafauna', part: STRENGTH, output: THRUST, amount: herdWary * w });
     addSkip(row, layout, { channel: 'megafauna', part: SINE, output: TURN, amount: -herdWary * w });
-    const silent = sprintInstinct && canHunt ? [ALARM, HUNT, SMOKE, OUTPUT_INDEX.SPRINT] : [ALARM, HUNT, SMOKE];
-    for (const output of silent) {
+    for (const output of [ALARM, HUNT, SMOKE]) {
         const i = layout.bOut + GENE_OUTPUTS.indexOf(output);
         row[i] = Math.max(-WEIGHT_CLAMP, SILENT_BIAS * w);
     }
@@ -83,7 +77,6 @@ export function randomGenome(world, slot, { row, rng }) {
     applyInstinct(row, layout, {
         weight: config.instinctWeight,
         herdWary: config.herdWary,
-        sprintInstinct: config.huntSprintInstinct,
         canHunt: specParams(config, world.spec[slot]).canHunt,
     });
 }

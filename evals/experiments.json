@@ -2849,6 +2849,31 @@
       },
       "effect": "no-difference",
       "note": "Screen read (8 seeds, so a direction, not a verdict). No arm passes hunterGate: the defaults themselves sit at the keep line (hunters alive 6/8, 1 seed under 80, median predators_at_end 6, last-quarter hunter-ticks 238069), and per-seed predators_at_end runs 0 to 59 inside the defaults, so 8 seeds cannot separate arms by a seed or two. Hunters alive / median predators_at_end / median last-quarter ticks: sprint-instinct 6/8, 10.5, 168917 (best end count, 0 seeds low); herb-meat-0.1 5/8, 4, 406256 (best hunter-ticks, carcass_hunter_share 0.149->0.260, hunter median lifespan 1849->2460); rest-60 6/8, 4, 229799; refuge-40 6/8, 3.5, 294087; meal-heat-cap 7/8, 2.5, 203381 but population 414->471 and pop < max on 1/8 (overshoot). Harmful: patches-8 (2/8, 6 seeds low), bite-15/30, graze-90, no-scatter (population roughly halves). On every arm hunter_kills_per_life has median 0 and hunter_zero_kill_share stays 0.80-0.92: no lever made hunters hunt; they live on carcass, herd and bite income. floor-off gives the same predators_at_end as defaults on every seed, so the floor no longer decides any world after E112. Decision (autonomy rule): confirm sprint-instinct and herb-meat-0.1 on 16 seeds against evals/results/e112-cap-short.json (the adopted defaults); rest-60 waits on those. herb-meat-0.1 raising carcass_hunter_share passes T58's first gate condition, but its end hunter count did not rise, so T58 carcass scent stays gated pending the 16-seed read. 16-seed confirmation (200000 ticks, against evals/results/e112-cap-short.json, the adopted defaults; reports evals/results/e113-sprint.json and e113-herb-meat.json): hunters alive at the end 10/16 on all three; seeds with population mean under 80: defaults 1, sprint 2, herb-meat 2. sprint-instinct: predators_at_end 8.06->7.50 no-difference, median last-quarter hunter-ticks 173320->73876, population_mean -10.8%, body_plan_coverage worse; rejected, switch deleted. herb-meat-0.1: predators_at_end 8.06->11.06 no-difference ([-9.5, 13.4]), median hunter-ticks 173320->284419, carcass_hunter_share 0.126->0.245 (interval [0.020, 0.208] excludes 0), births_per_1k +8.4% better, basin_families and basin_lineages_alive better, body_plan_coverage worse; not adopted (fails the keep rule on seeds under 80 by one and the end count does not move). rest-60/rest-240 and meal-heat-cap showed no hunter gain on 8 seeds (meal-heat-cap overshoots the population cap), so predatorRestTicks and mealHeatCap are deleted with huntSprintInstinct (T57, T52). T58 gate met: herbivore meatFoodValue 0.1 raises carcass_hunter_share while the end hunter count does not move, so carcass scent for hunters is built next."
+    },
+    {
+      "id": "E114",
+      "date": "2026-11-05",
+      "branch": "feat/hunter-carcass-scent",
+      "hypothesis": "Hunters cannot find carcasses (E113: herbivore meatFoodValue 0.1 doubles carcass_hunter_share but predators_at_end does not move). A carcass scent on the hunt scent field, which hunters already follow, leads them to carcasses (T58).",
+      "prediction": "8 seeds x 200000 ticks. carcass-scent raises carcass_hunter_share and hunters alive at the end by at least one seed over the defaults; with herb-meat-0.1 it raises predators_at_end above herb-meat alone. Risk: herbivores also read hunt scent and avoid carcass areas.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.hunter_ticks_last_quarter",
+        "eval.carcass_hunter_share",
+        "eval.population_mean"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/carcass-scent/defaults.report.json",
+      "after": "evals/screens/results/carcass-scent/ (table.md, 4 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.predators_at_end": "worse",
+        "eval.hunter_ticks_last_quarter": "worse",
+        "eval.carcass_hunter_share": "no-difference",
+        "eval.population_mean": "worse"
+      },
+      "effect": "worse",
+      "note": "Screen read, 8 seeds. Hunters alive / median predators_at_end / median last-quarter hunter-ticks / population mean / carcass_hunter_share: defaults 6/8, 6, 238069, 414, 0.149; carcass-scent 4/8, 0.5, 44295, 315, 0.135; carcass-scent + herb-meat-0.1 5/8, 1.5, 111424, 287, 0.138; herb-meat-0.1 5/8, 4, 406256, 407, 0.260. The scent lowers hunter carcass income (0.379 to 0.332 of income) and predation per 1k halves. Decision: delete carcassScent (T58 adopt-or-delete); a far miss on every reading, so no 16-seed confirmation was run. Reason in sim-notes.md 2026-11-05."
     }
   ]
 }

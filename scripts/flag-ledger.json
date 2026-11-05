@@ -22,23 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
-  },
-  {
-    "key": "mealHeatCap",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "T52",
-    "reason": "Kept as the one-factor candidate E108 supported (eating cannot raise temperature above temperatureOptimalMax); T52 adopts it and deletes the key, or deletes the cap path, after its screen against defaults."
-  },
-  {
-    "key": "huntSprintInstinct",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "T57",
-    "reason": "Kept as the one-factor arm of the hunter-energy screen (hunters walk until prey is close); T57 adopts it and deletes the key, or deletes the sprint-instinct path, after the screen."
-  },
-  {
-    "key": "predatorRestTicks",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "T57",
-    "reason": "Kept as the one-factor arm of the hunter-energy screen (a hunter rests after a kill); T57 adopts a value and deletes the key's off path, or deletes the key, after the screen."
   }
 ]

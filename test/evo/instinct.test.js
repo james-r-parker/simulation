@@ -7,7 +7,6 @@ import {
     GENE_OUTPUTS,
     OUTPUT_COUNT,
     OUTPUT_INDEX,
-    POOLED_CHANNELS,
     POOLED_STRIDE,
     brainLayout,
     inputOffsets,
@@ -206,37 +205,5 @@ describe('a predator with the instinct', () => {
             off += bites(0, seed);
         }
         expect(on).toBeGreaterThan(off + 4);
-    });
-});
-
-describe('applyInstinct: sprintInstinct', () => {
-    const { SPRINT } = OUTPUT_INDEX;
-    const sprintBias = (/** @type {Float32Array} */ row) => row[layout.bOut + GENE_OUTPUTS.indexOf(SPRINT)];
-    const preySprint = (/** @type {Float32Array} */ row) => {
-        const input = POOLED_CHANNELS.indexOf('prey') * POOLED_STRIDE;
-        return row[layout.wSkip + input * layout.geneOutputs + GENE_OUTPUTS.indexOf(SPRINT)];
-    };
-
-    it('is off unless asked: the row is bit-identical without the option', () => {
-        const base = rowOf(5, 1, true);
-        const row = new Float32Array(layout.weightCount);
-        randomWeights(row, layout, createRng(5), config.leakGeneStart);
-        applyInstinct(row, layout, { weight: 1, canHunt: true, herdWary: config.herdWary, sprintInstinct: false });
-        expect(row).toEqual(base);
-    });
-
-    it('for a hunter silences the sprint bias at -2 x weight and lets prey strength raise it', () => {
-        const row = new Float32Array(layout.weightCount);
-        applyInstinct(row, layout, { weight: 1, canHunt: true, herdWary: 0, sprintInstinct: true });
-        expect(sprintBias(row)).toBe(-2);
-        expect(preySprint(row)).toBe(1);
-    });
-
-    it('leaves a non-hunter untouched', () => {
-        const a = new Float32Array(layout.weightCount);
-        const b = new Float32Array(layout.weightCount);
-        applyInstinct(a, layout, { weight: 1, canHunt: false, herdWary: 0, sprintInstinct: true });
-        applyInstinct(b, layout, { weight: 1, canHunt: false, herdWary: 0 });
-        expect(a).toEqual(b);
     });
 });
