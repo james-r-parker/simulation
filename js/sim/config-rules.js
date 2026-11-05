@@ -85,6 +85,7 @@ export const FEATURE_RULES = {
     birthWindowTicks: int(1),
     maxBirthsPerWindow: int(0, 16),
     capBirthsEnabled: BOOL,
+    mealHeatCap: BOOL,
     splitCapMargin: int(0),
     mateDistanceMax: { type: 'num', gt: 0, infinite: true },
     meritMateBonus: num(0),
