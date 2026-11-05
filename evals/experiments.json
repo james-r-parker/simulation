@@ -2747,6 +2747,27 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Preregistered; cancelled before running on 2026-11-05 because the hunter readings are being fixed (T53, T60); it re-runs after them."
+    },
+    {
+      "id": "E110",
+      "date": "2026-11-05",
+      "branch": "eval/e110-ledger-floor",
+      "hypothesis": "T54 (user direction 2026-11-05): the presence gains of E103 (fat store, role switching) and E105 (carcassShare 0.8) may be the floor guard restocking hunters rather than hunters living. The T53 ledger splits hunter deaths into lives with no meal (the store never filled) and lives that ate and still starved (burned between meals), and counts hunter births by source.",
+      "prediction": "16 seeds x 200000 ticks, defaults vs floorTrigger 0 (evals/floor-off-config.json). Defaults: eval.hunter_birth_source_share.floor about 0.3 or more (E100 replays had 81 floor re-seeds against 9 mating births); eval.hunter_zero_kill_share above 0.8; most hunter deaths starvation with no meal. Floor-off: eval.predators_at_end median falls to 0 and hunter_ticks_last_quarter falls by more than half; if so the E103/E105 presence gains are restock and the next screens are judged with the floor off. Spec-flip hunters (birth source spec mutation) kill at a lower rate than hunter-parent ones.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.hunter_ticks_last_quarter",
+        "eval.hunter_kills_per_life",
+        "eval.population_mean",
+        "eval.floor_episodes"
+      ],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/results/e110-defaults.json",
+      "after": "evals/results/e110-floor-off.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered; running."
     }
   ]
 }
