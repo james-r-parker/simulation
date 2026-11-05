@@ -139,6 +139,19 @@ describe('the hunter ledger', () => {
     });
 });
 
+describe('the hunter ledger on a starving tick', () => {
+    it('splits only the energy actually removed across standing, moving and sprinting', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        removeEnergy(world, HUNTER, world.energy[HUNTER] - 1e-4, LOSS_CAUSE.COST);
+        const had = world.energy[HUNTER];
+        runArena(world, { ticks: 1, prey: stillBrain });
+        const [record] = drained(world, 'HunterLedger');
+        const spent = record.standingEnergy + record.moveEnergy + record.sprintEnergy;
+        expect(world.alive[HUNTER]).toBe(0);
+        expect(spent).toBeCloseTo(had, 12);
+    });
+});
+
 describe('birth source', () => {
     it('names a spawn by its cause', () => {
         expect(sourceOfSpawn(BORN_CAUSE.FLOOR)).toBe(BIRTH_SOURCE.FLOOR);

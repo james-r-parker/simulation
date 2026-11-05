@@ -137,6 +137,9 @@ function visionLoss(world, slot) {
     return world.config.passiveLoss * world.config.visionCost * (world.vision[slot] - 1);
 }
 
+/** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */
+const nominal = new Float64Array(3);
+
 /**
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
@@ -163,9 +166,9 @@ function tickCost(world, slot) {
     cost += upkeep;
     if (sp.canHunt) {
         // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.
-        world.ledgerStanding[slot] += standing * drain + upkeep;
-        world.ledgerMove[slot] += base - standing * drain;
-        world.ledgerSprint[slot] += sprint;
+        nominal[0] = standing * drain + upkeep;
+        nominal[1] = base - standing * drain;
+        nominal[2] = sprint;
     }
     return cost;
 }
@@ -187,6 +190,14 @@ export function applyCosts(world) {
         ateTimer[slot] = Math.min(TIMER_CAP, ateTimer[slot] + 1);
         bittenTimer[slot] = Math.min(TIMER_CAP, bittenTimer[slot] + 1);
         stepTemperature(world, slot);
-        removeEnergy(world, slot, tickCost(world, slot), LOSS_CAUSE.COST);
+        const cost = tickCost(world, slot);
+        const removed = removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
+        if (world.huntBySpec[world.spec[slot]] === 1 && cost > 0) {
+            // The ledger books the energy removed, split in proportion to the nominal terms (a starving tick removes less).
+            const share = removed / cost;
+            world.ledgerStanding[slot] += nominal[0] * share;
+            world.ledgerMove[slot] += nominal[1] * share;
+            world.ledgerSprint[slot] += nominal[2] * share;
+        }
     }
 }
