@@ -18,20 +18,21 @@
 // Preallocated arrays and one growable log; nothing is allocated per tick.
 
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
-import { DEATH_CAUSE } from '../sim/events.js';
+import { DEFAULTS } from '../sim/config-defaults.js';
+import { DEATH_CAUSE, EVENT_TYPE } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok, quantile, share } from './metrics-stats.js';
+import {
+    ageMetrics,
+    BIRTH_INDEX,
+    createAgeScene,
+    HUNTER_BIRTH_NAMES,
+    noteAgeDeath,
+    noteAgeKill,
+} from './scene-hunter-age.js';
 
 /** The hunter death causes the metrics name, in order. */
 export const HUNTER_DEATH_NAMES = Object.freeze(['starved', 'collision', 'eaten', 'trampled', 'disease', 'other']);
-/** The hunter birth sources the metrics name, in order. */
-export const HUNTER_BIRTH_NAMES = Object.freeze([
-    'mate-hunter-parent',
-    'split-hunter-parent',
-    'spec-flip',
-    'floor',
-    'initial',
-]);
 /** The hunter income sources the metrics name, in the order of `INCOME` in js/sim/hunter-ledger.js. */
 export const HUNTER_INCOME_NAMES = Object.freeze(['kill', 'bite', 'carcass', 'herd']);
 
@@ -45,22 +46,16 @@ DEATH_INDEX[DEATH_CAUSE.DISEASE] = 4;
 DEATH_INDEX[DEATH_CAUSE.OLD_AGE] = 5;
 DEATH_INDEX[DEATH_CAUSE.POISONED] = 5;
 
-/** @type {Record<number, number>} */
-const BIRTH_INDEX = {};
-BIRTH_INDEX[BIRTH_SOURCE.MATE_HUNTER] = 0;
-BIRTH_INDEX[BIRTH_SOURCE.SPLIT_HUNTER] = 1;
-BIRTH_INDEX[BIRTH_SOURCE.SPEC_FLIP] = 2;
-BIRTH_INDEX[BIRTH_SOURCE.FLOOR] = 3;
-BIRTH_INDEX[BIRTH_SOURCE.INITIAL] = 4;
-
 const LAST_SHARE = 0.25;
 
 /**
  * @param {number} runTicks the run length in ticks; 0 leaves `eval.hunter_ticks_last_quarter` empty
+ * @param {Readonly<Record<string, any>>} [config] the world's config, for the juvenile window of the age detectors
  * @returns {Record<string, any>} an empty hunter scene
  */
-export function createHunterScene(runTicks) {
+export function createHunterScene(runTicks, config = DEFAULTS) {
     return {
+        age: createAgeScene(config.juvenileTicks),
         log: createLog(['age', 'kills']),
         rows: 0,
         deaths: new Float64Array(HUNTER_DEATH_NAMES.length),
@@ -105,6 +100,33 @@ export function noteHunterLedger(scene, d, o) {
     scene.log.kills[row] = Math.floor(packed / 64);
     scene.deaths[DEATH_INDEX[Math.floor(packed / 8) % 8]] += 1;
     scene.alive -= 1;
+    noteAgeDeath(scene.age, d, o);
+}
+
+/**
+ * Notes one `HunterKill` record: the kill's age band and, for a first kill, the age.
+ * @param {Record<string, any>} scene the hunter scene
+ * @param {Float64Array} d the event ring data
+ * @param {number} o the record offset
+ * @returns {void}
+ */
+export function noteHunterKill(scene, d, o) {
+    noteAgeKill(scene.age, d, o);
+}
+
+/**
+ * Notes one event record when it is a hunter's: a `HunterKill` or a `HunterLedger`.
+ * @param {Record<string, any>} scene the hunter scene
+ * @param {Float64Array} d the event ring data
+ * @param {number} o the record offset
+ * @returns {void}
+ */
+export function noteHunterRecord(scene, d, o) {
+    if (d[o] === EVENT_TYPE.HUNTER_KILL) {
+        noteHunterKill(scene, d, o);
+    } else if (d[o] === EVENT_TYPE.HUNTER_LEDGER) {
+        noteHunterLedger(scene, d, o);
+    }
 }
 
 /**
@@ -207,6 +229,7 @@ export function hunterMetrics(scene, world) {
         ...deathMetrics(scene),
         ...shares('eval.hunter_birth_source_share', HUNTER_BIRTH_NAMES, scene.births, 'no hunter births'),
         ...incomeMetrics(world),
+        ...ageMetrics(scene.age, world),
         'eval.predator_end_local_share': endLocalShare(world),
         'eval.hunter_ticks_last_quarter':
             scene.runTicks > 0 ? ok(scene.quarterTicks) : none('no run length (createObserver runTicks)'),

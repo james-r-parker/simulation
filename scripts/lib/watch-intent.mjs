@@ -22,6 +22,7 @@ export const WATCH_INTENDED_LOWER = new Set([
     'eval.flora_seed_bank_occupancy_share',
     'eval.disease_deaths_share',
     'eval.hunter_zero_kill_share',
+    'eval.hunter_first_kill_age',
     'eval.hunter_death_share.starved',
     ...['forager', 'predator', 'reproducer', 'scout', 'defender'].map((name) => `eval.herd_carcass_share.${name}`),
 ]);

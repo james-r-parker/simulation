@@ -2,7 +2,7 @@
 // world is only read.
 
 import { describe, expect, it } from 'vitest';
-import { DEATH_CAUSE } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { observe } from '../../js/evo/observer.js';
 import { createScenes, resetSceneSlot } from '../../js/evo/observer-scenes.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
@@ -49,6 +49,16 @@ describe('observeScenes', () => {
         observe(r.observer, r.world);
         expect(r.observer.scenes.approach.caught).toBe(1);
         expect(r.observer.scenes.approach.phase[hunter]).toBe(0);
+    });
+
+    it('feeds a HunterKill record to the hunter age detectors', () => {
+        const r = observed();
+        nextTick(r.world, T0 + 1);
+        const o = pushEvent(r.world.events, EVENT_TYPE.HUNTER_KILL, T0);
+        r.world.events.data.set([5, 700, 1], o + 2);
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.hunters.age.firstKills).toBe(1);
+        expect(r.observer.scenes.hunters.age.bandKills[0]).toBe(1);
     });
 
     it('runs the terrain and basin samples every 10 ticks and the patch sample every 100', () => {

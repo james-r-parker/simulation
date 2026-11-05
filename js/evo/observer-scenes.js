@@ -14,7 +14,7 @@ import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
-import { createHunterScene, noteHunterBirth, noteHunterLedger, tickHunters } from './scene-hunters.js';
+import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
@@ -56,7 +56,7 @@ export function createScenes(config, runTicks = 0) {
         mate: createMateScene(config),
         proof: createProofScene(config),
         disease: createDiseaseScene(config),
-        hunters: createHunterScene(runTicks),
+        hunters: createHunterScene(runTicks, config),
     };
 }
 
@@ -129,9 +129,7 @@ function noteEvents(scenes, observer, world) {
         }
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
-        if (d[o] === EVENT_TYPE.HUNTER_LEDGER) {
-            noteHunterLedger(scenes.hunters, d, o);
-        }
+        noteHunterRecord(scenes.hunters, d, o);
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             noteHunterBirth(scenes.hunters, world, d[o + 2]);
             resetSceneSlot(scenes, d[o + 2]);
