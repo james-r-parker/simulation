@@ -1,0 +1,16 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "genes-100": { "mutationRate": "genes:100" },
+    "genes-134": { "mutationRate": "genes:134" },
+    "genes-268": { "mutationRate": "genes:268" },
+    "decay-0.001": { "weightDecay": 0.001 },
+    "decay-0": { "weightDecay": 0 },
+    "genes-134-decay-0.001": { "mutationRate": "genes:134", "weightDecay": 0.001 }
+  }
+}

@@ -2686,6 +2686,26 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "E106 (6 arms x 8 seeds x 200000 ticks, post-E105 defaults): no arm qualified, no seed reached 3 families per basin in any arm. basin_family_effective (mean) defaults 1.29, mate-0.7 1.31, mate-0.45 1.31, one-gap 1.23, mutation-2x 1.50 (+0.21, best, under the +0.4 bar), disease-3x 1.22. Population mean 145, 125, 125, 132, 124, 127; predator presence 0.51, 0.41, 0.41, 0.50, 0.42, 0.49; prey types at end 3.88, 3.38, 3.38, 3.13, 3.13, 2.75; lineage_dominance 0.29, 0.29, 0.29, 0.37, 0.29, 0.34. mate-0.7 and mate-0.45 gave identical metrics, and the key does bind (0.7 differs from defaults; mate births 0.384 against 0.412, mating share 0.415 against 0.451, so mating is not near 0). No mated pair lay between 0.45 and 0.7 in 8 seeds x 200000 ticks: pair distances are bimodal, close kin under 0.45 or distant over 0.7, and 0.7 already removes every distant pair. A cutoff cannot cut finer than that, and the population inside a basin is close kin, so the shortage is variation, not panmixia. Failure gate applies: a distance cutoff cannot add families; the screen points at standing variation (mutation scale, FAMILY_DISTANCE 0.5 against a within-basin spread under 0.45) before any assortative preference (mateAssortWeight in js/sim/mate-search.js). No candidate config written. Prediction missed: every arm lost population (about -10 to -15%) against defaults and predicted family gains did not appear."
+    },
+    {
+      "id": "E107",
+      "date": "2026-11-05",
+      "branch": "eval/e107-variation",
+      "hypothesis": "E106 showed basins are close kin (mated pairs are under 0.45 or over 0.7 in genetic distance, none between), so one family per basin is a shortage of standing variation, not panmixia: only doubled mutation helped (+0.21). Mutation adds variation, and weightDecay (0.005) shrinks the wIn rows of silent inputs every birth, pulling neutral variation back to zero. In nature neutral variation accumulates on genes under no selection; removing the decay and raising the mutation count should let families drift apart within a basin.",
+      "prediction": "8 seeds x 200000 ticks on the post-E105 defaults (evals/screens/variation.grid.json). basin_family_effective (defaults about 1.3): genes-100 1.4, genes-134 1.5, genes-268 1.8, decay-0.001 1.5, decay-0 1.6, genes-134-decay-0.001 1.8. Population mean (about 145) falls 5-15% with more mutation (more broken brains) and is unchanged with less decay; predator presence and prey types within 10% for the decay arms and down to 15% for genes-268. A candidate needs basin_family_effective up by 0.4 or more with population mean 126 or more, predator presence 0.45 or more, prey types 3.0 or more and no more floor episodes. Failure gate: no arm qualifies, then variation is not the limit at this population size and the families gate is recorded as unmet for this round, with the evidence, instead of tuning further.",
+      "targets": [
+        "eval.basin_family_effective",
+        "eval.population_mean",
+        "eval.predator_presence",
+        "eval.prey_types_at_end"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/variation/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/variation/ (table.md, 7 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/variation.grid.json."
     }
   ]
 }
