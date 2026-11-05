@@ -1,0 +1,15 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "cap-short",
+  "base": { "floorTrigger": 0 },
+  "arms": {
+    "cap-short": { "flora": { "toxiccap": { "life": 4000, "yield": 0.2 } }, "maxFood": 3600 },
+    "food-3600": { "maxFood": 3600 },
+    "life-yield": { "flora": { "toxiccap": { "life": 4000, "yield": 0.2 } } },
+    "life-3600": { "flora": { "toxiccap": { "life": 4000 } }, "maxFood": 3600 },
+    "yield-3600": { "flora": { "toxiccap": { "yield": 0.2 } }, "maxFood": 3600 }
+  }
+}
