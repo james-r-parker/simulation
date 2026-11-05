@@ -2644,7 +2644,7 @@
       "after": "evals/screens/results/scavenge/ (table.md, 7 arms x 8 seeds x 200000 ticks)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered, not run. Grid evals/screens/scavenge.grid.json."
+      "note": "A screen, not a verdict. Hunters at end (seeds, total): defaults 4/8 (4), carcass-long 2/8 (56), carcass-rich 3/8 (11), meat-exclusive 2/8 (3), herd-turnover 1/8 (2), herd-fat 1/8 (51), scavenger-combo 1/8 (4). Predator presence: defaults 0.356, carcass-long 0.338, carcass-rich 0.514, meat-exclusive 0.405, herd-turnover 0.368, herd-fat 0.391, scavenger-combo 0.403. Hunter carcass share: 0.062, 0.066, 0.113, 0.155, 0.129, 0.124, 0.362. Herd carcass meal share: 0.012, 0.008, 0.015, 0.043, 0.025, 0.021, 0.009. Population mean: 140, 131, 145, 100, 116, 120, 104; seeds under 80: 3, 3, 3, 5, 3, 3, 4. Prey types at end: 3.63, 2.63, 3.88, 3.00, 3.13, 3.13, 2.75. Fed life 4650-4910 (no arm differs). Floor episodes 5.8 defaults, 7.1-9.5 others. Families eff. 1.29-1.58, dominance 0.29-0.34, mate merit gain -0.034 defaults, +0.007 to +0.071 others. Seeded patches 0.005-0.016. Gate: only carcass-rich clears it (presence +44%, carcass meals up, population 145, prey types 3.88). Predictions mostly missed: hunters at end did not rise (carcass-rich 3/8 against 4/8), the combo did not stack (presence 0.403, population 104), meat-exclusive and the combo cost population and prey types. Sent to 16-seed confirmation: carcass-rich (evals/carcass-rich-config.json). Fallback if it fails: carcass scent (code change, sketch in sim-notes)."
     }
   ]
 }
