@@ -104,12 +104,17 @@ export function noteBiteLedger(world, biter, { gained, fatal, kick }) {
 }
 
 /**
- * Credits an eaten victim to its killer, when the killer is alive. Call at the victim's death.
+ * Credits an eaten victim to its killer, when the killer is alive and the victim's last noted bite was deliberate (the rule
+ * of `noteKill`). Call it for every victim of a reap before any `noteHunterDeath`, so a killer that dies on the same tick
+ * (at a lower slot too) still has the kill on its record.
  * @param {Record<string, any>} world the world
  * @param {number} victim the eaten slot
  * @returns {void}
  */
 export function noteLedgerKill(world, victim) {
+    if (world.lastBiteDeliberate[victim] !== 1 || world.lastBiter[victim] === 0) {
+        return;
+    }
     const killer = slotOfGenome(world, world.lastBiter[victim]);
     if (killer >= 0) {
         world.ledgerKills[killer] += 1;

@@ -4,6 +4,7 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { BIRTH_SOURCE, noteChildSource, sourceOfSpawn } from '../../js/sim/hunter-ledger.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { removeEnergy, LOSS_CAUSE } from '../../js/sim/energy.js';
+import { reap } from '../../js/sim/population.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { HUNTER, PREY, createArena, runArena, stillBrain } from './helpers/predator-arena.js';
 
@@ -149,6 +150,32 @@ describe('the hunter ledger on a starving tick', () => {
         const spent = record.standingEnergy + record.moveEnergy + record.sprintEnergy;
         expect(world.alive[HUNTER]).toBe(0);
         expect(spent).toBeCloseTo(had, 12);
+    });
+
+    it('credits a kill to a killer that dies on the same tick, on its record', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        const killer = world.genomeId[HUNTER];
+        world.lastBiter[PREY] = killer;
+        world.lastBiteTick[PREY] = world.tick + 1;
+        world.lastBiteDeliberate[PREY] = 1;
+        world.energy[PREY] = 0;
+        world.energy[HUNTER] = 0;
+        world.lastLoss[HUNTER] = LOSS_CAUSE.COST;
+        world.lastLoss[PREY] = LOSS_CAUSE.BITE;
+        world.tick += 1;
+        reap(world, { initBrain() {} });
+        const [record] = drained(world, 'HunterLedger');
+        expect(record.kills).toBe(1);
+    });
+
+    it('does not credit a kill whose last bite was not deliberate', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        world.lastBiter[PREY] = world.genomeId[HUNTER];
+        world.lastBiteDeliberate[PREY] = 0;
+        world.energy[PREY] = 0;
+        world.lastLoss[PREY] = LOSS_CAUSE.BITE;
+        reap(world, { initBrain() {} });
+        expect(world.ledgerKills[HUNTER]).toBe(0);
     });
 });
 

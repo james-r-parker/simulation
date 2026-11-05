@@ -108,6 +108,21 @@ function pushDied(world, slot, cause) {
 }
 
 /**
+ * Credits each eaten victim of this reap to its killer's ledger before any record is emitted, so a killer that dies on the
+ * same tick keeps its kill.
+ * @param {World} world the world
+ * @returns {void}
+ */
+function creditLedgerKills(world) {
+    const { alive, energy } = world;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 1 && energy[slot] <= 0 && deathCause(world, slot) === DEATH_CAUSE.EATEN) {
+            noteLedgerKill(world, slot);
+        }
+    }
+}
+
+/**
  * Kills every agent that is too old or out of energy: event, hook, remaining energy to the ledger, carcass, fertile zone, free.
  * @param {World} world the world
  * @param {Policy} policy the policy
@@ -116,6 +131,7 @@ function pushDied(world, slot, cause) {
 export function reap(world, policy) {
     const { alive } = world;
     openHunterTally(world);
+    creditLedgerKills(world);
     for (let slot = 0; slot < alive.length; slot++) {
         const cause = alive[slot] === 1 ? deathCause(world, slot) : -1;
         if (cause < 0) {
@@ -124,7 +140,6 @@ export function reap(world, policy) {
         pushDied(world, slot, cause);
         if (cause === DEATH_CAUSE.EATEN) {
             noteKill(world, slot);
-            noteLedgerKill(world, slot);
         }
         if (world.huntBySpec[world.spec[slot]]) {
             noteHunterDeath(world, slot, cause);
