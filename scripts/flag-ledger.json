@@ -22,5 +22,23 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
+  },
+  {
+    "key": "provisionEnabled",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T10",
+    "reason": "Kept as the one-factor arm of the hunter-learning Phase 1 screen (a hunter hands part of each meal to its young); T10 adopts it and deletes the key, or deletes provision.js and the key, after the E115 and E116 verdict."
+  },
+  {
+    "key": "juvenileDependency",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T11",
+    "reason": "Kept as the one-factor arm of the hunter-learning Phase 1 screen (a juvenile hunter burns less and every hunter child gets the kin pull floor); T11 adopts it and deletes the key, or deletes the burn, the floor and their keys, after the verdict."
+  },
+  {
+    "key": "flipReflex",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T12",
+    "reason": "Kept as the one-factor arm of the hunter-learning Phase 1 screen (a spec-flip child gets the hunter prey reflex); T12 adopts it and deletes the key, or deletes the flip call, after the verdict."
   }
 ]

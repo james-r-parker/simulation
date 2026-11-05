@@ -5,6 +5,7 @@ import {
     createHunterScene,
     hunterMetrics,
     noteHunterBirth,
+    noteHunterKill,
     noteHunterLedger,
     tickHunters,
 } from '../../js/evo/scene-hunters.js';
@@ -20,6 +21,8 @@ function world(over = {}) {
         alive: new Uint8Array(4),
         spec: new Uint8Array(4),
         birthSource: new Uint8Array(4),
+        ageTicks: new Float64Array(4),
+        ledgerKills: new Float64Array(4),
         huntBySpec: HUNT,
         hunterIncomeBySpec: new Float64Array(2 * INCOME_KINDS),
         ...over,
@@ -151,5 +154,22 @@ describe('the hunter birth, income and end metrics', () => {
         }
         expect(hunterMetrics(scene, w)['eval.hunter_ticks_last_quarter']).toEqual({ value: 14 * 2 + 11 });
         expect(hunterMetrics(createHunterScene(0), w)['eval.hunter_ticks_last_quarter'].value).toBeNull();
+    });
+});
+
+describe('the age detectors on the hunter scene', () => {
+    it('take the juvenile window from the config and count a death and a kill through the scene', () => {
+        const scene = createHunterScene(1000, { juvenileTicks: 500 });
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 1, age: 400 });
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 0, age: 600 });
+        const ring = createEventRing(1);
+        const o = pushEvent(ring, EVENT_TYPE.HUNTER_KILL, 1);
+        ring.data[o + 3] = 300;
+        ring.data[o + 4] = 1;
+        noteHunterKill(scene, ring.data, o);
+        const m = hunterMetrics(scene, world());
+        expect(m['eval.hunter_juvenile_death_share']).toEqual({ value: 0.5 });
+        expect(m['eval.hunter_first_kill_age']).toEqual({ value: 300 });
+        expect(m['eval.hunter_kill_rate_by_age.juvenile'].value).toBeCloseTo((1 / 900) * 1000, 12);
     });
 });

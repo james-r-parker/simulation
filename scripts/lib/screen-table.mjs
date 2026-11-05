@@ -15,6 +15,19 @@ const WATCH_HEADS = [
     'predators',
     'pred births',
     'migration',
+    'conv <1k',
+    'conv 1k-2k',
+    'conv >2k',
+    'chases <1k',
+    'chases 1k-2k',
+    'chases >2k',
+    'first kill KM',
+    'first kill RMST',
+    'prey extinct',
+    'boom-bust',
+    'pred share cv',
+    'basin pop cv',
+    'pred-prey lag',
 ];
 
 /**

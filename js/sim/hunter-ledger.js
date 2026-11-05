@@ -1,6 +1,7 @@
 // The hunter death ledger (natural-selection.md T53): per slot, what a hunter did with its life - kills, carcass energy
 // eaten, energy spent standing, moving and sprinting (charged in `tickCost`) - and how it was born. On a `canHunt` agent's death `pushLedger`
-// pushes one `HunterLedger` event beside its `AgentDied`; `drainEvents` logs it at debug level. The arrays are zeroed by
+// pushes one `HunterLedger` event beside its `AgentDied`, and `noteLedgerKill` pushes one `HunterKill` per deliberate kill
+// (hunter-learning.md T1); `drainEvents` logs it at debug level. The arrays are zeroed by
 // `freeAgent` and are outside `worldHash` and the snapshot, so no golden moves. No RNG, no clock, no allocation.
 
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
@@ -104,6 +105,21 @@ export function noteBiteLedger(world, biter, { gained, fatal, kick }) {
 }
 
 /**
+ * Pushes a `HunterKill` event for a killer that just gained a deliberate kill: fields 2 to 4 are its genome id, its age and
+ * its kills so far (1 for its first).
+ * @param {Record<string, any>} world the world
+ * @param {number} killer the killer's slot, whose `ledgerKills` already counts this kill
+ * @returns {void}
+ */
+function pushHunterKill(world, killer) {
+    const o = pushEvent(world.events, EVENT_TYPE.HUNTER_KILL, world.tick);
+    const d = world.events.data;
+    d[o + 2] = world.genomeId[killer];
+    d[o + 3] = world.ageTicks[killer];
+    d[o + 4] = world.ledgerKills[killer];
+}
+
+/**
  * Credits an eaten victim to its killer, when the killer is alive and the victim's last noted bite was deliberate (the rule
  * of `noteKill`). Call it for every victim of a reap before any `noteHunterDeath`, so a killer that dies on the same tick
  * (at a lower slot too) still has the kill on its record.
@@ -118,6 +134,7 @@ export function noteLedgerKill(world, victim) {
     const killer = slotOfGenome(world, world.lastBiter[victim]);
     if (killer >= 0) {
         world.ledgerKills[killer] += 1;
+        pushHunterKill(world, killer);
     }
 }
 

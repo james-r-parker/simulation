@@ -101,6 +101,39 @@ describe('the hunter ledger', () => {
         expect(records[0].biteCostEnergy).toBeGreaterThan(0);
     });
 
+    it('logs one debug HunterKill at the deliberate kill, with the killer, its age and its kills so far', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        world.foodEnergy[PREY] = 500;
+        const genomeId = world.genomeId[HUNTER];
+        /** @type {Record<string, any>[]} */
+        const kills = [];
+        runArena(world, {
+            ticks: 400,
+            prey: stillBrain,
+            after: (w) => {
+                kills.push(...drained(w, 'HunterKill'));
+                return w.alive[PREY] === 0;
+            },
+        });
+        expect(kills).toHaveLength(1);
+        expect(kills[0]).toEqual({
+            event: 'HunterKill',
+            level: 'debug',
+            tick: world.tick - 1,
+            genomeId,
+            ageTicks: world.ageTicks[HUNTER],
+            kills: 1,
+        });
+        expect(world.ledgerKills[HUNTER]).toBe(1);
+    });
+
+    it('logs no HunterKill for a victim nobody deliberately bit', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        removeEnergy(world, PREY, world.energy[PREY], LOSS_CAUSE.COST);
+        runArena(world, { ticks: 1, prey: stillBrain });
+        expect(drained(world, 'HunterKill')).toHaveLength(0);
+    });
+
     it('logs a LastHunterDied with the basin and the non-hunters in each basin when the only hunter dies', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         world.x[HUNTER] = world.config.worldWidth * 0.75;

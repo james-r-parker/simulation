@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { noteApproachKill, trackApproaches } from '../../js/evo/scene-approach.js';
 import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
+import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
@@ -131,5 +132,77 @@ describe('hunt approaches and chases', () => {
         expect(a.observer.scenes.approach.aborted).toBe(0);
         expect(a.observer.scenes.approach.phase[a.prey[0]]).toBe(0);
         expect(read(a, 'hunt_abort_rate').reason).toContain('no hunter approach');
+    });
+});
+
+describe('the noteChase hook', () => {
+    /**
+     * @param {any} a the arena
+     * @returns {{slot: number, outcome: number, openedTick: number}[]} the calls the approach scene's hook will record
+     */
+    function record(a) {
+        /** @type {{slot: number, outcome: number, openedTick: number}[]} */
+        const calls = [];
+        a.observer.scenes.approach.onChase = (/** @type {any} */ _world, /** @type {any} */ chase) => calls.push(chase);
+        return calls;
+    }
+
+    it('fires once for each caught, escaped and given-up chase, with the tick the chase opened', () => {
+        const a = arena(3, 2);
+        const calls = record(a);
+        const [h1, h2, h3] = a.hunters;
+        const [v1, v2] = a.prey;
+        play(a, T0, { closing: [h1, h2, h3] });
+        play(a, T0 + 1, {
+            closing: [h1, h2],
+            bites: [
+                [h1, v1],
+                [h2, v2],
+            ],
+        });
+        a.world.tick = T0 + 2;
+        noteApproachKill(a.observer.scenes.approach, a.observer, a.world, {
+            killerId: a.world.genomeId[h2],
+            victimId: a.world.genomeId[v2],
+        });
+        a.world.alive[v2] = 0;
+        play(a, T0 + 1 + INTENT_WINDOW);
+        expect(calls).toEqual([
+            { slot: h2, outcome: CHASE_OUTCOME.CAUGHT, openedTick: T0 },
+            { slot: h1, outcome: CHASE_OUTCOME.ESCAPED, openedTick: T0 },
+            { slot: h3, outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0 },
+        ]);
+    });
+
+    it('reports the first closing tick as the opening, not the last', () => {
+        const a = arena(1, 0);
+        const calls = record(a);
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 20, { closing: a.hunters });
+        play(a, T0 + 21 + INTENT_WINDOW);
+        expect(calls).toEqual([{ slot: a.hunters[0], outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0 }]);
+    });
+
+    it('opens a new chase at the next closing sighting after one resolves', () => {
+        const a = arena(1, 0);
+        const calls = record(a);
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 1 + INTENT_WINDOW);
+        play(a, T0 + 500, { closing: a.hunters });
+        play(a, T0 + 501 + INTENT_WINDOW);
+        expect(calls.map((c) => c.openedTick)).toEqual([T0, T0 + 500]);
+    });
+
+    it('does not fire for a dropped chase or for one that ends before burn-in', () => {
+        const a = arena(2, 1);
+        const calls = record(a);
+        const [h1, h2] = a.hunters;
+        play(a, T0, { closing: [h1] });
+        play(a, T0 + 1, { closing: [h1], bites: [[h1, a.prey[0]]] });
+        a.world.alive[a.prey[0]] = 0;
+        play(a, T0 + 1 + INTENT_WINDOW);
+        play(a, T0 - 5000, { closing: [h2] });
+        play(a, T0 - 4999 + INTENT_WINDOW);
+        expect(calls).toEqual([]);
     });
 });
