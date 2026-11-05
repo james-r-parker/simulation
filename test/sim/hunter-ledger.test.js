@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
-import { BIRTH_SOURCE, noteChildSource, sourceOfSpawn } from '../../js/sim/hunter-ledger.js';
+import { BIRTH_SOURCE, noteChildSource, noteLedgerKill, sourceOfSpawn } from '../../js/sim/hunter-ledger.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { removeEnergy, LOSS_CAUSE } from '../../js/sim/energy.js';
 import { reap } from '../../js/sim/population.js';
@@ -111,6 +111,15 @@ describe('the hunter ledger', () => {
         expect(record).toMatchObject({ genomeId, basin: 'east', nonPredatorsWest: 1, nonPredatorsEast: 0 });
     });
 
+    it('counts a non-hunter in the east basin when the only hunter dies in the west', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        world.x[HUNTER] = world.config.worldWidth * 0.25;
+        world.x[PREY] = world.config.worldWidth * 0.75;
+        starveHunter(world);
+        const [record] = drained(world, 'LastHunterDied');
+        expect(record).toMatchObject({ basin: 'west', nonPredatorsWest: 0, nonPredatorsEast: 1 });
+    });
+
     it('writes no LastHunterDied while another hunter is alive', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         world.spec[PREY] = 1;
@@ -166,6 +175,15 @@ describe('the hunter ledger on a starving tick', () => {
         reap(world, { initBrain() {} });
         const [record] = drained(world, 'HunterLedger');
         expect(record.kills).toBe(1);
+    });
+
+    it('credits no one when the biter of an eaten victim is no longer alive', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        world.lastBiter[PREY] = 987654321;
+        world.lastBiteDeliberate[PREY] = 1;
+        noteLedgerKill(world, PREY);
+        expect(world.ledgerKills[HUNTER]).toBe(0);
+        expect(world.ledgerKills[PREY]).toBe(0);
     });
 
     it('does not credit a kill whose last bite was not deliberate', () => {

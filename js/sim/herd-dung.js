@@ -91,9 +91,9 @@ export function dropHerdDung(world) {
         ) {
             const x = world.herdX[animal];
             const y = world.herdY[animal];
-            if (addDungZone(world, x, y) >= 0) {
-                releaseHerdSeed(world, animal, x, y);
-            }
+            // The zone cap is above 0 here and validation keeps it within fertileZoneMax, so a slot always exists.
+            addDungZone(world, x, y);
+            releaseHerdSeed(world, animal, x, y);
         }
     }
 }
