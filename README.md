@@ -190,7 +190,7 @@ A genome (`js/evo/genome.js`) is the 7,183-float row plus a specialisation, ids 
 - **Splitting** copies the mother's row and mutates it.
 - **Trait genes** (`TRAIT_INDEX`): `size`, `vision`, `childShare` and `learn`. A trait is `1 + 0.3 x tanh(gene)`, so 0.7x to 1.3x of the default
   (`traitValue`). Vision costs extra passive energy above 1 (`visionCost`). `learn` scales Hebbian plasticity.
-- **Specialisation** is not a gene: a child takes its mother's, except with probability `specMutationRate` (0.002) a random other one (`js/sim/heritable-spec.js`).
+- **Specialisation** is not a gene: a child takes its mother's, except with probability `specMutationRate` (0.02) a random other one (`js/sim/heritable-spec.js`).
 
 ## The world
 

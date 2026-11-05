@@ -109,7 +109,7 @@ number and writes no hashed state where this file says so.
 | `mateRank`                                                                    | `'rank'`                            | `'rank'` or `'offspring'`                                |
 | `birthWindowTicks`, `maxBirthsPerWindow`                                      | `3000`, `5`                         | Integer `>= 1`; integer `0 .. 16`                        |
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust`            | `0.95`, `10`, `20`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` |
-| `specMutationRate`, `huntUpkeep`                                              | `0.002`, `0.002`                    | `0 .. 1`; `>= 0`                                         |
+| `specMutationRate`, `huntUpkeep`                                              | `0.02`, `0.002`                     | `0 .. 1`; `>= 0`                                         |
 | `alarmThreshold`, `huntCallThreshold`                                         | `0.65`, `0.65`                      | `0 .. 0.95` each; 0 fires on any output above 0          |
 | `predatorKillEnergy`                                                          | `150`                               | `0 .. 1000`; 0 is off                                    |
 | `floorTrigger`, `entrantEnergy`                                               | `8`, `200`                          | Integer `>= 0`; `>= 0` (0 means `initialEnergy`)         |

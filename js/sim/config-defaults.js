@@ -145,7 +145,7 @@ export const DEFAULTS = deepFreeze({
             passiveLossMultiplier: 0.3, // survival screen (instinct, inst1-gorge-bite20): gorge and fast, a predator rests cheaply between meals like a python (was 0.6, T15d; scales the standing energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 3, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store, so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
+            maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         },
         reproducer: {
             index: 2,
@@ -213,7 +213,7 @@ export const DEFAULTS = deepFreeze({
     satiationShare: 0.95, // new: at or above this share of maxEnergy an agent cannot eat; 0 is off (world-balance T49, on from T41)
     digestTicks: 10, // new: ticks after a meal before the next; 0 is off, at most TIMER_CAP (T49)
     handlingTicks: 20, // new: ticks after a meal at reduced thrust; 0 is off, at most TIMER_CAP (T50)
-    specMutationRate: 0.002, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
+    specMutationRate: 0.02, // new: chance a child takes another specialisation; above 0 also turns on huntUpkeep and the random-elite floor and seeder rule (T51)
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
