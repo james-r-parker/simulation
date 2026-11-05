@@ -529,7 +529,7 @@ immigrants every `invasionInterval` ticks (0 is none, capped at `maxAgents`): th
 immigrant, the rest copies of its weights, specialisation and lineage with new genome ids, all in a band 150 px deep at
 one random edge, from the `spawn` stream; `InvasionArrived` (count, lineage, spec, edge). Nothing is drawn when off.
 
-**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.5) x
+**Carcasses (T54).** A dead agent leaves a carcass for `carcassTicks` (300) holding `carcassShare` (0.8) x
 the energy it took in over its life, as a food item of kind `meat`. `meatFoodValue` per specialisation (predator 1, others 0.3) sets
 what each gains from meat, alongside `plantFoodValue`, so predators fight over kills and other agents can scavenge.
 Carcasses are hashed only when `carcassesEnabled`; the snapshot marks them so the renderer can draw them and the
