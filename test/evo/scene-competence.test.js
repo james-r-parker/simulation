@@ -1,0 +1,188 @@
+// The competence detectors (hunter-learning.md T2a): kill conversion binned by the hunter's age at the opening of a chase, and
+// the censored time to first kill, against hand-built chase lists and life lists.
+
+import { describe, expect, it } from 'vitest';
+import { EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
+import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
+import {
+    CHASE_OUTCOME,
+    COMPETENCE_DIRECTIONS,
+    competenceMetrics,
+    createCompetenceScene,
+    noteChase,
+    noteCompetenceBirth,
+    noteCompetenceRecord,
+} from '../../js/evo/scene-competence.js';
+
+const CONFIG = { juvenileTicks: 3000 };
+const T = BURN_IN_TICKS + 5000;
+
+/**
+ * @param {Array<{id: number, age: number, spec?: number}>} [alive] hunters alive at the last tick
+ * @returns {Record<string, any>} a hand-built world at tick `T`; spec 1 hunts
+ */
+function world(alive = []) {
+    const w = {
+        tick: T,
+        alive: new Uint8Array(8),
+        spec: new Uint8Array(8),
+        genomeId: new Uint32Array(8),
+        ageTicks: new Float64Array(8),
+        huntBySpec: new Float64Array([0, 1]),
+    };
+    alive.forEach(({ id, age, spec = 1 }, slot) => {
+        w.alive[slot] = 1;
+        w.spec[slot] = spec;
+        w.genomeId[slot] = id;
+        w.ageTicks[slot] = age;
+    });
+    return w;
+}
+
+/**
+ * Starts the observation of a hunter born after burn-in.
+ * @param {Record<string, any>} scene the scene
+ * @param {number} id the hunter's genome id
+ * @param {{tick?: number, spec?: number}} [options] the birth tick and specialisation
+ * @returns {void}
+ */
+function born(scene, id, { tick = BURN_IN_TICKS + 10, spec = 1 } = {}) {
+    const w = world([{ id, age: 0, spec }]);
+    w.tick = tick;
+    noteCompetenceBirth(scene, w, 0);
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {number} type an `EVENT_TYPE`
+ * @param {[number, number, number?]} fields genome id, age, and kills so far for a kill
+ * @returns {void}
+ */
+function record(scene, type, [id, age, kills = 0]) {
+    const ring = createEventRing(1);
+    const o = pushEvent(ring, type, 1);
+    ring.data.set([id, age, kills], o + 2);
+    noteCompetenceRecord(scene, ring.data, o);
+}
+
+/**
+ * @param {Record<string, any>} scene the scene
+ * @param {Record<string, any>} w the world
+ * @param {number} ageAtResolve the hunter's age when the chase resolves
+ * @param {number} ticksSinceOpen the ticks the chase lasted
+ * @param {number} outcome the `CHASE_OUTCOME`
+ * @returns {void}
+ */
+function chase(scene, w, ageAtResolve, ticksSinceOpen, outcome) {
+    w.ageTicks[0] = ageAtResolve;
+    noteChase(scene, w, { slot: 0, outcome, openedTick: w.tick - ticksSinceOpen });
+}
+
+describe('kill conversion by age at the opening of a chase', () => {
+    it('is null with a reason on a fresh scene, and names the 1k-2k band as the one to raise', () => {
+        const m = competenceMetrics(createCompetenceScene(CONFIG), world());
+        for (const [name, result] of Object.entries(m)) {
+            expect(result.value, name).toBeNull();
+            expect(result.reason, name).toBeTypeOf('string');
+        }
+        expect(Object.keys(m).sort()).toEqual(Object.keys(COMPETENCE_DIRECTIONS).sort());
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_by_age.1k-2k']).toBe('higher');
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_by_age.under1k']).toBe('watch');
+    });
+
+    it('bins by the age at the opening and not at the resolution, against a hand-built list', () => {
+        const scene = createCompetenceScene(CONFIG);
+        const w = world([{ id: 1, age: 0 }]);
+        // [age at resolution, ticks the chase lasted, outcome]: the age at the opening is the difference
+        const chases = [
+            [900, 100, CHASE_OUTCOME.CAUGHT], // opened at 800: under1k
+            [1100, 200, CHASE_OUTCOME.GAVE_UP], // opened at 900: under1k
+            [1200, 100, CHASE_OUTCOME.CAUGHT], // opened at 1100: 1k-2k
+            [2100, 100, CHASE_OUTCOME.ESCAPED], // opened at 2000: over2k
+            [2000, 50, CHASE_OUTCOME.GAVE_UP], // opened at 1950: 1k-2k
+            [9000, 10, CHASE_OUTCOME.CAUGHT], // opened at 8990: over2k
+            [1999, 0, CHASE_OUTCOME.GAVE_UP], // opened at 1999: 1k-2k
+        ];
+        for (const [age, lasted, outcome] of chases) {
+            chase(scene, w, age, lasted, outcome);
+        }
+        const m = competenceMetrics(scene, w);
+        expect(m['eval.hunter_kill_conversion_by_age.under1k']).toEqual({ value: 1 / 2 });
+        expect(m['eval.hunter_kill_conversion_by_age.1k-2k']).toEqual({ value: 1 / 3 });
+        expect(m['eval.hunter_kill_conversion_by_age.over2k']).toEqual({ value: 1 / 2 });
+        expect(m['eval.hunter_chases_by_age.under1k']).toEqual({ value: 2 });
+        expect(m['eval.hunter_chases_by_age.1k-2k']).toEqual({ value: 3 });
+        expect(m['eval.hunter_chases_by_age.over2k']).toEqual({ value: 2 });
+    });
+
+    it('is null for a band no chase opened in, while the others stand', () => {
+        const scene = createCompetenceScene(CONFIG);
+        const w = world([{ id: 1, age: 0 }]);
+        chase(scene, w, 500, 10, CHASE_OUTCOME.CAUGHT);
+        const m = competenceMetrics(scene, w);
+        expect(m['eval.hunter_kill_conversion_by_age.under1k']).toEqual({ value: 1 });
+        expect(m['eval.hunter_kill_conversion_by_age.1k-2k']).toEqual({
+            value: null,
+            reason: 'no chase opened in the band',
+        });
+    });
+});
+
+describe('the censored time to first kill', () => {
+    it('reads the Kaplan-Meier median and restricted mean over killers, a hunter that died without a kill and a live one', () => {
+        const scene = createCompetenceScene(CONFIG);
+        for (const id of [1, 2, 3, 4, 5]) {
+            born(scene, id);
+        }
+        born(scene, 6, { tick: BURN_IN_TICKS - 1 });
+        born(scene, 7, { spec: 0 });
+        record(scene, EVENT_TYPE.HUNTER_KILL, [1, 300, 1]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [2, 900, 1]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [2, 1500, 2]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [5, 700, 1]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [6, 100, 1]);
+        record(scene, EVENT_TYPE.HUNTER_LEDGER, [3, 400]);
+        record(scene, EVENT_TYPE.HUNTER_LEDGER, [1, 2000]);
+        const m = competenceMetrics(
+            scene,
+            world([
+                { id: 4, age: 2500 },
+                { id: 5, age: 3200 },
+            ]),
+        );
+        // observations: 300 event, 400 censored, 700 event, 900 event, 2500 censored
+        expect(m['eval.hunter_first_kill_km_median']).toEqual({ value: 900 });
+        expect(m['eval.hunter_first_kill_rmst'].value).toBeCloseTo(
+            300 + 0.8 * 400 + ((0.8 * 2) / 3) * 200 + (0.8 / 3) * 5100,
+            9,
+        );
+    });
+
+    it('counts a hunter that never killed in the curve: all censored gives no median and the area is the horizon', () => {
+        const scene = createCompetenceScene(CONFIG);
+        born(scene, 1);
+        born(scene, 2);
+        record(scene, EVENT_TYPE.HUNTER_LEDGER, [1, 800]);
+        const m = competenceMetrics(scene, world([{ id: 2, age: 1200 }]));
+        expect(m['eval.hunter_first_kill_km_median']).toEqual({ value: null, reason: 'median not reached' });
+        expect(m['eval.hunter_first_kill_rmst']).toEqual({ value: 6000 });
+    });
+
+    it('keeps a killer that is still alive as an event, and a death after the kill as no second observation', () => {
+        const scene = createCompetenceScene(CONFIG);
+        born(scene, 1);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [1, 500, 1]);
+        record(scene, EVENT_TYPE.HUNTER_LEDGER, [1, 4000]);
+        const m = competenceMetrics(scene, world());
+        expect(m['eval.hunter_first_kill_km_median']).toEqual({ value: 500 });
+        expect(m['eval.hunter_first_kill_rmst']).toEqual({ value: 500 });
+    });
+
+    it('is null with a reason when no hunter was born after burn-in', () => {
+        const scene = createCompetenceScene(CONFIG);
+        born(scene, 1, { tick: 0 });
+        const m = competenceMetrics(scene, world([{ id: 1, age: 700 }]));
+        expect(m['eval.hunter_first_kill_rmst']).toEqual({ value: null, reason: 'no hunter born after burn-in' });
+        expect(m['eval.hunter_first_kill_km_median'].reason).toBe('no hunter born after burn-in');
+    });
+});

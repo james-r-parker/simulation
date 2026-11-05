@@ -11,6 +11,7 @@ import { DIVERGENCE_METRICS, divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
+import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
@@ -81,6 +82,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     'eval.basin_family_effective': 'higher',
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
     ...AGE_DIRECTIONS,
+    ...COMPETENCE_DIRECTIONS,
 });
 
 /**
@@ -107,5 +109,6 @@ export function sceneMetrics(observer, world) {
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
+        ...competenceMetrics(s.competence, world),
     };
 }

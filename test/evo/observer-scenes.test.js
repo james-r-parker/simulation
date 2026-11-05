@@ -61,6 +61,29 @@ describe('observeScenes', () => {
         expect(r.observer.scenes.hunters.age.bandKills[0]).toBe(1);
     });
 
+    it('hands a counted chase of the approach tracker to the competence scene', () => {
+        const r = observed();
+        const slot = addBlob(r.world, { spec: r.world.config.specialisations.predator.index });
+        r.world.ageTicks[slot] = 1500;
+        r.world.tick = T0 + 200;
+        r.observer.scenes.approach.onChase(r.world, { slot, outcome: 0, openedTick: T0 });
+        expect(r.observer.scenes.competence.chases[1]).toBe(1);
+        expect(r.observer.scenes.competence.caught[1]).toBe(1);
+    });
+
+    it('opens a first-kill observation for a hunter born after burn-in and closes it on its HunterKill', () => {
+        const r = observed();
+        const slot = addBlob(r.world, { spec: r.world.config.specialisations.predator.index });
+        nextTick(r.world, T0 + 1);
+        pushBorn(r.world, { slot, genomeId: r.world.genomeId[slot] });
+        const o = pushEvent(r.world.events, EVENT_TYPE.HUNTER_KILL, T0);
+        r.world.events.data.set([r.world.genomeId[slot], 400, 1], o + 2);
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.competence.rows).toBe(1);
+        expect(r.observer.scenes.competence.log.event[0]).toBe(1);
+        expect(r.observer.scenes.competence.log.time[0]).toBe(400);
+    });
+
     it('runs the terrain and basin samples every 10 ticks and the patch sample every 100', () => {
         const r = observed({ ...BASINS, foodPatchCount: 1, foodPatchRadius: 100, foodPatchCapacity: 1000 });
         r.world.patchX.set([200]);
@@ -101,6 +124,7 @@ describe('observeScenes', () => {
             'balance',
             'basin',
             'carcass',
+            'competence',
             'condition',
             'disease',
             'divergence',

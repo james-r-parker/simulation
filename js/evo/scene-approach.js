@@ -8,6 +8,10 @@
 //   a lapse is a give-up. The three sum to 1. A victim that dies of something else inside the window is dropped.
 //
 // Counts come from approaches that end at or after `BURN_IN_TICKS`. Per slot state only; nothing is allocated.
+//
+// Each chase counted here (a catch, an escape or a give-up, never a dropped one) is also handed to the scene's `onChase` hook
+// with the hunter's slot, its outcome and the tick the chase opened (hunter-learning.md T2a: `scene-competence.js` bins it by
+// the hunter's age at the opening).
 
 import { popcount16 } from '../sim/merit-state.js';
 import { none, ok } from './metrics-stats.js';
@@ -15,6 +19,7 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW } from './observer-intent-state.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
+import { CHASE_OUTCOME } from './scene-competence.js';
 
 const IDLE = 0;
 const OPEN = 1;
@@ -22,15 +27,23 @@ const BITTEN = 2;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
 /**
- * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, victim and bite tick, and the
- *   counts of committed, aborted, caught and escaped approaches
+ * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, openedTick: number}) => void} ChaseHook
+ *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME` and the tick the chase opened
  */
-export function createApproachScene(config) {
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {ChaseHook | null} [onChase] the hook told of each counted chase
+ * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, tick the chase opened, victim and
+ *   bite tick, and the counts of committed, aborted, caught and escaped approaches
+ */
+export function createApproachScene(config, onChase = null) {
     const n = config.maxAgents;
     return {
+        onChase,
         phase: new Uint8Array(n),
         lastClosing: new Float64Array(n),
+        openedTick: new Float64Array(n),
         victim: new Uint32Array(n),
         biteTick: new Float64Array(n),
         committed: 0,
@@ -61,6 +74,25 @@ function closingNow(prey, slot, tick) {
     return tick - prey.seen[slot] <= INTENT_WINDOW && popcount16(prey.bits[slot] & CLOSING_MASK) >= CLOSING_MIN;
 }
 
+const OUTCOME_COUNTER = ['caught', 'escaped', 'aborted'];
+
+/**
+ * Counts a resolved chase when it resolves at or after burn-in, and hands it to the hook, if the scene has one.
+ * @param {Record<string, any>} scene the approach scene
+ * @param {Record<string, any>} world the world
+ * @param {{slot: number, outcome: number}} chase the hunter's slot and the chase's `CHASE_OUTCOME`
+ * @returns {void}
+ */
+function resolved(scene, world, { slot, outcome }) {
+    if (world.tick < BURN_IN_TICKS) {
+        return;
+    }
+    scene[OUTCOME_COUNTER[outcome]] += 1;
+    if (scene.onChase !== null) {
+        scene.onChase(world, { slot, outcome, openedTick: scene.openedTick[slot] });
+    }
+}
+
 /**
  * Notes an eaten death: the killer's open approach (or the chase on that victim) ends in a catch.
  * @param {Record<string, any>} scene the approach scene
@@ -80,7 +112,7 @@ export function noteApproachKill(scene, observer, world, { killerId, victimId })
     } else if (scene.victim[killer] !== victimId) {
         return;
     }
-    scene.caught += counted ? 1 : 0;
+    resolved(scene, world, { slot: killer, outcome: CHASE_OUTCOME.CAUGHT });
     scene.phase[killer] = IDLE;
 }
 
@@ -120,14 +152,17 @@ function advance(scene, observer, world, slot) {
     if (scene.phase[slot] === BITTEN) {
         if (tick - scene.biteTick[slot] >= INTENT_WINDOW) {
             const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
-            scene.escaped += lives && tick >= BURN_IN_TICKS ? 1 : 0;
+            if (lives) {
+                resolved(scene, world, { slot, outcome: CHASE_OUTCOME.ESCAPED });
+            }
             scene.phase[slot] = IDLE;
         }
     } else if (closingNow(observer.intent.prey, slot, tick)) {
+        scene.openedTick[slot] = scene.phase[slot] === OPEN ? scene.openedTick[slot] : tick;
         scene.phase[slot] = OPEN;
         scene.lastClosing[slot] = tick;
     } else if (scene.phase[slot] === OPEN && tick - scene.lastClosing[slot] > INTENT_WINDOW) {
-        scene.aborted += tick >= BURN_IN_TICKS ? 1 : 0;
+        resolved(scene, world, { slot, outcome: CHASE_OUTCOME.GAVE_UP });
         scene.phase[slot] = IDLE;
     }
 }

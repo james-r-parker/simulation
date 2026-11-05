@@ -14,6 +14,7 @@ import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
+import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -36,11 +37,13 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
  * @returns {Record<string, any>} the scenes, each empty
  */
 export function createScenes(config, runTicks = 0) {
+    const competence = createCompetenceScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        approach: createApproachScene(config),
+        approach: createApproachScene(config, (world, chase) => noteChase(competence, world, chase)),
+        competence,
         terrain: createTerrainScene(config),
         basin: createBasinScene(),
         balance: createBalanceScene(),
@@ -130,8 +133,10 @@ function noteEvents(scenes, observer, world) {
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         noteHunterRecord(scenes.hunters, d, o);
+        noteCompetenceRecord(scenes.competence, d, o);
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             noteHunterBirth(scenes.hunters, world, d[o + 2]);
+            noteCompetenceBirth(scenes.competence, world, d[o + 2]);
             resetSceneSlot(scenes, d[o + 2]);
             noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
             if (d[o + 8] === BORN_CAUSE.MATE) {
