@@ -2,7 +2,7 @@
 
 **Status:** In progress - the big bang is merged (PR #217) and Phase 4's instruments, checks and speed chunks are merged (#220, #221, #222). Its screens (E81, E82, E85 to E87) found no predator, life-history or space value that keeps hunters to the end, and the family gate could not pass on maternal lines, so balancing pauses (user, 2026-10-31): the shark rule and the clonal cap are on by default, families are counted as genetic clusters, the step budget is 3.32 ms, and Phase 4 reopens after [flora.md](flora.md) and [megafauna.md](megafauna.md) land, starting with the predator balance and E88. Balancing reopened for the hunter ledger and floor accounting (T53 to T59, user, 2026-11-05), the open Phase 4 work after E105.
 **Validated:** 7396097 (2026-11-01)
-**Priority:** 1 - the default world fails the principles (spinning, a scout monoculture, lucky lives that breed, dead genomes that return), and one big-bang build with every change on by default avoids flags, dual paths and a re-pin per tuning round (user, 2026-10-29)
+**Priority:** 2 - the default world fails the principles (spinning, a scout monoculture, lucky lives that breed, dead genomes that return), and one big-bang build with every change on by default avoids flags, dual paths and a re-pin per tuning round (user, 2026-10-29)
 **Depends on:** [fitness-and-selection.md](fitness-and-selection.md) (Phases 1 to 3 built, T48h and T48i built)
 
 Right now a lucky life can still breed and a dead failure can still come back. [principles.md](../principles.md)

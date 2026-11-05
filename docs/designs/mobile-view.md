@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 (touch gestures for the keyboard-only actions, a phone quality start and a phone frame budget, portrait director shots) is next.
 **Validated:** efdc1ef (2026-11-03)
-**Priority:** 13 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
+**Priority:** 14 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
 The app on `index.html` runs on a phone or a tablet as well as on the desktop. A person can pinch to zoom, drag to

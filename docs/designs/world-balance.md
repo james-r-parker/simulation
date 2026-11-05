@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic families through the hypothesis queue below. No Phase 5 balance-round defaults are adopted. The contagion moved to [disease.md](disease.md), which lands before T84; the round's instruments are specified in full (Instruments for T80 to T83).
 **Validated:** 64a66de (2026-11-02)
-**Priority:** 6 - the post-feature balance round follows flora and megafauna; the current rank is unchanged
+**Priority:** 7 - the post-feature balance round follows flora and megafauna; the current rank is unchanged
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the
