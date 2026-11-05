@@ -2665,6 +2665,27 @@
       "verdicts": {},
       "effect": "better",
       "note": "E105 (16 seeds x 200000 ticks against E103's report, the current defaults): predator presence 0.39 to 0.50 (interval 0.015 to 0.22, better); hunters' carcass meal share 0.091 to 0.111, population 129 to 149, herd seeded patches +29% (intervals include 0); fed lifespan, families, lineage dominance no difference; no metric worse. prey types at end 3.50 to 3.25 and predators at end 0.81 to 0.69, both no difference. Adopted."
+    },
+    {
+      "id": "E106",
+      "date": "2026-11-05",
+      "branch": "eval/e106-families",
+      "hypothesis": "One genetic family per basin (basin_family_effective about 1.4 against a target of 3) because mating is nearly panmictic: canMatePair (js/sim/mate-eligibility.js) allows mates closer than mateDistanceMax 1.0 while unrelated genomes sit at about 1.13 and families cluster at 0.5, so any cluster mates with any other and the majority absorbs the rest; three wall gaps let one family sweep both basins. Reproductive isolation by genetic distance, allopatric barriers, more standing variation, or a parasite of the common genotype should hold several families.",
+      "prediction": "8 seeds x 200000 ticks on the post-E105 defaults (evals/screens/families.grid.json). mate-0.45: basin_family_effective 2.2 (1.8-2.8), lineage_dominance 0.22, population mean 125, predator presence 0.45, prey types 3.2. mate-0.7: 1.7, 0.27, 135, 0.5, 3.3. one-gap: 1.7, 0.28, 135, 0.45, 3.1 (families may form per basin, recolonisation worse). mutation-2x: 1.5, 0.29, 135, 0.5, 3.3 (drift bounded by mateDistanceMax). disease-3x: 1.7, 0.24, 130, 0.45, 3.2. Defaults: 1.4, 0.30, 140, 0.5, 3.3. A candidate needs basin_family_effective up by 0.4 or more with population mean 126 or more, predator presence 0.45 or more, prey types 3.0 or more and no more floor episodes; an arm fails if population mean is under 110 or predators at end fall on more than 2 extra seeds. At most one arm is expected to reach 3 per basin. Failure gate: no arm qualifies, then mating is panmictic beyond what mateDistanceMax can fix and an assortative mate preference (a code change in mate-search.js, a mateAssortWeight key) is next.",
+      "targets": [
+        "eval.basin_family_effective",
+        "eval.lineage_dominance",
+        "eval.population_mean",
+        "eval.predator_presence",
+        "eval.prey_types_at_end"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/families/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/families/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/families.grid.json."
     }
   ]
 }
