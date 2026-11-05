@@ -139,7 +139,7 @@ export function createObserver(config, rng, options = {}) {
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
-        scenes: createScenes(config),
+        scenes: createScenes(config, options.runTicks ?? 0),
         windows: createWindows(options.runTicks ?? 0),
         ...createBrainPools(config, options),
         instinct: createInstinctPools(config),

@@ -13,6 +13,7 @@ import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
+import { createHunterScene, noteHunterBirth, noteHunterLedger, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
@@ -30,9 +31,10 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {number} [runTicks] the run length in ticks, for the last-quarter hunter ticks
  * @returns {Record<string, any>} the scenes, each empty
  */
-export function createScenes(config) {
+export function createScenes(config, runTicks = 0) {
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
@@ -52,6 +54,7 @@ export function createScenes(config) {
         mate: createMateScene(config),
         proof: createProofScene(config),
         disease: createDiseaseScene(config),
+        hunters: createHunterScene(runTicks),
     };
 }
 
@@ -124,7 +127,11 @@ function noteEvents(scenes, observer, world) {
         }
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
+        if (d[o] === EVENT_TYPE.HUNTER_LEDGER) {
+            noteHunterLedger(scenes.hunters, d, o);
+        }
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
+            noteHunterBirth(scenes.hunters, world, d[o + 2]);
             resetSceneSlot(scenes, d[o + 2]);
             noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
             if (d[o + 8] === BORN_CAUSE.MATE) {
@@ -147,6 +154,7 @@ export function observeScenes(observer, world) {
     const scenes = observer.scenes;
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
+    tickHunters(scenes.hunters, world.tick);
     trackFlora(scenes.flora, world);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
