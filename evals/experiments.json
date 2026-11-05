@@ -2685,7 +2685,7 @@
       "after": "evals/screens/results/families/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Preregistered, not run. Grid evals/screens/families.grid.json."
+      "note": "E106 (6 arms x 8 seeds x 200000 ticks, post-E105 defaults): no arm qualified, no seed reached 3 families per basin in any arm. basin_family_effective (mean) defaults 1.29, mate-0.7 1.31, mate-0.45 1.31, one-gap 1.23, mutation-2x 1.50 (+0.21, best, under the +0.4 bar), disease-3x 1.22. Population mean 145, 125, 125, 132, 124, 127; predator presence 0.51, 0.41, 0.41, 0.50, 0.42, 0.49; prey types at end 3.88, 3.38, 3.38, 3.13, 3.13, 2.75; lineage_dominance 0.29, 0.29, 0.29, 0.37, 0.29, 0.34. mate-0.7 and mate-0.45 gave identical metrics, so mateDistanceMax below 1.0 does not bind (mate pairs are already closer than 0.45 whenever chosen). Failure gate applies: panmixia is not fixed by a distance cutoff; next is an assortative mate preference (mateAssortWeight in js/sim/mate-search.js). No candidate config written. Prediction missed: every arm lost population (about -10 to -15%) against defaults and predicted family gains did not appear."
     }
   ]
 }
