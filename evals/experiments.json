@@ -2765,9 +2765,15 @@
       "afterPolicy": "map-elites-v6",
       "before": "evals/results/e110-defaults.json",
       "after": "evals/results/e110-floor-off.json",
-      "verdicts": {},
-      "effect": "no-difference",
-      "note": "Preregistered; running."
+      "verdicts": {
+        "eval.predators_at_end": "worse",
+        "eval.hunter_ticks_last_quarter": "-",
+        "eval.hunter_kills_per_life": "-",
+        "eval.population_mean": "-",
+        "eval.floor_episodes": "-"
+      },
+      "effect": "worse",
+      "note": "Ran 2026-11-05 at 17c639c. Floor-off is worse on every hunter and world target: eval.predators_at_end 0.69 -> 0 (interval [-2.19, -0.13], worse), eval.hunter_ticks_last_quarter 49590 -> 0 on all 16 seeds, eval.predator_presence 0.50 -> 0.32 (worse), eval.prey_types_at_end 3.25 -> 0 (worse), eval.population_mean 149 -> 90. The cause is not hunters: with floorTrigger 0 every world goes fully extinct, prey included, between 41k and 149k ticks; worlds that sat at the 500 cap from 20k fall to 0 within about 30k ticks of 80k (seed 888035: 458 at 79k, 39 at 88k, 0 at 110k). The defaults show the same crash and the floor holds a remnant of 20 to 40, which is where eval.hunter_birth_source_share.floor 0.37 comes from (the prediction's 'about a third' held). Deaths are starvation (old age 6 of about 85,000, so the age-cohort idea was wrong). Ledger (4 replays with --policy map-elites-v6, 417 hunter deaths): 73% starved; of those 65% never ate (median age 956) and 35% ate and still starved (median age 3500). Spend is movement (0.69-0.74 of energy out), not standing (0.08-0.09); bite cost is 0.18 of spend for hunters that ate. Kill rate per 1,000 ticks by birth source: split from a hunter 0.177 (31% make a kill), mated from a hunter 0.337 (n 9), spec-flip 0.060 (1.4% kill), floor 0.011, initial 0.016. Spec-flip and floor hunters are the zero-kill mass. Prey at the last hunter death: median of the poorer basin 15 to 30 per replay, so hunters die with prey present. Verdict: the E103 and E105 presence gains were measured on floor-held worlds and are partly restock; no hunter lever can be judged on floor-off until the world-wide starvation crash is fixed, so that crash is the next work (diagnosis running), and E109 waits for it."
     }
   ]
 }
