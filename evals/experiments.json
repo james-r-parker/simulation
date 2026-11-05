@@ -2630,6 +2630,21 @@
       "verdicts": {},
       "effect": "better",
       "note": "Adopted (feat commit aa01255). eval:compare: predator_presence 0.239 to 0.392 (interval 0.079 to 0.232, better); prey_types_at_end 2.19 to 3.50 (0.69 to 1.75, better); predator_births 9.3 to 34.8 (better); mean fitness predator 683 to 1095 and scout 2332 to 2832 (better); terrain_death_share 0.194 to 0.167 (better); predators_at_end 0.44 to 0.81 (interval -0.75 to 1.25, no difference); population_mean 112.5 to 128.8 (+14%, interval -10.6 to 49.2); fed median lifespan, basin_family_effective, lineage_dominance no difference; herd seeded patches -26% and herd carcass meal share -12% (both intervals include 0). Worse: merit_mate_gain 0.090 to -0.016 (interval -0.227 to -0.013), kept as a watch item. Reasoning: the first lever of this round with a significant gain for hunters and prey diversity, with no viability loss; the mate-merit cost is small next to a world that keeps its hunters. Hunters still mostly starve (77% of deaths in two replays); next lever: scavenging."
+    },
+    {
+      "id": "E104",
+      "date": "2026-11-05",
+      "branch": "eval/e104-scavenge",
+      "hypothesis": "Hunters starve (77% of hunter deaths after E103) and take only about 1.5% of meals from carcasses: a blob carcass lasts 300 ticks against a hunter median age of about 1.8k, other specialisations eat meat at 0.3 and compete for it, and carcasses are seen only by rays. As lions and hyenas do, hunters that can live on carcasses survive failed hunts.",
+      "prediction": "8 seeds x 200000 ticks on the post-E103 defaults (evals/screens/scavenge.grid.json). Hunters at end (of 8) rise from 3-4 to 4-5 for carcass-long (carcassTicks 1500), carcass-rich (carcassShare 0.8) and meat-exclusive (other specs meatFoodValue 0.05), 5 for herd-turnover (herdLifeTicks 72000) and herd-fat (herdStoreMax 6000), and 5-6 for scavenger-combo. eval.predator_presence rises from 0.39 to 0.43-0.47 for single arms and 0.50-0.55 for the combo. Predator carcass meal share rises from about 1.5% to 3-5% (single) and 6-10% (combo). Population mean stays 125-132; prey types at end 3.4-3.6 (risk 3.0-3.3 for meat-exclusive). eval.herd_carcass_meal_share rises about 1.5x for herd-turnover and herd-fat. Failure gate: no arm lifts predator presence by 20% or more (to 0.47+) or carcass meals do not rise, then scavenging is not the gap and carcass scent (a code change) is next. Population mean below 115 or prey types below 3.0 counts against an arm even if presence rises.",
+      "targets": ["eval.predator_presence", "eval.predators_at_end", "eval.population_mean", "eval.prey_types_at_end"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/scavenge/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/scavenge/ (table.md, 7 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/scavenge.grid.json."
     }
   ]
 }
