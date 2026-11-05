@@ -9,6 +9,7 @@ import { feed } from '../../js/sim/feeding.js';
 import { assertInvariants } from '../../js/sim/invariants.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
+import { INDEPENDENT_TICKS, isDependentKiller } from '../../js/sim/provision.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { addBlob, imbalance, lifeWorld } from './helpers/life-world.js';
 
@@ -285,5 +286,42 @@ describe('the Provisioned event', () => {
         expect(given).toHaveLength(1);
         expect(given[0]).toMatchObject({ genomeId, young: 2 });
         expect(given[0].energy).toBeCloseTo(SHARE * w.biteEnergy[hunter], 9);
+    });
+});
+
+describe('isDependentKiller', () => {
+    it('is true within INDEPENDENT_TICKS of a provisioning, false after', () => {
+        const w = provisionWorld();
+        const hunter = add(w, PREDATOR);
+        w.tick = 5000;
+        w.provisionedTick[hunter] = 5000 - INDEPENDENT_TICKS + 1;
+        expect(isDependentKiller(w, hunter)).toBe(true);
+        w.provisionedTick[hunter] = 5000 - INDEPENDENT_TICKS;
+        expect(isDependentKiller(w, hunter)).toBe(false);
+        w.provisionedTick[hunter] = 0;
+        expect(isDependentKiller(w, hunter)).toBe(false);
+    });
+
+    it('is true while either parent is alive within provisionRange, false when it is far or dead', () => {
+        const w = provisionWorld({ provisionRange: 120 });
+        const mother = add(w, PREDATOR, { x: 100 });
+        const father = add(w, PREDATOR, { x: 600, y: 600 });
+        const child = addYoung(w, mother, { x: 200 });
+        w.parentB[child] = w.genomeId[father];
+        expect(isDependentKiller(w, child)).toBe(true);
+        w.x[mother] = 400;
+        expect(isDependentKiller(w, child)).toBe(false);
+        w.x[father] = 250;
+        w.y[father] = 100;
+        expect(isDependentKiller(w, child)).toBe(true);
+        freeAgent(w, father);
+        freeAgent(w, mother);
+        expect(isDependentKiller(w, child)).toBe(false);
+    });
+
+    it('is false for a founder with no parents and no provisioning', () => {
+        const w = provisionWorld();
+        const founder = add(w, PREDATOR);
+        expect(isDependentKiller(w, founder)).toBe(false);
     });
 });

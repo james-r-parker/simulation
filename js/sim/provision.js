@@ -10,7 +10,11 @@
 
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { transferEnergy } from './energy.js';
+import { slotOfGenome } from './merit-state.js';
 import { cellOf, cellRange } from './spatial-hash.js';
+
+/** A hunter provisioned within this many ticks of a kill is still dependent (hunter-learning.md, Detectors). */
+export const INDEPENDENT_TICKS = 1000;
 
 /**
  * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot: `provisionedTick`
@@ -156,6 +160,37 @@ export function provisionYoung(world, hash, giver, stored) {
     if (list.moved > 0) {
         pushProvisioned(world, { giver, moved: list.moved, fed: list.fed });
     }
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the hunter
+ * @param {number} parentId a parent's genome id, 0 for none
+ * @returns {boolean} whether that parent is alive within `provisionRange` of the hunter
+ */
+function parentNear(world, slot, parentId) {
+    const parent = slotOfGenome(world, parentId);
+    if (parent < 0) {
+        return false;
+    }
+    const dx = world.x[parent] - world.x[slot];
+    const dy = world.y[parent] - world.y[slot];
+    return dx * dx + dy * dy <= world.config.provisionRange * world.config.provisionRange;
+}
+
+/**
+ * Whether a killer was still a dependent when it killed: it was provisioned within `INDEPENDENT_TICKS` ticks, or a parent is
+ * alive within `provisionRange`. A kill made beside a feeding parent is not evidence the hunter can hunt alone.
+ * @param {Record<string, any>} world the world
+ * @param {number} killer the killer's slot
+ * @returns {boolean} whether the killer is dependent
+ */
+export function isDependentKiller(world, killer) {
+    const stamp = world.provisionedTick[killer];
+    if (stamp > 0 && world.tick + 1 - stamp <= INDEPENDENT_TICKS) {
+        return true;
+    }
+    return parentNear(world, killer, world.parentA[killer]) || parentNear(world, killer, world.parentB[killer]);
 }
 
 /**

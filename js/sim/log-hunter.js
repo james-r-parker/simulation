@@ -2,7 +2,7 @@
 // ring become debug log events. Split from `log.js`, which holds the table that uses them.
 
 /**
- * Emits one `HunterKill` event: a hunter's deliberate kill, with its age and its kills so far.
+ * Emits one `HunterKill` event: a hunter's deliberate kill, with its age, its kills so far and whether it was still dependent.
  * @param {import('./log.js').SimLog} log the log
  * @param {Float64Array} d ring data
  * @param {number} o record offset
@@ -14,6 +14,7 @@ export function emitHunterKill(log, d, o) {
         genomeId: d[o + 2],
         ageTicks: d[o + 3],
         kills: d[o + 4],
+        dependent: d[o + 5] === 1,
     });
 }
 

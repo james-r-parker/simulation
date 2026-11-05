@@ -55,13 +55,13 @@ function born(scene, id, { tick = BURN_IN_TICKS + 10, spec = 1 } = {}) {
 /**
  * @param {Record<string, any>} scene the scene
  * @param {number} type an `EVENT_TYPE`
- * @param {[number, number, number?]} fields genome id, age, and kills so far for a kill
+ * @param {[number, number, number?, number?]} fields genome id, age, and for a kill the kills so far and the dependent bit
  * @returns {void}
  */
-function record(scene, type, [id, age, kills = 0]) {
+function record(scene, type, [id, age, kills = 0, dependent = 0]) {
     const ring = createEventRing(1);
     const o = pushEvent(ring, type, 1);
-    ring.data.set([id, age, kills], o + 2);
+    ring.data.set([id, age, kills, dependent], o + 2);
     noteCompetenceRecord(scene, ring.data, o);
 }
 
@@ -184,5 +184,25 @@ describe('the censored time to first kill', () => {
         const m = competenceMetrics(scene, world([{ id: 1, age: 700 }]));
         expect(m['eval.hunter_first_kill_rmst']).toEqual({ value: null, reason: 'no hunter born after burn-in' });
         expect(m['eval.hunter_first_kill_km_median'].reason).toBe('no hunter born after burn-in');
+    });
+});
+
+describe('the independent kill share', () => {
+    it('is the share of HunterKill records whose dependent bit is clear, null without a kill', () => {
+        const scene = createCompetenceScene(CONFIG);
+        expect(competenceMetrics(scene, world())['eval.hunter_independent_kill_share']).toEqual({
+            value: null,
+            reason: 'no deliberate kill',
+        });
+        record(scene, EVENT_TYPE.HUNTER_KILL, [1, 300, 1, 0]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [1, 600, 2, 1]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [2, 900, 1, 1]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [3, 900, 1, 0]);
+        record(scene, EVENT_TYPE.HUNTER_KILL, [3, 950, 2]);
+        expect(competenceMetrics(scene, world())['eval.hunter_independent_kill_share']).toEqual({ value: 0.6 });
+    });
+
+    it('has the direction higher', () => {
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_independent_kill_share']).toBe('higher');
     });
 });

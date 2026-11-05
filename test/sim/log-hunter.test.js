@@ -24,8 +24,8 @@ function drain(type, fields) {
 
 describe('the hunter-learning log events', () => {
     it('turns a HunterKill record into a debug event with the killer, its age and its kills so far', () => {
-        expect(drain(EVENT_TYPE.HUNTER_KILL, [41, 900, 2])).toEqual([
-            { event: 'HunterKill', level: 'debug', tick: 7, genomeId: 41, ageTicks: 900, kills: 2 },
+        expect(drain(EVENT_TYPE.HUNTER_KILL, [41, 900, 2, 1])).toEqual([
+            { event: 'HunterKill', level: 'debug', tick: 7, genomeId: 41, ageTicks: 900, kills: 2, dependent: true },
         ]);
     });
 
