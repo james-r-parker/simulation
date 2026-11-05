@@ -17,24 +17,6 @@ export function gainTemperature(world, slot, amount) {
 }
 
 /**
- * Adds the heat of a meal. With `mealHeatCap` on, a meal cannot raise the temperature above
- * `temperatureOptimalMax` (it still warms a cold agent, and never cools a hot one); off, it is `gainTemperature`.
- * @param {World} world the world
- * @param {number} slot the agent slot
- * @param {number} amount the temperature gained, non-negative
- * @returns {void}
- */
-export function gainMealTemperature(world, slot, amount) {
-    const { mealHeatCap, temperatureOptimalMax } = world.config;
-    const t = world.temperature[slot];
-    if (mealHeatCap && t + amount > temperatureOptimalMax) {
-        world.temperature[slot] = Math.max(t, temperatureOptimalMax);
-        return;
-    }
-    gainTemperature(world, slot, amount);
-}
-
-/**
  * Advances one alive agent's temperature by a tick: movement warms it by its speed as a fraction of `maxVelocity`
  * (capped at 1), the passive loss cools it, scaled by the season; then clamps to 0 to `temperatureMax`.
  * @param {World} world the world

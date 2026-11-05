@@ -230,9 +230,6 @@ export const DEFAULTS = deepFreeze({
     temperatureColdStress: 30, // TEMPERATURE_COLD_STRESS_THRESHOLD
     temperatureColdModerate: 40, // TEMPERATURE_COLD_MODERATE_THRESHOLD
     temperatureOptimalMin: 40, // TEMPERATURE_OPTIMAL_MIN
-    predatorRestTicks: 0, // new: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off (natural-selection T56)
-    huntSprintInstinct: false, // new: a hunter's sprint starts silent and rises with prey strength (natural-selection T55)
-    mealHeatCap: false, // new: eating cannot raise temperature above temperatureOptimalMax (natural-selection T52)
     temperatureOptimalMax: 65, // TEMPERATURE_OPTIMAL_MAX
     temperatureHeatModerate: 70, // TEMPERATURE_HEAT_MODERATE_THRESHOLD
     temperatureHeatStress: 85, // TEMPERATURE_HEAT_STRESS_THRESHOLD
