@@ -38,6 +38,10 @@ function report(over = {}) {
         traces: [good, good],
         metrics: {
             'eval.catch_rate': metric(0.01),
+            'eval.predators_at_end': metric(5),
+            'eval.hunter_ticks_last_quarter': metric(4000),
+            'eval.hunter_kills_per_life': metric(2),
+            'eval.chase_catch_share': metric(0.3),
             'eval.mating_share': metric(0.3),
             'eval.born_share': metric(0.9),
             'eval.population_mean': metric(140),
@@ -122,6 +126,25 @@ describe('armVerdict', () => {
         expect(at(0.19, 0.5).means.matingShare.pass).toBe(false);
         expect(at(0.2, 0.49).means.bornShare.pass).toBe(false);
         expect(at(0.19, 0.49).pass).toBe(false);
+    });
+
+    it('gates the hunters on the medians of headcount, last-quarter hunter-ticks and kills per life', () => {
+        const at = (/** @type {string} */ name, /** @type {number[]} */ values) => {
+            const r = report();
+            r.metrics[name] = metric(0, values);
+            return armVerdict('a', r, report());
+        };
+        // One seed with a hunter alive is not enough: the median seed has none.
+        const lone = at('eval.predators_at_end', [0, 9]);
+        expect(lone.hunters).toMatchObject({ predators: 4.5, pass: true });
+        expect(at('eval.predators_at_end', [0, 2]).pass).toBe(false);
+        expect(at('eval.hunter_ticks_last_quarter', [100, 200]).hunters.pass).toBe(false);
+        expect(at('eval.hunter_kills_per_life', [0, 0]).hunters.pass).toBe(false);
+        const ok = armVerdict('a', report(), report());
+        expect(ok.hunters).toEqual({ predators: 5, ticks: 4000, kills: 2, chaseCatch: 0.3, pass: true });
+        const bare = report();
+        delete bare.metrics['eval.predators_at_end'];
+        expect(armVerdict('a', bare, report()).hunters).toMatchObject({ predators: null, pass: false });
     });
 
     it('fails when one seed fails one criterion', () => {

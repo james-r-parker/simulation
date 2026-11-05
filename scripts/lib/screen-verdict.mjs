@@ -2,12 +2,21 @@
 // computed from eval reports that carry `traces`. Pure: no files, no clock.
 
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
+import { quantile } from '../../js/evo/metrics-stats.js';
 
 export const POP_ABOVE_SHARE = 0.8;
 export const MIN_LINEAGES = 5;
 export const MAX_SPEC_SHARE = 0.7;
 export const MIN_MATING_SHARE = 0.2;
 export const MIN_BORN_SHARE = 0.5;
+
+/**
+ * The hunter gate (T60): medians over the seeds, not "at least one alive". A run of hunters needs a headcount at the
+ * end, hunting time in the last quarter and a median hunter life that kills.
+ */
+export const MIN_HUNTERS_AT_END = 3;
+export const MIN_HUNTER_TICKS_LAST_QUARTER = 2500;
+export const MIN_HUNTER_KILLS_PER_LIFE = 1;
 
 /** The Phase 4 Targets, compared against the reference arm. */
 export const TARGETS = [
@@ -138,6 +147,34 @@ function meanAtLeast(report, metric, floor) {
 
 /**
  * @param {Record<string, any>} report an eval report
+ * @returns {{ predators: number | null, ticks: number | null, kills: number | null, chaseCatch: number | null,
+ *   pass: boolean }} the medians over the seeds of `eval.predators_at_end`, `eval.hunter_ticks_last_quarter` and
+ *   `eval.hunter_kills_per_life` (null with no seed deciding it), the mean `eval.chase_catch_share`, and whether the
+ *   three medians reach their floors
+ */
+export function hunterGate(report) {
+    const median = (/** @type {string} */ metric) => {
+        const decided = metricValues(report, metric).filter((v) => v !== null && v !== undefined);
+        return decided.length === 0 ? null : quantile(decided, 0.5);
+    };
+    const predators = median('eval.predators_at_end');
+    const ticks = median('eval.hunter_ticks_last_quarter');
+    const kills = median('eval.hunter_kills_per_life');
+    const reaches = (/** @type {number | null} */ v, /** @type {number} */ floor) => v !== null && v >= floor;
+    return {
+        predators,
+        ticks,
+        kills,
+        chaseCatch: report.metrics['eval.chase_catch_share']?.mean ?? null,
+        pass:
+            reaches(predators, MIN_HUNTERS_AT_END) &&
+            reaches(ticks, MIN_HUNTER_TICKS_LAST_QUARTER) &&
+            reaches(kills, MIN_HUNTER_KILLS_PER_LIFE),
+    };
+}
+
+/**
+ * @param {Record<string, any>} report an eval report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, { mean: number | null, delta: number | null, rel: number | null }>} per Target: the arm's
  *   mean, the difference from the reference's mean and that difference over the reference's magnitude
@@ -172,7 +209,7 @@ export function watchMeans(report) {
  * @param {Record<string, any>} report the arm's report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
- *   `pass` (every seed passes every criterion and both means pass), the Target deltas against the reference and the
+ *   `hunters` (`hunterGate`), `pass` (every seed passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference and the
  *   `WATCH_METRICS` means
  */
 export function armVerdict(name, report, reference) {
@@ -181,8 +218,11 @@ export function armVerdict(name, report, reference) {
         matingShare: meanAtLeast(report, 'eval.mating_share', MIN_MATING_SHARE),
         bornShare: meanAtLeast(report, 'eval.born_share', MIN_BORN_SHARE),
     };
+    const hunters = hunterGate(report);
     const pass =
-        SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) && Object.values(means).every((m) => m.pass);
+        SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) &&
+        Object.values(means).every((m) => m.pass) &&
+        hunters.pass;
     return {
         arm: name,
         seeds: report.seeds.length,
@@ -190,6 +230,7 @@ export function armVerdict(name, report, reference) {
         maxAgents: report.config.maxAgents,
         criteria,
         means,
+        hunters,
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
         deltas: report === reference ? null : targetDeltas(report, reference),
