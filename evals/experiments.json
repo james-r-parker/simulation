@@ -2726,6 +2726,27 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "Preregistered, not run. Grid evals/screens/temperature.grid.json."
+    },
+    {
+      "id": "E109",
+      "date": "2026-11-05",
+      "branch": "eval/e108-temperature",
+      "hypothesis": "User direction 2026-11-05: the chase (E88, E98), births (E100), the fat store (E103) and a richer carcass (E105) are spent; the levers still on their original values may be what starves hunters. Three groups: the prey base is thin (disease, herd grazing, winter regrowth, toxic caps); the hunter's own budget (turn cost, bite energy per wound, the lunge tax of recoil and bite cost, refuge size); where the meals sit (fewer, denser food patches; less background scatter). floor-off reads how much of the hunter count is the floor guard restocking.",
+      "prediction": "8 seeds x 200000 ticks on the post-E105 defaults (evals/screens/untouched.grid.json). Defaults: hunters alive at the last tick on 3-4/8 seeds, about 3 seeds with mean population under 80. Most arms stay at 2-4/8; at most one arm reaches 6/8. Per-arm keep rules (user): disease-off - population up and floor episodes down without losing a prey type; graze-60/90 - eval.herd_grazed_share under 0.25 with herd carcass meals and seeded patches held and population up; winter-mild - floor episodes down and end hunters not down; cap-off - prey types and population up; turn-0.02/0.05 - median age of one-kill hunters up with the end count, not catch rate alone; bite-15/30 - zero-kill hunters with bite energy stop starving, prey types 3+; no-lunge-tax - hunter births stop being cancelled by cost losses (drop if the ledger shows almost no recoil); refuge-40 - eval.refuge_use_under_threat and end hunters up, prey types not down; patches-8 - catch rate and end hunters up together (patches-24 is the control); no-scatter - eval.carcass_hunter_share up. Global gate: keep an arm only if hunters are alive at the last tick on at least 6/8 seeds and no more seeds sit under 80 agents than the defaults. floor-off: if hunters at the end collapse with the guard off, the current hunter count is restock, and no arm from this screen is adopted until it also wins with floorTrigger 0. Readings before any adoption (T53 ledger): prey per basin at the last hunter death, kill rate of hunter-parent versus spec-flip hunters, and the floor share of hunter births.",
+      "targets": [
+        "eval.predators_at_end",
+        "eval.population_mean",
+        "eval.prey_types_at_end",
+        "eval.predator_presence",
+        "eval.floor_episodes"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/screens/results/untouched/defaults.report.json (the defaults arm of this screen)",
+      "after": "evals/screens/results/untouched/ (table.md, 16 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered, not run. Grid evals/screens/untouched.grid.json."
     }
   ]
 }
