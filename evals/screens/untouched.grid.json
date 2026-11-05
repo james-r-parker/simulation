@@ -1,0 +1,25 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "disease-off": { "diseaseSeedRate": 0 },
+    "graze-60": { "herdGrazeTicks": 60 },
+    "graze-90": { "herdGrazeTicks": 90 },
+    "winter-mild": { "winterRegrow": 0.45 },
+    "cap-off": { "flora": { "toxiccap": { "share": 0 } } },
+    "turn-0.02": { "turnCost": 0.02 },
+    "turn-0.05": { "turnCost": 0.05 },
+    "bite-15": { "biteEnergy": 15 },
+    "bite-30": { "biteEnergy": 30 },
+    "no-lunge-tax": { "recoilEnergy": 0, "biteCost": 0 },
+    "refuge-40": { "refugeSizeMax": 40 },
+    "patches-8": { "foodPatchCount": 8 },
+    "patches-24": { "foodPatchCount": 24 },
+    "no-scatter": { "foodBackgroundShare": 0.05 },
+    "floor-off": { "floorTrigger": 0 }
+  }
+}
