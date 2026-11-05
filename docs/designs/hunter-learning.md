@@ -1,6 +1,6 @@
 # Hunter learning
 
-**Status:** Proposed - hunters have time to learn to kill: Phase 1 (parental provisioning, a juvenile dependency with a kin pull, and the hunter reflex on a spec-flip child, with the detectors that show them) is built first; Phase 2 adds reward-gated lifetime learning.
+**Status:** In progress - hunters have time to learn to kill: Phase 1 (parental provisioning, a juvenile dependency with a kin pull, and the hunter reflex on a spec-flip child, with the detectors that show them) is built first, and its chunk A1 (the `HunterKill` event, the age, competence and guard detectors and the eight Phase 1 keys, every switch off) is built; Phase 2 adds reward-gated lifetime learning.
 **Validated:** 2683cb6 (2026-11-05)
 **Priority:** 2 - after natural-selection.md, whose Phase 4 is nearly done; the self-sustaining world after E112 keeps hunters alive on about 10 of 16 seeds but a hunter's life has no kill in 80 to 92% of cases, and every budget, placement and scent lever has been spent (user, 2026-11-05)
 **Depends on:** [natural-selection.md](natural-selection.md)
