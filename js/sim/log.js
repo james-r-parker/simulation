@@ -144,6 +144,22 @@ function emitHunterLedger(log, d, o) {
 }
 
 /**
+ * Emits one `HunterKill` event: a hunter's deliberate kill, with its age and its kills so far.
+ * @param {SimLog} log the log
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {void}
+ */
+function emitHunterKill(log, d, o) {
+    log.log('debug', 'HunterKill', {
+        tick: d[o + 1],
+        genomeId: d[o + 2],
+        ageTicks: d[o + 3],
+        kills: d[o + 4],
+    });
+}
+
+/**
  * Emits one `LastHunterDied` event: the last hunter died, in a basin, with the non-hunters alive in each.
  * @param {SimLog} log the log
  * @param {Float64Array} d ring data
@@ -473,6 +489,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.STRAIN_EXTINCT]: { level: LOG_LEVEL.info, emit: emitStrainExtinct },
     [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
     [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
+    [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
 });
 
 /**
