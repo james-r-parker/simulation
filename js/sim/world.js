@@ -155,9 +155,9 @@ function allocFoodAndObstacles(world) {
     world.foodRows = allocRows(
         world,
         [
-            ...singles(Uint8Array, ['foodAlive', 'foodKind', 'foodOrigin']),
+            ...singles(Uint8Array, ['foodAlive', 'foodKind', 'foodOrigin', 'foodGone']),
             ...singles(Float32Array, ['foodX', 'foodY', 'foodRadius']),
-            ...singles(Float64Array, ['foodValue']),
+            ...singles(Float64Array, ['foodValue', 'foodTaken']),
             ...singles(Uint32Array, ['foodAge']),
         ],
         maxFood,
@@ -430,16 +430,24 @@ export function freeAgent(world, slot) {
     world.population -= 1;
 }
 
+/** Why a food slot was last emptied (`foodGone`); the observer reads it, the step never does. */
+export const FOOD_GONE = Object.freeze({ NONE: 0, EATEN: 1, ROTTED: 2 });
+
 /**
- * Zeroes every food array at a slot.
+ * Zeroes every food array at a slot, then notes why it was emptied (`foodGone`) and the energy the eater stored
+ * (`foodTaken`). Both are read only by the observer and are not hashed.
  * @param {World} world the world
  * @param {number} slot the alive food slot to remove
+ * @param {number} [gone] a `FOOD_GONE` cause
+ * @param {number} [taken] the energy the eater actually stored, for an eaten item
  * @returns {void}
  */
-export function removeFood(world, slot) {
+export function removeFood(world, slot, gone = FOOD_GONE.ROTTED, taken = 0) {
     if (world.foodAlive[slot] !== 1) {
         throw new Error(`removeFood: food slot ${slot} is not alive`);
     }
     zeroSlot(world.foodRows, slot);
+    world.foodGone[slot] = gone;
+    world.foodTaken[slot] = taken;
     world.foodCount -= 1;
 }

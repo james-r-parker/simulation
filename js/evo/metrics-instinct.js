@@ -54,15 +54,16 @@ export function createInstinctPools(config) {
  * @param {Record<string, any>} pools the drift pools
  * @param {Record<string, any>} world the world
  * @param {Int32Array} slots the sampled slots
+ * @param {Uint8Array} priorSpec each slot's specialisation at birth, whose prior its genome carries (the observer's)
  * @returns {number} the mean absolute distance of the sampled genomes' instinct cells from their prior, NaN for none
  */
-export function priorDistance(pools, world, slots) {
+export function priorDistance(pools, world, slots, priorSpec) {
     const n = world.layout.weightCount;
     let sum = 0;
     let cells = 0;
     for (let s = 0; s < slots.length; s++) {
         const slot = slots[s];
-        const { cells: at, prior } = specParams(world.config, world.spec[slot]).canHunt ? pools.hunter : pools.other;
+        const { cells: at, prior } = specParams(world.config, priorSpec[slot]).canHunt ? pools.hunter : pools.other;
         for (let c = 0; c < at.length; c++) {
             sum += Math.abs(world.weights[slot * n + at[c]] - prior[c]);
         }
@@ -83,7 +84,7 @@ export function sampleInstinct(pools, observer, world) {
     if (pools.weight === 0) {
         return;
     }
-    const distance = priorDistance(pools, world, observer.sampled);
+    const distance = priorDistance(pools, world, observer.sampled, observer.priorSpec);
     if (Number.isNaN(distance)) {
         return;
     }

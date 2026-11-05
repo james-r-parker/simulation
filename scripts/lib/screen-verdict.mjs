@@ -2,12 +2,26 @@
 // computed from eval reports that carry `traces`. Pure: no files, no clock.
 
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
+import { quantile } from '../../js/evo/metrics-stats.js';
 
 export const POP_ABOVE_SHARE = 0.8;
 export const MIN_LINEAGES = 5;
 export const MAX_SPEC_SHARE = 0.7;
 export const MIN_MATING_SHARE = 0.2;
 export const MIN_BORN_SHARE = 0.5;
+
+/**
+ * The hunter gate (T60, user's keep rules 2026-11-05): judged against the reference arm, not on absolute floors, and
+ * on headcounts rather than "at least one alive". An arm keeps hunters at the last tick on at least this share of its
+ * seeds (6 of 8)...
+ */
+export const MIN_HUNTER_SEED_SHARE = 0.75;
+/** ...has no more seeds than the reference ending under this many agents... */
+export const LOW_POPULATION = 80;
+/**
+ * ...and its medians of `eval.predators_at_end` and `eval.hunter_ticks_last_quarter` are not below the reference's.
+ * `eval.hunter_kills_per_life` is reported beside them, not gated: a typical hunter life expects well under one kill.
+ */
 
 /** The Phase 4 Targets, compared against the reference arm. */
 export const TARGETS = [
@@ -138,6 +152,55 @@ function meanAtLeast(report, metric, floor) {
 
 /**
  * @param {Record<string, any>} report an eval report
+ * @param {string} metric a metric name
+ * @returns {number | null} the median over the seeds that decide it, null when none does
+ */
+function seedMedian(report, metric) {
+    const decided = metricValues(report, metric).filter((v) => v !== null && v !== undefined);
+    return decided.length === 0 ? null : quantile(decided, 0.5);
+}
+
+/**
+ * @param {Record<string, any>} report an eval report
+ * @returns {number} the seeds whose end population is under `LOW_POPULATION`
+ */
+function lowSeeds(report) {
+    return report.traces.filter((/** @type {any} */ t) => sum(t.spec) < LOW_POPULATION).length;
+}
+
+/**
+ * @param {Record<string, any>} report an eval report
+ * @param {Record<string, any>} reference the reference arm's report
+ * @returns {{ predators: number | null, ticks: number | null, kills: number | null, chaseCatch: number | null,
+ *   aliveShare: number, lowSeeds: number, pass: boolean }} the seed medians of `eval.predators_at_end`,
+ *   `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life`, the mean `eval.chase_catch_share`, the share of
+ *   seeds with a hunter at the last tick, the seeds ending under `LOW_POPULATION`, and whether the keep rules hold
+ */
+export function hunterGate(report, reference) {
+    const predators = seedMedian(report, 'eval.predators_at_end');
+    const ticks = seedMedian(report, 'eval.hunter_ticks_last_quarter');
+    const ends = metricValues(report, 'eval.predators_at_end');
+    const aliveShare = ends.filter((v) => v !== null && v !== undefined && v > 0).length / report.seeds.length;
+    const low = lowSeeds(report);
+    const notBelow = (/** @type {number | null} */ v, /** @type {number | null} */ ref) =>
+        v !== null && (ref === null || v >= ref);
+    return {
+        predators,
+        ticks,
+        kills: seedMedian(report, 'eval.hunter_kills_per_life'),
+        chaseCatch: report.metrics['eval.chase_catch_share']?.mean ?? null,
+        aliveShare,
+        lowSeeds: low,
+        pass:
+            aliveShare >= MIN_HUNTER_SEED_SHARE &&
+            low <= lowSeeds(reference) &&
+            notBelow(predators, seedMedian(reference, 'eval.predators_at_end')) &&
+            notBelow(ticks, seedMedian(reference, 'eval.hunter_ticks_last_quarter')),
+    };
+}
+
+/**
+ * @param {Record<string, any>} report an eval report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, { mean: number | null, delta: number | null, rel: number | null }>} per Target: the arm's
  *   mean, the difference from the reference's mean and that difference over the reference's magnitude
@@ -172,7 +235,7 @@ export function watchMeans(report) {
  * @param {Record<string, any>} report the arm's report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
- *   `pass` (every seed passes every criterion and both means pass), the Target deltas against the reference and the
+ *   `hunters` (`hunterGate`), `pass` (every seed passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference and the
  *   `WATCH_METRICS` means
  */
 export function armVerdict(name, report, reference) {
@@ -181,8 +244,11 @@ export function armVerdict(name, report, reference) {
         matingShare: meanAtLeast(report, 'eval.mating_share', MIN_MATING_SHARE),
         bornShare: meanAtLeast(report, 'eval.born_share', MIN_BORN_SHARE),
     };
+    const hunters = hunterGate(report, reference);
     const pass =
-        SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) && Object.values(means).every((m) => m.pass);
+        SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) &&
+        Object.values(means).every((m) => m.pass) &&
+        hunters.pass;
     return {
         arm: name,
         seeds: report.seeds.length,
@@ -190,6 +256,7 @@ export function armVerdict(name, report, reference) {
         maxAgents: report.config.maxAgents,
         criteria,
         means,
+        hunters,
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
         deltas: report === reference ? null : targetDeltas(report, reference),

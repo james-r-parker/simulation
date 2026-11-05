@@ -227,12 +227,32 @@ function startBirth(observer, world, d, o) {
     observer.genomeId[slot] = d[o + 3];
     observer.lineageId[slot] = d[o + 4];
     observer.spec[slot] = d[o + 5];
+    observer.priorSpec[slot] = priorSpecOf(observer, d, o);
     observer.birthTick[slot] = d[o + 1];
     observer.eligibleChild[slot] = child ? 1 : 0;
     noteBirthBody(observer, world, slot, d[o + 3]);
     setLineage(observer, d, o);
     recordParents(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);
+}
+
+/**
+ * The specialisation whose instinct prior a newborn's genome carries (`eval.instinct_drift`): a child of a mate or a
+ * split inherits its mother's genome, so her prior, even when the child's own specialisation mutated; a founder, a
+ * floor entrant or a child whose mother is not tracked takes its own.
+ * @param {Record<string, any>} observer the observer
+ * @param {Float64Array} d the event data
+ * @param {number} o the record offset
+ * @returns {number} the specialisation index
+ */
+function priorSpecOf(observer, d, o) {
+    if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
+        const mother = observer.slotOf.get(d[o + 6]);
+        if (mother !== undefined) {
+            return observer.priorSpec[mother];
+        }
+    }
+    return d[o + 5];
 }
 
 /**

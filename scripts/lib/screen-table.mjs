@@ -60,6 +60,29 @@ function deltaCell(delta) {
 }
 
 /**
+ * @param {{ chaseCatch: number | null } | undefined} hunters an arm's hunter gate
+ * @returns {string} the mean `eval.chase_catch_share`, the share of chases that end in a catch, or `n/a`
+ */
+function chaseCell(hunters) {
+    const share = hunters?.chaseCatch;
+    return share === null || share === undefined ? 'n/a' : share.toFixed(2);
+}
+
+/**
+ * @param {{ predators: number | null, ticks: number | null, kills: number | null, aliveShare: number, lowSeeds: number,
+ *   pass: boolean } | undefined} hunters an arm's hunter gate
+ * @returns {string} the three medians as predators/ticks/kills, the share of seeds with a hunter at the end, the
+ *   seeds ending under 80 agents, then `ok` or `FAIL`; `n/a` without a gate
+ */
+function huntersCell(hunters) {
+    if (hunters === undefined) {
+        return 'n/a';
+    }
+    const part = (/** @type {number | null} */ v) => (v === null ? '-' : String(Math.round(v * 10) / 10));
+    return `${part(hunters.predators)}/${part(hunters.ticks)}/${part(hunters.kills)} alive ${part(hunters.aliveShare)} low ${hunters.lowSeeds} ${hunters.pass ? 'ok' : 'FAIL'}`;
+}
+
+/**
  * @param {Record<string, any>} verdict one arm's verdict
  * @returns {string[]} the row's cells
  */
@@ -70,6 +93,8 @@ function row(verdict) {
         verdict.pass ? 'PASS' : 'FAIL',
         seedsCell(c.popAboveMin),
         seedsCell(c.catchRate),
+        chaseCell(verdict.hunters),
+        huntersCell(verdict.hunters),
         meanCell(means.matingShare),
         meanCell(means.bornShare),
         seedsCell(c.lineages),
@@ -91,7 +116,9 @@ export function renderTable({ reference, arms }) {
         'Arm',
         'verdict',
         'pop > min',
-        'catch > 0',
+        'catch/1k > 0 (speed)',
+        'chase catch share',
+        'hunters p50 (pred/ticks/kills), alive share, seeds <80',
         'mating mean >= 0.2',
         'born mean >= 0.5',
         'lineages >= 5',

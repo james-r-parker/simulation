@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { FOOD_KIND, FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
+import { FOOD_GONE, removeFood } from '../../js/sim/world.js';
 import { trackCarcasses } from '../../js/evo/scene-carcass.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { trackHerd } from '../../js/evo/scene-herd.js';
@@ -39,10 +40,10 @@ describe('the carcass metrics', () => {
         meat(world, 2, 900, 299);
         world.tick = BURN_IN_TICKS + 1;
         trackCarcasses(observer.scenes.carcass, observer, world);
-        for (const food of [0, 1, 2]) {
-            world.foodAlive[food] = 0;
-        }
-        world.foodAge[2] = 301;
+        const grazerShare = world.meatFoodBySpec[world.spec[grazer]];
+        removeFood(world, 0, FOOD_GONE.EATEN, 100);
+        removeFood(world, 1, FOOD_GONE.EATEN, 100 * grazerShare);
+        removeFood(world, 2, FOOD_GONE.ROTTED);
         world.foodEnergy[hunter] = 100;
         world.foodEnergy[grazer] = 100;
         world.tick = BURN_IN_TICKS + 2;
@@ -51,7 +52,6 @@ describe('the carcass metrics', () => {
         observer.intent.run.huntBiteChance = 20;
         trackHerd(observer.scenes.herd, world, observer);
         // The hunter eats all of its carcass (meatFoodValue 1); the grazer a third or less of its own.
-        const grazerShare = world.meatFoodBySpec[world.spec[grazer]];
         expect(grazerShare).toBeLessThan(1);
         const eaten = 100 + 100 * grazerShare;
         expect(read(r, 'carcass_meal_share').value).toBeCloseTo(eaten / (eaten + 70), 12);
@@ -68,8 +68,8 @@ describe('the carcass metrics', () => {
         meat(world, 1, 900, 0);
         world.tick = BURN_IN_TICKS + 1;
         trackCarcasses(observer.scenes.carcass, observer, world);
-        world.foodAlive[0] = 0;
-        world.foodAlive[1] = 0;
+        removeFood(world, 0, FOOD_GONE.EATEN, 100);
+        removeFood(world, 1, FOOD_GONE.EATEN, 100);
         world.foodEnergy[grazer] = 100;
         world.foodEnergy[hunter] = 100;
         world.tick = BURN_IN_TICKS + 2;
@@ -89,7 +89,7 @@ describe('the carcass metrics', () => {
         world.foodX[1] = 500;
         world.tick = BURN_IN_TICKS + 1;
         trackCarcasses(observer.scenes.carcass, observer, world);
-        world.foodAlive[1] = 0;
+        removeFood(world, 1, FOOD_GONE.EATEN, 100);
         world.foodEnergy[grazer] = 100;
         world.tick = BURN_IN_TICKS + 2;
         trackCarcasses(observer.scenes.carcass, observer, world);
@@ -111,5 +111,31 @@ describe('the carcass metrics', () => {
         world.tick = BURN_IN_TICKS + 2;
         trackCarcasses(observer.scenes.carcass, observer, world);
         expect(observer.scenes.carcass.eaten).toBe(0);
+    });
+
+    it('do not credit a rotted carcass to a blob that ate a plant on the spot, and count the energy stored', () => {
+        const r = observed();
+        const { world, observer } = r;
+        const grazer = addBlob(world, { x: 500 });
+        meat(world, 0, 500, 299);
+        meat(world, 1, 900, 0);
+        world.tick = BURN_IN_TICKS + 1;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        removeFood(world, 0, FOOD_GONE.ROTTED);
+        world.foodEnergy[grazer] = 100;
+        removeFood(world, 1, FOOD_GONE.EATEN, 37);
+        world.tick = BURN_IN_TICKS + 2;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        expect(observer.scenes.carcass.eaten).toBe(0);
+        // An eaten item credits the energy stored, not the item's value.
+        const eater = addBlob(world, { x: 900 });
+        meat(world, 2, 900, 0);
+        world.tick = BURN_IN_TICKS + 3;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        removeFood(world, 2, FOOD_GONE.EATEN, 37);
+        world.foodEnergy[eater] = 50;
+        world.tick = BURN_IN_TICKS + 4;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        expect(observer.scenes.carcass.eaten).toBe(37);
     });
 });

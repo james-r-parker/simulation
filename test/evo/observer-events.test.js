@@ -13,6 +13,21 @@ describe('observer events', () => {
         expect(observer.births[BORN_CAUSE.MATE]).toBe(1);
     });
 
+    it('gives a child of a mated or split mother her instinct prior spec, whatever its own spec mutated to', () => {
+        const { world, observer } = observed();
+        pushBorn(world, { slot: 0, genomeId: 1, spec: 2, cause: BORN_CAUSE.FLOOR, tick: 0 });
+        observe(observer, world);
+        nextTick(world, 1);
+        pushBorn(world, { slot: 1, genomeId: 2, spec: 4, parentA: 1, parentB: 1, cause: BORN_CAUSE.SPLIT, tick: 1 });
+        observe(observer, world);
+        nextTick(world, 2);
+        pushBorn(world, { slot: 2, genomeId: 3, spec: 0, parentA: 2, parentB: 1, cause: BORN_CAUSE.MATE, tick: 2 });
+        pushBorn(world, { slot: 3, genomeId: 4, spec: 3, parentA: 99, cause: BORN_CAUSE.MATE, tick: 2 });
+        observe(observer, world);
+        expect([...observer.priorSpec.subarray(0, 4)]).toEqual([2, 2, 2, 3]);
+        expect([...observer.spec.subarray(0, 4)]).toEqual([2, 4, 0, 3]);
+    });
+
     it('counts births by cause again from BURN_IN_TICKS, not before', () => {
         const { world, observer } = observed();
         pushBorn(world, { slot: 1, genomeId: 5, cause: BORN_CAUSE.MATE, tick: BURN_IN_TICKS - 1 });

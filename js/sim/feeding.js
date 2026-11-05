@@ -8,7 +8,7 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } fr
 import { depletePatchAt } from './food-patches.js';
 import { INCOME, noteBiteLedger, noteIncome } from './hunter-ledger.js';
 import { depositPheromone } from './pheromones.js';
-import { removeFood } from './world.js';
+import { FOOD_GONE, removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
@@ -69,10 +69,10 @@ function consumeFood(world, slot, food, share) {
         world.herdTotals[1] += stored;
         world.herdCarcassEatenBySpec[world.spec[slot]] += stored;
         if (world.foodValue[food] < 1) {
-            removeFood(world, food);
+            removeFood(world, food, FOOD_GONE.EATEN, stored);
         }
     } else {
-        removeFood(world, food);
+        removeFood(world, food, FOOD_GONE.EATEN, stored);
     }
 }
 

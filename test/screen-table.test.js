@@ -16,6 +16,7 @@ function verdict(arm, over = {}) {
         pass: true,
         criteria: { popAboveMin: same, catchRate: same, lineages: same, specShare: same, popBelowMax: same },
         means: { matingShare: { value: 0.25, pass: true }, bornShare: { value: 0.9, pass: true } },
+        hunters: { predators: 5, ticks: 4000, kills: 2, chaseCatch: 0.31, aliveShare: 1, lowSeeds: 0, pass: true },
         popMean: 279.4,
         deltas: null,
         ...over,
@@ -53,6 +54,10 @@ describe('renderTable', () => {
         expect(lines[3]).toContain('1/2');
         expect(lines[3]).toContain('0.16 FAIL');
         expect(lines[3]).toMatch(/-20%.*\+50%.*\+0\.10.*n\/a.*0%/);
+        expect(lines[0]).toContain('catch/1k > 0 (speed)');
+        expect(lines[0].indexOf('chase catch share')).toBeGreaterThan(lines[0].indexOf('catch/1k'));
+        expect(lines[2]).toContain('0.31');
+        expect(lines[2]).toContain('5/4000/2 alive 1 low 0 ok');
         expect(table).toContain('Reference arm: `ref`.');
         expect(new Set(lines.slice(0, 4).map((l) => l.length)).size).toBe(1);
     });

@@ -6,13 +6,17 @@
 //   founder lies within `FAMILY_DISTANCE` (`geneticDistance`, about 1.13 between unrelated genomes), else founds one.
 //   The count of families and the inverse Simpson index of their sizes; per seed, the smaller of the two basins' means
 //   over the checkpoints in the last quarter of the run (the one basin when only one qualifies, `null` when none does).
+//   `eval.basin_family_effective` (T60) does not drop a thin basin: when a basin's mean alive count over the last
+//   quarter is under `BASIN_MIN_ALIVE`, it is `null` with the basin and its count as the reason, so a collapsed basin
+//   cannot hide behind the other one.
 //
 // The founders and sizes live in arrays sized once from `maxAgents`; a checkpoint allocates nothing.
 
 import { basinOf } from '../sim/eras.js';
 import { geneticDistance } from '../sim/genetics.js';
 import { createLog, ensureRoom } from './growable-log.js';
-import { lastQuarterBasinMean } from './scene-balance.js';
+import { BASIN_MIN_ALIVE, basinMean, LAST_SHARE, lastQuarterBasinMean } from './scene-balance.js';
+import { none } from './metrics-stats.js';
 
 /** Genomes closer than this share a family: under half the distance between two unrelated genomes. */
 export const FAMILY_DISTANCE = 0.5;
@@ -95,6 +99,25 @@ export function sampleFamilies(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the family scene
+ * @param {number} lastTick the run's last tick
+ * @returns {import('./metrics-stats.js').MetricResult | null} `null` result with a reason naming a basin whose mean
+ *   alive count over the last quarter is under `BASIN_MIN_ALIVE`, or `null` when no basin is thin
+ */
+function thinBasin(scene, lastTick) {
+    const from = lastTick * (1 - LAST_SHARE);
+    for (let basin = 0; basin < 2; basin++) {
+        const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
+        if (alive < BASIN_MIN_ALIVE) {
+            return none(
+                `basin ${basin} held ${Math.round(alive * 10) / 10} agents (under ${BASIN_MIN_ALIVE}) in the last quarter`,
+            );
+        }
+    }
+    return null;
+}
+
+/**
+ * @param {Record<string, any>} scene the family scene
  * @param {Record<string, any>} world the world at the run's last tick
  * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two family metrics
  */
@@ -102,6 +125,6 @@ export function familyMetrics(scene, world) {
     const lastTick = world.tick ?? 0;
     return {
         'eval.basin_families': lastQuarterBasinMean(scene, 'families', lastTick),
-        'eval.basin_family_effective': lastQuarterBasinMean(scene, 'effective', lastTick),
+        'eval.basin_family_effective': thinBasin(scene, lastTick) ?? lastQuarterBasinMean(scene, 'effective', lastTick),
     };
 }

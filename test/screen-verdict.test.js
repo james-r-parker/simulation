@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     armVerdict,
+    hunterGate,
     largestSpecShare,
     screenVerdicts,
     seedChecks,
@@ -38,6 +39,10 @@ function report(over = {}) {
         traces: [good, good],
         metrics: {
             'eval.catch_rate': metric(0.01),
+            'eval.predators_at_end': metric(5),
+            'eval.hunter_ticks_last_quarter': metric(4000),
+            'eval.hunter_kills_per_life': metric(2),
+            'eval.chase_catch_share': metric(0.3),
             'eval.mating_share': metric(0.3),
             'eval.born_share': metric(0.9),
             'eval.population_mean': metric(140),
@@ -122,6 +127,61 @@ describe('armVerdict', () => {
         expect(at(0.19, 0.5).means.matingShare.pass).toBe(false);
         expect(at(0.2, 0.49).means.bornShare.pass).toBe(false);
         expect(at(0.19, 0.49).pass).toBe(false);
+    });
+
+    it('keeps hunters on 6 of 8 seeds at the end, not on one seed with a hunter alive', () => {
+        const eight = (/** @type {number[]} */ ends) => {
+            const r = report({ seeds: ends.map((_, i) => i + 1), traces: ends.map(() => report().traces[0]) });
+            r.metrics['eval.predators_at_end'] = metric(0, ends);
+            r.metrics['eval.hunter_ticks_last_quarter'] = metric(
+                0,
+                ends.map(() => 4000),
+            );
+            return hunterGate(r, report());
+        };
+        expect(eight([0, 0, 5, 5, 5, 5, 5, 5])).toMatchObject({ aliveShare: 0.75, pass: true });
+        expect(eight([0, 0, 0, 5, 5, 5, 5, 9])).toMatchObject({ aliveShare: 0.625, pass: false });
+    });
+
+    it('fails an arm with more seeds under 80 agents than the reference, and passes it at the same count', () => {
+        const low = trace([], { spec: [10, 10, 10, 10, 10] });
+        const one = report({ traces: [low, report().traces[0]] });
+        expect(hunterGate(one, report())).toMatchObject({ lowSeeds: 1, pass: false });
+        expect(hunterGate(one, one).pass).toBe(true);
+    });
+
+    it('fails when the headcount or last-quarter hunter-ticks median falls below the reference, not on kills', () => {
+        const at = (/** @type {string} */ name, /** @type {number[]} */ values) => {
+            const r = report();
+            r.metrics[name] = metric(0, values);
+            return hunterGate(r, report());
+        };
+        expect(at('eval.predators_at_end', [4, 5]).pass).toBe(false);
+        expect(at('eval.hunter_ticks_last_quarter', [3000, 4000]).pass).toBe(false);
+        // Kills per life is reported beside the gate: a typical hunter life expects well under one kill.
+        const sparse = at('eval.hunter_kills_per_life', [0.1, 0.2]);
+        expect(sparse.pass).toBe(true);
+        expect(sparse.kills).toBeCloseTo(0.15);
+        expect(hunterGate(report(), report())).toEqual({
+            predators: 5,
+            ticks: 4000,
+            kills: 2,
+            chaseCatch: 0.3,
+            aliveShare: 1,
+            lowSeeds: 0,
+            pass: true,
+        });
+        const bare = report();
+        delete bare.metrics['eval.predators_at_end'];
+        expect(hunterGate(bare, report())).toMatchObject({ predators: null, aliveShare: 0, pass: false });
+        expect(armVerdict('a', bare, report()).pass).toBe(false);
+    });
+
+    it('passes the medians when the reference lacks them', () => {
+        const ref = report();
+        delete ref.metrics['eval.predators_at_end'];
+        delete ref.metrics['eval.hunter_ticks_last_quarter'];
+        expect(hunterGate(report(), ref).pass).toBe(true);
     });
 
     it('fails when one seed fails one criterion', () => {
