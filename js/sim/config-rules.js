@@ -50,6 +50,7 @@ export const FEATURE_RULES = {
     refugeCount: int(0, 32),
     refugeCluster: int(1, 4),
     coverConceals: BOOL,
+    coverFoodFree: BOOL,
     refugeSizeMax: positive(),
     refugeSense: BOOL,
     refugeSenseRange: num(500, 8000),

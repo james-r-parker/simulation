@@ -1,6 +1,7 @@
 // Finds a clear local seedling centre within the visited patch's basin.
 import { detCos, detSin } from './det-math.js';
 import { nextFloat } from './rng.js';
+import { rejectedByCover } from './cover.js';
 import { clearOfObstacles } from './spawn.js';
 
 const TWO_PI = 6.283185307179586;
@@ -33,7 +34,8 @@ export function placeSeed(world, parent) {
         if (
             minX <= maxX &&
             dx * dx + dy * dy <= reach * reach * (1 + ROUND_OFF) &&
-            clearOfObstacles(world, x, y, radius)
+            clearOfObstacles(world, x, y, radius) &&
+            !rejectedByCover(world, x, y)
         ) {
             world.point[0] = x;
             world.point[1] = y;

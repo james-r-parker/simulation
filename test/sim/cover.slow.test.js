@@ -29,11 +29,12 @@ const COVER_WORLD = {
     refugeSizeMax: 60,
     coldMarginWidth: 0,
     coverConceals: true,
+    coverFoodFree: true,
 };
 
 /**
  * @param {boolean} checkEveryTick whether to assert the invariants after every tick
- * @returns {{hash: string, agentTicks: number, concealed: number}} the run's hash and cover counters
+ * @returns {{hash: string, agentTicks: number, rejected: number, concealed: number}} the run's hash and cover counters
  */
 function run(checkEveryTick) {
     const policy = cloneWithNoisePolicy();
@@ -47,6 +48,7 @@ function run(checkEveryTick) {
     return {
         hash: hashWorld(world),
         agentTicks: world.coverTotals[COVER_TOTALS.AGENT_TICKS],
+        rejected: world.coverTotals[COVER_TOTALS.FOOD_REJECTED],
         concealed: world.coverTotals[COVER_TOTALS.CONCEALED_HITS],
     };
 }
@@ -59,7 +61,7 @@ describe('cover on a crowded world', () => {
             const second = run(false);
             expect(second.hash).toBe(first.hash);
             expect(second).toEqual(first);
-            expect(first.agentTicks + first.concealed).toBeGreaterThan(0);
+            expect(first.rejected + first.agentTicks + first.concealed).toBeGreaterThan(0);
         },
         TIMEOUT_MS,
     );

@@ -223,6 +223,7 @@ export const DEFAULTS = deepFreeze({
     refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
     refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
     coverConceals: false, // realistic-keepers T6 (T22 adopts or deletes): a ray from outside a ring skips an agent inside it
+    coverFoodFree: false, // realistic-keepers T7 (T22 adopts or deletes): plant placement rejects a point inside a ring
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
     refugeSense: false, // new: the three refuge inputs carry the nearest ring's bearing and nearness; false zeroes them (refuge.md T24)
     refugeSenseRange: 2500, // new: px over which refugeNear falls from 1 at the ring edge to 0 (refuge.md T24)

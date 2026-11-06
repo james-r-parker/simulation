@@ -12,7 +12,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 const BASINS = { worldWidth: 4000, worldHeight: 2000, refugeCount: 2, refugeCluster: 1, wallGaps: 1 };
-const ON = { coverConceals: true };
+const ON = { coverConceals: true, coverFoodFree: true };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -55,7 +55,7 @@ describe('stepCover', () => {
         expect([world.coverRing[inside], world.coverRing[past]]).toEqual([1, 0]);
     });
 
-    it('does nothing with the switch off', () => {
+    it('does nothing with both switches off', () => {
         const world = ringWorld();
         blobAt(world, 0);
         stepCover(world);
@@ -65,7 +65,7 @@ describe('stepCover', () => {
     });
 
     it('counts the agents in rings now and in total', () => {
-        const world = ringWorld(ON);
+        const world = ringWorld({ coverFoodFree: true });
         blobAt(world, 0);
         blobAt(world, 1);
         addBlob(world, { x: 5, y: 5 });
@@ -117,6 +117,7 @@ describe('cover events', () => {
             event: 'CoverConfig',
             tick: 0,
             coverConceals: true,
+            coverFoodFree: true,
             refugeCount: 2,
             aperturePx: 2 * world.config.refugeSizeMax,
             interiorRadius: ringRadius(world.config),
@@ -131,6 +132,7 @@ describe('cover events', () => {
         const world = ringWorld(ON);
         blobAt(world, 0);
         world.coverTotals[COVER_TOTALS.CONCEALED_HITS] = 7;
+        world.coverTotals[COVER_TOTALS.FOOD_REJECTED] = 3;
         clearEvents(world.events);
         world.tick = COVER_LOG_TICKS;
         stepCover(world);
@@ -144,6 +146,7 @@ describe('cover events', () => {
                 agentsInRings: 1,
                 agentTicksInRings: 1,
                 concealedHits: 7,
+                foodRejected: 3,
             },
         ]);
     });

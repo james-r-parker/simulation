@@ -25,12 +25,13 @@ function drain(type, fields, level) {
 
 describe('the cover log events', () => {
     it('turns a CoverConfig record into an info event', () => {
-        expect(drain(EVENT_TYPE.COVER_CONFIG, [1, 8, 60, 120.5], 'info')).toEqual([
+        expect(drain(EVENT_TYPE.COVER_CONFIG, [1, 0, 8, 60, 120.5], 'info')).toEqual([
             {
                 event: 'CoverConfig',
                 level: 'info',
                 tick: 9,
                 coverConceals: true,
+                coverFoodFree: false,
                 refugeCount: 8,
                 aperturePx: 60,
                 interiorRadius: 120.5,
@@ -39,7 +40,7 @@ describe('the cover log events', () => {
     });
 
     it('turns a CoverTotals record into a debug event, skipped at info', () => {
-        expect(drain(EVENT_TYPE.COVER_TOTALS, [4, 400, 12], 'debug')).toEqual([
+        expect(drain(EVENT_TYPE.COVER_TOTALS, [4, 400, 12, 5], 'debug')).toEqual([
             {
                 event: 'CoverTotals',
                 level: 'debug',
@@ -47,8 +48,9 @@ describe('the cover log events', () => {
                 agentsInRings: 4,
                 agentTicksInRings: 400,
                 concealedHits: 12,
+                foodRejected: 5,
             },
         ]);
-        expect(drain(EVENT_TYPE.COVER_TOTALS, [4, 400, 12], 'info')).toEqual([]);
+        expect(drain(EVENT_TYPE.COVER_TOTALS, [4, 400, 12, 5], 'info')).toEqual([]);
     });
 });
