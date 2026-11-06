@@ -49,6 +49,8 @@ export const FEATURE_RULES = {
     wallGapWidth: positive(),
     refugeCount: int(0, 8),
     refugeCluster: int(1, 4),
+    coverConceals: BOOL,
+    coverFoodFree: BOOL,
     refugeSizeMax: positive(),
     coldMarginWidth: num(0),
     specMutationRate: num(0, 1),
