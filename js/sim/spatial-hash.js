@@ -12,6 +12,7 @@
  * @property {Float64Array} boxX per entry, the circle's `minX` at build time
  * @property {Float64Array} boxY per entry, the circle's `minY` at build time
  * @property {Int32Array} range `[col0, row0, col1, row1]` written by `cellRange`
+ * @property {Int32Array} circleRange per circle id, its four `range` values from the count pass, read by the insert pass
  * @property {number} entryCount entries used by the last build
  */
 
@@ -36,6 +37,7 @@ export function createSpatialHash(config) {
         boxX: new Float64Array(capacity),
         boxY: new Float64Array(capacity),
         range: new Int32Array(4),
+        circleRange: new Int32Array(4 * (config.maxAgents + config.maxFood)),
         entryCount: 0,
     };
 }
@@ -71,11 +73,17 @@ export function cellRange(hash, x, y, r) {
 }
 
 /**
- * Counts one circle into every cell of `hash.range`.
+ * Counts one circle into every cell of `hash.range` and keeps the range for the insert pass.
  * @param {SpatialHash} hash the hash
+ * @param {number} id circle id
  */
-function countRange(hash) {
-    const { range, cols, cellCount } = hash;
+function countRange(hash, id) {
+    const { range, cols, cellCount, circleRange } = hash;
+    const at = 4 * id;
+    circleRange[at] = range[0];
+    circleRange[at + 1] = range[1];
+    circleRange[at + 2] = range[2];
+    circleRange[at + 3] = range[3];
     for (let row = range[1]; row <= range[3]; row++) {
         for (let col = range[0]; col <= range[2]; col++) {
             cellCount[row * cols + col]++;
@@ -84,16 +92,20 @@ function countRange(hash) {
 }
 
 /**
- * Inserts one circle into every cell of `hash.range`.
+ * Inserts one circle into every cell of the range the count pass kept for it.
  * @param {SpatialHash} hash the hash
  * @param {number} id circle id
  * @param {number} minX the box's minimum x
  * @param {number} minY the box's minimum y
  */
 function insertRange(hash, id, minX, minY) {
-    const { range, cols, cellStart, cellCount, entries, boxX, boxY } = hash;
-    for (let row = range[1]; row <= range[3]; row++) {
-        for (let col = range[0]; col <= range[2]; col++) {
+    const { cols, cellStart, cellCount, entries, boxX, boxY, circleRange } = hash;
+    const at4 = 4 * id;
+    const row1 = circleRange[at4 + 3];
+    const col0 = circleRange[at4];
+    const col1 = circleRange[at4 + 2];
+    for (let row = circleRange[at4 + 1]; row <= row1; row++) {
+        for (let col = col0; col <= col1; col++) {
             const cell = row * cols + col;
             const at = cellStart[cell] + cellCount[cell]++;
             entries[at] = id;
@@ -104,31 +116,41 @@ function insertRange(hash, id, minX, minY) {
 }
 
 /**
- * Visits every live circle: agents by ascending slot (id `slot`), then food (id `maxAgents + slot`).
+ * Counts every live circle: agents by ascending slot (id `slot`), then food (id `maxAgents + slot`).
  * @param {SpatialHash} hash the hash
  * @param {Record<string, any>} world the world
- * @param {boolean} insert false to count, true to insert
  */
-function visitAll(hash, world, insert) {
+function countAll(hash, world) {
     const { alive, x, y, size, foodAlive, foodX, foodY, foodRadius } = world;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             cellRange(hash, x[i], y[i], size[i]);
-            if (insert) {
-                insertRange(hash, i, x[i] - size[i], y[i] - size[i]);
-            } else {
-                countRange(hash);
-            }
+            countRange(hash, i);
         }
     }
     for (let i = 0; i < foodAlive.length; i++) {
         if (foodAlive[i] === 1) {
             cellRange(hash, foodX[i], foodY[i], foodRadius[i]);
-            if (insert) {
-                insertRange(hash, hash.maxAgents + i, foodX[i] - foodRadius[i], foodY[i] - foodRadius[i]);
-            } else {
-                countRange(hash);
-            }
+            countRange(hash, hash.maxAgents + i);
+        }
+    }
+}
+
+/**
+ * Inserts every live circle in the same order as `countAll`.
+ * @param {SpatialHash} hash the hash
+ * @param {Record<string, any>} world the world
+ */
+function insertAll(hash, world) {
+    const { alive, x, y, size, foodAlive, foodX, foodY, foodRadius } = world;
+    for (let i = 0; i < alive.length; i++) {
+        if (alive[i] === 1) {
+            insertRange(hash, i, x[i] - size[i], y[i] - size[i]);
+        }
+    }
+    for (let i = 0; i < foodAlive.length; i++) {
+        if (foodAlive[i] === 1) {
+            insertRange(hash, hash.maxAgents + i, foodX[i] - foodRadius[i], foodY[i] - foodRadius[i]);
         }
     }
 }
@@ -141,7 +163,7 @@ function visitAll(hash, world, insert) {
 export function buildHash(hash, world) {
     const { cellStart, cellCount } = hash;
     cellCount.fill(0);
-    visitAll(hash, world, false);
+    countAll(hash, world);
     cellStart[0] = 0;
     for (let c = 0; c < cellCount.length; c++) {
         cellStart[c + 1] = cellStart[c] + cellCount[c];
@@ -151,6 +173,6 @@ export function buildHash(hash, world) {
         throw new Error(`spatial hash needs ${total} entries but holds ${hash.entries.length}`);
     }
     cellCount.fill(0);
-    visitAll(hash, world, true);
+    insertAll(hash, world);
     hash.entryCount = total;
 }
