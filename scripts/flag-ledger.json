@@ -22,5 +22,23 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
+  },
+  {
+    "key": "rewardedHebb",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T22",
+    "reason": "Kept for the reward-gated learning screen (E117, E118): T22 deletes the switch and keeps the scaling when the best reward arm beats the shuffled and no-plasticity arms, or deletes reward.js, the scaling and the keys when it does not."
+  },
+  {
+    "key": "rewardSource",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T22",
+    "reason": "Kept for the E117 screen arms (kill, kill-bite, meat): T22 keeps the winning source as the behaviour and deletes the enum, or deletes it with reward.js on a loss."
+  },
+  {
+    "key": "rewardShuffle",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T22",
+    "reason": "Control arm of the E117 screen (rewards delivered at an unrelated time): T22 deletes the switch, its queue, stream and event whatever the verdict."
   }
 ]
