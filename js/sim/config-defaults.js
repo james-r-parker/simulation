@@ -295,5 +295,9 @@ export const DEFAULTS = deepFreeze({
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
     satedBite: false, // realistic-keepers T1: a canHunt biter for which canEatNow is false (full or digesting) does not bite
     predatorRestTicks: 0, // realistic-keepers T2: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
+    rewardedHebb: false, // realistic-keepers T5 (T22 adopts or deletes): a reward trace of meat meals scales the Hebbian rate
+    rewardGain: 4, // realistic-keepers T5: gain of the trace on the Hebbian rate
+    rewardBase: 0.25, // realistic-keepers T5: share of the plain rate that applies with no reward
+    rewardDecay: 0.02, // realistic-keepers T5: per-tick decay of the trace
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

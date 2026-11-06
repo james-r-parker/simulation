@@ -10,6 +10,7 @@ import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { killSpecs } from './kills.js';
 import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
+import { rewardSpecs } from './reward.js';
 import { proofSpecs } from './proof.js';
 import { allocProvision } from './provision-state.js';
 import { splitGateSpecs } from './split-gate.js';
@@ -124,6 +125,7 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
+            ...rewardSpecs(world.config),
             ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,
