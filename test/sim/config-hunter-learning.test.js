@@ -7,9 +7,6 @@ import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const DEFAULT_KEYS = {
     juvenileTicks: 3000,
-    juvenileDependency: false,
-    juvenileBurn: 0.6,
-    kinPullWeight: 0.5,
     flipReflex: false,
     satedBite: false,
     hunterTerritory: false,
@@ -29,20 +26,13 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['juvenileDependency', 'flipReflex', 'satedBite', 'hunterTerritory'])(
-        '%s is a boolean that accepts true',
-        (key) => {
-            expect(make({ [key]: true })[key]).toBe(true);
-            expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
-        },
-    );
+    it.each(['flipReflex', 'satedBite', 'hunterTerritory'])('%s is a boolean that accepts true', (key) => {
+        expect(make({ [key]: true })[key]).toBe(true);
+        expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
+    });
 
     it.each([
         ['juvenileTicks', 1],
-        ['juvenileBurn', 0],
-        ['juvenileBurn', 1],
-        ['kinPullWeight', 0],
-        ['kinPullWeight', 4],
         ['territoryRadius', 0.5],
         ['territoryMax', 0],
         ['territoryMax', 5],
@@ -53,11 +43,6 @@ describe('the hunter-learning Phase 1 keys', () => {
     it.each([
         ['juvenileTicks', 0],
         ['juvenileTicks', 1.5],
-        ['juvenileBurn', -0.1],
-        ['juvenileBurn', 1.5],
-        ['kinPullWeight', -1],
-        ['kinPullWeight', 4.5],
-        ['kinPullWeight', NaN],
         ['territoryRadius', 0],
         ['territoryRadius', -1],
         ['territoryMax', -1],

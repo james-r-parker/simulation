@@ -206,24 +206,8 @@ describe('the hunter reflexes at birth', () => {
         );
     });
 
-    it('raises the kin cells of every hunter child under juvenileDependency, and no other', () => {
-        const over = { juvenileDependency: true, kinPullWeight: 0.5 };
-        for (const mother of [FORAGER, PREDATOR]) {
-            const off = born({ mother, child: PREDATOR });
-            const on = born({ over, mother, child: PREDATOR });
-            const { world } = on;
-            const cells = [cell(world, 'kin', 0, THRUST), cell(world, 'kin', 2, TURN)].sort((x, y) => x - y);
-            expect(differing(on.row, off.row)).toEqual(cells);
-            expect(on.row[cells[0]]).toBeGreaterThanOrEqual(0.5 - 1e-6);
-            expect(on.rng.s).toEqual(off.rng.s);
-        }
-        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
-            born({ mother: PREDATOR, child: FORAGER }).row,
-        );
-    });
-
     it('changes nothing at instinctWeight 0', () => {
-        const over = { flipReflex: true, juvenileDependency: true, instinctWeight: 0 };
+        const over = { flipReflex: true, instinctWeight: 0 };
         expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
             born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR }).row,
         );

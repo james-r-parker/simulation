@@ -283,9 +283,6 @@ export const DEFAULTS = deepFreeze({
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
     splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
-    juvenileDependency: false, // hunter-learning Phase 1 (T11): a juvenile canHunt body pays juvenileBurn of its cost, and every canHunt child gets the kin pull floor
-    juvenileBurn: 0.6, // hunter-learning: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
-    kinPullWeight: 0.5, // hunter-learning: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight under juvenileDependency, in [0, 4]
     flipReflex: false, // hunter-learning Phase 1 (T12): a child whose specialisation canHunt while its mother's does not gets the hunter prey reflex added to its row
     satedBite: false, // hunter-learning Phase 1 (T12): a canHunt biter for which canEatNow is false (full or digesting) does not bite
     hunterTerritory: false, // hunter-learning Phase 1 (T12): a canHunt agent may not start a pregnancy or split while more than territoryMax other mature canHunt agents lie within territoryRadius
