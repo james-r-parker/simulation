@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brainLayout, OUTPUT_INDEX, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
+import { BODY_INPUT, EXTRA_INPUTS, brainLayout, OUTPUT_INDEX, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { arenaConfig, playTrial, viewOf } from '../../js/evo/memory-probe-run.js';
 
@@ -107,7 +107,7 @@ describe('playTrial', () => {
             spec: null,
             weights: null,
             act: (/** @type {any} */ w) => {
-                seen.push(w.inputs[w.layout.rawInputCount - 2]);
+                seen.push(w.inputs[w.layout.rawInputCount - EXTRA_INPUTS + BODY_INPUT.MEMORY_A]);
                 w.outputs[OUTPUT_INDEX.MEMORY_A] = 1;
             },
         };

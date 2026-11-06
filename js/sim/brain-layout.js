@@ -1,11 +1,11 @@
-// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v4 layout, top 2 hits per channel) from a config.
+// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v5 layout, top 2 hits per channel) from a config.
 
 /**
  * The name of the brain layout this file defines. Stamped into every genome, archive and champion file and checked on
  * load, so a file written under a layout of the same sizes but different meaning (another channel order, hit count or
  * block order) is refused by name. Change it whenever a gene's meaning or position changes.
  */
-export const BRAIN_LAYOUT_NAME = 'pooled-v4';
+export const BRAIN_LAYOUT_NAME = 'pooled-v5';
 
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
@@ -70,12 +70,15 @@ export const FOOD_HUE_VALUES = 2;
 /** Pooled values at the head of the brain's input row: 54 ray values and two food hues (56). */
 export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE + FOOD_HUE_VALUES;
 
-/** Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory. */
-export const EXTRA_INPUTS = 33;
+/**
+ * Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory,
+ * 3 refuge (bearing sine and cosine, nearness).
+ */
+export const EXTRA_INPUTS = 36;
 
 /**
  * Body input offsets, from the start of the body block: the scent block (antennae, hunt scent, heard calls), the sex
- * input and the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`).
+ * input, the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`) and the three refuge inputs.
  */
 export const BODY_INPUT = Object.freeze({
     BITTEN: 10,
@@ -86,6 +89,9 @@ export const BODY_INPUT = Object.freeze({
     SEX: 30,
     MEMORY_A: 31,
     MEMORY_B: 32,
+    REFUGE_BEARING_SIN: 33,
+    REFUGE_BEARING_COS: 34,
+    REFUGE_NEAR: 35,
 });
 
 /** Trait genes after `bOut`: `sizeGene`, `visionGene`, `childShareGene`, `learnGene`. */
@@ -176,6 +182,7 @@ export function layoutStamp(layout) {
  * @property {number} sex index of the sex input
  * @property {number} memoryA index of the `MEMORY_A` read-back
  * @property {number} memoryB index of the `MEMORY_B` read-back
+ * @property {number} refuge index of `refugeBearingSin` (`refugeBearingCos` and `refugeNear` follow)
  * @property {number} rawBodyStart index of the body block in the raw `inputs` row (after the ray block)
  */
 
@@ -202,6 +209,7 @@ export function inputOffsets(config) {
         sex: at(BODY_INPUT.SEX),
         memoryA: at(BODY_INPUT.MEMORY_A),
         memoryB: at(BODY_INPUT.MEMORY_B),
+        refuge: at(BODY_INPUT.REFUGE_BEARING_SIN),
         rawBodyStart: config.rayCount * RAY_CHANNELS,
     });
 }

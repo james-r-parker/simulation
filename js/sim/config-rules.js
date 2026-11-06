@@ -50,6 +50,8 @@ export const FEATURE_RULES = {
     refugeCount: int(0, 32),
     refugeCluster: int(1, 4),
     refugeSizeMax: positive(),
+    refugeSense: BOOL,
+    refugeSenseRange: num(500, 8000),
     coldMarginWidth: num(0),
     specMutationRate: num(0, 1),
     huntUpkeep: num(0),

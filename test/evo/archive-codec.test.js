@@ -85,9 +85,9 @@ describe('archive codec', () => {
 
     it('rejects an archive of the same sizes but another layout name, by name', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
-        expect(json.layout.name).toBe('pooled-v4');
+        expect(json.layout.name).toBe('pooled-v5');
         expect(() => decodeArchive({ ...json, layout: { ...json.layout, name: 'elman-v1' } }, config)).toThrow(
-            /archive\.layout\.name: expected pooled-v4, got elman-v1/,
+            /archive\.layout\.name: expected pooled-v5, got elman-v1/,
         );
     });
 
@@ -126,8 +126,8 @@ describe('archive codec', () => {
         expect(() => decodeArchive(json, config)).toThrow(/wizard/);
     });
 
-    it('is version 6: the megafauna channel changes the genome layout', () => {
-        expect(ARCHIVE_VERSION).toBe(6);
+    it('is version 7: the three refuge inputs change the genome layout', () => {
+        expect(ARCHIVE_VERSION).toBe(7);
     });
 
     it('rejects a stored archive from before the layout change by its version, cleanly, whatever else it holds', () => {
@@ -151,20 +151,21 @@ describe('archive codec', () => {
         const records = [];
         const log = createSimLog((r) => records.push(r), { level: 'debug' });
         const stale = viaText(stored);
-        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 6, got 2/);
+        expect(() => decodeArchive(stale, config, log)).toThrow(/archive\.version: expected 7, got 2/);
         expect(records.map((r) => [r.event, r.field, r.expected, r.actual])).toEqual([
-            ['GenomeRejected', 'archive.version', 6, 2],
+            ['GenomeRejected', 'archive.version', 7, 2],
         ]);
         expect(() => decodeArchive({ version: 2 }, config)).toThrow(/archive\.version/);
-        expect(() => decodeArchive({ version: 3 }, config)).toThrow(/archive\.version: expected 6, got 3/);
-        expect(() => decodeArchive({ version: 4 }, config)).toThrow(/archive\.version: expected 6, got 4/);
-        expect(() => decodeArchive({ version: 5 }, config)).toThrow(/archive\.version: expected 6, got 5/);
+        expect(() => decodeArchive({ version: 3 }, config)).toThrow(/archive\.version: expected 7, got 3/);
+        expect(() => decodeArchive({ version: 4 }, config)).toThrow(/archive\.version: expected 7, got 4/);
+        expect(() => decodeArchive({ version: 5 }, config)).toThrow(/archive\.version: expected 7, got 5/);
+        expect(() => decodeArchive({ version: 6 }, config)).toThrow(/archive\.version: expected 7, got 6/);
         expect(() => decodeArchive({}, config)).toThrow(/archive\.version/);
     });
 
     it('rejects a current-version archive stamped with the old 179-input layout by the layout field', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
         const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
-        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 89, got 179/);
+        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 92, got 179/);
     });
 });

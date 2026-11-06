@@ -27,10 +27,10 @@ function setup(alive) {
 }
 
 describe('sampleInputActivity', () => {
-    it('keeps the two hue values in the 89-input mask and marks an absent hue rare', () => {
+    it('keeps the two hue values in the 92-input mask and marks an absent hue rare', () => {
         const { world, activity, n } = setup(1);
-        expect(n).toBe(89);
-        expect(activity.rare).toHaveLength(89);
+        expect(n).toBe(92);
+        expect(activity.rare).toHaveLength(92);
         activity.samples = RARE_MIN_SAMPLES;
         activity.active[54] = RARE_MIN_SAMPLES;
         world.pooled[54] = 0.5;
