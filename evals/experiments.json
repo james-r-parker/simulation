@@ -3129,6 +3129,58 @@
       },
       "effect": "better",
       "note": "Ran 2026-11-06 at cf2f21c, floor on. Verdicts are flip-territory against the defaults. Keep rule: hunters alive at the last tick 14/16 (defaults 10/16), seeds ending under 80 agents 2 (defaults 5): passes. Floor share of births 0.007 (defaults 0.005). Competence: conversion 1k-2k 0.033 -> 0.088 (+165%, interval [0.038, 0.069]), first-kill RMST 4879 -> 3150 (-35%), juvenile death share 0.627 -> 0.497, zero-kill share 0.826 -> 0.596. Survival: predators at end 8.1 -> 37.1, births per 1k +20%, effective specialisation types 3.20 -> 4.01 (better). Guards: prey types 3.44 -> 3.50 and prey extinctions 4.06 -> 5.00 (no-difference). Cost: population mean 320 -> 254 (-20%, interval [-132, 13], a watch metric). territory alone: every target no-difference, hunters alive 11/16, 1 seed under 80. Decision: adopt flipReflex and hunterTerritory (T12) as defaults; delete provisioning, juvenile dependency (T10, T11) and satedBite, which did not hold on 16 seeds (E116, E120). Prediction held on every row."
+    },
+    {
+      "id": "E124",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-practice-verdict",
+      "hypothesis": "Planned as E117 in hunter-learning.md. Hunters improve within a lifetime only if plasticity is credited to the act that paid, as dopamine-gated plasticity does in nature. rewardedHebb scales the Hebbian rate by a reward trace fed by kills, bites or meat; it should raise the late-minus-early conversion above both the shuffled-reward and the no-plasticity controls.",
+      "prediction": "Written before the run (chunk D at cc8ecea, floor off, 8 seeds x 200000 ticks, evals/screens/hunter-practice.grid.json). Plasticity is small (hebbianRate 0.0001, fastOut hidden-to-output only), so most likely every arm sits within noise of the defaults on survival and the guards. reward-kill-bite or reward-meat shows the highest eval.hunter_conversion_gain, above reward-shuffled and no-plasticity but by less than the 8-seed noise; reward-gain-8 shows the largest gain if any arm does; no-plasticity is close to the defaults. If no reward arm's gain beats both controls by a visible margin, T22 takes the loss path and deletes reward.js: the Hebbian channel is too weak to carry learning at this rate.",
+      "targets": [
+        "eval.hunter_conversion_gain",
+        "eval.hunter_conversion_gain_hunters",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_zero_kill_share",
+        "eval.reward_events.kill",
+        "eval.reward_events.bite",
+        "eval.reward_events.scavenge",
+        "eval.prey_types_at_end",
+        "eval.population_mean"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm (floorTrigger 0)",
+      "after": "evals/screens/results/hunter-practice/ (table.md, 9 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.hunter_conversion_gain": "-",
+        "eval.hunter_conversion_gain_hunters": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.reward_events.kill": "-",
+        "eval.reward_events.bite": "-",
+        "eval.reward_events.scavenge": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at cc8ecea, floor off, 8 seeds (means; no eval:compare verdicts at 8 seeds). Conversion gain (ages 3000-3999 minus 1000-1999, per hunter): defaults -0.026, reward-meat -0.020, reward-kill -0.025, reward-kill-bite -0.045, reward-gain-8 -0.034, reward-base-0 -0.041, reward-decay-0.005 -0.023, reward-shuffled -0.005, no-plasticity -0.048. The shuffled control has the best point estimate, so no reward arm beats it even before noise, and the gain is negative in every arm: hunters do not get better with age in this world, rewarded or not. Conversion 1k-2k: defaults 0.097, every other arm 0.079 to 0.097. Seeds under 80: defaults 3, reward-gain-8 and reward-decay-0.005 3, the rest 5 or 6; hunters alive at the end 0.8 in reward-gain-8 and reward-decay-0.005, 0.6 in the defaults (8-seed noise, not a competence effect, since their gain and conversion are no better). Reward counts per 1000 hunter agent-ticks in the defaults: kill 0.31, bite 9.6, scavenge 0.95, so the trace is fed mostly by bites. Prediction held: the loss path. The planned E118 (16-seed confirmation) is skipped, see E125."
+    },
+    {
+      "id": "E125",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-practice-verdict",
+      "hypothesis": "Planned 16-seed confirmation of the best E124 reward arm against the shuffled-reward and no-plasticity controls. Planned as E118 in hunter-learning.md.",
+      "prediction": "Not run. The adopt rule (T22) needs the best reward arm to beat the shuffled arm on the age-matched conversion gain; in E124 the shuffled arm had the best point estimate of all nine arms (-0.005 against the best reward arm's -0.020), and in this project 8-seed gains have shrunk at 16 seeds (E116, E120), never appeared. A 16-seed run cannot turn a point-estimate loss into an interval that excludes 0 in the reward arm's favour often enough to justify the CPU.",
+      "targets": ["eval.hunter_conversion_gain"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "-",
+      "after": "-",
+      "verdicts": {
+        "eval.hunter_conversion_gain": "-"
+      },
+      "effect": "no-difference",
+      "note": "Skipped by decision (balance autonomy): T22 takes the loss path on E124 and deletes reward.js, the Hebbian scaling, the reward keys and the shuffled-reward control. eval.hunter_conversion_gain stays as a detector."
     }
   ]
 }

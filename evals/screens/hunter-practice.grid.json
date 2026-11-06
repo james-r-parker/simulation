@@ -1,0 +1,19 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": { "floorTrigger": 0 },
+  "arms": {
+    "defaults": {},
+    "reward-meat": { "rewardedHebb": true, "rewardSource": "meat" },
+    "reward-kill-bite": { "rewardedHebb": true, "rewardSource": "kill-bite" },
+    "reward-kill": { "rewardedHebb": true, "rewardSource": "kill" },
+    "reward-shuffled": { "rewardedHebb": true, "rewardSource": "meat", "rewardShuffle": true },
+    "no-plasticity": { "hebbianRate": 0 },
+    "reward-gain-8": { "rewardedHebb": true, "rewardSource": "meat", "rewardGain": 8 },
+    "reward-base-0": { "rewardedHebb": true, "rewardSource": "meat", "rewardBase": 0 },
+    "reward-decay-0.005": { "rewardedHebb": true, "rewardSource": "meat", "rewardDecay": 0.005 }
+  }
+}
