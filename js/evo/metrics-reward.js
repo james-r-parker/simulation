@@ -5,10 +5,12 @@
 import { REWARD_NAMES } from '../sim/reward.js';
 import { none, per1k } from './metrics-stats.js';
 
+const NAMES = [...REWARD_NAMES, 'shuffle_dropped'];
+
 /** The direction of each metric of this module. */
 /** @type {Readonly<Record<string, string>>} */
 export const REWARD_DIRECTIONS = Object.freeze(
-    Object.fromEntries(REWARD_NAMES.map((name) => [`eval.reward_events.${name}`, 'watch'])),
+    Object.fromEntries(NAMES.map((name) => [`eval.reward_events.${name}`, 'watch'])),
 );
 
 /**
@@ -19,9 +21,12 @@ export const REWARD_DIRECTIONS = Object.freeze(
 export function rewardMetrics(observer, world) {
     const ticks = observer.combat.hunterAgentTicks;
     if (world.rewardCounts === undefined) {
-        return Object.fromEntries(REWARD_NAMES.map((name) => [`eval.reward_events.${name}`, none('no reward counts')]));
+        return Object.fromEntries(NAMES.map((name) => [`eval.reward_events.${name}`, none('no reward counts')]));
     }
-    return Object.fromEntries(
-        REWARD_NAMES.map((name, i) => [`eval.reward_events.${name}`, per1k(world.rewardCounts[i], ticks)]),
-    );
+    return {
+        ...Object.fromEntries(
+            REWARD_NAMES.map((name, i) => [`eval.reward_events.${name}`, per1k(world.rewardCounts[i], ticks)]),
+        ),
+        'eval.reward_events.shuffle_dropped': per1k(world.rewardDropped, ticks),
+    };
 }
