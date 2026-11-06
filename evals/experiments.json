@@ -3056,7 +3056,7 @@
         "eval.boom_bust_count": "-"
       },
       "effect": "no-difference",
-      "note": "Preregistered 2026-11-06 before the run."
+      "note": "Ran 2026-11-06 at c7a6c39, floor off, 8 seeds (means; no eval:compare verdicts at 8 seeds). defaults: alive 5/8, 2 under 80, median predators at end 4.5, median last-quarter hunter-ticks 238069, conversion 1k-2k 0.038, zero-kill 0.805, prey types 3.38, population 358. flip: as E115. territory: alive 7/8, 1 under 80, median predators 13.5, hunter-ticks 412395, prey types 3.63, population 358, competence flat (conversion 0.026); passes the full hunter gate (the first arm to). flip-territory: conversion 0.097, spec-flip rate 0.441, zero-kill 0.548 (the best competence of any arm), prey types 2.50, population 233, 3 under 80, alive 5/8, median predators 23, hunter-ticks 973597 (4x). flip-territory-r1000: alive 3/8, 5 under 80, prey types 2.00. flip-sated-territory: conversion 0.071, zero-kill 0.528, prey types 2.63, 4 under 80, alive 5/8. Prediction held for flip, for territory changing competence little and for flip-territory keeping the competence and reaching prey types 2.5; it missed on hunter numbers (territory raises them: a hunter that cannot breed pays no birth cost and lives longer, and spaced hunters split the prey less), on seeds under 80 (3 against at most 2) and on r1000, which did worst. Both territory and flip-territory go to 16 seeds (E122)."
     }
   ]
 }

@@ -1875,3 +1875,10 @@ The world-wide starvation crash of E110 is the toxic cap. It fruits from year ph
 - **Result.** With the reflex, the brake keeps most of the competence (spec-flip hunters kill 0.215 per 1,000 ticks, the zero-kill share 0.577) but prey types still fall to 1.75 and 5 of 8 seeds go under 80 agents. Median last-quarter hunter-ticks rise eightfold (1.89 million against 238069).
 - **Why.** A hunter that stops biting when full also stops paying the bite kick and wasting energy, so it lives longer and breeds more. The prey crash comes from the hunters' numerical response, not from each hunter killing more than it eats. A longer digest (30 ticks) makes it worse.
 - **What it means.** A brake on a taught hunter has to act on hunter density (interference between hunters, territory), not on the single hunter's appetite.
+
+### 2026-11-06 - Territory on breeding raises hunter numbers and passes the hunter gate (E121)
+
+- **What ran.** `hunterTerritory` (a hunter may not breed while more than 1 other mature hunter lies within 600) with and without `flipReflex`, 8 floor-off seeds.
+- **Territory alone.** Hunters alive at the end on 7/8 seeds, 1 seed under 80, median hunters at the end 13.5 against 4.5, prey types 3.63: the first arm to pass the full hunter gate. Competence is flat.
+- **Why numbers rise.** Blocking breeding in a crowd does not thin hunters; a hunter that cannot breed keeps the energy a birth costs and lives longer, and the births that do happen are spread out, so fewer hunters starve on the same patch of prey.
+- **With the reflex.** The best competence of any arm (conversion 1k-2k 0.097, zero-kill share 0.548) with prey types 2.50, but 3 of 8 seeds under 80 agents. A wider territory (1000) is worse on every survival row.
