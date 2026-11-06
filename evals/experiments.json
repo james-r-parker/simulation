@@ -3325,6 +3325,43 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06, 32 seeds floor on. Means: refuge_use_under_threat -0.0024 (sd 0.0015, negative on all 32 seeds), refuge_prey_use_under_threat -0.0025, refuge_episode_entry -0.0004 (2 of 32 positive), refuge_bite_deficit 0.12 (median 0.10, max 0.31), refuge_eligible_share 0.64, refuge_exit_fed 0.64, refuge_crowding 1.28, refuge_dwell_ticks 178, cold_margin_use_under_threat -0.013. Answers: (1) the geometry is usable - 64% of prey ticks are at an eligible size and T3 showed radius 20 to 32 enter from every angle; (2) prey do not meet cover and threat together - a threatened prey is no likelier to be or get inside than a calm one; (3) cover already protects - bites per prey-tick inside a ring are 12% of the outside rate; (4) the detector is sound (prey-only and all-agent forms agree). The prediction was wrong on (1) and (3): cover works and fits, prey just do not reach it under threat, and the rings are 0.94% of the map. eval:power (splits of 16): false positives 7 to 14%; use under threat and bite deficit detect a 75% change, dwell, exit-fed and crowding 30%, eligible share 10%; episode entry and the cold-margin form have no power. Side finding: seeds 17 to 32 end under 80 agents on 8 of 16 (seeds 1 to 16: 2 of 16, as in E126), so 10 of 32 floor-on worlds end under 80 and the 16-seed default picture is optimistic; comparisons on matched seeds stand. Hunters alive at the end on 28 of 32."
+    },
+    {
+      "id": "E131",
+      "date": "2026-11-06",
+      "branch": "eval/refuge-screen",
+      "hypothesis": "cover already protects (bite deficit 0.12) but threatened prey do not reach it because rings are 0.94% of the map. More rings put cover within a flight's reach; concealment makes hiding pay more (a hunter outside loses sight); a plant-free interior forces the leak back out to feed.",
+      "prediction": "refuge_use_under_threat stays near 0 in defaults (-0.002). refuges-16 and refuges-24 raise it a little (to about +0.005 to +0.01) by chance encounters, still below the 0.05 bar, because the brain has no cover sense and evolution has had no reward for fleeing to rocks; conceal alone moves it little (rings still out of reach) but raises the prey's survival inside slightly (bite deficit lower); refuges-24-conceal is the best arm but likely still below 0.05. foodfree lowers ring use when calm (prey have no reason to stay) and so may raise the threatened-minus-calm difference slightly. Guards: more rings may cut hunter kill conversion; watch it stays >= 80% of defaults and the keep rule holds. If no arm reaches 0.05, T23's Phase 3 gate (deficit <= 0.7, eligible >= 0.5, use < 0.02) passes and the cover sense input (Phase 3) is the next step. (Written before the run, chunk C at 9dfa158, floor on, 8 seeds x 200000 ticks, evals/screens/refuge.grid.json.)",
+      "targets": [
+        "eval.refuge_use_under_threat",
+        "eval.refuge_prey_use_under_threat",
+        "eval.refuge_bite_deficit",
+        "eval.refuge_crowding",
+        "eval.refuge_exit_fed",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.prey_extinctions"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm",
+      "after": "evals/screens/results/refuge/ (7 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.refuge_use_under_threat": "-",
+        "eval.refuge_prey_use_under_threat": "-",
+        "eval.refuge_bite_deficit": "-",
+        "eval.refuge_crowding": "-",
+        "eval.refuge_exit_fed": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.prey_extinctions": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at 9dfa158, floor on, 8 seeds. refuge_use_under_threat: defaults -0.0024, refuges-16 -0.0039, refuges-24 -0.0056, conceal -0.0028, foodfree -0.0008, refuges-24-conceal -0.0046, refuges-24-conceal-foodfree -0.0034; at most 1 of 8 seeds above 0 in any arm, so no arm comes near the 0.05 bar. Bite deficit stays low everywhere (0.06 to 0.32): cover protects whoever is inside. A check run (seed 1, coverConceals on, 6000 ticks) found only 1 or 2 of 100 to 145 agents inside a ring at any time and 88 concealed ray hits in total, so the mechanisms barely touch the world: prey are almost never in a ring, so changing what happens inside one changes nothing. Guards: the defaults arm drew well on these 8 seeds (0 under 80, hunters alive 7/8, predators at end 38.5) and every other arm reads worse (2 to 6 under 80, predators 4.6 to 20.8); with the mechanisms this inert that spread is chaotic divergence between seeds, not an effect. Prediction held on the scene (no arm reaches 0.05) and was wrong that more rings would lift use by chance. Decision (balance autonomy): delete coverConceals and coverFoodFree (T16, T18: inert), no 16-seed confirmation (T15 skipped: a far miss on the deciding metric in every arm, as E114); keep refugeCount at 8. T23 Phase 3 gate passes (bite deficit <= 0.7, eligible share >= 0.5, use < 0.02): prey cannot steer to cover they cannot sense, so the cover-sense input is next, with ring density as an arm because most prey are beyond sight of any ring."
     }
   ]
 }
