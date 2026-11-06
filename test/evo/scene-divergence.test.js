@@ -126,4 +126,13 @@ describe('basin divergence', () => {
         const none = createDivergenceScene(CONFIG);
         expect(divergenceMetrics(none, { tick: 1000 })['eval.basin_divergence'].value).toBeNull();
     });
+
+    it('is null with the no-checkpoint reason when each basin is thick on average but never both at once', () => {
+        const scene = createDivergenceScene(CONFIG);
+        sampleDivergence(scene, handWorld(group(0, [[0, 0, 40]]), 1900));
+        sampleDivergence(scene, handWorld(group(1, [[1, 1, 40]]), 2000));
+        const result = divergenceMetrics(scene, { tick: 2000 })['eval.basin_divergence'];
+        expect(result.value).toBeNull();
+        expect(result.reason).toContain('no checkpoint in the last quarter had both basins');
+    });
 });

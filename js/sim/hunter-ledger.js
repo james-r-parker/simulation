@@ -7,6 +7,7 @@
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { basinOf } from './eras.js';
 import { slotOfGenome } from './merit-state.js';
+import { isDependentKiller, provisionSpecs } from './provision-state.js';
 
 /**
  * How an agent came to be, stored in `birthSource`. A hunter child of a hunter is `MATE_HUNTER` or `SPLIT_HUNTER`; a hunter
@@ -40,7 +41,8 @@ export function noteIncome(world, slot, { kind, stored }) {
 }
 
 /**
- * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot
+ * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot (the ledger's arrays and
+ *   the provisioning stamp)
  */
 export function ledgerSpecs() {
     return [
@@ -53,6 +55,7 @@ export function ledgerSpecs() {
         [Float64Array, 'ledgerKillEnergy', 1],
         [Float64Array, 'ledgerBiteGain', 1],
         [Float64Array, 'ledgerBiteCost', 1],
+        ...provisionSpecs(),
     ];
 }
 
@@ -106,7 +109,7 @@ export function noteBiteLedger(world, biter, { gained, fatal, kick }) {
 
 /**
  * Pushes a `HunterKill` event for a killer that just gained a deliberate kill: fields 2 to 4 are its genome id, its age and
- * its kills so far (1 for its first).
+ * its kills so far (1 for its first), field 5 is 1 when it was still dependent (`isDependentKiller`).
  * @param {Record<string, any>} world the world
  * @param {number} killer the killer's slot, whose `ledgerKills` already counts this kill
  * @returns {void}
@@ -117,6 +120,7 @@ function pushHunterKill(world, killer) {
     d[o + 2] = world.genomeId[killer];
     d[o + 3] = world.ageTicks[killer];
     d[o + 4] = world.ledgerKills[killer];
+    d[o + 5] = isDependentKiller(world, killer) ? 1 : 0;
 }
 
 /**

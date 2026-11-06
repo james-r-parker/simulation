@@ -135,6 +135,20 @@ describe('hunt approaches and chases', () => {
     });
 });
 
+describe('a resolved chase with no hook', () => {
+    it('still counts the outcome when the scene has no onChase hook', () => {
+        const a = arena(1, 1);
+        a.observer.scenes.approach.onChase = null;
+        play(a, T0, { closing: a.hunters });
+        a.world.tick = T0 + 1;
+        noteApproachKill(a.observer.scenes.approach, a.observer, a.world, {
+            killerId: a.world.genomeId[a.hunters[0]],
+            victimId: a.world.genomeId[a.prey[0]],
+        });
+        expect(a.observer.scenes.approach.caught).toBe(1);
+    });
+});
+
 describe('the noteChase hook', () => {
     /**
      * @param {any} a the arena

@@ -123,8 +123,27 @@ describe('the hunter ledger', () => {
             genomeId,
             ageTicks: world.ageTicks[HUNTER],
             kills: 1,
+            dependent: false,
         });
         expect(world.ledgerKills[HUNTER]).toBe(1);
+    });
+
+    it('marks the HunterKill of a hunter provisioned in the last INDEPENDENT_TICKS as dependent', () => {
+        const world = createArena({ gap: 300, hunterEnergy: 2500 });
+        world.foodEnergy[PREY] = 500;
+        world.provisionedTick[HUNTER] = 1;
+        /** @type {Record<string, any>[]} */
+        const kills = [];
+        runArena(world, {
+            ticks: 400,
+            prey: stillBrain,
+            after: (w) => {
+                kills.push(...drained(w, 'HunterKill'));
+                return w.alive[PREY] === 0;
+            },
+        });
+        expect(kills).toHaveLength(1);
+        expect(kills[0].dependent).toBe(true);
     });
 
     it('logs no HunterKill for a victim nobody deliberately bit', () => {

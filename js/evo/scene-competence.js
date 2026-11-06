@@ -43,12 +43,13 @@ export const COMPETENCE_DIRECTIONS = Object.freeze({
     ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_chases_by_age.${name}`, 'watch'])),
     'eval.hunter_first_kill_km_median': 'lower',
     'eval.hunter_first_kill_rmst': 'lower',
+    'eval.hunter_independent_kill_share': 'higher',
 });
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`juvenileTicks`)
- * @returns {Record<string, any>} an empty competence scene: caught and resolved chases per age band, and the first-kill
- *   observations (`log` rows of time and event, `state` PENDING or DONE) of the hunters born after burn-in, by genome id
+ * @returns {Record<string, any>} an empty competence scene: caught and resolved chases per age band, the deliberate kills and
+ *   those of an independent hunter, and the first-kill observations (`log` rows of time and event, `state` PENDING or DONE) of the hunters born after burn-in, by genome id
  */
 export function createCompetenceScene(config) {
     return {
@@ -58,6 +59,8 @@ export function createCompetenceScene(config) {
         log: createLog(['time', 'event', 'state']),
         rows: 0,
         rowOf: new Map(),
+        kills: 0,
+        independentKills: 0,
     };
 }
 
@@ -116,14 +119,16 @@ function closeObservation(scene, { genomeId, time, event }) {
 }
 
 /**
- * Notes a `HunterKill` record (fields 2 to 4: genome id, age, kills so far): the first kill closes the observation with the
- * event.
+ * Notes a `HunterKill` record (fields 2 to 5: genome id, age, kills so far, the dependent bit): the kill joins the independent
+ * tally unless the bit is set, and the first kill closes the observation with the event.
  * @param {Record<string, any>} scene the competence scene
  * @param {Float64Array} d the event ring data
  * @param {number} o the record offset
  * @returns {void}
  */
 function noteCompetenceKill(scene, d, o) {
+    scene.kills += 1;
+    scene.independentKills += d[o + 5] === 1 ? 0 : 1;
     if (d[o + 4] === 1) {
         closeObservation(scene, { genomeId: d[o + 2], time: d[o + 3], event: 1 });
     }
@@ -223,5 +228,6 @@ export function competenceMetrics(scene, world) {
             ]),
         ),
         ...firstKillMetrics(scene, world),
+        'eval.hunter_independent_kill_share': share(scene.independentKills, scene.kills, 'no deliberate kill'),
     };
 }

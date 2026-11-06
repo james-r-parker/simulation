@@ -4,6 +4,7 @@
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { decaySilentInputs } from '../../evo/weight-decay.js';
+import { applyHunterReflex } from '../../evo/instinct.js';
 import { brainLayout } from '../../sim/brain-layout.js';
 import { resolveMutationRate } from '../../sim/mutation-rate.js';
 import { BORN_CAUSE } from '../../sim/events.js';
@@ -23,6 +24,26 @@ export function rowOf(cache, array, { slot, count }) {
         cache[slot] = view;
     }
     return view;
+}
+
+/**
+ * Writes the hunter reflexes into a child's row before mutation (hunter-learning.md T6): the prey terms when `flipReflex` is on
+ * and the child's specialisation `canHunt` while its mother's does not, and the kin pull floor for every `canHunt` child while
+ * `juvenileDependency` is on. Draws nothing.
+ * @param {Record<string, any>} world the world
+ * @param {{child: number, mother: number, row: Float32Array}} birth the child, its mother and the child's weight row
+ * @returns {void}
+ */
+export function applyBirthReflex(world, { child, mother, row }) {
+    const { config } = world;
+    if (world.huntBySpec[world.spec[child]] !== 1) {
+        return;
+    }
+    const flip = config.flipReflex && world.huntBySpec[world.spec[mother]] !== 1;
+    const kinPull = config.juvenileDependency ? config.kinPullWeight : 0;
+    if (flip || kinPull > 0) {
+        applyHunterReflex(row, world.layout, { weight: config.instinctWeight, prey: flip, kinPull });
+    }
 }
 
 /**
@@ -84,6 +105,7 @@ export function createBirth(config) {
         } else {
             row.set(motherRow);
         }
+        applyBirthReflex(world, { child, mother, row });
         mutateWeights(row, childSigma, rng, mutation);
         if (config.weightDecay > 0) {
             decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });

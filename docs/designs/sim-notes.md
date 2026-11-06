@@ -1855,3 +1855,8 @@ The world-wide starvation crash of E110 is the toxic cap. It fruits from year ph
 - **What was measured.** `npm run eval:power` on 32 default seeds (`evals/results/t59-defaults-32.json`, splits of 16).
 - **Result.** No verdict for `eval.basin_divergence`, `eval.basin_spec_divergence` or `eval.basin_cluster_divergence`: 7 of 32 seeds have a basin under 20 agents in the last quarter, so the reading is null there, and nearly every 16-seed split holds one of those seeds. `predator_end_local_share` is null on 11 of 32.
 - **How to use it.** The divergence readings are watch metrics, read as means beside the others, never an arm's gate. A null means a collapsed basin, which is itself the finding.
+
+### 2026-11-05 - Provisioning scans the spatial hash once per agent (hunter-learning A2)
+
+- **What was learned.** An agent sits in every hash cell its bounding box touches, so a scan of the cells around a giver meets a large young in several cells. `provisionYoung` counts an entry only in the first cell of its build-time box that lies inside the query range, so it needs no per-agent stamp or second pass.
+- **Also.** `provisionedTick` stores tick + 1 (0 for never) because `freeAgent` zeroes every agent row, which makes a -1 sentinel a special case. Bench at 500 agents: `bench.step_ms@500` 4.14 to 4.20 ms with the three Phase 1 switches off and 4.16 to 4.17 ms with them on (baseline 4.20); `scripts/alloc-check.mjs` 19 KB and 67 KB of heap growth over 1000 ticks off and on (limit 1 MB).

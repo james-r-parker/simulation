@@ -8,6 +8,7 @@ import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } fr
 import { depletePatchAt } from './food-patches.js';
 import { INCOME, noteBiteLedger, noteIncome } from './hunter-ledger.js';
 import { depositPheromone } from './pheromones.js';
+import { provisionYoung } from './provision.js';
 import { FOOD_GONE, removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
@@ -17,28 +18,38 @@ import { gainTemperature } from './temperature.js';
 const HERD_CARCASS_BITE = 400;
 
 /**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the eating agent
+ * @param {number} food the food slot
+ * @returns {number} the share of the food's value the agent's specialisation takes (0 for none)
+ */
+function shareOf(world, slot, food) {
+    const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
+    return table[world.spec[slot]];
+}
+
+/**
  * Eats one food if the agent's circle overlaps it.
  * @param {Record<string, any>} world the world
+ * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} slot the eating agent
  * @param {number} food the food slot
  * @returns {void}
  */
-function tryEat(world, slot, food) {
-    const isMeat = world.foodKind[food] === FOOD_KIND.MEAT;
-    const table = isMeat ? world.meatFoodBySpec : world.plantFoodBySpec;
-    const share = table[world.spec[slot]];
-    if (world.foodAlive[food] !== 1 || share === 0 || !canEatNow(world, slot)) {
+function tryEat(world, hash, slot, food) {
+    if (world.foodAlive[food] !== 1 || shareOf(world, slot, food) === 0 || !canEatNow(world, slot)) {
         return;
     }
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        consumeFood(world, slot, food, share);
+        consumeFood(world, hash, slot, food);
     }
 }
 
-/** @param {Record<string, any>} world @param {number} slot @param {number} food @param {number} share */
-function consumeFood(world, slot, food, share) {
+/** @param {Record<string, any>} world @param {import('./spatial-hash.js').SpatialHash} hash @param {number} slot @param {number} food */
+function consumeFood(world, hash, slot, food) {
+    const share = shareOf(world, slot, food);
     const isMeat = world.foodKind[food] === FOOD_KIND.MEAT;
     const herdCarcass = world.foodOrigin[food] === FOOD_ORIGIN.HERD_CARCASS;
     const available = herdCarcass ? Math.min(HERD_CARCASS_BITE, world.foodValue[food]) : world.foodValue[food];
@@ -49,6 +60,7 @@ function consumeFood(world, slot, food, share) {
     if (isMeat) {
         world.ledgerCarcass[slot] += stored;
         noteIncome(world, slot, { kind: herdCarcass ? INCOME.HERD : INCOME.CARCASS, stored });
+        provisionYoung(world, hash, slot, stored);
     }
     world.foodEatenBySpec[world.spec[slot]] += stored;
     const { temperatureGainEat, foodEnergy } = world.config;
@@ -105,7 +117,7 @@ function eatInCell(world, hash, slot, cell) {
     const { cellStart, entries, maxAgents } = hash;
     for (let e = cellStart[cell]; e < cellStart[cell + 1]; e++) {
         if (entries[e] >= maxAgents) {
-            tryEat(world, slot, entries[e] - maxAgents);
+            tryEat(world, hash, slot, entries[e] - maxAgents);
         }
     }
 }
@@ -160,11 +172,12 @@ function kickOf(world, biter, victim) {
 /**
  * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
+ * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick, for provisioning
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
  * @returns {void}
  */
-function applyBite(world, biter, victim) {
+function applyBite(world, hash, biter, victim) {
     const { config, x, y } = world;
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
@@ -180,6 +193,7 @@ function applyBite(world, biter, victim) {
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteBiteLedger(world, biter, { gained, fatal, kick: paid });
+    provisionYoung(world, hash, biter, gained);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (world.lastBiter[victim] !== biterId) {
@@ -218,13 +232,14 @@ function recoil(world, hunter, target) {
 /**
  * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge.
  * @param {Record<string, any>} world the world
+ * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} biter the slot that may bite
  * @param {number} other the slot it touches
  * @returns {void}
  */
-function lunge(world, biter, other) {
+function lunge(world, hash, biter, other) {
     if (bites(world, biter, other)) {
-        applyBite(world, biter, other);
+        applyBite(world, hash, biter, other);
     } else if (world.config.recoilEnergy > 0) {
         recoil(world, biter, other);
     }
@@ -246,7 +261,7 @@ export function feed(world, hash) {
     for (let c = 0; c < contactCount; c++) {
         const a = contacts[2 * c];
         const b = contacts[2 * c + 1];
-        lunge(world, a, b);
-        lunge(world, b, a);
+        lunge(world, hash, a, b);
+        lunge(world, hash, b, a);
     }
 }
