@@ -1,6 +1,6 @@
 # Realistic keepers
 
-**Status:** Proposed - Phase 1 first: restore the realistic mechanisms deleted for lack of a scene gain as default-off switches (chunks A and B), then Phase 2 judges each on 16 seeds for no harm.
+**Status:** In progress - Phase 1 chunk A is built (T1 to T4: `satedBite`, `predatorRestTicks`, `provisionEnabled` and `juvenileDependency` as default-off switches, goldens unchanged); next chunk B (T5 to T9), then Phase 2 judges each switch on 16 seeds for no harm.
 **Validated:** 12d9ba4 (2026-11-06)
 **Priority:** 2 - the user's keep rule (2026-11-06) turns eight deleted or never-confirmed mechanisms into candidates the balance round can adopt now; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing owns the defaults, and ahead of refuge.md Phase 3 conclusion, whose T27 `refugeSense` reports T19 reads
 **Depends on:** [natural-selection.md](natural-selection.md), [refuge.md](refuge.md)
@@ -96,10 +96,10 @@ specialisations, an existing config value judged as an arm.
 
 #### Chunks
 
-| Chunk | Tasks    | Holds                                                                                       |
-| ----- | -------- | ------------------------------------------------------------------------------------------- |
-| A     | T1 to T4 | Hunter energy switches: `satedBite`, `predatorRestTicks`, provisioning, juvenile dependency |
-| B     | T5 to T9 | `rewardedHebb`, the two cover switches, the off-path checks and the conformance review      |
+| Chunk     | Tasks    | Holds                                                                                       |
+| --------- | -------- | ------------------------------------------------------------------------------------------- |
+| A (built) | T1 to T4 | Hunter energy switches: `satedBite`, `predatorRestTicks`, provisioning, juvenile dependency |
+| B         | T5 to T9 | `rewardedHebb`, the two cover switches, the off-path checks and the conformance review      |
 
 ### Phase 2 - No-harm checks
 
@@ -171,10 +171,10 @@ not claim to recover it.
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                    | Nature       | Depends on                 |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------- |
-| T1  | Chunk A: restore `satedBite` in `lunge` from #275 (key, rule, flag-ledger entry pointing at T22, `test/sim/feeding-sated-bite.test.js`, rows in `test/sim/config-hunter-learning.test.js`)                                                                                                                                              | [judgement]  | -                          |
-| T2  | Restore `predatorRestTicks` and `restTimer` from #265 (`actAll` in `../../js/sim/physics.js`, the fatal-bite hook in `feeding.js`, rule `int(0, 65535)`, no ledger entry (a number key), `test/sim/predator-rest.test.js`); the old instinct and temperature changes stay deleted                                                       | [judgement]  | -                          |
-| T3  | Restore provisioning from #273: `provision.js`, `provision-state.js`, the `Provisioned` event and `emitProvisioned` in `log-hunter.js`, the energy-conservation invariant, `eval.provisioned_energy_share`, the three keys and the ledger entry, with their tests; `isDependentKiller` is unchanged                                     | [judgement]  | -                          |
-| T4  | Restore the juvenile dependency from #273: `juvenile.js`, `juvenileBurnOf` in `tickCost`, the kin-floor half of the hunter reflex for every hunting child (`applyBirthReflex` is the caller today), the three keys and the ledger entry, with their tests                                                                               | [judgement]  | T3                         |
+| T1  | Chunk A: restore `satedBite` in `lunge` from #275 (key, rule, flag-ledger entry pointing at T22, `test/sim/feeding-sated-bite.test.js`, rows in `test/sim/config-hunter-learning.test.js`) (built)                                                                                                                                      | [judgement]  | -                          |
+| T2  | Restore `predatorRestTicks` and `restTimer` from #265 (`actAll` in `../../js/sim/physics.js`, the fatal-bite hook in `feeding.js`, rule `int(0, 65535)`, no ledger entry (a number key), `test/sim/predator-rest.test.js`); the old instinct and temperature changes stay deleted (built)                                               | [judgement]  | -                          |
+| T3  | Restore provisioning from #273: `provision.js`, `provision-state.js`, the `Provisioned` event and `emitProvisioned` in `log-hunter.js`, the energy-conservation invariant, `eval.provisioned_energy_share`, the three keys and the ledger entry, with their tests; `isDependentKiller` is unchanged (built)                             | [judgement]  | -                          |
+| T4  | Restore the juvenile dependency from #273: `juvenile.js`, `juvenileBurnOf` in `tickCost`, the kin-floor half of the hunter reflex for every hunting child (`applyBirthReflex` is the caller today), the three keys and the ledger entry, with their tests (built)                                                                       | [judgement]  | T3                         |
 | T5  | Chunk B: restore `rewardedHebb` from #278, `meat` source only: `reward.js` (trace, decay, `rewardScale`), `reward-hash.js`, the `hebbianStep` scale, `noteReward` calls in `feeding.js`, `eval.reward_events.*` (`metrics-reward.js`), the four keys and the ledger entry, with their tests; no shuffle queue and no `rewardSource` key | [judgement]  | -                          |
 | T6  | Restore `coverConceals` from #289: `cover.js`, the ray skip in `nearestHit`, `CoverConfig` and `CoverTotals` with `log-cover.js`, the invariant, the key and ledger entry, with `cover.test.js`, `ray-march-cover.test.js` and `log-cover.test.js`                                                                                      | [judgement]  | -                          |
 | T7  | Restore `coverFoodFree` from #289: the plant-placement rejection in `spawnFoodItem` and `flora-placement.js`, the key and ledger entry, with rows in `spawn.test.js` and `flora-spawn.test.js`                                                                                                                                          | [judgement]  | -                          |
