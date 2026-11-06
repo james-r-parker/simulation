@@ -128,20 +128,19 @@ function isConcealed(coverRing, key, casterRing) {
 function nearestHitCovered(world, count, casterRing) {
     const { rayLocal: local, rayScratch: s, coverRing, coverTotals } = world;
     seedWithWall(world);
-    const range = s[RANGE];
-    const dx = s[DX];
-    const dy = s[DY];
     let bestT = s[BEST_T];
     let bestKey = s[BEST_KEY];
     for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
-        const t = circleHit(dx * local[at] + dy * local[at + 1], local[at + 2]);
-        if (t >= 0 && t <= range && (t < bestT || (t === bestT && local[at + 3] < bestKey))) {
-            if (isConcealed(coverRing, local[at + 3], casterRing)) {
-                coverTotals[COVER_TOTALS.CONCEALED_HITS] += 1;
-            } else {
-                bestT = t;
-                bestKey = local[at + 3];
-            }
+        const t = circleHit(s[DX] * local[at] + s[DY] * local[at + 1], local[at + 2]);
+        const key = local[at + 3];
+        if (t < 0 || t > s[RANGE] || t > bestT || (t === bestT && key >= bestKey)) {
+            continue;
+        }
+        if (isConcealed(coverRing, key, casterRing)) {
+            coverTotals[COVER_TOTALS.CONCEALED_HITS] += 1;
+        } else {
+            bestT = t;
+            bestKey = key;
         }
     }
     s[BEST_T] = bestT;

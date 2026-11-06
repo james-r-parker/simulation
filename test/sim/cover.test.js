@@ -59,7 +59,7 @@ describe('stepCover', () => {
         const world = ringWorld();
         blobAt(world, 0);
         stepCover(world);
-        expect(world.coverRing.every((b) => b === 0)).toBe(true);
+        expect(world.coverRing.every((/** @type {number} */ b) => b === 0)).toBe(true);
         expect(world.coverCentres).toBeNull();
         expect(world.events.count).toBe(0);
     });
@@ -98,6 +98,7 @@ describe('cover events', () => {
      * @returns {Record<string, any>[]} the records the log makes of the world's events
      */
     function drain(world) {
+        /** @type {Record<string, any>[]} */
         const records = [];
         drainEvents(
             world,
