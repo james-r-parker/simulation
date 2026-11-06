@@ -1,0 +1,53 @@
+// Phase 2 of hunter-learning.md: a real world runs with reward-gated learning, and with the shuffled-reward control, for
+// 5000 ticks from seed 1. The invariants hold every tick and two runs end on the same `worldHash`.
+
+import { describe, expect, it } from 'vitest';
+import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
+import { createConfig } from '../../js/sim/config.js';
+import { assertInvariants } from '../../js/sim/invariants.js';
+import { createWorld } from '../../js/sim/spawn.js';
+import { step } from '../../js/sim/step.js';
+import { hashWorld } from '../../js/sim/world-hash.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
+import { golden } from './golden-run.js';
+
+const TICKS = 5000;
+const TIMEOUT_MS = scaleTimeout(180_000);
+const BUSY = golden.cases.find((/** @type {{name: string}} */ c) => c.name === 'busy').overrides;
+
+/**
+ * @param {Record<string, any>} switches the Phase 2 keys to set
+ * @returns {{hash: string, rewards: number, dropped: number}} the end hash, the rewards earned and the shuffled rewards dropped
+ */
+function run(switches) {
+    const policy = cloneWithNoisePolicy();
+    const world = createWorld(createConfig({ ...BUSY, ...switches, checkInvariants: false }), policy);
+    for (let t = 0; t < TICKS; t++) {
+        step(world, policy);
+        assertInvariants(world);
+    }
+    const rewards = world.rewardCounts.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+    return { hash: hashWorld(world), rewards, dropped: world.rewardDropped };
+}
+
+describe('practice on a real world', () => {
+    it(
+        'keeps the invariants and ends on the same hash twice with rewardedHebb on',
+        () => {
+            const a = run({ rewardedHebb: true });
+            expect(a.rewards).toBeGreaterThan(0);
+            expect(run({ rewardedHebb: true }).hash).toBe(a.hash);
+        },
+        TIMEOUT_MS,
+    );
+
+    it(
+        'keeps the invariants and ends on the same hash twice with rewardShuffle on',
+        () => {
+            const a = run({ rewardedHebb: true, rewardShuffle: true });
+            expect(a.rewards).toBeGreaterThan(0);
+            expect(run({ rewardedHebb: true, rewardShuffle: true }).hash).toBe(a.hash);
+        },
+        TIMEOUT_MS,
+    );
+});
