@@ -20,8 +20,8 @@ import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { GROUP_SAMPLE_TICKS, THREAT_PROXIMITY } from './observer-intent-state.js';
 import { refugeCentres } from './scene-terrain.js';
 
-/** The room, in px, a body needs between its radius and `refugeSizeMax` to count as able to enter a ring. */
-export const REFUGE_CLEARANCE_PX = 1;
+/** The room, in px, a body needs between its radius and `refugeSizeMax` to count as able to enter a ring. The largest eligible radius enters from every angle (`test/sim/refuge-access.test.js`), so none. */
+export const REFUGE_CLEARANCE_PX = 0;
 
 /** Fewest prey-samples inside a ring that `eval.refuge_bite_deficit` needs. */
 export const MIN_RING_PREY_SAMPLES = 100;
