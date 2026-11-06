@@ -27,8 +27,8 @@ export function rowOf(cache, array, { slot, count }) {
 }
 
 /**
- * Writes the hunter reflexes into a child's row before mutation (hunter-learning.md T6): the prey terms when `flipReflex` is on
- * and the child's specialisation `canHunt` while its mother's does not. Draws nothing.
+ * Writes the hunter reflexes into a child's row before mutation (hunter-learning.md T6): the prey terms when
+ * the child's specialisation `canHunt` while its mother's does not. Draws nothing.
  * @param {Record<string, any>} world the world
  * @param {{child: number, mother: number, row: Float32Array}} birth the child, its mother and the child's weight row
  * @returns {void}
@@ -38,7 +38,7 @@ export function applyBirthReflex(world, { child, mother, row }) {
     if (world.huntBySpec[world.spec[child]] !== 1) {
         return;
     }
-    if (config.flipReflex && world.huntBySpec[world.spec[mother]] !== 1) {
+    if (world.huntBySpec[world.spec[mother]] !== 1) {
         applyHunterReflex(row, world.layout, config.instinctWeight);
     }
 }

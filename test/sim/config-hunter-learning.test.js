@@ -1,4 +1,4 @@
-// The Phase 1 keys of hunter-learning.md (T3): defaults, ranges and the rules hash. Every switch is off, so no world moves.
+// The Phase 1 tuning keys of hunter-learning.md (T3): defaults and ranges, and the rules hash.
 
 import { describe, expect, it } from 'vitest';
 import { createConfig, rulesHash } from '../../js/sim/config.js';
@@ -7,9 +7,6 @@ import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const DEFAULT_KEYS = {
     juvenileTicks: 3000,
-    flipReflex: false,
-    satedBite: false,
-    hunterTerritory: false,
     territoryRadius: 600,
     territoryMax: 1,
 };
@@ -24,11 +21,6 @@ describe('the hunter-learning Phase 1 keys', () => {
     it.each(Object.entries(DEFAULT_KEYS))('%s defaults to %s', (key, value) => {
         expect(DEFAULTS[key]).toBe(value);
         expect(make({})[key]).toBe(value);
-    });
-
-    it.each(['flipReflex', 'satedBite', 'hunterTerritory'])('%s is a boolean that accepts true', (key) => {
-        expect(make({ [key]: true })[key]).toBe(true);
-        expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
     });
 
     it.each([

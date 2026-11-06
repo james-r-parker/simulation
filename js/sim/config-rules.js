@@ -100,9 +100,6 @@ export const FEATURE_RULES = {
     splitClonalMax: int(1),
     splitMateScarceTicks: int(0),
     juvenileTicks: int(1),
-    flipReflex: BOOL,
-    satedBite: BOOL,
-    hunterTerritory: BOOL,
     territoryRadius: positive(),
     territoryMax: int(0),
 };

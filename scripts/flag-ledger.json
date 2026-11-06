@@ -22,23 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
-  },
-  {
-    "key": "flipReflex",
-    "plan": "docs/designs/hunter-learning.md",
-    "task": "T12",
-    "reason": "Kept as the one-factor arm of the hunter-learning Phase 1 screen (a spec-flip child gets the hunter prey reflex); T12 adopts it and deletes the key, or deletes the flip call, after the verdict."
-  },
-  {
-    "key": "satedBite",
-    "plan": "docs/designs/hunter-learning.md",
-    "task": "T12",
-    "reason": "Kept as the one-factor arm of the hunter-learning brake screen (a full or digesting hunter does not bite); T12 adopts it and deletes the key, or deletes the skip in lunge and the key, after the E119 and E120 verdict."
-  },
-  {
-    "key": "hunterTerritory",
-    "plan": "docs/designs/hunter-learning.md",
-    "task": "T12",
-    "reason": "Kept as the one-factor arm of the hunter-learning territory screen (a hunter with more than territoryMax mature hunters in territoryRadius does not mate or split); T12 adopts it and deletes the key, or deletes territoryAllows and the key, after the E121 and E122 verdict."
   }
 ]

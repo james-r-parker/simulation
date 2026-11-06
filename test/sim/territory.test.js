@@ -1,5 +1,5 @@
 // hunter territory (hunter-learning T9d): a hunter with more than territoryMax other mature hunters in range cannot
-// mate or split; immature, non-hunter and distant neighbours do not count; non-hunters and the switch off are untouched.
+// mate or split; immature, non-hunter and distant neighbours do not count; non-hunters are untouched.
 
 import { describe, expect, it } from 'vitest';
 import { isReadyToMate } from '../../js/sim/mate-eligibility.js';
@@ -13,11 +13,10 @@ const MATURITY = 100;
 
 /**
  * @param {Record<string, any>} [over] config overrides
- * @returns {any} a world with territory on, radius 600 and one other hunter tolerated
+ * @returns {any} a world with territory radius 600 and one other hunter tolerated
  */
 function world(over = {}) {
     return lifeWorld({
-        hunterTerritory: true,
         territoryRadius: 600,
         territoryMax: 1,
         maturityTicks: MATURITY,
@@ -96,14 +95,6 @@ describe('territoryAllows', () => {
         crowd(w, 5);
         expect(territoryAllows(w, me)).toBe(true);
         expect(readyBeforeGate(w, me)).toBe(true);
-    });
-
-    it('does nothing with the switch off', () => {
-        const w = world({ hunterTerritory: false });
-        const me = blob(w);
-        crowd(w, 5);
-        expect(territoryAllows(w, me)).toBe(true);
-        expect(isReadyToMate(w, me)).toBe(true);
     });
 
     it('follows territoryMax and territoryRadius', () => {
