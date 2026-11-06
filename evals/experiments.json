@@ -2874,6 +2874,33 @@
       },
       "effect": "worse",
       "note": "Screen read, 8 seeds. Hunters alive / median predators_at_end / median last-quarter hunter-ticks / population mean / carcass_hunter_share: defaults 6/8, 6, 238069, 414, 0.149; carcass-scent 4/8, 0.5, 44295, 315, 0.135; carcass-scent + herb-meat-0.1 5/8, 1.5, 111424, 287, 0.138; herb-meat-0.1 5/8, 4, 406256, 407, 0.260. The scent lowers hunter carcass income (0.379 to 0.332 of income) and predation per 1k halves. Decision: delete carcassScent (T58 adopt-or-delete); a far miss on every reading, so no 16-seed confirmation was run. Reason in sim-notes.md 2026-11-05."
+    },
+    {
+      "id": "E115",
+      "date": "2026-11-06",
+      "branch": "eval/hunter-learn-screen",
+      "hypothesis": "Hunters fail at killing, not at surviving: 80 to 92% of hunters never kill on every E113 lever, and spec-flip hunters (non-hunter brains in hunter bodies) are the zero-kill mass. Nature gives young predators a born pursuit reflex, food from their parents while they learn, and a cheaper, family-bound youth. Phase 1 of hunter-learning.md builds those as switches: flipReflex (a spec-flip child gets the hunter reflex), provisionEnabled (a hunter shares provisionShare 0.3 of each stored meal with its young hunters within 120), juvenileDependency (young hunters under 3000 ticks pay 0.6 of their movement cost and every hunter child gets a kin-pull floor). Screened on the floor-off world, where a taught hunter cannot be confused with a restocked one.",
+      "prediction": "8 seeds x 200000 ticks, floorTrigger 0 (evals/screens/hunter-learn.grid.json). The age-matched baseline (eval.hunter_kill_conversion_by_age.1k-2k on the defaults arm) is not yet measured, because the detector is new, so this prediction is relative. Competence first: flip raises eval.hunter_kill_rate_by_source.spec-flip and lowers eval.hunter_zero_kill_share the most of the single arms, and raises 1k-2k conversion by at least 10% of the defaults value. provision and juvenile mainly lower eval.hunter_juvenile_death_share and raise hunter survival, with little change in conversion (keeping an animal alive is not teaching it). flip-provision-juvenile is the best arm on hunters alive at the end and on the zero-kill share. Defaults: hunters alive at the last tick on about 4 to 5 of 8 floor-off seeds. Guards: provision-juvenile may raise eval.boom_bust_count through more hunters, but eval.prey_extinctions does not rise in any arm. Keep rule (user): hunters alive at the last tick on at least 6/8 seeds and no more seeds under 80 agents than the defaults; an arm that only improves survival with no conversion gain is not counted as teaching. The best arm is confirmed on 16 seeds (E116).",
+      "targets": [
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_independent_kill_share",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_kill_rate_by_source.spec-flip",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.boom_bust_count"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm (floorTrigger 0)",
+      "after": "evals/screens/results/hunter-learn/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Preregistered 2026-11-06 before the run."
     }
   ]
 }
