@@ -1,0 +1,16 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": { "floorTrigger": 0 },
+  "arms": {
+    "defaults": {},
+    "flip": { "flipReflex": true },
+    "territory": { "hunterTerritory": true },
+    "flip-territory": { "flipReflex": true, "hunterTerritory": true },
+    "flip-territory-r1000": { "flipReflex": true, "hunterTerritory": true, "territoryRadius": 1000 },
+    "flip-sated-territory": { "flipReflex": true, "satedBite": true, "hunterTerritory": true }
+  }
+}

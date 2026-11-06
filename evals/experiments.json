@@ -3020,6 +3020,43 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at a8f789c. Hunters alive at the last tick 10/16 (defaults 9/16), short of 12/16. Every target no-difference: predators at end 7.7 -> 9.4, prey types 2.81 -> 2.63, prey extinctions 3.25 -> 4.06, population 314 -> 277, juvenile death share 0.616 -> 0.585 (interval [-0.063, -0.006] but under the 5% minimum effect), conversion 1k-2k null in a seed. The prediction's caveat held: the 8-seed gain did not replicate. satedBite is not adopted on its own; it is deleted with the flip verdict (T12) unless the territory lever needs it."
+    },
+    {
+      "id": "E121",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-territory",
+      "hypothesis": "E119: taught hunters (flipReflex) over-hunt through their numbers, not their appetite. hunterTerritory stops a hunter breeding while more than territoryMax 1 other mature hunter lies within territoryRadius 600 (r1000 is a wider territory), as breeding suppression and territories hold predator density down in nature.",
+      "prediction": "8 seeds x 200000 ticks, floor off (evals/screens/hunter-territory.grid.json). flip repeats E115 and E119. territory alone lowers hunter numbers a little and changes competence little. flip-territory keeps most of the competence gain (spec-flip kill rate at least 0.2, zero-kill share under 0.7) while median last-quarter hunter-ticks stay within 2x of the defaults, prey types at the end at least 2.5, and seeds under 80 at most 2; flip-territory-r1000 holds the prey best but leaves fewer hunters alive. flip-sated-territory sits between. Keep rule (user): hunters alive at the last tick on at least 6/8 and no more seeds under 80 than the defaults. If no flip-territory arm keeps the prey, the hunters' kill rate per head is itself too high for the prey base and the next step is on the prey side (escape, refuge, vigilance).",
+      "targets": [
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_kill_rate_by_source.spec-flip",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.boom_bust_count"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm (floorTrigger 0)",
+      "after": "evals/screens/results/hunter-territory/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.hunter_first_kill_rmst": "-",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.hunter_juvenile_death_share": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.hunter_kill_rate_by_source.spec-flip": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "-",
+        "eval.boom_bust_count": "-"
+      },
+      "effect": "no-difference",
+      "note": "Preregistered 2026-11-06 before the run."
     }
   ]
 }
