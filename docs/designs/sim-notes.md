@@ -2010,3 +2010,16 @@ Not causes: food supply (edible slots full, reachable, steady), a synchronised c
 ### 2026-11-06 - A refuge gap admits bodies about 2.5 px over refugeSizeMax
 
 `test/sim/refuge-access.test.js` drives a scripted agent (`actAll` and `integrate`, body radius held fixed) at a ring from 16 approach angles. The gap between two rocks is `2 x refugeSizeMax` (60 px), so radius 30 has zero clearance, yet it enters and leaves from all 16 angles: `obstacleBounce` pushes a body out of one rock at a time, so a body touching both is not held. Radius 32 enters from all 16 angles, 32.5 from 1, 33 from 3 and 33.5 from none. Radius 20 to 29 enter from all 16. The gate is therefore soft by about 2.5 px, and `eval.refuge_eligible_share` uses `refugeSizeMax` with no clearance (`REFUGE_CLEARANCE_PX` 0). A body's size is re-derived from its energy whenever energy changes (`energy.js`), so a test that sets `size` must hold it each tick. Reported, not changed (refuge.md T3).
+
+### 2026-11-06 - Cover works, prey do not reach it (refuge T5, E130)
+
+On 32 floor-on seeds the rings already protect and admit prey, but the Refuge scene is absent because threatened prey are
+not near a ring. Bites per prey-tick inside a ring are 0.12 of the outside rate, 64% of prey ticks are at a size that fits
+(T3: radius 20 to 32 enter from every angle; `obstacleBounce` lets a body squeeze a 60 px gap), and 64% of ring exits
+lead to a meal, yet `eval.refuge_use_under_threat` is negative on all 32 seeds (-0.0024) and a threatened prey is no
+likelier to enter than a calm one. The eight rings are 0.94% of the map. The bite guard and wider gaps were dropped from
+refuge.md before they were built; the screen tests reach first (`refugeCount` 16 and 24) and concealment.
+
+Also: the first 16 seeds of `evals/seeds.json` are kinder than the next 16 - floor-on worlds end under 80 agents on 2 of
+seeds 1 to 16 and on 8 of seeds 17 to 32. Read 16-seed absolute health figures as optimistic; matched-seed comparisons
+are unaffected.
