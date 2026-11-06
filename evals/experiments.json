@@ -3362,6 +3362,39 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at 9dfa158, floor on, 8 seeds. refuge_use_under_threat: defaults -0.0024, refuges-16 -0.0039, refuges-24 -0.0056, conceal -0.0028, foodfree -0.0008, refuges-24-conceal -0.0046, refuges-24-conceal-foodfree -0.0034; at most 1 of 8 seeds above 0 in any arm, so no arm comes near the 0.05 bar. Bite deficit stays low everywhere (0.06 to 0.32): cover protects whoever is inside. A check run (seed 1, coverConceals on, 6000 ticks) found only 1 or 2 of 100 to 145 agents inside a ring at any time and 88 concealed ray hits in total, so the mechanisms barely touch the world: prey are almost never in a ring, so changing what happens inside one changes nothing. Guards: the defaults arm drew well on these 8 seeds (0 under 80, hunters alive 7/8, predators at end 38.5) and every other arm reads worse (2 to 6 under 80, predators 4.6 to 20.8); with the mechanisms this inert that spread is chaotic divergence between seeds, not an effect. Prediction held on the scene (no arm reaches 0.05) and was wrong that more rings would lift use by chance. Decision (balance autonomy): delete coverConceals and coverFoodFree (T16, T18: inert), no 16-seed confirmation (T15 skipped: a far miss on the deciding metric in every arm, as E114); keep refugeCount at 8. T23 Phase 3 gate passes (bite deficit <= 0.7, eligible share >= 0.5, use < 0.02): prey cannot steer to cover they cannot sense, so the cover-sense input is next, with ring density as an arm because most prey are beyond sight of any ring."
+    },
+    {
+      "id": "E132",
+      "date": "2026-11-06",
+      "branch": "docs/principle-keep-realistic",
+      "hypothesis": "cover protects but prey cannot steer to cover they cannot sense; a long-range refuge sense (bearing and nearness, like remembered burrows) lets evolution find fleeing to cover.",
+      "prediction": "the sense-off arms stay near -0.002 (as E130/E131). sense-on-8 lifts refuge_use_under_threat a little (to about +0.002 to +0.01): with a sense, prey that happen to flee toward a ring survive, but rings are far (2,400 px) and selection is weak in 200k ticks. sense-on-24 lifts it more (+0.01 to +0.03), and r4000 slightly more; probably none reach the 0.05 bar at 8 seeds. Episode entry is unpowered, so read crowding and bite deficit alongside. Guards: the sense should not hurt hunters much (prey that hide are rarely in reach anyway), but 8-seed guard numbers swing by chaos (E131), so only a 16-seed confirmation against the arm's own sense-off control decides. If no arm moves use above +0.01, T28 reverts the layout: the brain does not learn to use the sense in this timescale, and the refuge scene needs a different approach (e.g. a scripted flee instinct prior like the hunter reflex, or seeding the instinct cells). (Written before the run, chunk F at e54ade2, floor on, 8 seeds x 200000 ticks, evals/screens/refuge-sense.grid.json.)",
+      "targets": [
+        "eval.refuge_use_under_threat",
+        "eval.refuge_prey_use_under_threat",
+        "eval.refuge_bite_deficit",
+        "eval.refuge_crowding",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.hunter_kill_conversion_by_age.1k-2k"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "sense-off-8 and sense-off-24 arms (refugeSense false, same layout)",
+      "after": "evals/screens/results/refuge-sense/ (5 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.refuge_use_under_threat": "-",
+        "eval.refuge_prey_use_under_threat": "-",
+        "eval.refuge_bite_deficit": "-",
+        "eval.refuge_crowding": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at e54ade2, floor on, 8 seeds. refuge_use_under_threat: sense-off-8 -0.0024, sense-on-8 -0.0019, sense-off-24 -0.0046, sense-on-24 -0.0071, sense-on-24-r4000 -0.0050; at most 2 of 8 seeds above 0 in any arm. The prediction of a small lift failed: the sense does not change refuge use. A prey flees a hunter within its 250 to 350 px vision and the nearest ring edge averages 2,427 px away with 8 rings (1,427 with 24), so a flight cannot reach cover; nature's refuges are within a dash of where the animal feeds. Guards at 8 rings, sense on against off: seeds under 80 3 against 4, hunters alive 7/8 against 6/8, predators at end 29.9 against 25.9, population mean 226 against 198, conversion 1k-2k 0.088 against 0.076 - no sign of harm (8 seeds judge nothing). Decision: under the user's rule of 2026-11-06 (principles.md, How the principles are used: keep a realistic mechanism that does no harm), the sense is not reverted; E133 checks it for harm on 16 seeds, and refuge.md T28 adopts it on if it passes. The 24-ring arms read worse on guards and are not pursued."
     }
   ]
 }

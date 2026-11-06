@@ -1,0 +1,15 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "sense-off-8",
+  "base": {},
+  "arms": {
+    "sense-off-8": {},
+    "sense-on-8": { "refugeSense": true },
+    "sense-off-24": { "refugeCount": 24 },
+    "sense-on-24": { "refugeCount": 24, "refugeSense": true },
+    "sense-on-24-r4000": { "refugeCount": 24, "refugeSense": true, "refugeSenseRange": 4000 }
+  }
+}
