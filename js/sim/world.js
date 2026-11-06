@@ -7,6 +7,7 @@ import { createInputActivity } from './input-activity.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
+import { allocCoverState } from './cover.js';
 import { killSpecs } from './kills.js';
 import { INCOME_KINDS, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
@@ -163,6 +164,7 @@ function allocFoodAndObstacles(world) {
         maxFood,
     );
     allocRows(world, singles(Float32Array, ['obsX', 'obsY', 'obsRadius']), obstacleCount);
+    allocCoverState(world);
 }
 
 /**
