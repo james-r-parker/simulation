@@ -1,0 +1,16 @@
+{
+  "seeds": 8,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "base": { "floorTrigger": 0 },
+  "arms": {
+    "defaults": {},
+    "mate-350": { "mateRange": 350 },
+    "mate-500": { "mateRange": 500 },
+    "mate-700": { "mateRange": 700 },
+    "mate-900": { "mateRange": 900 },
+    "mate-900-clonal-off": { "mateRange": 900, "splitClonalMax": 1000 }
+  }
+}
