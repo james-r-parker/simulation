@@ -22,17 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
-  },
-  {
-    "key": "coverConceals",
-    "plan": "docs/designs/refuge.md",
-    "task": "T16",
-    "reason": "Default off until the refuge screen: T16 sets it true and deletes the flag on a win, or deletes nearestHitCovered and the key on a loss."
-  },
-  {
-    "key": "coverFoodFree",
-    "plan": "docs/designs/refuge.md",
-    "task": "T18",
-    "reason": "Default off until the refuge screen: T18 sets it true and deletes the flag on a win, or deletes the plant placement test and the key on a loss."
   }
 ]
