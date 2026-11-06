@@ -186,6 +186,9 @@ function applyBite(world, biter, victim) {
     if (fatal && config.predatorKillEnergy > 0) {
         gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
     }
+    if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
+        world.restTimer[biter] = config.predatorRestTicks;
+    }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteBiteLedger(world, biter, { gained, fatal, kick: paid });

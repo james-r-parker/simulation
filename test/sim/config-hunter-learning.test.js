@@ -10,6 +10,7 @@ const DEFAULT_KEYS = {
     territoryRadius: 600,
     territoryMax: 1,
     satedBite: false,
+    predatorRestTicks: 0,
 };
 
 /**
@@ -30,6 +31,7 @@ describe('the hunter-learning Phase 1 keys', () => {
     });
 
     it.each([
+        ['predatorRestTicks', 65535],
         ['juvenileTicks', 1],
         ['territoryRadius', 0.5],
         ['territoryMax', 0],
@@ -39,6 +41,9 @@ describe('the hunter-learning Phase 1 keys', () => {
     });
 
     it.each([
+        ['predatorRestTicks', -1],
+        ['predatorRestTicks', 65536],
+        ['predatorRestTicks', 1.5],
         ['juvenileTicks', 0],
         ['juvenileTicks', 1.5],
         ['territoryRadius', 0],

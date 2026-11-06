@@ -133,6 +133,7 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
+            ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,
     );

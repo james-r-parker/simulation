@@ -288,5 +288,6 @@ export const DEFAULTS = deepFreeze({
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
     satedBite: false, // realistic-keepers T1: a canHunt biter for which canEatNow is false (full or digesting) does not bite
+    predatorRestTicks: 0, // realistic-keepers T2: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

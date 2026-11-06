@@ -105,4 +105,5 @@ export const FEATURE_RULES = {
     territoryRadius: positive(),
     territoryMax: int(0),
     satedBite: BOOL,
+    predatorRestTicks: int(0, 65535),
 };
