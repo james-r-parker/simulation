@@ -14,6 +14,7 @@ export const STATISTICAL_TESTS = [
     'test/evo/deliberate-controllers.slow.test.js',
     'test/evo/survivable-world.slow.test.js',
     'test/evo/anti-exploit.slow.test.js',
+    'test/sim/practice.slow.test.js',
 ];
 
 /** @returns {string[]} the test files left out for this scope */
