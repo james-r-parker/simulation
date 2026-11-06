@@ -1,6 +1,6 @@
 # Refuge
 
-**Status:** In progress - Phase 1 chunk A built (the eight detectors and the aperture test, T1 to T4, no behaviour change); next the diagnosis run (T5, T6), then three default-off cover mechanisms and one geometry key.
+**Status:** In progress - Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach it); next Phase 2, concealment, a food-free interior and more rings, each screened against the defaults.
 **Validated:** b26e468 (2026-11-06)
 **Priority:** 2 - the Refuge scene is absent on the default world (`eval.refuge_use_under_threat` -0.003, E126 and E129), and cover is the classic stabiliser of the boom-and-dip the floor-off worlds show; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing is the parent body of work
 **Depends on:** [natural-selection.md](natural-selection.md)
@@ -105,7 +105,7 @@ New `eval.*` metrics from the eval observer at the 10-tick sample of `sampleTerr
 
 ## Phases
 
-### Phase 1 - Detectors and diagnosis
+### Phase 1 - Detectors and diagnosis (built)
 
 **Targets:** none - the new metrics are instruments (`watch`) and no existing metric moves; the phase ends with a written diagnosis.
 
@@ -121,7 +121,7 @@ Chunks:
 | Chunk                       | Tasks          | Boundary                                                                                    |
 | --------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
 | A - Detectors (Code, built) | T1, T2, T3, T4 | The eight metrics with tests, the aperture test and the detector docs; no behaviour changes |
-| B - Diagnose (Runs)         | T5, T6         | The 16-seed floor-on run, `eval:power`, the sim-notes diagnosis, the conformance review     |
+| B - Diagnose (Runs, built)  | T5, T6         | The 16-seed floor-on run, `eval:power`, the sim-notes diagnosis, the conformance review     |
 
 ### Phase 2 - Cover mechanisms
 
@@ -204,7 +204,7 @@ Chunks:
 
 ## Task breakdown
 
-### Phase 1 - Detectors and diagnosis
+### Phase 1 - Detectors and diagnosis (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
@@ -213,7 +213,7 @@ Chunks:
 | T3  | Add `test/sim/refuge-access.test.js` (analytic clearance by body radius, 16 approach angles, two agents inside; a failing geometry is reported, not changed); it is the fixture [world-balance.md](world-balance.md) T83 names, and T83 reuses it (built)                                                                                                                                                                                                                                                                                                                                                                         | [judgement]  | -          |
 | T4  | Update the Refuge row of [principles.md](../principles.md) and the Metrics table in [evolution-evals.md](evolution-evals.md) with the eight metrics (built)                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [mechanical] | T1, T2     |
 | T5  | (built as `E130`, 32 seeds floor on: cover protects (bite deficit 0.12) and bodies fit (eligible share 0.64), exits lead to a meal (0.64), but threatened prey do not head for cover (episode entry about 0, use under threat -0.0024 on all 32 seeds); the rings are 0.94% of the map and out of reach; sim-notes 2026-11-06) Run the diagnosis: 16 seeds from `evals/seeds.json`, floor on, 200,000 ticks, defaults; `npm run eval:power`; write the sim-notes entry answering the four questions and the screen's prediction, and set the provisional Phase 2 and Phase 3 thresholds from these numbers (a run chunk, no code) | [judgement]  | T1, T2, T3 |
-| T6  | Mark Phase 1 `(built)`, move the status line, regenerate the index; a fresh review agent checks every Delivery requirements row against the diff in parallel with the final `scripts/check.sh` (conformance review)                                                                                                                                                                                                                                                                                                                                                                                                               | [judgement]  | T4, T5     |
+| T6  | (built) Mark Phase 1 `(built)`, move the status line, regenerate the index; a fresh review agent checks every Delivery requirements row against the diff in parallel with the final `scripts/check.sh` (conformance review)                                                                                                                                                                                                                                                                                                                                                                                                       | [judgement]  | T4, T5     |
 
 ### Phase 2 - Cover mechanisms
 
