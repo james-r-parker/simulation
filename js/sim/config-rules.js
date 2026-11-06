@@ -47,7 +47,7 @@ export const FEATURE_RULES = {
     carcassShare: num(0, 1),
     wallGaps: int(0, 8),
     wallGapWidth: positive(),
-    refugeCount: int(0, 8),
+    refugeCount: int(0, 32),
     refugeCluster: int(1, 4),
     coverConceals: BOOL,
     coverFoodFree: BOOL,
