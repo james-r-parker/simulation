@@ -8,6 +8,7 @@ import { createPatches } from './food-patches.js';
 import { createHerds } from './herds.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain } from './terrain.js';
+import { rejectedByCover } from './cover.js';
 import { drawSex } from './sex.js';
 import { SPEC_COUNT } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
@@ -68,6 +69,28 @@ function placementError(world, radius) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {Rng} rng the stream to draw from
+ * @param {number} radius the circle radius to keep clear
+ * @param {boolean} plant whether the point is for a plant, which `coverFoodFree` keeps out of the rings
+ * @returns {void}
+ * @throws {Error} after `placementTries` rejections
+ */
+function drawClear(world, rng, radius, plant) {
+    const { worldWidth, worldHeight, placementTries } = world.config;
+    for (let attempt = 0; attempt < placementTries; attempt++) {
+        const x = radius + nextFloat(rng) * (worldWidth - 2 * radius);
+        const y = radius + nextFloat(rng) * (worldHeight - 2 * radius);
+        if (clearOfObstacles(world, x, y, radius) && !(plant && rejectedByCover(world, x, y))) {
+            world.point[0] = x;
+            world.point[1] = y;
+            return;
+        }
+    }
+    throw placementError(world, radius);
+}
+
+/**
  * Finds a point clear of every obstacle by rejection sampling and writes it to `world.point`.
  * @param {World} world the world
  * @param {Rng} rng the stream to draw from
@@ -76,17 +99,19 @@ function placementError(world, radius) {
  * @throws {Error} after `placementTries` rejections
  */
 export function placeClear(world, rng, radius) {
-    const { worldWidth, worldHeight, placementTries } = world.config;
-    for (let attempt = 0; attempt < placementTries; attempt++) {
-        const x = radius + nextFloat(rng) * (worldWidth - 2 * radius);
-        const y = radius + nextFloat(rng) * (worldHeight - 2 * radius);
-        if (clearOfObstacles(world, x, y, radius)) {
-            world.point[0] = x;
-            world.point[1] = y;
-            return;
-        }
-    }
-    throw placementError(world, radius);
+    drawClear(world, rng, radius, false);
+}
+
+/**
+ * `placeClear` for a plant: with `coverFoodFree` it also rejects a point inside a refuge ring.
+ * @param {World} world the world
+ * @param {Rng} rng the stream to draw from
+ * @param {number} radius the circle radius to keep clear
+ * @returns {void}
+ * @throws {Error} after `placementTries` rejections
+ */
+export function placePlantClear(world, rng, radius) {
+    drawClear(world, rng, radius, true);
 }
 
 /**
@@ -111,7 +136,7 @@ function placeInDisc(world, { cx, cy, discRadius, localOnly = false }, radius) {
         if (localOnly && dx * dx + dy * dy > discRadius * discRadius) {
             continue;
         }
-        if (clearOfObstacles(world, x, y, radius)) {
+        if (clearOfObstacles(world, x, y, radius) && !rejectedByCover(world, x, y)) {
             world.point[0] = x;
             world.point[1] = y;
             return true;
@@ -120,7 +145,7 @@ function placeInDisc(world, { cx, cy, discRadius, localOnly = false }, radius) {
     if (localOnly) {
         return false;
     }
-    placeClear(world, rng, radius);
+    placePlantClear(world, rng, radius);
     return true;
 }
 
@@ -148,7 +173,7 @@ function freeFoodSlot(world) {
  */
 export function spawnFoodItem(world) {
     const slot = freeFoodSlot(world);
-    return spawnFloraItem(world, slot, placeClear, placeInDisc);
+    return spawnFloraItem(world, slot, placePlantClear, placeInDisc);
 }
 
 /**

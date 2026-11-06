@@ -47,6 +47,22 @@ export function ringIndexAt(world, x, y) {
 }
 
 /**
+ * With `coverFoodFree`, tells whether a plant may not be placed at a point because it lies in a ring, and counts the
+ * refusal. Draws nothing, so the caller goes on to its next draw from the same stream.
+ * @param {World} world the world
+ * @param {number} x the point's x
+ * @param {number} y the point's y
+ * @returns {boolean} true when the switch is on and the point is inside a ring
+ */
+export function rejectedByCover(world, x, y) {
+    if (!world.config.coverFoodFree || ringIndexAt(world, x, y) < 0) {
+        return false;
+    }
+    world.coverTotals[COVER_TOTALS.FOOD_REJECTED] += 1;
+    return true;
+}
+
+/**
  * @param {World} world the world
  * @returns {void}
  */
