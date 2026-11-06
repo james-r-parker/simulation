@@ -2910,7 +2910,7 @@
         "eval.boom_bust_count": "-"
       },
       "effect": "no-difference",
-      "note": "Preregistered 2026-11-06 before the run."
+      "note": "Ran 2026-11-06 at 20f8f9d, floor off, 8 seeds (means; no eval:compare verdicts at 8 seeds). defaults: hunters alive 5/8, 2 seeds under 80, conversion 1k-2k 0.038, zero-kill 0.805, prey types 3.38, population 358. flip: as E115 (conversion 0.094, spec-flip rate 0.403, prey types 1.75, 7 seeds under 80). sated: alive 7/8, 1 seed under 80, prey types 3.50, population 349, competence flat (conversion 0.027); median hunter-ticks 182778 below the defaults' 238069. flip-sated: conversion 0.064, spec-flip rate 0.215, zero-kill 0.577, but prey types 1.75, population 208, 5 seeds under 80, alive 5/8, and median last-quarter hunter-ticks 1893561 (8x the defaults) with 34.5 hunters at the end. flip-sated-digest-30: worst (alive 2/8, prey types 0.88, population 119). Prediction held for flip and for sated alone changing little in competence; it missed on flip-sated keeping the prey: the brake saves the hunters' energy, hunters multiply and the prey still crash. The over-hunting is a numerical response (too many hunters), not surplus killing, which is the fallback the prediction named: the next lever is on hunter numbers. No flip-sated arm goes to 16 seeds; sated alone is confirmed in E120."
     }
   ]
 }
