@@ -35,29 +35,7 @@ const REACH_SLACK = 1.000001;
 const BOX_MARGIN = 1;
 
 /**
- * Keeps the circle staged in the row at `count` when its surface lies within `range` of the origin. The caller has
- * stored the origin-relative x and y, the radius and the key in the row; a kept row has its radius replaced by `c`.
- * @param {World} world the world
- * @param {number} count rows used so far
- * @returns {number} the new row count
- */
-function commit(world, count) {
-    const local = world.rayLocal;
-    const at = count * LOCAL_STRIDE;
-    const ox = local[at];
-    const oy = local[at + 1];
-    const r = local[at + 2];
-    const reach = world.rayScratch[RANGE] + r;
-    const d2 = ox * ox + oy * oy;
-    if (d2 > reach * reach * REACH_SLACK) {
-        return count;
-    }
-    local[at + 2] = d2 - r * r;
-    return count + 1;
-}
-
-/**
- * The distance test of `commit`, before anything is written: a fixture row is filled only when it is kept.
+ * The distance test for a gathered circle, before anything is written: a fixture row is filled only when it is kept.
  * @param {Float64Array} s the ray scratch (`RANGE`)
  * @param {number} ox the circle's origin-relative x
  * @param {number} oy the circle's origin-relative y
@@ -90,7 +68,7 @@ function writeFixture(local, count, row) {
 const fixtureRow = new Float64Array(LOCAL_STRIDE);
 
 /**
- * Appends obstacles, live herd bodies and smoke clouds near the origin, in the order and with the values `commit` would keep.
+ * Appends obstacles, live herd bodies and smoke clouds near the origin, in the order and with the values the distance test keeps.
  * @param {World} world the world
  * @returns {number} the row count
  */
@@ -133,28 +111,33 @@ function appendFixtures(world) {
 }
 
 /**
+ * Appends one hash entry when its surface lies within range, testing before it writes: a far circle costs no stores
+ * into `rayLocal`, and a kept row holds the same values as before.
  * @param {World} world the world
  * @param {number} count rows used so far
  * @param {number} id the hash entry's circle id: an agent slot, or `maxAgents` plus a food slot
  * @returns {number} the new row count
  */
 function appendCircle(world, count, id) {
-    const { rayLocal: local, rayScratch: s } = world;
-    const at = count * LOCAL_STRIDE;
+    const s = world.rayScratch;
     const maxAgents = world.config.maxAgents;
-    if (id < maxAgents) {
-        local[at] = s[OX] - world.x[id];
-        local[at + 1] = s[OY] - world.y[id];
-        local[at + 2] = world.size[id];
-        local[at + 3] = AGENT * KIND_STRIDE + id;
-    } else {
-        const f = id - maxAgents;
-        local[at] = s[OX] - world.foodX[f];
-        local[at + 1] = s[OY] - world.foodY[f];
-        local[at + 2] = world.foodRadius[f];
-        local[at + 3] = FOOD * KIND_STRIDE + f;
+    const isAgent = id < maxAgents;
+    const f = id - maxAgents;
+    const ox = s[OX] - (isAgent ? world.x[id] : world.foodX[f]);
+    const oy = s[OY] - (isAgent ? world.y[id] : world.foodY[f]);
+    const r = isAgent ? world.size[id] : world.foodRadius[f];
+    const reach = s[RANGE] + r;
+    const d2 = ox * ox + oy * oy;
+    if (d2 > reach * reach * REACH_SLACK) {
+        return count;
     }
-    return commit(world, count);
+    const local = world.rayLocal;
+    const at = count * LOCAL_STRIDE;
+    local[at] = ox;
+    local[at + 1] = oy;
+    local[at + 2] = d2 - r * r;
+    local[at + 3] = isAgent ? AGENT * KIND_STRIDE + id : FOOD * KIND_STRIDE + f;
+    return count + 1;
 }
 
 /**

@@ -96,4 +96,53 @@ describe('grazeHerds', () => {
         grazeHerds(world);
         expect(world.foodAlive[0]).toBe(0);
     });
+
+    it('eats the same plants as a full scan of every slot, animal by animal, across groups', () => {
+        const world = build({ herdCount: 3, herdSize: 3, maxFood: 400, maxAgents: 4 });
+        let seed = 12345;
+        const rand = () => {
+            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+            return seed / 4294967296;
+        };
+        for (let animal = 0; animal < 9; animal++) {
+            world.herdAlive[animal] = animal === 4 ? 0 : 1;
+            world.herdGroup[animal] = Math.floor(animal / 3);
+            world.herdX[animal] = 300 + 600 * Math.floor(animal / 3) + 40 * (animal % 3);
+            world.herdY[animal] = 400 + 30 * (animal % 3);
+        }
+        for (let slot = 0; slot < 400; slot++) {
+            const kind = rand() < 0.2 ? FOOD_KIND.MEAT : FOOD_KIND.PLANT;
+            addFood(world, slot, kind, 250 + rand() * 1500, 350 + rand() * 120, 10 + slot);
+            world.foodRadius[slot] = 2 + rand() * 10;
+        }
+        const alive = Uint8Array.from(world.foodAlive);
+        const { herdRadius } = world.config;
+        const expected = [];
+        for (let animal = 0; animal < 9; animal++) {
+            if (world.herdAlive[animal] !== 1) {
+                continue;
+            }
+            let best = -1;
+            let bestDistance = Infinity;
+            for (let food = 0; food < 400; food++) {
+                const reach = herdRadius + world.foodRadius[food];
+                const dx = world.foodX[food] - world.herdX[animal];
+                const dy = world.foodY[food] - world.herdY[animal];
+                const distance = dx * dx + dy * dy;
+                if (alive[food] === 1 && world.foodKind[food] === FOOD_KIND.PLANT && distance <= reach * reach) {
+                    if (distance < bestDistance) {
+                        best = food;
+                        bestDistance = distance;
+                    }
+                }
+            }
+            if (best >= 0) {
+                alive[best] = 0;
+                expected.push(best);
+            }
+        }
+        expect(expected.length).toBeGreaterThan(3);
+        grazeHerds(world);
+        expect(Array.from(world.foodAlive.subarray(0, 400))).toEqual(Array.from(alive.subarray(0, 400)));
+    });
 });
