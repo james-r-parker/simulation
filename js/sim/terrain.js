@@ -212,6 +212,43 @@ export function placeTerrain(world) {
 }
 
 /**
+ * The refuge centres: each ring's eight rocks sit on a circle round it, so it is their mean. Read from the rocks
+ * `placeTerrain` wrote, the last `refugeCount x REFUGE_ROCKS` obstacle slots.
+ * @param {World} world the world
+ * @returns {Float64Array} x, y per refuge; empty when the layout has none
+ */
+export function refugeCentresOf(world) {
+    const count = world.config.refugeCount;
+    const centres = new Float64Array(2 * count);
+    const first = terrainRockCount(world.config) - count * REFUGE_ROCKS;
+    for (let i = 0; i < count; i++) {
+        for (let r = 0; r < REFUGE_ROCKS; r++) {
+            centres[2 * i] += world.obsX[first + i * REFUGE_ROCKS + r] / REFUGE_ROCKS;
+            centres[2 * i + 1] += world.obsY[first + i * REFUGE_ROCKS + r] / REFUGE_ROCKS;
+        }
+    }
+    return centres;
+}
+
+/**
+ * @param {Float64Array} centres the refuge centres, x and y per ring
+ * @param {number} radius the ring radius (`ringRadius`)
+ * @param {number} x a point's x
+ * @param {number} y a point's y
+ * @returns {number} the index of the first ring whose circle holds the point, or -1 outside every ring
+ */
+export function refugeIndexAt(centres, radius, x, y) {
+    for (let i = 0; i < centres.length; i += 2) {
+        const dx = x - centres[i];
+        const dy = y - centres[i + 1];
+        if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+            return i / 2;
+        }
+    }
+    return -1;
+}
+
+/**
  * @param {Config} config the config
  * @param {number} y an agent's y
  * @returns {number} the factor on passive temperature loss: 2 in the cold margin, otherwise 1

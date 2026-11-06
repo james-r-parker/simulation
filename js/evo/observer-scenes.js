@@ -29,6 +29,8 @@ import { createNicheScene } from './scene-niche.js';
 import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
 import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
+import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
+import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
@@ -47,6 +49,8 @@ export function createScenes(config, runTicks = 0) {
         approach: createApproachScene(config, (world, chase) => noteChase(competence, world, chase)),
         competence,
         terrain: createTerrainScene(config),
+        refuge: createRefugeScene(config),
+        refugeOutcome: createRefugeOutcomeScene(config),
         basin: createBasinScene(),
         balance: createBalanceScene(),
         families: createFamilyScene(config),
@@ -173,9 +177,12 @@ export function observeScenes(observer, world) {
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
+    tickRefugeBites(scenes.refugeOutcome, observer, world);
     trackSlots(scenes, observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
+        sampleRefuge(scenes.refuge, observer, world);
+        sampleRefugeOutcome(scenes.refugeOutcome, observer, world);
         sampleBasins(scenes.basin, world);
         sampleSpend(scenes.spend, world);
     }

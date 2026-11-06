@@ -6,6 +6,9 @@ import {
     REFUGE_ROCKS,
     REFUGE_ROCK_RADIUS,
     coldFactor,
+    refugeCentresOf,
+    refugeIndexAt,
+    ringRadius,
     terrainProblem,
     terrainRockCount,
 } from '../../js/sim/terrain.js';
@@ -153,5 +156,34 @@ describe('terrainProblem', () => {
 
     it('is enforced by createConfig', () => {
         expect(() => createConfig({ ...SIMPLE_WORLD, ...BASINS, wallGaps: 9 })).toThrow(/wallGaps/);
+    });
+});
+
+describe('refugeCentresOf and refugeIndexAt', () => {
+    const world = smallWorld({ ...BASINS, refugeCount: 2, refugeCluster: 1 });
+    const centres = refugeCentresOf(world);
+    const radius = ringRadius(world.config);
+
+    it('puts a centre in the middle of each ring, one ring radius from each of its rocks', () => {
+        const first = world.obsX.length - 2 * REFUGE_ROCKS;
+        expect(centres).toHaveLength(4);
+        for (let ring = 0; ring < 2; ring++) {
+            for (let r = 0; r < REFUGE_ROCKS; r++) {
+                const dx = world.obsX[first + ring * REFUGE_ROCKS + r] - centres[2 * ring];
+                const dy = world.obsY[first + ring * REFUGE_ROCKS + r] - centres[2 * ring + 1];
+                expect(Math.hypot(dx, dy)).toBeCloseTo(radius, 3);
+            }
+        }
+    });
+
+    it('is empty on a layout with no refuge', () => {
+        expect(refugeCentresOf(smallWorld({ ...BASINS, refugeCount: 0 }))).toHaveLength(0);
+    });
+
+    it('finds the ring that holds a point, and -1 elsewhere', () => {
+        expect(refugeIndexAt(centres, radius, centres[0], centres[1])).toBe(0);
+        expect(refugeIndexAt(centres, radius, centres[2] + radius - 1, centres[3])).toBe(1);
+        expect(refugeIndexAt(centres, radius, centres[2] + radius + 1, centres[3])).toBe(-1);
+        expect(refugeIndexAt(new Float64Array(0), radius, 5, 5)).toBe(-1);
     });
 });

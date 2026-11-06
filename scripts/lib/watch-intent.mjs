@@ -3,7 +3,7 @@
 // the change in the right direction when it measures a `watch` metric's detectable change. It is not a verdict
 // direction: `DIRECTIONS` in `js/evo/compare.js` is. A `watch` metric not listed here is treated as `higher`.
 
-/** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a more even sex ratio, a smaller energy bank, fewer given-up chases, fewer lineages that never cross the wall). */
+/** `watch` metrics whose intended direction is lower (fewer stressed agents, fewer unseen bites, a lower bite rate inside a ring than outside it, a more even sex ratio, a smaller energy bank, fewer given-up chases, fewer lineages that never cross the wall). */
 export const WATCH_INTENDED_LOWER = new Set([
     'eval.heat_stress_share',
     'eval.toxic_death_share',
@@ -22,6 +22,7 @@ export const WATCH_INTENDED_LOWER = new Set([
     'eval.flora_seed_bank_occupancy_share',
     'eval.disease_deaths_share',
     'eval.hunter_zero_kill_share',
+    'eval.refuge_bite_deficit',
     'eval.hunter_first_kill_age',
     'eval.hunter_death_share.starved',
     ...['forager', 'predator', 'reproducer', 'scout', 'defender'].map((name) => `eval.herd_carcass_share.${name}`),
