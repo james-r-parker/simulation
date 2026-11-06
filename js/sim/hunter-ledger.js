@@ -7,7 +7,7 @@
 import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { basinOf } from './eras.js';
 import { slotOfGenome } from './merit-state.js';
-import { isDependentKiller, provisionSpecs } from './provision-state.js';
+import { isDependentKiller } from './dependent-killer.js';
 
 /**
  * How an agent came to be, stored in `birthSource`. A hunter child of a hunter is `MATE_HUNTER` or `SPLIT_HUNTER`; a hunter
@@ -41,8 +41,7 @@ export function noteIncome(world, slot, { kind, stored }) {
 }
 
 /**
- * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot (the ledger's arrays and
- *   the provisioning stamp)
+ * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot (the ledger's arrays)
  */
 export function ledgerSpecs() {
     return [
@@ -55,7 +54,6 @@ export function ledgerSpecs() {
         [Float64Array, 'ledgerKillEnergy', 1],
         [Float64Array, 'ledgerBiteGain', 1],
         [Float64Array, 'ledgerBiteCost', 1],
-        ...provisionSpecs(),
     ];
 }
 

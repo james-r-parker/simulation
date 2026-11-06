@@ -6,9 +6,6 @@ import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const DEFAULT_KEYS = {
-    provisionEnabled: false,
-    provisionShare: 0.3,
-    provisionRange: 120,
     juvenileTicks: 3000,
     juvenileDependency: false,
     juvenileBurn: 0.6,
@@ -32,7 +29,7 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['provisionEnabled', 'juvenileDependency', 'flipReflex', 'satedBite', 'hunterTerritory'])(
+    it.each(['juvenileDependency', 'flipReflex', 'satedBite', 'hunterTerritory'])(
         '%s is a boolean that accepts true',
         (key) => {
             expect(make({ [key]: true })[key]).toBe(true);
@@ -41,9 +38,6 @@ describe('the hunter-learning Phase 1 keys', () => {
     );
 
     it.each([
-        ['provisionShare', 0],
-        ['provisionShare', 1],
-        ['provisionRange', 0.5],
         ['juvenileTicks', 1],
         ['juvenileBurn', 0],
         ['juvenileBurn', 1],
@@ -57,10 +51,6 @@ describe('the hunter-learning Phase 1 keys', () => {
     });
 
     it.each([
-        ['provisionShare', -0.1],
-        ['provisionShare', 1.1],
-        ['provisionRange', 0],
-        ['provisionRange', -5],
         ['juvenileTicks', 0],
         ['juvenileTicks', 1.5],
         ['juvenileBurn', -0.1],
@@ -77,6 +67,6 @@ describe('the hunter-learning Phase 1 keys', () => {
     });
 
     it('changes the rules hash when a key changes', () => {
-        expect(rulesHash(make({ provisionShare: 0.4 }))).not.toBe(rulesHash(make({})));
+        expect(rulesHash(make({ territoryMax: 2 }))).not.toBe(rulesHash(make({})));
     });
 });

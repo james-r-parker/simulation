@@ -292,18 +292,7 @@ describe('assertInvariants', () => {
             MERIT: 'merit',
             DOSE: 'dose',
             HERDS: 'herds',
-            PROVISION: 'provision',
         });
-    });
-
-    it('throws on provisioning totals that differ, and on a provisioning stamp from the future', () => {
-        const world = validWorld();
-        world.provisionTotals[0] = 5;
-        expect(() => assertInvariants(world)).toThrow(/provision/);
-        world.provisionTotals[1] = 5;
-        expect(() => assertInvariants(world)).not.toThrow();
-        world.provisionedTick[0] = world.tick + 2;
-        expect(() => assertInvariants(world)).toThrow(/stamp is from the future/);
     });
 
     it('accepts an agent at the origin corner', () => {

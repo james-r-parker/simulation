@@ -128,10 +128,11 @@ describe('the hunter ledger', () => {
         expect(world.ledgerKills[HUNTER]).toBe(1);
     });
 
-    it('marks the HunterKill of a hunter provisioned in the last INDEPENDENT_TICKS as dependent', () => {
+    it('marks the HunterKill of a hunter with a living parent in range as dependent', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         world.foodEnergy[PREY] = 500;
-        world.provisionedTick[HUNTER] = 1;
+        // The hunter's own genome id as its parent id stands for a living parent on the spot (distance 0).
+        world.parentA[HUNTER] = world.genomeId[HUNTER];
         /** @type {Record<string, any>[]} */
         const kills = [];
         runArena(world, {

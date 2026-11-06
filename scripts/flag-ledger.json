@@ -24,12 +24,6 @@
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
   },
   {
-    "key": "provisionEnabled",
-    "plan": "docs/designs/hunter-learning.md",
-    "task": "T10",
-    "reason": "Kept as the one-factor arm of the hunter-learning Phase 1 screen (a hunter hands part of each meal to its young); T10 adopts it and deletes the key, or deletes provision.js and the key, after the E115 and E116 verdict."
-  },
-  {
     "key": "juvenileDependency",
     "plan": "docs/designs/hunter-learning.md",
     "task": "T11",
