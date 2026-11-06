@@ -49,6 +49,7 @@ export const FEATURE_RULES = {
     wallGapWidth: positive(),
     refugeCount: int(0, 32),
     refugeCluster: int(1, 4),
+    coverConceals: BOOL,
     refugeSizeMax: positive(),
     refugeSense: BOOL,
     refugeSenseRange: num(500, 8000),

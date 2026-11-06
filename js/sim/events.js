@@ -38,6 +38,8 @@ export const EVENT_TYPE = Object.freeze({
     LAST_HUNTER_DIED: 30,
     HUNTER_KILL: 31,
     PROVISIONED: 32,
+    COVER_CONFIG: 33,
+    COVER_TOTALS: 34,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */
