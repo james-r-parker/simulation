@@ -152,6 +152,7 @@ describe('observeScenes', () => {
             'patch',
             'proof',
             'refuge',
+            'refugeOutcome',
             'season',
             'spend',
             'style',

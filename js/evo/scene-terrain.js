@@ -6,11 +6,10 @@
 //   its side at the sample before; a change is a crossing. Per lineage with `MIN_LINEAGE_SAMPLES` agent-samples or
 //   more: the mean crossings, and the share of those lineages with none.
 //
-// The refuge centres are read once from the rocks the terrain writes (the last `refugeCount x REFUGE_ROCKS` obstacle
-// slots, eight rocks to a ring). Samples count from `BURN_IN_TICKS`. Nothing is allocated per sample but a Map entry
+// The refuge centres are read once from the rocks the terrain writes (`refugeCentresOf`). Samples count from `BURN_IN_TICKS`. Nothing is allocated per sample but a Map entry
 // the first time a lineage is seen.
 
-import { REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
+import { refugeCentresOf, ringRadius } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { THREAT_PROXIMITY } from './observer-intent-state.js';
@@ -46,17 +45,7 @@ export function createTerrainScene(config) {
  */
 export function refugeCentres(scene, world) {
     if (scene.centres === undefined) {
-        const { config } = world;
-        const count = config.refugeCount;
-        const centres = new Float64Array(2 * count);
-        const first = terrainRockCount(config) - count * REFUGE_ROCKS;
-        for (let i = 0; i < count; i++) {
-            for (let r = 0; r < REFUGE_ROCKS; r++) {
-                centres[2 * i] += world.obsX[first + i * REFUGE_ROCKS + r] / REFUGE_ROCKS;
-                centres[2 * i + 1] += world.obsY[first + i * REFUGE_ROCKS + r] / REFUGE_ROCKS;
-            }
-        }
-        scene.centres = centres;
+        scene.centres = refugeCentresOf(world);
     }
     return scene.centres;
 }
