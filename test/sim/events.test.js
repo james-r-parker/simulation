@@ -44,7 +44,6 @@ describe('event codes', () => {
             HUNTER_LEDGER: 29,
             LAST_HUNTER_DIED: 30,
             HUNTER_KILL: 31,
-            PROVISIONED: 32,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({

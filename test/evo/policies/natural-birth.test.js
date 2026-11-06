@@ -176,8 +176,8 @@ describe('the hunter reflexes at birth', () => {
     ];
     for (const [name, cause] of causes) {
         it(`gives a flip child of a non-hunter the prey terms by ${name}, and draws the same stream`, () => {
-            const off = born({ mother: FORAGER, child: PREDATOR, cause });
-            const on = born({ over: { flipReflex: true }, mother: FORAGER, child: PREDATOR, cause });
+            const off = born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR, cause });
+            const on = born({ mother: FORAGER, child: PREDATOR, cause });
             const { world } = on;
             const thrust = cell(world, 'prey', 0, THRUST);
             const turn = cell(world, 'prey', 2, TURN);
@@ -190,42 +190,14 @@ describe('the hunter reflexes at birth', () => {
         });
     }
 
-    it('gives no prey terms to a hunter child of a hunter, a non-hunter child, or with flipReflex off', () => {
-        const over = { flipReflex: true };
-        expect(born({ over, mother: PREDATOR, child: PREDATOR }).row).toEqual(
-            born({ mother: PREDATOR, child: PREDATOR }).row,
-        );
-        expect(born({ over, mother: FORAGER, child: FORAGER }).row).toEqual(
-            born({ mother: FORAGER, child: FORAGER }).row,
-        );
-        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
-            born({ mother: PREDATOR, child: FORAGER }).row,
-        );
-        expect(born({ mother: FORAGER, child: PREDATOR }).row).toEqual(
-            born({ over: { flipReflex: false }, mother: FORAGER, child: PREDATOR }).row,
-        );
-    });
-
-    it('raises the kin cells of every hunter child under juvenileDependency, and no other', () => {
-        const over = { juvenileDependency: true, kinPullWeight: 0.5 };
-        for (const mother of [FORAGER, PREDATOR]) {
-            const off = born({ mother, child: PREDATOR });
-            const on = born({ over, mother, child: PREDATOR });
-            const { world } = on;
-            const cells = [cell(world, 'kin', 0, THRUST), cell(world, 'kin', 2, TURN)].sort((x, y) => x - y);
-            expect(differing(on.row, off.row)).toEqual(cells);
-            expect(on.row[cells[0]]).toBeGreaterThanOrEqual(0.5 - 1e-6);
-            expect(on.rng.s).toEqual(off.rng.s);
+    it('gives no prey terms to a hunter child of a hunter or to a non-hunter child', () => {
+        const off = { instinctWeight: 0 };
+        for (const [mother, child] of [
+            [PREDATOR, PREDATOR],
+            [FORAGER, FORAGER],
+            [PREDATOR, FORAGER],
+        ]) {
+            expect(born({ mother, child }).row).toEqual(born({ over: off, mother, child }).row);
         }
-        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
-            born({ mother: PREDATOR, child: FORAGER }).row,
-        );
-    });
-
-    it('changes nothing at instinctWeight 0', () => {
-        const over = { flipReflex: true, juvenileDependency: true, instinctWeight: 0 };
-        expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
-            born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR }).row,
-        );
     });
 });

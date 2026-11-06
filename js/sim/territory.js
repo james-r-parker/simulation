@@ -1,17 +1,17 @@
-// Hunter territory (hunter-learning T9d): a breeding limit on hunter density, off by default.
+// Hunter territory (hunter-learning T9d, adopted at T12 after E121-E123): a breeding limit on hunter density.
 
 /** @typedef {import('./world.js').World} World */
 
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent that is otherwise ready to breed
- * @returns {boolean} false when `hunterTerritory` is on, the slot's specialisation `canHunt` and more than
+ * @returns {boolean} false when the slot's specialisation `canHunt` and more than
  *   `territoryMax` other alive, mature `canHunt` agents lie within `territoryRadius` (centre distance, no wrap, as in
  *   mate search); true otherwise. Stops scanning once the count passes the limit.
  */
 export function territoryAllows(world, slot) {
-    const { hunterTerritory, territoryRadius, territoryMax, maturityTicks } = world.config;
-    if (!hunterTerritory || world.huntBySpec[world.spec[slot]] !== 1) {
+    const { territoryRadius, territoryMax, maturityTicks } = world.config;
+    if (world.huntBySpec[world.spec[slot]] !== 1) {
         return true;
     }
     const { alive, spec, ageTicks, huntBySpec, x, y } = world;
