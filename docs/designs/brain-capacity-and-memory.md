@@ -132,23 +132,24 @@ The two strongest food hits have one linear hue each in [-1, 1], at pooled offse
 
 ### Body inputs
 
-33 inputs after the pooled block, written by `writeBodyInputs` and `scent-inputs.js`. The absolute input offset is the
+36 inputs after the pooled block, written by `writeBodyInputs`, `scent-inputs.js` and `refuge-sense.js`. The absolute input offset is the
 pooled value count (56 now) plus the body offset.
 
-| Group             | Body offset | Count | Meaning                                                                                 |
-| ----------------- | ----------- | ----- | --------------------------------------------------------------------------------------- |
-| Energy and motion | 0           | 4     | Energy over the type's `maxEnergy`, forward speed, lateral speed, turn rate             |
-| Size and state    | 4           | 3     | Size, pregnant (0 or 1), ready to mate (0 or 1)                                         |
-| Pheromones        | 7           | 2     | Danger and attack pheromone at the body                                                 |
-| Timers            | 9           | 2     | One minus the time since the last meal, and since the last bite taken, over `TIMER_CAP` |
-| Identity          | 11          | 2     | Specialisation index over 4, age over `maxAgeTicks`                                     |
-| Temperature       | 13          | 4     | The four inputs of `temperatureInputs`                                                  |
-| Antennae scent    | 17          | 4     | The scent block of `scent-inputs.js`                                                    |
-| Hunt scent        | 21          | 3     | The hunt scent of `scent-inputs.js`                                                     |
-| Heard alarm       | 24          | 3     | Alarm calls heard                                                                       |
-| Heard hunt call   | 27          | 3     | Hunt calls heard                                                                        |
-| Sex               | 30          | 1     | 0 female, 1 male                                                                        |
-| Memory read-back  | 31          | 2     | Last tick's `MEMORY_A` and `MEMORY_B` outputs                                           |
+| Group             | Body offset | Count | Meaning                                                                                     |
+| ----------------- | ----------- | ----- | ------------------------------------------------------------------------------------------- |
+| Energy and motion | 0           | 4     | Energy over the type's `maxEnergy`, forward speed, lateral speed, turn rate                 |
+| Size and state    | 4           | 3     | Size, pregnant (0 or 1), ready to mate (0 or 1)                                             |
+| Pheromones        | 7           | 2     | Danger and attack pheromone at the body                                                     |
+| Timers            | 9           | 2     | One minus the time since the last meal, and since the last bite taken, over `TIMER_CAP`     |
+| Identity          | 11          | 2     | Specialisation index over 4, age over `maxAgeTicks`                                         |
+| Temperature       | 13          | 4     | The four inputs of `temperatureInputs`                                                      |
+| Antennae scent    | 17          | 4     | The scent block of `scent-inputs.js`                                                        |
+| Hunt scent        | 21          | 3     | The hunt scent of `scent-inputs.js`                                                         |
+| Heard alarm       | 24          | 3     | Alarm calls heard                                                                           |
+| Heard hunt call   | 27          | 3     | Hunt calls heard                                                                            |
+| Sex               | 30          | 1     | 0 female, 1 male                                                                            |
+| Memory read-back  | 31          | 2     | Last tick's `MEMORY_A` and `MEMORY_B` outputs                                               |
+| Refuge            | 33          | 3     | `refugeBearingSin`, `refugeBearingCos` and `refugeNear` (all 0 when `refugeSense` is false) |
 
 ### Planned extensions
 
@@ -159,6 +160,7 @@ a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
 | Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                                 | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
 | Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 (`pooled-v4`) | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| Refuge Phase 3 (+3)    | Three refuge body inputs after the memory read-back (offsets 33 to 35 of the body block, `pooled-v5`)               | 92     | 56            | 2,494     | 3,646     | 4,926     | 7,870     | 11,326    |
 
 ## Hypotheses
 

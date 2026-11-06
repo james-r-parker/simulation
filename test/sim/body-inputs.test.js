@@ -152,7 +152,7 @@ describe('writeBodyInputs', () => {
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
         const end = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
-        expect(end + 16).toBe((slot + 1) * w.layout.rawInputCount);
+        expect(end + 19).toBe((slot + 1) * w.layout.rawInputCount);
         expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(
             w.inputs

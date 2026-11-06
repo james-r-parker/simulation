@@ -81,9 +81,12 @@ describe('the Sensory schema tables', () => {
         expect(at.Sex).toBe(BODY_INPUT.SEX);
         expect(at['Memory read-back']).toBe(BODY_INPUT.MEMORY_A);
         expect(BODY_INPUT.MEMORY_B).toBe(BODY_INPUT.MEMORY_A + 1);
+        expect(at.Refuge).toBe(BODY_INPUT.REFUGE_BEARING_SIN);
+        expect(BODY_INPUT.REFUGE_BEARING_COS).toBe(BODY_INPUT.REFUGE_BEARING_SIN + 1);
+        expect(BODY_INPUT.REFUGE_NEAR).toBe(BODY_INPUT.REFUGE_BEARING_SIN + 2);
     });
 
-    it('gives the Megafauna Phase 2 row its input count, pooled values and genome size at each hidden width', () => {
+    it('gives the Refuge Phase 3 row its input count, pooled values and genome size at each hidden width', () => {
         const [header, ...rows] = [
             [
                 'Step',
@@ -98,7 +101,7 @@ describe('the Sensory schema tables', () => {
             ],
             ...table('Planned extensions'),
         ];
-        const row = /** @type {string[]} */ (rows.find((r) => r[0] === 'Megafauna Phase 2 (+6)'));
+        const row = /** @type {string[]} */ (rows.find((r) => r[0] === 'Refuge Phase 3 (+3)'));
         expect(row).toBeDefined();
         expect(Number(row[2])).toBe(POOLED_VALUES + EXTRA_INPUTS);
         expect(Number(row[3])).toBe(POOLED_VALUES);

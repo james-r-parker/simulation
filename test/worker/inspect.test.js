@@ -18,7 +18,7 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
 
 describe('inspectLabels', () => {
-    it('names the 10 ray channels, the 33 body inputs and the 11 outputs', () => {
+    it('names the 10 ray channels, the 36 body inputs and the 11 outputs', () => {
         const labels = inspectLabels();
         expect(labels.rayChannels).toHaveLength(RAY_CHANNELS);
         expect(labels.rayChannels.at(-1)).toBe('megafauna');
@@ -80,7 +80,7 @@ describe('workerLayout', () => {
             herdStride: 6,
             zoneStride: 4,
             rayStride: 4,
-            inputCount: 4 * 10 + 33,
+            inputCount: 4 * 10 + 36,
         });
     });
 });

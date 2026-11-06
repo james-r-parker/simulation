@@ -25,7 +25,7 @@ describe('inspectorView on a real selected agent', () => {
         );
     });
 
-    it('groups the body inputs under the six labels, each bar clamped to -1..1', () => {
+    it('groups the body inputs under the seven labels, each bar clamped to -1..1', () => {
         expect(view.groups.map((g) => g.name)).toEqual([
             'Body',
             'Senses',
@@ -33,6 +33,7 @@ describe('inspectorView on a real selected agent', () => {
             'Scent antennae',
             'Heard calls',
             'Memory',
+            'Refuge',
         ]);
         const bars = view.groups.flatMap((g) => g.bars);
         expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 10);

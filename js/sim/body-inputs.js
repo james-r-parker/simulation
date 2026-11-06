@@ -1,8 +1,9 @@
-// Writes an agent's body inputs 0 to 16 and 30 to 32 after its ray block; scent-inputs.js writes 17 to 29.
+// Writes an agent's body inputs 0 to 16 and 30 to 35 after its ray block; scent-inputs.js writes 17 to 29.
 
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { isReadyToMate } from './mate-eligibility.js';
+import { writeRefugeInputs } from './refuge-sense.js';
 import { samplePheromone } from './pheromones.js';
 import { temperatureInputs } from './temperature.js';
 import { TIMER_CAP } from './world.js';
@@ -27,7 +28,7 @@ function writeMemoryInputs(world, slot, o) {
 }
 
 /**
- * Writes body inputs 0 to 16 and 30 to 32 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
+ * Writes body inputs 0 to 16 and 30 to 35 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} [cH] the cosine of the agent's heading, when the caller has it
@@ -58,4 +59,5 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     out[o + 12] = world.ageTicks[slot] / maxAgeTicks;
     temperatureInputs(world.config, world.temperature[slot], out, o + 13);
     writeMemoryInputs(world, slot, o);
+    writeRefugeInputs(world, slot, cH, sH);
 }

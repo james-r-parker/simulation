@@ -7,7 +7,7 @@ import { spawnFloraItem } from './flora-spawn.js';
 import { createPatches } from './food-patches.js';
 import { createHerds } from './herds.js';
 import { createRng, fork, nextFloat, nextInt } from './rng.js';
-import { placeTerrain } from './terrain.js';
+import { placeTerrain, refugeCentresOf } from './terrain.js';
 import { drawSex } from './sex.js';
 import { SPEC_COUNT } from './spec-rescue.js';
 import { createSpatialHash } from './spatial-hash.js';
@@ -230,6 +230,7 @@ export function createWorld(config, policy) {
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
     world.hash = createSpatialHash(config);
     placeTerrain(world);
+    world.refugeCentres = refugeCentresOf(world);
     createPatches(world);
     createHerds(world);
     for (let i = 0; i < config.initialFood; i++) {

@@ -223,6 +223,8 @@ export const DEFAULTS = deepFreeze({
     refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
     refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
+    refugeSense: false, // new: the three refuge inputs carry the nearest ring's bearing and nearness; false zeroes them (refuge.md T24)
+    refugeSenseRange: 2500, // new: px over which refugeNear falls from 1 at the ring edge to 0 (refuge.md T24)
     coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
     temperatureSeasonSlope: 0.03, // new: scales SEASON_*_TEMP_MODIFIER
