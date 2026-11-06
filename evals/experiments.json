@@ -3426,6 +3426,35 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at 12d9ba4. Keep rule: hunters alive at the last tick 12/16 (defaults 14/16; at the 12/16 line), seeds ending under 80 agents 7 against 7: holds. eval:compare: predators at end 23.1 -> 27.2, prey types 3.56 -> 3.38, spec_effective 3.98 -> 3.86, conversion 1k-2k 0.083 -> 0.086, prey extinctions 8.75 -> 7.81, all no-difference; population mean 194 -> 220 (+13%, interval [-25, 77], watch). refuge_use_under_threat -0.0024 -> -0.0029 (no change, as predicted). Verdict: no harm, kept. Adoption (refugeSense true by default, flag deleted, goldens re-pinned) is done once with the other keepers at realistic-keepers.md T22. Side note: the defaults now end under 80 on 7 of seeds 1 to 16 (2 before #292): the longer genome reshuffles every world, and E130 already showed seeds 1 to 16 were the kind half (10 of 32 overall)."
+    },
+    {
+      "id": "E134",
+      "date": "2026-11-06",
+      "branch": "eval/keepers-e134",
+      "hypothesis": "satiation (satedBite), post-kill rest (predatorRestTicks 60), parental provisioning (provisionEnabled) and juvenile dependency (juvenileDependency) each add realistic behaviour and do no harm on today's defaults (flip reflex and territory on).",
+      "prediction": "each passes the no-harm test or misses it by chance on one guard. satedBite: hunters a little more numerous (energy saved), prey slightly lower; no guard worse. rest-60: fewer kills per hunter, hunters fed longer, no harm. provision: hunter juveniles survive slightly more; no harm. juvenile dependency: independent kill share lower by construction (a watch, not a guard); conversion flat. Keep rule risk: the defaults sit at 14/16 hunters alive, the line is 12/16; one or two arms may land at 11/16 by chance, which per the rule is a failure.  (Written before the runs, keepers chunk A at 636818f, floor on, 16 seeds x 200000 ticks; baseline evals/results/e133-off.json, the same default world.)",
+      "targets": [
+        "eval.population_mean",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.spec_effective",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.prey_extinctions"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e133-off.json (defaults, 16 seeds, floor on)",
+      "after": "evals/results/e134-sated.json, e134-rest.json, e134-prov.json, e134-juv.json",
+      "verdicts": {
+        "eval.population_mean": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.spec_effective": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.prey_extinctions": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06, 16 seeds floor on, against the defaults (hunters alive 14/16, seeds under 80 7). Keep rule = hunters alive >= 12/16 and seeds under 80 <= 7, plus no eval:compare guard worse. juvenileDependency: alive 13/16, under 80 7, every guard no-difference (conversion 1k-2k +6.5%, prey extinctions -8.6%): PASSES, kept. satedBite: alive 14/16, under 80 6, predators at end 23.1 -> 42.9 better, prey extinctions 8.75 -> 5.0 better, population 194 -> 253 (+31%), prey types and spec_effective no-difference, but conversion 1k-2k 0.083 -> 0.067 worse (-19%): FAILS the rule as written. The drop may be by construction - a sated hunter that chases and declines to bite records an unconverted chase - so realistic-keepers.md adds a check of conversion over chases opened by hungry hunters only; satedBite is held, not deleted, until that reads. predatorRestTicks 60: alive 10/16, under 80 8: FAILS the keep rule (every guard no-difference), deleted at T20. provisionEnabled: alive 10/16, under 80 9, prey types at end 3.56 -> 2.75 worse: FAILS, deleted at T20. The prediction that each passes held for one of four."
     }
   ]
 }
