@@ -1,6 +1,6 @@
 # Realistic keepers
 
-**Status:** In progress - Phase 1 chunk A is built (T1 to T4: `satedBite`, `predatorRestTicks`, `provisionEnabled` and `juvenileDependency` as default-off switches, goldens unchanged); next chunk B (T5 to T9), then Phase 2 judges each switch on 16 seeds for no harm.
+**Status:** In progress - Phase 1 is built (T1 to T9: `satedBite`, `predatorRestTicks`, `provisionEnabled`, `juvenileDependency`, `rewardedHebb`, `coverConceals` and `coverFoodFree` as default-off switches, goldens unchanged); next Phase 2 judges each switch on 16 seeds for no harm.
 **Validated:** 12d9ba4 (2026-11-06)
 **Priority:** 2 - the user's keep rule (2026-11-06) turns eight deleted or never-confirmed mechanisms into candidates the balance round can adopt now; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing owns the defaults, and ahead of refuge.md Phase 3 conclusion, whose T27 `refugeSense` reports T19 reads
 **Depends on:** [natural-selection.md](natural-selection.md), [refuge.md](refuge.md)
@@ -71,7 +71,7 @@ Each deleted mechanism is restored with `git show <commit>^:<path>` and adapted 
 
 ## Design
 
-### Phase 1 - Restore
+### Phase 1 - Restore (built)
 
 **Targets:** none - every switch is default off, so the goldens, the archive format and `bench.step_ms@500` do not move.
 
@@ -99,7 +99,7 @@ specialisations, an existing config value judged as an arm.
 | Chunk     | Tasks    | Holds                                                                                       |
 | --------- | -------- | ------------------------------------------------------------------------------------------- |
 | A (built) | T1 to T4 | Hunter energy switches: `satedBite`, `predatorRestTicks`, provisioning, juvenile dependency |
-| B         | T5 to T9 | `rewardedHebb`, the two cover switches, the off-path checks and the conformance review      |
+| B (built) | T5 to T9 | `rewardedHebb`, the two cover switches, the off-path checks and the conformance review      |
 
 ### Phase 2 - No-harm checks
 
@@ -167,7 +167,7 @@ not claim to recover it.
 
 ## Task breakdown
 
-### Phase 1 - Restore
+### Phase 1 - Restore (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Nature       | Depends on                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------- |
