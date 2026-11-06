@@ -222,8 +222,6 @@ export const DEFAULTS = deepFreeze({
     wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
     refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
     refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
-    coverConceals: false, // new: a ray from outside a ring skips an agent inside it (refuge.md T9; verdict T16)
-    coverFoodFree: false, // new: plant placement rejects a point inside a ring (refuge.md T11; verdict T18)
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
     coldMarginWidth: 600, // new: width of the cold bands along the north and south edges, where passive loss doubles (T52)
     temperatureLossPassive: 0.0075, // TEMPERATURE_LOSS_PASSIVE
