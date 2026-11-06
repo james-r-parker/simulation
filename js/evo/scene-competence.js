@@ -7,6 +7,8 @@
 //   death, or whose victim dies of another cause, never resolves, so it is dropped as there.
 //   `eval.hunter_kill_conversion_by_age.<band>` is caught over resolved chases in the band (`under1k`: age below 1000, `1k-2k`:
 //   1000 to 1999, `over2k`: 2000 and over); `eval.hunter_chases_by_age.<band>` is the count it rests on.
+//   `eval.hunter_kill_conversion_hungry.1k-2k` is the same over the chases opened while the hunter could eat (`canEatNow` at the
+//   opening tick, realistic-keepers T11a), so a sated hunter's skipped bites do not count against it.
 // - Time to first kill. Every hunter born after burn-in is an observation: the event is its first deliberate kill (a `HunterKill`
 //   with kills so far 1); a hunter that dies without one, or is alive at the last tick without one, is censored at its age.
 //   `eval.hunter_first_kill_km_median` is the Kaplan-Meier median (`null`, `median not reached`, while the curve stays above 0.5)
@@ -50,6 +52,7 @@ export const COMPETENCE_DIRECTIONS = Object.freeze({
         ]),
     ),
     ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_chases_by_age.${name}`, 'watch'])),
+    'eval.hunter_kill_conversion_hungry.1k-2k': 'watch',
     'eval.hunter_first_kill_km_median': 'lower',
     'eval.hunter_first_kill_rmst': 'lower',
     'eval.hunter_independent_kill_share': 'higher',
@@ -67,6 +70,8 @@ export function createCompetenceScene(config) {
         horizon: HORIZON_JUVENILE_WINDOWS * config.juvenileTicks,
         caught: new Float64Array(CONVERSION_BANDS.length),
         chases: new Float64Array(CONVERSION_BANDS.length),
+        hungryCaught: 0,
+        hungryChases: 0,
         log: createLog(['time', 'event', 'state']),
         rows: 0,
         rowOf: new Map(),
@@ -86,18 +91,24 @@ function bandOf(age) {
     return age < BAND_EDGES[0] ? 0 : age < BAND_EDGES[1] ? 1 : 2;
 }
 
+const HUNGRY_BAND = 1;
+
 /**
  * Notes one resolved chase, binned by the hunter's age at the chase's opening.
  * @param {Record<string, any>} scene the competence scene
  * @param {Record<string, any>} world the world
- * @param {{slot: number, outcome: number, openedTick: number}} chase the hunter's slot, a `CHASE_OUTCOME` and the tick the
- *   chase opened
+ * @param {{slot: number, outcome: number, openedTick: number, hungry?: boolean}} chase the hunter's slot, a `CHASE_OUTCOME` and the tick the
+ *   chase opened, and whether the hunter could eat then
  * @returns {void}
  */
-export function noteChase(scene, world, { slot, outcome, openedTick }) {
+export function noteChase(scene, world, { slot, outcome, openedTick, hungry = false }) {
     const band = bandOf(world.ageTicks[slot] - (world.tick - openedTick));
     scene.chases[band] += 1;
     scene.caught[band] += outcome === CHASE_OUTCOME.CAUGHT ? 1 : 0;
+    if (hungry && band === HUNGRY_BAND) {
+        scene.hungryChases += 1;
+        scene.hungryCaught += outcome === CHASE_OUTCOME.CAUGHT ? 1 : 0;
+    }
     noteGainChase(scene, world.genomeId[slot], {
         age: world.ageTicks[slot] - (world.tick - openedTick),
         caught: outcome === CHASE_OUTCOME.CAUGHT,
@@ -289,6 +300,11 @@ export function competenceMetrics(scene, world) {
                 `eval.hunter_chases_by_age.${name}`,
                 scene.chases[i] > 0 ? ok(scene.chases[i]) : none(reason),
             ]),
+        ),
+        'eval.hunter_kill_conversion_hungry.1k-2k': share(
+            scene.hungryCaught,
+            scene.hungryChases,
+            'no chase opened hungry in the band',
         ),
         ...firstKillMetrics(scene, world),
         ...gainMetrics(scene),

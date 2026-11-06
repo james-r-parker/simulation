@@ -11,8 +11,9 @@
 //
 // Each chase counted here (a catch, an escape or a give-up, never a dropped one) is also handed to the scene's `onChase` hook
 // with the hunter's slot, its outcome and the tick the chase opened (hunter-learning.md T2a: `scene-competence.js` bins it by
-// the hunter's age at the opening).
+// the hunter's age at the opening) and whether it could eat then (`canEatNow` at the opening tick).
 
+import { canEatNow } from '../sim/feeding.js';
 import { popcount16 } from '../sim/merit-state.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
@@ -27,8 +28,9 @@ const BITTEN = 2;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
 /**
- * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, openedTick: number}) => void} ChaseHook
- *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME` and the tick the chase opened
+ * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, openedTick: number, hungry: boolean}) => void} ChaseHook
+ *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME`, the tick the chase opened and whether the
+ *   hunter could eat (`canEatNow`) at that tick
  */
 
 /**
@@ -44,6 +46,7 @@ export function createApproachScene(config, onChase = null) {
         phase: new Uint8Array(n),
         lastClosing: new Float64Array(n),
         openedTick: new Float64Array(n),
+        openedHungry: new Uint8Array(n),
         victim: new Uint32Array(n),
         biteTick: new Float64Array(n),
         committed: 0,
@@ -89,7 +92,12 @@ function resolved(scene, world, { slot, outcome }) {
     }
     scene[OUTCOME_COUNTER[outcome]] += 1;
     if (scene.onChase !== null) {
-        scene.onChase(world, { slot, outcome, openedTick: scene.openedTick[slot] });
+        scene.onChase(world, {
+            slot,
+            outcome,
+            openedTick: scene.openedTick[slot],
+            hungry: scene.openedHungry[slot] === 1,
+        });
     }
 }
 
@@ -158,7 +166,10 @@ function advance(scene, observer, world, slot) {
             scene.phase[slot] = IDLE;
         }
     } else if (closingNow(observer.intent.prey, slot, tick)) {
-        scene.openedTick[slot] = scene.phase[slot] === OPEN ? scene.openedTick[slot] : tick;
+        if (scene.phase[slot] !== OPEN) {
+            scene.openedTick[slot] = tick;
+            scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;
+        }
         scene.phase[slot] = OPEN;
         scene.lastClosing[slot] = tick;
     } else if (scene.phase[slot] === OPEN && tick - scene.lastClosing[slot] > INTENT_WINDOW) {
