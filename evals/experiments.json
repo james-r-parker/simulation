@@ -3020,6 +3020,115 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at a8f789c. Hunters alive at the last tick 10/16 (defaults 9/16), short of 12/16. Every target no-difference: predators at end 7.7 -> 9.4, prey types 2.81 -> 2.63, prey extinctions 3.25 -> 4.06, population 314 -> 277, juvenile death share 0.616 -> 0.585 (interval [-0.063, -0.006] but under the 5% minimum effect), conversion 1k-2k null in a seed. The prediction's caveat held: the 8-seed gain did not replicate. satedBite is not adopted on its own; it is deleted with the flip verdict (T12) unless the territory lever needs it."
+    },
+    {
+      "id": "E121",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-territory",
+      "hypothesis": "E119: taught hunters (flipReflex) over-hunt through their numbers, not their appetite. hunterTerritory stops a hunter breeding while more than territoryMax 1 other mature hunter lies within territoryRadius 600 (r1000 is a wider territory), as breeding suppression and territories hold predator density down in nature.",
+      "prediction": "8 seeds x 200000 ticks, floor off (evals/screens/hunter-territory.grid.json). flip repeats E115 and E119. territory alone lowers hunter numbers a little and changes competence little. flip-territory keeps most of the competence gain (spec-flip kill rate at least 0.2, zero-kill share under 0.7) while median last-quarter hunter-ticks stay within 2x of the defaults, prey types at the end at least 2.5, and seeds under 80 at most 2; flip-territory-r1000 holds the prey best but leaves fewer hunters alive. flip-sated-territory sits between. Keep rule (user): hunters alive at the last tick on at least 6/8 and no more seeds under 80 than the defaults. If no flip-territory arm keeps the prey, the hunters' kill rate per head is itself too high for the prey base and the next step is on the prey side (escape, refuge, vigilance).",
+      "targets": [
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_kill_rate_by_source.spec-flip",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.boom_bust_count"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm (floorTrigger 0)",
+      "after": "evals/screens/results/hunter-territory/ (table.md, 6 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.hunter_first_kill_rmst": "-",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.hunter_juvenile_death_share": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.hunter_kill_rate_by_source.spec-flip": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "-",
+        "eval.boom_bust_count": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at c7a6c39, floor off, 8 seeds (means; no eval:compare verdicts at 8 seeds). defaults: alive 5/8, 2 under 80, median predators at end 4.5, median last-quarter hunter-ticks 238069, conversion 1k-2k 0.038, zero-kill 0.805, prey types 3.38, population 358. flip: as E115. territory: alive 7/8, 1 under 80, median predators 13.5, hunter-ticks 412395, prey types 3.63, population 358, competence flat (conversion 0.026); passes the full hunter gate (the first arm to). flip-territory: conversion 0.097, spec-flip rate 0.441, zero-kill 0.548 (the best competence of any arm), prey types 2.50, population 233, 3 under 80, alive 5/8, median predators 23, hunter-ticks 973597 (4x). flip-territory-r1000: alive 3/8, 5 under 80, prey types 2.00. flip-sated-territory: conversion 0.071, zero-kill 0.528, prey types 2.63, 4 under 80, alive 5/8. Prediction held for flip, for territory changing competence little and for flip-territory keeping the competence and reaching prey types 2.5; it missed on hunter numbers (territory raises them: a hunter that cannot breed pays no birth cost and lives longer, and spaced hunters split the prey less), on seeds under 80 (3 against at most 2) and on r1000, which did worst. Both territory and flip-territory go to 16 seeds (E122)."
+    },
+    {
+      "id": "E122",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-territory",
+      "hypothesis": "The two E121 leads hold on 16 floor-off seeds: territory (passed the full hunter gate on 8 seeds) and flip-territory (best competence, prey types 2.5).",
+      "prediction": "flip-territory: the competence rows better (conversion 1k-2k up with the interval excluding 0, RMST lower, zero-kill share down at least 0.10, spec-flip rate at least 0.15), prey types and extinctions no-difference, hunters alive on at least 10/16. territory: survival rows better or no-difference, competence no-difference.",
+      "targets": [
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_kill_rate_by_source.spec-flip",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e116-defaults.json (16 seeds, floorTrigger 0; code differs only by default-off switches, goldens unchanged)",
+      "after": "evals/results/e122-flip-territory.json, evals/results/e122-territory.json (16 seeds, floorTrigger 0)",
+      "verdicts": {
+        "eval.hunter_kill_conversion_by_age.1k-2k": "better",
+        "eval.hunter_first_kill_rmst": "better",
+        "eval.hunter_juvenile_death_share": "better",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.hunter_kill_rate_by_source.spec-flip": "-",
+        "eval.predators_at_end": "better",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "no-difference"
+      },
+      "effect": "better",
+      "note": "Ran 2026-11-06 at 51d4270. Verdicts are flip-territory against the defaults. flip-territory: conversion 1k-2k 0.036 -> 0.093 (+162%, interval [0.041, 0.072]), first-kill RMST 4843 -> 3173 (-34%), juvenile death share 0.616 -> 0.481 (-22%), zero-kill share 0.820 -> 0.589 (-0.23, interval [-0.28, -0.17]), spec-flip kill rate 0.050 -> 0.378 per 1k, predators at end 7.7 -> 27.2 (better), prey types 2.81 -> 2.38 and prey extinctions 3.25 -> 3.50 (no-difference), population mean 314 -> 228 (-28%, interval [-165, -3], a watch metric, so no verdict), last-quarter hunter-ticks 205500 -> 938400. Hunters alive at the last tick 10/16 (defaults 9/16); seeds ending under 80 agents 7 (defaults 6). territory: every target no-difference (predators at end 7.7 -> 12.8, interval [-0.8, 13.4]); hunters alive 10/16, seeds under 80 4. This is the first 16-seed competence win in balancing: the Phase 1 competence rows of hunter-learning.md are met. Against the user keep rule on the floor-off world flip-territory misses by one seed on each count (10/16 alive against 12/16, 7 under 80 against 6), and the defaults themselves collapse on 6 of 16 floor-off seeds; the rule was set on the floor-on world, so E123 runs both arms floor-on before the adopt decision. Prediction held on every row it named."
+    },
+    {
+      "id": "E123",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-territory",
+      "hypothesis": "The user keep rule was set on the floor-on world, the production default. flip-territory and territory against the floor-on defaults on 16 seeds decide adoption.",
+      "prediction": "flip-territory keeps its competence gain floor-on (conversion 1k-2k up with the interval excluding 0, RMST lower) and passes the keep rule (hunters alive on at least 12/16, no more seeds under 80 than the defaults), with the floor share of births under 0.05 so the floor is not making the hunters. territory: no-difference on the targets.",
+      "targets": [
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_zero_kill_share",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.births_per_1k",
+        "eval.spec_effective"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e123-defaults.json (16 seeds, floor on)",
+      "after": "evals/results/e123-flip-territory.json, evals/results/e123-territory.json (16 seeds, floor on)",
+      "verdicts": {
+        "eval.hunter_kill_conversion_by_age.1k-2k": "better",
+        "eval.hunter_first_kill_rmst": "better",
+        "eval.hunter_juvenile_death_share": "better",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.predators_at_end": "better",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "no-difference",
+        "eval.births_per_1k": "better",
+        "eval.spec_effective": "better"
+      },
+      "effect": "better",
+      "note": "Ran 2026-11-06 at cf2f21c, floor on. Verdicts are flip-territory against the defaults. Keep rule: hunters alive at the last tick 14/16 (defaults 10/16), seeds ending under 80 agents 2 (defaults 5): passes. Floor share of births 0.007 (defaults 0.005). Competence: conversion 1k-2k 0.033 -> 0.088 (+165%, interval [0.038, 0.069]), first-kill RMST 4879 -> 3150 (-35%), juvenile death share 0.627 -> 0.497, zero-kill share 0.826 -> 0.596. Survival: predators at end 8.1 -> 37.1, births per 1k +20%, effective specialisation types 3.20 -> 4.01 (better). Guards: prey types 3.44 -> 3.50 and prey extinctions 4.06 -> 5.00 (no-difference). Cost: population mean 320 -> 254 (-20%, interval [-132, 13], a watch metric). territory alone: every target no-difference, hunters alive 11/16, 1 seed under 80. Decision: adopt flipReflex and hunterTerritory (T12) as defaults; delete provisioning, juvenile dependency (T10, T11) and satedBite, which did not hold on 16 seeds (E116, E120). Prediction held on every row."
     }
   ]
 }

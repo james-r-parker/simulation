@@ -5,6 +5,7 @@ import { birthBudgetSpent } from './birth-budget.js';
 import { blocksMating } from './temperature.js';
 import { geneticDistance } from './genetics.js';
 import { SEX } from './sex.js';
+import { territoryAllows } from './territory.js';
 import { childShareOf } from './traits.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -22,7 +23,8 @@ export function isReadyToMate(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > mateMinEnergy &&
-        !blocksMating(world.config, world.temperature[slot])
+        !blocksMating(world.config, world.temperature[slot]) &&
+        territoryAllows(world, slot)
     );
 }
 

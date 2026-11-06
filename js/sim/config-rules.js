@@ -108,4 +108,7 @@ export const FEATURE_RULES = {
     kinPullWeight: num(0, 4),
     flipReflex: BOOL,
     satedBite: BOOL,
+    hunterTerritory: BOOL,
+    territoryRadius: positive(),
+    territoryMax: int(0),
 };

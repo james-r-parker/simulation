@@ -6,6 +6,7 @@ import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
+import { territoryAllows } from './territory.js';
 import { mateRankDue, refreshMateRanks } from './mate-rank.js';
 import { childSpec } from './heritable-spec.js';
 import { noteChildSource } from './hunter-ledger.js';
@@ -320,7 +321,8 @@ export function readyBeforeGate(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
-        !birthBudgetSpent(world, slot)
+        !birthBudgetSpent(world, slot) &&
+        territoryAllows(world, slot)
     );
 }
 
