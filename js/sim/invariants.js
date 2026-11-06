@@ -1,4 +1,5 @@
 import { assertPollen } from './pollination.js';
+import { assertCover } from './cover.js';
 import { assertMycelium } from './mycelium.js';
 import { assertFlora } from './flora-state.js';
 import { assertDisease } from './disease.js';
@@ -367,4 +368,5 @@ export function assertInvariants(world) {
     assertPollen(world);
     assertMycelium(world);
     assertDisease(world);
+    assertCover(world);
 }

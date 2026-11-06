@@ -45,6 +45,8 @@ describe('event codes', () => {
             LAST_HUNTER_DIED: 30,
             HUNTER_KILL: 31,
             PROVISIONED: 32,
+            COVER_CONFIG: 33,
+            COVER_TOTALS: 34,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({

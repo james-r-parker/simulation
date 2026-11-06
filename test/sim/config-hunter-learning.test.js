@@ -80,3 +80,35 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(rulesHash(make({ territoryMax: 2 }))).not.toBe(rulesHash(make({})));
     });
 });
+
+const REWARD_DEFAULTS = {
+    rewardedHebb: false,
+    rewardGain: 4,
+    rewardBase: 0.25,
+    rewardDecay: 0.02,
+};
+
+describe('the reward-gated learning keys (realistic-keepers T5)', () => {
+    it.each(Object.entries(REWARD_DEFAULTS))('%s defaults to %s', (key, value) => {
+        expect(DEFAULTS[key]).toBe(value);
+        expect(make({})[key]).toBe(value);
+    });
+
+    it.each([
+        ['rewardedHebb', true],
+        ['rewardGain', 10],
+        ['rewardBase', 0],
+        ['rewardDecay', 1],
+    ])('accepts %s at %s', (key, value) => {
+        expect(make({ [key]: value })[key]).toBe(value);
+    });
+
+    it.each([
+        ['rewardedHebb', 1],
+        ['rewardGain', 11],
+        ['rewardBase', 1.5],
+        ['rewardDecay', -0.1],
+    ])('rejects %s at %s, naming the key', (key, value) => {
+        expect(() => make({ [key]: value })).toThrow(new RegExp(key));
+    });
+});

@@ -5,7 +5,8 @@ import { CH_MEGAFAUNA, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
-import { AGENT, FOOD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { AGENT, FOOD, KIND_STRIDE, LOCAL_STRIDE, OBSTACLE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { COVER_TOTALS } from './cover.js';
 import { visionOf } from './traits.js';
 
 import { noteMatesSeen } from './mate-scarcity.js';
@@ -102,6 +103,50 @@ function nearestHit(world, count) {
     s[BEST_KEY] = bestKey;
 }
 
+/**
+ * @param {Uint8Array} coverRing the ring byte of each agent slot (`stepCover`)
+ * @param {number} key a gathered circle's packed key
+ * @param {number} casterRing the casting agent's ring byte
+ * @returns {boolean} true when the circle is an agent standing in a ring the caster is not in
+ */
+function isConcealed(coverRing, key, casterRing) {
+    if (key < AGENT * KIND_STRIDE || key >= OBSTACLE * KIND_STRIDE) {
+        return false;
+    }
+    const ring = coverRing[key - AGENT * KIND_STRIDE];
+    return ring !== 0 && ring !== casterRing;
+}
+
+/**
+ * `nearestHit` with `coverConceals`: an agent whose centre is inside a ring is skipped by a ray from outside that ring
+ * (a ray from inside the same ring sees it), so the ray goes on to whatever lies behind. Each skip is counted.
+ * @param {World} world the world
+ * @param {number} count the gathered rows in `world.rayLocal`
+ * @param {number} casterRing the casting agent's ring byte (0 outside every ring)
+ * @returns {void}
+ */
+function nearestHitCovered(world, count, casterRing) {
+    const { rayLocal: local, rayScratch: s, coverRing, coverTotals } = world;
+    seedWithWall(world);
+    let bestT = s[BEST_T];
+    let bestKey = s[BEST_KEY];
+    for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
+        const t = circleHit(s[DX] * local[at] + s[DY] * local[at + 1], local[at + 2]);
+        const key = local[at + 3];
+        if (t < 0 || t > s[RANGE] || t > bestT || (t === bestT && key >= bestKey)) {
+            continue;
+        }
+        if (isConcealed(coverRing, key, casterRing)) {
+            coverTotals[COVER_TOTALS.CONCEALED_HITS] += 1;
+        } else {
+            bestT = t;
+            bestKey = key;
+        }
+    }
+    s[BEST_T] = bestT;
+    s[BEST_KEY] = bestKey;
+}
+
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
 const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_MEGAFAUNA]);
 
@@ -172,10 +217,16 @@ export function castRays(world, hash, slot) {
     noteMatesSeen(world, slot, count);
     const { rayCos, raySin } = world;
     const rowBase = slot * world.layout.rawInputCount;
+    const conceals = world.config.coverConceals;
+    const casterRing = world.coverRing[slot];
     for (let k = 0; k < world.config.rayCount; k++) {
         s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
         s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
-        nearestHit(world, count);
+        if (conceals) {
+            nearestHitCovered(world, count, casterRing);
+        } else {
+            nearestHit(world, count);
+        }
         writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
     }
 }

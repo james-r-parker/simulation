@@ -47,6 +47,7 @@ export function noteIncome(world, slot, { kind, stored }) {
  */
 export function allocLedgerState(world) {
     world.hunterTally = new Float64Array(3);
+    world.rewardCounts = new Float64Array(3);
     world.hunterIncomeBySpec = new Float64Array(Object.keys(world.config.specialisations).length * INCOME_KINDS);
 }
 

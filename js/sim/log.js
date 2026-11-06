@@ -2,6 +2,7 @@
 
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
 import { emitHunterKill, emitProvisioned } from './log-hunter.js';
+import { emitCoverConfig, emitCoverTotals } from './log-cover.js';
 
 /** Log levels by severity; a record is kept when its value is at least the log's level. */
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
@@ -476,6 +477,8 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
     [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
     [EVENT_TYPE.PROVISIONED]: { level: LOG_LEVEL.debug, emit: emitProvisioned },
+    [EVENT_TYPE.COVER_CONFIG]: { level: LOG_LEVEL.info, emit: emitCoverConfig },
+    [EVENT_TYPE.COVER_TOTALS]: { level: LOG_LEVEL.debug, emit: emitCoverTotals },
 });
 
 /**

@@ -22,6 +22,7 @@ import { meritPhase } from './merit-phase.js';
 import { tallyReady } from './merit-tally.js';
 import { advancePregnancies, mate, splitAll } from './reproduction.js';
 import { senseAll } from './sensors.js';
+import { stepCover } from './cover.js';
 import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
 import { stepHerds } from './herd-motion.js';
@@ -55,6 +56,7 @@ function hash(world) {
  * @returns {void}
  */
 function sense(world) {
+    stepCover(world);
     senseAll(world, world.hash);
 }
 

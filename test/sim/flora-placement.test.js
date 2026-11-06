@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { placeSeed } from '../../js/sim/flora-placement.js';
 import { nextFloat } from '../../js/sim/rng.js';
+import { ringIndexAt } from '../../js/sim/cover.js';
 import { floraGarden } from './helpers/flora-garden.js';
 
 const TWO_PI = 6.283185307179586;
@@ -67,5 +68,31 @@ describe('local seed placement', () => {
     it('refuses an empty-world configuration whose patch footprint cannot fit a basin', () => {
         const w = floraGarden({ foodPatchCount: 0, foodPatchRadius: 600, placementTries: 2 });
         expect(placeSeed(w, 1)).toBe(false);
+    });
+});
+
+describe('coverFoodFree seed placement', () => {
+    /**
+     * @param {Record<string, any>} over config overrides
+     * @returns {any} a garden with a ring over the visited patch, wide enough to hold the whole seed disc
+     */
+    function ringed(over) {
+        const w = floraGarden({ refugeSizeMax: 400, ...over });
+        w.coverCentres = Float64Array.of(500, 500);
+        return w;
+    }
+
+    it('refuses a seedling point inside a ring, from the flora stream only', () => {
+        const w = ringed({ coverFoodFree: true, placementTries: 4 });
+        expect(ringIndexAt(w, 650, 500)).toBe(0);
+        const food = w.rng.food.s.slice();
+        expect(placeSeed(w, 1)).toBe(false);
+        expect(w.rng.food.s).toEqual(food);
+    });
+
+    it('places inside the same ring with the switch off', () => {
+        const w = ringed({ placementTries: 4 });
+        expect(placeSeed(w, 1)).toBe(true);
+        expect(ringIndexAt(w, w.point[0], w.point[1])).toBe(0);
     });
 });

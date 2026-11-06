@@ -7,9 +7,11 @@ import { createInputActivity } from './input-activity.js';
 import { createEventRing } from './events.js';
 import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
+import { allocCoverState } from './cover.js';
 import { killSpecs } from './kills.js';
 import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
+import { rewardSpecs } from './reward.js';
 import { proofSpecs } from './proof.js';
 import { allocProvision } from './provision-state.js';
 import { splitGateSpecs } from './split-gate.js';
@@ -124,6 +126,7 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
+            ...rewardSpecs(world.config),
             ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,
@@ -156,6 +159,7 @@ function allocFoodAndObstacles(world) {
         maxFood,
     );
     allocRows(world, singles(Float32Array, ['obsX', 'obsY', 'obsRadius']), obstacleCount);
+    allocCoverState(world);
 }
 
 /**
@@ -330,11 +334,10 @@ function allocClouds(world) {
  */
 export function allocateWorld(config) {
     assertLittleEndian();
-    const layout = brainLayout(config);
     /** @type {World} */
     const world = {
         config,
-        layout,
+        layout: brainLayout(config),
         rng: null,
         tick: 0,
         nextId: 1,
@@ -370,7 +373,7 @@ export function allocateWorld(config) {
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
     };
-    allocAgentArrays(world, layout);
+    allocAgentArrays(world, world.layout);
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
     allocClouds(world);

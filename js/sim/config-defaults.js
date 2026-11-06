@@ -222,6 +222,8 @@ export const DEFAULTS = deepFreeze({
     wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
     refugeCount: 8, // new: refuges of rocks that only agents below refugeSizeMax fit into (T52; 8 since the big bang, from 4)
     refugeCluster: 2, // new: refuge rings per group; a group shares a band and sits in a row (natural-selection.md T10f)
+    coverConceals: false, // realistic-keepers T6 (T22 adopts or deletes): a ray from outside a ring skips an agent inside it
+    coverFoodFree: false, // realistic-keepers T7 (T22 adopts or deletes): plant placement rejects a point inside a ring
     refugeSizeMax: 30, // new: the largest agent radius that fits a refuge's gaps (T52)
     refugeSense: false, // new: the three refuge inputs carry the nearest ring's bearing and nearness; false zeroes them (refuge.md T24)
     refugeSenseRange: 2500, // new: px over which refugeNear falls from 1 at the ring edge to 0 (refuge.md T24)
@@ -295,5 +297,9 @@ export const DEFAULTS = deepFreeze({
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
     satedBite: false, // realistic-keepers T1: a canHunt biter for which canEatNow is false (full or digesting) does not bite
     predatorRestTicks: 0, // realistic-keepers T2: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
+    rewardedHebb: false, // realistic-keepers T5 (T22 adopts or deletes): a reward trace of meat meals scales the Hebbian rate
+    rewardGain: 4, // realistic-keepers T5: gain of the trace on the Hebbian rate
+    rewardBase: 0.25, // realistic-keepers T5: share of the plain rate that applies with no reward
+    rewardDecay: 0.02, // realistic-keepers T5: per-tick decay of the trace
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

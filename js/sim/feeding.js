@@ -14,6 +14,7 @@ import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
+import { REWARD_SOURCE, noteReward } from './reward.js';
 
 const HERD_CARCASS_BITE = 400;
 
@@ -60,6 +61,7 @@ function consumeFood(world, hash, slot, food) {
     if (isMeat) {
         world.ledgerCarcass[slot] += stored;
         noteIncome(world, slot, { kind: herdCarcass ? INCOME.HERD : INCOME.CARCASS, stored });
+        noteReward(world, slot, REWARD_SOURCE.SCAVENGE, stored);
         provisionYoung(world, hash, slot, stored);
     }
     world.foodEatenBySpec[world.spec[slot]] += stored;
@@ -196,6 +198,7 @@ function applyBite(world, hash, biter, victim) {
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteBiteLedger(world, biter, { gained, fatal, kick: paid });
+    noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
     provisionYoung(world, hash, biter, gained);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
