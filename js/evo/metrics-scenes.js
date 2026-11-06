@@ -17,6 +17,7 @@ import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
+import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
 import { spendMetrics } from './scene-spend.js';
@@ -87,6 +88,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...COMPETENCE_DIRECTIONS,
     ...GUARD_DIRECTIONS,
     ...KIN_DIRECTIONS,
+    ...REWARD_DIRECTIONS,
 });
 
 /**
@@ -116,5 +118,6 @@ export function sceneMetrics(observer, world) {
         ...competenceMetrics(s.competence, world),
         ...guardMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
+        ...rewardMetrics(observer, world),
     };
 }

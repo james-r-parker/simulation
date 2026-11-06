@@ -4,6 +4,7 @@
 import { TRAIT_INDEX } from './brain-layout.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
+import { resetReward } from './reward.js';
 
 /** A trait gene moves its trait by at most this fraction of the default: 0.7 to 1.3. */
 export const TRAIT_SPAN = 0.3;
@@ -74,6 +75,7 @@ export function applyGenes(world, slot) {
     if (config.hebbianRate > 0) {
         resetFastOut(world, slot);
     }
+    resetReward(world, slot);
     const H = layout.hidden;
     const leakGenes = slot * layout.weightCount + layout.leakStart;
     for (let j = 0; j < H; j++) {
