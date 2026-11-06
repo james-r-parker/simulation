@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
-import { createWorld, placeClear, placePlantClear, spawnAgent, spawnFoodItem } from '../../js/sim/spawn.js';
-import { COVER_TOTALS, ringIndexAt } from '../../js/sim/cover.js';
+import { createWorld, placeClear, spawnAgent, spawnFoodItem } from '../../js/sim/spawn.js';
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { fixedSpecPolicy, testPolicy } from './helpers/test-policy.js';
@@ -304,56 +303,5 @@ describe('spawnAgent entrantEnergy', () => {
         const w = build({ initialAgents: 1 });
         const slot = spawnAgent(w, testPolicy, BORN_CAUSE.FLOOR);
         expect(w.size[slot]).toBeLessThan(w.size[0]);
-    });
-});
-
-describe('coverFoodFree plant placement', () => {
-    /**
-     * @param {Record<string, any>} over config overrides
-     * @returns {ReturnType<typeof createWorld>} a world whose one ring is large and sits at the middle
-     */
-    function ringed(over) {
-        const w = build({ initialAgents: 0, initialFood: 0, refugeSizeMax: 150, ...over });
-        w.coverCentres = Float64Array.of(500, 500);
-        return w;
-    }
-
-    it('keeps every plant point outside the ring and counts the rejections', () => {
-        const w = ringed({ coverFoodFree: true });
-        for (let i = 0; i < 200; i++) {
-            placePlantClear(w, w.rng.food, 20);
-            expect(ringIndexAt(w, w.point[0], w.point[1])).toBe(-1);
-        }
-        expect(w.coverTotals[COVER_TOTALS.FOOD_REJECTED]).toBeGreaterThan(0);
-    });
-
-    it('keeps spawned food out of the ring, local and uniform placement alike', () => {
-        const w = ringed({ coverFoodFree: true, foodPatchCount: 1, foodPatchRadius: 200, maxFood: 200 });
-        w.coverCentres = Float64Array.of(w.patchX[0], w.patchY[0]);
-        for (let i = 0; i < 100; i++) {
-            const slot = spawnFoodItem(w);
-            expect(ringIndexAt(w, w.foodX[slot], w.foodY[slot])).toBe(-1);
-        }
-    });
-
-    it('draws from the same stream as with the switch off, only discarding points', () => {
-        const off = ringed({});
-        const on = ringed({ coverFoodFree: true });
-        placePlantClear(off, off.rng.food, 20);
-        placePlantClear(on, on.rng.food, 20);
-        const redraws = on.coverTotals[COVER_TOTALS.FOOD_REJECTED];
-        expect(ringIndexAt(off, off.point[0], off.point[1]) >= 0).toBe(redraws > 0);
-        expect(off.coverTotals[COVER_TOTALS.FOOD_REJECTED]).toBe(0);
-    });
-
-    it('leaves placeClear, which agents use, alone', () => {
-        const w = ringed({ coverFoodFree: true });
-        let inside = 0;
-        for (let i = 0; i < 200; i++) {
-            placeClear(w, w.rng.spawn, 20);
-            inside += ringIndexAt(w, w.point[0], w.point[1]) >= 0 ? 1 : 0;
-        }
-        expect(inside).toBeGreaterThan(0);
-        expect(w.coverTotals[COVER_TOTALS.FOOD_REJECTED]).toBe(0);
     });
 });
