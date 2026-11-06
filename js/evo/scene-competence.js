@@ -12,6 +12,10 @@
 //   `eval.hunter_first_kill_km_median` is the Kaplan-Meier median (`null`, `median not reached`, while the curve stays above 0.5)
 //   and `eval.hunter_first_kill_rmst` the restricted mean up to `2 x juvenileTicks`, always defined once a hunter was born.
 //
+// - Within-lifetime gain (hunter-learning.md, Phase 2). A hunter's conversion at ages 3000 to 3999 minus its conversion at ages
+//   1000 to 1999, for the hunters with at least `MIN_GAIN_CHASES` resolved chases in each band (the same age at opening).
+//   `eval.hunter_conversion_gain` is the mean over those hunters and `eval.hunter_conversion_gain_hunters` their number.
+//
 // Observer state outside `worldHash`; nothing is allocated per tick.
 
 import { EVENT_TYPE } from '../sim/events.js';
@@ -26,6 +30,11 @@ const BAND_EDGES = Object.freeze([1000, 2000]);
 
 /** The outcome of a resolved chase, as `noteChase` takes it. */
 export const CHASE_OUTCOME = Object.freeze({ CAUGHT: 0, ESCAPED: 1, GAVE_UP: 2 });
+
+const EARLY_BAND = Object.freeze([1000, 2000]);
+const LATE_BAND = Object.freeze([3000, 4000]);
+const MIN_GAIN_CHASES = 2;
+const NO_GAIN_REASON = 'no hunter lived to both bands';
 
 const HORIZON_JUVENILE_WINDOWS = 2;
 const PENDING = 0;
@@ -44,6 +53,8 @@ export const COMPETENCE_DIRECTIONS = Object.freeze({
     'eval.hunter_first_kill_km_median': 'lower',
     'eval.hunter_first_kill_rmst': 'lower',
     'eval.hunter_independent_kill_share': 'higher',
+    'eval.hunter_conversion_gain': 'higher',
+    'eval.hunter_conversion_gain_hunters': 'watch',
 });
 
 /**
@@ -61,6 +72,9 @@ export function createCompetenceScene(config) {
         rowOf: new Map(),
         kills: 0,
         independentKills: 0,
+        gain: createLog(['early', 'earlyCaught', 'late', 'lateCaught']),
+        gainRows: 0,
+        gainRowOf: new Map(),
     };
 }
 
@@ -84,6 +98,55 @@ export function noteChase(scene, world, { slot, outcome, openedTick }) {
     const band = bandOf(world.ageTicks[slot] - (world.tick - openedTick));
     scene.chases[band] += 1;
     scene.caught[band] += outcome === CHASE_OUTCOME.CAUGHT ? 1 : 0;
+    noteGainChase(scene, world.genomeId[slot], {
+        age: world.ageTicks[slot] - (world.tick - openedTick),
+        caught: outcome === CHASE_OUTCOME.CAUGHT,
+    });
+}
+
+/**
+ * Adds a resolved chase to the hunter's early or late tally, when its opening age falls in one of the two bands.
+ * @param {Record<string, any>} scene the competence scene
+ * @param {number} genomeId the hunter
+ * @param {{age: number, caught: boolean}} chase the hunter's age at the chase's opening, and whether it caught
+ * @returns {void}
+ */
+function noteGainChase(scene, genomeId, { age, caught }) {
+    const early = age >= EARLY_BAND[0] && age < EARLY_BAND[1];
+    if (!early && !(age >= LATE_BAND[0] && age < LATE_BAND[1])) {
+        return;
+    }
+    let row = scene.gainRowOf.get(genomeId);
+    if (row === undefined) {
+        row = scene.gainRows++;
+        ensureRoom(scene.gain, row);
+        scene.gainRowOf.set(genomeId, row);
+    }
+    const { gain } = scene;
+    const count = early ? gain.early : gain.late;
+    const wins = early ? gain.earlyCaught : gain.lateCaught;
+    count[row] += 1;
+    wins[row] += caught ? 1 : 0;
+}
+
+/**
+ * @param {Record<string, any>} scene the competence scene
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the late-minus-early conversion gain and the hunters it rests on
+ */
+function gainMetrics(scene) {
+    const { early, earlyCaught, late, lateCaught } = scene.gain;
+    let sum = 0;
+    let hunters = 0;
+    for (let row = 0; row < scene.gainRows; row++) {
+        if (early[row] >= MIN_GAIN_CHASES && late[row] >= MIN_GAIN_CHASES) {
+            sum += lateCaught[row] / late[row] - earlyCaught[row] / early[row];
+            hunters += 1;
+        }
+    }
+    return {
+        'eval.hunter_conversion_gain': hunters > 0 ? ok(sum / hunters) : none(NO_GAIN_REASON),
+        'eval.hunter_conversion_gain_hunters': hunters > 0 ? ok(hunters) : none(NO_GAIN_REASON),
+    };
 }
 
 /**
@@ -228,6 +291,7 @@ export function competenceMetrics(scene, world) {
             ]),
         ),
         ...firstKillMetrics(scene, world),
+        ...gainMetrics(scene),
         'eval.hunter_independent_kill_share': share(scene.independentKills, scene.kills, 'no deliberate kill'),
     };
 }

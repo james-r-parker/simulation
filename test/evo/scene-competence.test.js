@@ -206,3 +206,65 @@ describe('the independent kill share', () => {
         expect(COMPETENCE_DIRECTIONS['eval.hunter_independent_kill_share']).toBe('higher');
     });
 });
+
+describe('conversion gain within a lifetime', () => {
+    const CAUGHT = CHASE_OUTCOME.CAUGHT;
+    const MISSED = CHASE_OUTCOME.ESCAPED;
+    const REASON = 'no hunter lived to both bands';
+
+    /**
+     * Resolves chases for one hunter, each resolved at once.
+     * @param {Record<string, any>} scene the scene
+     * @param {number} id the hunter's genome id
+     * @param {Array<[number, number]>} chases the age at the opening and the outcome
+     * @returns {void}
+     */
+    function chasesOf(scene, id, chases) {
+        const w = world([{ id, age: 0 }]);
+        for (const [age, outcome] of chases) {
+            chase(scene, w, age, 0, outcome);
+        }
+    }
+
+    it('is null with the reason when no hunter has two chases in each band', () => {
+        const scene = createCompetenceScene(CONFIG);
+        chasesOf(scene, 1, [
+            [1100, CAUGHT],
+            [1200, CAUGHT],
+            [3100, CAUGHT],
+        ]);
+        chasesOf(scene, 2, [
+            [3100, CAUGHT],
+            [3200, CAUGHT],
+        ]);
+        const m = competenceMetrics(scene, world());
+        expect(m['eval.hunter_conversion_gain']).toEqual({ value: null, reason: REASON });
+        expect(m['eval.hunter_conversion_gain_hunters']).toEqual({ value: null, reason: REASON });
+    });
+
+    it('is the mean over qualifying hunters of late minus early conversion, band edges included', () => {
+        const scene = createCompetenceScene(CONFIG);
+        chasesOf(scene, 1, [
+            [1000, MISSED],
+            [1999, MISSED],
+            [3000, CAUGHT],
+            [3999, MISSED],
+            [2500, CAUGHT],
+            [4000, CAUGHT],
+        ]); // early 0 of 2, late 1 of 2: gain +0.5
+        chasesOf(scene, 2, [
+            [1500, CAUGHT],
+            [1600, CAUGHT],
+            [3500, MISSED],
+            [3600, MISSED],
+        ]); // early 2 of 2, late 0 of 2: gain -1
+        const m = competenceMetrics(scene, world());
+        expect(m['eval.hunter_conversion_gain']).toEqual({ value: -0.25 });
+        expect(m['eval.hunter_conversion_gain_hunters']).toEqual({ value: 2 });
+    });
+
+    it('has the directions higher and watch', () => {
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_conversion_gain']).toBe('higher');
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_conversion_gain_hunters']).toBe('watch');
+    });
+});

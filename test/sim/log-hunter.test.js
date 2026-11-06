@@ -29,6 +29,20 @@ describe('the hunter-learning log events', () => {
         ]);
     });
 
+    it('turns a RewardShuffleDropped record into a debug event naming its cause', () => {
+        expect(drain(EVENT_TYPE.REWARD_SHUFFLE_DROPPED, [41, 0.25, 0])).toEqual([
+            {
+                event: 'RewardShuffleDropped',
+                level: 'debug',
+                tick: 7,
+                genomeId: 41,
+                magnitude: 0.25,
+                cause: 'queue-full',
+            },
+        ]);
+        expect(drain(EVENT_TYPE.REWARD_SHUFFLE_DROPPED, [41, 0.25, 1])[0].cause).toBe('death');
+    });
+
     it('keeps it out of an info-level log', () => {
         const ring = createEventRing(2);
         pushEvent(ring, EVENT_TYPE.HUNTER_KILL, 1);

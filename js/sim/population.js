@@ -9,6 +9,7 @@ import { releaseInfection } from './disease.js';
 import { noteKill } from './kills.js';
 import { closeHunterTally, noteHunterDeath, noteLedgerKill, openHunterTally } from './hunter-ledger.js';
 import { releaseProofAtDeath } from './proof.js';
+import { dropQueuedRewards } from './reward.js';
 import { spawnAgent } from './spawn.js';
 import { freeAgent } from './world.js';
 
@@ -148,6 +149,7 @@ export function reap(world, policy) {
             policy.onDeath(world, slot, cause);
         }
         releaseProofAtDeath(world, slot);
+        dropQueuedRewards(world, slot);
         releaseInfection(world, slot);
         world.ledger[1] += world.energy[slot];
         leaveCarcass(world, slot);

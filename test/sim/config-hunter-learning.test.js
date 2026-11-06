@@ -47,3 +47,45 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(rulesHash(make({ territoryMax: 2 }))).not.toBe(rulesHash(make({})));
     });
 });
+
+const PHASE2_DEFAULTS = {
+    rewardedHebb: false,
+    rewardSource: 'meat',
+    rewardShuffle: false,
+    rewardShuffleMin: 300,
+    rewardShuffleMax: 3000,
+    rewardGain: 4,
+    rewardBase: 0.25,
+    rewardDecay: 0.02,
+};
+
+describe('the hunter-learning Phase 2 keys', () => {
+    it.each(Object.entries(PHASE2_DEFAULTS))('%s defaults to %s', (key, value) => {
+        expect(DEFAULTS[key]).toBe(value);
+        expect(make({})[key]).toBe(value);
+    });
+
+    it.each([
+        ['rewardedHebb', true],
+        ['rewardSource', 'kill'],
+        ['rewardSource', 'kill-bite'],
+        ['rewardShuffle', true],
+        ['rewardGain', 10],
+        ['rewardBase', 0],
+        ['rewardDecay', 1],
+    ])('accepts %s at %s', (key, value) => {
+        expect(make({ [key]: value })[key]).toBe(value);
+    });
+
+    it.each([
+        ['rewardedHebb', 1],
+        ['rewardSource', 'any'],
+        ['rewardShuffleMin', -1],
+        ['rewardShuffleMax', 1.5],
+        ['rewardGain', 11],
+        ['rewardBase', 1.5],
+        ['rewardDecay', -0.1],
+    ])('rejects %s at %s, naming the key', (key, value) => {
+        expect(() => make({ [key]: value })).toThrow(new RegExp(key));
+    });
+});
