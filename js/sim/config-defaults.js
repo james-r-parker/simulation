@@ -284,8 +284,16 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
     splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
+    provisionEnabled: false, // realistic-keepers T3: a hunter that stores energy from a kill, a bite or a carcass hands provisionShare of it to its young in range
+    provisionShare: 0.3, // realistic-keepers T3: share of the stored energy moved to the young, in [0, 1]
+    provisionRange: 120, // realistic-keepers T3: largest centre distance in world units between giver and young
+    juvenileDependency: false, // realistic-keepers T4: a juvenile canHunt body pays juvenileBurn of its cost, and every canHunt child gets the kin pull floor
+    juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
+    kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight under juvenileDependency, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
+    satedBite: false, // realistic-keepers T1: a canHunt biter for which canEatNow is false (full or digesting) does not bite
+    predatorRestTicks: 0, // realistic-keepers T2: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

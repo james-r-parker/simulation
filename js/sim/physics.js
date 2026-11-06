@@ -33,6 +33,10 @@ export function actAll(world) {
             if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
                 thrust *= 1 + sprintMultiplier * world.sprintBySpec[world.spec[i]];
             }
+            if (config.predatorRestTicks > 0 && world.restTimer[i] > 0) {
+                world.restTimer[i] -= 1; // realistic-keepers T2: a hunter lies up after a kill
+                thrust = 0;
+            }
             if (world.ateTimer[i] < config.handlingTicks) {
                 thrust *= config.handlingThrust;
             }
