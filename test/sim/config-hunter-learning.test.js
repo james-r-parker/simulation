@@ -9,6 +9,7 @@ const DEFAULT_KEYS = {
     juvenileTicks: 3000,
     territoryRadius: 600,
     territoryMax: 1,
+    satedBite: false,
 };
 
 /**
@@ -21,6 +22,11 @@ describe('the hunter-learning Phase 1 keys', () => {
     it.each(Object.entries(DEFAULT_KEYS))('%s defaults to %s', (key, value) => {
         expect(DEFAULTS[key]).toBe(value);
         expect(make({})[key]).toBe(value);
+    });
+
+    it.each(['satedBite'])('%s is a boolean that accepts true', (key) => {
+        expect(make({ [key]: true })[key]).toBe(true);
+        expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
     });
 
     it.each([

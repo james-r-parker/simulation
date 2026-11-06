@@ -104,4 +104,5 @@ export const FEATURE_RULES = {
     juvenileTicks: int(1),
     territoryRadius: positive(),
     territoryMax: int(0),
+    satedBite: BOOL,
 };
