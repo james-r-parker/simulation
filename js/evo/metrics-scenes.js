@@ -20,6 +20,7 @@ import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
 import { spendMetrics } from './scene-spend.js';
+import { refugeMetrics } from './scene-refuge.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
 import { herdMetrics, HERD_SPEC_NAMES } from './scene-herd-metrics.js';
@@ -30,6 +31,10 @@ const WATCH = [
     'eval.chase_escape_share',
     'eval.chase_giveup_share',
     'eval.refuge_use_under_threat',
+    'eval.refuge_prey_use_under_threat',
+    'eval.refuge_episode_entry',
+    'eval.refuge_dwell_ticks',
+    'eval.refuge_exit_fed',
     'eval.carcass_meal_share',
     'eval.carcass_hunter_share',
     'eval.gap_crossers',
@@ -101,6 +106,7 @@ export function sceneMetrics(observer, world) {
         ...patchMetrics(s.patch),
         ...approachMetrics(s.approach),
         ...terrainMetrics(s.terrain),
+        ...refugeMetrics(s.refuge),
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
         ...balanceMetrics(s.balance, world),
