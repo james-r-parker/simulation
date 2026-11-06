@@ -290,5 +290,6 @@ export const DEFAULTS = deepFreeze({
     juvenileBurn: 0.6, // hunter-learning: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // hunter-learning: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight under juvenileDependency, in [0, 4]
     flipReflex: false, // hunter-learning Phase 1 (T12): a child whose specialisation canHunt while its mother's does not gets the hunter prey reflex added to its row
+    satedBite: false, // hunter-learning Phase 1 (T12): a canHunt biter for which canEatNow is false (full or digesting) does not bite
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

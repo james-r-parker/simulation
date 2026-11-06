@@ -14,6 +14,7 @@ const DEFAULT_KEYS = {
     juvenileBurn: 0.6,
     kinPullWeight: 0.5,
     flipReflex: false,
+    satedBite: false,
 };
 
 /**
@@ -28,10 +29,13 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['provisionEnabled', 'juvenileDependency', 'flipReflex'])('%s is a boolean that accepts true', (key) => {
-        expect(make({ [key]: true })[key]).toBe(true);
-        expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
-    });
+    it.each(['provisionEnabled', 'juvenileDependency', 'flipReflex', 'satedBite'])(
+        '%s is a boolean that accepts true',
+        (key) => {
+            expect(make({ [key]: true })[key]).toBe(true);
+            expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
+        },
+    );
 
     it.each([
         ['provisionShare', 0],
