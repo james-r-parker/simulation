@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 (drills: fixed scenarios that test a genome's skills) is built first; Phase 2 adds the local trainer, Phase 3 puts champions in the live world after the world gate.
 **Validated:** 26bc8ed (2026-11-03)
-**Priority:** 3 - the drills and the trainer are tools that do not depend on the balance numbers, and the balance round needs trained champions to test whether unskilled founders cause the floor restarts (world-balance.md H10); champions reach the live world only after the world gate (user, 2026-10-16)
+**Priority:** 4 - the drills and the trainer are tools that do not depend on the balance numbers, and the balance round needs trained champions to test whether unskilled founders cause the floor restarts (world-balance.md H10); champions reach the live world only after the world gate (user, 2026-10-16)
 **Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md)
 
 > Companion to [evolution-rework.md](evolution-rework.md), whose Phases 1 and 2 built the genome, the archive and the live policy. This doc replaces its Phase 3.

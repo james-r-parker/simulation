@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 3 amended to a long-range refuge sense (2026-11-06); Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach it); Phase 2 is built - the cover mechanisms were inert and deleted (`E131`); Phase 3 chunk F is built (the `refugeSense` inputs, `pooled-v5`, `ARCHIVE_VERSION` 7, goldens and baseline re-pinned; `refugeSense` defaults false); next T27, the sense screen.
 **Validated:** 62a6758 (2026-11-06)
-**Priority:** 2 - the Refuge scene is absent on the default world (`eval.refuge_use_under_threat` -0.003, E126 and E129), and cover is the classic stabiliser of the boom-and-dip the floor-off worlds show; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing is the parent body of work
+**Priority:** 3 - the Refuge scene is absent on the default world (`eval.refuge_use_under_threat` -0.003, E126 and E129), and cover is the classic stabiliser of the boom-and-dip the floor-off worlds show; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing is the parent body of work
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a
