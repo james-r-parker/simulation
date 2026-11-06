@@ -1882,3 +1882,11 @@ The world-wide starvation crash of E110 is the toxic cap. It fruits from year ph
 - **Territory alone.** Hunters alive at the end on 7/8 seeds, 1 seed under 80, median hunters at the end 13.5 against 4.5, prey types 3.63: the first arm to pass the full hunter gate. Competence is flat.
 - **Why numbers rise.** Blocking breeding in a crowd does not thin hunters; a hunter that cannot breed keeps the energy a birth costs and lives longer, and the births that do happen are spread out, so fewer hunters starve on the same patch of prey.
 - **With the reflex.** The best competence of any arm (conversion 1k-2k 0.097, zero-kill share 0.548) with prey types 2.50, but 3 of 8 seeds under 80 agents. A wider territory (1000) is worse on every survival row.
+
+### 2026-11-06 - The flip reflex with territory teaches hunters to kill and passes the keep rule (E122, E123)
+
+- **What ran.** `flipReflex` with `hunterTerritory` against the defaults on 16 seeds, floor off (E122) and floor on (E123).
+- **Competence, both worlds.** Kill conversion at age 1000 to 2000 rises about 2.6 times (0.033 to 0.088 floor on), the first-kill time falls 35%, the juvenile death share falls 0.13 and the zero-kill share 0.23. It is the first lever in balancing that makes hunters better at killing on 16 seeds.
+- **Floor on (production).** Hunters alive at the end on 14/16 seeds (10/16), 2 seeds under 80 agents (5), hunters at the end 37 against 8, effective specialisation types 3.2 to 4.0; the floor makes 0.7% of births. Prey types and extinctions do not move. The population mean falls 20%.
+- **Floor off.** The same competence gain, but 10/16 alive and 7 seeds under 80 against 6: on the floor-off world the taught hunters still empty some basins.
+- **Why the pair works.** The reflex gives a spec-flip hunter a hunter's brain at birth; territory stops the taught hunters breeding into the overshoot of E115 and E119. Neither alone holds on 16 seeds.
