@@ -3181,6 +3181,37 @@
       },
       "effect": "no-difference",
       "note": "Skipped by decision (balance autonomy): T22 takes the loss path on E124 and deletes reward.js, the Hebbian scaling, the reward keys and the shuffled-reward control. eval.hunter_conversion_gain stays as a detector."
+    },
+    {
+      "id": "E126",
+      "date": "2026-11-06",
+      "branch": "eval/reference-1106",
+      "hypothesis": "Reference runs on the defaults after hunter-learning (flip reflex and territory on, reward learning deleted) and the step-drift perf pass, and the eval:power run T59 still owed for eval.basin_divergence.",
+      "prediction": "Floor on (16 seeds): matches the E123 flip-territory arm (2 seeds under 80, predators at end about 37). Floor off (32 seeds): about 40% of seeds end under 80 as in E122; eval.basin_divergence powered like the other basin metrics (detects about a 30% change at 16 seeds).",
+      "targets": [
+        "eval.population_mean",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.spec_effective",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_conversion_gain",
+        "eval.basin_divergence"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "-",
+      "after": "evals/results/ref-1106-floor-on-16.json and ref-1106-floor-off-32.json (not committed; evals/results is ignored)",
+      "verdicts": {
+        "eval.population_mean": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.spec_effective": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.hunter_conversion_gain": "-",
+        "eval.basin_divergence": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at c027d92 (behaviour identical to 98d595d). Floor on, 16 seeds: population mean 254, predators at end 37.1, prey types 3.50, spec_effective 4.01, conversion 1k-2k 0.088, conversion gain -0.027, seeds under 80 2/16, basin_divergence 0.43 (null on 3/16, a basin under 20 agents). Matches E123. Floor off, 32 seeds: population mean 204, predators at end 16.8, prey types 2.00, spec_effective 3.96, conversion 1k-2k 0.094, conversion gain -0.023 (null 2), seeds under 80 19/32 (59%, against 6-7/16 in E122), basin_divergence 0.47 but null on 18/32 because one basin held under 20 agents in the last quarter. T59 eval:power: with 18 null seeds no 16-seed split is valid, so eval.basin_divergence has no measurable power floor off; it is only readable on floor-on worlds, and its null count is itself the sign of a basin dying. Conversion 1k-2k and gain also give no valid split (1 and 2 nulls). The floor-off collapse (over half the seeds) remains the largest world problem; next is its diagnosis (natural-selection T64)."
     }
   ]
 }
