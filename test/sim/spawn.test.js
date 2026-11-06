@@ -53,21 +53,10 @@ describe('createWorld', () => {
         expect(hashWorld(build({ seed: 7 }))).not.toBe(hashWorld(build({ seed: 8 })));
     });
 
-    it('creates the ten named streams and the spatial hash', () => {
+    it('creates the nine named streams and the spatial hash', () => {
         const w = build();
         expect(Object.keys(w.rng).sort()).toEqual(
-            [
-                'brain-init',
-                'disease',
-                'flora',
-                'food',
-                'herds',
-                'lifecycle',
-                'mutation',
-                'obstacles',
-                'reward-shuffle',
-                'spawn',
-            ].sort(),
+            ['brain-init', 'disease', 'flora', 'food', 'herds', 'lifecycle', 'mutation', 'obstacles', 'spawn'].sort(),
         );
         expect(w.hash.cols).toBe(Math.ceil(1000 / w.config.hashCellSize));
     });

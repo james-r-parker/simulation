@@ -102,12 +102,4 @@ export const FEATURE_RULES = {
     juvenileTicks: int(1),
     territoryRadius: positive(),
     territoryMax: int(0),
-    rewardedHebb: BOOL,
-    rewardSource: { type: 'enum', values: ['kill', 'kill-bite', 'meat'] },
-    rewardShuffle: BOOL,
-    rewardShuffleMin: int(0),
-    rewardShuffleMax: int(0),
-    rewardGain: num(0, 10),
-    rewardBase: UNIT,
-    rewardDecay: UNIT,
 };

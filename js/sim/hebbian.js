@@ -3,7 +3,6 @@
 
 import { detSigmoid } from './det-math.js';
 import { GENE_OUTPUTS, TRAIT_INDEX } from './brain-layout.js';
-import { rewardScale } from './reward.js';
 
 /** How strongly a plastic weight is pulled back toward its genome value each tick. */
 export const HEBB_DECAY = 0.01;
@@ -35,7 +34,7 @@ export function resetFastOut(world, slot) {
 
 /**
  * Updates a slot's plastic block after its outputs: `fastOut[j, o] += eta x (h_j x out_o - HEBB_DECAY x (fastOut[j, o]
- * - w[j, o]))` with `eta = hebbianRate x sigmoid(learnGene)` (times `rewardBase + rewardGain x trace` with `rewardedHebb`), then clamps to plus or minus `HEBB_CLAMP`.
+ * - w[j, o]))` with `eta = hebbianRate x sigmoid(learnGene)`, then clamps to plus or minus `HEBB_CLAMP`.
  * @param {Record<string, any>} world the world
  * @param {number} slot the alive slot, whose `hidden` row and `outputs` row are this tick's
  * @returns {void}
@@ -45,12 +44,9 @@ export function hebbianStep(world, slot) {
     const H = layout.hidden;
     const OUT = layout.outputCount;
     const G = layout.geneOutputs;
-    let eta =
+    const eta =
         world.config.hebbianRate *
         detSigmoid(weights[slot * layout.weightCount + layout.traitStart + TRAIT_INDEX.LEARN]);
-    if (world.config.rewardedHebb) {
-        eta *= rewardScale(world, slot);
-    }
     const genome = slot * layout.weightCount + layout.wOut;
     const plastic = slot * H * G;
     const out = geneOut;

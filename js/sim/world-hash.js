@@ -3,7 +3,6 @@ import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
 import { meritSpecs } from './merit-state.js';
-import { rewardHashBytes } from './reward-hash.js';
 import { DISEASE_AGENT_ARRAYS, DISEASE_STRAIN_ARRAYS } from './disease-state.js';
 
 /** Agent arrays hashed whole, in the World state table order; `hidden` is handled separately. */
@@ -223,9 +222,6 @@ function hashOptionalArrays(world, views) {
     const { config } = world;
     if (config.hebbianRate > 0) {
         fnv64Bytes(digest, views.fastOut);
-    }
-    for (const reward of rewardHashBytes(world)) {
-        fnv64Bytes(digest, reward);
     }
     if (config.weightDecay > 0) {
         sampleCount[0] = world.inputActivity.samples;
