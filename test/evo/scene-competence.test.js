@@ -128,6 +128,41 @@ describe('kill conversion by age at the opening of a chase', () => {
     });
 });
 
+describe('kill conversion over chases opened hungry', () => {
+    /**
+     * @param {Record<string, any>} scene the scene
+     * @param {Record<string, any>} w the world
+     * @param {[number, boolean, number]} c age at the resolution, whether it could eat at the opening, the outcome
+     * @returns {void}
+     */
+    function hungryChase(scene, w, [age, hungry, outcome]) {
+        w.ageTicks[0] = age;
+        noteChase(scene, w, { slot: 0, outcome, openedTick: w.tick - 100, hungry });
+    }
+
+    it('is registered as watch and counts only hungry chases opened at 1000 to 1999', () => {
+        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_hungry.1k-2k']).toBe('watch');
+        const scene = createCompetenceScene(CONFIG);
+        const w = world([{ id: 1, age: 0 }]);
+        hungryChase(scene, w, [1200, true, CHASE_OUTCOME.CAUGHT]); // opened 1100, hungry
+        hungryChase(scene, w, [1300, true, CHASE_OUTCOME.GAVE_UP]); // hungry
+        hungryChase(scene, w, [1400, false, CHASE_OUTCOME.GAVE_UP]); // opened sated: excluded
+        hungryChase(scene, w, [1500, false, CHASE_OUTCOME.GAVE_UP]); // sated: excluded
+        hungryChase(scene, w, [1050, true, CHASE_OUTCOME.CAUGHT]); // opened at 950: under1k, excluded
+        hungryChase(scene, w, [2100, true, CHASE_OUTCOME.CAUGHT]); // opened at 2000: over2k, excluded
+        const m = competenceMetrics(scene, w);
+        expect(m['eval.hunter_kill_conversion_hungry.1k-2k']).toEqual({ value: 1 / 2 });
+        expect(m['eval.hunter_kill_conversion_by_age.1k-2k']).toEqual({ value: 1 / 4 });
+    });
+
+    it('is null when every chase in the band opened sated', () => {
+        const scene = createCompetenceScene(CONFIG);
+        const w = world([{ id: 1, age: 0 }]);
+        hungryChase(scene, w, [1200, false, CHASE_OUTCOME.CAUGHT]);
+        expect(competenceMetrics(scene, w)['eval.hunter_kill_conversion_hungry.1k-2k'].value).toBeNull();
+    });
+});
+
 describe('the censored time to first kill', () => {
     it('reads the Kaplan-Meier median and restricted mean over killers, a hunter that died without a kill and a live one', () => {
         const scene = createCompetenceScene(CONFIG);

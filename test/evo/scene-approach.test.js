@@ -16,10 +16,11 @@ const CLOSING = 0x3ff;
  * A world with `hunters` predators and `prey` foragers, each tracked by the observer.
  * @param {number} hunters how many predators
  * @param {number} prey how many foragers
+ * @param {Record<string, any>} [over] config overrides
  * @returns {any} the world, the observer and the two slot lists
  */
-function arena(hunters, prey) {
-    const r = observed();
+function arena(hunters, prey, over = {}) {
+    const r = observed(over);
     const { predator } = r.world.config.specialisations;
     /** @type {{hunters: number[], prey: number[]}} */
     const slots = { hunters: [], prey: [] };
@@ -152,10 +153,10 @@ describe('a resolved chase with no hook', () => {
 describe('the noteChase hook', () => {
     /**
      * @param {any} a the arena
-     * @returns {{slot: number, outcome: number, openedTick: number}[]} the calls the approach scene's hook will record
+     * @returns {{slot: number, outcome: number, openedTick: number, hungry: boolean}[]} the calls the approach scene's hook will record
      */
     function record(a) {
-        /** @type {{slot: number, outcome: number, openedTick: number}[]} */
+        /** @type {{slot: number, outcome: number, openedTick: number, hungry: boolean}[]} */
         const calls = [];
         a.observer.scenes.approach.onChase = (/** @type {any} */ _world, /** @type {any} */ chase) => calls.push(chase);
         return calls;
@@ -182,9 +183,27 @@ describe('the noteChase hook', () => {
         a.world.alive[v2] = 0;
         play(a, T0 + 1 + INTENT_WINDOW);
         expect(calls).toEqual([
-            { slot: h2, outcome: CHASE_OUTCOME.CAUGHT, openedTick: T0 },
-            { slot: h1, outcome: CHASE_OUTCOME.ESCAPED, openedTick: T0 },
-            { slot: h3, outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0 },
+            { slot: h2, outcome: CHASE_OUTCOME.CAUGHT, openedTick: T0, hungry: expect.any(Boolean) },
+            { slot: h1, outcome: CHASE_OUTCOME.ESCAPED, openedTick: T0, hungry: expect.any(Boolean) },
+            { slot: h3, outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0, hungry: expect.any(Boolean) },
+        ]);
+    });
+
+    it('flags a chase hungry by whether the hunter could eat at its opening, not at its end', () => {
+        const a = arena(2, 0, { satiationShare: 0.5 });
+        const calls = record(a);
+        const [h1, h2] = a.hunters;
+        const { world } = a;
+        const full = world.config.satiationShare * world.maxEnergyBySpec[world.spec[h1]];
+        world.energy[h1] = full + 1;
+        world.energy[h2] = 0;
+        play(a, T0, { closing: [h1, h2] });
+        world.energy[h1] = 0; // empties after the opening
+        world.energy[h2] = full + 1; // fills after the opening
+        play(a, T0 + 1 + INTENT_WINDOW);
+        expect(calls.map((c) => [c.slot, c.hungry]).sort()).toEqual([
+            [h1, false],
+            [h2, true],
         ]);
     });
 
@@ -194,7 +213,9 @@ describe('the noteChase hook', () => {
         play(a, T0, { closing: a.hunters });
         play(a, T0 + 20, { closing: a.hunters });
         play(a, T0 + 21 + INTENT_WINDOW);
-        expect(calls).toEqual([{ slot: a.hunters[0], outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0 }]);
+        expect(calls).toEqual([
+            { slot: a.hunters[0], outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0, hungry: expect.any(Boolean) },
+        ]);
     });
 
     it('opens a new chase at the next closing sighting after one resolves', () => {
