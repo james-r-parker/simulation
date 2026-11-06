@@ -62,7 +62,9 @@ function play(world, slot, ticks) {
  * @returns {number[]} the due values (tick plus one) in the slot's queue
  */
 function queued(world, slot) {
-    return Array.from(world.rewardDue.slice(slot * QUEUE_SIZE, (slot + 1) * QUEUE_SIZE)).filter((d) => d > 0);
+    return Array.from(world.rewardDue.slice(slot * QUEUE_SIZE, (slot + 1) * QUEUE_SIZE)).filter(
+        (/** @type {number} */ d) => d > 0,
+    );
 }
 
 describe('the shuffled reward', () => {
@@ -70,7 +72,7 @@ describe('the shuffled reward', () => {
         const { world, slot } = setup();
         noteReward(world, slot, REWARD_SOURCE.KILL, 20);
         expect(world.rewardTrace[slot]).toBe(0);
-        expect(world.rewardDue.slice(slot * QUEUE_SIZE, (slot + 1) * QUEUE_SIZE).filter((d) => d > 0)).toHaveLength(1);
+        expect(queued(world, slot)).toHaveLength(1);
         expect(world.rewardCounts[REWARD_SOURCE.KILL]).toBe(1);
     });
 
