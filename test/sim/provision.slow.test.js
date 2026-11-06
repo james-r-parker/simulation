@@ -1,4 +1,4 @@
-// realistic-keepers.md with provisionEnabled on: real worlds run
+// realistic-keepers.md with provisionEnabled and juvenileDependency on: real worlds run
 // with the invariants checked every tick (provision totals equal, energy conserved), and a replay reaches the same world hash.
 
 import { describe, expect, it } from 'vitest';
@@ -15,7 +15,7 @@ import { HUNTER, PREY, hunterBrain, stillBrain } from './helpers/predator-arena.
 import { imbalance } from './helpers/life-world.js';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
-const SWITCHES_ON = { provisionEnabled: true };
+const SWITCHES_ON = { provisionEnabled: true, juvenileDependency: true };
 const YOUNG = 2;
 
 /** The golden "busy" world: a crowded 2400 x 1600 map where mating, splits, bites, the floor and immigrants all happen. */
@@ -95,7 +95,7 @@ function runFamily() {
     return world;
 }
 
-describe('provisioning on', () => {
+describe('provisioning and the juvenile dependency on', () => {
     it(
         'runs the busy world with invariants every tick and replays to the same world hash',
         () => {

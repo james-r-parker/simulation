@@ -96,3 +96,22 @@ describe('eval.instinct_drift', () => {
         expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeNull();
     });
 });
+
+describe('instinctCells with the kin pull', () => {
+    it('adds the two kin cells of a hunter, and none of a non-hunter', () => {
+        const options = { weight: 1, herdWary: CONFIG.herdWary };
+        const plain = instinctCells(LAYOUT, { ...options, canHunt: true });
+        const pulled = instinctCells(LAYOUT, { ...options, canHunt: true, kinPull: 0.5 });
+        expect(pulled.cells.length).toBe(plain.cells.length + 2);
+        expect(instinctCells(LAYOUT, { ...options, canHunt: false, kinPull: 0.5 }).cells).toEqual(
+            instinctCells(LAYOUT, { ...options, canHunt: false }).cells,
+        );
+    });
+
+    it('createInstinctPools puts the kin cells in the hunter pool only under juvenileDependency', () => {
+        const off = createInstinctPools(createConfig({ instinctWeight: 1, juvenileDependency: false }));
+        const on = createInstinctPools(createConfig({ instinctWeight: 1, juvenileDependency: true }));
+        expect(on.hunter.cells.length).toBe(off.hunter.cells.length + 2);
+        expect(on.other.cells).toEqual(off.other.cells);
+    });
+});

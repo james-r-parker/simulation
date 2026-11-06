@@ -31,31 +31,53 @@ const STRENGTH = 0;
 const SINE = HIT_STRIDE - 1;
 
 /**
- * The hunter's prey reflex on a row, in place (hunter-learning.md T6): thrust and turn towards prey, and bite it, each added
- * and clamped. It is the hunter branch of `applyInstinct`, and `applyBirthReflex` adds it to a spec-flip child. Draws nothing.
+ * Raises one skip weight to at least `floor`, clamped. A floor, not an addition, so a repeated call changes nothing.
  * @param {Float32Array} row the weight row
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {number} weight `config.instinctWeight`
+ * @param {{channel: string, part: number, output: number, floor: number}} term which weight and its floor
  * @returns {void}
  */
-export function applyHunterReflex(row, layout, weight) {
+function floorSkip(row, layout, { channel, part, output, floor }) {
+    const input = POOLED_CHANNELS.indexOf(channel) * POOLED_STRIDE + part;
+    const i = layout.wSkip + input * layout.geneOutputs + GENE_OUTPUTS.indexOf(output);
+    row[i] = Math.max(row[i], Math.min(WEIGHT_CLAMP, floor));
+}
+
+/**
+ * The hunter's reflexes on a row, in place (hunter-learning.md T6). The prey terms (thrust and turn towards prey, and bite it,
+ * each added and clamped) are the hunter branch of `applyInstinct`; the kin pull raises the `kin` strength-to-thrust and
+ * sine-to-turn cells to at least `kinPull` x `weight` (a floor, so repeated calls do not accumulate). Draws nothing.
+ * @param {Float32Array} row the weight row
+ * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
+ * @param {{weight: number, prey: boolean, kinPull: number}} options `weight` is `config.instinctWeight`; `prey` adds the prey
+ *   terms; `kinPull` is `kinPullWeight` for the floor, 0 for none
+ * @returns {void}
+ */
+export function applyHunterReflex(row, layout, { weight, prey, kinPull }) {
     const { THRUST, TURN, BITE } = OUTPUT_INDEX;
-    addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: THRUST, amount: weight });
-    addSkip(row, layout, { channel: 'prey', part: SINE, output: TURN, amount: weight });
-    addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: BITE, amount: BITE_SHARE * weight });
+    if (prey) {
+        addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: THRUST, amount: weight });
+        addSkip(row, layout, { channel: 'prey', part: SINE, output: TURN, amount: weight });
+        addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: BITE, amount: BITE_SHARE * weight });
+    }
+    if (kinPull > 0 && weight > 0) {
+        floorSkip(row, layout, { channel: 'kin', part: STRENGTH, output: THRUST, floor: kinPull * weight });
+        floorSkip(row, layout, { channel: 'kin', part: SINE, output: TURN, floor: kinPull * weight });
+    }
 }
 
 /**
  * Adds the reflexes to a random row in place, scaled by `weight`. Every body: thrust and turn towards food, and (a
  * non-hunter) thrust and turn away from a threat; every body thrusts and turns away from megafauna at `herdWary` x
- * weight. A hunter: thrust, turn towards and bite prey (`applyHunterReflex`). Every body: the alarm, hunt-call and smoke biases start at -2 x weight.
+ * weight. A hunter: thrust, turn towards and bite prey (`applyHunterReflex`), and under `kinPull` a floor on the kin cells. Every body: the alarm, hunt-call and smoke biases start at -2 x weight.
  * @param {Float32Array} row the weight row (a random genome)
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean, herdWary: number}} options `weight` is
- *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged
+ * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options `weight` is
+ *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged; `kinPull` (default 0) is the kin pull
+ *   floor of a hunter, `kinPullWeight` while `juvenileDependency` is on
  * @returns {void}
  */
-export function applyInstinct(row, layout, { weight, canHunt, herdWary }) {
+export function applyInstinct(row, layout, { weight, canHunt, herdWary, kinPull = 0 }) {
     if (weight === 0) {
         return;
     }
@@ -64,7 +86,7 @@ export function applyInstinct(row, layout, { weight, canHunt, herdWary }) {
     addSkip(row, layout, { channel: 'food', part: STRENGTH, output: THRUST, amount: w });
     addSkip(row, layout, { channel: 'food', part: SINE, output: TURN, amount: w });
     if (canHunt) {
-        applyHunterReflex(row, layout, w);
+        applyHunterReflex(row, layout, { weight: w, prey: true, kinPull });
     } else {
         addSkip(row, layout, { channel: 'threat', part: STRENGTH, output: THRUST, amount: w });
         addSkip(row, layout, { channel: 'threat', part: SINE, output: TURN, amount: -w });
@@ -91,5 +113,6 @@ export function randomGenome(world, slot, { row, rng }) {
         weight: config.instinctWeight,
         herdWary: config.herdWary,
         canHunt: specParams(config, world.spec[slot]).canHunt,
+        kinPull: config.juvenileDependency ? config.kinPullWeight : 0,
     });
 }

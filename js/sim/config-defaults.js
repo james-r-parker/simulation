@@ -287,6 +287,9 @@ export const DEFAULTS = deepFreeze({
     provisionEnabled: false, // realistic-keepers T3: a hunter that stores energy from a kill, a bite or a carcass hands provisionShare of it to its young in range
     provisionShare: 0.3, // realistic-keepers T3: share of the stored energy moved to the young, in [0, 1]
     provisionRange: 120, // realistic-keepers T3: largest centre distance in world units between giver and young
+    juvenileDependency: false, // realistic-keepers T4: a juvenile canHunt body pays juvenileBurn of its cost, and every canHunt child gets the kin pull floor
+    juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
+    kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight under juvenileDependency, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
