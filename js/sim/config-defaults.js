@@ -285,13 +285,5 @@ export const DEFAULTS = deepFreeze({
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
-    rewardedHebb: false, // hunter-learning Phase 2 (T22 adopts or deletes): a reward trace scales the Hebbian rate
-    rewardSource: 'meat', // hunter-learning Phase 2: which events feed the trace, 'kill', 'kill-bite' or 'meat'
-    rewardShuffle: false, // hunter-learning Phase 2 control (T22 deletes): rewards arrive at an unrelated time
-    rewardShuffleMin: 300, // hunter-learning Phase 2: shortest delay in ticks of a shuffled reward
-    rewardShuffleMax: 3000, // hunter-learning Phase 2: longest delay in ticks of a shuffled reward
-    rewardGain: 4, // hunter-learning Phase 2: gain of the trace on the Hebbian rate
-    rewardBase: 0.25, // hunter-learning Phase 2: share of the plain rate that applies with no reward
-    rewardDecay: 0.02, // hunter-learning Phase 2: per-tick decay of the trace
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
 });

@@ -10,7 +10,6 @@ import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { killSpecs } from './kills.js';
 import { INCOME_KINDS, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
-import { rewardSpecs } from './reward.js';
 import { proofSpecs } from './proof.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
@@ -112,7 +111,6 @@ function agentSpecs(layout) {
  */
 function allocLedgerState(world) {
     world.hunterTally = new Float64Array(3);
-    world.rewardCounts = new Float64Array(3);
     world.hunterIncomeBySpec = new Float64Array(Object.keys(world.config.specialisations).length * INCOME_KINDS);
 }
 
@@ -135,7 +133,6 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
-            ...rewardSpecs(world.config),
         ],
         n,
     );
@@ -340,10 +337,11 @@ function allocClouds(world) {
  */
 export function allocateWorld(config) {
     assertLittleEndian();
+    const layout = brainLayout(config);
     /** @type {World} */
     const world = {
         config,
-        layout: brainLayout(config),
+        layout,
         rng: null,
         tick: 0,
         nextId: 1,
@@ -379,7 +377,7 @@ export function allocateWorld(config) {
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
     };
-    allocAgentArrays(world, world.layout);
+    allocAgentArrays(world, layout);
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
     allocClouds(world);

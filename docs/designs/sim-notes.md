@@ -1890,3 +1890,11 @@ The world-wide starvation crash of E110 is the toxic cap. It fruits from year ph
 - **Floor on (production).** Hunters alive at the end on 14/16 seeds (10/16), 2 seeds under 80 agents (5), hunters at the end 37 against 8, effective specialisation types 3.2 to 4.0; the floor makes 0.7% of births. Prey types and extinctions do not move. The population mean falls 20%.
 - **Floor off.** The same competence gain, but 10/16 alive and 7 seeds under 80 against 6: on the floor-off world the taught hunters still empty some basins.
 - **Why the pair works.** The reflex gives a spec-flip hunter a hunter's brain at birth; territory stops the taught hunters breeding into the overshoot of E115 and E119. Neither alone holds on 16 seeds.
+
+### 2026-11-06 - Rewarded Hebbian learning does not teach hunters (E124)
+
+Reward-gated Hebbian plasticity (`hebbianRate` 0.0001 scaled by a trace of kills, bites or meat) gave no within-lifetime
+gain: conversion at ages 3000-3999 minus 1000-1999 was negative in all nine arms, and the shuffled-reward control scored
+best (-0.005; reward arms -0.020 to -0.045, no plasticity -0.048). The trace is fed mostly by bites (9.6 per 1000 hunter
+agent-ticks against 0.3 kills), and plasticity touches only the hidden-to-output block, so the channel is too weak and too
+noisy to credit a kill. Competence in this world comes from inherited weights (the flip reflex), not lifetime learning.
