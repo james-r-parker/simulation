@@ -230,7 +230,8 @@ function recoil(world, hunter, target) {
 }
 
 /**
- * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge.
+ * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge. Under
+ * `satedBite` a `canHunt` biter that `canEatNow` refuses does neither.
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} biter the slot that may bite
@@ -238,6 +239,9 @@ function recoil(world, hunter, target) {
  * @returns {void}
  */
 function lunge(world, hash, biter, other) {
+    if (world.config.satedBite && !canEatNow(world, biter) && specParams(world.config, world.spec[biter]).canHunt) {
+        return; // hunter-learning T9a: a full or digesting hunter does not bite (no damage, recoil or pheromone)
+    }
     if (bites(world, biter, other)) {
         applyBite(world, hash, biter, other);
     } else if (world.config.recoilEnergy > 0) {

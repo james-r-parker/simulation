@@ -2950,6 +2950,76 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at e44b0f3. Verdicts are provision-juvenile against the defaults. Hunters alive at the last tick: defaults 9/16, provision-juvenile 10/16, provision 9/16; no arm reaches 12/16. provision-juvenile: conversion 1k-2k 0.036 -> 0.046 (+30%, interval [-0.006, 0.031]), prey extinctions 3.25 -> 1.94 (interval [-3.7, 0.25]), predators at end 7.7 -> 5.1, independent kill share 0.979 -> 0.906 (worse, by construction). provision: every target no-difference; conversion, RMST and spec-flip rate null in a seed. The 8-seed survival gains did not replicate. eval:power on 32 default floor-off seeds (evals/results/e116-defaults-32.json, splits of 16): conversion 1k-2k false positive 7.6% and detectable change 100%, first-kill RMST 7.9% and 15%, juvenile death share 9.2% and 15%, zero-kill share 8.5% and 15%, prey extinctions and boom-bust over 100%, juvenile parent pull no verdict. The conversion rate is too noisy at 16 seeds to confirm anything smaller than a doubling; only flip (x2.5 in E115) is that large. Decision: provisioning and juvenile dependency are not adopted (T10, T11); flipReflex is kept off pending a predator brake (it teaches killing but the taught hunters over-hunt)."
+    },
+    {
+      "id": "E119",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-sated-bite",
+      "hypothesis": "E115: flipReflex taught killing (conversion 1k-2k 0.038 -> 0.094, spec-flip kill rate x6) and the taught hunters over-hunted (prey types 3.4 -> 1.75, 7/8 seeds under 80). A full or digesting hunter still bites and wastes the surplus; in nature satiation caps each predator's kill rate (type II functional response) and damps the cycle. satedBite makes the existing satiationShare 0.95 and digestTicks 10 rules apply to bites; digest-30 lengthens the handling time.",
+      "prediction": "8 seeds x 200000 ticks, floor off (evals/screens/hunter-brake.grid.json). flip repeats E115 (conversion about 0.09, prey types under 2, most seeds under 80). sated alone changes little, because untaught hunters rarely kill while full. flip-sated keeps most of the competence gain (spec-flip kill rate at least 0.2, zero-kill share under 0.7, conversion at least 0.07) while prey types at the end recover to at least 2.5 and seeds under 80 fall to at most 3. flip-sated-digest-30 brakes harder: prey types closest to the defaults, competence a little lower than flip-sated. Keep rule (user): hunters alive at the last tick on at least 6/8 and no more seeds under 80 than the defaults. If no flip-sated arm keeps the prey, the over-hunting is a numerical response (too many hunters), not surplus killing, and the next lever is on hunter numbers.",
+      "targets": [
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_juvenile_death_share",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.hunter_kill_rate_by_source.spec-flip",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.boom_bust_count"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "defaults arm (floorTrigger 0)",
+      "after": "evals/screens/results/hunter-brake/ (table.md, 5 arms x 8 seeds x 200000 ticks)",
+      "verdicts": {
+        "eval.hunter_first_kill_rmst": "-",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.hunter_juvenile_death_share": "-",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "-",
+        "eval.hunter_kill_rate_by_source.spec-flip": "-",
+        "eval.predators_at_end": "-",
+        "eval.prey_types_at_end": "-",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "-",
+        "eval.boom_bust_count": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at 20f8f9d, floor off, 8 seeds (means; no eval:compare verdicts at 8 seeds). defaults: hunters alive 5/8, 2 seeds under 80, conversion 1k-2k 0.038, zero-kill 0.805, prey types 3.38, population 358. flip: as E115 (conversion 0.094, spec-flip rate 0.403, prey types 1.75, 7 seeds under 80). sated: alive 7/8, 1 seed under 80, prey types 3.50, population 349, competence flat (conversion 0.027); median hunter-ticks 182778 below the defaults' 238069. flip-sated: conversion 0.064, spec-flip rate 0.215, zero-kill 0.577, but prey types 1.75, population 208, 5 seeds under 80, alive 5/8, and median last-quarter hunter-ticks 1893561 (8x the defaults) with 34.5 hunters at the end. flip-sated-digest-30: worst (alive 2/8, prey types 0.88, population 119). Prediction held for flip and for sated alone changing little in competence; it missed on flip-sated keeping the prey: the brake saves the hunters' energy, hunters multiply and the prey still crash. The over-hunting is a numerical response (too many hunters), not surplus killing, which is the fallback the prediction named: the next lever is on hunter numbers. No flip-sated arm goes to 16 seeds; sated alone is confirmed in E120."
+    },
+    {
+      "id": "E120",
+      "date": "2026-11-06",
+      "branch": "feat/hunter-sated-bite",
+      "hypothesis": "satedBite alone reached hunters alive on 7/8 seeds with 1 under 80 in E119 (defaults 5/8 and 2); confirm on 16 floor-off seeds. No flip-sated arm kept the prey, so none is confirmed.",
+      "prediction": "Hunters alive on at least 12/16 and every guard no-difference; competence no-difference (the brake teaches nothing). The 8-seed gain may not replicate, as provisioning's did not in E116.",
+      "targets": [
+        "eval.hunter_first_kill_rmst",
+        "eval.hunter_zero_kill_share",
+        "eval.hunter_juvenile_death_share",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.population_mean",
+        "eval.prey_extinctions",
+        "eval.boom_bust_count"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e116-defaults.json (16 seeds, floorTrigger 0; the code differs only by default-off switches and the goldens are unchanged)",
+      "after": "evals/results/e120-sated.json (16 seeds, floorTrigger 0, satedBite true)",
+      "verdicts": {
+        "eval.hunter_first_kill_rmst": "no-difference",
+        "eval.hunter_zero_kill_share": "-",
+        "eval.hunter_juvenile_death_share": "no-difference",
+        "eval.predators_at_end": "no-difference",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.population_mean": "-",
+        "eval.prey_extinctions": "no-difference",
+        "eval.boom_bust_count": "no-difference"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at a8f789c. Hunters alive at the last tick 10/16 (defaults 9/16), short of 12/16. Every target no-difference: predators at end 7.7 -> 9.4, prey types 2.81 -> 2.63, prey extinctions 3.25 -> 4.06, population 314 -> 277, juvenile death share 0.616 -> 0.585 (interval [-0.063, -0.006] but under the 5% minimum effect), conversion 1k-2k null in a seed. The prediction's caveat held: the 8-seed gain did not replicate. satedBite is not adopted on its own; it is deleted with the flip verdict (T12) unless the territory lever needs it."
     }
   ]
 }

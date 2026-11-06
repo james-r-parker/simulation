@@ -107,4 +107,5 @@ export const FEATURE_RULES = {
     juvenileBurn: UNIT,
     kinPullWeight: num(0, 4),
     flipReflex: BOOL,
+    satedBite: BOOL,
 };
