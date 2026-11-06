@@ -3395,6 +3395,37 @@
       },
       "effect": "no-difference",
       "note": "Ran 2026-11-06 at e54ade2, floor on, 8 seeds. refuge_use_under_threat: sense-off-8 -0.0024, sense-on-8 -0.0019, sense-off-24 -0.0046, sense-on-24 -0.0071, sense-on-24-r4000 -0.0050; at most 2 of 8 seeds above 0 in any arm. The prediction of a small lift failed: the sense does not change refuge use. A prey flees a hunter within its 250 to 350 px vision and the nearest ring edge averages 2,427 px away with 8 rings (1,427 with 24), so a flight cannot reach cover; nature's refuges are within a dash of where the animal feeds. Guards at 8 rings, sense on against off: seeds under 80 3 against 4, hunters alive 7/8 against 6/8, predators at end 29.9 against 25.9, population mean 226 against 198, conversion 1k-2k 0.088 against 0.076 - no sign of harm (8 seeds judge nothing). Decision: under the user's rule of 2026-11-06 (principles.md, How the principles are used: keep a realistic mechanism that does no harm), the sense is not reverted; E133 checks it for harm on 16 seeds, and refuge.md T28 adopts it on if it passes. The 24-ring arms read worse on guards and are not pursued."
+    },
+    {
+      "id": "E133",
+      "date": "2026-11-06",
+      "branch": "eval/refuge-sense-e133",
+      "hypothesis": "Under the user's rule of 2026-11-06 (principles.md: keep a realistic mechanism that does no harm), the refuge sense (refugeSense, the remembered bearing and nearness of the nearest refuge) is kept if 16 matched floor-on seeds show no harm: the keep rule holds and no eval:compare guard is worse.",
+      "prediction": "No harm: E132's 8 seeds showed sense-on at least level with sense-off on every guard; refuge use stays near -0.002 because a flight cannot reach cover.",
+      "targets": [
+        "eval.population_mean",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.spec_effective",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.prey_extinctions",
+        "eval.refuge_use_under_threat"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "evals/results/e133-off.json (defaults at 12d9ba4, refugeSense false, 16 seeds x 200000 ticks, floor on)",
+      "after": "evals/results/e133-on.json (refugeSense true)",
+      "verdicts": {
+        "eval.population_mean": "-",
+        "eval.predators_at_end": "no-difference",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.spec_effective": "no-difference",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "no-difference",
+        "eval.prey_extinctions": "no-difference",
+        "eval.refuge_use_under_threat": "-"
+      },
+      "effect": "no-difference",
+      "note": "Ran 2026-11-06 at 12d9ba4. Keep rule: hunters alive at the last tick 12/16 (defaults 14/16; at the 12/16 line), seeds ending under 80 agents 7 against 7: holds. eval:compare: predators at end 23.1 -> 27.2, prey types 3.56 -> 3.38, spec_effective 3.98 -> 3.86, conversion 1k-2k 0.083 -> 0.086, prey extinctions 8.75 -> 7.81, all no-difference; population mean 194 -> 220 (+13%, interval [-25, 77], watch). refuge_use_under_threat -0.0024 -> -0.0029 (no change, as predicted). Verdict: no harm, kept. Adoption (refugeSense true by default, flag deleted, goldens re-pinned) is done once with the other keepers at realistic-keepers.md T22. Side note: the defaults now end under 80 on 7 of seeds 1 to 16 (2 before #292): the longer genome reshuffles every world, and E130 already showed seeds 1 to 16 were the kind half (10 of 32 overall)."
     }
   ]
 }
