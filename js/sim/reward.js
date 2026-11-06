@@ -54,3 +54,17 @@ export function noteReward(world, slot, source, stored) {
         world.rewardTrace[slot] = Math.min(1, world.rewardTrace[slot] + stored / world.config.foodEnergy);
     }
 }
+
+/**
+ * The factor `hebbianStep` multiplies its rate by this tick: `rewardBase + rewardGain x trace`. The trace then decays by
+ * `rewardDecay`.
+ * @param {Record<string, any>} world the world, with `rewardedHebb` on
+ * @param {number} slot the alive slot
+ * @returns {number} the factor
+ */
+export function rewardScale(world, slot) {
+    const { rewardBase, rewardGain, rewardDecay } = world.config;
+    const trace = world.rewardTrace[slot];
+    world.rewardTrace[slot] = trace * (1 - rewardDecay);
+    return rewardBase + rewardGain * trace;
+}
