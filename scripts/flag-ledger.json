@@ -46,5 +46,11 @@
     "plan": "docs/designs/hunter-learning.md",
     "task": "T12",
     "reason": "Kept as the one-factor arm of the hunter-learning brake screen (a full or digesting hunter does not bite); T12 adopts it and deletes the key, or deletes the skip in lunge and the key, after the E119 and E120 verdict."
+  },
+  {
+    "key": "hunterTerritory",
+    "plan": "docs/designs/hunter-learning.md",
+    "task": "T12",
+    "reason": "Kept as the one-factor arm of the hunter-learning territory screen (a hunter with more than territoryMax mature hunters in territoryRadius does not mate or split); T12 adopts it and deletes the key, or deletes territoryAllows and the key, after the E121 and E122 verdict."
   }
 ]

@@ -15,6 +15,9 @@ const DEFAULT_KEYS = {
     kinPullWeight: 0.5,
     flipReflex: false,
     satedBite: false,
+    hunterTerritory: false,
+    territoryRadius: 600,
+    territoryMax: 1,
 };
 
 /**
@@ -29,7 +32,7 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['provisionEnabled', 'juvenileDependency', 'flipReflex', 'satedBite'])(
+    it.each(['provisionEnabled', 'juvenileDependency', 'flipReflex', 'satedBite', 'hunterTerritory'])(
         '%s is a boolean that accepts true',
         (key) => {
             expect(make({ [key]: true })[key]).toBe(true);
@@ -46,6 +49,9 @@ describe('the hunter-learning Phase 1 keys', () => {
         ['juvenileBurn', 1],
         ['kinPullWeight', 0],
         ['kinPullWeight', 4],
+        ['territoryRadius', 0.5],
+        ['territoryMax', 0],
+        ['territoryMax', 5],
     ])('accepts %s at %s', (key, value) => {
         expect(make({ [key]: value })[key]).toBe(value);
     });
@@ -62,6 +68,10 @@ describe('the hunter-learning Phase 1 keys', () => {
         ['kinPullWeight', -1],
         ['kinPullWeight', 4.5],
         ['kinPullWeight', NaN],
+        ['territoryRadius', 0],
+        ['territoryRadius', -1],
+        ['territoryMax', -1],
+        ['territoryMax', 1.5],
     ])('rejects %s at %s, naming the key', (key, value) => {
         expect(() => make({ [key]: value })).toThrow(new RegExp(key));
     });
