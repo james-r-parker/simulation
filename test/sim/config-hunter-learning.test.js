@@ -11,6 +11,9 @@ const DEFAULT_KEYS = {
     territoryMax: 1,
     satedBite: false,
     predatorRestTicks: 0,
+    provisionEnabled: false,
+    provisionShare: 0.3,
+    provisionRange: 120,
 };
 
 /**
@@ -25,13 +28,16 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['satedBite'])('%s is a boolean that accepts true', (key) => {
+    it.each(['satedBite', 'provisionEnabled'])('%s is a boolean that accepts true', (key) => {
         expect(make({ [key]: true })[key]).toBe(true);
         expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
     });
 
     it.each([
         ['predatorRestTicks', 65535],
+        ['provisionShare', 0],
+        ['provisionShare', 1],
+        ['provisionRange', 0.5],
         ['juvenileTicks', 1],
         ['territoryRadius', 0.5],
         ['territoryMax', 0],
@@ -41,6 +47,10 @@ describe('the hunter-learning Phase 1 keys', () => {
     });
 
     it.each([
+        ['provisionShare', -0.1],
+        ['provisionShare', 1.1],
+        ['provisionRange', 0],
+        ['provisionRange', -5],
         ['predatorRestTicks', -1],
         ['predatorRestTicks', 65536],
         ['predatorRestTicks', 1.5],

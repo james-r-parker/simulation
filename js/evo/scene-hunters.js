@@ -196,6 +196,23 @@ function incomeMetrics(world) {
 
 /**
  * @param {Record<string, any>} world the world at the last tick
+ * @returns {import('./metrics-stats.js').MetricResult} the energy the young received by provisioning (`provisionTotals`) over
+ *   the energy hunters stored from all sources
+ */
+function provisionedShare(world) {
+    const reason = 'no hunter income';
+    if (world.hunterIncomeBySpec === undefined || world.provisionTotals === undefined) {
+        return none(reason);
+    }
+    let income = 0;
+    for (let i = 0; i < world.hunterIncomeBySpec.length; i++) {
+        income += world.huntBySpec[Math.floor(i / HUNTER_INCOME_NAMES.length)] === 1 ? world.hunterIncomeBySpec[i] : 0;
+    }
+    return share(world.provisionTotals[1], income, reason);
+}
+
+/**
+ * @param {Record<string, any>} world the world at the last tick
  * @returns {import('./metrics-stats.js').MetricResult} the local share of the hunters alive
  */
 function endLocalShare(world) {
@@ -229,6 +246,7 @@ export function hunterMetrics(scene, world) {
         ...deathMetrics(scene),
         ...shares('eval.hunter_birth_source_share', HUNTER_BIRTH_NAMES, scene.births, 'no hunter births'),
         ...incomeMetrics(world),
+        'eval.provisioned_energy_share': provisionedShare(world),
         ...ageMetrics(scene.age, world),
         'eval.predator_end_local_share': endLocalShare(world),
         'eval.hunter_ticks_last_quarter':
@@ -243,6 +261,7 @@ export const HUNTER_METRIC_NAMES = Object.freeze([
     'eval.hunter_median_lifespan',
     'eval.predator_end_local_share',
     'eval.hunter_ticks_last_quarter',
+    'eval.provisioned_energy_share',
     ...HUNTER_DEATH_NAMES.map((n) => `eval.hunter_death_share.${n}`),
     ...HUNTER_BIRTH_NAMES.map((n) => `eval.hunter_birth_source_share.${n}`),
     ...HUNTER_INCOME_NAMES.map((n) => `eval.hunter_income_share.${n}`),

@@ -284,6 +284,9 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
     splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
+    provisionEnabled: false, // realistic-keepers T3: a hunter that stores energy from a kill, a bite or a carcass hands provisionShare of it to its young in range
+    provisionShare: 0.3, // realistic-keepers T3: share of the stored energy moved to the young, in [0, 1]
+    provisionRange: 120, // realistic-keepers T3: largest centre distance in world units between giver and young
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory

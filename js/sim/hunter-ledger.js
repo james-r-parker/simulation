@@ -41,6 +41,16 @@ export function noteIncome(world, slot, { kind, stored }) {
 }
 
 /**
+ * Allocates the hunter ledger's world-level state (hunter-ledger.js): the death tally and the energy income by spec.
+ * @param {Record<string, any>} world the world being built
+ * @returns {void}
+ */
+export function allocLedgerState(world) {
+    world.hunterTally = new Float64Array(3);
+    world.hunterIncomeBySpec = new Float64Array(Object.keys(world.config.specialisations).length * INCOME_KINDS);
+}
+
+/**
  * @returns {[any, string, number][]} the allocation specs for `allocateWorld`, one element per slot (the ledger's arrays)
  */
 export function ledgerSpecs() {

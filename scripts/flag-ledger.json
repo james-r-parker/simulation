@@ -34,5 +34,11 @@
     "plan": "docs/designs/realistic-keepers.md",
     "task": "T22",
     "reason": "Restored default-off under the keep rule: T11 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
+  },
+  {
+    "key": "provisionEnabled",
+    "plan": "docs/designs/realistic-keepers.md",
+    "task": "T22",
+    "reason": "Restored default-off under the keep rule: T13 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
   }
 ]
