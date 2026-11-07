@@ -6,8 +6,8 @@ import { test, expect } from '@playwright/test';
 
 /** Every look item that is not an effect family: the reference frame keeps the scenery and drops the effects. */
 const SCENERY = 'rocks,aurora,terrain,motion,threads,decay,finish,flora,herds,chase';
-/** Recipes drawn by the herds and flora items, which the reference keeps on. */
-const SCENERY_RECIPES = new Set(['stampede', 'pollinated']);
+/** Recipes of the herds and flora families: their look items stay on in the reference, so their unit tests cover them. */
+const SCENERY_RECIPES = new Set(['stampede', 'pollinated', 'herdDied', 'calfBorn', 'dungDropped', 'patchWilted']);
 const DEMO = '?seed=3&agents=60&quality=0&scale=0.5&fxdemo=all&fxhold=4';
 /** A pixel counts as lit by an effect when its luminance (0 to 1) rises by more than this. */
 const LIT_STEP = 0.08;
