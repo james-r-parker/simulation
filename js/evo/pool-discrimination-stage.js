@@ -1,7 +1,7 @@
 // Stages a tiny hand-built world for the pooled-ray discrimination scenes: a few agents, food and rocks, nothing else.
 
 import { createConfig } from '../sim/config.js';
-import { ENERGY_SOURCE, addEnergy } from '../sim/energy.js';
+import { ENERGY_SOURCE, addEnergy, updateSize } from '../sim/energy.js';
 import { BORN_CAUSE } from '../sim/events.js';
 import { createWorld, spawnAgent, spawnFoodItem } from '../sim/spawn.js';
 
@@ -54,6 +54,7 @@ const STAGE_CONFIG = Object.freeze({
  * @property {number} angle heading in radians
  * @property {number} spec the specialisation index (0 forager, 1 predator)
  * @property {number} energy starting energy, at least the config's `initialEnergy` (energy is only added)
+ * @property {number} [baseSize] the agent's base size (default: the config's `baseSize`); size is this plus energy / `energyToSize`
  * @property {Float32Array} [weights] the brain row the agent is born with (default: all zero)
  * @property {[number, number]} [parents] the agent's `parentA` and `parentB` ids (default `[0, 0]`; a shared nonzero
  *   id makes two agents kin)
@@ -79,6 +80,19 @@ const STAGE_CONFIG = Object.freeze({
 function setParents(world, slot, parents) {
     world.parentA[slot] = parents[0];
     world.parentB[slot] = parents[1];
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @param {number | undefined} baseSize the base size to give it, or undefined to keep the config's
+ * @returns {void}
+ */
+function setBaseSize(world, slot, baseSize) {
+    if (baseSize !== undefined) {
+        world.baseSize[slot] = baseSize;
+        updateSize(world, slot);
+    }
 }
 
 /**
@@ -126,6 +140,7 @@ export function stageWorld({ foods, rocks, agents, seed, config = {} }) {
         world.x[slot] = agent.x;
         world.y[slot] = agent.y;
         world.angle[slot] = agent.angle;
+        setBaseSize(world, slot, agent.baseSize);
         setParents(world, slot, agent.parents ?? [0, 0]);
     }
     return { world, policy };
