@@ -40,7 +40,7 @@ describe('playEdges: meals', () => {
         expect(pool.time[2]).toBe(CURVE.crumbIn);
         expect(pool.pose[0]).toBeCloseTo(108);
         expect(pool.move[0]).toBeCloseTo(22);
-        expect(pool.color[0]).toBeCloseTo(PALETTE.meat[0]);
+        expect(pool.color[0]).toBeCloseTo(PALETTE.meat[0] * 1.8);
         expect(player.tweens.kind[1]).toBe(TWEEN.GULP);
     });
 
