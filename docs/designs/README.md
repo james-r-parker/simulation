@@ -21,7 +21,7 @@ Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:
 12. [Deployment and community](deployment-and-community.md) - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
 13. [Mobile view](mobile-view.md) - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 14. [Brain inspection](brain-inspection.md) - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
-20. [Habitat cover](habitat-cover.md) - the Refuge scene is still absent after the cover mechanisms (`E131`) and the refuge sense (`E132`, `E133`) because prey are 1,400 to 2,400 px from a ring and flee within 300 px; the fix is where the cover stands, and it queues behind every unbuilt doc because it changes the map and so the goldens
+20. [Habitat cover](habitat-cover.md) - it changes the map and re-pins the goldens, so it queues behind every unbuilt doc
 
 ## Implemented (11)
 
