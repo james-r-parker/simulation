@@ -94,3 +94,16 @@ describe('playRecipe', () => {
         expect(fx.pool.time[1]).toBeCloseTo(60);
     });
 });
+
+describe('effect-owned reach and life', () => {
+    it('a part whose reach or life is -1 takes the effect value, 0 reach and 1 tick when the effect gives none', () => {
+        const fx = createFxPlayer(createFxPool());
+        const spot = at();
+        playRecipe(fx, FX_RECIPES.packCall, spot);
+        expect(fx.pool.move[4]).toBe(0);
+        expect(fx.pool.time[1]).toBe(1);
+        playRecipe(fx, FX_RECIPES.packCall, { ...spot, reach: 50, life: 30 });
+        expect(fx.pool.move[(4 + 1) * 4]).toBe(50);
+        expect(fx.pool.time[4 * 4 + 1]).toBe(30);
+    });
+});

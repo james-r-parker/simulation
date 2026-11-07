@@ -80,7 +80,7 @@ export function createFxPool() {
  * @returns {void}
  */
 export function setFxLevel(pool, level) {
-    pool.limit = FX_CAPACITY_BY_LEVEL[level] ?? FX_CAPACITY;
+    pool.limit = FX_CAPACITY_BY_LEVEL[level];
     if (pool.next >= pool.limit) {
         pool.next = 0;
     }
@@ -207,7 +207,7 @@ function fxUniforms() {
 }
 
 /**
- * @param {{pool: FxPool, budget?: import('./fx-budget.js').FxBudget}} options the pool the effects player spawns into
+ * @param {{pool: FxPool, budget: import('./fx-budget.js').FxBudget}} options the pool the effects player spawns into
  *   and the budget that follows the quality level and the look items
  * @returns {import('./scene.js').Layer & {uniforms: Record<string, {value: any}>}} the pool's mesh, drawn additively
  */
@@ -235,14 +235,10 @@ export function createFxLayer({ pool, budget }) {
         uniforms,
         setQuality(level) {
             setFxLevel(pool, level);
-            if (budget) {
-                setFxQuality(budget, level);
-            }
+            setFxQuality(budget, level);
         },
         setLook(look) {
-            if (budget) {
-                setFxLook(budget, look);
-            }
+            setFxLook(budget, look);
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;

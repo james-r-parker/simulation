@@ -181,3 +181,11 @@ describe('the effect-family cues', () => {
         expect(cueFor(died(0), { ...ctx, camera: CLOSE })).toBeNull();
     });
 });
+
+describe('cueFor without a cue', () => {
+    it('returns null for a kind it has no tone for', () => {
+        const layout = { effectKinds: { BORN: 1, DIED: 2, ALARM: 4, PACK_CALL: 5 }, deathCauses: { EATEN: 1 } };
+        const camera = { x: 0, y: 0, zoom: 1, canvas: { width: 10, height: 10 } };
+        expect(cueFor({ kind: 99, x: 0, y: 0, a: 0, c: 0 }, { layout, camera, rootMidi: 50 })).toBeNull();
+    });
+});

@@ -38,7 +38,7 @@ export const FLAG_CALL = 1;
  * @property {string} ease an `FX_EASE` name
  * @property {readonly number[]} scale four keys at ages 0, 1/3, 2/3 and 1 (after easing)
  * @property {readonly number[]} alpha four keys; above 1 lifts the colour over the bloom threshold
- * @property {number} [flags] `FLAG_CALL`
+ * @property {number} flags `FLAG_CALL` or 0
  */
 
 /**
@@ -162,7 +162,7 @@ export function curveUniforms() {
         out.info[i * 4] = FX_SHAPES.indexOf(c.shape);
         out.info[i * 4 + 1] = FX_MOTIONS.indexOf(c.motion);
         out.info[i * 4 + 2] = FX_EASE.indexOf(c.ease);
-        out.info[i * 4 + 3] = c.flags ?? 0;
+        out.info[i * 4 + 3] = c.flags;
     });
     return out;
 }

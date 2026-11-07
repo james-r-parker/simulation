@@ -31,7 +31,7 @@ export function createFlagEdges(capacity) {
         flags: new Uint32Array(capacity),
         genome: new Uint32Array(capacity),
         ate: new Uint8Array(capacity),
-        ctx: { bits: {}, emit: () => {}, index: 0 },
+        ctx: { bits: {}, emit: /** @type {any} */ (null), index: 0 },
     };
 }
 

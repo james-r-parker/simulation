@@ -137,6 +137,18 @@ describe('createFrameLoop', () => {
         expect(client.released).toBe(1);
     });
 
+    it('starts the effects frame and diffs flag edges even with no effect queue', () => {
+        const client = fakeClient();
+        const { info, layout } = smallReady(0);
+        const player = createEffectsPlayer({ layout, info });
+        client.effects = null;
+        const { deps, loop } = setup(client);
+        deps.refs.player = player;
+        loop.frame(1000);
+        expect(player.edges.tick).toBeGreaterThanOrEqual(0);
+        expect(player.fx.budget.lastTick).not.toBeNaN();
+    });
+
     it('plays the queued effects the playhead has reached', () => {
         const client = fakeClient();
         const { info, layout } = smallReady(0);

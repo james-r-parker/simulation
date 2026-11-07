@@ -148,7 +148,7 @@ function deathCue(effect, { deathCauses }, place, zoom) {
 function bornCue(effect, layout, place, rootMidi) {
     const causes = layout.bornCauses;
     if (causes !== undefined && (effect.d === causes.FLOOR || effect.d === causes.IMMIGRANT)) {
-        return toneCue('arrival', place, CLOSE_ZOOM) ?? makeCue('born', 'sine', [0, 0, 0, 0], place);
+        return /** @type {Cue} */ (toneCue('arrival', place, CLOSE_ZOOM));
     }
     const down = causes !== undefined && effect.d === causes.SPLIT ? 12 : 0;
     const hz = midiToHz(rootMidi + 24 - down + PENTATONIC[(effect.a >>> 0) % PENTATONIC.length]);
