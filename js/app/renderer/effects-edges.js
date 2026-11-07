@@ -62,7 +62,7 @@ function onEdge(player, edge, index) {
         tellSink(player, agents, index, CLIENT_KIND.MEAL);
     } else if (edge === EDGE.PREGNANT_ON) {
         playPregnant(player, agents, index);
-    } else if (edge <= EDGE.INFECTED_OFF) {
+    } else {
         playSickness(player, agents, index, edge);
         tellSink(player, agents, index, SICK_KINDS[edge]);
     }

@@ -91,3 +91,13 @@ describe('createFxDemo', () => {
         expect(demo.cells).toHaveLength(0);
     });
 });
+
+describe('createFxDemo before a world', () => {
+    it('does nothing while there is no effects player', () => {
+        const c = ctx();
+        const demo = /** @type {any} */ (createFxDemo({ family: 'all', hold: null, stress: false }));
+        demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), { ...c, player: null });
+        expect(c.client.paused).toBe(false);
+        expect(demo.cells).toHaveLength(0);
+    });
+});

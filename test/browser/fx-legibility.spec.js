@@ -84,6 +84,7 @@ test('every effect recipe lights pixels in its demo cell against the same frame 
         },
         { a: on.png, b: off.png, cells: on.cells, step: LIT_STEP },
     );
+    console.log(`fx legibility, lit pixels per cell: ${gains.map((g) => `${g.name} ${g.lit}`).join(', ')}`);
     expect(gains.length).toBeGreaterThan(30);
     for (const { name, lit } of gains) {
         if (!SCENERY_RECIPES.has(name)) {

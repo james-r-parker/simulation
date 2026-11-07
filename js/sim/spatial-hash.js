@@ -1,4 +1,8 @@
-// Uniform-grid spatial hash over agent and food circles, rebuilt each tick by a counting sort.
+// Uniform-grid spatial hash over agent and food circles, rebuilt each tick by a counting sort in the WASM kernels
+// (wasm/src/hash.rs). The arrays live in the world's arena (`arenaHash` in wasm-hash.js); this module keeps the query
+// helpers the JS rules use.
+
+import { buildHashKernel, hashShape } from './wasm-hash.js';
 
 /**
  * @typedef {object} SpatialHash
@@ -7,37 +11,32 @@
  * @property {number} rows rows
  * @property {number} maxAgents agent slot count; food ids start here
  * @property {Int32Array} cellStart `cols * rows + 1` offsets into `entries`
- * @property {Int32Array} cellCount per-cell scratch for the count and insert passes
  * @property {Int32Array} entries circle ids, grouped by cell
  * @property {Float64Array} boxX per entry, the circle's `minX` at build time
  * @property {Float64Array} boxY per entry, the circle's `minY` at build time
  * @property {Int32Array} range `[col0, row0, col1, row1]` written by `cellRange`
- * @property {Int32Array} circleRange per circle id, its four `range` values from the count pass, read by the insert pass
  * @property {number} entryCount entries used by the last build
  */
 
 /**
- * Allocates the hash once, sized for the worst case of nine cells per circle.
+ * A hash for a world of this config that no build has bound yet: empty cells and no entries. Every world gets its own
+ * hash over its arena at birth (`world.hash`); tests and tools that want a separate handle make one here and pass it to
+ * `buildHash`, which binds it to the world's arrays.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {SpatialHash}
  */
 export function createSpatialHash(config) {
-    const cellSize = config.hashCellSize;
-    const cols = Math.ceil(config.worldWidth / cellSize);
-    const rows = Math.ceil(config.worldHeight / cellSize);
-    const capacity = 9 * (config.maxAgents + config.maxFood);
+    const { cellSize, cols, rows } = hashShape(config);
     return {
         cellSize,
         cols,
         rows,
         maxAgents: config.maxAgents,
         cellStart: new Int32Array(cols * rows + 1),
-        cellCount: new Int32Array(cols * rows),
-        entries: new Int32Array(capacity),
-        boxX: new Float64Array(capacity),
-        boxY: new Float64Array(capacity),
+        entries: new Int32Array(0),
+        boxX: new Float64Array(0),
+        boxY: new Float64Array(0),
         range: new Int32Array(4),
-        circleRange: new Int32Array(4 * (config.maxAgents + config.maxFood)),
         entryCount: 0,
     };
 }
@@ -73,106 +72,22 @@ export function cellRange(hash, x, y, r) {
 }
 
 /**
- * Counts one circle into every cell of `hash.range` and keeps the range for the insert pass.
- * @param {SpatialHash} hash the hash
- * @param {number} id circle id
- */
-function countRange(hash, id) {
-    const { range, cols, cellCount, circleRange } = hash;
-    const at = 4 * id;
-    circleRange[at] = range[0];
-    circleRange[at + 1] = range[1];
-    circleRange[at + 2] = range[2];
-    circleRange[at + 3] = range[3];
-    for (let row = range[1]; row <= range[3]; row++) {
-        for (let col = range[0]; col <= range[2]; col++) {
-            cellCount[row * cols + col]++;
-        }
-    }
-}
-
-/**
- * Inserts one circle into every cell of the range the count pass kept for it.
- * @param {SpatialHash} hash the hash
- * @param {number} id circle id
- * @param {number} minX the box's minimum x
- * @param {number} minY the box's minimum y
- */
-function insertRange(hash, id, minX, minY) {
-    const { cols, cellStart, cellCount, entries, boxX, boxY, circleRange } = hash;
-    const at4 = 4 * id;
-    const row1 = circleRange[at4 + 3];
-    const col0 = circleRange[at4];
-    const col1 = circleRange[at4 + 2];
-    for (let row = circleRange[at4 + 1]; row <= row1; row++) {
-        for (let col = col0; col <= col1; col++) {
-            const cell = row * cols + col;
-            const at = cellStart[cell] + cellCount[cell]++;
-            entries[at] = id;
-            boxX[at] = minX;
-            boxY[at] = minY;
-        }
-    }
-}
-
-/**
- * Counts every live circle: agents by ascending slot (id `slot`), then food (id `maxAgents + slot`).
- * @param {SpatialHash} hash the hash
- * @param {Record<string, any>} world the world
- */
-function countAll(hash, world) {
-    const { alive, x, y, size, foodAlive, foodX, foodY, foodRadius } = world;
-    for (let i = 0; i < alive.length; i++) {
-        if (alive[i] === 1) {
-            cellRange(hash, x[i], y[i], size[i]);
-            countRange(hash, i);
-        }
-    }
-    for (let i = 0; i < foodAlive.length; i++) {
-        if (foodAlive[i] === 1) {
-            cellRange(hash, foodX[i], foodY[i], foodRadius[i]);
-            countRange(hash, hash.maxAgents + i);
-        }
-    }
-}
-
-/**
- * Inserts every live circle in the same order as `countAll`.
- * @param {SpatialHash} hash the hash
- * @param {Record<string, any>} world the world
- */
-function insertAll(hash, world) {
-    const { alive, x, y, size, foodAlive, foodX, foodY, foodRadius } = world;
-    for (let i = 0; i < alive.length; i++) {
-        if (alive[i] === 1) {
-            insertRange(hash, i, x[i] - size[i], y[i] - size[i]);
-        }
-    }
-    for (let i = 0; i < foodAlive.length; i++) {
-        if (foodAlive[i] === 1) {
-            insertRange(hash, hash.maxAgents + i, foodX[i] - foodRadius[i], foodY[i] - foodRadius[i]);
-        }
-    }
-}
-
-/**
- * Rebuilds the hash from the world's live agents and food. Allocates nothing.
- * @param {SpatialHash} hash the hash
- * @param {Record<string, any>} world the world
+ * Rebuilds the world's hash from its live agents and food in the WASM kernel (`build_hash`, wasm/src/hash.rs): agents by
+ * ascending slot (id `slot`), then food (id `maxAgents + slot`), each in every cell its bounding box covers. Allocates
+ * nothing. A hash other than `world.hash` (one a test or tool made with `createSpatialHash`) is bound to the world's
+ * arrays, so it reads this build.
+ * @param {SpatialHash} hash the hash to bind the build to: `world.hash`, or one made for this world's config
+ * @param {Record<string, any>} world a world on the WASM kernels
+ * @throws {Error} when the entries would overflow the capacity of nine cells per circle
  */
 export function buildHash(hash, world) {
-    const { cellStart, cellCount } = hash;
-    cellCount.fill(0);
-    countAll(hash, world);
-    cellStart[0] = 0;
-    for (let c = 0; c < cellCount.length; c++) {
-        cellStart[c + 1] = cellStart[c] + cellCount[c];
+    const own = world.hash;
+    const total = buildHashKernel(world);
+    if (total > own.entries.length) {
+        throw new Error(`spatial hash needs ${total} entries but holds ${own.entries.length}`);
     }
-    const total = cellStart[cellCount.length];
-    if (total > hash.entries.length) {
-        throw new Error(`spatial hash needs ${total} entries but holds ${hash.entries.length}`);
+    own.entryCount = total;
+    if (hash !== own) {
+        Object.assign(hash, { ...own, range: hash.range });
     }
-    cellCount.fill(0);
-    insertAll(hash, world);
-    hash.entryCount = total;
 }

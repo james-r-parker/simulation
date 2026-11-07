@@ -103,44 +103,76 @@ describe('createFxDev modes', () => {
     });
 });
 
-describe('the page hooks', () => {
-    it('fxSink tells the interface, then the overlay when there is one', () => {
-        /** @type {string[]} */
-        const seen = [];
-        const effect = { kind: 1 };
-        const app = { iface: { onEffect: () => seen.push('iface') }, fxDev: null };
-        fxSink(app, effect);
-        fxSink({ ...app, fxDev: { onEffect: () => seen.push('dev') } }, effect);
-        expect(seen).toEqual(['iface', 'iface', 'dev']);
-    });
-
-    it('fxAfterDraw always runs the interface hook and the overlay only when the URL asked for it', () => {
-        /** @type {any[]} */
-        const calls = [];
-        const player = {};
-        const app = {
-            iface: { afterDraw: () => calls.push('iface') },
+describe('fxSink, fxAfterDraw and fxPerf', () => {
+    /** @returns {any} a page with no effect tools */
+    function page() {
+        const seen = /** @type {string[]} */ ([]);
+        return {
+            seen,
             fxDev: null,
-            deps: { refs: { player } },
-            camera: { canvas: { width: 200 } },
-            supervisor: { client: () => 'client' },
-            ready: 'ready',
-            container: { clientWidth: 100 },
+            iface: { onEffect: () => seen.push('effect'), afterDraw: () => seen.push('draw') },
+            deps: { refs: { player: null }, scene: null },
         };
-        fxAfterDraw(app, { tick: 1 });
-        expect(calls).toEqual(['iface']);
-        const dev = { afterDraw: (/** @type {any} */ f, /** @type {any} */ ctx) => calls.push(ctx) };
-        fxAfterDraw({ ...app, fxDev: dev }, { tick: 2 });
-        expect(calls[2]).toEqual({ player, camera: app.camera, client: 'client', ready: 'ready', cssScale: 0.5 });
+    }
+
+    it('always tells the interface, and the tools only when they exist', () => {
+        const app = page();
+        fxSink(app, { kind: 3 });
+        fxAfterDraw(app, {});
+        expect(app.seen).toEqual(['effect', 'draw']);
+        expect(fxPerf(app)).toEqual({ fx: null, drawCalls: null });
+        const calls = /** @type {string[]} */ ([]);
+        app.fxDev = {
+            onEffect: () => calls.push('note'),
+            afterDraw: (/** @type {any} */ _f, /** @type {any} */ ctx) => calls.push(`draw ${ctx.cssScale}`),
+        };
+        Object.assign(app, {
+            camera: { canvas: { width: 200 } },
+            container: { clientWidth: 100 },
+            supervisor: { client: () => null },
+            ready: null,
+        });
+        fxSink(app, { kind: 3 });
+        fxAfterDraw(app, {});
+        expect(calls).toEqual(['note', 'draw 0.5']);
     });
 
-    it('fxPerf reports nulls before the player and the budget counts after it', () => {
-        expect(fxPerf({ deps: { refs: { player: null }, scene: null } })).toEqual({ fx: null, drawCalls: null });
-        const layout = { effectKinds: {}, deathCauses: {}, bornCauses: {} };
-        const player = createEffectsPlayer({ layout, info: { callRadius: 1, callTicks: 1, maxAgents: 4 } });
-        const scene = { renderer: { info: { render: { calls: 7 } } } };
-        const perf = fxPerf({ deps: { refs: { player }, scene } });
+    it('reports the budget counts, the pool occupancy and the draw calls once a world exists', () => {
+        const app = page();
+        app.deps.refs.player = createEffectsPlayer({
+            layout: { effectKinds: {}, deathCauses: {} },
+            info: { callRadius: 1, callTicks: 1 },
+        });
+        app.deps.scene = { renderer: { info: { render: { calls: 7 } } } };
+        const perf = fxPerf(app);
         expect(perf.drawCalls).toBe(7);
-        expect(Object.keys(perf.fx ?? {}).length).toBeGreaterThan(0);
+        expect(perf.fx?.occupancy).toBe(0);
+        expect(perf.fx?.combat).toEqual({ spawned: 0, dropped: 0, culled: 0 });
+    });
+});
+
+describe('createFxDev with the overlay alone', () => {
+    it('mounts once per world, replaces the overlay for a new world, and lists no demo', () => {
+        const parent = fakeElement();
+        /** @type {Record<string, any>} */
+        const target = {};
+        const dev = /** @type {any} */ (
+            createFxDev({ params: readFxParams('?fxlog=1'), doc: fakeDocument(), parent, target })
+        );
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 100, height: 100 }),
+            world: { width: 100, height: 100 },
+        });
+        const layout = { effectKinds: {}, deathCauses: {} };
+        const ctx = { player: null, camera, client: null, ready: null, cssScale: 1 };
+        dev.afterDraw({ nowMs: 1 }, ctx);
+        expect(parent.children).toHaveLength(0);
+        const ready = { layout };
+        dev.afterDraw({ nowMs: 2 }, { ...ctx, ready });
+        dev.afterDraw({ nowMs: 3 }, { ...ctx, ready });
+        expect(parent.children).toHaveLength(1);
+        dev.afterDraw({ nowMs: 4 }, { ...ctx, ready: { layout } });
+        expect(parent.children).toHaveLength(1);
+        expect(target.__fxdemo).toBeUndefined();
     });
 });

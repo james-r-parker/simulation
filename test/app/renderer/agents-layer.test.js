@@ -161,4 +161,17 @@ describe('setLook', () => {
         expect(read()).toEqual([1, 0, 0, 0]);
         layer.dispose();
     });
+
+    it('sets the body, weather, courtship and flora gates from their items', () => {
+        const { info, layout } = smallReady();
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const u = layer.object.children[0].material.uniforms;
+        layer.setLook?.({ body: 0, weather: 0, courtship: 0, flora: 0 });
+        expect([u.uBody.value, u.uWeather.value, u.uCourt.value, u.uFlora.value]).toEqual([1, 1, 1, 1]);
+        layer.setLook?.({ body: 1, weather: -1, courtship: -1, flora: -1 });
+        expect([u.uBody.value, u.uWeather.value, u.uCourt.value, u.uFlora.value]).toEqual([0.5, 0, 0, 0]);
+        layer.setLook?.({});
+        expect([u.uBody.value, u.uWeather.value, u.uCourt.value]).toEqual([0, 0, 0]);
+        layer.dispose();
+    });
 });
