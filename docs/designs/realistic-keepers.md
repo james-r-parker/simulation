@@ -159,6 +159,31 @@ call. Non-guard readings, recorded for the combined run to watch: predatorRestTi
 (-8%), and raises `eval.alarm_rate` from about 1e-6 to 8e-6 (flagged worse by direction, still near zero). None is on the keep rule's guard list, so none is
 harm under the rule as written.
 
+**E-L-2 (placeholder id) - the combined run (T21).** All seven kept mechanisms on together (`satedBite`, `predatorRestTicks` 60,
+`juvenileDependency`, `rewardedHebb`, `coverConceals`, `coverFoodFree`, `refugeSense`; provisioning already deleted) against the defaults on
+the same 32 seeds (`off-a`, `off-b`), floor on, 200000 ticks, policy live, two 16-seed reports (`combined-a`, `combined-b`). Prediction (written from
+the arms: no arm harmful, `satedBite` the one arm whose 1k-2k conversion fell by construction): the keep rule holds in each half and no guard but
+conversion 1k-2k is worse.
+
+| Measure                                             | Defaults a / b   | Combined a / b   | Paired reading                                                                             |
+| --------------------------------------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------------------ |
+| Hunters alive at end (of 16)                        | 14 / 13          | 13 / 14          | rule needs 12 or more: holds in both halves; 32 seeds 27 vs 27, diff 0.000 [-0.188, 0.188] |
+| Seeds under 80 agents (of 16)                       | 7 / 4            | 5 / 4            | no more than the defaults in either half; 32 seeds 11 vs 9, diff -0.063 [-0.250, 0.125]    |
+| population_mean (32 seeds)                          | 203.1            | 236.0 (+16.2%)   | no-difference [-12.3, 74.6]                                                                |
+| predators_at_end (32 seeds)                         | 23.2             | 34.6 (+49.1%)    | better [1.6, 21.9]                                                                         |
+| prey_types_at_end, spec_effective, prey_extinctions | 3.41, 3.94, 8.13 | 3.47, 3.94, 7.06 | all no-difference                                                                          |
+| hunter_kill_conversion 1k-2k                        | 0.0870           | 0.0655 (-24.7%)  | worse [-0.0335, -0.0110] (each half also worse)                                            |
+| hunter_kill_conversion_hungry 1k-2k                 | 0.0893           | 0.0810 (-9.3%)   | no-difference [-0.0208, 0.0034] (each half no-difference)                                  |
+
+**Verdict: passes.** The counts of the keep rule hold in each half and every guard but one is no-difference or better. The one guard that is worse,
+`hunter_kill_conversion_by_age.1k-2k`, is the one E136 ruled on for `satedBite`: a full hunter declines chases by construction, which removes
+easy conversions from the denominator's complement; the conversion over chases opened while the hunter can eat (the by-construction metric
+built in T11a) is not worse (-9.3%, interval spans 0, each half too). By the E136 precedent that guard is read through the hungry metric, so the
+combination stands and refugeSense is not backed out (backing out the latest-added mechanism would not touch `satedBite`'s effect, so a rerun
+would repeat it). Delegated decision, recorded in the Decisions table. Other readings worse by `eval:compare` and not on the guard list: catch_rate
+(-19.6%), pack_kill_share (-15.8%), fed_median_lifespan (-5.2%), median_lifespan (-5.3%), mean and p90 reproducer fitness (-9% and -10%),
+and terrain_death_share (+42%: more deaths on terrain, more prey in cover areas). Predators at end improving +49% is the combined world's gain.
+
 ### Phase 3 - Close
 
 **Targets:** bench.step_ms@500
@@ -194,6 +219,7 @@ not claim to recover it.
 | `predatorRestTicks` is judged at 60, the value E113 screened                                                                                                                                                                                         | Delegated (balance autonomy) |
 | Provisioning and the juvenile dependency are judged as separate arms; `eval.hunter_independent_kill_share` falls by construction under both and is not a guard                                                                                       | Delegated (balance autonomy) |
 | `refugeSense` keeps its refuge.md ownership (T27, T28); this doc applies the keep rule to the `E133` 16-seed reports (refuge.md T27) and adds it to the combined run                                                                                 | Delegated (balance autonomy) |
+| The combined run's 1k-2k conversion fall is read through `eval.hunter_kill_conversion_hungry.1k-2k` (E136 precedent for `satedBite`): the hungry-chase conversion is not worse, so the combination passes; no mechanism is backed out                | Delegated (balance autonomy) |
 | Excluded, harm: carcass scent (E114, worse on every reading), `huntSprintInstinct` (E113, population -10.8%, hunter-ticks down), `mealHeatCap` (population overshoot), `splitClonalMax` lifted (E127, collapse), boom-damping tuning (E128 and E129) | Delegated (balance autonomy) |
 | Excluded, unrealistic: a long `mateRange` (mating at a distance nature does not show)                                                                                                                                                                | Delegated (balance autonomy) |
 | Excluded, control or redundant: the reward shuffle control, `coverBiteGuard` and `refugeSlack`; denser rings stay with refuge.md Phase 3                                                                                                             | Delegated (balance autonomy) |
