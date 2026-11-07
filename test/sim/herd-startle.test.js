@@ -108,4 +108,41 @@ describe('stepHerds startle response', () => {
         expect(odd.groupFleeX[1]).toBe(-1);
         expect(odd.groupFleeY[1]).toBe(0);
     });
+
+    it('picks the same hunter as an all-pairs reference among many agents and herd animals', () => {
+        const world = build({ herdSize: 8, maxAgents: 40 });
+        const hunterSpec = world.config.specialisations.predator.index;
+        const preySpec = world.config.specialisations.forager.index;
+        for (let a = 0; a < 8; a++) {
+            world.herdX[a] = 400 + ((a * 17) % 60);
+            world.herdY[a] = 600 + ((a * 29) % 70);
+            world.herdAlive[a] = a === 5 ? 0 : 1;
+        }
+        const range = world.config.herdStartleRadius;
+        for (let h = 0; h < 40; h++) {
+            world.alive[h] = h % 9 === 4 ? 0 : 1;
+            world.spec[h] = h % 3 === 0 ? preySpec : hunterSpec;
+            world.x[h] = 430 + Math.cos(h * 2.3) * range * (0.4 + (h % 7) * 0.2);
+            world.y[h] = 630 + Math.sin(h * 2.3) * range * (0.4 + (h % 7) * 0.2);
+        }
+        stepHerds(world);
+        let expected = -1;
+        let best = Infinity;
+        for (let h = 0; h < 40; h++) {
+            const canHunt = world.alive[h] === 1 && world.spec[h] === hunterSpec;
+            const near = [...Array(8).keys()].some(
+                (a) =>
+                    world.herdAlive[a] === 1 &&
+                    (world.x[h] - world.herdX[a]) ** 2 + (world.y[h] - world.herdY[a]) ** 2 <= range * range,
+            );
+            const dx = world.x[h] - world.groupCentroidX[0];
+            const dy = world.y[h] - world.groupCentroidY[0];
+            if (canHunt && near && dx * dx + dy * dy < best) {
+                best = dx * dx + dy * dy;
+                expected = h;
+            }
+        }
+        expect(expected).toBeGreaterThanOrEqual(0);
+        expect(world.events.data[3]).toBe(expected);
+    });
 });

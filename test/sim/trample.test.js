@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allocBody } from './helpers/body.js';
 import { createConfig } from '../../js/sim/config.js';
-import { addEnergy, ENERGY_SOURCE, LOSS_CAUSE } from '../../js/sim/energy.js';
+import { addEnergy, ENERGY_SOURCE, LOSS_CAUSE, removeEnergy } from '../../js/sim/energy.js';
 import { DEATH_CAUSE, EVENT_TYPE } from '../../js/sim/events.js';
 import { reap } from '../../js/sim/population.js';
 import { createWorld } from '../../js/sim/spawn.js';
@@ -107,4 +107,78 @@ describe('trampleHerds', () => {
         trampleHerds(world, slot);
         expect(world.energy[slot]).toBe(0);
     });
+
+    it('matches the all-against-all reference bit for bit on a crowded herd', () => {
+        const run = (/** @type {boolean} */ reject) => {
+            const world = build({ herdCount: 4, herdSize: 16, maxAgents: 8 });
+            const slots = [];
+            for (let i = 0; i < 6; i++) {
+                const slot = addBlob(world);
+                world.x[slot] = 300 + i * 37;
+                world.y[slot] = 500 + i * 23;
+                world.vx[slot] = 3 - i;
+                world.vy[slot] = i - 2;
+                slots.push(slot);
+            }
+            for (let a = 0; a < world.herdMax; a++) {
+                world.herdAlive[a] = a % 7 === 3 ? 0 : 1;
+                world.herdId[a] = a;
+                world.herdX[a] = 300 + ((a * 53) % 260);
+                world.herdY[a] = 480 + ((a * 31) % 160);
+                world.herdVx[a] = (a % 3) - 1;
+                world.herdVy[a] = (a % 5) - 2;
+            }
+            for (const slot of slots) {
+                if (reject) {
+                    trampleHerds(world, slot);
+                } else {
+                    trampleHerdsReference(world, slot);
+                }
+            }
+            return slots.map((s) => [
+                world.x[s],
+                world.y[s],
+                world.vx[s],
+                world.vy[s],
+                world.energy[s],
+                world.lastHerdId[s],
+            ]);
+        };
+        const fast = run(true);
+        expect(fast.some((row) => row[4] < 100)).toBe(true);
+        expect(fast).toEqual(run(false));
+    });
 });
+
+/** The pre-reject loop, copied: a full contact response for every live animal in slot order. @param {import('../../js/sim/world.js').World} world @param {number} slot */
+function trampleHerdsReference(world, slot) {
+    const { x, y, vx, vy, size, herdX, herdY, herdVx, herdVy } = world;
+    for (let animal = 0; animal < world.herdMax; animal++) {
+        if (world.herdAlive[animal] !== 1) {
+            continue;
+        }
+        const dx = x[slot] - herdX[animal];
+        const dy = y[slot] - herdY[animal];
+        const reach = size[slot] + world.config.herdRadius;
+        const distanceSq = dx * dx + dy * dy;
+        if (distanceSq >= reach * reach) {
+            continue;
+        }
+        const distance = Math.sqrt(distanceSq);
+        const nx = distance > 0 ? dx / distance : 1;
+        const ny = distance > 0 ? dy / distance : 0;
+        x[slot] = herdX[animal] + nx * reach;
+        y[slot] = herdY[animal] + ny * reach;
+        const vn = (vx[slot] - herdVx[animal]) * nx + (vy[slot] - herdVy[animal]) * ny;
+        if (vn >= 0) {
+            continue;
+        }
+        vx[slot] -= 2 * vn * nx;
+        vy[slot] -= 2 * vn * ny;
+        const ratio = -vn / world.config.maxVelocity;
+        const amount = world.config.trampleDamage * ratio * ratio * (size[slot] / world.baseSize[slot]);
+        if (removeEnergy(world, slot, amount, LOSS_CAUSE.TRAMPLE) > 0) {
+            world.lastHerdId[slot] = world.herdId[animal];
+        }
+    }
+}

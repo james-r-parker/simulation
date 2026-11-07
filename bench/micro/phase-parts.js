@@ -8,6 +8,7 @@ import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { applyCosts } from '../../js/sim/energy.js';
 import { decayFertileZones, updateSeason } from '../../js/sim/environment.js';
 import { advanceEra } from '../../js/sim/eras.js';
+import { stepHerds } from '../../js/sim/herd-motion.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ageFood, spawnFood } from '../../js/sim/food.js';
 import { regrowPatches } from '../../js/sim/food-patches.js';
@@ -28,7 +29,7 @@ import { microSuite, microWorld } from './fixture.js';
 
 /** Each phase's parts, in the order its body calls them. The brain phase is timed by `brain-parts.bench.js`. */
 export const PHASE_PARTS = Object.freeze({
-    environment: { updateSeason, advanceEra },
+    environment: { updateSeason, advanceEra, stepHerds },
     hash: { buildHash: (/** @type {any} */ w) => buildHash(w.hash, w) },
     sense: { senseAll: (/** @type {any} */ w) => senseAll(w, w.hash) },
     signal: { signalAll: (/** @type {any} */ w) => signalAll(w, w.hash) },
