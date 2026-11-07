@@ -21,6 +21,8 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=lib/cpu-lock.sh
+source "$ROOT/scripts/lib/cpu-lock.sh"
 
 FIX=0
 CI=0
@@ -126,6 +128,8 @@ PASSED=0
 FAILED=0
 SKIPPED=0
 
+LOCKED_GATES="test,bench-check,eval-smoke,bench-compare,browser-smoke"
+
 wanted() { [[ -z "$ONLY" || ",$ONLY," == *",$1,"* ]]; }
 
 # digest <gate> <log>: what to act on, at most DIGEST_LINES lines, indented under the gate's line.
@@ -165,7 +169,13 @@ run_gate() {
   local log="$LOG_DIR/$name.log" start ms
   start=$(date +%s%N)
   local rc=0
-  "$@" >"$log" 2>&1 || rc=$?
+  # The timing-sensitive gates hold the CPU lock while they run (scripts/lib/cpu-lock.sh; CHECK_CPU_LOCK=<file> or off,
+  # CHECK_CPU_LOCK_HELD=1 when the caller holds it); CI is one job on its own runner and takes none.
+  if [[ $CI -eq 0 && ",$LOCKED_GATES," == *",$name,"* ]]; then
+    with_cpu_lock "$@" >"$log" 2>&1 || rc=$?
+  else
+    "$@" >"$log" 2>&1 || rc=$?
+  fi
   if [[ $rc -eq 3 && "$name" == bench-check ]]; then
     # An over-limit step time on a busy machine is inconclusive, not a failure (scripts/bench-check.mjs).
     SKIPPED=$((SKIPPED + 1))
