@@ -136,14 +136,15 @@ const MIN_FRAMES = 60;
  */
 
 /**
- * @param {{pinned?: number | null, floatTargets?: boolean, software?: boolean}} [options] `pinned` holds a level;
- *   `floatTargets` false (no float render targets for bloom) holds level 2; `software` (a CPU rasteriser) starts at
- *   level 2 but leaves the rule free to move it
- * @returns {Quality} the quality state, at level 0 unless pinned, limited or software
+ * @param {{pinned?: number | null, floatTargets?: boolean, software?: boolean, coarse?: boolean}}
+ *   [options] `pinned` holds a level; `floatTargets` false (no float render targets for bloom) holds level 2;
+ *   `software` (a CPU rasteriser) starts at level 2 but leaves the rule free to move it; `coarse` (a touch screen, so a
+ *   phone or tablet) starts at level 1 and the rule moves it from there
+ * @returns {Quality} the quality state, at level 0 unless pinned, limited, software or coarse
  */
-export function createQuality({ pinned = null, floatTargets = true, software = false } = {}) {
+export function createQuality({ pinned = null, floatTargets = true, software = false, coarse = false } = {}) {
     const floor = floatTargets ? 0 : 2;
-    const start = software ? 2 : floor;
+    const start = software ? 2 : Math.max(floor, coarse ? 1 : 0);
     const level = pinned === null ? start : Math.max(floor, Math.min(2, pinned));
     return {
         level,
