@@ -49,4 +49,11 @@ describe('workflows', () => {
         expect(nightly?.text).toContain('npx playwright install --with-deps chromium');
         expect(nightly?.text).toContain('npm run browser:hash');
     });
+    it('give the perf job room to finish its bench-compare on a hosted runner', () => {
+        // Five alternating runs at 500 agents overran a 15-minute timeout on the hosted runner (PR #308).
+        const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
+        const perf = check.slice(check.indexOf('\n  perf:'));
+        expect(Number(/timeout-minutes:\s*(\d+)/.exec(perf)?.[1])).toBeGreaterThanOrEqual(30);
+        expect(Number(/bench-compare\.mjs[^\n]*--runs=(\d+)/.exec(perf)?.[1])).toBeLessThanOrEqual(3);
+    });
 });
