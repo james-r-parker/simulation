@@ -1,0 +1,12 @@
+{
+  "seeds": 16,
+  "seedOffset": 16,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "defaults",
+  "arms": {
+    "defaults": {},
+    "wd0": { "weightDecay": 0 },
+    "mr0.1": { "mutationRate": 0.1 }
+  }
+}
