@@ -80,6 +80,11 @@ For every metric that moved:
    invalid; `eval:compare` refuses them (exit 2, `CompareRefused <field>`) - never force it. `--allow-config-diff
 <key>` is for a change that is the config key itself; `--allow-seed-diff` is only for calibration.
 
+When the outcome is a training, drill or reflex run (`npm run train`, `drill`, `reflex`), also write the record in
+[training.md](../../../docs/designs/training.md), "From outcome to task": observation, theory (nature first), a check
+against `docs/principles.md`, a prediction with its detector, and task rows. A theory that fails the check is refused in
+Decisions and never becomes a task.
+
 ## Calibration
 
 Calibration compares `baseline-v5` on seeds 1-16 with seeds 17-32 (`npm run eval -- --seed-offset 16 --out

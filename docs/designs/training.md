@@ -49,6 +49,23 @@ Phase 3 only, after the world gate below. `npm run train:export -- --out public/
 
 **World gate** (from evolution-rework.md, kept): world-balance.md's post-feature round is built (T93), its scorecard passes on both seed halves, and the user has watched the default world in the renderer and signed it off.
 
+## From outcome to task
+
+Every training run, drill run and reflex run ends with this record, written in the doc of the work it judges (this doc for the trainer) before the next run starts. A finding that skips it does not become a task.
+
+1. **Observation.** The detector numbers: drill win shares and edges, reflex pass shares and their bars, curve metrics, with the seeds, trials and the arm that produced them. A number with no bar beside it (random brains, the memoryless reference) is not an observation.
+2. **Theory.** The mechanism that would explain it, as one sentence a fixture can falsify. How nature meets the same problem comes first ([principles.md](../principles.md), "How the principles are used"), and the doc names the biology. A theory about what the brain does (never bites, always bites) is checked with a diagnostic before any run that depends on it.
+3. **Principle check.** A table row per theory naming the scenes and selection rules it serves and each of these it must not break. One failed line refuses the theory.
+    - Detector, not reward: no fitness, merit, archive-rank, offer-filter or mate-rank term pays for an act or for a drill or reflex score ("measure scenes, reward them almost never"; selection rule 9).
+    - The hunt chain fails closed: a chase that never bites or a bite that bounces stays a failed gene (rule 6); nothing is rescued, restocked or pardoned (rules 1 and 4).
+    - Senses stay local: the brain can sense what the lesson needs (a ray class, a body input), and no input is added to fit a task.
+    - No scripted mode, no timer, no restocking, and no free action ("What to refuse").
+    - The change is to the world a stage runs in (a config, a curriculum), never to who breeds.
+4. **Prediction and detector.** Written before the run: the detector (a drill, a reflex case, a curve metric or an `eval.*` metric), its direction and size, and the minimum evidence. Training outcomes use at least 3 training-seed offsets per arm and 32 drill trials per genome; the reflex case runs at 64 trials; a single archive is a lead, not a verdict. A claim on a world metric uses 16 seeds and `eval:compare` ([run-evolution-loop](../../.claude/skills/run-evolution-loop/SKILL.md)).
+5. **Task rows.** Each surviving theory becomes `[judgement]` or `[mechanical]` rows in this doc's Task breakdown under a new phase, with a Chunks table. A diagnostic that tells two theories apart is a row before the run it gates. Code, runs and the final write-up are separate rows; a long run is never in a code chunk ([AGENTS.md](../../AGENTS.md), "Delegating to subagents").
+
+A refused theory is written into Decisions with the line it failed and the reason. The run's result closes the record: a final row records whether the prediction held and appends the next record's tasks, so the loop continues from data.
+
 ## Phases
 
 ### Phase 1 - Drills (built)
