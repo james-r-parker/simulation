@@ -2111,6 +2111,30 @@ Toolchain facts found on the way:
   replacing them, so the build script adds `--remap-path-prefix` without losing `--import-memory`; a build from another
   checkout path gives the same bytes.
 
+### 2026-11-07 - WASM brain kernel adopted: step 4.01 to 3.00 ms, drills 17% faster (wasm-kernels T7)
+
+Every world now runs the brain in the Rust kernel from birth (`allocateWorld` attaches) and the JS brain kernel is deleted.
+Measured under `flock /tmp/claude-1000/cpu.lock` on a machine also running evals (load about 10 of 32 cores), against
+`origin/main` (8cf1ccd10, which runs the JS brain):
+
+| Measure                                                                        | JS            | Rust          | Change                |
+| ------------------------------------------------------------------------------ | ------------- | ------------- | --------------------- |
+| `bench-compare --sizes=500 --runs=5`, `bench.step_ms@500`                      | 4.006         | 3.003         | -25.0%                |
+| Same, `bench.step_ms@500merit` / `@500w7680`                                   | 4.019 / 3.549 | 2.981 / 2.742 | -25.8% / -22.7%       |
+| Same, `bench.phase_ms.brain@500`                                               | 1.296         | 0.499         | -61.5% (2.6 times)    |
+| `bench:micro --area drill --compare origin/main --runs 3`, trials/s per worker | 49.6          | 58.2          | +17.2%, margin +-7.0% |
+
+- The step is under the 3.32 ms budget for the first time since the budget was set.
+- `bench-compare` flagged `bench.phase_ms.sense@500` at +12.7% (and `@500merit` +10.2%, `@500w7680` +2.4%); the sense micro
+  bench (`bench:parts --area sense --compare origin/main --runs 3`) shows +1.4%, margin +-10.2%, `same`. Typed-array views over
+  a `WebAssembly.Memory` buffer read as fast as plain ones in the JS rules; the flag looks like load noise in the whole-step
+  run, and Phase 2 moves the sense phase into the kernel anyway.
+- World birth: compiling the module and probing `__heap_base` once per thread leaves a drill-size world (8 slots, 4 pages) one
+  `Memory` plus one `Instance`, 28 us; the whole attach is about 35 us after the agent-row lookup moved from a scan per row
+  (61 us over 99 rows, the world object being in dictionary mode before its final spread) to one `Map`.
+- A synchronous `new WebAssembly.Module` of a 24 kB binary is fine in Node and in a worker; only a browser main thread limits
+  synchronous compiles, and no world is born there.
+
 ### 2026-11-07 - Trainer smoke run and ticks per second (training T8 to T11)
 
 A short run, not the Phase 2 done run (that needs about 40 x 32 x 60000 ticks): `npm run train -- --generations 6
@@ -2157,3 +2181,23 @@ and `bench:parts` against origin/main (alternating runs, a loaded machine, so th
 
 End to end (`bench-compare --sizes=500 --runs=5`, load about 27): `bench.step_ms@500` 7.97 to 7.63 (-4.3%), sense phase
 1.60 to 1.37 ms; inside the gate's noise, not a quiet-machine number. The golden test passes unchanged.
+
+### 2026-11-07 - herd neighbour loops skip the grid (T73)
+
+`trampleHerds` ran a contact test of every agent against every live herd animal, and `senseGroupHunters` in
+`herd-startle.js` ran a spec lookup and a distance test of every agent against each herd every eighth tick. Both now
+reject on one axis before the rest: `trampleHerds` skips an animal when `|dx| >= reach`, `threatensGroup` when `dx * dx >
+rangeSq`, and the startle loop runs the distance test before `specParams` (both must pass, so the nearest hunter is the
+same).
+
+- Why it is bit-identical: float multiplication and addition round monotonically, so `dx * dx >= reach * reach` follows
+  from `|dx| >= reach`, and `dx * dx + dy * dy >= dx * dx`. A skipped pair is exactly one the full test returns on, the
+  loops keep their order, and no float result changes. A strict `>` is used in the startle loop because that test is
+  `<=` (a plain `|dx| > radius` could skip a pair whose rounded squares are equal). Tests compare each loop with an
+  all-pairs copy of the old code; `test/sim/golden.json` is unchanged.
+- Measured, alternating runs on a loaded machine (`npm run bench:parts -- --area <phase> --compare origin/main`):
+  physics `integrate` 2,531 to 3,498 ops/s (+38%, margin 8%); environment `stepHerds` 20,196 to 38,083 ops/s (+89%,
+  margin 6%), the environment phase 20,843 to 35,769 (+72%, margin 14%). The whole physics phase moved +0.5% inside a
+  10% margin, so the step-level gain is small (about 0.02 to 0.05 ms) and needs a quiet-machine bench to quote.
+- `herd-graze.js` already box-rejects food before its distance test; `herd-steering.js` and `herd-motion.js` loop over
+  the herd's own animals, rocks and gaps (small, fixed sets), not agents, so they were left alone.

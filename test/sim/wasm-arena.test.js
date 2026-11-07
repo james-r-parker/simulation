@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -9,59 +8,25 @@ import {
     ALIGN,
     MAX_PAGES,
     WORLD_FIELDS,
-    WasmArenaError,
     arenaSpecs,
     attachWasm,
     createArena,
     layoutArena,
 } from '../../js/sim/wasm-arena.js';
-import { loadKernels } from '../../js/sim/wasm-loader.js';
+import { embeddedKernels } from '../../js/sim/wasm-loader.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
-if (!kernels.ok) {
-    throw new Error(`the committed kernels do not load: ${kernels.detail}`);
-}
-const { module } = kernels;
-/** A module whose memory import needs 65 pages, more than the probe gives. */
-const GREEDY = new WebAssembly.Module(
-    Uint8Array.of(
-        0,
-        0x61,
-        0x73,
-        0x6d,
-        1,
-        0,
-        0,
-        0,
-        2,
-        15,
-        1,
-        3,
-        0x65,
-        0x6e,
-        0x76,
-        6,
-        0x6d,
-        0x65,
-        0x6d,
-        0x6f,
-        0x72,
-        0x79,
-        2,
-        0,
-        65,
-    ),
-);
+const kernels = embeddedKernels();
 
 /**
- * @returns {{ records: any[], log: { log: (level: string, event: string, fields: object) => void } }} a log that keeps
- *   its records
+ * @param {Record<string, any>} world an attached world
+ * @returns {Record<string, any>} a shallow copy without an arena of its own yet, with its own agent rows
  */
-function recordingLog() {
-    /** @type {any[]} */
-    const records = [];
-    return { records, log: { log: (level, event, fields) => records.push({ level, event, ...fields }) } };
+function detachedCopy(world) {
+    /** @type {Record<string, any>} */
+    const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
+    delete copy.wasm;
+    return copy;
 }
 
 describe('arena layout', () => {
@@ -96,68 +61,53 @@ describe('arena layout', () => {
 describe('createArena', () => {
     const world = smallWorld();
 
-    it('requests the whole memory up front and cannot grow', () => {
-        const arena = createArena(module, world.config, world.layout);
+    it('requests the whole memory up front, sized for the world, and cannot grow', () => {
+        const arena = createArena(kernels, world.config, world.layout);
         const pages = arena.memory.buffer.byteLength / 65536;
+        const { end } = layoutArena(arenaSpecs(world.config, world.layout), kernels.heapBase);
+        expect(pages).toBe(Math.ceil(end / 65536));
         expect(() => arena.memory.grow(1)).toThrow(RangeError);
         expect(arena.memory.buffer.byteLength / 65536).toBe(pages);
     });
 
     it('gives views that share their bytes with the kernel', () => {
-        const arena = createArena(module, world.config, world.layout);
+        const arena = createArena(kernels, world.config, world.layout);
         arena.views.scratch.set([0.25, -3, 0]);
         expect(arena.exports.tanh_into(arena.offsets.scratch, 3)).toBe(0);
         expect(Array.from(arena.views.scratch.subarray(0, 3))).toEqual([detTanh(0.25), detTanh(-3), 0]);
     });
 
-    it('turns a probe that cannot instantiate into an instantiate error, and the committed kernels probe cleanly', () => {
-        expect(() => createArena(GREEDY, world.config, world.layout)).toThrow(/probe failed/);
-        try {
-            createArena(GREEDY, world.config, world.layout);
-        } catch (error) {
-            expect(/** @type {WasmArenaError} */ (error).reason).toBe('instantiate');
-        }
-        expect(() => createArena(module, world.config, world.layout)).not.toThrow();
-    });
-
-    it('throws a memory error past the page limit', () => {
+    it('fails loudly past the page limit', () => {
         const huge = { ...world.config, maxAgents: 1e6 };
         const layout = brainLayout({ ...world.config, brainHidden: 64 });
-        expect(() => createArena(module, huge, layout)).toThrow(WasmArenaError);
-        try {
-            createArena(module, huge, layout);
-        } catch (error) {
-            expect(/** @type {WasmArenaError} */ (error).reason).toBe('memory');
-            expect(String(error)).toContain(`the limit is ${MAX_PAGES}`);
-        }
+        expect(() => createArena(kernels, huge, layout)).toThrow(`the limit is ${MAX_PAGES}`);
     });
 });
 
 describe('attachWasm', () => {
-    it('changes nothing with the switch off', () => {
-        const world = smallWorld();
-        const weights = world.weights;
-        expect(attachWasm(world, kernels)).toBe(false);
-        expect(attachWasm(world, kernels, { wasmKernels: false })).toBe(false);
-        expect(world.weights).toBe(weights);
-        expect(world.wasm).toBeUndefined();
-    });
-
-    it('moves every hot array into the arena with its contents, and the world hash does not move', () => {
+    it('is done at birth: every hot array of a new world lives in its arena', () => {
         const world = smallWorld({ initialAgents: 5 });
-        const before = hashWorld(smallWorld({ initialAgents: 5 })); // a twin: a hashed world cannot be attached
-        const copies = Object.fromEntries(WORLD_FIELDS.map((name) => [name, world[name].slice()]));
-        expect(attachWasm(world, kernels, { wasmKernels: true })).toBe(true);
+        expect(world.wasm).toBeDefined();
         for (const name of WORLD_FIELDS) {
             expect(world[name].buffer).toBe(world.wasm.memory.buffer);
-            expect(world[name]).toEqual(copies[name]);
         }
-        expect(hashWorld(world)).toBe(before);
+    });
+
+    it('moves a copy onto its own arena with every hot array and its contents, and the world hash does not move', () => {
+        const world = smallWorld({ initialAgents: 5 });
+        const before = hashWorld(smallWorld({ initialAgents: 5 })); // a twin: a hashed world cannot be attached
+        const copy = detachedCopy(world);
+        expect(attachWasm(copy)).toBe(true);
+        for (const name of WORLD_FIELDS) {
+            expect(copy[name].buffer).toBe(copy.wasm.memory.buffer);
+            expect(copy[name].buffer).not.toBe(world.wasm.memory.buffer);
+            expect(copy[name]).toEqual(world[name]);
+        }
+        expect(hashWorld(copy)).toBe(before);
     });
 
     it('re-points the agent rows, so freeing a slot clears the arena bytes', () => {
         const world = smallWorld({ initialAgents: 3 });
-        attachWasm(world, kernels, { wasmKernels: true });
         const H = world.layout.hidden;
         world.hidden.fill(0.5, 0, 3 * H);
         world.hidden[world.config.maxAgents * H] = 0.75; // the scratch row is not an agent row
@@ -171,19 +121,15 @@ describe('attachWasm', () => {
 
     it('refuses a second attach, so no agent row is re-pointed at the wrong array', () => {
         const world = smallWorld({ initialAgents: 3 });
-        attachWasm(world, kernels, { wasmKernels: true });
-        expect(() => attachWasm(world, kernels, { wasmKernels: true })).toThrow(/already runs the WASM kernels/);
+        expect(() => attachWasm(world, kernels)).toThrow(/already runs the WASM kernels/);
         freeAgent(world, 0);
         expect(Array.from(world.alive.subarray(0, 3))).toEqual([0, 1, 1]);
     });
 
-    it('attaches a shallow copy of an attached world on its own arena, the original untouched', () => {
+    it('attaches a shallow copy on its own arena, the original untouched', () => {
         const world = smallWorld({ initialAgents: 3 });
-        attachWasm(world, kernels, { wasmKernels: true });
-        /** @type {Record<string, any>} */
-        const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
-        delete copy.wasm;
-        expect(attachWasm(copy, kernels, { wasmKernels: true, midRun: true })).toBe(true);
+        const copy = detachedCopy(world);
+        expect(attachWasm(copy, kernels, { midRun: true })).toBe(true);
         const H = world.layout.hidden;
         world.hidden.fill(0.5, 0, 3 * H);
         copy.hidden.fill(0.25, 0, 3 * H);
@@ -198,29 +144,14 @@ describe('attachWasm', () => {
         );
     });
 
-    it('refuses a world already hashed or past tick 0, whose hash views would keep reading the JS arrays', () => {
-        const hashed = smallWorld();
+    it('refuses a world already hashed or past tick 0, whose hash views would keep reading the old arrays', () => {
+        const hashed = detachedCopy(smallWorld());
         hashWorld(hashed);
-        expect(() => attachWasm(hashed, kernels, { wasmKernels: true })).toThrow(/already hashed/);
-        expect(() => attachWasm(hashed, kernels, { wasmKernels: true, midRun: true })).toThrow(/already hashed/);
-        const running = smallWorld();
+        expect(() => attachWasm(hashed)).toThrow(/already hashed/);
+        expect(() => attachWasm(hashed, kernels, { midRun: true })).toThrow(/already hashed/);
+        const running = detachedCopy(smallWorld());
         running.tick = 5;
-        expect(() => attachWasm(running, kernels, { wasmKernels: true })).toThrow(/past tick 0/);
-        expect(attachWasm(running, kernels, { wasmKernels: true, midRun: true })).toBe(true);
-    });
-
-    it('falls back with one WasmFallback warning when the binary is missing or the arena too big', () => {
-        const world = smallWorld();
-        const { records, log } = recordingLog();
-        expect(attachWasm(world, loadKernels(null), { wasmKernels: true, log })).toBe(false);
-        expect(records).toEqual([
-            { level: 'warn', event: 'WasmFallback', reason: 'missing', detail: 'no kernel bytes' },
-        ]);
-        const big = smallWorld();
-        big.config = { ...big.config, maxAgents: 1e6 };
-        big.layout = brainLayout({ ...big.config, brainHidden: 64 });
-        expect(attachWasm(big, kernels, { wasmKernels: true, log })).toBe(false);
-        expect(records[1]).toMatchObject({ event: 'WasmFallback', reason: 'memory' });
-        expect(world.wasm).toBeUndefined();
+        expect(() => attachWasm(running)).toThrow(/past tick 0/);
+        expect(attachWasm(running, kernels, { midRun: true })).toBe(true);
     });
 });
