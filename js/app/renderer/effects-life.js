@@ -4,7 +4,7 @@
 
 import { familyColor, PALETTE } from './colors.js';
 import { TWEEN } from './body-tweens.js';
-import { BIRTH_SIZE, indexOfGenome, tweenAt } from './effects-combat.js';
+import { atBody, BIRTH_SIZE, indexOfGenome, tweenAt } from './effects-combat.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** The orbit radius of a mating whose partners are gone, world units. */
@@ -60,12 +60,7 @@ export function playMate(player, agents) {
  * @returns {void}
  */
 export function playPregnant(player, agents, i) {
-    const at = player.at;
-    at.x = agents.x[i];
-    at.y = agents.y[i];
-    at.size = agents.size[i];
-    at.angle = 0;
-    at.tick = player.edges.tick;
+    const at = atBody(player, agents, i, player.edges.tick);
     at.rgb = PALETTE.courtship;
     playRecipe(player.fx, FX_RECIPES.pregnant, at);
 }

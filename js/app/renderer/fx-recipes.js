@@ -46,6 +46,7 @@ const C = CURVE;
 const combat = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.combat, RANK.kill, parts);
 const feed = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.feeding, RANK.eat, parts);
 const court = (/** @type {number} */ rank, /** @type {FxPart[]} */ parts) => recipe(FAMILY.courtship, rank, parts);
+const sick = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.sickness, RANK.sickness, parts);
 const ghost = (/** @type {number} */ curve, /** @type {number} */ life) => ({ curve, count: 1, life, size: 1.1 });
 
 /** Every recipe by name. */
@@ -136,6 +137,13 @@ export const FX_RECIPES = Object.freeze({
     pollinated: recipe(FAMILY.flora, RANK.mate, [
         { curve: C.ring, count: 1, life: 30, size: 3.4, minPx: 10 },
         { curve: C.sprout, count: 1, life: 40, size: 0.8, gain: 40, minPx: 8 },
+    ]),
+    sickOn: sick([{ curve: C.drop, count: 6, life: 40, size: 0.3, reach: 2.2, spread: 'random', color: 'toxin' }]),
+    sickOff: sick([{ curve: C.sparkle, count: 4, life: 24, size: 0.35, reach: 1.4, spread: 'ring', color: 'recover' }]),
+    infectedOn: sick([{ curve: C.spore, count: 8, life: 50, size: 0.28, reach: 2, spread: 'ring', color: 'infected' }]),
+    infectedOff: sick([
+        { curve: C.sparkle, count: 6, life: 30, size: 0.35, reach: 1.6, spread: 'ring', color: 'recover' },
+        { curve: C.ring, count: 1, life: 30, size: 2, color: 'recover', gain: 0.8, minPx: 8 },
     ]),
     toxicPip: feed([{ curve: C.pip, count: 1, life: 24, size: 0.45, color: 'toxin', minPx: 6 }]),
 });

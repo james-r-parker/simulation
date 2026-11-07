@@ -64,3 +64,36 @@ describe('playEdges: meals', () => {
         expect(player.fx.pool.spawned).toBe(5);
     });
 });
+
+describe('playEdges: sickness', () => {
+    /**
+     * @param {any} player the player
+     * @param {number[]} flagsByTick the agent's flags each frame
+     * @returns {void}
+     */
+    function run(player, flagsByTick) {
+        flagsByTick.forEach((flags, k) => {
+            const snapshot = makeSnapshot(k + 1, [{ slot: 2, genomeId: 8, x: 50, y: 50, size: 10, flags }]);
+            const agents = createInterpolated(8);
+            interpolateInto(null, snapshot, 1, agents);
+            playEdges(player, agents, snapshot, k + 1);
+        });
+    }
+
+    it('bubbles toxin at onset and shakes it off with a sparkle and a tween at recovery', () => {
+        const player = build();
+        run(player, [30, 30 | BITS.SICK]);
+        expect(player.fx.pool.spawned).toBe(6);
+        expect(player.fx.pool.time[2]).toBe(CURVE.drop);
+        run(player, [30 | BITS.SICK, 30]);
+        expect(player.fx.pool.spawned).toBe(10);
+        expect(player.tweens.kind[2]).toBe(TWEEN.SHAKE_OFF);
+    });
+
+    it('puffs spores when infected and rings the agent in the recovery colour when it clears', () => {
+        const player = build();
+        run(player, [30, 30 | BITS.INFECTED, 30]);
+        expect(player.fx.pool.spawned).toBe(8 + 7);
+        expect(player.fx.pool.color[14 * 4]).toBeCloseTo(PALETTE.recover[0] * 0.8);
+    });
+});

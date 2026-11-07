@@ -4,7 +4,7 @@
 
 import { floraColor } from './flora-colors.js';
 import { TWEEN } from './body-tweens.js';
-import { tweenAt } from './effects-combat.js';
+import { atBody, tweenAt } from './effects-combat.js';
 import { createFlagEdges, diffFlags, EDGE } from './flag-edges.js';
 import { buildFoodGrid, createFoodGrid, FOOD_KIND, nearestFood } from './food-grid.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
@@ -52,10 +52,38 @@ export function createEdgeState(player, info) {
  * @returns {void}
  */
 function onEdge(player, edge, index) {
+    const agents = /** @type {import('../interpolate.js').Interpolated} */ (player.edges.agents);
     if (edge === EDGE.ATE) {
         playMeal(player, index);
     } else if (edge === EDGE.PREGNANT_ON) {
-        playPregnant(player, /** @type {any} */ (player.edges.agents), index);
+        playPregnant(player, agents, index);
+    } else if (edge <= EDGE.INFECTED_OFF) {
+        playSickness(player, agents, index, edge);
+    }
+}
+
+/** The recipe for each sickness edge. */
+/** The recipe for each sickness edge, indexed by `EDGE` (`SICK_ON` 0 to `INFECTED_OFF` 3). */
+const SICK_RECIPES = Object.freeze([
+    FX_RECIPES.sickOn,
+    FX_RECIPES.sickOff,
+    FX_RECIPES.infectedOn,
+    FX_RECIPES.infectedOff,
+]);
+
+/**
+ * Toxin sickness or a disease begins (bubbles, spores) or passes (a shake-off sparkle, an immune ring).
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {number} i the agent's index
+ * @param {number} edge a sickness `EDGE`
+ * @returns {void}
+ */
+function playSickness(player, agents, i, edge) {
+    playRecipe(player.fx, SICK_RECIPES[edge], atBody(player, agents, i, player.edges.tick));
+    if (edge === EDGE.SICK_OFF || edge === EDGE.INFECTED_OFF) {
+        player.effect.tick = player.edges.tick;
+        tweenAt(player, agents, i, TWEEN.SHAKE_OFF);
     }
 }
 

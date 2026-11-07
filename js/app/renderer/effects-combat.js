@@ -62,6 +62,24 @@ function atOf(player, { x, y, angle, size }) {
 const SPOT = { x: 0, y: 0, angle: 0, size: 0 };
 
 /**
+ * Fills the player's scratch `at` on an agent's body, facing 0.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {number} i the agent's index
+ * @param {number} tick the tick the effect starts
+ * @returns {import('./fx-recipes.js').FxAt} the scratch `at`
+ */
+export function atBody(player, agents, i, tick) {
+    const at = player.at;
+    at.x = agents.x[i];
+    at.y = agents.y[i];
+    at.size = agents.size[i];
+    at.angle = 0;
+    at.tick = tick;
+    return at;
+}
+
+/**
  * A bite: a spray at the biter's jaw (at the effect when the biter is gone), a bite mark on the victim's rim facing
  * the biter, a lunge on the biter and a flinch on the victim.
  * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
