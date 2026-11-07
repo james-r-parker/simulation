@@ -25,6 +25,7 @@
     "bench:parallel": "node scripts/bench-parallel.mjs",
     "replay": "node scripts/replay.mjs",
     "eval": "node scripts/eval.mjs",
+    "drill": "node scripts/drill.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
     "eval:power": "node scripts/eval-power.mjs",
     "league": "node scripts/league.mjs",
