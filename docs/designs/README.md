@@ -38,11 +38,12 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (10)
+## In progress (11)
 
 Partly built - the note says which phases are real.
 
 - [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip b... _(validated d8a8561, 2026-10-29)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
+- [Deployment and community](deployment-and-community.md) - Phase 2 storage back end built on `feat/library-store` (pure `js/library/` modules, `migrations/0001_library.sql`); the Pages Functions, the release and deploy... _(validated f5c7880, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Fitness and selection](fitness-and-selection.md) - Phases 1 to 3 built: the metric audit and new metrics (E35), the predator fix (E36, E47), in-world merit (off by default), `fitnessV6`, `descriptorV6`, `map-eli... _(validated d8a8561, 2026-10-29)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Mobile view](mobile-view.md) - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path,... _(validated efdc1ef, 2026-11-03)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Natural selection](natural-selection.md) - the big bang is merged (PR #217) and Phase 4's instruments, checks and speed chunks are merged (#220, #221, #222). Its screens (E81, E82, E85 to E87) found no p... _(validated 7396097, 2026-11-01)_ _(depends on [fitness-and-selection.md](fitness-and-selection.md))_
@@ -53,12 +54,11 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic famili... _(validated 64a66de, 2026-11-02)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (4)
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Brain inspection](brain-inspection.md) - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of train... _(validated 2dd6b77, 2026-11-04)_ _(depends on [training.md](training.md))_
-- [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Training](training.md) - Phase 1 (drills: fixed scenarios that test a genome's skills) is built first; Phase 2 adds the local trainer, Phase 3 puts champions in the live world after the... _(validated 26bc8ed, 2026-11-03)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 
