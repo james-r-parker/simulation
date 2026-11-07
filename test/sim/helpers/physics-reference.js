@@ -63,6 +63,7 @@ const PHYSICS = STEP_PHASES.find((p) => p.name === 'physics');
 export function runPhysicsCase({ overrides, ticks }) {
     const policy = cloneWithNoisePolicy();
     const world = createWorld(createConfig({ ...overrides, checkInvariants: false }), policy);
+    /** @type {string[]} */
     const digests = [];
     const physics = (/** @type {any} */ w, /** @type {any} */ p) => {
         PHYSICS?.run(w, p);

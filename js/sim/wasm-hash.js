@@ -105,6 +105,20 @@ export function arenaHash(arena, world, previous) {
 }
 
 /**
+ * Throws unless `hash` reads the world's own arena arrays (`world.hash`, or a hash `buildHash` bound to the world), so a
+ * kernel that reads the arena hash reads the hash its caller means.
+ * @param {Record<string, any>} world a world on the WASM kernels
+ * @param {import('./spatial-hash.js').SpatialHash} hash the hash the caller passed
+ * @param {string} caller the function name for the message
+ * @returns {void}
+ */
+export function assertArenaHash(world, hash, caller) {
+    if (hash.cellStart !== world.wasm.views.cellStart) {
+        throw new Error(`${caller}: the hash is not the world's own; build it with buildHash(hash, world) first`);
+    }
+}
+
+/**
  * Runs the build kernel on the world's live agents and food.
  * @param {Record<string, any>} world a world on the WASM kernels
  * @returns {number} the entry total the build needed; above the capacity, nothing was inserted

@@ -18,6 +18,9 @@ export const REQUIRED_EXPORTS = Object.freeze([
     'sense_slot',
     'build_hash',
     'update_pheromones',
+    'move_agents',
+    'bounce_rocks',
+    'resolve_contacts',
 ]);
 
 /** Pages of the throwaway memory the probe instance reads `__heap_base` from; the kernels declare far fewer. */

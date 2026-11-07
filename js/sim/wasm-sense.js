@@ -3,7 +3,7 @@
 // replaced (deleted at T11). The circles' arrays and the spatial hash (built in the arena by `build_hash`, Phase 4) are
 // read in place. The hit classes, the mate sighting and the body and scent inputs are rules and stay in JS.
 
-import { hashShape } from './wasm-hash.js';
+import { assertArenaHash, hashShape } from './wasm-hash.js';
 
 /** World fields the sense kernel reads or writes, taken over by the arena at their allocated type and length. */
 export const SENSE_FIELDS = Object.freeze([
@@ -132,11 +132,8 @@ export function writeSenseParams(arena, world) {
  * @throws {Error} when the hash does not read the world's arena arrays
  */
 export function beginSense(world, hash) {
-    const { views } = world.wasm;
-    if (hash.cellStart !== views.cellStart) {
-        throw new Error("beginSense: the hash is not the world's own; build it with buildHash(hash, world) first");
-    }
-    const p = views.senseParams;
+    assertArenaHash(world, hash, 'beginSense');
+    const p = world.wasm.views.senseParams;
     p[SENSE_WORD.cloudCount] = world.cloudCount;
     // Rings conceal: `refugeCentres` is placed by `createWorld`, after the arena is built.
     p[SENSE_WORD.conceals] = world.refugeCentres.length > 0 ? 1 : 0;
