@@ -119,8 +119,9 @@ describe('DRILLS', () => {
             foodAlive: Uint8Array.from(alive),
             foodTox: Float32Array.from(tox),
         });
-        expect(plan.done(/** @type {any} */ (world([1, 1], [1, 0])))).toBe(false);
-        expect(plan.done(/** @type {any} */ (world([0, 1], [1, 0])))).toBe(true);
+        const control = /** @type {any} */ ({ name: 'intact' });
+        expect(plan.done(/** @type {any} */ (world([1, 1], [1, 0])), control)).toBe(false);
+        expect(plan.done(/** @type {any} */ (world([0, 1], [1, 0])), control)).toBe(true);
         expect(plan.won(/** @type {any} */ (world([1, 0], [1, 0])))).toBe(true);
         expect(plan.won(/** @type {any} */ (world([0, 1], [1, 0])))).toBe(false);
         expect(plan.won(/** @type {any} */ (world([0, 0], [1, 0])))).toBe(false);
