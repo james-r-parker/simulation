@@ -26,7 +26,7 @@ const FALLBACK_SHAPE = SILHOUETTES.forager;
 const RAMP_TEXELS = 64;
 /** Dimming of agents under the scent lens. */
 export const SCENT_DIM = 0.55;
-const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra', 'iMotion'];
+const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra', 'iMotion', 'iTween'];
 
 /**
  * @param {Record<string, any>} info `ready.info`
@@ -80,8 +80,9 @@ function agentMesh(capacity, kind, shared) {
  * @returns {void}
  */
 function upload(mesh, bucket) {
-    const { pose, color, state, extra, motion } = bucket;
-    uploadInstances(mesh, { iPose: pose, iColor: color, iState: state, iExtra: extra, iMotion: motion }, bucket.count);
+    const { pose, color, state, extra, motion, tween } = bucket;
+    const sources = { iPose: pose, iColor: color, iState: state, iExtra: extra, iMotion: motion, iTween: tween };
+    uploadInstances(mesh, sources, bucket.count);
 }
 
 /**
@@ -116,6 +117,11 @@ function sharedUniforms(info, ramp, blank) {
         uMotion: { value: 1.0 },
         uFlora: { value: 1.0 },
         uSimTick: { value: 0 },
+        uBody: { value: 1 },
+        uWeather: { value: 1 },
+        uCourt: { value: 1 },
+        uCold01: { value: info.temperatureColdStress / info.temperatureMax },
+        uHeat01: { value: info.temperatureHeatStress / info.temperatureMax },
         uView: { value: new Vector4(0, 0, 1, 1) },
     };
 }
@@ -164,6 +170,9 @@ export function createAgentsLayer({ info, flagBits }) {
             const tier = /** @type {number} */ (look.motion);
             shared.uMotion.value = tier === 0 ? 1.0 : tier === 1 ? 0.5 : 0.0;
             shared.uFlora.value = look.flora === -1 ? 0 : 1;
+            shared.uBody.value = look.body === 0 ? 1 : look.body === 1 ? 0.5 : 0;
+            shared.uWeather.value = look.weather === -1 || look.weather === undefined ? 0 : 1;
+            shared.uCourt.value = look.courtship === -1 || look.courtship === undefined ? 0 : 1;
         },
         setSmokeTexture(texture) {
             shared.uSmoke.value = texture;
@@ -175,6 +184,7 @@ export function createAgentsLayer({ info, flagBits }) {
                 zoom: frame.camera.zoom,
                 slots: frame.family,
                 maxVelocity: info.maxVelocity,
+                tick: frame.tick,
             });
             for (let i = 0; i < meshes.length; i++) {
                 upload(meshes[i], store.buckets[i]);

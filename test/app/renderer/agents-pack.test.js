@@ -14,6 +14,7 @@ import {
     TURN_FULL,
 } from '../../../js/app/renderer/agents-pack.js';
 import { fitZoom, snapZoom } from '../../../js/app/camera.js';
+import { startTween, TWEEN, TWEEN_TICKS } from '../../../js/app/renderer/body-tweens.js';
 import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
 import { familyColor } from '../../../js/app/renderer/colors.js';
 import { minPxTable } from '../../../js/app/display-size.js';
@@ -281,5 +282,22 @@ describe('packAgents', () => {
         const k = ENERGY_FLOOR + (1 - ENERGY_FLOOR) * out.energy[0];
         expect(a[0]).toBeCloseTo(expectA[0] * k * MESH_GAIN[0], 4);
         expect(b[2]).toBeCloseTo(expectB[2] * (ENERGY_FLOOR + (1 - ENERGY_FLOOR) * out.energy[1]), 4);
+    });
+
+    it('packAgents writes the running tween with its age and the call state, and clears an ended one', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const bits = { ...BITS, ALARMING: 1 << 11, HUNT_CALLING: 1 << 12 };
+        const out = interp([
+            { slot: 0, genomeId: 10, spec: 1, flags: bits.ALARMING },
+            { slot: 1, genomeId: 11, spec: 1, flags: bits.HUNT_CALLING },
+        ]);
+        startTween(store.tweens, { slot: 0, genome: 10 }, TWEEN.GULP, 100);
+        packAgents(out, store, bits, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 106 });
+        const t = store.buckets[1].tween;
+        expect(Array.from(t.subarray(0, 4))).toEqual([TWEEN.GULP, 0.5, 1, 0]);
+        expect(Array.from(t.subarray(ITEM, ITEM + 4))).toEqual([0, 0, 2, 0]);
+        packAgents(out, store, bits, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 100 + TWEEN_TICKS[TWEEN.GULP] });
+        expect(store.buckets[1].tween[0]).toBe(0);
+        expect(store.buckets[1].tween).toBe(t);
     });
 });
