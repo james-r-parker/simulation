@@ -165,3 +165,4 @@ coverage/
 # Function microbenchmark results (scripts/bench-micro.mjs)
 .bench-micro/
 .bench-micro-info/
+.wrangler/

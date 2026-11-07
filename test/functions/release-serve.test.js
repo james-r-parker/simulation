@@ -107,7 +107,7 @@ describe('serveNext', () => {
         const fetcher = vi.fn(async () => new Response('ok'));
         const context = ctx('https://x/next/a/b.js?v=1', ['a', 'b.js'], { PAGES_PROJECT: 'matrix' });
         await serveNext(context, /** @type {any} */ (fetcher));
-        expect(fetcher.mock.calls[0][0]).toBe('https://next.matrix.pages.dev/a/b.js?v=1');
+        expect(/** @type {any} */ (fetcher.mock.calls[0])[0]).toBe('https://next.matrix.pages.dev/a/b.js?v=1');
     });
 
     it('refuses an unsafe path and an unset or odd project', async () => {

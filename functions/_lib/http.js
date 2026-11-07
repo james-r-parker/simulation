@@ -45,7 +45,7 @@ export function errorResponse(error) {
  * Answers from the Cache API when it holds the request, else builds the response, stores a copy and returns it.
  * The cached copy carries `X-Cache: HIT`. Only a 200 response is stored.
  * @param {Request} request the GET request (its URL is the cache key)
- * @param {{waitUntil(promise: Promise<unknown>): void} | undefined} context the Functions context, to store after replying
+ * @param {{waitUntil?: (promise: Promise<unknown>) => void} | undefined} context the Functions context, to store after replying
  * @param {() => Promise<Response>} build makes the response on a miss
  * @returns {Promise<Response>} the response
  */
@@ -62,7 +62,7 @@ export async function cached(request, context, build) {
     const response = await build();
     if (cache !== undefined && response.status === 200) {
         const store = cache.put(request, response.clone());
-        if (context === undefined) {
+        if (context?.waitUntil === undefined) {
             await store;
         } else {
             context.waitUntil(store);

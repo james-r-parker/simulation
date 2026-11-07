@@ -12,7 +12,7 @@ const SHORT = 'public, max-age=60';
  * @property {Request} request
  * @property {{RELEASES: any, PAGES_PROJECT?: string}} env
  * @property {Record<string, string | string[]>} params
- * @property {{waitUntil(promise: Promise<unknown>): void}} [waitUntil]
+ * @property {(promise: Promise<unknown>) => void} [waitUntil]
  */
 
 /**
@@ -62,7 +62,7 @@ async function fileResponse(bucket, key, path, cacheControl) {
  */
 export function serveVersion(context) {
     const segments = segmentsOf(context.params);
-    return cached(context.request, context.waitUntil === undefined ? undefined : context, async () => {
+    return cached(context.request, context, async () => {
         if (segments.length === 1 && segments[0] === 'index.json') {
             const response = await fileResponse(context.env.RELEASES, INDEX_KEY, 'index.json', SHORT);
             return response ?? notFound('index', INDEX_KEY);
@@ -83,7 +83,7 @@ export function serveVersion(context) {
  */
 export function serveSeason(context) {
     const [season, ...rest] = segmentsOf(context.params);
-    return cached(context.request, context.waitUntil === undefined ? undefined : context, async () => {
+    return cached(context.request, context, async () => {
         if (!/^\d+$/.test(season ?? '') || !safeSegments(rest)) {
             return notFound('season', [season, ...rest].join('/'));
         }

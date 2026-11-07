@@ -25,11 +25,7 @@ const LIST_CACHE = 'public, s-maxage=60';
  */
 async function guarded(context, build) {
     try {
-        return await cached(
-            context.request,
-            context.waitUntil === undefined ? undefined : { waitUntil: context.waitUntil },
-            build,
-        );
+        return await cached(context.request, context, build);
     } catch (error) {
         return errorResponse(error);
     }
