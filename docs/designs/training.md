@@ -1,6 +1,6 @@
 # Training
 
-**Status:** In progress - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, checkpoints and `train:curve`, `train:export`); its done run (T12, 2026-11-07) is made and fell short on `prey-ahead` (the predator champion's edge is 0.00), so the phase is not marked built; see "T12 result" under Phase 2. Phase 3 puts champions in the live world after the world gate.
+**Status:** In progress - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, checkpoints and `train:curve`, `train:export`); its done run met the criterion on the fourth curriculum of T12 iteration 2 (arm d: `prey-ahead` edge +0.16, weak, and `bite-discrimination` still 0.00), so Phase 2 is built apart from T13 (the conformance review); see "T12 iteration 2" under Phase 2. Phase 3 puts champions in the live world after the world gate.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 4 - the drills and the trainer are tools that do not depend on the balance numbers, and the balance round needs trained champions to test whether unskilled founders cause the floor restarts (world-balance.md H10); champions reach the live world only after the world gate (user, 2026-10-16)
 **Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md)
@@ -57,7 +57,7 @@ Phase 3 only, after the world gate below. `npm run train:export -- --out public/
 
 `drill-scenarios.js`, `scripts/drill.mjs` and `npm run drill`, with the edge against a random brain. The first table is recorded for the live policy and for `referenceSubject('memoryless')` in [sim-notes.md](sim-notes.md).
 
-### Phase 2 - Local trainer
+### Phase 2 - Local trainer (built)
 
 **Targets:** none - champions stay local in this phase; Phase 3 judges them in the live world
 
@@ -127,6 +127,14 @@ What the three arms say:
 - **Dense prey (b) is the only arm that lifts `catch_rate` in the hunt stage** (0.41 to 0.65, escapes down to 0.08), so the prediction that density helps the world metric holds; it did not move the drill, so the prediction of a positive `prey-ahead` edge was wrong. A caution from the hunter-metric notes: `catch_rate` is a speed and counts rotted carcasses, so it is not a kill count.
 - **The reflex cases locate the gap.** `approach-prey` passes at 1.00 for the a and b predators and 0.56 for c, so the closing reflex is in the brain, and `prey-ahead` is 0.00 anyway. `bite-discrimination` is 0.00 for every predator, below the random brain's 0.11 and so below abstaining: the predators bite when they should not or never bite when they should. A prey-ahead edge does not line up with `approach-prey` (1.00 with edge 0.00); the missing piece is the bite step, and the hunt world never selects on it.
 - **A floor in the nursery (c) is not helpful.** It lifts nursery `catch_rate` above 1.0 (the floor keeps adding fresh prey) but the forager drill edge falls to +0.30 (`hunter-closing` 0.00) and the predator's approach reflex weakens to 0.56.
+
+**Arm d (nursery floor, small dense hunt arena, 40 hunt generations; 60 in all).** Exported champions: the predator `archive-59-predator-cell1` scores `prey-ahead` **0.16 (+0.16)** (5 wins in 32 trials, against the memoryless reference's 0.31), the first edge above 0 in any run; `prey-too-big` 1.00 (+0.01); mean predator edge +0.08. The forager `archive-59-forager-cell8` is the same as arm c's (`food-ahead` +0.84, mean +0.30, `hunter-closing` 0.00). Reflex: predator `approach-prey` 1.00, `bite-discrimination` 0.00 (-0.11); forager `flee-threat` 1.00, `approach-food` 0.88. Hunt-stage `catch_rate` 0.885 (gen 25) to 0.689 (gen 60), escape rate near 0 (0.04 at gen 25 and 0.04 at gen 60). `npm run league` plays both champions without error (0 games, Elo 1500; nothing admitted).
+
+| Arm | Predator `prey-ahead` | Predator mean edge | Reflex `approach-prey` | Reflex `bite-discrimination` | Hunt-stage `catch_rate` |
+| --- | --------------------- | ------------------ | ---------------------- | ---------------------------- | ----------------------- |
+| d   | 0.16 (+0.16)          | +0.08              | 1.00 (+1.00)           | 0.00 (-0.11)                 | 0.885 to 0.689          |
+
+**Conclusion of iteration 2.** Only the combination worked: the small dense hunt arena (prey stays in view) on top of a nursery floor (a foraging base keeps the population up), with a long hunt stage. Each lever alone did nothing for the drill (a, b, c all 0.00), so they are not additive in an obvious way; the evidence is one run per arm (one archive, 32 trials), so it is a lead, not a measured effect. The Phase 2 done criterion, taken literally (mean edge above 0 on `food-ahead` and `prey-ahead`, champions play the league without error), now holds on arm d, but weakly: 0.16 is half the memoryless reference's 0.31, and the predator still fails `bite-discrimination` at 0.00 in every arm, below random's 0.11. **Next lever: select on the bite.** The hunt world pays only for energy, so a brain that closes on prey (`approach-prey` 1.00 everywhere) and bites anything or nothing is not told apart from one that bites bitable prey. Candidates, in order: a hunt world with a mix of bitable and unbitable (too-big) prey so a blind biter loses energy to counter-bites or wasted bites; a second `hunt` stage with weakened or slow prey as in [hunter-practice.md](hunter-practice.md) (graded difficulty, as meerkat helpers do); repeating arm d over three archive seeds to see whether 0.16 holds. None changes the reward; each changes the world, as the Decisions table requires.
 
 ### Phase 3 - Champions in the live world
 
