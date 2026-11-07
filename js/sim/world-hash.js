@@ -130,6 +130,15 @@ const sampleCountBytes = new Uint8Array(sampleCount.buffer, sampleCount.byteOffs
 const viewCache = new WeakMap();
 
 /**
+ * @param {object} world the world
+ * @returns {boolean} whether `hashWorld` has cached byte views of the world's arrays; re-pointing a field after that
+ *   would leave the hash reading the old array (`attachWasm` refuses such a world)
+ */
+export function hasHashViews(world) {
+    return viewCache.has(world);
+}
+
+/**
  * @param {Record<string, any>} world the world
  * @param {string} name the array's property name
  * @returns {Uint8Array} the raw bytes of the array

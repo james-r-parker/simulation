@@ -5,6 +5,7 @@
 
 import { writeBrainParams } from './wasm-brain.js';
 import { KERNEL_ABI } from './wasm-loader.js';
+import { hasHashViews } from './world-hash.js';
 
 /** Bytes per WebAssembly page. */
 export const PAGE_BYTES = 65536;
@@ -180,13 +181,43 @@ function repointRows(world, arena) {
 }
 
 /**
- * Throws for a world that cannot be attached safely.
+ * Throws for a world that cannot be attached safely: one already on the kernels, one `hashWorld` has cached views of
+ * (the hash would keep reading the JS arrays), or one past tick 0 unless the caller says it knows (`midRun`, for the
+ * bench's warmed-up worlds).
  * @param {Record<string, any>} world the world
+ * @param {boolean} midRun whether a world past tick 0 is allowed
  * @returns {void}
  */
-function refuseAttach(world) {
+function refuseAttach(world, midRun) {
     if (world.wasm !== undefined) {
         throw new Error('attachWasm: the world already runs the WASM kernels');
+    }
+    if (hasHashViews(world)) {
+        throw new Error('attachWasm: the world was already hashed; attach before the first hashWorld');
+    }
+    if (world.tick > 0 && !midRun) {
+        throw new Error(`attachWasm: the world is past tick 0 (tick ${world.tick}); attach right after createWorld`);
+    }
+}
+
+/**
+ * Builds the world's arena, or logs why it cannot and returns null.
+ * @param {Record<string, any>} world the world
+ * @param {import('./wasm-loader.js').Kernels} kernels the result of `loadKernels`
+ * @param {{ log: (level: string, event: string, fields: object) => void } | undefined} log the fallback log
+ * @returns {Arena | null} the arena, or null after one `WasmFallback` warning
+ */
+function buildArena(world, kernels, log) {
+    if (!kernels.ok) {
+        log?.log('warn', 'WasmFallback', { reason: kernels.reason, detail: kernels.detail });
+        return null;
+    }
+    try {
+        return createArena(kernels.module, world.config, world.layout);
+    } catch (error) {
+        const reason = error instanceof WasmArenaError ? error.reason : 'instantiate';
+        log?.log('warn', 'WasmFallback', { reason, detail: String(/** @type {Error} */ (error).message) });
+        return null;
     }
 }
 
@@ -197,26 +228,20 @@ function refuseAttach(world) {
  * kernels throws. A shallow copy needs its own `agentRows` entries, which are re-pointed at its arena.
  * @param {Record<string, any>} world a world from `createWorld`
  * @param {import('./wasm-loader.js').Kernels} kernels the result of `loadKernels`
- * @param {{ wasmKernels?: boolean, log?: { log: (level: string, event: string, fields: object) => void } }} [options]
- *   the switch, and the log the fallback warning goes to
+ * @param {{
+ *   wasmKernels?: boolean,
+ *   midRun?: boolean,
+ *   log?: { log: (level: string, event: string, fields: object) => void },
+ * }} [options] the switch, whether a world past tick 0 may be attached, and the log the fallback warning goes to
  * @returns {boolean} whether the world now runs the WASM kernels
  */
-export function attachWasm(world, kernels, { wasmKernels = false, log } = {}) {
+export function attachWasm(world, kernels, { wasmKernels = false, midRun = false, log } = {}) {
     if (!wasmKernels) {
         return false;
     }
-    refuseAttach(world);
-    if (!kernels.ok) {
-        log?.log('warn', 'WasmFallback', { reason: kernels.reason, detail: kernels.detail });
-        return false;
-    }
-    /** @type {Arena} */
-    let arena;
-    try {
-        arena = createArena(kernels.module, world.config, world.layout);
-    } catch (error) {
-        const reason = error instanceof WasmArenaError ? error.reason : 'instantiate';
-        log?.log('warn', 'WasmFallback', { reason, detail: String(/** @type {Error} */ (error).message) });
+    refuseAttach(world, midRun);
+    const arena = buildArena(world, kernels, log);
+    if (arena === null) {
         return false;
     }
     writeBrainParams(arena, world.config, world.layout);

@@ -102,7 +102,7 @@ describe('attachWasm', () => {
 
     it('moves every hot array into the arena with its contents, and the world hash does not move', () => {
         const world = smallWorld({ initialAgents: 5 });
-        const before = hashWorld(world);
+        const before = hashWorld(smallWorld({ initialAgents: 5 })); // a twin: a hashed world cannot be attached
         const copies = Object.fromEntries(WORLD_FIELDS.map((name) => [name, world[name].slice()]));
         expect(attachWasm(world, kernels, { wasmKernels: true })).toBe(true);
         for (const name of WORLD_FIELDS) {
@@ -140,7 +140,7 @@ describe('attachWasm', () => {
         /** @type {Record<string, any>} */
         const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
         delete copy.wasm;
-        expect(attachWasm(copy, kernels, { wasmKernels: true })).toBe(true);
+        expect(attachWasm(copy, kernels, { wasmKernels: true, midRun: true })).toBe(true);
         const H = world.layout.hidden;
         world.hidden.fill(0.5, 0, 3 * H);
         copy.hidden.fill(0.25, 0, 3 * H);
@@ -153,6 +153,17 @@ describe('attachWasm', () => {
         expect(copy.agentRows.every((/** @type {any} */ row) => row.array.buffer !== world.wasm.memory.buffer)).toBe(
             true,
         );
+    });
+
+    it('refuses a world already hashed or past tick 0, whose hash views would keep reading the JS arrays', () => {
+        const hashed = smallWorld();
+        hashWorld(hashed);
+        expect(() => attachWasm(hashed, kernels, { wasmKernels: true })).toThrow(/already hashed/);
+        expect(() => attachWasm(hashed, kernels, { wasmKernels: true, midRun: true })).toThrow(/already hashed/);
+        const running = smallWorld();
+        running.tick = 5;
+        expect(() => attachWasm(running, kernels, { wasmKernels: true })).toThrow(/past tick 0/);
+        expect(attachWasm(running, kernels, { wasmKernels: true, midRun: true })).toBe(true);
     });
 
     it('falls back with one WasmFallback warning when the binary is missing or the arena too big', () => {

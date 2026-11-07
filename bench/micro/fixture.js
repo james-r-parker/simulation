@@ -42,7 +42,7 @@ export function benchAttach(world) {
     if (WASM === null) {
         return;
     }
-    if (!WASM.attachWasm(world, WASM.kernels, { wasmKernels: true })) {
+    if (!WASM.attachWasm(world, WASM.kernels, { wasmKernels: true, midRun: true })) {
         throw new Error('BENCH_WASM=1 but the WASM kernels did not attach');
     }
 }
