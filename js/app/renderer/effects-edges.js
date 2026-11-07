@@ -9,6 +9,7 @@ import { createFlagEdges, diffFlags, EDGE } from './flag-edges.js';
 import { buildFoodGrid, createFoodGrid, FOOD_KIND, nearestFood } from './food-grid.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 import { playPregnant } from './effects-life.js';
+import { CLIENT_KIND } from './client-kinds.js';
 import { createBreaths, playBreaths } from './effects-weather.js';
 
 /** How far from the mouth a meal is looked for, in eater radii, plus a margin in world units. */
@@ -58,14 +59,42 @@ function onEdge(player, edge, index) {
     const agents = /** @type {import('../interpolate.js').Interpolated} */ (player.edges.agents);
     if (edge === EDGE.ATE) {
         playMeal(player, index);
+        tellSink(player, agents, index, CLIENT_KIND.MEAL);
     } else if (edge === EDGE.PREGNANT_ON) {
         playPregnant(player, agents, index);
     } else if (edge <= EDGE.INFECTED_OFF) {
         playSickness(player, agents, index, edge);
+        tellSink(player, agents, index, SICK_KINDS[edge]);
     }
 }
 
-/** The recipe for each sickness edge. */
+/** The client effect kind for each sickness edge, indexed by `EDGE`. */
+const SICK_KINDS = Object.freeze([CLIENT_KIND.SICK, CLIENT_KIND.CURED, CLIENT_KIND.INFECTED, CLIENT_KIND.RECOVERED]);
+
+/**
+ * Tells the sink (the audio cues, the overlay) of an edge as a client effect record, reusing `player.effect`.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {number} i the agent's index
+ * @param {number} kind a `CLIENT_KIND`
+ * @returns {void}
+ */
+function tellSink(player, agents, i, kind) {
+    if (player.sink === null) {
+        return;
+    }
+    const e = player.effect;
+    e.kind = kind;
+    e.tick = player.edges.tick;
+    e.x = agents.x[i];
+    e.y = agents.y[i];
+    e.a = agents.genomeId[i];
+    e.b = 0;
+    e.c = agents.spec[i];
+    e.d = agents.lineageId[i];
+    player.sink(e);
+}
+
 /** The recipe for each sickness edge, indexed by `EDGE` (`SICK_ON` 0 to `INFECTED_OFF` 3). */
 const SICK_RECIPES = Object.freeze([
     FX_RECIPES.sickOn,
