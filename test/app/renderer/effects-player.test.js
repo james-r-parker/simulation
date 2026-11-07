@@ -31,6 +31,7 @@ const layout = {
         STRAIN_EMERGED: 11,
     },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
+    bornCauses: { INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 },
 };
 const info = { callRadius: 300, callTicks: 40, maxAgents: 8 };
 
@@ -199,12 +200,35 @@ describe('playEffects', () => {
         expect(Array.from(rings.kind.slice(0, 2))).toEqual([1, 0]);
     });
 
-    it('a birth spawns a ring and 6 motes in the lineage colour', () => {
-        const { player, rings, sparks } = build();
-        playEffects(player, queueOf([[1, 5, 1, 2, 7, 3, 1, 0]]), alive([]), 5);
-        expect(liveRings(rings, 6)).toBe(1);
-        expect(liveSparks(sparks, 6)).toBe(6);
+    it('a birth plays by its cause: mating, split, floor and immigrant differ, the founders play nothing', () => {
+        /** @type {Record<number, number>} */
+        const counts = {};
+        for (const cause of [0, 1, 2, 3, 4]) {
+            const { player } = build();
+            const agents = alive([{ slot: 3, genomeId: 7 }]);
+            playEffects(player, queueOf([[1, 5, 1, 2, 7, 3, 1, cause]]), agents, 5);
+            counts[cause] = liveFx(player.fx.pool, 6);
+            if (cause > 0) {
+                expect(player.tweens.kind[3], `cause ${cause}`).toBe(TWEEN.BIRTH_POP);
+            }
+        }
+        expect(counts).toEqual({ 0: 0, 1: 11, 2: 5, 3: 8, 4: 8 });
         expect(RING_CAPACITY + SPARK_CAPACITY).toBeGreaterThan(0);
+    });
+
+    it('a mating spirals courtship motes to the midpoint of the pair and bounces both', () => {
+        const { player, threads } = build();
+        const agents = alive([
+            { slot: 1, genomeId: 11, x: 0, y: 0, size: 10 },
+            { slot: 2, genomeId: 22, x: 100, y: 0, size: 10 },
+        ]);
+        playEffects(player, queueOf([[8, 10, 0, 0, 11, 22, 0, 3]]), agents, 10);
+        expect(threads.count).toBe(1);
+        expect(player.fx.pool.pose[0]).toBeCloseTo(50);
+        expect(player.fx.pool.move[0]).toBeCloseTo(50);
+        expect(liveFx(player.fx.pool, 11)).toBe(6);
+        expect(player.tweens.kind[1]).toBe(TWEEN.COURT);
+        expect(player.tweens.kind[2]).toBe(TWEEN.COURT);
     });
 
     it('a death plays its cause recipe through the effect pool; each cause differs, a pack kill adds two rings', () => {

@@ -8,6 +8,7 @@ import { tweenAt } from './effects-combat.js';
 import { createFlagEdges, diffFlags, EDGE } from './flag-edges.js';
 import { buildFoodGrid, createFoodGrid, FOOD_KIND, nearestFood } from './food-grid.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
+import { playPregnant } from './effects-life.js';
 
 /** How far from the mouth a meal is looked for, in eater radii, plus a margin in world units. */
 export const MEAL_REACH = 2;
@@ -53,6 +54,8 @@ export function createEdgeState(player, info) {
 function onEdge(player, edge, index) {
     if (edge === EDGE.ATE) {
         playMeal(player, index);
+    } else if (edge === EDGE.PREGNANT_ON) {
+        playPregnant(player, /** @type {any} */ (player.edges.agents), index);
     }
 }
 

@@ -110,11 +110,9 @@ describe('per-frame scratch reuse', () => {
         seen.bursts.length = 0;
         seen.fx.length = 0;
         expect(playEffects(player, queue, agents, 1)).toBe(kinds.length);
-        expect(seen.rings.length).toBe(6);
-        expect(seen.bursts.length).toBe(2);
+        expect(seen.rings.length).toBe(4);
         expect(seen.fx.length).toBeGreaterThan(10);
         expect(new Set(seen.rings).size).toBe(1);
-        expect(new Set(seen.bursts).size).toBe(1);
         expect(new Set(seen.fx).size).toBe(1);
     });
 });

@@ -45,6 +45,7 @@ function recipe(family, rank, parts) {
 const C = CURVE;
 const combat = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.combat, RANK.kill, parts);
 const feed = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.feeding, RANK.eat, parts);
+const court = (/** @type {number} */ rank, /** @type {FxPart[]} */ parts) => recipe(FAMILY.courtship, rank, parts);
 const ghost = (/** @type {number} */ curve, /** @type {number} */ life) => ({ curve, count: 1, life, size: 1.1 });
 
 /** Every recipe by name. */
@@ -94,6 +95,23 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.crumbStay, count: 2, life: 20, size: 0.15, spread: 'random', color: 'meat', gain: 0.6 },
     ]),
     eatFungus: feed([{ curve: C.orbit, count: 5, life: 12, size: 0.2, reach: -1, spread: 'ring', gain: 2.5 }]),
+    mateOrbit: court(RANK.mate, [
+        { curve: C.orbit, count: 6, life: 30, size: 0.25, reach: -1, spread: 'ring', color: 'courtship' },
+    ]),
+    pregnant: court(RANK.mate, [{ curve: C.ringSlow, count: 1, life: 30, size: 2.2, color: 'courtship', gain: 0.8 }]),
+    birthMate: court(RANK.birth, [
+        { curve: C.ring, count: 1, life: 30, size: 3.4, gain: 0.6, minPx: 10 },
+        { curve: C.moteOut, count: 6, life: 30, size: 0.2, reach: 1.6, spread: 'random' },
+        { curve: C.sparkle, count: 4, life: 30, size: 0.35, reach: 1.5, spread: 'random', color: 'courtship' },
+    ]),
+    birthSplit: court(RANK.birth, [
+        { curve: C.fission, count: 1, life: 20, size: 1.2, minPx: 8 },
+        { curve: C.moteOut, count: 4, life: 24, size: 0.2, reach: 1.4, spread: 'ring' },
+    ]),
+    birthArrival: court(RANK.birth, [
+        { curve: C.arrive, count: 8, life: 40, size: 0.25, reach: 5, spread: 'heading', color: 'arrival' },
+        { curve: C.ring, count: 1, life: 30, size: 2, color: 'arrival', delay: 30, gain: 0.7, minPx: 8 },
+    ]),
     toxicPip: feed([{ curve: C.pip, count: 1, life: 24, size: 0.45, color: 'toxin', minPx: 6 }]),
 });
 

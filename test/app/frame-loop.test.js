@@ -152,7 +152,8 @@ describe('createFrameLoop', () => {
         deps.refs.player = player;
         loop.frame(1000);
         expect(client.effects.count).toBe(0);
-        expect(rings.next).toBe(1);
+        expect(player.fx.pool.spawned + player.fx.budget.culled[2]).toBeGreaterThan(0);
+        expect(rings.next).toBe(0);
     });
 
     it('records intervals but not the first frame, and not while hidden', () => {
