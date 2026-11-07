@@ -58,7 +58,11 @@ describe('stageWorld', () => {
             const rng = fork(createRng(1), `stage:${drill.name}`);
             for (let t = 0; t < 20; t++) {
                 const { stage } = drill.plan(rng, 300);
-                const { world } = stageWorld({ ...stage, seed: 1 + t });
+                // A plan types its agents loosely (`Record<string, any>`); the stage needs the full `StagedAgent`.
+                const staged = /** @type {import('../../js/evo/pool-discrimination-stage.js').Stage} */ (
+                    /** @type {unknown} */ ({ ...stage, seed: 1 + t })
+                );
+                const { world } = stageWorld(staged);
                 expect(world.foodAlive.length).toBe(STAGE_MAX_FOOD);
                 expect(world.foodCount).toBe(stage.foods.length);
                 expect(stage.foods.length).toBeLessThanOrEqual(STAGE_MAX_FOOD / 4);
