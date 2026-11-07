@@ -6,6 +6,12 @@ import { OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { canBite } from '../sim/bite-rule.js';
 
 /**
+ * The most the pair's distance may exceed the summed radii at the end of a tick and still count as touching: contact
+ * resolution pushes an overlapping pair just apart, so the touching pair of a bite tick ends at 1.0005 radii, not below 1.
+ */
+const TOUCH_GAP = 1.01;
+
+/**
  * The ordered reasons a hunting trial is lost. The first that holds is the one reported.
  * @typedef {'never-bit' | 'never-in-jaws' | 'bit-prey-lived' | 'subject-died-first' | 'prey-died-unkilled'} LostReason
  */
@@ -13,7 +19,7 @@ import { canBite } from '../sim/bite-rule.js';
 /**
  * @typedef {object} PreyTrace
  * @property {number} closest the closest approach so far, in the two bodies' summed radii (1 is touching)
- * @property {number} jawTicks ticks with the prey inside the jaws: touching, ahead, and bitable
+ * @property {number} jawTicks ticks with the prey inside the jaws: touching (within `TOUCH_GAP`), ahead, and bitable
  * @property {number} biteTicks ticks with `BITE` above 0 (anywhere)
  * @property {number} biteJawTicks ticks with `BITE` above 0 and the prey inside the jaws
  * @property {boolean} preyDied whether the prey was dead at the last tick noted
@@ -48,7 +54,7 @@ export function noteTick(trace, world) {
     const dy = world.y[1] - world.y[0];
     const gap = Math.sqrt(dx * dx + dy * dy) / (world.size[0] + world.size[1]);
     trace.closest = Math.min(trace.closest, gap);
-    const inJaws = gap <= 1 && canBite(world, 0, 1);
+    const inJaws = gap <= TOUCH_GAP && canBite(world, 0, 1);
     const biting = world.outputs[OUTPUT_INDEX.BITE] > 0;
     trace.jawTicks += inJaws ? 1 : 0;
     trace.biteTicks += biting ? 1 : 0;

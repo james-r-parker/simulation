@@ -38,8 +38,11 @@ describe('genomeSkipCells', () => {
     it('reads only the genomes that can hunt, and is null when there are none', () => {
         const genome = (/** @type {number} */ spec) => ({ weights: reflexRow(), spec });
         expect(genomeSkipCells([genome(0)], config)).toBeNull();
-        expect(genomeSkipCells([genome(0), genome(1), { weights: null, spec: 1 }], config)?.json.champions.count).toBe(
-            1,
-        );
+        expect(
+            genomeSkipCells(
+                [genome(0), genome(1), { weights: null, spec: 1 }, { weights: reflexRow(), spec: null }],
+                config,
+            )?.json.champions.count,
+        ).toBe(1);
     });
 });

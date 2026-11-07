@@ -46,6 +46,7 @@ describe('noteTick', () => {
         noteTick(trace, world);
         expect(trace.closest).toBe(3);
         expect(trace).toMatchObject({ biteTicks: 1, biteJawTicks: 0, jawTicks: 0 });
+        expect(world.size).toEqual([5, 5]);
         world.alive[1] = 0;
         noteTick(trace, world);
         expect(trace.preyDied).toBe(true);
@@ -59,13 +60,22 @@ describe('prey-ahead trace in the drill log', () => {
      * @returns {Record<string, any>[]} the DrillTrial records of 3 trials
      */
     function trials(subject) {
+        return trialsOf(subject, 3);
+    }
+
+    /**
+     * @param {import('../../js/evo/memory-probe-run.js').Subject} subject a subject
+     * @param {number} count trials
+     * @returns {Record<string, any>[]} the DrillTrial records
+     */
+    function trialsOf(subject, count) {
         /** @type {Record<string, any>[]} */
         const records = [];
         const log = {
             level: /** @type {const} */ ('debug'),
             log: (/** @type {any} */ _l, /** @type {any} */ _e, /** @type {any} */ f) => records.push(f),
         };
-        drillSubject(preyAhead, subject, { trials: 3, log: /** @type {any} */ (log) });
+        drillSubject(preyAhead, subject, { trials: count, log: /** @type {any} */ (log) });
         return records;
     }
 
@@ -81,6 +91,12 @@ describe('prey-ahead trace in the drill log', () => {
             expect(record).toMatchObject({ won: false, reason: 'never-bit', biteTicks: 0 });
             expect(record.closest).toBeGreaterThan(0);
         }
+    });
+
+    it('counts ticks with the prey in the jaws, and bites there, for the chasing reference', () => {
+        const records = trialsOf(referenceSubject('memoryless'), 12);
+        expect(records.some((r) => r.jawTicks > 0 && r.biteJawTicks > 0)).toBe(true);
+        expect(records.every((r) => r.biteJawTicks <= r.jawTicks && r.biteJawTicks <= r.biteTicks)).toBe(true);
     });
 
     it('gives the chasing reference a reason only on the trials it lost, and counts its bites', () => {

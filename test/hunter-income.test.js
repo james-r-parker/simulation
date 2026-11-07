@@ -45,7 +45,7 @@ describe('hunter-income', () => {
     });
 
     it('refuses a log with no ledger record, and a missing argument', () => {
-        expect(() => runHunterIncome([logOf('b.jsonl', [{ event: 'Other' }])])).toThrow(/--level debug/);
-        expect(() => runHunterIncome([])).toThrow(/usage/);
+        expect(() => runHunterIncome([logOf('b.jsonl', [{ event: 'Other' }])], () => {})).toThrow(/--level debug/);
+        expect(() => runHunterIncome([], () => {})).toThrow(/usage/);
     });
 });

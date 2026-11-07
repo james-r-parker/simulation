@@ -10,11 +10,11 @@ const USAGE = 'usage: hunter-income <log.jsonl>';
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @param {(line: string) => void} [print] where the output goes
+ * @param {(line: string) => void} print where the output goes
  * @returns {import('../js/evo/hunter-income-split.js').IncomeSplit} the split
  * @throws {Error} when no log is named or it holds no `HunterLedger` record
  */
-export function runHunterIncome(argv, print = () => {}) {
+export function runHunterIncome(argv, print) {
     if (argv.length !== 1) {
         throw new Error(USAGE);
     }
