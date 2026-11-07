@@ -91,6 +91,19 @@ The `prey-too-big` column is from the fixed drill: its prey was bitable (a forag
 
 **Done criterion: not met.** `food-ahead` is above 0 (+0.84), but `prey-ahead` is 0.00: the predator champion never kills the fleeing forager in the drill (it "wins" `prey-too-big` only by not attacking), and the memoryless reference scores 0.31 there. The league condition holds. What fell short is predator skill: the hunt stage lowered `catch_rate` from 0.41 to 0.24 instead of teaching a chase. The forager side is better than the earlier 6-generation smoke (`hunter-closing` +0.47 against +0.13) but `two-foods` and `rock-refuge` are still not learned. Phase 2 stays "In progress". Next to try, in the doc's own terms: more generations in the hunt stage or a hunt world with prey that stays in view longer, and a `minAgents` floor in the nursery. Champions stay local under `/tmp/claude-1000/eval-out/train-t12/champions` and are uploaded nowhere.
 
+#### T12 iteration 2 (2026-11-07)
+
+Goal: find a curriculum under which the trained predator kills in the `prey-ahead` drill (edge above 0), with no change to the live sim or the trainer. Each arm is a full `npm run train` with 32 episodes at 60000 ticks; runs are under `/tmp/claude-1000/eval-out/train-iter2/<arm>/`. Nature first ([hunter-practice.md](hunter-practice.md)): young predators learn on easy prey that stays close, with the hunt kept in view; so the arms lengthen practice (a), keep prey in view (b), and keep the nursery populated so a foraging base exists when hunters appear (c).
+
+| Arm | Curriculum file                       | What changes against T12                                                                  |
+| --- | ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| a   | `evals/train-curriculum-iter2-a.json` | hunt stage 40 generations (nursery 20), 60 in all                                         |
+| b   | `evals/train-curriculum-iter2-b.json` | hunt world 1600x1067, 60 agents start, cap 100, 50 food (prey density 2.5x, 20 hunt gens) |
+| c   | `evals/train-curriculum-iter2-c.json` | nursery `minAgents` 20 (`evals/train-nursery-floor.json`), hunt as T12                    |
+| d   | chosen after a to c                   | the best combination                                                                      |
+
+**Prediction (written before the runs).** The predator edge on `prey-ahead` is above 0 in b (about +0.1 to +0.2, a coin flip) because density multiplies chance sightings and chases, which is what the hunt stage lacked (`catch_rate` fell as the hunters sparsed the prey in a roomy arena). Arm a alone stays at 0.00 (about 70 percent): more generations of the same sparse world select on rare kills, and T12's `catch_rate` fell with the stage, so more of it drifts further. Arm c is mostly neutral on predators (the floor only helps the nursery forager) and may lift `food-ahead` more than `prey-ahead`. The reflex `approach-prey` and `bite-discrimination` pass shares should line up with a positive edge: a champion with edge 0 fails approach-prey (it never closes), a champion with edge above 0 passes it above 0.5. Unsure about bite-discrimination: abstaining passes half of it by default.
+
 ### Phase 3 - Champions in the live world
 
 **Targets:** eval.food_energy_per_1k, eval.food_energy_per_1k@20k, eval.floor_episodes
