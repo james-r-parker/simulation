@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GENOME_SPECS } from '../../js/evo/genome.js';
 import { CHAMPION_VERSION, validateChampion } from '../../js/evo/league.js';
-import { canonicalChampion, championId, genomeKey } from '../../js/library/canonical.js';
+import { canonicalChampion, championId } from '../../js/library/canonical.js';
 import { decodeCursor, encodeCursor, parseListQuery } from '../../js/library/query.js';
 import { toPublicChampion } from '../../js/library/rows.js';
 import {
@@ -149,12 +149,11 @@ describe('canonicalChampion', () => {
 
     it('matches a known SHA-256', async () => {
         expect(await championId('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
-        expect(genomeKey(6, 'x')).toBe('s6/x.json');
     });
 });
 
 describe('toPublicChampion', () => {
-    it('hides r2_key, attempts, uploader_id and the reject reason', () => {
+    it('hides attempts, uploader_id and the reject reason', () => {
         const view = toPublicChampion({
             id: 'i',
             season: 6,
@@ -173,7 +172,6 @@ describe('toPublicChampion', () => {
             verified_sha: 's',
             attempts: 2,
             bytes: 9,
-            r2_key: 'k',
         });
         expect(Object.keys(view).sort()).toEqual([
             'bytes',
@@ -200,7 +198,7 @@ describe('seeding', () => {
     it('builds one verified official row per distinct file, with the league Elo', async () => {
         const a = makeChampionFile('a', 1, { specialisation: 0 });
         const b = makeChampionFile('b', 2, { specialisation: 1 });
-        const { rows, objects } = await buildSeedRows([a, b, a], {
+        const { rows, files } = await buildSeedRows([a, b, a], {
             season: 6,
             league: { champions: [{ name: 'a', elo: 1625 }] },
             now: 100,
@@ -212,10 +210,9 @@ describe('seeding', () => {
             uploader_id: null,
             created: 100,
             season: 6,
-            r2_key: objects[0].key,
         });
-        expect(rows[0].bytes).toBe(new TextEncoder().encode(objects[0].body).length);
-        expect(objects[0].key).toBe(`s6/${rows[0].id}.json`);
+        expect(rows[0].bytes).toBe(new TextEncoder().encode(files[0].body).length);
+        expect(files.map((f) => f.id)).toEqual(rows.map((r) => r.id));
     });
 
     it('writes idempotent SQL', async () => {

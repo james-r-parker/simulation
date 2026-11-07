@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { listSql, toPage } from '../../js/library/list.js';
 import { parseListQuery } from '../../js/library/query.js';
-import { championsSql, seasonSql } from '../../js/library/seed.js';
+import { championsSql, filesSql, seasonSql } from '../../js/library/seed.js';
 
 const HASH = (/** @type {number} */ n) => n.toString(16).padStart(64, '0');
 
@@ -28,14 +28,15 @@ function row(/** @type {number} */ n, /** @type {Record<string, any>} */ over = 
         verified_sha: null,
         attempts: 0,
         bytes: 10,
-        r2_key: `s6/${HASH(n)}.json`,
         ...over,
     };
 }
 
 function openDb() {
     const db = new DatabaseSync(':memory:');
-    db.exec(readFileSync('migrations/0001_library.sql', 'utf8'));
+    for (const file of ['0001_library.sql', '0002_champion_files.sql']) {
+        db.exec(readFileSync(`migrations/${file}`, 'utf8'));
+    }
     db.exec(
         seasonSql({
             season: 6,
@@ -95,6 +96,33 @@ describe('migrations/0001_library.sql', () => {
         const db = openDb();
         db.exec(championsSql([row(1, { name: "o'brien" })]));
         expect(db.prepare('SELECT name FROM champions').get()?.name).toBe("o'brien");
+    });
+});
+
+describe('migrations/0002_champion_files.sql', () => {
+    const BODY = '{"a":"o\'k"}';
+
+    it('drops r2_key and keeps the file in its own table', () => {
+        const db = openDb();
+        const columns = db
+            .prepare('PRAGMA table_info(champions)')
+            .all()
+            .map((c) => c.name);
+        expect(columns).not.toContain('r2_key');
+        db.exec(championsSql([row(1)]));
+        const sql = filesSql([{ id: HASH(1), body: BODY }]);
+        db.exec(sql);
+        db.exec(sql);
+        expect(db.prepare('SELECT COUNT(*) AS n FROM champion_files').get()?.n).toBe(1);
+        expect(db.prepare('SELECT body FROM champion_files WHERE id = ?').get(HASH(1))?.body).toBe(BODY);
+    });
+
+    it('refuses a file over the cap and one without a champion row', () => {
+        const db = openDb();
+        db.exec(championsSql([row(1)]));
+        expect(() => db.exec(filesSql([{ id: HASH(1), body: 'x'.repeat(65537) }]))).toThrow();
+        db.exec('PRAGMA foreign_keys = ON');
+        expect(() => db.exec(filesSql([{ id: HASH(9), body: '{}' }]))).toThrow();
     });
 });
 

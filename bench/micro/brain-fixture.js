@@ -2,7 +2,7 @@
 // input rows reshaped so the sparsity of the brain's input is a knob, not an accident of one world.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
-import { aliveSlots } from './fixture.js';
+import { aliveSlots, benchAttach } from './fixture.js';
 
 /** Where the sweep suites write facts a bench name cannot carry (read back by `scripts/bench-micro.mjs`). */
 export const INFO_DIR = '.bench-micro-info';
@@ -15,7 +15,18 @@ export const INFO_DIR = '.bench-micro-info';
  * @returns {Record<string, any>} the copy
  */
 export function forkBrainWorld(world, over = {}) {
-    return {
+    if (world.wasm !== undefined) {
+        // A WASM world's copy gets its own arena, which copies the arrays; its agent rows are copied so the original's
+        // stay on the original's arena.
+        /** @type {Record<string, any>} */
+        const wasmCopy = { ...world, brainScratch: world.brainScratch.slice(), ...over };
+        delete wasmCopy.wasm;
+        wasmCopy.agentRows = world.agentRows.map((/** @type {any} */ row) => ({ ...row }));
+        benchAttach(wasmCopy);
+        return wasmCopy;
+    }
+    /** @type {Record<string, any>} */
+    const copy = {
         ...world,
         inputs: world.inputs.slice(),
         pooled: world.pooled.slice(),
@@ -25,6 +36,7 @@ export function forkBrainWorld(world, over = {}) {
         brainScratch: world.brainScratch.slice(),
         ...over,
     };
+    return copy;
 }
 
 /**

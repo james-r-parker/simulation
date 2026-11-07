@@ -258,7 +258,7 @@ describe('selectParent', () => {
 });
 
 describe('seedArchive and metrics', () => {
-    it('seeds the elite with n = 1 and mean 0, so a tested challenger can replace it', () => {
+    it('seeds the elite with no samples, so any offer becomes its challenger and a tested one replaces it', () => {
         const archive = createArchive(layout);
         seedArchive(archive, {
             specialisation: 'predator',
@@ -269,7 +269,7 @@ describe('seedArchive and metrics', () => {
         });
         const o = placeOf(1, 5, ELITE);
         expect([archive.occupied[o], archive.stats[o * 3], archive.stats[o * 3 + 1], archive.ids[o]]).toEqual([
-            1, 1, 0, 40,
+            1, 0, 0, 40,
         ]);
         offer(archive, { ...mk(7, 30), spec: 1 });
         cloneOf1(archive);

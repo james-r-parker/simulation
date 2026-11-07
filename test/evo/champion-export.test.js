@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createArchive, seedArchive, refOf, placeOf, ELITE } from '../../js/evo/archive.js';
 import { WELFORD_STRIDE, welfordAdd } from '../../js/evo/welford.js';
-import { exportChampions } from '../../js/evo/champion-export.js';
+import { bestElitePerSpec, exportBestPerSpec, exportChampions } from '../../js/evo/champion-export.js';
 import { validateChampion } from '../../js/evo/league.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -54,5 +54,28 @@ describe('exportChampions', () => {
         const [file] = exportChampions(archive, config, { count: 1, label: 'x' });
         const ref = refOf(archive, placeOf(0, file.cell, ELITE));
         expect(ref.id).toBe(file.genomeId);
+    });
+});
+
+describe('exportBestPerSpec', () => {
+    const archive = createArchive(layout);
+    seed(archive, { spec: 0, cell: 5, id: 11, fill: 0.25, fitness: 3 });
+    seed(archive, { spec: 0, cell: 2, id: 13, fill: 0.125, fitness: 9 });
+    seed(archive, { spec: 1, cell: 7, id: 12, fill: -0.5, fitness: 9 });
+
+    it('picks each specialisation elite with the highest lower bound, in specialisation order', () => {
+        expect(bestElitePerSpec(archive).map((e) => [e.spec, e.id])).toEqual([
+            [0, 13],
+            [1, 12],
+        ]);
+    });
+
+    it('writes one file per specialisation that validateChampion accepts', () => {
+        const files = exportBestPerSpec(archive, config, { label: 'run' });
+        expect(files.map((f) => f.name)).toEqual(['run-forager-cell2', 'run-predator-cell7']);
+        for (const file of files) {
+            expect(() => validateChampion(JSON.parse(JSON.stringify(file)), config)).not.toThrow();
+        }
+        expect(exportBestPerSpec(createArchive(layout), config, { label: 'run' })).toEqual([]);
     });
 });

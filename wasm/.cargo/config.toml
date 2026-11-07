@@ -1,0 +1,12 @@
+# Standard fixed-width SIMD only (no relaxed SIMD); the memory is imported so JS sizes it once and never grows it; a
+# small stack, and __heap_base exported so the arena knows where its arrays may start.
+[build]
+target = "wasm32-unknown-unknown"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C", "target-feature=+simd128",
+    "-C", "link-arg=--import-memory",
+    "-C", "link-arg=-zstack-size=65536",
+    "-C", "link-arg=--export=__heap_base",
+]

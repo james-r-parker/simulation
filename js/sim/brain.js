@@ -4,6 +4,7 @@ import { detTanhInto } from './det-math.js';
 import { hebbianStep } from './hebbian.js';
 import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from './brain-layout.js';
 import { poolRays } from './ray-pool.js';
+import { wasmForwardAll } from './wasm-brain.js';
 
 /** The gene outputs' running sums in `outputStep`, in double precision as a local sum would be. */
 const geneSums = new Float64Array(GENE_OUTPUTS.length);
@@ -176,11 +177,16 @@ function outputStep(world, slot) {
 }
 
 /**
- * Runs the brain of every alive agent, slots ascending: updates `hidden` and writes `outputs`.
+ * Runs the brain of every alive agent, slots ascending: updates `hidden` and writes `outputs`. A world that
+ * `attachWasm` moved into an arena runs the WASM kernel instead, bit-identical (docs/designs/wasm-kernels.md).
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function forwardAll(world) {
+    if (world.wasm !== undefined) {
+        wasmForwardAll(world);
+        return;
+    }
     const { alive } = world;
     const learn = world.config.hebbianRate > 0;
     for (let slot = 0; slot < alive.length; slot++) {
