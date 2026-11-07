@@ -94,7 +94,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createVisionLayer({ info }),
             smoke,
             createFxLayer({ pool: fx.pool, budget: fx.budget }),
-            createChaseLayer({ info }),
+            createChaseLayer({ info, pursuits: player.flee.pursuits }),
             createMateThreadLayer({ pool: threads }),
             createOverlays({ info }),
             createBorderLayer({ info }),
