@@ -1,9 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { checkHash, hasCargo, parseHashFile, sha256Hex } from '../scripts/check-wasm.mjs';
+import {
+    checkHash,
+    checkSources,
+    hasCargo,
+    parseHashFile,
+    sha256Hex,
+    sourceFiles,
+    sourceHashText,
+} from '../scripts/check-wasm.mjs';
 
 const BINARY = readFileSync(new URL('../wasm/blob-kernels.wasm', import.meta.url));
 const HASH_TEXT = readFileSync(new URL('../wasm/blob-kernels.wasm.sha256', import.meta.url), 'utf8');
+const SOURCE_TEXT = readFileSync(new URL('../wasm/blob-kernels.src.sha256', import.meta.url), 'utf8');
 
 describe('check-wasm', () => {
     it('accepts the committed binary against its committed hash', () => {
@@ -33,5 +42,22 @@ describe('check-wasm', () => {
 
     it('answers whether cargo can run without throwing when the PATH is empty', () => {
         expect(typeof hasCargo({ PATH: '' })).toBe('boolean');
+    });
+
+    it('finds every source the binary is built from recorded unchanged, so source drift fails without cargo', () => {
+        expect(sourceFiles()).toEqual(
+            expect.arrayContaining(['Cargo.toml', 'Cargo.lock', '.cargo/config.toml', 'src/lib.rs']),
+        );
+        expect(checkSources(SOURCE_TEXT, sourceHashText())).toEqual([]);
+    });
+
+    it('names a changed source, a removed one and a missing record', () => {
+        const actual = sourceHashText();
+        const edited = actual.replace(/^[0-9a-f]{64}(?= {2}src\/lib\.rs$)/m, '0'.repeat(64));
+        expect(checkSources(edited, actual)).toEqual([
+            'wasm: src/lib.rs changed since wasm/blob-kernels.wasm was built - run scripts/build-wasm.sh',
+        ]);
+        expect(checkSources(`${actual}${'1'.repeat(64)}  src/gone.rs\n`, actual)[0]).toContain('a source was removed');
+        expect(checkSources(null, actual)[0]).toContain('src.sha256 is missing');
     });
 });

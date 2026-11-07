@@ -1,10 +1,12 @@
 // Checks the committed WASM kernels (docs/designs/wasm-kernels.md): the binary's sha256 must match
 // wasm/blob-kernels.wasm.sha256, and on a machine with cargo a fresh build from wasm/src must reproduce it. Without
-// cargo the rebuild is skipped with a note. Prints one line per problem and exits 1 if there are any.
-// Usage: node scripts/check-wasm.mjs [--no-rebuild]
+// cargo the rebuild is skipped with a note. wasm/blob-kernels.src.sha256 records the hash of every source the binary is
+// built from, so a source change without a rebuild fails here (and in test/check-wasm.test.js) on a machine without cargo.
+// Prints one line per problem and exits 1 if there are any.
+// Usage: node scripts/check-wasm.mjs [--no-rebuild] | --write-sources (scripts/build-wasm.sh records the source hashes)
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +15,54 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BINARY = join(ROOT, 'wasm/blob-kernels.wasm');
 const HASH_FILE = join(ROOT, 'wasm/blob-kernels.wasm.sha256');
 const BUILD = join(ROOT, 'scripts/build-wasm.sh');
+const WASM_DIR = join(ROOT, 'wasm');
+const SOURCE_HASH_FILE = join(WASM_DIR, 'blob-kernels.src.sha256');
+
+/** Sources outside `src/` that change the built bytes. */
+const BUILD_INPUTS = ['.cargo/config.toml', 'Cargo.lock', 'Cargo.toml'];
+
+/**
+ * @param {string} wasmDir the crate directory
+ * @returns {string[]} every source the binary is built from, relative to the crate, in code-point order
+ */
+export function sourceFiles(wasmDir = WASM_DIR) {
+    const rust = readdirSync(join(wasmDir, 'src'))
+        .filter((name) => name.endsWith('.rs'))
+        .map((name) => `src/${name}`);
+    return [...BUILD_INPUTS, ...rust].filter((file) => existsSync(join(wasmDir, file))).sort();
+}
+
+/**
+ * @param {string} wasmDir the crate directory
+ * @returns {string} one `<sha256>  <file>` line per source, as `blob-kernels.src.sha256` records them
+ */
+export function sourceHashText(wasmDir = WASM_DIR) {
+    return sourceFiles(wasmDir)
+        .map((file) => `${sha256Hex(readFileSync(join(wasmDir, file)))}  ${file}\n`)
+        .join('');
+}
+
+/**
+ * Compares the sources with the hashes recorded when the binary was last built.
+ * @param {string | null} recorded the recorded file, or null when it is missing
+ * @param {string} actual `sourceHashText` of the crate now
+ * @returns {string[]} problems
+ */
+export function checkSources(recorded, actual) {
+    if (recorded === null) {
+        return ['wasm: wasm/blob-kernels.src.sha256 is missing - run scripts/build-wasm.sh'];
+    }
+    if (recorded === actual) {
+        return [];
+    }
+    const want = new Set(recorded.split('\n'));
+    const changed = actual
+        .split('\n')
+        .filter((line) => line !== '' && !want.has(line))
+        .map((line) => line.slice(66));
+    const named = changed.length > 0 ? changed.join(', ') : 'a source was removed';
+    return [`wasm: ${named} changed since wasm/blob-kernels.wasm was built - run scripts/build-wasm.sh`];
+}
 
 /**
  * @param {Uint8Array} bytes file contents
@@ -91,10 +141,17 @@ function checkRebuild(bytes) {
 }
 
 /* v8 ignore start - the command-line shell; the checks above are unit-tested */
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+    process.argv[1] &&
+    resolve(process.argv[1]) === fileURLToPath(import.meta.url) &&
+    process.argv.includes('--write-sources')
+) {
+    writeFileSync(SOURCE_HASH_FILE, sourceHashText());
+} else if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
     const bytes = existsSync(BINARY) ? readFileSync(BINARY) : null;
     const hashText = existsSync(HASH_FILE) ? readFileSync(HASH_FILE, 'utf8') : null;
-    const problems = checkHash(bytes, hashText);
+    const recorded = existsSync(SOURCE_HASH_FILE) ? readFileSync(SOURCE_HASH_FILE, 'utf8') : null;
+    const problems = [...checkHash(bytes, hashText), ...checkSources(recorded, sourceHashText())];
     if (problems.length === 0 && bytes !== null && !process.argv.includes('--no-rebuild')) {
         if (hasCargo()) {
             problems.push(...checkRebuild(bytes));

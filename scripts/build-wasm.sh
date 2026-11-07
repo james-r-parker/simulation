@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the WASM kernels (docs/designs/wasm-kernels.md): cargo for wasm32-unknown-unknown, then wasm-opt -O3 with
-# standard SIMD. With no argument it writes the committed wasm/blob-kernels.wasm and wasm/blob-kernels.wasm.sha256;
+# standard SIMD. With no argument it writes the committed wasm/blob-kernels.wasm, wasm/blob-kernels.wasm.sha256 and
+# wasm/blob-kernels.src.sha256 (the hash of every source it was built from);
 # with a path it writes only that file (scripts/check-wasm.mjs rebuilds into a temporary path and compares).
 # Run it whenever wasm/src changes. Needs rustc and cargo (1.99, target wasm32-unknown-unknown) and wasm-opt.
 set -euo pipefail
@@ -23,5 +24,6 @@ wasm-opt -O3 --enable-simd --enable-nontrapping-float-to-int --enable-bulk-memor
 
 if [[ $# -eq 0 ]]; then
   sha256sum blob-kernels.wasm > blob-kernels.wasm.sha256
-  echo "wrote wasm/blob-kernels.wasm ($(stat -c %s "$out") bytes) and its hash"
+  node "$root/scripts/check-wasm.mjs" --write-sources
+  echo "wrote wasm/blob-kernels.wasm ($(stat -c %s "$out") bytes), its hash and the source hashes"
 fi
