@@ -29,7 +29,7 @@ Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:
 25. [Brain reflex tests](brain-reflex-tests.md) - a tool and a study that change no sim behaviour; it builds on the trainer and drills (training.md) and gets cheaper once the Rust brain kernel is adopted (wasm-kernels.md), so it queues behind both
 26. [Renderer event effects](renderer-event-effects.md) - a viewer cannot yet tell most features are firing (user, 2026-11-07); it changes no sim behaviour, so it queues behind the balance and scene work
 
-## Implemented (11)
+## Implemented (12)
 
 Describe shipped code. Trust these, and fix them when the code moves.
 
@@ -44,6 +44,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Megafauna](megafauna.md) - Phases 1–4 are built and enabled by default. T40's matched RTX 4090 run found no observed frame-time regression from the herd look; its GC-pause budget was exce...
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
+- [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
 ## In progress (13)
 
