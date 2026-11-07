@@ -18,6 +18,8 @@ import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRe
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
+import { createBiteScene, tickBite } from './scene-bite.js';
+import { createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from './scene-bite-life.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -78,6 +80,8 @@ export function createScenes(config, runTicks = 0) {
         hunters: createHunterScene(runTicks, config),
         guards: createGuardScene(config),
         kin: createKinProximityScene(config),
+        bite: createBiteScene(config),
+        biteLife: createBiteLifeScene(),
     };
 }
 
@@ -151,6 +155,7 @@ function noteEvents(scenes, observer, world) {
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         noteHunterRecord(scenes.hunters, d, o);
+        noteBiteLifeRecord(scenes.biteLife, d, o);
         noteCompetenceRecord(scenes.competence, d, o);
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             noteHunterBirth(scenes.hunters, world, d[o + 2]);
@@ -183,6 +188,8 @@ export function observeScenes(observer, world) {
     if (world.tick === 0) {
         return;
     }
+    tickBite(scenes.bite, world);
+    tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);

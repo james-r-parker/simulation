@@ -19,6 +19,19 @@ const BASINS = {
 };
 
 describe('observeScenes', () => {
+    it('tallies an idle hunter after tick 0 and not at tick 0', () => {
+        const r = observed();
+        const { predator } = r.world.config.specialisations;
+        addBlob(r.world, { spec: predator.index });
+        const total = () =>
+            r.observer.scenes.bite.opportunities.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+        observe(r.observer, r.world);
+        expect(total()).toBe(0);
+        nextTick(r.world, 5);
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.bite.opportunities[0]).toBe(1);
+    });
+
     it('resets a slot on a birth, and the scenes of a died hunter with it', () => {
         const r = observed();
         const slot = addBlob(r.world);
@@ -135,6 +148,8 @@ describe('observeScenes', () => {
             'approach',
             'balance',
             'basin',
+            'bite',
+            'biteLife',
             'carcass',
             'competence',
             'condition',
