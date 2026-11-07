@@ -12,11 +12,17 @@ const PARKED = 20000;
 const FOOD_RADIUS = 50;
 const FOOD_VALUE = 300;
 
+/** Food slots of a staged world: far above what any scene places, so a carcass always finds a slot. */
+export const STAGE_MAX_FOOD = 48;
+
 /**
  * The knobs that keep a staged world to the scene: no regrowth, no hazards, no reproduction pressure, one wall gap and
  * no refuges; its rocks are rewritten by `stageWorld`.
  */
 const STAGE_CONFIG = Object.freeze({
+    // The scenes place at most a handful of foods; the rest is headroom for carcasses. The default 3600 slots would be
+    // walked by every hash build, every tick, in a world that holds one or two items.
+    maxFood: STAGE_MAX_FOOD,
     worldWidth: 3000,
     worldHeight: 4000,
     maxAgents: 8,
