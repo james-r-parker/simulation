@@ -132,6 +132,30 @@ export function relativeNoise(values) {
 }
 
 /**
+ * A millisecond metric whose median rises by less than this passes whatever the ratio: a phase that takes 0.0001 ms
+ * (the invariants check with `checkInvariants` off) reads +100% from one rounding step, which is not a regression.
+ */
+export const MIN_MS_DELTA = 0.005;
+
+/**
+ * Judges one metric: the change of the head median over the base median against the limit (the tolerance, widened by
+ * measured noise when asked), passing a millisecond metric whose rise is below `MIN_MS_DELTA`.
+ * @param {string} metric the metric name
+ * @param {{baseValues: number[], headValues: number[]}} values the base and head runs' values
+ * @param {{tolerance: number, noiseMultiplier: number}} limits the tolerance and noise multiplier
+ * @returns {{metric: string, base: number, head: number, change: number, limit: number, ok: boolean}} the row
+ */
+function judge(metric, { baseValues, headValues }, { tolerance, noiseMultiplier }) {
+    const base = median(baseValues);
+    const head = median(headValues);
+    const change = base > 0 ? head / base - 1 : head > 0 ? Infinity : 0;
+    const noise = Math.max(relativeNoise(baseValues), relativeNoise(headValues));
+    const limit = Math.max(tolerance, noiseMultiplier * noise);
+    const negligible = metric.includes('_ms') && head - base < MIN_MS_DELTA;
+    return { metric, base, head, change, limit, ok: change <= limit || negligible };
+}
+
+/**
  * @param {Array<Record<string, number>>} baseRuns bench JSON objects from the base tree
  * @param {Array<Record<string, number>>} headRuns bench JSON objects from the head tree
  * @param {number} [tolerance] allowed fraction above the base median
@@ -149,12 +173,7 @@ export function compare(baseRuns, headRuns, tolerance = TOLERANCE, noiseMultipli
         if (!metric.startsWith(METRIC_PREFIX) || !present(baseValues) || !present(headValues)) {
             continue;
         }
-        const base = median(baseValues);
-        const head = median(headValues);
-        const change = base > 0 ? head / base - 1 : head > 0 ? Infinity : 0;
-        const noise = Math.max(relativeNoise(baseValues), relativeNoise(headValues));
-        const limit = Math.max(tolerance, noiseMultiplier * noise);
-        rows.push({ metric, base, head, change, limit, ok: change <= limit });
+        rows.push(judge(metric, { baseValues, headValues }, { tolerance, noiseMultiplier }));
     }
     return rows;
 }
