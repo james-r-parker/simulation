@@ -1,33 +1,39 @@
-// The manifest of a release upload: which files go to which R2 keys with which content type. Pure over a file list.
-import { contentTypeOf, isVersion, releaseKey } from '../../functions/_lib/releases.js';
+// Registering a release in the D1 `releases` table, as a pure decision over the stored row (if any).
+import { GET_RELEASE_SQL, isVersion, releaseSql, sameRelease } from '../../js/library/releases.js';
 
 /**
- * @typedef {object} UploadRow
- * @property {string} path the file's path inside the release directory
- * @property {string} key the R2 key `releases/<version>/<path>`
- * @property {string} contentType
+ * @typedef {import('../../js/library/releases.js').ReleaseEntry} ReleaseEntry
+ * @typedef {import('../../js/library/releases.js').ReleaseRow} ReleaseRow
  */
 
 /**
- * @param {string} version the release version
- * @param {readonly string[]} paths the files of the release directory, relative, with `/` separators
- * @returns {UploadRow[]} one row per file, in path order
- * @throws {Error} when the version is not `major.minor.patch`, a path would leave `releases/<version>/`, or no file is
- *   `index.html`
+ * @param {string} version a release version
+ * @returns {string} `GET_RELEASE_SQL` with the version as a literal; only a valid `major.minor.patch` is ever inlined
+ * @throws {Error} `bad_version` for any other text, so no other text reaches the SQL
  */
-export function uploadManifest(version, paths) {
+export function readReleaseSql(version) {
     if (!isVersion(version)) {
         throw new Error(`release-upload: bad version ${JSON.stringify(version)}`);
     }
-    const rows = [...paths].sort().map((path) => {
-        const key = releaseKey(version, path);
-        if (key === null) {
-            throw new Error(`release-upload: refusing path ${JSON.stringify(path)}`);
-        }
-        return { path, key, contentType: contentTypeOf(path) };
-    });
-    if (!rows.some((row) => row.path === 'index.html')) {
-        throw new Error('release-upload: the release has no index.html');
+    return GET_RELEASE_SQL.replace('?', `'${version}'`);
+}
+
+/**
+ * @param {ReleaseEntry} entry the release this run built (`release-entry.json`)
+ * @param {ReleaseRow | null} stored the row D1 holds for its version, or null
+ * @returns {{action: 'insert', sql: string} | {action: 'noop'}} what to do: insert the row, or nothing when an identical
+ *   row is stored (a repair run after a partial failure passes)
+ * @throws {Error} `release_conflict` when a different row is stored for the version, `bad_version` for a bad version
+ */
+export function registerPlan(entry, stored) {
+    if (!isVersion(entry.version)) {
+        throw new Error(`bad_version: ${entry.version}`);
     }
-    return rows;
+    if (stored === null) {
+        return { action: 'insert', sql: releaseSql(entry) };
+    }
+    if (!sameRelease(stored, entry)) {
+        throw new Error(`release_conflict: ${entry.version} is already stored with different content`);
+    }
+    return { action: 'noop' };
 }

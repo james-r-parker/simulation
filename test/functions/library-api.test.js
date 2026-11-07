@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleFile, handleList, handleOne, handleSeasons } from '../../functions/_lib/library-api.js';
-import { championsSql, seasonSql } from '../../js/library/seed.js';
-import { fakeCache, fakeD1, fakeR2 } from './helpers/fakes.js';
+import { championsSql, filesSql, seasonSql } from '../../js/library/seed.js';
+import { fakeCache, fakeD1 } from './helpers/fakes.js';
 
 const id = (/** @type {number} */ n) => n.toString(16).padStart(64, '0');
 const row = (/** @type {number} */ n, /** @type {Record<string, any>} */ over = {}) => ({
@@ -22,7 +22,6 @@ const row = (/** @type {number} */ n, /** @type {Record<string, any>} */ over = 
     verified_sha: null,
     attempts: 3,
     bytes: 5,
-    r2_key: `s6/${id(n)}.json`,
     ...over,
 });
 const season = {
@@ -38,8 +37,8 @@ function world() {
     const { db, sqlite, reads } = fakeD1();
     sqlite.exec(seasonSql(season));
     sqlite.exec(championsSql([row(1), row(2), row(3), row(4, { status: 'pending' }), row(5, { status: 'removed' })]));
-    const GENES = fakeR2({ [`s6/${id(1)}.json`]: '{"file":1}', [`s6/${id(4)}.json`]: '{"file":4}' });
-    return { env: { DB: db, GENES }, reads };
+    sqlite.exec(filesSql([1, 4, 5].map((n) => ({ id: id(n), body: `{"file":${n}}` }))));
+    return { env: { DB: db }, reads };
 }
 
 const call = (/** @type {any} */ handler, /** @type {string} */ url, /** @type {any} */ env, params = {}) =>
@@ -64,7 +63,7 @@ describe('GET /api/champions', () => {
         const body = await res.json();
         expect(body.items.map((/** @type {any} */ i) => i.id)).toEqual([id(3), id(2), id(1)]);
         expect(body.next).toBeNull();
-        expect(JSON.stringify(body)).not.toMatch(/r2_key|attempts|uploader_id|secret/);
+        expect(JSON.stringify(body)).not.toMatch(/attempts|uploader_id|secret/);
         expect(res.headers.get('Cache-Control')).toBe('public, s-maxage=60');
     });
 
@@ -122,7 +121,7 @@ describe('GET /api/champions/:id and its file', () => {
         }
     });
 
-    it('answers 404 for a malformed id without reading D1 and for a missing R2 object', async () => {
+    it('answers 404 for a malformed id without reading D1 and for a champion with no stored file', async () => {
         const { env, reads } = world();
         expect((await call(handleOne, 'https://x', env, { id: "1' OR '1'='1" })).status).toBe(404);
         expect(reads.count).toBe(0);

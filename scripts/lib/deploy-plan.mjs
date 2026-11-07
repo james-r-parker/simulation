@@ -5,24 +5,21 @@ const ZERO_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * @typedef {object} Bindings
- * @property {{binding: string, bucket: string}[]} r2
  * @property {{binding: string, name: string, id: string}[]} d1
  */
 
 /**
  * @param {string} name a table name
  * @param {boolean} array whether it was written `[[name]]`
- * @returns {{env: 'production' | 'preview', kind: 'r2' | 'd1' | null}} its environment and binding kind (null when it
+ * @returns {{env: 'production' | 'preview', kind: 'd1' | null}} its environment and binding kind (null when it
  *   holds no bindings)
  */
 function classify(name, array) {
     const preview = name.startsWith('env.preview.');
     const base = preview ? name.slice('env.preview.'.length) : name;
-    /** @type {'r2' | 'd1' | null} */
+    /** @type {'d1' | null} */
     let kind = null;
-    if (array && base === 'r2_buckets') {
-        kind = 'r2';
-    } else if (array && base === 'd1_databases') {
+    if (array && base === 'd1_databases') {
         kind = 'd1';
     }
     return { env: preview ? 'preview' : 'production', kind };
@@ -40,7 +37,7 @@ function significantLines(text) {
 }
 
 /**
- * Reads the bindings of `wrangler.toml`: `[[r2_buckets]]` and `[[d1_databases]]` at the top level (production) and under
+ * Reads the bindings of `wrangler.toml`: `[[d1_databases]]` at the top level (production) and under
  * `[env.preview]`. Only tables, arrays of tables and `key = "string"` or number lines are understood.
  * @param {string} text the file's text
  * @returns {{production: Bindings, preview: Bindings}} the bindings of each environment
@@ -48,7 +45,7 @@ function significantLines(text) {
  */
 export function readBindings(text) {
     /** @type {Record<string, Record<string, string>[]>} */
-    const tables = { 'production.r2': [], 'production.d1': [], 'preview.r2': [], 'preview.d1': [] };
+    const tables = { 'production.d1': [], 'preview.d1': [] };
     /** @type {Record<string, string> | null} */
     let current = null;
     for (const { line, text: content } of significantLines(text)) {
@@ -79,21 +76,8 @@ export function readBindings(text) {
  */
 function shape(tables, env) {
     return {
-        r2: tables[`${env}.r2`].map((row) => ({ binding: row.binding, bucket: row.bucket_name })),
         d1: tables[`${env}.d1`].map((row) => ({ binding: row.binding, name: row.database_name, id: row.database_id })),
     };
-}
-
-/**
- * @param {Bindings['r2']} production the production buckets
- * @param {Bindings['r2']} preview the preview buckets
- * @returns {boolean} true when every production bucket has a differently named `-preview` bucket
- */
-function bucketsSeparate(production, preview) {
-    return production.every((row) => {
-        const other = preview.find((entry) => entry.binding === row.binding);
-        return other !== undefined && other.bucket.endsWith('-preview') && other.bucket !== row.bucket;
-    });
 }
 
 /**
@@ -115,7 +99,7 @@ function databasesSeparate(production, preview) {
  *   `-preview` resource and no id is still the placeholder
  */
 function bindingProblem({ production, preview }) {
-    if (!bucketsSeparate(production.r2, preview.r2) || !databasesSeparate(production.d1, preview.d1)) {
+    if (!databasesSeparate(production.d1, preview.d1)) {
         return 'preview-bindings';
     }
     return [...production.d1, ...preview.d1].some((row) => row.id === ZERO_ID) ? 'placeholder-ids' : null;

@@ -1,25 +1,31 @@
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { uploadManifest } from '../scripts/lib/release-upload.mjs';
+import { readReleaseSql, registerPlan } from '../scripts/lib/release-upload.mjs';
 
-describe('uploadManifest', () => {
-    it('maps files to release keys with content types, in path order', () => {
-        const rows = uploadManifest('6.1.0', ['index.html', 'assets/b.js', 'assets/a.css', 'x.wasm']);
-        expect(rows.map((r) => r.key)).toEqual([
-            'releases/6.1.0/assets/a.css',
-            'releases/6.1.0/assets/b.js',
-            'releases/6.1.0/index.html',
-            'releases/6.1.0/x.wasm',
-        ]);
-        expect(rows.find((r) => r.path === 'x.wasm')?.contentType).toBe('application/wasm');
+const entry = { version: '6.1.0', season: 6, date: '2026-11-07', rulesHash: 'h' };
+const row = { version: '6.1.0', season: 6, released: '2026-11-07', rules_hash: 'h' };
+
+describe('registerPlan', () => {
+    it('inserts when nothing is stored, and the SQL runs on the real migration', () => {
+        const plan = registerPlan(entry, null);
+        expect(plan.action).toBe('insert');
+        const db = new DatabaseSync(':memory:');
+        for (const file of ['0001_library.sql', '0002_champion_files.sql']) {
+            db.exec(readFileSync(`migrations/${file}`, 'utf8'));
+        }
+        db.exec(/** @type {{sql: string}} */ (plan).sql);
+        expect(db.prepare(readReleaseSql('6.1.0')).get()).toMatchObject(row);
     });
 
-    it.each(['../escape', 'a/../../b', 'a//b', '/abs'])('refuses the path %s', (path) => {
-        expect(() => uploadManifest('6.1.0', ['index.html', path])).toThrow('refusing path');
+    it('is a no-op for an identical stored row and refuses a different one', () => {
+        expect(registerPlan(entry, row)).toEqual({ action: 'noop' });
+        expect(() => registerPlan(entry, { ...row, rules_hash: 'other' })).toThrow('release_conflict');
     });
 
-    it('refuses a bad version and a release without index.html', () => {
-        expect(() => uploadManifest('6.1', ['index.html'])).toThrow('bad version');
-        expect(() => uploadManifest('../../x', ['index.html'])).toThrow('bad version');
-        expect(() => uploadManifest('6.1.0', ['a.js'])).toThrow('no index.html');
+    it('refuses a bad version and inlines only a valid one into SQL', () => {
+        expect(() => registerPlan({ ...entry, version: '6.1' }, null)).toThrow('bad_version');
+        expect(() => readReleaseSql("6.1.0' OR '1'='1")).toThrow('bad version');
+        expect(readReleaseSql('6.1.0')).toContain("WHERE version = '6.1.0'");
     });
 });

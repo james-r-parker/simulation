@@ -48,3 +48,19 @@ export async function getChampion(db, id) {
     const row = await db.prepare("SELECT * FROM champions WHERE id = ? AND status = 'verified'").bind(id).first();
     return row ?? null;
 }
+
+/**
+ * @param {any} db the D1 binding
+ * @param {string} id a champion id
+ * @returns {Promise<string | null>} the canonical file text of a `verified` champion, or null when the champion is not
+ *   verified or has no stored file; one query, so a file is never served for any other status
+ */
+export async function getChampionFile(db, id) {
+    const row = await db
+        .prepare(
+            "SELECT f.body AS body FROM champions c JOIN champion_files f ON f.id = c.id WHERE c.id = ? AND c.status = 'verified'",
+        )
+        .bind(id)
+        .first();
+    return row?.body ?? null;
+}

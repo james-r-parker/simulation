@@ -5,7 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createConfig, rulesHash } from '../js/sim/config.js';
-import { isVersion } from '../functions/_lib/releases.js';
+import { isVersion } from '../js/library/releases.js';
 
 const version = process.argv[2];
 if (!isVersion(version)) {

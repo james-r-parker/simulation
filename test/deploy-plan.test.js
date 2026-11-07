@@ -5,11 +5,9 @@ import { PREVIEW_MARKER, previewComment } from '../scripts/lib/pr-comment.mjs';
 
 const bindings = {
     production: {
-        r2: [{ binding: 'RELEASES', bucket: 'matrix-releases' }],
         d1: [{ binding: 'DB', name: 'blob-library', id: 'aaaa' }],
     },
     preview: {
-        r2: [{ binding: 'RELEASES', bucket: 'matrix-releases-preview' }],
         d1: [{ binding: 'DB', name: 'blob-library-preview', id: 'bbbb' }],
     },
 };
@@ -68,7 +66,6 @@ describe('deployPlan', () => {
     });
 
     it('refuses preview bindings that are not separate -preview resources', () => {
-        const same = { ...bindings, preview: { ...bindings.preview, r2: bindings.production.r2 } };
         const badName = {
             ...bindings,
             preview: { ...bindings.preview, d1: [{ binding: 'DB', name: 'blob-library', id: 'bbbb' }] },
@@ -77,8 +74,8 @@ describe('deployPlan', () => {
             ...bindings,
             preview: { ...bindings.preview, d1: [{ binding: 'DB', name: 'x-preview', id: 'aaaa' }] },
         };
-        const missing = { ...bindings, preview: { r2: [], d1: [] } };
-        for (const b of [same, badName, sameId, missing]) {
+        const missing = { ...bindings, preview: { d1: [] } };
+        for (const b of [badName, sameId, missing]) {
             expect(deployPlan({ event: run(), repo: 'o/r', bindings: b, seasonNext: false })).toMatchObject({
                 reason: 'preview-bindings',
             });
@@ -104,20 +101,17 @@ describe('deployPlan', () => {
 describe('readBindings', () => {
     it('reads the repository wrangler.toml, production and preview', () => {
         const parsed = readBindings(readFileSync('wrangler.toml', 'utf8'));
-        expect(parsed.production.r2.map((r) => r.binding).sort()).toEqual(['GENES', 'RELEASES']);
-        expect(parsed.preview.r2.map((r) => r.bucket).sort()).toEqual([
-            'blob-genomes-preview',
-            'matrix-releases-preview',
-        ]);
+        expect(parsed.production).not.toHaveProperty('r2');
+        expect(readFileSync('wrangler.toml', 'utf8')).not.toMatch(/r2_buckets/);
         expect(parsed.production.d1[0]).toMatchObject({ binding: 'DB', name: 'blob-library' });
         expect(parsed.preview.d1[0].name).toBe('blob-library-preview');
     });
 
     it('ignores comments and unrelated tables, and throws on other shapes', () => {
         const parsed = readBindings(
-            'name = "x" # c\n[vars]\nA = "b"\n[[r2_buckets]]\nbinding = "R"\nbucket_name = "b"\n',
+            'name = "x" # c\n[vars]\nA = "b"\n[[d1_databases]]\nbinding = "D"\ndatabase_name = "b"\ndatabase_id = "i"\n',
         );
-        expect(parsed.production.r2).toEqual([{ binding: 'R', bucket: 'b' }]);
+        expect(parsed.production.d1).toEqual([{ binding: 'D', name: 'b', id: 'i' }]);
         expect(() => readBindings('a = [1, 2]')).toThrow('line 1');
         expect(() => readBindings('a = { b = 1 }')).toThrow('unsupported');
     });

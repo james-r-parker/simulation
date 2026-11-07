@@ -1,8 +1,16 @@
 /* global Response, URL, fetch */
-// The handlers behind `/v/...`, `/s/...` and `/next/...`: read release files from the `RELEASES` R2 bucket.
+// The handlers behind `/v/...`, `/s/...` and `/next/...`. A release is a Pages deployment on its own branch
+// (`aliasBranch`); these Functions check the version against the D1 `releases` table and proxy to that deployment.
 
+import {
+    GET_RELEASE_SQL,
+    LATEST_OF_SEASON_SQL,
+    isVersion,
+    LIST_RELEASES_SQL,
+    toIndex,
+} from '../../js/library/releases.js';
 import { cached, json, logEvent } from './http.js';
-import { contentTypeOf, INDEX_KEY, isVersion, releaseKey, resolveSeason, safeSegments } from './releases.js';
+import { safeSegments, upstreamUrl } from './releases.js';
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const SHORT = 'public, max-age=60';
@@ -10,7 +18,7 @@ const SHORT = 'public, max-age=60';
 /**
  * @typedef {object} Context
  * @property {Request} request
- * @property {{RELEASES: any, PAGES_PROJECT?: string}} env
+ * @property {{DB: any, PAGES_SUBDOMAIN?: string}} env
  * @property {Record<string, string | string[]>} params
  * @property {(promise: Promise<unknown>) => void} [waitUntil]
  */
@@ -35,20 +43,23 @@ function notFound(kind, key) {
 }
 
 /**
- * @param {any} bucket the R2 bucket
- * @param {string} key the object key
- * @param {string} path the path the content type is read from
+ * @param {string | null} url the upstream URL, null when it is not valid
  * @param {string} cacheControl the `Cache-Control` value
- * @returns {Promise<Response | null>} the file as a response, or null when the key is not stored
+ * @param {typeof fetch} fetcher the fetch to use
+ * @returns {Promise<Response | null>} the file as a response with the upstream content type, or null when the URL is
+ *   not valid or the deployment does not answer 200
  */
-async function fileResponse(bucket, key, path, cacheControl) {
-    const object = await bucket.get(key);
-    if (object === null || object === undefined) {
+async function proxy(url, cacheControl, fetcher) {
+    if (url === null) {
         return null;
     }
-    return new Response(object.body, {
+    const upstream = await fetcher(url, { redirect: 'manual' });
+    if (upstream.status !== 200) {
+        return null;
+    }
+    return new Response(upstream.body, {
         headers: {
-            'Content-Type': contentTypeOf(path),
+            'Content-Type': upstream.headers.get('Content-Type') ?? 'application/octet-stream',
             'Cache-Control': cacheControl,
             'X-Content-Type-Options': 'nosniff',
         },
@@ -58,72 +69,65 @@ async function fileResponse(bucket, key, path, cacheControl) {
 /**
  * `GET /v/index.json` and `GET /v/<version>/<path>`.
  * @param {Context} context the Functions context
+ * @param {typeof fetch} [fetcher] the fetch to use (a test passes a fake)
  * @returns {Promise<Response>} the response
  */
-export function serveVersion(context) {
+export function serveVersion(context, fetcher = fetch) {
     const segments = segmentsOf(context.params);
     return cached(context.request, context, async () => {
-        if (segments.length === 1 && segments[0] === 'index.json') {
-            const response = await fileResponse(context.env.RELEASES, INDEX_KEY, 'index.json', SHORT);
-            return response ?? notFound('index', INDEX_KEY);
+        const [version, ...path] = segments;
+        if (segments.length === 1 && version === 'index.json') {
+            const { results } = await context.env.DB.prepare(LIST_RELEASES_SQL).all();
+            return json(toIndex(results), { cacheControl: SHORT });
         }
-        const key = isVersion(segments[0]) ? releaseKey(segments[0], segments.slice(1).join('/')) : null;
-        if (key === null) {
-            return notFound('version', segments.join('/'));
-        }
-        const response = await fileResponse(context.env.RELEASES, key, key, IMMUTABLE);
-        return response ?? notFound('version', key);
+        const stored = isVersion(version) ? await context.env.DB.prepare(GET_RELEASE_SQL).bind(version).first() : null;
+        const url = stored === null ? null : upstreamUrl(version, path, context.env.PAGES_SUBDOMAIN);
+        return (await proxy(url, IMMUTABLE, fetcher)) ?? notFound('version', segments.join('/'));
     });
 }
 
 /**
  * `GET /s/<season>` serves that season's newest `index.html`; `GET /s/<season>/<path>` redirects to `/v/<version>/<path>`.
  * @param {Context} context the Functions context
+ * @param {typeof fetch} [fetcher] the fetch to use (a test passes a fake)
  * @returns {Promise<Response>} the response
  */
-export function serveSeason(context) {
+export function serveSeason(context, fetcher = fetch) {
     const [season, ...rest] = segmentsOf(context.params);
     return cached(context.request, context, async () => {
         if (!/^\d+$/.test(season ?? '') || !safeSegments(rest)) {
             return notFound('season', [season, ...rest].join('/'));
         }
-        const stored = await context.env.RELEASES.get(INDEX_KEY);
-        const index = stored === null || stored === undefined ? { releases: [] } : JSON.parse(await stored.text());
-        const version = resolveSeason(index, Number(season));
-        if (version === null) {
+        const latest = await context.env.DB.prepare(LATEST_OF_SEASON_SQL).bind(Number(season)).first();
+        if (latest === null) {
             return notFound('season', season);
         }
         if (rest.length > 0) {
-            const target = new URL(`/v/${version}/${rest.join('/')}`, context.request.url);
+            const target = new URL(`/v/${latest.version}/${rest.join('/')}`, context.request.url);
             return new Response(null, { status: 302, headers: { Location: target.pathname, 'Cache-Control': SHORT } });
         }
-        const response = await fileResponse(
-            context.env.RELEASES,
-            `releases/${version}/index.html`,
-            'index.html',
-            SHORT,
-        );
-        return response ?? notFound('season', `releases/${version}/index.html`);
+        const url = upstreamUrl(latest.version, [], context.env.PAGES_SUBDOMAIN);
+        return (await proxy(url, SHORT, fetcher)) ?? notFound('season', season);
     });
 }
 
 /**
  * `GET /next/<path>` forwards to the `next` branch alias of the Pages project.
- * @param {Context} context the Functions context
+ * @param {Context & {env: {PAGES_SUBDOMAIN?: string}}} context the Functions context
  * @param {typeof fetch} [fetcher] the fetch to use (a test passes a fake)
- * @returns {Promise<Response>} the upstream response, or 404 for an unsafe path or an unset project
+ * @returns {Promise<Response>} the upstream response, or 404 for an unsafe path or an unset subdomain
  */
 export async function serveNext(context, fetcher = fetch) {
     const segments = segmentsOf(context.params);
-    const project = context.env.PAGES_PROJECT;
+    const subdomain = context.env.PAGES_SUBDOMAIN;
     if (!safeSegments(segments) && segments.length > 0) {
         return notFound('next', segments.join('/'));
     }
-    if (project === undefined || !/^[a-z0-9-]+$/.test(project)) {
-        return notFound('next', 'no project');
+    if (subdomain === undefined || !/^[a-z0-9-]+$/.test(subdomain)) {
+        return notFound('next', 'no subdomain');
     }
     const url = new URL(context.request.url);
-    return fetcher(`https://next.${project}.pages.dev/${segments.join('/')}${url.search}`, {
+    return fetcher(`https://next.${subdomain}.pages.dev/${segments.join('/')}${url.search}`, {
         headers: { Accept: context.request.headers.get('Accept') ?? '*/*' },
     });
 }

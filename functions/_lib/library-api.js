@@ -5,13 +5,13 @@
 import { parseListQuery } from '../../js/library/query.js';
 import { toPublicChampion } from '../../js/library/rows.js';
 import { ApiError, ID_PATTERN } from '../../js/library/shapes.js';
-import { getChampion, listChampions, listSeasons } from './db.js';
+import { getChampion, getChampionFile, listChampions, listSeasons } from './db.js';
 import { cached, errorResponse, json } from './http.js';
 
 /**
  * @typedef {object} Context
  * @property {Request} request
- * @property {{DB: any, GENES: any}} env
+ * @property {{DB: any}} env
  * @property {Record<string, string | string[]>} [params]
  * @property {(promise: Promise<unknown>) => void} [waitUntil]
  */
@@ -85,16 +85,15 @@ export function handleOne(context) {
 
 /**
  * @param {Context} context the Functions context
- * @returns {Promise<Response>} one verified champion's file from R2
+ * @returns {Promise<Response>} one verified champion's file from D1
  */
 export function handleFile(context) {
     return guarded(context, async () => {
-        const row = await getChampion(context.env.DB, idOf(context));
-        const object = row === null ? null : await context.env.GENES.get(row.r2_key);
-        if (row === null || object === null || object === undefined) {
+        const body = await getChampionFile(context.env.DB, idOf(context));
+        if (body === null) {
             throw new ApiError(404, 'not_found', 'champion not found');
         }
-        return new Response(object.body, {
+        return new Response(body, {
             headers: {
                 'Content-Type': 'application/json; charset=utf-8',
                 'Cache-Control': 'public, max-age=31536000, immutable',

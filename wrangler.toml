@@ -4,20 +4,14 @@ compatibility_date = "2024-01-01"
 # Pages project configuration
 pages_build_output_dir = "dist"
 
-# Bindings (docs/designs/deployment-and-community.md). Pages does not inherit bindings between environments, so the
-# production set is the top level and the preview set is repeated under [env.preview] with `-preview` resources.
+# Bindings (docs/designs/deployment-and-community.md). The account is on the free plan only (user, 2026-11-07), so there
+# is no R2: champion files and the release index live in D1, and a release is served by its own Pages deployment.
+# Pages does not inherit bindings between environments, so the production set is the top level and the preview set is
+# repeated under [env.preview] with the `-preview` database.
 #
 # SETUP (user): the zero database ids below are placeholders. `npx wrangler d1 create blob-library` and
 # `npx wrangler d1 create blob-library-preview` print the real ids; paste them here. scripts/lib/deploy-plan.mjs
 # refuses to deploy while a placeholder id is in this file.
-
-[[r2_buckets]]
-binding = "RELEASES"
-bucket_name = "matrix-releases"
-
-[[r2_buckets]]
-binding = "GENES"
-bucket_name = "blob-genomes"
 
 [[d1_databases]]
 binding = "DB"
@@ -27,22 +21,18 @@ migrations_dir = "migrations"
 
 [env.preview]
 
-[[env.preview.r2_buckets]]
-binding = "RELEASES"
-bucket_name = "matrix-releases-preview"
-
-[[env.preview.r2_buckets]]
-binding = "GENES"
-bucket_name = "blob-genomes-preview"
-
 [[env.preview.d1_databases]]
 binding = "DB"
 database_name = "blob-library-preview"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 
+# PAGES_PROJECT is the Pages project's name; PAGES_SUBDOMAIN is the host label in `<branch>.<label>.pages.dev` (read-only
+# `wrangler pages project list` shows matrix-6be.pages.dev for the project `matrix`).
 [env.preview.vars]
 PAGES_PROJECT = "matrix"
+PAGES_SUBDOMAIN = "matrix-6be"
 
 [vars]
 PAGES_PROJECT = "matrix"
+PAGES_SUBDOMAIN = "matrix-6be"

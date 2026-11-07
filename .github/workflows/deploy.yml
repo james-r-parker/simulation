@@ -132,7 +132,7 @@ jobs:
           SHA: ${{ needs.plan.outputs.sha }}
         run: |
           marker='<!-- blob-evolution-preview -->'
-          body="$marker"$'\n'"Preview: $URL"$'\n\n'"Built from \`${SHA:0:7}\`. It reads the preview database and bucket, never production."
+          body="$marker"$'\n'"Preview: $URL"$'\n\n'"Built from \`${SHA:0:7}\`. It reads the preview database, never production."
           id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)"
           if [[ -n "$id" ]]; then
             gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" >/dev/null
