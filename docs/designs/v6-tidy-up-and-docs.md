@@ -1,7 +1,7 @@
 # v6 tidy-up and docs
 
-**Status:** In progress - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with screenshots) is still to build.
-**Validated:** 23eaea3 (2026-10-17)
+**Status:** In progress - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the README rewrite with screenshots and the final docs audit) is still to build: `scripts/screenshots.mjs` does not exist, and the README is kept current by the periodic audits meanwhile.
+**Validated:** d6ca3e6c (2026-11-07)
 **Priority:** 11 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
@@ -123,14 +123,14 @@ built on, and the random-genome brain moved to `js/evo/policies/random-brain.js`
 
 ### Phase 1 - Legacy sweep (built)
 
-| #   | Task                                                                                                                                                               | Nature       | Depends on         |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |
-| T1  | Inventory every legacy trace with `rg -i legacy` and the Legacy sweep table; list each in the PR body with its fate                                                | [judgement]  | -                  |
-| T2  | Remove the legacy tooling: `legacyLines` and its check, `js/dev/perf-probe.js`, `--app legacy`, the legacy ignores and scopes, the console-error allowlist entries | [mechanical] | T1                 |
-| T3  | Remove dependencies only the legacy app used, each checked with `rg`                                                                                               | [mechanical] | T1                 |
-| T4  | Add the `conventions` guard against legacy paths, stray `js/` files and "legacy" wording, with `test/check-conventions.test.js`                                    | [judgement]  | T2                 |
-| T5  | Update `AGENTS.md`, `CLAUDE.md` and the skills to drop legacy wording                                                                                              | [mechanical] | T2, T3             |
-| T6  | Conformance review of Phase 1                                                                                                                                      | [judgement]  | T1, T2, T3, T4, T5 |
+| #   | Task                                                                                                                                                                       | Nature       | Depends on         |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T1  | (built) Inventory every legacy trace with `rg -i legacy` and the Legacy sweep table; list each in the PR body with its fate                                                | [judgement]  | -                  |
+| T2  | (built) Remove the legacy tooling: `legacyLines` and its check, `js/dev/perf-probe.js`, `--app legacy`, the legacy ignores and scopes, the console-error allowlist entries | [mechanical] | T1                 |
+| T3  | (built) Remove dependencies only the legacy app used, each checked with `rg`                                                                                               | [mechanical] | T1                 |
+| T4  | (built) Add the `conventions` guard against legacy paths, stray `js/` files and "legacy" wording, with `test/check-conventions.test.js`                                    | [judgement]  | T2                 |
+| T5  | (built) Update `AGENTS.md`, `CLAUDE.md` and the skills to drop legacy wording                                                                                              | [mechanical] | T2, T3             |
+| T6  | (built) Conformance review of Phase 1                                                                                                                                      | [judgement]  | T1, T2, T3, T4, T5 |
 
 ### Phase 2 - Docs and screenshots
 
