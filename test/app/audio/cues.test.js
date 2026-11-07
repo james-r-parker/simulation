@@ -189,3 +189,15 @@ describe('cueFor without a cue', () => {
         expect(cueFor({ kind: 99, x: 0, y: 0, a: 0, c: 0 }, { layout, camera, rootMidi: 50 })).toBeNull();
     });
 });
+
+describe('world cues', () => {
+    it('thuds a herd death and rings a first kill', () => {
+        const layout = {
+            effectKinds: { BORN: 1, DIED: 2, ALARM: 4, PACK_CALL: 5, HERD_DIED: 12, FIRST_KILL: 16 },
+            deathCauses: { EATEN: 1 },
+        };
+        const camera = { x: 0, y: 0, zoom: 1, canvas: { width: 10, height: 10 } };
+        expect(cueFor({ kind: 12, x: 0, y: 0, a: 0, c: 0 }, { layout, camera, rootMidi: 50 })?.kind).toBe('herdDied');
+        expect(cueFor({ kind: 16, x: 0, y: 0, a: 0, c: 0 }, { layout, camera, rootMidi: 50 })?.kind).toBe('firstKill');
+    });
+});

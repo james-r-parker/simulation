@@ -12,6 +12,7 @@ import { createEdgeState } from './effects-edges.js';
 import { createFlee } from './effects-flee.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
 import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
+import { playWorldEffect } from './effects-world.js';
 export { playEdges } from './effects-edges.js';
 import { adaptFxBudget, beginFxFrame, logFxBudget } from './fx-budget.js';
 import { createFxPool } from './fx-pool.js';
@@ -157,6 +158,8 @@ function dispatchSignal(player, agents) {
         playAtEffect(player, 'stampede');
     } else if (e.kind === kinds.STRAIN_EMERGED) {
         playAtEffect(player, 'strain');
+    } else {
+        playWorldEffect(player);
     }
 }
 

@@ -54,12 +54,15 @@ varying float vSpeed;
 varying float vPhase;
 varying vec3 vColor;
 uniform float uDetail;
+uniform float uTime;
 void main() {
     bool plain = uDetail > 1.5;
     // Signed distance in radii, negative inside: an ellipse body that fills the trample radius, and a head lobe.
     vec2 axes = vec2(1.0, 0.8);
     float bodyDistance = (length(vLocal / axes) - 1.0) * axes.y;
-    float headNod = uDetail < 0.5 ? sin(vPhase + vSpeed * 2.0) * vSpeed * 0.045 : 0.0;
+    // A slow animal grazes: its head dips on a slow beat (renderer-event-effects Phase 3).
+    float graze = (1.0 - smoothstep(0.05, 0.15, vSpeed)) * 0.08 * max(sin(uTime * 1.5 + vPhase), 0.0);
+    float headNod = uDetail < 0.5 ? sin(vPhase + vSpeed * 2.0) * vSpeed * 0.045 - graze : 0.0;
     float headDistance = length(vLocal - vec2(1.0, headNod)) - 0.34;
     float d = plain ? length(vLocal) - 1.0 : min(bodyDistance, headDistance);
     // The outline is sized in screen pixels (capped in radii), like the agents' membrane.

@@ -367,7 +367,7 @@ export function createTerrainLayer({ info, seed = 0 }) {
             patchUniforms.uTime.value = t;
             updateRefugeLevels(refuge, occupancy, frame);
             if (floraOn && flora) {
-                flora.update(frame.snapshot ?? null);
+                flora.update(frame.snapshot ?? null, frame.nowMs);
             }
         },
         dispose() {

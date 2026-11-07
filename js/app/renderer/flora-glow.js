@@ -5,6 +5,9 @@ import { SCENERY_MAX_LUMINANCE } from './colors.js';
 import { floraColor } from './flora-colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances } from './instanced.js';
 
+/** How much brighter than the glow a fruit glint is. */
+export const FRUIT_GAIN = 8;
+
 const VERTEX = /* glsl */ `
 attribute vec2 corner;
 attribute vec4 iPatch;
@@ -17,12 +20,22 @@ void main() {
     gl_Position = projectionMatrix * viewMatrix * vec4(iPatch.xy + corner * iPatch.z, 0.0, 1.0);
 }`;
 const FRAGMENT = /* glsl */ `
+uniform float uTime;
 varying vec2 vLocal;
 varying vec4 vTint;
 void main() {
     float d = length(vLocal);
     if (d >= 1.0) discard;
     vec3 rgb = vTint.rgb * vTint.a * (1.0 - d) * (1.0 - d);
+    // A patch above 70% full fruits: four glints bob on its glow (renderer-event-effects Phase 3).
+    float ripe = smoothstep(0.7, 0.9, vTint.a);
+    float glints = 0.0;
+    for (int k = 0; k < 4; k++) {
+        float a = float(k) * 1.5707963 + 0.4;
+        vec2 at = vec2(cos(a), sin(a)) * 0.42 + vec2(0.0, 0.04 * sin(uTime * 2.0 + float(k) * 1.7));
+        glints += 1.0 - smoothstep(0.025, 0.06, length(vLocal - at));
+    }
+    rgb += vTint.rgb * ${FRUIT_GAIN.toFixed(1)} * ripe * glints;
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -56,7 +69,8 @@ export function packFloraGlows(snapshot, section, out) {
 
 /**
  * @param {Record<string, any>} info world dimensions and patch capacity
- * @returns {{mesh: any, geom: any, mat: any, update: (snapshot: any) => void}} the preallocated glow mesh
+ * @returns {{mesh: any, geom: any, mat: any, update: (snapshot: any, nowMs?: number) => void}} the preallocated glow
+ *   mesh; `update` takes the snapshot and the wall time (the fruit glints bob on it)
  */
 export function createFloraGlow(info) {
     const capacity = info.floraPatchMax ?? info.patches?.length ?? 0;
@@ -64,6 +78,7 @@ export function createFloraGlow(info) {
     const mat = new ShaderMaterial({
         vertexShader: VERTEX,
         fragmentShader: FRAGMENT,
+        uniforms: { uTime: { value: 0 } },
         blending: AdditiveBlending,
         transparent: true,
         depthTest: false,
@@ -82,7 +97,8 @@ export function createFloraGlow(info) {
         mesh,
         geom,
         mat,
-        update(snapshot) {
+        update(snapshot, nowMs = 0) {
+            mat.uniforms.uTime.value = nowMs / 1000;
             if (snapshot === null) {
                 mesh.visible = false;
                 return;
