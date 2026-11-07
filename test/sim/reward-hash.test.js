@@ -4,8 +4,8 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
 describe('rewardHashBytes', () => {
-    it('is empty with rewardedHebb off, so the default hash has nothing to add', () => {
-        expect(rewardHashBytes(smallWorld())).toEqual([]);
+    it('is empty with rewardedHebb off, so that hash has nothing to add', () => {
+        expect(rewardHashBytes(smallWorld({ rewardedHebb: false }))).toEqual([]);
     });
 
     it('views the trace with rewardedHebb on, the same views on every call', () => {

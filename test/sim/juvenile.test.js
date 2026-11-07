@@ -1,5 +1,5 @@
 // The juvenile burn (realistic-keepers.md T4): a canHunt body below juvenileTicks pays juvenileBurn of its standing, movement,
-// turn and sprint cost under juvenileDependency, and exactly the plain cost otherwise; the hunter ledger's terms still sum to
+// turn and sprint cost, and exactly the plain cost (`juvenileBurn` 1) otherwise; the hunter ledger's terms still sum to
 // what was removed.
 
 import { describe, expect, it } from 'vitest';
@@ -58,42 +58,41 @@ function costOf(world, slot) {
 }
 
 describe('juvenileBurnOf', () => {
-    it('is juvenileBurn for a hunter below juvenileTicks while juvenileDependency is on', () => {
-        const world = pair({ juvenileDependency: true });
+    it('is juvenileBurn for a hunter below juvenileTicks', () => {
+        const world = pair();
         expect(juvenileBurnOf(world, PREDATOR)).toBe(0.5);
         world.ageTicks[PREDATOR] = 2999;
         expect(juvenileBurnOf(world, PREDATOR)).toBe(0.5);
     });
 
-    it('is 1 for an adult hunter, a non-hunter and the switch off', () => {
-        const world = pair({ juvenileDependency: true });
+    it('is 1 for an adult hunter and a non-hunter', () => {
+        const world = pair();
         world.ageTicks[PREDATOR] = 3000;
         expect(juvenileBurnOf(world, PREDATOR)).toBe(1);
         expect(juvenileBurnOf(world, FORAGER)).toBe(1);
-        expect(juvenileBurnOf(pair({ juvenileDependency: false }), PREDATOR)).toBe(1);
     });
 });
 
 describe('the juvenile burn in applyCosts', () => {
     it('charges a juvenile hunter juvenileBurn of the plain cost, a forager the plain cost', () => {
-        const on = pair({ juvenileDependency: true });
-        const off = pair({ juvenileDependency: false });
+        const on = pair();
+        const off = pair({ juvenileBurn: 1 });
         const plain = costOf(off, PREDATOR);
         const forager = costOf(off, FORAGER);
         expect(costOf(on, PREDATOR)).toBeCloseTo(0.5 * plain, 9);
         expect(costOf(on, FORAGER)).toBe(forager);
     });
 
-    it('charges exactly the plain cost with the switch off, adult or not', () => {
-        const a = pair({ juvenileDependency: false, juvenileBurn: 0.1 });
-        const b = pair({ juvenileDependency: true, juvenileBurn: 0.1 });
+    it('charges exactly the plain cost to an adult hunter', () => {
+        const a = pair({ juvenileBurn: 1 });
+        const b = pair({ juvenileBurn: 0.1 });
         b.ageTicks[PREDATOR] = 5000;
         expect(costOf(b, PREDATOR)).toBe(costOf(a, PREDATOR));
     });
 
     it('keeps the ledger terms summing to the energy removed', () => {
         for (const burn of [0.3, 0.6, 1]) {
-            const world = pair({ juvenileDependency: true, juvenileBurn: burn });
+            const world = pair({ juvenileBurn: burn });
             const paid = costOf(world, PREDATOR);
             const booked = world.ledgerStanding[PREDATOR] + world.ledgerMove[PREDATOR] + world.ledgerSprint[PREDATOR];
             expect(booked).toBeCloseTo(paid, 9);
@@ -102,11 +101,11 @@ describe('the juvenile burn in applyCosts', () => {
     });
 
     it('steps back up to the plain cost on the tick the hunter reaches juvenileTicks', () => {
-        const plain = costOf(pair({ juvenileDependency: false }), PREDATOR);
-        const last = pair({ juvenileDependency: true });
+        const plain = costOf(pair({ juvenileBurn: 1 }), PREDATOR);
+        const last = pair();
         last.ageTicks[PREDATOR] = 2998;
         expect(costOf(last, PREDATOR)).toBeCloseTo(0.5 * plain, 9);
-        const first = pair({ juvenileDependency: true });
+        const first = pair();
         first.ageTicks[PREDATOR] = 2999;
         expect(costOf(first, PREDATOR)).toBeCloseTo(plain, 9);
     });
