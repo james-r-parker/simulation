@@ -10,12 +10,31 @@ description: Use when an evolution or performance change needs measuring - after
 
 ## Overview
 
-One cycle: hypothesise, run, check the eval, record, act, measure, rebaseline. `evals/experiments.json` is the only
+One cycle: check the detector, hypothesise, run, check the eval, turn the outcome into tasks, record, act, measure, rebaseline. `evals/experiments.json` is the only
 record of what was tried and what it did.
 
 **Core principle:** check the eval before blaming (or crediting) the simulation. Evolution is noisy: a change that
 looks better on 2 seeds is usually seed luck, and a fitness score that jumped is often an exploit. A fix aimed at
 noise or an exploit is wasted work.
+
+## 0. Check the detector first
+
+Before theorising about the sim, rule out the measure. Ask of every number that surprised you:
+
+1. **Does it count what it claims?** A rate, a share and a count differ; a metric may include what the name leaves out.
+2. **Is the fixture's premise true?** A drill, reflex case or scripted scene stands for a situation; check the situation
+   exists (replay one trial and look).
+3. **Does a pass on it predict the outcome it stands for?** A detector that scores 1.00 beside an outcome edge of 0.00,
+   or that moves while the outcome does not, is not measuring the outcome.
+
+A detector fault becomes a task on the detector, and the sim theory waits until the detector is fixed and the run is
+repeated. Three cases from 2026-11-07:
+
+- The `prey-too-big` drill's prey was bitable (a forager's size is capped by its store), so a predator that never bit
+  won it (fixed in #347).
+- `catch_rate` rose 0.55 to 0.65 in T12 iteration 2 arm b while the `prey-ahead` drill edge stayed 0.00: it is a rate,
+  and it counts rotted carcasses.
+- The reflex `approach-prey` scored 1.00 alongside a `prey-ahead` edge of 0.00: approaching is not catching.
 
 ## 1. Hypothesise
 
@@ -80,10 +99,42 @@ For every metric that moved:
    invalid; `eval:compare` refuses them (exit 2, `CompareRefused <field>`) - never force it. `--allow-config-diff
 <key>` is for a change that is the config key itself; `--allow-seed-diff` is only for calibration.
 
-When the outcome is a training, drill or reflex run (`npm run train`, `drill`, `reflex`), also write the record in
-[training.md](../../../docs/designs/training.md), "From outcome to task": observation, theory (nature first), a check
-against `docs/principles.md`, a prediction with its detector, and task rows. A theory that fails the check is refused in
-Decisions and never becomes a task.
+## Outcome to task
+
+Every eval, screen, ladder, probe, long run, training, drill and reflex outcome ends with this record, written in the
+doc of the work it judges before the next run starts. A finding that skips it does not become a task. The trainer's
+own minimum evidence is in [training.md](../../../docs/designs/training.md), "From outcome to task".
+
+0. **Detector.** Step 0 above passed, or its fault is the first task.
+1. **Observation.** The detector numbers with the seeds, trials and arm that produced them. A number with no bar
+   beside it (random brains, a memoryless reference, the baseline arm) is not an observation.
+2. **Theory.** The mechanism that would explain it, as one sentence a fixture can falsify. How nature meets the same
+   problem comes first ([principles.md](../../../docs/principles.md), "How the principles are used"), and the doc names
+   the biology. A theory about what a brain does (never bites, always bites) is checked with a diagnostic before any run
+   that depends on it.
+3. **Principle check.** A table row per theory naming the scenes and selection rules it serves and each of these it must
+   not break. One failed line refuses the theory.
+    - Detector, not reward: no fitness, merit, archive-rank, offer-filter or mate-rank term pays for an act or for a
+      detector score ("measure scenes, reward them almost never"; selection rule 9).
+    - The hunt chain fails closed: a chase that never bites or a bite that bounces stays a failed gene (rule 6); nothing
+      is rescued, restocked or pardoned (rules 1 and 4).
+    - Senses stay local: the brain can sense what the lesson needs (a ray class, a body input), and no input is added
+      to fit a task.
+    - No scripted mode, no timer, no restocking, and no free action ("What to refuse").
+    - The change is to the world a run happens in (a config, a curriculum stage), never to who breeds.
+4. **Prediction and detector.** Written before the run: the detector (a drill, a reflex case, a curve metric or an
+   `eval.*` metric), its direction and size, and the minimum evidence. A world-metric claim uses at least 16 seeds per
+   arm and `eval:compare` (section 2). Every arm of a run, not only the headline arm, is judged on at least 3 seed
+   offsets: two arms identical up to a point on one archive (a shared prefix stage and the same seeds) are one
+   experiment until they diverge, and a single archive is a lead, never a verdict.
+5. **Task rows.** Each surviving theory becomes `[judgement]` or `[mechanical]` rows in the doc's Task breakdown under a
+   new phase, with a Chunks table. A diagnostic that tells two theories apart is a row before the run it gates. Code,
+   runs and the final write-up are separate rows; a long run is never in a code chunk ([AGENTS.md](../../../AGENTS.md),
+   "Delegating to subagents").
+
+A refused theory is written into the doc's Decisions table with the line it failed and the reason, and never becomes a
+task. The run's result closes the record: a final row records whether the prediction held and appends the next record's
+tasks, so the loop continues from data.
 
 ## Calibration
 
@@ -126,6 +177,8 @@ was kept or reverted, and what waits for approval.
 ## Red flags
 
 - Fewer than 16 seeds, or different seeds on the two arms.
+- A sim theory built on a number whose detector was never checked (step 0).
+- An arm judged on a single archive or one seed offset.
 - A prediction written after the result.
 - Calling `no-difference` an improvement.
 - A fitness gain with no gain in food or lifespan, accepted without a replay.

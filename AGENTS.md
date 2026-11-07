@@ -98,8 +98,9 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 4. **Before pushing** - the `create-pr` skill: `scripts/check.sh --fix`, a plan-conformance review agent in parallel
    with the final check, measurements for the phase's Targets, the phase marked `(built)` and the status line moved
    in the same PR.
-5. **Measuring a change** - the `run-evolution-loop` skill: prediction first, at least 16 seeds per arm,
-   `eval:compare` verdicts, experiments recorded in `evals/experiments.json`.
+5. **Measuring a change** - the `run-evolution-loop` skill: check the detector first, prediction first, at least 16 seeds
+   per arm, `eval:compare` verdicts, experiments recorded in `evals/experiments.json`; every outcome becomes tasks through
+   its "Outcome to task" record.
 6. **Something misbehaves** - the `debug-sim` skill: find the event in the logs, replay from seed and config,
    failing test, fix.
 7. **Docs drift** - the `audit-docs` skill proposes fixes; nothing is applied without approval.
