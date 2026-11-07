@@ -85,6 +85,7 @@ describe('computeMetrics on hand-built state', () => {
                 2 +
                 2 +
                 4 +
+                6 +
                 1,
         );
     });

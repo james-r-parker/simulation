@@ -5,6 +5,8 @@ import { FLORA_NAMES } from '../sim/config-flora.js';
 // fed it. They change no sim state and cost no per-tick allocation.
 
 import { ALARM_REACH_DIRECTIONS, alarmReachMetrics } from './observer-alarm-reach.js';
+import { BITE_DIRECTIONS, biteMetrics } from './scene-bite.js';
+import { BITE_LIFE_DIRECTIONS, biteLifeMetrics } from './scene-bite-life.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
@@ -113,6 +115,8 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...KIN_DIRECTIONS,
     ...ALARM_REACH_DIRECTIONS,
     ...REWARD_DIRECTIONS,
+    ...BITE_DIRECTIONS,
+    ...BITE_LIFE_DIRECTIONS,
 });
 
 /**
@@ -150,5 +154,7 @@ export function sceneMetrics(observer, world) {
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
+        ...biteMetrics(s.bite),
+        ...biteLifeMetrics(s.biteLife, world),
     };
 }
