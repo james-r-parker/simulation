@@ -4,6 +4,7 @@
 // the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
 import { writeBrainParams } from './wasm-brain.js';
+import { SENSE_FIELDS, senseSpecs, writeSenseParams } from './wasm-sense.js';
 import { embeddedKernels } from './wasm-loader.js';
 import { hasHashViews } from './world-hash.js';
 
@@ -22,8 +23,8 @@ export const PARAM_WORDS = 40;
 /** Float64 values in the brain kernel's parameter block. */
 export const PARAM_DOUBLES = 4;
 
-/** World fields the arena takes over; every other entry in `arenaSpecs` is the kernels' own. */
-export const WORLD_FIELDS = Object.freeze([
+/** World fields of the brain kernel; every other entry in `arenaSpecs` is the kernels' own. */
+export const BRAIN_FIELDS = Object.freeze([
     'alive',
     'weights',
     'hidden',
@@ -36,6 +37,9 @@ export const WORLD_FIELDS = Object.freeze([
     'rayCos',
     'raySin',
 ]);
+
+/** Every world field the arena takes over: the brain kernel's, then the sense kernel's. */
+export const WORLD_FIELDS = Object.freeze([...BRAIN_FIELDS, ...SENSE_FIELDS]);
 
 /** @typedef {[string, Float64ArrayConstructor | Float32ArrayConstructor | Int32ArrayConstructor | Uint8ArrayConstructor, number]} ArenaSpec */
 
@@ -107,11 +111,12 @@ export function layoutArena(specs, start) {
  * @param {import('./wasm-loader.js').Kernels} kernels the compiled kernels and their `__heap_base`
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
+ * @param {ArenaSpec[]} [extra] more arrays after the brain's (the sense kernel's, from `senseSpecs`)
  * @returns {Arena} the arena, with one typed-array view per array
  * @throws {Error} when the arrays need more than `MAX_PAGES`
  */
-export function createArena(kernels, config, layout) {
-    const specs = arenaSpecs(config, layout);
+export function createArena(kernels, config, layout, extra = []) {
+    const specs = [...arenaSpecs(config, layout), ...extra];
     const { offsets, end } = layoutArena(specs, kernels.heapBase);
     const pages = Math.ceil(end / PAGE_BYTES);
     if (pages > MAX_PAGES) {
@@ -146,7 +151,8 @@ function rowField(world, fields, array) {
 }
 
 /**
- * Points each world-owned entry of `world.agentRows` at its arena view (the hidden entry excludes the scratch row).
+ * Points each world-owned entry of `world.agentRows` and `world.foodRows` at its arena view (the hidden entry excludes
+ * the scratch row), so freeing a slot clears the arena bytes.
  * The fields are looked up in a map, not by a scan per row: small worlds are born by the thousand in the drills.
  * @param {Record<string, any>} world the world, its fields not yet re-pointed
  * @param {Arena} arena the arena
@@ -155,7 +161,7 @@ function rowField(world, fields, array) {
 function repointRows(world, arena) {
     const n = world.config.maxAgents;
     const fields = new Map(WORLD_FIELDS.map((name) => [world[name], name]));
-    for (const row of world.agentRows) {
+    for (const row of [...world.agentRows, ...(world.foodRows ?? [])]) {
         const name = rowField(world, fields, row.array);
         if (name === 'hidden') {
             row.array = arena.views.hidden.subarray(0, n * world.layout.hidden);
@@ -196,8 +202,9 @@ function refuseAttach(world, midRun) {
  */
 export function attachWasm(world, kernels = embeddedKernels(), { midRun = false } = {}) {
     refuseAttach(world, midRun);
-    const arena = createArena(kernels, world.config, world.layout);
+    const arena = createArena(kernels, world.config, world.layout, senseSpecs(world));
     writeBrainParams(arena, world.config, world.layout);
+    writeSenseParams(arena, world);
     repointRows(world, arena);
     for (const name of WORLD_FIELDS) {
         arena.views[name].set(world[name]);

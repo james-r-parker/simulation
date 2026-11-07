@@ -8,6 +8,7 @@ import { isKin } from './kin.js';
 import { AGENT, FOOD, KIND_STRIDE, LOCAL_STRIDE, OBSTACLE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
 import { COVER_TOTALS } from './cover.js';
 import { visionOf } from './traits.js';
+import { SENSE_WORD, senseSlot, syncSense } from './wasm-sense.js';
 
 import { noteMatesSeen } from './mate-scarcity.js';
 
@@ -222,19 +223,30 @@ function writeRay(world, slot, base, ray) {
 }
 
 /**
- * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
+ * Puts the caster's origin, vision range and heading cosine and sine into `world.rayScratch`.
  * @param {World} world the world
- * @param {SpatialHash} hash the hash built for this tick
- * @param {number} slot the alive agent
- * @returns {void}
+ * @param {number} slot the casting agent
+ * @returns {Float64Array} the scratch
  */
-export function castRays(world, hash, slot) {
+function setOrigin(world, slot) {
     const s = world.rayScratch;
     s[OX] = world.x[slot];
     s[OY] = world.y[slot];
     s[RANGE] = visionOf(world, slot);
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
+    return s;
+}
+
+/**
+ * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
+ * @param {World} world the world
+ * @param {SpatialHash} hash the hash built for this tick
+ * @param {number} slot the alive agent
+ * @returns {number} the gathered row count
+ */
+export function castRaysJs(world, hash, slot) {
+    const s = setOrigin(world, slot);
     const count = gatherNear(world, hash, slot);
     noteMatesSeen(world, slot, count);
     const { rayCos, raySin } = world;
@@ -249,7 +261,7 @@ export function castRays(world, hash, slot) {
             nearestHitCovered(world, count, casterRing);
             writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
         }
-        return;
+        return count;
     }
     nearestHitsAll(world, count);
     for (let k = 0; k < rays; k++) {
@@ -257,4 +269,42 @@ export function castRays(world, hash, slot) {
         s[BEST_KEY] = rayBestKey[k];
         writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
     }
+    return count;
+}
+
+/**
+ * Casts one agent's rays in the WASM sense kernel and writes its ray block; the hash must be synced this tick
+ * (`syncSense`). Bit-identical to `castRaysJs`.
+ * @param {World} world the world
+ * @param {number} slot the alive agent
+ * @returns {number} the gathered row count
+ */
+export function castSlot(world, slot) {
+    const s = setOrigin(world, slot);
+    const count = senseSlot(world, slot);
+    const { views } = world.wasm;
+    if (world.config.coverConceals) {
+        world.coverTotals[COVER_TOTALS.CONCEALED_HITS] += views.senseParams[SENSE_WORD.concealed];
+    }
+    noteMatesSeen(world, slot, count);
+    const { rayBestT: bestT, rayBestKey: bestKey } = views;
+    const rowBase = slot * world.layout.rawInputCount;
+    for (let k = 0; k < world.config.rayCount; k++) {
+        s[BEST_T] = bestT[k];
+        s[BEST_KEY] = bestKey[k];
+        writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
+    }
+    return count;
+}
+
+/**
+ * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
+ * @param {World} world the world
+ * @param {SpatialHash} hash the hash built for this tick
+ * @param {number} slot the alive agent
+ * @returns {number} the gathered row count
+ */
+export function castRays(world, hash, slot) {
+    syncSense(world, hash);
+    return castSlot(world, slot);
 }
