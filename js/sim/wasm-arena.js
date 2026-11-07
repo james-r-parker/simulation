@@ -1,20 +1,17 @@
-// The WASM kernels' memory (docs/designs/wasm-kernels.md): one fixed-size memory per world, sized from `maxAgents`, the
-// brain layout and `rayCount` at instantiation and never grown (growth would detach every view). Each hot array lives
-// at a 16-byte aligned offset, and `attachWasm` re-points the world's fields at views over those bytes, so the JS rules
-// and the kernels read and write the same memory.
+// The WASM kernels' memory (docs/designs/wasm-kernels.md): one fixed-size memory per world, sized from the world's own
+// `maxAgents`, brain layout and `rayCount` and never grown (growth would detach every view). Each hot array lives at a
+// 16-byte aligned offset, and `attachWasm` re-points the world's fields at views over those bytes, so the JS rules and
+// the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
 import { writeBrainParams } from './wasm-brain.js';
-import { KERNEL_ABI } from './wasm-loader.js';
+import { embeddedKernels } from './wasm-loader.js';
 import { hasHashViews } from './world-hash.js';
 
 /** Bytes per WebAssembly page. */
 export const PAGE_BYTES = 65536;
 
-/** The largest memory an arena asks for: 1 GiB. A bigger world falls back to the JS kernels. */
+/** The largest memory an arena asks for: 1 GiB. A bigger world fails at birth. */
 export const MAX_PAGES = 16384;
-
-/** Pages of the throwaway memory the probe instance reads `__heap_base` from; the kernels declare far fewer. */
-export const PROBE_PAGES = 64;
 
 /** Every array starts on a 16-byte boundary, so a `v128` load of its head is aligned. */
 export const ALIGN = 16;
@@ -96,18 +93,6 @@ export function layoutArena(specs, start) {
     return { offsets, end: at };
 }
 
-/** An arena that could not be built, with the `WasmFallback` reason. */
-export class WasmArenaError extends Error {
-    /**
-     * @param {'memory' | 'instantiate'} reason the fallback reason
-     * @param {string} message what went wrong
-     */
-    constructor(reason, message) {
-        super(message);
-        this.reason = reason;
-    }
-}
-
 /**
  * @typedef {{
  *   exports: Record<string, any>,
@@ -118,47 +103,22 @@ export class WasmArenaError extends Error {
  */
 
 /**
- * Instantiates the kernels once on a throwaway memory to read where their own data ends.
- * @param {WebAssembly.Module} module the compiled kernels
- * @returns {number} the kernels' `__heap_base`
- * @throws {WasmArenaError} when the probe instance cannot be built or has no `__heap_base`
- */
-function probeHeapBase(module) {
-    try {
-        const memory = new WebAssembly.Memory({ initial: PROBE_PAGES });
-        const probe = new WebAssembly.Instance(module, { env: { memory } });
-        const heapBase = /** @type {WebAssembly.Global} */ (probe.exports.__heap_base).value;
-        if (!Number.isInteger(heapBase)) {
-            throw new Error('no __heap_base export');
-        }
-        return heapBase;
-    } catch (error) {
-        throw new WasmArenaError('instantiate', `wasm arena: probe failed: ${/** @type {Error} */ (error).message}`);
-    }
-}
-
-/**
  * Instantiates the kernels with a memory big enough for every array, requested whole up front.
- * @param {WebAssembly.Module} module the compiled kernels (`loadKernels`)
+ * @param {import('./wasm-loader.js').Kernels} kernels the compiled kernels and their `__heap_base`
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
  * @returns {Arena} the arena, with one typed-array view per array
- * @throws {WasmArenaError} when the arrays need more than `MAX_PAGES`, or the binary's ABI is not `KERNEL_ABI`
+ * @throws {Error} when the arrays need more than `MAX_PAGES`
  */
-export function createArena(module, config, layout) {
+export function createArena(kernels, config, layout) {
     const specs = arenaSpecs(config, layout);
-    const heapBase = probeHeapBase(module);
-    const { offsets, end } = layoutArena(specs, heapBase);
+    const { offsets, end } = layoutArena(specs, kernels.heapBase);
     const pages = Math.ceil(end / PAGE_BYTES);
     if (pages > MAX_PAGES) {
-        throw new WasmArenaError('memory', `wasm arena: ${pages} pages needed, the limit is ${MAX_PAGES}`);
+        throw new Error(`wasm arena: ${pages} pages needed, the limit is ${MAX_PAGES}`);
     }
     const memory = new WebAssembly.Memory({ initial: pages, maximum: pages });
-    const instance = new WebAssembly.Instance(module, { env: { memory } });
-    const abi = /** @type {() => number} */ (instance.exports.abi_version)();
-    if (abi !== KERNEL_ABI) {
-        throw new WasmArenaError('instantiate', `wasm arena: kernel ABI ${abi}, expected ${KERNEL_ABI}`);
-    }
+    const instance = new WebAssembly.Instance(kernels.module, { env: { memory } });
     /** @type {Record<string, any>} */
     const views = {};
     for (const [name, Type, length] of specs) {
@@ -169,13 +129,14 @@ export function createArena(module, config, layout) {
 
 /**
  * @param {Record<string, any>} world the world, its fields not yet re-pointed
+ * @param {Map<any, string>} fields each world field's array, mapped to its name
  * @param {any} array an agent row's array
  * @returns {string | undefined} the world field the row is, by identity; the hidden row is the field's head, so it
  *   matches by buffer and offset. Matching by buffer alone would map every row to `alive` once the fields share one
  *   arena.
  */
-function rowField(world, array) {
-    const name = WORLD_FIELDS.find((field) => world[field] === array);
+function rowField(world, fields, array) {
+    const name = fields.get(array);
     if (name !== undefined) {
         return name;
     }
@@ -186,14 +147,16 @@ function rowField(world, array) {
 
 /**
  * Points each world-owned entry of `world.agentRows` at its arena view (the hidden entry excludes the scratch row).
+ * The fields are looked up in a map, not by a scan per row: small worlds are born by the thousand in the drills.
  * @param {Record<string, any>} world the world, its fields not yet re-pointed
  * @param {Arena} arena the arena
  * @returns {void}
  */
 function repointRows(world, arena) {
     const n = world.config.maxAgents;
+    const fields = new Map(WORLD_FIELDS.map((name) => [world[name], name]));
     for (const row of world.agentRows) {
-        const name = rowField(world, row.array);
+        const name = rowField(world, fields, row.array);
         if (name === 'hidden') {
             row.array = arena.views.hidden.subarray(0, n * world.layout.hidden);
         } else if (name !== undefined) {
@@ -204,8 +167,8 @@ function repointRows(world, arena) {
 
 /**
  * Throws for a world that cannot be attached safely: one already on the kernels, one `hashWorld` has cached views of
- * (the hash would keep reading the JS arrays), or one past tick 0 unless the caller says it knows (`midRun`, for the
- * bench's warmed-up worlds).
+ * (the hash would keep reading the old arrays), or one past tick 0 unless the caller says it knows (`midRun`, for a
+ * copy of a running world with its own arena, as the benches make).
  * @param {Record<string, any>} world the world
  * @param {boolean} midRun whether a world past tick 0 is allowed
  * @returns {void}
@@ -223,49 +186,17 @@ function refuseAttach(world, midRun) {
 }
 
 /**
- * Builds the world's arena, or logs why it cannot and returns null.
- * @param {Record<string, any>} world the world
- * @param {import('./wasm-loader.js').Kernels} kernels the result of `loadKernels`
- * @param {{ log: (level: string, event: string, fields: object) => void } | undefined} log the fallback log
- * @returns {Arena | null} the arena, or null after one `WasmFallback` warning
+ * Moves the world's hot arrays into a new arena, sized for this world, and sets `world.wasm`. `allocateWorld` calls it
+ * for every world; a copy of a world that wants its own arena (its `wasm` deleted, its own `agentRows` entries) calls
+ * it again with `midRun`. Fails loudly: there is no JS kernel to fall back to.
+ * @param {Record<string, any>} world a world from `allocateWorld`, or such a copy
+ * @param {import('./wasm-loader.js').Kernels} [kernels] the compiled kernels (the embedded ones by default)
+ * @param {{ midRun?: boolean }} [options] whether a world past tick 0 may be attached
+ * @returns {true} always; anything else throws
  */
-function buildArena(world, kernels, log) {
-    if (!kernels.ok) {
-        log?.log('warn', 'WasmFallback', { reason: kernels.reason, detail: kernels.detail });
-        return null;
-    }
-    try {
-        return createArena(kernels.module, world.config, world.layout);
-    } catch (error) {
-        const reason = error instanceof WasmArenaError ? error.reason : 'instantiate';
-        log?.log('warn', 'WasmFallback', { reason, detail: String(/** @type {Error} */ (error).message) });
-        return null;
-    }
-}
-
-/**
- * Moves the world's hot arrays into a new arena and turns the WASM kernels on. With `wasmKernels` false nothing
- * changes. When the kernels are missing or the arena cannot be built, the world keeps its JS arrays and kernels and a
- * `WasmFallback` warning is logged. A cloned or restored world calls this again; attaching a world that already runs the
- * kernels throws. A shallow copy needs its own `agentRows` entries, which are re-pointed at its arena.
- * @param {Record<string, any>} world a world from `createWorld`
- * @param {import('./wasm-loader.js').Kernels} kernels the result of `loadKernels`
- * @param {{
- *   wasmKernels?: boolean,
- *   midRun?: boolean,
- *   log?: { log: (level: string, event: string, fields: object) => void },
- * }} [options] the switch, whether a world past tick 0 may be attached, and the log the fallback warning goes to
- * @returns {boolean} whether the world now runs the WASM kernels
- */
-export function attachWasm(world, kernels, { wasmKernels = false, midRun = false, log } = {}) {
-    if (!wasmKernels) {
-        return false;
-    }
+export function attachWasm(world, kernels = embeddedKernels(), { midRun = false } = {}) {
     refuseAttach(world, midRun);
-    const arena = buildArena(world, kernels, log);
-    if (arena === null) {
-        return false;
-    }
+    const arena = createArena(kernels, world.config, world.layout);
     writeBrainParams(arena, world.config, world.layout);
     repointRows(world, arena);
     for (const name of WORLD_FIELDS) {

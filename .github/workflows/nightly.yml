@@ -42,8 +42,11 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      # The gate's output is kept in reports/ so nightly-failure can name the failed gates.
       - name: Tier 3 gate
-        run: scripts/check.sh --ci --full --tier 3
+        run: |
+          mkdir -p reports
+          scripts/check.sh --ci --full --tier 3 2>&1 | tee reports/nightly-summary.txt
 
       - name: Golden hashes in Chromium
         if: ${{ !cancelled() }}
@@ -60,3 +63,37 @@ jobs:
             TestResults/
           if-no-files-found: ignore
           include-hidden-files: true
+
+  # One open `nightly-failure` issue at a time: a failed nightly opens it, and the next failures comment on it
+  # (docs/designs/quality-gates-and-test-tiers.md, T21).
+  nightly-failure:
+    needs: nightly
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Open or update the issue
+        run: |
+          # The reports are optional: a run that died before the gate has none, and the issue still opens.
+          gh run download "$GITHUB_RUN_ID" --name nightly-reports --dir nightly-reports || true
+          summary=nightly-reports/reports/nightly-summary.txt
+          title="$(node scripts/lib/nightly-digest.mjs "$summary" "$RUN_URL" --title)"
+          node scripts/lib/nightly-digest.mjs "$summary" "$RUN_URL" > body.md
+          gh label create nightly-failure --color B60205 --description "A nightly run failed" --force
+          open="$(gh issue list --label nightly-failure --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file body.md
+          else
+            gh issue create --label nightly-failure --title "$title" --body-file body.md
+          fi

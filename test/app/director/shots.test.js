@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitZoom, ZOOM_IN } from '../../../js/app/camera.js';
+import { fitZoom, homeZoom, ZOOM_IN } from '../../../js/app/camera.js';
 import { MOMENT_KIND } from '../../../js/app/director/scoring.js';
 import {
     glideDurationS,
@@ -202,5 +202,24 @@ describe('js/app/director/shots', () => {
             world: WORLD,
         });
         expect(pullbackNoFrom.fromPose).toEqual(pullbackNoFrom.toPose);
+    });
+
+    it('frames by homeZoom in portrait, so a wide or close shot never shows the world as a band', () => {
+        const phone = { width: 412, height: 915 };
+        const home = homeZoom(phone, WORLD);
+        expect(home).toBeGreaterThan(fitZoom(phone, WORLD) * 2);
+        const spread = [
+            { x: 0, y: 0 },
+            { x: 0, y: 0 },
+            { x: 14400, y: 8100 },
+            { x: 14400, y: 8100 },
+        ];
+        expect(wideFraming(spread, { canvas: phone, world: WORLD }).zoom).toBeCloseTo(home, 6);
+        expect(wideFraming([], { canvas: phone, world: WORLD, zoomScale: 1.1 }).zoom).toBeCloseTo(home * 1.1, 6);
+        const moment = /** @type {any} */ ({ kind: MOMENT_KIND.FAMILY_LEAD, x: 5000, y: 4000 });
+        const glide = planShot({ state: SHOT_STATE.GLIDE, startTimeS: 0, moment, canvas: phone, world: WORLD });
+        expect(glide.toPose.zoom).toBeGreaterThanOrEqual(home);
+        const landscape = wideFraming(spread, { canvas: CANVAS, world: WORLD });
+        expect(landscape.zoom).toBeCloseTo(fitZoom(CANVAS, WORLD), 6);
     });
 });

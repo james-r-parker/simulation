@@ -99,6 +99,7 @@ describe('parseArgs', () => {
             runs: 5,
             threshold: 0.1,
             noise: 0,
+            self: false,
         });
     });
 
@@ -110,6 +111,7 @@ describe('parseArgs', () => {
             runs: 5,
             threshold: 0.1,
             noise: 0,
+            self: false,
         });
     });
 
@@ -230,6 +232,25 @@ describe('main (end to end on a throwaway repository)', () => {
         expectNoWorktreeLeft(dir);
     });
 
+    it('--self benches HEAD against a second checkout of itself and exits 0 with no worktree left', () => {
+        const dir = makeRepo({ base: { ms: 100, bench: true }, head: null });
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            expect(main(['--self', '--runs=2'], dir)).toBe(0);
+            const text = log.mock.calls.map((call) => String(call[0])).join('\n');
+            expect(text).toContain('noise only');
+            expect(text).toContain('change +0.0%');
+        } finally {
+            log.mockRestore();
+        }
+        expectNoWorktreeLeft(dir);
+    });
+
+    it('--self still skips a HEAD with no bench script', () => {
+        const dir = makeRepo({ base: { ms: 100, bench: false }, head: null });
+        expect(main(['--self', '--runs=2'], dir)).toBe(SKIP_EXIT);
+    });
+
     it('skips when origin/main is missing and no base is given', () => {
         const dir = makeRepo({ base: { ms: 100, bench: true }, head: { ms: 100, bench: true } });
         expect(main(['--runs=2'], dir)).toBe(SKIP_EXIT);
@@ -250,6 +271,17 @@ describe('main (end to end on a throwaway repository)', () => {
     it('throws when the base ref does not exist', () => {
         const dir = makeRepo({ base: { ms: 100, bench: true }, head: { ms: 100, bench: true } });
         expect(() => main(['--base', 'nope'], dir)).toThrow();
+    });
+});
+
+describe('parseArgs --self', () => {
+    it('is off by default and on with --self', () => {
+        expect(parseArgs([]).self).toBe(false);
+        expect(parseArgs(['--self']).self).toBe(true);
+    });
+
+    it('refuses --base with --self', () => {
+        expect(() => parseArgs(['--self', '--base', 'main'])).toThrow(/--self/);
     });
 });
 

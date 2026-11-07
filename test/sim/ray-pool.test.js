@@ -7,7 +7,8 @@ import {
     inputOffsets,
 } from '../../js/sim/brain-layout.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
-import { poolRays } from '../../js/sim/ray-pool.js';
+import { detCos, detSin } from '../../js/sim/det-math.js';
+import { poolRays, rayTables } from '../../js/sim/ray-pool.js';
 import { senseAll } from '../../js/sim/sensors.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -165,5 +166,16 @@ describe('poolRays', () => {
         expect(w.pooled[at]).toBe(0);
         expect(w.pooled[at + 54]).toBe(0);
         expect(w.pooled[at + 55]).toBe(0);
+    });
+});
+
+describe('rayTables', () => {
+    it('spaces the rays evenly round the heading, ray 0 straight ahead', () => {
+        const { rayCos, raySin } = rayTables(8);
+        expect([rayCos[0], raySin[0]]).toEqual([1, 0]);
+        for (let k = 0; k < 8; k++) {
+            expect(rayCos[k]).toBe(detCos((2 * 3.141592653589793 * k) / 8));
+            expect(raySin[k]).toBe(detSin((2 * 3.141592653589793 * k) / 8));
+        }
     });
 });

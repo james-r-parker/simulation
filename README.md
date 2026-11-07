@@ -103,7 +103,7 @@ and the largest type with its share (`scout 82%`). Sources: `js/app/ui/top-bar.j
 ## The brain
 
 Every blob has an Elman recurrent network: its hidden layer feeds back into itself on the next tick, so it can remember.
-One tick for one blob, `forwardAll` in `js/sim/brain.js`:
+One tick, for every blob: `forwardAll` in `js/sim/brain.js` makes one call into the Rust kernel `brain_forward` (`wasm/src/brain.rs`, built by `scripts/build-wasm.sh`), which pools, steps the hidden layer, writes the outputs and applies Hebbian learning. It is attached at world birth by `attachWasm` (`js/sim/wasm-arena.js`), called from `allocateWorld`; the JS brain was deleted, so every world runs it. The diagram shows what it computes for one blob:
 
 ```
  rays (16 x 10) -> pool: 9 channels x 2 strongest hits x (strength, cos, sin) = 54 + 2 food hues --+
@@ -119,7 +119,7 @@ One tick for one blob, `forwardAll` in `js/sim/brain.js`:
   11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
 - **Skip.** `W_skip` joins the 56 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
   threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
-- **Activation.** `tanh` on hidden units and outputs, through `detTanhInto` (`js/sim/det-math.js`) so the result is the same
+- **Activation.** `tanh` on hidden units and outputs, through `det_tanh` (`wasm/src/det_math.rs`, the same function as `js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
 - **Memory.** (1) The recurrent hidden row persists in `world.hidden`. (2) Each hidden unit is leaky:
   `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.02 + 0.98 x sigmoid(leak gene)` per unit (`leakMin` 0.02: a half-life of 34 ticks for the slowest) (`leakRateOf` in `js/sim/traits.js`),
@@ -129,7 +129,7 @@ One tick for one blob, `forwardAll` in `js/sim/brain.js`:
 - **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 70 of
   the 4,926 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
   share is under 0.01 over at least 10,000 agent-samples; `world.inputActivity` in `js/sim/input-activity.js`).
-- **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (`hebbianStep` in
+- **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (inside the Rust kernel; constants in
   `js/sim/hebbian.js`). Each blob has its own copy, `fastOut`, which drifts by `eta x (hidden x output - 0.01 x (fastOut - genome weight))`
   with `eta = hebbianRate x sigmoid(learn gene)`, clamped to plus or minus 4. A child inherits the genome, never what its
   parent learned.
@@ -138,7 +138,7 @@ One tick for one blob, `forwardAll` in `js/sim/brain.js`:
 
 | Group                | Count | What it is                                                                                                                                                                                       |
 | -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pooled rays          | 54    | The 16 raw rays (below) are pooled by `poolRays` in `js/sim/ray-pool.js`: for each of the nine ray channels (food, threat, prey, other, kin, wall, obstacle, smoke, megafauna) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
+| Pooled rays          | 54    | The 16 raw rays (below) are pooled in the Rust kernel (`pool_slot`, reached through `poolRays` in `js/sim/ray-pool.js`): for each of the nine ray channels (food, threat, prey, other, kin, wall, obstacle, smoke, megafauna) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
 | Food hues            | 2     | Hue of the two pooled food hits, in matching order; absent hits are zero. Strength distinguishes an absent hit from a real hue of zero. |
 | Body (offsets 0-16)  | 17    | Energy; forward and sideways velocity; turn rate; size; pregnant; ready to mate; danger and attack scent here; just ate and just bitten (fade over 30 ticks); specialisation; age; four temperature inputs (level, distance from the optimal band, cold stress, heat stress). `writeBodyInputs` |
 | Scent and calls (17-29) | 13 | Danger and attack scent at a left and a right antenna (0.8 rad either side, 150 px out); hunt scent here and at both antennae; the loudest heard alarm and the loudest heard hunt call, each as loudness, ahead and side. `writeScentInputs` |
