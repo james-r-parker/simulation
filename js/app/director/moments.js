@@ -2,6 +2,8 @@
 // snapshot (with a 1.5 s earlier snapshot for chase gap-closing), the recent effects and the recent ticker items,
 // applies the 30 s repeat penalty and returns candidates sorted by score descending.
 
+import { largestCluster } from './cluster.js';
+import { findWorldMoments } from './moments-world.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import {
     applyRepeatPenalty,
@@ -189,28 +191,6 @@ function findChaseMoments(agents, earlierByGenome, { info, huntingFlag }) {
 }
 
 /**
- * Finds the largest spatial cluster of effects within `radius` of a centre effect and returns its centroid and count.
- * @param {readonly {x: number, y: number}[]} points effects in the time window
- * @param {number} radius cluster radius in world units
- * @returns {{count: number, x: number, y: number}} largest cluster summary (`count: 0` when empty)
- */
-function largestCluster(points, radius) {
-    let best = /** @type {{x: number, y: number}[]} */ ([]);
-    for (const center of points) {
-        const neighbors = points.filter((p) => Math.hypot(p.x - center.x, p.y - center.y) <= radius);
-        if (neighbors.length > best.length) {
-            best = neighbors;
-        }
-    }
-    if (best.length === 0) {
-        return { count: 0, x: 0, y: 0 };
-    }
-    const sumX = best.reduce((acc, p) => acc + p.x, 0);
-    const sumY = best.reduce((acc, p) => acc + p.y, 0);
-    return { count: best.length, x: sumX / best.length, y: sumY / best.length };
-}
-
-/**
  * @typedef {object} RawEffectRecord
  * @property {number} tick
  * @property {number} kind
@@ -219,6 +199,7 @@ function largestCluster(points, radius) {
  * @property {number} a
  * @property {number} b
  * @property {number} c
+ * @property {number} [d]
  */
 
 /**
@@ -392,6 +373,7 @@ export function findMoments({
         ...findChaseMoments(agents, earlierByGenome, { info, huntingFlag }),
         ...findEffectMoments(effects, { tick, ticksPerSecond, layout, currentByGenome }),
         ...findTickerMoments(ticker, { tick, ticksPerSecond, agents, info }),
+        ...findWorldMoments(effects, { tick, ticksPerSecond, layout, info }),
     ];
 
     for (const candidate of candidates) {

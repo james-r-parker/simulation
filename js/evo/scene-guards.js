@@ -13,13 +13,19 @@
 //   current checkpoint; a checkpoint with no hunter alive clears the trough, so a hunter population that returns from nothing
 //   starts a new trough.
 //
-// Both are `lower` metrics; `null` with a reason when no checkpoint after burn-in was sampled. The series live in a growable
+// - `eval.prey_summer_min` (higher; mating-edge screen, world-balance T97): the lowest prey count at the checkpoints inside
+//   any summer (season index 1 of `SEASONS_PER_YEAR`, each `eraSeasonTicks` long). The mating Allee edge sits near 100 prey, so a
+//   seed that keeps more than 100 through summer is clear of it. `null` when no summer checkpoint was sampled (the run is
+//   shorter than the first summer, or `eraSeasonTicks` is off).
+//
+// The first two are `lower` metrics; `null` with a reason when no checkpoint after burn-in was sampled. The series live in a growable
 // log and the checkpoint allocates nothing.
 
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok } from './metrics-stats.js';
 import { BASIN_CHECKPOINT_TICKS } from './scene-basin.js';
+import { SEASONS_PER_YEAR } from '../sim/eras.js';
 
 /** The hunters must reach this multiple of their trough for a boom. */
 export const BOOM_FACTOR = 2;
@@ -35,6 +41,12 @@ export const GUARD_DIRECTIONS = Object.freeze({
     'eval.prey_extinctions': 'lower',
     'eval.boom_bust_count': 'lower',
 });
+
+/** The direction of the summer minimum. */
+export const SUMMER_DIRECTIONS = Object.freeze({ 'eval.prey_summer_min': 'higher' });
+
+/** The season index of summer in a year of four. */
+const SUMMER = 1;
 
 const SEEK = 0;
 const PREY = 1;
@@ -53,6 +65,8 @@ export function createGuardScene(config) {
         counts: new Float64Array(specs),
         previous: new Float64Array(specs).fill(-1),
         extinctions: 0,
+        eraSeasonTicks: config.eraSeasonTicks ?? 0,
+        summerMin: Infinity,
     };
 }
 
@@ -96,6 +110,10 @@ export function sampleGuards(scene, world) {
     ensureRoom(scene.log, row);
     scene.log.hunters[row] = hunters;
     scene.log.prey[row] = prey;
+    const era = scene.eraSeasonTicks;
+    if (era > 0 && Math.floor(world.tick / era) % SEASONS_PER_YEAR === SUMMER) {
+        scene.summerMin = Math.min(scene.summerMin, prey);
+    }
 }
 
 /**
@@ -196,4 +214,15 @@ export function guardMetrics(scene) {
             boomBustCount(scene.log.hunters.subarray(0, scene.rows), scene.log.prey.subarray(0, scene.rows)),
         ),
     };
+}
+
+/**
+ * @param {Record<string, any>} scene the guard scene
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the lowest prey count at a summer checkpoint
+ */
+export function summerMetrics(scene) {
+    if (scene.summerMin === Infinity) {
+        return { 'eval.prey_summer_min': none('no summer checkpoint after burn-in') };
+    }
+    return { 'eval.prey_summer_min': ok(scene.summerMin) };
 }

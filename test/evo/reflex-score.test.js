@@ -109,15 +109,15 @@ describe('reflexRow', () => {
     it('is the mean pass share, edge and first-row share over the genome cases', () => {
         const row = reflexRow(
             {
-                a: { passes: 12, trials: 16, passShare: 0.75, fast: 0.5 },
-                b: { passes: 8, trials: 16, passShare: 0.5, fast: 0.25 },
+                a: { passes: 12, trials: 16, passShare: 0.75, fast: 0.5, kinds: {} },
+                b: { passes: 8, trials: 16, passShare: 0.5, fast: 0.25, kinds: {} },
             },
             bars,
         );
         expect(row?.score).toBeCloseTo(0.625, 12);
         expect(row?.edge).toBeCloseTo(0.25, 12);
         expect(row?.fast).toBeCloseTo(0.375, 12);
-        expect(row?.cases.a).toEqual({ passShare: 0.75, edge: 0.5, fast: 0.5 });
+        expect(row?.cases.a).toEqual({ passShare: 0.75, edge: 0.5, fast: 0.5, kinds: {} });
         expect(row?.cases.b.edge).toBeCloseTo(0, 12);
     });
 

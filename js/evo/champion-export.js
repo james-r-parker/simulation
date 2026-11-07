@@ -77,6 +77,22 @@ export function bestElitePerSpec(archive) {
 
 /**
  * @param {import('./archive.js').Archive} archive the archive
+ * @param {{spec: number, count: number}} pick the specialisation and how many elites
+ * @returns {ReturnType<typeof refOf>[]} up to `count` of the specialisation's elites with the highest lower bound, best
+ *   first (ties in place order); a row is a view into the archive
+ */
+export function bestElites(archive, { spec, count }) {
+    const cv = archiveCv(archive);
+    return allElites(archive)
+        .filter((elite) => elite.spec === spec)
+        .map((elite) => ({ elite, bound: lowerBound(archive, elite.place, cv) }))
+        .sort((a, b) => b.bound - a.bound || a.elite.place - b.elite.place)
+        .slice(0, count)
+        .map(({ elite }) => elite);
+}
+
+/**
+ * @param {import('./archive.js').Archive} archive the archive
  * @param {Readonly<Record<string, any>>} config the config the files are stamped for (the world they will be played in)
  * @param {{label: string}} options the name prefix
  * @returns {Record<string, any>[]} one champion file per specialisation that has an elite: `bestElitePerSpec`'s picks

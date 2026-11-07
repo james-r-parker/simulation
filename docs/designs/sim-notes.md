@@ -2369,3 +2369,62 @@ genome; 512 random brains in one batch took 1.9 ms a genome, **522 genomes per s
 the scoring. The same kind of genomes through the five forager drills at 32 trials ran at 0.67 genomes per second, so the
 tier is **776 times** cheaper. The doc's first target (900) rested on 768 forwards; it is now 300, which both numbers clear.
 A table costs about 0.1 s to build (one `stageWorld` per distinct tick), paid once per case, seed and trials.
+
+### 2026-11-07 - Drill levers: staged food slots and an allocation-free food count (training Phase 2)
+
+Two drill-only changes (no live-sim code; `worldHash` and `golden.json` unchanged, golden test run): `STAGE_CONFIG` in
+`js/evo/pool-discrimination-stage.js` gets `maxFood` 48 (`STAGE_MAX_FOOD`; it inherited 3600, so every tiny drill world walked
+3600 food slots per tick in the hash build), and `aliveFoods` in `js/evo/drill-scenarios.js` (3.7% of a drill trial) became
+`aliveFoodCount` and `onlyAliveFood`, which allocate nothing. Drill outcomes did not move: the table below is identical
+before and after. `npm run drill` on four fresh smoke champions (4 generations, nursery) plus the references, wall time:
+
+| Workers | Before | After   | Change |
+| ------- | ------ | ------- | ------ |
+| 2       | 8.71 s | 5.37 s  | -38%   |
+| 4       | 5.40 s | not run | -      |
+| 8       | 3.52 s | 2.26 s  | -36%   |
+
+| Subject                   | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| ------------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| archive-3-forager-cell5   | 1.00 (+0.84) | 1.00 (+0.82) | 0.00 (-0.11) | -            | -            | 0.13 (+0.13)   | 0.00 (+0.00) | +0.34     |
+| archive-3-predator-cell15 | -            | -            | -            | 0.00 (+0.00) | 0.97 (-0.03) | -              | -            | -0.02     |
+| reference memoryless      | 1.00 (+0.84) | 1.00 (+0.82) | 0.00 (-0.11) | 0.31 (+0.31) | 0.31 (-0.69) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.17     |
+
+- The elites of the earlier smoke table were refused (rules and descriptor hashes have moved since), so the table was
+  re-made from a fresh 4-generation smoke run; the same champions fed both columns.
+- `bench:micro --area drill --compare origin/main --runs 3` under the CPU lock (base 5f85ab5dc, head the two levers): one
+  trial of each of the 7 drills 12.67 -> 16.10 ops/s, +27.0% (+-9.5%), so about 89 -> 113 trials per second per worker.
+  The T12 training run (8 workers) was started while this queued, so the margin is wider than on a quiet machine.
+
+### 2026-11-07 - Brain-value screen, the 600000-tick long run and the baseline-v5 re-record (E139, E140, T14)
+
+- **E139 (placeholder id; T43)**: `weightDecay` 0 and `mutationRate` 1 and 0.1 against the defaults (0.005 and `invsqrt`), floor on, policy live, 200000 ticks. `mutationRate` 1 collapsed on seeds 1 to 16 (mating 0.19, population 83, hunters alive on 0.3 of seeds). `mutationRate` 0.1 looked better on seeds 1 to 16 (hunters alive 0.9 against 0.8, 3 seeds under 80 against 5) and lost on 32 matched seeds (hunters alive 23 of 32 against 27, `eval.hunter_ticks_last_quarter` -37%, `eval.predator_births` -24%, `eval.catch_rate` -11%). `weightDecay` 0 showed no gain and `eval.hunter_ticks_last_quarter` -33%. No default changed.
+- **Why 16 seeds misled**: seeds 17 to 32 are harsher than 1 to 16 (E130), and a 2-seed margin on seeds under 80 flipped between the halves. Only the merged 32-seed pair judges a keep-rule arm. `scripts/screen.mjs` writes one report per half; to pair them, concatenate `seeds`, `traces`, `inputActivity` and each metric's `values` and `reasons` (recompute `mean` and `sd`), then `eval:compare` the merged files.
+- **E140 (placeholder id; replaces T34)**: the defaults on 16 seeds x 600000 ticks. Hunters alive on 13 of 16 seeds, a prey type on 16 of 16, `eval.skill_heritability` 0.41 (16 of 16 positive), `eval.skill_trend` -0.032 (3 of 16 positive), `eval.basin_recolonisations` at least 1 on 4 of 16, `eval.social_return` -2.19, `eval.spec_dominance` 0.41, `eval.mating_share` 0.44. Hunters do not get better with a longer horizon; that is hunter-practice.md's problem.
+- **T14, baselines re-recorded** (`baseline-v5` seeds 1 to 16 and `baseline-v5-o16` seeds 17 to 32, 16 seeds x 200000 ticks, on `6ce01567`, configHash `ff8d890a5a70c14d`): the scripted policy is harsher on the current world than at T48g. Means over seeds 1 to 16 and 17 to 32: population 190 and 186 to 18.5 and 18.2, food per 1k 404 and 374 to 175 and 167, fed median lifespan 5007 and 5071 to 3657 and 3578, floor episodes 59 and 68 to 26 and 26, and 89% to 90% of births now come from the floor (`floorTrigger` 8 refills an almost dead world, so the population sits under `minAgents`). Nothing reads these as a bar; they stay the instrument baseline for scripted policies.
+
+### 2026-11-07 - Reach, season, alarm and hunter baselines, and the step-0 checks on them (E141, E142, E143, E144)
+
+- **Runs** (defaults, floor on, policy `live`, 200000 ticks, configHash `ff8d890a5a70c14d`): `E141` 32 seeds (habitat reach), `E142` 32 seeds (season), `E143` 16 seeds (alarm reach), `E144` 16 seeds (matched hunter). The habitat and season reports share their worlds (identical `eval.population_mean`), as the observers are outside `worldHash`.
+- **Habitat reach**: the median prey is at least 1,430 px from a ring edge on every seed; `eval.prey_within_dash_share` 0.10 (SD 0.04); `eval.prey_in_patch_share` 0.34. The premise of the habitat doc holds on the defaults. `eval:power` at 16 v 16: 30% (cover distance), 50% (dash share), 15% (patch share) detectable.
+- **Season**: `eval.season_map_distance` 0.35 (0.16 to 0.63 on every seed); `eval.winter_band_shift` 0.016 (SD 0.04), so a relative detectable change is undefined near 0. The metric needs an absolute planted change before a power read.
+- **Alarm**: no call on any seed (`eval.alarm_rate` 0), so every hearer metric is null by construction. `eval.call_opportunity_neighbours` 3.2 (1.5 to 5.6) against the 0.4 density estimate in the alarm doc: the estimate was uniform, and threat clusters prey. The count excludes the agent itself (`countOpportunity`).
+- **Hunter matched**: matched conversion falls with age (0.083, 0.063, 0.044 across the three bands), and the fall is smaller than pooled on 13 of 16 seeds (0.039 against 0.053 absolute). `eval.hunter_conversion_by_dose` is -0.0002. A paired interval on the difference is not yet computed.
+- **Fault, `eval.hunter_kills_per_life`**: a median per life, 0 on 15 of 16 seeds. It cannot register a gain. Phase 1b of `hunter-practice.md` replaces it with a mean beside `eval.chase_catch_share`.
+- **Fault, the catch rate's rot theory**: refused. `eval.catch_rate` counts fatal bites by hunters per 1,000 hunter agent-ticks, from `AGENT_DIED` events; food rot emits none. It is a speed, and the attempt read is `eval.chase_catch_share`.
+- **Tooling gap**: `scripts/eval-power.mjs` needs 2 times the arm size in seeds, and the smallest arm it takes is 16, so no 16-seed report can be powered. The alarm and hunter power reads need 32-seed runs or a change to that floor.
+
+### 2026-11-07 - The arm d predator bites prey and kin and loses the drill before the bite (training.md T20, partial)
+
+- **Subject:** the T12 iteration 2 arm d predator champion (`archive-59-predator-cell1`, `/tmp/claude-1000/eval-out/train-iter2/d/champions`). Run with the T18 and T19 tools: `npm run reflex -- --champions <dir> --cases bite-discrimination --trials 32 --level debug` and `npm run drill -- --champions <dir> --drills prey-ahead,prey-too-big --trials 32`, seed 1.
+- **`bite-discrimination` by staging (pass, bite share):** prey 1.00 and 1.00; too-big 1.00 and 0.00; kin 0.00 and 1.00. The combined pass is 0.00 (edge -0.11, random 0.11, reference 1.00, case valid). The kin bite is the whole failure.
+- **Skip cells:** prey into `BITE` +1.97, prey into `THRUST` +1.16, prey sine into `TURN` +1.20, kin into `BITE` -0.01, `other` into `BITE` -0.07. The inborn prey-bite prior (+2) survived 60 generations; nothing refuses kin.
+- **`prey-ahead`:** won 5 of 32 (0.16; memoryless reference 0.31). Lost-trial reasons: `never-in-jaws` 24, `prey-died-unkilled` 3, `never-bit` 0. The reference loses mostly to `never-in-jaws` (16) too; the random brains split between `never-in-jaws` and `never-bit`.
+- **Reading:** the bite works when the prey is in the jaws, and the too-big body is left alone by silence (it never reaches the `prey` channel). The predator has no wire against kin, though a kin lunge already costs `recoilEnergy` in the live world. The drill is lost on contact, not on the bite.
+- **Lever line:** row 2 for discrimination (hunter-learning.md Phase 3 kin refusal wire); contact for the drill (arm g, then the chase). Arms e and f (too-big price) are not needed.
+
+### 2026-11-07 - Arm d replication (training T22)
+
+- Arm d (`evals/train-curriculum-iter2-d.json`, 60 generations, 32 episodes) on `--seed-offset` 0, 64 and 128 gives predator `prey-ahead` 0.16, 0.00 and 0.00 (memoryless reference 0.31): the +0.16 edge does not replicate (1 of 3 offsets above 0). Treat one archive's edge as a lead, not an effect.
+- The bite varies by offset: all three bite prey (share 1.00); offset 0 bites kin, offset 128 bites the too-big prey, offset 64 passes `bite-discrimination` at 1.00. Prey into BITE is +1.97 to +2.19 on all three, so the bite exists in the cell and the failure is in the chase and the discrimination, not in a missing output.
+- A full arm d run took about 9 minutes at 14 workers with the machine otherwise idle, not 25 to 30.

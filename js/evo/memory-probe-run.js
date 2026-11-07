@@ -41,6 +41,7 @@ const RULE_KEYS = Object.freeze([
  * @property {(world: Record<string, any>, control: import('./memory-probe-controls.js').Control) => boolean} done
  *   whether the trial is over, read after each step
  * @property {(world: Record<string, any>) => boolean} won whether the trial scored
+ * @property {(won: boolean) => Record<string, any>} [trace] the trial's trace fields once it is over (drills log them)
  */
 
 /**

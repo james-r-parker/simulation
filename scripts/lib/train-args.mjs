@@ -6,7 +6,7 @@ export const DEFAULT_EPISODES = 32;
 /** Generations between checkpoints. */
 export const DEFAULT_CHECKPOINT_EVERY = 10;
 export const USAGE =
-    'usage: train --generations <g> --out <dir> [--episodes <e>] [--workers <n>] [--curriculum <file>] [--config <file.json>] [--resume <archive.json>] [--checkpoint-every <n>] [--ticks <n>] [--offer-from <tick>]';
+    'usage: train --generations <g> --out <dir> [--episodes <e>] [--workers <n>] [--curriculum <file>] [--config <file.json>] [--resume <archive.json>] [--checkpoint-every <n>] [--ticks <n>] [--offer-from <tick>] [--seed-offset <k>]';
 
 /**
  * @typedef {object} TrainArgs
@@ -19,6 +19,7 @@ export const USAGE =
  * @property {number} checkpointEvery generations between checkpoints; 0 for none
  * @property {number | undefined} ticks ticks per episode (default `EPISODE_TICKS`; a test and smoke-run knob)
  * @property {number | undefined} offerFrom the first death tick offered (default `OFFER_FROM_TICK`; a test and smoke-run knob)
+ * @property {number} seedOffset shifts the episode seed index: episode `i` of generation `g` takes seed `(g x episodes + i + k) mod 256` (default 0)
  * @property {string} out the output directory
  */
 
@@ -41,6 +42,7 @@ export function parseArgs(argv) {
                 '--checkpoint-every': (v, f) => ['checkpointEvery', intValue(f, v, 0, USAGE)],
                 '--ticks': (v, f) => ['ticks', intValue(f, v, 1, USAGE)],
                 '--offer-from': (v, f) => ['offerFrom', intValue(f, v, 0, USAGE)],
+                '--seed-offset': (v, f) => ['seedOffset', intValue(f, v, 0, USAGE)],
                 '--out': (v) => ['out', String(v)],
             },
             defaults: {
@@ -53,6 +55,7 @@ export function parseArgs(argv) {
                 checkpointEvery: DEFAULT_CHECKPOINT_EVERY,
                 ticks: undefined,
                 offerFrom: undefined,
+                seedOffset: 0,
                 out: null,
             },
             usage: USAGE,

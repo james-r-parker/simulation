@@ -1,8 +1,8 @@
 # Habitat cover
 
-**Status:** Proposed - nothing built; Phase 1 (reach instruments and a 32-seed baseline) is first, Phase 2 puts rings on the rims of the food patches behind `refugeAnchor`.
+**Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 20 - it changes the map and re-pins the goldens, so it queues behind every unbuilt doc
+**Priority:** 6 - the review of 2026-11-07 calls cover on the food-patch rims the right refuge idea and ranks it third, behind the bite diagnosis and the mating-edge screen; it changes the map and re-pins the goldens, so it queues behind the sim and keeper work already ranked
 **Depends on:** [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a
@@ -80,6 +80,25 @@ in the food. Phase 1 turns this table into a metric on 32 seeds.
 | Prey inside a patch disc                                                | 28 to 45%, seeds 1 to 4 (above)          |
 | `eval.refuge_use_under_threat` with `refugeSense` on, 16 seeds (`E133`) | -0.0029                                  |
 
+**Reach baseline (`E141`, Phase 1 T2).** 32 seeds from `evals/seeds.json`, floor on, defaults, policy `live`, 200,000 ticks,
+config hash `ff8d890a5a70c14d`, on `c346a20e`. Samples every 10 ticks after burn-in; the ring metrics read `DASH_PX` 600.
+
+| Metric                          | Mean   | Range across seeds | SD    | Detectable change at 80% (16 v 16, `eval:power`) | False positive |
+| ------------------------------- | ------ | ------------------ | ----- | ------------------------------------------------ | -------------- |
+| `eval.prey_cover_distance` (px) | 2,070  | 1,430 to 3,150     | 431   | 30%, planted lower                               | 9.5%           |
+| `eval.prey_within_dash_share`   | 0.103  | 0.036 to 0.174     | 0.041 | 50%, planted higher                              | 7.7%           |
+| `eval.prey_in_patch_share`      | 0.341  | 0.260 to 0.452     | 0.047 | 15%, planted higher                              | 8.6%           |
+| `eval.refuge_use_under_threat`  | -0.002 | -0.008 to 0.010    | 0.003 | (guard, not powered)                             | -              |
+| `eval.refuge_bite_deficit`      | 0.16   | 0 to 1.04          | 0.21  | (guard, not powered)                             | -              |
+| `eval.population_mean`          | 236    | 42 to 376          | 108   | (guard, not powered)                             | -              |
+
+Reading. The premise holds on the defaults: the per-seed median prey distance to the nearest ring edge is at least 1,430 px
+on every seed, only 10% of samples are within a dash of cover, and 34% sit inside a food patch. The Phase 2 read is
+relative to this baseline: a `patch` anchor must move `eval.prey_within_dash_share` well above its 0.10 mean and seed SD
+of 0.04, and move `eval.prey_cover_distance` down by more than the 30% detectable change. The `eval:power` run used
+`--sizes 16`, the largest arm 32 seeds allow (`eval-power.mjs` needs twice the arm size in seeds). Population metrics match
+the season run exactly (same config, same worlds: the observers do not change the sim).
+
 ## Config keys and options
 
 Validated in `../../js/sim/config-rules.js`, defaulted in `../../js/sim/config-defaults.js`; each has an entry in
@@ -110,7 +129,7 @@ New `eval.*` metrics from the eval observer at the 10-tick sample, `watch`, none
 **Targets:** none - the three metrics are instruments (`watch`) and no existing metric moves; the phase ends with a 32-seed baseline.
 
 Done means: the three metrics run in `js/evo/scene-reach.js`, `npm run eval:power` has rated them, and the 32-seed floor-on
-baseline (`E-D-2`) replaces the four-seed diagnostic above with numbers in [sim-notes.md](sim-notes.md).
+baseline (`E141`) replaces the four-seed diagnostic above with numbers in [sim-notes.md](sim-notes.md).
 
 Chunks:
 
@@ -184,7 +203,7 @@ Chunks:
 | Eight seeds screen, 32 matched seeds judge                                             | The principles: eight seeds never judge anything; harm is a paired interval on 32                                                                                                                                                             | Delegated |
 | Hunters are guarded, not exempted                                                      | Shelter on every patch also shelters prey from the hunters that work the patches; the keep rule and 80% conversion bound it                                                                                                                   | Delegated |
 | A flee-to-cover instinct is a later doc, only if reach is made and use is still absent | Habitat first: a reflex layered on cover prey cannot reach would be unmeasurable                                                                                                                                                              | Delegated |
-| Priority 20                                                                            | Changes the map, so it re-pins the goldens; it queues behind the balance round and the other unbuilt docs                                                                                                                                     | Delegated |
+| Priority 5                                                                             | Changes the map, so it re-pins the goldens; it queues behind the balance round and the other unbuilt docs                                                                                                                                     | Delegated |
 
 ## Delivery requirements
 
@@ -206,11 +225,11 @@ Chunks:
 
 ### Phase 1 - Reach instruments and baseline
 
-| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/evo/scene-reach.js` with `eval.prey_cover_distance`, `eval.prey_within_dash_share` and `eval.prey_in_patch_share`, its test, and Metrics rows for them and for `eval.predators_at_end`, `eval.prey_types_at_end`, `eval.hunter_kill_conversion_by_age.1k-2k` and `eval.hunter_independent_kill_share` (built: the three reach metrics and their Metrics rows; the four others already existed in `scene-balance.js` and `scene-competence.js`, and `eval.predators_at_end` and `eval.prey_types_at_end` already have `higher` directions) | [mechanical] | -          |
-| T2  | Run 32 floor-on seeds at 200,000 ticks (`E-D-2`), `eval:power` the three metrics, write the baseline into `sim-notes.md` - open; the metrics are built (T1), so run `npm run eval -- --seeds 32 --ticks 200000 --policy live --workers 8 --out /tmp/claude-1000/eval-out/D/reach-baseline.json`, then `npm run eval:power -- /tmp/claude-1000/eval-out/D/reach-baseline.json --include-watch --metrics eval.prey_cover_distance,eval.prey_within_dash_share,eval.prey_in_patch_share`                                                             | [mechanical] | T1         |
-| T3  | Conformance review of Phase 1: a fresh agent checks every Delivery requirements row against the diff, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                                                         | [judgement]  | T2         |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | (built, #343) Add `js/evo/scene-reach.js` with `eval.prey_cover_distance`, `eval.prey_within_dash_share` and `eval.prey_in_patch_share`, its test, and Metrics rows for them and for `eval.predators_at_end`, `eval.prey_types_at_end`, `eval.hunter_kill_conversion_by_age.1k-2k` and `eval.hunter_independent_kill_share` (built: the three reach metrics and their Metrics rows; the four others already existed in `scene-balance.js` and `scene-competence.js`, and `eval.predators_at_end` and `eval.prey_types_at_end` already have `higher` directions) | [mechanical] | -          |
+| T2  | (built) Run 32 floor-on seeds at 200,000 ticks (`E141`), `eval:power` the three metrics; the table is in the Baseline section and the entry in `sim-notes.md` (2026-11-07 baseline entry); the metrics are built (T1), so run `npm run eval -- --seeds 32 --ticks 200000 --policy live --workers 8 --out /tmp/claude-1000/eval-out/D/reach-baseline.json`, then `npm run eval:power -- /tmp/claude-1000/eval-out/D/reach-baseline.json --include-watch --metrics eval.prey_cover_distance,eval.prey_within_dash_share,eval.prey_in_patch_share`                 | [mechanical] | T1         |
+| T3  | Conformance review of Phase 1: a fresh agent checks every Delivery requirements row against the diff, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                                                                       | [judgement]  | T2         |
 
 ### Phase 2 - Habitat on the patch rims
 

@@ -5,6 +5,8 @@ import { FLORA_NAMES } from '../sim/config-flora.js';
 // fed it. They change no sim state and cost no per-tick allocation.
 
 import { ALARM_REACH_DIRECTIONS, alarmReachMetrics } from './observer-alarm-reach.js';
+import { BITE_DIRECTIONS, biteMetrics } from './scene-bite.js';
+import { BITE_LIFE_DIRECTIONS, biteLifeMetrics } from './scene-bite-life.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
@@ -13,7 +15,7 @@ import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
-import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
+import { GUARD_DIRECTIONS, SUMMER_DIRECTIONS, guardMetrics, summerMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
@@ -109,9 +111,12 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...COMPETENCE_DIRECTIONS,
     ...MATCHED_DIRECTIONS,
     ...GUARD_DIRECTIONS,
+    ...SUMMER_DIRECTIONS,
     ...KIN_DIRECTIONS,
     ...ALARM_REACH_DIRECTIONS,
     ...REWARD_DIRECTIONS,
+    ...BITE_DIRECTIONS,
+    ...BITE_LIFE_DIRECTIONS,
 });
 
 /**
@@ -145,8 +150,11 @@ export function sceneMetrics(observer, world) {
         ...competenceMetrics(s.competence, world),
         ...matchedMetrics(s.matched),
         ...guardMetrics(s.guards),
+        ...summerMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
+        ...biteMetrics(s.bite),
+        ...biteLifeMetrics(s.biteLife, world),
     };
 }

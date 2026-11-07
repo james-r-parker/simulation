@@ -15,7 +15,7 @@ const PI = 3.141592653589793;
  * @param {number} victim the bitten slot
  * @returns {boolean}
  */
-function inJaws(world, biter, victim) {
+export function inJaws(world, biter, victim) {
     if (world.config.biteArc >= PI) {
         return true;
     }

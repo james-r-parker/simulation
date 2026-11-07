@@ -1,0 +1,17 @@
+{
+  "worldWidth": 1800,
+  "worldHeight": 1200,
+  "initialAgents": 60,
+  "maxAgents": 100,
+  "minAgents": 0,
+  "maxFood": 50,
+  "initialFood": 50,
+  "initialEnergy": 3000,
+  "maxEnergy": 25000,
+  "hashCellSize": 560,
+  "foodPatchRadius": 280,
+  "wallGaps": 1,
+  "herdCount": 0,
+  "refugeCount": 0,
+  "coldMarginWidth": 0
+}
