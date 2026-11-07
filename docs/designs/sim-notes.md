@@ -2317,5 +2317,6 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 
 - The elites of the earlier smoke table were refused (rules and descriptor hashes have moved since), so the table was
   re-made from a fresh 4-generation smoke run; the same champions fed both columns.
-- The `bench:micro --area drill --compare origin/main` figure is queued behind the CPU lock (the E84 screen holds it) and
-  is added here when it runs.
+- `bench:micro --area drill --compare origin/main --runs 3` under the CPU lock (base 5f85ab5dc, head the two levers): one
+  trial of each of the 7 drills 12.67 -> 16.10 ops/s, +27.0% (+-9.5%), so about 89 -> 113 trials per second per worker.
+  The T12 training run (8 workers) was started while this queued, so the margin is wider than on a quiet machine.
