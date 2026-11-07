@@ -48,7 +48,7 @@ export function mountOverflowMenu(doc, { bar, hud }, { perform, clip = true }) {
     const button = doc.createElement('button');
     button.className = 'control control-overflow';
     button.textContent = '⋯';
-    button.setAttribute('title', 'More actions');
+    button.setAttribute('title', 'More actions (lenses, screenshot, exports, audio)');
     button.setAttribute('aria-label', 'More actions');
     button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
