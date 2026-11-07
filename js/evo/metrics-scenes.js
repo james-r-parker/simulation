@@ -4,6 +4,7 @@ import { FLORA_NAMES } from '../sim/config-flora.js';
 // `observer.scenes`. Each is `watch` unless its direction is set below, and each is `null` with a reason when nothing
 // fed it. They change no sim state and cost no per-tick allocation.
 
+import { ALARM_REACH_DIRECTIONS, alarmReachMetrics } from './observer-alarm-reach.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
@@ -102,6 +103,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...COMPETENCE_DIRECTIONS,
     ...GUARD_DIRECTIONS,
     ...KIN_DIRECTIONS,
+    ...ALARM_REACH_DIRECTIONS,
     ...REWARD_DIRECTIONS,
 });
 
@@ -135,6 +137,7 @@ export function sceneMetrics(observer, world) {
         ...competenceMetrics(s.competence, world),
         ...guardMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
+        ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
     };
 }
