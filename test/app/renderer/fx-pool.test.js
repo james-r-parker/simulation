@@ -12,6 +12,8 @@ import {
     setFxLevel,
     spawnFx,
 } from '../../../js/app/renderer/fx-pool.js';
+import { createFxBudget } from '../../../js/app/renderer/fx-budget.js';
+import { LOOK_OFF } from '../../../js/app/renderer/quality.js';
 
 /**
  * @param {number} [tick] start tick
@@ -101,7 +103,7 @@ describe('spawnFx', () => {
 describe('flushFx and the layer', () => {
     it('uploads only the dirty range, then clears it', () => {
         const pool = createFxPool();
-        const layer = createFxLayer({ pool });
+        const layer = createFxLayer({ pool, budget: createFxBudget() });
         const attribute = layer.object.geometry.getAttribute('iPose');
         expect(attribute.array).toBe(pool.pose);
         spawnFx(pool, record());
@@ -122,18 +124,46 @@ describe('flushFx and the layer', () => {
     it('draws every slot and feeds the rebased playhead and the calls lens', () => {
         const pool = createFxPool();
         spawnFx(pool, record(500));
-        const layer = createFxLayer({ pool });
+        const layer = createFxLayer({ pool, budget: createFxBudget() });
         const camera = createCameraController({
             canvas: /** @type {any} */ ({ width: 100, height: 100 }),
             world: { width: 100, height: 100 },
         });
-        const frame = /** @type {any} */ ({ tick: 510.5, camera, lenses: { calls: true } });
+        const frame = /** @type {any} */ ({
+            tick: 510.5,
+            camera,
+            lenses: { calls: true },
+            family: { palette: 'high-contrast' },
+        });
         layer.update?.(frame);
+        expect(layer.uniforms.uContrast.value).toBe(1.5);
         expect(layer.object.count).toBe(FX_CAPACITY);
         expect(layer.uniforms.uFxTick.value).toBeCloseTo(10.5);
         expect(layer.uniforms.uCallBoost.value).toBeCloseTo(1 / 0.35);
-        layer.setQuality?.(1);
+        const budget = createFxBudget();
+        const fed = createFxLayer({ pool, budget });
+        fed.setQuality?.(1);
         expect(pool.limit).toBe(1024);
+        expect(budget.level).toBe(1);
+        fed.setLook?.({ combat: LOOK_OFF });
+        expect(budget.tier[0]).toBe(LOOK_OFF);
+        fed.dispose();
+        layer.dispose();
+    });
+});
+
+describe('the layer before any effect', () => {
+    it('parks the shader clock far back, with no calls lens and the default palette', () => {
+        const pool = createFxPool();
+        const layer = createFxLayer({ pool, budget: createFxBudget() });
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 10, height: 10 }),
+            world: { width: 10, height: 10 },
+        });
+        layer.update?.(/** @type {any} */ ({ tick: 5, camera, lenses: { calls: false } }));
+        expect(layer.uniforms.uFxTick.value).toBe(-1e9);
+        expect(layer.uniforms.uCallBoost.value).toBe(1);
+        expect(layer.uniforms.uContrast.value).toBe(1);
         layer.dispose();
     });
 });

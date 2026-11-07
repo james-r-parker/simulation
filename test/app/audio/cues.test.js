@@ -135,7 +135,7 @@ describe('the effect-family cues', () => {
             STAMPEDE: 10,
             STRAIN_EMERGED: 11,
         },
-        deathCauses: { EATEN: 1 },
+        deathCauses: { STARVED: 0, EATEN: 1, OLD_AGE: 3, TRAMPLED: 5 },
         bornCauses: { INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 },
     };
     const CLOSE = { ...CAMERA, zoom: 2 };
@@ -149,7 +149,8 @@ describe('the effect-family cues', () => {
         expect(cueFor(at(11), ctx)?.kind).toBe('strain');
         expect(cueFor(at(CLIENT_KIND.SICK), ctx)?.kind).toBe('sick');
         expect(cueFor(at(CLIENT_KIND.INFECTED), ctx)).toMatchObject({ wave: TONES.infected.wave });
-        expect(cueFor(at(CLIENT_KIND.CURED), ctx)).toBeNull();
+        expect(cueFor(at(CLIENT_KIND.CURED), ctx)?.kind).toBe('recovered');
+        expect(cueFor(at(CLIENT_KIND.RECOVERED), ctx)?.kind).toBe('recovered');
     });
 
     it('sounds bites and meals only at the close zoom band and in view', () => {
@@ -167,5 +168,24 @@ describe('the effect-family cues', () => {
         expect(split?.startHz).toBeCloseTo((mate?.startHz ?? 0) / 2);
         expect(cueFor(at(1, 3), ctx)?.kind).toBe('arrival');
         expect(cueFor(at(1, 4), ctx)?.kind).toBe('arrival');
+    });
+
+    it('gives a pack kill a lower thud, a trampling its own thud, and old age a soft tone at the close band only', () => {
+        const ctx = { layout: FULL, camera: CAMERA, rootMidi: 50 };
+        const died = (/** @type {number} */ c) => ({ kind: 2, x: 1000, y: 500, a: 0, c, d: 0 });
+        expect(cueFor(died(1 << 8), ctx)?.kind).toBe('eaten');
+        expect(cueFor(died((1 << 8) | 65536), ctx)?.kind).toBe('packKill');
+        expect(cueFor(died(5 << 8), ctx)?.kind).toBe('trampled');
+        expect(cueFor(died(3 << 8), ctx)).toBeNull();
+        expect(cueFor(died(3 << 8), { ...ctx, camera: CLOSE })?.kind).toBe('oldAge');
+        expect(cueFor(died(0), { ...ctx, camera: CLOSE })).toBeNull();
+    });
+});
+
+describe('cueFor without a cue', () => {
+    it('returns null for a kind it has no tone for', () => {
+        const layout = { effectKinds: { BORN: 1, DIED: 2, ALARM: 4, PACK_CALL: 5 }, deathCauses: { EATEN: 1 } };
+        const camera = { x: 0, y: 0, zoom: 1, canvas: { width: 10, height: 10 } };
+        expect(cueFor({ kind: 99, x: 0, y: 0, a: 0, c: 0 }, { layout, camera, rootMidi: 50 })).toBeNull();
     });
 });

@@ -12,6 +12,8 @@ import { createQuadGeometry, createQuadMesh, VEC4 } from './instanced.js';
 export const FX_CAPACITY = 2048;
 /** The active capacity at quality levels 0, 1 and 2. */
 export const FX_CAPACITY_BY_LEVEL = Object.freeze([2048, 1024, 256]);
+/** The effect colour gain under the high-contrast palette (ring strokes also double). */
+export const HIGH_CONTRAST_GAIN = 1.5;
 /** Rebase the stored ticks once the playhead is this far past the base. */
 export const REBASE_TICKS = 1 << 20;
 
@@ -78,7 +80,7 @@ export function createFxPool() {
  * @returns {void}
  */
 export function setFxLevel(pool, level) {
-    pool.limit = FX_CAPACITY_BY_LEVEL[level] ?? FX_CAPACITY;
+    pool.limit = FX_CAPACITY_BY_LEVEL[level];
     if (pool.next >= pool.limit) {
         pool.next = 0;
     }
@@ -196,6 +198,7 @@ function fxUniforms() {
         uFxTick: { value: 0 },
         uZoom: { value: 1 },
         uCallBoost: { value: 1 },
+        uContrast: { value: 1 },
         uScale: { value: vecs(tables.scale) },
         uAlpha: { value: vecs(tables.alpha) },
         uInfo: { value: vecs(tables.info) },
@@ -204,7 +207,7 @@ function fxUniforms() {
 }
 
 /**
- * @param {{pool: FxPool, budget?: import('./fx-budget.js').FxBudget}} options the pool the effects player spawns into
+ * @param {{pool: FxPool, budget: import('./fx-budget.js').FxBudget}} options the pool the effects player spawns into
  *   and the budget that follows the quality level and the look items
  * @returns {import('./scene.js').Layer & {uniforms: Record<string, {value: any}>}} the pool's mesh, drawn additively
  */
@@ -232,19 +235,16 @@ export function createFxLayer({ pool, budget }) {
         uniforms,
         setQuality(level) {
             setFxLevel(pool, level);
-            if (budget) {
-                setFxQuality(budget, level);
-            }
+            setFxQuality(budget, level);
         },
         setLook(look) {
-            if (budget) {
-                setFxLook(budget, look);
-            }
+            setFxLook(budget, look);
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
             uniforms.uFxTick.value = Number.isNaN(pool.base) ? -1e9 : frame.tick + pool.clockOffset - pool.base;
             uniforms.uCallBoost.value = frame.lenses.calls ? 1 / 0.35 : 1;
+            uniforms.uContrast.value = frame.family?.palette === 'high-contrast' ? HIGH_CONTRAST_GAIN : 1;
             flushFx(pool, geometry.attributes);
         },
         dispose() {

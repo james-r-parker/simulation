@@ -33,3 +33,17 @@ describe('playBreaths', () => {
         expect(player.fx.pool.pose[0]).toBeCloseTo(15);
     });
 });
+
+describe('playBreaths under the budget', () => {
+    it('counts no breath when the weather item is off', () => {
+        const player = build();
+        player.fx.budget.tier.fill(-1);
+        const agents = createInterpolated(8);
+        interpolateInto(null, makeSnapshot(1, [{ slot: 0, genomeId: 1, temperature: 0.1 }]), 1, agents);
+        let total = 0;
+        for (let tick = 0; tick < 3 * BREATH_TICKS; tick++) {
+            total += playBreaths(player, agents, tick);
+        }
+        expect(total).toBe(0);
+    });
+});

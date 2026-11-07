@@ -92,8 +92,8 @@ export const FX_RECIPES = Object.freeze({
     died: combat([{ curve: C.moteOut, count: 10, life: 40, size: 0.2, reach: 2.4, spread: 'random' }]),
     eatPlant: feed([{ curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', gain: 2.5 }]),
     eatMeat: feed([
-        { curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', color: 'meat' },
-        { curve: C.crumbStay, count: 2, life: 20, size: 0.15, spread: 'random', color: 'meat', gain: 0.6 },
+        { curve: C.crumbIn, count: 5, life: 10, size: 0.28, reach: -1, spread: 'heading', color: 'meat', gain: 1.8 },
+        { curve: C.crumbStay, count: 2, life: 20, size: 0.2, spread: 'random', color: 'meat', gain: 1.2 },
     ]),
     eatFungus: feed([{ curve: C.orbit, count: 5, life: 12, size: 0.2, reach: -1, spread: 'ring', gain: 2.5 }]),
     mateOrbit: court(RANK.mate, [

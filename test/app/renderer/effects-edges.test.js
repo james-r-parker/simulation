@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CLIENT_KIND } from '../../../js/app/renderer/client-kinds.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
@@ -40,7 +41,7 @@ describe('playEdges: meals', () => {
         expect(pool.time[2]).toBe(CURVE.crumbIn);
         expect(pool.pose[0]).toBeCloseTo(108);
         expect(pool.move[0]).toBeCloseTo(22);
-        expect(pool.color[0]).toBeCloseTo(PALETTE.meat[0]);
+        expect(pool.color[0]).toBeCloseTo(PALETTE.meat[0] * 1.8);
         expect(player.tweens.kind[1]).toBe(TWEEN.GULP);
     });
 
@@ -93,5 +94,26 @@ describe('playEdges: sickness', () => {
         run(player, [30, 30 | BITS.INFECTED, 30]);
         expect(player.fx.pool.spawned).toBe(8 + 7);
         expect(player.fx.pool.color[14 * 4]).toBeCloseTo(PALETTE.recover[0] * 0.8);
+    });
+});
+
+describe('playEdges: the sink', () => {
+    it('tells the sink of a meal and a sickness as client effects', () => {
+        /** @type {number[]} */
+        const kinds = [];
+        const player = createEffectsPlayer({ layout, info, sink: (e) => kinds.push(e.kind) });
+        step(player, { tick: 1, ate: 20, foods: [] });
+        step(player, { tick: 3, ate: 1 | BITS.SICK, foods: [] });
+        expect(kinds).toEqual([CLIENT_KIND.SICK, CLIENT_KIND.MEAL]);
+    });
+});
+
+describe('playEdges without a snapshot', () => {
+    it('diffs the agents and keeps the food grids when no snapshot is held', () => {
+        const player = build();
+        const agents = createInterpolated(8);
+        playEdges(player, agents, null, 4);
+        expect(player.edges.fresh.tick).toBe(-1);
+        expect(player.edges.tick).toBe(4);
     });
 });

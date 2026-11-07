@@ -6,6 +6,7 @@ import { createFxDemo, DEMO_CELL } from './renderer/fx-demo.js';
 import { FX_FAMILIES, fxStats } from './renderer/fx-budget.js';
 import { createFxLog, noteFx, updateFxLog } from './renderer/fx-log-overlay.js';
 import { createFxNames } from './renderer/fx-names.js';
+import { occupancy } from './renderer/fx-pool.js';
 
 /**
  * @typedef {object} FxParams
@@ -138,13 +139,13 @@ export function fxAfterDraw(app, frame) {
 
 /**
  * @param {Record<string, any>} app the page (`main.js`)
- * @returns {{fx: Record<string, {spawned: number, dropped: number, culled: number}> | null, drawCalls: number | null}}
- *   the effect budget's counts by family and the last frame's draw calls, for `__perf`
+ * @returns {{fx: Record<string, any> | null, drawCalls: number | null}} the effect budget's counts by family with the
+ *   pool's live instances (`occupancy`), and the last frame's draw calls, for `__perf`
  */
 export function fxPerf(app) {
     const player = app.deps.refs.player;
     return {
-        fx: player === null ? null : fxStats(player.fx.budget),
+        fx: player === null ? null : { ...fxStats(player.fx.budget), occupancy: occupancy(player.fx.pool) },
         drawCalls: app.deps.scene?.renderer.info.render?.calls ?? null,
     };
 }

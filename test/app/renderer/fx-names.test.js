@@ -20,3 +20,11 @@ describe('nameOf', () => {
         expect(nameOf(names, { kind: 77, c: 0, d: 0 })).toBe('KIND 77');
     });
 });
+
+describe('createFxNames without tables', () => {
+    it('falls back to the kind name when a cause table is missing', () => {
+        const names = createFxNames({ effectKinds: { BORN: 1, DIED: 2 } });
+        expect(nameOf(names, { kind: 1, c: 0, d: 4 })).toBe('BORN');
+        expect(names.births).toEqual([]);
+    });
+});

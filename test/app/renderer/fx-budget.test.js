@@ -134,6 +134,7 @@ describe('logFxBudget and fxStats', () => {
         expect(logFxBudget(b, { nowMs: 2 * LOG_EVERY_MS, overwrote: 3, capacity: 2048 }, log)).toBe(false);
         expect(records.map((r) => r.event)).toEqual(['FxBudgetDropped', 'FxPoolSaturated']);
         expect(records[0].dropped).toBe(500 - FAMILY_RATE[FAMILY.combat]);
+        expect(records[0].families).toEqual({ combat: 500 - FAMILY_RATE[FAMILY.combat] });
     });
 
     it('reports counts by family name', () => {

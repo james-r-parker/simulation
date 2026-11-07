@@ -111,12 +111,9 @@ export function createWeatherLayer({ info, seed }) {
     return {
         object: mesh,
         uniforms,
-        setQuality(level) {
-            count = WEATHER_COUNT[level] ?? 0;
-        },
         setLook(look) {
             on = look.weather !== undefined && look.weather !== LOOK_OFF;
-            count = on ? WEATHER_COUNT[look.weather ?? 0] : 0;
+            count = on ? WEATHER_COUNT[/** @type {number} */ (look.weather)] : 0;
         },
         update(frame) {
             seasonWeights(frame.tick, info.seasonLength, SEASON);
