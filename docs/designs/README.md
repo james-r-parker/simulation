@@ -21,7 +21,7 @@ Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:
 12. [Deployment and community](deployment-and-community.md) - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
 13. [Mobile view](mobile-view.md) - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 14. [Brain inspection](brain-inspection.md) - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
-23. [Hunter practice](hunter-practice.md) - the within-lifetime gain is negative in every E124 arm and the cause is a weak channel plus a biased detector, not a missing feature; it queues behind the world fixes (refuge, balance) because a taught hunter needs a world whose prey survive it
+23. [Hunter practice](hunter-practice.md) - the within-lifetime gain is negative in every E124 arm and the cause is a weak channel plus a biased detector, not a missing feature
 
 ## Implemented (11)
 

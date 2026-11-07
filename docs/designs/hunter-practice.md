@@ -2,7 +2,7 @@
 
 **Status:** Proposed - hunters improve with age: a probe that measures practice without survivorship, a learnable pursuit skill credited by the meal, and a sensitive period; nothing built.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 23 - the within-lifetime gain is negative in every E124 arm and the cause is a weak channel plus a biased detector, not a missing feature; it queues behind the world fixes (refuge, balance) because a taught hunter needs a world whose prey survive it
+**Priority:** 23 - the within-lifetime gain is negative in every E124 arm and the cause is a weak channel plus a biased detector, not a missing feature
 **Depends on:** [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md)
 
 Real predators are poor hunters when young and good hunters when old, and the gap closes through practice, not through
@@ -71,10 +71,9 @@ two decide whether a gain can be seen; the last three decide whether one can exi
 | D2  | Conversion falls with age in the pooled data of every arm, including no plasticity, so age is confounded with other things: an older hunter is better fed (it chases without need, and a chase that does not become a bite is a give-up), holds a territory the prey have learned to leave, and sees prey that survived earlier chases                                                                                        | Defaults 0.126, 0.097, 0.052 across the three age bands; no-plasticity 0.112, 0.082, 0.057. The fall appears with learning off. `eval.hunter_kill_conversion_hungry.1k-2k` exists for one band only; there is no matched-energy or matched-experience read                        |
 | D3  | The skill that matters is not in the plastic path. The hunt reflex (approach, turn, bite on the prey channel) sits in the skip block, which is not plastic. `hebbianStep` moves only hidden-to-output weights, which a hunter uses mostly for what the hidden state (memory, other channels) adds                                                                                                                             | `applyHunterReflex` writes the skip cells; the skip block is read in `addSkip` and never written in a life; `fastOut` is `hidden x geneOutputs`                                                                                                                                   |
 | D4  | The rule has no credit assignment. `hebbianStep` multiplies this tick's hidden and output activity. The meal arrives after the chase, and the chase and the meal are different ticks, so a reward scale reinforces whatever the brain does in the 35-tick half-life after a meal, which is eating, not hunting. `rewardScale` changes `eta`, never which weights move                                                         | `reward.js`: the trace decays by `rewardDecay` 0.02 per tick (half-life about 35 ticks) and only multiplies the rate. In E124 the shuffled-reward arm (the same rewards at unrelated times) had the best gain, -0.005, which is what a rule that ignores the timing would produce |
-| D5  | The step is small and the signal is sparse. `eta` is at most 0.0001, so a weight moves at most 0.1 to 0.3 in 1,000 to 3,000 ticks even if every product has one sign, against a clamp of 4 and reflex weights of about 1. A kill reaches a hunter 0.31 times per 1,000 hunter agent-ticks and the median hunter life has 0 kills                                                                                              | E124 notes (reward counts); `HEBB_CLAMP` 4; `hebbianRate` 0.0001; `eval.hunter_zero_kill_share` about 0.85 on the pre-flip defaults                                                                                                                                               |
+| D5  | The step is small and the signal is sparse. `eta` is at most 0.0001 (at most 4.25 times that with `rewardedHebb` on), so a weight moves at most 0.1 to 0.3 in 1,000 to 3,000 ticks even if every product has one sign, against a clamp of 4 and reflex weights of about 1. A kill reaches a hunter 0.31 times per 1,000 hunter agent-ticks and the median hunter life has 0 kills                                             | E124 notes (reward counts); `HEBB_CLAMP` 4; `hebbianRate` 0.0001; `eval.hunter_zero_kill_share` about 0.85 on the pre-flip defaults                                                                                                                                               |
 
-Cheap diagnostics already available show D1 and D2 (the no-plasticity row). No new run is needed to start the work; the
-first task of Phase 1 is the probe, which separates the five.
+D1 and D2 are hypotheses: the no-plasticity row is consistent with both and cannot separate survivorship from age or hunger. E124 also has defaults (-0.026) above no-plasticity (-0.048) and shuffled reward (-0.005) above both, a spread inside the noise of 8 seeds (per-seed gains span -0.20 to +0.06 on 1 to 442 hunters). The first tasks of Phase 1 are the probe and the matched detectors, which separate the five.
 
 > Note: `eval.hunter_conversion_gain` stays registered. Its value is read only as a difference to the no-plasticity arm on the
 > same seeds, never against 0.
@@ -103,7 +102,7 @@ All default off or neutral. The first is a switch with a flag-ledger deletion ta
 | `practiceTraceDecay`  | number  | 0.97    | Phase 2. Per-tick decay of the eligibility trace (half-life about 23 ticks, a chase)                                                                                                                                     |
 | `practiceWindowTicks` | integer | 0       | Phase 2. Sensitive period: the step is scaled by `max(0, 1 - ageTicks / practiceWindowTicks)` plus a floor of 0.25; 0 is a flat rate. Screened at 0 and `juvenileTicks` (3,000)                                          |
 
-`practiceTrace` has an entry in `scripts/flag-ledger.json` pointing at T14, added by T4. The numeric keys need none.
+`practiceTrace` has an entry in `scripts/flag-ledger.json` pointing at T14, added by T9. The numeric keys need none.
 
 ## Detectors
 
@@ -149,8 +148,8 @@ read with `npm run eval:power`.
 
 **Targets:** eval.hunter_kill_conversion_by_age.1k-2k, eval.hunter_conversion_gain, eval.chase_catch_share, eval.predators_at_end, eval.prey_types_at_end, eval.prey_extinctions, eval.population_mean
 
-`practiceTrace` adds the credit rule nature uses. For each `canHunt` agent, a plastic copy of the 12 prey-channel skip
-cells (prey strength, cosine and sine into thrust, turn, sprint and bite) starts equal to the genome and a per-agent
+`practiceTrace` adds the credit rule nature uses. For each `canHunt` agent, a plastic copy of the prey-channel skip
+cells (both pooled hits, 3 values each, into thrust, turn and bite: 18 cells; sprint is left out because the reflex does not seed it) starts equal to the genome and a per-agent
 eligibility trace of the same size decays by `practiceTraceDecay` each tick and adds the product of the prey input and the
 output it fed. A meal of live prey (a kill, or a bite that stores energy from a live victim; never a carcass, so the rule
 teaches hunting and not scavenging) delivers a reward `min(1, stored / foodEnergy)` and moves each plastic cell by
@@ -158,11 +157,11 @@ teaches hunting and not scavenging) delivers a reward `min(1, stored / foodEnerg
 value. The brain reads the plastic cells instead of the genome cells for a hunter. The hook is its own call in `feeding.js`
 beside the meal; it does not read `rewardTrace`, so it stands when `reward.js` is deleted.
 
-Cost: hunters are a few per cent of the population, 12 cells each; off, no allocation and no work.
+Cost: hunters are a few per cent of the population, 18 cells each; off, no allocation and no work.
 
 Judged in two steps. The probe first: `probe.practice_gain` above the null control with the interval excluding 0, above
 the transfer and shuffled-credit controls, at one of the three `practiceRate` values. Then the world: the keep rule of
-[realistic-keepers.md](realistic-keepers.md) on paired intervals over 32 matched floor-on seeds, with the competence rows
+[realistic-keepers.md](realistic-keepers.md) on paired intervals over 32 matched floor-on seeds (the rule as updated in principles.md: hunters alive at the last tick on 12 of 16 seeds in each 16-seed half, and no more seeds under 80 agents than the defaults), with the competence rows
 (`eval.hunter_kill_conversion_by_age.1k-2k` and `eval.hunter_conversion_by_dose`) not worse. A gain in a world run is not
 required; the probe is the competence verdict.
 
@@ -173,15 +172,14 @@ required; the probe is the competence verdict.
 | C     | T7 to T10  | The trace state, the plastic cells in the brain read, the reward hook, the switch and its off-path checks |
 | D     | T11 to T13 | The probe on the switch, the `practiceRate` and window screen, the 32-seed no-harm runs                   |
 
-### Phase 3 - Adopt, and graded practice if the probe asks for it
+### Phase 3 - Adopt
 
 **Targets:** eval.hunter_kill_conversion_by_age.1k-2k, eval.predators_at_end, eval.prey_extinctions, eval.population_mean
 
 If Phase 2 passes, `practiceTrace` is set true, its flag and off path are deleted and the golden cases re-pinned. If the
 probe shows learning but the world run shows hunters still failing on healthy prey, the next step is graded difficulty as
 nature gives it: a prey a hunter has bitten and not finished keeps its wound (the existing `bittenTimer` state slows it),
-so a young hunter near a parent meets catchable prey. That step is written as its own doc if the probe asks for it, with
-its own Decisions row, and is not built here.
+so a young hunter near a parent meets catchable prey. That step is written as its own doc if the probe asks for it, and is not built here.
 
 #### Chunks
 
@@ -191,27 +189,26 @@ its own Decisions row, and is not built here.
 
 ## Decisions
 
-| Decision                                                                                                                                                                        | By                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| The competence verdict is the probe, not the in-world gain: the in-world detector has a negative null (E124 no-plasticity -0.048) and is read only as a difference to that null | Delegated (balance autonomy) |
-| The learnable cells are the 12 prey-channel skip cells of a `canHunt` agent, not the hidden-to-output block: the reflex is there and 12 cells keep the cost to hunters only     | Delegated (balance autonomy) |
-| The rule is a three-factor eligibility trace, replacing the instantaneous correlation for those cells; the old `hebbianStep` is untouched                                       | Delegated (balance autonomy) |
-| The reward is the energy stored from live prey (kill or live bite), not carcass or scavenge energy                                                                              | Delegated (balance autonomy) |
-| No reward baseline (prediction error) in the first build: kills and live bites are rare enough that drift from frequent reward is not the limit                                 | Delegated (balance autonomy) |
-| The switch owns its reward hook and state and never reads `rewardTrace`; the doc survives the deletion of `rewardedHebb`, `provisionEnabled` or `predatorRestTicks`             | Delegated (balance autonomy) |
-| Play, teaching and observational learning are excluded: no energy-neutral play, no cost-to-teacher mechanic, and a kin-behaviour input would change the layout `pooled-v5`      | Delegated (balance autonomy) |
-| Graded difficulty (wounded prey for the young) is a conditional follow-up doc, built only if the probe shows learning that the world does not use                               | Delegated (balance autonomy) |
-| Placeholder experiment ids `E-G-1` to `E-G-6` are assigned real ids by the coordinator at merge                                                                                 | Delegated (balance autonomy) |
+| Decision                                                                                                                                                                                                          | By                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| The competence verdict is the probe, not the in-world gain: the in-world detector has a negative null (E124 no-plasticity -0.048) and is read only as a difference to that null                                   | Delegated (balance autonomy) |
+| The learnable cells are the 18 prey-channel skip cells (two hits into thrust, turn and bite) of a `canHunt` agent, not the hidden-to-output block: the reflex is there and 18 cells keep the cost to hunters only | Delegated (balance autonomy) |
+| The rule is a three-factor eligibility trace, replacing the instantaneous correlation for those cells; the old `hebbianStep` is untouched                                                                         | Delegated (balance autonomy) |
+| The reward is the energy stored from live prey (kill or live bite), not carcass or scavenge energy                                                                                                                | Delegated (balance autonomy) |
+| No reward baseline (prediction error) in the first build: kills and live bites are rare enough that drift from frequent reward is not the limit                                                                   | Delegated (balance autonomy) |
+| The switch owns its reward hook and state and never reads `rewardTrace`; the doc survives the deletion of `rewardedHebb`, `provisionEnabled` or `predatorRestTicks`                                               | Delegated (balance autonomy) |
+| Play, teaching and observational learning are excluded: no energy-neutral play, no cost-to-teacher mechanic, and a kin-behaviour input would change the layout `pooled-v5`                                        | Delegated (balance autonomy) |
+| Graded difficulty (wounded prey for the young) is a conditional follow-up doc, built only if the probe shows learning that the world does not use                                                                 | Delegated (balance autonomy) |
 
 ## Experiments
 
 | Id    | Task | Question                                                                                                    | Prediction (written before the run)                                                                                                      |
 | ----- | ---- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| E-G-1 | T5   | What is the probe's noise floor on main, with and without `rewardedHebb`?                                   | No arm shows a gain whose interval excludes 0; the spread sets the number of hunters and trials Phase 2 needs                            |
+| E-G-1 | T5   | What is the probe's noise floor on main, on main?                                                           | No arm shows a gain whose interval excludes 0; the spread sets the number of hunters and trials Phase 2 needs                            |
 | E-G-2 | T6   | Do the matched detectors remove the age-driven fall seen in E124?                                           | `eval.hunter_conversion_matched` falls less with age than the pooled conversion does; `eval.hunter_conversion_by_dose` is near 0 on main |
 | E-G-3 | T11  | Does `practiceTrace` give a probe gain over the null, the transfer control and the shuffled-credit control? | A gain at `practiceRate` 0.01 or 0.03 that the shuffled control does not reach; 0.003 too small; the window helps at the late test       |
 | E-G-4 | T12  | Which `practiceRate` and window setting is best on the probe and safe in a short world run?                 | The window of `juvenileTicks` beats the flat rate on a late test because late drift is noise; no setting changes the world guards        |
-| E-G-5 | T13  | Does the best setting pass the keep rule on 32 matched floor-on seeds, paired intervals?                    | Passes: hunters are few, the rule moves only 12 weights each, and no energy enters the world; conversion 1k-2k no worse                  |
+| E-G-5 | T13  | Does the best setting pass the keep rule on 32 matched floor-on seeds, paired intervals?                    | Passes: hunters are few, the rule moves only 18 weights each, and no energy enters the world; conversion 1k-2k no worse                  |
 | E-G-6 | T14  | Does `eval.hunter_conversion_by_dose` turn positive in the world with the switch on?                        | Slightly positive, below the 5% minimum effect on 32 seeds; the world is not required to show it                                         |
 
 ## Delivery requirements
@@ -240,20 +237,20 @@ its own Decisions row, and is not built here.
 | T2  | Add the practice-probe scenario and runner in `js/evo/practice-probe.js` and `practice-probe-run.js` (arena, test and practice sets, the null, transfer and shuffled-credit controls, paired gain); `test/evo/practice-probe.test.js`                                | [judgement]  | -          |
 | T3  | Add `scripts/practice-probe.mjs` and `npm run probe:practice` (`--champions`, `--trials`, `--practice-trials`, `--seed`, `--config`), report through `scripts/lib/probe-report.mjs`; the AGENTS.md command row                                                       | [mechanical] | T2         |
 | T4  | Chunk A check: run the pre-commit hook and the new tests; confirm the golden hashes and `eval-smoke` are unchanged                                                                                                                                                   | [mechanical] | T1, T3     |
-| T5  | Run `E-G-1`: save 8 champions with `--save-champions`, run the probe on main and with `rewardedHebb` on, record the noise floor and the hunters and trials needed; one `sim-notes.md` entry                                                                          | [judgement]  | T4         |
+| T5  | Run `E-G-1`: save 8 champions with `--save-champions`, run the probe on main with the defaults, record the noise floor and the hunters and trials needed; one `sim-notes.md` entry                                                                                   | [judgement]  | T4         |
 | T6  | Run `E-G-2`: 16 floor-on seeds with the new detectors; `npm run eval:power` on them; record the matched and dose readings beside the pooled conversion; conformance review of Phase 1 by a fresh agent in parallel with the final `scripts/check.sh`; mark `(built)` | [judgement]  | T5         |
 
 ### Phase 2 - A learnable pursuit skill
 
-| #   | Task                                                                                                                                                                                                                                                                                   | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T7  | Add `practice-state.js` and `practice.js`: per-agent plastic cells and eligibility rows allocated with `practiceTrace`, the trace update, the reward step with the window factor, reset in `freeAgent`; the four keys and rules; `test/sim/practice.test.js` against a naive reference | [judgement]  | T6         |
-| T8  | Read the plastic cells for a `canHunt` agent in `addSkip` of `brain.js`; the trace update after `outputStep`; `test/sim/brain-practice.test.js`; with the switch off the brain is bit-identical                                                                                        | [judgement]  | T7         |
-| T9  | Call the reward hook beside the meal in `feeding.js` for kills and live bites only; add `eval.practice_reward_events` and `eval.practice_drift`, `PracticeConfig` and `PracticeTotals`, the `worldHash` rows with the switch on, the invariant and the ledger entry pointing at T14    | [judgement]  | T8         |
-| T10 | Off-path checks: golden hashes unchanged, `npm run alloc-check` on and off, `npm run bench:parts -- --area brain --compare <base>` under the CPU lock, `eval-smoke` with the switch on; conformance review of chunk C                                                                  | [mechanical] | T9         |
-| T11 | Run `E-G-3`: the probe on `practiceTrace` against the null, transfer and shuffled-credit controls at the three `practiceRate` values; prediction first                                                                                                                                 | [judgement]  | T10        |
-| T12 | Run `E-G-4`: a short 16-seed screen of `practiceRate` x `practiceWindowTicks` on the probe and the world guards, writing to `evals/screens/hunter-practice-skill.grid.json`; the best setting by the probe, no setting that fails a guard                                              | [judgement]  | T11        |
-| T13 | Run `E-G-5`: the best setting against the defaults on 32 matched floor-on seeds (seeds 1 to 32 in two reports), keep rule by paired intervals, competence rows not worse; one entry                                                                                                    | [judgement]  | T12        |
+| #   | Task                                                                                                                                                                                                                                                                                              | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T7  | Add `practice-state.js` and `practice.js`: per-agent plastic cells and eligibility rows allocated with `practiceTrace`, the trace update, the reward step with the window factor, reset in `freeAgent`; the four keys and rules; `test/sim/practice.test.js` against a naive reference            | [judgement]  | T6         |
+| T8  | Read the plastic cells for a `canHunt` agent in `addSkip` of `brain.js`; the trace update after `outputStep`; `test/sim/brain-practice.test.js`; with the switch off the brain is bit-identical                                                                                                   | [judgement]  | T7         |
+| T9  | Call the reward hook beside the meal in `feeding.js` for kills and live bites only; add `eval.practice_reward_events` and `eval.practice_drift`, `PracticeConfig` and `PracticeTotals`, the `worldHash` rows with the switch on, the invariant and the ledger entry pointing at T14               | [judgement]  | T8         |
+| T10 | Off-path checks: golden hashes unchanged, `npm run alloc-check` on and off, `npm run bench:parts -- --area brain --compare <base>` under the CPU lock, `eval-smoke` with the switch on; conformance review of chunk C                                                                             | [mechanical] | T9         |
+| T11 | Run `E-G-3`: the probe on `practiceTrace` against the null, transfer and shuffled-credit controls at the three `practiceRate` values; prediction first                                                                                                                                            | [judgement]  | T10        |
+| T12 | Run `E-G-4`: a short 16-seed screen of `practiceRate` x `practiceWindowTicks` on the probe and the world guards, writing to `evals/screens/hunter-practice-skill.grid.json`; the best setting by the probe, no setting that fails a guard                                                         | [judgement]  | T11        |
+| T13 | Run `E-G-5`: the best setting against the defaults on 32 matched floor-on seeds (seeds 1 to 32 in two reports), keep rule by paired intervals, competence rows not worse; one entry; conformance review of Phase 2 by a fresh agent in parallel with the final `scripts/check.sh`; mark `(built)` | [judgement]  | T12        |
 
 ### Phase 3 - Adopt
 
