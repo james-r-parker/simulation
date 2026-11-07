@@ -7,6 +7,7 @@
 
 mod brain;
 mod det_math;
+mod field;
 mod hash;
 mod sense;
 
@@ -86,6 +87,16 @@ pub unsafe extern "C" fn sense_slot(params: i32, slot: i32) -> i32 {
 pub unsafe extern "C" fn build_hash(params: i32, cell_size: f64) -> i32 {
     // SAFETY: the caller passes the arena's hash parameter block.
     unsafe { hash::build(params as u32, cell_size) }
+}
+
+/// Decays then diffuses the three pheromone grids (`updatePheromones`).
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-field.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn update_pheromones(params: i32, decay: f64, diffusion: f64) {
+    // SAFETY: the caller passes the arena's field parameter block.
+    unsafe { field::update_pheromones(params as u32, decay, diffusion) }
 }
 
 #[panic_handler]

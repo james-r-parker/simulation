@@ -4,6 +4,7 @@
 // the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
 import { writeBrainParams } from './wasm-brain.js';
+import { FIELD_FIELDS, fieldSpecs, writeFieldParams } from './wasm-field.js';
 import { HASH_FIELDS, arenaHash, hashSpecs } from './wasm-hash.js';
 import { SENSE_FIELDS, senseSpecs, writeSenseParams } from './wasm-sense.js';
 import { embeddedKernels } from './wasm-loader.js';
@@ -39,8 +40,8 @@ export const BRAIN_FIELDS = Object.freeze([
     'raySin',
 ]);
 
-/** Every world field the arena takes over: the brain kernel's, then the sense kernel's, then the hash kernel's. */
-export const WORLD_FIELDS = Object.freeze([...BRAIN_FIELDS, ...SENSE_FIELDS, ...HASH_FIELDS]);
+/** Every world field the arena takes over: the brain kernel's, then the sense, hash and field kernels'. */
+export const WORLD_FIELDS = Object.freeze([...BRAIN_FIELDS, ...SENSE_FIELDS, ...HASH_FIELDS, ...FIELD_FIELDS]);
 
 /** @typedef {[string, Float64ArrayConstructor | Float32ArrayConstructor | Int32ArrayConstructor | Uint8ArrayConstructor, number]} ArenaSpec */
 
@@ -112,8 +113,8 @@ export function layoutArena(specs, start) {
  * @param {import('./wasm-loader.js').Kernels} kernels the compiled kernels and their `__heap_base`
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
- * @param {ArenaSpec[]} [extra] more arrays after the brain's (the sense and hash kernels', from `senseSpecs` and
- *   `hashSpecs`)
+ * @param {ArenaSpec[]} [extra] more arrays after the brain's (the other kernels', from `senseSpecs`, `hashSpecs` and
+ *   `fieldSpecs`)
  * @returns {Arena} the arena, with one typed-array view per array
  * @throws {Error} when the arrays need more than `MAX_PAGES`
  */
@@ -205,9 +206,11 @@ function refuseAttach(world, midRun) {
  */
 export function attachWasm(world, kernels = embeddedKernels(), { midRun = false } = {}) {
     refuseAttach(world, midRun);
-    const arena = createArena(kernels, world.config, world.layout, [...senseSpecs(world), ...hashSpecs(world)]);
+    const extra = [...senseSpecs(world), ...hashSpecs(world), ...fieldSpecs(world)];
+    const arena = createArena(kernels, world.config, world.layout, extra);
     writeBrainParams(arena, world.config, world.layout);
     writeSenseParams(arena, world);
+    writeFieldParams(arena, world);
     repointRows(world, arena);
     for (const name of WORLD_FIELDS) {
         arena.views[name].set(world[name]);
