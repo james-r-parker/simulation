@@ -21,6 +21,7 @@ import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
+import { seasonMapMetrics } from './scene-season-map.js';
 import { spendMetrics } from './scene-spend.js';
 import { reachMetrics } from './scene-reach.js';
 import { refugeMetrics } from './scene-refuge.js';
@@ -57,6 +58,8 @@ const WATCH = [
     'eval.childshare_by_condition',
     'eval.winter_basin_density',
     'eval.winter_shelter_distance',
+    'eval.season_map_distance',
+    'eval.herd_season_shift',
     'eval.style_separation',
     'eval.dodge_skill',
     'eval.disease_deaths_share',
@@ -130,6 +133,7 @@ export function sceneMetrics(observer, world) {
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),
+        ...seasonMapMetrics(s.seasonMap),
         ...styleMetrics(s.style),
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),

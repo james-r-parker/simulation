@@ -155,6 +155,7 @@ describe('observeScenes', () => {
             'refuge',
             'refugeOutcome',
             'season',
+            'seasonMap',
             'spend',
             'style',
             'terrain',

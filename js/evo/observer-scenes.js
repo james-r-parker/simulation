@@ -21,6 +21,7 @@ import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } fro
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
+import { createSeasonMapScene, sampleSeasonMap } from './scene-season-map.js';
 import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
@@ -62,6 +63,7 @@ export function createScenes(config, runTicks = 0) {
         condition: createConditionScene(config),
         spend: createSpendScene(config),
         season: createSeasonScene(),
+        seasonMap: createSeasonMapScene(),
         heritage: createHeritageScene(config),
         niche: createNicheScene(),
         mate: createMateScene(config),
@@ -195,6 +197,7 @@ export function observeScenes(observer, world) {
     }
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
         sampleSeason(scenes.season, scenes.terrain, world);
+        sampleSeasonMap(scenes.seasonMap, world);
         sampleBalance(scenes.balance, world);
         sampleFamilies(scenes.families, world);
         sampleDivergence(scenes.divergence, world);
