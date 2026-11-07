@@ -3,7 +3,7 @@
 // shows undiluted. `npm run bench:micro -- --area wasm --compare HEAD` prices a rebuilt binary.
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { visionOf } from '../../js/sim/traits.js';
-import { syncSense } from '../../js/sim/wasm-sense.js';
+import { beginSense } from '../../js/sim/wasm-sense.js';
 import { aliveSlots, microSuite } from './fixture.js';
 import { kernelWorld } from './wasm-fixture.js';
 
@@ -22,7 +22,7 @@ function senseLoop(overrides) {
         detCos(world.angle[slot]),
         detSin(world.angle[slot]),
     ]);
-    syncSense(world, world.hash);
+    beginSense(world, world.hash);
     const s = world.rayScratch;
     return () => {
         let rows = 0;

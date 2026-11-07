@@ -11,7 +11,6 @@ import { placeTerrain, refugeCentresOf } from './terrain.js';
 import { rejectedByCover } from './cover.js';
 import { drawSex } from './sex.js';
 import { SPEC_COUNT } from './spec-rescue.js';
-import { createSpatialHash } from './spatial-hash.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { sourceOfSpawn } from './hunter-ledger.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
@@ -253,7 +252,6 @@ export function createWorld(config, policy) {
     const world = allocateWorld(config);
     const root = createRng(config.seed);
     world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
-    world.hash = createSpatialHash(config);
     placeTerrain(world);
     world.refugeCentres = refugeCentresOf(world);
     createPatches(world);
