@@ -279,7 +279,7 @@ Every row is Delegated: the user was away and the doc's author answered the crea
 | #   | Task                                                                                                                                                             | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T1  | Add `eval.alarm_hearers_per_call`, `eval.alarm_hunter_hearers_per_call` and `eval.alarm_calls_with_threat_per_1k` (`observer-alarm-reach.js`) with tests (built) | [mechanical] | -          |
-| T2  | Add `eval.call_opportunity_neighbours` (one counter in `sampleGroups`) and `eval.call_opportunity_kin` (from the existing D5 sums), with tests                   | [mechanical] | -          |
+| T2  | Add `eval.call_opportunity_neighbours` (one counter in `sampleGroups`) and `eval.call_opportunity_kin` (from the existing D5 sums), with tests (built)           | [mechanical] | -          |
 | T3  | Add the `alarmOnSight` scripted controller and a test that it calls only with a threat ray                                                                       | [mechanical] | -          |
 | T4  | Re-run the defaults on 16 seeds at 200,000 ticks for the opportunity metrics and `eval:power`, recording the config hash (E-E-2)                                 | [mechanical] | T1, T2     |
 | T5  | Forced-call runs: `alarmOnSight` on 10%, 30% and 100% of prey, 16 seeds each, read hearers, response and kills of hearers against controls (E-E-3)               | [judgement]  | T3, T4     |

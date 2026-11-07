@@ -5,10 +5,16 @@
 // - `eval.alarm_hearers_per_call`: the mean non-hunter hearers per call;
 // - `eval.alarm_hunter_hearers_per_call`: the mean `canHunt` hearers per call (a call that tells a hunter where prey are);
 // - `eval.alarm_calls_with_threat_per_1k`: the calls whose caller saw a threat within `INTENT_WINDOW` ticks, per 1000
-//   agent-ticks of agents without `canHunt`, so that spam does not hide inside `eval.alarm_rate`.
+//   agent-ticks of agents without `canHunt`, so that spam does not hide inside `eval.alarm_rate`;
+// - `eval.call_opportunity_neighbours`: the mean count of other non-hunters of any lineage within `callRadius` of a
+//   threatened non-hunter, in the D5 grouping sample (`sampleGroups`): the audience a call would have, whether or not
+//   anyone calls;
+// - `eval.call_opportunity_kin`: the mean same-lineage count in the same sample (`run.groupThreatSum` over
+//   `run.groupThreatN`): the ceiling on the kin term.
 //
-// The first two are `null` with no call. All three are instruments (`watch`); none is a reward. Observer state outside
-// `worldHash`; one pass over the slots per call, nothing allocated.
+// The three call metrics are `null` with no call (the third with no agent-tick), the opportunity pair with no
+// threatened agent in a sample. All five are instruments (`watch`); none is a reward. Observer state outside `worldHash`;
+// one pass over the slots per call, nothing allocated.
 
 import { HEARD_STRIDE } from '../sim/world.js';
 import { none, ok, per1k } from './metrics-stats.js';
@@ -18,6 +24,8 @@ export const ALARM_REACH_DIRECTIONS = Object.freeze({
     'eval.alarm_hearers_per_call': 'watch',
     'eval.alarm_hunter_hearers_per_call': 'watch',
     'eval.alarm_calls_with_threat_per_1k': 'watch',
+    'eval.call_opportunity_neighbours': 'watch',
+    'eval.call_opportunity_kin': 'watch',
 });
 
 /**
@@ -57,17 +65,19 @@ export function noteAlarmReach(reach, { hunterSpec, world, caller }) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three alarm-reach metrics
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five alarm-reach metrics
  */
 export function alarmReachMetrics(observer) {
     const { alarmReach: reach, hunterAgentTicks } = observer.combat;
     const noCall = none('no alarm call');
+    const { run } = observer.intent;
+    const noThreat = none('no threatened agent in a grouping sample');
     return {
+        'eval.call_opportunity_neighbours':
+            run.groupThreatN > 0 ? ok(run.opportunityNeighbourSum / run.groupThreatN) : noThreat,
+        'eval.call_opportunity_kin': run.groupThreatN > 0 ? ok(run.groupThreatSum / run.groupThreatN) : noThreat,
         'eval.alarm_hearers_per_call': reach.calls > 0 ? ok(reach.hearers / reach.calls) : noCall,
         'eval.alarm_hunter_hearers_per_call': reach.calls > 0 ? ok(reach.hunterHearers / reach.calls) : noCall,
-        'eval.alarm_calls_with_threat_per_1k': per1k(
-            observer.intent.run.alarmsPrecise,
-            observer.agentTicks - hunterAgentTicks,
-        ),
+        'eval.alarm_calls_with_threat_per_1k': per1k(run.alarmsPrecise, observer.agentTicks - hunterAgentTicks),
     };
 }
