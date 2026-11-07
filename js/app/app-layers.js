@@ -7,6 +7,7 @@ import { createChaseLayer } from './renderer/chase-layer.js';
 import { createAuroraLayer } from './renderer/aurora-layer.js';
 import { createTerrainLayer } from './renderer/terrain-layer.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
+import { createFxLayer, createFxPool } from './renderer/fx-pool.js';
 import { createGroundLayer } from './renderer/ground-layer.js';
 import { createFinishLayer } from './renderer/finish-layer.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
@@ -64,6 +65,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     const rings = createRingPool();
     const sparks = createSparkPool(seed);
     const threads = createMateThreadPool();
+    const fx = createFxPool();
     refs.haze = haze;
     refs.player = createEffectsPlayer({ rings, sparks, threads, layout, info, slots, sink });
     return {
@@ -83,6 +85,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             smoke,
             createRingLayer({ pool: rings }),
             createSparkLayer({ pool: sparks }),
+            createFxLayer({ pool: fx }),
             createChaseLayer({ info }),
             createMateThreadLayer({ pool: threads }),
             createOverlays({ info }),
