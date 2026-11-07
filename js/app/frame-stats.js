@@ -54,6 +54,8 @@ const REFRESH_PERCENTILE = 25;
  * @typedef {object} FrameStats
  * @property {{push: (ms: number) => void, values: () => Float64Array}} intervals frame intervals in ms
  * @property {{push: (ms: number) => void, values: () => Float64Array}} draws time spent in the frame callback in ms
+ * @property {{hidden: number, zero: number, long: number}} ignored frames not recorded, by reason: a hidden tab, no
+ *   interval (the first frame, or two callbacks with one timestamp), or an interval over `MAX_INTERVAL_MS`
  */
 
 /**
@@ -61,7 +63,11 @@ const REFRESH_PERCENTILE = 25;
  * @returns {FrameStats} empty rings
  */
 export function createFrameStats(capacity) {
-    return { intervals: createFrameRing(capacity), draws: createFrameRing(capacity) };
+    return {
+        intervals: createFrameRing(capacity),
+        draws: createFrameRing(capacity),
+        ignored: { hidden: 0, zero: 0, long: 0 },
+    };
 }
 
 /**
@@ -73,6 +79,7 @@ export function createFrameStats(capacity) {
 export function clearFrameStats(stats, capacity) {
     stats.intervals = createFrameRing(capacity);
     stats.draws = createFrameRing(capacity);
+    stats.ignored = { hidden: 0, zero: 0, long: 0 };
 }
 
 /**
@@ -84,7 +91,9 @@ export function clearFrameStats(stats, capacity) {
  * @returns {boolean} whether the frame was recorded
  */
 export function recordFrame(stats, intervalMs, drawMs, hidden = false) {
-    if (hidden || !(intervalMs > 0) || intervalMs > MAX_INTERVAL_MS) {
+    const reason = hidden ? 'hidden' : !(intervalMs > 0) ? 'zero' : intervalMs > MAX_INTERVAL_MS ? 'long' : null;
+    if (reason !== null) {
+        stats.ignored[reason] += 1;
         return false;
     }
     stats.intervals.push(intervalMs);
@@ -105,7 +114,7 @@ export function spread(values) {
 /**
  * Summarises the rings. Allocates; call it about once a second, not every frame.
  * @param {FrameStats} stats the rings
- * @returns {{frames: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number, p95: number, p99: number}, refreshMs: number, refreshHz: number}}
+ * @returns {{frames: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number, p95: number, p99: number}, refreshMs: number, refreshHz: number, ignored: {hidden: number, zero: number, long: number}}}
  *   `refreshMs` is the measured refresh interval (0 before any frame): the 25th percentile of the intervals, so a
  *   run of dropped frames does not stretch it
  */
@@ -118,5 +127,6 @@ export function frameReport(stats) {
         drawMs: spread(stats.draws.values()),
         refreshMs,
         refreshHz: refreshMs > 0 ? Math.round(10000 / refreshMs) / 10 : 0,
+        ignored: { ...stats.ignored },
     };
 }
