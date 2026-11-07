@@ -144,6 +144,9 @@ digest() {
       out="$(grep -E '\([0-9]+,[0-9]+\): error TS[0-9]+' "$log" | awk '!seen[$0]++')" ;;
     lint)
       out="$(grep -vE '^\s*$' "$log" | sed -E "s#${ROOT}/##g")" ;;
+    bench-compare)
+      # The head line and one line per metric; install warnings and bench progress stay in the log.
+      out="$(grep -E '^(base [0-9a-f]+ head |ok   |FAIL |skipped)|^[^ ].*(Error|error):' "$log")" ;;
     format)
       out="$(grep -E '^\[warn\] ' "$log" | grep -v 'Code style issues')" ;;
     *)
