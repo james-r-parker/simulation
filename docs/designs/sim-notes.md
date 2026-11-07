@@ -2059,6 +2059,87 @@ The last one is inside its margin and was dropped. The ray change is bit-identic
 with ties to the lower key, so the order circles are met in cannot change it, and the golden test passes unchanged. The
 `coverConceals` path keeps the per-ray loop. Not yet measured: `bench.step_ms@500` end to end (needs a quiet machine).
 
+### 2026-11-07 - First drill table (training T4)
+
+`node scripts/drill.mjs --policy map-elites-v6 --trials 32 --workers 2` (seed 1, the 8 best elites of a fresh 20000-tick
+world on seed 1, default config; win share, with the edge over four random brains in brackets; `-` is a skipped drill).
+Only one of the 8 elites was a forager.
+
+| Subject                | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| ---------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| forager elite (cell 4) | 1.00 (+0.90) | 0.88 (+0.70) | 0.00 (-0.10) | -            | -            | 0.00 (+0.00)   | 0.00 (+0.00) | +0.30     |
+| 7 predator elites      | -            | -            | -            | 0.00 (+0.00) | 1.00 (+0.00) | -              | -            | +0.00     |
+| reference `memoryless` | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | 0.31 (+0.31) | 0.28 (-0.72) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.18     |
+
+Reading it:
+
+- No genome passes `two-foods` (the evolved forager and the scripted reference both eat the nearer, toxic item first;
+  random brains win 0.10 by wandering), `hunter-closing` or `rock-refuge`: no forager survives 600 ticks against a
+  hunter that starts 500 px away, and none enters the ring.
+- No evolved predator kills in `prey-ahead` (0.00 on all seven); the scripted chaser wins 0.31. A predator's 1.00 on
+  `prey-too-big` is the abort drill won by not biting, which a predator that never bites also wins (edge 0.00, since
+  random brains do not bite either). Read `prey-too-big` only beside `prey-ahead`.
+- A fleeing prey can starve at a sprint before it is caught (it did at tick 342 against a still subject), so the
+  `prey-ahead` win reads the sim's `deliberateKills` credit, not the prey's death.
+- The drill world has no refuges, so `refugeSense` inputs read 0 in every drill.
+
+### 2026-11-07 - WASM brain kernel: 3 to 8 times faster and bit-identical (wasm-kernels T6)
+
+The brain phase (`poolRays`, `hiddenStep`, `outputStep`, `hebbianStep`) runs in `wasm/blob-kernels.wasm` behind the
+`attachWasm` option `wasmKernels`. Both measurements ran on a machine loaded by evals; the ratios are paired.
+
+- `BENCH_WASM=1 flock /tmp/claude-1000/cpu.lock npm run bench:parts -- --area brain --compare origin/main` (median of 3
+  alternating runs): `forwardAll, 500 agents, defaults` 110 to 881 ops/s (+703%, margin +-13%); `forwardAll, real inputs`
+  102 to 824 ops/s (+706%, +-17%); hidden sizes 16 to 64 gain 4.6 to 12 times; `poolRays`, `hebbianStep` alone and the
+  evolution functions unchanged (they still run in JS when called directly).
+- An alternating A/B of two identical 500-agent worlds in one Node process (12 rounds of 250 ticks, world hashes equal at
+  the end): brain phase median 3.10 to 1.02 ms per tick (3.15 times, paired min 2.66), whole step 7.56 to 5.46 ms (1.38
+  times). The micro bench's JS figure (about 9 ms per call) is slower than the in-step one, so its ratio overstates the
+  gain; read 3 times as the step-level figure.
+- Identity: outputs, hidden and fastOut byte-equal every tick for 200 ticks (default, rewarded Hebbian, 13 hidden units)
+  and 2000 ticks (default); the three 5000-tick golden cases reach their pinned hashes with the switch on;
+  `test/sim/golden.json` unchanged.
+
+Toolchain facts found on the way:
+
+- `f64::floor` is not in `core` for a `no_std` crate on Rust 1.99; the kernel uses the SIMD `f64x2_floor` on a splat,
+  which is IEEE round-toward-negative and so equals `Math.floor`.
+- `wasm-opt` 120 rejects rustc's output unless told the features rustc's generic wasm32 CPU emits
+  (`--enable-nontrapping-float-to-int --enable-bulk-memory --enable-sign-ext --enable-mutable-globals --enable-multivalue
+--enable-reference-types`, plus `--enable-simd`).
+- `cargo build --config "target.<triple>.rustflags=[...]"` appends to the rustflags in `.cargo/config.toml` rather than
+  replacing them, so the build script adds `--remap-path-prefix` without losing `--import-memory`; a build from another
+  checkout path gives the same bytes.
+
+### 2026-11-07 - Trainer smoke run and ticks per second (training T8 to T11)
+
+A short run, not the Phase 2 done run (that needs about 40 x 32 x 60000 ticks): `npm run train -- --generations 6
+--episodes 8 --ticks 30000 --offer-from 5000 --checkpoint-every 3 --curriculum evals/train-curriculum.json --workers 8`,
+all six generations in the nursery stage. It took 3 minutes on 8 workers and the archive grew from nothing to coverage 0.106
+(qd 628). Checkpoint at generation 6: mean drill edge +0.23, `eval.food_energy_per_1k` 289 (185 at generation 3),
+`eval.catch_rate` 0.38. Exported with `train:export`, the five champions drilled as:
+
+| Subject               | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| --------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| smoke-forager-cell5   | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | -            | -            | 0.00 (+0.00)   | 0.00 (+0.00) | +0.32     |
+| smoke-predator-cell25 | -            | -            | -            | 0.00 (+0.00) | 0.97 (-0.03) | -              | -            | -0.02     |
+| reference memoryless  | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | 0.31 (+0.31) | 0.28 (-0.72) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.18     |
+
+- Six small generations already beat the random brain on both food drills by +0.82 to +0.90 and match the memoryless
+  reference there; the predator wins none of `prey-ahead` (it never kills in the drill). `two-foods`, the hunter and refuge
+  drills are not learned yet. The `defender`, `reproducer` and `scout` champions have no drill (the drills only stage
+  foragers and predators).
+- Default world, 100 agents: about 2 ms per tick per worker (3000 ticks in 5.5 s), so a 60000-tick episode is about 2
+  minutes and one 32-episode generation about 8 minutes on 8 workers. Worker use per generation was only 25 to 41% in the
+  smoke run: 8 episodes on 8 workers wait for the slowest world (nursery worlds go extinct and finish early). The doc's 32
+  episodes keep the pool fuller.
+- `evals/predator-world.json` no longer passes `createConfig` (`hashCellSize` 140 is below the largest radius 532.5 that
+  `maxEnergy` 25000 gives); the hunt stage uses `evals/train-hunt-world.json`.
+- The nursery (`evals/micro-world.json`) has no floor (`minAgents` 0): random brains go extinct before tick 12000 on some
+  seeds, which ends those episodes early and offers few genomes. If the full run shows the nursery barely seeding the
+  archive, a `minAgents` above 0 in the stage is the first thing to try.
+- `npm run league` on a trained champion plays no games until the league has admitted champions, and prints Elo 1500.
+
 ### 2026-11-07 - Speed pass 3 (T71, T72): one gather fix kept, the rest inside the margin
 
 Profile of the 500-agent step (`node --cpu-prof`, self time): `hiddenStep` 16 percent, `hebbianStep` 14, `castRays` 10,
