@@ -8,8 +8,6 @@ import { makeSnapshot } from './helpers/snapshots.js';
 // measurements.
 const seen = vi.hoisted(() => ({
     circles: /** @type {object[]} */ ([]),
-    rings: /** @type {object[]} */ ([]),
-    bursts: /** @type {object[]} */ ([]),
     fx: /** @type {object[]} */ ([]),
 }));
 
@@ -20,26 +18,6 @@ vi.mock('../../js/app/renderer/line-buffer.js', async (importOriginal) => {
         pushCircle: (/** @type {any} */ buffer, /** @type {object} */ circle) => {
             seen.circles.push(circle);
             real.pushCircle(buffer, circle);
-        },
-    };
-});
-vi.mock('../../js/app/renderer/rings.js', async (importOriginal) => {
-    const real = /** @type {any} */ (await importOriginal());
-    return {
-        ...real,
-        spawnRing: (/** @type {any} */ pool, /** @type {object} */ ring) => {
-            seen.rings.push(ring);
-            real.spawnRing(pool, ring);
-        },
-    };
-});
-vi.mock('../../js/app/renderer/sparks.js', async (importOriginal) => {
-    const real = /** @type {any} */ (await importOriginal());
-    return {
-        ...real,
-        spawnBurst: (/** @type {any} */ pool, /** @type {object} */ burst) => {
-            seen.bursts.push(burst);
-            return real.spawnBurst(pool, burst);
         },
     };
 });
@@ -57,8 +35,6 @@ vi.mock('../../js/app/renderer/fx-pool.js', async (importOriginal) => {
 
 const { createOverlays } = await import('../../js/app/renderer/overlays.js');
 const { createEffectsPlayer, playEffects } = await import('../../js/app/renderer/effects-player.js');
-const { createRingPool } = await import('../../js/app/renderer/rings.js');
-const { createSparkPool } = await import('../../js/app/renderer/sparks.js');
 
 const list = [
     { slot: 0, genomeId: 1, lineageId: 5, x: 10, y: 10, angle: 0, size: 20, spec: 0 },
@@ -86,14 +62,12 @@ describe('per-frame scratch reuse', () => {
         layer.dispose();
     });
 
-    it('the effects player reuses one burst, one ring and one effect-pool record for every effect', () => {
+    it('the effects player reuses one effect-pool record for every effect', () => {
         const layout = {
             effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6 },
             deathCauses: { EATEN: 1 },
         };
         const player = createEffectsPlayer({
-            rings: createRingPool(),
-            sparks: createSparkPool(1),
             layout,
             info: { callRadius: 300, callTicks: 40 },
         });
@@ -106,15 +80,9 @@ describe('per-frame scratch reuse', () => {
         });
         const queue = { u32, f32: new Float32Array(buffer), words: 8, start: 0, count: kinds.length, dropped: 0 };
         const agents = createInterpolated(8);
-        seen.rings.length = 0;
-        seen.bursts.length = 0;
         seen.fx.length = 0;
         expect(playEffects(player, queue, agents, 1)).toBe(kinds.length);
-        expect(seen.rings.length).toBe(6);
-        expect(seen.bursts.length).toBe(2);
         expect(seen.fx.length).toBeGreaterThan(10);
-        expect(new Set(seen.rings).size).toBe(1);
-        expect(new Set(seen.bursts).size).toBe(1);
         expect(new Set(seen.fx).size).toBe(1);
     });
 });

@@ -89,7 +89,7 @@ export const FX_CURVES = Object.freeze([
     curve('orbit', ['ORBIT', 'orbit', 'sineInOut'], [0.8, 1, 1, 0.6], [1.2, 1, 0.6, 0]),
     curve('sparkle', ['SPARKLE', 'rise', 'quadOut'], [0.4, 1, 0.8, 0.3], [1.6, 1.2, 0.6, 0]),
     curve('fission', ['FISSION', 'fixed', 'quadOut'], [1, 1, 1, 0.9], [1.2, 1, 0.6, 0]),
-    curve('arrive', ['MOTE', 'fall', 'quadIn'], [0.6, 0.8, 1, 0.6], [0.2, 0.8, 1, 0]),
+    curve('arrive', ['MOTE', 'in', 'quadIn'], [0.6, 0.8, 1, 0.6], [0.2, 0.8, 1, 0]),
     curve('sprout', ['SPROUT', 'fixed', 'backOut'], [0.2, 0.8, 1, 1], [0.8, 1, 0.8, 0]),
     curve('dust', ['PUFF', 'out', 'quadOut'], [0.5, 0.9, 1.1, 1.2], [0.7, 0.5, 0.3, 0]),
     curve('flake', ['SPARKLE', 'fall', 'linear'], [1, 1, 1, 1], [0, 0.6, 0.6, 0]),

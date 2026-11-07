@@ -28,6 +28,7 @@ import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
+import { createFxDev, fxAfterDraw, fxPerf, fxSink, readFxParams } from './fx-dev.js';
 import { createWakeLock } from './wake-lock.js';
 
 const PERF_FRAMES = 32768;
@@ -102,6 +103,7 @@ function observeSize(container, onSize) {
  * @property {ReturnType<typeof createSupervisor>} supervisor the supervised worker
  * @property {(action: string) => void} perform runs a shortcut action
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
+ * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
  */
 
 /**
@@ -135,7 +137,7 @@ function onReady(app, message) {
                 refs: app.deps.refs,
                 getReady: () => app.ready,
                 slots: app.slots,
-                sink: (effect) => app.iface.onEffect(effect),
+                sink: (effect) => fxSink(app, effect),
             }),
             onRestored: () => attachGpuTimer(app),
         });
@@ -296,6 +298,12 @@ function createApp(container) {
     /** @type {App} */
     const app = /** @type {any} */ ({ container, params, overrides, state, camera, stats, ready: null, minPx: [] });
     app.size = { width: 1, height: 1 };
+    app.fxDev = createFxDev({
+        params: readFxParams(location.search),
+        doc: document,
+        parent: container,
+        target: window,
+    });
     app.slots = createFamilySlots();
     app.deps = {
         getClient: () => app.supervisor.client(),
@@ -308,7 +316,7 @@ function createApp(container) {
         gpuTimer: null,
         clock: () => performance.now(),
         hidden: () => document.hidden,
-        afterDraw: (/** @type {{tick: number}} */ frame) => app.iface.afterDraw(frame),
+        afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
@@ -347,6 +355,7 @@ function readPerf(app) {
         gpu: gpuCounts(app.deps.scene?.renderer.info),
         gpuSamples: app.deps.gpuTimer?.samples() ?? null,
         heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
+        ...fxPerf(app),
     };
 }
 
