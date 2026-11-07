@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
-import { createFxDemo, DEMO_PERIOD, DEMO_ZOOM, demoGrid, demoRecipes } from '../../../js/app/renderer/fx-demo.js';
+import { createFxDemo, DEMO_PERIOD, demoGrid, demoRecipes, demoZoom } from '../../../js/app/renderer/fx-demo.js';
 import { FX_RECIPES } from '../../../js/app/renderer/fx-recipes.js';
 
 /** @returns {{player: any, camera: any, client: any}} a context */
@@ -34,6 +34,12 @@ describe('demoRecipes and demoGrid', () => {
         expect(demoRecipes('feeding').map(([name]) => name)).not.toContain('eaten');
     });
 
+    it('zooms so the whole grid fits the canvas, never past the most', () => {
+        const z = demoZoom(45, { width: 1280, height: 720 });
+        expect(z * 150 * 9.5).toBeLessThanOrEqual(1280 + 1e-9);
+        expect(demoZoom(1, { width: 4000, height: 4000 })).toBe(2);
+    });
+
     it('centres the grid on the given point', () => {
         const cells = demoGrid(10, { x: 100, y: 100 });
         const mx = cells.reduce((a, c) => a + c.x, 0) / 10;
@@ -54,7 +60,7 @@ describe('createFxDemo', () => {
         const frame = /** @type {any} */ ({ tick: 100, dtMs: 16 });
         demo.update(frame, c);
         expect(c.client.paused).toBe(true);
-        expect(c.camera.zoom).toBe(DEMO_ZOOM);
+        expect(c.camera.zoom).toBeCloseTo(demoZoom(demo.cells.length, c.camera.canvas));
         expect(demo.cells).toHaveLength(demoRecipes('combat').length);
         const spawned = c.player.fx.pool.spawned;
         expect(spawned).toBeGreaterThan(demo.cells.length);

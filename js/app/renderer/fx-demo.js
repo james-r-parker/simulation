@@ -11,7 +11,7 @@ import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** The demo replays every recipe this often, in ticks of its own clock. */
 export const DEMO_PERIOD = 90;
-/** A demo cell's side in world units, and the zoom the demo frames it at (device px per unit). */
+/** A demo cell's side in world units, and the most the demo zooms in (device px per unit). */
 export const DEMO_CELL = 150;
 export const DEMO_ZOOM = 2;
 /** Recipes the stress mode plays per second. */
@@ -28,12 +28,30 @@ export function demoRecipes(family) {
 
 /**
  * @param {number} n cells
+ * @returns {{cols: number, rows: number}} the grid's columns and rows, wider than tall
+ */
+export function demoShape(n) {
+    const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.8)));
+    return { cols, rows: Math.ceil(n / cols) };
+}
+
+/**
+ * @param {number} n cells
+ * @param {{width: number, height: number}} canvas the canvas in device px
+ * @returns {number} the zoom that fits the whole grid in the canvas, at most `DEMO_ZOOM`
+ */
+export function demoZoom(n, canvas) {
+    const { cols, rows } = demoShape(n);
+    return Math.min(DEMO_ZOOM, canvas.width / ((cols + 0.5) * DEMO_CELL), canvas.height / ((rows + 0.5) * DEMO_CELL));
+}
+
+/**
+ * @param {number} n cells
  * @param {{x: number, y: number}} centre the grid's centre in world units
  * @returns {{x: number, y: number}[]} each cell's centre, row by row
  */
 export function demoGrid(n, centre) {
-    const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.8)));
-    const rows = Math.ceil(n / cols);
+    const { cols, rows } = demoShape(n);
     return Array.from({ length: n }, (_, k) => ({
         x: centre.x + ((k % cols) - (cols - 1) / 2) * DEMO_CELL,
         y: centre.y - (Math.floor(k / cols) - (rows - 1) / 2) * DEMO_CELL,
@@ -120,7 +138,7 @@ function demoStep(s, frame, { player, camera, client }) {
         s.started = true;
         client?.pause?.();
         const centre = { x: camera.world.width / 2, y: camera.world.height / 2 };
-        moveCameraTo(camera, { ...centre, zoom: DEMO_ZOOM }, true);
+        moveCameraTo(camera, { ...centre, zoom: demoZoom(s.recipes.length, camera.canvas) }, true);
         demoGrid(s.recipes.length, centre).forEach((c, k) => s.cells.push({ name: s.recipes[k][0], x: c.x, y: c.y }));
     }
     if (s.clock - s.lastSpawn >= DEMO_PERIOD) {

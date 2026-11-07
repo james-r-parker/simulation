@@ -72,7 +72,7 @@ test('every effect recipe brightens its demo cell against the same frame with th
                         n += 1;
                     }
                 }
-                return n === 0 ? 0 : sum / n;
+                return n === 0 ? Number.NaN : sum / n;
             };
             return cells.map((/** @type {any} */ c) => ({ name: c.name, gain: mean(pa, c) - mean(pb, c) }));
         },

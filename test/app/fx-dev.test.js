@@ -51,6 +51,6 @@ describe('createFxDev', () => {
         expect(parent.children).toHaveLength(1);
         dev.onEffect({ kind: 3, x: 0, y: 0, c: 0, d: 0 }, 1000);
         expect(target.__fxdemo.cells.length).toBeGreaterThan(0);
-        expect(target.__fxdemo.cells[0].size).toBeCloseTo(300);
+        expect(target.__fxdemo.cells[0].size).toBeCloseTo(150 * camera.zoom);
     });
 });
