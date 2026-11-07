@@ -6,9 +6,9 @@
 //! as the JS store into an `Int32Array` did. The entries of a cell keep the insertion order, so every reader of the hash
 //! (the ray march, the contact pass, feeding, mating, calls, disease) sees the cells exactly as before.
 
-use core::arch::wasm32::{
-    f64x2, f64x2_add, f64x2_div, f64x2_extract_lane, f64x2_floor, f64x2_splat, f64x2_sub, v128, v128_any_true,
-};
+use core::arch::wasm32::{v128, v128_any_true};
+
+use crate::det_math::floor;
 
 /// The parameter block JS writes (`js/sim/wasm-hash.js`, `writeHashParams`): byte offsets of the arrays, then sizes.
 #[repr(C)]
@@ -98,14 +98,11 @@ impl Grid {
     /// `id` is below `maxAgents + maxFood`, so its four range words and every cell it counts are inside the arrays.
     #[inline(always)]
     unsafe fn count(&self, id: usize, x: f64, y: f64, r: f64) {
-        // `cell_of` of the four box edges: the two minima and the two maxima each as one `f64x2` division and floor.
-        let (centre, rr, size) = (f64x2(x, y), f64x2_splat(r), f64x2_splat(self.cell_size));
-        let lo = f64x2_floor(f64x2_div(f64x2_sub(centre, rr), size));
-        let hi = f64x2_floor(f64x2_div(f64x2_add(centre, rr), size));
-        let c0 = clamp_cell(f64x2_extract_lane::<0>(lo), self.last_col);
-        let r0 = clamp_cell(f64x2_extract_lane::<1>(lo), self.last_row);
-        let c1 = clamp_cell(f64x2_extract_lane::<0>(hi), self.last_col);
-        let r1 = clamp_cell(f64x2_extract_lane::<1>(hi), self.last_row);
+        let cs = self.cell_size;
+        let c0 = clamp_cell(floor((x - r) / cs), self.last_col);
+        let r0 = clamp_cell(floor((y - r) / cs), self.last_row);
+        let c1 = clamp_cell(floor((x + r) / cs), self.last_col);
+        let r1 = clamp_cell(floor((y + r) / cs), self.last_row);
         // SAFETY: as documented above.
         unsafe {
             let range = self.ranges.add(4 * id);
