@@ -8,7 +8,7 @@ import { LOCAL_STRIDE } from '../../js/sim/ray-gather.js';
 import { castRays, castRaysJs } from '../../js/sim/ray-march.js';
 import { syncSense } from '../../js/sim/wasm-sense.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
-import { SENSE_CASES, runSenseCase } from './helpers/sense-reference.js';
+import { SENSE_CASES, readSenseReference, runSenseCase } from './helpers/sense-reference.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
@@ -87,6 +87,20 @@ describe('the WASM sense kernel against the JS ray march', () => {
                 if (c.mustConceal) {
                     expect(concealed).toBeGreaterThan(0);
                 }
+            },
+            TIMEOUT_MS,
+        );
+    }
+});
+
+// The recorded reference (T11): the JS ray march's digests, which the kernel must reproduce once the JS is gone.
+describe('the WASM sense kernel against the recorded JS reference', () => {
+    const reference = readSenseReference();
+    for (const c of SENSE_CASES) {
+        it(
+            `reproduces the digest after every tick (${c.name}, ${c.ticks} ticks)`,
+            () => {
+                expect(runSenseCase(c, castRays)).toEqual(reference.stepped[c.name]);
             },
             TIMEOUT_MS,
         );
