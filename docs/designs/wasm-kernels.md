@@ -50,6 +50,27 @@ imports it as a `?url` asset, so the browser, the worker pool, the eval workers 
 - CI runs the differential test against the committed binary, so a stale or hand-edited binary fails a test as well as the hash check.
 - `npm ci` and `npm run build` do not build the binary; an agent runs `scripts/build-wasm.sh` when `wasm/src` changes.
 
+### Benchmarking the kernels
+
+Each kernel export has a microbenchmark in `bench/micro/wasm-*.bench.js` (area `wasm`), timed raw, without the JS wrapper, so a
+change in the Rust shows undiluted: `wasm-brain` calls `brain_forward` on a 500-agent micro world (real inputs, Hebbian on, all
+inputs 0), `wasm-math` the batch `tanh_into` and the scalar det-math exports on 1024 seeded values; each sense kernel adds its own
+file when it lands. `bench/micro/wasm-fixture.js` attaches a copy of the micro world to its own arena and reads the kernel binary
+of the tree it runs in.
+
+The loop for a micro change:
+
+1. Edit `wasm/src`.
+2. `scripts/build-wasm.sh` rebuilds `wasm/blob-kernels.wasm` (uncommitted).
+3. `flock /tmp/claude-1000/cpu.lock npm run bench:micro -- --area wasm --compare HEAD`. The ref tree is a checkout of `HEAD`, so it
+   runs the committed binary, and this tree runs the rebuilt one; the runs alternate and the table prints each export's change
+   against its margin (`same`, `faster`, `slower`). `--runs 5` on a quiet machine; with `--runs 1` the margin has no run-to-run
+   spread and the scalar exports show false verdicts of a few percent.
+4. A change that is `same` everywhere is not a gain; revert it. A gain is committed with the rebuilt binary and the table.
+
+For the whole phase rather than the export, `npm run bench:parts -- --area brain --compare <ref>` with `BENCH_WASM=1` (until T7;
+after it every world runs the kernel) times `forwardAll` with the wrapper.
+
 ### Memory
 
 `js/sim/wasm-arena.js` (`createArena`) instantiates the module with a fixed memory sized from `maxAgents`, the brain layout
