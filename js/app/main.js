@@ -328,6 +328,7 @@ function createApp(container) {
         now: () => performance.now(),
         chooseSeed: () => chooseSeed(null),
         config: overrides,
+        lastMoments: () => app.deps.refs.player?.moments ?? null,
         leaderAgent: () =>
             largestOfLineage(app.loop.agents(), app.supervisor.client()?.stats?.lineages?.top?.[0]?.id ?? -1),
         ui: app.iface.hooks,

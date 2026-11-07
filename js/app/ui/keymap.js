@@ -38,6 +38,7 @@ export const KEYMAP = Object.freeze([
     { action: 'screenshot', codes: ['KeyP'], shift: false, title: 'Screenshot with a caption plate' },
     { action: 'recordClip', codes: ['KeyP'], shift: true, title: 'Record a 15 s clip' },
     { action: 'home', codes: ['Home'], title: 'Reset the camera' },
+    { action: 'focusLast', codes: ['KeyL'], title: 'Go to the last notable moment' },
     { action: 'escape', codes: ['Escape'], title: 'Close a drawer, else clear the selection' },
     { action: 'panLeft', codes: ['ArrowLeft'], title: 'Pan left' },
     { action: 'panRight', codes: ['ArrowRight'], title: 'Pan right' },

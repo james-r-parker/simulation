@@ -85,3 +85,9 @@ describe('shortcutLabel', () => {
         expect(shortcutLabel({ action: 'x', codes: ['Digit1'], title: '' })).toBe('1');
     });
 });
+
+describe('the focusLast key', () => {
+    it('L goes to the last notable moment', () => {
+        expect(actionForKey({ code: 'KeyL' })).toBe('focusLast');
+    });
+});

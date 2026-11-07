@@ -10,6 +10,7 @@ import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createFxBudget } from './renderer/fx-budget.js';
 import { createFxLayer, createFxPool } from './renderer/fx-pool.js';
 import { createFxPlayer } from './renderer/fx-recipes.js';
+import { createFxPointersLayer } from './renderer/fx-pointers.js';
 import { createGroundLayer } from './renderer/ground-layer.js';
 import { createFinishLayer } from './renderer/finish-layer.js';
 import { createHazeLayer } from './renderer/haze-layer.js';
@@ -94,6 +95,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createVisionLayer({ info }),
             smoke,
             createFxLayer({ pool: fx.pool, budget: fx.budget }),
+            createFxPointersLayer({ moments: player.moments }),
             createChaseLayer({ info, pursuits: player.flee.pursuits }),
             createMateThreadLayer({ pool: threads }),
             createOverlays({ info }),
