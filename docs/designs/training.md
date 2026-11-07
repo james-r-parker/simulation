@@ -100,9 +100,33 @@ Goal: find a curriculum under which the trained predator kills in the `prey-ahea
 | a   | `evals/train-curriculum-iter2-a.json` | hunt stage 40 generations (nursery 20), 60 in all                                         |
 | b   | `evals/train-curriculum-iter2-b.json` | hunt world 1600x1067, 60 agents start, cap 100, 50 food (prey density 2.5x, 20 hunt gens) |
 | c   | `evals/train-curriculum-iter2-c.json` | nursery `minAgents` 20 (`evals/train-nursery-floor.json`), hunt as T12                    |
-| d   | chosen after a to c                   | the best combination                                                                      |
+| d   | `evals/train-curriculum-iter2-d.json` | nursery floor, small dense hunt arena, 40 hunt generations (60 in all)                    |
 
 **Prediction (written before the runs).** The predator edge on `prey-ahead` is above 0 in b (about +0.1 to +0.2, a coin flip) because density multiplies chance sightings and chases, which is what the hunt stage lacked (`catch_rate` fell as the hunters sparsed the prey in a roomy arena). Arm a alone stays at 0.00 (about 70 percent): more generations of the same sparse world select on rare kills, and T12's `catch_rate` fell with the stage, so more of it drifts further. Arm c is mostly neutral on predators (the floor only helps the nursery forager) and may lift `food-ahead` more than `prey-ahead`. The reflex `approach-prey` and `bite-discrimination` pass shares should line up with a positive edge: a champion with edge 0 fails approach-prey (it never closes), a champion with edge above 0 passes it above 0.5. Unsure about bite-discrimination: abstaining passes half of it by default.
+
+**Results, arms a to c** (`npm run train:export`, `npm run drill`, `npm run reflex` on each run's five champions, 32 trials; files under `/tmp/claude-1000/eval-out/train-iter2/<arm>/`). Arms a and b run the same nursery, so their archives are identical to generation 20 and the forager champion is the same file in both (and in T12): only the hunt stage differs.
+
+| Arm | Gens (nursery / hunt) | Predator `prey-ahead` | Predator `prey-too-big` | Forager mean drill edge | Predator reflex `approach-prey` | Predator reflex `bite-discrimination` |
+| --- | --------------------- | --------------------- | ----------------------- | ----------------------- | ------------------------------- | ------------------------------------- |
+| T12 | 20 / 20               | 0.00 (+0.00)          | 1.00 (+0.01)            | +0.38                   | not run                         | not run                               |
+| a   | 20 / 40               | 0.00 (+0.00)          | 1.00 (+0.01)            | +0.38                   | 1.00 (+1.00)                    | 0.00 (-0.11)                          |
+| b   | 20 / 20, small arena  | 0.00 (+0.00)          | 1.00 (+0.01)            | +0.38                   | 1.00 (+1.00)                    | 0.00 (-0.11)                          |
+| c   | 20 floor / 20         | 0.00 (+0.00)          | 1.00 (+0.01)            | +0.30                   | 0.56 (+0.56)                    | 0.00 (-0.11)                          |
+
+`catch_rate` and `escape_rate` from the curve (checkpoint evals on the stage's own world):
+
+| Arm | Last nursery checkpoint   | Hunt stage, first to last checkpoint                          |
+| --- | ------------------------- | ------------------------------------------------------------- |
+| a   | catch 0.409, escape 0.327 | catch 0.341 (gen 25) to 0.185 (gen 60), escape 0.458 to 0.385 |
+| b   | catch 0.409, escape 0.327 | catch 0.551 (gen 25) to 0.645 (gen 40), escape 0.029 to 0.076 |
+| c   | catch 1.121, escape 0.099 | catch 0.469 (gen 25) to 0.404 (gen 40), escape 0.041 to 0.051 |
+
+What the three arms say:
+
+- **No arm teaches a kill.** `prey-ahead` is 0.00 in all three, while the memoryless reference scores 0.31. More generations (a) make it worse on the world's own `catch_rate` (0.34 to 0.19, still falling), as predicted.
+- **Dense prey (b) is the only arm that lifts `catch_rate` in the hunt stage** (0.41 to 0.65, escapes down to 0.08), so the prediction that density helps the world metric holds; it did not move the drill, so the prediction of a positive `prey-ahead` edge was wrong. A caution from the hunter-metric notes: `catch_rate` is a speed and counts rotted carcasses, so it is not a kill count.
+- **The reflex cases locate the gap.** `approach-prey` passes at 1.00 for the a and b predators and 0.56 for c, so the closing reflex is in the brain, and `prey-ahead` is 0.00 anyway. `bite-discrimination` is 0.00 for every predator, below the random brain's 0.11 and so below abstaining: the predators bite when they should not or never bite when they should. A prey-ahead edge does not line up with `approach-prey` (1.00 with edge 0.00); the missing piece is the bite step, and the hunt world never selects on it.
+- **A floor in the nursery (c) is not helpful.** It lifts nursery `catch_rate` above 1.0 (the floor keeps adding fresh prey) but the forager drill edge falls to +0.30 (`hunter-closing` 0.00) and the predator's approach reflex weakens to 0.56.
 
 ### Phase 3 - Champions in the live world
 
