@@ -67,8 +67,17 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.ring, count: 1, life: 36, size: 3.2, color: 'huntRing', delay: 6, minPx: 10 },
     ]),
     starved: combat([
-        { curve: C.ghostSink, count: 1, life: 60, size: 1.1, reach: 1.2, color: 'coolWhite', gain: 0.35 },
-        { curve: C.moteFall, count: 8, life: 60, size: 0.2, reach: 2, spread: 'random', color: 'coolWhite', gain: 0.4 },
+        { curve: C.ghostSink, count: 1, life: 60, size: 1.1, reach: 1.2, color: 'coolWhite', gain: 0.55 },
+        {
+            curve: C.moteFall,
+            count: 8,
+            life: 60,
+            size: 0.25,
+            reach: 2,
+            spread: 'random',
+            color: 'coolWhite',
+            gain: 0.7,
+        },
     ]),
     oldAge: combat([
         { curve: C.ghostRise, count: 1, life: 90, size: 1.1, reach: 1.5, color: 'coolWhite', gain: 0.7 },
@@ -110,7 +119,7 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.moteOut, count: 4, life: 24, size: 0.2, reach: 1.4, spread: 'ring' },
     ]),
     birthArrival: court(RANK.birth, [
-        { curve: C.arrive, count: 8, life: 40, size: 0.25, reach: 5, spread: 'heading', color: 'arrival' },
+        { curve: C.arrive, count: 8, life: 40, size: 0.3, reach: 3, spread: 'heading', color: 'arrival', gain: 1.4 },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'arrival', delay: 30, gain: 0.7, minPx: 8 },
     ]),
     alarm: recipe(FAMILY.calls, RANK.call, [
