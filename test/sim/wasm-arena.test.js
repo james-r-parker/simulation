@@ -21,11 +21,15 @@ const kernels = embeddedKernels();
 
 /**
  * @param {Record<string, any>} world an attached world
- * @returns {Record<string, any>} a shallow copy without an arena of its own yet, with its own agent rows
+ * @returns {Record<string, any>} a shallow copy without an arena of its own yet, with its own agent and food rows
  */
 function detachedCopy(world) {
     /** @type {Record<string, any>} */
-    const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
+    const copy = {
+        ...world,
+        agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })),
+        foodRows: world.foodRows.map((/** @type {any} */ row) => ({ ...row })),
+    };
     delete copy.wasm;
     return copy;
 }

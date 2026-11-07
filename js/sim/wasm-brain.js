@@ -4,7 +4,6 @@
 
 import {
     EXTRA_INPUTS,
-    FOOD_HUE_VALUES,
     GENE_OUTPUTS,
     HIT_STRIDE,
     OUTPUT_INDEX,
@@ -87,9 +86,6 @@ function paramValues(config, layout) {
  * @returns {void}
  */
 export function writeBrainParams(arena, config, layout) {
-    if (FOOD_HUE_VALUES !== 2) {
-        throw new Error(`writeBrainParams: the kernel pools 2 food hues, the layout has ${FOOD_HUE_VALUES}`);
-    }
     if (layout.geneOutputs + 1 !== layout.outputCount) {
         throw new Error(
             `writeBrainParams: the kernel expects one gene-less output (SPLIT), the layout has ${layout.geneOutputs} genes for ${layout.outputCount} outputs`,

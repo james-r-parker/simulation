@@ -36,6 +36,23 @@ export function decodeBase64(text) {
 }
 
 /**
+ * Checks what a probe instance reports.
+ * @param {number} abi the binary's `abi_version()`
+ * @param {unknown} heapBase the binary's `__heap_base` value
+ * @returns {number} the heap base
+ * @throws {Error} when the ABI is not `KERNEL_ABI` or the heap base is not an integer
+ */
+export function checkProbe(abi, heapBase) {
+    if (abi !== KERNEL_ABI) {
+        throw new Error(`kernel ABI ${abi}, expected ${KERNEL_ABI}`);
+    }
+    if (!Number.isInteger(heapBase)) {
+        throw new Error('no integer __heap_base');
+    }
+    return /** @type {number} */ (heapBase);
+}
+
+/**
  * Instantiates the kernels once on a throwaway memory to check the ABI and read where their own data ends.
  * @param {WebAssembly.Module} module the compiled kernels
  * @returns {number} the kernels' `__heap_base`
@@ -44,14 +61,7 @@ function probeHeapBase(module) {
     const memory = new WebAssembly.Memory({ initial: PROBE_PAGES });
     const probe = new WebAssembly.Instance(module, { env: { memory } });
     const abi = /** @type {() => number} */ (probe.exports.abi_version)();
-    if (abi !== KERNEL_ABI) {
-        throw new Error(`kernel ABI ${abi}, expected ${KERNEL_ABI}`);
-    }
-    const heapBase = /** @type {WebAssembly.Global} */ (probe.exports.__heap_base).value;
-    if (!Number.isInteger(heapBase)) {
-        throw new Error('no integer __heap_base');
-    }
-    return heapBase;
+    return checkProbe(abi, /** @type {WebAssembly.Global} */ (probe.exports.__heap_base).value);
 }
 
 /**

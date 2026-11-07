@@ -161,7 +161,7 @@ function rowField(world, fields, array) {
 function repointRows(world, arena) {
     const n = world.config.maxAgents;
     const fields = new Map(WORLD_FIELDS.map((name) => [world[name], name]));
-    for (const row of [...world.agentRows, ...(world.foodRows ?? [])]) {
+    for (const row of [...world.agentRows, ...world.foodRows]) {
         const name = rowField(world, fields, row.array);
         if (name === 'hidden') {
             row.array = arena.views.hidden.subarray(0, n * world.layout.hidden);
@@ -193,8 +193,8 @@ function refuseAttach(world, midRun) {
 
 /**
  * Moves the world's hot arrays into a new arena, sized for this world, and sets `world.wasm`. `allocateWorld` calls it
- * for every world; a copy of a world that wants its own arena (its `wasm` deleted, its own `agentRows` entries) calls
- * it again with `midRun`. Fails loudly: there is no JS kernel to fall back to.
+ * for every world; a copy of a world that wants its own arena (its `wasm` deleted, its own `agentRows` and `foodRows`
+ * entries) calls it again with `midRun`. Fails loudly: there is no JS kernel to fall back to.
  * @param {Record<string, any>} world a world from `allocateWorld`, or such a copy
  * @param {import('./wasm-loader.js').Kernels} [kernels] the compiled kernels (the embedded ones by default)
  * @param {{ midRun?: boolean }} [options] whether a world past tick 0 may be attached

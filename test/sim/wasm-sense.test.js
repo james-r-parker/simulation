@@ -6,8 +6,10 @@ import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { COVER_TOTALS } from '../../js/sim/cover.js';
 import { LOCAL_STRIDE } from '../../js/sim/ray-gather.js';
 import { castRays, castRaysJs } from '../../js/sim/ray-march.js';
+import { syncSense } from '../../js/sim/wasm-sense.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { SENSE_CASES, runSenseCase } from './helpers/sense-reference.js';
+import { smallWorld } from './helpers/small-world.js';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
 const STAMP = 3;
@@ -41,6 +43,18 @@ function snapshot(world, slot, count) {
         concealed: world.coverTotals[COVER_TOTALS.CONCEALED_HITS],
     };
 }
+
+describe('syncSense', () => {
+    it('refuses a hash with more cells or entries than the arena mirror holds', () => {
+        const world = smallWorld();
+        const { hash } = world;
+        expect(() => syncSense(world, { ...hash, rows: hash.rows + 1 })).toThrow(/overflows the mirror/);
+        expect(() => syncSense(world, { ...hash, entryCount: world.wasm.views.entries.length + 1 })).toThrow(
+            /overflows the mirror/,
+        );
+        expect(() => syncSense(world, hash)).not.toThrow();
+    });
+});
 
 describe('the WASM sense kernel against the JS ray march', () => {
     for (const c of SENSE_CASES) {
