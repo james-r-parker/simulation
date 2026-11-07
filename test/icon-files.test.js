@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ICON_OUTPUTS, ICO_SIZES, encodeIco, pngSize, readIco } from '../scripts/lib/icon-files.mjs';
+import {
+    ICON_OUTPUTS,
+    ICO_SIZES,
+    encodeIco,
+    jpegSize,
+    pngSize,
+    readIco,
+    variantSvg,
+} from '../scripts/lib/icon-files.mjs';
 
 /**
  * A minimal PNG header: the signature and an IHDR chunk with the given size, then filler bytes.
@@ -36,6 +44,23 @@ describe('pngSize', () => {
         const noIhdr = fakePng(4, 4);
         noIhdr[12] = 0x58;
         expect(() => pngSize(noIhdr)).toThrow('IHDR');
+    });
+});
+
+describe('jpegSize', () => {
+    /** SOI, an APP0 segment of 4 bytes, then a frame marker with height 630 and width 1200. */
+    const jpeg = (frame = 0xc0) =>
+        new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 4, 1, 2, 0xff, frame, 0, 17, 8, 0x02, 0x76, 0x04, 0xb0, 3]);
+
+    it('reads the size from the first start-of-frame marker after other segments', () => {
+        expect(jpegSize(jpeg())).toEqual({ width: 1200, height: 630 });
+        expect(jpegSize(jpeg(0xc2))).toEqual({ width: 1200, height: 630 });
+    });
+
+    it('refuses a non-JPEG and a JPEG with no frame marker', () => {
+        expect(() => jpegSize(new Uint8Array([0x89, 0x50, 0, 0]))).toThrow('Not a JPEG');
+        expect(() => jpegSize(new Uint8Array([0xff]))).toThrow('Not a JPEG');
+        expect(() => jpegSize(jpeg(0xdb))).toThrow('no start-of-frame');
     });
 });
 
@@ -76,6 +101,23 @@ describe('readIco', () => {
         expect(() => readIco(new Uint8Array(4))).toThrow('Not an ICO');
         expect(() => readIco(new Uint8Array([0, 0, 2, 0, 1, 0]))).toThrow('Not an ICO');
         expect(() => readIco(new Uint8Array([0, 0, 1, 0, 2, 0, 16]))).toThrow('truncated');
+    });
+});
+
+describe('variantSvg', () => {
+    const source = '<!-- x --><svg viewBox="0 0 1 1"></svg>';
+
+    it('adds the variant and the size to the root element', () => {
+        expect(variantSvg(source, { variant: 'favicon' })).toBe(
+            '<!-- x --><svg data-variant="favicon" viewBox="0 0 1 1"></svg>',
+        );
+        expect(variantSvg(source, { variant: '', size: 16 })).toBe(
+            '<!-- x --><svg style="width:16px;height:16px;display:block" viewBox="0 0 1 1"></svg>',
+        );
+    });
+
+    it('refuses text with no svg element', () => {
+        expect(() => variantSvg('<p></p>', { variant: '' })).toThrow('no <svg>');
     });
 });
 

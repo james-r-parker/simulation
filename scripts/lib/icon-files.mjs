@@ -11,8 +11,8 @@ export const FAVICON_SVG = 'public/favicon.svg';
 export const FAVICON_ICO = 'public/favicon.ico';
 export const ICO_SIZES = Object.freeze([16, 32, 48]);
 
-/** The share card. */
-export const OG_IMAGE = Object.freeze({ path: 'public/og/og-image.png', width: 1200, height: 630 });
+/** The share card: a JPEG, so it stays under the 300 KB some chat apps allow for a link preview. */
+export const OG_IMAGE = Object.freeze({ path: 'public/og/og-image.jpg', width: 1200, height: 630, quality: 90 });
 
 /**
  * Every square PNG the build writes: its path, side in pixels and the source's `data-variant` (`''` is the full tile).
@@ -57,6 +57,27 @@ export function pngSize(bytes) {
 }
 
 /**
+ * Reads a JPEG's width and height from its first start-of-frame marker.
+ * @param {Uint8Array} bytes The JPEG file.
+ * @returns {{ width: number, height: number }} The pixel size.
+ */
+export function jpegSize(bytes) {
+    if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
+        throw new Error('Not a JPEG file');
+    }
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let at = 2;
+    while (at + 9 <= bytes.length && bytes[at] === 0xff) {
+        const marker = bytes[at + 1];
+        if (marker >= 0xc0 && marker <= 0xc3) {
+            return { width: view.getUint16(at + 7), height: view.getUint16(at + 5) };
+        }
+        at += 2 + view.getUint16(at + 2);
+    }
+    throw new Error('JPEG has no start-of-frame marker');
+}
+
+/**
  * Writes an ICO container holding PNG-compressed square images.
  * @param {{ size: number, png: Uint8Array }[]} images One PNG per size, in the order they are listed.
  * @returns {Uint8Array} The ICO file.
@@ -88,6 +109,24 @@ export function encodeIco(images) {
         offset += png.length;
     });
     return out;
+}
+
+/**
+ * The source SVG drawn as one variant at one size.
+ * @param {string} source The source SVG text.
+ * @param {{ variant: string, size?: number }} options The `data-variant` (`''` for the full tile) and an optional side.
+ * @returns {string} The SVG text.
+ */
+export function variantSvg(source, { variant, size }) {
+    const at = source.indexOf('<svg ');
+    if (at < 0) {
+        throw new Error('Source has no <svg> element');
+    }
+    let attrs = variant ? `data-variant="${variant}" ` : '';
+    if (size !== undefined) {
+        attrs += `style="width:${size}px;height:${size}px;display:block" `;
+    }
+    return `${source.slice(0, at)}<svg ${attrs}${source.slice(at + '<svg '.length)}`;
 }
 
 /**
