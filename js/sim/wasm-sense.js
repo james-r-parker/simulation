@@ -1,6 +1,6 @@
 // The ray march in the WASM kernels (docs/designs/wasm-kernels.md, Phase 2): one `sense_slot` call gathers a casting
-// agent's circles and finds every ray's nearest hit, bit-identical to `gatherNear` and the nearest-hit loops it
-// replaces. The circles' arrays live in the arena (zero copy); the spatial hash's two arrays are copied into an arena
+// agent's circles and finds every ray's nearest hit, bit-identical to the JS gather and nearest-hit loops it
+// replaced (deleted at T11). The circles' arrays live in the arena (zero copy); the spatial hash's two arrays are copied into an arena
 // mirror once per `senseAll` (`syncSense`), since a caller may pass any hash. The hit classes, the mate sighting and the
 // body and scent inputs are rules and stay in JS.
 
