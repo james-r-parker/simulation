@@ -381,7 +381,7 @@ async function measure(subjects, { workers, config, seeds: seedCount, drillTrial
  */
 export function formatStudy(result) {
     const fmt = (/** @type {Relation} */ r) =>
-        `n ${r.n}  rho ${r.rho.toFixed(2)}  [${r.low.toFixed(2)}, ${r.high.toFixed(2)}]  partial ${r.partial.toFixed(2)}  ${r.passes ? 'pass' : 'fail'}`;
+        `n ${r.n}  rho ${r.rho.toFixed(2)}  [${r.low.toFixed(2)}, ${r.high.toFixed(2)}]  partial ${r.partial.toFixed(2)}  ${Number.isNaN(r.low) ? 'underpowered' : r.passes ? 'pass' : 'fail'}`;
     return [
         ...result.pairs.map((p) => `${p.case} vs ${p.drills.join('+')}: ${fmt(p)}`),
         ...result.outcomes.map((o) => `reflex score vs ${o.name}: ${fmt(o)}`),
@@ -399,6 +399,13 @@ export async function runStudy(args, { print = () => {} } = {}) {
     const { subjects, skipped } = collectSubjects(args, createConfig(config));
     for (const line of skipped) {
         print(`skipped ${line}`);
+    }
+    const foragers = subjects.filter((s) => s.spec === 0).length;
+    const predators = subjects.filter((s) => s.spec === 1).length;
+    if (subjects.length < 120 || foragers < 40 || predators < 40) {
+        print(
+            `warning: ${subjects.length} genomes (${foragers} forager, ${predators} predator); the study wants 120 and 40 each`,
+        );
     }
     const rows = await measure(subjects, {
         workers: args.workers,

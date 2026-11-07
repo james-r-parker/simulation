@@ -46,11 +46,12 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (14)
+## In progress (15)
 
 Partly built - the note says which phases are real.
 
 - [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip b... _(validated d8a8561, 2026-10-29)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
+- [Brain reflex tests](brain-reflex-tests.md) - Phase 1 built: the six cases, the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second, 776 times... _(validated 7625625, 2026-11-07)_ _(depends on [training.md](training.md))_
 - [Deployment and community](deployment-and-community.md) - Phase 2 storage back end built on `feat/library-store` (pure `js/library/` modules, `migrations/0001_library.sql`; champion files and the release index live in... _(validated f5c7880, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Fitness and selection](fitness-and-selection.md) - Phases 1 to 3 built: the metric audit and new metrics (E35), the predator fix (E36, E47), in-world merit (off by default), `fitnessV6`, `descriptorV6`, `map-eli... _(validated d8a8561, 2026-10-29)_ _(depends on [world-balance.md](world-balance.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md))_
 - [Mobile view](mobile-view.md) - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path,... _(validated e5ffd3d, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
@@ -65,13 +66,12 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic famili... _(validated 64a66de, 2026-11-02)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (7)
+## Proposed (6)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Alarm calls](alarm-calls.md) - research and diagnosis only; nothing built. Phase 1 adds instruments and a forced-call diagnosis, Phase 2 adds three default-off switches, Phase 3 judges them,... _(validated f5c7880, 2026-11-07)_ _(depends on [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md))_
 - [Brain inspection](brain-inspection.md) - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of train... _(validated 2dd6b77, 2026-11-04)_ _(depends on [training.md](training.md))_
-- [Brain reflex tests](brain-reflex-tests.md) - a third tier under the drills and the sim: brain-only reflex cases, scored in about a millisecond a genome; Phase 1 (cases, batched evaluator, baselines, bench)... _(validated 8cf1ccd, 2026-11-07)_ _(depends on [training.md](training.md))_
 - [Habitat cover](habitat-cover.md) - nothing built; Phase 1 (reach instruments and a 32-seed baseline) is first, Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - hunters improve with age: a probe that measures practice without survivorship, a learnable pursuit skill credited by the meal, and a sensitive period; nothing b... _(validated f5c7880, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
