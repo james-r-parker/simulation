@@ -7,6 +7,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import {
     ALIGN,
     MAX_PAGES,
+    BRAIN_FIELDS,
     WORLD_FIELDS,
     arenaSpecs,
     attachWasm,
@@ -20,11 +21,15 @@ const kernels = embeddedKernels();
 
 /**
  * @param {Record<string, any>} world an attached world
- * @returns {Record<string, any>} a shallow copy without an arena of its own yet, with its own agent rows
+ * @returns {Record<string, any>} a shallow copy without an arena of its own yet, with its own agent and food rows
  */
 function detachedCopy(world) {
     /** @type {Record<string, any>} */
-    const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
+    const copy = {
+        ...world,
+        agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })),
+        foodRows: world.foodRows.map((/** @type {any} */ row) => ({ ...row })),
+    };
     delete copy.wasm;
     return copy;
 }
@@ -42,7 +47,7 @@ describe('arena layout', () => {
         expect(length.pooled).toBe(37 * layout.inputCount);
         expect(length.fastOut).toBe(37 * 5 * layout.geneOutputs);
         expect(length.rayCos).toBe(7);
-        expect(WORLD_FIELDS.every((name) => name in length)).toBe(true);
+        expect(BRAIN_FIELDS.every((name) => name in length)).toBe(true);
     });
 
     it('starts every array on a 16-byte boundary at or after the heap base, with no two overlapping', () => {
@@ -104,6 +109,15 @@ describe('attachWasm', () => {
             expect(copy[name]).toEqual(world[name]);
         }
         expect(hashWorld(copy)).toBe(before);
+    });
+
+    it('re-points the food rows too, so a food slot zeroed by its row clears the arena bytes the kernel reads', () => {
+        const world = smallWorld();
+        const rowArrays = world.foodRows.map((/** @type {any} */ row) => row.array);
+        for (const name of ['foodX', 'foodY', 'foodRadius']) {
+            expect(world[name].buffer).toBe(world.wasm.memory.buffer);
+            expect(rowArrays).toContain(world[name]);
+        }
     });
 
     it('re-points the agent rows, so freeing a slot clears the arena bytes', () => {

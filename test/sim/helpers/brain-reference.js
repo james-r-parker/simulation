@@ -86,9 +86,9 @@ export function randomise(world, seed, { slots, edgy = false, scale = 1 }) {
 
 /** The configs of the per-call cases. */
 const CONFIGS = [
-    { name: 'no learning', over: { hebbianRate: 0, rewardedHebb: false } },
-    { name: 'Hebbian', over: { hebbianRate: 0.05, rewardedHebb: false } },
-    { name: 'rewarded Hebbian', over: { hebbianRate: 0.05, rewardedHebb: true } },
+    { name: 'no learning', over: { hebbianRate: 0 } },
+    { name: 'Hebbian, plain rate', over: { hebbianRate: 0.05, rewardBase: 1, rewardGain: 0 } },
+    { name: 'rewarded Hebbian', over: { hebbianRate: 0.05 } },
 ];
 
 /**
@@ -107,7 +107,7 @@ export function unitCases() {
         }
     }
     for (let seed = 1; seed <= 40; seed++) {
-        const over = { hebbianRate: seed % 2 === 0 ? 0.1 : 0, rewardedHebb: false, brainHidden: 3 + (seed % 9) };
+        const over = { hebbianRate: seed % 2 === 0 ? 0.1 : 0, brainHidden: 3 + (seed % 9) };
         const scale = seed % 4 === 0 ? 40 : 1;
         cases.push({ key: `fuzz, seed ${seed}`, over, seed, slots: [1, 4, 5], edgy: true, scale, calls: 1 });
     }
@@ -136,7 +136,7 @@ const BUSY = golden.shortCases.find((/** @type {any} */ c) => c.name === 'busy')
 /** The stepped cases: seeded worlds stepped `ticks` ticks, the digest taken after every tick. */
 export const STEPPED_CASES = Object.freeze([
     { name: 'default config', overrides: {}, ticks: 200 },
-    { name: 'Hebbian, rewarded', overrides: { ...BUSY, hebbianRate: 0.01, rewardedHebb: true }, ticks: 200 },
+    { name: 'Hebbian, rewarded', overrides: { ...BUSY, hebbianRate: 0.01 }, ticks: 200 },
     { name: 'odd hidden size, no learning', overrides: { ...BUSY, brainHidden: 13, hebbianRate: 0 }, ticks: 200 },
 ]);
 

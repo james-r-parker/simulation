@@ -61,8 +61,6 @@ pub struct Params {
 
 /// `flags` bit: Hebbian learning is on (`hebbianRate > 0`), so outputs read `fastOut` and `hebbianStep` runs.
 const FLAG_LEARN: u32 = 1;
-/// `flags` bit: `rewardedHebb` is on, so the rate is scaled by `reward_scale[slot]` (filled by JS before the call).
-const FLAG_REWARDED: u32 = 2;
 
 /// `status_where`: the non-finite value was a hidden unit's sum, an output's sum, or a slot's learn gene.
 const AT_HIDDEN: i32 = 1;
@@ -394,10 +392,8 @@ unsafe fn hebbian_step(b: &Brain, slot: usize, rate: f64) -> Result<(), Fault> {
         if !learn.is_finite() {
             return Err(Fault(slot, AT_LEARN, learn));
         }
-        let mut eta = rate * det_sigmoid(learn);
-        if p.flags & FLAG_REWARDED != 0 {
-            eta *= *b.reward.add(slot);
-        }
+        // The reward factor `rewardScale` gave this slot (filled by JS before the call): learning is always reward-gated.
+        let eta = rate * det_sigmoid(learn) * *b.reward.add(slot);
         for k in 0..g {
             *b.gout.add(k) = *b.outputs.add(slot * out + *b.gene_index.add(k) as usize) as f64;
         }

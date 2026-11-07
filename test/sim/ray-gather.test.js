@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { HERD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE, gatherNear } from '../../js/sim/ray-gather.js';
+import { HERD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE } from '../../js/sim/ray-gather.js';
+import { senseSlot, syncSense } from '../../js/sim/wasm-sense.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -11,15 +12,15 @@ const VISION = 300;
  * @returns {number[]} the gathered keys, as listed
  */
 function gather(w, me) {
-    const hash = rebuild(w);
+    syncSense(w, rebuild(w));
     w.rayScratch[OX] = w.x[me];
     w.rayScratch[OY] = w.y[me];
     w.rayScratch[RANGE] = VISION;
-    const count = gatherNear(w, hash, me);
+    const count = senseSlot(w, me);
     return Array.from({ length: count }, (_, n) => w.rayLocal[n * LOCAL_STRIDE + 3]);
 }
 
-describe('gatherNear', () => {
+describe('the sense kernel gather', () => {
     it('lists a near agent, food and cloud once each and never the caster', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);

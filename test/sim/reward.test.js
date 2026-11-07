@@ -15,7 +15,7 @@ const FOOD = 100;
  * @returns {{world: any, slot: number}} a world with one agent
  */
 function setup(over = {}) {
-    const world = smallWorld({ rewardedHebb: true, foodEnergy: FOOD, ...over });
+    const world = smallWorld({ foodEnergy: FOOD, ...over });
     return { world, slot: addBlob(world) };
 }
 
@@ -37,10 +37,9 @@ describe('noteReward', () => {
         }
     });
 
-    it('counts every source in every arm, with or without rewardedHebb', () => {
-        const world = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
+    it('counts every source', () => {
+        const world = smallWorld({ foodEnergy: FOOD });
         const slot = addBlob(world);
-        expect(world.rewardTrace).toBeUndefined();
         noteReward(world, slot, REWARD_SOURCE.BITE, 5);
         noteReward(world, slot, REWARD_SOURCE.SCAVENGE, 5);
         noteReward(world, slot, REWARD_SOURCE.SCAVENGE, 5);
@@ -66,12 +65,12 @@ describe('noteReward', () => {
         expect(world.rewardTrace[slot]).toBe(0);
     });
 
-    it('does not move the world hash when rewardedHebb is off', () => {
-        const a = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
-        const b = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
+    it('moves the world hash, since the trace is hashed', () => {
+        const a = smallWorld({ foodEnergy: FOOD });
+        const b = smallWorld({ foodEnergy: FOOD });
         addBlob(a);
         noteReward(b, addBlob(b), REWARD_SOURCE.KILL, 50);
-        expect(hashWorld(b)).toBe(hashWorld(a));
+        expect(hashWorld(b)).not.toBe(hashWorld(a));
     });
 });
 

@@ -6,15 +6,8 @@ import { attachWasm } from '../../js/sim/wasm-arena.js';
 import { loadKernels } from '../../js/sim/wasm-loader.js';
 import { microWorld } from './fixture.js';
 
-/**
- * The compiled kernels of the tree this file runs in. Typed loosely: a ref from before T7 returns `{ ok, module }`
- * and reports a failure in `ok`, the adopted loader returns `{ module, heapBase }` and throws.
- * @type {any}
- */
+/** The compiled kernels of the tree this file runs in (`loadKernels` throws when they do not load). */
 export const KERNELS = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
-if (KERNELS.ok === false) {
-    throw new Error(`wasm bench: the kernels did not load (${KERNELS.reason}: ${KERNELS.detail})`);
-}
 const MODULE = KERNELS.module;
 
 /** Pages of the standalone memory `standaloneKernels` gives an instance: 4 MiB, room for any batch here. */
@@ -32,10 +25,8 @@ export function kernelWorld(overrides = {}) {
     const copy = { ...world, brainScratch: world.brainScratch.slice() };
     delete copy.wasm;
     copy.agentRows = world.agentRows.map((/** @type {any} */ row) => ({ ...row }));
-    // `wasmKernels` is the spike's switch (a ref from before T7); the adopted attach ignores it.
-    if (!attachWasm(copy, KERNELS, { wasmKernels: true, midRun: true })) {
-        throw new Error('wasm bench: the kernels did not attach');
-    }
+    copy.foodRows = world.foodRows.map((/** @type {any} */ row) => ({ ...row }));
+    attachWasm(copy, KERNELS, { midRun: true });
     return copy;
 }
 

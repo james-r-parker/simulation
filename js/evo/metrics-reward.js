@@ -1,5 +1,5 @@
 // Reward events (realistic-keepers.md, T5): the rewards earned per 1,000 hunter agent-ticks by source. The sim counts them at
-// the call to `noteReward` (`world.rewardCounts`), whether or not `rewardedHebb` is on, so the reading is the same in every
+// the call to `noteReward` (`world.rewardCounts`), so the reading is the same in every
 // arm. Both the counts and the hunter agent-ticks run from the first tick.
 
 import { REWARD_NAMES } from '../sim/reward.js';

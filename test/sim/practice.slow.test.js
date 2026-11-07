@@ -32,11 +32,11 @@ function run(switches) {
 
 describe('practice on a real world', () => {
     it(
-        'keeps the invariants and ends on the same hash twice with rewardedHebb on',
+        'keeps the invariants and ends on the same hash twice with reward-gated learning',
         () => {
-            const a = run({ rewardedHebb: true });
+            const a = run({});
             expect(a.rewards).toBeGreaterThan(0);
-            expect(run({ rewardedHebb: true }).hash).toBe(a.hash);
+            expect(run({}).hash).toBe(a.hash);
         },
         TIMEOUT_MS,
     );
