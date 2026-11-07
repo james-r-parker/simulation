@@ -19,6 +19,7 @@ import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
+import { mountOverflowMenu } from './ui/overflow-menu.js';
 import { mountDrawers } from './ui/drawer.js';
 import { createPeekTracker, mountPeek, peekControls } from './ui/hover-peek.js';
 import { createHudFade } from './ui/hud-fade.js';
@@ -110,6 +111,11 @@ function mountParts(ctx) {
     const { deps, prefs } = ctx;
     const { doc, elements } = deps;
     ctx.controls = mountControls(doc, elements.bar, { perform: deps.perform, onSeed: (seed) => startWorld(ctx, seed) });
+    mountOverflowMenu(
+        doc,
+        { bar: elements.bar, hud: elements.hud },
+        { perform: deps.perform, clip: clipSupported(deps.MediaRecorder) },
+    );
     ctx.charts = createChartsLifecycle({
         doc,
         drawers: { state: () => ctx.drawers.state(), body: (name) => ctx.drawers.body(name) },
