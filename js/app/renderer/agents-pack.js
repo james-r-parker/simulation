@@ -6,6 +6,13 @@ import { slotOf } from '../family-slots.js';
 import { createBodyTweens, tweenAge } from './body-tweens.js';
 import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
 
+/** The state word's layout (`SNAPSHOT_STATE` in js/sim/snapshot-state.js; a test keeps the two in step). */
+export const STATE_BITS = 0xf;
+export const GESTATION_SHIFT = 8;
+export const DOSE_SHIFT = 16;
+export const STRAIN_SHIFT = 24;
+const BYTE = 0xff;
+
 /** Floats per vec4 attribute, and the attributes per instance: pose, colour, state, extra and motion. */
 export const ITEM = 4;
 /** Ticks an ate or bitten flash lasts after the event. */
@@ -69,6 +76,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, infected
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), 0
+ * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
  * @property {number} count agents packed this frame
  */
 
@@ -100,6 +108,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             extra: new Float32Array(capacity * ITEM),
             motion: new Float32Array(capacity * ITEM),
             tween: new Float32Array(capacity * ITEM),
+            body: new Float32Array(capacity * ITEM),
             count: 0,
         });
     }
@@ -138,7 +147,8 @@ function packStatus(extra, o, flags, bits) {
 }
 
 /**
- * Writes an agent's tween row: its running one-shot tween and age, and its call state.
+ * Writes an agent's tween row (its running one-shot tween and age, and its call state) and its body row (the state
+ * word unpacked).
  * @param {AgentStore} store the store
  * @param {{bucket: Bucket, o: number, i: number, tick: number}} at the bucket, the row offset, the agent's index and the
  *   playhead tick
@@ -147,6 +157,11 @@ function packStatus(extra, o, flags, bits) {
  * @returns {void}
  */
 function packTween(store, { bucket, o, i, tick }, agents, bits) {
+    const s = agents.state[i];
+    bucket.body[o] = s & STATE_BITS;
+    bucket.body[o + 1] = ((s >>> GESTATION_SHIFT) & BYTE) / BYTE;
+    bucket.body[o + 2] = ((s >>> DOSE_SHIFT) & BYTE) / BYTE;
+    bucket.body[o + 3] = ((s >>> STRAIN_SHIFT) & BYTE) / BYTE;
     const slot = agents.slot[i];
     const age = tweenAge(store.tweens, slot, agents.genomeId[i], tick);
     const flags = agents.flags[i];

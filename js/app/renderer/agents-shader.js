@@ -5,6 +5,7 @@
 
 import { PALETTE } from './colors.js';
 import { TWEEN_GLSL } from './body-tweens-glsl.js';
+import { BODY_STATE_GLSL } from './body-states-glsl.js';
 
 /**
  * @param {readonly number[]} rgb a linear RGB triple
@@ -34,12 +35,14 @@ attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
 attribute vec4 iExtra;  // pregnant, neutral family, sick, infected
 attribute vec4 iMotion; // speed01, turn01, phase, 0
 attribute vec4 iTween;  // one-shot tween kind, its age, call (1 alarm, 2 hunt), 0
+attribute vec4 iBody;   // state bits, gestation01, dose01, strain / 255
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;
 varying vec4 vColor;
 varying vec4 vState;
 varying vec4 vMotion;
 varying vec4 vTween;
+varying vec4 vBody;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
@@ -59,6 +62,7 @@ void main() {
     vState = iState;
     vMotion = iMotion;
     vTween = iTween;
+    vBody = iBody;
     vPregnant = iExtra.x;
     vNeutral = iExtra.y;
     vSick = iExtra.z;
@@ -91,6 +95,7 @@ varying vec4 vColor;
 varying vec4 vState;
 varying vec4 vMotion;
 varying vec4 vTween;
+varying vec4 vBody;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
@@ -99,6 +104,8 @@ varying vec2 vWorld;
 varying float vPx;
 
 ${TWEEN_GLSL}
+
+${BODY_STATE_GLSL}
 
 float sdWedge(vec2 p, vec2 apex, float halfAngle) {
     vec2 q = vec2(p.x - apex.x, abs(p.y - apex.y));
@@ -166,7 +173,7 @@ float body(vec2 p, float open, out float noseX) {
 void main() {
     float cold = clamp((uCold01 - vState.x) / max(uCold01, 0.01), 0.0, 1.0) * uWeather;
     float hot = clamp((vState.x - uHeat01) / max(1.0 - uHeat01, 0.01), 0.0, 1.0) * uWeather;
-    vec2 p = bodyStates(tweenP(vP), cold, hot);
+    vec2 p = bodyStates(tweenP(stateP(vP)), cold, hot);
     p.y += 0.04 * vSick * uFlora * sin(uSimTick * 0.05 + vMotion.z * 6.2831853 + p.x * 4.0);
     if (uMotion > 0.0) {
         float speed01 = vMotion.x;
@@ -189,7 +196,7 @@ void main() {
     float faint = contrast * vNeutral;                // a neutral family in the high-contrast palette
     float bright = (${BRIGHTNESS_FLOOR.toFixed(1)} + 1.5 * vColor.a) * (1.0 - 0.65 * faint);
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
-    base = mix(base, vec3(0.32, 0.4, 0.28) * length(base), 0.55 * vSick * uFlora);
+    base = mix(base, vec3(0.32, 0.4, 0.28) * length(base), 0.55 * max(vSick, vBody.z) * uFlora);
     // The halo and the rim are sized in screen pixels (capped in radii for small agents), so zooming in never lets the
     // glow swallow the silhouette: a luminous membrane around a darker body with a glowing core.
     float across = 2.0 / vPx;                        // the agent's width in device px
@@ -201,7 +208,7 @@ void main() {
     float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
     float nucleus = exp(-dot(p, p) * 3.2) * 0.45 * (1.0 - small);
     float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
-    vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
+    vec3 rgb = base * bright * (cover * fill * (1.0 - concealment()) + halo * (1.0 - cover));
     rgb += base * bright * rim * ${RIM_GAIN.toFixed(2)};
     rgb += (${glsl(PALETTE.coolWhite)} * cold + ${glsl(PALETTE.heat)} * hot) * rim * 0.7;
     if (uShape < 1.5 || uShape > 2.5) {
@@ -217,7 +224,7 @@ void main() {
     float tip = 1.0 - smoothstep(0.0, 0.42, length(p - vec2(noseX * 0.8, 0.0)));
     rgb += vec3(1.0, 0.45, 0.35) * 1.6 * tip * small * uHunter * cover;
     vec2 eyeAt = p - vec2(0.45, 0.0);
-    rgb += vec3(0.85, 0.95, 1.0) * 1.1 * (1.0 - smoothstep(0.13 - vPx, 0.13 + vPx, length(eyeAt))) * cover;
+    rgb += vec3(0.85, 0.95, 1.0) * 1.1 * eyeCover(eyeAt) * cover;
     // A wake behind a moving agent: a comet tail along the reversed heading, longer and brighter the faster it goes, so
     // heading, speed and a chase read in a still frame. It is part of the motion look (off at level 2).
     float speed01 = sqrt(vMotion.x) * min(uMotion * 2.0, 1.0);
@@ -231,7 +238,8 @@ void main() {
     spots = max(spots, 1.0 - smoothstep(0.15, 0.22, length(p - vec2(0.08, -0.3))));
     spots = max(spots, 1.0 - smoothstep(0.12, 0.19, length(p - vec2(-0.48, -0.15))));
     float pulse = 0.8 + 0.2 * sin(uTime * 3.14159);
-    rgb = mix(rgb, ${glsl(PALETTE.infected)} * (0.6 + 0.6 * bright) * pulse, 0.9 * spots * vInfected * cover);
+    rgb = mix(rgb, strainTint(${glsl(PALETTE.infected)}) * (0.6 + 0.6 * bright) * pulse, 0.9 * spots * vInfected * cover);
+    rgb += gestationArc(p) * cover;
     rgb += vec3(0.35, 0.9, 0.7) * vState.y * 0.9 * (cover + halo * 0.5);
     rgb += vec3(1.0, 0.18, 0.15) * vState.z * 1.3 * (cover + halo * 0.5);
     float window = 1.0 - smoothstep(0.3, 1.0, length(vP) / ${QUAD_HALF.toFixed(1)});
