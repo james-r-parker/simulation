@@ -19,8 +19,9 @@ import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
 import { uiScaleFor } from './ui/ui-scale.js';
 import { mountControls } from './ui/controls.js';
+import { mountOverflowMenu } from './ui/overflow-menu.js';
 import { mountDrawers } from './ui/drawer.js';
-import { createPeekTracker, mountPeek } from './ui/hover-peek.js';
+import { createPeekTracker, mountPeek, peekControls } from './ui/hover-peek.js';
 import { createHudFade } from './ui/hud-fade.js';
 import { mountHelp } from './ui/help.js';
 import { mountInspector } from './ui/inspector.js';
@@ -110,6 +111,11 @@ function mountParts(ctx) {
     const { deps, prefs } = ctx;
     const { doc, elements } = deps;
     ctx.controls = mountControls(doc, elements.bar, { perform: deps.perform, onSeed: (seed) => startWorld(ctx, seed) });
+    mountOverflowMenu(
+        doc,
+        { bar: elements.bar, hud: elements.hud },
+        { perform: deps.perform, clip: clipSupported(deps.MediaRecorder) },
+    );
     ctx.charts = createChartsLifecycle({
         doc,
         drawers: { state: () => ctx.drawers.state(), body: (name) => ctx.drawers.body(name) },
@@ -321,7 +327,8 @@ function createListeners(ctx) {
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
- *   resize: () => void, pointer: (x: number, y: number) => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
+ *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
+ *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -338,10 +345,7 @@ export function createInterface(deps) {
                 ctx.drawers.dispatch({ type: 'open', drawer: 'inspector' });
             }
         },
-        pointer(x, y) {
-            ctx.peekTracker.move(x, y, deps.now());
-            ctx.peek.hide();
-        },
+        ...peekControls(ctx.peekTracker, ctx.peek, deps.now),
         noteInput(event) {
             ctx.audio.gesture(event.type);
             const counted = ctx.idle.input(event);

@@ -48,7 +48,10 @@ describe('perf-scope.sh', { timeout: scaleTimeout(15_000) }, () => {
 
 describe('check.yml perf job', () => {
     const text = readFileSync('.github/workflows/check.yml', 'utf8');
-    const job = text.slice(text.indexOf('\n  perf:'));
+    const start = text.indexOf('\n  perf:');
+    // Up to the next top-level job: the `noise` job after it has its own install and bench-compare steps.
+    const next = text.slice(start + 1).search(/\n {2}[a-z][a-z-]*:\n/);
+    const job = next === -1 ? text.slice(start) : text.slice(start, start + 1 + next);
 
     it('runs on pull requests only, advisory, and always reports', () => {
         expect(job).toContain("if: github.event_name == 'pull_request'");

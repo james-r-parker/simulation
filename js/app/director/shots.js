@@ -1,9 +1,10 @@
 // Shot planning and camera poses for the Phase 4 director (`docs/designs/worker-and-renderer.md`): `wide` frames the
-// middle 80% of agents (10th to 90th percentile, padded 10%, never below `fitZoom`) with a 90 s / 140 s Lissajous drift
+// middle 80% of agents (10th to 90th percentile, padded 10%, never below `homeZoom`: the whole world on a landscape
+// canvas, the height fill on a portrait one, so a shot never shows the world as a band) with a 90 s / 140 s Lissajous drift
 // of 3% world width; `glide` smoothersteps to the moment in 3 s (2 s for kills); `linger` holds on the focus; `pullback`
 // smoothersteps back to `wide` in 4 s.
 
-import { fitZoom, ZOOM_IN } from '../camera.js';
+import { homeZoom, ZOOM_IN } from '../camera.js';
 import { MOMENT_KIND } from './scoring.js';
 
 /** Shot machine states. */
@@ -82,16 +83,16 @@ export function wideDrift(timeS, worldWidth) {
 
 /**
  * Computes the `wide` camera pose framing the middle 80% of agents (10th to 90th percentile in x and y, padded 10% on
- * each side, never below `fitZoom`) multiplied by `zoomScale` (1 to 1.15).
+ * each side, never below `homeZoom`) multiplied by `zoomScale` (1 to 1.15).
  * @param {readonly {x: number, y: number}[]} agents alive agents
  * @param {{canvas: {width: number, height: number}, world: {width: number, height: number},
  *   zoomScale?: number}} view canvas and world dimensions and optional random zoom factor
  * @returns {{x: number, y: number, zoom: number}} wide base pose (before Lissajous drift)
  */
 export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
-    const fit = fitZoom(canvas, world);
+    const home = homeZoom(canvas, world);
     if (agents.length === 0) {
-        return { x: world.width / 2, y: world.height / 2, zoom: fit * zoomScale };
+        return { x: world.width / 2, y: world.height / 2, zoom: home * zoomScale };
     }
     const xs = agents.map((a) => a.x).sort((a, b) => a - b);
     const ys = agents.map((a) => a.y).sort((a, b) => a - b);
@@ -104,7 +105,7 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
     const spanX = Math.max(1, (maxX - minX) * 1.2);
     const spanY = Math.max(1, (maxY - minY) * 1.2);
     const boxZoom = Math.min(canvas.width / spanX, canvas.height / spanY);
-    const zoom = Math.min(fit * ZOOM_IN, Math.max(fit, boxZoom) * zoomScale);
+    const zoom = Math.min(home * ZOOM_IN, Math.max(home, boxZoom) * zoomScale);
     return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom };
 }
 
@@ -129,10 +130,10 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
  * @returns {PlannedShot} planned close shot
  */
 function planCloseShot(state, startTimeS, moment, { fromPose, canvas, world }) {
-    const fit = fitZoom(canvas, world);
+    const home = homeZoom(canvas, world);
     const isGlide = state === SHOT_STATE.GLIDE;
     const durationS = isGlide ? glideDurationS(moment.kind) : LINGER_BASE_S;
-    const zoom = isGlide ? Math.max(fit, canvas.width / momentFrameWidth(moment.kind)) : (fromPose?.zoom ?? fit);
+    const zoom = isGlide ? Math.max(home, canvas.width / momentFrameWidth(moment.kind)) : (fromPose?.zoom ?? home);
     const toPose = { x: moment.x, y: moment.y, zoom };
     return {
         state,

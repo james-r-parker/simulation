@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+    checkEmbed,
     checkHash,
+    embedText,
     checkSources,
     hasRebuildTools,
     parseHashFile,
@@ -13,8 +15,19 @@ import {
 const BINARY = readFileSync(new URL('../wasm/blob-kernels.wasm', import.meta.url));
 const HASH_TEXT = readFileSync(new URL('../wasm/blob-kernels.wasm.sha256', import.meta.url), 'utf8');
 const SOURCE_TEXT = readFileSync(new URL('../wasm/blob-kernels.src.sha256', import.meta.url), 'utf8');
+const EMBED_TEXT = readFileSync(new URL('../js/sim/wasm-binary.js', import.meta.url), 'utf8');
 
 describe('check-wasm', () => {
+    it('accepts the embedded copy it writes, and names one that differs or is missing', () => {
+        expect(checkEmbed(BINARY, embedText(BINARY))).toEqual([]);
+        expect(checkEmbed(BINARY, EMBED_TEXT)).toEqual([]);
+        const edited = Uint8Array.from(BINARY);
+        edited[0] ^= 1;
+        expect(checkEmbed(edited, EMBED_TEXT)[0]).toContain('does not decode to wasm/blob-kernels.wasm');
+        expect(checkEmbed(BINARY, null)[0]).toContain('is missing');
+        expect(checkEmbed(BINARY, '// nothing')[0]).toContain('has no KERNEL_BASE64');
+    });
+
     it('accepts the committed binary against its committed hash', () => {
         expect(checkHash(BINARY, HASH_TEXT)).toEqual([]);
     });

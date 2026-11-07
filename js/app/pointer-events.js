@@ -1,5 +1,5 @@
 // Turns the canvas and window pointer events into `createPointerInput` calls: each pointer by its `pointerId`, a touch
-// marked as one, the canvas capturing a pointer it saw go down, and `pointercancel` (a phone taking the gesture for
+// marked as one (a touch never rests a hover peek: a long press asks for it), the canvas capturing a pointer it saw go down, and `pointercancel` (a phone taking the gesture for
 // itself) or a lost capture dropping the pointer instead of leaving it pressed.
 
 /**
@@ -10,7 +10,8 @@
  * @param {{canvas: {addEventListener: (type: string, fn: (e: any) => void) => void,
  *   setPointerCapture?: (id: number) => void}, target: {addEventListener: (type: string, fn: (e: any) => void) => void},
  *   input: import('./pointer-input.js').PointerInput,
- *   iface: {noteInput: (event: import('./idle.js').InputEvent) => boolean, pointer: (x: number, y: number) => void},
+ *   iface: {noteInput: (event: import('./idle.js').InputEvent) => boolean, pointer: (x: number, y: number) => void,
+ *   peekHide?: () => void},
  *   toDevice: (e: PointerLike) => {x: number, y: number}}} wiring the canvas, the window, the pointer handlers, the
  *   interface that hears every input and the client-to-device mapper
  * @returns {void}
@@ -19,12 +20,18 @@ export function listenPointers({ canvas, target, input, iface, toDevice }) {
     canvas.addEventListener('pointerdown', (/** @type {PointerLike} */ e) => {
         iface.noteInput({ type: 'pointerdown' });
         canvas.setPointerCapture?.(e.pointerId);
+        const touch = e.pointerType === 'touch';
+        if (touch) {
+            iface.peekHide?.();
+        }
         const at = toDevice(e);
-        input.down(at.x, at.y, e.pointerId, e.pointerType === 'touch');
+        input.down(at.x, at.y, e.pointerId, touch);
     });
     target.addEventListener('pointermove', (/** @type {PointerLike} */ e) => {
         iface.noteInput({ type: 'pointermove', x: e.clientX, y: e.clientY });
-        iface.pointer(e.clientX, e.clientY);
+        if (e.pointerType !== 'touch') {
+            iface.pointer(e.clientX, e.clientY);
+        }
         const at = toDevice(e);
         input.move(at.x, at.y, e.pointerId);
     });
