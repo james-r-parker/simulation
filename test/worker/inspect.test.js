@@ -76,7 +76,7 @@ describe('workerLayout', () => {
         const layout = workerLayout(smallWorld().config);
         expect(layout).toMatchObject({
             headerWords: 9,
-            agentStride: 12,
+            agentStride: 13,
             herdStride: 6,
             zoneStride: 4,
             rayStride: 4,

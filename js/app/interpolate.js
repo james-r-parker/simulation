@@ -3,7 +3,7 @@
 
 /** Words in a snapshot's header and per agent (`js/sim/snapshot.js`; a test keeps the two in step). */
 export const HEADER_WORDS = 9;
-export const AGENT_STRIDE = 12;
+export const AGENT_STRIDE = 13;
 
 /** Offsets of an agent's fields within its record. */
 export const AGENT_FIELD = Object.freeze({
@@ -19,6 +19,7 @@ export const AGENT_FIELD = Object.freeze({
     TEMPERATURE: 9,
     SPEED: 10,
     FLAGS: 11,
+    STATE: 12,
 });
 
 /** Snapshot arrivals the tick-rate estimate looks at. */
@@ -46,6 +47,7 @@ const MAX_FRAME_MS = 100;
  * @property {Uint32Array} genomeId
  * @property {Uint32Array} slot
  * @property {Uint32Array} flags
+ * @property {Uint32Array} state the body state word (`SNAPSHOT_STATE`)
  * @property {Int32Array} previous scratch: the previous snapshot's index plus 1, by slot (all 0 between calls)
  */
 
@@ -69,6 +71,7 @@ export function createInterpolated(capacity) {
         genomeId: new Uint32Array(capacity),
         slot: new Uint32Array(capacity),
         flags: new Uint32Array(capacity),
+        state: new Uint32Array(capacity),
         previous: new Int32Array(capacity),
     };
 }
@@ -191,6 +194,7 @@ function writeNewest(out, i, next, n) {
     out.genomeId[i] = u[n + AGENT_FIELD.GENOME];
     out.slot[i] = u[n + AGENT_FIELD.SLOT];
     out.flags[i] = u[n + AGENT_FIELD.FLAGS];
+    out.state[i] = u[n + AGENT_FIELD.STATE];
 }
 
 /**
