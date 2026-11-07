@@ -68,8 +68,12 @@ describe('checkpoint helpers', () => {
         expect(edges['food-ahead']).toBeCloseTo(0.3);
         expect(edges['prey-ahead']).toBeCloseTo(0.3);
         expect(edges['two-foods']).toBeNull();
-        const m = averageMetrics([{ 'eval.catch_rate': 1 }, { 'eval.catch_rate': null }, { 'eval.catch_rate': 3 }]);
-        expect(m['eval.catch_rate']).toBe(2);
+        const m = averageMetrics([
+            { 'eval.hunter_zero_kill_share': 1 },
+            { 'eval.hunter_zero_kill_share': null },
+            { 'eval.hunter_zero_kill_share': 3 },
+        ]);
+        expect(m['eval.hunter_zero_kill_share']).toBe(2);
         expect(m['eval.escape_rate']).toBeNull();
     });
 });
@@ -92,6 +96,9 @@ describe('train:curve', () => {
         writeFileSync(join(dir, 'curve.jsonl'), [10, 20, 30, 40, 50].map((g) => JSON.stringify(row(g))).join('\n'));
         const lines = formatCurve(readCurve(dir));
         expect(lines[0]).toMatch(/^gen\s+stage\s+ticks/);
+        for (const column of ['zero_kill_share', 'income.kill', 'income.carcass', 'kills/1k.mate-hunter-parent']) {
+            expect(lines[0]).toContain(column);
+        }
         expect(lines).toHaveLength(7);
         expect(lines.at(-1)).toBe('plateau: generation 10');
     });

@@ -8,9 +8,15 @@ import { GENOME_SPECS } from './genome.js';
 export const CURVE_METRICS = Object.freeze([
     'eval.food_energy_per_1k',
     'eval.births_per_1k',
-    'eval.fed_median_lifespan',
-    'eval.catch_rate',
     'eval.escape_rate',
+    'eval.hunter_kills_per_life',
+    'eval.hunter_zero_kill_share',
+    'eval.hunter_income_share.kill',
+    'eval.hunter_income_share.bite',
+    'eval.hunter_income_share.carcass',
+    'eval.hunter_income_share.herd',
+    'eval.hunter_kill_rate_by_source.mate-hunter-parent',
+    'eval.hunter_kill_rate_by_source.split-hunter-parent',
 ]);
 /** Checkpoints a series is read over by `findPlateau`. */
 export const PLATEAU_WINDOW = 3;

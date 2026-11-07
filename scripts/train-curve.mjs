@@ -39,11 +39,23 @@ function cell(value) {
 }
 
 /**
+ * @param {string} name a curve metric's name
+ * @returns {string} its column header: no `eval.` prefix, and the hunter metrics' long prefixes shortened
+ */
+export function shortName(name) {
+    return name
+        .replace('eval.', '')
+        .replace('hunter_income_share.', 'income.')
+        .replace('hunter_kill_rate_by_source.', 'kills/1k.')
+        .replace('hunter_', '');
+}
+
+/**
  * @param {Record<string, any>[]} rows the curve rows
  * @returns {string[]} the table and the plateau line
  */
 export function formatCurve(rows) {
-    const short = CURVE_METRICS.map((name) => name.replace('eval.', ''));
+    const short = CURVE_METRICS.map(shortName);
     const header = ['gen', 'stage', 'ticks', 'wall s', 'coverage', 'qd', 'drill edge', ...short];
     const body = rows.map((r) => [
         String(r.generation),

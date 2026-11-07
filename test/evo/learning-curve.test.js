@@ -72,7 +72,7 @@ describe('curvePoint', () => {
             trainTicks: 600,
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 0,
-            'eval.escape_rate': 4,
+            'eval.escape_rate': CURVE_METRICS.indexOf('eval.escape_rate'),
         });
         expect(point.coverage).toBeCloseTo(1 / 500);
         expect(point.best.forager).toBeTypeOf('number');
@@ -82,6 +82,38 @@ describe('curvePoint', () => {
             'prey-ahead': -0.1,
             'two-foods': null,
         });
+    });
+
+    it('carries a field for each curve metric, the hunter ones included', () => {
+        const names = [
+            'eval.hunter_kills_per_life',
+            'eval.hunter_zero_kill_share',
+            'eval.hunter_income_share.kill',
+            'eval.hunter_income_share.bite',
+            'eval.hunter_income_share.carcass',
+            'eval.hunter_income_share.herd',
+            'eval.hunter_kill_rate_by_source.mate-hunter-parent',
+            'eval.hunter_kill_rate_by_source.split-hunter-parent',
+            'eval.escape_rate',
+            'eval.food_energy_per_1k',
+            'eval.births_per_1k',
+        ];
+        expect([...CURVE_METRICS].sort()).toEqual([...names].sort());
+        const metrics = Object.fromEntries(names.map((name, i) => [name, i + 1]));
+        const point = curvePoint({
+            generation: 0,
+            stage: 's',
+            trainTicks: 0,
+            wallSeconds: 0,
+            archive,
+            drillEdges: {},
+            metrics,
+        });
+        for (const [i, name] of names.entries()) {
+            expect(point[name]).toBe(i + 1);
+        }
+        expect(CURVE_METRICS).not.toContain('eval.catch_rate');
+        expect(CURVE_METRICS).not.toContain('eval.fed_median_lifespan');
     });
 
     it('has null for a metric with no value and for the edge when no drill applies', () => {
@@ -94,7 +126,7 @@ describe('curvePoint', () => {
             drillEdges: {},
             metrics: {},
         });
-        expect([point.drillEdge, point['eval.catch_rate']]).toEqual([null, null]);
+        expect([point.drillEdge, point['eval.hunter_zero_kill_share']]).toEqual([null, null]);
         expect(meanDrillEdge({ a: null })).toBeNull();
         expect(bestLowerBounds(createArchive(layout)).forager).toBeNull();
     });
