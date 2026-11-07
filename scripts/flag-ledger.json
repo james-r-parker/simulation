@@ -1,9 +1,9 @@
 [
   {
     "key": "capBirthsEnabled",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "T17d",
-    "reason": "Kept as the control arm of the birth-cap screen (capBirthsEnabled false against the default); T17d deletes the off path when the screen shows the cap is not what hides the crash, or the key when it is."
+    "plan": null,
+    "task": null,
+    "reason": "Kept: the control for the population-cap behaviour (capBirthsEnabled false against the default), used by the floor-off stress worlds; its deletion task T17d was superseded when natural-selection.md closed (Decisions, 2026-11-07), and no plan owns a screen that would delete it."
   },
   {
     "key": "checkInvariants",
@@ -19,8 +19,8 @@
   },
   {
     "key": "mateRank",
-    "plan": "docs/designs/natural-selection.md",
-    "task": "T8 follow-up screen",
-    "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
+    "plan": null,
+    "task": null,
+    "reason": "Kept for the 'offspring' fallback arm: its follow-up screen (offspring against rank, 16 seeds) was never run before natural-selection.md closed (Decisions, 2026-11-07); delete the key with the offspring path if a later screen shows eval.mate_hunter_lean is not negative with 'rank'."
   }
 ]

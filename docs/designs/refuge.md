@@ -1,8 +1,6 @@
 # Refuge
 
-**Status:** In progress - Phase 3 amended to a long-range refuge sense (2026-11-06); Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach it); Phase 2 is built - the cover mechanisms were inert and deleted (`E131`); Phase 3 is built: chunk F (the `refugeSense` inputs, `pooled-v5`, `ARCHIVE_VERSION` 7), the sense screens `E132` and `E133` (no harm, refuge use not moved) and T28, which adopted the sense always on with its flag deleted at realistic-keepers.md T22 (goldens re-pinned; the scene stays absent on the default world, tracked in principles.md).
-**Validated:** 62a6758 (2026-11-06)
-**Priority:** 3 - the Refuge scene is absent on the default world (`eval.refuge_use_under_threat` -0.003, E126 and E129), and cover is the classic stabiliser of the boom-and-dip the floor-off worlds show; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing is the parent body of work
+**Status:** Implemented - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach it); the cover mechanisms were inert and deleted (`E131`); the long-range refuge sense (`refugeSense`, `pooled-v5`, `ARCHIVE_VERSION` 7) was screened (`E132`, `E133`: no harm, refuge use not moved) and adopted always on at realistic-keepers.md T22 with goldens re-pinned. The Refuge scene is still absent on the default world (tracked in principles.md); [habitat-cover.md](habitat-cover.md) owns the next lever.
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a
@@ -150,7 +148,7 @@ Chunks:
 | D - Screen and confirm (Runs, built) | T14, T15                            | The 8-seed screen and the 16-seed confirmation, floor on, with the floor-off watch run; no code                      |
 | E - Adopt (Code, built)              | T16, T17, T18, T19, T20, T21, T22   | One verdict per mechanism, the golden re-pin and the baseline re-record in their own commits, the conformance review |
 
-### Phase 3 - Cover sense (conditional)
+### Phase 3 - Cover sense (built)
 
 **Targets:** eval.refuge_use_under_threat, eval.refuge_episode_entry, eval.hunter_kill_conversion_by_age.1k-2k, eval.prey_types_at_end
 
@@ -246,7 +244,7 @@ Chunks:
 | T21 | (built - no re-pin needed, goldens unchanged) Re-pin the four golden cases in Node and Chromium (one commit)                                                                                                                                                                                                                                                                                                                                                                                | [mechanical] | T19, T20          |
 | T22 | (built - baseline kept: `bench.step_ms@500` 4.124 ms against 4.068 ms in `bench/baseline.json`, +1.4%, inside the 15% limit) Re-record `bench/baseline.json` on a quiet machine under the CPU lock (one commit); mark Phase 2 `(built)`, move the status line, regenerate the index; a fresh review agent runs the conformance review in parallel with the final `scripts/check.sh`                                                                                                         | [judgement]  | T21               |
 
-### Phase 3 - Cover sense (conditional)
+### Phase 3 - Cover sense (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Nature       | Depends on |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

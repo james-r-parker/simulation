@@ -1,7 +1,7 @@
 # Brain inspection
 
 **Status:** Proposed - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of trained champions.
-**Validated:** 2dd6b77 (2026-11-04)
+**Validated:** d6ca3e6c (2026-11-07)
 **Priority:** 14 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
 **Depends on:** [training.md](training.md)
 

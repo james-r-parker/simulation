@@ -5,8 +5,9 @@
 **Priority:** 24 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
-The goal ([principles.md](../principles.md)) is a world that is interesting to watch. Step time at 500 agents sits at about 3.9 to 4.1 ms
-against a 3.32 ms budget, with the sense phase near 1.15 ms and the brain phase near 1.25 ms. This doc moves the hottest numeric
+The goal ([principles.md](../principles.md)) is a world that is interesting to watch. Step time at 500 agents sat at about 3.9 to 4.1 ms
+against a 3.32 ms budget, with the sense phase near 1.15 ms and the brain phase near 1.25 ms; with Phases 1, 2, 4 and 5 built it is
+about 2.4 to 2.6 ms (Phase 5 below). This doc moves the hottest numeric
 loops into a small Rust module compiled to WebAssembly. The JS worker keeps the tick loop and every rule; it calls the module once
 per phase. No scene, selection rule or genome changes: `worldHash` stays bit-identical. The JS kernel is the reference only while a
 port is being proven; once a kernel is adopted in Rust its JS code is deleted, so the two never have to be kept in sync (user,
@@ -238,8 +239,9 @@ calls `brain_forward` once per tick for all of them. What it would take:
   until the batch ends (its `alive` bytes 0), so the call shape never changes mid-batch.
 - The same bit-identity rules: each trial's slots in ascending order, the same summation order, so a batched trial's digests
   equal the unbatched ones (a differential test against single-trial runs).
-- It pays only once the other phases are in the kernel too (Phase 2 for the spatial hash, and a later phase for the
-  pheromone field and physics); with the brain alone the batch saves at most the 13% brain share.
+- It paid nothing while only the brain was in the kernel (the batch saves at most the 13% brain share). The sense, hash,
+  field and physics kernels are now built (Phases 2 and 4), so the case is open again; the brain-only drill tier of
+  [brain-reflex-tests.md](brain-reflex-tests.md) already batches brain calls without the world and runs 522 genomes per second.
 
 ### Phase 4 - The spatial hash, the pheromone field and physics
 
