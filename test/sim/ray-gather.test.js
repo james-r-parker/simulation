@@ -46,6 +46,25 @@ describe('gatherNear', () => {
         expect(gather(w, me)).toEqual([HERD * KIND_STRIDE, HERD * KIND_STRIDE + 2]);
     });
 
+    it('keeps an obstacle whose surface is on the vision edge and drops one past it, on either axis', () => {
+        const w = senseWorld();
+        const me = addAgent(w, 500, 500, 20);
+        const radius = 60;
+        w.obsRadius[0] = radius;
+        w.obsRadius[1] = radius;
+        w.obsRadius[2] = radius;
+        const reach = VISION + radius;
+        [
+            [500 + reach - 0.01, 500],
+            [500, 500 - reach - 5],
+            [500 - reach + 0.01, 500],
+        ].forEach(([x, y], i) => {
+            w.obsX[i] = x;
+            w.obsY[i] = y;
+        });
+        expect(gather(w, me)).toEqual([2 * KIND_STRIDE, 2 * KIND_STRIDE + 2]);
+    });
+
     it('lists a live herd body as an obstacle-channel hit kind', () => {
         const w = senseWorld({ herdCount: 1, herdSize: 1 });
         const me = addAgent(w, 500, 500, 20);
