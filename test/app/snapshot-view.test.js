@@ -49,3 +49,12 @@ describe('readSections', () => {
         expect(snapshot.f32[s.obstacleStart + 2]).toBeGreaterThan(0);
     });
 });
+
+describe('readSections: drought', () => {
+    it('reads the basin under drought from header word 9, -1 for none', () => {
+        const snapshot = makeSnapshot(1, []);
+        expect(readSections(snapshot.u32, createSections()).droughtBasin).toBe(-1);
+        snapshot.u32[9] = 2;
+        expect(readSections(snapshot.u32, createSections()).droughtBasin).toBe(1);
+    });
+});
