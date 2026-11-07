@@ -192,6 +192,7 @@ const TIERS = {
     finish: [0, 1, LOOK_OFF],
     flora: [0, 1, LOOK_OFF],
     herds: [0, 1, LOOK_OFF],
+    chase: [0, 1, LOOK_OFF],
 };
 
 describe('lookFor', () => {
