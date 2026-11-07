@@ -60,15 +60,23 @@ export function drillSubject(drill, subject, options = {}) {
     const rng = fork(createRng(seed), `drill:${drill.name}`);
     let wins = 0;
     for (let trial = 0; trial < trials; trial++) {
+        const plan = drill.plan(rng, view);
         const won = playTrial({
-            plan: drill.plan(rng, view),
+            plan,
             subject: staged,
             controlSpec: { name: 'intact' },
             seed: seed + trial,
             config,
         });
         wins += won ? 1 : 0;
-        log?.log('debug', 'DrillTrial', { drill: drill.name, trial, genomeId: subject.id, subject: subject.name, won });
+        log?.log('debug', 'DrillTrial', {
+            drill: drill.name,
+            trial,
+            genomeId: subject.id,
+            subject: subject.name,
+            won,
+            ...plan.trace?.(won),
+        });
     }
     return { wins, trials, winShare: wins / trials };
 }

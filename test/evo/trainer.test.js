@@ -17,6 +17,13 @@ describe('episodeSeed', () => {
         expect(episodeSeed(seeds, { generation: 0, episodes: 4, episode: 3 })).toBe(13);
         expect(episodeSeed(seeds, { generation: 2, episodes: 4, episode: 1 })).toBe(seeds[9 % 5]);
     });
+
+    it('shifts the index by the offset, and an offset of 0 changes nothing', () => {
+        const seeds = [10, 11, 12, 13, 14];
+        expect(episodeSeed(seeds, { generation: 0, episodes: 4, episode: 3, offset: 0 })).toBe(13);
+        expect(episodeSeed(seeds, { generation: 0, episodes: 4, episode: 3, offset: 4 })).toBe(seeds[7 % 5]);
+        expect(episodeSeed(seeds, { generation: 2, episodes: 4, episode: 1, offset: 3 })).toBe(seeds[12 % 5]);
+    });
 });
 
 describe('createTrainerArchive', () => {

@@ -41,7 +41,7 @@ async function runEpisodes({ seeds, stage, archive }, { args, generation, log })
     const snapshot = snapshotArchive(archive);
     const ticks = args.ticks ?? EPISODE_TICKS;
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
-        seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode }),
+        seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode, offset: args.seedOffset }),
         overrides: stage.overrides,
         snapshot,
         ticks,

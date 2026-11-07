@@ -77,7 +77,7 @@ export function loadChampions(dir, { config, log }) {
     const base = createConfig(config);
     const layout = brainLayout(base);
     const names = readdirSync(dir)
-        .filter((name) => name.endsWith('.json') && name !== 'index.json')
+        .filter((name) => name.endsWith('.json') && name !== 'index.json' && name !== 'skip-cells.json')
         .sort();
     if (names.length === 0) {
         throw new Error(`--champions: no .json champion files in ${dir}`);
