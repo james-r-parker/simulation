@@ -1,6 +1,6 @@
 # Renderer event effects
 
-**Status:** In progress - Phase 1 code built (T1 to T14, T16): the effect pool, budget, look items, flag edges, body tweens, every Phase 1 recipe, the weather layer, the audio cues and the developer tools; T15, the GPU budget run on the user's 4K OLED machine, is still to do, so Phase 1 is not yet marked built; Phase 2 is next.
+**Status:** In progress - Phases 1 and 2 code built (T1 to T14, T16 to T22): the effect pool and its adaptive budget, look items, flag edges, body tweens and states, every Phase 1 and 2 recipe, the weather layer, the agent state word, the flee cue, the gaits, the audio cues and the developer tools; the GPU reading of Phase 1 is recorded from the user's machine (T15), the perf:browser harness run with its baseline file is still owed, and the Phase 2 GPU reading (T22) waits for that machine; Phase 3 is next.
 **Validated:** e8904ad9 (2026-11-07)
 **Priority:** 26 - a viewer cannot yet tell most features are firing (user, 2026-11-07); it changes no sim behaviour, so it queues behind the balance and scene work
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
@@ -155,9 +155,10 @@ The background stays near-black; there is no light canvas theme. The page chrome
 - **Wall-time floor.** Life in ticks is raised at spawn to at least `FX_MIN_MS` (250 ms) times the actual tick rate.
 - **Budget.** `renderer/fx-budget.js` (`createFxBudget`, `admitFx`) applies four limits. Each rejection is counted by family in `__perf().fx`:
     - a per-frame spawn cap of 96, 48 or 12 instances at levels 0, 1 and 2;
-    - a token bucket per family per second (combat 60, feeding 40, courtship 30, calls 30, sickness 30, weather 20, herds 20);
+    - a token bucket per family per second (combat 80, feeding 60, courtship 30, calls 30, sickness 30, weather 20, herds 20, flora 20);
     - a priority order when the frame cap binds: kill, birth, first kill, bite, call, sickness, mate, eat, weather;
     - off-view culling with a 200-unit margin. Audio still gets the off-view cue at half gain.
+- **Adaptive scale.** `adaptFxBudget` multiplies the frame cap and every bucket by `budget.scale`, which follows `TARGET_LOAD` (0.75) over the smoothed load (the larger of the last frame's draw CPU time and GPU time, `latest` in `gpu-timer.js`, over its interval) at 1x per second, between `MIN_SCALE` 0.5 and `MAX_SCALE` 4. `beginEffects` feeds it from the frame loop.
 - **Zoom bands.** `zoomBand(pxPerUnit, typicalRadius)` gives `far` when an agent draws under 6 device px, `mid` under 20 and `close` above. At `far` each part of a recipe spawns only its lead instance, at the part's least size (3 device px unless the part sets more). At `mid` recipes run at half count. At `close` they run in full.
 - **Recipes.** `renderer/fx-recipes.js` (`FX_RECIPES`, `DEATH_RECIPES`, `createFxPlayer`, `playRecipe`) maps each inventory row to its parts. It is a table, so a row is added without touching the dispatcher. A part whose `reach` or `life` is -1 takes the effect's own (a call's radius and length, a meal's distance).
 - **Dispatch.** `effects-player.js` plays the worker's records (`playEffects`) and the flag edges (`playEdges`), and `beginEffects` feeds the budget each frame. The recipes are grouped by module: `effects-combat.js` (bites, deaths), `effects-life.js` (mating, pregnancy, births), `effects-signals.js` (calls, smoke, stampede, pollination, strains), `effects-edges.js` (meals, sickness) and `effects-weather.js` (cold breath). Edge events reach the sink (audio, overlay) as `CLIENT_KIND` records above 1000 (`renderer/client-kinds.js`).
@@ -165,7 +166,7 @@ The background stays near-black; there is no light canvas theme. The page chrome
 ### Body tweens
 
 - **One-shot tweens.** `renderer/body-tweens.js` keeps per-slot arrays sized to `maxAgents`: start tick (`Uint32Array`) and kind (`Uint8Array`). `startTween(tweens, slot, kind, tick)` overwrites a running tween only when the new one ranks higher. `packAgents` writes `iTween` (kind, age01) per instance, and `agents-shader.js` applies the curve: `LUNGE`, `FLINCH`, `GULP`, `CALL_THROB`, `HOWL`, `COURT`, `BIRTH_POP`, `SHAKE_OFF`.
-- **Continuous states.** Computed in the shader from attributes the agent already has, with no CPU state: `SICK_SWAY`, `SHIVER` and `PANT` in Phase 1; `BREATHE`, `ROUND`, `CONCEAL`, `JUVENILE`, `STREAMLINE` and the `GAITS` in Phase 2.
+- **Continuous states.** Computed in the shader from attributes the agent already has, with no CPU state: `SICK_SWAY`, `SHIVER` and `PANT` in Phase 1 (`body-tweens-glsl.js`); in Phase 2 (`body-states-glsl.js`) the state word's `iBody` attribute drives `stateP` (resting breath at 0.4 Hz, sated 8% rounder), `eyeCover` (shut to a line at rest, 40% larger when juvenile, 30% larger when fleeing), `concealment` (an ordered dither of the fill in cover, rim kept), `gestationArc`, `strainTint` and the dose-scaled toxin tint; `iTween.w` marks a fleeing body for the 15% streamline; `gaitP` and `gaitRim` give each silhouette its `GAITS` signature.
 - **Slot reuse.** A slot whose genome id changes clears its tween.
 
 ### Flag edges
@@ -283,6 +284,19 @@ Measured (T14, `npm run perf:browser -- --allow-fallback --allow-low-refresh`, 4
 - `frame-stats.js` drops intervals over `MAX_INTERVAL_MS` (250 ms); the branch's 4K software frames record none.
 - The GPU budget is T15, on the user's machine.
 
+T15 GPU reading, via Claude in Chrome `__perf()`, not the perf:browser harness: Windows Chrome, RTX 4090 through ANGLE and D3D11, 3072x1503 CSS at DPR 1.25 (about 3840x1880 physical), 244 Hz, `?seed=1&agents=500&quality=0`, about 335 agents, 40 s each, main at aa2d22f2 (chunks A and B).
+
+| Look | frame p50/p95/p99 ms | GPU p50/p95 ms | draw CPU p50/p95 ms | draw calls |
+| ---- | -------------------- | -------------- | ------------------- | ---------- |
+| none | 4.2 / 4.3 / 4.3      | 0.43 / 0.85    | 0.4 / 0.7           | 1          |
+| all  | 4.2 / 4.3 / 4.3      | 0.92 / 0.93    | 0.7 / 1.1           | 2          |
+
+- The frame is vsync-locked at 244 Hz in both, within `browser.frame_p95_ms` 8.4.
+- GPU p95 rises 0.08 ms and p50 0.49 ms, within the +0.6 ms budget.
+- Draw CPU p95 rises 0.4 ms over look none, over the +0.3 ms budget and under the 2.0 ms ceiling.
+- Effects spawned and dropped over the run (fixed budget): combat 2850 and 3243, feeding 1893 and 5085, courtship 499 and 57, weather 273 and 47. The adaptive scale replaces the fixed caps.
+- The perf:browser harness run that writes the baseline file stays owed until a CDP route to that machine exists.
+
 Chunks:
 
 | Chunk                          | Tasks                          | Boundary                                                                                                                           |
@@ -296,6 +310,14 @@ Chunks:
 **Targets:** browser.draw_cpu_p95_ms, browser.gpu_frame_p95_ms
 
 The agent `state` word and what it shows: rest, sated, cover, juvenile and maturing, gestation progress, dose strength and strain-tinted spots. Also the flee cue from the prey side of `findPursuits`, and the per-spec gait signatures, so the five types read at all three zoom bands.
+
+As built:
+
+- `js/sim/snapshot-state.js` (`SNAPSHOT_STATE`, `agentState`) writes word 12. `test/sim/snapshot-state.test.js` checks each bit and byte and that `hashWorld` is unchanged by a write; `test/sim/golden.test.js` passes with `golden.json` unchanged.
+- `effects-flee.js` (`createFlee`, `playFlee`) finds the pursuit pairs once a frame. The chase layer draws the same pairs (`createChaseLayer({ pursuits })`).
+- `flag-edges.js` adds `REST_ON`, `COVER_ON` and `MATURED` from the state word, played as `restSettle`, `coverShimmer` and `matured`.
+
+Measured (T22, the T14 procedure, SwiftShader, 2560x1440, look all, 40 s, about 238 agents): draw CPU p95 2.6 ms at the Phase 1 head (59944d80) and 3.0 ms at the Phase 2 head (e364f9eb). In Node at 350 agents, `playEdges` with the flee and breath passes takes 18 us a frame and `packAgents` 43 us. The GPU reading waits for the user's machine.
 
 Chunks:
 
@@ -331,20 +353,20 @@ Chunks:
 
 ## Decisions
 
-| Decision                                                                                   | Why                                                                                                                           | Who       |
-| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Priority 26, after every scene and balance doc                                             | Changes no sim behaviour; the coordinator gave the rank                                                                       | Delegated |
-| Phase 1 uses only data the renderer already receives (effect ring, flags, temp01, tick)    | The wow chunk ships without touching the worker or the snapshot, so it cannot disturb other streams or the goldens            | Delegated |
-| One GPU-animated instanced pool replaces `sparks.js` and `rings.js`                        | One draw call and no per-frame CPU packing; the old pools would be a second path for the same effects                         | Delegated |
-| Sickness, pregnancy and call onsets come from client-side flag edges, not new effect kinds | The flags already hold the state; edges at snapshot rate catch every state that lasts two ticks (one snapshot) or more        | Delegated |
-| No light canvas theme; the world stays dark and the high-contrast palette serves lit rooms | The OLED and bloom look depend on a black field; a white field would flatten every glow                                       | Delegated |
-| "Weather" is drawn as season, temperature and drought                                      | The sim has no weather state; drawing rain or wind that does nothing would show a feature that does not exist                 | Delegated |
-| Floor and immigrant births get their own arrival signature                                 | Selection rule 1: a viewer should see which bodies selection did not earn                                                     | Delegated |
-| The eat food kind is found by `nearestFood` on the previous snapshot, not a new event      | It needs no worker change; a wrong kind at worst tints a crumb                                                                | Delegated |
-| The `focusLast` key binding waits for the mobile stream's input files                      | Those files are being edited by another stream now                                                                            | Delegated |
-| Fx pool 2048, 1024 and 256 instances; frame caps 96, 48 and 12; per-family token buckets   | A busy 500-agent minute measures well under 60 effects a second per family; the caps bound the worst case at a fixed GPU cost | Delegated |
-| T33 waits for mobile-view.md Phase 2 to merge before it starts                             | The input handlers belong to the mobile stream until then                                                                     | Delegated |
-| No new event codes                                                                         | Event codes belong to the sim stream; every channel here derives from existing events and state                               | Delegated |
+| Decision                                                                                                                      | Why                                                                                                                                                                                      | Who       |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Priority 26, after every scene and balance doc                                                                                | Changes no sim behaviour; the coordinator gave the rank                                                                                                                                  | Delegated |
+| Phase 1 uses only data the renderer already receives (effect ring, flags, temp01, tick)                                       | The wow chunk ships without touching the worker or the snapshot, so it cannot disturb other streams or the goldens                                                                       | Delegated |
+| One GPU-animated instanced pool replaces `sparks.js` and `rings.js`                                                           | One draw call and no per-frame CPU packing; the old pools would be a second path for the same effects                                                                                    | Delegated |
+| Sickness, pregnancy and call onsets come from client-side flag edges, not new effect kinds                                    | The flags already hold the state; edges at snapshot rate catch every state that lasts two ticks (one snapshot) or more                                                                   | Delegated |
+| No light canvas theme; the world stays dark and the high-contrast palette serves lit rooms                                    | The OLED and bloom look depend on a black field; a white field would flatten every glow                                                                                                  | Delegated |
+| "Weather" is drawn as season, temperature and drought                                                                         | The sim has no weather state; drawing rain or wind that does nothing would show a feature that does not exist                                                                            | Delegated |
+| Floor and immigrant births get their own arrival signature                                                                    | Selection rule 1: a viewer should see which bodies selection did not earn                                                                                                                | Delegated |
+| The eat food kind is found by `nearestFood` on the previous snapshot, not a new event                                         | It needs no worker change; a wrong kind at worst tints a crumb                                                                                                                           | Delegated |
+| The `focusLast` key binding waits for the mobile stream's input files                                                         | Those files are being edited by another stream now                                                                                                                                       | Delegated |
+| Fx pool 2048, 1024 and 256 instances; frame caps 96, 48 and 12 and per-family buckets, scaled 0.5x to 4x by measured headroom | A fixed budget dropped most bites and meals on the user's RTX 4090 with the GPU 78% idle; scaling by headroom shows nearly every effect on a fast machine and sheds them on a loaded one | Delegated |
+| T33 waits for mobile-view.md Phase 2 to merge before it starts                                                                | The input handlers belong to the mobile stream until then                                                                                                                                | Delegated |
+| No new event codes                                                                                                            | Event codes belong to the sim stream; every channel here derives from existing events and state                                                                                          | Delegated |
 
 ## Delivery requirements
 
@@ -387,15 +409,15 @@ Chunks:
 
 ### Phase 2 - Hidden states and agent types
 
-| #   | Task                                                                                                                                                                                                                                   | Nature       | Depends on    |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T17 | Add the agent `state` word to `writeAgents` (stride 13) and `stateBits` to `ready.layout`, update the layout readers listed under Data plumbing, with `test/sim/snapshot.test.js`; the golden test passes with `golden.json` unchanged | [judgement]  | T16           |
-| T18 | Draw the states in `agents-shader.js`: `BREATHE`, `ROUND`, `CONCEAL`, `JUVENILE`, the gestation arc, dose strength and strain tint, with tests                                                                                         | [judgement]  | T17           |
-| T19 | Add the flee cue from the prey side of `findPursuits` (`STREAMLINE`, wide eye, dust kicks), with tests                                                                                                                                 | [judgement]  | T16           |
-| T20 | Add the `GAITS` per spec and the far-band silhouette contrast in `agents-shader.js`, with tests                                                                                                                                        | [judgement]  | T16           |
-| T21 | Add the Phase 2 edges and recipes (rest settle, cover shimmer, maturing ring) to `flag-edges.js` and `fx-recipes.js`, and their cells in `fx-demo.js`, with tests                                                                      | [judgement]  | T18           |
-| T22 | Repeat T14 and T15 for Phase 2 and record the numbers                                                                                                                                                                                  | [mechanical] | T19, T20, T21 |
-| T23 | Conformance review by a fresh agent, in parallel with `scripts/check.sh`; move the status line and mark Phase 2 `(built)`                                                                                                              | [judgement]  | T22           |
+| #   | Task                                                                                                                                                                                                                                           | Nature       | Depends on    |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T17 | Add the agent `state` word to `writeAgents` (stride 13) and `stateBits` to `ready.layout`, update the layout readers listed under Data plumbing, with `test/sim/snapshot.test.js`; the golden test passes with `golden.json` unchanged (built) | [judgement]  | T16           |
+| T18 | Draw the states in `agents-shader.js`: `BREATHE`, `ROUND`, `CONCEAL`, `JUVENILE`, the gestation arc, dose strength and strain tint, with tests (built)                                                                                         | [judgement]  | T17           |
+| T19 | Add the flee cue from the prey side of `findPursuits` (`STREAMLINE`, wide eye, dust kicks), with tests (built)                                                                                                                                 | [judgement]  | T16           |
+| T20 | Add the `GAITS` per spec and the far-band silhouette contrast in `agents-shader.js`, with tests (built)                                                                                                                                        | [judgement]  | T16           |
+| T21 | Add the Phase 2 edges and recipes (rest settle, cover shimmer, maturing ring) to `flag-edges.js` and `fx-recipes.js`, and their cells in `fx-demo.js`, with tests (built)                                                                      | [judgement]  | T18           |
+| T22 | Repeat T14 and T15 for Phase 2 and record the numbers (built)                                                                                                                                                                                  | [mechanical] | T19, T20, T21 |
+| T23 | Conformance review by a fresh agent, in parallel with `scripts/check.sh`; move the status line and mark Phase 2 `(built)`                                                                                                                      | [judgement]  | T22           |
 
 ### Phase 3 - World layers
 
