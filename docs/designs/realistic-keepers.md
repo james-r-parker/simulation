@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default and their flags deleted, goldens re-pinned in Node and Chromium (`rewardedHebb` was then deleted with its Rust and JS off paths in wasm-kernels.md Phase 1, so learning is always reward-gated); the `bench/baseline.json` re-record was made after the WASM kernels (T23, #342); remaining: the Phase 3 perf check (T25, the step is about 2.4 to 2.6 ms against the 3.32 ms budget) and the close (T26).
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 2 - the user's keep rule (2026-11-06) turns eight deleted or never-confirmed mechanisms into candidates the balance round can adopt now; it queues behind natural-selection.md (Priority 1), whose Phase 4 balancing owns the defaults, and ahead of refuge.md Phase 3 conclusion, whose T27 `refugeSense` reports T19 reads
+**Priority:** 1 - the user's keep rule (2026-11-06) made eight deleted or never-confirmed mechanisms candidates; the adoption is built and what remains is the Phase 3 perf check and the close, which are small and unblock nothing but the status
 **Depends on:** [natural-selection.md](natural-selection.md), [refuge.md](refuge.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. The user's rule (2026-11-06): **a realistic
