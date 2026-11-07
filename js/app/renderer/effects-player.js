@@ -13,7 +13,7 @@ import { createFlee } from './effects-flee.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
 import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
 export { playEdges } from './effects-edges.js';
-import { beginFxFrame, logFxBudget } from './fx-budget.js';
+import { adaptFxBudget, beginFxFrame, logFxBudget } from './fx-budget.js';
 import { createFxPool } from './fx-pool.js';
 import { createFxPlayer } from './fx-recipes.js';
 
@@ -162,19 +162,27 @@ function dispatchSignal(player, agents) {
 
 const VIEW = { left: 0, right: 0, top: 0, bottom: 0 };
 const FRAME = { tick: 0, dtMs: 0, zoom: 1, view: VIEW };
+const LOAD = { drawMs: -1, gpuMs: -1, intervalMs: 0, dtMs: 0 };
 
 /**
  * Starts a frame of effects: refills the budget and takes the view, the zoom band and the playhead's rate, and logs
  * drops and pool overwrites at most once per 10 s.
  * @param {EffectsPlayer} player the player
- * @param {{tick: number, dtMs: number, nowMs: number, camera: import('../camera.js').CameraController}} at the frame
+ * @param {{tick: number, dtMs: number, nowMs: number, camera: import('../camera.js').CameraController,
+ *   drawMs?: number, gpuMs?: number, intervalMs?: number}} at the frame, with the previous frame's draw CPU and GPU
+ *   times and interval when known (they scale the budget)
  * @returns {void}
  */
-export function beginEffects(player, { tick, dtMs, nowMs, camera }) {
+export function beginEffects(player, { tick, dtMs, nowMs, camera, drawMs = -1, gpuMs = -1, intervalMs = 0 }) {
     FRAME.tick = tick;
     FRAME.dtMs = dtMs;
     FRAME.zoom = camera.zoom;
     viewBounds(camera, VIEW);
+    LOAD.drawMs = drawMs;
+    LOAD.gpuMs = gpuMs;
+    LOAD.intervalMs = intervalMs;
+    LOAD.dtMs = dtMs;
+    adaptFxBudget(player.fx.budget, LOAD);
     beginFxFrame(player.fx.budget, FRAME);
     const { pool } = player.fx;
     logFxBudget(player.fx.budget, { nowMs, overwrote: pool.overwrote, capacity: pool.limit });
