@@ -105,7 +105,6 @@ export const FEATURE_RULES = {
     juvenileTicks: int(1),
     territoryRadius: positive(),
     territoryMax: int(0),
-    rewardedHebb: BOOL,
     rewardGain: num(0, 10),
     rewardBase: UNIT,
     rewardDecay: UNIT,

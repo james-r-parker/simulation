@@ -3,6 +3,7 @@
 // through test/sim/golden.test.js and golden.slow.test.js, which now run the kernel.
 import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
+import { FOOD_HUE_VALUES } from '../../js/sim/brain-layout.js';
 import { poolRays } from '../../js/sim/ray-pool.js';
 import { PARAM_ARRAYS, STATUS_SLOT, writeBrainParams } from '../../js/sim/wasm-brain.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
@@ -72,6 +73,10 @@ describe('forwardAll on the kernel', () => {
 });
 
 describe('writeBrainParams', () => {
+    it('serves a layout with the two food hues the kernel pools', () => {
+        expect(FOOD_HUE_VALUES).toBe(2);
+    });
+
     it('refuses a layout without exactly one gene-less output', () => {
         const world = smallWorld();
         const layout = { ...world.layout, outputCount: world.layout.geneOutputs + 2 };

@@ -289,7 +289,6 @@ export const DEFAULTS = deepFreeze({
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
     predatorRestTicks: 60, // realistic-keepers T2, adopted at T22: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
-    rewardedHebb: true, // realistic-keepers T5, adopted at T22 (key deletion owned by wasm-kernels.md): a reward trace of meat meals scales the Hebbian rate
     rewardGain: 4, // realistic-keepers T5: gain of the trace on the Hebbian rate
     rewardBase: 0.25, // realistic-keepers T5: share of the plain rate that applies with no reward
     rewardDecay: 0.02, // realistic-keepers T5: per-tick decay of the trace

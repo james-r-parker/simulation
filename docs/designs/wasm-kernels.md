@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phase 1 is built and adopted (T1 to T8): every world runs the brain phase in the Rust/WASM kernel from birth and the JS brain kernel is deleted; Phase 2 (sense) is next; Phase 3 (batched drill evaluation) is proposed.
+**Status:** In progress - Phases 1 and 2 are built and adopted (T1 to T12): every world runs the brain phase and the ray march in the Rust/WASM kernels from birth, and the JS brain kernel and JS ray march are deleted; Phase 3 (batched drill evaluation) and Phase 4 (the pheromone field and physics) are proposed.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 24 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -99,7 +99,7 @@ a JS array. The arena returns one typed-array view per array over `memory.buffer
   pool would need an explicit release, since a shallow copy of a world shares its views).
 - **One call per phase.** `forwardAll` calls `brain_forward(params, doubles)` once; the kernel loops over the alive slots
   itself and runs the pooling, the hidden step, the outputs and Hebbian learning for each. Nothing crosses the boundary per
-  agent. With `rewardedHebb` the JS takes each alive slot's `rewardScale` first, in slot order, because nothing else in the
+  agent. With learning on (always reward-gated since `rewardedHebb` was deleted) the JS takes each alive slot's `rewardScale` first, in slot order, because nothing else in the
   phase reads the trace. `poolRays(world, slot)` calls the `pool_slot` export for the tools that read pooling without the
   brain (`js/evo/pool-discrimination.js`), so pooling has one implementation.
 - **Copies.** A copy of a world that wants its own arena (its `wasm` deleted, its own `agentRows` entries, as the benches make)
@@ -143,12 +143,17 @@ As built after T7, `test/sim/wasm-brain.test.js` requires:
 1. Every per-call digest of the recorded reference: three configs (no learning, Hebbian, rewarded Hebbian) at six hidden sizes
    (1, 3, 7, 8, 17, 32) and four seeds, three calls each, and a fuzz of 40 seeds over random finite weights and pooled inputs
    including zeros, `-0`, values near the tanh saturation and subnormals.
-2. The digest after every tick of three seeded worlds stepped 200 ticks (the default config; Hebbian with `rewardedHebb`; an
+2. The digest after every tick of three seeded worlds stepped 200 ticks (the default config; reward-gated Hebbian; an
    odd hidden size without learning).
 3. `worldHash` equal to `test/sim/golden.json` for every golden case: `golden.test.js` and `golden.slow.test.js` now run the
    kernel.
 4. The `detTanh` error on a non-finite sum or learn gene, with the slot; a loud error for a world without an arena; and
    `poolRays` pooling a slot exactly as the brain phase does.
+
+As built after T11, `test/sim/wasm-sense.test.js` requires the digest of `inputs`, `rayHue`, `mateSeenAt` and `coverTotals`
+plus the gathered row count after every tick's casts of seven stepped worlds (default, busy, disease, `coverConceals` with
+rings, two odd ray counts) to equal the recorded JS reference, and `syncSense` to refuse a hash bigger than its mirror. The
+gather's edge cases (herd and obstacle surfaces on the vision edge, the stamp) are tested through `sense_slot`.
 
 ### Go / no-go bar
 
@@ -192,8 +197,28 @@ it saves), the differential test and the bench.
 
 **Targets:** bench.phase_ms.sense@500, bench.step_ms@500
 
-Starts only when Phase 1 clears the bar. The ray march and ray summary move into the kernel, one call per phase, with the
-spatial hash arrays placed in the arena; a JS reference is kept only while the port is proven, then recorded and deleted.
+As built (`wasm/src/sense.rs`, `js/sim/wasm-sense.js`): `sense_slot` gathers one caster's circles (obstacles with the one-axis
+reject from #319, live herd bodies, smoke clouds, then the agents and food of the hash cells under the vision box, in the JS
+order) and finds every ray's nearest hit, uncovered or with `coverConceals` (the concealed count returned). JS calls it once
+per alive agent from `castSlot`, then applies the rules that need the world: the hit class of an agent (`agentChannel`: kin,
+threat, prey, other), the mate sighting (`noteMatesSeen`, which reads the gathered rows) and the body and scent inputs. The
+per-agent call is a deliberate departure from one call per phase: the rules between calls read each caster's gather, and a
+call costs tens of nanoseconds against about 1.2 us of kernel work per caster.
+
+- **Memory.** The circles' arrays (`x`, `y`, `size`, food, obstacles, herds, clouds, `coverRing`) and the ray scratch, stamps
+  and gathered rows move into the arena at their allocated type and length (`senseSpecs`); `world.foodRows` is re-pointed like
+  the agent rows. The spatial hash's `cellStart` and `entries` are copied into an arena mirror once per `senseAll`
+  (`syncSense`), because tests and tools pass hashes of their own; the copy is a few kilobytes.
+- **Speed.** The covered loop, the main path once refuge rings and `coverConceals` are the default, runs two rays per `f64x2`
+  (each lane its own pass over the rows in order; a row's concealment is the same for both lanes; the square root only when a
+  lane can hit). The uncovered loop stays scalar and row-major: two rays per vector measured slower there, because most rows
+  miss most rays and the vector form pays for both lanes.
+- **Proof and adoption.** While proving, `castRaysJs` and the kernel cast every alive agent of seven stepped worlds on the same
+  state, byte-equal on the ray block, hues, gathered rows, scratch, mate sighting and concealed count. T11 recorded the JS
+  digests into `test/sim/fixtures/wasm-sense-reference.json` and deleted the JS ray march (`gatherNear` and its helpers,
+  `circleHit`, `seedWithWall`, `nearestHitsAll`, `nearestHitCovered`, `castRaysJs`).
+- **Result.** Against the brain-only tree, `bench-compare --sizes=500 --runs=5` gives `bench.phase_ms.sense@500` 0.87 to
+  0.61 ms (-30%) and `bench.step_ms@500` 2.97 to 2.63 ms (-11%); details in `sim-notes.md`.
 
 ### Phase 3 - Batched drill evaluation (proposed, not built)
 
@@ -216,28 +241,55 @@ calls `brain_forward` once per tick for all of them. What it would take:
 - It pays only once the other phases are in the kernel too (Phase 2 for the spatial hash, and a later phase for the
   pheromone field and physics); with the brain alone the batch saves at most the 13% brain share.
 
+### Phase 4 - The pheromone field and physics (proposed, not built)
+
+**Targets:** bench.phase_ms.field@500, bench.phase_ms.physics@500, bench.drill_trials_per_s
+
+The drill profile puts the pheromone update at about 25% of a trial's step and physics at about 19%, the spatial hash and grid
+build at 25 to 30% (the hash build is still JS after Phase 2; only the ray march moved). Each is a pure array loop with the same
+shape as the brain and the ray march:
+
+- **Pheromone update** (`updatePheromones` and `updateGrid` in `js/sim/pheromones.js`): a grid diffusion and decay over the
+  `danger`, `attack` and `hunt` fields with `pheromoneScratch`. A natural SIMD kernel: four `f32` cells per vector, or two
+  `f64` lanes where the JS sums in double, each cell's terms in the JS order. The grids move into the arena (they are already
+  allocated once per world).
+- **Spatial hash build** (`buildHash` in `js/sim/spatial-hash.js`): the counting sort writes `cellStart` and `entries`; in
+  the kernel it would write the arena arrays directly and remove the `syncSense` copy for the world's own hash.
+- **Physics** (`integrate`, `resolveContacts`, `bounceObstacles` in `js/sim/physics.js`): the motion integration and the
+  contact pass over the hash. Integration is a straight per-agent loop; the contact pass reads the hash and applies the
+  trample and push rules, so like the sense port it would split into a kernel that finds the pairs and JS rules that apply.
+
+The same rules hold: every operation in the JS order, `f32` widened where JS widens, `Math.fround` at the same stores, no
+fused multiply-add, and the same proving path (a JS reference kept while proving, a differential test byte-equal every tick,
+the goldens, `npm run browser:hash`, a recorded fixture, then the JS deleted). The drill trials-per-second bench is a Target,
+because training is where these phases dominate.
+
 ## Decisions
 
-| Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who              |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Rust compiled to WASM for hot numeric paths                                                     | The user said "I really like this RUST on hot paths idea"; the behaviour-changing speed levers are ruled out, so it is exact                                                                                                                | User, 2026-11-07 |
-| Hybrid: JS keeps the tick loop and every rule; WASM takes one call per phase                    | A rewrite moves rules, RNG and logging and loses the reference; pure array loops are the part that gains                                                                                                                                    | Delegated        |
-| No `wasm-bindgen`, plain `extern "C"` with offsets                                              | Every argument is an integer offset into one memory; generated glue adds allocation and a build dependency for no gain                                                                                                                      | Delegated        |
-| The `.wasm` is a committed artifact with a hash check and a CI differential test                | CI runners and `npm ci` need no Rust; every platform runs identical bytes; a stale binary fails a test                                                                                                                                      | Delegated        |
-| Fixed-size memory, hot arrays allocated once, views never rebuilt                               | `memory.grow` detaches every typed-array view; sizing from `maxAgents` at start removes the failure mode                                                                                                                                    | Delegated        |
-| Standard SIMD only, vertical lanes, no relaxed SIMD or fused multiply-add                       | Relaxed SIMD and FMA round differently by engine; vertical lanes keep each unit's summation order and so the hash                                                                                                                           | Delegated        |
-| A replaced JS kernel is deleted at adoption; no long-lived fallback                             | The user: "once items get replaced by RUST their JS code should be removed so we dont need to keep them in sync"; a recorded fixture and the goldens keep the reference                                                                     | User, 2026-11-07 |
-| `wasmKernels` and the JS path exist only while a port is proven                                 | The differential test needs a live reference during the spike; standard SIMD ships in every target browser, so no fallback is needed after                                                                                                  | Delegated        |
-| Rust coding is done by Opus                                                                     | The user: "any RUST dev should be done by opus"; bit-identical ports are high risk                                                                                                                                                          | User, 2026-11-07 |
-| The brain goes first, sense only after a 2 times and bit-identical bar                          | The brain is pure arithmetic with the fewest inputs, so it prices the approach before the larger sense port                                                                                                                                 | Delegated        |
-| Pooling and Hebbian learning run in the brain kernel too (T4)                                   | An early bench put `poolRays` at about 28% of `forwardAll`; left in JS it would cap the gain near 2 times. One call per phase also needs `alive` in the arena                                                                               | Delegated        |
-| `WasmStatus` is the thrown error's `slot` and `where` fields, not a log record (spike)          | The step has no log handle and `js/sim/events.js` belongs to another stream during the push; the throw keeps the failure loud with the JS message                                                                                           | Delegated        |
-| `BENCH_WASM=1` made the micro bench worlds attach the kernels (T6; gone at T7)                  | `bench:parts --compare` runs this tree's bench files in both trees; a ref without the kernels runs the JS ones, so the compare prices the switch                                                                                            | Delegated        |
-| The binary is embedded as base64 in `js/sim/wasm-binary.js`, not fetched as a Vite `?url` asset | `allocateWorld` is the one place every world is born and it is synchronous; a fetched asset would make every entry point await a load before its first world. 24 kB in the worker bundle; a check and a test pin it to the committed binary | Delegated        |
-| `allocateWorld` attaches every world                                                            | The single birthplace: no world can be hashed or copied before its arena, and no worker, eval script, replay or test needs a call of its own                                                                                                | Delegated        |
-| `poolRays` stays as an entry that calls a new `pool_slot` export                                | `js/evo/pool-discrimination.js` reads pooling without running the brain; an export keeps one pooling implementation instead of a JS copy to keep in sync                                                                                    | Delegated        |
-| No arena pool for drill worlds                                                                  | Measured: the attach is about 35 us of a 23 ms trial (module compiled once per thread); a pool would need an explicit release, since a shallow copy shares the views                                                                        | Delegated        |
-| `rayTables` moved from `world.js` to `ray-pool.js`                                              | `world.js` sat at the 300-line limit and needed the attach call; the ray angle tables are what pooling and the ray march read                                                                                                               | Delegated        |
+| Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who                     |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Rust compiled to WASM for hot numeric paths                                                     | The user said "I really like this RUST on hot paths idea"; the behaviour-changing speed levers are ruled out, so it is exact                                                                                                                | User, 2026-11-07        |
+| Hybrid: JS keeps the tick loop and every rule; WASM takes one call per phase                    | A rewrite moves rules, RNG and logging and loses the reference; pure array loops are the part that gains                                                                                                                                    | Delegated               |
+| No `wasm-bindgen`, plain `extern "C"` with offsets                                              | Every argument is an integer offset into one memory; generated glue adds allocation and a build dependency for no gain                                                                                                                      | Delegated               |
+| The `.wasm` is a committed artifact with a hash check and a CI differential test                | CI runners and `npm ci` need no Rust; every platform runs identical bytes; a stale binary fails a test                                                                                                                                      | Delegated               |
+| Fixed-size memory, hot arrays allocated once, views never rebuilt                               | `memory.grow` detaches every typed-array view; sizing from `maxAgents` at start removes the failure mode                                                                                                                                    | Delegated               |
+| Standard SIMD only, vertical lanes, no relaxed SIMD or fused multiply-add                       | Relaxed SIMD and FMA round differently by engine; vertical lanes keep each unit's summation order and so the hash                                                                                                                           | Delegated               |
+| A replaced JS kernel is deleted at adoption; no long-lived fallback                             | The user: "once items get replaced by RUST their JS code should be removed so we dont need to keep them in sync"; a recorded fixture and the goldens keep the reference                                                                     | User, 2026-11-07        |
+| `wasmKernels` and the JS path exist only while a port is proven                                 | The differential test needs a live reference during the spike; standard SIMD ships in every target browser, so no fallback is needed after                                                                                                  | Delegated               |
+| Rust coding is done by Opus                                                                     | The user: "any RUST dev should be done by opus"; bit-identical ports are high risk                                                                                                                                                          | User, 2026-11-07        |
+| The brain goes first, sense only after a 2 times and bit-identical bar                          | The brain is pure arithmetic with the fewest inputs, so it prices the approach before the larger sense port                                                                                                                                 | Delegated               |
+| Pooling and Hebbian learning run in the brain kernel too (T4)                                   | An early bench put `poolRays` at about 28% of `forwardAll`; left in JS it would cap the gain near 2 times. One call per phase also needs `alive` in the arena                                                                               | Delegated               |
+| `WasmStatus` is the thrown error's `slot` and `where` fields, not a log record (spike)          | The step has no log handle and `js/sim/events.js` belongs to another stream during the push; the throw keeps the failure loud with the JS message                                                                                           | Delegated               |
+| `BENCH_WASM=1` made the micro bench worlds attach the kernels (T6; gone at T7)                  | `bench:parts --compare` runs this tree's bench files in both trees; a ref without the kernels runs the JS ones, so the compare prices the switch                                                                                            | Delegated               |
+| The binary is embedded as base64 in `js/sim/wasm-binary.js`, not fetched as a Vite `?url` asset | `allocateWorld` is the one place every world is born and it is synchronous; a fetched asset would make every entry point await a load before its first world. 24 kB in the worker bundle; a check and a test pin it to the committed binary | Delegated               |
+| `allocateWorld` attaches every world                                                            | The single birthplace: no world can be hashed or copied before its arena, and no worker, eval script, replay or test needs a call of its own                                                                                                | Delegated               |
+| `poolRays` stays as an entry that calls a new `pool_slot` export                                | `js/evo/pool-discrimination.js` reads pooling without running the brain; an export keeps one pooling implementation instead of a JS copy to keep in sync                                                                                    | Delegated               |
+| No arena pool for drill worlds                                                                  | Measured: the attach is about 35 us of a 23 ms trial (module compiled once per thread); a pool would need an explicit release, since a shallow copy shares the views                                                                        | Delegated               |
+| `rayTables` moved from `world.js` to `ray-pool.js`                                              | `world.js` sat at the 300-line limit and needed the attach call; the ray angle tables are what pooling and the ray march read                                                                                                               | Delegated               |
+| The sense kernel is one call per caster, not per phase                                          | The mate sighting reads each caster's gathered rows and the hit class needs the kin and bite rules; a call costs tens of ns against about 1.2 us of kernel work per caster                                                                  | Delegated               |
+| The spatial hash is mirrored into the arena once per `senseAll`, not allocated there            | Tests and tools pass hashes of their own to `senseAll` and `castRays`; the copy is a few kilobytes per tick. Phase 4 can move `buildHash` into the kernel and drop it                                                                       | Delegated               |
+| Two rays per `f64x2` in the covered loop only                                                   | Measured: the vector covered loop beat the scalar one, the vector uncovered loop lost to the scalar one (most rows miss most rays)                                                                                                          | Delegated               |
+| `rewardedHebb` deleted with its off path in Rust and JS                                         | #328 adopted it (default true, E137) and gave this doc the deletion; the kernel's `FLAG_REWARDED` went and the rate always takes `rewardScale`. Goldens unchanged; the 24 unchanged-config reference cases kept their digests               | Coordinator, 2026-11-07 |
 
 ## Delivery requirements
 
@@ -272,12 +324,12 @@ calls `brain_forward` once per tick for all of them. What it would take:
 
 ### Phase 2 - Sense
 
-| #   | Task                                                                                                         | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T9  | Place the spatial-hash and ray arrays in the arena and port the ray march, a JS reference kept while proving | [judgement] | T8         |
-| T10 | Port the ray summary and pooling, extend the differential test, record the sense bench                       | [judgement] | T9         |
-| T11 | Adopt: record the JS sense fixture, then delete the JS ray kernels                                           | [judgement] | T10        |
-| T12 | Conformance review of Phase 2, in parallel with `scripts/check.sh`                                           | [judgement] | T11        |
+| #   | Task                                                                                                                 | Nature      | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T9  | Place the spatial-hash and ray arrays in the arena and port the ray march, a JS reference kept while proving (built) | [judgement] | T8         |
+| T10 | Port the ray summary and pooling, extend the differential test, record the sense bench (built)                       | [judgement] | T9         |
+| T11 | Adopt: record the JS sense fixture, then delete the JS ray kernels (built)                                           | [judgement] | T10        |
+| T12 | Conformance review of Phase 2, in parallel with `scripts/check.sh` (built)                                           | [judgement] | T11        |
 
 ## Verification
 

@@ -1,6 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { REQUIRED_EXPORTS, decodeBase64, embeddedKernels, loadKernels } from '../../js/sim/wasm-loader.js';
+import {
+    KERNEL_ABI,
+    REQUIRED_EXPORTS,
+    checkProbe,
+    decodeBase64,
+    embeddedKernels,
+    loadKernels,
+} from '../../js/sim/wasm-loader.js';
 
 const BYTES = readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url));
 /** The smallest valid module: the magic number and version, no sections. */
@@ -42,6 +49,18 @@ describe('decodeBase64', () => {
             0, 1, 254, 255, 7,
         ]);
         expect(decodeBase64('').length).toBe(0);
+    });
+});
+
+describe('checkProbe', () => {
+    it('returns the heap base of a binary on this ABI', () => {
+        expect(checkProbe(KERNEL_ABI, 70000)).toBe(70000);
+    });
+
+    it('refuses another ABI and a heap base that is not an integer', () => {
+        expect(() => checkProbe(KERNEL_ABI + 1, 70000)).toThrow(`kernel ABI ${KERNEL_ABI + 1}, expected ${KERNEL_ABI}`);
+        expect(() => checkProbe(KERNEL_ABI, 1.5)).toThrow('no integer __heap_base');
+        expect(() => checkProbe(KERNEL_ABI, undefined)).toThrow('no integer __heap_base');
     });
 });
 

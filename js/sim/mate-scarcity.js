@@ -2,7 +2,7 @@
 // only when no mate can be found, so an agent may split only after `splitMateScarceTicks`
 // ticks without a possible mate in view (600 by default): an agent of its own specialisation, of the other sex and mature, among the
 // circles its rays gather this tick. A forager in a crowd of foragers never splits; a lone hunter may. The check reads
-// the rows `gatherNear` already wrote, so it costs one pass over them. `mateSeenAt` is
+// the rows the sense kernel already gathered, so it costs one pass over them. `mateSeenAt` is
 // derived state beside the split-gate counters: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation.
 
 import { AGENT, KIND_STRIDE, LOCAL_STRIDE } from './ray-gather.js';
@@ -27,7 +27,7 @@ function isPossibleMate(world, slot, other) {
 }
 
 /**
- * Notes the tick when the caster has a possible mate among the `count` rows `gatherNear` left in `world.rayLocal`.
+ * Notes the tick when the caster has a possible mate among the `count` rows the sense kernel left in `world.rayLocal`.
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} count the gathered rows
