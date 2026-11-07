@@ -55,6 +55,54 @@ describe('createFxDev', () => {
     });
 });
 
+describe('createFxDev modes', () => {
+    const layout = { effectKinds: { BITE: 3 }, deathCauses: {}, bornCauses: {} };
+    const info = { callRadius: 100, callTicks: 30, maxAgents: 4 };
+    const camera = () =>
+        createCameraController({
+            canvas: /** @type {any} */ ({ width: 800, height: 400 }),
+            world: { width: 4000, height: 2000 },
+        });
+
+    it('with only the overlay, mounts nothing before a world and keeps no demo cells', () => {
+        const parent = fakeElement();
+        /** @type {Record<string, any>} */
+        const target = {};
+        const dev = /** @type {any} */ (
+            createFxDev({ params: readFxParams('?fxlog=1'), doc: fakeDocument(), parent, target })
+        );
+        const player = createEffectsPlayer({ layout, info });
+        const frame = { tick: 1, dtMs: 16, nowMs: 1000 };
+        dev.onEffect({ kind: 3, x: 0, y: 0, c: 0, d: 0 }, 1000);
+        dev.afterDraw(frame, { player, camera: camera(), client: null, ready: null, cssScale: 1 });
+        expect(parent.children).toHaveLength(0);
+        expect(target.__fxdemo).toBeUndefined();
+        dev.afterDraw(frame, { player, camera: camera(), client: null, ready: { layout }, cssScale: 1 });
+        expect(parent.children).toHaveLength(1);
+        dev.afterDraw(frame, { player, camera: camera(), client: null, ready: { layout }, cssScale: 1 });
+        expect(parent.children).toHaveLength(1);
+        dev.afterDraw(frame, { player, camera: camera(), client: null, ready: { layout: { ...layout } }, cssScale: 1 });
+        expect(parent.children).toHaveLength(1);
+    });
+
+    it('with only the demo, ignores effects and shows no overlay', () => {
+        const parent = fakeElement();
+        /** @type {Record<string, any>} */
+        const target = {};
+        const dev = /** @type {any} */ (
+            createFxDev({ params: readFxParams('?fxdemo=calls'), doc: fakeDocument(), parent, target })
+        );
+        const player = createEffectsPlayer({ layout, info });
+        dev.onEffect({ kind: 3, x: 0, y: 0, c: 0, d: 0 }, 1000);
+        dev.afterDraw(
+            { tick: 1, dtMs: 16, nowMs: 1000 },
+            { player, camera: camera(), client: null, ready: { layout }, cssScale: 1 },
+        );
+        expect(parent.children).toHaveLength(0);
+        expect(target.__fxdemo.cells.length).toBeGreaterThan(0);
+    });
+});
+
 describe('the page hooks', () => {
     it('fxSink tells the interface, then the overlay when there is one', () => {
         /** @type {string[]} */

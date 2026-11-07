@@ -149,4 +149,19 @@ describe('flushFx and the layer', () => {
         expect(budget.tier.every((t) => t === LOOK_OFF)).toBe(true);
         layer.dispose();
     });
+
+    it('falls back to the full capacity for an unknown level and keeps the playhead off before any effect', () => {
+        const pool = createFxPool();
+        setFxLevel(pool, 99);
+        expect(pool.limit).toBe(FX_CAPACITY);
+        const layer = createFxLayer({ pool });
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 100, height: 100 }),
+            world: { width: 100, height: 100 },
+        });
+        layer.update?.(/** @type {any} */ ({ tick: 5, camera, lenses: { calls: false } }));
+        expect(layer.uniforms.uFxTick.value).toBe(-1e9);
+        expect(layer.uniforms.uCallBoost.value).toBe(1);
+        layer.dispose();
+    });
 });
