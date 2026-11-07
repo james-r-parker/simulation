@@ -3513,6 +3513,74 @@
       },
       "effect": "better",
       "note": "Ran 2026-11-06 at 5c6800e. The old metrics reproduce E134 to the digit (hunters alive 14/16 both, under 80 7 against 6, conversion 1k-2k 0.0831 -> 0.0672), so the observer-only change kept determinism. Hungry-chase conversion 0.0864 -> 0.0825 (-4.5%, interval [-0.015, 0.009]): not worse. The E134 drop came from sated hunters chasing without biting, by construction. predators at end 23.1 -> 42.9 better, prey extinctions 8.75 -> 5.0 better, population 194 -> 253. Verdict: satedBite passes the keep-realistic rule and is kept; it joins the combined run (T21). Prediction held."
+    },
+    {
+      "id": "E137",
+      "date": "2026-11-07",
+      "branch": "feat/realistic-keepers-finish",
+      "hypothesis": "realistic-keepers T12/T16/T17 under the paired-interval rule (principles.md, user 2026-11-07): predatorRestTicks 60, rewardedHebb and coverConceals do no harm on 32 matched floor-on seeds; their E134/E135 count failures were chance.",
+      "prediction": "E137 prediction, written 2026-11-07 before the runs (main 450d6b8; floor on, seeds 17 to 32 via --seed-offset 16, 200000 ticks; joined with the seeds 1 to 16 runs of E133-off, E134-rest, E135-reward, E135-conceal for 32 matched seeds).\nHypothesis: under the user's paired-interval rule (2026-11-07), predatorRestTicks 60, rewardedHebb and coverConceals do no harm - their E134/E135 count failures were chance.\nPrediction: on 32 seeds no paired interval shows harm for coverConceals (near inert) or rewardedHebb (guards all no-difference on 16 seeds); predatorRestTicks is the most likely to show a worse hunters-alive share (it lowered predators at end -18% and population -10% on 16 seeds, both no-difference) - perhaps an interval touching 0. If an interval excludes 0 on the worse side, that mechanism is deleted.",
+      "targets": [
+        "eval.population_mean",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.spec_effective",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.prey_extinctions",
+        "share.hunters_alive",
+        "share.under_80"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "off-a.json + off-b.json (defaults, seeds 1-32 as two 16-seed halves, floor on, 200000 ticks, main f5c7880)",
+      "after": "rest-*.json (predatorRestTicks 60), reward-*.json (rewardedHebb), conceal-*.json (coverConceals), same seeds",
+      "verdicts": {
+        "eval.population_mean": "no-difference",
+        "eval.predators_at_end": "no-difference",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.spec_effective": "no-difference",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "no-difference",
+        "eval.prey_extinctions": "no-difference",
+        "share.hunters_alive": "no-difference",
+        "share.under_80": "no-difference"
+      },
+      "effect": "no-difference",
+      "note": "No arm harmful: no guard and no share interval excludes 0 on the worse side, so all three kept and adopted at T22. Hunters alive of 32: defaults 27, rest 23, reward 20, conceal 24. Closest call rewardedHebb: hunters-alive share diff -0.219 [-0.438, 0.000], upper bound exactly 0 (10 seeds lost, 3 gained, sign-test p 0.092). Verdicts listed are the same for all three arms. Non-guard readings flagged worse (rest: coverage -11%, qd_score -12%; conceal: basin_lineage_effective -12%) are not on the keep rule's guard list. Full table in docs/designs/realistic-keepers.md (Results)."
+    },
+    {
+      "id": "E138",
+      "date": "2026-11-07",
+      "branch": "feat/realistic-keepers-finish",
+      "hypothesis": "realistic-keepers T21: all seven kept mechanisms on together (satedBite, predatorRestTicks 60, juvenileDependency, rewardedHebb, coverConceals, coverFoodFree, refugeSense) pass the user's keep rule on the floor-on world.",
+      "prediction": "Written from the arms before the run: the keep rule holds in each half (hunters alive 12 of 16 or more, no more seeds under 80 than the defaults) and no guard but hunter_kill_conversion_by_age.1k-2k is worse (satedBite lowers it by construction, E134/E136).",
+      "targets": [
+        "eval.population_mean",
+        "eval.predators_at_end",
+        "eval.prey_types_at_end",
+        "eval.spec_effective",
+        "eval.hunter_kill_conversion_by_age.1k-2k",
+        "eval.prey_extinctions",
+        "eval.hunter_kill_conversion_hungry.1k-2k",
+        "share.hunters_alive",
+        "share.under_80"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "off-a.json + off-b.json (defaults, seeds 1-32, floor on, 200000 ticks)",
+      "after": "combined-a.json + combined-b.json (all seven on, same seeds)",
+      "verdicts": {
+        "eval.population_mean": "no-difference",
+        "eval.predators_at_end": "better",
+        "eval.prey_types_at_end": "no-difference",
+        "eval.spec_effective": "no-difference",
+        "eval.hunter_kill_conversion_by_age.1k-2k": "worse",
+        "eval.prey_extinctions": "no-difference",
+        "eval.hunter_kill_conversion_hungry.1k-2k": "no-difference",
+        "share.hunters_alive": "no-difference",
+        "share.under_80": "no-difference"
+      },
+      "effect": "better",
+      "note": "Passes. Hunters alive 13/16 and 14/16 (defaults 14 and 13); seeds under 80: 5 and 4 (defaults 7 and 4). Predators at end 23.2 -> 34.6 (+49%, better). Conversion 1k-2k -24.7% worse is read through the hungry-chase metric (-9.3%, interval spans 0) by the E136 precedent (Delegated decision); backing out refugeSense would not touch satedBite's by-construction effect. Adopted as defaults in T22 with goldens re-pinned."
     }
   ]
 }
