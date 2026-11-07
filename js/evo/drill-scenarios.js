@@ -57,16 +57,33 @@ function offset(rng, lowDeg, highDeg) {
 
 /**
  * @param {Record<string, any>} world the world
- * @returns {number[]} the alive food slots
+ * @returns {number} how many food items are alive (the food drills' `done` check runs every tick: allocates nothing)
  */
-function aliveFoods(world) {
-    const slots = [];
-    for (let i = 0; i < world.foodAlive.length; i++) {
-        if (world.foodAlive[i] === 1) {
-            slots.push(i);
+function aliveFoodCount(world) {
+    const alive = world.foodAlive;
+    let count = 0;
+    for (let i = 0; i < alive.length; i++) {
+        count += alive[i];
+    }
+    return count;
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @returns {number} the one alive food slot of a world with exactly one, or -1
+ */
+function onlyAliveFood(world) {
+    const alive = world.foodAlive;
+    let found = -1;
+    for (let i = 0; i < alive.length; i++) {
+        if (alive[i] === 1) {
+            if (found >= 0) {
+                return -1;
+            }
+            found = i;
         }
     }
-    return slots;
+    return found;
 }
 
 /**
@@ -103,7 +120,7 @@ function foodDrill(name, { share, fromDeg, toDeg, maxTicks }) {
         plan(rng, view) {
             const angle = heading(rng);
             const food = around(angle + offset(rng, fromDeg, toDeg), share * view);
-            const eaten = (/** @type {Record<string, any>} */ world) => aliveFoods(world).length === 0;
+            const eaten = (/** @type {Record<string, any>} */ world) => aliveFoodCount(world) === 0;
             return {
                 stage: stage([subjectAt(FORAGER_SPEC, angle)], [food]),
                 timing: null,
@@ -137,10 +154,10 @@ const TWO_FOODS = {
             timing: null,
             scent: false,
             maxTicks: 600,
-            done: (world) => aliveFoods(world).length < 2,
+            done: (world) => aliveFoodCount(world) < 2,
             won: (world) => {
-                const left = aliveFoods(world);
-                return left.length === 1 && world.foodTox[left[0]] > 0;
+                const left = onlyAliveFood(world);
+                return left >= 0 && world.foodTox[left] > 0;
             },
         };
     },
