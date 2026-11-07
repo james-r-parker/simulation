@@ -35,4 +35,9 @@ describe('body state GLSL', () => {
         expect(BODY_STATE_GLSL).toContain('if (uBody < 0.75) return 0.0;');
         expect(BODY_STATE_GLSL).toContain('vPregnant * uCourt');
     });
+
+    it('stretches a fleeing body into a streamline and widens its eye', () => {
+        expect(BODY_STATE_GLSL).toContain('p.x /= 1.0 + 0.15 * vTween.w;');
+        expect(BODY_STATE_GLSL).toContain('0.3 * vTween.w');
+    });
 });

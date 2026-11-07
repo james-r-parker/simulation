@@ -11,6 +11,7 @@ import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 import { playPregnant } from './effects-life.js';
 import { CLIENT_KIND } from './client-kinds.js';
 import { createBreaths, playBreaths } from './effects-weather.js';
+import { playFlee } from './effects-flee.js';
 
 /** How far from the mouth a meal is looked for, in eater radii, plus a margin in world units. */
 export const MEAL_REACH = 2;
@@ -176,4 +177,5 @@ export function playEdges(player, agents, snapshot, tick) {
     edges.tick = tick;
     diffFlags(edges.flags, agents, player.bits, edges.emit);
     playBreaths(player, agents, tick);
+    playFlee(player, agents, tick);
 }

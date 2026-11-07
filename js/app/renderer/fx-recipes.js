@@ -145,6 +145,18 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.sparkle, count: 6, life: 30, size: 0.35, reach: 1.6, spread: 'ring', color: 'recover' },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'recover', gain: 0.8, minPx: 8 },
     ]),
+    fleeDust: recipe(FAMILY.combat, RANK.eat, [
+        {
+            curve: C.dust,
+            count: 2,
+            life: 24,
+            size: 0.5,
+            reach: 0.8,
+            spread: 'heading',
+            color: 'stampedeDust',
+            gain: 30,
+        },
+    ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
     ]),

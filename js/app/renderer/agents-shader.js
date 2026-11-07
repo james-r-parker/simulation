@@ -34,7 +34,7 @@ attribute vec4 iColor;  // r, g, b, energy01
 attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
 attribute vec4 iExtra;  // pregnant, neutral family, sick, infected
 attribute vec4 iMotion; // speed01, turn01, phase, 0
-attribute vec4 iTween;  // one-shot tween kind, its age, call (1 alarm, 2 hunt), 0
+attribute vec4 iTween;  // one-shot tween kind, its age, call (1 alarm, 2 hunt), fleeing
 attribute vec4 iBody;   // state bits, gestation01, dose01, strain / 255
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;

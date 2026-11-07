@@ -24,12 +24,13 @@ vec2 stateP(vec2 p) {
     if (uBody < 0.75) return p;
     p /= 1.0 + 0.04 * stateBit(${BODY_BIT.RESTING}.0) * sin(uTime * 2.5132741);
     p.y /= 1.0 + 0.08 * stateBit(${BODY_BIT.SATED}.0);
+    p.x /= 1.0 + 0.15 * vTween.w;
     return p;
 }
 
 float eyeCover(vec2 eyeAt) {
     float on = uBody > 0.75 ? 1.0 : 0.0;
-    float r = 0.13 * (1.0 + 0.4 * stateBit(${BODY_BIT.JUVENILE}.0) * on);
+    float r = 0.13 * (1.0 + (0.4 * stateBit(${BODY_BIT.JUVENILE}.0) + 0.3 * vTween.w) * on);
     vec2 q = eyeAt * vec2(1.0, 1.0 + 4.0 * stateBit(${BODY_BIT.RESTING}.0) * on);
     return 1.0 - smoothstep(r - vPx, r + vPx, length(q));
 }

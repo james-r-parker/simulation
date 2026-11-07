@@ -75,7 +75,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
  * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, infected
  * @property {Float32Array} motion speed01, turn01, phase, 0
- * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), 0
+ * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), fleeing
  * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
  * @property {number} count agents packed this frame
  */
@@ -89,6 +89,8 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
  * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
+ * @property {Uint8Array | null} fleeing 1 for each agent index under pursuit this frame (the effects player's), null
+ *   when none is attached
  */
 
 /**
@@ -120,6 +122,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         minPx: Float32Array.from(minPx),
         rgb: [0, 0, 0],
         tweens: createBodyTweens(capacity),
+        fleeing: null,
     };
 }
 
@@ -168,7 +171,7 @@ function packTween(store, { bucket, o, i, tick }, agents, bits) {
     bucket.tween[o] = age >= 0 ? store.tweens.kind[slot] : 0;
     bucket.tween[o + 1] = Math.max(age, 0);
     bucket.tween[o + 2] = (flags & bits.ALARMING) !== 0 ? 1 : (flags & bits.HUNT_CALLING) !== 0 ? 2 : 0;
-    bucket.tween[o + 3] = 0;
+    bucket.tween[o + 3] = store.fleeing === null ? 0 : store.fleeing[i];
 }
 
 const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0 };

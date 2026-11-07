@@ -66,7 +66,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
     refs.haze = haze;
-    refs.player = createEffectsPlayer({
+    const player = createEffectsPlayer({
         threads,
         layout,
         info,
@@ -75,6 +75,8 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         fx,
         tweens: agents.store.tweens,
     });
+    agents.store.fleeing = player.flee.fleeing;
+    refs.player = player;
     return {
         layers: [
             createAuroraLayer({ info }),

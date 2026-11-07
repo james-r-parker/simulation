@@ -9,6 +9,7 @@ import { viewBounds } from '../camera.js';
 import { createBodyTweens } from './body-tweens.js';
 import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
+import { createFlee } from './effects-flee.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
 import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
 export { playEdges } from './effects-edges.js';
@@ -52,6 +53,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {string[]} bornNames birth cause names by number (`ready.layout.bornCauses`)
  * @property {import('./effects-edges.js').EdgeState} edges the flag-edge state and the food grids
  * @property {Record<string, number>} bits `ready.layout.flags`
+ * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  */
 
 /**
@@ -90,6 +92,7 @@ export function createEffectsPlayer({
         fx,
         tweens,
         edges: /** @type {any} */ (null),
+        flee: /** @type {any} */ (null),
         bits: layout.flags ?? {},
         at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash, reach: 0 },
         who: { slot: 0, genome: 0 },
@@ -110,6 +113,7 @@ export function createEffectsPlayer({
         rgb: [0, 0, 0],
     };
     player.edges = createEdgeState(player, info);
+    player.flee = createFlee(info);
     return player;
 }
 
