@@ -9,6 +9,7 @@ import { loadKernels } from '../../js/sim/wasm-loader.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { golden } from './golden-run.js';
 import { smallWorld } from './helpers/small-world.js';
+import { readReference, runUnitCase, unitCases } from './helpers/brain-reference.js';
 import { runCase, stepPair } from './helpers/wasm-run.js';
 
 const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
@@ -213,4 +214,20 @@ describe('the WASM brain kernel in stepped worlds', () => {
         },
         TIMEOUT_MS,
     );
+});
+
+// The recorded reference (T7): the JS kernel's digests, which the kernel must reproduce once the JS kernel is gone.
+describe('the WASM brain kernel against the recorded JS reference', () => {
+    const reference = readReference();
+    it('reproduces every per-call digest', () => {
+        for (const c of unitCases()) {
+            const digests = runUnitCase(c, (world) => {
+                if (world.wasm === undefined) {
+                    attachWasm(world, kernels, { wasmKernels: true });
+                }
+                wasmForwardAll(world);
+            });
+            expect(digests, c.key).toEqual(reference.unit[c.key]);
+        }
+    });
 });
