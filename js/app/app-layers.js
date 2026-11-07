@@ -19,12 +19,10 @@ import { createOverlays } from './renderer/overlays.js';
 import { createPollenLayer } from './renderer/pollen-layer.js';
 import { createParticles } from './renderer/particles.js';
 import { createMateThreadLayer, createMateThreadPool } from './renderer/mate-threads.js';
-import { createRingLayer, createRingPool } from './renderer/rings.js';
 import { createSmokeLayer } from './renderer/smoke-layer.js';
 import { createTerritoryLayer } from './renderer/territory-layer.js';
 import { createVisionLayer } from './renderer/vision-layer.js';
 import { createWeatherLayer } from './renderer/weather-layer.js';
-import { createSparkLayer, createSparkPool } from './renderer/sparks.js';
 import { createBorderLayer, createFoodLayer, createObstacleLayer } from './renderer/world-layers.js';
 
 /**
@@ -65,14 +63,10 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     const haze = createHazeLayer({ info });
     const smoke = createSmokeLayer({ info });
     agents.setSmokeTexture(smoke.texture);
-    const rings = createRingPool();
-    const sparks = createSparkPool(seed);
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
     refs.haze = haze;
     refs.player = createEffectsPlayer({
-        rings,
-        sparks,
         threads,
         layout,
         info,
@@ -97,8 +91,6 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             agents,
             createVisionLayer({ info }),
             smoke,
-            createRingLayer({ pool: rings }),
-            createSparkLayer({ pool: sparks }),
             createFxLayer({ pool: fx.pool, budget: fx.budget }),
             createChaseLayer({ info }),
             createMateThreadLayer({ pool: threads }),

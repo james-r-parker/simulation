@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../js/app/camera.js';
 import { createFxDev, readFxParams } from '../../js/app/fx-dev.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
-import { createRingPool } from '../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../js/app/renderer/sparks.js';
 import { fakeDocument } from './helpers/fake-dom.js';
 
 const fakeElement = () => fakeDocument().createElement('div');
@@ -41,8 +39,6 @@ describe('createFxDev', () => {
             createFxDev({ params: readFxParams('?fxlog=1&fxdemo=calls'), doc: fakeDocument(), parent, target })
         );
         const player = createEffectsPlayer({
-            rings: createRingPool(),
-            sparks: createSparkPool(1),
             layout,
             info: { callRadius: 100, callTicks: 30, maxAgents: 4 },
         });

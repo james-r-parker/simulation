@@ -4,8 +4,6 @@ import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { createEffectsPlayer, playEdges } from '../../../js/app/renderer/effects-player.js';
 import { bornNamesOf } from '../../../js/app/renderer/effects-life.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const BITS = { ATE_SHIFT: 0, TIMER_MASK: 31, PREGNANT: 1 << 13, SICK: 1 << 18, INFECTED: 1 << 15 };
@@ -20,8 +18,6 @@ describe('bornNamesOf', () => {
 describe('a pregnancy edge', () => {
     it('rings the mother in the courtship colour once, when the pregnant bit rises', () => {
         const player = createEffectsPlayer({
-            rings: createRingPool(),
-            sparks: createSparkPool(1),
             layout: { effectKinds: {}, deathCauses: {}, flags: BITS },
             info: { callRadius: 1, callTicks: 1, maxAgents: 8, maxFood: 4, worldWidth: 100, worldHeight: 100 },
         });

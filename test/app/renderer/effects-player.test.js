@@ -13,8 +13,6 @@ import { createMateThreadPool } from '../../../js/app/renderer/mate-threads.js';
 import { isLive } from '../../../js/app/renderer/fx-pool.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
-import { createRingPool, RING_CAPACITY } from '../../../js/app/renderer/rings.js';
-import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = {
@@ -59,15 +57,13 @@ const alive = (/** @type {any[]} */ list) => {
     return out;
 };
 
-/** @returns {{player: any, rings: any, sparks: any, threads: any, seen: number[]}} a player with a recording sink */
+/** @returns {{player: any, threads: any, seen: number[]}} a player with a recording sink */
 function build() {
-    const rings = createRingPool();
-    const sparks = createSparkPool(1);
     const threads = createMateThreadPool();
     /** @type {number[]} */
     const seen = [];
-    const player = createEffectsPlayer({ rings, sparks, threads, layout, info, sink: (e) => seen.push(e.kind) });
-    return { player, rings, sparks, threads, seen };
+    const player = createEffectsPlayer({ threads, layout, info, sink: (e) => seen.push(e.kind) });
+    return { player, threads, seen };
 }
 
 /**
@@ -210,7 +206,6 @@ describe('playEffects', () => {
             }
         }
         expect(counts).toEqual({ 0: 0, 1: 11, 2: 5, 3: 8, 4: 8 });
-        expect(RING_CAPACITY + SPARK_CAPACITY).toBeGreaterThan(0);
     });
 
     it('a mating spirals courtship motes to the midpoint of the pair and bounces both', () => {

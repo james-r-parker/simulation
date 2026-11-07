@@ -3,14 +3,10 @@ import { createCameraController } from '../../../js/app/camera.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
 import { createFxDemo, DEMO_PERIOD, DEMO_ZOOM, demoGrid, demoRecipes } from '../../../js/app/renderer/fx-demo.js';
 import { FX_RECIPES } from '../../../js/app/renderer/fx-recipes.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 
 /** @returns {{player: any, camera: any, client: any}} a context */
 function ctx() {
     const player = createEffectsPlayer({
-        rings: createRingPool(),
-        sparks: createSparkPool(1),
         layout: { effectKinds: {}, deathCauses: {} },
         info: { callRadius: 100, callTicks: 30, maxAgents: 8 },
     });

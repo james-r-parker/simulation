@@ -34,8 +34,6 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
 
 /**
  * @typedef {object} EffectsPlayer
- * @property {import('./rings.js').RingPool} rings
- * @property {import('./sparks.js').SparkPool} sparks
  * @property {import('./mate-threads.js').MateThreadPool} [threads]
  * @property {Record<string, number>} kinds `ready.layout.effectKinds`
  * @property {number} eatenCause `ready.layout.deathCauses.EATEN`
@@ -70,8 +68,7 @@ function causeNamesOf(causes) {
 }
 
 /**
- * @param {{rings: import('./rings.js').RingPool, sparks: import('./sparks.js').SparkPool,
- *   threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
+ * @param {{threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
  *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
  *   sink?: ((effect: Effect) => void) | null, fx?: import('./fx-recipes.js').FxPlayer,
  *   tweens?: import('./body-tweens.js').BodyTweens}} options the pools to play into, `ready.layout` and
@@ -80,8 +77,6 @@ function causeNamesOf(causes) {
  * @returns {EffectsPlayer} a player
  */
 export function createEffectsPlayer({
-    rings,
-    sparks,
     threads,
     layout,
     info,
@@ -100,8 +95,6 @@ export function createEffectsPlayer({
         who: { slot: 0, genome: 0 },
         causeNames: causeNamesOf(layout.deathCauses),
         bornNames: bornNamesOf(layout.bornCauses),
-        rings,
-        sparks,
         threads,
         kinds: layout.effectKinds,
         floraEnabled: true,

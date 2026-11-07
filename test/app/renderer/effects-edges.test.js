@@ -4,8 +4,6 @@ import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { createEffectsPlayer, playEdges } from '../../../js/app/renderer/effects-player.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const BITS = { ATE_SHIFT: 0, TIMER_MASK: 31, SICK: 1 << 18, INFECTED: 1 << 15, PREGNANT: 1 << 13 };
@@ -28,7 +26,7 @@ function step(player, { tick, ate, foods }) {
 
 /** @returns {any} a player */
 function build() {
-    return createEffectsPlayer({ rings: createRingPool(), sparks: createSparkPool(1), layout, info });
+    return createEffectsPlayer({ layout, info });
 }
 
 describe('playEdges: meals', () => {

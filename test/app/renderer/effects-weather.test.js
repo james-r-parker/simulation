@@ -2,15 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
 import { BREATH_TICKS, playBreaths } from '../../../js/app/renderer/effects-weather.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 /** @returns {any} a player whose cold-stress line is 0.3 of the maximum */
 function build() {
     return createEffectsPlayer({
-        rings: createRingPool(),
-        sparks: createSparkPool(1),
         layout: { effectKinds: {}, deathCauses: {} },
         info: { callRadius: 1, callTicks: 1, maxAgents: 8, temperatureMax: 40, temperatureColdStress: 12 },
     });

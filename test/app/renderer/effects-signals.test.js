@@ -4,15 +4,11 @@ import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { SCENERY_MAX_LUMINANCE } from '../../../js/app/renderer/colors.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
 import { playAtEffect, playCall, playPollinated } from '../../../js/app/renderer/effects-signals.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 /** @returns {any} a player */
 function build() {
     return createEffectsPlayer({
-        rings: createRingPool(),
-        sparks: createSparkPool(1),
         layout: { effectKinds: {}, deathCauses: {} },
         info: { callRadius: 200, callTicks: 30, maxAgents: 8 },
     });
