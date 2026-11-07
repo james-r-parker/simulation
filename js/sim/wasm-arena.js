@@ -13,6 +13,9 @@ export const PAGE_BYTES = 65536;
 /** The largest memory an arena asks for: 1 GiB. A bigger world falls back to the JS kernels. */
 export const MAX_PAGES = 16384;
 
+/** Pages of the throwaway memory the probe instance reads `__heap_base` from; the kernels declare far fewer. */
+export const PROBE_PAGES = 64;
+
 /** Every array starts on a 16-byte boundary, so a `v128` load of its head is aligned. */
 export const ALIGN = 16;
 
@@ -115,6 +118,26 @@ export class WasmArenaError extends Error {
  */
 
 /**
+ * Instantiates the kernels once on a throwaway memory to read where their own data ends.
+ * @param {WebAssembly.Module} module the compiled kernels
+ * @returns {number} the kernels' `__heap_base`
+ * @throws {WasmArenaError} when the probe instance cannot be built or has no `__heap_base`
+ */
+function probeHeapBase(module) {
+    try {
+        const memory = new WebAssembly.Memory({ initial: PROBE_PAGES });
+        const probe = new WebAssembly.Instance(module, { env: { memory } });
+        const heapBase = /** @type {WebAssembly.Global} */ (probe.exports.__heap_base).value;
+        if (!Number.isInteger(heapBase)) {
+            throw new Error('no __heap_base export');
+        }
+        return heapBase;
+    } catch (error) {
+        throw new WasmArenaError('instantiate', `wasm arena: probe failed: ${/** @type {Error} */ (error).message}`);
+    }
+}
+
+/**
  * Instantiates the kernels with a memory big enough for every array, requested whole up front.
  * @param {WebAssembly.Module} module the compiled kernels (`loadKernels`)
  * @param {Readonly<Record<string, any>>} config the validated config
@@ -124,8 +147,7 @@ export class WasmArenaError extends Error {
  */
 export function createArena(module, config, layout) {
     const specs = arenaSpecs(config, layout);
-    const probe = new WebAssembly.Instance(module, { env: { memory: new WebAssembly.Memory({ initial: 1 }) } });
-    const heapBase = /** @type {WebAssembly.Global} */ (probe.exports.__heap_base).value;
+    const heapBase = probeHeapBase(module);
     const { offsets, end } = layoutArena(specs, heapBase);
     const pages = Math.ceil(end / PAGE_BYTES);
     if (pages > MAX_PAGES) {

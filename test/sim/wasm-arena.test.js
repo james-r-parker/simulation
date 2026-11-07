@@ -19,7 +19,40 @@ import { loadKernels } from '../../js/sim/wasm-loader.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
-const module = kernels.ok ? kernels.module : /** @type {never} */ (null);
+if (!kernels.ok) {
+    throw new Error(`the committed kernels do not load: ${kernels.detail}`);
+}
+const { module } = kernels;
+/** A module whose memory import needs 65 pages, more than the probe gives. */
+const GREEDY = new WebAssembly.Module(
+    Uint8Array.of(
+        0,
+        0x61,
+        0x73,
+        0x6d,
+        1,
+        0,
+        0,
+        0,
+        2,
+        15,
+        1,
+        3,
+        0x65,
+        0x6e,
+        0x76,
+        6,
+        0x6d,
+        0x65,
+        0x6d,
+        0x6f,
+        0x72,
+        0x79,
+        2,
+        0,
+        65,
+    ),
+);
 
 /**
  * @returns {{ records: any[], log: { log: (level: string, event: string, fields: object) => void } }} a log that keeps
@@ -75,6 +108,16 @@ describe('createArena', () => {
         arena.views.scratch.set([0.25, -3, 0]);
         expect(arena.exports.tanh_into(arena.offsets.scratch, 3)).toBe(0);
         expect(Array.from(arena.views.scratch.subarray(0, 3))).toEqual([detTanh(0.25), detTanh(-3), 0]);
+    });
+
+    it('turns a probe that cannot instantiate into an instantiate error, and the committed kernels probe cleanly', () => {
+        expect(() => createArena(GREEDY, world.config, world.layout)).toThrow(/probe failed/);
+        try {
+            createArena(GREEDY, world.config, world.layout);
+        } catch (error) {
+            expect(/** @type {WasmArenaError} */ (error).reason).toBe('instantiate');
+        }
+        expect(() => createArena(module, world.config, world.layout)).not.toThrow();
     });
 
     it('throws a memory error past the page limit', () => {
