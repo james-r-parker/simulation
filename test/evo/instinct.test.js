@@ -267,7 +267,7 @@ describe('applyHunterReflex', () => {
         expect(row(false, 0.5)).toBe(0);
     });
 
-    it('randomGenome takes the kin pull from juvenileDependency and kinPullWeight', () => {
+    it('randomGenome takes the kin pull from kinPullWeight', () => {
         const genome = (/** @type {Record<string, any>} */ over) => {
             const row = new Float32Array(layout.weightCount);
             const world = {
@@ -278,8 +278,8 @@ describe('applyHunterReflex', () => {
             randomGenome(world, 0, { row, rng: createRng(5) });
             return row;
         };
-        const off = genome({ juvenileDependency: false });
-        const on = genome({ juvenileDependency: true, kinPullWeight: 0.5 });
+        const off = genome({ kinPullWeight: 0 });
+        const on = genome({ kinPullWeight: 0.5 });
         expect(off[cell('kin', 0, THRUST)]).not.toBe(on[cell('kin', 0, THRUST)]);
         expect(on[cell('kin', 0, THRUST)]).toBeGreaterThanOrEqual(0.5);
         expect(on[cell('kin', 2, TURN)]).toBeGreaterThanOrEqual(0.5);

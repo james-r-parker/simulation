@@ -289,10 +289,8 @@ describe('applyCosts', () => {
         expect(world.cooldown[0]).toBe(0);
     });
 
-    it('charges a juvenile hunter juvenileBurn of the standing, movement and turn formula under juvenileDependency', () => {
-        const world = allocateWorld(
-            createConfig({ ...SIMPLE_WORLD, ...SMALL, juvenileDependency: true, juvenileBurn: 0.4 }),
-        );
+    it('charges a juvenile hunter juvenileBurn of the standing, movement and turn formula', () => {
+        const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, juvenileBurn: 0.4 }));
         world.temperature[allocBody(world)] = world.config.temperatureStart;
         world.energy[0] = 100;
         world.spec[0] = 1;

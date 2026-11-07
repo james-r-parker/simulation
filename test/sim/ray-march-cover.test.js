@@ -18,18 +18,20 @@ function proximity(w, slot) {
 
 /**
  * @param {Record<string, any>} over config overrides
+ * @param {boolean} rings whether the world has a refuge ring (the rays conceal only then)
  * @returns {{w: ReturnType<typeof senseWorld>, me: number, hidden: number}} a caster facing an agent 100 px ahead
  */
-function scene(over) {
+function scene(over, rings) {
     const w = senseWorld(over);
+    w.refugeCentres = rings ? Float64Array.of(2000, 2000) : new Float64Array(0);
     const me = addAgent(w, 500, 500, 20);
     const hidden = addAgent(w, 600, 500, 20);
     return { w, me, hidden };
 }
 
-describe('castRays with coverConceals', () => {
+describe('castRays with refuge rings', () => {
     it('skips an agent inside a ring when the caster is outside every ring', () => {
-        const { w, me, hidden } = scene({ coverConceals: true });
+        const { w, me, hidden } = scene({}, true);
         w.coverRing[hidden] = 1;
         expect(proximity(w, me)).toBe(0);
         expect(w.inputs.subarray(me * w.layout.rawInputCount, me * w.layout.rawInputCount + RAY_CHANNELS)).toEqual(
@@ -38,26 +40,26 @@ describe('castRays with coverConceals', () => {
     });
 
     it('sees the agent from inside the same ring', () => {
-        const { w, me, hidden } = scene({ coverConceals: true });
+        const { w, me, hidden } = scene({}, true);
         w.coverRing[hidden] = 1;
         w.coverRing[me] = 1;
         expect(proximity(w, me)).toBeCloseTo(1 - 80 / VISION, 6);
     });
 
     it('skips the agent from inside a different ring', () => {
-        const { w, me, hidden } = scene({ coverConceals: true });
+        const { w, me, hidden } = scene({}, true);
         w.coverRing[hidden] = 1;
         w.coverRing[me] = 2;
         expect(proximity(w, me)).toBe(0);
     });
 
     it('sees an agent outside every ring as before', () => {
-        const { w, me } = scene({ coverConceals: true });
+        const { w, me } = scene({}, true);
         expect(proximity(w, me)).toBeCloseTo(1 - 80 / VISION, 6);
     });
 
     it('finds the agent behind the concealed one, and the food behind it', () => {
-        const { w, me, hidden } = scene({ coverConceals: true });
+        const { w, me, hidden } = scene({}, true);
         w.coverRing[hidden] = 1;
         const behind = addAgent(w, 700, 500, 20);
         expect(proximity(w, me)).toBeCloseTo(1 - 180 / VISION, 6);
@@ -67,14 +69,14 @@ describe('castRays with coverConceals', () => {
     });
 
     it('counts each concealed hit', () => {
-        const { w, me, hidden } = scene({ coverConceals: true });
+        const { w, me, hidden } = scene({}, true);
         w.coverRing[hidden] = 1;
         castRays(w, rebuild(w), me);
         expect(w.coverTotals[COVER_TOTALS.CONCEALED_HITS]).toBe(1);
     });
 
-    it('leaves the rays as they were with the switch off, whatever the ring bytes say', () => {
-        const { w, me, hidden } = scene({});
+    it('leaves the rays alone in a world without rings, whatever the ring bytes say', () => {
+        const { w, me, hidden } = scene({}, false);
         w.coverRing[hidden] = 1;
         expect(proximity(w, me)).toBeCloseTo(1 - 80 / VISION, 6);
         expect(w.coverTotals[COVER_TOTALS.CONCEALED_HITS]).toBe(0);

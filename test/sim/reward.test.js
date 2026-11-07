@@ -38,7 +38,7 @@ describe('noteReward', () => {
     });
 
     it('counts every source in every arm, with or without rewardedHebb', () => {
-        const world = smallWorld({ foodEnergy: FOOD });
+        const world = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
         const slot = addBlob(world);
         expect(world.rewardTrace).toBeUndefined();
         noteReward(world, slot, REWARD_SOURCE.BITE, 5);
@@ -67,8 +67,8 @@ describe('noteReward', () => {
     });
 
     it('does not move the world hash when rewardedHebb is off', () => {
-        const a = smallWorld({ foodEnergy: FOOD });
-        const b = smallWorld({ foodEnergy: FOOD });
+        const a = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
+        const b = smallWorld({ foodEnergy: FOOD, rewardedHebb: false });
         addBlob(a);
         noteReward(b, addBlob(b), REWARD_SOURCE.KILL, 50);
         expect(hashWorld(b)).toBe(hashWorld(a));

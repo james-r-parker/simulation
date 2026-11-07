@@ -12,7 +12,7 @@ describe('refuge inputs', () => {
      * @returns {{w: ReturnType<typeof senseWorld>, slot: number, read: () => number[]}} an agent at (500, 500) facing +x
      */
     function sensing(over, centres) {
-        const w = senseWorld({ refugeSense: true, ...over });
+        const w = senseWorld({ ...over });
         const slot = addAgent(w, 500, 500, 25);
         w.refugeCentres = Float64Array.from(centres);
         const at = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS;
@@ -63,12 +63,8 @@ describe('refuge inputs', () => {
         expect(read()[2]).toBe(0);
     });
 
-    it('is exactly 0 in all three when refugeSense is false', () => {
-        expect(sensing({ refugeSense: false }, [900, 500]).read()).toEqual([0, 0, 0]);
-    });
-
     it('is exactly 0 in all three when the world has no refuges', () => {
-        const w = senseWorld({ refugeSense: true, refugeCount: 0 });
+        const w = senseWorld({ refugeCount: 0 });
         const slot = addAgent(w, 500, 500, 25);
         writeBodyInputs(w, slot);
         const at = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.REFUGE_BEARING_SIN;
@@ -76,7 +72,7 @@ describe('refuge inputs', () => {
     });
 
     it('caches the real ring centres on the world at creation', () => {
-        const w = smallWorld({ refugeSense: true, refugeCount: 2, worldWidth: 8000, worldHeight: 4000 });
+        const w = smallWorld({ refugeCount: 2, worldWidth: 8000, worldHeight: 4000 });
         expect(w.refugeCentres.every((/** @type {number} */ v) => v > 0 && v < 8000)).toBe(true);
         expect(w.refugeCentres).toEqual(refugeCentresOf(w));
         expect(w.refugeCentres.length).toBe(4);
