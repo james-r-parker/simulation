@@ -104,3 +104,11 @@ describe('fruit glints', () => {
         expect(glow.mat.uniforms.uTime.value).toBe(2.5);
     });
 });
+
+describe('fruit glints and the feeding item', () => {
+    it('draws the glints only while the feeding item draws', () => {
+        const glow = createFloraGlow({ floraPatchMax: 2, foodPatchRadius: 10 });
+        expect(glow.mat.fragmentShader).toContain('smoothstep(0.7, 0.9, vTint.a) * uFruit');
+        expect(glow.mat.uniforms.uFruit.value).toBe(1);
+    });
+});

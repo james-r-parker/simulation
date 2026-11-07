@@ -54,10 +54,11 @@ void main() {
     vec3 rgb = (uDanger * weight.r + uAttack * weight.g + uHunt * weight.b) * uCap * mottle;
     if (uLens > 0.5) {
         vec3 hot = clamp(field.rgb, 0.0, 1.0);
-        vec3 heat = uDanger * smoothstep(0.0, 0.5, hot.r) + uAttack * smoothstep(0.0, 0.5, hot.g)
-            + uHunt * smoothstep(0.0, 0.5, hot.b);
-        float peak = smoothstep(0.6, 1.0, max(hot.r, max(hot.g, hot.b)));
-        rgb = (heat + vec3(peak)) * uCap * mottle;
+        vec3 white = vec3(1.0);
+        vec3 heat = mix(uDanger, white, smoothstep(0.6, 1.0, hot.r)) * smoothstep(0.0, 0.5, hot.r)
+            + mix(uAttack, white, smoothstep(0.6, 1.0, hot.g)) * smoothstep(0.0, 0.5, hot.g)
+            + mix(uHunt, white, smoothstep(0.6, 1.0, hot.b)) * smoothstep(0.0, 0.5, hot.b);
+        rgb = heat * uCap * mottle;
     }
     gl_FragColor = vec4(rgb, 1.0);
     #include <tonemapping_fragment>

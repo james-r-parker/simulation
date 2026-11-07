@@ -21,6 +21,7 @@ void main() {
 }`;
 const FRAGMENT = /* glsl */ `
 uniform float uTime;
+uniform float uFruit;     // 1 when the feeding look item draws
 varying vec2 vLocal;
 varying vec4 vTint;
 void main() {
@@ -28,7 +29,7 @@ void main() {
     if (d >= 1.0) discard;
     vec3 rgb = vTint.rgb * vTint.a * (1.0 - d) * (1.0 - d);
     // A patch above 70% full fruits: four glints bob on its glow (renderer-event-effects Phase 3).
-    float ripe = smoothstep(0.7, 0.9, vTint.a);
+    float ripe = smoothstep(0.7, 0.9, vTint.a) * uFruit;
     float glints = 0.0;
     for (int k = 0; k < 4; k++) {
         float a = float(k) * 1.5707963 + 0.4;
@@ -78,7 +79,7 @@ export function createFloraGlow(info) {
     const mat = new ShaderMaterial({
         vertexShader: VERTEX,
         fragmentShader: FRAGMENT,
-        uniforms: { uTime: { value: 0 } },
+        uniforms: { uTime: { value: 0 }, uFruit: { value: 1 } },
         blending: AdditiveBlending,
         transparent: true,
         depthTest: false,

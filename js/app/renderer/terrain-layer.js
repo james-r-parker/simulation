@@ -355,6 +355,9 @@ export function createTerrainLayer({ info, seed = 0 }) {
         setLook(look) {
             const tier = look.terrain === 0 ? 0 : look.terrain === 1 ? 1 : 2;
             floraOn = look.flora !== LOOK_OFF;
+            if (flora) {
+                flora.mat.uniforms.uFruit.value = look.feeding === undefined || look.feeding === LOOK_OFF ? 0 : 1;
+            }
             const terrainOn = tier >= 0 && tier < 2;
             setFloraVisibility(parts, terrainOn, floraOn);
             occupancy.paused = !terrainOn;
