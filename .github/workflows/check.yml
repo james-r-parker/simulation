@@ -109,3 +109,41 @@ jobs:
           path: .checklogs/
           if-no-files-found: ignore
           include-hidden-files: true
+
+  # Alternates the PR base and head on this one runner, so the runner's speed cancels (scripts/bench-compare.mjs). It
+  # always runs and reports; its steps are skipped (the job passes) when scripts/perf-scope.sh finds no path that can
+  # move the step time. Advisory (continue-on-error) for two weeks after it merges, then T18 of
+  # docs/designs/quality-gates-and-test-tiers.md makes it required at max(5%, 3 x measured noise).
+  perf:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Perf scope
+        id: scope
+        run: |
+          scope="$(scripts/perf-scope.sh "origin/${{ github.base_ref }}" || echo perf)"
+          echo "scope=$scope" >>"$GITHUB_OUTPUT"
+          echo "Perf scope: $scope"
+
+      - uses: actions/setup-node@v7
+        if: steps.scope.outputs.scope == 'perf'
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        if: steps.scope.outputs.scope == 'perf'
+        run: npm ci
+
+      - name: Compare step time against the base
+        if: steps.scope.outputs.scope == 'perf'
+        run: |
+          set -o pipefail
+          node scripts/bench-compare.mjs --base "origin/${{ github.base_ref }}" --sizes=500 --runs=3 --threshold=0.10 | tee bench-compare.txt
+          { echo '### bench-compare'; echo '```'; cat bench-compare.txt; echo '```'; } >>"$GITHUB_STEP_SUMMARY"

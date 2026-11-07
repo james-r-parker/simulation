@@ -1,7 +1,7 @@
 # Deployment and community
 
-**Status:** Proposed - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open, to `/next/` and every same-repo PR to a preview; Phases 2 to 4 add a read-only gene library, verified community uploads and an `npx` contributor trainer.
-**Validated:** 23eaea3 (2026-10-17)
+**Status:** In progress - Phase 2 storage back end built on `feat/library-store` (pure `js/library/` modules, `migrations/0001_library.sql`); the Pages Functions, the release and deploy workflows wait on `feat/deploy-pipeline` for the user's setup checklist. Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open, to `/next/` and every same-repo PR to a preview; Phases 2 to 4 add a read-only gene library, verified community uploads and an `npx` contributor trainer.
+**Validated:** f5c7880 (2026-11-07)
 **Priority:** 12 - the last stage: put v6 online, then open it to the community (user, 2026-10-16)
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
@@ -28,7 +28,7 @@ is organised in seasons, one ruleset each. The app and the drawer call a season 
 names the in-world Spring to Winter cycle (`seasonLength`); `season` stays the field name in `seasons.json`, the API
 and the champion rows.
 
-- `library/seasons.json` is `[{ "season", "rulesHash", "layout": { "inputCount", "brainHidden", "outputCount" }, "opened", "major" }]`,
+- `library/seasons.json` is `[{ "season", "rulesHash", "layout": { "name", "inputCount", "brainHidden", "outputCount" }, "opened", "major" }]`,
   oldest first. It is empty until the world gate in [evolution-rework.md](evolution-rework.md) Phase 3 passes. Season 6
   is the first entry (`major` 6), added in the PR that exports `public/champions/v1/`.
 - A season is a major version: `major` equals `season`, a release `n.x.y` belongs to season `n`, and the npm package
@@ -132,6 +132,52 @@ Run once, in this order. Nothing here is committed except the names.
     `NPM_TOKEN`: an npm granular access token, "Read and write", limited to the package `blob-evolution`, 90 days.
 22. Merge the next release PR; approve the `npm-publish` environment in the Actions run.
 
+## Build state (resumed 2026-11-07)
+
+The user asked for this doc ahead of its rank; it was resumed with the earlier docs unbuilt, so only the parts that need
+none of them were built. Drift found against the 2026-10-17 text: the champion file's `layout` carries a `name` field
+(`layoutStamp`); `CHAMPION_VERSION` is 1 and `ARCHIVE_VERSION` 7 (the library stores champion files only, so the archive
+version does not matter here); `evals/league.json` is empty and `public/champions/v1/` does not exist, so seeding has
+no input yet; `library/seasons.json` is empty, as designed; `wrangler.toml` holds only the name, the date and
+`pages_build_output_dir`; `.github/workflows/deploy.yml` is the interim "deploy `main` to production" pipeline that
+Phase 1 replaces; `wrangler` is pinned at 4.152.0 in `package.json`.
+
+| Part                                                                                                                                                                                                                                                                                                         | State                                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/library/` (shapes, seasons, query, list SQL, canonical bytes, rows, seed rows and SQL), `migrations/0001_library.sql`, `library/seasons.json` (empty)                                                                                                                                                    | Built on `feat/library-store`; tests in `test/library/`, the SQL on real SQLite                                                                                                                                                                             |
+| `functions/` (`v`, `s`, `next`, `api/seasons`, `api/champions`, `[id]`, `[id]/file`, `_lib/`), `wrangler.toml` bindings, `scripts/lib/deploy-plan.mjs`, `scripts/deploy-plan.mjs`, `scripts/lib/pr-comment.mjs`, `scripts/lib/release-upload.mjs`, `scripts/release-upload.mjs`, `scripts/build-release.mjs` | Built on `feat/deploy-pipeline` (stacked on `feat/library-store`); tests in `test/functions/`, `test/deploy-plan.test.js`, `test/release-upload.test.js`; the Functions compile with `wrangler pages functions build` and answer under `wrangler pages dev` |
+| `deploy.yml` (replaces the interim production deploy), `release.yml`, `release-please.yml`, `release-please-config.json`, `.release-please-manifest.json`, `.github/deploy/` (wrangler 4.152.0 and lockfile), the Dependabot entry                                                                           | Built on `feat/deploy-pipeline`; `test/deploy-workflows.test.js` asserts the secret rules, SHA pins, no cache, no persisted credentials. Not run on GitHub: that is T5                                                                                      |
+| Gene library drawer, `seedChampion`, founding family (T11, T12, T35)                                                                                                                                                                                                                                         | Waits: the app shell and worker protocol belong to other work                                                                                                                                                                                               |
+| The seed shell script (`scripts/library-seed.mjs`, `library:seed`), `library-probe.mjs`, `library-sync-seasons.mjs`                                                                                                                                                                                          | Waits: needs `public/champions/v1/` and the world gate; `js/library/seed.js` is the pure part                                                                                                                                                               |
+| T7: tsconfig, ESLint globals and size rules, dependency-cruiser, coverage, jscpd and the mirrored-test convention for `js/library/` and `functions/`                                                                                                                                                         | Waits: shared config files with their own owner. Until then both folders read Web globals through `globalThis` or `/* global */` comments, and `js/library/` is covered by `tsc` only through the tests that import it                                      |
+| T1a and T33: `release-check` gate and `season/next` in `check.yml`; T2b: `vite.config.js` `--base` and `APP_VERSION`, relative asset URLs, `npm run build:release`, `test/build-base.slow.test.js`; T4: `AGENTS.md` and `DEPLOY.md`                                                                          | Waits: files outside this work's paths. `release.yml` calls `node scripts/build-release.mjs <version>` directly, and the app must stop using bare `/` paths before a versioned build works                                                                  |
+
+Deviations from the text above: `addRelease` and `resolveSeason` are in `functions/_lib/releases.js` (the Functions and
+`scripts/release-upload.mjs` both need them, and `scripts/lib/release-index.mjs` would only re-export); the workflow
+test file is `test/deploy-workflows.test.js` because `test/workflows.test.js` already holds other workflow rules;
+`wrangler.toml` keeps zero placeholder database ids and `deployPlan` skips with `placeholder-ids` until step 10 pastes
+the real ones, so merging the pipeline branch early cannot deploy a broken binding.
+
+### Merge order and what the user must do first
+
+1. Merge `feat/library-store` (docs, `js/library/`, the migration): it touches no deploy path.
+2. Do the Phase 1 setup checklist steps 1 to 9 and the Phase 2 steps 10 to 12, paste the ids into `wrangler.toml`.
+3. Only then merge `feat/deploy-pipeline`. Merging it replaces the interim workflow: a merge to `main` no longer
+   deploys production, a release does. The first production deploy is merging the Release Please PR (T5).
+4. Things the build could not verify and T5 must: `wrangler d1 migrations apply <name> --env preview --remote` reads the
+   preview bindings of a Pages `wrangler.toml`; `wrangler pages deploy` takes its bindings from `wrangler.toml` for a
+   non-production branch; the `next` branch alias URL is `next.<project>.pages.dev` (the `/next/` Function forwards
+   to it); a release created with the App token starts no second workflow; the `Cache-Control` and Cache API behaviour
+   of the Functions on a deployed site (T3b, T9a).
+
+### Testing before any setup (no Cloudflare account touched)
+
+- `npx vitest run test/library test/functions` runs the pure modules, the migration and list SQL on real SQLite
+  (`node:sqlite`), and the Functions against fake R2 and D1.
+- `npx wrangler d1 migrations apply blob-library --local` applies `migrations/` to a local database in `.wrangler/`.
+- `npm run build && npx wrangler pages dev dist --d1 DB=blob-library --r2 GENES=blob-genomes --r2 RELEASES=matrix-releases`
+  serves the site and `/api/` locally on Miniflare; nothing leaves the machine.
+
 ## Decisions
 
 | Decision                                                                                                                                                          | Reason                                                                                                                                                              | By                |
@@ -150,6 +196,9 @@ Run once, in this order. Nothing here is committed except the names.
 | Verification starts on completion of `nightly`, picks round-robin by uploader and rejects accounts under 30 days                                                  | The 03:00 cron started 4.5 to 5 hours late; oldest-first let one actor fill every night; GitHub accounts are free                                                   | Specialist review |
 | `VERIFY_TOKEN` (queue, expire, verify, attempt) is the only token in Actions; `ADMIN_TOKEN` (block, remove) stays local                                           | A leaked workflow secret should not be able to block accounts or remove champions                                                                                   | Specialist review |
 | Phase 2 widens both tokens with D1 Edit                                                                                                                           | Cloudflare tokens cannot be scoped to one D1 database; the `deploy` job runs no repository code                                                                     | Specialist review |
+| `js/library/seed.js` holds the pure seed code (rows, objects, SQL); the seed shell script is a later task                                                         | The shell lives in `scripts/`, outside this stream's paths, and has no champions to read yet                                                                        | Delegated         |
+| The list API pages by keyset on `(elo DESC, id)` or `(created DESC, id)`; a verified row always has an Elo (a seeded row with no league entry gets 1500)          | A NULL sort key breaks keyset paging; 1500 is `ELO_START`                                                                                                           | Delegated         |
+| Pure modules read `crypto`, `TextEncoder` and `btoa` through `globalThis`                                                                                         | The ESLint config does not declare these globals for `js/library/` yet; widening it (T7) belongs to the config owner                                                | Delegated         |
 
 ## Phases
 
@@ -356,7 +405,7 @@ called from the release run, publishes, after the user approves the `npm-publish
   `(season, status, elo DESC, id)`; `champions_by_created` on `(season, status, created DESC, id)`;
   `champions_uploader` on `(uploader_id, created)` (Phase 3). The list query picks the index that matches its filter and sort.
 - The canonical bytes are `canonicalChampion(file)` in `js/library/canonical.js`: the validated file re-serialised as
-  JSON with keys in the order `version`, `name`, `rulesHash`, `layout` (`inputCount`, `brainHidden`, `outputCount`),
+  JSON with keys in the order `version`, `name`, `rulesHash`, `layout` (`name`, `inputCount`, `brainHidden`, `outputCount`, the `layoutStamp` of [brain-layout.js](../../js/sim/brain-layout.js)),
   `specialisation`, `cell` (omitted when absent), `weights`, and no whitespace.
 - R2 bucket `blob-genomes`, key `s<season>/<id>.json`, the canonical bytes.
 - `wrangler.toml` binds `DB` (D1 `blob-library`) and `GENES` (R2 `blob-genomes`), and for `[env.preview]` the
@@ -667,8 +716,8 @@ day at most, 6 verified a night.
 | #   | Task                                                                                                                                                                                                                                                                 | Nature       | Depends on                               |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------- |
 | T7  | Widen tsconfig, ESLint, Prettier, coverage, jscpd, dependency-cruiser (layer rules above) and the mirrored-test convention to `js/library/` and `cli/`                                                                                                               | [mechanical] | T6                                       |
-| T8  | Add `js/library/shapes.js`, `seasons.js` (with `MIN_SEASON_GAP_DAYS`), `query.js`, `rows.js`, `library/seasons.json` (empty), the seasons `conventions` test (`major`, the 28-day gap, the `season/next` exemption) and tests                                        | [judgement]  | T7                                       |
-| T9  | Add `migrations/0001_library.sql` (tables and the three browse indexes), `wrangler.toml` bindings (production and preview) and `functions/_lib/db.js` with fake-D1 tests                                                                                             | [judgement]  | T8                                       |
+| T8  | (built) Add `js/library/shapes.js`, `seasons.js` (with `MIN_SEASON_GAP_DAYS`), `query.js`, `rows.js`, `library/seasons.json` (empty), the seasons `conventions` test (`major`, the 28-day gap, the `season/next` exemption) and tests                                | [judgement]  | T7                                       |
+| T9  | (partly built: migration and list SQL; `functions/_lib/db.js` is on `feat/deploy-pipeline`) Add `migrations/0001_library.sql` (tables and the three browse indexes), `wrangler.toml` bindings (production and preview) and `functions/_lib/db.js` with fake-D1 tests | [judgement]  | T8                                       |
 | T9a | Add `js/library/canonical.js` and the four read handlers with the Cache API (verified on a deployed Function) and fake-D1/R2 tests                                                                                                                                   | [judgement]  | T8, T9                                   |
 | T10 | Add `scripts/library-seed.mjs`, `scripts/lib/library-seed.mjs`, `scripts/library-sync-seasons.mjs`, the `library:seed` script and tests; the release `deploy` job applies migrations and syncs seasons                                                               | [judgement]  | T9a                                      |
 | T11 | Add the `seedChampion` message and handler to `js/worker/protocol.js` and `js/worker/sim-host.js` with tests                                                                                                                                                         | [judgement]  | T8                                       |

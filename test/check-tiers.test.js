@@ -7,7 +7,11 @@ import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks; a child git that inherits them acts on this repo, not
 // the temporary one, so every spawn gets an environment without them.
-const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+/** @type {Record<string, string | undefined>} */
+const ENV = {
+    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_'))),
+    CHECK_CPU_LOCK: 'off', // these tests spawn check.sh; they must not queue on a lock another agent holds
+};
 
 // Every test here spawns check.sh; a loaded CI runner needs more than Vitest's 5 s default.
 const SPAWN_TIMEOUT_MS = scaleTimeout(30_000);
@@ -83,6 +87,8 @@ describe('check.sh --list --tier 1 staged-file selection', { timeout: SPAWN_TIME
         try {
             mkdirSync(join(repo, 'scripts'));
             copyFileSync(resolve('scripts/check.sh'), join(repo, 'scripts/check.sh'));
+            mkdirSync(join(repo, 'scripts/lib'));
+            copyFileSync(resolve('scripts/lib/cpu-lock.sh'), join(repo, 'scripts/lib/cpu-lock.sh'));
             git('init', '-q');
             for (const name of ['gone.js', 'edited.js', 'seen.md']) {
                 writeFileSync(join(repo, name), 'x\n');

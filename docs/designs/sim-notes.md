@@ -2024,6 +2024,65 @@ Also: the first 16 seeds of `evals/seeds.json` are kinder than the next 16 - flo
 seeds 1 to 16 and on 8 of seeds 17 to 32. Read 16-seed absolute health figures as optimistic; matched-seed comparisons
 are unaffected.
 
+### 2026-11-07 - Prey live in the food patches, the cover does not (habitat-cover.md, draft E-D-1)
+
+Draft entry from the habitat-cover research stream; the coordinator assigns the real experiment id.
+
+On the default floor-on world (`map-elites-v6`, seeds 1 to 4, 20,000 ticks, non-hunting agents sampled every 200 ticks
+over the second half) the median prey stands 1,953 to 2,667 px from the nearest ring edge, 1.1 to 5.2% of samples are
+within 300 px of one (the flight of a prey) and 2.2 to 12.6% within 600 px, and 0 to 0.5% are inside. Meanwhile 28 to 45%
+of samples are inside a food patch disc, which covers about 7% of the map, and the median prey is 448 to 722 px from a
+patch centre. So prey are tied to the patches and the rings, drawn at random from the `obstacles` stream in
+`placeRefuges`, are not. Cover on the patch rims would be within a flight of the prey that feed there. The script is a
+throwaway: it steps a `createWorld` world with the live policy and measures positions, no sim change.
+
+Nature: flight initiation distance rises with the distance to refuge (Dill and Houtman 1989, gray squirrel; Bonenfant and
+Kramer 1996, woodchuck, 0 to 25 m from the burrow), the flight decision trades food against capture risk (Ydenberg and Dill
+1986; Stankowich and Blumstein 2005) and foragers feed near cover (Kotler 1984; Brown 1988; Lima and Dill 1990). The first
+two were checked against their abstracts; the rest are cited from memory and need a full read before they go anywhere
+else.
+
+### 2026-11-07 - Speed pass 2 (T68): rays share one walk over the gathered circles
+
+Profile of the 500-agent step (`node --cpu-prof`, ranked by self time): `hiddenStep` 16 percent, `hebbianStep` 14,
+`castRays` 10, `appendFixtures` 6, `forwardAll` 6, `outputStep` 5, `gatherNear` 5, `buildHash` and its count pass 6.
+Brain parts wait for the WASM spike. Results on `bench:micro --area ray --compare origin/main` (alternating runs, a
+machine at load 27, so the margins are wide):
+
+| Change                                                            | Bench               | Change | Margin |
+| ----------------------------------------------------------------- | ------------------- | ------ | ------ |
+| Far herd body rejected on one axis before the distance test       | `gatherNear` x 484  | +8.7%  | 6.9%   |
+| All 16 rays walk the gathered circles once (circle-major)         | `castRays` x 484    | +77%   | 21.5%  |
+| `hebbianStep` with running indices instead of row and column sums | `hebbianStep` x 486 | +4.8%  | 12.0%  |
+
+The last one is inside its margin and was dropped. The ray change is bit-identical: a ray's hit is the least distance
+with ties to the lower key, so the order circles are met in cannot change it, and the golden test passes unchanged. The
+`coverConceals` path keeps the per-ray loop. Not yet measured: `bench.step_ms@500` end to end (needs a quiet machine).
+
+### 2026-11-07 - First drill table (training T4)
+
+`node scripts/drill.mjs --policy map-elites-v6 --trials 32 --workers 2` (seed 1, the 8 best elites of a fresh 20000-tick
+world on seed 1, default config; win share, with the edge over four random brains in brackets; `-` is a skipped drill).
+Only one of the 8 elites was a forager.
+
+| Subject                | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| ---------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| forager elite (cell 4) | 1.00 (+0.90) | 0.88 (+0.70) | 0.00 (-0.10) | -            | -            | 0.00 (+0.00)   | 0.00 (+0.00) | +0.30     |
+| 7 predator elites      | -            | -            | -            | 0.00 (+0.00) | 1.00 (+0.00) | -              | -            | +0.00     |
+| reference `memoryless` | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | 0.31 (+0.31) | 0.28 (-0.72) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.18     |
+
+Reading it:
+
+- No genome passes `two-foods` (the evolved forager and the scripted reference both eat the nearer, toxic item first;
+  random brains win 0.10 by wandering), `hunter-closing` or `rock-refuge`: no forager survives 600 ticks against a
+  hunter that starts 500 px away, and none enters the ring.
+- No evolved predator kills in `prey-ahead` (0.00 on all seven); the scripted chaser wins 0.31. A predator's 1.00 on
+  `prey-too-big` is the abort drill won by not biting, which a predator that never bites also wins (edge 0.00, since
+  random brains do not bite either). Read `prey-too-big` only beside `prey-ahead`.
+- A fleeing prey can starve at a sprint before it is caught (it did at tick 342 against a still subject), so the
+  `prey-ahead` win reads the sim's `deliberateKills` credit, not the prey's death.
+- The drill world has no refuges, so `refugeSense` inputs read 0 in every drill.
+
 ### 2026-11-07 - WASM brain kernel: 3 to 8 times faster and bit-identical (wasm-kernels T6)
 
 The brain phase (`poolRays`, `hiddenStep`, `outputStep`, `hebbianStep`) runs in `wasm/blob-kernels.wasm` behind the
