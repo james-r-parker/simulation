@@ -82,13 +82,18 @@ function createOfferBuilder({ pending, observer, counters, descriptor }) {
 
 /**
  * Offers a death to the archive, and logs its score when the policy keeps the parts.
- * @param {{archive: any, log?: import('../../sim/log.js').SimLog}} sink the archive and the log
+ * @param {{archive: any, log?: import('../../sim/log.js').SimLog, onOffer?: (item: any, tick: number) => void}} sink the
+ *   archive, the log and, when given, the hook that takes each offer instead of the archive
  * @param {{tick: number, item: import('../../evo/archive.js').Offer, extra?: Record<string, number>}} scored the tick, the offer and the
  *   debug fields of its `FitnessScored` event (none: no event)
  * @returns {void}
  */
-function offerScored({ archive, log }, { tick, item, extra }) {
-    offer(archive, item, log);
+function offerScored({ archive, log, onOffer }, { tick, item, extra }) {
+    if (onOffer === undefined) {
+        offer(archive, item, log);
+    } else {
+        onOffer(item, tick);
+    }
     if (extra !== undefined) {
         log?.log('debug', 'FitnessScored', {
             tick,
@@ -120,13 +125,13 @@ function createRowReader(observer) {
 }
 
 /**
- * @param {Record<string, any>} options `{ config, archive, observer, counters, clones, sigma, log, scoreFields }`;
+ * @param {Record<string, any>} options `{ config, archive, onOffer, observer, counters, clones, sigma, log, scoreFields }`;
  *   `clones` is `{ isClone, archiveRef, refId }`, `sigma` the per-slot step sizes and `scoreFields(row)`, when given,
  *   the fields a debug `FitnessScored` event carries beside the offer's own (none given: no event)
  * @returns {{onDeath: Function, onEvent: Function}} the two hooks; both do nothing without an `observer`, which
  *   is the only source of fitness and speed, so an unobserved run leaves the archive empty
  */
-export function createOffers({ config, archive, observer, counters, clones, sigma, log, scoreFields }) {
+export function createOffers({ config, archive, onOffer, observer, counters, clones, sigma, log, scoreFields }) {
     const pending = createPending(config.maxAgents, archive.layout.weightCount);
     const from = { ...clones, sigma };
     const offerOf = createOfferBuilder({ pending, observer, counters, descriptor: archive.descriptor });
@@ -146,7 +151,7 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
         for (const id of d[o + 4] === d[o + 5] ? [d[o + 4]] : [d[o + 4], d[o + 5]]) {
             const taken = ledger.table.take(id);
             if (taken !== undefined) {
-                offerScored({ archive, log }, { tick: d[o + 1], item: taken, extra: taken.extra });
+                offerScored({ archive, log, onOffer }, { tick: d[o + 1], item: taken, extra: taken.extra });
             }
         }
     }
@@ -167,7 +172,7 @@ export function createOffers({ config, archive, observer, counters, clones, sigm
             const item = offerOf(d, o, row);
             const extra = scoreFields?.(row);
             if (ledger.settle(d[o + 2], { tick: d[o + 1], item, extra })) {
-                offerScored({ archive, log }, { tick: d[o + 1], item, extra });
+                offerScored({ archive, log, onOffer }, { tick: d[o + 1], item, extra });
             }
             pending.id[d[o + 2]] = 0;
         }

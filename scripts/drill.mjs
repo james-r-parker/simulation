@@ -209,13 +209,13 @@ function rowsOf(args, { genomes, tasks, results, log }) {
 }
 
 /**
- * @param {DrillArgs} args the options
- * @param {import('../js/sim/log.js').SimLog} log the log
+ * Drills the genomes and the reference on the pool.
+ * @param {DrillArgs} args the options (`drills`, `seed`, `trials`, `workers`; the source flags are not read)
+ * @param {{genomes: import('../js/evo/memory-probe-run.js').Subject[], config: Record<string, any>, log: import('../js/sim/log.js').SimLog}} run
+ *   the genomes, the config overrides and the log
  * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
  */
-async function drillRows(args, log) {
-    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
-    const genomes = await genomesOf(args, { config, log });
+export async function drillGenomes(args, { genomes, config, log }) {
     const tasks = buildTasks(args, { genomes, config });
     const results = await runPool(
         tasks.map((t) => t.task),
@@ -225,6 +225,17 @@ async function drillRows(args, log) {
         log.log('debug', 'DrillTrial', record);
     }
     return rowsOf(args, { genomes, tasks, results, log });
+}
+
+/**
+ * @param {DrillArgs} args the options
+ * @param {import('../js/sim/log.js').SimLog} log the log
+ * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
+ */
+async function drillRows(args, log) {
+    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const genomes = await genomesOf(args, { config, log });
+    return drillGenomes(args, { genomes, config, log });
 }
 
 /**
