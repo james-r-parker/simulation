@@ -10,3 +10,11 @@ describe('haze shader', () => {
         expect(HAZE_VERTEX).toContain('uWorld');
     });
 });
+
+describe('flow and heat map', () => {
+    it('advects streaks down the field gradient when it flows, and draws a white-hot heat map under the lens', () => {
+        expect(HAZE_FRAGMENT).toContain('vec2 down = -grad / max(length(grad), 1e-4);');
+        expect(HAZE_FRAGMENT).toContain('if (uFlow > 0.5)');
+        expect(HAZE_FRAGMENT).toContain('float peak = smoothstep(0.6, 1.0, max(hot.r, max(hot.g, hot.b)));');
+    });
+});

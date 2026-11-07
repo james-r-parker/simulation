@@ -92,3 +92,20 @@ describe('createHazeLayer', () => {
         expect(hb).toBeLessThan(0.3);
     });
 });
+
+describe('haze flow and lens', () => {
+    it('flows with the motion item at full and switches to the heat map under the scent lens', () => {
+        const layer = createHazeLayer({
+            info: { worldWidth: 100, worldHeight: 100, cols: 10, rows: 5, pheromoneMax: 1 },
+        });
+        const u = layer.object.material.uniforms;
+        expect(u.uTexel.value).toEqual([0.1, 0.2]);
+        layer.setLook?.({ motion: 1 });
+        expect(u.uFlow.value).toBe(0);
+        layer.setLook?.({ motion: 0 });
+        expect(u.uFlow.value).toBe(1);
+        layer.update?.(/** @type {any} */ ({ nowMs: 0, lenses: { scent: true } }));
+        expect(u.uLens.value).toBe(1);
+        layer.dispose();
+    });
+});

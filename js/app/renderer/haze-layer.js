@@ -88,6 +88,9 @@ function hazeUniforms(info, slots) {
         uDanger: { value: PALETTE.dangerScent },
         uAttack: { value: PALETTE.attackScent },
         uHunt: { value: PALETTE.huntScent },
+        uFlow: { value: 1 },
+        uLens: { value: 0 },
+        uTexel: { value: [1 / Math.max(info.cols ?? 1, 1), 1 / Math.max(info.rows ?? 1, 1)] },
     };
 }
 
@@ -130,6 +133,10 @@ export function createHazeLayer({ info }) {
             uniforms.uMix.value = fadeAt(startMs, frame.nowMs);
             uniforms.uTime.value = frame.nowMs / 1000;
             uniforms.uCap.value = frame.lenses.scent ? HAZE_CAP_LENS : HAZE_CAP;
+            uniforms.uLens.value = frame.lenses.scent ? 1 : 0;
+        },
+        setLook(look) {
+            uniforms.uFlow.value = look.motion === 0 ? 1 : 0;
         },
         dispose() {
             geometry.dispose();
