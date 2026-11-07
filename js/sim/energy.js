@@ -158,7 +158,7 @@ function tickCost(world, slot) {
         (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
         sp.passiveLossMultiplier *
         passiveMultiplier(c, world.temperature[slot]);
-    const burn = c.juvenileDependency ? juvenileBurnOf(world, slot) : 1;
+    const burn = juvenileBurnOf(world, slot);
     const base =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) *
         drain *

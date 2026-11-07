@@ -2083,6 +2083,15 @@ Reading it:
   `prey-ahead` win reads the sim's `deliberateKills` credit, not the prey's death.
 - The drill world has no refuges, so `refugeSense` inputs read 0 in every drill.
 
+### 2026-11-07 - parental provisioning deleted (realistic-keepers T20)
+
+`provisionEnabled` (a hunter hands `provisionShare` of a stored meal to its young in range) failed the keep rule in `E134`
+on 16 floor-on seeds: hunters alive 10/16 against the defaults' 14/16, 9 seeds ended under 80 agents (defaults 7) and
+`eval.prey_types_at_end` was worse. It was deleted with `provision.js`, `provision-state.js`, `eval.provisioned_energy_share`,
+the three keys (`provisionEnabled`, `provisionShare`, `provisionRange`), the invariant and the `Provisioned` log emitter.
+The `PROVISIONED` event code (32) stays in `events.js` unused so later codes do not renumber. The juvenile dependency, which
+keeps the kin-floor half of the reflex, stays.
+
 ### 2026-11-07 - WASM brain kernel: 3 to 8 times faster and bit-identical (wasm-kernels T6)
 
 The brain phase (`poolRays`, `hiddenStep`, `outputStep`, `hebbianStep`) runs in `wasm/blob-kernels.wasm` behind the
@@ -2181,6 +2190,27 @@ and `bench:parts` against origin/main (alternating runs, a loaded machine, so th
 
 End to end (`bench-compare --sizes=500 --runs=5`, load about 27): `bench.step_ms@500` 7.97 to 7.63 (-4.3%), sense phase
 1.60 to 1.37 ms; inside the gate's noise, not a quiet-machine number. The golden test passes unchanged.
+
+### 2026-11-07 - the realistic keepers adopted (realistic-keepers T21 and T22)
+
+The combined world (`satedBite`, `predatorRestTicks` 60, `juvenileDependency`, `rewardedHebb`, `coverConceals`, `coverFoodFree`,
+`refugeSense`) passed the keep rule on 32 seeds (hunters alive 13/16 and 14/16, no more seeds under 80 than the defaults, predators at
+end +49%). Its only worse guard, `eval.hunter_kill_conversion_by_age.1k-2k` (-25%), is the by-construction fall of `satedBite` (E136):
+the hungry-chase conversion is not worse (-9%, interval spans 0). All seven are the default now; the six plain switches are deleted
+(`predatorRestTicks` is a plain key at 60, `rewardedHebb` a default-true key until wasm-kernels.md deletes it with the Rust and JS off
+paths). Facts to know:
+
+- Ray casting takes the covered path (`nearestHitCovered`, one ray at a time) whenever the world has refuge rings, which the default
+  world does (8). The circle-major `nearestHitsAll` pass of the speed work runs only in worlds without rings (`refugeCount` 0, as in
+  most tests and the busy and disease golden cases). A sense-phase cost, to be measured at the baseline re-record.
+- `stepCover` and `rejectedByCover` now run in every default world: one ring byte per agent per tick, one ring test per plant placement.
+- Tests that are not about a juvenile hunter set `juvenileBurn` 1 (`test/sim/helpers/predator-arena.js`), and tests of the plain
+  Hebbian rule set `rewardedHebb` false.
+- Historic grids and configs (`evals/screens/hunter-*.grid.json`, `refuge*.grid.json`, `evals/sated-floor-off-config.json`) still name
+  the deleted keys; they record what was run and will not validate if rerun. Old reports carry `provisionEnabled`, so `eval:compare`
+  against them needs `--allow-config-diff` for the keys that differ.
+- Goldens re-pinned (default, busy, disease, full and short), the busy effect-stream pin in `test/worker/sim-host.slow.test.js`
+  moved with them, and `npm run browser:hash` matches in Chromium.
 
 ### 2026-11-07 - herd neighbour loops skip the grid (T73)
 

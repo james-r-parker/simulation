@@ -37,6 +37,23 @@ function hold(q, report, fromMs, forMs) {
     return t;
 }
 
+describe('coarse pointer start', () => {
+    it('starts one level down and the rule still moves it', () => {
+        const q = createQuality({ coarse: true });
+        expect(q.level).toBe(1);
+        const t = hold(q, fast, 0, UP_AFTER_MS + 1000);
+        expect(q.level).toBe(0);
+        expect(t).toBeGreaterThan(0);
+    });
+
+    it('yields to a pin, to software and to missing float targets', () => {
+        expect(createQuality({ coarse: true, pinned: 0 }).level).toBe(0);
+        expect(createQuality({ coarse: true, software: true }).level).toBe(2);
+        expect(createQuality({ coarse: true, floatTargets: false }).level).toBe(2);
+        expect(createQuality().level).toBe(0);
+    });
+});
+
 describe('quality levels', () => {
     it('level 0 is everything, 1 halves bloom and motes, 2 turns both off', () => {
         expect(QUALITY_LEVELS[0]).toMatchObject({ bloom: true, bloomScale: 1, motes: 1 });

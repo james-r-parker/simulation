@@ -113,7 +113,7 @@ export function castSlot(world, slot) {
     const s = setOrigin(world, slot);
     const count = senseSlot(world, slot);
     const { views } = world.wasm;
-    if (world.config.coverConceals) {
+    if (views.senseParams[SENSE_WORD.conceals] === 1) {
         world.coverTotals[COVER_TOTALS.CONCEALED_HITS] += views.senseParams[SENSE_WORD.concealed];
     }
     noteMatesSeen(world, slot, count);

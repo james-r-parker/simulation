@@ -40,6 +40,6 @@ function senseLoop(overrides) {
 }
 
 microSuite('wasm-sense', [
-    ['sense_slot x the alive agents, 500-agent world', senseLoop({})],
-    ['sense_slot x the alive agents, coverConceals', senseLoop({ coverConceals: true })],
+    ['sense_slot x the alive agents, 500-agent world (rings conceal)', senseLoop({})],
+    ['sense_slot x the alive agents, no refuge rings', senseLoop({ refugeCount: 0 })],
 ]);

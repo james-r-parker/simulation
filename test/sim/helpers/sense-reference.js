@@ -17,14 +17,14 @@ export const SENSE_REFERENCE_URL = new URL('../fixtures/wasm-sense-reference.jso
 const BUSY = golden.shortCases.find((/** @type {any} */ c) => c.name === 'busy').overrides;
 const DISEASE = golden.shortCases.find((/** @type {any} */ c) => c.name === 'disease').overrides;
 
-/** The stepped cases: the default world, the busy and disease goldens' worlds, and cover concealment on. */
+/** The stepped cases: the default world (rings conceal), the busy and disease goldens' worlds, worlds without rings. */
 export const SENSE_CASES = Object.freeze([
-    { name: 'default config', overrides: {}, ticks: 120 },
+    { name: 'default config', overrides: {}, ticks: 200, mustConceal: true },
     { name: 'busy', overrides: BUSY, ticks: 200 },
     { name: 'disease', overrides: DISEASE, ticks: 200 },
-    { name: 'coverConceals, default', overrides: { coverConceals: true }, ticks: 200, mustConceal: true },
+    { name: 'no refuge rings', overrides: { refugeCount: 0 }, ticks: 120 },
     { name: 'odd ray count', overrides: { rayCount: 11 }, ticks: 80 },
-    { name: 'odd ray count, coverConceals', overrides: { coverConceals: true, rayCount: 13 }, ticks: 120 },
+    { name: 'odd ray count, no refuge rings', overrides: { refugeCount: 0, rayCount: 13 }, ticks: 120 },
 ]);
 
 /** World arrays a cast writes that outlive it. */

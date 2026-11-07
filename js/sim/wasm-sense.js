@@ -116,7 +116,6 @@ export function writeSenseParams(arena, world) {
     p[SENSE_WORD.obsCount] = world.obsX.length;
     p[SENSE_WORD.herdMax] = world.herdMax;
     p[SENSE_WORD.rayCount] = config.rayCount;
-    p[SENSE_WORD.conceals] = config.coverConceals ? 1 : 0;
     d[D_SMOKE_RADIUS] = config.smokeRadius;
     d[D_HERD_RADIUS] = config.herdRadius;
     d[D_WIDTH] = config.worldWidth;
@@ -145,6 +144,8 @@ export function syncSense(world, hash) {
     p[SENSE_WORD.cols] = hash.cols;
     p[SENSE_WORD.rows] = hash.rows;
     p[SENSE_WORD.cloudCount] = world.cloudCount;
+    // Rings conceal: `refugeCentres` is placed by `createWorld`, after the arena is built.
+    p[SENSE_WORD.conceals] = world.refugeCentres.length > 0 ? 1 : 0;
     views.senseDoubles[D_CELL_SIZE] = hash.cellSize;
 }
 

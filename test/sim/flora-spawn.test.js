@@ -149,7 +149,7 @@ describe('species spawning', () => {
     });
 });
 
-describe('coverFoodFree species spawning', () => {
+describe('species spawning out of the rings', () => {
     it('keeps patch food out of a ring over the patch, from the food stream', () => {
         const w = smallWorld({
             foodPatchCount: 1,
@@ -159,10 +159,26 @@ describe('coverFoodFree species spawning', () => {
             maxFood: 40,
         });
         w.coverCentres = Float64Array.of(w.patchX[0], w.patchY[0]);
-        w.config = { ...w.config, coverFoodFree: true };
         for (let i = 0; i < 30; i++) {
             const slot = spawnFoodItem(w);
             expect(ringIndexAt(w, w.foodX[slot], w.foodY[slot])).toBe(-1);
         }
+    });
+
+    it('falls back to the last dung zone when no fertility share can be subtracted away', () => {
+        const w = smallWorld({ foodPatchCount: 0, fertileZoneSpawnChance: 1 });
+        for (const [slot, x] of [
+            [0, 300],
+            [1, 700],
+        ]) {
+            w.zoneAlive[slot] = 1;
+            w.zoneOrigin[slot] = ZONE_ORIGIN.DUNG;
+            w.zoneX[slot] = x;
+            w.zoneY[slot] = 400;
+            w.zoneFertility[slot] = NaN;
+            w.zoneInitial[slot] = 3;
+        }
+        const food = spawnFoodItem(w);
+        expect(Math.hypot(w.foodX[food] - 700, w.foodY[food] - 400)).toBeLessThanOrEqual(w.config.fertileZoneRadius);
     });
 });
