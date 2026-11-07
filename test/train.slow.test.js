@@ -52,9 +52,30 @@ function archiveText(name, g) {
     return readFileSync(join(root, name, `archive-${g}.json`), 'utf8');
 }
 
-describe('npm run train', () => {
-    it('writes identical archives with one and two workers, with offers merged', async () => {
-        await runTraining(
+/** @type {Map<string, Promise<void>>} */
+const done = new Map();
+
+/**
+ * Runs a training once per output name, so a test that reads another test's output does not depend on test order
+ * (the gate shuffles the order).
+ * @param {string} name the output directory name
+ * @param {() => Promise<unknown>} run the training run
+ * @returns {Promise<void>} resolves when the run has finished
+ */
+function once(name, run) {
+    if (!done.has(name)) {
+        done.set(
+            name,
+            run().then(() => {}),
+        );
+    }
+    return /** @type {Promise<void>} */ (done.get(name));
+}
+
+/** @returns {Promise<void>} the two-generation, one-worker run into `w1` */
+function runW1() {
+    return once('w1', () =>
+        runTraining(
             parseArgs([
                 '--generations',
                 '2',
@@ -64,7 +85,19 @@ describe('npm run train', () => {
                 '0',
                 ...small('w1', ['--workers', '1']),
             ]),
-        );
+        ),
+    );
+}
+
+/** @returns {Promise<void>} the three-generation curriculum run into `full` */
+function runFull() {
+    const base = ['--curriculum', curriculum, '--checkpoint-every', '0', '--workers', '2'];
+    return once('full', () => runTraining(parseArgs(['--generations', '3', ...base, ...small('full', [])])));
+}
+
+describe('npm run train', () => {
+    it('writes identical archives with one and two workers, with offers merged', async () => {
+        await runW1();
         await runTraining(
             parseArgs([
                 '--generations',
@@ -81,6 +114,7 @@ describe('npm run train', () => {
     }, 120000);
 
     it('writes the same archives with checkpoints as without, and a curve row', async () => {
+        await runW1();
         const args = ['--generations', '2', '--config', fileA, '--workers', '2'];
         await runTraining(parseArgs([...args, '--checkpoint-every', '1', ...small('cp', [])]), { drillTrials: 2 });
         expect(archiveText('cp', 1)).toBe(archiveText('w1', 1));
@@ -94,7 +128,7 @@ describe('npm run train', () => {
 
     it('switches config at the stage boundary and resumes to the same archive', async () => {
         const base = ['--curriculum', curriculum, '--checkpoint-every', '0', '--workers', '2'];
-        await runTraining(parseArgs(['--generations', '3', ...base, ...small('full', [])]));
+        await runFull();
         const log = readFileSync(join(root, 'full', 'train.jsonl'), 'utf8')
             .trim()
             .split('\n')
@@ -128,6 +162,7 @@ describe('npm run train', () => {
     }, 240000);
 
     it('refuses to resume an archive whose stage rules differ, naming the field', async () => {
+        await runFull();
         const args = parseArgs([
             '--generations',
             '3',

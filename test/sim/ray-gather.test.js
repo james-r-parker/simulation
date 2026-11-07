@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HERD, KIND_STRIDE, LOCAL_STRIDE, OX, OY, RANGE } from '../../js/sim/ray-gather.js';
-import { senseSlot, syncSense } from '../../js/sim/wasm-sense.js';
+import { senseSlot, beginSense } from '../../js/sim/wasm-sense.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -12,7 +12,7 @@ const VISION = 300;
  * @returns {number[]} the gathered keys, as listed
  */
 function gather(w, me) {
-    syncSense(w, rebuild(w));
+    beginSense(w, rebuild(w));
     w.rayScratch[OX] = w.x[me];
     w.rayScratch[OY] = w.y[me];
     w.rayScratch[RANGE] = VISION;
