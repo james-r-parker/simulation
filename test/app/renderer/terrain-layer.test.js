@@ -95,4 +95,19 @@ describe('createTerrainLayer', () => {
 
         layer.dispose();
     });
+    it('lights a refuge in the instance attribute while blobs are inside it', () => {
+        const info = {
+            worldWidth: 6000,
+            worldHeight: 4000,
+            terrain: { layout: 'basins', coldMarginWidth: 0, refuges: [{ x: 1000, y: 1500, radius: 250 }] },
+        };
+        const layer = createTerrainLayer({ info, seed: 1 });
+        const agents = { count: 6, x: new Float32Array(6).fill(1000), y: new Float32Array(6).fill(1500) };
+        layer.update?.(/** @type {any} */ ({ nowMs: 1000, agents }));
+        const refuge = layer.object.children.find(
+            (/** @type {any} */ c) => c.geometry?.getAttribute('iRefuge')?.array[2] === 250,
+        );
+        expect(refuge.geometry.getAttribute('iRefuge').array[3]).toBeGreaterThan(0);
+        layer.dispose();
+    });
 });

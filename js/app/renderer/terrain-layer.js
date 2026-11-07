@@ -16,6 +16,7 @@ import {
 } from 'three';
 import { createFloraGlow, disposeFloraGlow, setFloraVisibility } from './flora-glow.js';
 import { LOOK_OFF } from './quality.js';
+import { createRefugeOccupancy, updateRefugeLevels } from './refuge-occupancy.js';
 import { createPrng } from '../prng.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
@@ -120,10 +121,12 @@ void main() {
 
 const REFUGE_VERTEX = /* glsl */ `
 attribute vec2 corner;
-attribute vec4 iRefuge; // x, y, radius, 0
+attribute vec4 iRefuge; // x, y, radius, occupancy 0 to 1
+varying float vOcc;
 varying vec2 vLocal;
 void main() {
     vLocal = corner;
+    vOcc = iRefuge.w;
     vec2 pos = iRefuge.xy + corner * iRefuge.z;
     gl_Position = projectionMatrix * viewMatrix * vec4(pos, 0.0, 1.0);
 }
@@ -135,13 +138,15 @@ uniform float uSceneryMax;
 uniform float uPeak;
 uniform float uTime;
 varying vec2 vLocal;
+varying float vOcc;
 void main() {
     float d = length(vLocal);
     if (d >= 1.0) {
         discard;
     }
     float breath = 0.5 + 0.5 * sin(uTime * 0.785398); // 8 s period
-    float intensity = uPeak * uSceneryMax * (1.0 - d) * (1.0 - d) * (0.8 + 0.2 * breath);
+    float intensity = uPeak * uSceneryMax * (1.0 - d) * (1.0 - d) * (0.8 + 0.2 * breath) * (1.0 + 0.8 * vOcc);
+    intensity += vOcc * 0.25 * uPeak * uSceneryMax * smoothstep(0.8, 0.95, d) * (1.0 - smoothstep(0.95, 1.0, d));
     gl_FragColor = vec4(uGlowColor * intensity, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -251,7 +256,7 @@ function createGlowMesh(refuges, uniforms) {
         packed[o + 3] = 0;
     }
     uploadInstances(mesh, { iRefuge: packed }, refuges.length);
-    return { mesh, geom, mat };
+    return { mesh, geom, mat, packed };
 }
 
 /**
@@ -333,6 +338,7 @@ export function createTerrainLayer({ info, seed = 0 }) {
     const { frost, refuge, patches } = buildTerrainMeshes(hasBasins, info, seed, uniforms);
     const flora = (info.floraPatchMax ?? info.patches?.length ?? 0) > 0 ? createFloraGlow(info) : null;
     let floraOn = true;
+    const occupancy = createRefugeOccupancy(info);
     const parts = { group, frost, refuge, patches, flora };
     for (const part of [frost, refuge, patches]) {
         if (part) {
@@ -358,6 +364,7 @@ export function createTerrainLayer({ info, seed = 0 }) {
             frostUniforms.uTime.value = t;
             refugeUniforms.uTime.value = t;
             patchUniforms.uTime.value = t;
+            updateRefugeLevels(refuge, occupancy, frame);
             if (floraOn && flora) {
                 flora.update(frame.snapshot ?? null);
             }
